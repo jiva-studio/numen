@@ -8,5 +8,10 @@ export const URLS: Medium<typeof URL> = {
   tab: URL,
   source: 'url',
   draws: UrlTab,
-  hands: (puts, opens) => puts.points(opens),
+  hands: (puts, opens) => {
+    // A url is reached both ways: by what the vault says stands at a path,
+    // and by having just been made here.
+    puts.reads({ kind: URLS.source }, opens)
+    puts.holds('url', (path) => opens(path, []))
+  },
 }

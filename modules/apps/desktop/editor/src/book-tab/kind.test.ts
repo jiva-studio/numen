@@ -32,7 +32,12 @@ const window_ = (held: BookTabState | null = null) => {
 /** What puts books in front, keeping the reader it is handed. */
 const openers = () => {
   let reader: SourceReader | null = null
-  const puts = { turns: (opens: SourceReader) => void (reader = opens) } as unknown as FileOpeners
+  const puts = {
+    reads: (key: { format?: string }, opens: SourceReader) => {
+      if (!key.format) return
+      reader = opens
+    },
+  } as unknown as FileOpeners
   return { puts, opens: () => reader }
 }
 

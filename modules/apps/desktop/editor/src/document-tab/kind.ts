@@ -51,7 +51,7 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
     const id = await handle.opens(DOCUMENT, path)
     void handle.holds<DocumentTabState>(DOCUMENT, id)?.reach(...spans)
   }
-  puts.reads((path, spans) => void reads(path, spans))
+  puts.reads({ kind: 'book' }, (path, spans) => void reads(path, spans))
 
   return { kind }
 }

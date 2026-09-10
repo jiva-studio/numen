@@ -69,7 +69,8 @@ export function bookKind(
     const id = await handle.opens(BOOK, path)
     void handle.holds<BookTabState>(BOOK, id)?.reach(...spans)
   }
-  puts.turns((path, spans) => void turns(path, spans))
+  // A book that reflows is this kind's to read, and no other book's.
+  puts.reads({ kind: 'book', format: 'epub' }, (path, spans) => void turns(path, spans))
 
   return { kind }
 }

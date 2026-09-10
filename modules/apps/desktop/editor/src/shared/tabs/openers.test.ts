@@ -7,10 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { FileKind } from '../file'
-import type { RefusalReason } from '../note'
-import { fileMakers, fileOpeners, type VaultMaker, type FileOpenerDeps } from './openers'
-import { writer } from '../testing/writer'
-import { REFUSED } from '../words'
+import { fileOpeners, type FileOpenerDeps } from './openers'
 
 /** A vault that answers what it was told, and counts the questions. */
 const vault = (stands: Record<string, FileKind> = {}) => {
@@ -56,15 +53,15 @@ const editors = (puts: ReturnType<typeof fileOpeners>) => {
       opened.push(`${type} ${path} ${title || '—'} ${showing} ${line ?? '—'}`),
     )
   }
-  puts.reads((path, runs) =>
+  puts.reads({ kind: 'book' }, (path, runs) =>
     opened.push(
       `document ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
     ),
   )
-  puts.turns((path, runs) =>
+  puts.reads({ kind: 'book', format: 'epub' }, (path, runs) =>
     opened.push(`book ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`),
   )
-  puts.hears((path, runs) =>
+  puts.reads({ kind: 'recording' }, (path, runs) =>
     opened.push(
       `recording ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
     ),
@@ -259,7 +256,7 @@ describe('which reader a book opens in', () => {
     const one = vault({ 'Gita.epub': REFLOWS })
     const puts = fileOpeners(one.core)
     const opened: string[] = []
-    puts.reads((path) => opened.push(`document ${path}`))
+    puts.reads({ kind: 'book' }, (path) => opened.push(`document ${path}`))
 
     await puts.opens('Gita.epub')
 
@@ -277,99 +274,5 @@ describe('a file just made here', () => {
 
     expect(opened).toStrictEqual(['deck Animals.md Animals here —'])
     expect(one.asked).toStrictEqual([])
-  })
-})
-
-/** The vault answering what it was told, and writing down what it was asked to make. */
-const maker = (
-  refusal: RefusalReason | null = null,
-  throws = false,
-): VaultMaker & { asked: string[] } => {
-  const asked: string[] = []
-  const answer = async (path: string) => {
-    if (throws) throw new Error('the vault is not there')
-    return { path: refusal ? '' : path, refusal }
-  }
-  return {
-    asked,
-    makeDeck: (title, folder) => {
-      asked.push(`deck ${folder || '—'} ${title}`)
-      return answer(`${folder}/${title}.md`)
-    },
-    makeStencil: (title, folder, fields) => {
-      asked.push(`stencil ${folder || '—'} ${title} ${fields.join(',')}`)
-      return answer(`${folder}/${title}.md`)
-    },
-    makesPreset: (title, folder) => {
-      asked.push(`preset ${folder || '—'} ${title}`)
-      return answer(`${folder}/${title}.md`)
-    },
-    makesURL: (address, folder) => {
-      asked.push(`link ${folder || '—'} ${address}`)
-      return answer(`${folder}/${address}.md`)
-    },
-  }
-}
-
-/** Everything making one of the four says, and the field a stencil carries. */
-const MAKING = { refused: REFUSED, field: 'Front' }
-
-describe('a deck, a stencil or a preset made', () => {
-  it('is asked of the vault under the name and the folder it was given', async () => {
-    const vault = maker()
-    const made = fileMakers(vault, fileOpeners(unreachable), MAKING, () => {})
-
-    await made.makes('deck', 'zoology', 'Animals')
-    await made.makes('stencil', 'zoology', 'Words')
-    await made.makes('preset', '', 'Slow')
-
-    expect(vault.asked).toStrictEqual([
-      'deck zoology Animals',
-      'stencil zoology Words Front',
-      'preset — Slow',
-    ])
-  })
-
-  it('answers where the vault filed it', async () => {
-    const made = fileMakers(maker(), fileOpeners(unreachable), MAKING, () => {})
-
-    expect(await made.makes('deck', 'zoology', 'Animals')).toBe('zoology/Animals.md')
-  })
-
-  it('is put in front of the person as what it was made as', async () => {
-    const puts = fileOpeners(unreachable)
-    const opened = editors(puts)
-    puts.holds('preset', (path) => opened.push(`preset ${path}`))
-    const made = fileMakers(maker(), puts, MAKING, () => {})
-
-    await made.decks('zoology', 'Animals')
-    await made.stencils('zoology', 'Words')
-    await made.presets('', 'Slow')
-
-    expect(opened).toStrictEqual([
-      'deck zoology/Animals.md — here —',
-      'stencil zoology/Words.md — here —',
-      'preset /Slow.md',
-    ])
-  })
-
-  it('says what the vault refused, and nothing opens', async () => {
-    const puts = fileOpeners(unreachable)
-    const opened = editors(puts)
-    const told = writer()
-    const made = fileMakers(maker('occupied'), puts, MAKING, told.says)
-
-    expect(await made.decks('zoology', 'Animals')).toBe('')
-    expect(told.said).toStrictEqual([REFUSED.occupied])
-    expect(opened).toStrictEqual([])
-  })
-
-  it('says a vault that could not be asked at all', async () => {
-    const told = writer()
-    const made = fileMakers(maker(null, true), fileOpeners(unreachable), MAKING, told.says)
-
-    expect(await made.decks('zoology', 'Animals')).toBe('')
-    expect(told.said.join(' ')).not.toContain('the vault is not there')
-    expect(told.said.join(' ')).toContain('numen did not answer')
   })
 })

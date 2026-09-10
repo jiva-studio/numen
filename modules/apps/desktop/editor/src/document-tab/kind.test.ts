@@ -31,7 +31,12 @@ const window_ = (held: DocumentTabState | null = null) => {
 /** What puts documents in front, keeping the reader it is handed. */
 const openers = () => {
   let reader: SourceReader | null = null
-  const puts = { reads: (opens: SourceReader) => void (reader = opens) } as unknown as FileOpeners
+  const puts = {
+    reads: (key: { format?: string }, opens: SourceReader) => {
+      if (key.format) return
+      reader = opens
+    },
+  } as unknown as FileOpeners
   return { puts, opens: () => reader }
 }
 

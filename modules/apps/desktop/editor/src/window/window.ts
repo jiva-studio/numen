@@ -46,7 +46,8 @@ import { reaching, type CommandDeps, type Store } from '../shared/command/deps'
 import { does } from '../shared/command/handlers'
 import { search } from '../shared/command/search'
 import { lands, type DestinationDeps } from '../shared/command/destination'
-import { fileMakers, fileOpeners } from '../shared/tabs/openers'
+import { fileOpeners } from '../shared/tabs/openers'
+import { fileMakers } from '../shared/tabs/makers'
 import { flushing } from '../shared/saving/flushing'
 import { raisesConflicts } from '../shared/saving/conflicts'
 import { windowTabs, type OpenTab } from '../shared/tabs/windowTabs'
@@ -310,8 +311,8 @@ export const useWindow = () => {
     {
       makeDeck: (title, folder) => cards.makeDeck(title, folder),
       makeStencil: (title, folder, fields) => cards.makeStencil(title, folder, fields),
-      makesPreset: (title, folder) => presets.makes(title, folder),
-      makesURL: async (address, folder) => {
+      makePreset: (title, folder) => presets.makes(title, folder),
+      makeURL: async (address, folder) => {
         const made = await core.makeURL(address, folder)
         // What is at the address is fetched as the file is made: the person
         // pasted it to have what is there, and the file is called what the
@@ -321,7 +322,7 @@ export const useWindow = () => {
       },
     },
     puts,
-    { refused: words.refused, field: cardWords.newField },
+    { refused: words.refused },
     told,
   )
 
@@ -347,7 +348,7 @@ export const useWindow = () => {
     makes: (path) => does(invocationOf('makeFolder', where(), path), doing, words),
     writes: async (folder) => (await making.named(folder, []))?.path ?? '',
     decks: (folder, name) => made.makes('deck', folder, name),
-    stencils: (folder, name) => made.makes('stencil', folder, name),
+    stencils: (folder, name) => made.makes('stencil', folder, name, [cardWords.newField]),
     presets: (folder, name) => made.makes('preset', folder, name),
     imports: (folder, address) => made.imports(folder, address),
     says: (text) => told(text, 'refusal'),
@@ -651,7 +652,12 @@ export const useWindow = () => {
         return able
       },
     },
-    makers: made,
+    makers: {
+      ...made,
+      // The one field a stencil is made carrying is the flashcards' word, and
+      // the commands say no more about it than the making needs.
+      stencils: (folder, name) => made.stencils(folder, name, [cardWords.newField]),
+    },
     vaults: {
       ...vaults,
       calls: (vault) => (shown.value = vault),
