@@ -35,6 +35,7 @@ import { browserClock, type Clock } from '@/shared/lib/clock'
 import { DragPreview, usePressDrag } from '@/shared/ui/drag-preview'
 import { TreeField } from './tree-field'
 
+// --- Props & Emits ---
 const props = withDefaults(
   defineProps<{
     /** What is drawn, nested. */
@@ -104,6 +105,7 @@ defineSlots<{
   silence(): unknown
 }>()
 
+// --- State ---
 const list = useTemplateRef<HTMLElement>('list')
 
 /** What the tree takes up on screen: a drop lands only over it. */
@@ -139,13 +141,11 @@ const said = shallowRef(false)
 const { dragging, at, position, lift } = usePressDrag<readonly RowId[], RowLanding>({
   threshold: () => props.threshold,
   clock: () => props.clock,
-  landingAt,
+  landingAt: getLandingAt,
   settle: (rows, found) => {
     if (found) emit('move', rows, found)
     emit('drop')
   },
-  // The rows are clear of the tree the moment the press turns into a drag,
-  // and said once for the whole of it.
   began: (rows) => emit('drag', rows),
 })
 
@@ -163,69 +163,74 @@ const label = computed<DragLabel | null>(() => {
   return dragLabel(shown.value, held.held, where, props.counted)
 })
 
-/** What a row is marked with, and nothing where it is marked with nothing. */
-const markOf = (row: RowId | null): Record<string, string> => {
-  const mark = props.marking
-  const value = mark?.valueFor(row)
-  return mark && value !== null && value !== undefined ? { [mark.attribute]: value } : {}
-}
-
 /** The rows as they are drawn, each under the row it stands for. */
 const drawnRows = new Map<RowId, HTMLElement>()
 
-const holdRow = (row: RowId, element: unknown): void => {
-  if (element) drawnRows.set(row, element as HTMLElement)
-  else drawnRows.delete(row)
-}
-
-const rowFor = (row: RowId): HTMLElement | null => drawnRows.get(row) ?? null
-
-/** The keyboard onto a row, once the rows it moved among are drawn. */
-const goTo = async (row: RowId | null): Promise<void> => {
+/** The keyboard into the field once it is drawn. */
+watch(renaming, (row) => {
   if (row === null) return
-  here.value = row
-  await nextTick()
-  rowFor(row)?.focus()
+  void nextTick(() => field.value?.[0]?.focus())
+})
+
+// --- Handlers ---
+function onContextMenu(event: MouseEvent): void {
+  requestMenu(null, { x: event.clientX, y: event.clientY })
 }
 
-const turn = (row: ShownRow): void => {
-  if (row.open) emit('close', row.id)
-  else emit('open', row.id)
+function onRowContextMenu(row: ShownRow, event: MouseEvent): void {
+  requestMenu(row, { x: event.clientX, y: event.clientY })
 }
 
-/** A selection a press came to, said, and the anchor put where it names. */
-const takes = (pressed: RowSelection): readonly RowId[] => {
-  anchor.value = pressed.anchor
-  if (!sameRows(pressed.rows, props.selected)) emit('select', pressed.rows)
-  return pressed.rows
+function onRowFocus(rowId: RowId): void {
+  here.value = rowId
 }
 
-const choose = (row: ShownRow): void => {
+function onRowPointerDown(rowId: RowId, event: PointerEvent): void {
+  if (event.button !== 0) return
+  event.preventDefault()
+  ;(event.currentTarget as HTMLElement).focus()
+
+  const how: Press = { joining: event.ctrlKey || event.metaKey, reaching: event.shiftKey }
+  said.value = how.joining || how.reaching || !picked.value.has(rowId)
+  const taken = said.value
+    ? applySelection(selects(shown.value, props.selected, anchor.value, rowId, how))
+    : props.selected
+
+  lift(dragged(taken, rowId), event)
+}
+
+function onRowClick(row: ShownRow): void {
   const spoken = said.value
   said.value = false
   if (dragging.value?.moved || spoken) return
-  takes(selects(shown.value, props.selected, anchor.value, row.id, PLAIN))
+  applySelection(selects(shown.value, props.selected, anchor.value, row.id, PLAIN))
 }
 
-const act = (row: ShownRow): void => {
-  if (row.holds) turn(row)
-  emit('activate', row.id)
+function onRowDoubleClick(row: ShownRow): void {
+  activateRow(row)
 }
 
-/** A menu asked for on a row, which the selection takes in first, or off every row. */
-const askMenu = (row: ShownRow | null, at: Position): void => {
-  if (row && !picked.value.has(row.id)) {
-    takes(selects(shown.value, props.selected, anchor.value, row.id, PLAIN))
-  }
-  emit('menu', row?.id ?? null, at)
+function onRename(rowId: RowId, name: string): void {
+  renaming.value = null
+  emit('rename', rowId, name)
+  void focusRow(rowId)
 }
 
-const onKey = (event: KeyboardEvent): void => {
+function onAbandon(rowId: RowId): void {
+  renaming.value = null
+  void focusRow(rowId)
+}
+
+function onFieldBlur(): void {
+  renaming.value = null
+}
+
+function onKeyDown(event: KeyboardEvent): void {
   const chorded = event.ctrlKey || event.metaKey
 
   if (chorded && event.key.toLowerCase() === 'a') {
     event.preventDefault()
-    takes(everyRow(shown.value, anchor.value))
+    applySelection(everyRow(shown.value, anchor.value))
     return
   }
 
@@ -240,7 +245,7 @@ const onKey = (event: KeyboardEvent): void => {
 
   if (event.key === 'Enter') {
     event.preventDefault()
-    act(on)
+    activateRow(on)
     return
   }
 
@@ -248,14 +253,14 @@ const onKey = (event: KeyboardEvent): void => {
   if (event.key === ' ') {
     event.preventDefault()
     const press: Press = { joining: true, reaching: false }
-    takes(selects(shown.value, props.selected, anchor.value, on.id, press))
+    applySelection(selects(shown.value, props.selected, anchor.value, on.id, press))
     return
   }
 
   if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
     event.preventDefault()
-    const box = rowFor(on.id)?.getBoundingClientRect()
-    if (box) askMenu(on, { x: box.left, y: box.bottom })
+    const elementBox = getRowElement(on.id)?.getBoundingClientRect()
+    if (elementBox) requestMenu(on, { x: elementBox.left, y: elementBox.bottom })
     return
   }
 
@@ -267,39 +272,65 @@ const onKey = (event: KeyboardEvent): void => {
   else if (step.turn) emit('close', step.turn.row)
   if (step.at !== null) {
     const press: Press = { joining: false, reaching: event.shiftKey }
-    takes(selects(shown.value, props.selected, anchor.value, step.at, press))
+    applySelection(selects(shown.value, props.selected, anchor.value, step.at, press))
   }
-  void goTo(step.at)
+  void focusRow(step.at)
+}
+
+// --- Helpers ---
+/** What a row is marked with, and nothing where it is marked with nothing. */
+function getMarkOf(row: RowId | null): Record<string, string> {
+  const mark = props.marking
+  const value = mark?.valueFor(row)
+  return mark && value !== null && value !== undefined ? { [mark.attribute]: value } : {}
+}
+
+function setRowElement(row: RowId, element: unknown): void {
+  if (element) drawnRows.set(row, element as HTMLElement)
+  else drawnRows.delete(row)
+}
+
+function getRowElement(row: RowId): HTMLElement | null {
+  return drawnRows.get(row) ?? null
+}
+
+/** The keyboard onto a row, once the rows it moved among are drawn. */
+async function focusRow(row: RowId | null): Promise<void> {
+  if (row === null) return
+  here.value = row
+  await nextTick()
+  getRowElement(row)?.focus()
+}
+
+function toggleRow(row: ShownRow): void {
+  if (row.open) emit('close', row.id)
+  else emit('open', row.id)
+}
+
+/** A selection a press came to, said, and the anchor put where it names. */
+function applySelection(pressed: RowSelection): readonly RowId[] {
+  anchor.value = pressed.anchor
+  if (!sameRows(pressed.rows, props.selected)) emit('select', pressed.rows)
+  return pressed.rows
+}
+
+function activateRow(row: ShownRow): void {
+  if (row.holds) toggleRow(row)
+  emit('activate', row.id)
+}
+
+/** A menu asked for on a row, which the selection takes in first, or off every row. */
+function requestMenu(row: ShownRow | null, at: Position): void {
+  if (row && !picked.value.has(row.id)) {
+    applySelection(selects(shown.value, props.selected, anchor.value, row.id, PLAIN))
+  }
+  emit('menu', row?.id ?? null, at)
 }
 
 /**
- * A row is lifted under the primary button and under no other. The press
- * selects no text as it travels, and takes the keyboard itself.
- *
- * A row standing outside the selection is what the press selects, and it is
- * dragged alone; a row standing in the selection drags the whole of it, and
- * a plain press collapses the selection onto it once the pointer has let go
- * without travelling.
+ * Where the pointer is, asked of the drawing: the rows are one height each.
  */
-function press(row: RowId, event: PointerEvent): void {
-  if (event.button !== 0) return
-  event.preventDefault()
-  ;(event.currentTarget as HTMLElement).focus()
-
-  const how: Press = { joining: event.ctrlKey || event.metaKey, reaching: event.shiftKey }
-  said.value = how.joining || how.reaching || !picked.value.has(row)
-  const taken = said.value
-    ? takes(selects(shown.value, props.selected, anchor.value, row, how))
-    : props.selected
-
-  lift(dragged(taken, row), event)
-}
-
-/**
- * Where the pointer is, asked of the drawing: the rows are one height each,
- * and the height is whatever they are drawn at.
- */
-function landingAt(rows: readonly RowId[], at: Position): RowLanding | null {
+function getLandingAt(rows: readonly RowId[], at: Position): RowLanding | null {
   const drawn = list.value
   const over = box.value?.getBoundingClientRect()
   if (!drawn || !over) return null
@@ -311,30 +342,11 @@ function landingAt(rows: readonly RowId[], at: Position): RowLanding | null {
 
   const first = shown.value[0]
   const height =
-    (first && rowFor(first.id)?.getBoundingClientRect().height) ?? 0
+    (first && getRowElement(first.id)?.getBoundingClientRect().height) ?? 0
   const found = landing(shown.value, rows, at.y - drawn.getBoundingClientRect().top, height)
   if (!found) return null
 
   return refuses(props.rows, rows, holderOf(shown.value, found)) ? null : found
-}
-
-/** The keyboard into the field once it is drawn. */
-watch(renaming, (row) => {
-  if (row === null) return
-  void nextTick(() => field.value?.[0]?.focus())
-})
-
-/** A name taken, and the keyboard back on the row it belongs to. */
-const rename = (row: RowId, name: string): void => {
-  renaming.value = null
-  emit('rename', row, name)
-  void goTo(row)
-}
-
-/** A name left as it was, and the keyboard back on the row. */
-const abandon = (row: RowId): void => {
-  renaming.value = null
-  void goTo(row)
 }
 </script>
 
@@ -343,8 +355,8 @@ const abandon = (row: RowId): void => {
     ref="box"
     class="tree numen min-h-0 bg-surface font-sans text-base text-ink"
     :data-into="at && 'into' in at && at.into === null ? '' : undefined"
-    v-bind="markOf(null)"
-    @contextmenu.prevent="askMenu(null, { x: $event.clientX, y: $event.clientY })"
+    v-bind="getMarkOf(null)"
+    @contextmenu.prevent="onContextMenu"
   >
     <div
       ref="list"
@@ -352,11 +364,11 @@ const abandon = (row: RowId): void => {
       role="tree"
       aria-multiselectable="true"
       :aria-label="name"
-      @keydown="onKey"
+      @keydown="onKeyDown"
     >
       <div
         v-for="row in shown"
-        :ref="(element) => holdRow(row.id, element)"
+        :ref="(element) => setRowElement(row.id, element)"
         :key="row.id"
         class="tree__row flex min-w-0 items-center"
         role="treeitem"
@@ -370,13 +382,13 @@ const abandon = (row: RowId): void => {
         :data-last="row.last || undefined"
         :data-into="row.id === into || undefined"
         :data-before="row.id === before || undefined"
-        v-bind="markOf(row.id)"
+        v-bind="getMarkOf(row.id)"
         :style="{ '--level': row.level }"
-        @focus="here = row.id"
-        @pointerdown="press(row.id, $event)"
-        @click="choose(row)"
-        @dblclick="act(row)"
-        @contextmenu.prevent.stop="askMenu(row, { x: $event.clientX, y: $event.clientY })"
+        @focus="onRowFocus(row.id)"
+        @pointerdown="onRowPointerDown(row.id, $event)"
+        @click="onRowClick(row)"
+        @dblclick="onRowDoubleClick(row)"
+        @contextmenu.prevent.stop="onRowContextMenu(row, $event)"
       >
         <span class="tree__icon flex shrink-0 items-center">
           <slot name="icon" :id="row.id" :holds="row.holds" :open="row.open" />
@@ -387,9 +399,9 @@ const abandon = (row: RowId): void => {
           ref="field"
           :value="row.name"
           :name="name"
-          @rename="rename(row.id, $event)"
-          @abandon="abandon(row.id)"
-          @blur="renaming = null"
+          @rename="onRename(row.id, $event)"
+          @abandon="onAbandon(row.id)"
+          @blur="onFieldBlur"
         />
         <!-- The whole name is on the element, for one too long to be drawn. -->
         <span v-else class="tree__name min-w-0 truncate" :title="row.name">{{ row.name }}</span>
