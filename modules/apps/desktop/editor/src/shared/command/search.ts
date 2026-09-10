@@ -102,7 +102,7 @@ export interface Words extends EmptyWords {
 /**
  * Where an item chosen takes the person. A file names the file and the place
  * inside it, and nothing about which editor it opens in: a landing at a file
- * carries a line, one at a document a stretch of the source's own text.
+ * carries a line, one at a document a span of the source's own text.
  */
 export interface SearchDestination {
   at: 'plex' | 'file' | 'document'
@@ -111,7 +111,7 @@ export interface SearchDestination {
   title: string
   /** The line the item stands on, for a place inside a file. */
   line?: number
-  /** The stretch of the source's own text to light, for a place in a document. */
+  /** The span of the source's own text to light, for a place in a document. */
   start?: number
   length?: number
 }
@@ -138,7 +138,7 @@ interface SearchHit {
   path: string
   title: string
   line: number
-  /** The stretch of the source's own text the item was found in. */
+  /** The span of the source's own text the item was found in. */
   start: number
   length: number
   offers: readonly string[]
@@ -320,7 +320,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       title: one.title || one.path,
       detail: one.text,
       detailAt: one.at,
-      // A book is not a node, so the one thing offered over it is the stretch
+      // A book is not a node, so the one thing offered over it is the span
       // of its text the words were found in.
       actions: one.isNote
         ? [
@@ -333,7 +333,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       path: one.path,
       title: one.title,
       // A note is opened on the line the words were found on. A book has no
-      // prose to count lines from, and is opened at the stretch instead.
+      // prose to count lines from, and is opened at the span instead.
       line: one.isNote ? one.line : -1,
       start: one.start,
       length: one.length,

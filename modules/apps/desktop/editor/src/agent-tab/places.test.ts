@@ -23,7 +23,7 @@ describe('a link to a place', () => {
     }
   })
 
-  it('is nothing where it names no stretch of the text', () => {
+  it('is nothing where it names no span of the text', () => {
     for (const href of [
       'numen:library%2FA%20Book.pdf',
       'numen:library%2FA%20Book.pdf?start=1&length=0',

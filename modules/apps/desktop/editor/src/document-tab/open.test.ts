@@ -19,12 +19,12 @@ const SHAPE: Shape = {
 
 /**
  * A document of three pages, recording every question put to it. It answers
- * about each stretch asked about with the highlights standing at the same place
+ * about each span asked about with the highlights standing at the same place
  * in `where`, and with nothing where that list is shorter.
  */
 function book(shape: Shape | Error = SHAPE, where: readonly (readonly HighlightedPage[])[] = []) {
   const asked: string[] = []
-  /** Every stretch of the document's text it was asked what stands on. */
+  /** Every span of the document's text it was asked what stands on. */
   const spans: string[] = []
 
   const documents: Documents = {

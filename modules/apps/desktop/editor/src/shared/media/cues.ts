@@ -7,7 +7,7 @@
  * span out where the split fell in its characters.
  */
 
-/** One stretch of speech: what was said, and the milliseconds it spans. */
+/** One span of speech: what was said, and the milliseconds it covers. */
 export interface Cue {
   readonly text: string
   readonly from: number

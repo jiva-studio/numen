@@ -76,7 +76,7 @@ describe('a file chosen', () => {
 })
 
 describe('a passage chosen', () => {
-  it('opens the document it stands in, at the stretch it names', async () => {
+  it('opens the document it stands in, at the span it names', async () => {
     const one = window()
 
     await lands(
@@ -88,7 +88,7 @@ describe('a passage chosen', () => {
     expect(one.shown).toStrictEqual([])
   })
 
-  it('opens it at its first page where it names no stretch', async () => {
+  it('opens it at its first page where it names no span', async () => {
     const one = window()
 
     await lands(landing({ at: 'document', path: 'library/mahabharata.epub' }), one.places)

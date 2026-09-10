@@ -130,7 +130,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
 
   /**
    * A source put in front of the person at spans of its own text: a book in
-   * the reader and a recording in the player, at the first of them. A stretch
+   * the reader and a recording in the player, at the first of them. A span
    * of a note's bytes names no line for the keyboard to stand on, so a note
    * opens whole.
    */

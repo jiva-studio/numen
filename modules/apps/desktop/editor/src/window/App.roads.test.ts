@@ -89,7 +89,7 @@ describe('every road to a file', () => {
       await settles()
       window.findComponent(Palette).vm.$emit('choose', 'read', 'read')
     },
-    // The two roads that arrive naming a stretch of a source's own text: a link
+    // The two roads that arrive naming a span of a source's own text: a link
     // in an answer the agent wrote, and a place asked for from outside the
     // window altogether.
     'a link in an answer': async (window, path) => {

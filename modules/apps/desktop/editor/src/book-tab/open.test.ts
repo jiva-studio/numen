@@ -237,7 +237,7 @@ describe('a passage reached', () => {
     expect(read.highlights.value).toStrictEqual([{ begins: 3_600, ends: 3_642 }])
   })
 
-  it('leaves the other stretches somewhere else to look', async () => {
+  it('leaves the other spans somewhere else to look', async () => {
     const { books } = shelf()
     const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
 

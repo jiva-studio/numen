@@ -184,8 +184,8 @@ describe('a path opened', () => {
   })
 })
 
-describe('a source opened at a stretch of its own text', () => {
-  it('reads a document at the stretches it was asked at', async () => {
+describe('a source opened at a span of its own text', () => {
+  it('reads a document at the spans it was asked at', async () => {
     const one = vault({ 'Physics.pdf': DOCUMENT })
     const puts = fileOpeners(one.core)
     const opened = editors(puts)
@@ -198,7 +198,7 @@ describe('a source opened at a stretch of its own text', () => {
     expect(opened).toStrictEqual(['document Physics.pdf [10+14, 30+32]'])
   })
 
-  it('plays a recording at the stretch of the words it was asked at', async () => {
+  it('plays a recording at the span of the words it was asked at', async () => {
     const one = vault({ 'talks/Ants.mp3': TALK })
     const puts = fileOpeners(one.core)
     const opened = editors(puts)

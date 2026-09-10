@@ -63,7 +63,7 @@ export function bookKind(
     }),
   }
 
-  // The reader of books that reflow. The stretch asked for is marked where it
+  // The reader of books that reflow. The span asked for is marked where it
   // stands and the tab is turned to it; the rest are marked more faintly
   // wherever they fall, each of them somewhere else to look.
   const turns = async (path: string, spans: readonly Span[]) => {

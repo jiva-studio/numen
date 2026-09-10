@@ -94,7 +94,7 @@ export interface Core {
   tasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
   /**
    * The places something else asked to be put in front of the person: a
-   * source, and the stretch of its own text meant, counted in bytes. A length
+   * source, and the span of its own text meant, counted in bytes. A length
    * of zero names the source and no place inside it.
    */
   focus(signal: AbortSignal): AsyncIterable<{

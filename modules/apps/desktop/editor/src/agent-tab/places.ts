@@ -9,7 +9,7 @@
 /** The scheme a link to somewhere in the vault carries. */
 export const SCHEME = 'numen:'
 
-/** Somewhere in the vault: a file, and the stretch of its text meant. */
+/** Somewhere in the vault: a file, and the span of its text meant. */
 export interface LinkTarget {
   readonly path: string
   readonly start: number
@@ -19,7 +19,7 @@ export interface LinkTarget {
 /**
  * The place a link names, and nothing for a link that names none.
  *
- * A link of ours with no stretch in it is a link to a file and not to a place
+ * A link of ours with no span in it is a link to a file and not to a place
  * inside it, which nothing here opens.
  */
 export const spotOf = (href: string): LinkTarget | null => {
@@ -62,6 +62,6 @@ export const spotsIn = (text: string): readonly LinkTarget[] => {
   return found
 }
 
-/** Whether two places are the same stretch of the same file. */
+/** Whether two places are the same span of the same file. */
 export const same = (one: LinkTarget, other: LinkTarget): boolean =>
   one.path === other.path && one.start === other.start && one.length === other.length

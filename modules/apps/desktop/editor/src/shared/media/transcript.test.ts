@@ -328,7 +328,7 @@ describe('a file whose text the vault carries under one kind and not the other',
 })
 
 describe('a recording opened at a place in its words', () => {
-  it('plays from the moment the first stretch was spoken at', async () => {
+  it('plays from the moment the first span was spoken at', async () => {
     const { recordings, asked } = talk(CUES, SUMMARY, 2_500)
     const { player, sought } = played()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
@@ -340,7 +340,7 @@ describe('a recording opened at a place in its words', () => {
     expect(heard.current.value).toBe(1)
   })
 
-  it('stands where it stands when no cue holds the stretch', async () => {
+  it('stands where it stands when no cue holds the span', async () => {
     const { recordings } = talk(CUES, SUMMARY, null)
     const { player, sought } = played()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
