@@ -7,27 +7,27 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { panesOf } from '@numen/ui'
-import { AGENT, CONVERSATION, PLEX, named, opening, plexCalled, shortened } from './workspace'
+import { AGENT, CONVERSATION, PLEX, begun, minted } from './workspace'
 
-describe('the name a tab is filed under', () => {
+describe('the identity a tab is filed under', () => {
   it('is a new one every time, so a second of a kind is a second tab', () => {
-    const names = [named(PLEX), named(PLEX), named(PLEX)]
+    const names = [minted(PLEX), minted(PLEX), minted(PLEX)]
 
     expect(new Set(names).size).toBe(3)
   })
 
   it('is never the name of a tab of another kind', () => {
-    expect(named(PLEX)).not.toBe(named(AGENT))
+    expect(minted(PLEX)).not.toBe(minted(AGENT))
   })
 
   it('says what kind of thing the tab holds', () => {
-    expect(named(AGENT).startsWith(`${AGENT}:`)).toBe(true)
+    expect(minted(AGENT).startsWith(`${AGENT}:`)).toBe(true)
   })
 })
 
 describe('the name a conversation is answered under', () => {
   it('is a new one for every conversation opened', () => {
-    const names = [named(CONVERSATION), named(CONVERSATION), named(CONVERSATION)]
+    const names = [minted(CONVERSATION), minted(CONVERSATION), minted(CONVERSATION)]
 
     expect(new Set(names).size).toBe(3)
   })
@@ -37,30 +37,19 @@ describe('the name a conversation is answered under', () => {
    * the conversation each of them stands for. The next name is new to both.
    */
   it('is not one the page gave out before it was reloaded', async () => {
-    const before = [named(CONVERSATION), named(CONVERSATION)]
+    const before = [minted(CONVERSATION), minted(CONVERSATION)]
 
     // The page again, with everything it held forgotten.
     vi.resetModules()
     const reloaded = await import('./workspace')
-    const after = [reloaded.named(CONVERSATION), reloaded.named(CONVERSATION)]
+    const after = [reloaded.minted(CONVERSATION), reloaded.minted(CONVERSATION)]
 
     expect(new Set([...before, ...after]).size).toBe(4)
   })
 })
 
-describe('what a plex tab is called', () => {
-  /** The tab's own icon says it is a plex, so the word is not said twice. */
-  it('is the note it stands on', () => {
-    expect(plexCalled('Plex', 'Entropy')).toBe('Entropy')
-  })
-
-  it('is the word for a plex while it stands nowhere', () => {
-    expect(plexCalled('Plex', '')).toBe('Plex')
-  })
-})
-
 describe('the layout the window opens with', () => {
-  const layout = opening('plex:one', 'agent:one', 'files:tree')
+  const layout = begun('plex:one', 'agent:one', 'files:tree')
 
   it('holds two panes, the plex alone and the agent over the files', () => {
     expect(panesOf(layout.root).map((one) => one.tabs)).toStrictEqual([
@@ -90,30 +79,3 @@ describe('the layout the window opens with', () => {
   })
 })
 
-describe('what a tab is called by a question', () => {
-  it('is the question itself when it is short enough to read', () => {
-    expect(shortened('what is here?')).toBe('what is here?')
-  })
-
-  it('is the first line of one written over several', () => {
-    expect(shortened('what is here?\nand below it?')).toBe('what is here?')
-  })
-
-  it('is the first line with anything on it', () => {
-    expect(shortened('\nwhat is here?')).toBe('what is here?')
-  })
-
-  it('is cut at a word rather than through one', () => {
-    const asked = 'what is the note about entropy joined to'
-
-    expect(shortened(asked, 24)).toBe('what is the note about…')
-  })
-
-  it('is cut where it has to be when there is nothing to cut at', () => {
-    expect(shortened('x'.repeat(40), 10)).toBe(`${'x'.repeat(10)}…`)
-  })
-
-  it('is nothing when nothing has been asked', () => {
-    expect(shortened('')).toBe('')
-  })
-})

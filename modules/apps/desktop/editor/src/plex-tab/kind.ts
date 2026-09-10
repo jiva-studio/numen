@@ -20,10 +20,16 @@ import type { View } from './view'
 import { ticketing } from './tickets'
 import type { Move, NoteHeading, NoteType } from '../shared/core'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
-import { PLEX, plexCalled } from '../shared/tabs/workspace'
+import { PLEX } from '../shared/tabs/workspace'
 import PlexTab from './PlexTab.vue'
 import { fileOf } from '../shared/paths'
 import { WORDS as words } from './words'
+
+/**
+ * What a plex tab is called: the note it stands on. The tab's own icon says it
+ * is a plex, so the word is only there for one standing on nothing.
+ */
+const titleOf = (note: string): string => note || words.plex
 
 /** Where the menu stands, and the node it was asked for on. */
 export interface MenuRequest {
@@ -112,7 +118,7 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
       if (from) void state.view.go(from)
       return state
     },
-    called: (state) => plexCalled(words.plex, state.view.neighbourhood.value?.focus.title ?? ''),
+    called: (state) => titleOf(state.view.neighbourhood.value?.focus.title ?? ''),
     draws: PlexTab,
     shuts: (state) => {
       state.view.close()

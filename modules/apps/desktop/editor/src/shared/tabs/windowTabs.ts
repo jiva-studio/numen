@@ -19,7 +19,7 @@ import { closeTab, openTab, openTabBeside, pane, paneById, panesOf } from '@nume
 import type { Tab, Workspace } from '@numen/ui'
 import type { Source } from '../file'
 import type { ProgressOf } from './tab'
-import { named } from './workspace'
+import { minted } from './workspace'
 
 /**
  * What a command asked over one tab is over: the note the tab means, and the
@@ -240,7 +240,7 @@ export function windowTabs() {
   const makes = async (kind: string, at = ''): Promise<string> => {
     const one = byKind.get(kind)
     if (!one) return ''
-    const id = one.identity ? `${kind}:${one.identity(at)}` : named(kind)
+    const id = one.identity ? `${kind}:${one.identity(at)}` : minted(kind)
     if (open.value.has(id)) return id
     const scope = effectScope(true)
     const state = scope.run(() => one.opens(at))

@@ -35,36 +35,19 @@ export const SETTINGS_FILE = 'settings-file'
 export const CONVERSATION = 'conversation'
 
 /**
- * A name no tab and no conversation has carried or will carry, in this window
- * or in one the person opens after it. The agent keeps a conversation under
- * each name it hears, and a name stands for one of them.
+ * The identity a tab or a conversation is given when nothing it can be found
+ * under exists: the word its kind is filed under, and what nothing else
+ * answers to, in this window or in one the person opens after it. The agent
+ * keeps a conversation under each name it hears, and a name stands for one of
+ * them.
  */
-export const named = (kind: string): string => `${kind}:${crypto.randomUUID()}`
-
-/**
- * What a plex tab is called: the note it stands on. The tab's own icon says it
- * is a plex, so the word is only there for one standing on nothing.
- */
-export const plexCalled = (word: string, note: string): string => note || word
-
-/**
- * What a tab is called by a question put in it: the first line with anything on
- * it, short enough to read at a glance. The cut lands at the last word to begin
- * past a third of the room, and mid-word when none does.
- */
-export const shortened = (question: string, most = 24): string => {
-  const line = question.split('\n').find((one) => one.trim() !== '')?.trim() ?? ''
-  if (line.length <= most) return line
-  const cut = line.slice(0, most)
-  const space = cut.lastIndexOf(' ')
-  return `${(space > most / 3 ? cut.slice(0, space) : cut).trimEnd()}…`
-}
+export const minted = (kind: string): string => `${kind}:${crypto.randomUUID()}`
 
 /**
  * The plex with the room, and one pane along the trailing edge holding the
  * agent in front of the files. The person begins in the plex.
  */
-export const opening = (plex: string, agent: string, files: string): Workspace => ({
+export const begun = (plex: string, agent: string, files: string): Workspace => ({
   root: branch('root', [pane('main', [plex]), pane('aside', [agent, files])], [0.72, 0.28]),
   axis: 'horizontal',
   focus: 'main',

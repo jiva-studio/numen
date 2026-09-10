@@ -11,9 +11,22 @@ import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/
 import { same, spotOf, spotsIn } from './places'
 import type { Span } from '../shared/core'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
-import { AGENT, shortened } from '../shared/tabs/workspace'
+import { AGENT } from '../shared/tabs/workspace'
 import AgentTab from './AgentTab.vue'
 import { WORDS as words } from './words'
+
+/**
+ * What a tab is called by a question put in it: the first line with anything on
+ * it, short enough to read at a glance. The cut lands at the last word to begin
+ * past a third of the room, and mid-word when none does.
+ */
+export const firstLine = (question: string, most = 24): string => {
+  const line = question.split('\n').find((one) => one.trim() !== '')?.trim() ?? ''
+  if (line.length <= most) return line
+  const cut = line.slice(0, most)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > most / 3 ? cut.slice(0, space) : cut).trimEnd()}…`
+}
 
 /** What an agent tab asks of the window it is drawn in. */
 export interface AgentTabDeps {
@@ -145,7 +158,8 @@ export function agentKind(handle: WindowHandle, opens: () => AgentTabState, abou
     kind: AGENT,
     opens,
     called: (state) =>
-      shortened(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') || words.agent,
+      firstLine(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') ||
+      words.agent,
     draws: AgentTab,
     shuts: (state) => {
       state.finish()

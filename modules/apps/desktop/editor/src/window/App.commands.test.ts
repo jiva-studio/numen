@@ -38,7 +38,6 @@ import {
   sourceSaid,
 } from '../shared/testing/window'
 import { REFUSED, WORDS } from '../shared/words'
-import { plexCalled } from '../shared/tabs/workspace'
 
 describe('the palette', () => {
   /** A keystroke taken on the window, and whether the window took it. */
@@ -215,7 +214,7 @@ describe('the palette', () => {
   /** The tab of the plex standing on that note, as the window calls it. */
   const plexTab = (window: Awaited<ReturnType<typeof drawn>>, note: string): string =>
     (window.findComponent(WorkspaceLayout).props('tabs') as readonly { id: string; title: string }[])
-      .find((one) => one.title === plexCalled(plexWords.plex, note))
+      .find((one) => one.title === (note || plexWords.plex))
       ?.id ?? ''
 
   it('is over the plex in the tab in front, not the plex last put in front', async () => {

@@ -75,7 +75,7 @@ import { core as agent } from '../agent-tab/core'
 import { WORDS as talk } from '../agent-tab/words'
 import { WORDS as cardWords } from '../shared/flashcards/words'
 import { WORDS as words } from '../shared/words'
-import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from '../shared/tabs/workspace'
+import { AGENT, CONVERSATION, FILES, PLEX, begun, minted } from '../shared/tabs/workspace'
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
@@ -218,7 +218,7 @@ export const useWindow = () => {
   const agents = agentKind(
     held.handle,
     () =>
-      talking(conversation(agent, talk, named(CONVERSATION)), {
+      talking(conversation(agent, talk, minted(CONVERSATION)), {
         opens: (path, ...runs) => void puts.opensAt(path, runs),
         beside: (path) => void puts.opens(path, '', 'beside'),
         resolve: (written) => core.resolve('', written),
@@ -732,7 +732,7 @@ export const useWindow = () => {
     const plex = await held.opens(PLEX)
     const talk = await held.opens(AGENT)
     const tree = await held.opens(FILES)
-    layout.value = opening(plex, talk, tree)
+    layout.value = begun(plex, talk, tree)
   }
 
   onMounted(async () => {

@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
-import { agentKind, talking, type AgentTabState } from './kind'
+import { agentKind, firstLine, talking, type AgentTabState } from './kind'
 import type { Span } from '../shared/core'
 import { windowTabs } from '../shared/tabs/windowTabs'
 import { AGENT } from '../shared/tabs/workspace'
@@ -256,6 +256,34 @@ describe('what an agent tab is called', () => {
     const one = await window.holds()
 
     expect(window.kind.called(one.state)).toBe('Agent')
+  })
+})
+
+describe('what a tab is called by a question', () => {
+  it('is the question itself when it is short enough to read', () => {
+    expect(firstLine('what is here?')).toBe('what is here?')
+  })
+
+  it('is the first line of one written over several', () => {
+    expect(firstLine('what is here?\nand below it?')).toBe('what is here?')
+  })
+
+  it('is the first line with anything on it', () => {
+    expect(firstLine('\nwhat is here?')).toBe('what is here?')
+  })
+
+  it('is cut at a word rather than through one', () => {
+    const asked = 'what is the note about entropy joined to'
+
+    expect(firstLine(asked, 24)).toBe('what is the note about…')
+  })
+
+  it('is cut where it has to be when there is nothing to cut at', () => {
+    expect(firstLine('x'.repeat(40), 10)).toBe(`${'x'.repeat(10)}…`)
+  })
+
+  it('is nothing when nothing has been asked', () => {
+    expect(firstLine('')).toBe('')
   })
 })
 

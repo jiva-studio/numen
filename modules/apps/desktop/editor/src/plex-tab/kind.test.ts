@@ -1390,3 +1390,20 @@ describe('what a plex tab holds, as whoever answers for the person is told it', 
     expect(one.kind.attends!(state)).toStrictEqual({ path: 'Root.md' })
   })
 })
+
+describe('what a plex tab is called', () => {
+  it('is the note it stands on', async () => {
+    const one = window()
+    const { state } = await one.holds('Root.md')
+
+    expect(one.kind.called(state)).toBe('Root')
+  })
+
+  it('is the word for a plex while it stands nowhere', async () => {
+    const one = window('')
+    const { state } = await one.holds()
+
+    expect(one.kind.called(state)).toBe('Plex')
+  })
+})
+
