@@ -16,7 +16,7 @@ import { OFF, ON, SYNCING, syncSetting } from '../shared/settings/sync'
 import { HANGING, PARTS, hanging } from '../shared/settings/hanging'
 import { settingsStore } from '../shared/settings/store'
 import { settling } from '../settings-tab/kind'
-import { editingSettingsFile } from '../settings-file-tab/kind'
+import { createSettingsFileTabKind } from '../settings-file-tab/kind'
 import type { PaletteLists } from '../shared/command/lists'
 import type { Core } from '../shared/core'
 import type { MessageLog } from '../shared/notices/messages'
@@ -40,7 +40,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
   const oneName = syncSetting(core, words, log.under('named'))
   const rest = settingsStore(core, words, log.under('configured'))
 
-  const file = editingSettingsFile(held.handle, core, () => void rest.start())
+  const file = createSettingsFileTabKind(held.handle, core, () => void rest.start())
 
   const configured = settling(held.handle, {
     themes: dressed.list,

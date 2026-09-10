@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { mount } from '@vue/test-utils'
 import SettingsFileTab from './SettingsFileTab.vue'
-import { holding, type SettingsFileTabDeps } from './kind'
+import { useSettingsFileTab, type SettingsFileTabDeps } from './kind'
 import { WORDS as words } from './words'
 
 const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
@@ -23,7 +23,7 @@ const drawn = async (answers: Partial<SettingsFileTabDeps> = {}) => {
     },
     ...answers,
   }
-  const state = holding(core, () => {})
+  const state = useSettingsFileTab(core, () => {})
   await state.again()
   return { wrote, state, tab: mount(SettingsFileTab, { props: { state } }) }
 }

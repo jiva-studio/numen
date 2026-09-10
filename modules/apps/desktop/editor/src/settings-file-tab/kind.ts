@@ -28,7 +28,7 @@ export interface SettingsFileTabDeps {
 }
 
 /** What one tab of the settings file holds. */
-export type SettingsFileTabState = ReturnType<typeof holding>
+export type SettingsFileTabState = ReturnType<typeof useSettingsFileTab>
 
 /**
  * The file as it stands, what is typed over it, and what is wrong with what was
@@ -36,7 +36,7 @@ export type SettingsFileTabState = ReturnType<typeof holding>
  * last read, and a file that moved past it stands overtaken until the person
  * keeps theirs or takes the file's.
  */
-export function holding(core: SettingsFileTabDeps, reads: () => void) {
+export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void) {
   /** The bytes the file held when it was last read. */
   const held = ref('')
   const typed = ref('')
@@ -130,15 +130,20 @@ const mark = (state: SettingsFileTabState): string | undefined => {
  * The settings file's tab. There is one file, so opening it again is the tab it
  * already stands in.
  */
-export function editingSettingsFile(handle: WindowHandle, core: SettingsFileTabDeps, reads: () => void) {
+export function createSettingsFileTabKind(
+  handle: WindowHandle,
+  core: SettingsFileTabDeps,
+  reads: () => void,
+) {
   const kind: TabKind<SettingsFileTabState, typeof SETTINGS_FILE> = {
     kind: SETTINGS_FILE,
     opens: () => {
-      const state = holding(core, reads)
+      const state = useSettingsFileTab(core, reads)
       void state.again()
       return state
     },
     called: () => words.called,
+    getTitle: () => words.called,
     marked: mark,
     draws: SettingsFileTab,
     identity: () => SETTINGS_FILE,

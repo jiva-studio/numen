@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { holding, type SettingsFileTabDeps } from './kind'
+import { useSettingsFileTab, type SettingsFileTabDeps } from './kind'
 import { WORDS as words } from './words'
 
 const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
@@ -26,7 +26,7 @@ const vault = (answers: Partial<SettingsFileTabDeps> = {}) => {
     ...answers,
   }
   const reads = vi.fn()
-  return { wrote, presented, reads, held: holding(core, reads) }
+  return { wrote, presented, reads, held: useSettingsFileTab(core, reads) }
 }
 
 describe('the file as it stands', () => {
@@ -171,7 +171,7 @@ describe('a file that moved past what the tab read', () => {
         return Promise.resolve({ changed: false })
       },
     }
-    const held = holding(core, reads)
+    const held = useSettingsFileTab(core, reads)
     await held.again()
     stands = MOVED
     held.types(TYPED)

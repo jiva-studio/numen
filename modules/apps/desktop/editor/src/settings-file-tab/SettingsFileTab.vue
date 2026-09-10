@@ -11,11 +11,32 @@ import { Editor } from '@numen/ui'
 import type { SettingsFileTabState } from './kind'
 import { WORDS as words } from './words'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: SettingsFileTabState }>()
 
+// --- State ---
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
 const { saying, overtaken, read, text } = props.state
+
+// --- Handlers ---
+function onKeep() {
+  props.state.keep()
+}
+
+function onTake() {
+  props.state.take()
+}
+
+function onUpdateModelValue(said: string) {
+  props.state.types(said)
+}
+
+function onSave() {
+  props.state.keeps()
+}
+
+// --- Helpers ---
 </script>
 
 <template>
@@ -26,8 +47,8 @@ const { saying, overtaken, read, text } = props.state
 
     <p v-if="overtaken" class="caution caution--conflict" role="status">
       {{ words.overtaken }}
-      <button type="button" class="answer" @click="props.state.keep()">{{ words.keep }}</button>
-      <button type="button" class="answer" @click="props.state.take()">{{ words.take }}</button>
+      <button type="button" class="answer" @click="onKeep">{{ words.keep }}</button>
+      <button type="button" class="answer" @click="onTake">{{ words.take }}</button>
     </p>
 
     <Editor
@@ -37,8 +58,8 @@ const { saying, overtaken, read, text } = props.state
       language="json"
       class="settings-file__editor"
       :aria-label="words.called"
-      @update:model-value="(said: string) => props.state.types(said)"
-      @save="props.state.keeps()"
+      @update:model-value="onUpdateModelValue"
+      @save="onSave"
     />
     <p v-else class="settings-file__waiting">{{ words.reading }}</p>
   </div>
