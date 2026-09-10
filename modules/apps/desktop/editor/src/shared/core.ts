@@ -209,11 +209,11 @@ export interface Core {
 }
 
 export * from './note'
-export * from './file'
+export type * from './file'
 export * from './artifacts'
-export * from './notices/task'
-export * from './settings/configuration'
+export type * from './notices/task'
+export type * from './settings/configuration'
 export type { HangingSettings } from './settings/hanging'
 export type { ReviewSettings } from './settings/review'
-export * from './tabs/tab'
-export * from './vaults'
+export type * from './tabs/tab'
+export type * from './vaults'
