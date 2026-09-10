@@ -59,11 +59,12 @@ export interface ConflictWords {
   readonly take: string
 }
 
-const overtaken: ConflictWords = {
+const stale: ConflictWords = {
   says: 'this note changed on disk, and saving stopped',
   keep: 'keep mine',
   take: "take the file's",
 }
+const overtaken = stale
 
 /** What the window hands the store of open notes, beside the vault itself. */
 export interface OpenNotesOptions {
@@ -189,10 +190,10 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     return refusal ? words[refusal] : ''
   }
 
-  /** What an overtaken note puts to the person, for the window to draw. */
-  const overtakenOf = (id: string): ConflictWords | null => {
+  /** What a stale note puts to the person, for the window to draw. */
+  const staleOf = (id: string): ConflictWords | null => {
     const tab = tabs.value.get(id)
-    return tab && stateOf(tab) === 'overtaken' ? overtaken : null
+    return tab && (stateOf(tab) === 'stale' || (stateOf(tab) as string) === 'overtaken') ? stale : null
   }
 
   function turn(id: string, event: Event): void {
@@ -349,7 +350,8 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     address: (id: string): Address | null => addresses.value.get(id) ?? null,
     all,
     saying: sayingOf,
-    overtaken: overtakenOf,
+    stale: staleOf,
+    overtaken: staleOf,
     flush,
     tabs: tabs as Ref<Map<string, Tab>>,
   }

@@ -349,13 +349,13 @@ describe('a card written in a deck', () => {
 })
 
 describe('a deck whose file moved past what was read', () => {
-  it('is overtaken once the write comes back saying the file changed', async () => {
+  it('is stale once the write comes back saying the file changed', async () => {
     const { decks, tab } = await open({ changed: true })
 
     tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
 
-    expect(tab.shown.value.state).toBe('overtaken')
+    expect(tab.shown.value.state).toBe('stale')
   })
 
   it('keeps what the person wrote when they say so, over whatever the file holds', async () => {

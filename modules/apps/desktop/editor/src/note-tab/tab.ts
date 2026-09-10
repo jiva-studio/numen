@@ -64,7 +64,7 @@ export interface Tab {
   readonly refused: Refusal | null
 }
 
-export type State = 'loading' | 'stuck' | 'gone' | 'overtaken' | 'saving' | 'unsaved' | 'clean'
+export type State = 'loading' | 'stuck' | 'gone' | 'stale' | 'saving' | 'unsaved' | 'clean' | 'overtaken'
 
 /** Dirty is what is shown differing from what was written. */
 export const dirty = (tab: Tab): boolean => tab.shown !== tab.written
@@ -77,7 +77,7 @@ export const stateOf = (tab: Tab): State => {
   if (tab.refused) return 'stuck'
   if (tab.written === null) return 'loading'
   if (tab.isDeleted) return 'gone'
-  if (tab.isStale) return 'overtaken'
+  if (tab.isStale) return 'stale'
   if (tab.pendingWrite !== null) return 'saving'
   if (dirty(tab)) return 'unsaved'
   return 'clean'
@@ -91,7 +91,8 @@ export const stateOf = (tab: Tab): State => {
 const MARKS: Record<State, string | undefined> = {
   stuck: 'stuck',
   gone: 'gone',
-  overtaken: 'overtaken',
+  stale: 'stale',
+  overtaken: 'stale',
   unsaved: 'unsaved',
   saving: 'unsaved',
   loading: undefined,
@@ -275,7 +276,7 @@ const answered = (tab: Tab, generation: number, answer: ReadResult): Transition 
   // The note came back, at this name or another.
   if (state === 'gone') return shows({ ...tab, isDeleted: false }, answer.body, answer.at)
   if (stale) return still(tab)
-  if (state === 'overtaken') return shows({ ...tab, isStale: false }, answer.body, answer.at)
+  if (state === 'stale' || (state as string) === 'overtaken') return shows({ ...tab, isStale: false }, answer.body, answer.at)
   if (dirty(tab)) return still(tab)
   return shows(tab, answer.body, answer.at)
 }
@@ -302,8 +303,8 @@ const typed = (tab: Tab, body: string, at: number, limits: WriteLimits): Transit
   const refused = mends(tab) ? null : tab.refused
   const since = tab.since ?? at
   const next: Tab = { ...tab, shown: body, since, refused }
-  // An overtaken tab arms nothing, and one of the two answers is what writes.
-  if (state === 'overtaken') return still(next)
+  // A stale tab arms nothing, and one of the two answers is what writes.
+  if (state === 'stale' || (state as string) === 'overtaken') return still(next)
   return { tab: next, effects: [{ kind: 'arm', after: armFor(since, at, limits) }] }
 }
 
@@ -390,13 +391,14 @@ const settling = (tab: Tab): Transition => {
 /** Keep: what is on screen goes to the file, whatever the file now holds. */
 const keeping = (tab: Tab): Transition => {
   const state = stateOf(tab)
-  if (state !== 'overtaken' && state !== 'gone') return still(tab)
+  if (state !== 'stale' && (state as string) !== 'overtaken' && state !== 'gone') return still(tab)
   return begins(tab, null)
 }
 
 /** Take: the file is read again, and that read replaces the buffer. */
 const taking = (tab: Tab): Transition => {
-  if (stateOf(tab) !== 'overtaken') return still(tab)
+  const state = stateOf(tab)
+  if (state !== 'stale' && (state as string) !== 'overtaken') return still(tab)
   const reading = tab.reading + 1
   return {
     tab: { ...tab, reading },
@@ -406,7 +408,7 @@ const taking = (tab: Tab): Transition => {
 
 /**
  * A tab with something unwritten is held until what is owed answers, and the
- * caller closes it then. An overtaken tab is held with its question standing:
+ * caller closes it then. A stale tab is held with its question standing:
  * what the file holds and what the person typed are both still there, and
  * choosing between them is theirs. A tab that cannot be written says so, and
  * the buffer goes with it.
@@ -423,7 +425,7 @@ const closing = (tab: Tab): Transition => {
   }
   // A tab that has not read its note owes nothing.
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
-  if (state === 'overtaken') return { tab, effects: [{ kind: 'hold' }] }
+  if (state === 'stale' || (state as string) === 'overtaken') return { tab, effects: [{ kind: 'hold' }] }
   if (state === 'unsaved') {
     const going = begins(tab, seenOf(tab))
     return { tab: going.tab, effects: [...going.effects, { kind: 'hold' }] }

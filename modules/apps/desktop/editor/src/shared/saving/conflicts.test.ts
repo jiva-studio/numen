@@ -11,7 +11,7 @@ import { raiseConflicts, type Notes } from './conflicts'
 import type { Conflict } from './flushing'
 
 /** The words this test puts its notes in. A screen has more; these are enough. */
-type Word = 'clean' | 'unsaved' | 'overtaken' | 'gone'
+type Word = 'clean' | 'unsaved' | 'stale' | 'overtaken' | 'gone'
 
 /** Notes in the states the test puts them in, each under its own identity. */
 const notes = () => {
@@ -55,6 +55,15 @@ const window = () => {
 }
 
 describe('a note the file moved past', () => {
+  it('is a question the quit waits for when stale', async () => {
+    const one = window()
+
+    one.stands('Note.md', 'stale')
+    await nextTick()
+
+    expect(one.paths()).toEqual(['Note.md'])
+  })
+
   it('is a question the quit waits for', async () => {
     const one = window()
 

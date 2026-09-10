@@ -220,7 +220,8 @@ export interface Words {
   /** The note is waiting on the person, and its file stays where it is. */
   readonly unanswered: string
   /** The note holds prose nobody here has seen, so nothing was written. */
-  readonly overtaken: string
+  readonly stale?: string
+  readonly overtaken?: string
   /** A name at the destination is taken, and the file stayed where it was. */
   readonly occupied: string
   /** This build cannot do the run at all, and stops offering it. */

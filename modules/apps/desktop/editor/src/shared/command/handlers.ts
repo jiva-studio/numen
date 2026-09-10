@@ -151,7 +151,7 @@ const renames = async (invocation: CommandInvocation, on: CommandDeps, words: Wo
   const tab = await settles(invocation.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
   const answer = await on.files.renames(invocation.path, invocation.name)
-  if (answer.changed) return on.says(words.overtaken, 'caution')
+  if (answer.changed) return on.says(words.stale ?? words.overtaken ?? '', 'caution')
   if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
 

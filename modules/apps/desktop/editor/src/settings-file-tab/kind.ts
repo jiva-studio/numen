@@ -49,7 +49,7 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
   const read = ref(false)
 
   /** Whether the file moved past what was last read, so keeping it stopped. */
-  const overtaken = ref(false)
+  const isStale = ref(false)
 
   const again = async (): Promise<void> => {
     let answer: Awaited<ReturnType<SettingsFileTabDeps['settingsFile']>>
@@ -63,7 +63,7 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
     typed.value = answer.written
     wrong.value = ''
     read.value = true
-    overtaken.value = false
+    isStale.value = false
   }
 
   /**
@@ -80,15 +80,15 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
       wrong.value = `${words.unwritten} ${troubleWords(thrown)}`
       return
     }
-    // Nothing was written, and the tab stands overtaken until the person says
+    // Nothing was written, and the tab stands stale until the person says
     // which of the two is theirs.
     if (answer.changed) {
-      overtaken.value = true
+      isStale.value = true
       return
     }
     held.value = typed.value
     wrong.value = ''
-    overtaken.value = false
+    isStale.value = false
     reads()
   }
 
@@ -97,7 +97,7 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
 
   /** Keep: what is typed goes to the file, whatever the file now holds. */
   const keep = async (): Promise<void> => {
-    if (!overtaken.value) return
+    if (!isStale.value) return
     await writes(null)
   }
 
@@ -111,7 +111,9 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
     /** Whether the file has been read at all. */
     read: readonly(read),
     /** Whether the file moved past what was read. */
-    overtaken: readonly(overtaken),
+    isStale: readonly(isStale),
+    stale: readonly(isStale),
+    overtaken: readonly(isStale),
     again,
     keeps,
     keep,
@@ -122,7 +124,7 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
 
 /** What the tab carries beside its name, and nothing where there is nothing to say. */
 const mark = (state: SettingsFileTabState): string | undefined => {
-  if (state.overtaken.value) return 'overtaken'
+  if (state.isStale?.value || state.stale?.value || state.overtaken?.value) return 'stale'
   return state.changed.value ? '•' : undefined
 }
 

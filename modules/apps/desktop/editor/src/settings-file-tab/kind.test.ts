@@ -182,6 +182,8 @@ describe('a file that moved past what the tab read', () => {
   it('stops keeping, with nothing written', async () => {
     const { held, wrote, reads } = await overtaken()
 
+    expect(held.isStale.value).toBe(true)
+    expect(held.stale.value).toBe(true)
     expect(held.overtaken.value).toBe(true)
     expect(wrote).toStrictEqual([])
     expect(reads).not.toHaveBeenCalled()
@@ -192,6 +194,7 @@ describe('a file that moved past what the tab read', () => {
     await held.keep()
 
     expect(wrote).toStrictEqual([TYPED])
+    expect(held.isStale.value).toBe(false)
     expect(held.overtaken.value).toBe(false)
     expect(held.changed.value).toBe(false)
     expect(reads).toHaveBeenCalledTimes(1)
@@ -202,6 +205,7 @@ describe('a file that moved past what the tab read', () => {
     await held.take()
 
     expect(held.text.value).toBe(MOVED)
+    expect(held.isStale.value).toBe(false)
     expect(held.overtaken.value).toBe(false)
     expect(held.changed.value).toBe(false)
     expect(wrote).toStrictEqual([])
@@ -211,6 +215,7 @@ describe('a file that moved past what the tab read', () => {
     const { held, wrote } = await overtaken()
     await held.keeps()
 
+    expect(held.isStale.value).toBe(true)
     expect(held.overtaken.value).toBe(true)
     expect(wrote).toStrictEqual([])
   })

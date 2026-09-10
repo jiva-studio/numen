@@ -288,13 +288,13 @@ describe('a field carried in a stencil', () => {
 })
 
 describe('a stencil whose file moved past what was read', () => {
-  it('is overtaken once the write comes back saying the file changed', async () => {
+  it('is stale once the write comes back saying the file changed', async () => {
     const { stencils, tab } = await open({ changed: true })
 
     tab.addsField('Weight')
     await stencils.flush()
 
-    expect(tab.shown.value.state).toBe('overtaken')
+    expect(tab.shown.value.state).toBe('stale')
   })
 
   it('keeps what the person wrote when they say so', async () => {

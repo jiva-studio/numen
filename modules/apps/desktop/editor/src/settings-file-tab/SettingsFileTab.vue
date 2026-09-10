@@ -17,7 +17,7 @@ const props = defineProps<{ state: SettingsFileTabState }>()
 // --- State ---
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { saying, overtaken, read, text } = props.state
+const { saying, isStale, overtaken, read, text } = props.state
 
 // --- Handlers ---
 function onKeep() {
@@ -45,8 +45,8 @@ function onSave() {
       {{ saying }}
     </p>
 
-    <p v-if="overtaken" class="caution caution--conflict" role="status">
-      {{ words.overtaken }}
+    <p v-if="isStale ?? overtaken" class="caution caution--conflict" role="status">
+      {{ words.stale ?? words.overtaken }}
       <button type="button" class="answer" @click="onKeep">{{ words.keep }}</button>
       <button type="button" class="answer" @click="onTake">{{ words.take }}</button>
     </p>

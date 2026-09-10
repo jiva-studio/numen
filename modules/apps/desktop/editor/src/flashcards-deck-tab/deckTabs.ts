@@ -204,7 +204,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
     has: (id) => store.all().includes(id),
     where: (id) => store.where(id),
     called: (id) => said.called(store.where(id)),
-    asking: (id) => store.overtaken(id) !== null,
+    asking: (id) => (store.stale?.(id) ?? store.overtaken(id)) !== null,
     settles: (id) => store.settles(id),
     shuts,
     holding: (path) => store.all().find((id) => store.where(id) === path) ?? null,

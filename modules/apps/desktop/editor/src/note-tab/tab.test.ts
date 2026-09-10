@@ -55,7 +55,7 @@ describe('the states', () => {
 
     expect(stateOf(everything)).toBe('stuck')
     expect(stateOf(readable)).toBe('loading')
-    expect(stateOf({ ...readable, written: 'one', isStale: true })).toBe('overtaken')
+    expect(stateOf({ ...readable, written: 'one', isStale: true })).toBe('stale')
     expect(stateOf({ ...readable, written: 'one' })).toBe('saving')
     expect(stateOf({ ...readable, written: 'one', pendingWrite: null })).toBe('unsaved')
     expect(stateOf(tab())).toBe('clean')
@@ -419,7 +419,7 @@ describe('a write answers changed', () => {
       answer: { kind: 'changed' },
     })
 
-    expect(stateOf(next.tab)).toBe('overtaken')
+    expect(stateOf(next.tab)).toBe('stale')
     expect(next.tab.pendingWrite).toBeNull()
     expect(next.tab.shown).toBe('mine')
     expect(next.tab.written).toBe('one')
@@ -440,7 +440,7 @@ describe('a write answers changed', () => {
     const next = tabAfter(overtaken(), { kind: 'typed', body: 'mine and more', at: 2000 })
 
     expect(next.tab.shown).toBe('mine and more')
-    expect(stateOf(next.tab)).toBe('overtaken')
+    expect(stateOf(next.tab)).toBe('stale')
     expect(next.effects).toEqual([])
   })
 
@@ -470,7 +470,7 @@ describe('a write answers changed', () => {
     const back = tabAfter(stopped, { kind: 'typed', body: 'one', at: 2000 }).tab
 
     expect(dirty(back)).toBe(false)
-    expect(stateOf(back)).toBe('overtaken')
+    expect(stateOf(back)).toBe('stale')
     expect(tabAfter(back, { kind: 'keeping' }).effects).toEqual([
       { kind: 'write', path: 'Note.md', body: 'one', seen: null },
     ])
@@ -484,7 +484,7 @@ describe('a write answers changed', () => {
     })
 
     expect(next.tab).toEqual(stopped)
-    expect(stateOf(next.tab)).toBe('overtaken')
+    expect(stateOf(next.tab)).toBe('stale')
   })
 })
 
@@ -518,7 +518,7 @@ describe("the person takes the file's", () => {
     const next = tabAfter(overtaken(), { kind: 'taking' })
 
     expect(next.tab.reading).toBe(2)
-    expect(stateOf(next.tab)).toBe('overtaken')
+    expect(stateOf(next.tab)).toBe('stale')
     expect(next.effects).toEqual([{ kind: 'read', path: 'Note.md', generation: 2 }])
   })
 
@@ -561,7 +561,7 @@ describe("the person takes the file's", () => {
     })
 
     expect(next.tab).toEqual(reading)
-    expect(stateOf(next.tab)).toBe('overtaken')
+    expect(stateOf(next.tab)).toBe('stale')
   })
 
   it('says the note is not there where the file is gone, since there is nothing to take', () => {
@@ -792,7 +792,7 @@ describe('a close is asked for', () => {
     const next = tabAfter(overtaken(), { kind: 'closing' })
 
     expect(kinds(next.effects)).toEqual(['hold'])
-    expect(stateOf(next.tab)).toBe('overtaken')
+    expect(stateOf(next.tab)).toBe('stale')
     expect(next.tab.shown).toBe('mine')
   })
 
@@ -906,8 +906,8 @@ describe('the word a tab carries beside its title', () => {
     expect(markOf('saving')).toBe('unsaved')
   })
 
-  it('is overtaken while the file has moved past what the tab read', () => {
-    expect(markOf('overtaken')).toBe('overtaken')
+  it('is stale while the file has moved past what the tab read', () => {
+    expect(markOf('stale')).toBe('stale')
   })
 
   it('is stuck when the note can be neither read nor written', () => {
@@ -915,7 +915,7 @@ describe('the word a tab carries beside its title', () => {
   })
 
   it('is a different word for each of the three things a tab carries', () => {
-    const words: (string | undefined)[] = [markOf('stuck'), markOf('overtaken'), markOf('unsaved')]
+    const words: (string | undefined)[] = [markOf('stuck'), markOf('stale'), markOf('unsaved')]
     expect(new Set(words).size).toBe(3)
   })
 })

@@ -25,9 +25,13 @@ export function raiseConflicts(notes: Notes, going: ConflictRaiser) {
   const raised = new Map<string, () => void>()
 
   watch(
-    () => notes.all().filter((id) => conflictIn(notes.shown(id).state) === 'overtaken'),
-    (overtaken) => {
-      for (const id of overtaken) {
+    () =>
+      notes.all().filter((id) => {
+        const c = conflictIn(notes.shown(id).state)
+        return c === 'stale' || c === 'overtaken'
+      }),
+    (stale) => {
+      for (const id of stale) {
         if (raised.has(id)) continue
         raised.set(
           id,
@@ -39,7 +43,7 @@ export function raiseConflicts(notes: Notes, going: ConflictRaiser) {
         )
       }
       for (const [id, drop] of raised) {
-        if (overtaken.includes(id)) continue
+        if (stale.includes(id)) continue
         drop()
         raised.delete(id)
       }

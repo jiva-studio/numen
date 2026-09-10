@@ -44,11 +44,11 @@ export interface ConflictPrompt {
  * neither. A screen tells its files apart in its own words; these are the two
  * this folder has something to do about.
  */
-export type FileConflict = 'gone' | 'overtaken' | null
+export type FileConflict = 'gone' | 'stale' | 'overtaken' | null
 
 /** Which conflict a screen's word names, and nothing for every other word. */
 export const conflictIn = (state: string): FileConflict =>
-  state === 'gone' || state === 'overtaken' ? state : null
+  state === 'gone' || state === 'stale' ? state : state === 'overtaken' ? 'stale' : null
 
 /**
  * Answering the application when it asks the window to write out what it holds.

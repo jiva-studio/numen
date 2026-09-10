@@ -9,6 +9,7 @@ export const WORDS = {
   /** What stands over the editor while the file has not been read yet. */
   reading: 'Reading the file',
   /** The file moved past what this tab read, and the two ways out. */
+  stale: 'This file changed on disk, so it stopped saving.',
   overtaken: 'This file changed on disk, so it stopped saving.',
   keep: 'Keep mine',
   take: "Take the file's",

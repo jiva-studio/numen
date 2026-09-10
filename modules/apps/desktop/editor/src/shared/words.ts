@@ -289,6 +289,7 @@ export const WORDS = {
   /** The vault opens with no note at all. */
   nowhere: 'The vault has no note to open with',
   unanswered: 'that note changed on disk, and its tab is waiting for an answer',
+  stale: 'that note changed on disk while this was asked, so nothing was written',
   overtaken: 'that note changed on disk while this was asked, so nothing was written',
   /** A file landed where something of its name is filed, and stayed where it was. */
   occupied: 'something of that name is filed there, so the file stayed where it was',

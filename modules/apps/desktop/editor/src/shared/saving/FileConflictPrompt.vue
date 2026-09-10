@@ -8,11 +8,13 @@
  */
 import type { FileConflict } from './flushing'
 
+// --- Props & Emits ---
 /** The words the two conflicts are put in. */
 export interface FileConflictWords {
   readonly gone: string
   readonly makeAgain: string
-  readonly overtaken: string
+  readonly stale?: string
+  readonly overtaken?: string
   readonly keep: string
   readonly take: string
 }
@@ -41,8 +43,8 @@ defineEmits<{
     <button type="button" class="answer" @click="$emit('keep')">{{ words.makeAgain }}</button>
   </p>
 
-  <p v-if="conflict === 'overtaken'" class="caution caution--conflict" role="status">
-    {{ words.overtaken }}
+  <p v-if="conflict === 'stale' || conflict === 'overtaken'" class="caution caution--conflict" role="status">
+    {{ words.stale ?? words.overtaken }}
     <button type="button" class="answer" @click="$emit('keep')">{{ words.keep }}</button>
     <button type="button" class="answer" @click="$emit('take')">{{ words.take }}</button>
   </p>

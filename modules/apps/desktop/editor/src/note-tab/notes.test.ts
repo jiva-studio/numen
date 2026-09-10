@@ -463,7 +463,8 @@ describe('a note that changed on disk under a save', () => {
   it('is put to the person, and nothing more is written', async () => {
     const { notes, wrote } = await caught()
 
-    expect(notes.shown('Heat.md').state).toBe('overtaken')
+    expect(notes.shown('Heat.md').state).toBe('stale')
+    expect(notes.stale('Heat.md')?.says).toBe('this note changed on disk, and saving stopped')
     expect(notes.overtaken('Heat.md')?.says).toBe('this note changed on disk, and saving stopped')
     expect(notes.shown('Heat.md').body).toBe('mine')
 
@@ -471,7 +472,7 @@ describe('a note that changed on disk under a save', () => {
     await new Promise((wake) => setTimeout(wake, 20))
 
     expect(wrote).toHaveLength(1)
-    expect(notes.shown('Heat.md').state).toBe('overtaken')
+    expect(notes.shown('Heat.md').state).toBe('stale')
   })
 
   it('keeps what the person has, and the file takes it', async () => {
@@ -482,6 +483,7 @@ describe('a note that changed on disk under a save', () => {
 
     expect(files.get('Heat.md')).toBe('mine')
     expect(notes.shown('Heat.md').state).toBe('clean')
+    expect(notes.stale('Heat.md')).toBeNull()
     expect(notes.overtaken('Heat.md')).toBeNull()
   })
 
@@ -493,6 +495,7 @@ describe('a note that changed on disk under a save', () => {
 
     expect(notes.shown('Heat.md').body).toBe('theirs')
     expect(notes.shown('Heat.md').state).toBe('clean')
+    expect(notes.stale('Heat.md')).toBeNull()
     expect(notes.overtaken('Heat.md')).toBeNull()
   })
 
