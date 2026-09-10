@@ -1,8 +1,6 @@
 <script setup lang="ts">
 /**
- * A document tab: the pages of one document, and what is highlighted on them.
- *
- * What the document could not be read as is said where the pages would be.
+ * Document tab view rendering reader pages and highlights.
  */
 import { Reader } from '@numen/ui'
 import { WORDS as words } from './words'

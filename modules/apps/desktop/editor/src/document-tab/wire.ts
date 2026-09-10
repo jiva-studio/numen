@@ -1,14 +1,12 @@
 /**
- * What a document of the vault is, for whatever opens it: its pages and how
- * large each of them is, its pictures at device resolution, and what a model
- * read off them.
+ * Wire adapter for DocumentService and OcrService.
  */
 import { createClient } from '@connectrpc/connect'
 import { DocumentService, OcrService } from '@numen/protocol'
 import type { Run as RunMessage } from '@numen/protocol'
 import { transport } from '@numen/wire'
 import { asset, named, stamp, waiting } from '../shared/answers'
-import type { Documents, HighlightedPage, Rect } from './open'
+import type { Documents, PageHighlight, Rect } from './types'
 
 const served = {
   documents: createClient(DocumentService, transport),
@@ -17,10 +15,9 @@ const served = {
 }
 
 /**
- * Where one run of the text stands, page by page. The boxes come in the order
- * they were read, so a run crossing a page opens a page where it crosses.
+ * Where one run of the text stands, page by page.
  */
-const toHighlightedPages = (run: RunMessage): HighlightedPage[] => {
+const toHighlightedPages = (run: RunMessage): PageHighlight[] => {
   const pages: { page: number; rects: Rect[] }[] = []
   for (const box of run.boxes) {
     const rect: Rect = {
@@ -35,14 +32,15 @@ const toHighlightedPages = (run: RunMessage): HighlightedPage[] => {
   }
   return pages
 }
-const highlighted = toHighlightedPages
 
-/**
- * The documents the vault holds, over the addresses the application serves the
- * window at. A page is a picture at an address of its own, drawn to the width
- * it is asked for in device pixels.
- */
 export const documents: Documents = {
+  getDocumentLayout: async (path) => {
+    const answer = await waiting(() => served.documents.getDocument({ path }))
+    return {
+      pages: answer.pages.map((one) => ({ width: one.width, height: one.height })),
+      fingerprint: stamp(answer.fingerprint) ?? '',
+    }
+  },
   getShape: async (path) => {
     const answer = await waiting(() => served.documents.getDocument({ path }))
     return {
@@ -50,7 +48,7 @@ export const documents: Documents = {
       at: stamp(answer.fingerprint) ?? '',
     }
   },
-  getPageUrl: (path, at, wide, seen) =>
+  getPageUrl: (path, at, wide, seen = '') =>
     `${asset(path)}/pages/${at}?wide=${wide}&${named(seen)}`,
   getHighlights: async (path, spans) => {
     const answer = await waiting(() => served.ocr.readOcr({ path, spans: [...spans] }))
@@ -60,3 +58,4 @@ export const documents: Documents = {
     })
   },
 }
+

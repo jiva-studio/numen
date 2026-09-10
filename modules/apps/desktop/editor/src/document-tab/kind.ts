@@ -1,12 +1,9 @@
 /**
- * What one document tab holds: the document being read, and the page on screen.
- *
- * A page is laid out against the room it has, and a tab is drawn while it is
- * out of sight, where there is none. What is drawn says so when it appears, and
- * measures again then.
+ * Window registration and tab state for document tabs.
  */
 import { shallowRef } from 'vue'
 import type { DocumentReaderState } from './open'
+import type { PageHandle } from './types'
 import type { Span } from '../shared/core'
 import type { FileOpeners } from '../shared/tabs/openers'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
@@ -14,10 +11,8 @@ import { DOCUMENT } from '../shared/tabs/workspace'
 import DocumentTab from './DocumentTab.vue'
 import { fileOf } from '../shared/paths'
 
-/** What the window asks of a page once it is drawn. */
-export interface PageHandle {
-  measure(): void
-}
+export type { PageHandle }
+
 
 /** What one document tab holds. */
 export type DocumentTabState = ReturnType<typeof useDocumentTab>
