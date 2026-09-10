@@ -147,8 +147,8 @@ export function useCommands(options: CommandsDepsOptions) {
       closes: (tab) => held.drops(tab),
       asks: (text) => void agents().askQuestion(text),
       searches: () => {
-        commands.shows(false)
-        palette.shows(true)
+        ;(commands.setOpen ?? commands.shows)(false)
+        ;(palette.setOpen ?? palette.shows)(true)
       },
     },
     settings: {
@@ -174,7 +174,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const carries = (id: string, at: CommandTarget) => {
     const invocation = commands.asks(id, at)
     if (invocation) return void does(invocation, doing, words)
-    if (commands.open.value) return palette.shows(false)
+    if (commands.open.value) return void (palette.setOpen ?? palette.shows)(false)
     told(commands.refused(id, at), 'refusal')
   }
 

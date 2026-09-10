@@ -22,6 +22,7 @@ import { VERSION } from './version'
 import { COMMANDS, vaultsOn, waysIn } from './screen'
 import { WORDS as words } from '../shared/words'
 
+// --- Props & Emits ---
 const props = defineProps<{
   /** Every vault the installation holds, as the list last answered. */
   listed: VaultList
@@ -35,7 +36,7 @@ const props = defineProps<{
   carries: (id: string, at: CommandTarget) => void
 }>()
 
-/** What the welcome screen offers below the list of vaults. */
+// --- State ---
 const adding = computed(() => {
   const icon = iconFor('newVault')
   return {
@@ -56,41 +57,36 @@ const ways = computed(() => {
 
 const onList = computed(() => vaultsOn(props.listed, words))
 
-/**
- * A way in taken on the welcome screen. The commands are the window's own; the
- * rest are commands, and one that is refused says why.
- */
-const runs = (id: string) => {
-  if (id !== COMMANDS) return props.carries(id, props.where())
-  props.search.shows(false)
-  props.commands.shows(true)
-}
-
 /** Whether the welcome screen is what the person is looking at and typing into. */
 const welcoming = computed(
   () => props.tabs.length === 0 && !props.search.open.value && !props.commands.open.value,
 )
 
-/** A vault chosen on the welcome screen, shown in this window in place of none. */
-const opens = (id: string) => {
+// --- Handlers ---
+function onRuns(id: string) {
+  if (id !== COMMANDS) return props.carries(id, props.where())
+  ;(props.search.setOpen ?? props.search.shows)(false)
+  ;(props.commands.setOpen ?? props.commands.shows)(true)
+}
+
+function onOpens(id: string) {
   const one = props.listed.vaults.find((vault) => vault.id === id)
   if (!one) return
   const vault: VaultRef = { id: one.id, name: one.name }
   void does(invocationOf('openVault', { ...props.where(), vault }), props.doing, words)
 }
 
-/** A letter alone, which opens the vault drawn on the row carrying it. */
-const asked = (event: KeyboardEvent) => {
+function onKeyDown(event: KeyboardEvent) {
   if (event.defaultPrevented || !welcoming.value) return
   const at = opensVault(event, onList.value.length)
   const one = at === null ? undefined : onList.value[at]
   if (!one) return
   event.preventDefault()
-  opens(one.id)
+  onOpens(one.id)
 }
 
-onMounted(() => globalThis.addEventListener('keydown', asked))
-onUnmounted(() => globalThis.removeEventListener('keydown', asked))
+onMounted(() => globalThis.addEventListener('keydown', onKeyDown))
+onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
 </script>
 
 <template>
@@ -100,8 +96,8 @@ onUnmounted(() => globalThis.removeEventListener('keydown', asked))
     :heading="words.vaults"
     :offer="adding"
     :version="VERSION"
-    @runs="runs"
-    @opens="opens"
+    @runs="onRuns"
+    @opens="onOpens"
     @offers="carries('newVault', where())"
   />
 </template>

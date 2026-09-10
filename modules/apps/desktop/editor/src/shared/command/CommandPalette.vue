@@ -19,6 +19,7 @@ import { chorded } from './chords'
 import { lands, type DestinationDeps } from './destination'
 import { WORDS as words } from '../words'
 
+// --- Props & Emits ---
 const props = defineProps<{
   commands: Commands
   search: SearchState
@@ -28,6 +29,13 @@ const props = defineProps<{
   /** Where the window is taken by what the search turns up. */
   places: DestinationDeps
 }>()
+
+// --- State ---
+const actionWords: ActionWords = {
+  name: words.actions,
+  placeholder: words.findAction,
+  silence: words.noAction,
+}
 
 /** What the palette draws: the commands while they are open, the search under. */
 const field = computed(() =>
@@ -52,13 +60,71 @@ const field = computed(() =>
       },
 )
 
-/**
- * What one row of the palette is drawn as: a command by its own mark, a name or
- * a passage by the kind of note it stands in, and the note a search did not
- * find by the mark of making one. A passage out of a book or a recording stands
- * in no note and is drawn as the source it was read out of.
- */
-const rowIcon = (id: string) => {
+// --- Handlers ---
+function onTyping(text: string) {
+  if (props.commands.open.value) return void props.commands.typing(text)
+  if (!asksCommands(props.search.typed.value, text)) return void props.search.typing(text)
+  const setSearchOpen = props.search.setOpen ?? props.search.shows
+  const setCommandsOpen = props.commands.setOpen ?? props.commands.shows
+  setSearchOpen(false)
+  setCommandsOpen(true)
+}
+
+async function onChoose(item: string, action: string) {
+  const setSearchOpen = props.search.setOpen ?? props.search.shows
+  const setCommandsOpen = props.commands.setOpen ?? props.commands.shows
+  if (props.commands.open.value) {
+    const invocation = props.commands.chose(item, action)
+    if (!invocation) return
+    setCommandsOpen(false)
+    await does(invocation, props.doing, words)
+    return
+  }
+  if (item === MAKING) {
+    const name = props.search.typed.value.trim()
+    setSearchOpen(false)
+    await does(creates(action, name, props.where()), props.doing, words)
+    return
+  }
+  const landing = props.search.chose(item, action)
+  setSearchOpen(false)
+  await lands(landing, props.places)
+}
+
+function onDismiss() {
+  if (props.commands.open.value) props.commands.leaves()
+  else (props.search.setOpen ?? props.search.shows)(false)
+}
+
+function onBack() {
+  if (props.commands.open.value && props.commands.backs()) {
+    ;(props.search.setOpen ?? props.search.shows)(true)
+  }
+}
+
+function onKeyDown(event: KeyboardEvent) {
+  if (event.defaultPrevented || !chorded(event) || event.shiftKey) return
+  const key = event.key.toLowerCase()
+  const setSearchOpen = props.search.setOpen ?? props.search.shows
+  const setCommandsOpen = props.commands.setOpen ?? props.commands.shows
+  if (key === 'k') {
+    event.preventDefault()
+    setCommandsOpen(false)
+    setSearchOpen(!props.search.open.value)
+    return
+  }
+  if (key === 'p') {
+    event.preventDefault()
+    setSearchOpen(false)
+    setCommandsOpen(!props.commands.open.value)
+  }
+}
+
+onMounted(() => globalThis.addEventListener('keydown', onKeyDown))
+onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
+
+// --- Helpers ---
+function rowIcon(id: string) {
   if (props.commands.open.value) {
     const picked = props.commands.typeOf(id)
     return picked ? iconOfNote(picked) : iconFor(id)
@@ -69,77 +135,6 @@ const rowIcon = (id: string) => {
   const kind = props.search.kindOf(id)
   return kind ? iconOfSource(kind) : null
 }
-
-/**
- * Something typed in the field. The one character that means the commands is
- * the one typed into a field holding nothing.
- */
-const typing = (text: string) => {
-  if (props.commands.open.value) return void props.commands.typing(text)
-  if (!asksCommands(props.search.typed.value, text)) return void props.search.typing(text)
-  props.search.shows(false)
-  props.commands.shows(true)
-}
-
-/** Something chosen, and the window taken there or the command carried out. */
-const went = async (item: string, action: string) => {
-  if (props.commands.open.value) {
-    const invocation = props.commands.chose(item, action)
-    if (!invocation) return
-    props.commands.shows(false)
-    await does(invocation, props.doing, words)
-    return
-  }
-  if (item === MAKING) {
-    const name = props.search.typed.value.trim()
-    props.search.shows(false)
-    await does(creates(action, name, props.where()), props.doing, words)
-    return
-  }
-  const landing = props.search.chose(item, action)
-  props.search.shows(false)
-  await lands(landing, props.places)
-}
-
-/** Escape: a step of a command goes, and the palette itself at the last of them. */
-const dismissed = () =>
-  props.commands.open.value ? props.commands.leaves() : props.search.shows(false)
-
-/** Backspace in an empty field: the step goes, and the first hands back the search. */
-const back = () => {
-  if (props.commands.open.value && props.commands.backs()) props.search.shows(true)
-}
-
-/**
- * The two chords that put the field up and take it down. Each is that letter
- * alone: the same letter with Shift is a chord of its own and goes to whoever
- * the table of keystrokes gives it to.
- */
-const asked = (event: KeyboardEvent) => {
-  if (event.defaultPrevented || !chorded(event) || event.shiftKey) return
-  const key = event.key.toLowerCase()
-  if (key === 'k') {
-    event.preventDefault()
-    props.commands.shows(false)
-    props.search.shows(!props.search.open.value)
-    return
-  }
-  if (key === 'p') {
-    event.preventDefault()
-    props.search.shows(false)
-    props.commands.shows(!props.commands.open.value)
-  }
-}
-
-/** What the palette's action panel is drawn with. */
-const actionWords: ActionWords = {
-  name: words.actions,
-  placeholder: words.findAction,
-  silence: words.noAction,
-}
-
-onMounted(() => globalThis.addEventListener('keydown', asked))
-onUnmounted(() => globalThis.removeEventListener('keydown', asked))
 </script>
 
 <template>
@@ -153,11 +148,11 @@ onUnmounted(() => globalThis.removeEventListener('keydown', asked))
     :opens-on="field.opensOn"
     :name="words.find"
     :action-words="actionWords"
-    @update:model-value="typing"
-    @choose="went"
+    @update:model-value="onTyping"
+    @choose="onChoose"
     @lit="commands.lights"
-    @back="back"
-    @dismiss="dismissed"
+    @back="onBack"
+    @dismiss="onDismiss"
   >
     <template #icon="{ id }">
       <component :is="rowIcon(id)" v-if="rowIcon(id)" class="command-icon" />
