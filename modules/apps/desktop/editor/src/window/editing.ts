@@ -8,7 +8,7 @@ import { useStencilTabs } from '../flashcards-stencil-tab/stencilTabs'
 import { usePresetTab } from '../flashcards-preset-tab/kind'
 import { noteChanges } from '../note-tab/changes'
 import { openNotes } from '../note-tab/notes'
-import { noteMaker } from '../note-tab/maker'
+import { noteCreator } from '../note-tab/maker'
 import { useNoteTab } from '../note-tab/kind'
 import { useFileFlush } from '../shared/saving/flushing'
 import { raiseConflicts } from '../shared/saving/conflicts'
@@ -29,7 +29,7 @@ export interface EditingDeps {
 export function openEditing({ core, log, puts, held, day }: EditingDeps) {
   const changes = noteChanges()
   const notes = openNotes(core, { replaced: changes.arrived })
-  const making = noteMaker(core, log.under('made'))
+  const making = noteCreator(core, log.under('made'))
 
   const noted = useNoteTab(core, notes, changes, held.handle, puts)
   const decks = useDeckTabs(cards, presets, held.handle, puts)

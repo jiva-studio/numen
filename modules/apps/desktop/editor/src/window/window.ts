@@ -139,7 +139,7 @@ export const useWindow = () => {
     first: () => window.first(),
     dragged,
     says: (text) => told(text, 'refusal'),
-    writes: async () => (await editing.making.named('', []))?.path ?? '',
+    writes: async () => (await editing.making.createUntitled('', []))?.path ?? '',
     creatable: CREATABLE,
   })
 
@@ -251,7 +251,7 @@ export const useWindow = () => {
       dragged.value = paths
     },
     makes: (path) => does(invocationOf('makeFolder', where(), path), commandsModule.doing, words),
-    writes: async (folder) => (await editing.making.named(folder, []))?.path ?? '',
+    writes: async (folder) => (await editing.making.createUntitled(folder, []))?.path ?? '',
     decks: (folder, name) => made.makes('deck', folder, name),
     stencils: (folder, name) => made.makes('stencil', folder, name, [cardWords.newField]),
     presets: (folder, name) => made.makes('preset', folder, name),

@@ -180,7 +180,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps) {
    * A folder made where the row stands, under a name nothing there carries, and
    * its name put in a field for the person to type over.
    */
-  const makes = async (path: string | null) => {
+  const createFolder = async (path: string | null) => {
     const into = folderFor(path)
     const name = list.freeIn(into, words.folder)
     const made = into === ROOT ? name : `${into}/${name}`
@@ -190,18 +190,20 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps) {
     // refusal, and it has already been said.
     if (list.entryAt(made)) renaming.value = made
   }
+  const makes = createFolder
 
   /**
    * A note made where the row stands, under a name nothing there carries, and
    * its name put in a field for the person to type over.
    */
-  const writes = async (path: string | null) => {
+  const createNote = async (path: string | null) => {
     const into = folderFor(path)
     const made = await deps.writes(into)
     if (!made) return
     await list.opens(into)
     renaming.value = made
   }
+  const writes = createNote
 
   /** An address dropped on the tree, made into the file it is kept in. */
   const imports = (address: string) =>
@@ -213,13 +215,14 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps) {
    * answers where it stands, so a name already taken there comes back as a
    * refusal.
    */
-  const makesOne = async (path: string | null, makes: FileMaker, name: string) => {
+  const createOne = async (path: string | null, createEntry: FileMaker, name: string) => {
     const into = folderFor(path)
-    const made = await makes(into, name)
+    const made = await createEntry(into, name)
     if (!made) return
     await list.opens(into)
     renaming.value = made
   }
+  const makesOne = createOne
 
   /** The row whose name the person is typing over, and none once they are done. */
   const setRenamingPath = (path: string | null) => {
@@ -239,11 +242,11 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps) {
     const asking = menu.value
     menu.value = null
     if (!asking || !OFFERED.has(id)) return
-    if (id === NEW_NOTE) return void writes(asking.path)
-    if (id === NEW_DECK) return void makesOne(asking.path, deps.decks, words.newDeck)
-    if (id === NEW_STENCIL) return void makesOne(asking.path, deps.stencils, words.newStencil)
-    if (id === NEW_PRESET) return void makesOne(asking.path, deps.presets, words.newPreset)
-    if (id === NEW_FOLDER) return void makes(asking.path)
+    if (id === NEW_NOTE) return void createNote(asking.path)
+    if (id === NEW_DECK) return void createOne(asking.path, deps.decks, words.newDeck)
+    if (id === NEW_STENCIL) return void createOne(asking.path, deps.stencils, words.newStencil)
+    if (id === NEW_PRESET) return void createOne(asking.path, deps.presets, words.newPreset)
+    if (id === NEW_FOLDER) return void createFolder(asking.path)
 
     const path = asking.path
     if (path === null) return
@@ -285,6 +288,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps) {
     writes,
     createNote: writes,
     makesOne,
+    createOne: makesOne,
     imports,
     importAddress: imports,
     openMenu,

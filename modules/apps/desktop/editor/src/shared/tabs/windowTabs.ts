@@ -244,7 +244,7 @@ export function useWindowTabs() {
    * What a kind calls one of its tabs is filed under that kind, so two kinds
    * that name a tab after the same thing hold a tab each.
    */
-  const makes = async (kind: string, at = ''): Promise<string> => {
+  const createTab = async (kind: string, at = ''): Promise<string> => {
     const one = byKind.get(kind)
     if (!one) return ''
     const id = one.identity ? `${kind}:${one.identity(at)}` : minted(kind)
@@ -255,17 +255,18 @@ export function useWindowTabs() {
     open.value = new Map(open.value).set(id, { kind: one, state })
     return id
   }
+  const makes = createTab
 
   /** A tab opened where the person is, and put in front. */
   const opens = async (kind: string, at = ''): Promise<string> => {
-    const id = await makes(kind, at)
+    const id = await createTab(kind, at)
     if (id) shows(id)
     return id
   }
 
   /** A tab opened beside the pane the person is in. */
   const beside = async (kind: string, at = ''): Promise<string> => {
-    const id = await makes(kind, at)
+    const id = await createTab(kind, at)
     if (id) layout.value = openTabBeside(layout.value, id, 'right', naming)
     return id
   }
@@ -355,6 +356,8 @@ export function useWindowTabs() {
     declares,
     heldIn,
     holdsIn,
+    createTab,
+    makes,
     opens,
     beside,
     shows,

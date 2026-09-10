@@ -18,7 +18,7 @@ import type { MessageLog, MessageWriter } from '../shared/notices/messages'
 import type { fileMakers } from '../shared/tabs/makers'
 import type { useWindowTabs } from '../shared/tabs/windowTabs'
 import { WORDS } from '../shared/words'
-import type { noteMaker } from '../note-tab/maker'
+import type { NoteCreator } from '../note-tab/maker'
 import type { VaultCore } from './vault'
 
 type Words = typeof WORDS
@@ -33,7 +33,7 @@ export interface CommandsDepsOptions {
   kept: PaletteLists
   runs: RunSupport
   coverage: () => IndexCoverage
-  making: ReturnType<typeof noteMaker>
+  making: NoteCreator
   made: ReturnType<typeof fileMakers>
   shown: Ref<VaultRef>
   reloads: () => void
@@ -86,7 +86,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const doing: CommandDeps = {
     files: {
-      makes: (title, from, seat) => making.calls(title, from, seat),
+      makes: (title, from, seat) => making.createWithTitle(title, from, seat),
       renames: (path, title) => core.rename(path, title),
       removes: (path, destroy) => core.remove(path, destroy),
       moves: (from, to) => core.move(from, to),

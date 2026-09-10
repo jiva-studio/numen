@@ -72,7 +72,7 @@ export interface NoteRef {
   readonly title: string
 }
 
-export function noteMaker(core: Core, said: MessageWriter) {
+export function noteCreator(core: Core, said: MessageWriter) {
   /**
    * One note asked for. A name the vault has already filed is handed back as
    * `occupied` for the caller to answer for.
@@ -99,7 +99,7 @@ export function noteMaker(core: Core, said: MessageWriter) {
    * taken: whether a name is free is the filesystem's to answer at the moment
    * the file is made, so it is asked one name at a time.
    */
-  async function named(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
+  async function createUntitled(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
     for (let taken = 1; taken <= names; taken++) {
       const made = await creates(nameAt(taken), folder, links)
       if (made === 'occupied') continue
@@ -113,7 +113,7 @@ export function noteMaker(core: Core, said: MessageWriter) {
    * A note under the name a person gave it: in a seat of another note, filed
    * beside it, or on its own at the top of the vault.
    */
-  async function calls(
+  async function createWithTitle(
     title: string,
     from: string,
     seat: PlexRelatedSeat | null,
@@ -123,11 +123,11 @@ export function noteMaker(core: Core, said: MessageWriter) {
     return answered(await creates(title, from ? folderOf(from) : '', links))
   }
 
-  /** Make a note in a seat of another one, filed in the folder that one is in. */
-  async function make(from: string, seat: PlexRelatedSeat): Promise<NoteRef | null> {
+  /** Create a note in a seat of another one, filed in the folder that one is in. */
+  async function createInSeat(from: string, seat: PlexRelatedSeat): Promise<NoteRef | null> {
     const links = seatedOn(from, seat)
     if (!links) return null
-    return named(folderOf(from), links)
+    return createUntitled(folderOf(from), links)
   }
 
   /** What a note that was asked for came to, said to the person where it failed. */
@@ -162,8 +162,19 @@ export function noteMaker(core: Core, said: MessageWriter) {
     }
   }
 
-  return { make, named, calls, join }
+  return {
+    createNote: createWithTitle,
+    createInSeat,
+    createUntitled,
+    createWithTitle,
+    make: createInSeat,
+    named: createUntitled,
+    calls: createWithTitle,
+    join,
+  }
 }
+
+export type NoteCreator = ReturnType<typeof noteCreator>
 
 /** The name the note asked for after that many taken ones is filed under. */
 const nameAt = (taken: number): string => (taken === 1 ? UNTITLED : `${UNTITLED} ${taken}`)
