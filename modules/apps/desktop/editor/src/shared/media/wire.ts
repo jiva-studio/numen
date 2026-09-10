@@ -17,8 +17,8 @@ const served = {
   articles: createClient(ArticleService, transport),
 }
 
-/** One stretch of speech, kept as the plain value the window carries it as. */
-const heard = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: one.to })
+/** Maps a protobuf Cue message to internal Cue type. */
+const toCue = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: one.to })
 
 /**
  * Whether the text may be written over. A run putting the words right holds
@@ -47,7 +47,7 @@ export const recordings: Recordings = {
   getTaskStates: (path) => running.carries(path),
   readTranscript: async (path) => {
     const answer = await waiting(() => served.transcripts.readTranscript({ path }))
-    return { cues: answer.cues.map(heard), prose: '', editable: await editable(path) }
+    return { cues: answer.cues.map(toCue), prose: '', editable: await editable(path) }
   },
   readArticle: async (path) => {
     const answer = await waiting(() => served.articles.readArticle({ path }))

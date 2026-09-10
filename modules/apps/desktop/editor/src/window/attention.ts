@@ -9,23 +9,28 @@ import type { OpenTab, windowTabs } from '../shared/tabs/windowTabs'
 
 export interface AttentionDeps {
   core: Core
-  held: ReturnType<typeof windowTabs>
+  /** The window tabs manager. */
+  tabs?: ReturnType<typeof windowTabs>
+  held?: ReturnType<typeof windowTabs>
 }
 
-export function useAttention({ core, held }: AttentionDeps) {
-  const looked = (): string => {
-    const at = held.handle.front()
+export function useAttention({ core, tabs, held }: AttentionDeps) {
+  const windowTabsManager = (tabs ?? held)!
+  /** Returns the ID of the front/active tab. */
+  const getActiveTabId = (): string => {
+    const at = windowTabsManager.handle.front()
     if (at && at.kind !== AGENT) return at.id
-    const beside = [...held.tabs.value]
+    const beside = [...windowTabsManager.tabs.value]
       .reverse()
-      .find((one) => held.heldIn(one.id)?.kind.kind !== AGENT)
+      .find((one) => windowTabsManager.heldIn(one.id)?.kind.kind !== AGENT)
     return beside?.id ?? at?.id ?? ''
   }
+  const looked = getActiveTabId
 
   const attends = (): Attention => ({
-    front: looked(),
-    tabs: held.tabs.value.map(({ id, title }) => {
-      const one = held.heldIn(id)
+    front: getActiveTabId(),
+    tabs: windowTabsManager.tabs.value.map(({ id, title }) => {
+      const one = windowTabsManager.heldIn(id)
       const said = one?.kind.attends?.(one.state) as
         | OpenTab<'document' | 'recording' | 'book'>
         | undefined
@@ -52,10 +57,11 @@ export function useAttention({ core, held }: AttentionDeps) {
     { immediate: true },
   )
 
-  const tabIcon = (id: string) => iconOfKind(held.heldIn(id)?.kind.kind ?? '')
+  const tabIcon = (id: string) => iconOfKind(windowTabsManager.heldIn(id)?.kind.kind ?? '')
 
   return {
     attention,
+    getActiveTabId,
     looked,
     tabIcon,
   }

@@ -16,15 +16,15 @@ import type { WindowHandle } from '../shared/tabs/windowTabs'
 const read = (path: string, title = '', close = vi.fn()) =>
   ({ path, title: ref(title), close }) as unknown as OpenBookState
 
-/** A window, writing down what it was asked to open and holding what it made. */
-const window_ = (held: BookTabState | null = null) => {
+/** A mock window handle writing down opened tabs and returning a given tab state. */
+const createMockWindow = (held?: BookTabState) => {
   const opened: string[] = []
   const handle = {
     opens: async (kind: string, at?: string) => {
       opened.push(`${kind} ${at ?? ''}`.trim())
       return `id of ${at}`
     },
-    holds: () => held,
+    holds: () => held ?? null,
   } as unknown as WindowHandle
   return { handle, opened }
 }
@@ -56,7 +56,7 @@ const openedAt = (path: string, at: number, page: number, pages: number, length 
   }) as unknown as BookTabState
 
 /** The kind, over a window holding the book it is handed. */
-const kindOver = (held: BookTabState) => bookKind(window_(held).handle, () => held, openers().puts).kind
+const kindOver = (held: BookTabState) => bookKind(createMockWindow(held).handle, () => held, openers().puts).kind
 
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {
@@ -127,7 +127,7 @@ describe('a passage of a book reached', () => {
   it('opens the book and sends the tab to the spans asked about', async () => {
     const reach = vi.fn()
     const held = { reach } as unknown as BookTabState
-    const { handle, opened } = window_(held)
+    const { handle, opened } = createMockWindow(held)
     const { puts, opens } = openers()
     bookKind(handle, () => held, puts)
 

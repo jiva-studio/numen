@@ -116,11 +116,12 @@ export function openDocument(documents: Documents, path: string) {
    * Where one page is drawn, at the width the strip wants it. It is empty until
    * the document has been read and the room it is read in has been measured.
    */
-  const pictureOf = (page: number): string =>
+  const getPageImageUrl = (page: number): string =>
     pages.value.length > 0 && wide.value > 0 ? documents.getPageUrl(path, page, wide.value, seen.value) : ''
+  const pictureOf = getPageImageUrl
 
   /** Where the page in front is drawn. */
-  const picture = computed(() => pictureOf(at.value))
+  const picture = computed(() => getPageImageUrl(at.value))
 
   /** Whether the tab this document stands in is still open. */
   let open = true
@@ -200,6 +201,7 @@ export function openDocument(documents: Documents, path: string) {
     pages,
     at,
     picture,
+    getPageImageUrl,
     pictureOf,
     highlighted,
     highlightedOn,

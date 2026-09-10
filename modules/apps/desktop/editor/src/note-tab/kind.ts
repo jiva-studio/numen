@@ -197,10 +197,12 @@ export function noting(
     kind: NOTE,
     opens: (id) => opens(id),
     called: (state) => names.called(state.id),
+    getTitle: (state) => names.called(state.id),
     marked: (state) => markOf(state.shown.value.state),
     draws: NoteTab,
     identity: (id) => id,
     shown: (state) => state.measure(),
+    onShow: (state) => state.measure(),
     over: (state) => {
       const path = standsAt(state)
       return { path, title: path ? names.called(state.id) : '' }
@@ -210,9 +212,14 @@ export function noting(
       state.shuts(id)
       return false
     },
+    onClose: (state, id) => {
+      state.shuts(id)
+      return false
+    },
     // What an open note owes at the quit is written by the quit, which the
     // window waits for.
     gone: () => {},
+    onDestroy: () => {},
   }
 
   /** The notes, as a command reaches the ones the window has open. */

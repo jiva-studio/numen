@@ -119,8 +119,13 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
       return state
     },
     called: (state) => titleOf(state.view.neighbourhood.value?.focus.title ?? ''),
+    getTitle: (state) => titleOf(state.view.neighbourhood.value?.focus.title ?? ''),
     draws: PlexTab,
     shuts: (state) => {
+      state.view.close()
+      return true
+    },
+    onClose: (state) => {
       state.view.close()
       return true
     },

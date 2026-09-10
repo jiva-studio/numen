@@ -154,14 +154,21 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
  * the note the plex the person was last in is standing on.
  */
 export function agentKind(handle: WindowHandle, opens: () => AgentTabState, about: () => NoteRef) {
+  const getTitle = (state: AgentTabState) =>
+    firstLine(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') ||
+    words.agent
+
   const kind: TabKind<AgentTabState, typeof AGENT> = {
     kind: AGENT,
     opens,
-    called: (state) =>
-      firstLine(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') ||
-      words.agent,
+    called: getTitle,
+    getTitle,
     draws: AgentTab,
     shuts: (state) => {
+      state.finish()
+      return true
+    },
+    onClose: (state) => {
       state.finish()
       return true
     },
@@ -169,11 +176,11 @@ export function agentKind(handle: WindowHandle, opens: () => AgentTabState, abou
   }
 
   /** Something to ask, put in the agent the person was last in and put in front. */
-  const asks = async (text: string) => {
+  const askQuestion = async (text: string) => {
     const id = handle.last<AgentTabState>(AGENT)?.id ?? (await handle.opens(AGENT))
     handle.holds<AgentTabState>(AGENT, id)?.writing(text)
     handle.shows(id)
   }
 
-  return { kind, asks }
+  return { kind, askQuestion, asks: askQuestion }
 }

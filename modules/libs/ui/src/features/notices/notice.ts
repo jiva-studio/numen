@@ -50,17 +50,25 @@ export interface Notice {
 /** One piece of work a window is doing behind itself, as it is answered for. */
 export interface Task {
   readonly id: string
-  /** The work, in the words to show, and what it is on. */
+  /** The action or operation being performed (e.g. "Transcribing"). */
+  readonly action?: string
   readonly doing: string
+  /** The subject/target of the task (e.g. filename). */
+  readonly target?: string
   readonly about: string
-  /** Why it stopped, when it stopped badly. */
+  /** Explanation if the task failed. */
+  readonly failureReason?: string
   readonly failed: string
-  /** Whether a person asked for this and is waiting to be told it began. */
+  /** Whether the task was initiated by user request. */
+  readonly isUserRequested?: boolean
   readonly asked: boolean
   /** How far it has got, where there is a total to count against. */
+  readonly completedCount?: number
   readonly done?: number
+  readonly totalCount?: number
   readonly total?: number
-  /** What that count counts. */
+  /** Unit of measurement for the count. */
+  readonly unit?: TallyUnit
   readonly counting?: TallyUnit
 }
 
@@ -70,17 +78,27 @@ export interface Task {
  * What stopped a piece of work is what its card is called: it is the sentence a
  * person acts on, and the room on a card is the words at the front of it.
  */
-export const noticed = (task: Task): Notice => ({
-  id: task.id,
-  says: task.failed || task.doing,
-  about: task.about,
-  working: task.failed === '',
-  asked: task.asked || task.failed !== '',
-  ...(task.failed ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
-  ...(task.done !== undefined && task.total !== undefined && task.total > 0
-    ? { done: task.done, total: task.total, ...(task.counting ? { counting: task.counting } : {}) }
-    : {}),
-})
+export const noticed = (task: Task): Notice => {
+  const failure = task.failureReason ?? task.failed
+  const action = task.action ?? task.doing
+  const subject = task.target ?? task.about
+  const isUserReq = task.isUserRequested ?? task.asked
+  const completed = task.completedCount ?? task.done
+  const total = task.totalCount ?? task.total
+  const unit = task.unit ?? task.counting
+
+  return {
+    id: task.id,
+    says: failure || action,
+    about: subject,
+    working: failure === '',
+    asked: isUserReq || failure !== '',
+    ...(failure ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
+    ...(completed !== undefined && total !== undefined && total > 0
+      ? { done: completed, total: total, ...(unit ? { counting: unit } : {}) }
+      : {}),
+  }
+}
 
 /**
  * The notices worth drawing: the ones that have something to say.

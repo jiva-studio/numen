@@ -84,13 +84,18 @@ const carries = (outer: string, inner: string): boolean =>
  */
 const alone = (tasks: readonly Task[]): readonly Task[] =>
   tasks.filter((at, index) => {
-    if (at.failed === '') return true
+    const atFailed = at.failureReason ?? at.failed
+    if (atFailed === '') return true
     return !tasks.some(
-      (other, was) =>
-        other.failed !== '' &&
-        other !== at &&
-        carries(at.failed, other.failed) &&
-        (other.failed.length < at.failed.length || was < index),
+      (other, was) => {
+        const otherFailed = other.failureReason ?? other.failed
+        return (
+          otherFailed !== '' &&
+          other !== at &&
+          carries(atFailed, otherFailed) &&
+          (otherFailed.length < atFailed.length || was < index)
+        )
+      },
     )
   })
 

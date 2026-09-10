@@ -4,13 +4,14 @@
  */
 
 /** A note that is no longer where it was, and where it now is. */
-export interface Move {
+export interface NoteMove {
   readonly from: string
   readonly to: string
 }
+export type Move = NoteMove
 
 /** Where a note went, and nothing where none of these moved it. */
-export const movedTo = (renamed: readonly Move[], path: string): string =>
+export const movedTo = (renamed: readonly NoteMove[], path: string): string =>
   renamed.find((one) => one.from === path)?.to ?? ''
 
 /**
@@ -97,15 +98,15 @@ export interface NoteResult {
 }
 
 /**
- * Where a link note points: the address itself, and where a frame plays what is
- * at it. A frame plays nothing for an address nothing plays.
+ * Where a link note points: the web address (URL) and embed player URL.
  */
-export interface Address {
+export interface LinkAddress {
   readonly url: string
   readonly embed: string
 }
+export type Address = LinkAddress
 
-export type RefusalReason =
+export type NoteRefusalReason =
   | 'missing'
   | 'notANote'
   | 'notText'
@@ -118,6 +119,7 @@ export type RefusalReason =
   | 'notADeck'
   | 'deckTooLarge'
   | 'notAPreset'
+export type RefusalReason = NoteRefusalReason
 
 /** A note to make: what it is called, where it goes, and what it arrives joined to. */
 export interface NewNote {
@@ -150,12 +152,13 @@ export interface Link {
   label?: string
 }
 
-/** What making a note, a deck or a stencil came back with. */
-export interface MakeResult {
+/** What creating a note, a deck or a stencil came back with. */
+export interface CreateResult {
   /** Where the file is filed. Empty when nothing was made. */
   path: string
   refusal: RefusalReason | null
 }
+export type MakeResult = CreateResult
 
 /** What renaming a note came back with. */
 export interface RenameResult {

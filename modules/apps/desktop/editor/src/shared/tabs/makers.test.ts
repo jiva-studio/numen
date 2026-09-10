@@ -7,13 +7,13 @@ import type { RefusalReason } from '../note'
 import { writer } from '../testing/writer'
 import { REFUSED } from '../words'
 import { fileOpeners } from './openers'
-import { fileMakers, type VaultMaker } from './makers'
+import { fileMakers, type VaultCreator } from './makers'
 
 /** The vault answering what it was told, and writing down what it was asked to make. */
 const maker = (
   refusal: RefusalReason | null = null,
   throws = false,
-): VaultMaker & { asked: string[] } => {
+): VaultCreator & { asked: string[] } => {
   const asked: string[] = []
   const answer = async (path: string) => {
     if (throws) throw new Error('the vault is not there')

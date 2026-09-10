@@ -291,22 +291,21 @@ export function stencilling(
   )
 
   /**
-   * The identity minted for a stencil asked for by name, until its tab opens
-   * under it. A stencil is asked for and shown in two steps, and both name the
-   * same tab.
+   * Pending tab IDs for stencils asked for by path, until opened.
    */
-  const minting = new Map<string, string>()
-  const minted = new Map<string, string>()
+  const pendingTabIds = new Map<string, string>()
+  const pendingTabPaths = new Map<string, string>()
 
-  /** The identity of the tab standing at a file, minted where none stands there. */
-  const mints = (path: string): string => {
-    const open = tabbed.value.get(path) ?? minting.get(path)
+  /** Gets or allocates a tab ID for a stencil at a path. */
+  const getOrCreateTabId = (path: string): string => {
+    const open = tabbed.value.get(path) ?? pendingTabIds.get(path)
     if (open) return open
-    const one = crypto.randomUUID()
-    minting.set(path, one)
-    minted.set(one, path)
-    return one
+    const id = crypto.randomUUID()
+    pendingTabIds.set(path, id)
+    pendingTabPaths.set(id, path)
+    return id
   }
+  const mints = getOrCreateTabId
 
   /**
    * A stencil tab as the window keeps it, filed under the identity it opened
@@ -316,10 +315,10 @@ export function stencilling(
   const kind: TabKind<StencilTabState, typeof STENCIL> = {
     kind: STENCIL,
     opens: (id) => {
-      const path = minted.get(id) ?? id
+      const path = pendingTabPaths.get(id) ?? id
       store.open(id, path)
-      minting.delete(path)
-      minted.delete(id)
+      pendingTabIds.delete(path)
+      pendingTabPaths.delete(id)
       return held(id)
     },
     called: (one) => called(store.where(one.id)),

@@ -4,46 +4,46 @@
  * in front of the person in a tab of its own.
  */
 import { troubleWords } from '@numen/wire'
-import type { MakeResult, RefusalReason } from '../note'
+import type { CreateResult, MakeResult, RefusalReason } from '../note'
 import type { MessageWriter } from '../notices/messages'
 import type { FileOpeners } from './openers'
 
-/** Which of the four a file is made as. */
-export type MakeKind = 'deck' | 'stencil' | 'preset' | 'url'
+/** Which of the four a file is created as. */
+export type CreateKind = 'deck' | 'stencil' | 'preset' | 'url'
+export type MakeKind = CreateKind
 
-/** What the window asks the vault to make from nothing. */
-export interface VaultMaker {
-  /** A deck of no cards, filed in that folder under a name made from the title. */
-  makeDeck(title: string, folder: string): Promise<MakeResult>
-  /**
-   * A stencil declaring those fields and showing no face, the same way. The
-   * first field names the cards it cuts.
-   */
-  makeStencil(title: string, folder: string, fields: readonly string[]): Promise<MakeResult>
-  /** A preset naming none of its settings, the same way. */
-  makePreset(title: string, folder: string): Promise<MakeResult>
-  /**
-   * A note pointing at an address, named by the address. What is at it is
-   * fetched afterwards, and says what the note is called from then on.
-   */
-  makeURL(address: string, folder: string): Promise<MakeResult>
+/** What the window asks the vault to create from nothing. */
+export interface VaultCreator {
+  createDeck?(title: string, folder: string): Promise<CreateResult>
+  createStencil?(title: string, folder: string, fields: readonly string[]): Promise<CreateResult>
+  createPreset?(title: string, folder: string): Promise<CreateResult>
+  createURL?(address: string, folder: string): Promise<CreateResult>
+
+  makeDeck?(title: string, folder: string): Promise<MakeResult>
+  makeStencil?(title: string, folder: string, fields: readonly string[]): Promise<MakeResult>
+  makePreset?(title: string, folder: string): Promise<MakeResult>
+  makeURL?(address: string, folder: string): Promise<MakeResult>
 }
 
-/** What making one of the four says in the window's voice. */
-export interface MakeWords {
+/** What creating one of the four says in the window's voice. */
+export interface CreateWords {
   /** What the vault refused, in words a person reads. */
   readonly refused: Record<RefusalReason, string>
 }
 
-/** What making each of the four asks of the vault, each entry naming its own. */
+/** What creating each of the four asks of the vault, each entry naming its own. */
 const asks: Record<
-  MakeKind,
-  (vault: VaultMaker, folder: string, name: string, fields: readonly string[]) => Promise<MakeResult>
+  CreateKind,
+  (vault: VaultCreator, folder: string, name: string, fields: readonly string[]) => Promise<CreateResult>
 > = {
-  deck: (vault, folder, name) => vault.makeDeck(name, folder),
-  stencil: (vault, folder, name, fields) => vault.makeStencil(name, folder, fields),
-  preset: (vault, folder, name) => vault.makePreset(name, folder),
-  url: (vault, folder, name) => vault.makeURL(name, folder),
+  deck: (vault, folder, name) =>
+    (vault.createDeck ?? vault.makeDeck)!.call(vault, name, folder),
+  stencil: (vault, folder, name, fields) =>
+    (vault.createStencil ?? vault.makeStencil)!.call(vault, name, folder, fields),
+  preset: (vault, folder, name) =>
+    (vault.createPreset ?? vault.makePreset)!.call(vault, name, folder),
+  url: (vault, folder, name) =>
+    (vault.createURL ?? vault.makeURL)!.call(vault, name, folder),
 }
 
 /**
@@ -52,9 +52,9 @@ const asks: Record<
  * answers where it stands. A vault that answers nothing at all is said here,
  * because the roads that ask for one carry no word of their own.
  */
-export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWords, said: MessageWriter) {
-  const makes = async (
-    what: MakeKind,
+export function fileCreators(vault: VaultCreator, puts: FileOpeners, words: CreateWords, said: MessageWriter) {
+  const createFile = async (
+    what: CreateKind,
     folder: string,
     name: string,
     fields: readonly string[] = [],
@@ -79,14 +79,15 @@ export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWord
     name: string,
     fields: readonly string[] = [],
   ): Promise<string> => {
-    const path = await makes(what, folder, name, fields)
+    const path = await createFile(what, folder, name, fields)
     if (!path) return ''
     puts.made(path, '', what)
     return path
   }
 
   return {
-    makes,
+    createFile,
+    makes: createFile,
     decks: (folder: string, name: string) => opens('deck', folder, name),
     stencils: (folder: string, name: string, fields: readonly string[]) =>
       opens('stencil', folder, name, fields),
@@ -94,3 +95,5 @@ export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWord
     imports: (folder: string, address: string) => opens('url', folder, address),
   }
 }
+
+export const fileMakers = fileCreators

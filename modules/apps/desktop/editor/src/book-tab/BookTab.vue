@@ -28,7 +28,7 @@ const panel = useTemplateRef<HTMLElement>('panel')
 const way = useTemplateRef<HTMLElement>('way')
 
 /** A press that landed neither in the list nor on the way into it. */
-const outside = (event: Event) => {
+const onOutsidePointerDown = (event: Event) => {
   const target = event.target
   if (!(target instanceof Node)) return
   if (panel.value?.contains(target) || way.value?.contains(target)) return
@@ -48,7 +48,7 @@ const onWindowKey = (event: KeyboardEvent) => {
  * looking at and reading from holds the keyboard, whichever pane the layout
  * calls the one they are in.
  */
-const turns = (event: KeyboardEvent) => {
+const onPageTurnKey = (event: KeyboardEvent) => {
   if (props.state.pressed(event)) event.preventDefault()
 }
 
@@ -63,10 +63,10 @@ const leave = () => {
 watch(listing, (open) => {
   if (!open) return leave()
   // Escape is read before the panel the tab stands in sees it.
-  window.addEventListener('pointerdown', outside, true)
+  window.addEventListener('pointerdown', onOutsidePointerDown, true)
   window.addEventListener('keydown', onWindowKey, true)
   detach = () => {
-    window.removeEventListener('pointerdown', outside, true)
+    window.removeEventListener('pointerdown', onOutsidePointerDown, true)
     window.removeEventListener('keydown', onWindowKey, true)
   }
 })
@@ -74,7 +74,7 @@ watch(listing, (open) => {
 onBeforeUnmount(leave)
 
 /** A place chosen in the list: the book is turned to it and the list goes. */
-const chose = (at: number) => {
+const onSelectEntry = (at: number) => {
   listing.value = false
   void props.state.go(at)
 }
@@ -85,7 +85,7 @@ const chose = (at: number) => {
     :ref="(held: unknown) => props.state.holdsTab(held as HTMLElement | null)"
     class="book-tab"
     tabindex="-1"
-    @keydown="turns"
+    @keydown="onPageTurnKey"
   >
     <div class="book-tab__reading">
       <Transition name="book-tab__over">

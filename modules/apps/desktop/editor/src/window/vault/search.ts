@@ -5,9 +5,9 @@ import { finding } from './clients'
 import { modes, noteType, run, sourceKind } from './words'
 import type { SearchDeps } from '../../shared/command/search'
 
-export type SearchCore = SearchDeps
+export type SearchOperations = SearchDeps
 
-export const searchCore: SearchCore = {
+export const searchOperations: SearchOperations = {
   names: async (query, limit) => {
     const answer = await finding.searchNames({ query, limit })
     return answer.found.map((one) => ({
@@ -35,3 +35,5 @@ export const searchCore: SearchCore = {
     }))
   },
 }
+
+export const searchCore = searchOperations

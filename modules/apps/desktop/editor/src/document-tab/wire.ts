@@ -12,6 +12,7 @@ import type { Documents, HighlightedPage, Rect } from './open'
 
 const served = {
   documents: createClient(DocumentService, transport),
+  ocr: createClient(OcrService, transport),
   readings: createClient(OcrService, transport),
 }
 
@@ -19,7 +20,7 @@ const served = {
  * Where one run of the text stands, page by page. The boxes come in the order
  * they were read, so a run crossing a page opens a page where it crosses.
  */
-const highlighted = (run: RunMessage): HighlightedPage[] => {
+const toHighlightedPages = (run: RunMessage): HighlightedPage[] => {
   const pages: { page: number; rects: Rect[] }[] = []
   for (const box of run.boxes) {
     const rect: Rect = {
@@ -34,6 +35,7 @@ const highlighted = (run: RunMessage): HighlightedPage[] => {
   }
   return pages
 }
+const highlighted = toHighlightedPages
 
 /**
  * The documents the vault holds, over the addresses the application serves the
@@ -51,10 +53,10 @@ export const documents: Documents = {
   getPageUrl: (path, at, wide, seen) =>
     `${asset(path)}/pages/${at}?wide=${wide}&${named(seen)}`,
   getHighlights: async (path, spans) => {
-    const answer = await waiting(() => served.readings.readOcr({ path, spans: [...spans] }))
+    const answer = await waiting(() => served.ocr.readOcr({ path, spans: [...spans] }))
     return spans.map((_, at) => {
       const run = answer.runs[at]
-      return run ? highlighted(run) : []
+      return run ? toHighlightedPages(run) : []
     })
   },
 }

@@ -52,8 +52,6 @@ A word means one thing inside its context, and the same word in two contexts is 
 | reading | What a model read off the pages of a scanned document, with the place on the page each word stands at — [Recognising a document](recognising.md). It is the artifact a chunk of that document is a place in, named by the producer and the hash of the bytes read, and it is what a proofreader puts right. The places on pages are what separate it from a transcript, which carries times instead, and from an article, which carries neither. A recognition is the run that makes one. | recognition |
 | recognition | One run of a model over a scanned document's pages, asked for by a person and never begun by the application — [Recognising a document](recognising.md). It is also the settings section `indexing.recognition`. What a recognition produces is a reading. | |
 | text layer | The text a document carries of its own, which a library takes out deterministically and nothing stores — [A book's text is a cache or an artifact](adr/0015-a-books-text-is-a-cache-or-an-artifact.md). It is the cache to a reading's artifact, it is used until a person asks for the pages to be read instead, and in the core it is `port.TextLayer`. | reading |
-| chunk | One cut of a source's text, as a row. Both sizes are chunks; the large one is the chunk with no parent. | |
-| chunking | How a source's text is cut into chunks: the sizes, taken from the settings and from one place, so a vault cut in a terminal and one cut in a window are cut alike. | cutting |
 | part | A named division of a source: the heading that names it, and where in the source's text the division begins. A note's headings and a book's outline are both parts; where a call is working is a place. A node hangs the parts of the note it stands for under its box, and choosing one opens that note where the part begins. | place |
 | page | One page of a document: where its text begins in the reading, how large it was rendered, and what was found on it. It carries no name of its own — what a page is called is where it stands in the file, and a second name for one page is a second thing to be wrong about. | sheet |
 | location | Where a chunk sits, in the terms its own format uses. Nullable, and never a key. | |
@@ -167,8 +165,6 @@ A word means one thing inside its context, and the same word in two contexts is 
 | seat | Where a node sits relative to the focus: `parent`, `child`, `jump`, `sibling`. It is not a value that can be written to a note. | role |
 | hang_parts_under_a_node | Whether a node hangs the parts of the note it stands for under its box — [Settings](settings.md). On. | |
 | parts_under_a_node | How many of those parts stand under a node at once, the rest being wound to — [Settings](settings.md). 6. | |
-| viewport | The area the plex is drawn into. | window |
-| position | A place on the screen, `{ x, y }`, in whatever coordinates the caller measures in. The plex, the tree, the menu and the workspace all pass one around, and it is what `@vueuse/core` calls the pair. A place on a preset's curve is a point. | point |
 | span | A run of text as a client counts it: `from` and `to`, in UTF-16 code units. It is how a note's own text is addressed on the wire; a run of a source's text rides there as a `Stretch`, in bytes, and in the core every run is a stretch. | |
 | standing on nothing | A window showing no vault: an installation that holds none, or one whose vault was taken down and nothing came up in its place. Every question that would reach into a vault is refused there, and the welcome screen offers the list and the way to add one. It names nothing in the code: it is the phrase the core answers such a window in, and the state itself is the vault a window shows being none. | |
 | shown vault | What the welcome screen is drawn over: the vault the window is showing, and whether it has been read and can be asked to do anything. It is `ShownVault` in the window, and the tools spend the word on the vault a call is answered about. | |
@@ -182,13 +178,6 @@ A word means one thing inside its context, and the same word in two contexts is 
 | tab | One thing a pane holds open, shown by its title. | |
 | minted | The identity a tab or a conversation is given when nothing it can be found under exists: the word its kind is filed under, and what nothing else answers to. It is `minted` in the window; `naming` is what a rename brings into line, and the settings section beside it. | named |
 | tab kind | Which of the kinds of tab a window draws, declared to the window once: how a tab of it opens, what it is called, what is drawn in it and what letting go of it comes to. A window is free to open a kind nothing in the application has heard of. It is `TabKind` in the window; the agent's `kind` — what a call does to the vault — is the other thing the word is spent on. | plugin, view |
-| welcome | What the window draws while it holds no tab: the mark, the ways into the vault, and the vaults this installation holds. | |
-| tree | A hierarchy of rows drawn as an indented list, some of them holding others. The vault's folders and files are shown in one. | |
-| row | One line of a tree: an entry, at the depth it sits. | node |
-| selection | The rows of a tree chosen together. A gesture made on one of them is made on all of them. | |
-| drag | The gesture while it runs: what has been lifted, and where the pointer is. The tree says what it has lifted; the plex draws a line to it and never looks at what it is. In code it is `drag` and `dragged`, and the element on its way is `data-dragged`. The English *carry* is not this: in this repository's prose it means to bear — a note carries an identifier, a line carries a title — and it names nothing in the code. | carry |
-| drop | Where a drag lands and what that comes to: the seat, the place in an order, the link that gets written. In code it is `drop` and `dropped`. | |
-| anchor | The row a selection is reached from, which is where a plain or joining press last landed. | |
 | unsaved | A tab whose text is not the text in its file. | |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse. | |
 | gone | What a name points to is not on disk: a tab whose name has no file behind it, so its save stopped, and a vault with nothing at its path. | |
@@ -201,8 +190,6 @@ A word means one thing inside its context, and the same word in two contexts is 
 
 | Term | What it is | Never called |
 | --- | --- | --- |
-| palette | The list of everything that can be done, opened over the window and narrowed by typing. It is drawn in bands, each item offering the actions whoever put it there named. | |
-| menu | A list of things that can be done, opened on what they are done to. | |
 | invocation | One command as it is carried out: the note and the vault it is over, the tab holding that note, the files it is over, and what was typed for it. It is `CommandInvocation` in the window. | |
 | band | A stretch of one list of things to choose. The palette gives each a title; a menu draws a rule where one band gives way to the next. | |
 | shelf | The heading a run of rows stands under in a list: the two a theme comes off, and the ones the agent's models stand on. | |

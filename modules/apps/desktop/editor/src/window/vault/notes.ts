@@ -6,7 +6,7 @@ import { answered, around, filed, run, seenOf, writes, written } from './words'
 import { refusalIn, staleIn } from '../../shared/answers'
 import type { Core } from '../../shared/core'
 
-export type NotesCore = Pick<
+export type NoteOperations = Pick<
   Core,
   | 'neighbourhood'
   | 'opening'
@@ -20,7 +20,7 @@ export type NotesCore = Pick<
   | 'resolve'
 >
 
-export const notesCore: NotesCore = {
+export const noteOperations: NoteOperations = {
   neighbourhood: async (path) => around(await notes.getNeighbourhood({ path })),
   opening: async () => (await notes.getOpeningNote({})).note ?? null,
   async *editing(signal) {
@@ -77,3 +77,5 @@ export const notesCore: NotesCore = {
     )
   },
 }
+
+export const notesCore = noteOperations

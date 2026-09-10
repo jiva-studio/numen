@@ -30,11 +30,11 @@ const vault = (stands: Record<string, FileKind> = {}) => {
 const note = (type: FileKind['type']): FileKind => ({ kind: 'note', type })
 
 /**
- * A book drawn as pictures of its pages, a book that reflows, a recording, and
+ * A document drawn as pictures of its pages, an epub book that reflows, a recording, and
  * a file the vault holds no source for.
  */
-const BOOK: FileKind = { kind: 'book', type: 'note', format: 'pdf' }
-const REFLOWS: FileKind = { kind: 'book', type: 'note', format: 'epub' }
+const DOCUMENT: FileKind = { kind: 'book', type: 'note', format: 'pdf' }
+const BOOK: FileKind = { kind: 'book', type: 'note', format: 'epub' }
 const TALK: FileKind = { kind: 'recording', type: 'note' }
 const OTHER: FileKind = { kind: 'other', type: 'note' }
 
@@ -100,14 +100,14 @@ describe('a path opened', () => {
     expect(opened).toStrictEqual(['note Entropy.md Entropy here —'])
   })
 
-  it('opens a book in the reader, and in no editor of a note', async () => {
-    const one = vault({ 'Physics.epub': BOOK })
+  it('opens a document in the reader, and in no editor of a note', async () => {
+    const one = vault({ 'Physics.pdf': DOCUMENT })
     const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
-    await puts.opens('Physics.epub', 'Physics')
+    await puts.opens('Physics.pdf', 'Physics')
 
-    expect(opened).toStrictEqual(['document Physics.epub []'])
+    expect(opened).toStrictEqual(['document Physics.pdf []'])
   })
 
   it('opens a recording in the player, and in no reader', async () => {
@@ -185,17 +185,17 @@ describe('a path opened', () => {
 })
 
 describe('a source opened at a stretch of its own text', () => {
-  it('reads a book at the stretches it was asked at', async () => {
-    const one = vault({ 'Physics.epub': BOOK })
+  it('reads a document at the stretches it was asked at', async () => {
+    const one = vault({ 'Physics.pdf': DOCUMENT })
     const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
-    await puts.opensAt('Physics.epub', [
+    await puts.opensAt('Physics.pdf', [
       { from: 10, to: 14 },
       { from: 30, to: 32 },
     ])
 
-    expect(opened).toStrictEqual(['document Physics.epub [10+14, 30+32]'])
+    expect(opened).toStrictEqual(['document Physics.pdf [10+14, 30+32]'])
   })
 
   it('plays a recording at the stretch of the words it was asked at', async () => {
@@ -232,7 +232,7 @@ describe('a source opened at a stretch of its own text', () => {
 
 describe('which reader a book opens in', () => {
   it('turns a book that reflows a spread at a time', async () => {
-    const one = vault({ 'Gita.epub': REFLOWS })
+    const one = vault({ 'Gita.epub': BOOK })
     const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
@@ -241,8 +241,8 @@ describe('which reader a book opens in', () => {
     expect(opened).toStrictEqual(['book Gita.epub [10+14]'])
   })
 
-  it('reads a book of pages as the row of pages it is', async () => {
-    const one = vault({ 'Physics.pdf': BOOK })
+  it('reads a document of pages as the row of pages it is', async () => {
+    const one = vault({ 'Physics.pdf': DOCUMENT })
     const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
@@ -253,7 +253,7 @@ describe('which reader a book opens in', () => {
 
   it('reads a book that reflows as pages where the window turns none', async () => {
     // A window told about no book tab still opens the file.
-    const one = vault({ 'Gita.epub': REFLOWS })
+    const one = vault({ 'Gita.epub': BOOK })
     const puts = fileOpeners(one.core)
     const opened: string[] = []
     puts.reads({ kind: 'book' }, (path) => opened.push(`document ${path}`))

@@ -49,7 +49,8 @@ export interface TabKind<TabState, K extends string = string> {
    */
   opens(at: string): TabState
   /** What the tab is called, as what it holds now stands. */
-  called(state: TabState): string
+  called?(state: TabState): string
+  getTitle?(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
   marked?(state: TabState): string | undefined
   /** What is drawn in the pane, given what the tab holds. */
@@ -62,6 +63,7 @@ export interface TabKind<TabState, K extends string = string> {
   identity?(at: string): string
   /** The tab came on screen, where what it holds has room to measure. */
   shown?(state: TabState, id: string): void
+  onShow?(state: TabState, id: string): void
   /**
    * A key struck while one of its tabs is the one the person is in, answered
    * with whether the tab took it. Several panes are drawn at once, so the tab
@@ -69,6 +71,7 @@ export interface TabKind<TabState, K extends string = string> {
    * then whatever else is on screen.
    */
   presses?(state: TabState, event: KeyboardEvent): boolean
+  onKeyPress?(state: TabState, event: KeyboardEvent): boolean
   /** What a command asked over one of its tabs is over. */
   over?(state: TabState): TabTarget
   /** What one of its tabs holds, as whoever answers for the person is told it. */
@@ -78,11 +81,13 @@ export interface TabKind<TabState, K extends string = string> {
    * has something to finish, and closes the tab itself once it has.
    */
   shuts?(state: TabState, id: string): boolean
+  onClose?(state: TabState, id: string): boolean
   /**
    * The window is going, and nothing this tab holds outlives it. A kind that
    * says nothing here lets go the way a tab of it closes.
    */
   gone?(state: TabState, id: string): void
+  onDestroy?(state: TabState, id: string): void
 }
 
 /**
@@ -196,7 +201,8 @@ export function windowTabs() {
   const tabs = computed<readonly Tab[]>(() =>
     [...open.value].map(([id, one]): Tab => {
       const mark = one.kind.marked?.(one.state)
-      return { id, title: one.kind.called(one.state), ...(mark ? { mark } : {}) }
+      const title = (one.kind.getTitle ?? one.kind.called)?.(one.state) ?? ''
+      return { id, title, ...(mark ? { mark } : {}) }
     }),
   )
 
@@ -283,7 +289,7 @@ export function windowTabs() {
     const one = open.value.get(id)
     if (!one) return
     open.value = new Map([...without(open.value, id), [id, one]])
-    one.kind.shown?.(one.state, id)
+    ;(one.kind.onShow ?? one.kind.shown)?.(one.state, id)
   }
 
   /**
@@ -303,7 +309,8 @@ export function windowTabs() {
       if (!id || offered.has(id) || !drawn.includes(id)) continue
       offered.add(id)
       const one = open.value.get(id)
-      if (one?.kind.presses?.(one.state, event)) return true
+      const handler = one?.kind.onKeyPress ?? one?.kind.presses
+      if (handler?.(one!.state, event)) return true
     }
     return false
   }
@@ -315,7 +322,8 @@ export function windowTabs() {
   const shut = (id: string): boolean => {
     const one = open.value.get(id)
     if (!one) return true
-    if (one.kind.shuts && !one.kind.shuts(one.state, id)) return false
+    const canClose = one.kind.onClose ?? one.kind.shuts
+    if (canClose && !canClose(one.state, id)) return false
     open.value = without(open.value, id)
     drop(id)
     return true
@@ -332,8 +340,9 @@ export function windowTabs() {
   /** The window is going, and nothing a tab holds outlives it. */
   const close = () => {
     for (const [id, one] of open.value) {
-      if (one.kind.gone) one.kind.gone(one.state, id)
-      else one.kind.shuts?.(one.state, id)
+      const onDestroy = one.kind.onDestroy ?? one.kind.gone
+      if (onDestroy) onDestroy(one.state, id)
+      else (one.kind.onClose ?? one.kind.shuts)?.(one.state, id)
       drop(id)
     }
   }

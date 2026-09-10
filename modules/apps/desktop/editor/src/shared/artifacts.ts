@@ -23,7 +23,7 @@ const artifacts = createClient(ArtifactService, transport)
  * never the producer.
  */
 export const running: ArtifactRunner = {
-  carries: async (path) => {
+  getArtifactStates: async (path) => {
     const answer = await artifacts.listArtifacts({ path })
     const held: Record<string, ArtifactState> = {}
     for (const one of answer.artifacts) {
@@ -32,7 +32,8 @@ export const running: ArtifactRunner = {
     }
     return held
   },
-  makes: async (path, of) => {
+  carries: (path) => running.getArtifactStates(path),
+  createArtifact: async (path, of) => {
     try {
       const answer = await artifacts.createArtifact({ path, kind: asking[of] })
       return {
@@ -48,21 +49,26 @@ export const running: ArtifactRunner = {
       throw error
     }
   },
-  corrects: async (path) => {
+  makes: (path, of) => running.createArtifact(path, of),
+  correctArtifact: async (path) => {
     // Which text is put right follows from the file: a recording carries a
     // transcript and a scan carries a reading.
-    const held = await running.carries(path)
+    const held = await running.getArtifactStates(path)
     const of: Artifact = held.transcript === undefined ? 'ocr.corrected' : 'transcript.corrected'
-    return running.makes(path, of)
+    return running.createArtifact(path, of)
   },
-  fetches: async (path) => {
+  corrects: (path) => running.correctArtifact(path),
+  fetchArtifact: async (path) => {
     // Which of the two the text at an address is, is the vault's to say: it
     // knows the address, and this asks for the one it says the note carries.
-    const held = await running.carries(path)
+    const held = await running.getArtifactStates(path)
     const of: Artifact = held.transcript === undefined ? 'article' : 'transcript'
-    return running.makes(path, of)
+    return running.createArtifact(path, of)
   },
+  fetches: (path) => running.fetchArtifact(path),
+  deleteTranscript: (path) => taken(path, Kinds.TRANSCRIPT),
   deletesTranscript: (path) => taken(path, Kinds.TRANSCRIPT),
+  deleteCopy: (path) => taken(path, Kinds.COPY),
   deletesCopy: (path) => taken(path, Kinds.COPY),
 }
 
@@ -168,37 +174,42 @@ export type Outcome =
       readonly error: string
     }
 
-/** What a person asks be made from one file of the vault, and taken away. */
-export interface ArtifactRunner {
-  /**
-   * What the file at a path carries. It is asked before anything is offered
-   * over the file, so a book that has been read is not offered to be read
-   * again.
-   */
+/** Reads which artifacts a file currently carries. */
+export interface ArtifactInspector {
+  getArtifactStates(path: string): Promise<ArtifactStates>
   carries(path: string): Promise<ArtifactStates>
-  /** One artifact asked for, and what came of asking. */
+}
+
+/** Initiates creation/recognition of an artifact for a file. */
+export interface ArtifactProducer {
+  createArtifact(path: string, of: Artifact): Promise<Outcome>
   makes(path: string, of: Artifact): Promise<Outcome>
-  /**
-   * The text of a file put right by a proofreader, asked for by which text
-   * that is: a recording carries a transcript and a scan carries a reading.
-   */
+}
+
+/** Corrects a file's OCR reading or transcript. */
+export interface ArtifactCorrector {
+  correctArtifact(path: string): Promise<Outcome>
   corrects(path: string): Promise<Outcome>
-  /**
-   * The text at the address a note points at, asked for by what that text is:
-   * a video is a transcript and every other page is an article, and which of
-   * them this note carries is what the vault answers.
-   */
+}
+
+/** Fetches content (transcript or article) for a URL address. */
+export interface ArtifactFetcher {
+  fetchArtifact(path: string): Promise<Outcome>
   fetches(path: string): Promise<Outcome>
-  /**
-   * The transcript of a recording taken away, with everything cut from it, and
-   * whether this build can do it at all. The recording is left saying nothing,
-   * and it is offered to be transcribed again.
-   */
+}
+
+/** Removes artifact data from disk. */
+export interface ArtifactDeleter {
+  deleteTranscript(path: string): Promise<boolean>
   deletesTranscript(path: string): Promise<boolean>
-  /**
-   * The copy fetched for a url taken off this disk, and whether this build can
-   * do it at all. The url stands as it was, pointing where it points, and what
-   * is there is framed again.
-   */
+  deleteCopy(path: string): Promise<boolean>
   deletesCopy(path: string): Promise<boolean>
 }
+
+/** Composed interface combining all artifact capabilities. */
+export interface ArtifactRunner
+  extends ArtifactInspector,
+    ArtifactProducer,
+    ArtifactCorrector,
+    ArtifactFetcher,
+    ArtifactDeleter {}

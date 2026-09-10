@@ -43,8 +43,8 @@ export interface CommandsDepsOptions {
   dressed: { chooses: (item: string) => Promise<void> | void }
   oneName: { chooses: (item: string) => Promise<void> | void }
   hungParts: { chooses: (item: string) => Promise<void> | void; choosesCount: (item: string) => Promise<void> | void }
-  recorded: { deleted: (path: string) => void }
-  pointed: { deleted: (path: string) => void }
+  recorded: { deleted?: (path: string) => void; onDelete?: (path: string) => void }
+  pointed: { deleted?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { reveals: (path: string) => void }
   plexes: () => { travel: (path: string) => Promise<void> | void; leaves: (from: string, to: string) => Promise<void> | void }
   agents: () => { asks: (text: string) => void }
@@ -112,8 +112,8 @@ export function useCommands(options: CommandsDepsOptions) {
       deletesTranscript: async (path) => {
         const able = await running.deletesTranscript(path)
         if (able) {
-          recorded.deleted(path)
-          pointed.deleted(path)
+          ;(recorded.onDelete ?? recorded.deleted)?.(path)
+          ;(pointed.onDelete ?? pointed.deleted)?.(path)
         }
         void carrying(path)
         return able
@@ -178,7 +178,7 @@ export function useCommands(options: CommandsDepsOptions) {
     told(commands.refused(id, at), 'refusal')
   }
 
-  const asked = (event: KeyboardEvent) => {
+  const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (held.presses(event)) return event.preventDefault()
     if (!chorded(event)) return
@@ -187,6 +187,7 @@ export function useCommands(options: CommandsDepsOptions) {
     event.preventDefault()
     carries(command, where())
   }
+  const asked = onKeyDown
 
   return {
     palette,
@@ -194,5 +195,6 @@ export function useCommands(options: CommandsDepsOptions) {
     doing,
     carries,
     asked,
+    onKeyDown,
   }
 }
