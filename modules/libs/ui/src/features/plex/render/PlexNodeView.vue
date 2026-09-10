@@ -37,6 +37,7 @@ import {
   type Position,
 } from '../node'
 
+// --- Props & Emits ---
 const props = withDefaults(
   defineProps<{
     node: PlacedNode
@@ -44,14 +45,12 @@ const props = withDefaults(
     gestureRole?: GestureRole
     /**
      * The box it widens to while the attention rests on it, and nothing where
-     * it has no more of its title to show. How wide the whole title runs, and
-     * how much window there is to grow into, are the picture's to work out.
+     * it has no more of its title to show.
      */
     wide?: WideBox | null
     /**
      * The parts it hangs under its box while the attention rests, and nothing
-     * for a node with none. What they are and what choosing one does are the
-     * caller's.
+     * for a node with none.
      */
     hung?: HungParts | null
     /** How long the attention rests before it widens. Milliseconds. */
@@ -111,157 +110,54 @@ const group = useTemplateRef<SVGGElement>('group')
 /** The keyboard put back on this node by whoever took it away. */
 defineExpose({ focus: () => group.value?.focus() })
 
-const over = ref(false)
-const attended = ref(false)
+// --- State ---
+const isOver = ref(false)
+const isAttended = ref(false)
 
 const slots = useSlots()
 
-/** Whether anything was drawn at all, which a placeholder and a blank are not. */
-const anything = (drawn: readonly VNode[] | undefined): boolean =>
-  !!drawn &&
-  drawn.some((one) => {
-    if (one.type === Comment) return false
-    if (one.type === Fragment) return anything(one.children as VNode[])
-    if (one.type === Text) return String(one.children).trim() !== ''
-    return true
-  })
-
 /**
- * Whether this node is drawn something before its title. The caller answers
- * per node, and a node it draws nothing for keeps no room beside its title.
+ * Whether this node is drawn something before its title.
  */
-const icon = computed(() => anything(slots.icon?.({ node: props.node })))
+const hasIcon = computed(() => hasAnything(slots.icon?.({ node: props.node })))
 
 /** Not a node yet, so nothing may be done to it and nothing is told about it. */
-const ghost = computed(() => props.gestureRole === 'ghost')
+const isGhost = computed(() => props.gestureRole === 'ghost')
 
 /** One predicate: the same rule decides the click and the name. */
-const reachable = computed(() => !ghost.value && isReachable(props.node))
+const canReach = computed(() => !isGhost.value && isReachable(props.node))
 
 /** Where the keyboard stops: the focus too, and nothing on its way in or out. */
-const stop = computed(() => !ghost.value && isStop(props.node))
+const canStop = computed(() => !isGhost.value && isStop(props.node))
 
 /** The focus is announced although it cannot be chosen: it is where you are. */
-const announced = computed(
-  () => reachable.value || (!ghost.value && props.node.seat === 'focus'),
+const isAnnounced = computed(
+  () => canReach.value || (!isGhost.value && props.node.seat === 'focus'),
 )
-
-const activate = () => {
-  if (reachable.value) emit('activate')
-}
-
-/**
- * Asking for the node itself, which every node that is really there answers —
- * the focus included, as it answers a menu.
- */
-const show = (modified: boolean) => {
-  if (stop.value) emit('show', showingOf(modified))
-}
-
-/**
- * What this node listens for beyond the handle, and whether it draws one.
- * Which of the two a reader gets is the plex's to choose.
- */
-const listening = joined(
-  props.reaching.listeners({
-    ready: () => !ghost.value && props.gestureRole === 'open',
-    reach: (event: PointerEvent) => emit('reach', event),
-  }),
-  props.showing.listeners({
-    ready: () => stop.value,
-    show: (modified: boolean) => show(modified),
-  }),
-)
-
-/** The middle of the node, for a press, which carries no point of its own. */
-const middleOf = (element: SVGGElement): Position => {
-  const box = element.getBoundingClientRect()
-  return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
-}
-
-/** The webview draws a menu of its own over whatever does not refuse it. */
-const onContextMenu = (event: MouseEvent) => {
-  if (ghost.value) return
-  event.preventDefault()
-  emit('menu', { x: event.clientX, y: event.clientY }, 'pointer')
-}
-
-const onKey = (event: KeyboardEvent) => {
-  if (isMenuKey(event)) {
-    if (ghost.value) return
-    event.preventDefault()
-    const box = group.value
-    if (box) emit('menu', middleOf(box), 'keyboard')
-    return
-  }
-  if (isShowKey(event)) {
-    event.preventDefault()
-    show(event.altKey)
-    return
-  }
-  if (!isPress(event)) return
-  event.preventDefault()
-  activate()
-}
-
-/**
- * Whether the keyboard is visibly on an element, which the browser works out
- * from how the focus got there. Where there is no such state, the answer is no.
- */
-const keyboardOn = (element: Element) => {
-  try {
-    return element.matches(':focus-visible')
-  } catch {
-    // A browser that does not know the selector cannot say the keyboard is on
-    // it, and no is the answer that draws nothing extra.
-    return false
-  }
-}
-
-/**
- * Where the attention is: the keyboard counts while it is the thing in use.
- * `focusout` carries where the focus went, so moving from the node onto its
- * own handle is not leaving.
- */
-const attend = (event: FocusEvent) => {
-  const within = event.currentTarget as Element
-  if (event.type === 'focusout') {
-    const next = event.relatedTarget as Node | null
-    attended.value = !!(next && within.contains(next))
-    return
-  }
-  attended.value = keyboardOn(event.target as Element)
-}
 
 /**
  * When there is a handle to press. Under the hand, or under the keyboard while
- * the keyboard is what is being used, or held there for as long as the gesture
- * that left from it lasts. A node on its way in or out offers nothing: it is
- * about to be somewhere else.
+ * the keyboard is what is being used.
  */
-const offering = computed(
+const isOffering = computed(
   () =>
     props.reaching.handle &&
     props.node.opacity >= 1 &&
     (props.gestureRole === 'source' ||
-      (props.gestureRole === 'open' && (over.value || attended.value))),
+      (props.gestureRole === 'open' && (isOver.value || isAttended.value))),
 )
 
 /** Whether there is anything to open: more of the title, or parts to hang. */
-const opens = computed(() => !!props.wide || !!props.hung)
+const canOpen = computed(() => !!props.wide || !!props.hung)
 
 /**
- * What the attention is on, and where that stands. A box that moves under the
- * hand is somewhere else, and is settled on afresh.
- *
- * A gesture is under way at every role but `open`, and nothing widens
- * while one is.
+ * What the attention is on, and where that stands.
  */
 const under = computed(() =>
-  opens.value &&
+  canOpen.value &&
   props.node.opacity >= 1 &&
   props.gestureRole === 'open' &&
-  (over.value || attended.value)
+  (isOver.value || isAttended.value)
     ? `${props.node.x} ${props.node.y}`
     : null,
 )
@@ -287,14 +183,133 @@ const handle = computed(() => {
 
 /**
  * One hue per seat, from a token named after it.
- *
- * There is no token for the focus, so on it this resolves to nothing and every
- * rule that reads the hue takes its fallback — which is how the focus comes to
- * wear its own colours rather than a seat's.
  */
 const hue = computed(() => ({
   '--numen-seat-hue': `var(--numen-seat-${props.node.seat})`,
 }))
+
+/**
+ * What this node listens for beyond the handle, and whether it draws one.
+ */
+const listening = joined(
+  props.reaching.listeners({
+    ready: () => !isGhost.value && props.gestureRole === 'open',
+    reach: (event: PointerEvent) => emit('reach', event),
+  }),
+  props.showing.listeners({
+    ready: () => canStop.value,
+    show: (modified: boolean) => showNode(modified),
+  }),
+)
+
+// --- Handlers ---
+function onClick(): void {
+  activateNode()
+}
+
+function onDoubleClick(event: MouseEvent): void {
+  if (props.showing.doubleClick) {
+    showNode(event.altKey)
+  }
+}
+
+function onContextMenu(event: MouseEvent): void {
+  if (isGhost.value) return
+  event.preventDefault()
+  emit('menu', { x: event.clientX, y: event.clientY }, 'pointer')
+}
+
+function onKeyDown(event: KeyboardEvent): void {
+  if (isMenuKey(event)) {
+    if (isGhost.value) return
+    event.preventDefault()
+    const element = group.value
+    if (element) emit('menu', getMiddleOf(element), 'keyboard')
+    return
+  }
+  if (isShowKey(event)) {
+    event.preventDefault()
+    showNode(event.altKey)
+    return
+  }
+  if (!isPress(event)) return
+  event.preventDefault()
+  activateNode()
+}
+
+function onPointerEnter(): void {
+  isOver.value = true
+}
+
+function onPointerLeave(): void {
+  isOver.value = false
+}
+
+function onFocusIn(event: FocusEvent): void {
+  updateAttendance(event)
+}
+
+function onFocusOut(event: FocusEvent): void {
+  updateAttendance(event)
+}
+
+function onPartEnter(part: string): void {
+  emit('enter', part)
+}
+
+function onHandleReach(event: PointerEvent): void {
+  emit('reach', event)
+}
+
+function onHandleAsk(): void {
+  emit('ask')
+}
+
+// --- Helpers ---
+function activateNode(): void {
+  if (canReach.value) emit('activate')
+}
+
+function showNode(modified: boolean): void {
+  if (canStop.value) emit('show', showingOf(modified))
+}
+
+/** Whether anything was drawn at all, which a placeholder and a blank are not. */
+function hasAnything(drawn: readonly VNode[] | undefined): boolean {
+  return (
+    !!drawn &&
+    drawn.some((one) => {
+      if (one.type === Comment) return false
+      if (one.type === Fragment) return hasAnything(one.children as VNode[])
+      if (one.type === Text) return String(one.children).trim() !== ''
+      return true
+    })
+  )
+}
+
+/** The middle of the node, for a press, which carries no point of its own. */
+function getMiddleOf(element: SVGGElement): Position {
+  const box = element.getBoundingClientRect()
+  return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+}
+
+function isKeyboardOn(element: Element): boolean {
+  try {
+    return element.matches(':focus-visible')
+  } catch {
+    return false
+  }
+}
+
+function updateAttendance(event: FocusEvent): void {
+  const within = event.currentTarget as Element
+  if (event.type === 'focusout') {
+    const next = event.relatedTarget as Node | null
+    isAttended.value = !!(next && within.contains(next))
+    return
+  }
+  isAttended.value = isKeyboardOn(event.target as Element)
+}
 </script>
 
 <template>
@@ -304,20 +319,20 @@ const hue = computed(() => ({
     :style="hue"
     :transform="`translate(${node.x} ${node.y})`"
     :opacity="node.opacity"
-    :tabindex="stop ? 0 : -1"
-    :aria-hidden="announced ? undefined : 'true'"
-    :role="ghost ? undefined : node.seat === 'focus' ? 'img' : 'button'"
+    :tabindex="canStop ? 0 : -1"
+    :aria-hidden="isAnnounced ? undefined : 'true'"
+    :role="isGhost ? undefined : node.seat === 'focus' ? 'img' : 'button'"
     :class="[`plex__node--${node.seat}`, `plex__node--${gestureRole}`]"
-    :aria-label="ghost ? undefined : nameOf(node)"
-    @click="activate"
-    @dblclick="showing.doubleClick && show($event.altKey)"
+    :aria-label="isGhost ? undefined : nameOf(node)"
+    @click="onClick"
+    @dblclick="onDoubleClick"
     @contextmenu="onContextMenu"
-    @keydown="onKey"
+    @keydown="onKeyDown"
     v-on="listening"
-    @pointerenter="over = true"
-    @pointerleave="over = false"
-    @focusin="attend"
-    @focusout="attend"
+    @pointerenter="onPointerEnter"
+    @pointerleave="onPointerLeave"
+    @focusin="onFocusIn"
+    @focusout="onFocusOut"
   >
     <rect
       class="plex__box"
@@ -332,10 +347,10 @@ const hue = computed(() => ({
       :width="box.width"
       :height="node.height"
     >
-      <div class="plex__title" :class="{ 'caps-numen': ghost }">
+      <div class="plex__title" :class="{ 'caps-numen': isGhost }">
         <!-- Whatever stands for the thing a node addresses. The plex has no
              way to know what that is, so it is handed one. -->
-        <span v-if="icon" class="plex__icon" aria-hidden="true">
+        <span v-if="hasIcon" class="plex__icon" aria-hidden="true">
           <slot name="icon" :node="node" />
         </span>
         <span class="plex__title-text">{{ node.title }}</span>
@@ -346,16 +361,16 @@ const hue = computed(() => ({
       v-if="hung"
       :hung="hung"
       :open="open"
-      @enter="emit('enter', $event)"
+      @enter="onPartEnter"
     />
 
     <!-- Reach out from here to make something. Under the hand or under the
          keyboard, so it is there when wanted and out of the way when not. -->
     <PlexNodeHandle
-      v-if="offering"
+      v-if="isOffering"
       :at="handle"
-      @reach="emit('reach', $event)"
-      @ask="emit('ask')"
+      @reach="onHandleReach"
+      @ask="onHandleAsk"
     />
   </g>
 </template>
