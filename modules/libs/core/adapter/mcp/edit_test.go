@@ -9,9 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// The stretch named is replaced and the rest of the note is the bytes it was,
+// The span named is replaced and the rest of the note is the bytes it was,
 // which is the whole reason for a tool that is not `note_rewrite`.
-func TestEditingANoteChangesOnlyTheStretchNamed(t *testing.T) {
+func TestEditingANoteChangesOnlyTheSpanNamed(t *testing.T) {
 	v, core := built(t, map[string]string{
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
 	})
@@ -35,16 +35,16 @@ func TestEditingANoteChangesOnlyTheStretchNamed(t *testing.T) {
 	}
 	body := onDisk(t, v, "Aggressor.md")
 	if !strings.Contains(body, "An axe is named.") {
-		t.Errorf("the stretch was not replaced:\n%s", body)
+		t.Errorf("the span was not replaced:\n%s", body)
 	}
 	if !strings.Contains(body, "And nothing else.\n") {
 		t.Errorf("what was not named changed:\n%s", body)
 	}
 }
 
-// A stretch standing twice is refused, and the refusal says how many places
+// A span standing twice is refused, and the refusal says how many places
 // there are rather than picking one.
-func TestEditingRefusesAStretchThatStandsTwice(t *testing.T) {
+func TestEditingRefusesASpanThatStandsTwice(t *testing.T) {
 	_, core := built(t, map[string]string{
 		"Aggressor.md": "A foe advances.\n\nAnother foe advances.\n",
 	})
@@ -59,7 +59,7 @@ func TestEditingRefusesAStretchThatStandsTwice(t *testing.T) {
 	}
 }
 
-// A stretch that is not there is refused with what the note holds in its place,
+// A span that is not there is refused with what the note holds in its place,
 // so the next attempt is not the same guess again.
 func TestEditingSaysWhatTheNoteHoldsInstead(t *testing.T) {
 	_, core := built(t, map[string]string{
@@ -77,8 +77,8 @@ func TestEditingSaysWhatTheNoteHoldsInstead(t *testing.T) {
 }
 
 // Quotes and dashes a person's editor wrote are not what a program reproduces.
-// The stretch is found, and the answer says the reading was a loose one.
-func TestEditingFindsAStretchWhosePunctuationDiffers(t *testing.T) {
+// The span is found, and the answer says the reading was a loose one.
+func TestEditingFindsASpanWhosePunctuationDiffers(t *testing.T) {
 	v, core := built(t, map[string]string{
 		"Aggressor.md": "Он сказал «да» — и ушёл.\n",
 	})
@@ -105,7 +105,7 @@ func TestEditingFindsAStretchWhosePunctuationDiffers(t *testing.T) {
 
 // An empty replacement takes the text out, which is one operation and not a
 // second tool.
-func TestEditingWithNothingTakesTheStretchOut(t *testing.T) {
+func TestEditingWithNothingTakesTheSpanOut(t *testing.T) {
 	v, core := built(t, map[string]string{"Aggressor.md": "one two three\n"})
 	s := connectedTo(t, core)
 
@@ -182,7 +182,7 @@ func TestARefusedEditIsStillEnded(t *testing.T) {
 	}
 }
 
-// A note written whole is drawn as the stretch that changed, so a person sees
+// A note written whole is drawn as the span that changed, so a person sees
 // the change and not the note.
 func TestWritingANoteWholeTellsTheWindowOnlyWhatChanged(t *testing.T) {
 	s, looking := watched(t, map[string]string{
@@ -205,14 +205,14 @@ func TestWritingANoteWholeTellsTheWindowOnlyWhatChanged(t *testing.T) {
 		t.Errorf("what goes in is %q, wanted only what changed", began.Text)
 	}
 	if began.To-began.From != len("A hedgehog") {
-		t.Errorf("the stretch is %d bytes, wanted the ten that changed", began.To-began.From)
+		t.Errorf("the span is %d bytes, wanted the ten that changed", began.To-began.From)
 	}
 }
 
 // A note that is not ASCII is where counting in bytes and counting the way a
-// client counts part company, and a stretch named in bytes is drawn over the
+// client counts part company, and a span named in bytes is drawn over the
 // wrong words.
-func TestTheStretchIsCountedTheWayAClientCountsText(t *testing.T) {
+func TestTheSpanIsCountedTheWayAClientCountsText(t *testing.T) {
 	s, looking := watched(t, map[string]string{
 		"Aggressor.md": "Он сказал да.\n",
 	})
@@ -227,7 +227,7 @@ func TestTheStretchIsCountedTheWayAClientCountsText(t *testing.T) {
 	began := looking.drawn[0]
 	// "Он " is three characters and four bytes.
 	if began.From != 3 || began.To != 9 {
-		t.Errorf("the stretch is %d..%d, wanted 3..9", began.From, began.To)
+		t.Errorf("the span is %d..%d, wanted 3..9", began.From, began.To)
 	}
 }
 

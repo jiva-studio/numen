@@ -19,7 +19,7 @@ func (c changing) replace() note.Replace {
 }
 
 // What is asked for is replaced, and what is not asked for is the bytes it was.
-func TestOnlyTheStretchAskedForIsReplaced(t *testing.T) {
+func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
@@ -77,18 +77,18 @@ func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 	}
 }
 
-// A stretch standing twice does not say which was meant, and guessing at one
+// A span standing twice does not say which was meant, and guessing at one
 // is how the wrong half of a note is rewritten.
-func TestAStretchStandingTwiceIsRefused(t *testing.T) {
+func TestASpanStandingTwiceIsRefused(t *testing.T) {
 	t.Parallel()
 	was := "A foe advances.\n\nAnother foe advances.\n"
 	c := changeable(t, map[string]string{"Aggressor.md": was})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"foe advances", "foe retreats", domain.Fingerprint{})
-	var ambiguous note.AmbiguousStretch
+	var ambiguous note.AmbiguousSpan
 	if !errors.As(err, &ambiguous) {
-		t.Fatalf("want AmbiguousStretch, got %v", err)
+		t.Fatalf("want AmbiguousSpan, got %v", err)
 	}
 	if ambiguous.Places != 2 {
 		t.Errorf("counted %d places", ambiguous.Places)
@@ -98,17 +98,17 @@ func TestAStretchStandingTwiceIsRefused(t *testing.T) {
 	}
 }
 
-// A stretch that is not there is answered with where a copy of it stopped
+// A span that is not there is answered with where a copy of it stopped
 // agreeing, which is what tells a caller its copy is one character out.
-func TestAStretchThatIsNotThereSaysWhereItDiverged(t *testing.T) {
+func TestASpanThatIsNotThereSaysWhereItDiverged(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"the wrath of the retreating foe", "nothing", domain.Fingerprint{})
-	var nowhere note.MissingStretch
+	var nowhere note.MissingSpan
 	if !errors.As(err, &nowhere) {
-		t.Fatalf("want MissingStretch, got %v", err)
+		t.Fatalf("want MissingSpan, got %v", err)
 	}
 	if !strings.HasPrefix(nowhere.Matched, "the wrath of the ") {
 		t.Errorf("what matched is reported as %q", nowhere.Matched)

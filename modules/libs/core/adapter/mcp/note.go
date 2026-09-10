@@ -251,7 +251,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			"names. This " +
 			"answers with the fingerprint it produced: pass that one to write the same " +
 			"note again without reading it back. To change part of a note, `note_edit` " +
-			"replaces one stretch and leaves the rest untouched; this is for a note being " +
+			"replaces one span and leaves the rest untouched; this is for a note being " +
 			"rewritten, or one short enough that rewriting it is the plainer thing — under " +
 			"about 800 characters it usually is.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
@@ -286,14 +286,14 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_edit",
 		Title: "Edit a note",
-		Description: "Replace one stretch of a note's prose with another and leave the " +
-			"rest of it the bytes it was. `match` is that stretch as `note_read` gave it " +
+		Description: "Replace one span of a note's prose with another and leave the " +
+			"rest of it the bytes it was. `match` is that span as `note_read` gave it " +
 			"to you, and it must stand in exactly one place: where it stands twice, take " +
 			"in enough of what surrounds one of them to tell it from the others. Quotes, " +
-			"dashes and spacing may differ from what the note has and the stretch is " +
+			"dashes and spacing may differ from what the note has and the span is " +
 			"still found; the answer says so, and says what the note held. Reach for this " +
 			"before `note_rewrite` for anything short of rewriting a note — it costs you the " +
-			"stretch instead of the whole note, and it cannot change a word you did not " +
+			"span instead of the whole note, and it cannot change a word you did not " +
 			"name. The fingerprint from `note_read` is required, and an edit lands only on " +
 			"the note that fingerprint names. It answers with the fingerprint it produced.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
@@ -305,13 +305,13 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
 		Match       string `json:"match" jsonschema:"the text that was replaced, as the note had it"`
-		Loose       bool   `json:"loose,omitempty" jsonschema:"the stretch was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
+		Loose       bool   `json:"loose,omitempty" jsonschema:"the span was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
 	}, error) {
 		type out = struct {
 			Path        string `json:"path"`
 			Fingerprint string `json:"fingerprint"`
 			Match       string `json:"match" jsonschema:"the text that was replaced, as the note had it"`
-			Loose       bool   `json:"loose,omitempty" jsonschema:"the stretch was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
+			Loose       bool   `json:"loose,omitempty" jsonschema:"the span was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
 		}
 		seen, err := parseFingerprint(in.Fingerprint)
 		if err != nil {
@@ -321,7 +321,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		// What stood there is answered because a stretch found by a looser
+		// What stood there is answered because a span found by a looser
 		// reading is not the text that was asked for.
 		return nil, out{
 			Path:        in.Path,
