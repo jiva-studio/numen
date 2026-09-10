@@ -11,7 +11,7 @@ import { ref } from 'vue'
 import { runSupport, type RunSupport } from './runs'
 import type { CommandTarget } from './target'
 import type { NoteLookup, PaletteLists, StepGroup } from './lists'
-import { commandPalette } from './palette'
+import { useCommandPalette } from './palette'
 import type { VaultList, Vault } from '../vaults'
 import type { NameMatch } from './search'
 import { WORDS as words } from '../words'
@@ -111,7 +111,7 @@ const asking = (
   }
   const window = held()
   const kept = holding(offers)
-  const commands = commandPalette(
+  const commands = useCommandPalette(
     core,
     words,
     () => at.value,
@@ -775,7 +775,7 @@ describe('a command that asks for a note', () => {
   it('says the vault could not answer, in the window’s own words', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const at = ref(front())
-    const commands = commandPalette(
+    const commands = useCommandPalette(
       {
         names: async () => Promise.reject(new Error('no model is set')),
         vaults: async () => installation(),
@@ -1072,7 +1072,7 @@ describe('a command that asks for a vault', () => {
   it('says the list could not be asked, in the window’s own words', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const at = ref(front())
-    const commands = commandPalette(
+    const commands = useCommandPalette(
       {
         names: async () => [],
         vaults: async () => Promise.reject(new Error('the list is not there')),

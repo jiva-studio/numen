@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  search,
+  useSearch,
   type SearchDeps,
   type NameMatch,
   type Passage,
@@ -97,7 +97,7 @@ const groupOf = (groups: readonly { id: string }[], id: string) =>
 describe('asking', () => {
   it('draws no group at all until something is typed', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     expect(palette.groups.value).toHaveLength(0)
     expect(vault.queries).toHaveLength(0)
@@ -105,7 +105,7 @@ describe('asking', () => {
 
   it('asks all three questions at once, about what was typed', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -117,7 +117,7 @@ describe('asking', () => {
 
   it('asks about the words and not about the spaces around them', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     void palette.typing('  ent  ')
     await settled()
@@ -127,7 +127,7 @@ describe('asking', () => {
 
   it('asks nothing at all once what was typed is taken back', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -142,7 +142,7 @@ describe('asking', () => {
 describe('answers arriving', () => {
   it('fills each group on its own, while the others are still out', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -158,7 +158,7 @@ describe('answers arriving', () => {
 
   it('drops an answer to a question nobody is asking any more', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -177,7 +177,7 @@ describe('answers arriving', () => {
 
   it('says a group could not be asked in the window’s own words, and fills the others', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -193,7 +193,7 @@ describe('answers arriving', () => {
 
   it('says nothing of a group that was asked and came back with nothing', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -208,7 +208,7 @@ describe('answers arriving', () => {
   it('says the vault holds no vectors, where meaning came back with nothing', async () => {
     const vault = asking()
     const read = { chunks: 4, embedded: 0, embedding: true }
-    const palette = search(vault.core, WORDS, { wait: now, coverage: () => read })
+    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => read })
 
     void palette.typing('ent')
     await settled()
@@ -225,7 +225,7 @@ describe('answers arriving', () => {
   it('says nothing reads the vault for meaning, where nothing is set to', async () => {
     const vault = asking()
     const read = { chunks: 4, embedded: 0, embedding: false }
-    const palette = search(vault.core, WORDS, { wait: now, coverage: () => read })
+    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => read })
 
     void palette.typing('ent')
     await settled()
@@ -237,7 +237,7 @@ describe('answers arriving', () => {
 
   it('lets go of everything when the palette is put away', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     palette.shows(true)
     void palette.typing('ent')
@@ -256,7 +256,7 @@ describe('answers arriving', () => {
 describe('where a thing found takes the person', () => {
   const filled = async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -305,7 +305,7 @@ describe('where a thing found takes the person', () => {
 
   it('opens a passage as the note it was read out of, on the line it stands on', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -331,7 +331,7 @@ describe('where a thing found takes the person', () => {
 describe('what a key reaches, per kind of thing found', () => {
   it('offers the plex first for a name and the note first for a place', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -353,7 +353,7 @@ describe('what a key reaches, per kind of thing found', () => {
 describe('a passage from something that is not a note', () => {
   it('offers the document, opened where the words were found', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('war')
     await settled()
 
@@ -394,7 +394,7 @@ describe('a passage from something that is not a note', () => {
 describe('what a row is drawn as', () => {
   it('says what kind each name found is', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -417,7 +417,7 @@ describe('what a row is drawn as', () => {
 
   it('draws a heading as the note it stands in', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -432,7 +432,7 @@ describe('what a row is drawn as', () => {
 
   it('draws a passage as the note it was read out of', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -454,7 +454,7 @@ describe('what a row is drawn as', () => {
 
   it('says what the vault holds where a passage was read out of', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -471,7 +471,7 @@ describe('what a row is drawn as', () => {
 
   it('says a name stands in a note, whatever kind of note it is', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -484,7 +484,7 @@ describe('what a row is drawn as', () => {
 
   it('says nothing about an item it is not drawing', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     expect(palette.typeOf('notes/entropy.md')).toBeNull()
     expect(palette.kindOf('notes/entropy.md')).toBeNull()
   })
@@ -493,7 +493,7 @@ describe('what a row is drawn as', () => {
 describe('a group landing under the keyboard', () => {
   it('names a passage by where it stands in the vault, not by where it stands in the list', async () => {
     const vault = asking()
-    const palette = search(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
     void palette.typing('war')
     await settled()
 

@@ -34,7 +34,7 @@ const HOLD = 120
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
-export function commandPalette(
+export function useCommandPalette(
   core: CommandsDeps,
   words: Words,
   at: () => CommandTarget,
@@ -345,18 +345,19 @@ export function commandPalette(
   }
 
   /** The commands are opened, or put away and every step let go of. */
-  const shows = (now: boolean) => {
+  const setOpen = (now: boolean) => {
     lights('')
     open.value = now
     drop()
     typed.value = ''
     steps.value = []
   }
+  const shows = setOpen
 
   /** Escape: the step goes, and the commands go with it at the list itself. */
   const leaves = () => {
     if (here.value) return pops()
-    shows(false)
+    setOpen(false)
   }
 
   /**
@@ -369,7 +370,7 @@ export function commandPalette(
       pops()
       return false
     }
-    shows(false)
+    setOpen(false)
     return true
   }
 
@@ -383,6 +384,7 @@ export function commandPalette(
     placeholder,
     typing,
     lights,
+    setOpen,
     shows,
     asks,
     refused,
@@ -395,4 +397,4 @@ export function commandPalette(
 }
 
 /** The commands of one window, over whatever is in front of the person. */
-export type Commands = ReturnType<typeof commandPalette>
+export type Commands = ReturnType<typeof useCommandPalette>

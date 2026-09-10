@@ -4,8 +4,8 @@
 import type { Ref } from 'vue'
 import { chorded, commandFor } from '../shared/command/chords'
 import { does } from '../shared/command/handlers'
-import { commandPalette } from '../shared/command/palette'
-import { search } from '../shared/command/search'
+import { useCommandPalette } from '../shared/command/palette'
+import { useSearch } from '../shared/command/search'
 import type { CommandTarget, VaultRef } from '../shared/command/target'
 import { vaults } from './vault'
 import { running } from '../shared/artifacts'
@@ -81,8 +81,8 @@ export function useCommands(options: CommandsDepsOptions) {
     told,
   } = options
 
-  const palette = search(core, words, { coverage })
-  const commands = commandPalette(core, words, where, knows, kept, runs)
+  const palette = useSearch(core, words, { coverage })
+  const commands = useCommandPalette(core, words, where, knows, kept, runs)
 
   const doing: CommandDeps = {
     files: {

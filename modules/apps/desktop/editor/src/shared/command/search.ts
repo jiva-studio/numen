@@ -163,7 +163,7 @@ export interface SearchOptions {
   coverage?(): IndexCoverage
 }
 
-export function search(core: SearchDeps, words: Words, how: SearchOptions = {}) {
+export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
   const wait = how.wait ?? sleep
   const coverage = how.coverage
   /** Whether the palette is drawn at all. */
@@ -248,13 +248,14 @@ export function search(core: SearchDeps, words: Words, how: SearchOptions = {}) 
   }
 
   /** The palette is opened, or put away and everything it held let go of. */
-  const shows = (now: boolean) => {
+  const setOpen = (now: boolean) => {
     open.value = now
     if (now) return
     asks.drop()
     typed.value = ''
     drop()
   }
+  const shows = setOpen
 
   /**
    * A name found is a thing, so it opens in the plex; a heading and a passage
@@ -421,8 +422,8 @@ export function search(core: SearchDeps, words: Words, how: SearchOptions = {}) 
       : { at: 'file', ...named }
   }
 
-  return { open, typed, groups, typing, shows, chose, typeOf, kindOf }
+  return { open, typed, groups, typing, setOpen, shows, chose, typeOf, kindOf }
 }
 
 /** The search of one window: what the words typed turn up, and where each goes. */
-export type SearchState = ReturnType<typeof search>
+export type SearchState = ReturnType<typeof useSearch>
