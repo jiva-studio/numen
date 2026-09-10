@@ -21,7 +21,7 @@ export interface ConflictRaiser {
   raise(one: Conflict): () => void
 }
 
-export function raisesConflicts(notes: Notes, going: ConflictRaiser) {
+export function raiseConflicts(notes: Notes, going: ConflictRaiser) {
   const raised = new Map<string, () => void>()
 
   watch(

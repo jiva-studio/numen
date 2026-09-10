@@ -58,7 +58,7 @@ export const conflictIn = (state: string): FileConflict =>
  * open: the person asked for it to go. A conflict is: the text is still here,
  * and nothing but the person decides where it goes.
  */
-export function flushing(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
+export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
   const handlers = new Set<FlushHandler>()
   let open = true
   const listening = new AbortController()

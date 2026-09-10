@@ -10,8 +10,8 @@ import { noteChanges } from '../note-tab/changes'
 import { openNotes } from '../note-tab/notes'
 import { noteMaker } from '../note-tab/maker'
 import { useNoteTab } from '../note-tab/kind'
-import { flushing } from '../shared/saving/flushing'
-import { raisesConflicts } from '../shared/saving/conflicts'
+import { useFileFlush } from '../shared/saving/flushing'
+import { raiseConflicts } from '../shared/saving/conflicts'
 import { reaching, type Store } from '../shared/command/deps'
 import type { Core } from '../shared/core'
 import type { MessageLog } from '../shared/notices/messages'
@@ -42,15 +42,15 @@ export function openEditing({ core, log, puts, held, day }: EditingDeps) {
     day,
   )
 
-  const going = flushing(core)
+  const going = useFileFlush(core)
   going.holds(notes.flush)
   going.holds(decks.flush)
   going.holds(stencils.flush)
   going.holds(schedules.flush)
 
-  raisesConflicts(notes, going)
-  raisesConflicts(decks, going)
-  raisesConflicts(stencils, going)
+  raiseConflicts(notes, going)
+  raiseConflicts(decks, going)
+  raiseConflicts(stencils, going)
 
   const stores: readonly Store[] = [noted.kept, decks.kept, stencils.kept]
   const reached = reaching(stores, puts)

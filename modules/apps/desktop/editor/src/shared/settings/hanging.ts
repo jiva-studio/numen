@@ -58,7 +58,7 @@ export interface HangingDeps {
 const ladder = (least: number, most: number): readonly number[] =>
   Array.from({ length: Math.max(0, most - least + 1) }, (_, at) => least + at)
 
-export function hanging(core: HangingDeps, words: Words, said: MessageWriter) {
+export function useHangingSetting(core: HangingDeps, words: Words, said: MessageWriter) {
   /**
    * The two settings. They open on what an installation nobody has configured
    * does, and are asked of the vault as the window opens.

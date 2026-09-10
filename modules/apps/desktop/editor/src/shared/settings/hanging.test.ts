@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { HANGING, OFF, ON, PARTS, hanging } from './hanging'
+import { HANGING, OFF, ON, PARTS, useHangingSetting } from './hanging'
 import { writer } from '../testing/writer'
 import { WORDS as words } from '../words'
 
@@ -23,7 +23,7 @@ const vault = (held: boolean, parts = 6, refuses: string | null = null, most = 1
 describe('whether a node hangs the parts of its note', () => {
   it('opens on what the settings hold, so the list stands on what is in force', async () => {
     const core = vault(false)
-    const held = hanging(core, words, writer().says)
+    const held = useHangingSetting(core, words, writer().says)
     await held.start()
 
     const groups = held.offers()
@@ -34,7 +34,7 @@ describe('whether a node hangs the parts of its note', () => {
   })
 
   it('hangs the parts where the vault cannot be asked', async () => {
-    const held = hanging(
+    const held = useHangingSetting(
       { hanging: async () => Promise.reject(new Error('no')), choosesHanging: async () => null },
       words,
       writer().says,
@@ -46,7 +46,7 @@ describe('whether a node hangs the parts of its note', () => {
   })
 
   it('says which of the two is the one in force, and nothing beside the other', async () => {
-    const held = hanging(vault(true), words, writer().says)
+    const held = useHangingSetting(vault(true), words, writer().says)
     await held.start()
 
     const items = held.offers().flatMap((group) => group.items)
@@ -56,7 +56,7 @@ describe('whether a node hangs the parts of its note', () => {
 
   it('writes the row chosen and stands on it', async () => {
     const core = vault(true)
-    const held = hanging(core, words, writer().says)
+    const held = useHangingSetting(core, words, writer().says)
     await held.start()
 
     await held.chooses(OFF)
@@ -67,7 +67,7 @@ describe('whether a node hangs the parts of its note', () => {
 
   it('writes nothing for the row already in force', async () => {
     const core = vault(true)
-    const held = hanging(core, words, writer().says)
+    const held = useHangingSetting(core, words, writer().says)
     await held.start()
 
     await held.chooses(ON)
@@ -77,7 +77,7 @@ describe('whether a node hangs the parts of its note', () => {
 
   it('writes nothing for a row it does not offer', async () => {
     const core = vault(true)
-    const held = hanging(core, words, writer().says)
+    const held = useHangingSetting(core, words, writer().says)
     await held.start()
 
     await held.chooses('interfaceScale:1.5')
@@ -89,7 +89,7 @@ describe('whether a node hangs the parts of its note', () => {
   it('goes back to what the settings hold where the setting could not be written', async () => {
     const core = vault(true, 6, 'unreadable')
     const told = writer()
-    const held = hanging(core, words, told.says)
+    const held = useHangingSetting(core, words, told.says)
     await held.start()
 
     await held.chooses(OFF)
@@ -101,7 +101,7 @@ describe('whether a node hangs the parts of its note', () => {
 
 describe('how many parts stand under a node', () => {
   it('offers a ladder from one end of the setting to the other', async () => {
-    const held = hanging(vault(true, 4), words, writer().says)
+    const held = useHangingSetting(vault(true, 4), words, writer().says)
     await held.start()
 
     const groups = held.counts()
@@ -113,7 +113,7 @@ describe('how many parts stand under a node', () => {
   })
 
   it('marks the count in force, and says nothing beside the rest', async () => {
-    const held = hanging(vault(true, 4), words, writer().says)
+    const held = useHangingSetting(vault(true, 4), words, writer().says)
     await held.start()
 
     const items = held.counts().flatMap((group) => group.items)
@@ -124,7 +124,7 @@ describe('how many parts stand under a node', () => {
 
   it('writes the count chosen beside the switch the window already knows', async () => {
     const core = vault(false, 6)
-    const held = hanging(core, words, writer().says)
+    const held = useHangingSetting(core, words, writer().says)
     await held.start()
 
     await held.choosesCount('3')
@@ -136,7 +136,7 @@ describe('how many parts stand under a node', () => {
 
   it('writes nothing for the count in force, or for one it does not offer', async () => {
     const core = vault(true, 6)
-    const held = hanging(core, words, writer().says)
+    const held = useHangingSetting(core, words, writer().says)
     await held.start()
 
     await held.choosesCount('6')
@@ -150,7 +150,7 @@ describe('how many parts stand under a node', () => {
   it('goes back to what the settings hold where the count could not be written', async () => {
     const core = vault(true, 6, 'unreadable')
     const told = writer()
-    const held = hanging(core, words, told.says)
+    const held = useHangingSetting(core, words, told.says)
     await held.start()
 
     await held.choosesCount('3')
@@ -161,7 +161,7 @@ describe('how many parts stand under a node', () => {
 
   it('leaves the count out of a switch being turned', async () => {
     const core = vault(true, 4)
-    const held = hanging(core, words, writer().says)
+    const held = useHangingSetting(core, words, writer().says)
     await held.start()
 
     await held.chooses(OFF)

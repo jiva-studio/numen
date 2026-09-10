@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { openNotes } from './notes'
-import { flushing, type Conflict, type FlushDeps, type FlushResult } from '../shared/saving/flushing'
+import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from '../shared/saving/flushing'
 import type { NoteResult, Core } from '../shared/core'
 
 /** A vault that has been read and is doing nothing. */
@@ -167,7 +167,7 @@ describe('a page asked to write what it owes', () => {
     const said = stream()
     const at = fake(said.read)
     const notes = openNotes(at.core)
-    const going = flushing(at.core)
+    const going = useFileFlush(at.core)
     going.holds(notes.flush)
     void going.start()
 
@@ -189,7 +189,7 @@ describe('a page asked to write what it owes', () => {
     const said = stream()
     const at = fake(said.read)
     const notes = openNotes(at.core)
-    const going = flushing(at.core)
+    const going = useFileFlush(at.core)
     going.holds(notes.flush)
     void going.start()
 
@@ -214,7 +214,7 @@ describe('a page asked to write what it owes', () => {
     const said = stream()
     const at = fake(said.read)
     const notes = openNotes(at.core)
-    const going = flushing(at.core)
+    const going = useFileFlush(at.core)
     going.holds(notes.flush)
     void going.start()
 
@@ -233,7 +233,7 @@ describe('a page asked to write what it owes', () => {
   it('answers for a window with nothing open', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = flushing(at.core)
+    const going = useFileFlush(at.core)
     going.holds(openNotes(at.core).flush)
     void going.start()
 
@@ -248,7 +248,7 @@ describe('a page holding text the file changed under', () => {
   it('says there are conflicts outstanding, and does not say it has written', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = flushing(at.core)
+    const going = useFileFlush(at.core)
     const note = conflicted('Note.md')
     note.raise(going.raise)
     void going.start()
@@ -264,7 +264,7 @@ describe('a page holding text the file changed under', () => {
     const said = stream()
     const at = fake(said.read)
     const notes = openNotes(at.core)
-    const going = flushing(at.core)
+    const going = useFileFlush(at.core)
     going.holds(notes.flush)
     const note = conflicted('Held.md')
     note.raise(going.raise)
@@ -292,7 +292,7 @@ describe('a page holding text the file changed under', () => {
   it('says it has written once every conflict is settled', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = flushing(at.core)
+    const going = useFileFlush(at.core)
     const first = conflicted('One.md')
     const second = conflicted('Two.md')
     first.raise(going.raise)
@@ -323,7 +323,7 @@ describe('a page holding text the file changed under', () => {
   it('leaves a conflict the person put off standing, and stops drawing it', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = flushing(at.core, async () => {})
+    const going = useFileFlush(at.core, async () => {})
     conflicted('Later.md').raise(going.raise)
     void going.start()
 
@@ -349,7 +349,7 @@ describe('a page holding text the file changed under', () => {
   it('says nothing under a token the stream took with it', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = flushing(at.core, async () => {})
+    const going = useFileFlush(at.core, async () => {})
     const note = conflicted('Note.md')
     note.raise(going.raise)
     void going.start()
@@ -376,7 +376,7 @@ describe('a page holding text the file changed under', () => {
   it('raises what stands again under the token it is asked under next', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = flushing(at.core, async () => {})
+    const going = useFileFlush(at.core, async () => {})
     conflicted('Note.md').raise(going.raise)
     void going.start()
 

@@ -13,7 +13,7 @@ import {
 } from '../shared/settings/appearance'
 import { reviewSetting } from '../shared/settings/review'
 import { OFF, ON, SYNCING, syncSetting } from '../shared/settings/sync'
-import { HANGING, PARTS, hanging } from '../shared/settings/hanging'
+import { HANGING, PARTS, useHangingSetting } from '../shared/settings/hanging'
 import { settingsStore } from '../shared/settings/store'
 import { settling } from '../settings-tab/kind'
 import { createSettingsFileTabKind } from '../settings-file-tab/kind'
@@ -35,7 +35,7 @@ export interface SettingsDeps {
 
 export function useSettings({ core, words, log, held, onSizeChanged }: SettingsDeps) {
   const dayBegins = reviewSetting(core, words, log.under('reviewed'))
-  const hungParts = hanging(core, words, log.under('hanging'))
+  const hungParts = useHangingSetting(core, words, log.under('hanging'))
   const dressed = windowAppearance(themes, words, log.under('worn'))
   const oneName = syncSetting(core, words, log.under('named'))
   const rest = settingsStore(core, words, log.under('configured'))
