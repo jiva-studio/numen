@@ -339,3 +339,46 @@ high-value corrections are:
 Do not rename Go methods that implement an external interface until the
 interface is migrated in the same commit. Run `go test ./...` for every Go or
 protobuf migration; the TypeScript/Vue suite cannot validate those boundaries.
+
+### H. Systematic modeling and architectural patterns from `review.md`
+
+The review comments in `review.md` identify five systemic design flaws spanning across all desktop tab implementations:
+
+#### 1. Redundant / Over-fragmented wrapper types
+Single-use artificial wrapper types (`HighlightedPage`, `PendingWrite`, `NoteBaseline`) clutter the type system.
+- `document-tab/open.ts:22`: `HighlightedPage` `{ page: number, rects: Rect[] }` $\rightarrow$ represent highlights as `pageHighlights: Map<number, readonly Rect[]>` or optional `rects` on layout pages.
+- `note-tab/tab.ts:51`: `PendingWrite` `{ readonly body: string }` $\rightarrow$ eliminate single-field wrapper; use string or clean write request.
+- `note-tab/tab.ts:45`: `NoteBaseline` `{ prose: string, at: FilePath }` $\rightarrow$ simplify to `{ content: string, path: string }`.
+- `book-tab/open.ts:22, 39`: `SpineDocument`, `PrintedPage` $\rightarrow$ flatten and clean up fields.
+- `plex-tab/kind.ts:35` and `files-tab/kind.ts:28`: duplicate `MenuRequest` $\rightarrow$ unify or inline coordinates.
+
+#### 2. Cryptic & literary domain types and fields
+Non-standard or literary terms violate Rules 2, 6, and 9:
+- `document-tab/open.ts:44`: `interface Shape { pages, at }` $\rightarrow$ `DocumentLayout` with `path: string` instead of `at`.
+- `book-tab/open.ts:66`: `Book.at: string` $\rightarrow$ `Book.path: string`.
+- `book-tab/open.ts:33`: `BookPart.at: number` $\rightarrow$ `BookPart.offset: number`.
+- `note-tab/tab.ts:47, 65`: `at: FilePath` $\rightarrow$ `path: string`.
+- `note-tab/tab.ts:68`: `flight: PendingWrite | null` $\rightarrow$ `pendingWrite`.
+- `note-tab/tab.ts:70`: `owed: boolean` $\rightarrow$ `hasPendingWrite`.
+- `note-tab/tab.ts:75`: `gone: boolean` $\rightarrow$ `isDeleted`.
+- `note-tab/tab.ts:77`: `overtaken: boolean` $\rightarrow$ `isStale`.
+- `flashcards-preset-tab/kind.ts:99, 101, 117`: `material` $\rightarrow$ `counts`, `place` $\rightarrow$ `sliderValue`, `saying` $\rightarrow$ `errorMessage`.
+
+#### 3. God composables with bloated return surfaces & mixed naming
+Composables returning 15–20 mixed properties violate Rule 11 (Single Responsibility) and Rules 2/3/6 (imperative verbs, predicate booleans, on* handlers):
+- `document-tab/open.ts`: `useDocumentReader` returns 18 properties with mixed semantics (`highlighted` vs `highlightedOn` vs `highlight` vs `also` vs `alsoOn`).
+  - Decompose into focused composables:
+    - `useDocumentNavigation` (`currentPage`, `pageCount`, `goToPage`, `nextPage`, `previousPage`).
+    - `useDocumentViewport` (`pageImageUrl`, `setViewportWidth`).
+    - `useDocumentHighlights` (`primaryHighlights`, `secondaryHighlights`, `setHighlights`, `getHighlightsForPage`).
+- `book-tab/open.ts`: `useBookReader` returns 18 properties (`elsewhere`, `reading`, `drawn`, `at`, `go`, `reach`, `follow`). Decompose into navigation, spine loading, and highlights.
+- `NoteTabState`, `PresetTabState`, `StencilTabState`, `DeckTabState`: replace 3rd-person singular and past participle methods (`moves`, `adds`, `settles`, `shuts`, `typed`, `drew`) with standard imperative verbs (`move`, `add`, `save`, `close`, `setBody`).
+
+#### 4. Type dumps in implementation files (`kind.ts`, `open.ts`)
+Domain ports, DTOs, and component state interfaces are dumped into implementation files alongside runtime code.
+- Extract domain interfaces and contracts into dedicated `types.ts` per tab domain (`book-tab/types.ts`, `document-tab/types.ts`, `note-tab/types.ts`, `flashcards-preset-tab/types.ts`).
+
+#### 5. Narrative / philosophical comments
+Comments containing literary narration and justification violate Rule 1 ("Comments state the rule, and stop").
+- Remove narrative essays from headers in `AgentTab.vue`, `agent-tab/kind.ts`, `book-tab/open.ts`, `document-tab/open.ts`, and flashcard tabs.
+
