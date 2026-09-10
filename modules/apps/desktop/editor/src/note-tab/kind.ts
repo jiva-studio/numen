@@ -2,7 +2,7 @@
  * Window registration and tab state for note tabs.
  */
 import { computed, type ComputedRef } from 'vue'
-import { pointsAtNote, type PlexShowing } from '@numen/ui'
+import type { PlexShowing } from '@numen/ui'
 import type { Store } from '../shared/command/deps'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { NOTE } from '../shared/tabs/workspace'
@@ -15,6 +15,7 @@ import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
 import type { FileOpeners } from '../shared/tabs/openers'
 import type { NoteTabDeps, NoteTabState } from './types'
+import { createNoteTab } from './open'
 
 export type { NoteTabDeps, NoteTabState, NoteTitlesDeps }
 
@@ -110,58 +111,8 @@ export function useNoteTab(
    * What one tab of a note holds. What is being drawn over a note is filed by
    * the file it is being drawn on, which is where the note stands now.
    */
-  const held = (id: string): NoteTabState => {
-    return {
-      id,
-      shown: computed(() => notes.shown(id)),
-      saying: computed(() => notes.saying(id)),
-      change: computed(() => changes.shown(notes.where(id))),
-      updateBody: (body: string) => notes.typed(id, body),
-      typed: (body: string) => notes.typed(id, body),
-      save: () => notes.save(id),
-      keepMine: () => notes.keep(id),
-      keep: () => notes.keep(id),
-      takeFile: () => notes.take(id),
-      take: () => notes.take(id),
-      setEditor: (editor: unknown) => keyboard.drew(id, editor),
-      drew: (editor: unknown) => keyboard.drew(id, editor),
-      measure: () => keyboard.measure(id),
-      followLink: (address: string) => {
-        if (!pointsAtNote(address)) return
-        const from = notes.where(id)
-        void vault.resolve(from, [address]).then((landed) => {
-          const path = landed.get(address)
-          if (path) void puts.opens(path, '', 'beside')
-        })
-      },
-      follows: (address: string) => {
-        if (!pointsAtNote(address)) return
-        const from = notes.where(id)
-        void vault.resolve(from, [address]).then((landed) => {
-          const path = landed.get(address)
-          if (path) void puts.opens(path, '', 'beside')
-        })
-      },
-      close: (tab: string) => {
-        keyboard.drops(id)
-        changes.shut(notes.where(id))
-        void notes.shut(id).then((gone) => {
-          if (!gone) return
-          names.forgets(id)
-          handle.closes(tab)
-        })
-      },
-      shuts: (tab: string) => {
-        keyboard.drops(id)
-        changes.shut(notes.where(id))
-        void notes.shut(id).then((gone) => {
-          if (!gone) return
-          names.forgets(id)
-          handle.closes(tab)
-        })
-      },
-    }
-  }
+  const held = (id: string): NoteTabState =>
+    createNoteTab(id, notes, changes, keyboard, vault, names, handle, puts)
 
   /**
    * A note tab as the window keeps it. A note is its own tab, filed under the
