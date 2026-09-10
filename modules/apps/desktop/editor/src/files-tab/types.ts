@@ -61,6 +61,7 @@ export interface FilesTabState {
   imports(address: string): Promise<string>
   importAddress(address: string): Promise<string>
   openMenu(asked: MenuRequest): void
+  asks(asked: MenuRequest): void
   dismiss(): void
   chooseMenuItem(id: string): void
   nameOf(path: string): string

@@ -288,6 +288,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps) {
     imports,
     importAddress: imports,
     openMenu,
+    asks: openMenu,
     dismiss,
     chooseMenuItem,
     nameOf,
