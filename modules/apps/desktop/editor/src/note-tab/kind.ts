@@ -1,10 +1,5 @@
 /**
- * What the window knows about the notes it has open.
- *
- * The notes are read and written by one store for the whole window: what is
- * unsaved is answered to the quit as one question, and a change to the vault
- * reaches all of them at once. What one tab of one note holds is made here from
- * that store.
+ * Window registration and tab state for note tabs.
  */
 import { computed, type ComputedRef } from 'vue'
 import { pointsAtNote, type PlexShowing } from '@numen/ui'
@@ -19,51 +14,14 @@ import { noteTitles, type NoteTitlesDeps } from './titles'
 import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
 import type { FileOpeners } from '../shared/tabs/openers'
+import type { NoteTabDeps, NoteTabState } from './types'
+
+export type { NoteTabDeps, NoteTabState, NoteTitlesDeps }
 
 /** The notes of the whole window, read and written by one store. */
 type Notes = ReturnType<typeof openNotes>
 /** What is being typed into each note now, as the editor draws it. */
 type NoteChanges = ReturnType<typeof noteChanges>
-
-export type { NoteTitlesDeps }
-
-/** What the notes of a window ask of the vault, beside what names them. */
-export interface NoteTabDeps extends NoteTitlesDeps {
-  /**
-   * Where each of those addresses lands, by the address it was asked about.
-   * They are written in the note at `from`, and one that reaches nothing is
-   * absent.
-   */
-  resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
-}
-
-/** What one note tab holds: its text, and the answers a person gives it. */
-export interface NoteTabState {
-  /** The identity this note opened under, which its tab keeps wherever it goes. */
-  readonly id: string
-  /** The note as the window draws it: the body, and the state it is in. */
-  readonly shown: ComputedRef<OpenNote>
-  /** What could not be read or written, in words a person reads. */
-  readonly saying: ComputedRef<string>
-  /** What arrived from elsewhere, for the editor to take into what is typed. */
-  readonly change: ComputedRef<Change | null>
-  typed(body: string): void
-  save(): void
-  /** The person keeps what they have written, over whatever the file holds. */
-  keep(): void
-  /** The person takes what the file holds. */
-  take(): void
-  /** The editor of this note, as it is drawn and as it goes. */
-  drew(editor: unknown): void
-  measure(): void
-  /**
-   * A link in the prose followed. One naming a note opens it beside this one;
-   * an address no note answers to opens nothing.
-   */
-  follows(address: string): void
-  /** The tab is closing, and what is unwritten goes to the file first. */
-  shuts(id: string): void
-}
 
 export function useNoteTab(
   vault: NoteTabDeps,
@@ -158,12 +116,24 @@ export function useNoteTab(
       shown: computed(() => notes.shown(id)),
       saying: computed(() => notes.saying(id)),
       change: computed(() => changes.shown(notes.where(id))),
+      updateBody: (body: string) => notes.typed(id, body),
       typed: (body: string) => notes.typed(id, body),
       save: () => notes.save(id),
+      keepMine: () => notes.keep(id),
       keep: () => notes.keep(id),
+      takeFile: () => notes.take(id),
       take: () => notes.take(id),
+      setEditor: (editor: unknown) => keyboard.drew(id, editor),
       drew: (editor: unknown) => keyboard.drew(id, editor),
       measure: () => keyboard.measure(id),
+      followLink: (address: string) => {
+        if (!pointsAtNote(address)) return
+        const from = notes.where(id)
+        void vault.resolve(from, [address]).then((landed) => {
+          const path = landed.get(address)
+          if (path) void puts.opens(path, '', 'beside')
+        })
+      },
       follows: (address: string) => {
         if (!pointsAtNote(address)) return
         const from = notes.where(id)
@@ -172,7 +142,15 @@ export function useNoteTab(
           if (path) void puts.opens(path, '', 'beside')
         })
       },
-      /** The tab stands until the note says the write is done, and goes then. */
+      close: (tab: string) => {
+        keyboard.drops(id)
+        changes.shut(notes.where(id))
+        void notes.shut(id).then((gone) => {
+          if (!gone) return
+          names.forgets(id)
+          handle.closes(tab)
+        })
+      },
       shuts: (tab: string) => {
         keyboard.drops(id)
         changes.shut(notes.where(id))

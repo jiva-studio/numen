@@ -1,28 +1,18 @@
 <script setup lang="ts">
 /**
- * A note tab: the text, and the questions the file puts to the person.
- *
- * A note whose file moved past what was read stops saving and asks which of
- * the two is theirs. A note whose file is gone keeps what is on screen and
- * offers to make it again.
- *
- * A note pointing at an address is a tab of its own: what is at the address is
- * played and what was fetched for it is written, and none of that is what an
- * ordinary note is.
+ * Displays note editor and handles file conflict resolution prompts.
  */
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
 import FileConflictPrompt from '../shared/saving/FileConflictPrompt.vue'
 import { conflictIn } from '../shared/saving/flushing'
 import { WORDS as words } from './words'
-import type { NoteTabState } from './kind'
+import type { NoteTabState } from './types'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: NoteTabState }>()
 
 // --- State ---
-// The prose of a note arrives after the tab it is drawn in. The editor takes
-// the keyboard it is owed once there are lines for a caret to stand on.
 watch(
   () => props.state.shown.value.body,
   (body, was) => {
@@ -32,19 +22,19 @@ watch(
 
 // --- Handlers ---
 function onKeep() {
-  props.state.keep()
+  props.state.keepMine()
 }
 
 function onTake() {
-  props.state.take()
+  props.state.takeFile()
 }
 
 function onSetEditor(editor: unknown) {
-  props.state.drew(editor)
+  props.state.setEditor(editor)
 }
 
 function onUpdateModelValue(body: string) {
-  props.state.typed(body)
+  props.state.updateBody(body)
 }
 
 function onSave() {
@@ -52,7 +42,7 @@ function onSave() {
 }
 
 function onOpen(address: string) {
-  props.state.follows(address)
+  props.state.followLink(address)
 }
 
 // --- Helpers ---
