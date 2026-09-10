@@ -14,7 +14,7 @@ import type { Store } from '../shared/command/deps'
 import type { Presets } from '../flashcards-preset-tab/core'
 import { answers } from './answers'
 import { reader } from './reader'
-import { scheduler, type Choice, type DeckPreset } from './scheduler'
+import { useDeckSchedule, type Choice, type DeckPreset } from './scheduler'
 import { openNotes, type OpenNote } from '../note-tab/notes'
 import { markOf } from '../note-tab/tab'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
@@ -103,7 +103,7 @@ export interface DeckTabState {
   shuts(id: string): void
 }
 
-export function decking(cards: Cards, presets: Presets, handle: WindowHandle, puts: FileOpeners) {
+export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle, puts: FileOpeners) {
   /** What the vault last said about each file this window holds. */
   const said = answers()
   /** The stencils of the vault, as they were last listed. */
@@ -181,7 +181,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     if (!listedOk) void lists()
   }
 
-  const scheduled = scheduler(presets, store)
+  const scheduled = useDeckSchedule(presets, store)
   const { choices, listsPresets, listsPresetsAgain, asks, schedules, scheduledAt } = scheduled
 
   const held = (id: string): DeckTabState => {

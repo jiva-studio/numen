@@ -9,7 +9,7 @@ import { fileOpeners } from '../shared/tabs/openers'
 import { windowTabs } from '../shared/tabs/windowTabs'
 import { STENCIL } from '../shared/tabs/workspace'
 import { REFUSED } from '../shared/words'
-import { stencilling, type StencilTabState } from './stencilTabs'
+import { useStencilTabs, type StencilTabState } from './stencilTabs'
 import { WORDS as words } from '../shared/flashcards/words'
 
 /** The one place a file is opened from. Nothing here opens one. */
@@ -109,7 +109,7 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   /** Everything the window was given to say about this stencil. */
   const said: string[] = []
   const road = puts()
-  const stencils = stencilling(one.core, held.handle, road, (text) => void said.push(text))
+  const stencils = useStencilTabs(one.core, held.handle, road, (text) => void said.push(text))
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, path)
   await settles()

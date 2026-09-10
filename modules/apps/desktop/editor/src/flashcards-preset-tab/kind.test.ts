@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 
-import { presetting, type SettingValue } from './kind'
+import { usePresetTab, type SettingValue } from './kind'
 import { fieldsUnder, goalValue, nearest, steers, type Field } from './curve'
 import {
   DEFAULTS,
@@ -118,7 +118,7 @@ const opened = async (
   }
   const handle = { closes: (tab: string) => void closed.push(tab) } as unknown as WindowHandle
   const puts = { holds: () => {} } as unknown as FileOpeners
-  const kind = presetting(core, handle, puts, () => {}, () => NOW)
+  const kind = usePresetTab(core, handle, puts, () => {}, () => NOW)
   const state = await kind.kind.opens('Steady.md')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
@@ -179,7 +179,7 @@ const opening = async (file: Partial<Settings>) => {
   }
   const handle = { closes: () => {} } as unknown as WindowHandle
   const puts = { holds: () => {} } as unknown as FileOpeners
-  const kind = presetting(core, handle, puts, () => {}, () => NOW)
+  const kind = usePresetTab(core, handle, puts, () => {}, () => NOW)
   return { tab: await kind.kind.opens('Steady.md'), written, lands }
 }
 

@@ -3,9 +3,9 @@
  */
 import { cards } from '../shared/flashcards/cards'
 import { presets } from '../flashcards-preset-tab/core'
-import { decking } from '../flashcards-deck-tab/deckTabs'
-import { stencilling } from '../flashcards-stencil-tab/stencilTabs'
-import { presetting } from '../flashcards-preset-tab/kind'
+import { useDeckTabs } from '../flashcards-deck-tab/deckTabs'
+import { useStencilTabs } from '../flashcards-stencil-tab/stencilTabs'
+import { usePresetTab } from '../flashcards-preset-tab/kind'
 import { noteChanges } from '../note-tab/changes'
 import { openNotes } from '../note-tab/notes'
 import { noteMaker } from '../note-tab/maker'
@@ -32,9 +32,9 @@ export function openEditing({ core, log, puts, held, day }: EditingDeps) {
   const making = noteMaker(core, log.under('made'))
 
   const noted = noting(core, notes, changes, held.handle, puts)
-  const decks = decking(cards, presets, held.handle, puts)
-  const stencils = stencilling(cards, held.handle, puts, log.under('stencil'))
-  const schedules = presetting(
+  const decks = useDeckTabs(cards, presets, held.handle, puts)
+  const stencils = useStencilTabs(cards, held.handle, puts, log.under('stencil'))
+  const schedules = usePresetTab(
     presets,
     held.handle,
     puts,

@@ -15,10 +15,59 @@ import { conflictIn } from '../shared/saving/flushing'
 import type { StencilTabState } from './stencilTabs'
 import { WORDS as words } from '../shared/flashcards/words'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: StencilTabState }>()
 
+// --- State ---
 const stencil = computed(() => props.state.stencil.value)
 const marks = computed(() => props.state.marks.value)
+
+// --- Handlers ---
+function onKeep() {
+  props.state.keep()
+}
+
+function onTake() {
+  props.state.take()
+}
+
+function onAddField(name: string) {
+  props.state.addsField(name)
+}
+
+function onRenameField(field: string, name: string) {
+  props.state.namesField(field, name)
+}
+
+function onRemoveField(field: string) {
+  props.state.removesField(field)
+}
+
+function onMoveField(field: string, at: InsertionPoint) {
+  props.state.movesField(field, at)
+}
+
+function onAddFace(name: string) {
+  props.state.addsFace(name)
+}
+
+function onRenameFace(id: string, name: string) {
+  props.state.namesFace(id, name)
+}
+
+function onRemoveFace(id: string) {
+  props.state.removesFace(id)
+}
+
+function onMoveFace(id: string, at: InsertionPoint) {
+  props.state.movesFace(id, at)
+}
+
+function onWriteFace(id: string, half: Half, text: string) {
+  props.state.writes(id, half, text)
+}
+
+// --- Helpers ---
 </script>
 
 <template>
@@ -27,8 +76,8 @@ const marks = computed(() => props.state.marks.value)
       :saying="props.state.saying.value"
       :conflict="conflictIn(props.state.shown.value.state)"
       :words="words"
-      @keep="props.state.keep()"
-      @take="props.state.take()"
+      @keep="onKeep"
+      @take="onTake"
     />
 
     <ul v-if="marks.whole.length" class="caution wrong" :aria-label="words.problems">
@@ -41,15 +90,15 @@ const marks = computed(() => props.state.marks.value)
       :faces="stencil.faces"
       :wrong="marks"
       :name="words.stencil"
-      @add-field="(name: string) => props.state.addsField(name)"
-      @rename-field="(field: string, name: string) => props.state.namesField(field, name)"
-      @remove-field="(field: string) => props.state.removesField(field)"
-      @move-field="(field: string, at: InsertionPoint) => props.state.movesField(field, at)"
-      @add-face="(name: string) => props.state.addsFace(name)"
-      @rename-face="(id: string, name: string) => props.state.namesFace(id, name)"
-      @remove-face="(id: string) => props.state.removesFace(id)"
-      @move-face="(id: string, at: InsertionPoint) => props.state.movesFace(id, at)"
-      @write="(id: string, half: Half, text: string) => props.state.writes(id, half, text)"
+      @add-field="onAddField"
+      @rename-field="onRenameField"
+      @remove-field="onRemoveField"
+      @move-field="onMoveField"
+      @add-face="onAddFace"
+      @rename-face="onRenameFace"
+      @remove-face="onRemoveFace"
+      @move-face="onMoveFace"
+      @write="onWriteFace"
     />
   </div>
 </template>

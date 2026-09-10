@@ -85,7 +85,7 @@ export interface StencilTabState {
   shuts(id: string): void
 }
 
-export function stencilling(
+export function useStencilTabs(
   cards: Cards,
   handle: WindowHandle,
   puts: FileOpeners,

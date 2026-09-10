@@ -10,7 +10,7 @@ import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '.
 import { fileOpeners } from '../shared/tabs/openers'
 import { windowTabs } from '../shared/tabs/windowTabs'
 import { DECK } from '../shared/tabs/workspace'
-import { decking, type DeckTabState } from './deckTabs'
+import { useDeckTabs, type DeckTabState } from './deckTabs'
 import { WORDS as words } from '../shared/flashcards/words'
 
 /** A preset that schedules, which is what every preset here is. */
@@ -223,7 +223,7 @@ const open = async (
   const one = vault(answers)
   const held = windowTabs()
   const road = puts()
-  const decks = decking(one.core, one.presets, held.handle, road)
+  const decks = useDeckTabs(one.core, one.presets, held.handle, road)
   held.declares([decks.kind])
   const id = await held.opens(DECK, path)
   await settles()
@@ -557,7 +557,7 @@ describe('the vault changing under the window', () => {
   it('asks for no stencil while the window holds no deck', async () => {
     const one = vault()
     const held = windowTabs()
-    const decks = decking(one.core, one.presets, held.handle, puts())
+    const decks = useDeckTabs(one.core, one.presets, held.handle, puts())
     held.declares([decks.kind])
 
     decks.changed(['Notes.md'])

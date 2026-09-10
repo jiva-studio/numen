@@ -13,7 +13,7 @@ import { fileOpeners } from '../shared/tabs/openers'
 import { windowTabs } from '../shared/tabs/windowTabs'
 import { STENCIL } from '../shared/tabs/workspace'
 import StencilTab from './StencilTab.vue'
-import { stencilling, type StencilTabState } from './stencilTabs'
+import { useStencilTabs, type StencilTabState } from './stencilTabs'
 import { WORDS as words } from '../shared/flashcards/words'
 
 /** The one place a file is opened from. Nothing here opens one. */
@@ -63,7 +63,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   }
 
   const held = windowTabs()
-  const stencils = stencilling(core, held.handle, puts())
+  const stencils = useStencilTabs(core, held.handle, puts())
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, 'Animal.md')
   await settles()

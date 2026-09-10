@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 import { dayAfter } from '@numen/ui'
 
-import { presetting } from './kind'
+import { usePresetTab } from './kind'
 import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from './core'
 import { BOUNDS } from './drawn'
 import type { WindowHandle } from '../shared/tabs/windowTabs'
@@ -91,7 +91,7 @@ const opened = async (settings: Partial<Settings>, answer?: Curve) => {
   }
   const handle = { closes: () => {} } as unknown as WindowHandle
   const puts = { holds: () => {} } as unknown as FileOpeners
-  const kind = presetting(core, handle, puts, () => {}, () => DAY)
+  const kind = usePresetTab(core, handle, puts, () => {}, () => DAY)
   const state = await kind.kind.opens('Sanskrit.md')
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
   return { state, written }

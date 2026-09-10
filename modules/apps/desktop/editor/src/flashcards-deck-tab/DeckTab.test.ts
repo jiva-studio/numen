@@ -15,7 +15,7 @@ import { fileOpeners } from '../shared/tabs/openers'
 import { windowTabs } from '../shared/tabs/windowTabs'
 import { DECK } from '../shared/tabs/workspace'
 import DeckTab from './DeckTab.vue'
-import { decking, type DeckTabState } from './deckTabs'
+import { useDeckTabs, type DeckTabState } from './deckTabs'
 import { WORDS as words } from '../shared/flashcards/words'
 
 /** A preset that schedules, which is what every preset here is. */
@@ -167,7 +167,7 @@ const drawn = async (
   }
 
   const held = windowTabs()
-  const decks = decking(core, presets, held.handle, puts())
+  const decks = useDeckTabs(core, presets, held.handle, puts())
   held.declares([decks.kind])
   const id = await held.opens(DECK, 'Animals.md')
   await settles()

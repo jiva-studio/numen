@@ -42,7 +42,7 @@ export interface ScheduledStore {
 }
 
 /** The scheduler one window has, over the decks that window holds. */
-export function scheduler(presets: Presets, store: ScheduledStore) {
+export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   /** The presets of the vault, as they were last listed. */
   const offered = shallowRef<readonly PresetChoice[]>([])
   /** Whether the last listing of the presets answered. */

@@ -140,7 +140,7 @@ export interface PresetTabState {
  * told: a day of review begins hours past midnight, so a date counted from the
  * calendar day is a day off the count the core answers with.
  */
-export function presetting(
+export function usePresetTab(
   core: Presets,
   handle: WindowHandle,
   puts: FileOpeners,

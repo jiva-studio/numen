@@ -16,8 +16,10 @@ import type { Goal } from './core'
 import { idle, valueAt } from './curve'
 import { WORDS as words } from './words'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: PresetTabState }>()
 
+// --- State ---
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
 const {
@@ -55,6 +57,25 @@ const reading = computed(() =>
 
 /** Why the preset schedules nothing, and empty while it schedules something. */
 const stopped = computed(() => words.stopped(stoppedAt.value))
+
+// --- Handlers ---
+function onAgain() {
+  props.state.again()
+}
+
+function onSelectGoal(one: string) {
+  props.state.chooses(one as Goal)
+}
+
+function onMoveSlider(at: number) {
+  props.state.moves(at)
+}
+
+function onSettleSlider() {
+  props.state.settles()
+}
+
+// --- Helpers ---
 </script>
 
 <template>
@@ -63,14 +84,14 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
          and it waits on nothing in the vault. -->
     <p v-if="saying" role="alert" class="preset__warning preset__answering">
       {{ saying }}
-      <button type="button" class="answer" @click="props.state.again()">
+      <button type="button" class="answer" @click="onAgain">
         {{ words.reads }}
       </button>
     </p>
 
     <p v-if="changed" role="status" class="preset__warning preset__answering">
       {{ words.changed }}
-      <button type="button" class="answer" @click="props.state.again()">
+      <button type="button" class="answer" @click="onAgain">
         {{ words.reads }}
       </button>
     </p>
@@ -91,7 +112,7 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
           <SegmentedControl
             :model-value="settings.goal"
             :choices="goals"
-            @update:model-value="(one: string) => props.state.chooses(one as Goal)"
+            @update:model-value="onSelectGoal"
           />
 
           <p v-if="nothing" class="preset__unpointed" data-preset="unpointed">{{ saidInstead }}</p>
@@ -103,8 +124,8 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
               :place="place"
               :value-text="reading"
               :waiting="waiting"
-              @moves="(at: number) => props.state.moves(at)"
-              @settles="props.state.settles()"
+              @moves="onMoveSlider"
+              @settles="onSettleSlider"
             />
           </template>
 
