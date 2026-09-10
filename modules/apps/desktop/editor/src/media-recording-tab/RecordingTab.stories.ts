@@ -11,8 +11,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import RecordingTab from './RecordingTab.vue'
-import { transcribed } from '../shared/media/kind'
-import { transcript, type Recordings } from '../shared/media/transcript'
+import { useTranscriptTab } from '../shared/media/kind'
+import { useTranscript, type Recordings } from '../shared/media/transcript'
 import type { Cue } from '../shared/media/cues'
 import type { MediaTypeProbe, Player } from '../shared/media/player'
 import { WORDS as words } from '../shared/media/words'
@@ -64,7 +64,7 @@ const played = (): Player => {
 }
 
 const holding = (cues: readonly Cue[], plays: MediaTypeProbe = () => true) =>
-  transcribed(transcript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }), {
+  useTranscriptTab(useTranscript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }), {
     runs: () => {},
   })
 

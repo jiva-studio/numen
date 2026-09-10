@@ -31,7 +31,7 @@ export interface MediaTabDeps {
 }
 
 /** What one recording tab holds. */
-export type MediaTabState = ReturnType<typeof transcribed>
+export type MediaTabState = ReturnType<typeof useTranscriptTab>
 
 /**
  * One recording, with what can be asked about its words: writing them down
@@ -39,7 +39,7 @@ export type MediaTabState = ReturnType<typeof transcribed>
  * are. None is offered while a run is going, or where this build cannot do it
  * at all.
  */
-export function transcribed(read: TranscriptState, asks: MediaTabDeps) {
+export function useTranscriptTab(read: TranscriptState, asks: MediaTabDeps) {
   /** Whether this build can do a run. A window that says nothing offers every run. */
   const canRun = (run: string): boolean => asks.canRun?.(run) ?? true
 
@@ -96,7 +96,7 @@ export function recordingKind<K extends string>(
 ) {
   const kind: TabKind<MediaTabState, K> = {
     kind: as.tab,
-    opens: (path) => transcribed(opens(path), asks),
+    opens: (path) => useTranscriptTab(opens(path), asks),
     called: (state) => state.called,
     draws: as.draws,
     identity: (path) => path,

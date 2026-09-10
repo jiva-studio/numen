@@ -31,10 +31,10 @@ import StencilTab from '../flashcards-stencil-tab/StencilTab.vue'
 import type { StencilTabState } from '../flashcards-stencil-tab/stencilTabs'
 import type { Marks } from '../shared/flashcards/marks'
 import RecordingTab from '../media-recording-tab/RecordingTab.vue'
-import { transcript, type Recordings } from '../shared/media/transcript'
+import { useTranscript, type Recordings } from '../shared/media/transcript'
 import type { Cue } from '../shared/media/cues'
 import type { Player } from '../shared/media/player'
-import { transcribed } from '../shared/media/kind'
+import { useTranscriptTab } from '../shared/media/kind'
 import DocumentTab from '../document-tab/DocumentTab.vue'
 import { useDocumentTab } from '../document-tab/kind'
 import { useDocumentReader, type Documents } from '../document-tab/open'
@@ -502,7 +502,7 @@ export const Recording: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      transcribed(transcript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
+      useTranscriptTab(useTranscript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
     ),
 }
 
@@ -512,7 +512,7 @@ export const NoTranscript: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      transcribed(transcript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
+      useTranscriptTab(useTranscript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
     ),
 }
 
@@ -522,7 +522,7 @@ export const NoTranscript: Story = {
  */
 export const Transcribing: Story = {
   render: () => {
-    const state = transcribed(transcript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
+    const state = useTranscriptTab(useTranscript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
       runs: () => {},
     })
     state.ticks(true)
@@ -767,7 +767,7 @@ export const Transcribed: Story = {
     asking('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
       draws: RecordingTab,
-      state: transcribed(transcript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
+      state: useTranscriptTab(useTranscript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
         runs: () => {},
       }),
     }),

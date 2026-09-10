@@ -12,8 +12,8 @@ import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
 import { runSupport } from '../shared/command/runs'
 import RecordingTab from './RecordingTab.vue'
-import { transcribed } from '../shared/media/kind'
-import { transcript, type Recordings } from '../shared/media/transcript'
+import { useTranscriptTab } from '../shared/media/kind'
+import { useTranscript, type Recordings } from '../shared/media/transcript'
 import type { Cue } from '../shared/media/cues'
 import type { MediaTypeProbe, Player } from '../shared/media/player'
 import { WORDS } from '../shared/media/words'
@@ -67,8 +67,8 @@ function tab(
   canRun: (run: string) => boolean = () => true,
 ) {
   const asked: string[] = []
-  const state = transcribed(
-    transcript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }),
+  const state = useTranscriptTab(
+    useTranscript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }),
     { runs: (id, path, called) => void asked.push(`${id} ${path} ${called}`), canRun },
   )
   return { state, asked }

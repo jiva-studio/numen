@@ -158,7 +158,7 @@ const itself: MediaTypeProbe = (type) => {
  * What this window can play. The answer is the window's own, and it is asked
  * once for each kind of sound however many recordings are open.
  */
-export function playable(answers: MediaTypeProbe = itself): MediaTypeProbe {
+export function createMediaTypeProbe(answers: MediaTypeProbe = itself): MediaTypeProbe {
   const asked = new Map<string, boolean>()
   return (type) => {
     if (!type) return false

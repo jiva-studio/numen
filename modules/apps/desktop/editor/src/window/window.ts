@@ -40,8 +40,8 @@ import { bookKind, useBookTab } from '../book-tab/kind'
 import { recordingKind, type MediaTabDeps } from '../shared/media/kind'
 import { RECORDINGS } from '../media-recording-tab/kind'
 import { URLS } from '../media-url-tab/kind'
-import { transcript } from '../shared/media/transcript'
-import { playable } from '../shared/media/player'
+import { useTranscript } from '../shared/media/transcript'
+import { createMediaTypeProbe } from '../shared/media/player'
 import { filesKind } from '../files-tab/kind'
 import { useFileTree } from '../files-tab/listing'
 import { plexKind } from '../plex-tab/kind'
@@ -65,7 +65,7 @@ export const useWindow = () => {
   const { layout } = held
   const puts = fileOpeners(core)
   const runs = runSupport()
-  const plays = playable()
+  const plays = createMediaTypeProbe()
 
   const editing = openEditing({
     core,
@@ -181,7 +181,7 @@ export const useWindow = () => {
 
   const recorded = recordingKind(
     held.handle,
-    (path) => transcript(recordings, path, { plays }),
+    (path) => useTranscript(recordings, path, { plays }),
     over('recording'),
     puts,
     RECORDINGS,
@@ -189,7 +189,7 @@ export const useWindow = () => {
 
   const pointed = recordingKind(
     held.handle,
-    (path) => transcript(recordings, path, { plays }),
+    (path) => useTranscript(recordings, path, { plays }),
     over('url'),
     puts,
     URLS,

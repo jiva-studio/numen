@@ -10,7 +10,7 @@ import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import { answerGuard as latest } from '../questions'
 import { cued, same, spanning, spoken, type Cue } from './cues'
-import { playable as canPlay, player, type MediaTypeProbe, type Player } from './player'
+import { createMediaTypeProbe, player, type MediaTypeProbe, type Player } from './player'
 import { WORDS } from './words'
 
 /** The player a tab drew for itself, which a moment chosen in the words seeks. */
@@ -78,7 +78,7 @@ const holding = (cues: readonly Cue[], ms: number): number => {
   return -1
 }
 
-export type TranscriptState = ReturnType<typeof transcript>
+export type TranscriptState = ReturnType<typeof useTranscript>
 
 /** How long the words have to have been still before they are written. */
 export const QUIET = 800
@@ -96,10 +96,10 @@ export interface TranscriptOptions {
 /** What a url with no copy on this disk is played as: a page, read in a frame. */
 const PAGE = 'text/html'
 
-export function transcript(recordings: Recordings, path: string, how: TranscriptOptions = {}) {
+export function useTranscript(recordings: Recordings, path: string, how: TranscriptOptions = {}) {
   const through = how.through ?? player
   const quiet = how.quiet ?? QUIET
-  const plays = how.plays ?? canPlay()
+  const plays = how.plays ?? createMediaTypeProbe()
   /** Where the recording's own bytes are played from, once it is asked. */
   const address = ref('')
   /** The words heard in the recording, in the order they were spoken. */
