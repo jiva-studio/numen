@@ -7,17 +7,20 @@
  * play from there. Prose carries no times, so it is read with no gutter and
  * nothing to seek.
  */
-import { watchPostEffect } from 'vue'
+import { computed, watchPostEffect } from 'vue'
 import { Editor, timing } from '@numen/ui'
 import { WORDS as words } from './words'
 import type { MediaTabState } from './kind'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: MediaTabState }>()
+
+// --- State ---
+const isEditable = computed(() => props.state.isEditable?.value ?? props.state.editable.value)
 
 const {
   broken,
   current,
-  editable,
   following,
   note,
   prose,
@@ -41,6 +44,19 @@ watchPostEffect(() =>
     following: following.value && !typing.value,
   }),
 )
+
+// --- Handlers ---
+function onTranscribe() {
+  props.state.transcribes()
+}
+
+function onUpdateModelValue(said: string) {
+  props.state.typed(said)
+}
+
+function onSave() {
+  props.state.keep()
+}
 </script>
 
 <template>
@@ -60,7 +76,7 @@ watchPostEffect(() =>
       <p v-if="!transcribable" class="transcript__note">
         {{ note }}
       </p>
-      <button v-else type="button" class="transcript__ask" @click="props.state.transcribes()">
+      <button v-else type="button" class="transcript__ask" @click="onTranscribe">
         {{ words.transcribe }}
       </button>
     </div>
@@ -69,11 +85,11 @@ watchPostEffect(() =>
       v-else
       class="transcript__text"
       :model-value="prose"
-      :readonly="!editable"
+      :readonly="!isEditable"
       :extensions="timed ? times.extension : []"
       :aria-label="words.transcript"
-      @update:model-value="(said: string) => props.state.typed(said)"
-      @save="props.state.keep()"
+      @update:model-value="onUpdateModelValue"
+      @save="onSave"
     />
   </div>
 </template>
