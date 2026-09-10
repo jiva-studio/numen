@@ -11,7 +11,7 @@ import { noticed } from '@numen/ui'
 import type { Notice, Task, Tone } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 
-export function raising() {
+export function useNotices() {
   /** What the window is doing behind itself, which stands above what it said. */
   const tasks = shallowRef<readonly Notice[]>([])
 

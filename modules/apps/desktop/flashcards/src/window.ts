@@ -13,14 +13,14 @@ import { following, opensVault } from '@numen/ui'
 import type NotesPanel from './session/NotesPanel.vue'
 import type { PanelPlace } from './session/PanelCarousel.vue'
 import { WINDOW, agent as agentState, cards, deckName, itself } from './core'
-import { counting } from './counting'
+import { useReviewCounter } from './counting'
 import { asks, picks, swallows } from './keying'
-import { raising } from './notices'
-import { reviewed } from './decks/reviewed'
-import { opens, vaultPresets } from './decks/presets'
-import { session } from './session/session'
-import { agentPanel as panel } from './session/panel'
-import { notesPanel as notes } from './session/notes'
+import { useNotices } from './notices'
+import { useReviewedDays } from './decks/reviewed'
+import { opens, useVaultPresets } from './decks/presets'
+import { useReviewSession } from './session/session'
+import { useAgentPanel } from './session/panel'
+import { useNotesPanel } from './session/notes'
 import { screens } from './screens'
 import { around } from './session/notes/core'
 import { core as agent } from './session/agent/core'
@@ -33,11 +33,11 @@ export const useWindow = () => {
   /** The vault whose decks are open, and whose cards are being asked. */
   const vault = ref('')
 
-  const { notices, says, failed, doing, putAway } = raising()
-  const { vaults, counting: busy, day: today, count, stop } = counting({ cards, failed })
-  const state = session({ cards, failed })
-  const done = reviewed({ cards, failed })
-  const schedules = vaultPresets({ presets: cards })
+  const { notices, says, failed, doing, putAway } = useNotices()
+  const { vaults, counting: busy, day: today, count, stop } = useReviewCounter({ cards, failed })
+  const state = useReviewSession({ cards, failed })
+  const done = useReviewedDays({ cards, failed })
+  const schedules = useVaultPresets({ presets: cards })
 
   /** Why nothing can be asked here, empty while something can. */
   const unreachable = ref('')
@@ -64,7 +64,7 @@ export const useWindow = () => {
     else showing.value = 'here'
   }
 
-  const agentPanel = panel({
+  const agentPanel = useAgentPanel({
     agent,
     card: () => state.card.value,
     unreachable: () => unreachable.value,
@@ -79,7 +79,7 @@ export const useWindow = () => {
     says: (said) => says(said, 'caution'),
   })
 
-  const notesPanel = notes({
+  const notesPanel = useNotesPanel({
     open: () => showing.value === 'reading',
     shows: (open) => {
       if (open) showing.value = 'reading'

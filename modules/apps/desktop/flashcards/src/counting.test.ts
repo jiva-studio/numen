@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 
-import { counting } from './counting'
+import { useReviewCounter } from './counting'
 import type { CardsDueClient, DueCounts, VaultCounts } from './counting'
 
 const vault = (id: string, said: Partial<VaultCounts> = {}): VaultCounts => ({
@@ -92,7 +92,7 @@ const settles = () => new Promise((then) => setTimeout(then, 0))
 describe('counting what every vault owes', () => {
   it('holds the vaults before any of them is counted', async () => {
     const front = feeding()
-    const one = counting({ cards: front.cards, failed: () => {} })
+    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
 
     void one.count()
     front.says(listing(vault('01A'), vault('01B')))
@@ -110,7 +110,7 @@ describe('counting what every vault owes', () => {
 
   it('fills each count into its own vault as it lands', async () => {
     const front = feeding()
-    const one = counting({ cards: front.cards, failed: () => {} })
+    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
 
     void one.count()
     front.says(listing(vault('01A'), vault('01B')))
@@ -146,7 +146,7 @@ describe('counting what every vault owes', () => {
 
   it('carries what a vault that could not be counted says, and counts the rest', async () => {
     const front = feeding()
-    const one = counting({ cards: front.cards, failed: () => {} })
+    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
 
     void one.count()
     front.says(listing(vault('01A'), vault('01B')))
@@ -164,7 +164,7 @@ describe('counting what every vault owes', () => {
   // waiting for them rather than standing at nothing.
   it('leaves a vault being read uncounted, and says it is being read', async () => {
     const front = feeding()
-    const one = counting({ cards: front.cards, failed: () => {} })
+    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
 
     void one.count()
     front.says(listing(vault('01A')))
@@ -177,7 +177,7 @@ describe('counting what every vault owes', () => {
 
   it('is still counting until the last of them has arrived', async () => {
     const front = feeding()
-    const one = counting({ cards: front.cards, failed: () => {} })
+    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
 
     void one.count()
     front.says(listing(vault('01A')))
@@ -201,7 +201,7 @@ describe('counting what every vault owes', () => {
         return front.cards.watchCardsDue(said, how)
       },
     }
-    const one = counting({ cards, failed: () => {} })
+    const one = useReviewCounter({ cards, failed: () => {} })
 
     const three = [one.count(), one.count(), one.count()]
     expect(asked).toBe(1)
@@ -228,7 +228,7 @@ describe('counting what every vault owes', () => {
         return front.cards.watchCardsDue(said, how)
       },
     }
-    const one = counting({ cards, failed: () => {} })
+    const one = useReviewCounter({ cards, failed: () => {} })
 
     const first = one.count()
     front.says(listing(vault('01A')))
@@ -251,7 +251,7 @@ describe('counting what every vault owes', () => {
   // while the next one runs.
   it('leaves a vault at its last count while it is being counted again', async () => {
     const front = feeding()
-    const one = counting({ cards: front.cards, failed: () => {} })
+    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
 
     void one.count()
     front.says(listing(vault('01A')))
@@ -273,7 +273,7 @@ describe('counting what every vault owes', () => {
         throw new Error('no registry')
       },
     }
-    const one = counting({ cards, failed: (why) => trouble.push(why) })
+    const one = useReviewCounter({ cards, failed: (why) => trouble.push(why) })
 
     await one.count()
 
@@ -287,7 +287,7 @@ describe('counting what every vault owes', () => {
   it('stops the count without calling it a failure', async () => {
     const trouble: unknown[] = []
     const front = feeding()
-    const one = counting({ cards: front.cards, failed: (why) => trouble.push(why) })
+    const one = useReviewCounter({ cards: front.cards, failed: (why) => trouble.push(why) })
 
     const asked = one.count()
     front.says(listing(vault('01A'), vault('01B')))

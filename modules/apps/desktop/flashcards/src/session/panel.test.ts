@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import type { AgentPort, AgentStep } from '@numen/ui'
 
-import { agentPanel } from './panel'
+import { useAgentPanel } from './panel'
 import type { CardFace } from '../core'
 
 /** A card as the session hands one over. */
@@ -49,7 +49,7 @@ const panel = (
   const said: string[] = []
   /** The cards a port was asked for, one to a conversation. */
   const about: CardFace[] = []
-  const held = agentPanel({
+  const held = useAgentPanel({
     agent: (one) => {
       about.push(one)
       return agent

@@ -115,7 +115,7 @@ export interface VaultPresetsDeps {
   presets: PresetsClient
 }
 
-export function vaultPresets(deps: VaultPresetsDeps) {
+export function useVaultPresets(deps: VaultPresetsDeps) {
   const presets = shallowRef<readonly Preset[]>([])
 
   /** Which vault the presets on hand belong to. */

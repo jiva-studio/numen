@@ -34,7 +34,7 @@ export interface NotesPanelDeps {
   readonly says: (said: string) => void
 }
 
-export function notesPanel(deps: NotesPanelDeps) {
+export function useNotesPanel(deps: NotesPanelDeps) {
   /** Whether the panel is what the window is showing. */
   const open = computed(() => deps.open())
 
@@ -133,4 +133,4 @@ export function notesPanel(deps: NotesPanelDeps) {
 }
 
 /** What one panel holds. */
-export type NotesPanelState = ReturnType<typeof notesPanel>
+export type NotesPanelState = ReturnType<typeof useNotesPanel>

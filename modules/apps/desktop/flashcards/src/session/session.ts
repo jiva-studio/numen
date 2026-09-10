@@ -64,7 +64,7 @@ export interface SessionDeps {
   now?(): number
 }
 
-export function session(deps: SessionDeps) {
+export function useReviewSession(deps: SessionDeps) {
   const now = deps.now ?? (() => Date.now())
 
   const vault = ref('')

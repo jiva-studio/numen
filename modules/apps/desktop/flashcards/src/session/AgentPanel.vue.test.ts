@@ -5,7 +5,7 @@ import { nextTick, ref } from 'vue'
 import type { AgentPort } from '@numen/ui'
 
 import AgentPanel from './AgentPanel.vue'
-import { agentPanel } from './panel'
+import { useAgentPanel } from './panel'
 import type { AgentPanelState } from './panel'
 import { WORDS as words } from './agent/words'
 import type { CardFace } from '../core'
@@ -35,7 +35,7 @@ const agent: AgentPort = {
 const holding = (unreachable = ''): AgentPanelState => {
   // What the window is showing is the window's, and the test holds it for it.
   const open = ref(false)
-  return agentPanel({
+  return useAgentPanel({
     agent: () => agent,
     card: () => card,
     unreachable: () => unreachable,

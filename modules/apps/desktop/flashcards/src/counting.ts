@@ -76,7 +76,7 @@ export interface CountingDeps {
   failed(why: unknown): void
 }
 
-export function counting(deps: CountingDeps) {
+export function useReviewCounter(deps: CountingDeps) {
   const vaults = shallowRef<readonly VaultCardsDue[]>([])
   const counting = ref(true)
 

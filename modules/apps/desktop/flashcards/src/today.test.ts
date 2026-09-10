@@ -7,10 +7,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Goal, StopReason } from '@numen/protocol'
 
-import { counting } from './counting'
+import { useReviewCounter } from './counting'
 import type { CardsDueClient } from './counting'
 import { dayNamed } from '@numen/ui'
-import { vaultPresets } from './decks/presets'
+import { useVaultPresets } from './decks/presets'
 import type { PresetsClient, SettingsMessage } from './decks/presets'
 import type { VaultCardsDue } from './core'
 
@@ -64,7 +64,7 @@ describe('the day a goal is weighed against', () => {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
-    const held = counting({ cards, failed: () => {} })
+    const held = useReviewCounter({ cards, failed: () => {} })
 
     await held.count()
 
@@ -83,10 +83,10 @@ describe('the day a goal is weighed against', () => {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
-    const held = counting({ cards, failed: () => {} })
+    const held = useReviewCounter({ cards, failed: () => {} })
     await held.count()
 
-    const one = vaultPresets({ presets: answering(dated('2026-09-04')) })
+    const one = useVaultPresets({ presets: answering(dated('2026-09-04')) })
     await one.read(vault, held.day.value)
 
     expect(one.presets.value[0]?.paused).toBe('')

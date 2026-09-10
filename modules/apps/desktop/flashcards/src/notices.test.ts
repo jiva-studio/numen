@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 
-import { raising } from './notices'
+import { useNotices } from './notices'
 import type { Task } from '@numen/ui'
 
 describe('what the window has to say', () => {
   it('names each thing once, so putting one away leaves the rest', () => {
-    const one = raising()
+    const one = useNotices()
     one.says('the first', 'caution')
     one.says('the second', 'caution')
 
@@ -20,7 +20,7 @@ describe('what the window has to say', () => {
   })
 
   it('says trouble in the person’s own words, and stands until they put it away', () => {
-    const one = raising()
+    const one = useNotices()
     one.failed(new ConnectError('the vault could not be read', Code.Unavailable))
 
     const said = one.notices.value[0]!
@@ -32,7 +32,7 @@ describe('what the window has to say', () => {
   // Pressing a tile whose count is a moment stale is refused, and what the
   // application said is what a person needs. How it travelled is not.
   it('says a refusal without the wire it came over', () => {
-    const one = raising()
+    const one = useNotices()
     one.failed(
       new ConnectError('this preset schedules nothing today: it is paused', Code.FailedPrecondition),
     )
@@ -43,14 +43,14 @@ describe('what the window has to say', () => {
   })
 
   it('leaves a sentence that already ends where it ends', () => {
-    const one = raising()
+    const one = useNotices()
     one.failed(new ConnectError('The deck could not be written.', Code.Unavailable))
 
     expect(one.notices.value[0]!.says).toBe('The deck could not be written.')
   })
 
   it('puts away nothing when the name is not one it holds', () => {
-    const one = raising()
+    const one = useNotices()
     one.says('the first', 'caution')
     one.putAway('nothing')
 
@@ -60,7 +60,7 @@ describe('what the window has to say', () => {
   // Reading a vault is what this window does behind itself, and a person opened
   // the window on that vault, so the card is drawn the moment it arrives.
   it('draws work being done, and draws it at once', () => {
-    const one = raising()
+    const one = useNotices()
     one.doing([reads()])
 
     expect(one.notices.value[0]).toMatchObject({
@@ -73,7 +73,7 @@ describe('what the window has to say', () => {
   })
 
   it('says why work stopped, and stands until it is put away', () => {
-    const one = raising()
+    const one = useNotices()
     one.doing([reads({ failed: 'no such folder' })])
 
     expect(one.notices.value[0]).toMatchObject({
@@ -87,7 +87,7 @@ describe('what the window has to say', () => {
   // The whole list arrives at once, so the whole list is what stands: work that
   // finished is work the next list leaves out.
   it('lets go of work the list no longer names', () => {
-    const one = raising()
+    const one = useNotices()
     one.doing([reads()])
     one.says('the first', 'caution')
     one.doing([])

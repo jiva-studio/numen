@@ -10,7 +10,7 @@
  * in front of a person is never answered out of the one behind it.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { conversation } from '@numen/ui'
+import { useConversation } from '@numen/ui'
 import type { AgentPort, Conversation, Turn } from '@numen/ui'
 
 import { WORDS as words } from './agent/words'
@@ -41,7 +41,7 @@ export interface AgentPanelDeps {
   readonly paint?: (draw: () => void) => void
 }
 
-export function agentPanel(deps: AgentPanelDeps) {
+export function useAgentPanel(deps: AgentPanelDeps) {
   /** Whether the panel is what the window is showing, which the window holds. */
   const open = computed(() => deps.open())
 
@@ -64,7 +64,7 @@ export function agentPanel(deps: AgentPanelDeps) {
     if (talk.value && about.value?.mark === card.mark && about.value?.face === card.face) return
     ends()
     about.value = card
-    talk.value = conversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
+    talk.value = useConversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
   }
 
   /**
@@ -135,4 +135,4 @@ export function agentPanel(deps: AgentPanelDeps) {
 }
 
 /** What one panel holds. */
-export type AgentPanelState = ReturnType<typeof agentPanel>
+export type AgentPanelState = ReturnType<typeof useAgentPanel>

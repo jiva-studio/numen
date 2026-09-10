@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 
 import NotesPanel from './NotesPanel.vue'
-import { notesPanel } from './notes'
+import { useNotesPanel } from './notes'
 import { WORDS as words } from './notes/words'
 import type { DeckNeighbourhood, Neighbour } from './notes/core'
 import type { NotesPanelState } from './notes'
@@ -25,7 +25,7 @@ const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
 /** The panel over one deck, with the session around it standing in for it. */
 const held = (around: DeckNeighbourhood): NotesPanelState => {
   const open = ref(false)
-  return notesPanel({
+  return useNotesPanel({
     open: () => open.value,
     shows: (up) => {
       open.value = up

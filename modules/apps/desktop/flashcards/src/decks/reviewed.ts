@@ -37,7 +37,7 @@ export interface ReviewDaysDeps {
   failed(why: unknown): void
 }
 
-export function reviewed(deps: ReviewDaysDeps) {
+export function useReviewedDays(deps: ReviewDaysDeps) {
   /** How much was answered on each day, by the day it was answered on. */
   const days = ref<ReadonlyMap<string, HeatmapTally>>(new Map())
   /** How much falls on each day still to come, by the day it falls on. */
