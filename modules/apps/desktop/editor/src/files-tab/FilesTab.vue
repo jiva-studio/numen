@@ -1,11 +1,6 @@
 <script setup lang="ts">
 /**
- * A files tab: the tree of the vault, the menu on a row of it, and what this
- * tab could not read.
- *
- * A row's identity is the path the vault files it under, and what is drawn
- * beside a name is what the vault holds there. A row also names the folder a
- * file dropped on it from outside the window is filed in.
+ * Displays the vault file tree and handles file navigation and organisation gestures.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
@@ -13,7 +8,7 @@ import type { Position, Row, RowMarker } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 
 import { iconFor, iconOfEntry } from '../shared/icons'
-import type { DropPosition, FilesTabState } from './kind'
+import type { DropPosition, FilesTabState } from './types'
 import type { ListingRow } from './listing'
 import { addressDropped, carriesAddress } from './drag'
 import { itemsFor } from './menu'
@@ -60,7 +55,7 @@ function onDrop(event: DragEvent) {
   const address = addressDropped(event.dataTransfer)
   if (!address) return
   event.preventDefault()
-  void props.state.imports(address)
+  void (props.state.importAddress ?? props.state.imports)(address)
 }
 
 /** A drag carrying an address is one this tab takes. */

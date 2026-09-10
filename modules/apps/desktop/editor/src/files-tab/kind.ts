@@ -1,7 +1,5 @@
 /**
- * What one files tab holds: the tree of the vault, and what a gesture in it
- * does. The tree reports the shape of a gesture, and what it comes to is
- * decided here.
+ * Window registration and tab state for the files tree tab.
  */
 import { ref } from 'vue'
 import type { Entry, Move, Source } from '../shared/core'
@@ -23,81 +21,18 @@ import { FILES } from '../shared/tabs/workspace'
 import FilesTab from './FilesTab.vue'
 import { fileOf } from '../shared/paths'
 import { WORDS as words } from './words'
+import type { DropPosition, FileMaker, FilesTabDeps, FilesTabState, MenuRequest } from './types'
 
-/** Where the menu stands, and what it was asked for on. */
-export interface MenuRequest {
-  /** The row it was asked for on, and nothing where it was asked off every row. */
-  readonly path: string | null
-  readonly at: { x: number; y: number }
-}
-
-/** Where rows let go of landed, as the tree reports it. */
-export type DropPosition = { readonly into: string } | { readonly before: string }
-
-/** What a files tab asks of the window it is drawn in. */
-export interface FilesTabDeps {
-  /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
-  lands(going: SearchDestination | null): void
-  /**
-   * A command asked for on the files the rows stand for, under what the vault
-   * holds at the first of them. One that needs something asks for it in the
-   * palette; the rest happen where they stand.
-   */
-  runs(id: string, paths: readonly string[], name: string, source: Source): void
-  /** A file or a folder filed somewhere else, under the name the path ends in. */
-  moves(from: string, to: string): Promise<void>
-  /**
-   * The notes the tree is dragging over the rest of the window, and none once
-   * it has let go.
-   */
-  drags(paths: readonly string[]): void
-  /** An empty folder. The folders above it are made with it. */
-  makes(path: string): Promise<void>
-  /**
-   * A note made in a folder, under a name nothing there carries. The path it
-   * landed at, and nothing where none was made.
-   */
-  writes(folder: string): Promise<string>
-  /**
-   * A deck made in a folder, under the name it is given. The path it landed at,
-   * and nothing where none was made.
-   */
-  decks(folder: string, name: string): Promise<string>
-  /** A stencil made the same way. */
-  stencils(folder: string, name: string): Promise<string>
-  /** A preset made the same way, naming none of its settings. */
-  presets(folder: string, name: string): Promise<string>
-  /**
-   * The file a web address is kept in, made in a folder, and what is at that
-   * address fetched into the store beside it.
-   */
-  imports(folder: string, address: string): Promise<string>
-  /** What could not be done, in words a person reads. */
-  says(text: string): void
-  /**
-   * Whether this build can do a run at all, which decides whether the menu on
-   * a row offers it. A window that says nothing offers every run.
-   */
-  canRun?: RunGuard
-}
-
-/** One of the three files the vault names itself, made in a folder. */
-type FileMaker = (folder: string, name: string) => Promise<string>
+export type { DropPosition, FileMaker, FilesTabDeps, FilesTabState, MenuRequest }
 
 /**
- * Where a row activated takes the person: the file the row stands for, under
- * the name it is filed as. A folder is somewhere to go nowhere, and what the
- * file opens in is not decided here.
+ * Where a row activated takes the person: the file the row stands for.
  */
 export const landingOf = (entry: Entry): SearchDestination | null =>
   entry.folder ? null : { at: 'file', path: entry.path, title: entry.name }
 
-/** What one files tab holds. */
-export type FilesTabState = ReturnType<typeof useFilesTab>
-
 /**
- * The files tab of a window. A window shows the vault once, so a second asked
- * for is the tree already open.
+ * Manages window-level files tab operations and path reveal.
  */
 export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: FilesTabDeps) {
   const kind: TabKind<FilesTabState, typeof FILES> = {
@@ -346,13 +281,17 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps) {
     drop,
     remove,
     makes,
+    createFolder: makes,
     writes,
+    createNote: writes,
     makesOne,
     imports,
+    importAddress: imports,
     openMenu,
     dismiss,
     chooseMenuItem,
     nameOf,
+    getName: nameOf,
     canRun,
   }
 }
