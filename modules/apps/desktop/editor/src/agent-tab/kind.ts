@@ -1,10 +1,5 @@
 /**
- * What one agent tab holds: a talk of its own, and what pressing anything in
- * it comes to.
- *
- * What the person has open is the window's to report, and it says so as it
- * changes. A line about work names a place in a source and opens it; a link
- * inside an answer names a place in a source or a note, and opens either.
+ * Window registration and conversation state for agent tabs.
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
@@ -14,43 +9,15 @@ import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { AGENT } from '../shared/tabs/workspace'
 import AgentTab from './AgentTab.vue'
 import { WORDS as words } from './words'
+import { firstLine } from './title'
+import type { AgentTabDeps, NoteRef } from './types'
 
-/**
- * What a tab is called by a question put in it: the first line with anything on
- * it, short enough to read at a glance. The cut lands at the last word to begin
- * past a third of the room, and mid-word when none does.
- */
-export const firstLine = (question: string, most = 24): string => {
-  const line = question.split('\n').find((one) => one.trim() !== '')?.trim() ?? ''
-  if (line.length <= most) return line
-  const cut = line.slice(0, most)
-  const space = cut.lastIndexOf(' ')
-  return `${(space > most / 3 ? cut.slice(0, space) : cut).trimEnd()}…`
-}
-
-/** What an agent tab asks of the window it is drawn in. */
-export interface AgentTabDeps {
-  /** A source opened at stretches of its own text, the first of them in front. */
-  opens(path: string, ...spans: readonly Span[]): void
-  /** A note opened in a tab beside the pane the person is in. */
-  beside(path: string): void
-  /**
-   * Where each of those addresses lands, by the address it was asked about.
-   * One that reaches nothing is absent.
-   */
-  resolve(written: readonly string[]): Promise<ReadonlyMap<string, string>>
-  /** Why the agent cannot be reached, which the tab says where its answers stand. */
-  unreachable(): string
-}
+export { firstLine } from './title'
+export type { AgentTabDeps, NoteRef } from './types'
 
 /** What one agent tab holds. */
 export type AgentTabState = ReturnType<typeof useAgentConversation>
 
-/** The note a talk is about, under the name the window calls it by. */
-export interface NoteRef {
-  readonly path: string
-  readonly title: string
-}
 
 export function useAgentConversation(talk: Conversation, deps: AgentTabDeps) {
   /** The question being written, until it is sent. */
