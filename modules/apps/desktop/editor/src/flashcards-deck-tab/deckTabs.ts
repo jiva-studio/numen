@@ -1,10 +1,5 @@
 /**
- * The decks the window has open, and what one deck tab holds.
- *
- * A deck is saved the way a note is: one store for the whole window, the same
- * interval, and the same two answers where the file moved past what was read.
- * What travels between the store and the vault is the cards of the deck, and
- * the string the store is dirty against is those cards written out.
+ * Window registration and tab state for flashcard deck tabs.
  */
 import { computed, shallowRef, type ComputedRef } from 'vue'
 import type { DeckCard, DeckSection, PlexShowing, Stencil } from '@numen/ui'
@@ -42,66 +37,9 @@ import {
   type BufferDeck,
 } from './deck'
 import type { Marks } from '../shared/flashcards/marks'
+import type { DeckTabState } from './types'
 
-/** What one deck tab holds. */
-export interface DeckTabState {
-  /** The identity this deck opened under, which its tab keeps wherever it goes. */
-  readonly id: string
-  /** The deck as the window draws it: the state it is in, and what it stands at. */
-  readonly shown: ComputedRef<OpenNote>
-  /** The cards, as the window holds them. */
-  readonly deck: ComputedRef<BufferDeck>
-  /** The same, as the grid draws them, each under the stencil that cuts it. */
-  readonly drawn: ComputedRef<readonly DeckCard[]>
-  /** The sections, as the grid draws them. */
-  readonly sections: ComputedRef<readonly DeckSection[]>
-  /** The stencils a card may be cut by. */
-  readonly stencils: ComputedRef<readonly Stencil[]>
-  /** What is wrong with the file, against the card it stands on. */
-  readonly marks: ComputedRef<Marks>
-  /** What the whole file was refused for, in words a person reads. */
-  readonly saying: ComputedRef<string>
-  /** The preset this deck is scheduled by. */
-  readonly scheduled: ComputedRef<DeckPreset>
-  /** The presets this deck may be put on, the defaults first. */
-  readonly choices: ComputedRef<readonly Choice[]>
-  /**
-   * This deck put on the preset at that path, and on the defaults where the
-   * path is empty. What it is owed reaches the file first.
-   */
-  schedules(preset: string): void
-  /**
-   * A card cut by that stencil, made at the end of the section named, and at
-   * the end of the cards before the first section where none is.
-   */
-  adds(
-    stencil: string,
-    values: readonly { field: string; text: string }[],
-    section: string | null,
-  ): void
-  removes(card: string): void
-  /**
-   * A card let go before another card, at the head of a section, or at the end
-   * of the deck.
-   */
-  moves(card: string, at: string | null): void
-  /**
-   * One value of one card as it now reads. A card writing a field twice is
-   * written where `nth` counts off under it.
-   */
-  writes(card: string, field: string, nth: number, text: string): void
-  /** A section made at the end of the deck, under that name. */
-  addsSection(name: string): void
-  namesSection(section: string, name: string): void
-  /** A section asked to go. Its heading goes, and the cards under it stay. */
-  removesSection(section: string): void
-  /** The person keeps what they have written, over whatever the file holds. */
-  keep(): void
-  /** The person takes what the file holds. */
-  take(): void
-  /** The tab is closing, and what is unwritten goes to the file first. */
-  shuts(id: string): void
-}
+export type { DeckTabState }
 
 export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle, puts: FileOpeners) {
   /** What the vault last said about each file this window holds. */
@@ -200,18 +138,39 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
       scheduled: computed(() => scheduledAt(id)),
       choices,
       schedules: (preset) => void schedules(id, preset),
+      setSchedule: (preset) => void schedules(id, preset),
       adds: (stencil, values, section) =>
         turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
+      addCard: (stencil, values, section) =>
+        turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
       removes: (card) => turns(id, removed(deckAt(id), card)),
+      removeCard: (card) => turns(id, removed(deckAt(id), card)),
       moves: (card, at) => turns(id, dropped(deckAt(id), card, at)),
+      moveCard: (card, at) => turns(id, dropped(deckAt(id), card, at)),
       writes: (card, field, nth, text) => turns(id, filled(deckAt(id), card, field, nth, text)),
+      writeCardField: (card, field, nth, text) => turns(id, filled(deckAt(id), card, field, nth, text)),
       addsSection: (name) => turns(id, sectionAdded(deckAt(id), name)),
+      addSection: (name) => turns(id, sectionAdded(deckAt(id), name)),
       namesSection: (section, name) => turns(id, sectionNamed(deckAt(id), section, name)),
+      renameSection: (section, name) => turns(id, sectionNamed(deckAt(id), section, name)),
       removesSection: (section) => turns(id, sectionGone(deckAt(id), section)),
+      removeSection: (section) => turns(id, sectionGone(deckAt(id), section)),
       keep: () => store.keep(id),
+      keepMine: () => store.keep(id),
       take: () => store.take(id),
+      takeFile: () => store.take(id),
       /** The tab stands until the deck says the write is done, and goes then. */
       shuts: (tab) => {
+        const path = store.where(id)
+        void store.shut(id).then((gone) => {
+          if (!gone) return
+          read.closes(id)
+          scheduled.closes(id)
+          forgets(path)
+          handle.closes(tab)
+        })
+      },
+      close: (tab) => {
         const path = store.where(id)
         void store.shut(id).then((gone) => {
           if (!gone) return

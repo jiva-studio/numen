@@ -1,11 +1,6 @@
 <script setup lang="ts">
 /**
- * A deck tab: the cards as a grid under the sections they stand in, and the
- * questions the file puts.
- *
- * The grid takes cards and hands identities back, and is handed what is wrong
- * with each of them under the same identities, so a card under no stencil and
- * two cards of one mark are each marked where they were read from.
+ * Displays flashcard deck editor in grid view and handles deck management gestures.
  */
 import { computed, ref } from 'vue'
 import { cardBlanks, cardFields, DeckEditor, Menu } from '@numen/ui'
@@ -13,7 +8,7 @@ import type { InsertionPoint, Position } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import FileConflictPrompt from '../shared/saving/FileConflictPrompt.vue'
 import { conflictIn } from '../shared/saving/flushing'
-import type { DeckTabState } from './deckTabs'
+import type { DeckTabState } from './types'
 import { WORDS as words } from '../shared/flashcards/words'
 
 // --- Props & Emits ---
@@ -53,7 +48,8 @@ function onOpenScheduleMenu(event: Event) {
 
 function onChooseSchedule(path: string) {
   asking.value = null
-  props.state.schedules(path)
+  const schedule = props.state.setSchedule ?? props.state.schedules
+  schedule(path)
 }
 
 function onDismissScheduleMenu() {
@@ -61,39 +57,48 @@ function onDismissScheduleMenu() {
 }
 
 function onAddCard(stencil: string, section: string | null) {
-  props.state.adds(stencil, empty(stencil), section)
+  const add = props.state.addCard ?? props.state.adds
+  add(stencil, empty(stencil), section)
 }
 
 function onRemoveCard(id: string) {
-  props.state.removes(id)
+  const remove = props.state.removeCard ?? props.state.removes
+  remove(id)
 }
 
 function onMoveCard(id: string, at: InsertionPoint) {
-  props.state.moves(id, at)
+  const move = props.state.moveCard ?? props.state.moves
+  move(id, at)
 }
 
 function onWriteCard(id: string, field: string, nth: number, text: string) {
-  props.state.writes(id, field, nth, text)
+  const write = props.state.writeCardField ?? props.state.writes
+  write(id, field, nth, text)
 }
 
 function onAddSection(name: string) {
-  props.state.addsSection(name)
+  const addSec = props.state.addSection ?? props.state.addsSection
+  addSec(name)
 }
 
 function onRenameSection(id: string, name: string) {
-  props.state.namesSection(id, name)
+  const renameSec = props.state.renameSection ?? props.state.namesSection
+  renameSec(id, name)
 }
 
 function onRemoveSection(id: string) {
-  props.state.removesSection(id)
+  const removeSec = props.state.removeSection ?? props.state.removesSection
+  removeSec(id)
 }
 
 function onKeep() {
-  props.state.keep()
+  const keep = props.state.keepMine ?? props.state.keep
+  keep()
 }
 
 function onTake() {
-  props.state.take()
+  const take = props.state.takeFile ?? props.state.take
+  take()
 }
 
 // --- Helpers ---
