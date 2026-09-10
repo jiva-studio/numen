@@ -36,6 +36,7 @@ import {
 import { WORDS as words } from '../words'
 import './curve-slider.css'
 
+// --- Props & Emits ---
 const props = defineProps<{
   curve: Curve
   /**
@@ -52,17 +53,16 @@ const props = defineProps<{
   waiting: boolean
 }>()
 
-const raises = defineEmits<{
-  moves: [place: number]
-  settles: []
+const emit = defineEmits<{
+  (event: 'moves', place: number): void
+  (event: 'settles'): void
 }>()
 
+// --- State ---
 const picture = useTemplateRef<SVGSVGElement>('picture')
 
 /**
- * The stretch of cost the picture is scaled to, taken from the whole grid of
- * the first answer this goal gave and kept while that goal is on screen. A
- * later answer is drawn against it, so the line moves and the axis does not.
+ * The stretch of cost the picture is scaled to.
  */
 const scale = shallowRef<{ goal: string; extent: Extent } | null>(null)
 
@@ -90,17 +90,16 @@ const suggested = computed(() => positions.value[props.curve.suggested.at] ?? nu
 const held = computed(() => valueAt(props.curve, props.place))
 
 /** A goal of a date stands the mark of the day it names full height, and dashed. */
-const dated = computed(() => props.curve.goal === 'date')
+const isDated = computed(() => props.curve.goal === 'date')
 
 /** Whether this is the application's answer. The gridlines and the marks stand over that alone. */
-const honest = computed(() => props.curve.honest)
+const isHonest = computed(() => props.curve.honest)
 
 /**
- * The two marks the picture carries. The knob is where the person put it and
- * needs no name; the other one does, and carries it.
+ * The two marks the picture carries.
  */
 const marks = computed(() => {
-  if (!honest.value) return []
+  if (!isHonest.value) return []
   const out: Mark[] = []
   if (knob.value) out.push({ key: 'knob', at: knob.value, text: '' })
   if (suggested.value) {
@@ -113,7 +112,7 @@ const marks = computed(() => {
 const callout = computed(() => {
   const at = knob.value
   const point = props.curve.at[props.place]
-  if (!honest.value || !at || !point) return null
+  if (!isHonest.value || !at || !point) return null
   const backlog = runAt(props.curve, props.place)
   const lines = words.buys(props.curve.goal, {
     value: held.value,
@@ -177,48 +176,43 @@ const least = computed(() => props.curve.grid[0] ?? 0)
 const most = computed(() => props.curve.grid[places.value - 1] ?? 0)
 const value = computed(() => held.value)
 
-/**
- * The place a pointer stands over. Where it stands is read through the
- * picture's own transform, so the place is the one under the pointer whatever
- * room the picture was given.
- */
-const under = (event: PointerEvent): number => {
-  const at = picture.value?.getScreenCTM?.()
-  if (!at || at.a === 0) return props.place
-  return placeUnder((event.clientX - at.e) / at.a, places.value)
-}
-
-const took = (event: PointerEvent) => {
+// --- Handlers ---
+function onPointerDown(event: PointerEvent): void {
   if (event.button !== 0) return
   event.preventDefault()
   picture.value?.focus()
   picture.value?.setPointerCapture(event.pointerId)
-  raises('moves', under(event))
+  emit('moves', getPlaceUnder(event))
 }
 
-const dragged = (event: PointerEvent) => {
+function onPointerMove(event: PointerEvent): void {
   if (!picture.value?.hasPointerCapture(event.pointerId)) return
-  raises('moves', under(event))
+  emit('moves', getPlaceUnder(event))
 }
 
-const letGo = (event: PointerEvent) => {
+function onPointerUp(event: PointerEvent): void {
   if (!picture.value?.hasPointerCapture(event.pointerId)) return
   picture.value.releasePointerCapture(event.pointerId)
-  raises('settles')
+  emit('settles')
 }
 
-const pressed = (event: KeyboardEvent) => {
+function onKeyDown(event: KeyboardEvent): void {
   const step = walked(event.key, props.place, places.value)
   if (step === null) return
   event.preventDefault()
-  raises('moves', step)
+  emit('moves', step)
 }
 
-// The group is written once the key is let go of, so a held arrow key walks
-// the grid and writes at the end of the walk.
-const released = (event: KeyboardEvent) => {
+function onKeyUp(event: KeyboardEvent): void {
   if (walked(event.key, props.place, places.value) === null) return
-  raises('settles')
+  emit('settles')
+}
+
+// --- Helpers ---
+function getPlaceUnder(event: PointerEvent): number {
+  const at = picture.value?.getScreenCTM?.()
+  if (!at || at.a === 0) return props.place
+  return placeUnder((event.clientX - at.e) / at.a, places.value)
 }
 </script>
 
@@ -257,7 +251,7 @@ const released = (event: KeyboardEvent) => {
             <!-- The room keeps its proportion where no line is drawn in it,
                  so nothing below moves. -->
             <div
-              v-if="!honest && props.waiting"
+              v-if="!isHonest && props.waiting"
               class="curve-slider__waiting"
               data-control="waiting"
               role="status"
@@ -267,7 +261,7 @@ const released = (event: KeyboardEvent) => {
             </div>
 
             <svg
-              v-else-if="honest"
+              v-else-if="isHonest"
               ref="picture"
               class="curve-slider__picture"
               data-control="picture"
@@ -279,12 +273,12 @@ const released = (event: KeyboardEvent) => {
               :aria-valuemax="most"
               :aria-valuenow="value"
               :aria-valuetext="props.valueText"
-              @pointerdown="took"
-              @pointermove="dragged"
-              @pointerup="letGo"
-              @pointercancel="letGo"
-              @keydown="pressed"
-              @keyup="released"
+              @pointerdown="onPointerDown"
+              @pointermove="onPointerMove"
+              @pointerup="onPointerUp"
+              @pointercancel="onPointerUp"
+              @keydown="onKeyDown"
+              @keyup="onKeyUp"
             >
               <line
                 v-for="share in GRIDLINES"
@@ -323,7 +317,7 @@ const released = (event: KeyboardEvent) => {
                 data-control="drop"
                 :x1="knob.x"
                 :x2="knob.x"
-                :y1="dated ? TOP : knob.y"
+                :y1="isDated ? TOP : knob.y"
                 :y2="FOOT"
               />
 
@@ -358,7 +352,7 @@ const released = (event: KeyboardEvent) => {
           </span>
 
           <span
-            v-for="(one, at) in honest ? heights : []"
+            v-for="(one, at) in isHonest ? heights : []"
             :key="at"
             class="curve-slider__number"
             data-control="number"
@@ -394,7 +388,7 @@ const released = (event: KeyboardEvent) => {
       <div class="curve-slider__foot" data-control="foot">
         <p class="curve-slider__under" data-control="under">
           <span
-            v-if="honest"
+            v-if="isHonest"
             class="curve-slider__number curve-slider__number--knob"
             data-control="number"
             data-at-knob
@@ -405,8 +399,8 @@ const released = (event: KeyboardEvent) => {
         </p>
 
         <p class="curve-slider__ends" data-control="ends">
-          <span>{{ honest ? atLeast : '' }}</span>
-          <span>{{ honest ? atMost : '' }}</span>
+          <span>{{ isHonest ? atLeast : '' }}</span>
+          <span>{{ isHonest ? atMost : '' }}</span>
         </p>
 
         <p class="curve-slider__name curve-slider__name--x" data-control="name" data-axis="x">
@@ -414,14 +408,14 @@ const released = (event: KeyboardEvent) => {
         </p>
       </div>
 
-      <BacklogPlot :curve="props.curve" :place="props.place" :honest="honest" />
+      <BacklogPlot :curve="props.curve" :place="props.place" :honest="isHonest" />
     </div>
 
     <!-- When the material is learned at the place the knob stands, read off
          the same run the picture is drawn from. -->
     <div class="curve-slider__material" data-control="learned">
       <span
-        v-for="one in honest ? learning : []"
+        v-for="one in isHonest ? learning : []"
         :key="one.name"
         class="curve-slider__tile"
         data-control="tile"
