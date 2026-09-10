@@ -1,11 +1,7 @@
 /**
- * What one plex tab holds: where it is standing, and what a gesture in it does.
- * The plex reports the shape of a gesture, and what it comes to is decided here.
- *
- * A gesture names a node by its ticket. This is the edge where a ticket becomes
- * the path the vault is asked about, and past it every note is a path.
+ * Window registration and tab state for plex graph tabs.
  */
-import { computed, ref, shallowRef, watch, type Ref } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import type {
   MenuOpening,
   PlexNeighbourhood,
@@ -24,86 +20,15 @@ import { PLEX } from '../shared/tabs/workspace'
 import PlexTab from './PlexTab.vue'
 import { fileOf } from '../shared/paths'
 import { WORDS as words } from './words'
+import type { MenuRequest, PlexEditor, PlexTabDeps, PlexTabState } from './types'
 
-/**
- * What a plex tab is called: the note it stands on. The tab's own icon says it
- * is a plex, so the word is only there for one standing on nothing.
- */
+export type { MenuRequest, PlexEditor, PlexTabDeps, PlexTabState }
+
+/** What a plex tab is called: the note it stands on. */
 const titleOf = (note: string): string => note || words.plex
 
-/** Where the menu stands, and the node it was asked for on. */
-export interface MenuRequest {
-  /** The node it was asked for on, and nothing where it was asked off every node. */
-  readonly node: string | null
-  readonly at: { x: number; y: number }
-  readonly opening: MenuOpening
-}
-
-/** Making a note from the picture, and joining two that are already on it. */
-export interface PlexEditor {
-  make(from: string, seat: PlexRelatedSeat): Promise<unknown>
-  join(from: string, to: string, seat: PlexRelatedSeat): Promise<boolean>
-}
-
-/** What a plex tab asks of the vault and of the window it is drawn in. */
-export interface PlexTabDeps {
-  readonly makes: PlexEditor
-  /** Whether the window has anything true to draw at all. */
-  readonly ready: Readonly<Ref<boolean>>
-  /**
-   * Whether a node hangs the parts of its note under the box. While it stands
-   * false the vault is asked nothing about what a note is divided into, and
-   * every node hangs nothing.
-   */
-  readonly hangs: Readonly<Ref<boolean>>
-  /** How many of those parts stand under a node at once. The rest are wound to. */
-  readonly parts: Readonly<Ref<number>>
-  /**
-   * A note opened in a tab of its own, under the name the picture gives it, in
-   * the editor made for what it is. A line is a place inside it.
-   */
-  opens(path: string, title: string, showing: PlexShowing, line?: number): void
-  /**
-   * What each of the notes asked about is divided into, by the path it was
-   * asked about. A note with nothing inside it is absent.
-   */
-  inside(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
-  /** Something to ask, put in the agent the person was last in. */
-  asks(text: string): void
-  /**
-   * A command asked for on a node, on the note it stands for. One that needs
-   * something asks for it in the palette; the rest happen where they stand.
-   */
-  runs(id: string, path: string, title: string): void
-  /** The note the vault opens with, as it was last answered. */
-  readonly opening: Readonly<Ref<string>>
-  /**
-   * The notes the window is dragging over the picture, and none while it
-   * drags nothing.
-   */
-  readonly dragged: Readonly<Ref<readonly string[]>>
-  /** What could not be done, in words a person reads. */
-  says(text: string): void
-  /**
-   * A note made at the top of the vault, under a name nothing there carries.
-   * The path it landed at, and nothing where none was made.
-   */
-  writes(): Promise<string>
-  /** Asks the vault where it opens, for a plex that has nowhere to stand. */
-  first(): Promise<string>
-  /** The seats a gesture may make a note in, which the picture draws. */
-  readonly creatable: readonly PlexRelatedSeat[]
-}
-
-/** What one plex tab holds. */
-export type PlexTabState = ReturnType<typeof usePlexTab>
-
 /**
- * The plex tabs of a window, in the order the person was last in them.
- *
- * The plex the person is looking at is the one a note asked for from outside
- * the window is put in front of, and the one a plex opened after it stands
- * beside.
+ * Manages window-level plex tab operations and navigation.
  */
 export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: PlexTabDeps) {
   /** Every plex the window holds, and the one the person was last in. */
@@ -434,17 +359,28 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps) {
     partsOf,
     mostParts: deps.parts,
     reads,
+    readParts: reads,
     entered,
+    openPart: entered,
     activate,
     made,
+    createNode: made,
     joined,
+    joinNodes: joined,
     brought,
+    bringNodes: brought,
     opens,
+    openNode: opens,
     writes,
+    createNote: writes,
     asks,
+    openMenu: asks,
     dismiss,
     chose,
+    chooseMenuItem: chose,
     follows,
+    followMoves: follows,
     nameOf,
+    getName: nameOf,
   }
 }

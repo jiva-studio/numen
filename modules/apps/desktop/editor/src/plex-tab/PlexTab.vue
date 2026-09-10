@@ -1,11 +1,6 @@
 <script setup lang="ts">
 /**
- * A plex tab: the picture, the menu on a node of it, and what this tab could
- * not show.
- *
- * Every gesture is handed to what the tab holds. The menu stands on a node of
- * this picture and goes when the picture does. A note this tab cannot draw is
- * this tab's own trouble, and is said in it.
+ * Displays the graph neighborhood of notes and handles graph interaction gestures.
  */
 import { computed, useTemplateRef } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
@@ -13,7 +8,7 @@ import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from './menu'
 import { iconFor, iconOfNote } from '../shared/icons'
-import type { PlexTabState } from './kind'
+import type { PlexTabState } from './types'
 import { WORDS as words } from './words'
 
 // --- Props & Emits ---
@@ -49,7 +44,8 @@ const picture = useTemplateRef<{ focusNode: (id: string) => void }>('picture')
 function onContextMenu(event: MouseEvent) {
   if (!empty.value) return
   event.preventDefault()
-  props.state.asks({
+  const openMenu = props.state.openMenu ?? props.state.asks
+  openMenu({
     node: null,
     at: { x: event.clientX, y: event.clientY },
     opening: 'pointer',
@@ -61,27 +57,27 @@ function onActivateNode(node: string) {
 }
 
 function onCreateNode(from: string, seat: PlexRelatedSeat) {
-  void props.state.made(from, seat)
+  void (props.state.createNode ?? props.state.made)(from, seat)
 }
 
 function onLinkNodes(from: string, to: string, seat: PlexRelatedSeat) {
-  void props.state.joined(from, to, seat)
+  void (props.state.joinNodes ?? props.state.joined)(from, to, seat)
 }
 
 function onBringNodes(dragged: readonly string[], seat: PlexRelatedSeat) {
-  void props.state.brought(dragged, seat)
+  void (props.state.bringNodes ?? props.state.brought)(dragged, seat)
 }
 
 function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuOpening) {
-  props.state.asks({ node, at, opening })
+  (props.state.openMenu ?? props.state.asks)({ node, at, opening })
 }
 
 function onShowNode(node: string, how: PlexShowing) {
-  props.state.opens(node, how)
+  (props.state.openNode ?? props.state.opens)(node, how)
 }
 
 function onEnterPart(node: string, part: string) {
-  props.state.entered(node, part)
+  (props.state.openPart ?? props.state.entered)(node, part)
 }
 
 function onDismissPicture() {
@@ -110,7 +106,7 @@ function getNodeIcon(node: string): LucideIcon | null {
 function closeMenu(chose?: string) {
   const node = menu.value?.node ?? null
   if (chose === undefined) props.state.dismiss()
-  else props.state.chose(chose)
+  else (props.state.chooseMenuItem ?? props.state.chose)(chose)
   if (node !== null) picture.value?.focusNode(node)
 }
 </script>
