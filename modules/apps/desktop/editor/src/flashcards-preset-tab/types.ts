@@ -3,8 +3,10 @@
  */
 import type { Ref } from 'vue'
 import { StopReason } from '@numen/protocol'
-import type { Curve, Goal, Load, PresetCounts, Settings, SettingsBounds } from './core'
+import type { Curve, Goal, Load, PresetCounts, Presets, Settings, SettingsBounds } from './core'
 import type { Field } from './curve'
+
+export type { Curve, Goal, Load, PresetCounts, Presets, Settings, SettingsBounds, Field }
 
 /** What a person can put into one row of the receipt. */
 export type SettingValue = number | string | boolean | Load
