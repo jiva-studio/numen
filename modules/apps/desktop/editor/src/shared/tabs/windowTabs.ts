@@ -76,6 +76,7 @@ export interface TabKind<TabState, K extends string = string> {
   over?(state: TabState): TabTarget
   /** What one of its tabs holds, as whoever answers for the person is told it. */
   attends?(state: TabState): OpenTab<K>
+  getAttention?(state: TabState): OpenTab<K>
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
    * has something to finish, and closes the tab itself once it has.

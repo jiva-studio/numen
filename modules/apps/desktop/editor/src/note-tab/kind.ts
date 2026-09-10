@@ -65,7 +65,7 @@ export interface NoteTabState {
   shuts(id: string): void
 }
 
-export function noting(
+export function useNoteTab(
   vault: NoteTabDeps,
   notes: Notes,
   changes: NoteChanges,
@@ -208,6 +208,7 @@ export function noting(
       return { path, title: path ? names.called(state.id) : '' }
     },
     attends: (state) => ({ path: standsAt(state) }),
+    getAttention: (state) => ({ path: standsAt(state) }),
     shuts: (state, id) => {
       state.shuts(id)
       return false

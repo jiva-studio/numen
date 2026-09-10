@@ -31,7 +31,7 @@ export function useAttention({ core, tabs, held }: AttentionDeps) {
     front: getActiveTabId(),
     tabs: windowTabsManager.tabs.value.map(({ id, title }) => {
       const one = windowTabsManager.heldIn(id)
-      const said = one?.kind.attends?.(one.state) as
+      const said = (one?.kind.getAttention?.(one.state) ?? one?.kind.attends?.(one.state)) as
         | OpenTab<'document' | 'recording' | 'book'>
         | undefined
       return {

@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import type { PlexShowing } from '@numen/ui'
-import { noting, type NoteTabDeps, type NoteTabState } from './kind'
+import { useNoteTab, type NoteTabDeps, type NoteTabState } from './kind'
 import { fileOpeners } from '../shared/tabs/openers'
 import type { EditorHandle } from './keyboard'
 import type { noteChanges } from './changes'
@@ -128,7 +128,7 @@ const window = (
     fileKinds: async (paths) =>
       new Map(paths.map((path) => [path, { kind: 'note' as const, type: 'note' as const }])),
   })
-  const noted = noting(vault(titles, reaches), store.store, drawing.store, held.handle, puts)
+  const noted = useNoteTab(vault(titles, reaches), store.store, drawing.store, held.handle, puts)
   held.declares([noted.kind])
   /** Every note tab the window holds now. */
   const open = () => held.tabs.value.map((tab) => tab.id)
@@ -530,5 +530,6 @@ describe('what a note tab holds, as whoever answers for the person is told it', 
     await nextTick()
 
     expect(one.noted.kind.attends!(holds(one))).toStrictEqual({ path: 'Note.md' })
+    expect(one.noted.kind.getAttention!(holds(one))).toStrictEqual({ path: 'Note.md' })
   })
 })
