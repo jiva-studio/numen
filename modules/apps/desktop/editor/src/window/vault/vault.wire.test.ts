@@ -133,6 +133,7 @@ describe('a neighbourhood the vault answers with', () => {
         seat: 'parent',
         label: 'part of',
         through: '',
+        isMutual: true,
         mutual: true,
       },
     ])

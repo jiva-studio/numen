@@ -51,8 +51,8 @@ describe('every theme there is', () => {
 
     const { themes: every } = await themes.appearance()
     expect(every).toEqual([
-      { name: 'preset/Numen.css', title: 'Numen', shipped: true, pinned: false },
-      { name: 'own/Dusk.css', title: 'Dusk', shipped: false, pinned: true },
+      { name: 'preset/Numen.css', title: 'Numen', isBuiltIn: true, shipped: true, isPinned: false, pinned: false },
+      { name: 'own/Dusk.css', title: 'Dusk', isBuiltIn: false, shipped: false, isPinned: true, pinned: true },
     ])
   })
 })
