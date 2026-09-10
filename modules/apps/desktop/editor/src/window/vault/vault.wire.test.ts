@@ -20,7 +20,7 @@ const answers = (said: unknown) =>
     ),
   )
 
-const { core } = await import('./vault')
+const { core } = await import('./index')
 
 describe('a name the vault answers with', () => {
   it('is an ordinary note where the answer carries no kind at all', async () => {

@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { Role } from '@numen/protocol'
-import type { Role as WindowRole } from '../shared/core'
+import type { Role as WindowRole } from '../../shared/core'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -25,7 +25,7 @@ const asked = {
   writeLink: vi.fn(),
 }
 
-const { core } = await import('./vault')
+const { core } = await import('./index')
 
 describe('the file a save presents', () => {
   it('comes back as the file it was, through a path that holds spaces', async () => {

@@ -209,7 +209,6 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
 }))
 
 vi.mock('../../window/vault', () => ({
-  vault: {},
   vaults: {
     list: async () => listed,
     choose: async () => {
