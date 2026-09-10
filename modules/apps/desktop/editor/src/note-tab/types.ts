@@ -3,7 +3,7 @@
  */
 import type { ComputedRef } from 'vue'
 import type { Change } from './drawing'
-import type { OpenNote } from './notes'
+import type { OpenNote } from './noteTypes'
 import type { NoteTitlesDeps } from './titles'
 
 export type { NoteTitlesDeps }
