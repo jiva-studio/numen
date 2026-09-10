@@ -27,8 +27,10 @@ import { choicesFor } from './models'
 import { write } from '../shared/settings/write'
 import { WORDS as words } from './words'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: SettingsTabState }>()
 
+// --- State ---
 const installation = computed(() => props.state.installation)
 
 /** How large the interface may be drawn, and how large the text may be set. */
@@ -44,11 +46,14 @@ const modes = [
 /** The themes, in the two shelves they come off. */
 const themes = computed<readonly SelectChoice[]>(() =>
   [...installation.value.themes.value]
-    .sort((one, other) => Number(other.shipped) - Number(one.shipped))
+    .sort(
+      (one, other) =>
+        Number(other.isBuiltIn ?? other.shipped) - Number(one.isBuiltIn ?? one.shipped),
+    )
     .map((one) => ({
       id: one.name,
       text: one.title,
-      group: one.shipped ? words.shipped : words.owned,
+      group: (one.isBuiltIn ?? one.shipped) ? words.shipped : words.owned,
     })),
 )
 
@@ -68,41 +73,86 @@ const WHOLE = Number.MAX_SAFE_INTEGER
 const UNDER = { least: -1, most: WHOLE }
 const STEPS = { least: 1, most: WHOLE }
 
-/** What stands at a setting, read as the kind the row draws it as. */
-const said = (at: readonly string[]): string => {
-  const value = installation.value.setting(at)
-  return typeof value === 'string' ? value : ''
-}
-const on = (at: readonly string[]): boolean => installation.value.setting(at) === true
-const counted = (at: readonly string[]): number | null => {
-  const value = installation.value.setting(at)
-  return typeof value === 'number' ? value : null
-}
-
-/** The models a setting can be set to: what the file holds, then the presets. */
-const models = (at: readonly string[]): readonly SelectChoice[] =>
-  choicesFor(installation.value.models(at), said(at), words)
-
-/**
- * A model chosen. A preset writes everything that preset decides; a value the
- * presets do not name is written where it stands.
- */
-const picks = (at: readonly string[], name: string): void => {
-  const model = installation.value.models(at).find((one) => one.name === name)
-  if (model) installation.value.writes(model.writes)
-  else puts(at, name)
-}
-
-/** One setting written, by what is to stand there. */
-const puts = (at: readonly string[], value: unknown): void =>
-  installation.value.writes([{ at, value: write(value) }])
-
 /** The profiles a reading may be put right at, and naming none. */
 const profiles = computed<readonly SelectChoice[]>(() => {
   const kept = installation.value.setting(AT.profiles)
   const names = kept && typeof kept === 'object' ? Object.keys(kept) : []
   return [{ id: '', text: words.proofreadingNone }, ...names.map((one) => ({ id: one, text: one }))]
 })
+
+// --- Handlers ---
+function onOpenFile() {
+  installation.value.opensFile()
+}
+
+function onThemeChange(name: string) {
+  installation.value.chooses(name)
+}
+
+function onModeChange(modeChoice: string) {
+  installation.value.chooses(`${MODE}:${modeChoice as Mode}`)
+}
+
+function onInterfaceScaleChange(size: number | null) {
+  if (size !== null) {
+    installation.value.chooses(`${INTERFACE_SCALE}:${size}`)
+  }
+}
+
+function onTextScaleChange(size: number | null) {
+  if (size !== null) {
+    installation.value.chooses(`${TEXT_SCALE}:${size}`)
+  }
+}
+
+function onPartsChange(count: number | null) {
+  if (count !== null) {
+    installation.value.choosesParts(count)
+  }
+}
+
+function onDayStartsChange(hour: string) {
+  installation.value.choosesDayStarts(hour)
+}
+
+function onModelChange(at: readonly string[], name: string) {
+  const model = installation.value.models(at).find((one) => one.name === name)
+  if (model) installation.value.writes(model.writes)
+  else setSetting(at, name)
+}
+
+function onSettingChange(at: readonly string[], value: unknown) {
+  setSetting(at, value)
+}
+
+// --- Helpers ---
+function getSettingString(at: readonly string[]): string {
+  const value = installation.value.setting(at)
+  return typeof value === 'string' ? value : ''
+}
+const said = getSettingString
+
+function isSettingEnabled(at: readonly string[]): boolean {
+  return installation.value.setting(at) === true
+}
+const on = isSettingEnabled
+
+function getSettingNumber(at: readonly string[]): number | null {
+  const value = installation.value.setting(at)
+  return typeof value === 'number' ? value : null
+}
+const counted = getSettingNumber
+
+function getModels(at: readonly string[]): readonly SelectChoice[] {
+  return choicesFor(installation.value.models(at), getSettingString(at), words)
+}
+const models = getModels
+
+function setSetting(at: readonly string[], value: unknown): void {
+  installation.value.writes([{ at, value: write(value) }])
+}
+const puts = setSetting
+const picks = onModelChange
 </script>
 
 <template>
@@ -112,7 +162,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
            setting with a control is turned by its control. -->
       <div class="settings__where">
         <p class="settings__file">{{ installation.file.value || words.file }}</p>
-        <Button variant="outline" size="small" @click="installation.opensFile()">
+        <Button variant="outline" size="small" @click="onOpenFile">
           {{ words.opens }}
         </Button>
       </div>
@@ -132,7 +182,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :name="words.theme"
             :aria-labelledby="labelledBy"
             class="settings__choice"
-            @update:model-value="(name: string) => installation.chooses(name)"
+            @update:model-value="onThemeChange"
           />
         </SettingRow>
 
@@ -147,7 +197,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :choices="modes"
             :disabled="installation.pinned.value"
             :aria-labelledby="labelledBy"
-            @update:model-value="(one: string) => installation.chooses(`${MODE}:${one as Mode}`)"
+            @update:model-value="onModeChange"
           />
         </SettingRow>
 
@@ -164,10 +214,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :step="STEP"
             :aria-labelledby="labelledBy"
             class="settings__number"
-            @update:model-value="
-              (size: number | null) =>
-                size !== null && installation.chooses(`${INTERFACE_SCALE}:${size}`)
-            "
+            @update:model-value="onInterfaceScaleChange"
           />
         </SettingRow>
 
@@ -184,10 +231,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :step="STEP"
             :aria-labelledby="labelledBy"
             class="settings__number"
-            @update:model-value="
-              (size: number | null) =>
-                size !== null && installation.chooses(`${TEXT_SCALE}:${size}`)
-            "
+            @update:model-value="onTextScaleChange"
           />
         </SettingRow>
 
@@ -213,9 +257,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :step="1"
             :aria-labelledby="labelledBy"
             class="settings__number"
-            @update:model-value="
-              (count: number | null) => count !== null && installation.choosesParts(count)
-            "
+            @update:model-value="onPartsChange"
           />
         </SettingRow>
       </section>
@@ -247,7 +289,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :max="installation.latestDayStarts.value"
             :aria-labelledby="labelledBy"
             class="settings__number"
-            @settles="(hour: string) => installation.choosesDayStarts(hour)"
+            @settles="onDayStartsChange"
           />
         </SettingRow>
       </section>
@@ -264,7 +306,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           <Switch
             :model-value="on(AT.transcribing)"
             :aria-labelledby="labelledBy"
-            @update:model-value="(kept: boolean) => puts(AT.transcribing, kept)"
+            @update:model-value="(kept: boolean) => onSettingChange(AT.transcribing, kept)"
           />
         </SettingRow>
 
@@ -281,7 +323,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :step="1"
             :aria-labelledby="labelledBy"
             class="settings__number"
-            @settles="(size: number | null) => size !== null && puts(AT.transcribeUnder, size)"
+            @settles="(size: number | null) => size !== null && onSettingChange(AT.transcribeUnder, size)"
           />
         </SettingRow>
 
@@ -297,7 +339,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :name="words.transcriptProofread"
             :aria-labelledby="labelledBy"
             class="settings__choice"
-            @update:model-value="(name: string) => puts(AT.transcriptProofread, name)"
+            @update:model-value="(name: string) => onSettingChange(AT.transcriptProofread, name)"
           />
         </SettingRow>
 
@@ -310,7 +352,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           <Switch
             :model-value="on(AT.transcriptProofreadAlways)"
             :aria-labelledby="labelledBy"
-            @update:model-value="(kept: boolean) => puts(AT.transcriptProofreadAlways, kept)"
+            @update:model-value="(kept: boolean) => onSettingChange(AT.transcriptProofreadAlways, kept)"
           />
         </SettingRow>
       </section>
@@ -330,7 +372,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :name="words.ocrModel"
             :aria-labelledby="labelledBy"
             class="settings__choice"
-            @update:model-value="(name: string) => picks(AT.ocrModel, name)"
+            @update:model-value="(name: string) => onModelChange(AT.ocrModel, name)"
           />
         </SettingRow>
 
@@ -346,7 +388,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :name="words.ocrProofread"
             :aria-labelledby="labelledBy"
             class="settings__choice"
-            @update:model-value="(name: string) => puts(AT.ocrProofread, name)"
+            @update:model-value="(name: string) => onSettingChange(AT.ocrProofread, name)"
           />
         </SettingRow>
 
@@ -359,7 +401,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           <Switch
             :model-value="on(AT.ocrProofreadAlways)"
             :aria-labelledby="labelledBy"
-            @update:model-value="(kept: boolean) => puts(AT.ocrProofreadAlways, kept)"
+            @update:model-value="(kept: boolean) => onSettingChange(AT.ocrProofreadAlways, kept)"
           />
         </SettingRow>
       </section>
@@ -379,7 +421,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :name="words.indexingModel"
             :aria-labelledby="labelledBy"
             class="settings__choice"
-            @update:model-value="(name: string) => picks(AT.indexingModel, name)"
+            @update:model-value="(name: string) => onModelChange(AT.indexingModel, name)"
           />
         </SettingRow>
       </section>
@@ -399,7 +441,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :name="words.agentUse"
             :aria-labelledby="labelledBy"
             class="settings__choice"
-            @update:model-value="(name: string) => picks(AT.agent, name)"
+            @update:model-value="(name: string) => onModelChange(AT.agent, name)"
           />
         </SettingRow>
 
@@ -415,7 +457,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :name="words.agentModel"
             :aria-labelledby="labelledBy"
             class="settings__choice"
-            @update:model-value="(name: string) => picks(AT.agentModel, name)"
+            @update:model-value="(name: string) => onModelChange(AT.agentModel, name)"
           />
         </SettingRow>
 
@@ -432,7 +474,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             :step="1"
             :aria-labelledby="labelledBy"
             class="settings__number"
-            @settles="(count: number | null) => count !== null && puts(AT.agentSteps, count)"
+            @settles="(count: number | null) => count !== null && onSettingChange(AT.agentSteps, count)"
           />
         </SettingRow>
 
@@ -445,7 +487,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           <Switch
             :model-value="on(AT.agentTools)"
             :aria-labelledby="labelledBy"
-            @update:model-value="(kept: boolean) => puts(AT.agentTools, kept)"
+            @update:model-value="(kept: boolean) => onSettingChange(AT.agentTools, kept)"
           />
         </SettingRow>
 
@@ -458,7 +500,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           <Switch
             :model-value="on(AT.agentHooks)"
             :aria-labelledby="labelledBy"
-            @update:model-value="(kept: boolean) => puts(AT.agentHooks, kept)"
+            @update:model-value="(kept: boolean) => onSettingChange(AT.agentHooks, kept)"
           />
         </SettingRow>
       </section>
