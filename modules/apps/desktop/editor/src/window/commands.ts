@@ -45,7 +45,7 @@ export interface CommandsDepsOptions {
   hungParts: { chooses: (item: string) => Promise<void> | void; choosesCount: (item: string) => Promise<void> | void }
   recorded: { deleted?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { deleted?: (path: string) => void; onDelete?: (path: string) => void }
-  files: () => { reveals: (path: string) => void }
+  files: () => { revealPath: (path: string) => void }
   plexes: () => { travel: (path: string) => Promise<void> | void; leaves: (from: string, to: string) => Promise<void> | void }
   agents: () => { asks: (text: string) => void }
   opening: () => string
@@ -134,7 +134,7 @@ export function useCommands(options: CommandsDepsOptions) {
       reloads,
     },
     goes: {
-      reveals: (path) => void files().reveals(path),
+      reveals: (path) => void files().revealPath(path),
       travel: async (path) => {
         await plexes().travel(path)
       },
@@ -145,7 +145,7 @@ export function useCommands(options: CommandsDepsOptions) {
       opens: (kind) => void held.opens(kind),
       preset: (path) => opensPreset(path),
       closes: (tab) => held.drops(tab),
-      asks: (text) => void agents().asks(text),
+      asks: (text) => void agents().askQuestion(text),
       searches: () => {
         commands.shows(false)
         palette.shows(true)

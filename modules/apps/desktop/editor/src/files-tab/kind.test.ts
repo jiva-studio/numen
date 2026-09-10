@@ -8,8 +8,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../shared/core'
-import { filing, landingOf } from './kind'
-import { folderOf, listing, ROOT } from './listing'
+import { useFilesTab, landingOf } from './kind'
+import { folderOf, useFileTree, ROOT } from './listing'
 import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from './menu'
 import { WORDS as words } from './words'
 
@@ -47,8 +47,8 @@ const tab = (refuses = false) => {
   const done: string[] = []
   // Its own copy, so a folder one test makes is not there for the next.
   const vault: Record<string, readonly Entry[]> = { ...held }
-  const list = listing({ list: async (at: string) => vault[at] ?? [] })
-  const gestures = filing(list, {
+  const list = useFileTree({ list: async (at: string) => vault[at] ?? [] })
+  const gestures = useFilesTab(list, {
     lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
     runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
     moves: async (from, to) => void done.push(`moves ${from} ${to}`),
@@ -296,13 +296,13 @@ describe('rows let go of', () => {
 
   it('read the folders again once, when all of them are done', async () => {
     const asked: string[] = []
-    const list = listing({
+    const list = useFileTree({
       list: async (at: string) => {
         asked.push(at)
         return held[at] ?? []
       },
     })
-    const one = filing(list, {
+    const one = useFilesTab(list, {
       lands: () => {},
       runs: () => {},
       moves: async () => {},
@@ -415,14 +415,14 @@ describe('an item chosen in the menu on a row', () => {
   const asked = async (path: string | null = 'Entropy.md', refuses = false) => {
     const held = tab(refuses)
     await held.list.opens(ROOT)
-    held.one.asks({ path, at: { x: 0, y: 0 } })
+    held.one.openMenu({ path, at: { x: 0, y: 0 } })
     return held
   }
 
   it('puts the name of the row in a field, and asks the window for nothing', async () => {
     const { done, one } = await asked()
 
-    one.chose(RENAME)
+    one.chooseMenuItem(RENAME)
 
     expect(one.renaming.value).toBe('Entropy.md')
     expect(done).toStrictEqual([])
@@ -431,7 +431,7 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a folder beside the row, under a name nothing there carries', async () => {
     const { done, one } = await asked()
 
-    one.chose(NEW_FOLDER)
+    one.chooseMenuItem(NEW_FOLDER)
     await settles()
 
     expect(done).toStrictEqual(['makes New folder'])
@@ -440,7 +440,7 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a folder inside the row where the row is a folder', async () => {
     const { done, one } = await asked('physics')
 
-    one.chose(NEW_FOLDER)
+    one.chooseMenuItem(NEW_FOLDER)
     await settles()
 
     expect(done).toStrictEqual(['makes physics/New folder'])
@@ -449,7 +449,7 @@ describe('an item chosen in the menu on a row', () => {
   it('puts the name of a folder it made in a field', async () => {
     const { one } = await asked()
 
-    one.chose(NEW_FOLDER)
+    one.chooseMenuItem(NEW_FOLDER)
     await settles()
 
     expect(one.renaming.value).toBe('New folder')
@@ -460,7 +460,7 @@ describe('an item chosen in the menu on a row', () => {
   it('puts no name in a field where the folder was refused', async () => {
     const { one } = await asked('Entropy.md', true)
 
-    one.chose(NEW_FOLDER)
+    one.chooseMenuItem(NEW_FOLDER)
     await settles()
 
     expect(one.renaming.value).toBeNull()
@@ -469,7 +469,7 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a note beside the row, and puts its name in a field', async () => {
     const { done, one } = await asked()
 
-    one.chose(NEW_NOTE)
+    one.chooseMenuItem(NEW_NOTE)
     await settles()
 
     expect(done).toStrictEqual(['writes Untitled note.md'])
@@ -479,7 +479,7 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a deck beside the row, and puts its name in a field', async () => {
     const { done, one } = await asked()
 
-    one.chose(NEW_DECK)
+    one.chooseMenuItem(NEW_DECK)
     await settles()
 
     expect(done).toStrictEqual([`decks / ${words.newDeck}`])
@@ -490,7 +490,7 @@ describe('an item chosen in the menu on a row', () => {
   it('asks under the name alone, putting no ending on it', async () => {
     const { done, one } = await asked()
 
-    one.chose(NEW_DECK)
+    one.chooseMenuItem(NEW_DECK)
     await settles()
 
     expect(done[0]).not.toContain('.md')
@@ -499,7 +499,7 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a stencil the same way, under a name of its own', async () => {
     const { done, one } = await asked()
 
-    one.chose(NEW_STENCIL)
+    one.chooseMenuItem(NEW_STENCIL)
     await settles()
 
     expect(done).toStrictEqual([`stencils / ${words.newStencil}`])
@@ -508,7 +508,7 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a preset the same way, under a name of its own', async () => {
     const { done, one } = await asked()
 
-    one.chose(NEW_PRESET)
+    one.chooseMenuItem(NEW_PRESET)
     await settles()
 
     expect(done).toStrictEqual([`presets / ${words.newPreset}`])
@@ -518,7 +518,7 @@ describe('an item chosen in the menu on a row', () => {
   it('stands the preset in the tree as a preset', async () => {
     const { one } = await asked()
 
-    one.chose(NEW_PRESET)
+    one.chooseMenuItem(NEW_PRESET)
     await settles()
 
     expect(one.list.entryAt(`${words.newPreset}.note`)?.type).toBe('preset')
@@ -527,7 +527,7 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a preset inside the row where the row is a folder', async () => {
     const { done, one } = await asked('physics')
 
-    one.chose(NEW_PRESET)
+    one.chooseMenuItem(NEW_PRESET)
     await settles()
 
     expect(done).toStrictEqual([`presets physics ${words.newPreset}`])
@@ -536,7 +536,7 @@ describe('an item chosen in the menu on a row', () => {
   it('names nothing where the vault made no preset', async () => {
     const { one } = await asked(undefined, true)
 
-    one.chose(NEW_PRESET)
+    one.chooseMenuItem(NEW_PRESET)
     await settles()
 
     expect(one.renaming.value).toBeNull()
@@ -545,7 +545,7 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a deck inside the row where the row is a folder', async () => {
     const { done, one } = await asked('physics')
 
-    one.chose(NEW_DECK)
+    one.chooseMenuItem(NEW_DECK)
     await settles()
 
     expect(done).toStrictEqual([`decks physics ${words.newDeck}`])
@@ -554,7 +554,7 @@ describe('an item chosen in the menu on a row', () => {
   it('names nothing where the vault made no deck', async () => {
     const { one } = await asked(undefined, true)
 
-    one.chose(NEW_DECK)
+    one.chooseMenuItem(NEW_DECK)
     await settles()
 
     expect(one.renaming.value).toBeNull()
@@ -563,7 +563,7 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a note inside the row where the row is a folder', async () => {
     const { done, one } = await asked('physics')
 
-    one.chose(NEW_NOTE)
+    one.chooseMenuItem(NEW_NOTE)
     await settles()
 
     expect(done).toStrictEqual(['writes physics/Untitled note.md'])
@@ -572,10 +572,10 @@ describe('an item chosen in the menu on a row', () => {
   it('makes a note and a folder at the root, asked off every row', async () => {
     const { done, one } = await asked(null)
 
-    one.chose(NEW_NOTE)
+    one.chooseMenuItem(NEW_NOTE)
     await settles()
-    one.asks({ path: null, at: { x: 0, y: 0 } })
-    one.chose(NEW_FOLDER)
+    one.openMenu({ path: null, at: { x: 0, y: 0 } })
+    one.chooseMenuItem(NEW_FOLDER)
     await settles()
 
     expect(done).toStrictEqual(['writes Untitled note.md', 'makes New folder'])
@@ -584,7 +584,7 @@ describe('an item chosen in the menu on a row', () => {
   it('renames nothing where the menu was asked off every row', async () => {
     const { one } = await asked(null)
 
-    one.chose(RENAME)
+    one.chooseMenuItem(RENAME)
 
     expect(one.renaming.value).toBeNull()
   })
@@ -592,7 +592,7 @@ describe('an item chosen in the menu on a row', () => {
   it('hands a command over the file to the window', async () => {
     const { done, one } = await asked()
 
-    one.chose('remove')
+    one.chooseMenuItem('remove')
 
     expect(done).toStrictEqual(['runs remove Entropy.md Entropy.md'])
   })
@@ -601,7 +601,7 @@ describe('an item chosen in the menu on a row', () => {
     const held = await asked()
     held.list.chooses(['Entropy.md', 'Cover.png'])
 
-    held.one.chose('remove')
+    held.one.chooseMenuItem('remove')
 
     expect(held.done).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
   })
@@ -610,7 +610,7 @@ describe('an item chosen in the menu on a row', () => {
     const held = await asked()
     held.list.chooses(['Cover.png'])
 
-    held.one.chose('remove')
+    held.one.chooseMenuItem('remove')
 
     expect(held.done).toStrictEqual(['runs remove Entropy.md Entropy.md'])
   })
@@ -618,7 +618,7 @@ describe('an item chosen in the menu on a row', () => {
   it('does nothing at all for a choice the menu does not offer', async () => {
     const { done, one } = await asked()
 
-    one.chose('destroyEverything')
+    one.chooseMenuItem('destroyEverything')
 
     expect(done).toStrictEqual([])
   })
@@ -626,7 +626,7 @@ describe('an item chosen in the menu on a row', () => {
   it('puts the menu away whatever was chosen', async () => {
     const { one } = await asked()
 
-    one.chose('remove')
+    one.chooseMenuItem('remove')
 
     expect(one.menu.value).toBeNull()
   })

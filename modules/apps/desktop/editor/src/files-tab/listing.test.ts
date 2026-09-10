@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../shared/core'
-import { above, folderOf, freeName, landedIn, listing, ROOT, type ListingRow } from './listing'
+import { above, folderOf, freeName, landedIn, useFileTree, ROOT, type ListingRow } from './listing'
 
 /** One row of a listing, under the folder it sits in. */
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
@@ -115,7 +115,7 @@ describe('where a row let go of lands', () => {
 describe('the tree as it opens', () => {
   it('draws what the root holds, in the order the vault gave it', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
 
     await list.opens(ROOT)
 
@@ -124,7 +124,7 @@ describe('the tree as it opens', () => {
 
   it('draws every file the vault holds, and not only its notes', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
 
     await list.opens(ROOT)
 
@@ -135,7 +135,7 @@ describe('the tree as it opens', () => {
 describe('a folder opened', () => {
   it('is read, and what it holds is drawn inside it', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
 
     await list.opens('physics')
@@ -151,7 +151,7 @@ describe('a folder opened', () => {
 
   it('is read again every time it opens', async () => {
     const { core, asked } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     await list.opens('physics')
     list.closes('physics')
@@ -165,7 +165,7 @@ describe('a folder opened', () => {
 describe('a folder closed', () => {
   it('draws nothing under it', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     await list.opens('physics')
 
@@ -176,7 +176,7 @@ describe('a folder closed', () => {
 
   it('keeps the folders open inside it, so they are drawn again where it opens', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     await list.opens('physics')
     await list.opens('physics/heat')
@@ -189,7 +189,7 @@ describe('a folder closed', () => {
 
   it('is never the root, which is the tree itself', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
 
     list.closes(ROOT)
@@ -201,7 +201,7 @@ describe('a folder closed', () => {
 describe('a change the vault reports', () => {
   it('reads the folder the path it names sits in', async () => {
     const { core, asked } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     await list.opens('physics')
     asked.length = 0
@@ -213,7 +213,7 @@ describe('a change the vault reports', () => {
 
   it('leaves every other open folder alone', async () => {
     const { core, asked } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     await list.opens('physics')
     await list.opens('notes')
@@ -226,7 +226,7 @@ describe('a change the vault reports', () => {
 
   it('reads nothing for a path inside a folder that is closed', async () => {
     const { core, asked } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     asked.length = 0
 
@@ -237,7 +237,7 @@ describe('a change the vault reports', () => {
 
   it('reads the open folder above a folder it draws no row for', async () => {
     const { core, asked, puts } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     puts(ROOT, folder('trips'))
     asked.length = 0
@@ -250,7 +250,7 @@ describe('a change the vault reports', () => {
 
   it('reads every open folder when it names nothing at all', async () => {
     const { core, asked } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     await list.opens('physics')
     asked.length = 0
@@ -262,7 +262,7 @@ describe('a change the vault reports', () => {
 
   it('reads the folder a file left and the folder it arrived in', async () => {
     const { core, asked } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     await list.opens('physics')
     await list.opens('notes')
@@ -275,7 +275,7 @@ describe('a change the vault reports', () => {
 
   it('leaves each chosen row chosen at where it went', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     await list.opens('physics')
     list.chooses(['physics/Entropy.md', 'Cover.png'])
@@ -293,7 +293,7 @@ describe('the window coming back to the front', () => {
    */
   it('reads every open folder, and turns up what nothing reported', async () => {
     const { core, puts } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     await list.opens('physics')
     puts('physics', file('physics/Diagram.png', { kind: 'other' }))
@@ -305,7 +305,7 @@ describe('the window coming back to the front', () => {
 
   it('reads no folder that is closed', async () => {
     const { core, asked } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     asked.length = 0
 
@@ -318,7 +318,7 @@ describe('the window coming back to the front', () => {
 describe('the tree walked down to a path', () => {
   it('opens each folder above it, from the root down', async () => {
     const { core, asked } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     asked.length = 0
 
@@ -329,7 +329,7 @@ describe('the tree walked down to a path', () => {
 
   it('draws the path it was walked down to', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
 
     await list.reveals('physics/heat/Kelvin.md')
@@ -339,7 +339,7 @@ describe('the tree walked down to a path', () => {
 
   it('leaves the path the whole of what is chosen', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
     list.chooses(['Cover.png'])
 
@@ -351,7 +351,7 @@ describe('the tree walked down to a path', () => {
 
 describe('a folder that could not be read', () => {
   it('is said in the tab, and the tree stands as it was', async () => {
-    const list = listing({
+    const list = useFileTree({
       list: async () => {
         throw new Error('the vault is not there')
       },
@@ -368,7 +368,7 @@ describe('a folder that could not be read', () => {
 describe('a tab that has closed', () => {
   it('draws nothing of what it was given after it closed', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
 
     list.close()
@@ -378,7 +378,7 @@ describe('a tab that has closed', () => {
 
   it('keeps nothing a question answers with after it closed', async () => {
     const { core } = vault()
-    const list = listing(core)
+    const list = useFileTree(core)
     const asking = list.opens(ROOT)
     list.close()
 
@@ -391,7 +391,7 @@ describe('a tab that has closed', () => {
 describe('a name nothing in a folder is filed under', () => {
   it('counts past what the folder already holds', async () => {
     const { core } = vault({ [ROOT]: [folder('New folder')] })
-    const list = listing(core)
+    const list = useFileTree(core)
     await list.opens(ROOT)
 
     expect(list.freeIn(ROOT, 'New folder')).toBe('New folder 2')

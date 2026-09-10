@@ -74,9 +74,9 @@ export interface Documents {
 const WIDEST = 4096
 
 /** What one open document holds: its pages, and what is lit in them. */
-export type OpenDocumentState = ReturnType<typeof openDocument>
+export type DocumentReaderState = ReturnType<typeof useDocumentReader>
 
-export function openDocument(documents: Documents, path: string) {
+export function useDocumentReader(documents: Documents, path: string) {
   /** How big each page is, in its own units. */
   const pages = shallowRef<readonly Page[]>([])
   /** Which page is in front, counted from the first. */
@@ -217,3 +217,5 @@ export function openDocument(documents: Documents, path: string) {
     close,
   }
 }
+
+

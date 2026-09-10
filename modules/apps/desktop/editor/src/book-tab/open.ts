@@ -150,9 +150,9 @@ export function contentsOf(book: Book, words: BookWords): readonly ContentsEntry
 }
 
 /** What one open book holds: where the person is, and what stands there. */
-export type OpenBookState = ReturnType<typeof openBook>
+export type BookReaderState = ReturnType<typeof useBookReader>
 
-export function openBook(
+export function useBookReader(
   books: Books,
   path: string,
   words: BookWords,
@@ -325,3 +325,5 @@ export function openBook(
     close,
   }
 }
+
+

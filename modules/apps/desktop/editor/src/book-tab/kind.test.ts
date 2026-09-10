@@ -5,16 +5,16 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
-import { booking, bookKind, type BookHandle, type BookTabState } from './kind'
+import { bookKind, useBookTab, type BookHandle, type BookTabState } from './kind'
 import { BOOK } from '../shared/tabs/workspace'
-import type { OpenBookState } from './open'
+import type { BookReaderState } from './open'
 import type { FileOpeners, SourceReader } from '../shared/tabs/openers'
 import type { Span } from '../shared/core'
 import type { WindowHandle } from '../shared/tabs/windowTabs'
 
 /** A book being read, with only the parts a tab of it reaches for. */
 const read = (path: string, title = '', close = vi.fn()) =>
-  ({ path, title: ref(title), close }) as unknown as OpenBookState
+  ({ path, title: ref(title), close }) as unknown as BookReaderState
 
 /** A mock window handle writing down opened tabs and returning a given tab state. */
 const createMockWindow = (held?: BookTabState) => {
@@ -61,31 +61,50 @@ const kindOver = (held: BookTabState) => bookKind(createMockWindow(held).handle,
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {
     const drawn: BookHandle = { measure: vi.fn(), pressed: vi.fn(() => false) }
-    const held = booking(read('library/Mahabharata.epub'))
+    const held = useBookTab(read('library/Mahabharata.epub'))
 
     // Drawn nowhere yet, and asked to measure all the same.
     held.measure()
     expect(drawn.measure).not.toHaveBeenCalled()
 
-    held.holdsBook(drawn)
+    held.setBookHandle(drawn)
     held.measure()
     expect(drawn.measure).toHaveBeenCalledTimes(1)
   })
 
   it('stands at the path the book is filed at', () => {
-    expect(booking(read('library/Mahabharata.epub')).path).toBe('library/Mahabharata.epub')
+    expect(useBookTab(read('library/Mahabharata.epub')).path).toBe('library/Mahabharata.epub')
+  })
+
+  it('delegates focus and keypresses to the held elements', () => {
+    const focus = vi.fn()
+    const element = { focus } as unknown as HTMLElement
+    const pressed = vi.fn(() => true)
+    const drawn: BookHandle = { measure: vi.fn(), pressed }
+    const held = useBookTab(read('library/Mahabharata.epub'))
+
+    held.setTabElement(element)
+    held.focusTab()
+    expect(focus).toHaveBeenCalledTimes(1)
+
+    const event = new KeyboardEvent('keydown', { key: 'ArrowRight' })
+    expect(held.handleKeyPress(event)).toBe(false)
+
+    held.setBookHandle(drawn)
+    expect(held.handleKeyPress(event)).toBe(true)
+    expect(pressed).toHaveBeenCalledWith(event)
   })
 })
 
 describe('what a book tab is called', () => {
   it('is what the book calls itself', () => {
-    const held = booking(read('library/mbh-04.epub', 'Virāṭa Parva'))
+    const held = useBookTab(read('library/mbh-04.epub', 'Virāṭa Parva'))
 
     expect(kindOver(held).called(held)).toBe('Virāṭa Parva')
   })
 
   it('is the name of the file, for a book that calls itself nothing', () => {
-    const held = booking(read('library/sub/mbh-04.epub'))
+    const held = useBookTab(read('library/sub/mbh-04.epub'))
 
     expect(kindOver(held).called(held)).toBe('mbh-04.epub')
   })
@@ -116,7 +135,7 @@ describe('what a command over a book tab is asked over', () => {
 describe('a book let go of', () => {
   it('lets go of what it held and leaves the pane', () => {
     const close = vi.fn()
-    const held = booking(read('library/Mahabharata.epub', '', close))
+    const held = useBookTab(read('library/Mahabharata.epub', '', close))
 
     expect(kindOver(held).shuts?.(held, 'a tab')).toBe(true)
     expect(close).toHaveBeenCalledTimes(1)

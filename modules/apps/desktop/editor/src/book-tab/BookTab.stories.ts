@@ -14,8 +14,8 @@ import { onMounted, ref } from 'vue'
 import BookTab from './BookTab.vue'
 import { WorkspaceLayout, pane } from '@numen/ui'
 import type { Workspace } from '@numen/ui'
-import { booking } from './kind'
-import { openBook, type Book, type Books } from './open'
+import { useBookTab } from './kind'
+import { useBookReader, type Book, type Books } from './open'
 import { WORDS as words } from './words'
 
 /** How long a wait goes on where the browser sets the pace: a turn it animates. */
@@ -158,7 +158,7 @@ interface Knobs {
 
 const room = (args: Knobs) => ({
   components: { BookTab },
-  setup: () => ({ args, state: booking(openBook(shelf(args.book), 'library/mbh.epub', words, () => {})) }),
+  setup: () => ({ args, state: useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {})) }),
   template: `
     <div class="numen" :style="{ height: '100vh', width: args.width, background: 'var(--numen-surface)' }">
       <BookTab :state="state" />
@@ -312,7 +312,7 @@ export const DrawnOutOfSight: Story = {
   render: (args: Knobs) => ({
     components: { BookTab },
     setup() {
-      const state = booking(openBook(shelf(args.book), 'library/mbh.epub', words, () => {}))
+      const state = useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {}))
       const room = ref(false)
       onMounted(() => {
         setTimeout(() => {
@@ -340,7 +340,7 @@ export const DrawnOutOfSight: Story = {
 /** The book whose text points about inside itself and once out of itself. */
 const pointing = () => ({
   components: { BookTab },
-  setup: () => ({ state: booking(openBook(crossed, 'library/mbh.epub', words, () => {})) }),
+  setup: () => ({ state: useBookTab(useBookReader(crossed, 'library/mbh.epub', words, () => {})) }),
   template: `
     <div class="numen" style="height: 100vh; background: var(--numen-surface)">
       <BookTab :state="state" />
@@ -454,7 +454,7 @@ export const InAPaneOfTheWindow: Story = {
         axis: 'horizontal',
         focus: 'main',
       })
-      const state = booking(openBook(shelf(args.book), 'library/mbh.epub', words, () => {}))
+      const state = useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {}))
       return { layout, state, tabs: [{ id: BOOK_TAB, title: 'Mahābhārata' }] }
     },
     template: `
@@ -493,7 +493,7 @@ export const AnswersAKeyAsDrawn: Story = {
   render: (args: Knobs) => ({
     components: { BookTab },
     setup() {
-      const state = booking(openBook(shelf(args.book), 'library/mbh.epub', words, () => {}))
+      const state = useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {}))
       return { args, state }
     },
     template: `

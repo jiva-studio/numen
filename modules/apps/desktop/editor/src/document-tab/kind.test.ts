@@ -5,18 +5,18 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { documenting, documentKind, type DocumentTabState, type PageHandle } from './kind'
+import { documentKind, useDocumentTab, type DocumentTabState, type PageHandle } from './kind'
 import { DOCUMENT } from '../shared/tabs/workspace'
-import type { OpenDocumentState } from './open'
+import type { DocumentReaderState } from './open'
 import type { FileOpeners, SourceReader } from '../shared/tabs/openers'
 import type { Span } from '../shared/core'
 import type { WindowHandle } from '../shared/tabs/windowTabs'
 
 /** A document being read, with only the parts a tab of it reaches for. */
-const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as OpenDocumentState
+const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as DocumentReaderState
 
-/** A window, writing down what it was asked to open and holding what it made. */
-const window_ = (held: DocumentTabState | null = null) => {
+/** A mock window writing down what it was asked to open and returning a given tab state. */
+const createMockDocumentWindow = (held: DocumentTabState | null = null) => {
   const opened: string[] = []
   const handle = {
     opens: async (kind: string, at?: string) => {
@@ -48,18 +48,18 @@ const openedAt = (path: string, page: number, pageCount: number) =>
   ({ path, at: ref(page), pages: ref(Array.from({ length: pageCount })) }) as unknown as DocumentTabState
 
 /** The kind, over a window holding the document it is handed. */
-const kindOver = (held: DocumentTabState) => documentKind(window_(held).handle, () => held, openers().puts).kind
+const kindOver = (held: DocumentTabState) => documentKind(createMockDocumentWindow(held).handle, () => held, openers().puts).kind
 
 describe('what a document tab holds', () => {
   it('measures the page again once there is a page to measure', () => {
     const page: PageHandle = { measure: vi.fn() }
-    const held = documenting(read('physics/Boltzmann.pdf'))
+    const held = useDocumentTab(read('physics/Boltzmann.pdf'))
 
     // Drawn nowhere yet, and asked to measure all the same.
     held.measure()
     expect(page.measure).not.toHaveBeenCalled()
 
-    held.drew(page)
+    held.setPageHandle(page)
     held.measure()
     expect(page.measure).toHaveBeenCalledTimes(1)
   })
@@ -68,32 +68,32 @@ describe('what a document tab holds', () => {
   // page out in, so what it drew is let go of when it goes.
   it('measures nothing once the page it drew is gone', () => {
     const page: PageHandle = { measure: vi.fn() }
-    const held = documenting(read('physics/Boltzmann.pdf'))
-    held.drew(page)
-    held.drew(null)
+    const held = useDocumentTab(read('physics/Boltzmann.pdf'))
+    held.setPageHandle(page)
+    held.setPageHandle(null)
 
     held.measure()
     expect(page.measure).not.toHaveBeenCalled()
   })
 
   it('is the document it was opened on', () => {
-    expect(documenting(read('physics/Boltzmann.pdf')).path).toBe('physics/Boltzmann.pdf')
+    expect(useDocumentTab(read('physics/Boltzmann.pdf')).path).toBe('physics/Boltzmann.pdf')
   })
 })
 
 describe('a document tab', () => {
   const kindOf = () => {
-    const { handle } = window_()
+    const { handle } = createMockDocumentWindow()
     const { puts } = openers()
-    return documentKind(handle, (path) => documenting(read(path)), puts)
+    return documentKind(handle, (path) => useDocumentTab(read(path)), puts)
   }
 
   it('is called by the file and not by the folders above it', () => {
     const { kind } = kindOf()
-    expect(kind.called(documenting(read('physics/heat/Boltzmann 1877.pdf')))).toBe(
+    expect(kind.called(useDocumentTab(read('physics/heat/Boltzmann 1877.pdf')))).toBe(
       'Boltzmann 1877.pdf',
     )
-    expect(kind.called(documenting(read('Boltzmann.pdf')))).toBe('Boltzmann.pdf')
+    expect(kind.called(useDocumentTab(read('Boltzmann.pdf')))).toBe('Boltzmann.pdf')
   })
 
   // A document is its own tab, so the same one opened again is the tab it is
@@ -107,8 +107,8 @@ describe('a document tab', () => {
   it('measures the page when the tab comes on screen', () => {
     const { kind } = kindOf()
     const page: PageHandle = { measure: vi.fn() }
-    const held = documenting(read('physics/Boltzmann.pdf'))
-    held.drew(page)
+    const held = useDocumentTab(read('physics/Boltzmann.pdf'))
+    held.setPageHandle(page)
 
     kind.shown?.(held, 'a tab')
     expect(page.measure).toHaveBeenCalledTimes(1)
@@ -117,7 +117,7 @@ describe('a document tab', () => {
   it('lets go of the document it was reading, and goes', () => {
     const { kind } = kindOf()
     const close = vi.fn()
-    const held = documenting(read('physics/Boltzmann.pdf', close))
+    const held = useDocumentTab(read('physics/Boltzmann.pdf', close))
 
     expect(kind.shuts?.(held, 'a tab')).toBe(true)
     expect(close).toHaveBeenCalledTimes(1)
@@ -128,9 +128,9 @@ describe('a search that landed in a document', () => {
   it('opens the document and turns it to what was found', async () => {
     const reached = vi.fn()
     const held = { reach: reached } as unknown as DocumentTabState
-    const { handle, opened } = window_(held)
+    const { handle, opened } = createMockDocumentWindow(held)
     const { puts, opens } = openers()
-    documentKind(handle, (path) => documenting(read(path)), puts)
+    documentKind(handle, (path) => useDocumentTab(read(path)), puts)
 
     const spans: readonly Span[] = [
       { from: 0, to: 12 },

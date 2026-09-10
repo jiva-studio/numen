@@ -11,8 +11,10 @@ import { ListTree } from '@lucide/vue'
 import { WORDS as words } from './words'
 import type { BookHandle, BookTabState } from './kind'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: BookTabState }>()
 
+// --- State ---
 /** Whether the list of what the book divides into stands over the text. */
 const listing = ref(false)
 
@@ -22,20 +24,24 @@ const listing = ref(false)
  * "not mine" and the arrows turn nothing at all.
  */
 const book = useTemplateRef<BookHandle>('book')
-watchEffect(() => props.state.holdsBook(book.value))
+watchEffect(() => props.state.setBookHandle(book.value))
 
 const panel = useTemplateRef<HTMLElement>('panel')
 const way = useTemplateRef<HTMLElement>('way')
 
+/** What the open list installed on the window, if anything. */
+let detach: (() => void) | null = null
+
+// --- Handlers ---
 /** A press that landed neither in the list nor on the way into it. */
-const onOutsidePointerDown = (event: Event) => {
+function onOutsidePointerDown(event: Event) {
   const target = event.target
   if (!(target instanceof Node)) return
   if (panel.value?.contains(target) || way.value?.contains(target)) return
   listing.value = false
 }
 
-const onWindowKey = (event: KeyboardEvent) => {
+function onWindowKey(event: KeyboardEvent) {
   if (event.key !== 'Escape') return
   event.preventDefault()
   listing.value = false
@@ -48,20 +54,28 @@ const onWindowKey = (event: KeyboardEvent) => {
  * looking at and reading from holds the keyboard, whichever pane the layout
  * calls the one they are in.
  */
-const onPageTurnKey = (event: KeyboardEvent) => {
-  if (props.state.pressed(event)) event.preventDefault()
+function onPageTurnKey(event: KeyboardEvent) {
+  if (props.state.handleKeyPress(event)) event.preventDefault()
 }
 
-/** What the open list installed on the window, if anything. */
-let detach: (() => void) | null = null
+/** A place chosen in the list: the book is turned to it and the list goes. */
+function onSelectEntry(at: number) {
+  listing.value = false
+  void props.state.go(at)
+}
 
-const leave = () => {
+function onToggleListing() {
+  listing.value = !listing.value
+}
+
+// --- Helpers ---
+function cleanupWindowListeners() {
   detach?.()
   detach = null
 }
 
 watch(listing, (open) => {
-  if (!open) return leave()
+  if (!open) return cleanupWindowListeners()
   // Escape is read before the panel the tab stands in sees it.
   window.addEventListener('pointerdown', onOutsidePointerDown, true)
   window.addEventListener('keydown', onWindowKey, true)
@@ -71,18 +85,12 @@ watch(listing, (open) => {
   }
 })
 
-onBeforeUnmount(leave)
-
-/** A place chosen in the list: the book is turned to it and the list goes. */
-const onSelectEntry = (at: number) => {
-  listing.value = false
-  void props.state.go(at)
-}
+onBeforeUnmount(cleanupWindowListeners)
 </script>
 
 <template>
   <div
-    :ref="(held: unknown) => props.state.holdsTab(held as HTMLElement | null)"
+    :ref="(held: unknown) => props.state.setTabElement(held as HTMLElement | null)"
     class="book-tab"
     tabindex="-1"
     @keydown="onPageTurnKey"
@@ -94,7 +102,7 @@ const onSelectEntry = (at: number) => {
             :entries="props.state.contents.value"
             :at="props.state.at.value"
             :words="words"
-            @go="chose"
+            @go="onSelectEntry"
           />
         </aside>
       </Transition>
@@ -121,7 +129,7 @@ const onSelectEntry = (at: number) => {
             :aria-label="listing ? words.hides : words.shows"
             :aria-pressed="listing"
             :aria-expanded="listing"
-            @click="listing = !listing"
+            @click="onToggleListing"
           >
             <ListTree class="size-4" aria-hidden="true" />
           </button>

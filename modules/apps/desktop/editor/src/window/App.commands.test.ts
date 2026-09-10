@@ -759,12 +759,12 @@ describe('a deck or a stencil the file tree asked the vault for', () => {
   const asksFor = async (stencil: boolean) => {
     const window = await drawn()
     const tree = window.findComponent(FilesTab).props('state') as {
-      asks(asked: { path: string | null; at: { x: number; y: number } }): void
-      chose(id: string): void
+      openMenu(asked: { path: string | null; at: { x: number; y: number } }): void
+      chooseMenuItem(id: string): void
     }
     maker.breaks()
-    tree.asks({ path: null, at: { x: 0, y: 0 } })
-    tree.chose(stencil ? NEW_STENCIL : NEW_DECK)
+    tree.openMenu({ path: null, at: { x: 0, y: 0 } })
+    tree.chooseMenuItem(stencil ? NEW_STENCIL : NEW_DECK)
     await settles()
     return window
   }

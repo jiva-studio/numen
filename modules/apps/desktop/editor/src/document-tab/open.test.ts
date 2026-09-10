@@ -6,7 +6,7 @@
  * and they are the ones asked about here.
  */
 import { describe, expect, it } from 'vitest'
-import { openDocument, type Documents, type HighlightedPage, type Shape } from './open'
+import { useDocumentReader, type Documents, type HighlightedPage, type Shape } from './open'
 
 const SHAPE: Shape = {
   pages: [
@@ -46,7 +46,7 @@ function book(shape: Shape | Error = SHAPE, where: readonly (readonly Highlighte
 describe('a document opened', () => {
   it('asks what it is once, however much is read of it', async () => {
     const { documents, asked } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
 
     read.widen(800)
     await read.next()
@@ -57,7 +57,7 @@ describe('a document opened', () => {
 
   it('stands on the first page, under the name the document gives it', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
 
     await read.go(0)
 
@@ -67,7 +67,7 @@ describe('a document opened', () => {
 
   it('draws nothing until it is told how wide the page is', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
 
     await read.go(1)
 
@@ -78,7 +78,7 @@ describe('a document opened', () => {
 describe('a page turned', () => {
   it('is drawn at the page it moved to', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
     await read.go(0)
 
@@ -90,7 +90,7 @@ describe('a page turned', () => {
 
   it('is the picture it already was when it is turned back to', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
     await read.go(0)
     const first = read.picture.value
@@ -103,7 +103,7 @@ describe('a page turned', () => {
 
   it('stands at the end when it is turned past it', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
 
     await read.go(9)
@@ -117,7 +117,7 @@ describe('a page turned', () => {
 describe('the width a page is drawn at', () => {
   it('is the width the page is asked for', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     await read.go(0)
 
     read.widen(800)
@@ -129,7 +129,7 @@ describe('the width a page is drawn at', () => {
 
   it('is never wider than a page is drawn', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     await read.go(0)
 
     read.widen(9000)
@@ -141,7 +141,7 @@ describe('the width a page is drawn at', () => {
 describe('what is highlighted', () => {
   it('is the rectangles of the page in front, and the tab turns to the first', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.9, maxY: 0.3 }
 
@@ -159,7 +159,7 @@ describe('a document opened at a place in its text', () => {
   it('highlights what stands there, on the first page it falls on', async () => {
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
     const { documents, spans } = book(SHAPE, [[{ page: 1, rects: [rect] }]])
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
 
     await read.reach({ from: 40_512, to: 40_543 })
@@ -178,7 +178,7 @@ describe('a document opened at a place in its text', () => {
       [{ page: 1, rects: [there] }],
       [{ page: 2, rects: [alsoThere] }],
     ])
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
 
     await read.reach(
@@ -203,7 +203,7 @@ describe('a document opened at a place in its text', () => {
 
   it('stands on the first page with nothing highlighted where nothing stands there', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
 
     await read.reach({ from: 40_512, to: 40_543 })
@@ -218,7 +218,7 @@ describe('a document opened at a place in its text', () => {
     documents.getHighlights = async () => {
       throw new Error('the layer is being written')
     }
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
 
     await read.reach({ from: 40_512, to: 40_543 })
@@ -232,7 +232,7 @@ describe('a document opened at a place in its text', () => {
 describe('a document tab that closes', () => {
   it('draws nothing more, and turns to no other page', async () => {
     const { documents } = book()
-    const read = openDocument(documents, 'Book.pdf')
+    const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
     await read.go(1)
 
@@ -247,7 +247,7 @@ describe('a document tab that closes', () => {
 describe('a document that will not open', () => {
   it('says why, and stands with nothing in it', async () => {
     const { documents } = book(new Error('no such document'))
-    const read = openDocument(documents, 'Gone.pdf')
+    const read = useDocumentReader(documents, 'Gone.pdf')
 
     read.widen(800)
     await read.go(1)

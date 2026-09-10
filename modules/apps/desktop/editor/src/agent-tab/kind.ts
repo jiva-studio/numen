@@ -44,7 +44,7 @@ export interface AgentTabDeps {
 }
 
 /** What one agent tab holds. */
-export type AgentTabState = ReturnType<typeof talking>
+export type AgentTabState = ReturnType<typeof useAgentConversation>
 
 /** The note a talk is about, under the name the window calls it by. */
 export interface NoteRef {
@@ -52,11 +52,11 @@ export interface NoteRef {
   readonly title: string
 }
 
-export function talking(talk: Conversation, deps: AgentTabDeps) {
+export function useAgentConversation(talk: Conversation, deps: AgentTabDeps) {
   /** The question being written, until it is sent. */
   const asked = ref('')
 
-  const writing = (text: string) => {
+  const setQuestion = (text: string) => {
     asked.value = text
   }
 
@@ -67,7 +67,7 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
   }
 
   /** A line about work pressed: the place that call was on is put in front. */
-  const opensTurn = (turn: Turn) => {
+  const openTurnSource = (turn: Turn) => {
     const at = talk.place(turn.id)
     if (at) deps.opens(at.path, at.span)
   }
@@ -116,7 +116,7 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
    * it. One naming a note opens that note beside what the person is looking
    * at. Any other link is left to whatever would follow it.
    */
-  const followed = (turn: Turn, href: string, press: MouseEvent) => {
+  const followLink = (turn: Turn, href: string, press: MouseEvent) => {
     const here = spotOf(href)
     if (here) {
       press.preventDefault()
@@ -136,10 +136,10 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
     ...talk,
     turns,
     asked,
-    writing,
+    setQuestion,
     send,
-    opensTurn,
-    followed,
+    openTurnSource,
+    followLink,
     unreachable: deps.unreachable,
   }
 }
@@ -162,13 +162,8 @@ export function agentKind(handle: WindowHandle, opens: () => AgentTabState, abou
     kind: AGENT,
     opens,
     called: getTitle,
-    getTitle,
     draws: AgentTab,
     shuts: (state) => {
-      state.finish()
-      return true
-    },
-    onClose: (state) => {
       state.finish()
       return true
     },
@@ -178,9 +173,9 @@ export function agentKind(handle: WindowHandle, opens: () => AgentTabState, abou
   /** Something to ask, put in the agent the person was last in and put in front. */
   const askQuestion = async (text: string) => {
     const id = handle.last<AgentTabState>(AGENT)?.id ?? (await handle.opens(AGENT))
-    handle.holds<AgentTabState>(AGENT, id)?.writing(text)
+    handle.holds<AgentTabState>(AGENT, id)?.setQuestion(text)
     handle.shows(id)
   }
 
-  return { kind, askQuestion, asks: askQuestion }
+  return { kind, askQuestion }
 }

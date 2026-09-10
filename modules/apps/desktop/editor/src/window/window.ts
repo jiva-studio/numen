@@ -19,8 +19,8 @@ import { presets } from '../flashcards-preset-tab/core'
 import type { Source } from '../shared/core'
 import { showing } from './showing'
 import { view } from '../plex-tab/view'
-import { openDocument } from '../document-tab/open'
-import { openBook } from '../book-tab/open'
+import { useDocumentReader } from '../document-tab/open'
+import { useBookReader } from '../book-tab/open'
 import { WORDS as bookWords } from '../book-tab/words'
 import { cornerOf } from '../shared/notices/corner'
 import { CREATABLE } from '../note-tab/maker'
@@ -34,16 +34,16 @@ import { fileOpeners } from '../shared/tabs/openers'
 import { fileMakers } from '../shared/tabs/makers'
 import { windowTabs } from '../shared/tabs/windowTabs'
 import { messageLog } from '../shared/notices/messages'
-import { agentKind, talking } from '../agent-tab/kind'
-import { documentKind, documenting } from '../document-tab/kind'
-import { bookKind, booking } from '../book-tab/kind'
+import { agentKind, useAgentConversation } from '../agent-tab/kind'
+import { documentKind, useDocumentTab } from '../document-tab/kind'
+import { bookKind, useBookTab } from '../book-tab/kind'
 import { recordingKind, type MediaTabDeps } from '../shared/media/kind'
 import { RECORDINGS } from '../media-recording-tab/kind'
 import { URLS } from '../media-url-tab/kind'
 import { transcript } from '../shared/media/transcript'
 import { playable } from '../shared/media/player'
 import { filesKind } from '../files-tab/kind'
-import { listing as folders } from '../files-tab/listing'
+import { useFileTree } from '../files-tab/listing'
 import { plexKind } from '../plex-tab/kind'
 import { core as agent } from '../agent-tab/core'
 import { WORDS as talk } from '../agent-tab/words'
@@ -82,7 +82,7 @@ export const useWindow = () => {
       editing.stencils.changed(paths, renamed)
       editing.schedules.changed(paths, renamed)
       commandsModule.commands.follows(renamed)
-      await files.changed(paths, renamed)
+      await files.refreshChangedPaths(paths, renamed)
       await plexes.again(renamed)
     },
     drawing: editing.changes.told,
@@ -133,7 +133,7 @@ export const useWindow = () => {
     parts: settings.hungParts.parts,
     opens: (path, title, showing, line) => void puts.opens(path, title, showing, line),
     inside: (paths) => core.headings(paths),
-    asks: (text) => void agents.asks(text),
+    asks: (text) => void agents.askQuestion(text),
     runs: (id, path, title) => carries(id, { ...where(), path, title }),
     opening: window.opening,
     first: () => window.first(),
@@ -146,7 +146,7 @@ export const useWindow = () => {
   const agents = agentKind(
     held.handle,
     () =>
-      talking(conversation(agent, talk, minted(CONVERSATION)), {
+      useAgentConversation(conversation(agent, talk, minted(CONVERSATION)), {
         opens: (path, ...runs) => void puts.opensAt(path, runs),
         beside: (path) => void puts.opens(path, '', 'beside'),
         resolve: (written) => core.resolve('', written),
@@ -158,11 +158,11 @@ export const useWindow = () => {
     },
   )
 
-  const read = documentKind(held.handle, (path) => documenting(openDocument(documents, path)), puts)
+  const read = documentKind(held.handle, (path) => useDocumentTab(useDocumentReader(documents, path)), puts)
 
   const turned = bookKind(
     held.handle,
-    (path) => booking(openBook(books, path, bookWords, log.under('book'))),
+    (path) => useBookTab(useBookReader(books, path, bookWords, log.under('book'))),
     puts,
   )
 
@@ -232,7 +232,7 @@ export const useWindow = () => {
     told,
   )
 
-  const files = filesKind(held.handle, () => folders(core), {
+  const files = filesKind(held.handle, () => useFileTree(core), {
     lands: (landing) => void lands(landing, places),
     runs: (id, paths, name, source) => {
       const path = paths[0] ?? ''

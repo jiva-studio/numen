@@ -11,8 +11,8 @@ import { mount } from '@vue/test-utils'
 import { Menu, Tree } from '@numen/ui'
 import type { Entry } from '../shared/core'
 import FilesTab from './FilesTab.vue'
-import { filing, type FilesTabState } from './kind'
-import { listing, ROOT } from './listing'
+import { useFilesTab, type FilesTabState } from './kind'
+import { useFileTree, ROOT } from './listing'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
@@ -36,8 +36,8 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 /** A tab of that vault, drawn, and what it asked of the window written down. */
 const drawn = async (open: readonly string[] = []) => {
   const done: string[] = []
-  const list = listing({ list: async (at: string) => held[at] ?? [] })
-  const tab: FilesTabState = filing(list, {
+  const list = useFileTree({ list: async (at: string) => held[at] ?? [] })
+  const tab: FilesTabState = useFilesTab(list, {
     lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
     runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
     moves: async (from, to) => void done.push(`moves ${from} ${to}`),
@@ -283,12 +283,12 @@ describe('the menu on a row', () => {
 
 describe('a folder that could not be read', () => {
   it('is said in the tab', async () => {
-    const list = listing({
+    const list = useFileTree({
       list: async () => {
         throw new Error('the vault is not there')
       },
     })
-    const tab: FilesTabState = filing(list, {
+    const tab: FilesTabState = useFilesTab(list, {
       lands: () => {},
       runs: () => {},
       moves: async () => {},

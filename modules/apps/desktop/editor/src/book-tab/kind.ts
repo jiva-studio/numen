@@ -6,7 +6,8 @@
  * out of sight, where there is none. What is drawn says so when it appears, and
  * lays the columns out again then.
  */
-import type { OpenBookState } from './open'
+import { shallowRef } from 'vue'
+import type { BookReaderState } from './open'
 import type { Span } from '../shared/core'
 import type { FileOpeners } from '../shared/tabs/openers'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
@@ -21,7 +22,7 @@ export interface BookHandle {
 }
 
 /** What one book tab holds. */
-export type BookTabState = ReturnType<typeof booking>
+export type BookTabState = ReturnType<typeof useBookTab>
 
 /**
  * The book tabs of a window. A book is its own tab, so the same one opened
@@ -40,11 +41,11 @@ export function bookKind(
     identity: (path) => path,
     shown: (state) => {
       state.measure()
-      state.takes()
+      state.focusTab()
     },
     // Several panes are drawn at once, so the book asked is the one in the pane
     // the person is in.
-    presses: (state, event) => state.pressed(event),
+    presses: (state, event) => state.handleKeyPress(event),
     shuts: (state) => {
       state.close()
       return true
@@ -75,24 +76,24 @@ export function bookKind(
   return { kind }
 }
 
-export function booking(read: OpenBookState) {
+export function useBookTab(read: BookReaderState) {
   /** The book as it is drawn, for as long as its tab is drawn. */
-  let reader: BookHandle | null = null
+  const reader = shallowRef<BookHandle | null>(null)
 
   /** The tab it is drawn in, which is what holds the keyboard. */
-  let tab: HTMLElement | null = null
+  const tab = shallowRef<HTMLElement | null>(null)
 
   /** The book the tab is drawing, and nothing while it draws none. */
-  const holdsBook = (held: BookHandle | null) => {
-    reader = held
+  const setBookHandle = (held: BookHandle | null) => {
+    reader.value = held
   }
 
   /** The tab as it is drawn, which is the element the keyboard is brought to. */
-  const holdsTab = (held: HTMLElement | null) => {
-    tab = held
+  const setTabElement = (held: HTMLElement | null) => {
+    tab.value = held
   }
 
-  const measure = () => reader?.measure()
+  const measure = () => reader.value?.measure()
 
   /**
    * The book takes the keyboard, the way a note opened takes it. What holds it
@@ -100,10 +101,18 @@ export function booking(read: OpenBookState) {
    * opened out of the tree and left without it is a book the arrows never
    * reach.
    */
-  const takes = () => tab?.focus()
+  const focusTab = () => tab.value?.focus()
 
   /** A key the tab caught, answered by the book it is drawn in. */
-  const pressed = (event: KeyboardEvent) => reader?.pressed(event) ?? false
+  const handleKeyPress = (event: KeyboardEvent) => reader.value?.pressed(event) ?? false
 
-  return { ...read, holdsBook, holdsTab, measure, takes, pressed }
+  return {
+    ...read,
+    setBookHandle,
+    setTabElement,
+    measure,
+    focusTab,
+    handleKeyPress,
+  }
 }
+

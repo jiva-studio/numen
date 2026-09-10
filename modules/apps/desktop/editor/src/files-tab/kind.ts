@@ -93,7 +93,7 @@ export const landingOf = (entry: Entry): SearchDestination | null =>
   entry.folder ? null : { at: 'file', path: entry.path, title: entry.name }
 
 /** What one files tab holds. */
-export type FilesTabState = ReturnType<typeof filing>
+export type FilesTabState = ReturnType<typeof useFilesTab>
 
 /**
  * The files tab of a window. A window shows the vault once, so a second asked
@@ -103,7 +103,7 @@ export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: Fil
   const kind: TabKind<FilesTabState, typeof FILES> = {
     kind: FILES,
     opens: () => {
-      const state = filing(makes(), deps)
+      const state = useFilesTab(makes(), deps)
       void state.list.opens(ROOT)
       return state
     },
@@ -123,19 +123,19 @@ export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: Fil
    * The tree put in front of the person, walked down to a path. The window that
    * holds none opens one on it.
    */
-  const reveals = async (path: string) => {
+  const revealPath = async (path: string) => {
     const id = await handle.opens(FILES)
     await handle.holds<FilesTabState>(FILES, id)?.list.reveals(path)
   }
 
   /** The vault changed, and every open folder a named path sits in is read again. */
-  const changed = (paths: readonly string[], renamed: readonly Move[] = []) =>
+  const refreshChangedPaths = (paths: readonly string[], renamed: readonly Move[] = []) =>
     front()?.list.changed(paths, renamed) ?? Promise.resolve()
 
-  return { kind, reveals, changed }
+  return { kind, revealPath, refreshChangedPaths }
 }
 
-export function filing(list: FileTree, deps: FilesTabDeps) {
+export function useFilesTab(list: FileTree, deps: FilesTabDeps) {
   /** The menu on a row, for as long as it stands. */
   const menu = ref<MenuRequest | null>(null)
   /** The row whose name is in a field, and nothing while none is. */
@@ -287,12 +287,12 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
   }
 
   /** The row whose name the person is typing over, and none once they are done. */
-  const renames = (path: string | null) => {
+  const setRenamingPath = (path: string | null) => {
     renaming.value = path
   }
 
   /** A menu asked for on a row or off every row, and one put away. */
-  const asks = (asked: MenuRequest) => {
+  const openMenu = (asked: MenuRequest) => {
     menu.value = asked
   }
   const dismiss = () => {
@@ -300,7 +300,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
   }
 
   /** An item chosen in the menu, on the files it was asked for on. */
-  const chose = (id: string) => {
+  const chooseMenuItem = (id: string) => {
     const asking = menu.value
     menu.value = null
     if (!asking || !OFFERED.has(id)) return
@@ -333,7 +333,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
     list,
     menu,
     renaming,
-    renames,
+    setRenamingPath,
     over,
     folderFor,
     activate,
@@ -349,9 +349,9 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
     writes,
     makesOne,
     imports,
-    asks,
+    openMenu,
     dismiss,
-    chose,
+    chooseMenuItem,
     nameOf,
     canRun,
   }

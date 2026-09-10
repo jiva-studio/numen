@@ -36,11 +36,11 @@ import type { Cue } from '../shared/media/cues'
 import type { Player } from '../shared/media/player'
 import { transcribed } from '../shared/media/kind'
 import DocumentTab from '../document-tab/DocumentTab.vue'
-import { documenting } from '../document-tab/kind'
-import { openDocument, type Documents } from '../document-tab/open'
+import { useDocumentTab } from '../document-tab/kind'
+import { useDocumentReader, type Documents } from '../document-tab/open'
 import FilesTab from '../files-tab/FilesTab.vue'
-import { filing } from '../files-tab/kind'
-import { listing, ROOT } from '../files-tab/listing'
+import { useFilesTab } from '../files-tab/kind'
+import { useFileTree, ROOT } from '../files-tab/listing'
 import type { Entry } from '../shared/core'
 import { iconOfKind } from '../shared/icons'
 import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '../shared/tabs/workspace'
@@ -589,8 +589,8 @@ const VAULT: Record<string, readonly Entry[]> = {
 
 /** A files tab over that vault, and the reading of the folders named in it. */
 const files = (open: readonly string[]) => {
-  const list = listing({ list: async (at: string) => VAULT[at] ?? [] })
-  const state = filing(list, {
+  const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
+  const state = useFilesTab(list, {
     lands: () => {},
     runs: () => {},
     moves: async () => {},
@@ -776,7 +776,7 @@ export const Transcribed: Story = {
 /** The run a scanned document can be put through, on the row it stands at. */
 export const Recognised: Story = {
   render: () => {
-    const state = documenting(openDocument(BOOK, 'Reading/Boltzmann 1877.pdf'))
+    const state = useDocumentTab(useDocumentReader(BOOK, 'Reading/Boltzmann 1877.pdf'))
     return asking(
       'Reading/Boltzmann 1877.pdf',
       ['Lectures', 'Physics', 'Reading', 'Sanskrit'],

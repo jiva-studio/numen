@@ -5,7 +5,8 @@
  * out of sight, where there is none. What is drawn says so when it appears, and
  * measures again then.
  */
-import type { OpenDocumentState } from './open'
+import { shallowRef } from 'vue'
+import type { DocumentReaderState } from './open'
 import type { Span } from '../shared/core'
 import type { FileOpeners } from '../shared/tabs/openers'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
@@ -19,7 +20,7 @@ export interface PageHandle {
 }
 
 /** What one document tab holds. */
-export type DocumentTabState = ReturnType<typeof documenting>
+export type DocumentTabState = ReturnType<typeof useDocumentTab>
 
 /**
  * The document tabs of a window. A document is its own tab, so the same one
@@ -56,15 +57,20 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
   return { kind }
 }
 
-export function documenting(read: OpenDocumentState) {
+export function useDocumentTab(read: DocumentReaderState) {
   /** The page of this document, for as long as its tab is drawn. */
-  let page: PageHandle | null = null
+  const page = shallowRef<PageHandle | null>(null)
 
-  const drew = (drawn: unknown) => {
-    page = (drawn as PageHandle | null) ?? null
+  const setPageHandle = (drawn: unknown) => {
+    page.value = (drawn as PageHandle | null) ?? null
   }
 
-  const measure = () => page?.measure()
+  const measure = () => page.value?.measure()
 
-  return { ...read, drew, measure }
+  return {
+    ...read,
+    setPageHandle,
+    measure,
+  }
 }
+

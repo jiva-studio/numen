@@ -61,9 +61,9 @@ export const freeName = (taken: readonly string[], word: string): string => {
   }
 }
 
-export type FileTree = ReturnType<typeof listing>
+export type FileTree = ReturnType<typeof useFileTree>
 
-export function listing(core: Folders) {
+export function useFileTree(core: Folders) {
   /** What each folder that has been read holds, under the path of the folder. */
   const held = shallowRef<ReadonlyMap<string, readonly Entry[]>>(new Map())
   /** The folders drawn open. The root is one of them for as long as the tab is. */

@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
-import { agentKind, firstLine, talking, type AgentTabState } from './kind'
+import { agentKind, firstLine, useAgentConversation, type AgentTabState } from './kind'
 import type { Span } from '../shared/core'
 import { windowTabs } from '../shared/tabs/windowTabs'
 import { AGENT } from '../shared/tabs/workspace'
@@ -41,7 +41,7 @@ const tab = (
   const talk = talked(places)
   const opened: [string, readonly Span[]][] = []
   const beside: string[] = []
-  const state = talking(talk.talk, {
+  const state = useAgentConversation(talk.talk, {
     opens: (path, ...spans) => opened.push([path, spans]),
     beside: (path) => beside.push(path),
     resolve: async (written) =>
@@ -94,7 +94,7 @@ describe('a question sent', () => {
 
   it('empties the composer, so the question is not sent twice', () => {
     const one = tab()
-    one.state.writing('half a question')
+    one.state.setQuestion('half a question')
 
     one.state.send('half a question')
 
@@ -106,7 +106,7 @@ describe('a line about work pressed', () => {
   it('opens the place that call was on', () => {
     const one = tab({ call: { path: 'Source.pdf', span: { from: 10, to: 14 } } })
 
-    one.state.opensTurn(turn('call', 'read Source.pdf'))
+    one.state.openTurnSource(turn('call', 'read Source.pdf'))
 
     expect(one.opened).toEqual([['Source.pdf', [{ from: 10, to: 14 }]]])
   })
@@ -114,7 +114,7 @@ describe('a line about work pressed', () => {
   it('opens nothing for a line that names no place', () => {
     const one = tab()
 
-    one.state.opensTurn(turn('said', 'a sentence'))
+    one.state.openTurnSource(turn('said', 'a sentence'))
 
     expect(one.opened).toEqual([])
   })
@@ -133,7 +133,7 @@ describe('a link inside an answer', () => {
       'see [here](numen:Source.pdf?start=10&length=4) and [there](numen:Source.pdf?start=90&length=2)'
     const press = pressed()
 
-    one.state.followed(turn('said', text), 'numen:Source.pdf?start=10&length=4', press.press)
+    one.state.followLink(turn('said', text), 'numen:Source.pdf?start=10&length=4', press.press)
 
     expect(press.was()).toBe(true)
     expect(one.opened).toEqual([
@@ -151,7 +151,7 @@ describe('a link inside an answer', () => {
     const one = tab()
     const press = pressed()
 
-    one.state.followed(turn('said', 'read https://example.com'), 'https://example.com', press.press)
+    one.state.followLink(turn('said', 'read https://example.com'), 'https://example.com', press.press)
 
     expect(press.was()).toBe(false)
     expect(one.opened).toEqual([])
@@ -163,7 +163,7 @@ describe('a link inside an answer', () => {
     await nextTick()
     const press = pressed()
 
-    one.state.followed(one.said.value[0]!, 'name://Thermodynamics', press.press)
+    one.state.followLink(one.said.value[0]!, 'name://Thermodynamics', press.press)
 
     expect(one.beside).toEqual(['physics/Thermodynamics.md'])
   })
@@ -174,7 +174,7 @@ describe('a link inside an answer', () => {
     await nextTick()
     const press = pressed()
 
-    one.state.followed(one.said.value[0]!, 'name://Nowhere', press.press)
+    one.state.followLink(one.said.value[0]!, 'name://Nowhere', press.press)
 
     expect(one.beside).toEqual([])
   })
@@ -196,7 +196,7 @@ describe('something to ask about a note', () => {
   it('opens an agent to carry it in a window with none', async () => {
     const window = tabs()
 
-    await window.asks('Note.md — ')
+    await window.askQuestion('Note.md — ')
 
     expect(window.open()).toHaveLength(1)
     expect(window.talks[0]?.state.asked.value).toBe('Note.md — ')
@@ -209,7 +209,7 @@ describe('something to ask about a note', () => {
     window.enters(first.id)
     window.enters(second.id)
 
-    await window.asks('Note.md — ')
+    await window.askQuestion('Note.md — ')
 
     expect(window.open()).toHaveLength(2)
     expect(second.state.asked.value).toBe('Note.md — ')
@@ -222,7 +222,7 @@ describe('something to ask about a note', () => {
     window.enters(one.id)
     window.shuts(one.id)
 
-    await window.asks('Note.md — ')
+    await window.askQuestion('Note.md — ')
 
     expect(window.open()).toHaveLength(1)
     expect(window.talks[1]?.state.asked.value).toBe('Note.md — ')
