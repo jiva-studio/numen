@@ -20,7 +20,7 @@ interface Box {
 }
 
 /** A run of one line, as fractions of its length. */
-interface Stretch {
+interface Span {
   readonly from: number
   readonly to: number
 }
@@ -56,7 +56,7 @@ const boxOf = (node: PlacedNode, apart: number): Box => ({
   maxY: node.y + node.height / 2 + apart,
 })
 
-const spanOf = (stretch: Stretch): number => stretch.to - stretch.from
+const getSpanLength = (span: Span): number => span.to - span.from
 
 /**
  * Give every title a place on its line. Each one is kept clear of the boxes
@@ -85,7 +85,7 @@ export function settleTitles(
   for (const { edge, at, metrics } of tightestFirst(edges, width)) {
     const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
     const ends = (edge.arrow ? routing.arrowRoom : 0) / metrics.arc
-    const clear = clearStretches(boxAt, [...boxes, ...titles], ends, STEP / metrics.arc)
+    const clear = clearSpans(boxAt, [...boxes, ...titles], ends, STEP / metrics.arc)
 
     const found = settle(clear, edge.words!, metrics, width)
     if (!found) {
@@ -138,12 +138,12 @@ function tightestFirst(
 
 /**
  * The words that stand on a line and where: the whole of them at the clear
- * place nearest the middle, else as many as the longest clear stretch holds,
- * set in the middle of that stretch. Nothing where that stretch holds less
+ * place nearest the middle, else as many as the longest clear span holds,
+ * set in the middle of that span. Nothing where that span holds less
  * than `LEAST` of them.
  */
 function settle(
-  clear: readonly Stretch[],
+  clear: readonly Span[],
   words: string,
   metrics: TitleMetrics,
   width: (label: string) => number,
@@ -151,13 +151,13 @@ function settle(
   const whole = nearestPlace(clear, metrics.extent / 2 / metrics.arc)
   if (whole !== null) return { words, at: whole, extent: metrics.extent }
 
-  const longest = clear.reduce<Stretch | null>(
-    (widest, stretch) => (!widest || spanOf(stretch) > spanOf(widest) ? stretch : widest),
+  const longest = clear.reduce<Span | null>(
+    (widest, span) => (!widest || getSpanLength(span) > getSpanLength(widest) ? span : widest),
     null,
   )
   if (!longest) return null
 
-  const held = spanOf(longest) * metrics.arc
+  const held = getSpanLength(longest) * metrics.arc
   if (held < LEAST * metrics.extent) return null
 
   const cut = cutToFit(words, held, width)
@@ -187,46 +187,46 @@ function ribbonOf(
 /**
  * The runs of a line with nothing in the way, `ends` of it kept clear at
  * either end for whatever is drawn there. Every step of the line is looked at
- * on its own, so a line crossing a box comes back as the stretches to either
+ * on its own, so a line crossing a box comes back as the spans to either
  * side of it.
  */
-function clearStretches(
+function clearSpans(
   boxAt: (from: number, to: number) => Box,
   placed: readonly Box[],
   ends: number,
   step: number,
-): Stretch[] {
+): Span[] {
   const last = 1 - ends
   if (ends >= last || step <= 0) return []
 
-  const stretches: Stretch[] = []
+  const spans: Span[] = []
   let open: number | null = null
 
   for (let at = ends; at < last; at += step) {
     const box = boxAt(at, Math.min(at + step, last))
     if (placed.some((other) => meets(other, box))) {
-      if (open !== null) stretches.push({ from: open, to: at })
+      if (open !== null) spans.push({ from: open, to: at })
       open = null
     } else if (open === null) {
       open = at
     }
   }
-  if (open !== null) stretches.push({ from: open, to: last })
+  if (open !== null) spans.push({ from: open, to: last })
 
-  return stretches
+  return spans
 }
 
 /**
  * Where a title of this half-length stands: the place nearest the middle of
- * the line that leaves the whole of the words inside one clear stretch.
- * Nothing where no stretch is long enough to hold them.
+ * the line that leaves the whole of the words inside one clear span.
+ * Nothing where no span is long enough to hold them.
  */
-function nearestPlace(clear: readonly Stretch[], half: number): number | null {
+function nearestPlace(clear: readonly Span[], half: number): number | null {
   let nearest: number | null = null
 
-  for (const stretch of clear) {
-    if (spanOf(stretch) < 2 * half) continue
-    const at = Math.min(Math.max(MIDDLE, stretch.from + half), stretch.to - half)
+  for (const span of clear) {
+    if (getSpanLength(span) < 2 * half) continue
+    const at = Math.min(Math.max(MIDDLE, span.from + half), span.to - half)
     if (nearest === null || Math.abs(at - MIDDLE) < Math.abs(nearest - MIDDLE)) {
       nearest = at
     }
