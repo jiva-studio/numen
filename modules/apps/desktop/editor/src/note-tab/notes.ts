@@ -350,6 +350,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     keep,
     take,
     shown,
+    link: (id: string): Address | null => addresses.value.get(id) ?? null,
     address: (id: string): Address | null => addresses.value.get(id) ?? null,
     all,
     saying: sayingOf,

@@ -97,6 +97,7 @@ export interface NoteResult {
   error?: ErrorCode | null
   refusal: RefusalReason | null
   /** Where a link note points, and nothing on every other note. */
+  link?: LinkAddress
   address?: Address
 }
 

@@ -11,7 +11,6 @@ import type { Documents, PageHighlight, Rect } from './types'
 const served = {
   documents: createClient(DocumentService, transport),
   ocr: createClient(OcrService, transport),
-  readings: createClient(OcrService, transport),
 }
 
 /**

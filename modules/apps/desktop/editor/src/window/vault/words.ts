@@ -196,13 +196,14 @@ export const answered = (from: {
 }): NoteResult & { at?: string; changed: boolean } => {
   const at = stamp(from.at)
   const error = errorIn(from)
+  const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
   return {
     body: from.body ?? '',
     error,
     refusal: error,
     changed: staleIn(from),
     ...(at === undefined ? {} : { at }),
-    ...(from.url === undefined ? {} : { address: { url: from.url, embed: from.embed ?? '' } }),
+    ...(link === undefined ? {} : { link, address: link }),
   }
 }
 
