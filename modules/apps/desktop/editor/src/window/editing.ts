@@ -26,7 +26,7 @@ export interface EditingDeps {
   day: () => string
 }
 
-export function openEditing({ core, log, puts, held, day }: EditingDeps) {
+export function useEditing({ core, log, puts, held, day }: EditingDeps) {
   const changes = noteChanges()
   const notes = openNotes(core, { replaced: changes.arrived })
   const making = noteCreator(core, log.under('made'))

@@ -6,7 +6,7 @@ import { StopReason } from '@numen/protocol'
 import type { WindowHandle } from '../shared/tabs/windowTabs'
 import type { MessageWriter } from '../shared/notices/messages'
 import { DEFAULTS } from './core'
-import { producing, shapeOf, steers } from './curve'
+import { produceSchedule, shapeOf, steer } from './curve'
 import { WORDS as words } from './words'
 import type { Field, Goal, Presets, PresetTabState, Settings, SettingsBounds, SettingValue } from './types'
 import { aimGoal, applyTypedSetting, findGridIndex, reconcileSettings } from './settings'
@@ -124,7 +124,7 @@ export const createPresetState = (
     one.settings.value = applyTypedSetting(was, field, value, bounds.value)
     if (one.settings.value !== was) one.flight.theirs.add(field)
 
-    if (field === steers(one.settings.value.goal)) {
+    if (field === steer(one.settings.value.goal)) {
       const place = findGridIndex(one.curves.curve.value.grid, value, today())
       if (place >= 0) one.curves.place.value = place
     }
@@ -145,9 +145,9 @@ export const createPresetState = (
 
   const moveSlider = (place: number) => {
     const was = one.settings.value
-    one.settings.value = producing(was, place, one.curves.curve.value, today(), bounds.value)
+    one.settings.value = produceSchedule(was, place, one.curves.curve.value, today(), bounds.value)
     one.curves.place.value = place
-    one.flight.theirs.add(steers(one.curves.curve.value.goal))
+    one.flight.theirs.add(steer(one.curves.curve.value.goal))
   }
 
   const closeTab = (tab: string) => {

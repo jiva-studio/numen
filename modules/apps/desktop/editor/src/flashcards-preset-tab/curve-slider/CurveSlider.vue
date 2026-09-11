@@ -8,7 +8,7 @@
 import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import { Spinner } from '@numen/ui'
 import type { Curve, PresetCounts } from '../core'
-import { clearing, valueAt } from '../curve'
+import { clearBacklog, valueAt } from '../curve'
 import BacklogPlot from './backlog-plot/BacklogPlot.vue'
 import {
   calloutOf,
@@ -27,7 +27,7 @@ import {
   runAt,
   shortOf,
   TOP,
-  walked,
+  walkGrid,
   WIDE,
   yOfGridline,
   type Extent,
@@ -119,7 +119,7 @@ const callout = computed(() => {
     reviews: point.reviews,
     minutes: point.minutes,
     horizon: backlog.length,
-    clears: clearing(backlog),
+    clears: clearBacklog(backlog),
     short: point.short,
     cards: props.curve.cards,
   })
@@ -197,14 +197,14 @@ function onPointerUp(event: PointerEvent): void {
 }
 
 function onKeyDown(event: KeyboardEvent): void {
-  const step = walked(event.key, props.place, places.value)
+  const step = walkGrid(event.key, props.place, places.value)
   if (step === null) return
   event.preventDefault()
   emit('moves', step)
 }
 
 function onKeyUp(event: KeyboardEvent): void {
-  if (walked(event.key, props.place, places.value) === null) return
+  if (walkGrid(event.key, props.place, places.value) === null) return
   emit('settles')
 }
 

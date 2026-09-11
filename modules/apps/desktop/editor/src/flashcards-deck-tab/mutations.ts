@@ -7,7 +7,7 @@ import {
   type InsertionPoint,
 } from '@numen/ui'
 import type { Value } from '../shared/flashcards/cards'
-import { minting, type IdMaker } from '../shared/flashcards/identity'
+import { generateId, type IdMaker } from '../shared/flashcards/identity'
 import { nameOf } from '../shared/paths'
 import type { BufferCard, BufferDeck } from './types'
 
@@ -16,13 +16,13 @@ import type { BufferCard, BufferDeck } from './types'
  * a value standing empty for each field. Under no section it is made at the end
  * of the cards standing before the first of them.
  */
-export const added = (
+export const addCard = (
   deck: BufferDeck,
   title: string,
   stencilPath: string,
   values: readonly Value[],
   section: string | null = null,
-  mint: IdMaker = minting,
+  mint: IdMaker = generateId,
 ): BufferDeck => {
   const ranks = new Map(deck.sections.map((each, index) => [each.id, index]))
   const rank = (id: string | null): number => (id === null ? -1 : (ranks.get(id) ?? -1))
@@ -53,7 +53,7 @@ export const added = (
 }
 
 /** A card taken out of the deck. */
-export const removed = (deck: BufferDeck, id: string): BufferDeck => ({
+export const removeCard = (deck: BufferDeck, id: string): BufferDeck => ({
   ...deck,
   cards: deck.cards.filter((card) => card.id !== id),
 })
@@ -61,7 +61,7 @@ export const removed = (deck: BufferDeck, id: string): BufferDeck => ({
 /**
  * A card let go somewhere in the deck.
  */
-export const dropped = (deck: BufferDeck, id: string, at: InsertionPoint): BufferDeck => {
+export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): BufferDeck => {
   const held = deck.cards.find((card) => card.id === id)
   if (!held) return deck
   const left = deck.cards.filter((card) => card.id !== id)
@@ -113,13 +113,13 @@ export const dropped = (deck: BufferDeck, id: string, at: InsertionPoint): Buffe
 }
 
 /** A section made at the end of the deck, holding no card. */
-export const sectionAdded = (deck: BufferDeck, name: string, mint: IdMaker = minting): BufferDeck => ({
+export const addSection = (deck: BufferDeck, name: string, mint: IdMaker = generateId): BufferDeck => ({
   ...deck,
   sections: [...deck.sections, { id: mint(), name, preamble: '' }],
 })
 
 /** A section under another name. */
-export const sectionNamed = (deck: BufferDeck, id: string, name: string): BufferDeck => ({
+export const renameSection = (deck: BufferDeck, id: string, name: string): BufferDeck => ({
   ...deck,
   sections: deck.sections.map((section) =>
     section.id === id ? { ...section, name } : section,
@@ -133,7 +133,7 @@ const after = (above: string, below: string): string =>
 /**
  * A section taken out of the deck.
  */
-export const sectionGone = (deck: BufferDeck, id: string): BufferDeck => {
+export const removeSection = (deck: BufferDeck, id: string): BufferDeck => {
   const at = deck.sections.findIndex((section) => section.id === id)
   if (at === -1) return deck
   const going = deck.sections[at]
@@ -157,7 +157,7 @@ export const sectionGone = (deck: BufferDeck, id: string): BufferDeck => {
 /**
  * One value of one card as it now reads.
  */
-export const filled = (
+export const fillCard = (
   deck: BufferDeck,
   id: string,
   field: string,

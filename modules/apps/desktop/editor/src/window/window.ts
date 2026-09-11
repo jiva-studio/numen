@@ -15,7 +15,7 @@ import { createMediaTypeProbe } from '../shared/media/player'
 import { WORDS as words } from '../shared/words'
 import { AGENT, FILES, PLEX, begun } from '../shared/tabs/workspace'
 
-import { openEditing } from './editing'
+import { useEditing } from './editing'
 import { useSettings } from './settings'
 import { useVaults } from './vaults'
 import { useAttention } from './attention'
@@ -34,7 +34,7 @@ export const useWindow = () => {
   const runs = runSupport()
   const plays = createMediaTypeProbe()
 
-  const editing = openEditing({
+  const editing = useEditing({
     core,
     log,
     puts,

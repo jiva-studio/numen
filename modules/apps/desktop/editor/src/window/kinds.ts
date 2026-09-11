@@ -41,7 +41,7 @@ import { WORDS as words } from '../shared/words'
 import { CONVERSATION, minted } from '../shared/tabs/workspace'
 import type { Source, Core } from '../shared/core'
 import type { runSupport } from '../shared/command/runs'
-import type { openEditing } from './editing'
+import type { useEditing } from './editing'
 import type { useSettings } from './settings'
 import type { useVaults } from './vaults'
 import type { useWindowShowing } from './showing'
@@ -54,7 +54,7 @@ export interface WindowKindsDeps {
   held: ReturnType<typeof useWindowTabs>
   runs: ReturnType<typeof runSupport>
   plays: ReturnType<typeof createMediaTypeProbe>
-  editing: ReturnType<typeof openEditing>
+  editing: ReturnType<typeof useEditing>
   settings: ReturnType<typeof useSettings>
   vaults: ReturnType<typeof useVaults>
   window: ReturnType<typeof useWindowShowing>

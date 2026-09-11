@@ -9,7 +9,7 @@ import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import { answerGuard as latest } from '../questions'
-import { cued, same, spanning, spoken, type Cue } from './cues'
+import { applyCues, same, spanCues, getText, type Cue } from './cues'
 import { createMediaTypeProbe, player, type MediaTypeProbe, type Player } from './player'
 import { WORDS } from './words'
 
@@ -175,7 +175,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
    * at all, and the tab says so where they would stand.
    */
   const spans = computed(() =>
-    cues.value.length === 0 && prose.value === '' ? [] : spanning(cues.value, prose.value),
+    cues.value.length === 0 && prose.value === '' ? [] : spanCues(cues.value, prose.value),
   )
 
   /**
@@ -255,7 +255,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
       cues.value = spoke.cues
       editable.value = spoke.editable
       // Words the person has typed and not yet had written stay on screen.
-      if (!owed) prose.value = spoke.cues.length ? spoken(spoke.cues) : spoke.prose
+      if (!owed) prose.value = spoke.cues.length ? getText(spoke.cues) : spoke.prose
       trouble.value = ''
     } catch (error) {
       if (!mine.lands()) return
@@ -321,7 +321,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     settling = undefined
     if (!open || !owed || writing || !editable.value) return
     const body = prose.value
-    const next = cued(cues.value, body)
+    const next = applyCues(cues.value, body)
     owed = false
     // A transcript written down is a transcript a person owns, and a
     // proofreader leaves it alone. Only words that changed are written.

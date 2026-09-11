@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
 import { NOWHERE, type Curve, type Point } from './core'
-import { clearing } from './curve'
+import { clearBacklog } from './curve'
 import { FOOT } from './plot'
 import { drawn, heights, point, tabAt } from './drawn'
 import { WORDS as words } from './words'
@@ -218,10 +218,10 @@ describe('the one slider', () => {
   // The figure is read off the very run the backlog is drawn from, so the picture
   // and the words can never disagree.
   it('takes the day it goes off the projection the backlog is drawn from', () => {
-    expect(clearing([9, 4, 0, 0])).toBe(3)
-    expect(clearing([9, 21, 40])).toBe(-1)
-    expect(clearing([0, 0, 0])).toBe(null)
-    expect(clearing([])).toBe(null)
+    expect(clearBacklog([9, 4, 0, 0])).toBe(3)
+    expect(clearBacklog([9, 21, 40])).toBe(-1)
+    expect(clearBacklog([0, 0, 0])).toBe(null)
+    expect(clearBacklog([])).toBe(null)
   })
 
   // A bubble that covered the line would hide the thing it is about.

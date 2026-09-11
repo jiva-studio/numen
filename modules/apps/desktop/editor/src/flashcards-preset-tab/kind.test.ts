@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 
 import { usePresetTab, type SettingValue } from './kind'
-import { fieldsUnder, goalValue, nearest, steers, type Field } from './curve'
+import { fieldsUnder, goalValue, nearest, steer, type Field } from './curve'
 import {
   DEFAULTS,
   NO_BOUNDS,
@@ -748,7 +748,7 @@ describe('a field the goal does not steer, typed', () => {
     for (const goal of ['minutes', 'retention'] as const) {
       for (const field of fieldsUnder(goal, DEFAULTS.learned)) {
         const said = SAID[field]
-        if (field === steers(goal) || said === undefined) continue
+        if (field === steer(goal) || said === undefined) continue
 
         const { state, written } = await opened({ goal, minutesADay: 23 }, ranging)
         const was = state.settings.value

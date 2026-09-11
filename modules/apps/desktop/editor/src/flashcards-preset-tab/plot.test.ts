@@ -22,7 +22,7 @@ import {
   LEFT,
   LIFT,
   lineOf,
-  naming,
+  positionLabel,
   namingBox,
   calloutOf,
   CALLOUT_GAP,
@@ -34,7 +34,7 @@ import {
   RIGHT,
   shortOf,
   TOP,
-  walked,
+  walkGrid,
   WIDE,
   xOf,
   yOfGridline,
@@ -189,7 +189,7 @@ describe('the place a pointer stands over', () => {
 
 describe('where a name over a mark is set', () => {
   it('stands over the mark, and above it by the lift', () => {
-    const at = naming({ x: WIDE / 2, y: 100 })
+    const at = positionLabel({ x: WIDE / 2, y: 100 })
 
     expect(at.insetInlineStart).toBe('50%')
     expect(at.insetBlockStart).toBe(`${((100 - LIFT) / HIGH) * 100}%`)
@@ -197,12 +197,12 @@ describe('where a name over a mark is set', () => {
   })
 
   it('is pulled back inside the picture at either end', () => {
-    expect(naming({ x: LEFT, y: 100 }).translate).toBe('0 -100%')
-    expect(naming({ x: RIGHT, y: 100 }).translate).toBe('-100% -100%')
+    expect(positionLabel({ x: LEFT, y: 100 }).translate).toBe('0 -100%')
+    expect(positionLabel({ x: RIGHT, y: 100 }).translate).toBe('-100% -100%')
   })
 
   it('is held inside the top of the picture, so no word is set over the edge', () => {
-    expect(naming({ x: WIDE / 2, y: TOP }).insetBlockStart).toBe(`${(TOP / HIGH) * 100}%`)
+    expect(positionLabel({ x: WIDE / 2, y: TOP }).insetBlockStart).toBe(`${(TOP / HIGH) * 100}%`)
   })
 })
 
@@ -257,25 +257,25 @@ describe('the room a number against a line takes', () => {
 
 describe('where a keystroke takes the knob', () => {
   it('is one place either way, and stops at either end', () => {
-    expect(walked('ArrowRight', 2, 5)).toBe(3)
-    expect(walked('ArrowLeft', 2, 5)).toBe(1)
-    expect(walked('ArrowLeft', 0, 5)).toBe(0)
-    expect(walked('ArrowRight', 4, 5)).toBe(4)
+    expect(walkGrid('ArrowRight', 2, 5)).toBe(3)
+    expect(walkGrid('ArrowLeft', 2, 5)).toBe(1)
+    expect(walkGrid('ArrowLeft', 0, 5)).toBe(0)
+    expect(walkGrid('ArrowRight', 4, 5)).toBe(4)
   })
 
   it('is the same either way for the two axes, so a knob answers both', () => {
-    expect(walked('ArrowDown', 2, 5)).toBe(walked('ArrowLeft', 2, 5))
-    expect(walked('ArrowUp', 2, 5)).toBe(walked('ArrowRight', 2, 5))
+    expect(walkGrid('ArrowDown', 2, 5)).toBe(walkGrid('ArrowLeft', 2, 5))
+    expect(walkGrid('ArrowUp', 2, 5)).toBe(walkGrid('ArrowRight', 2, 5))
   })
 
   it('is either end of the range', () => {
-    expect(walked('Home', 2, 5)).toBe(0)
-    expect(walked('End', 2, 5)).toBe(4)
+    expect(walkGrid('Home', 2, 5)).toBe(0)
+    expect(walkGrid('End', 2, 5)).toBe(4)
   })
 
   it('is nothing for a keystroke of somebody else’s', () => {
-    expect(walked('a', 2, 5)).toBeNull()
-    expect(walked('Enter', 2, 5)).toBeNull()
+    expect(walkGrid('a', 2, 5)).toBeNull()
+    expect(walkGrid('Enter', 2, 5)).toBeNull()
   })
 })
 
@@ -345,7 +345,7 @@ describe('the names of the marks that fit', () => {
       {
         key: 'suggested',
         text: 'suggested',
-        at: naming({ x: WIDE / 2, y: 100 }),
+        at: positionLabel({ x: WIDE / 2, y: 100 }),
         box: namingBox({ x: WIDE / 2, y: 100 }),
       },
     ])

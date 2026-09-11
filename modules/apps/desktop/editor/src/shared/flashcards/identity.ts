@@ -6,4 +6,4 @@
 /** An identity something is drawn under. */
 export type IdMaker = () => string
 
-export const minting: IdMaker = () => crypto.randomUUID()
+export const generateId: IdMaker = () => crypto.randomUUID()

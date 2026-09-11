@@ -52,7 +52,7 @@ export const sameDeck = (one: BufferDeck, other: BufferDeck): boolean =>
 /**
  * The deck on screen under the headings the file now carries.
  */
-export const headed = (held: BufferDeck, read: BufferDeck): BufferDeck => {
+export const applyHead = (held: BufferDeck, read: BufferDeck): BufferDeck => {
   const carried = (at: number): string => read.cards[at]?.heading ?? ''
   if (held.cards.every((card, at) => card.heading === carried(at))) return held
   return { ...held, cards: held.cards.map((card, at) => ({ ...card, heading: carried(at) })) }
@@ -61,7 +61,7 @@ export const headed = (held: BufferDeck, read: BufferDeck): BufferDeck => {
 /**
  * A reading of a deck under the identities the window already drew it by.
  */
-export const named = (held: BufferDeck, read: BufferDeck): BufferDeck => {
+export const applyName = (held: BufferDeck, read: BufferDeck): BufferDeck => {
   const seat = (deck: BufferDeck, section: string | null): number =>
     section === null ? -1 : deck.sections.findIndex((each) => each.id === section)
 

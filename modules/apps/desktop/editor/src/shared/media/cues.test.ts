@@ -6,7 +6,7 @@
  * the times it works out.
  */
 import { describe, expect, it } from 'vitest'
-import { cued, same, spanning, spoken, type Cue } from './cues'
+import { applyCues, same, spanCues, getText, type Cue } from './cues'
 
 const CUES: readonly Cue[] = [
   { text: 'A bell over the door.', from: 1_000, to: 3_000 },
@@ -27,15 +27,15 @@ const orderly = (cues: readonly Cue[]) => {
 }
 
 /** The words as they now read, held to what the application will take. */
-const after = (was: readonly Cue[], text: string) => orderly(cued(was, text))
+const after = (was: readonly Cue[], text: string) => orderly(applyCues(was, text))
 
 describe('the words as they were left', () => {
   it('are the cues they came from', () => {
-    expect(after(CUES, spoken(CUES))).toStrictEqual(CUES)
+    expect(after(CUES, getText(CUES))).toStrictEqual(CUES)
   })
 
   it('are one line to a cue', () => {
-    expect(spoken(CUES)).toBe(
+    expect(getText(CUES)).toBe(
       'A bell over the door.\nRain on the awning.\nSomeone counting change.',
     )
   })
@@ -192,13 +192,13 @@ describe('a transcript deleted entirely', () => {
 
 describe('a line typed where no cue stood', () => {
   it('takes an empty span at the end of the words before it', () => {
-    const kept = after(CUES, `${spoken(CUES)}\nAnd the door again.`)
+    const kept = after(CUES, `${getText(CUES)}\nAnd the door again.`)
 
     expect(kept[3]).toStrictEqual({ text: 'And the door again.', from: 10_000, to: 10_000 })
   })
 
   it('takes an empty span at the start of the words after it', () => {
-    const kept = after(CUES, `A first thought.\n${spoken(CUES)}`)
+    const kept = after(CUES, `A first thought.\n${getText(CUES)}`)
 
     expect(kept[0]).toStrictEqual({ text: 'A first thought.', from: 1_000, to: 1_000 })
   })
@@ -264,23 +264,23 @@ describe('lines that read alike', () => {
 
 describe('the words as the application gave them', () => {
   it('are given back unchanged, so a transcript nobody edited is not written', () => {
-    expect(same(cued(CUES, spoken(CUES)), CUES)).toBe(true)
+    expect(same(applyCues(CUES, getText(CUES)), CUES)).toBe(true)
   })
 
   it('are given back unchanged where the editor added a newline of its own', () => {
-    expect(same(cued(CUES, `${spoken(CUES)}\n`), CUES)).toBe(true)
+    expect(same(applyCues(CUES, `${getText(CUES)}\n`), CUES)).toBe(true)
   })
 
   it('are not what a changed word gives back, however small the change', () => {
-    const text = spoken(CUES).replace('awning', 'awnings')
+    const text = getText(CUES).replace('awning', 'awnings')
 
-    expect(same(cued(CUES, text), CUES)).toBe(false)
+    expect(same(applyCues(CUES, text), CUES)).toBe(false)
   })
 
   it('are not what a line moved past another gives back', () => {
     const text = [CUES[1]!.text, CUES[0]!.text, CUES[2]!.text].join('\n')
 
-    expect(same(cued(CUES, text), CUES)).toBe(false)
+    expect(same(applyCues(CUES, text), CUES)).toBe(false)
   })
 
   it('are not what the same words at another moment give back', () => {
@@ -294,11 +294,11 @@ describe('every line on screen', () => {
   it('is answered for, an emptied one included', () => {
     const text = 'A bell over the door.\n\nSomeone counting change.'
 
-    expect(spanning(CUES, text).length).toBe(text.split('\n').length)
-    expect(spanning(CUES, text)[1]).toStrictEqual({ text: '', from: 3_000, to: 6_000 })
+    expect(spanCues(CUES, text).length).toBe(text.split('\n').length)
+    expect(spanCues(CUES, text)[1]).toStrictEqual({ text: '', from: 3_000, to: 6_000 })
   })
 
   it('is answered for where the transcript was emptied', () => {
-    expect(spanning(CUES, '').length).toBe(1)
+    expect(spanCues(CUES, '').length).toBe(1)
   })
 })

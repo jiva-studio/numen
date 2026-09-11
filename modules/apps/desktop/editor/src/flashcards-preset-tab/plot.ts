@@ -215,7 +215,7 @@ export const runAt = (curve: Curve, place: number): readonly number[] => {
  * Where a name over a mark is set: above it, pulled back inside the picture at
  * either end so the whole word stands over it.
  */
-export const naming = (at: Position): CSSProperties => {
+export const positionLabel = (at: Position): CSSProperties => {
   const back = at.x < LEFT + LABEL ? '0' : at.x > RIGHT - LABEL ? '-100%' : '-50%'
   return {
     insetInlineStart: `${(at.x / WIDE) * 100}%`,
@@ -317,7 +317,7 @@ export const labelsOf = (marks: readonly Mark[], over: Box | null): readonly Lab
     const box = namingBox(mark.at)
     if (!placed.every((one) => apart(box, one))) continue
     placed.push(box)
-    out.push({ key: mark.key, text: mark.text, at: naming(mark.at), box })
+    out.push({ key: mark.key, text: mark.text, at: positionLabel(mark.at), box })
   }
   return out
 }
@@ -370,7 +370,7 @@ export const readingAt = (knob: Position | null): CSSProperties => {
 }
 
 /** Where a keystroke takes the knob, and nothing for a keystroke of somebody else's. */
-export const walked = (key: string, place: number, places: number): number | null => {
+export const walkGrid = (key: string, place: number, places: number): number | null => {
   const last = places - 1
   if (key === 'ArrowLeft' || key === 'ArrowDown') return Math.max(place - 1, 0)
   if (key === 'ArrowRight' || key === 'ArrowUp') return Math.min(place + 1, last)

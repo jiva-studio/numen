@@ -2,13 +2,13 @@
  * Serialization and conversion between vault deck data and buffer deck models.
  */
 import type { VaultCard, VaultDeck, VaultSection } from '../shared/flashcards/cards'
-import { minting, type IdMaker } from '../shared/flashcards/identity'
+import { generateId, type IdMaker } from '../shared/flashcards/identity'
 import { NO_DECK, type BufferDeck } from './types'
 
 /**
  * A deck as the vault read it.
  */
-export const deckOf = (read: VaultDeck, mint: IdMaker = minting): BufferDeck => {
+export const deckOf = (read: VaultDeck, mint: IdMaker = generateId): BufferDeck => {
   const held = new Map<string, number>()
   for (const card of read.cards) held.set(card.mark, (held.get(card.mark) ?? 0) + 1)
   const sections = read.sections.map((section) => ({

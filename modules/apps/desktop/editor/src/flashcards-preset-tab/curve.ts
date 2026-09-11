@@ -124,7 +124,7 @@ export const fieldsUnder = (goal: Goal, learned: Rule): readonly Field[] => {
 }
 
 /** The field the goal steers, which is the knob under another name. */
-export const steers = (goal: Goal): Field => {
+export const steer = (goal: Goal): Field => {
   if (goal === 'minutes') return 'minutesADay'
   if (goal === 'retention') return 'retention'
   return 'byDate'
@@ -138,7 +138,7 @@ export const steers = (goal: Goal): Field => {
  * again.
  */
 export const shapeOf = (settings: Settings): string => {
-  const own = new Set<Field>(steers(settings.goal) === 'byDate' ? [] : ['byDate'])
+  const own = new Set<Field>(steer(settings.goal) === 'byDate' ? [] : ['byDate'])
   const said: Record<Field, string> = {
     newADay: `${settings.newADay}`,
     reviewsADay: `${settings.reviewsADay}`,
@@ -172,7 +172,7 @@ export const costOf = (goal: Goal, point: Point): number =>
  * drawn from. Null is a place with nothing overdue to be gone at all, and -1
  * is a pile still standing on the last day projected.
  */
-export const clearing = (backlog: readonly number[]): number | null => {
+export const clearBacklog = (backlog: readonly number[]): number | null => {
   if (!backlog.some((one) => one > 0)) return null
   const at = backlog.indexOf(0)
   return at < 0 ? -1 : at + 1
@@ -182,7 +182,7 @@ export const clearing = (backlog: readonly number[]): number | null => {
  * A number held inside the bounds of the setting it is. A setting the
  * application has said no bound for is held to none.
  */
-export const held = (value: number, within: Bounds | undefined): number =>
+export const clamp = (value: number, within: Bounds | undefined): number =>
   within === undefined ? value : Math.min(Math.max(value, within.least), within.most)
 
 /** The place of the grid nearest a value, and the last one for an empty grid. */
@@ -329,7 +329,7 @@ const guessed = (settings: Settings, value: number, grid: readonly number[]): Po
  * The settings one place of the curve produces, which is the goal's own value
  * off the grid. Every other setting stands as the person left it.
  */
-export const producing = (
+export const produceSchedule = (
   was: Settings,
   place: number,
   curve: Curve,
@@ -338,12 +338,12 @@ export const producing = (
 ): Settings => {
   const value = curve.grid[place] ?? goalValue(was, today)
   if (curve.goal === 'retention') {
-    return { ...was, retention: held(round(value, 2), within.retention) }
+    return { ...was, retention: clamp(round(value, 2), within.retention) }
   }
   if (curve.goal === 'date') {
     return { ...was, byDate: curve.days[place] ?? dayAfter(today, value) }
   }
-  return { ...was, minutesADay: held(Math.round(value), within.minutesADay) }
+  return { ...was, minutesADay: clamp(Math.round(value), within.minutesADay) }
 }
 
 /** A number to that many places. */

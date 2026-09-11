@@ -8,7 +8,7 @@
  */
 import { ordered, reordered, type InsertionPoint } from '@numen/ui'
 import type { VaultFace, VaultStencil } from '../shared/flashcards/cards'
-import { minting, type IdMaker } from '../shared/flashcards/identity'
+import { generateId, type IdMaker } from '../shared/flashcards/identity'
 import type { Surrounds } from '../shared/flashcards/surrounds'
 
 /** One face as the window holds it: what the file says, under an identity of its own. */
@@ -32,7 +32,7 @@ export interface BufferStencil extends Surrounds {
 export const NO_STENCIL: BufferStencil = { fields: [], preamble: '', faces: [], tail: '' }
 
 /** A stencil as the vault read it, each face under an identity this window mints. */
-export const stencilOf = (read: VaultStencil, mint: IdMaker = minting): BufferStencil => ({
+export const stencilOf = (read: VaultStencil, mint: IdMaker = generateId): BufferStencil => ({
   fields: read.fields,
   preamble: read.preamble,
   faces: read.faces.map((face) => ({
@@ -115,7 +115,7 @@ export const faceDropped = (stencil: BufferStencil, id: string, at: InsertionPoi
 }
 
 /** A face added at the end, with both its halves empty. */
-export const faceAdded = (stencil: BufferStencil, name: string, mint: IdMaker = minting): BufferStencil => ({
+export const faceAdded = (stencil: BufferStencil, name: string, mint: IdMaker = generateId): BufferStencil => ({
   ...stencil,
   faces: [...stencil.faces, { id: mint(), name, preamble: '', front: '', back: '' }],
 })

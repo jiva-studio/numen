@@ -1,7 +1,7 @@
 /**
  * Search and lookup domain methods for the window core.
  */
-import { finding } from './clients'
+import { search } from './clients'
 import { modes, noteType, run, sourceKind } from './words'
 import type { SearchDeps } from '../../shared/command/search'
 
@@ -9,7 +9,7 @@ export type SearchOperations = SearchDeps
 
 export const searchOperations: SearchOperations = {
   names: async (query, limit) => {
-    const answer = await finding.searchNames({ query, limit })
+    const answer = await search.searchNames({ query, limit })
     return answer.found.map((one) => ({
       path: one.note?.path ?? '',
       title: one.note?.title ?? '',
@@ -20,7 +20,7 @@ export const searchOperations: SearchOperations = {
     }))
   },
   search: async (query, mode, limit) => {
-    const answer = await finding.searchPassages({ query, limit, mode: modes[mode] })
+    const answer = await search.searchPassages({ query, limit, mode: modes[mode] })
     return answer.found.map((one) => ({
       path: one.path,
       title: one.note?.title ?? '',

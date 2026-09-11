@@ -33,7 +33,7 @@ export const files = createClient(FileService, transport)
 export const notes = createClient(NoteService, transport)
 
 /** What the vault holds that answers what a person typed. */
-export const finding = createClient(SearchService, transport)
+export const search = createClient(SearchService, transport)
 
 export const vaultsService = createClient(VaultsService, transport)
 

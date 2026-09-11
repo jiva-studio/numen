@@ -15,7 +15,7 @@ export interface Cue {
 }
 
 /** The prose of a transcript: one cue to a line. */
-export const spoken = (cues: readonly Cue[]): string => cues.map((cue) => cue.text).join('\n')
+export const getText = (cues: readonly Cue[]): string => cues.map((cue) => cue.text).join('\n')
 
 /** Whether two runs of cues say the same words at the same moments. */
 export const same = (a: readonly Cue[], b: readonly Cue[]): boolean =>
@@ -29,7 +29,7 @@ export const same = (a: readonly Cue[], b: readonly Cue[]): boolean =>
  * for each line, in the order they are read, and an emptied line as the empty
  * span it now covers.
  */
-export const spanning = (was: readonly Cue[], text: string): readonly Cue[] => {
+export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
   const lines = text.split('\n')
 
   // The lines that read as they did, from either end. What is left between
@@ -67,8 +67,8 @@ export const spanning = (was: readonly Cue[], text: string): readonly Cue[] => {
  * The transcript as it now reads, for the application to keep. A line emptied
  * entirely is dropped.
  */
-export const cued = (was: readonly Cue[], text: string): readonly Cue[] =>
-  spanning(was, text).filter((cue) => cue.text !== '')
+export const applyCues = (was: readonly Cue[], text: string): readonly Cue[] =>
+  spanCues(was, text).filter((cue) => cue.text !== '')
 
 /**
  * Lines laid over one span, each taking of it what its characters are of all

@@ -7,7 +7,7 @@
  * drawn again under a fresh identity.
  */
 import type { Problem } from '../shared/flashcards/cards'
-import { deckIn, headed, named, sameDeck, type BufferDeck } from './deck'
+import { deckIn, applyHead, applyName, sameDeck, type BufferDeck } from './deck'
 import { marksOf, sameMarks, type Marks } from '../shared/flashcards/marks'
 
 /** The string a tab holds, and the file it stands at. */
@@ -34,8 +34,8 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
     const read = deckIn(body)
     const deck = held
       ? sameDeck(held.deck, read)
-        ? headed(held.deck, read)
-        : named(held.deck, read)
+        ? applyHead(held.deck, read)
+        : applyName(held.deck, read)
       : read
     parsed.set(id, { body, deck })
     return deck

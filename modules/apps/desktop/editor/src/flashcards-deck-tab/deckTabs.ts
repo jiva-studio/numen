@@ -1,42 +1,41 @@
 /**
  * Window registration and tab state for flashcard deck tabs.
  */
-import { computed, shallowRef, type ComputedRef } from 'vue'
-import type { DeckCard, DeckSection, PlexShowing, Stencil } from '@numen/ui'
+import { computed, shallowRef } from 'vue'
+import type { PlexShowing } from '@numen/ui'
 import type { Move } from '../shared/core'
 import type { Cards, StencilSummary } from '../shared/flashcards/cards'
 import type { Store } from '../shared/command/deps'
 import type { Presets } from '../flashcards-preset-tab/core'
 import { answers } from './answers'
 import { reader } from './reader'
-import { useDeckSchedule, type Choice, type DeckPreset } from './scheduler'
-import { openNotes, type OpenNote } from '../note-tab/notes'
+import { useDeckSchedule } from './scheduler'
+import { openNotes } from '../note-tab/notes'
 import { markOf } from '../note-tab/tab'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import type { FileOpeners } from '../shared/tabs/openers'
 import { DECK } from '../shared/tabs/workspace'
 import DeckTab from './DeckTab.vue'
 import {
-  added,
+  addCard,
+  addSection,
   drawnSectionsOf,
   deckBodyOf,
   cardsOf,
-  dropped,
+  dropCard,
   stencilsOf,
   deckIn,
   deckOf,
   drawnOf,
-  filled,
+  fillCard,
   pathOfCut,
-  removed,
+  removeCard,
   sameOffers,
-  sectionAdded,
-  sectionGone,
-  sectionNamed,
+  removeSection,
+  renameSection,
   sectionsOf,
   type BufferDeck,
 } from './deck'
-import type { Marks } from '../shared/flashcards/marks'
 import type { DeckTabState } from './types'
 
 export type { DeckTabState }
@@ -140,21 +139,21 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
       schedules: (preset) => void schedules(id, preset),
       setSchedule: (preset) => void schedules(id, preset),
       adds: (stencil, values, section) =>
-        turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
+        turns(id, addCard(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
       addCard: (stencil, values, section) =>
-        turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
-      removes: (card) => turns(id, removed(deckAt(id), card)),
-      removeCard: (card) => turns(id, removed(deckAt(id), card)),
-      moves: (card, at) => turns(id, dropped(deckAt(id), card, at)),
-      moveCard: (card, at) => turns(id, dropped(deckAt(id), card, at)),
-      writes: (card, field, nth, text) => turns(id, filled(deckAt(id), card, field, nth, text)),
-      writeCardField: (card, field, nth, text) => turns(id, filled(deckAt(id), card, field, nth, text)),
-      addsSection: (name) => turns(id, sectionAdded(deckAt(id), name)),
-      addSection: (name) => turns(id, sectionAdded(deckAt(id), name)),
-      namesSection: (section, name) => turns(id, sectionNamed(deckAt(id), section, name)),
-      renameSection: (section, name) => turns(id, sectionNamed(deckAt(id), section, name)),
-      removesSection: (section) => turns(id, sectionGone(deckAt(id), section)),
-      removeSection: (section) => turns(id, sectionGone(deckAt(id), section)),
+        turns(id, addCard(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
+      removes: (card) => turns(id, removeCard(deckAt(id), card)),
+      removeCard: (card) => turns(id, removeCard(deckAt(id), card)),
+      moves: (card, at) => turns(id, dropCard(deckAt(id), card, at)),
+      moveCard: (card, at) => turns(id, dropCard(deckAt(id), card, at)),
+      writes: (card, field, nth, text) => turns(id, fillCard(deckAt(id), card, field, nth, text)),
+      writeCardField: (card, field, nth, text) => turns(id, fillCard(deckAt(id), card, field, nth, text)),
+      addsSection: (name) => turns(id, addSection(deckAt(id), name)),
+      addSection: (name) => turns(id, addSection(deckAt(id), name)),
+      namesSection: (section, name) => turns(id, renameSection(deckAt(id), section, name)),
+      renameSection: (section, name) => turns(id, renameSection(deckAt(id), section, name)),
+      removesSection: (section) => turns(id, removeSection(deckAt(id), section)),
+      removeSection: (section) => turns(id, removeSection(deckAt(id), section)),
       keep: () => store.keep(id),
       keepMine: () => store.keep(id),
       take: () => store.take(id),
