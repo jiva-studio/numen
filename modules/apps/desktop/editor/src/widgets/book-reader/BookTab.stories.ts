@@ -89,7 +89,7 @@ const UNNAMED: Book = { ...NAMED, parts: [] }
 
 /** A book on a shelf: one document, drawn as it stands. */
 const shelf = (book: Book): Books => ({
-  getShape: async () => book,
+  getBook: async () => book,
   readMarkup: async () => document_.markup,
   getEntryUrl: (_path, name) => `/assets/book.epub/${name.split("/").map(encodeURIComponent).join("/")}`,
 })
@@ -144,7 +144,7 @@ const CROSSED: Book = {
 
 /** That book on a shelf, each document of the spine drawn as it stands. */
 const crossed: Books = {
-  getShape: async () => CROSSED,
+  getBook: async () => CROSSED,
   readMarkup: async (_path, document) => (document === SECOND_PATH ? SECOND.markup : FIRST.markup),
   getEntryUrl: (_path, name) => `/assets/book.epub/${name.split("/").map(encodeURIComponent).join("/")}`,
 }

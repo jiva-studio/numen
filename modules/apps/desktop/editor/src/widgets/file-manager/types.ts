@@ -53,19 +53,13 @@ export interface FilesTabState {
   drag(paths: readonly string[]): void
   drop(): void
   remove(paths: readonly string[]): void
-  makes(path: string | null): Promise<void>
   createFolder(path: string | null): Promise<void>
-  writes(path: string | null): Promise<void>
   createNote(path: string | null): Promise<void>
-  makesOne(path: string | null, makes: FileMaker, name: string): Promise<void>
-  imports(address: string): Promise<string>
+  createOne(path: string | null, makes: FileMaker, name: string): Promise<void>
   importAddress(address: string): Promise<string>
-  importUrl(url: string): Promise<string>
   openMenu(asked: MenuRequest): void
-  asks(asked: MenuRequest): void
   dismiss(): void
   chooseMenuItem(id: string): void
   nameOf(path: string): string
-  getName(path: string): string
   canRun: RunGuard
 }

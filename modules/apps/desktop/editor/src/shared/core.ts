@@ -8,7 +8,6 @@ import type {
   CreateResult,
   ErrorCode,
   Link,
-  Move,
   Neighbourhood,
   NewNote,
   NoteEdit,

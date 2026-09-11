@@ -437,7 +437,7 @@ describe('what the tab says it encountered as an error', () => {
     const said: string[] = []
     for (const error of errors) {
       const { state } = await opened({}, curve, () => ({ preset: null, error }))
-      said.push(state.saying.value)
+      said.push(state.errorMessage.value)
     }
     expect(said.every((one) => one !== '')).toBe(true)
     expect(new Set(said).size).toBe(errors.length)
@@ -450,7 +450,7 @@ describe('what the tab says it encountered as an error', () => {
       state.types('newADay', 4)
       state.settles()
       await after()
-      said.push(state.saying.value)
+      said.push(state.errorMessage.value)
     }
     expect(said.every((one) => one !== '')).toBe(true)
     expect(new Set(said).size).toBe(errors.length)
@@ -477,13 +477,13 @@ describe('a curve nobody answers', () => {
   it('leaves the tab saying why, and not saying it is reading', async () => {
     const { state } = await opened({}, () => Promise.reject(new Error('the vault is gone')))
     expect(state.waiting.value).toBe(false)
-    expect(state.saying.value).not.toBe('')
+    expect(state.errorMessage.value).not.toBe('')
   })
 
   it('is what a file refused leaves, so no answer is waited on', async () => {
     const { state } = await opened({}, curve, () => ({ preset: null, error: 'notAPreset' }))
     expect(state.waiting.value).toBe(false)
-    expect(state.saying.value).not.toBe('')
+    expect(state.errorMessage.value).not.toBe('')
   })
 
   it('is waited on again where the goal is moved to one nobody has answered', async () => {
@@ -513,7 +513,7 @@ describe('what a tab still owes the file', () => {
     state.shuts('Steady.md')
     await after()
     expect(closed).toStrictEqual([])
-    expect(state.saying.value).not.toBe('')
+    expect(state.errorMessage.value).not.toBe('')
   })
 
   it('lets the tab go the second time it is asked, the person having been told', async () => {

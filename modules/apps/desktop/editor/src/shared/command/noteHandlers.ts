@@ -30,14 +30,12 @@ export const settleTab = async (path: string, on: CommandDeps): Promise<SettleRe
   await on.notes.settles(held)
   return { held, waiting: false }
 }
-export const settles = settleTab
 
 /** A note travelled to, and a vault with none to travel to said. */
 export const navigateToPath = async (path: string, on: CommandDeps, words: Words): Promise<void> => {
   if (!path) return on.says(words.nowhere, 'caution')
   await on.goes.travel(path)
 }
-export const travels = navigateToPath
 
 /**
  * A note made under the name that was typed. From a note tab it opens in a tab
@@ -55,7 +53,6 @@ export const createNoteCommand = async (
   if (invocation.kind === NOTE) return on.notes.made(made.path, made.title, 'note', 'beside')
   await navigateToPath(made.path, on, words)
 }
-export const makes = createNoteCommand
 
 /**
  * A note given a different name, and its file renamed with it where the two are
@@ -66,11 +63,10 @@ export const renameNoteCommand = async (invocation: CommandInvocation, on: Comma
   const tab = await settleTab(invocation.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
   const answer = await on.files.renames(invocation.path, invocation.name)
-  if (answer.hasChanged || answer.changed) return on.says(words.stale, 'caution')
+  if (answer.hasChanged) return on.says(words.stale, 'caution')
   const error = answer.error
   if (error) on.says(words.errors[error], 'error')
 }
-export const renames = renameNoteCommand
 
 /**
  * A file or a folder filed somewhere else, carrying the name the path ends in.
@@ -85,7 +81,6 @@ export const moveFileCommand = async (invocation: CommandInvocation, on: Command
   if (error === 'occupied') return on.says(words.occupied, 'error')
   if (error) on.says(words.errors[error], 'error')
 }
-export const moves = moveFileCommand
 
 /** An empty folder, made under the path that was typed. */
 export const createFolderCommand = async (invocation: CommandInvocation, on: CommandDeps, words: Words): Promise<void> => {
@@ -94,4 +89,3 @@ export const createFolderCommand = async (invocation: CommandInvocation, on: Com
   if (error === 'occupied') return on.says(words.occupied, 'error')
   if (error) on.says(words.errors[error], 'error')
 }
-export const makesFolder = createFolderCommand

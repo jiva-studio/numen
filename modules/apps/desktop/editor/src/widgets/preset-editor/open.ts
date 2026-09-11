@@ -51,12 +51,12 @@ export const readPreset = async (
     answer = await core.read(one.path.value)
   } catch (error) {
     console.error(error)
-    one.flight.saying.value = words.unreachable
+    one.flight.errorMessage.value = words.unreachable
     one.curves.waiting.value = false
     return
   }
   const readError = answer.error
-  one.flight.saying.value = readError === null ? '' : words.notRead(readError)
+  one.flight.errorMessage.value = readError === null ? '' : words.notRead(readError)
   one.flight.changed.value = false
   one.flight.at = answer.at
   bounds.value = answer.bounds
@@ -83,7 +83,7 @@ export const readPreset = async (
     bounds.value,
     today,
     (msg) => {
-      one.flight.saying.value = msg
+      one.flight.errorMessage.value = msg
     },
   )
 }
@@ -115,7 +115,7 @@ export const createPresetState = (
       bounds.value,
       today(),
       (msg) => {
-        one.flight.saying.value = msg
+        one.flight.errorMessage.value = msg
       },
     )
   }
@@ -138,7 +138,7 @@ export const createPresetState = (
         bounds.value,
         today(),
         (msg) => {
-          one.flight.saying.value = msg
+          one.flight.errorMessage.value = msg
         },
       )
     }
@@ -163,31 +163,19 @@ export const createPresetState = (
     id,
     settings: one.settings,
     curve: one.curves.curve,
-    counts: one.curves.material,
     material: one.curves.material,
-    sliderPosition: one.curves.place,
     place: one.curves.place,
-    isWaiting: one.curves.waiting,
     waiting: one.curves.waiting,
     bounds,
     problems: one.problems,
     stopped: one.stopped,
-    errorMessage: one.flight.saying,
-    saying: one.flight.saying,
-    hasChanged: one.flight.changed,
+    errorMessage: one.flight.errorMessage,
     changed: one.flight.changed,
     again: () => void readPreset(one, core, bounds, titles, today()),
-    reload: () => void readPreset(one, core, bounds, titles, today()),
     chooses: chooseGoal,
-    chooseGoal,
     moves: moveSlider,
-    move: moveSlider,
-    moveSlider,
     settles: () => void requestWrite(one.flight, one.path.value, one.settings.value, core, said),
-    save: () => void requestWrite(one.flight, one.path.value, one.settings.value, core, said),
     types: updateSetting,
-    updateSetting,
     shuts: closeTab,
-    close: closeTab,
   }
 }

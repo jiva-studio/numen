@@ -39,30 +39,6 @@ export const books: Books = {
       pages: answer.pageCount,
       pageBytes: answer.pageBytes,
       fingerprint: stamp(answer.fingerprint) ?? '',
-      at: stamp(answer.fingerprint) ?? '',
-    } satisfies Book
-  },
-  getShape: async (path) => {
-    const answer = await waiting(() => served.books.getBook({ path }))
-    return {
-      title: answer.title,
-      span: { begins: 0, ends: answer.textBytes },
-      documents: answer.documents.map(spined),
-      parts: answer.parts.map((one) => ({
-        title: one.title,
-        offset: one.offset,
-        at: one.offset,
-        level: one.level,
-      })),
-      printed: answer.printedPages.map((one) => ({
-        label: one.label,
-        offset: one.offset,
-        at: one.offset,
-      })),
-      pages: answer.pageCount,
-      pageBytes: answer.pageBytes,
-      fingerprint: stamp(answer.fingerprint) ?? '',
-      at: stamp(answer.fingerprint) ?? '',
     } satisfies Book
   },
   readMarkup: async (path, document, seen) => {

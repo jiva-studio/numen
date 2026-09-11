@@ -9,8 +9,15 @@
  */
 import { formatErrorMessage } from '@numen/wire'
 import { all, naming, type CommandDeps, type CommandHandler, type Words } from './deps'
-import { atItsFile, makes, makesFolder, moves, renames, settles, travels } from './noteHandlers'
-import type { CommandInvocation } from './target'
+import {
+  atItsFile,
+  createNoteCommand,
+  createFolderCommand,
+  moveFileCommand,
+  navigateToPath,
+  renameNoteCommand,
+  settleTab,
+} from './noteHandlers'
 import { adds, calls, forgets, shows } from './vaults'
 import type { Outcome, ArtifactState } from '../artifacts'
 import { AGENT, FILES, PLEX, SETTINGS } from '../tabs/workspace'
@@ -20,10 +27,10 @@ const carried: Record<string, CommandHandler> = {
   read: (invocation, on) => on.notes.opens(invocation.path, invocation.title, 'here'),
   beside: (invocation, on) => on.notes.opens(invocation.path, invocation.title, 'beside'),
   travel: (invocation, on) => on.goes.travel(invocation.path),
-  child: (invocation, on, words) => makes(invocation, 'child', on, words),
-  parent: (invocation, on, words) => makes(invocation, 'parent', on, words),
-  jump: (invocation, on, words) => makes(invocation, 'jump', on, words),
-  note: (invocation, on, words) => makes(invocation, null, on, words),
+  child: (invocation, on, words) => createNoteCommand(invocation, 'child', on, words),
+  parent: (invocation, on, words) => createNoteCommand(invocation, 'parent', on, words),
+  jump: (invocation, on, words) => createNoteCommand(invocation, 'jump', on, words),
+  note: (invocation, on, words) => createNoteCommand(invocation, null, on, words),
   deck: async (invocation, on) => {
     if (invocation.name) await on.makers.decks('', invocation.name)
   },
@@ -36,7 +43,7 @@ const carried: Record<string, CommandHandler> = {
   importUrl: async (invocation, on) => {
     if (invocation.name) await on.makers.imports('', invocation.name)
   },
-  title: (invocation, on, words) => renames(invocation, on, words),
+  title: (invocation, on, words) => renameNoteCommand(invocation, on, words),
   remove: (invocation, on, words) => removes(invocation, false, on, words),
   destroy: (invocation, on, words) => removes(invocation, true, on, words),
   transcribe: async (invocation, on, words) =>
@@ -64,8 +71,8 @@ const carried: Record<string, CommandHandler> = {
   reveal: (invocation, on) => on.goes.reveals(invocation.path),
   preset: (invocation, on) => on.goes.preset(invocation.path),
   settings: (_, on) => on.goes.opens(SETTINGS),
-  move: (invocation, on, words) => moves(invocation, on, words),
-  makeFolder: (invocation, on, words) => makesFolder(invocation, on, words),
+  move: (invocation, on, words) => moveFileCommand(invocation, on, words),
+  makeFolder: (invocation, on, words) => createFolderCommand(invocation, on, words),
   plex: (_, on) => on.goes.opens(PLEX),
   files: (_, on) => on.goes.opens(FILES),
   agent: (_, on) => on.goes.opens(AGENT),
@@ -78,8 +85,8 @@ const carried: Record<string, CommandHandler> = {
   syncing: (invocation, on) => on.settings.syncing(invocation.name),
   hanging: (invocation, on) => on.settings.hanging(invocation.name),
   parts: (invocation, on) => on.settings.parts(invocation.name),
-  first: (_, on, words) => travels(on.goes.opening(), on, words),
-  goto: (invocation, on, words) => travels(invocation.path, on, words),
+  first: (_, on, words) => navigateToPath(on.goes.opening(), on, words),
+  goto: (invocation, on, words) => navigateToPath(invocation.path, on, words),
   openVault: (invocation, on, words) => shows(invocation.vault.id, on, words),
   newVault: (_, on, words) => adds(on, words),
   renameVault: (invocation, on, words) => calls(invocation, on, words),
@@ -147,7 +154,7 @@ const removes = async (invocation: CommandInvocation, destroy: boolean, on: Comm
   const opening = on.goes.opening()
 
   for (const path of over(invocation)) {
-    const tab = await settles(path, on)
+    const tab = await settleTab(path, on)
     if (tab.waiting) {
       waiting = true
       continue

@@ -7,7 +7,7 @@
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { answerGuard } from '../../shared/questions'
-import { movedTo, type Neighbourhood, type Move } from '../../shared/core'
+import { getRenamedPath, type Neighbourhood, type PathRename } from '../../shared/core'
 import { alike } from './picture'
 
 /** The one question a plex asks of the vault: what is around a note. */
@@ -15,8 +15,7 @@ export interface Neighbours {
   neighbourhood(path: string): Promise<Neighbourhood>
 }
 
-export type View = ReturnType<typeof usePlexView>
-export type PlexView = View
+export type PlexView = ReturnType<typeof usePlexView>
 
 export function usePlexView(core: Neighbours) {
   const neighbourhood = ref<Neighbourhood | null>(null)
@@ -60,8 +59,8 @@ export function usePlexView(core: Neighbours) {
    * A note that moved. A plex standing on it stands on where it went, and an
    * answer on its way is let go of.
    */
-  const follows = (renamed: readonly Move[]) => {
-    const to = movedTo(renamed, here.value)
+  const follows = (renamed: readonly PathRename[]) => {
+    const to = getRenamedPath(renamed, here.value)
     if (!to) return
     here.value = to
     asks.drop()

@@ -23,27 +23,16 @@ export interface PageHighlight {
   readonly rects: readonly Rect[]
 }
 
-/** Backward-compatible alias for PageHighlight. */
-export type HighlightedPage = PageHighlight
-
 /** Document layout manifest: page dimensions and disk fingerprint. */
 export interface DocumentLayout {
   readonly pages: readonly Page[]
   readonly fingerprint: string
 }
 
-/** Backward-compatible alias for DocumentLayout. */
-export interface Shape {
-  readonly pages: readonly Page[]
-  readonly at: string
-}
-
 /** Port for document service interactions. */
 export interface Documents {
   /** Retrieves document layout and dimensions. */
-  getDocumentLayout?(path: string): Promise<DocumentLayout>
-  /** Retrieves document layout using legacy Shape contract. */
-  getShape?(path: string): Promise<Shape | DocumentLayout>
+  getDocumentLayout(path: string): Promise<DocumentLayout>
   /** Returns the image URL for a rendered page at the given pixel width. */
   getPageUrl(path: string, page: number, width: number, seen?: string): string
   /** Retrieves highlights for given text spans. */

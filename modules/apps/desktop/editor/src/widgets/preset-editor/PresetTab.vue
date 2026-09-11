@@ -24,7 +24,7 @@ const {
   material,
   place,
   problems,
-  saying,
+  errorMessage,
   settings,
   stopped: stoppedAt,
   waiting,
@@ -56,23 +56,19 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
 
 // --- Handlers ---
 function onAgain() {
-  const reload = props.state.reload ?? props.state.again
-  reload()
+  props.state.again()
 }
 
 function onSelectGoal(one: string) {
-  const chooseGoal = props.state.chooseGoal ?? props.state.chooses
-  chooseGoal(one as Goal)
+  props.state.chooses(one as Goal)
 }
 
 function onMoveSlider(at: number) {
-  const move = props.state.moveSlider ?? props.state.move ?? props.state.moves
-  move(at)
+  props.state.moves(at)
 }
 
 function onSettleSlider() {
-  const save = props.state.save ?? props.state.settles
-  save()
+  props.state.settles()
 }
 
 // --- Helpers ---
@@ -82,8 +78,8 @@ function onSettleSlider() {
   <div class="preset">
     <!-- Reading the file again is the way out of anything the tab has to say,
          and it waits on nothing in the vault. -->
-    <p v-if="saying" role="alert" class="preset__warning preset__answering">
-      {{ saying }}
+    <p v-if="errorMessage" role="alert" class="preset__warning preset__answering">
+      {{ errorMessage }}
       <button type="button" class="answer" @click="onAgain">
         {{ words.reads }}
       </button>

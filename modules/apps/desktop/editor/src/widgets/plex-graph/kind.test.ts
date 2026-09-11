@@ -10,11 +10,11 @@ import { ref } from 'vue'
 import { paneById, panesOf } from '@numen/ui'
 import { plexKind, usePlexTab, type PlexTabState, type PlexEditor, type PlexTabDeps } from './kind'
 import { ITEMS, NEW_NOTE } from './menu'
-import { usePlexView as viewing, type View } from './view'
+import { usePlexView as viewing, type PlexView } from './view'
 import { WORDS as words } from './words'
 import {
-  movedTo,
-  type Move,
+  getRenamedPath,
+  type PathRename,
   type NoteHeading,
   type Neighbourhood,
   type NoteType,
@@ -66,7 +66,7 @@ const viewOn = (at: string, related: readonly string[] = [], types: Types = {}) 
     },
     close: () => {},
   }
-  return { view: view as unknown as View, went }
+  return { view: view as unknown as PlexView, went }
 }
 
 /** A vault that takes every note it is asked to make, and records the asking. */
@@ -272,7 +272,7 @@ describe('a plex drawing nothing', () => {
       follows: () => {},
       close: () => {},
     }
-    return usePlexTab(view as unknown as View, {
+    return usePlexTab(view as unknown as PlexView, {
       makes: making().makes,
       ready: ref(true),
       hangs: ref(true),
@@ -761,16 +761,16 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   const edges = () => (picture()?.edges ?? []).map((one) => `${one.from} -> ${one.to}`)
 
   /** Files moved in the vault, and the plex told what went where. */
-  const follows = (...renamed: readonly Move[]) => {
+  const follows = (...renamed: readonly PathRename[]) => {
     around = around.map((one) => ({
       ...one,
-      path: movedTo(renamed, one.path) || one.path,
-      through: movedTo(renamed, one.through) || one.through,
+      path: getRenamedPath(renamed, one.path) || one.path,
+      through: getRenamedPath(renamed, one.through) || one.through,
     }))
     state.follows(renamed)
   }
   /** A move, followed by the picture being asked for again. */
-  const moves = async (...renamed: readonly Move[]) => {
+  const moves = async (...renamed: readonly PathRename[]) => {
     follows(...renamed)
     await view.go(view.here.value)
   }

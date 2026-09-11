@@ -10,21 +10,17 @@ import { useDocumentHighlights } from './highlights'
 import type {
   DocumentLayout,
   Documents,
-  HighlightedPage,
   Page,
   PageHighlight,
   Rect,
-  Shape,
 } from './types'
 
 export type {
   DocumentLayout,
   Documents,
-  HighlightedPage,
   Page,
   PageHighlight,
   Rect,
-  Shape,
 }
 export { useDocumentNavigation } from './navigation'
 export { useDocumentViewport } from './viewport'
@@ -44,12 +40,10 @@ export function useDocumentReader(documents: Documents, path: string) {
 
   const loadLayout = async () => {
     try {
-      const said = documents.getDocumentLayout
-        ? await documents.getDocumentLayout(path)
-        : await documents.getShape!(path)
+      const layout = await documents.getDocumentLayout(path)
       if (!open) return
-      pages.value = said.pages
-      seen.value = 'fingerprint' in said ? said.fingerprint : said.at
+      pages.value = layout.pages
+      seen.value = layout.fingerprint
     } catch (thrown) {
       if (!open) return
       error.value = formatErrorMessage(thrown)

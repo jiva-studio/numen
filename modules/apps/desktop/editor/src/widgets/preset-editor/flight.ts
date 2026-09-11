@@ -18,13 +18,12 @@ export interface WriteFlight {
   told: boolean
   readonly theirs: Set<keyof Settings>
   readonly changed: Ref<boolean>
-  readonly saying: Ref<string>
+  readonly errorMessage: Ref<string>
 }
 
 export function createWriteFlight(): WriteFlight {
   return {
     at: '',
-    isWriting: false,
     writing: false,
     isSelected: false,
     wanted: false,
@@ -33,7 +32,7 @@ export function createWriteFlight(): WriteFlight {
     told: false,
     theirs: new Set<keyof Settings>(),
     changed: ref(false),
-    saying: ref(''),
+    errorMessage: ref(''),
   }
 }
 
@@ -50,7 +49,7 @@ export const sendWrite = async (
   try {
     answer = await core.write(path, settings, flight.at)
   } catch (error) {
-    flight.saying.value = words.unwritten
+    flight.errorMessage.value = words.unwritten
     console.error(error)
     return
   }
@@ -60,11 +59,11 @@ export const sendWrite = async (
   }
   const writeError = answer.error
   if (writeError) {
-    flight.saying.value = words.notSaved(writeError)
-    said(flight.saying.value, 'error')
+    flight.errorMessage.value = words.notSaved(writeError)
+    said(flight.errorMessage.value, 'error')
     return
   }
-  flight.saying.value = ''
+  flight.errorMessage.value = ''
   flight.at = answer.at
   flight.theirs.clear()
   flight.hasMessage = false

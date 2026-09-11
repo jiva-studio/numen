@@ -142,7 +142,7 @@ describe('the settings under the control', () => {
 describe('what the tab says went wrong', () => {
   const saying = (words: string) => {
     const one = tabAt()
-    const state: PresetTabState = { ...one.state, saying: ref(words) }
+    const state: PresetTabState = { ...one.state, errorMessage: ref(words) }
     return { tab: mount(PresetTab, { props: { state } }), done: one.done }
   }
 

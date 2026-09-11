@@ -55,7 +55,7 @@ function onDrop(event: DragEvent) {
   const address = addressDropped(event.dataTransfer)
   if (!address) return
   event.preventDefault()
-  void (props.state.importAddress ?? props.state.imports)(address)
+  void props.state.importAddress(address)
 }
 
 /** A drag carrying an address is one this tab takes. */

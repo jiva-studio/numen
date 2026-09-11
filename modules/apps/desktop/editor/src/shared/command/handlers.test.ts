@@ -42,10 +42,10 @@ const known = (id: string, name: string): Vault => ({
 const renamed = (over: Partial<RenameResult> = {}): RenameResult => ({
   path: 'physics/Entropy.md',
   title: 'Entropy',
-  frontmatter: false,
+  hasFrontmatter: false,
   moved: null,
   error: null,
-  changed: false,
+  hasChanged: false,
   ...over,
 })
 
@@ -533,7 +533,7 @@ describe('a note renamed', () => {
   })
 
   it('says the note was written elsewhere while this was asked', async () => {
-    const one = window({ renamed: renamed({ changed: true }) })
+    const one = window({ renamed: renamed({ hasChanged: true }) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 

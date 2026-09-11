@@ -55,11 +55,9 @@ export const noteOperations: NoteOperations = {
       path: answer.path,
       title: answer.title,
       hasFrontmatter: writes[answer.by],
-      frontmatter: writes[answer.by],
       moved: answer.moved ? mapMoveResult(answer.moved) : null,
       error,
       hasChanged: staleIn(answer),
-      changed: staleIn(answer),
     }
   },
   headings: async (paths) => {

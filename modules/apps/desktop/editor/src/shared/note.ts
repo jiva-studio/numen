@@ -8,12 +8,10 @@ export interface PathRename {
   readonly from: string
   readonly to: string
 }
-export type Move = PathRename
 
 /** Where a file went, and nothing where none of these moved it. */
 export const getRenamedPath = (renamed: readonly PathRename[], path: string): string =>
   renamed.find((one) => one.from === path)?.to ?? ''
-export const movedTo = getRenamedPath
 
 /**
  * A run of text, by where it begins and where it ends. What it counts in is the
@@ -105,7 +103,6 @@ export interface LinkAddress {
   readonly url: string
   readonly embed: string
 }
-export type Address = LinkAddress
 
 /** The canonical error code for note operations. */
 export type ErrorCode =
@@ -159,7 +156,6 @@ export interface CreateResult {
   path: string
   error?: ErrorCode | null
 }
-export type MakeResult = CreateResult
 
 /** What renaming a note came back with. */
 export interface RenameResult {
@@ -171,13 +167,11 @@ export interface RenameResult {
   title: string
   /** Whether the rename wrote the title into the frontmatter of the note. */
   hasFrontmatter: boolean
-  frontmatter?: boolean
   /** What the file did. Null when it stayed where it was. */
   moved: MoveResult | null
   error?: ErrorCode | null
   /** The note holds prose nobody here has seen, and nothing was written. */
   hasChanged: boolean
-  changed?: boolean
 }
 
 /**

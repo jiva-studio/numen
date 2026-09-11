@@ -87,9 +87,7 @@ export function useBookReader(
 
   const loadBook = async () => {
     try {
-      const saidBook = books.getBook
-        ? await books.getBook(path)
-        : await books.getShape!(path)
+      const saidBook = await books.getBook(path)
       if (!open) return
       title.value = saidBook.title
       span.value = saidBook.span
@@ -97,7 +95,7 @@ export function useBookReader(
       pages.value = saidBook.pages
       pageBytes.value = saidBook.pageBytes
       contents.value = contentsOf(saidBook, words)
-      seen.value = saidBook.fingerprint ?? saidBook.at ?? ''
+      seen.value = saidBook.fingerprint
       at.value = saidBook.span.begins
       await draw(documentAt(saidBook.documents, saidBook.span.begins))
     } catch (error) {

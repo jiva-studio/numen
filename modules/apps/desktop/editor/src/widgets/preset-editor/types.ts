@@ -213,30 +213,18 @@ export interface PresetTabState {
   readonly id: string
   readonly settings: Readonly<Ref<Settings>>
   readonly curve: Readonly<Ref<Curve>>
-  readonly counts: Readonly<Ref<PresetCounts | null>>
   readonly material: Readonly<Ref<PresetCounts | null>>
-  readonly sliderPosition: Readonly<Ref<number>>
   readonly place: Readonly<Ref<number>>
-  readonly isWaiting: Readonly<Ref<boolean>>
   readonly waiting: Readonly<Ref<boolean>>
   readonly bounds: Readonly<Ref<SettingsBounds>>
   readonly problems: Readonly<Ref<readonly string[]>>
   readonly stopped: Readonly<Ref<StopReason>>
   readonly errorMessage: Readonly<Ref<string>>
-  readonly saying: Readonly<Ref<string>>
-  readonly hasChanged: Readonly<Ref<boolean>>
   readonly changed: Readonly<Ref<boolean>>
   again(): void
-  reload(): void
   chooses(goal: Goal): void
-  chooseGoal(goal: Goal): void
   moves(place: number): void
-  move(place: number): void
-  moveSlider(place: number): void
   settles(): void
-  save(): void
   types(field: Field, value: SettingValue): void
-  updateSetting(field: Field, value: SettingValue): void
   shuts(id: string): void
-  close(id: string): void
 }

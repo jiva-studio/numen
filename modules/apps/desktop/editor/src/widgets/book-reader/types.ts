@@ -36,16 +36,12 @@ export interface Book {
   readonly pages: number
   readonly pageBytes: number
   readonly fingerprint: string
-  /** Backward-compatible alias for fingerprint. */
-  readonly at?: string
 }
 
 /** Service port for book operations. */
 export interface Books {
   /** Retrieves book metadata and spine. */
-  getBook?(path: string): Promise<Book>
-  /** Backward-compatible shape retrieval. */
-  getShape?(path: string): Promise<Book>
+  getBook(path: string): Promise<Book>
   /** Reads document markup for a spine item. */
   readMarkup(path: string, document: string, seen: string): Promise<string>
   /** Returns the URL for an archived resource entry. */

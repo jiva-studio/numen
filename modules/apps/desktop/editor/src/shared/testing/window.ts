@@ -298,7 +298,7 @@ vi.mock('../../app/vault', () => ({
 
 vi.mock('../../widgets/document-viewer/wire', () => ({
   documents: {
-    getShape: async () => ({ pages: 1, pageSizes: [{ wide: 100, high: 100 }] }),
+    getDocumentLayout: async () => ({ pages: [{ width: 100, height: 100 }], fingerprint: '' }),
     getPageUrl: () => '',
     getHighlights: async () => [],
   },
@@ -306,7 +306,7 @@ vi.mock('../../widgets/document-viewer/wire', () => ({
 
 vi.mock('../../widgets/book-reader/wire', () => ({
   books: {
-    getShape: async (path: string) => ({
+    getBook: async (path: string) => ({
       title: path,
       span: { begins: 0, ends: 900 },
       documents: [{ path: 'text/one.xhtml', span: { begins: 0, ends: 900 } }],

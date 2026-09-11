@@ -5,7 +5,7 @@
  * while its file moves. Everything the plex hands back names a node by its
  * ticket, and is translated to a path at the plex's edge.
  */
-import { movedTo, type Move } from '../../shared/core'
+import { getRenamedPath, type PathRename } from '../../shared/core'
 
 export function createTickets() {
   /** The ticket each note holds, by the path its file is at. */
@@ -38,9 +38,9 @@ export function createTickets() {
    * Notes whose files went elsewhere. Each keeps the ticket it holds, and the
    * whole list is read against where the files were.
    */
-  const moved = (renamed: readonly Move[]): void => {
+  const moved = (renamed: readonly PathRename[]): void => {
     const went = new Map<string, string>()
-    for (const [path, ticket] of held) went.set(movedTo(renamed, path) || path, ticket)
+    for (const [path, ticket] of held) went.set(getRenamedPath(renamed, path) || path, ticket)
     held = went
   }
 

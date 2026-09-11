@@ -39,7 +39,7 @@ const BOOK: Book = {
   printed: [],
   pages: 3,
   pageBytes: 3_000,
-  at: '20480 1700000000000000000 mahabharata.epub',
+  fingerprint: '20480 1700000000000000000 mahabharata.epub',
 }
 
 /** The same book, naming nothing at all, which half of this corpus does. */
@@ -64,7 +64,7 @@ function shelf(book: Book | Error = BOOK, markup: Error | null = null) {
   const drawn: string[] = []
 
   const books: Books = {
-    getShape: async (path) => {
+    getBook: async (path) => {
       asked.push(path)
       if (book instanceof Error) throw book
       return book

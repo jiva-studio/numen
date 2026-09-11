@@ -123,7 +123,7 @@ const tabAt = (
     bounds: shallowRef(BOUNDS),
     problems: shallowRef([]),
     stopped: ref(StopReason.NOTHING),
-    saying: ref(''),
+    errorMessage: ref(''),
     changed: ref(false),
     again: () => void done.push('again'),
     chooses: (goal) => void done.push(`chooses ${goal}`),

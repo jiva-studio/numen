@@ -106,7 +106,7 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
     text: readonly(typed),
     types: (said: string) => void (typed.value = said),
     /** What is wrong, and empty where nothing is. */
-    saying: readonly(wrong),
+    errorMessage: readonly(wrong),
     changed,
     /** Whether the file has been read at all. */
     read: readonly(read),

@@ -6,15 +6,15 @@
  * and they are the ones asked about here.
  */
 import { describe, expect, it } from 'vitest'
-import { useDocumentReader, type Documents, type HighlightedPage, type Shape } from './open'
+import { useDocumentReader, type Documents, type PageHighlight, type DocumentLayout } from './open'
 
-const SHAPE: Shape = {
+const LAYOUT: DocumentLayout = {
   pages: [
     { width: 612, height: 792 },
     { width: 612, height: 792 },
     { width: 612, height: 792 },
   ],
-  at: '1024 1700000000000000000 book.pdf',
+  fingerprint: '1024 1700000000000000000 book.pdf',
 }
 
 /**
@@ -22,16 +22,16 @@ const SHAPE: Shape = {
  * about each span asked about with the highlights standing at the same place
  * in `where`, and with nothing where that list is shorter.
  */
-function book(shape: Shape | Error = SHAPE, where: readonly (readonly HighlightedPage[])[] = []) {
+function book(layout: DocumentLayout | Error = LAYOUT, where: readonly (readonly PageHighlight[])[] = []) {
   const asked: string[] = []
   /** Every span of the document's text it was asked what stands on. */
   const spans: string[] = []
 
   const documents: Documents = {
-    getShape: async (path) => {
+    getDocumentLayout: async (path) => {
       asked.push(path)
-      if (shape instanceof Error) throw shape
-      return shape
+      if (layout instanceof Error) throw layout
+      return layout
     },
     getPageUrl: (path, at, wide) => `${path} ${at} ${wide}`,
     getHighlights: async (path, asking) => {
@@ -158,7 +158,7 @@ describe('what is highlighted', () => {
 describe('a document opened at a place in its text', () => {
   it('highlights what stands there, on the first page it falls on', async () => {
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
-    const { documents, spans } = book(SHAPE, [[{ page: 1, rects: [rect] }]])
+    const { documents, spans } = book(LAYOUT, [[{ page: 1, rects: [rect] }]])
     const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
 
@@ -173,7 +173,7 @@ describe('a document opened at a place in its text', () => {
     const here = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
     const there = { minX: 0.1, minY: 0.5, maxX: 0.4, maxY: 0.53 }
     const alsoThere = { minX: 0.1, minY: 0.8, maxX: 0.4, maxY: 0.83 }
-    const { documents, spans } = book(SHAPE, [
+    const { documents, spans } = book(LAYOUT, [
       [{ page: 1, rects: [here] }],
       [{ page: 1, rects: [there] }],
       [{ page: 2, rects: [alsoThere] }],

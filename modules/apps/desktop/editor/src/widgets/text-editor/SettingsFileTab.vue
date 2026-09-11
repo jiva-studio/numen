@@ -17,7 +17,7 @@ const props = defineProps<{ state: SettingsFileTabState }>()
 // --- State ---
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { saying, isStale, read, text } = props.state
+const { errorMessage, isStale, read, text } = props.state
 
 // --- Handlers ---
 function onKeep() {
@@ -41,8 +41,8 @@ function onSave() {
 
 <template>
   <div class="settings-file">
-    <p v-if="saying" role="alert" class="settings-file__wrong">
-      {{ saying }}
+    <p v-if="errorMessage" role="alert" class="settings-file__wrong">
+      {{ errorMessage }}
     </p>
 
     <p v-if="isStale" class="caution caution--conflict" role="status">

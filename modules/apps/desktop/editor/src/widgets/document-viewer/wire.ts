@@ -40,13 +40,6 @@ export const documents: Documents = {
       fingerprint: stamp(answer.fingerprint) ?? '',
     }
   },
-  getShape: async (path) => {
-    const answer = await waiting(() => served.documents.getDocument({ path }))
-    return {
-      pages: answer.pages.map((one) => ({ width: one.width, height: one.height })),
-      at: stamp(answer.fingerprint) ?? '',
-    }
-  },
   getPageUrl: (path, at, wide, seen = '') =>
     `${asset(path)}/pages/${at}?wide=${wide}&${named(seen)}`,
   getHighlights: async (path, spans) => {

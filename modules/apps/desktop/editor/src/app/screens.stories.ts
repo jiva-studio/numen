@@ -698,9 +698,9 @@ const overLine = (at: number, ends: number) => ({
 const HIGHLIGHTS = [overLine(10, 396), overLine(11, 412), overLine(12, 372)]
 
 const BOOK: Documents = {
-  getShape: async () => ({
+  getDocumentLayout: async () => ({
     pages: Array.from({ length: LEAVES }, () => PAGE),
-    at: '1024 1700000000000000000 book.pdf',
+    fingerprint: '1024 1700000000000000000 book.pdf',
   }),
   getPageUrl: (_path, at) => pageAt(at),
   getHighlights: async () => [[{ page: OPENS_AT, rects: HIGHLIGHTS }]],

@@ -51,7 +51,7 @@ describe('the file as it stands', () => {
     })
     await held.again()
 
-    expect(held.saying.value).toBe(
+    expect(held.errorMessage.value).toBe(
       `${words.unread} numen did not answer, so nothing was done — it may have stopped, and the window keeps trying`,
     )
     expect(held.read.value).toBe(false)
@@ -79,7 +79,7 @@ describe('what is typed over it', () => {
 
     expect(wrote).toStrictEqual(['{\n  "agent": { "use": "" }\n}\n'])
     expect(held.changed.value).toBe(false)
-    expect(held.saying.value).toBe('')
+    expect(held.errorMessage.value).toBe('')
   })
 
   it('presents the file the tab last read', async () => {
@@ -125,8 +125,8 @@ describe('a file the settings cannot be read out of', () => {
     held.types('{ "agent": ')
     await held.keeps()
 
-    expect(held.saying.value).toContain(words.unwritten)
-    expect(held.saying.value).toContain('at byte 12')
+    expect(held.errorMessage.value).toContain(words.unwritten)
+    expect(held.errorMessage.value).toContain('at byte 12')
   })
 
   it('is left in the editor, as it was typed', async () => {

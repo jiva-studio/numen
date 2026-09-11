@@ -97,7 +97,7 @@ const holding = (args: Knobs): PresetTabState => {
     bounds: shallowRef(BOUNDS),
     problems: shallowRef([]),
     stopped: ref(StopReason.NOTHING),
-    saying: ref(''),
+    errorMessage: ref(''),
     changed: ref(false),
     again: fn(),
     chooses: fn(),
