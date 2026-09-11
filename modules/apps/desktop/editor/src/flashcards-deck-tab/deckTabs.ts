@@ -1,15 +1,16 @@
 /**
  * Window registration and tab state for flashcard deck tabs.
  */
-import { computed, shallowRef } from 'vue'
+import { computed } from 'vue'
 import type { PlexShowing } from '@numen/ui'
 import type { Move } from '../shared/core'
-import type { Cards, StencilSummary } from '../shared/flashcards/cards'
+import type { Cards } from '../shared/flashcards/cards'
 import type { Store } from '../shared/command/deps'
 import type { Presets } from '../flashcards-preset-tab/core'
 import { answers } from './answers'
 import { reader } from './reader'
-import { useDeckSchedule } from './scheduler'
+import { useDeckScheduleWiring } from './deckTabs.schedule'
+import { deckTabActions } from './deckTabs.actions'
 import { openNotes } from '../note-tab/notes'
 import { markOf } from '../note-tab/tab'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
@@ -17,22 +18,12 @@ import type { FileOpeners } from '../shared/tabs/openers'
 import { DECK } from '../shared/tabs/workspace'
 import DeckTab from './DeckTab.vue'
 import {
-  addCard,
-  addSection,
   drawnSectionsOf,
   deckBodyOf,
   cardsOf,
-  dropCard,
-  stencilsOf,
   deckIn,
   deckOf,
   drawnOf,
-  fillCard,
-  pathOfCut,
-  removeCard,
-  sameOffers,
-  removeSection,
-  renameSection,
   sectionsOf,
   type BufferDeck,
 } from './deck'
@@ -43,10 +34,6 @@ export type { DeckTabState }
 export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle, puts: FileOpeners) {
   /** What the vault last said about each file this window holds. */
   const said = answers()
-  /** The stencils of the vault, as they were last listed. */
-  const offers = shallowRef<readonly StencilSummary[]>([])
-  /** Whether the last listing of the stencils answered. */
-  let listedOk = true
 
   const store = openNotes({
     read: async (path) => {
@@ -90,7 +77,9 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
   const { deckAt, marksAt } = read
 
   /** The stencils a card may be cut by, made again where the list changed. */
-  const stencils = computed(() => stencilsOf(offers.value))
+  const wiring = useDeckScheduleWiring(cards, presets, store)
+  const { offers, stencils, lists, listsAgain, scheduled } = wiring
+  const { choices, listsPresets, listsPresetsAgain, asks, schedules, scheduledAt } = scheduled
 
   /** A deck as it now stands, written back into the store. */
   const turns = (id: string, deck: BufferDeck): void => {
@@ -99,34 +88,10 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
     store.typed(id, body)
   }
 
-  /**
-   * The stencils of the vault, asked for again. A list naming the same
-   * stencils leaves the one held standing, so what is drawn under it stands
-   * with it.
-   */
-  const lists = async (): Promise<void> => {
-    try {
-      const listed = (await cards.stencils()).stencils
-      listedOk = true
-      if (!sameOffers(offers.value, listed)) offers.value = listed
-    } catch {
-      // The stencils the window last heard of stand, and a card is cut by one
-      // of them until the vault answers again.
-      listedOk = false
-    }
-  }
-
-  /** The stencils asked for again, where the last listing did not answer. */
-  const listsAgain = (): void => {
-    if (!listedOk) void lists()
-  }
-
-  const scheduled = useDeckSchedule(presets, store)
-  const { choices, listsPresets, listsPresetsAgain, asks, schedules, scheduledAt } = scheduled
-
   const held = (id: string): DeckTabState => {
     /** The deck this tab is showing, which everything drawn of it follows. */
     const deck = computed(() => deckAt(id))
+    const actions = deckTabActions(id, deckAt, turns, () => offers.value)
 
     return {
       id,
@@ -143,22 +108,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
       choices,
       schedules: (preset) => void schedules(id, preset),
       setSchedule: (preset) => void schedules(id, preset),
-      adds: (stencil, values, section) =>
-        turns(id, addCard(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
-      addCard: (stencil, values, section) =>
-        turns(id, addCard(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
-      removes: (card) => turns(id, removeCard(deckAt(id), card)),
-      removeCard: (card) => turns(id, removeCard(deckAt(id), card)),
-      moves: (card, at) => turns(id, dropCard(deckAt(id), card, at)),
-      moveCard: (card, at) => turns(id, dropCard(deckAt(id), card, at)),
-      writes: (card, field, nth, text) => turns(id, fillCard(deckAt(id), card, field, nth, text)),
-      writeCardField: (card, field, nth, text) => turns(id, fillCard(deckAt(id), card, field, nth, text)),
-      addsSection: (name) => turns(id, addSection(deckAt(id), name)),
-      addSection: (name) => turns(id, addSection(deckAt(id), name)),
-      namesSection: (section, name) => turns(id, renameSection(deckAt(id), section, name)),
-      renameSection: (section, name) => turns(id, renameSection(deckAt(id), section, name)),
-      removesSection: (section) => turns(id, removeSection(deckAt(id), section)),
-      removeSection: (section) => turns(id, removeSection(deckAt(id), section)),
+      ...actions,
       keep: () => store.keep(id),
       keepMine: () => store.keep(id),
       take: () => store.take(id),
@@ -292,19 +242,11 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
    * presets are listed again. A window holding no deck asks for neither.
    */
   const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
-    // What the vault said about a file is filed under that file, so a file
-    // that moved takes it along.
     for (const went of renamed) {
       said.moved(went.from, went.to)
-      scheduled.moved(went.from, went.to)
     }
     store.changed(paths, renamed)
-    if (store.all().length === 0) return
-    void lists()
-    // A preset made, removed or renamed changes what a deck may be put on, and
-    // a deck written changes which preset it names.
-    void listsPresets()
-    for (const one of store.all()) void asks(store.where(one))
+    wiring.changed(paths, renamed)
   }
 
   return {
