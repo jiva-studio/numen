@@ -13,8 +13,7 @@ export interface Span {
 }
 
 /**
- * One name that matched: a note, and the heading inside it when a heading is
- * what matched rather than the note's own title.
+ * One name that matched: a note title or an internal heading.
  */
 export interface NameMatch {
   path: string
