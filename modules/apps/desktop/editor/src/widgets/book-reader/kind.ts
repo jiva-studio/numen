@@ -4,10 +4,10 @@
 import { shallowRef } from 'vue'
 import type { BookReaderState } from './open'
 import type { BookHandle } from './types'
-import type { Span } from '../shared/core'
-import type { FileOpeners } from '../shared/tabs/openers'
-import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
-import { BOOK } from '../shared/tabs/workspace'
+import type { Span } from '../../shared/core'
+import type { FileOpeners } from '../../shared/tabs/openers'
+import type { TabKind, WindowHandle } from '../../shared/tabs/windowTabs'
+import { BOOK } from '../../shared/tabs/workspace'
 import BookTab from './BookTab.vue'
 
 export type { BookHandle }

@@ -2,7 +2,7 @@
  * Write queuing, flight synchronization, and dirty state tracking for preset tabs.
  */
 import { ref, type Ref } from 'vue'
-import type { MessageWriter } from '../shared/notices/messages'
+import type { MessageWriter } from '../../shared/notices/messages'
 import type { Presets, Settings } from './core'
 import { WORDS as words } from './words'
 

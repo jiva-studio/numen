@@ -9,7 +9,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import { getRenamedPath, type FileEntry, type PathRename } from '../shared/core'
+import { getRenamedPath, type FileEntry, type PathRename } from '../../shared/core'
 
 /** Everything a files tab asks of the application. */
 export interface Folders {

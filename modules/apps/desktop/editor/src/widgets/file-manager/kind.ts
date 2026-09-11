@@ -1,10 +1,10 @@
 /**
  * Window registration and tab state for the files tree tab.
  */
-import type { Move } from '../shared/core'
+import type { Move } from '../../shared/core'
 import { type FileTree, ROOT } from './listing'
-import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
-import { FILES } from '../shared/tabs/workspace'
+import type { TabKind, WindowHandle } from '../../shared/tabs/windowTabs'
+import { FILES } from '../../shared/tabs/workspace'
 import FilesTab from './FilesTab.vue'
 import { WORDS as words } from './words'
 import type { DropPosition, FileMaker, FilesTabDeps, FilesTabState, MenuRequest } from './types'

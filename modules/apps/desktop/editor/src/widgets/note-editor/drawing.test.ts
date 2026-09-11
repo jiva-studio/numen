@@ -5,7 +5,7 @@
  * get rid of, and one dropped too early is a change that happens invisibly.
  */
 import { describe, expect, it } from 'vitest'
-import type { NoteEdit } from '../shared/core'
+import type { NoteEdit } from '../../shared/core'
 import { drawing, holding } from './drawing'
 
 const said = (over: Partial<NoteEdit> = {}): NoteEdit => ({

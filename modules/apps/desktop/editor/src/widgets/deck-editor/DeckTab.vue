@@ -6,10 +6,10 @@ import { computed, ref } from 'vue'
 import { cardBlanks, cardFields, DeckEditor, Menu } from '@numen/ui'
 import type { InsertionPoint, Position } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
-import FileConflictPrompt from '../shared/saving/FileConflictPrompt.vue'
-import { conflictIn } from '../shared/saving/flushing'
+import FileConflictPrompt from '../../shared/saving/FileConflictPrompt.vue'
+import { conflictIn } from '../../shared/saving/flushing'
 import type { DeckTabState } from './types'
-import { WORDS as words } from '../shared/flashcards/words'
+import { WORDS as words } from '../../shared/flashcards/words'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: DeckTabState }>()

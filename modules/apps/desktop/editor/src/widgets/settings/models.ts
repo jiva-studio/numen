@@ -5,7 +5,7 @@
  * build offers. What the file holds is always on the list and always the one in
  * force; a preset the file does not name is an offer beside it.
  */
-import type { Model, Presence } from '../shared/core'
+import type { Model, Presence } from '../../shared/core'
 import type { SelectChoice } from '@numen/ui'
 
 /** What this says in the window's voice. */

@@ -4,14 +4,14 @@
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { ErrorCode } from '../shared/core'
-import type { Cards, VaultCard, Problem } from '../shared/flashcards/cards'
-import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../flashcards-preset-tab/core'
-import { fileOpeners } from '../shared/tabs/openers'
-import { useWindowTabs } from '../shared/tabs/windowTabs'
-import { DECK } from '../shared/tabs/workspace'
+import type { ErrorCode } from '../../shared/core'
+import type { Cards, VaultCard, Problem } from '../../shared/flashcards/cards'
+import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../preset-editor/core'
+import { fileOpeners } from '../../shared/tabs/openers'
+import { useWindowTabs } from '../../shared/tabs/windowTabs'
+import { DECK } from '../../shared/tabs/workspace'
 import { useDeckTabs, type DeckTabState } from './deckTabs'
-import { WORDS as words } from '../shared/flashcards/words'
+import { WORDS as words } from '../../shared/flashcards/words'
 
 /** A preset that schedules, which is what every preset here is. */
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }

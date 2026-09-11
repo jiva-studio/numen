@@ -26,7 +26,7 @@ import {
  * The sketch is drawn across the span the core holds a target to, before any
  * answer from it has landed. Both read this one corpus, and neither owns it.
  */
-import corpus from '../../../../../libs/protocol/testdata/presets.json'
+import corpus from '../../../../../../libs/protocol/testdata/presets.json'
 
 /** The review day the window is told, which is what a date is counted from. */
 const today = '2026-08-30'

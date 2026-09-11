@@ -7,7 +7,7 @@ import {
   type StopReason,
 } from '@numen/protocol'
 import type { Goal } from '@numen/wire'
-import type { ErrorCode } from '../shared/core'
+import type { ErrorCode } from '../../shared/core'
 import type { Field } from './curve'
 
 export type { Goal, Field }

@@ -6,11 +6,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
 import { bookKind, useBookTab, type BookHandle, type BookTabState } from './kind'
-import { BOOK } from '../shared/tabs/workspace'
+import { BOOK } from '../../shared/tabs/workspace'
 import type { BookReaderState } from './open'
-import type { FileOpeners, SourceReader } from '../shared/tabs/openers'
-import type { Span } from '../shared/core'
-import type { WindowHandle } from '../shared/tabs/windowTabs'
+import type { FileOpeners, SourceReader } from '../../shared/tabs/openers'
+import type { Span } from '../../shared/core'
+import type { WindowHandle } from '../../shared/tabs/windowTabs'
 
 /** A book being read, with only the parts a tab of it reaches for. */
 const read = (path: string, title = '', close = vi.fn()) =>

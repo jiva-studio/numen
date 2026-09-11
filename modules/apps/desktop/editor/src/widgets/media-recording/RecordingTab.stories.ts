@@ -11,11 +11,11 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import RecordingTab from './RecordingTab.vue'
-import { useTranscriptTab } from '../shared/media/kind'
-import { useTranscript, type Recordings } from '../shared/media/transcript'
-import type { Cue } from '../shared/media/cues'
-import type { MediaTypeProbe, Player } from '../shared/media/player'
-import { WORDS as words } from '../shared/media/words'
+import { useTranscriptTab } from '../../shared/media/kind'
+import { useTranscript, type Recordings } from '../../shared/media/transcript'
+import type { Cue } from '../../shared/media/cues'
+import type { MediaTypeProbe, Player } from '../../shared/media/player'
+import { WORDS as words } from '../../shared/media/words'
 
 /** Two lines, said a minute and a half apart. */
 const CUES: readonly Cue[] = [

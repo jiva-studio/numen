@@ -5,7 +5,7 @@ import { createClient } from '@connectrpc/connect'
 import { DocumentService, OcrService } from '@numen/protocol'
 import type { Run as RunMessage } from '@numen/protocol'
 import { transport } from '@numen/wire'
-import { asset, named, stamp, waiting } from '../shared/answers'
+import { asset, named, stamp, waiting } from '../../shared/answers'
 import type { Documents, PageHighlight, Rect } from './types'
 
 const served = {

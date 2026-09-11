@@ -2,8 +2,8 @@
  * Type declarations for the files tab domain.
  */
 import type { Ref } from 'vue'
-import type { Source } from '../shared/core'
-import type { SearchDestination } from '../shared/command/search'
+import type { Source } from '../../shared/core'
+import type { SearchDestination } from '../../shared/command/search'
 import type { FileTree } from './listing'
 import type { RunGuard } from './menu'
 

@@ -4,7 +4,7 @@
  */
 import { onMounted, onUnmounted, watch } from 'vue'
 import { core } from './vault'
-import { presets } from '../flashcards-preset-tab/core'
+import { presets } from '../widgets/preset-editor/core'
 import { runSupport } from '../shared/command/runs'
 import type { CommandTarget } from '../shared/command/target'
 import type { NoteLookup } from '../shared/command/lists'

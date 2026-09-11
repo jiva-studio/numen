@@ -208,7 +208,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
   } as Record<string, readonly Record<string, unknown>[]>,
 }))
 
-vi.mock('../../window/vault', () => ({
+vi.mock('../../app/vault', () => ({
   vaults: {
     list: async () => listed,
     choose: async () => {
@@ -296,7 +296,7 @@ vi.mock('../../window/vault', () => ({
   },
 }))
 
-vi.mock('../../document-tab/wire', () => ({
+vi.mock('../../widgets/document-viewer/wire', () => ({
   documents: {
     getShape: async () => ({ pages: 1, pageSizes: [{ wide: 100, high: 100 }] }),
     getPageUrl: () => '',
@@ -304,7 +304,7 @@ vi.mock('../../document-tab/wire', () => ({
   },
 }))
 
-vi.mock('../../book-tab/wire', () => ({
+vi.mock('../../widgets/book-reader/wire', () => ({
   books: {
     getShape: async (path: string) => ({
       title: path,
@@ -423,7 +423,7 @@ vi.mock('../flashcards/cards', () => ({
   },
 }))
 
-vi.mock('../../agent-tab/core', () => ({ core: { ask: held, finish: async () => {} } }))
+vi.mock('../../widgets/agent-chat/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
 vi.mock('../settings/theme', () => ({
   themes: {
@@ -450,7 +450,7 @@ vi.mock('../settings/theme', () => ({
   },
 }))
 
-const App = (await import('../../App.vue')).default
+const App = (await import('../../app/App.vue')).default
 
 /** A moment for whatever the window asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))

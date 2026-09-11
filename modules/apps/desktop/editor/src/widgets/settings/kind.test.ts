@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { settling, type Installation } from './kind'
 import { WORDS as words } from './words'
-import { SETTINGS } from '../shared/tabs/workspace'
-import type { WindowHandle } from '../shared/tabs/windowTabs'
+import { SETTINGS } from '../../shared/tabs/workspace'
+import type { WindowHandle } from '../../shared/tabs/windowTabs'
 
 /** A window, writing down what it was asked to open. */
 const window_ = () => {

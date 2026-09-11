@@ -1,7 +1,7 @@
 /**
  * Tab-level card and section mutations for flashcard deck tabs.
  */
-import type { StencilSummary } from '../shared/flashcards/cards'
+import type { StencilSummary } from '../../shared/flashcards/cards'
 import {
   addCard,
   addSection,

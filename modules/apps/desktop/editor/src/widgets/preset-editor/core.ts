@@ -16,7 +16,7 @@ import type {
   Settings as SettingsMessage,
   SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
-import { fingerprint, errorIn, staleIn, stamp } from '../shared/answers'
+import { fingerprint, errorIn, staleIn, stamp } from '../../shared/answers'
 import {
   DEFAULTS,
   NOWHERE,

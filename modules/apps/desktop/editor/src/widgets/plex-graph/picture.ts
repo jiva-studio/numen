@@ -5,7 +5,7 @@
  * seat and edges between them; it is not told what a note is, and the schema
  * says nothing about drawing.
  */
-import type { Neighbourhood, NoteHeading, NoteType, Seat } from '../shared/core'
+import type { Neighbourhood, NoteHeading, NoteType, Seat } from '../../shared/core'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexPart } from '@numen/ui'
 
 /**

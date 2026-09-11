@@ -6,7 +6,7 @@
  * name, so a name carrying no ending keeps the one the file has.
  */
 import { folderOf, ROOT } from './listing'
-import { fileOf } from '../shared/paths'
+import { fileOf } from '../../shared/paths'
 
 /**
  * Where a name's ending begins, and nowhere for a name carrying none. An ending

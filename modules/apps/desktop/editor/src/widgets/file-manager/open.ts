@@ -2,9 +2,9 @@
  * Tab state and tree interactions for the files tab.
  */
 import { ref } from 'vue'
-import type { Entry, Source } from '../shared/core'
-import type { SearchDestination } from '../shared/command/search'
-import { fileOf } from '../shared/paths'
+import type { Entry, Source } from '../../shared/core'
+import type { SearchDestination } from '../../shared/command/search'
+import { fileOf } from '../../shared/paths'
 import { landedIn, type FileTree, ROOT } from './listing'
 import {
   NEW_DECK,

@@ -9,7 +9,7 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import type { Move, NoteHeading, NoteType } from '../shared/core'
+import type { Move, NoteHeading, NoteType } from '../../shared/core'
 import type { PlexView } from './view'
 
 /** Where the menu stands, and the node it was asked for on. */

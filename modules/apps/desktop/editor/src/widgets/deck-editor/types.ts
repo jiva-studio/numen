@@ -3,10 +3,10 @@
  */
 import type { ComputedRef } from 'vue'
 import type { DeckCard, DeckSection, Stencil } from '@numen/ui'
-import type { OpenNote } from '../note-tab/notes'
-import type { Marks } from '../shared/flashcards/marks'
-import type { Surrounds } from '../shared/flashcards/surrounds'
-import type { Value } from '../shared/flashcards/cards'
+import type { OpenNote } from '../note-editor/notes'
+import type { Marks } from '../../shared/flashcards/marks'
+import type { Surrounds } from '../../shared/flashcards/surrounds'
+import type { Value } from '../../shared/flashcards/cards'
 import type { Choice, DeckPreset } from './scheduler'
 
 /**

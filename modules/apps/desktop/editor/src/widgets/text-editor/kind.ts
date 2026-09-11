@@ -7,8 +7,8 @@
  */
 import { computed, readonly, ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
-import { SETTINGS_FILE } from '../shared/tabs/workspace'
+import type { TabKind, WindowHandle } from '../../shared/tabs/windowTabs'
+import { SETTINGS_FILE } from '../../shared/tabs/workspace'
 import SettingsFileTab from './SettingsFileTab.vue'
 import { WORDS as words } from './words'
 

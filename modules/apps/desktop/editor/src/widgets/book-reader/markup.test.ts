@@ -3,7 +3,7 @@
  * loads them from.
  */
 import { describe, expect, it } from 'vitest'
-import spine from '../../../../../libs/protocol/testdata/spine.html?raw'
+import spine from '../../../../../../libs/protocol/testdata/spine.html?raw'
 import { pointedAt } from './markup'
 
 /** Where one entry of the archive is served, as the test reads an address. */

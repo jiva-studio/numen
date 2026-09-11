@@ -8,11 +8,11 @@
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { Plex, Tree, WelcomePage } from '@numen/ui'
-import AgentTab from '../agent-tab/AgentTab.vue'
-import DocumentTab from '../document-tab/DocumentTab.vue'
-import FilesTab from '../files-tab/FilesTab.vue'
-import NoteTab from '../note-tab/NoteTab.vue'
-import PlexTab from '../plex-tab/PlexTab.vue'
+import AgentTab from '../widgets/agent-chat/AgentTab.vue'
+import DocumentTab from '../widgets/document-viewer/DocumentTab.vue'
+import FilesTab from '../widgets/file-manager/FilesTab.vue'
+import NoteTab from '../widgets/note-editor/NoteTab.vue'
+import PlexTab from '../widgets/plex-graph/PlexTab.vue'
 import { panesOf } from '@numen/ui'
 import {
   asked,

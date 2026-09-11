@@ -10,7 +10,7 @@ import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from './kind'
 import { useFileTree, ROOT } from './listing'
-import type { Entry } from '../shared/core'
+import type { Entry } from '../../shared/core'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,

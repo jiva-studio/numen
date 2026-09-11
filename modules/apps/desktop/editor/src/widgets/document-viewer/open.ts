@@ -3,7 +3,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { Span } from '../shared/core'
+import type { Span } from '../../shared/core'
 import { useDocumentNavigation } from './navigation'
 import { useDocumentViewport } from './viewport'
 import { useDocumentHighlights } from './highlights'

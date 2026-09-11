@@ -3,7 +3,7 @@
  */
 import { computed, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { Span } from '../shared/core'
+import type { Span } from '../../shared/core'
 import type { Documents, PageHighlight, Rect } from './types'
 
 export function useDocumentHighlights(

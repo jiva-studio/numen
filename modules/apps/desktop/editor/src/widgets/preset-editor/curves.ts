@@ -2,7 +2,7 @@
  * Curve calculation, caching, and throttling for preset tabs.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { answerGuard, type AnswerGuard } from '../shared/questions'
+import { answerGuard, type AnswerGuard } from '../../shared/questions'
 import {
   DEFAULTS,
   type Curve,

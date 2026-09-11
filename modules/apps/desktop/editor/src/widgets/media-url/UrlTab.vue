@@ -9,10 +9,10 @@
  * prose where it was written.
  */
 import { computed, useTemplateRef, watchPostEffect } from 'vue'
-import MediaLayout from '../shared/media/MediaLayout.vue'
+import MediaLayout from '../../shared/media/MediaLayout.vue'
 import Embed from './embed/Embed.vue'
-import { DELETE_TEXT, WORDS as words } from '../shared/media/words'
-import type { MediaTabState } from '../shared/media/kind'
+import { DELETE_TEXT, WORDS as words } from '../../shared/media/words'
+import type { MediaTabState } from '../../shared/media/kind'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: MediaTabState }>()

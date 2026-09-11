@@ -5,10 +5,10 @@
 import { computed } from 'vue'
 import { StencilEditor } from '@numen/ui'
 import type { InsertionPoint, Half } from '@numen/ui'
-import FileConflictPrompt from '../shared/saving/FileConflictPrompt.vue'
-import { conflictIn } from '../shared/saving/flushing'
+import FileConflictPrompt from '../../shared/saving/FileConflictPrompt.vue'
+import { conflictIn } from '../../shared/saving/flushing'
 import type { StencilTabState } from './types'
-import { WORDS as words } from '../shared/flashcards/words'
+import { WORDS as words } from '../../shared/flashcards/words'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: StencilTabState }>()

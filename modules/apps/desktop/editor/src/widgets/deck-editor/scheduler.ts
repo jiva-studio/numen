@@ -7,8 +7,8 @@
  * the installation is unreachable.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PresetChoice, Presets, ReadResult } from '../flashcards-preset-tab/core'
-import { WORDS as words } from '../shared/flashcards/words'
+import type { PresetChoice, Presets, ReadResult } from '../preset-editor/core'
+import { WORDS as words } from '../../shared/flashcards/words'
 
 /** The preset a deck is scheduled by, as the line at the top of it draws it. */
 export interface DeckPreset {

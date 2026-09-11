@@ -15,13 +15,13 @@ import {
   WorkspaceLayout,
   type PaletteGroup,
 } from '@numen/ui'
-import AgentTab from '../agent-tab/AgentTab.vue'
-import DeckTab from '../flashcards-deck-tab/DeckTab.vue'
-import FilesTab from '../files-tab/FilesTab.vue'
-import { NEW_DECK, NEW_STENCIL } from '../files-tab/menu'
-import NoteTab from '../note-tab/NoteTab.vue'
-import PlexTab from '../plex-tab/PlexTab.vue'
-import { WORDS as plexWords } from '../plex-tab/words'
+import AgentTab from '../widgets/agent-chat/AgentTab.vue'
+import DeckTab from '../widgets/deck-editor/DeckTab.vue'
+import FilesTab from '../widgets/file-manager/FilesTab.vue'
+import { NEW_DECK, NEW_STENCIL } from '../widgets/file-manager/menu'
+import NoteTab from '../widgets/note-editor/NoteTab.vue'
+import PlexTab from '../widgets/plex-graph/PlexTab.vue'
+import { WORDS as plexWords } from '../widgets/plex-graph/words'
 import {
   asked,
   cards,

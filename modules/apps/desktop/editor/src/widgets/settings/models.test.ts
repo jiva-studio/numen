@@ -6,7 +6,7 @@
  * invented.
  */
 import { describe, expect, it } from 'vitest'
-import type { Model } from '../shared/core'
+import type { Model } from '../../shared/core'
 import { choicesFor, nameOf } from './models'
 
 const WORDS = {

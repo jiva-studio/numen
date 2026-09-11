@@ -22,9 +22,9 @@ import {
   type WriteResult,
 } from './core'
 import { BOUNDS } from './drawn'
-import type { ErrorCode } from '../shared/core'
-import type { WindowHandle } from '../shared/tabs/windowTabs'
-import type { FileOpeners } from '../shared/tabs/openers'
+import type { ErrorCode } from '../../shared/core'
+import type { WindowHandle } from '../../shared/tabs/windowTabs'
+import type { FileOpeners } from '../../shared/tabs/openers'
 import { WORDS as words } from './words'
 
 const point = (over: Partial<Point> = {}): Point => ({

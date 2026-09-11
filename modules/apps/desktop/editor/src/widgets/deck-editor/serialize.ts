@@ -1,8 +1,8 @@
 /**
  * Serialization and conversion between vault deck data and buffer deck models.
  */
-import type { VaultCard, VaultDeck, VaultSection } from '../shared/flashcards/cards'
-import { generateId, type IdMaker } from '../shared/flashcards/identity'
+import type { VaultCard, VaultDeck, VaultSection } from '../../shared/flashcards/cards'
+import { generateId, type IdMaker } from '../../shared/flashcards/identity'
 import { NO_DECK, type BufferDeck } from './types'
 
 /**

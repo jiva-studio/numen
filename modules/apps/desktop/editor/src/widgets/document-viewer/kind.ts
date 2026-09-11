@@ -4,12 +4,12 @@
 import { shallowRef } from 'vue'
 import type { DocumentReaderState } from './open'
 import type { PageHandle } from './types'
-import type { Span } from '../shared/core'
-import type { FileOpeners } from '../shared/tabs/openers'
-import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
-import { DOCUMENT } from '../shared/tabs/workspace'
+import type { Span } from '../../shared/core'
+import type { FileOpeners } from '../../shared/tabs/openers'
+import type { TabKind, WindowHandle } from '../../shared/tabs/windowTabs'
+import { DOCUMENT } from '../../shared/tabs/workspace'
 import DocumentTab from './DocumentTab.vue'
-import { fileOf } from '../shared/paths'
+import { fileOf } from '../../shared/paths'
 
 export type { PageHandle }
 

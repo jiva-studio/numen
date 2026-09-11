@@ -7,7 +7,7 @@
  * vault for nothing.
  */
 import { describe, expect, it } from 'vitest'
-import type { Entry } from '../shared/core'
+import type { Entry } from '../../shared/core'
 import { useFilesTab, landingOf } from './kind'
 import { folderOf, useFileTree, ROOT } from './listing'
 import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from './menu'

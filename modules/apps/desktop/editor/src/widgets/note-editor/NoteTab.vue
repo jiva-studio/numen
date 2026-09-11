@@ -4,8 +4,8 @@
  */
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
-import FileConflictPrompt from '../shared/saving/FileConflictPrompt.vue'
-import { conflictIn } from '../shared/saving/flushing'
+import FileConflictPrompt from '../../shared/saving/FileConflictPrompt.vue'
+import { conflictIn } from '../../shared/saving/flushing'
 import { WORDS as words } from './words'
 import type { NoteTabState } from './types'
 

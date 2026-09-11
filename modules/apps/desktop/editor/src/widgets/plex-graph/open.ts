@@ -7,8 +7,8 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import type { Move, NoteType } from '../shared/core'
-import { fileOf } from '../shared/paths'
+import type { Move, NoteType } from '../../shared/core'
+import { fileOf } from '../../shared/paths'
 import { NEW_NOTE, OFFERED } from './menu'
 import { asPlex, typesIn } from './picture'
 import { createTickets } from './tickets'

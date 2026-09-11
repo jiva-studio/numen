@@ -7,9 +7,9 @@
  * fields and the faces a file is written from, is here.
  */
 import { ordered, reordered, type InsertionPoint } from '@numen/ui'
-import type { VaultFace, VaultStencil } from '../shared/flashcards/cards'
-import { generateId, type IdMaker } from '../shared/flashcards/identity'
-import type { Surrounds } from '../shared/flashcards/surrounds'
+import type { VaultFace, VaultStencil } from '../../shared/flashcards/cards'
+import { generateId, type IdMaker } from '../../shared/flashcards/identity'
+import type { Surrounds } from '../../shared/flashcards/surrounds'
 
 /** One face as the window holds it: what the file says, under an identity of its own. */
 export interface BufferFace {

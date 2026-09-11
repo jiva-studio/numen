@@ -3,14 +3,14 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
-import type { ErrorCode } from '../shared/core'
-import type { Cards, VaultFace, Problem, FieldRenameResult } from '../shared/flashcards/cards'
-import { fileOpeners } from '../shared/tabs/openers'
-import { useWindowTabs } from '../shared/tabs/windowTabs'
-import { STENCIL } from '../shared/tabs/workspace'
-import { ERRORS } from '../shared/words'
+import type { ErrorCode } from '../../shared/core'
+import type { Cards, VaultFace, Problem, FieldRenameResult } from '../../shared/flashcards/cards'
+import { fileOpeners } from '../../shared/tabs/openers'
+import { useWindowTabs } from '../../shared/tabs/windowTabs'
+import { STENCIL } from '../../shared/tabs/workspace'
+import { ERRORS } from '../../shared/words'
 import { useStencilTabs, type StencilTabState } from './stencilTabs'
-import { WORDS as words } from '../shared/flashcards/words'
+import { WORDS as words } from '../../shared/flashcards/words'
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => fileOpeners({ fileKinds: async () => new Map() })

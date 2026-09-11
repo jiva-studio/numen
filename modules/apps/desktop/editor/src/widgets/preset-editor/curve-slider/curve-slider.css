@@ -116,3 +116,176 @@
   font-size: var(--numen-text-1);
   font-variant-numeric: tabular-nums;
 }
+
+.curve-slider {
+  --curve-slider-line: calc(var(--numen-text-1) * 1.4);
+  --curve-slider-axis: calc(var(--numen-text-1) * 1.6);
+  --curve-slider-tail: 0.4375rem;
+  --curve-slider-lead: 0.125rem;
+  --curve-slider-tile: calc(
+    var(--numen-text-2) * 1.1 + var(--numen-dot-gap) + var(--numen-text-1) * 1.2 + 2 *
+      var(--numen-inset) + 2 * var(--numen-stroke)
+  );
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-node-gap);
+}
+
+.curve-slider__tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--numen-dot-gap);
+  min-inline-size: 0;
+  padding: calc(var(--numen-inset) - var(--curve-slider-lead)) var(--numen-box-air);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius-tight);
+  background: var(--numen-raised);
+}
+
+.curve-slider__figure {
+  color: var(--numen-ink);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-2);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.curve-slider__word {
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1;
+  overflow-wrap: break-word;
+}
+
+.curve-slider__waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--numen-node-gap);
+  inline-size: 100%;
+  block-size: 100%;
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+}
+
+.curve-slider__ring {
+  --spinner-size: 1em;
+}
+
+.curve-slider__under {
+  position: relative;
+  margin: 0;
+  block-size: var(--curve-slider-line);
+}
+
+.curve-slider__picture:focus-visible {
+  outline: none;
+}
+
+.curve-slider__picture:focus-visible .curve-slider__knob {
+  stroke: var(--numen-ring);
+  stroke-width: 3;
+}
+
+.curve-slider__gridline {
+  stroke: var(--numen-rule);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+}
+
+.curve-slider__line {
+  fill: none;
+  stroke: var(--numen-accent);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.curve-slider__short {
+  fill: none;
+  stroke: var(--numen-caution-fg);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+}
+
+.curve-slider__drop {
+  stroke: var(--numen-accent);
+  stroke-width: 1;
+  stroke-dasharray: var(--numen-thread-dash);
+}
+
+.curve-slider__suggested {
+  fill: var(--numen-accent);
+}
+
+.curve-slider__number--knob {
+  color: var(--numen-accent);
+}
+
+.curve-slider__callout {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-dot-gap);
+  padding: var(--numen-inset);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius-tight);
+  background: var(--numen-raised);
+  box-shadow: var(--numen-shadow-card);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.curve-slider__tail {
+  position: absolute;
+  inline-size: var(--curve-slider-tail);
+  block-size: var(--curve-slider-tail);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-block-start: 0;
+  border-inline-start: 0;
+  background: var(--numen-raised);
+  rotate: 45deg;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+.curve-slider__tail--under {
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
+  border-inline-start: var(--numen-stroke) solid var(--numen-rule);
+  border-block-end: 0;
+  border-inline-end: 0;
+}
+
+.curve-slider__bought {
+  color: var(--numen-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.curve-slider__bought:first-child {
+  color: var(--numen-accent);
+}
+
+.curve-slider__label {
+  position: absolute;
+  color: var(--numen-accent);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 0 var(--numen-edge-label-halo) var(--numen-raised),
+    0 0 var(--numen-edge-label-halo) var(--numen-raised);
+  pointer-events: none;
+}
+
+.curve-slider__knob {
+  fill: var(--numen-accent);
+  stroke: var(--numen-raised);
+  stroke-width: 2;
+}

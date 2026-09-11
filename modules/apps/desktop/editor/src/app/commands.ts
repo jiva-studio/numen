@@ -18,7 +18,7 @@ import type { MessageLog, MessageWriter } from '../shared/notices/messages'
 import type { fileMakers } from '../shared/tabs/makers'
 import type { useWindowTabs } from '../shared/tabs/windowTabs'
 import { WORDS } from '../shared/words'
-import type { NoteCreator } from '../note-tab/maker'
+import type { NoteCreator } from '../widgets/note-editor/maker'
 import type { VaultCore } from './vault'
 
 type Words = typeof WORDS

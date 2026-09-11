@@ -1,11 +1,11 @@
 /**
  * Wire adapters and vault communication for flashcard stencil tabs.
  */
-import type { PathRename, ErrorCode } from '../shared/core'
-import type { Cards, Problem } from '../shared/flashcards/cards'
-import type { MessageWriter } from '../shared/notices/messages'
-import { ERRORS } from '../shared/words'
-import { WORDS as words } from '../shared/flashcards/words'
+import type { PathRename, ErrorCode } from '../../shared/core'
+import type { Cards, Problem } from '../../shared/flashcards/cards'
+import type { MessageWriter } from '../../shared/notices/messages'
+import { ERRORS } from '../../shared/words'
+import { WORDS as words } from '../../shared/flashcards/words'
 import {
   facesOf,
   stencilBodyOf,

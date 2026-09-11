@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Embed from './Embed.vue'
-import { WORDS as words } from '../../shared/media/words'
+import { WORDS as words } from '../../../shared/media/words'
 
 // The player is framed from the socket this run opened, which is the address a
 // host is told is holding it.

@@ -5,10 +5,10 @@
  * It is filed under the path the file stands at, so a file that moved carries
  * it along and a file no tab stands at any longer lets it go.
  */
-import type { ErrorCode } from '../shared/core'
-import type { Problem } from '../shared/flashcards/cards'
-import { fileOf } from '../shared/paths'
-import { WORDS as words } from '../shared/flashcards/words'
+import type { ErrorCode } from '../../shared/core'
+import type { Problem } from '../../shared/flashcards/cards'
+import { fileOf } from '../../shared/paths'
+import { WORDS as words } from '../../shared/flashcards/words'
 
 /** What the vault said about one file the last time it was read or written. */
 export interface VaultAnswer {

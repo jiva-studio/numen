@@ -13,7 +13,7 @@ import type { BudgetUnit, Goal, Rule } from './core'
  * The defaults are read here and again in the core, which schedules a deck
  * naming no preset by them. Both read this one corpus, and neither owns it.
  */
-import corpus from '../../../../../libs/protocol/testdata/presets.json'
+import corpus from '../../../../../../libs/protocol/testdata/presets.json'
 
 /**
  * The key a preset file writes each word under, which is the words the corpus

@@ -4,8 +4,8 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { BookSpan } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
-import type { Span } from '../shared/core'
-import type { MessageWriter } from '../shared/notices/messages'
+import type { Span } from '../../shared/core'
+import type { MessageWriter } from '../../shared/notices/messages'
 import { pointedAt } from './markup'
 import { contentsOf, documentAt, pageAt } from './pagination'
 import type {

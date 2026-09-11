@@ -3,8 +3,8 @@
  */
 import { ref, shallowRef, type Ref } from 'vue'
 import { StopReason } from '@numen/protocol'
-import type { WindowHandle } from '../shared/tabs/windowTabs'
-import type { MessageWriter } from '../shared/notices/messages'
+import type { WindowHandle } from '../../shared/tabs/windowTabs'
+import type { MessageWriter } from '../../shared/notices/messages'
 import { DEFAULTS } from './core'
 import { produceSchedule, shapeOf, steer } from './curve'
 import { WORDS as words } from './words'

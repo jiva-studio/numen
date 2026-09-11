@@ -2,10 +2,10 @@
  * Stencil listing and schedule coordination for deck tabs.
  */
 import { computed, shallowRef } from 'vue'
-import type { Move } from '../shared/core'
-import type { Cards, StencilSummary } from '../shared/flashcards/cards'
-import type { Presets } from '../flashcards-preset-tab/core'
-import type { openNotes } from '../note-tab/notes'
+import type { Move } from '../../shared/core'
+import type { Cards, StencilSummary } from '../../shared/flashcards/cards'
+import type { Presets } from '../preset-editor/core'
+import type { openNotes } from '../note-editor/notes'
 import { useDeckSchedule } from './scheduler'
 import { sameOffers, stencilsOf } from './deck'
 

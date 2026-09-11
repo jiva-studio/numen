@@ -1,9 +1,9 @@
 /**
  * Window registration and tab state for plex graph tabs.
  */
-import type { Move } from '../shared/core'
-import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
-import { PLEX } from '../shared/tabs/workspace'
+import type { Move } from '../../shared/core'
+import type { TabKind, WindowHandle } from '../../shared/tabs/windowTabs'
+import { PLEX } from '../../shared/tabs/workspace'
 import PlexTab from './PlexTab.vue'
 import { WORDS as words } from './words'
 import type { MenuRequest, PlexEditor, PlexTabDeps, PlexTabState } from './types'

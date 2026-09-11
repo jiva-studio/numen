@@ -6,10 +6,10 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
-import type { Model, SettingEdit } from '../shared/core'
-import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
-import { SETTINGS } from '../shared/tabs/workspace'
-import type { Bounds, Mode, Ranges, Sizes, Theme } from '../shared/settings/theme'
+import type { Model, SettingEdit } from '../../shared/core'
+import type { TabKind, WindowHandle } from '../../shared/tabs/windowTabs'
+import { SETTINGS } from '../../shared/tabs/workspace'
+import type { Bounds, Mode, Ranges, Sizes, Theme } from '../../shared/settings/theme'
 import SettingsTab from './SettingsTab.vue'
 import { WORDS as words } from './words'
 

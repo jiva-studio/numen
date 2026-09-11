@@ -5,7 +5,7 @@ import { createClient } from '@connectrpc/connect'
 import { BookService } from '@numen/protocol'
 import type { SpineDocument as SpineDocumentMessage } from '@numen/protocol'
 import { transport } from '@numen/wire'
-import { asset, fingerprint, named, stamp, waiting } from '../shared/answers'
+import { asset, fingerprint, named, stamp, waiting } from '../../shared/answers'
 import type { Book, Books, SpineDocument } from './types'
 
 const served = {

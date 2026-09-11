@@ -3,8 +3,8 @@
  */
 import type { ComputedRef } from 'vue'
 import type { Half } from '@numen/ui'
-import type { OpenNote } from '../note-tab/notes'
-import type { Marks } from '../shared/flashcards/marks'
+import type { OpenNote } from '../note-editor/notes'
+import type { Marks } from '../../shared/flashcards/marks'
 import type { BufferStencil } from './stencil'
 
 /** What one stencil tab holds. */

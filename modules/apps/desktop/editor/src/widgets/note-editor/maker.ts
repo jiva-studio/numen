@@ -7,9 +7,9 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
-import type { Core, ErrorCode, Link, Role } from '../shared/core'
-import type { MessageWriter } from '../shared/notices/messages'
-import { ERRORS } from '../shared/words'
+import type { Core, ErrorCode, Link, Role } from '../../shared/core'
+import type { MessageWriter } from '../../shared/notices/messages'
+import { ERRORS } from '../../shared/words'
 
 /**
  * The role a link carries to seat a note where the gesture put it. A seat and
