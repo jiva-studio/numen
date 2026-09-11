@@ -118,7 +118,7 @@ describe('the role a link carries', () => {
 })
 
 describe('files domain', () => {
-  it('handles remove, list, move, makeFolder, makeURL, and fileKinds', async () => {
+  it('handles remove, list, move, createFolder, createUrl, and fileKinds', async () => {
     asked.removeFile.mockResolvedValue({ trashed: true, dangling: [] })
     const removed = await core.remove('test.md')
     expect(removed.trashed).toBe(true)
@@ -134,10 +134,10 @@ describe('files domain', () => {
     expect(moved.moved?.to).toBe('b.md')
 
     asked.createFolder.mockResolvedValue({})
-    expect(await core.makeFolder('folder')).toBeNull()
+    expect(await core.createFolder('folder')).toBeNull()
 
     asked.createURL.mockResolvedValue({ path: 'url.md' })
-    const url = await core.makeURL('https://example.com', '')
+    const url = await core.createUrl('https://example.com', '')
     expect(url.path).toBe('url.md')
 
     asked.listFileKinds.mockResolvedValue({

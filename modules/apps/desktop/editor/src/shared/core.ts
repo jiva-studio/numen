@@ -206,12 +206,14 @@ export interface Core {
     seen: string | null,
   ): Promise<{ readonly changed: boolean }>
   /** An empty folder. The folders above it are made with it. */
-  makeFolder(path: string): Promise<RefusalReason | null>
+  createFolder(path: string): Promise<RefusalReason | null>
+  makeFolder?(path: string): Promise<RefusalReason | null>
   /**
    * The file a web address is kept in, named by the address until a fetch says
    * what is there.
    */
-  makeURL(url: string, folder: string): Promise<MakeResult>
+  createUrl(url: string, folder: string): Promise<CreateResult>
+  makeURL?(url: string, folder: string): Promise<MakeResult>
   /**
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.

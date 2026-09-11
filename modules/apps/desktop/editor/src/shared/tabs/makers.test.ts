@@ -21,19 +21,19 @@ const maker = (
   }
   return {
     asked,
-    makeDeck: (title, folder) => {
+    createDeck: (title, folder) => {
       asked.push(`deck ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)
     },
-    makeStencil: (title, folder, fields) => {
+    createStencil: (title, folder, fields) => {
       asked.push(`stencil ${folder || '—'} ${title} ${fields.join(',')}`)
       return answer(`${folder}/${title}.md`)
     },
-    makePreset: (title, folder) => {
+    createPreset: (title, folder) => {
       asked.push(`preset ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)
     },
-    makeURL: (address, folder) => {
+    createUrl: (address, folder) => {
       asked.push(`link ${folder || '—'} ${address}`)
       return answer(`${folder}/${address}.md`)
     },

@@ -17,12 +17,8 @@ export interface VaultCreator {
   createDeck?(title: string, folder: string): Promise<CreateResult>
   createStencil?(title: string, folder: string, fields: readonly string[]): Promise<CreateResult>
   createPreset?(title: string, folder: string): Promise<CreateResult>
+  createUrl?(address: string, folder: string): Promise<CreateResult>
   createURL?(address: string, folder: string): Promise<CreateResult>
-
-  makeDeck?(title: string, folder: string): Promise<MakeResult>
-  makeStencil?(title: string, folder: string, fields: readonly string[]): Promise<MakeResult>
-  makePreset?(title: string, folder: string): Promise<MakeResult>
-  makeURL?(address: string, folder: string): Promise<MakeResult>
 }
 
 /** What creating one of the four says in the window's voice. */
@@ -36,14 +32,13 @@ const asks: Record<
   CreateKind,
   (vault: VaultCreator, folder: string, name: string, fields: readonly string[]) => Promise<CreateResult>
 > = {
-  deck: (vault, folder, name) =>
-    (vault.createDeck ?? vault.makeDeck)!.call(vault, name, folder),
+  deck: (vault, folder, name) => vault.createDeck!.call(vault, name, folder),
   stencil: (vault, folder, name, fields) =>
-    (vault.createStencil ?? vault.makeStencil)!.call(vault, name, folder, fields),
+    vault.createStencil!.call(vault, name, folder, fields),
   preset: (vault, folder, name) =>
-    (vault.createPreset ?? vault.makePreset)!.call(vault, name, folder),
+    vault.createPreset!.call(vault, name, folder),
   url: (vault, folder, name) =>
-    (vault.createURL ?? vault.makeURL)!.call(vault, name, folder),
+    (vault.createUrl ?? vault.createURL)!.call(vault, name, folder),
 }
 
 /**
@@ -61,8 +56,9 @@ export function fileCreators(vault: VaultCreator, puts: FileOpeners, words: Crea
   ): Promise<string> => {
     try {
       const answer = await asks[what](vault, folder, name, fields)
-      if (answer.refusal) {
-        said(words.refused[answer.refusal], 'refusal')
+      const error = answer.error ?? answer.refusal
+      if (error) {
+        said(words.refused[error], 'refusal')
         return ''
       }
       return answer.path

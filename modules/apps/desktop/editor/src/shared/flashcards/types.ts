@@ -1,4 +1,4 @@
-import type { MakeResult, RefusalReason } from '../note'
+import type { CreateResult, MakeResult, RefusalReason } from '../note'
 import type { Surrounds } from './surrounds'
 
 /** One stencil as the list of them names it. */
@@ -174,11 +174,13 @@ export interface Cards {
   /** Every stencil in the vault, by what it is called and what it asks for. */
   stencils(limit?: number): Promise<{ stencils: readonly StencilSummary[]; held: number }>
   /** A deck of no cards, filed in that folder under a name made from the title. */
-  makeDeck(title: string, folder: string): Promise<MakeResult>
+  createDeck(title: string, folder: string): Promise<CreateResult>
+  makeDeck?(title: string, folder: string): Promise<MakeResult>
   /**
    * A stencil declaring those fields and showing no face, the same way.
    */
-  makeStencil(title: string, folder: string, fields: readonly string[]): Promise<MakeResult>
+  createStencil(title: string, folder: string, fields: readonly string[]): Promise<CreateResult>
+  makeStencil?(title: string, folder: string, fields: readonly string[]): Promise<MakeResult>
   /**
    * A field of a stencil under another name, wherever that name is written.
    */

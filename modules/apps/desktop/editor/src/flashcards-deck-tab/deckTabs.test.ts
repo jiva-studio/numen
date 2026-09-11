@@ -100,8 +100,8 @@ const vault = (
         held: 1,
       }
     },
-    makeDeck: async (title) => ({ path: `${title}.md`, refusal: null }),
-    makeStencil: async (title) => ({ path: `${title}.md`, refusal: null }),
+    createDeck: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
+    createStencil: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
     renameField: async () => ({
       decks: [],
       cards: 0,

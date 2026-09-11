@@ -90,7 +90,7 @@ export function useCommands(options: CommandsDepsOptions) {
       renames: (path, title) => core.rename(path, title),
       removes: (path, destroy) => core.remove(path, destroy),
       moves: (from, to) => core.move(from, to),
-      makesFolder: (path) => core.makeFolder(path),
+      makesFolder: (path) => core.createFolder(path),
     },
     runs: {
       carries: (path) => running.carries(path),

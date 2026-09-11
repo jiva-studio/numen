@@ -271,13 +271,21 @@ vi.mock('../../window/vault', () => ({
       asked.moved.push(`${from} ${to}`)
       return { moved: null, refusal: null }
     },
+    createFolder: async (path: string) => {
+      asked.folders.push(path)
+      return null
+    },
     makeFolder: async (path: string) => {
       asked.folders.push(path)
       return null
     },
+    createUrl: async (url: string, folder: string) => {
+      asked.urls.push(`${url} ${folder}`)
+      return { path: folder ? `${folder}/made.url` : 'made.url', error: null, refusal: null }
+    },
     makeURL: async (url: string, folder: string) => {
       asked.urls.push(`${url} ${folder}`)
-      return { path: folder ? `${folder}/made.url` : 'made.url', refusal: null }
+      return { path: folder ? `${folder}/made.url` : 'made.url', error: null, refusal: null }
     },
     changes: held,
     editing: held,
@@ -369,8 +377,16 @@ vi.mock('../flashcards/cards', () => ({
       stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name'] }],
       held: 1,
     }),
+    createDeck: async (title: string, folder: string) => {
+      asked.cards.push(`deck ${folder || '/'} ${title}`)
+      return maker.makes(title, folder)
+    },
     makeDeck: async (title: string, folder: string) => {
       asked.cards.push(`deck ${folder || '/'} ${title}`)
+      return maker.makes(title, folder)
+    },
+    createStencil: async (title: string, folder: string, fields: readonly string[]) => {
+      asked.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
       return maker.makes(title, folder)
     },
     makeStencil: async (title: string, folder: string, fields: readonly string[]) => {

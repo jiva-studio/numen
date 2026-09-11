@@ -20,14 +20,18 @@ export const cards: Cards = {
     const answer = await cardsService.listStencils({ limit: limit ?? 0 })
     return { stencils: answer.stencils.map(offered), held: answer.total }
   },
-  makeDeck: async (title, folder) => {
+  createDeck: async (title, folder) => {
     const answer = await cardsService.createDeck({ title, path: folder })
-    return { path: answer.path, refusal: refusalIn(answer) }
+    const error = refusalIn(answer)
+    return { path: answer.path, error, refusal: error }
   },
-  makeStencil: async (title, folder, fields) => {
+  makeDeck: async (title, folder) => cards.createDeck(title, folder),
+  createStencil: async (title, folder, fields) => {
     const answer = await cardsService.createStencil({ title, path: folder, fields: [...fields] })
-    return { path: answer.path, refusal: refusalIn(answer) }
+    const error = refusalIn(answer)
+    return { path: answer.path, error, refusal: error }
   },
+  makeStencil: async (title, folder, fields) => cards.createStencil(title, folder, fields),
   renameField: async (path, from, to, seen) => {
     const answer = await cardsService.renameStencilField({
       path,

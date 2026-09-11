@@ -176,11 +176,11 @@ export function useWindowKinds({
 
   const made = fileMakers(
     {
-      makeDeck: (title, folder) => cards.makeDeck(title, folder),
-      makeStencil: (title, folder, fields) => cards.makeStencil(title, folder, fields),
-      makePreset: (title, folder) => presets.makes(title, folder),
-      makeURL: async (address, folder) => {
-        const made = await core.makeURL(address, folder)
+      createDeck: (title, folder) => cards.createDeck(title, folder),
+      createStencil: (title, folder, fields) => cards.createStencil(title, folder, fields),
+      createPreset: (title, folder) => presets.makes(title, folder),
+      createUrl: async (address, folder) => {
+        const made = await core.createUrl(address, folder)
         if (made.path) void fetches(made.path)
         return made
       },

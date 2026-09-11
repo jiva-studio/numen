@@ -58,8 +58,9 @@ describe('making a deck', () => {
   it('answers where it was filed', async () => {
     answers({ path: 'Decks/Words.md' })
 
-    expect(await cards.makeDeck('Words', 'Decks')).toEqual({
+    expect(await cards.createDeck('Words', 'Decks')).toEqual({
       path: 'Decks/Words.md',
+      error: null,
       refusal: null,
     })
   })
@@ -67,7 +68,7 @@ describe('making a deck', () => {
   it('carries the refusal in the words the window uses', async () => {
     answers({ path: '', refusal: 'REFUSAL_OCCUPIED' })
 
-    expect((await cards.makeDeck('Words', 'Decks')).refusal).toBe('occupied')
+    expect((await cards.createDeck('Words', 'Decks')).error).toBe('occupied')
   })
 })
 
@@ -75,8 +76,9 @@ describe('making a stencil', () => {
   it('carries the fields it is cut with', async () => {
     answers({ path: 'Word.md' })
 
-    expect(await cards.makeStencil('Word', '', ['Front', 'Back'])).toEqual({
+    expect(await cards.createStencil('Word', '', ['Front', 'Back'])).toEqual({
       path: 'Word.md',
+      error: null,
       refusal: null,
     })
     expect(asked[0]).toEqual({ title: 'Word', fields: ['Front', 'Back'] })

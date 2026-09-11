@@ -8,8 +8,11 @@ import type { Core } from '../../shared/core'
 
 export type FilesCore = Pick<
   Core,
-  'remove' | 'list' | 'move' | 'makeFolder' | 'makeURL' | 'fileKinds'
->
+  'remove' | 'list' | 'move' | 'createFolder' | 'createUrl' | 'fileKinds'
+> & {
+  makeFolder?: (path: string) => Promise<any>
+  makeURL?: (url: string, folder: string) => Promise<any>
+}
 
 export const filesCore: FilesCore = {
   remove: async (path, destroy) => {
@@ -30,11 +33,17 @@ export const filesCore: FilesCore = {
       error,
     }
   },
+  createFolder: async (path) => errorIn(await files.createFolder({ path })),
+  createUrl: async (url, folder) => {
+    const answer = await files.createURL({ url, path: folder })
+    const error = errorIn(answer)
+    return { path: answer.path, error, refusal: error }
+  },
   makeFolder: async (path) => errorIn(await files.createFolder({ path })),
   makeURL: async (url, folder) => {
     const answer = await files.createURL({ url, path: folder })
     const error = errorIn(answer)
-    return { path: answer.path, error }
+    return { path: answer.path, error, refusal: error }
   },
   fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })
