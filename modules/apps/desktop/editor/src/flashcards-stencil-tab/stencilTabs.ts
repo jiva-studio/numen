@@ -3,57 +3,22 @@
  */
 import { computed, type ComputedRef } from 'vue'
 import type { Half, PlexShowing } from '@numen/ui'
-import type { Move, RefusalReason } from '../shared/core'
-import type { Cards, Problem } from '../shared/flashcards/cards'
+import type { Move } from '../shared/core'
+import type { Cards } from '../shared/flashcards/cards'
 import type { Store } from '../shared/command/deps'
 import { openNotes, type OpenNote } from '../note-tab/notes'
 import { markOf } from '../note-tab/tab'
 import type { MessageWriter } from '../shared/notices/messages'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
-import { REFUSED } from '../shared/words'
 import type { FileOpeners } from '../shared/tabs/openers'
 import { STENCIL } from '../shared/tabs/workspace'
 import StencilTab from './StencilTab.vue'
-import {
-  faceAdded,
-  faceDropped,
-  faceGone,
-  faceNamed,
-  faceWritten,
-  facesOf,
-  fieldAdded,
-  fieldDropped,
-  fieldGone,
-  sameStencil,
-  stencilBodyOf,
-  stencilIn,
-  stencilOf,
-  type BufferStencil,
-} from './stencil'
-import { marksOf, sameMarks, type Marks } from '../shared/flashcards/marks'
 import { fileOf } from '../shared/paths'
-import { WORDS as words } from '../shared/flashcards/words'
 import type { StencilTabState } from './types'
+import { createStencilWire, type VaultAnswer } from './stencilTabs.wire'
+import { createStencilFields } from './stencilTabs.fields'
 
-export type { StencilTabState }
-
-/** What the vault said about one file the last time it was read or written. */
-interface VaultAnswer {
-  /**
-   * What is wrong with the file, in the order the faces were read in. Which
-   * face each stands on is decided against the stencil the editor is drawing,
-   * so a face the window is holding through a re-read keeps its mark.
-   */
-  readonly problems: readonly Problem[]
-  /** What the last read of the file was refused for. */
-  readonly reading: RefusalReason | null
-  /** What the last write of it was refused for. */
-  readonly writing: RefusalReason | null
-  /** The file the stencil last came out of, for a rename to present. */
-  readonly at: string
-}
-
-const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, at: '' }
+export type { StencilTabState, VaultAnswer }
 
 export function useStencilTabs(
   cards: Cards,
@@ -61,145 +26,27 @@ export function useStencilTabs(
   puts: FileOpeners,
   says: MessageWriter = () => {},
 ) {
-  /** What the vault last said about each file, under the path it is filed at. */
-  const told = new Map<string, VaultAnswer>()
-  /** What each file is called, as the vault last read it. */
-  const titles = new Map<string, string>()
+  const wire = createStencilWire(cards, says)
 
   const store = openNotes({
-    read: async (path) => {
-      const answer = await cards.readStencil(path)
-      const stencil = answer.stencil ? stencilOf(answer.stencil) : null
-      told.set(path, {
-        problems: answer.stencil?.problems ?? [],
-        reading: answer.refusal,
-        writing: null,
-        at: answer.at,
-      })
-      if (answer.stencil) titles.set(path, answer.stencil.title)
-      if (answer.refusal !== null) return { body: '', refusal: answer.refusal }
-      return { body: stencil ? stencilBodyOf(stencil) : '', refusal: null, at: answer.at }
-    },
-    write: async (path, body, seen) => {
-      const stencil = stencilIn(body)
-      const answer = await cards.writeStencil(
-        path,
-        stencil.fields,
-        { preamble: stencil.preamble, faces: facesOf(stencil), tail: stencil.tail },
-        seen?.at ?? null,
-      )
-      const said = told.get(path) ?? NOTHING
-      told.set(path, {
-        problems: said.problems,
-        reading: said.reading,
-        writing: answer.refusal,
-        // Nothing was written where the write was refused or overtaken, so the
-        // file the tab last stood on is the file it still stands on.
-        at: answer.changed || answer.refusal !== null ? said.at : answer.at,
-      })
-      return { body: '', refusal: answer.refusal, at: answer.at, changed: answer.changed }
-    },
+    read: wire.read,
+    write: wire.write,
   })
 
-  /** The last string a stencil was read out of, and what it came to. */
-  const parsed = new Map<string, { body: string; stencil: BufferStencil }>()
-
-  const stencilAt = (id: string): BufferStencil => {
-    const body = store.shown(id).body
-    const held = parsed.get(id)
-    if (held && held.body === body) return held.stencil
-    // A file read again carries fresh identities for the same faces, so the
-    // string it comes back as differs from the string that went out. A stencil
-    // reading as the one on screen leaves that one standing, and the field a
-    // person is typing into is not drawn again.
-    const read = stencilIn(body)
-    const stencil = held && sameStencil(held.stencil, read) ? held.stencil : read
-    parsed.set(id, { body, stencil })
-    return stencil
-  }
-
-  /** The problems one tab was last marked from, and the marks that came of it. */
-  const marked = new Map<string, { problems: readonly Problem[]; marks: Marks }>()
-
-  /**
-   * What is wrong with a file, against the face the editor is drawing. A
-   * problem carries where it stood in the file it was read from, so it is put
-   * against a face once, when the reading it came in on is the newest one: a
-   * face dragged elsewhere takes its mark with it from there.
-   */
-  const marksAt = (id: string): Marks => {
-    const problems = (told.get(store.where(id)) ?? NOTHING).problems
-    const held = marked.get(id)
-    if (held && held.problems === problems) return held.marks
-    const read = marksOf(
-      problems,
-      [],
-      stencilAt(id).faces.map((face) => face.id),
-    )
-    // Marks saying what the last ones said leave what is drawn against the
-    // file standing.
-    const marks = held && sameMarks(held.marks, read) ? held.marks : read
-    marked.set(id, { problems, marks })
-    return marks
-  }
-
-  /** A stencil as it now stands, written back into the store. */
-  const turns = (id: string, stencil: BufferStencil): void => {
-    const body = stencilBodyOf(stencil)
-    parsed.set(id, { body, stencil })
-    store.typed(id, body)
-  }
-
-  /**
-   * A field under another name, which the vault writes wherever that name
-   * stands: in the fields of this stencil, in the placeholders of its faces,
-   * and as a heading in every card this stencil cuts. The tab then reads the
-   * file the way it reads any file the vault has changed under it.
-   */
-  const renames = async (id: string, field: string, name: string): Promise<void> => {
-    if (!name || name === field) return
-    const path = store.where(id)
-    const answer = await cards.renameField(path, field, name, (told.get(path) ?? NOTHING).at || null)
-    if (answer.refusal !== null) return says(REFUSED[answer.refusal], 'refusal')
-    // The file moved past the stencil this tab read, and nothing was renamed
-    // anywhere. What it now holds is what the tab reads next.
-    if (answer.changed) {
-      says(words.notRenamed, 'refusal')
-      return store.changed([path])
-    }
-    if (answer.cards > 0) says(words.renamed(answer.cards, answer.decks.length))
-    // A deck the rename did not reach keeps the old heading, and nothing else
-    // would tell the person which.
-    if (answer.notWritten.length > 0) {
-      says(words.notWritten(answer.notWritten.map((one) => one.path)), 'refusal')
-    }
-    store.changed([path])
-  }
-
-  /**
-   * What one tab was refused for, in words a person reads. A vault that
-   * answered nothing at all left the tab refused and said no word of its own.
-   */
-  const sayingOf = (id: string): string => {
-    if (store.shown(id).refusal === null) return ''
-    const said = told.get(store.where(id)) ?? NOTHING
-    if (said.reading !== null) {
-      return said.reading === 'notAStencil' ? words.notAStencil : words.refused
-    }
-    if (said.writing !== null) {
-      return said.writing === 'notAStencil' ? words.notAStencil : words.notSaved
-    }
-    return words.unreachable
-  }
+  const fields = createStencilFields(
+    (id) => store.shown(id).body,
+    (id, body) => store.typed(id, body),
+    (id) => wire.getProblems(store.where(id)),
+    (id, field, name) => void wire.renameField(store.where(id), field, name, store.changed),
+  )
 
   const held = (id: string): StencilTabState => {
     const closeTab = (tab: string) => {
       const path = store.where(id)
       void store.shut(id).then((gone) => {
         if (!gone) return
-        parsed.delete(id)
-        marked.delete(id)
-        forgets(path)
+        fields.forget(id)
+        wire.forget(path, store.all().some((one) => store.where(one) === path))
         handle.closes(tab)
       })
     }
@@ -207,27 +54,10 @@ export function useStencilTabs(
     return {
       id,
       shown: computed(() => store.shown(id)),
-      stencil: computed(() => stencilAt(id)),
-      marks: computed(() => marksAt(id)),
-      saying: computed(() => sayingOf(id)),
-      addsField: (name) => turns(id, fieldAdded(stencilAt(id), name)),
-      addField: (name) => turns(id, fieldAdded(stencilAt(id), name)),
-      namesField: (field, name) => void renames(id, field, name),
-      renameField: (field, name) => void renames(id, field, name),
-      removesField: (field) => turns(id, fieldGone(stencilAt(id), field)),
-      removeField: (field) => turns(id, fieldGone(stencilAt(id), field)),
-      movesField: (field, at) => turns(id, fieldDropped(stencilAt(id), field, at)),
-      moveField: (field, at) => turns(id, fieldDropped(stencilAt(id), field, at)),
-      addsFace: (name) => turns(id, faceAdded(stencilAt(id), name)),
-      addFace: (name) => turns(id, faceAdded(stencilAt(id), name)),
-      namesFace: (face, name) => turns(id, faceNamed(stencilAt(id), face, name)),
-      renameFace: (face, name) => turns(id, faceNamed(stencilAt(id), face, name)),
-      removesFace: (face) => turns(id, faceGone(stencilAt(id), face)),
-      removeFace: (face) => turns(id, faceGone(stencilAt(id), face)),
-      movesFace: (face, at) => turns(id, faceDropped(stencilAt(id), face, at)),
-      moveFace: (face, at) => turns(id, faceDropped(stencilAt(id), face, at)),
-      writes: (face, half, text) => turns(id, faceWritten(stencilAt(id), face, half, text)),
-      writeFaceHalf: (face, half, text) => turns(id, faceWritten(stencilAt(id), face, half, text)),
+      stencil: computed(() => fields.getStencil(id)),
+      marks: computed(() => fields.getMarks(id)),
+      saying: computed(() => wire.getSaying(store.where(id), store.shown(id).refusal)),
+      ...fields.actionsFor(id),
       keep: () => store.keep(id),
       keepMine: () => store.keep(id),
       take: () => store.take(id),
@@ -237,18 +67,8 @@ export function useStencilTabs(
     }
   }
 
-  /**
-   * What the vault said about a file no tab of this window stands at any
-   * longer. A second tab standing there keeps it.
-   */
-  const forgets = (path: string): void => {
-    if (store.all().some((one) => store.where(one) === path)) return
-    told.delete(path)
-    titles.delete(path)
-  }
-
   /** What a stencil tab is called: the title the file carries, or the file itself. */
-  const called = (path: string): string => titles.get(path) || fileOf(path)
+  const called = (path: string): string => wire.getTitle(path) || fileOf(path)
 
   /** The tab holding a stencil lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
@@ -267,22 +87,13 @@ export function useStencilTabs(
     holding: (path) => store.all().find((id) => store.where(id) === path) ?? null,
   }
 
-  /**
-   * Every open stencil under the file it stands at now, against the identity it
-   * opened under. A stencil that moved is looked up here to reach the tab
-   * already holding it.
-   */
   const tabbed = computed<ReadonlyMap<string, string>>(
     () => new Map(store.all().map((one) => [store.where(one), one])),
   )
 
-  /**
-   * Pending tab IDs for stencils asked for by path, until opened.
-   */
   const pendingTabIds = new Map<string, string>()
   const pendingTabPaths = new Map<string, string>()
 
-  /** Gets or allocates a tab ID for a stencil at a path. */
   const getOrCreateTabId = (path: string): string => {
     const open = tabbed.value.get(path) ?? pendingTabIds.get(path)
     if (open) return open
@@ -293,11 +104,6 @@ export function useStencilTabs(
   }
   const mints = getOrCreateTabId
 
-  /**
-   * A stencil tab as the window keeps it, filed under the identity it opened
-   * under, so the same file asked for twice is the tab it has wherever the file
-   * has been renamed to since.
-   */
   const kind: TabKind<StencilTabState, typeof STENCIL> = {
     kind: STENCIL,
     opens: (id) => {
@@ -318,29 +124,16 @@ export function useStencilTabs(
     gone: () => {},
   }
 
-  /** A stencil put in front of the person, in a tab of its own. */
   const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
     const id = mints(path)
-    if (title) titles.set(path, title)
+    if (title) wire.setTitle(path, title)
     void (showing === 'beside' ? handle.beside(STENCIL, id) : handle.opens(STENCIL, id))
   }
 
-  // The editor of a stencil, which is its fields and its faces. A face stands
-  // on no line of prose, so a stencil asked for at a place inside it opens
-  // whole.
   puts.holds('stencil', shows)
 
   const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
-    // What the vault said about a file is filed under that file, so a file
-    // that moved takes it along.
-    for (const went of renamed) {
-      const said = told.get(went.from)
-      if (said) told.set(went.to, said)
-      told.delete(went.from)
-      const title = titles.get(went.from)
-      if (title !== undefined) titles.set(went.to, title)
-      titles.delete(went.from)
-    }
+    wire.movePaths(renamed)
     store.changed(paths, renamed)
   }
 
