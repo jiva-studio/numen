@@ -1,12 +1,12 @@
 /**
  * Window registration and tab state for flashcard stencil tabs.
  */
-import { computed, type ComputedRef } from 'vue'
-import type { Half, PlexShowing } from '@numen/ui'
+import { computed } from 'vue'
+import type { PlexShowing } from '@numen/ui'
 import type { Move } from '../shared/core'
 import type { Cards } from '../shared/flashcards/cards'
 import type { Store } from '../shared/command/deps'
-import { openNotes, type OpenNote } from '../note-tab/notes'
+import { openNotes } from '../note-tab/notes'
 import { markOf } from '../note-tab/tab'
 import type { MessageWriter } from '../shared/notices/messages'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'

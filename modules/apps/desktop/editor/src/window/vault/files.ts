@@ -10,8 +10,8 @@ export type FilesCore = Pick<
   Core,
   'remove' | 'list' | 'move' | 'createFolder' | 'createUrl' | 'fileKinds'
 > & {
-  makeFolder?: (path: string) => Promise<any>
-  makeURL?: (url: string, folder: string) => Promise<any>
+  makeFolder?: (path: string) => Promise<unknown>
+  makeURL?: (url: string, folder: string) => Promise<unknown>
 }
 
 export const filesCore: FilesCore = {

@@ -4,7 +4,7 @@
  * in front of the person in a tab of its own.
  */
 import { troubleWords } from '@numen/wire'
-import type { CreateResult, MakeResult, RefusalReason } from '../note'
+import type { CreateResult, RefusalReason } from '../note'
 import type { MessageWriter } from '../notices/messages'
 import type { FileOpeners } from './openers'
 

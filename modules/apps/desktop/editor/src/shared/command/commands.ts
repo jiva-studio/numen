@@ -2,7 +2,6 @@
  * Command grouping and filtering.
  */
 import type { Command, CommandGroup } from './target'
-import { commandsOf } from './list'
 
 export { commandsOf } from './list'
 

@@ -3,7 +3,6 @@
  */
 import { createClient } from '@connectrpc/connect'
 import {
-  BudgetName,
   BudgetUnit as BudgetUnits,
   Rule as Rules,
   PresetsService,
@@ -24,7 +23,6 @@ import {
   type Bounds,
   type BudgetUnit,
   type Curve,
-  type MakeResult,
   type Place,
   type Preset,
   type Presets,
@@ -32,7 +30,6 @@ import {
   type Rule,
   type Settings,
   type SettingsBounds,
-  type WriteResult,
 } from './types'
 
 export * from './types'

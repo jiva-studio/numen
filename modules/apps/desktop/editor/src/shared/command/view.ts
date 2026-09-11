@@ -8,7 +8,7 @@
  */
 import type { Ref } from 'vue'
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
-import { isWebAddress, isWebUrl } from './address'
+import { isWebUrl } from './address'
 import type { NoteType } from '../note'
 import type { Vault } from '../vaults'
 import { inGroup } from './commands'
