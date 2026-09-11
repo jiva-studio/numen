@@ -2,13 +2,13 @@
  * Step navigation, stack tracking, and presentation for command palette steps.
  */
 import { computed, shallowRef, type Ref } from 'vue'
-import { isWebUrl } from './address'
-import { movedTo, type Move } from '../note'
+import { getRenamedPath, type PathRename } from '../note'
 import type { Vault } from '../vaults'
 import type { PaletteLists, NoteLookup } from './lists'
 import { EXACT, NO, YES, type PendingStep } from './step'
 import type { CommandInvocation, CommandTarget, Words } from './target'
 import type { NameMatch } from './search'
+import { isWebUrl } from './address'
 
 export function createPaletteSteps(
   words: Words,
@@ -93,10 +93,10 @@ export function createPaletteSteps(
     begins(here.value)
   }
 
-  const follows = (renamed: readonly Move[] = []) => {
+  const follows = (renamed: readonly PathRename[] = []) => {
     if (!renamed.length) return
     steps.value = steps.value.map((step) => {
-      const to = movedTo(renamed, step.on.path)
+      const to = getRenamedPath(renamed, step.on.path)
       return to ? { ...step, on: { ...step.on, path: to } } : step
     })
   }

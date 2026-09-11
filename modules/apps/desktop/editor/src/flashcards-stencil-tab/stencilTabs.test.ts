@@ -3,12 +3,12 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
-import type { RefusalReason } from '../shared/core'
+import type { ErrorCode } from '../shared/core'
 import type { Cards, VaultFace, Problem, FieldRenameResult } from '../shared/flashcards/cards'
 import { fileOpeners } from '../shared/tabs/openers'
 import { useWindowTabs } from '../shared/tabs/windowTabs'
 import { STENCIL } from '../shared/tabs/workspace'
-import { REFUSED } from '../shared/words'
+import { ERRORS } from '../shared/words'
 import { useStencilTabs, type StencilTabState } from './stencilTabs'
 import { WORDS as words } from '../shared/flashcards/words'
 
@@ -25,7 +25,7 @@ const FACES: readonly VaultFace[] = [
 /** A vault holding one stencil, writing down every write it was asked for. */
 const vault = (
   answers: {
-    refusal?: RefusalReason
+    error?: ErrorCode
     problems?: readonly Problem[]
     changed?: boolean
     /** What renaming a field comes back with, where a test wants another answer. */
@@ -33,7 +33,7 @@ const vault = (
     /** The vault is out of reach, and a read of the stencil reaches nothing. */
     unreachable?: boolean
     /** What a write of the stencil is refused for. */
-    wrote?: RefusalReason
+    wrote?: ErrorCode
   } = {},
 ) => {
   const written: string[] = []
@@ -44,8 +44,8 @@ const vault = (
 
   const core: Cards = {
     stencils: async () => ({ stencils: [], held: 0 }),
-    createDeck: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
+    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
+    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
     // The vault writes the name wherever it stands: in the fields, and in the
     // braces of every face.
     renameField: async (path, from, to, seen) => {
@@ -58,13 +58,13 @@ const vault = (
         front: braces(face.front),
         back: braces(face.back),
       }))
-      return { decks: [], cards: 0, notWritten: [], refusal: null, changed: false, at: 'renamed' }
+      return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
     },
-    readDeck: async () => ({ deck: null, refusal: 'missing', at: '', bound: 0 }),
-    writeDeck: async () => ({ refusal: null, changed: false, at: '', bound: 0 }),
+    readDeck: async () => ({ deck: null, error: 'missing', at: '', bound: 0 }),
+    writeDeck: async () => ({ error: null, changed: false, at: '', bound: 0 }),
     readStencil: async (path) => {
       if (answers.unreachable) throw new Error('out of reach')
-      if (answers.refusal) return { stencil: null, refusal: answers.refusal, at: '' }
+      if (answers.error) return { stencil: null, error: answers.error, at: '' }
       return {
         stencil: {
           path,
@@ -75,7 +75,7 @@ const vault = (
           tail: '',
           problems: answers.problems ?? [],
         },
-        refusal: null,
+        error: null,
         at: 'read',
       }
     },
@@ -83,11 +83,11 @@ const vault = (
       written.push(
         `${path} ${wrote.join(', ') || '—'} | ${drew.faces.map((one) => one.back).join(' ')}`,
       )
-      if (answers.wrote) return { refusal: answers.wrote, changed: false, at: '' }
-      if (answers.changed) return { refusal: null, changed: true, at: '' }
+      if (answers.wrote) return { error: answers.wrote, changed: false, at: '' }
+      if (answers.changed) return { error: null, changed: true, at: '' }
       fields = wrote
       faces = drew.faces
-      return { refusal: null, changed: false, at: 'written' }
+      return { error: null, changed: false, at: 'written' }
     },
   }
 
@@ -142,7 +142,7 @@ describe('a field renamed in a stencil', () => {
   it('is the vault that renames it, presenting the file the tab read', async () => {
     const { tab, renamed } = await open()
 
-    tab.namesField('Height', 'Shoulder')
+    tab.renameField('Height', 'Shoulder')
     await settles()
 
     expect(renamed).toStrictEqual(['Animal.md Height Shoulder read'])
@@ -151,7 +151,7 @@ describe('a field renamed in a stencil', () => {
   it('writes the stencil from the tab nowhere, so nothing goes over the vault', async () => {
     const { stencils, tab, written } = await open()
 
-    tab.namesField('Height', 'Shoulder')
+    tab.renameField('Height', 'Shoulder')
     await settles()
     await stencils.flush()
 
@@ -161,7 +161,7 @@ describe('a field renamed in a stencil', () => {
   it('shows the fields and the braces as the vault left them', async () => {
     const { tab } = await open()
 
-    tab.namesField('Height', 'Shoulder')
+    tab.renameField('Height', 'Shoulder')
     await settles()
     await settles()
 
@@ -172,8 +172,8 @@ describe('a field renamed in a stencil', () => {
   it('asks for nothing where the name is the one the field carries', async () => {
     const { tab, renamed } = await open()
 
-    tab.namesField('Height', 'Height')
-    tab.namesField('Height', '')
+    tab.renameField('Height', 'Height')
+    tab.renameField('Height', '')
     await settles()
 
     expect(renamed).toStrictEqual([])
@@ -185,13 +185,13 @@ describe('a field renamed in a stencil', () => {
         decks: ['Animals.md', 'More.md'],
         cards: 3,
         notWritten: [],
-        refusal: null,
+        error: null,
         changed: false,
         at: 'renamed',
       },
     })
 
-    tab.namesField('Height', 'Shoulder')
+    tab.renameField('Height', 'Shoulder')
     await settles()
 
     expect(said).toContain(words.renamed(3, 2))
@@ -203,34 +203,34 @@ describe('a field renamed in a stencil', () => {
         decks: ['Animals.md'],
         cards: 1,
         notWritten: [{ path: 'Broken.md', text: 'the frontmatter cannot be read' }],
-        refusal: null,
+        error: null,
         changed: false,
         at: 'renamed',
       },
     })
 
-    tab.namesField('Height', 'Shoulder')
+    tab.renameField('Height', 'Shoulder')
     await settles()
 
     expect(said).toContain(words.notWritten(['Broken.md']))
   })
 
-  it('says the refusal, and says nothing of decks reached, where none was', async () => {
+  it('says the error, and says nothing of decks reached, where none was', async () => {
     const { tab, said } = await open({
       renaming: {
         decks: [],
         cards: 0,
         notWritten: [],
-        refusal: 'notAStencil',
+        error: 'notAStencil',
         changed: false,
         at: '',
       },
     })
 
-    tab.namesField('Height', 'Shoulder')
+    tab.renameField('Height', 'Shoulder')
     await settles()
 
-    expect(said).toStrictEqual([REFUSED.notAStencil])
+    expect(said).toStrictEqual([ERRORS.notAStencil])
   })
 
   it('says nothing was renamed where the file moved past the stencil that was read', async () => {
@@ -239,13 +239,13 @@ describe('a field renamed in a stencil', () => {
         decks: ['Animals.md'],
         cards: 3,
         notWritten: [],
-        refusal: null,
+        error: null,
         changed: true,
         at: '',
       },
     })
 
-    tab.namesField('Height', 'Shoulder')
+    tab.renameField('Height', 'Shoulder')
     await settles()
 
     expect(said).toStrictEqual([words.notRenamed])
@@ -264,7 +264,7 @@ describe('a field carried in a stencil', () => {
   it('lands where it was let go', async () => {
     const { tab } = await open()
 
-    tab.movesField('Life span', null)
+    tab.moveField('Life span', null)
 
     expect(tab.stencil.value.fields).toStrictEqual(['Height', 'Life span'])
   })
@@ -272,7 +272,7 @@ describe('a field carried in a stencil', () => {
   it('leaves the first field first, wherever it was let go', async () => {
     const { tab } = await open()
 
-    tab.movesField('Height', null)
+    tab.moveField('Height', null)
 
     expect(tab.stencil.value.fields).toStrictEqual(['Height', 'Life span'])
   })
@@ -280,8 +280,8 @@ describe('a field carried in a stencil', () => {
   it('lands nothing above the first field', async () => {
     const { tab } = await open()
 
-    tab.addsField('Weight')
-    tab.movesField('Weight', 'Height')
+    tab.addField('Weight')
+    tab.moveField('Weight', 'Height')
 
     expect(tab.stencil.value.fields).toStrictEqual(['Height', 'Life span', 'Weight'])
   })
@@ -291,7 +291,7 @@ describe('a stencil whose file moved past what was read', () => {
   it('is stale once the write comes back saying the file changed', async () => {
     const { stencils, tab } = await open({ changed: true })
 
-    tab.addsField('Weight')
+    tab.addField('Weight')
     await stencils.flush()
 
     expect(tab.shown.value.state).toBe('stale')
@@ -300,9 +300,9 @@ describe('a stencil whose file moved past what was read', () => {
   it('keeps what the person wrote when they say so', async () => {
     const { stencils, tab, written } = await open({ changed: true })
 
-    tab.addsField('Weight')
+    tab.addField('Weight')
     await stencils.flush()
-    tab.keep()
+    tab.keepMine()
     await settles()
 
     expect(written).toHaveLength(2)
@@ -311,31 +311,31 @@ describe('a stencil whose file moved past what was read', () => {
 
 describe('a stencil the vault refused', () => {
   it('says the note is not a stencil where that is what it is', async () => {
-    const { tab } = await open({ refusal: 'notAStencil' })
+    const { tab } = await open({ error: 'notAStencil' })
 
-    expect(tab.saying.value).toBe(words.notAStencil)
+    expect(tab.errorMessage.value).toBe(words.notAStencil)
     expect(tab.stencil.value.fields).toStrictEqual([])
   })
 
   it('says nothing where the stencil was read', async () => {
     const { tab } = await open()
 
-    expect(tab.saying.value).toBe('')
+    expect(tab.errorMessage.value).toBe('')
   })
 
   it('says the vault could not be reached, where the read reached nothing', async () => {
     const { tab } = await open({ unreachable: true })
 
-    expect(tab.saying.value).toBe(words.unreachable)
+    expect(tab.errorMessage.value).toBe(words.unreachable)
   })
 
   it('says the file could not be written, where that is what was refused', async () => {
     const { stencils, tab } = await open({ wrote: 'unreadable' })
 
-    tab.addsField('Weight')
+    tab.addField('Weight')
     await stencils.kept.settles(stencils.all()[0] ?? '')
 
-    expect(tab.saying.value).toBe(words.notSaved)
+    expect(tab.errorMessage.value).toBe(words.notSaved)
   })
 })
 

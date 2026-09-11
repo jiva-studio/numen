@@ -1,11 +1,11 @@
 /**
  * Save timers, settling coordination, and read/write execution for open notes.
  */
-import type { Address, NoteResult, RefusalReason } from '../shared/core'
+import type { ErrorCode, LinkAddress, NoteResult } from '../shared/core'
 import type { Notes } from './noteTypes'
-import type { Event, NoteBaseline, Refusal } from './tab'
+import type { Event, NoteBaseline, NoteErrorCode } from './tab'
 
-export const refusalOf = (from: RefusalReason): Refusal => {
+export const errorOf = (from: ErrorCode): NoteErrorCode => {
   if (from === 'deckTooLarge') return 'tooLarge'
   if (from === 'notAStencil' || from === 'notADeck' || from === 'notAPreset') return 'notANote'
   return from === 'missing' || from === 'occupied' || from === 'unnameable' ? 'unreadable' : from
@@ -15,7 +15,7 @@ export function createNoteQueue(
   core: Notes,
   turn: (id: string, event: Event) => void,
   hasTab: (id: string) => boolean,
-  setAddress: (id: string, address: Address | null) => void,
+  setAddress: (id: string, address: LinkAddress | null) => void,
   onClosingWritten: (id: string) => void,
 ) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -54,21 +54,21 @@ export function createNoteQueue(
     try {
       answered = await core.read(path)
     } catch {
-      turn(id, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
+      turn(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
       return
     }
-    const link = answered.link ?? answered.address
+    const link = answered.link
     if (link) setAddress(id, link)
     else setAddress(id, null)
     turn(id, {
       kind: 'read',
       generation,
       answer:
-        answered.refusal === null
+        !answered.error
           ? { kind: 'body', body: answered.body, at: answered.at ?? '' }
-          : answered.refusal === 'missing'
+          : answered.error === 'missing'
             ? { kind: 'missing' }
-            : { kind: 'refused', refusal: refusalOf(answered.refusal) },
+            : { kind: 'error', error: errorOf(answered.error) },
     })
   }
 
@@ -82,16 +82,16 @@ export function createNoteQueue(
     try {
       answered = await core.write(path, body, seen)
     } catch {
-      turn(id, { kind: 'written', answer: { kind: 'refused', refusal: 'unreachable' } })
+      turn(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })
       return
     }
     turn(id, {
       kind: 'written',
       answer: answered.changed
         ? { kind: 'changed' }
-        : answered.refusal === null
+        : !answered.error
           ? { kind: 'ok', at: answered.at ?? '' }
-          : { kind: 'refused', refusal: refusalOf(answered.refusal) },
+          : { kind: 'error', error: errorOf(answered.error) },
     })
     onClosingWritten(id)
   }

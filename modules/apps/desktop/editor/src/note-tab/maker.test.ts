@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { CREATABLE, UNTITLED, noteCreator } from './maker'
-import type { Core, MakeResult, Link, NewNote } from '../shared/core'
+import type { Core, CreateResult, ErrorCode, Link, NewNote } from '../shared/core'
 import { writer } from '../shared/testing/writer'
 
 const pathOf = (note: NewNote): string =>
@@ -18,17 +18,17 @@ const pathOf = (note: NewNote): string =>
  * A core that keeps what it was asked to write and answers what a test told it
  * to, falling back on making the note.
  */
-function fake(answers: MakeResult[] = [], refusals: MakeResult['refusal'][] = []) {
+function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
   const asked: NewNote[] = []
   const joined: { path: string; link: Link }[] = []
   const core = {
-    create: async (note: NewNote): Promise<MakeResult> => {
+    create: async (note: NewNote): Promise<CreateResult> => {
       asked.push(note)
-      return answers.shift() ?? { path: pathOf(note), refusal: null }
+      return answers.shift() ?? { path: pathOf(note), error: null }
     },
-    join: async (path: string, link: Link): Promise<MakeResult['refusal']> => {
+    join: async (path: string, link: Link): Promise<ErrorCode | null> => {
       joined.push({ path, link })
-      return refusals.shift() ?? null
+      return errors.shift() ?? null
     },
   } as unknown as Core
   return { core, asked, joined, ...writer() }
@@ -77,8 +77,8 @@ describe('making a note in a seat of another', () => {
 
   it('asks for the next name for as long as the vault says the last one is taken', async () => {
     const { core, asked, says, last } = fake([
-      { path: '', refusal: 'occupied' },
-      { path: '', refusal: 'occupied' },
+      { path: '', error: 'occupied' },
+      { path: '', error: 'occupied' },
     ])
     const making = noteCreator(core, says)
     const made = await making.make('Ontology.md', 'child')
@@ -102,14 +102,14 @@ describe('making a note in a seat of another', () => {
     ])
   })
 
-  it('says a refusal that is not a name already taken, and asks for nothing more', async () => {
-    const { core, asked, says, told } = fake([{ path: '', refusal: 'notANote' }])
+  it('says an error that is not a name already taken, and asks for nothing more', async () => {
+    const { core, asked, says, told } = fake([{ path: '', error: 'notANote' }])
     const making = noteCreator(core, says)
 
     expect(await making.make('Ontology.md', 'child')).toBeNull()
     expect(asked).toHaveLength(1)
     expect(told.at(-1)?.text).not.toBe('')
-    expect(told.at(-1)?.kind).toBe('refusal')
+    expect(told.at(-1)?.kind).toBe('error')
   })
 
   it('says a core that could not be reached', async () => {
@@ -172,6 +172,6 @@ describe('joining two notes that are both there', () => {
 
     expect(await making.join('Ontology.md', 'Entropy.md', 'jump')).toBe(false)
     expect(told.at(-1)?.text).not.toBe('')
-    expect(told.at(-1)?.kind).toBe('refusal')
+    expect(told.at(-1)?.kind).toBe('error')
   })
 })

@@ -44,17 +44,17 @@ export interface ConflictPrompt {
  * neither. A screen tells its files apart in its own words; these are the two
  * this folder has something to do about.
  */
-export type FileConflict = 'gone' | 'stale' | 'overtaken' | null
+export type FileConflict = 'gone' | 'stale' | null
 
 /** Which conflict a screen's word names, and nothing for every other word. */
 export const conflictIn = (state: string): FileConflict =>
-  state === 'gone' || state === 'stale' ? state : state === 'overtaken' ? 'stale' : null
+  state === 'gone' || state === 'stale' ? state : null
 
 /**
  * Answering the application when it asks the window to write out what it holds.
  *
  * Whatever holds unwritten work adds itself, and every one of them is written
- * before the answer goes back. A refusal is not a reason to keep the window
+ * before the answer goes back. An error is not a reason to keep the window
  * open: the person asked for it to go. A conflict is: the text is still here,
  * and nothing but the person decides where it goes.
  */

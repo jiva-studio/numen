@@ -14,7 +14,7 @@ import {
   type Move,
   type Tab,
 } from "./tab"
-import type { Address } from "../shared/core"
+import type { LinkAddress } from "../shared/core"
 import type { OpenNote, Notes, OpenNotesOptions } from "./noteTypes"
 import { createNoteQueue } from "./queue"
 import { createConflictCoordinator } from "./conflict"
@@ -28,7 +28,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
 
   const tabs = ref(new Map<string, Tab>())
   const bodies = ref(new Map<string, string>())
-  const addresses = ref(new Map<string, Address>())
+  const addresses = ref(new Map<string, LinkAddress>())
 
   const told = new Set<string>()
   const closing = new Map<string, (gone: boolean) => void>()
@@ -86,20 +86,19 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
 
   const shown = (id: string): OpenNote => {
     const tab = tabs.value.get(id)
-    const err = tab?.refused ?? null
+    const err = tab?.error ?? null
     return {
       path: tab?.path ?? id,
       body: bodies.value.get(id) ?? "",
       state: tab ? stateOf(tab) : "loading",
       error: err,
-      refusal: err,
     }
   }
 
   const all = (): readonly string[] => [...tabs.value.keys()]
 
   function carry(id: string, next: ReturnType<typeof tabAfter>): void {
-    tabs.value.set(id, next.tab)
+    tabs.value = new Map(tabs.value).set(id, next.tab)
     for (const effect of next.effects) act(id, effect)
 
     const held = next.effects.some((effect) => effect.kind === "hold")
@@ -166,12 +165,10 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     keep: conflicts.keep,
     take: conflicts.take,
     shown,
-    link: (id: string): Address | null => addresses.value.get(id) ?? null,
-    address: (id: string): Address | null => addresses.value.get(id) ?? null,
+    link: (id: string): LinkAddress | null => addresses.value.get(id) ?? null,
     all,
-    saying: conflicts.saying,
+    getErrorMessage: conflicts.getErrorMessage,
     stale: conflicts.stale,
-    overtaken: conflicts.stale,
     flush,
     tabs: tabs as Ref<Map<string, Tab>>,
   }

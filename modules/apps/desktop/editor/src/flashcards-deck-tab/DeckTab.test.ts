@@ -8,7 +8,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { RefusalReason } from '../shared/core'
+import type { ErrorCode } from '../shared/core'
 import type { Cards, VaultCard, Problem } from '../shared/flashcards/cards'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../flashcards-preset-tab/core'
 import { fileOpeners } from '../shared/tabs/openers'
@@ -75,7 +75,7 @@ const drawn = async (
     /** What is said against what the deck names. */
     saying?: string
     /** What putting the deck on a preset is refused for. */
-    notScheduled?: RefusalReason
+    notScheduled?: ErrorCode
   } = {},
 ) => {
   const core: Cards = {
@@ -83,13 +83,13 @@ const drawn = async (
       stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
       held: 1,
     }),
-    createDeck: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
+    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
+    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
     renameField: async () => ({
       decks: [],
       cards: 0,
       notWritten: [],
-      refusal: null,
+      error: null,
       changed: false,
       at: '',
     }),
@@ -103,13 +103,13 @@ const drawn = async (
         tail: '',
         problems,
       },
-      refusal: null,
+      error: null,
       at: 'read',
       bound: 0,
     }),
-    writeDeck: async () => ({ refusal: null, changed: false, at: 'written', bound: 0 }),
-    readStencil: async () => ({ stencil: null, refusal: 'missing', at: '' }),
-    writeStencil: async () => ({ refusal: null, changed: false, at: '' }),
+    writeDeck: async () => ({ error: null, changed: false, at: 'written', bound: 0 }),
+    readStencil: async () => ({ stencil: null, error: 'missing', at: '' }),
+    writeStencil: async () => ({ error: null, changed: false, at: '' }),
   }
 
   /** Which preset the deck names, as the vault answers it. */
@@ -120,7 +120,7 @@ const drawn = async (
   const presets: Presets = {
     read: async (path) => ({
       preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
-      refusal: null,
+      error: null,
       at: '',
       bounds: NO_BOUNDS,
     }),
@@ -129,7 +129,7 @@ const drawn = async (
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
-    makes: async () => ({ path: '', refusal: null }),
+    makes: async () => ({ path: '', error: null }),
     scheduling: async () => ({
       preset: {
         path: by,
@@ -138,19 +138,19 @@ const drawn = async (
         problems: scheduling.saying ? [scheduling.saying] : [],
         ...SCHEDULING,
       },
-      refusal: null,
+      error: null,
       at: '',
       bounds: NO_BOUNDS,
     }),
     schedules: async (_deck, preset) => {
       put.push(preset)
       if (scheduling.notScheduled) {
-        return { refusal: scheduling.notScheduled, changed: false, at: '' }
+        return { error: scheduling.notScheduled, changed: false, at: '' }
       }
       by = preset
-      return { refusal: null, changed: false, at: 'scheduled' }
+      return { error: null, changed: false, at: 'scheduled' }
     },
-    write: async () => ({ refusal: null, changed: false, at: '' }),
+    write: async () => ({ error: null, changed: false, at: '' }),
     curve: async () => ({
       goal: 'minutes',
       grid: [],
@@ -264,7 +264,7 @@ describe('a mark on a tile', () => {
     const { window, tab } = await drawn([stencilless])
     const second = tab.deck.value.cards[1]?.id ?? ''
 
-    tab.removes(second)
+    tab.removeCard(second)
     await settles()
 
     expect(window.findAll('[data-wrong]')).toHaveLength(0)
@@ -275,7 +275,7 @@ describe('a mark on a tile', () => {
     const first = tab.deck.value.cards[0]?.id ?? ''
     const second = tab.deck.value.cards[1]?.id ?? ''
 
-    tab.removes(first)
+    tab.removeCard(first)
     await settles()
 
     expect(tileOf(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
@@ -346,7 +346,7 @@ describe('the question a file that changed on disk puts', () => {
   it('is not drawn while the deck is as the file has it', async () => {
     const { window } = await drawn()
 
-    expect(window.text()).not.toContain(words.overtaken)
+    expect(window.text()).not.toContain(words.stale)
   })
 })
 

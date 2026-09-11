@@ -32,7 +32,7 @@ export function useWindowNotices({
       log.messages.value,
       {
         unwatched: window.unwatched.value,
-        unread: window.trouble.value,
+        unread: window.error.value,
         lost: window.lost.value || settings.dressed.lost.value,
         reading: window.indexing.value,
         holds: window.holds.value,

@@ -12,7 +12,6 @@ export const WORDS = {
   newField: 'Field 1',
   /** The two the file puts to the person, and the two ways out. */
   stale: 'This file changed on disk, so it stopped saving.',
-  overtaken: 'This file changed on disk, so it stopped saving.',
   gone: 'This file is no longer in the vault, so saving stopped. What is here is still yours.',
   makeAgain: 'make it again',
   keep: 'Keep mine',

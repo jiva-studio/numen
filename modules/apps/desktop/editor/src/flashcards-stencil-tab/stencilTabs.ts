@@ -3,7 +3,7 @@
  */
 import { computed } from 'vue'
 import type { PlexShowing } from '@numen/ui'
-import type { Move } from '../shared/core'
+import type { PathRename } from '../shared/core'
 import type { Cards } from '../shared/flashcards/cards'
 import type { Store } from '../shared/command/deps'
 import { openNotes } from '../note-tab/notes'
@@ -56,13 +56,10 @@ export function useStencilTabs(
       shown: computed(() => store.shown(id)),
       stencil: computed(() => fields.getStencil(id)),
       marks: computed(() => fields.getMarks(id)),
-      saying: computed(() => wire.getSaying(store.where(id), store.shown(id).refusal)),
+      errorMessage: computed(() => wire.getErrorMessage(store.where(id), store.shown(id).error)),
       ...fields.actionsFor(id),
-      keep: () => store.keep(id),
       keepMine: () => store.keep(id),
-      take: () => store.take(id),
       takeFile: () => store.take(id),
-      shuts: closeTab,
       close: closeTab,
     }
   }
@@ -73,7 +70,7 @@ export function useStencilTabs(
   /** The tab holding a stencil lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
     const tab = handle.each<StencilTabState>(STENCIL).find((one) => one.state.id === id)
-    tab?.state.shuts(tab.id)
+    tab?.state.close(tab.id)
   }
 
   /** The stencils, as a command reaches the ones the window has open. */
@@ -81,7 +78,7 @@ export function useStencilTabs(
     has: (id) => store.all().includes(id),
     where: (id) => store.where(id),
     called: (id) => called(store.where(id)),
-    asking: (id) => (store.stale?.(id) ?? store.overtaken(id)) !== null,
+    asking: (id) => store.stale(id) !== null,
     settles: (id) => store.settles(id),
     shuts,
     holding: (path) => store.all().find((id) => store.where(id) === path) ?? null,
@@ -118,7 +115,11 @@ export function useStencilTabs(
     draws: StencilTab,
     identity: (id) => id,
     shuts: (one, id) => {
-      one.shuts(id)
+      one.close(id)
+      return false
+    },
+    onClose: (one, id) => {
+      one.close(id)
       return false
     },
     gone: () => {},
@@ -132,7 +133,7 @@ export function useStencilTabs(
 
   puts.holds('stencil', shows)
 
-  const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
+  const changed = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     wire.movePaths(renamed)
     store.changed(paths, renamed)
   }

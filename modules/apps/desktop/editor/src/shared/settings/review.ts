@@ -6,7 +6,7 @@
  * installation is doing and choosing another hour writes it.
  */
 import { ref } from 'vue'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import type { MessageWriter } from '../notices/messages'
 
 /** The hour an installation nobody has configured begins the day at. */
@@ -82,14 +82,14 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
     try {
       failed = await core.choosesReviewing(hour)
     } catch (thrown) {
-      failed = troubleWords(thrown)
+      failed = formatErrorMessage(thrown)
     }
     if (!failed) {
       // The hour moved the boundary, and the day standing is the vault's to say.
       await counted()
       return
     }
-    said(`${words.unturned} ${failed}`, 'refusal')
+    said(`${words.unturned} ${failed}`, 'error')
     starts.value = was
   }
 

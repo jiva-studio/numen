@@ -3,16 +3,17 @@
  * them.
  */
 
-/** A note that is no longer where it was, and where it now is. */
-export interface NoteMove {
+/** A note or file that is no longer where it was, and where it now is. */
+export interface PathRename {
   readonly from: string
   readonly to: string
 }
-export type Move = NoteMove
+export type Move = PathRename
 
-/** Where a note went, and nothing where none of these moved it. */
-export const movedTo = (renamed: readonly NoteMove[], path: string): string =>
+/** Where a file went, and nothing where none of these moved it. */
+export const getRenamedPath = (renamed: readonly PathRename[], path: string): string =>
   renamed.find((one) => one.from === path)?.to ?? ''
+export const movedTo = getRenamedPath
 
 /**
  * A run of text, by where it begins and where it ends. What it counts in is the
@@ -33,7 +34,6 @@ export interface NoteEdit {
   readonly span: Span
   readonly text: string
   readonly isComplete: boolean
-  readonly done: boolean
 }
 
 /** Where a note joined to the note in focus sits around it. */
@@ -59,7 +59,6 @@ export interface Neighbour {
   readonly through: string
   /** Whether both notes named the relationship. */
   readonly isMutual: boolean
-  readonly mutual: boolean
 }
 
 /**
@@ -89,13 +88,12 @@ export interface NoteHeading {
 export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
 
 /**
- * What a read or a write came back with. A refusal carries no body, and the
+ * What a read or a write came back with. An error carries no body, and the
  * words for one belong to whatever shows it.
  */
 export interface NoteResult {
   body: string
   error?: ErrorCode | null
-  refusal?: RefusalReason | null
   /** Where a link note points, and nothing on every other note. */
   link?: LinkAddress
 }
@@ -123,8 +121,6 @@ export type ErrorCode =
   | 'notADeck'
   | 'deckTooLarge'
   | 'notAPreset'
-export type NoteRefusalReason = ErrorCode
-export type RefusalReason = ErrorCode
 
 /** A note to make: what it is called, where it goes, and what it arrives joined to. */
 export interface NewNote {
@@ -162,7 +158,6 @@ export interface CreateResult {
   /** Where the file is filed. Empty when nothing was made. */
   path: string
   error?: ErrorCode | null
-  refusal?: RefusalReason | null
 }
 export type MakeResult = CreateResult
 
@@ -176,14 +171,13 @@ export interface RenameResult {
   title: string
   /** Whether the rename wrote the title into the frontmatter of the note. */
   hasFrontmatter: boolean
-  frontmatter: boolean
+  frontmatter?: boolean
   /** What the file did. Null when it stayed where it was. */
   moved: MoveResult | null
   error?: ErrorCode | null
-  refusal?: RefusalReason | null
   /** The note holds prose nobody here has seen, and nothing was written. */
   hasChanged: boolean
-  changed: boolean
+  changed?: boolean
 }
 
 /**
@@ -204,5 +198,4 @@ export interface RemoveResult {
   /** The notes whose links pointed at it and now reach nothing. */
   dangling: readonly string[]
   error?: ErrorCode | null
-  refusal?: RefusalReason | null
 }

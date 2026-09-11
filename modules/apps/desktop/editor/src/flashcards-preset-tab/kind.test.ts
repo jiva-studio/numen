@@ -22,7 +22,7 @@ import {
   type WriteResult,
 } from './core'
 import { BOUNDS } from './drawn'
-import type { RefusalReason } from '../shared/core'
+import type { ErrorCode } from '../shared/core'
 import type { WindowHandle } from '../shared/tabs/windowTabs'
 import type { FileOpeners } from '../shared/tabs/openers'
 import { WORDS as words } from './words'
@@ -98,18 +98,18 @@ const opened = async (
         stops: StopReason.NOTHING,
         stopsOn: StopReason.NOTHING,
       },
-      refusal: null,
+      error: null,
       at: 'one',
       bounds: BOUNDS,
       ...reading(times++),
     }),
-    scheduling: async () => ({ preset: null, refusal: null, at: '', bounds: NO_BOUNDS }),
+    scheduling: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
-    makes: async () => ({ path: '', refusal: null }),
-    schedules: async () => ({ refusal: null, changed: false, at: '' }),
+    makes: async () => ({ path: '', error: null }),
+    schedules: async () => ({ error: null, changed: false, at: '' }),
     write: async (_path, put) => {
       written.push(put)
-      return { refusal: null, changed: false, at: 'two', ...(await writing(writes++)) }
+      return { error: null, changed: false, at: 'two', ...(await writing(writes++)) }
     },
     curve: async (_path, put) => {
       asked.push(put.goal)
@@ -162,18 +162,18 @@ const opening = async (file: Partial<Settings>) => {
           stops: StopReason.NOTHING,
           stopsOn: StopReason.NOTHING,
         },
-        refusal: null,
+        error: null,
         at: 'one',
         bounds: BOUNDS,
       }
     },
-    scheduling: async () => ({ preset: null, refusal: null, at: '', bounds: NO_BOUNDS }),
+    scheduling: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
-    makes: async () => ({ path: '', refusal: null }),
-    schedules: async () => ({ refusal: null, changed: false, at: '' }),
+    makes: async () => ({ path: '', error: null }),
+    schedules: async () => ({ error: null, changed: false, at: '' }),
     write: async (_path, put) => {
       written.push(put)
-      return { refusal: null, changed: false, at: 'two' }
+      return { error: null, changed: false, at: 'two' }
     },
     curve: async () => curve,
   }
@@ -429,44 +429,44 @@ describe('a preset no tab has open', () => {
 })
 
 // A person who is told what happened can do something about it. One sentence
-// over every refusal names none of them.
-describe('what the tab says it was refused for', () => {
-  const refusals: readonly RefusalReason[] = ['missing', 'tooLarge', 'notANote', 'unreadable']
+// over every error names none of them.
+describe('what the tab says it encountered as an error', () => {
+  const errors: readonly ErrorCode[] = ['missing', 'tooLarge', 'notANote', 'unreadable']
 
-  it('is a sentence of its own for each refusal a read answers', async () => {
+  it('is a sentence of its own for each error a read answers', async () => {
     const said: string[] = []
-    for (const refusal of refusals) {
-      const { state } = await opened({}, curve, () => ({ preset: null, refusal }))
+    for (const error of errors) {
+      const { state } = await opened({}, curve, () => ({ preset: null, error }))
       said.push(state.saying.value)
     }
     expect(said.every((one) => one !== '')).toBe(true)
-    expect(new Set(said).size).toBe(refusals.length)
+    expect(new Set(said).size).toBe(errors.length)
   })
 
-  it('is a sentence of its own for each refusal a write answers', async () => {
+  it('is a sentence of its own for each error a write answers', async () => {
     const said: string[] = []
-    for (const refusal of refusals) {
-      const { state } = await opened({}, curve, () => ({}), () => ({ refusal }))
+    for (const error of errors) {
+      const { state } = await opened({}, curve, () => ({}), () => ({ error }))
       state.types('newADay', 4)
       state.settles()
       await after()
       said.push(state.saying.value)
     }
     expect(said.every((one) => one !== '')).toBe(true)
-    expect(new Set(said).size).toBe(refusals.length)
+    expect(new Set(said).size).toBe(errors.length)
   })
 
   // The settings are in the tab and nowhere else once a write is refused, and
   // a person deciding what to do next has to be told that.
   it('says the settings are still here where a write was refused', async () => {
-    for (const refusal of refusals) {
-      expect(words.notSaved(refusal)).toContain('still here')
+    for (const error of errors) {
+      expect(words.notSaved(error)).toContain('still here')
     }
   })
 
-  it('says the refusal of a read and the refusal of a write in different words', async () => {
-    for (const refusal of refusals) {
-      expect(words.refused(refusal)).not.toBe(words.notSaved(refusal))
+  it('says the error of a read and the error of a write in different words', async () => {
+    for (const error of errors) {
+      expect(words.notRead(error)).not.toBe(words.notSaved(error))
     }
   })
 })
@@ -481,7 +481,7 @@ describe('a curve nobody answers', () => {
   })
 
   it('is what a file refused leaves, so no answer is waited on', async () => {
-    const { state } = await opened({}, curve, () => ({ preset: null, refusal: 'notAPreset' }))
+    const { state } = await opened({}, curve, () => ({ preset: null, error: 'notAPreset' }))
     expect(state.waiting.value).toBe(false)
     expect(state.saying.value).not.toBe('')
   })
@@ -508,7 +508,7 @@ describe('what a tab still owes the file', () => {
   })
 
   it('keeps the tab open where the write was refused, and says why', async () => {
-    const { state, closed } = await opened({}, curve, () => ({}), () => ({ refusal: 'notAPreset' }))
+    const { state, closed } = await opened({}, curve, () => ({}), () => ({ error: 'notAPreset' }))
     state.types('newADay', 4)
     state.shuts('Steady.md')
     await after()
@@ -517,7 +517,7 @@ describe('what a tab still owes the file', () => {
   })
 
   it('lets the tab go the second time it is asked, the person having been told', async () => {
-    const { state, closed } = await opened({}, curve, () => ({}), () => ({ refusal: 'notAPreset' }))
+    const { state, closed } = await opened({}, curve, () => ({}), () => ({ error: 'notAPreset' }))
     state.types('newADay', 4)
     state.shuts('Steady.md')
     await after()
@@ -622,7 +622,7 @@ describe('a file read again', () => {
               stopsOn: StopReason.NOTHING,
             },
           }
-        : { preset: null, refusal: 'notAPreset' },
+        : { preset: null, error: 'notAPreset' },
     )
     expect(state.problems.value).toHaveLength(1)
 

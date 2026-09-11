@@ -4,7 +4,6 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
 import { same, spotOf, spotsIn } from './places'
-import type { Span } from '../shared/core'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { AGENT } from '../shared/tabs/workspace'
 import AgentTab from './AgentTab.vue'

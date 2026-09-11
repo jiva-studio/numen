@@ -3,7 +3,7 @@
  */
 
 /** Why writing or reading is impossible. */
-export type Refusal =
+export type NoteErrorCode =
   /** The file, or the body handed over, is past the ceiling. */
   | 'tooLarge'
   /** The core would not take the body it was given. */
@@ -18,9 +18,9 @@ export type Refusal =
   | 'unreachable'
 
 /**
- * The refusals a keystroke is worth trying again after.
+ * The errors a keystroke is worth trying again after.
  */
-export const MENDABLE_REFUSALS: readonly Refusal[] = ['tooLarge', 'bodyRefused', 'unreachable']
+export const MENDABLE_ERRORS: readonly NoteErrorCode[] = ['tooLarge', 'bodyRefused', 'unreachable']
 
 /** A note that moved to a new path. */
 export interface Move {
@@ -60,11 +60,10 @@ export interface Tab {
   /** The generation of the newest read issued. */
   readonly reading: number
   /** Why writing or reading is impossible, or nothing. */
-  readonly error?: Refusal | null
-  readonly refused: Refusal | null
+  readonly error: NoteErrorCode | null
 }
 
-export type State = 'loading' | 'stuck' | 'gone' | 'stale' | 'saving' | 'unsaved' | 'clean' | 'overtaken'
+export type State = 'loading' | 'stuck' | 'gone' | 'stale' | 'saving' | 'unsaved' | 'clean'
 
 /** Dirty is what is shown differing from what was written. */
 export const dirty = (tab: Tab): boolean => tab.shown !== tab.written
@@ -73,7 +72,7 @@ export const dirty = (tab: Tab): boolean => tab.shown !== tab.written
  * The predicates are read in order, so a tab is in exactly one state.
  */
 export const stateOf = (tab: Tab): State => {
-  if (tab.refused) return 'stuck'
+  if (tab.error) return 'stuck'
   if (tab.written === null) return 'loading'
   if (tab.isDeleted) return 'gone'
   if (tab.isStale) return 'stale'
@@ -89,7 +88,6 @@ const MARKS: Record<State, string | undefined> = {
   stuck: 'stuck',
   gone: 'gone',
   stale: 'stale',
-  overtaken: 'stale',
   unsaved: 'unsaved',
   saving: 'unsaved',
   loading: undefined,
@@ -102,13 +100,13 @@ export const markOf = (state: State): string | undefined => MARKS[state]
 export type ReadResult =
   | { readonly kind: 'body'; readonly body: string; readonly at: FilePath }
   | { readonly kind: 'missing' }
-  | { readonly kind: 'refused'; readonly refusal: Refusal }
+  | { readonly kind: 'error'; readonly error: NoteErrorCode }
 
 /** What a write answers. */
 export type WriteResult =
   | { readonly kind: 'ok'; readonly at: FilePath }
   | { readonly kind: 'changed' }
-  | { readonly kind: 'refused'; readonly refusal: Refusal }
+  | { readonly kind: 'error'; readonly error: NoteErrorCode }
 
 /** What a tab is told about. */
 export type Event =
@@ -140,7 +138,7 @@ export type Effect =
   | { readonly kind: 'disarm' }
   | { readonly kind: 'replace'; readonly body: string }
   | { readonly kind: 'hold' }
-  | { readonly kind: 'say'; readonly refusal: Refusal }
+  | { readonly kind: 'say'; readonly error: NoteErrorCode }
   | { readonly kind: 'close' }
 
 export interface Transition {
@@ -169,7 +167,7 @@ export const opening = (path: string): Transition => ({
     isStale: false,
     since: null,
     reading: 1,
-    refused: null,
+    error: null,
   },
   effects: [{ kind: 'read', path, generation: 1 }],
 })

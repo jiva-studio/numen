@@ -5,7 +5,7 @@
  * for the whole window, and `showing.ts` tells every plex when to ask again.
  */
 import { ref } from 'vue'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import { answerGuard } from '../shared/questions'
 import { movedTo, type Neighbourhood, type Move } from '../shared/core'
 import { alike } from './picture'
@@ -28,7 +28,7 @@ export function usePlexView(core: Neighbours) {
    */
   const here = ref('')
   /** What this plex could not show, in words the window puts up for it. */
-  const trouble = ref('')
+  const error = ref('')
 
   /** Two answers can be in flight — a click while a change is being followed. */
   const asks = answerGuard()
@@ -42,17 +42,17 @@ export function usePlexView(core: Neighbours) {
       if (!answer.focus.path) {
         // The vault no longer holds it. What is on screen stays, and following
         // goes on, so putting the file back brings it straight back.
-        trouble.value = `${path} is not in the vault`
+        error.value = `${path} is not in the vault`
         return
       }
-      trouble.value = ''
+      error.value = ''
       here.value = path
       // The picture on screen is kept where the answer draws the same one, so
       // a vault that changed elsewhere leaves this plex standing.
       if (!alike(neighbourhood.value, answer)) neighbourhood.value = answer
-    } catch (error) {
+    } catch (thrown) {
       if (!mine.current) return
-      trouble.value = troubleWords(error)
+      error.value = formatErrorMessage(thrown)
     }
   }
 
@@ -72,5 +72,5 @@ export function usePlexView(core: Neighbours) {
     asks.close()
   }
 
-  return { neighbourhood, here, trouble, go, follows, close }
+  return { neighbourhood, here, error, go, follows, close }
 }

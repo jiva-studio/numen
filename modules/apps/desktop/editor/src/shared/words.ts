@@ -6,10 +6,10 @@
  * the palette, the commands, the corner, and the quit.
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
-import { ERRORS, REFUSED, VAULT_ERRORS, UNVAULTED } from './words/errors'
+import { ERRORS, VAULT_ERRORS } from './words/errors'
 import { FETCHED, MADE } from './words/artifacts'
 
-export { ERRORS, REFUSED, VAULT_ERRORS, UNVAULTED }
+export { ERRORS, VAULT_ERRORS }
 export { FETCHED, MADE }
 
 
@@ -176,15 +176,13 @@ export const WORDS = {
   asChild: 'Create it as a child',
   asParent: 'Create it as a parent',
   asJump: 'Create it as a jump',
-  /** What a command could not do, and what it left behind. */
-  refused: REFUSED,
-  unvaulted: UNVAULTED,
+  errors: ERRORS,
+  vaultErrors: VAULT_ERRORS,
   dangling: 'These notes link to nothing now:',
   /** The vault opens with no note at all. */
   nowhere: 'The vault has no note to open with',
   unanswered: 'that note changed on disk, and its tab is waiting for an answer',
   stale: 'that note changed on disk while this was asked, so nothing was written',
-  overtaken: 'that note changed on disk while this was asked, so nothing was written',
   /** A file landed where something of its name is filed, and stayed where it was. */
   occupied: 'something of that name is filed there, so the file stayed where it was',
   /** This build cannot do the run at all, and stops offering it. */

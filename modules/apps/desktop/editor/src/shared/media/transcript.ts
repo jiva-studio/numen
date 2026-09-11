@@ -7,7 +7,7 @@ import type { ArtifactStates } from '../artifacts'
 import type { Span } from '../note'
 import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import { answerGuard as latest } from '../questions'
 import { applyCues, same, spanCues, getText, type Cue } from './cues'
 import { createMediaTypeProbe, player, type MediaTypeProbe, type Player } from './player'
@@ -163,7 +163,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   /** Whether something is writing down what this recording says. */
   const working = ref(false)
   /** What this recording could not do, in words the tab puts up for it. */
-  const trouble = ref('')
+  const error = ref('')
   /** What the player could not do, while this is the recording it holds. */
   const broken = computed(() => (held.value ? through.failed.value : ''))
 
@@ -256,10 +256,10 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
       editable.value = spoke.editable
       // Words the person has typed and not yet had written stay on screen.
       if (!owed) prose.value = spoke.cues.length ? getText(spoke.cues) : spoke.prose
-      trouble.value = ''
-    } catch (error) {
+      error.value = ''
+    } catch (thrown) {
       if (!mine.lands()) return
-      trouble.value = troubleWords(error)
+      error.value = formatErrorMessage(thrown)
     }
   }
 
@@ -331,11 +331,11 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
       await recordings.writeTranscript(path, next)
       if (!open) return
       cues.value = next
-      trouble.value = ''
-    } catch (error) {
+      error.value = ''
+    } catch (thrown) {
       if (!open) return
       owed = true
-      trouble.value = troubleWords(error)
+      error.value = formatErrorMessage(thrown)
     } finally {
       writing = false
       // Typing that landed while the write was in the air is still owed.
@@ -380,9 +380,9 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
       const ms = await recordings.findCueTime(path, spans[0]!)
       if (!open || ms === null) return
       go(ms)
-    } catch (error) {
+    } catch (thrown) {
       if (!open) return
-      trouble.value = troubleWords(error)
+      error.value = formatErrorMessage(thrown)
     }
   }
 
@@ -453,7 +453,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     playsIn,
     reached,
     working,
-    trouble,
+    error,
     broken,
     go,
     goes,

@@ -175,7 +175,7 @@ export function useCommands(options: CommandsDepsOptions) {
     const invocation = commands.asks(id, at)
     if (invocation) return void does(invocation, doing, words)
     if (commands.open.value) return void (palette.setOpen ?? palette.shows)(false)
-    told(commands.refused(id, at), 'refusal')
+    told(commands.refused(id, at), 'error')
   }
 
   const onKeyDown = (event: KeyboardEvent) => {

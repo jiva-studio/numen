@@ -158,7 +158,7 @@ describe('a file that moved past what the tab read', () => {
    * what it has. A write presenting anything but the file as it stands is
    * refused.
    */
-  const overtaken = async () => {
+  const stale = async () => {
     let stands = HELD
     const wrote: string[] = []
     const reads = vi.fn()
@@ -180,43 +180,38 @@ describe('a file that moved past what the tab read', () => {
   }
 
   it('stops keeping, with nothing written', async () => {
-    const { held, wrote, reads } = await overtaken()
+    const { held, wrote, reads } = await stale()
 
     expect(held.isStale.value).toBe(true)
-    expect(held.stale.value).toBe(true)
-    expect(held.overtaken.value).toBe(true)
     expect(wrote).toStrictEqual([])
     expect(reads).not.toHaveBeenCalled()
   })
 
   it('writes what was typed where the person keeps theirs', async () => {
-    const { held, wrote, reads } = await overtaken()
+    const { held, wrote, reads } = await stale()
     await held.keep()
 
     expect(wrote).toStrictEqual([TYPED])
     expect(held.isStale.value).toBe(false)
-    expect(held.overtaken.value).toBe(false)
     expect(held.changed.value).toBe(false)
     expect(reads).toHaveBeenCalledTimes(1)
   })
 
   it("reads the file again where the person takes the file's", async () => {
-    const { held, wrote } = await overtaken()
+    const { held, wrote } = await stale()
     await held.take()
 
     expect(held.text.value).toBe(MOVED)
     expect(held.isStale.value).toBe(false)
-    expect(held.overtaken.value).toBe(false)
     expect(held.changed.value).toBe(false)
     expect(wrote).toStrictEqual([])
   })
 
   it('is written nowhere until the person answers', async () => {
-    const { held, wrote } = await overtaken()
+    const { held, wrote } = await stale()
     await held.keeps()
 
     expect(held.isStale.value).toBe(true)
-    expect(held.overtaken.value).toBe(true)
     expect(wrote).toStrictEqual([])
   })
 })

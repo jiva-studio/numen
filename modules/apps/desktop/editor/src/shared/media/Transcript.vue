@@ -27,7 +27,7 @@ const {
   timed,
   times: cues,
   transcribable,
-  trouble,
+  error,
   typing,
   written,
 } = props.state
@@ -55,7 +55,7 @@ function onUpdateModelValue(said: string) {
 }
 
 function onSave() {
-  props.state.keep()
+  void props.state.keep()
 }
 </script>
 
@@ -66,8 +66,8 @@ function onSave() {
     <p v-if="broken" class="transcript__note">
       {{ broken }}
     </p>
-    <p v-if="trouble" role="alert" class="transcript__note">
-      {{ trouble }}
+    <p v-if="error" role="alert" class="transcript__note">
+      {{ error }}
     </p>
 
     <!-- The button says there is nothing here, so the note says it only where

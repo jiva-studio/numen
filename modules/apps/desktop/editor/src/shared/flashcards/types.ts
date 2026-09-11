@@ -1,4 +1,4 @@
-import type { CreateResult, MakeResult, RefusalReason } from '../note'
+import type { CreateResult, ErrorCode } from '../note'
 import type { Surrounds } from './surrounds'
 
 /** One stencil as the list of them names it. */
@@ -115,7 +115,7 @@ export interface VaultStencil extends Surrounds {
 export interface DeckReadResult {
   /** Null when the deck was refused. */
   readonly deck: VaultDeck | null
-  readonly refusal: RefusalReason | null
+  readonly error: ErrorCode | null
   /** The file it came out of, to present at the next write. */
   readonly at: string
   /** The size a deck is read up to, in bytes. */
@@ -124,7 +124,7 @@ export interface DeckReadResult {
 
 /** What writing a deck came back with. */
 export interface DeckWriteResult {
-  readonly refusal: RefusalReason | null
+  readonly error: ErrorCode | null
   /** The file is no longer the one this caller read, and nothing was written. */
   readonly changed: boolean
   readonly at: string
@@ -135,13 +135,13 @@ export interface DeckWriteResult {
 export interface StencilReadResult {
   /** Null when the stencil was refused. */
   readonly stencil: VaultStencil | null
-  readonly refusal: RefusalReason | null
+  readonly error: ErrorCode | null
   readonly at: string
 }
 
 /** What writing a stencil came back with. */
 export interface StencilWriteResult {
-  readonly refusal: RefusalReason | null
+  readonly error: ErrorCode | null
   readonly changed: boolean
   readonly at: string
 }
@@ -161,7 +161,7 @@ export interface FieldRenameResult {
   readonly cards: number
   readonly notWritten: readonly UnwrittenDeck[]
   /** Set where nothing was renamed at all. */
-  readonly refusal: RefusalReason | null
+  readonly error: ErrorCode | null
   /** The stencil is no longer the one this caller read, and nothing was renamed. */
   readonly changed: boolean
   readonly at: string
@@ -175,12 +175,10 @@ export interface Cards {
   stencils(limit?: number): Promise<{ stencils: readonly StencilSummary[]; held: number }>
   /** A deck of no cards, filed in that folder under a name made from the title. */
   createDeck(title: string, folder: string): Promise<CreateResult>
-  makeDeck?(title: string, folder: string): Promise<MakeResult>
   /**
    * A stencil declaring those fields and showing no face, the same way.
    */
   createStencil(title: string, folder: string, fields: readonly string[]): Promise<CreateResult>
-  makeStencil?(title: string, folder: string, fields: readonly string[]): Promise<MakeResult>
   /**
    * A field of a stencil under another name, wherever that name is written.
    */

@@ -93,7 +93,6 @@ export const mapNoteResult = (from: {
   return {
     body: from.body ?? '',
     error,
-    refusal: error,
     changed: staleIn(from),
     ...(at === undefined ? {} : { at }),
     ...(link === undefined ? {} : { link }),

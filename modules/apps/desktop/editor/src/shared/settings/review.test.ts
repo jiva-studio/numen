@@ -126,7 +126,7 @@ describe('an hour chosen', () => {
     expect(hours.starts.value).toBe('04:00')
     expect(said).toHaveBeenLastCalledWith(
       'That setting could not be written: the file could not be written',
-      'refusal',
+      'error',
     )
   })
 
@@ -146,7 +146,7 @@ describe('an hour chosen', () => {
     expect(hours.starts.value).toBe(DEFAULT_STARTS)
     expect(said).toHaveBeenLastCalledWith(
       'That setting could not be written: numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
-      'refusal',
+      'error',
     )
   })
 })

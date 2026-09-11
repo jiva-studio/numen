@@ -5,7 +5,7 @@
  * one.
  */
 import { Code, ConnectError } from '@connectrpc/connect'
-import { Refusal } from '@numen/protocol'
+import { Refusal as ProtoErrorCode } from '@numen/protocol'
 
 /** What is said when nothing more precise can honestly be said. */
 const UNEXPECTED = 'something inside numen went wrong'
@@ -52,41 +52,33 @@ const CARRIES = new Set<Code>([
 
 /**
  * What a caught fault says to the person who was waiting for the answer.
- *
- * Anything at all can be thrown, so anything at all is taken. What the window
- * threw at itself is not the person's to read either, and lands on the same
- * words as a code nothing here produces.
  */
-export const troubleWords = (thrown: unknown): string => {
+export const formatErrorMessage = (thrown: unknown): string => {
   const fault = ConnectError.from(thrown)
   const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
   return carried || TROUBLE[fault.code]
 }
 
 /**
- * What each refusal the schema carries says.
- *
- * Keyed by the schema itself, so a refusal added to the protocol has no words
- * until someone writes them, and nothing that reads this compiles until
- * someone does.
+ * What each error code the schema carries says.
  */
-const REFUSED: Record<Refusal, string> = {
-  [Refusal.UNSPECIFIED]: 'that note could not be read, and numen did not say why',
-  [Refusal.MISSING]: 'that note is not in the vault',
-  [Refusal.NOT_A_NOTE]: 'that file is not a note',
-  [Refusal.NOT_TEXT]: 'that file is not text',
-  [Refusal.TOO_LARGE]: 'that note is longer than this reads',
-  [Refusal.BODY_REFUSED]: 'a note begins below its frontmatter, and that text begins with one',
-  [Refusal.UNREADABLE]: 'the frontmatter of that note cannot be read',
-  [Refusal.OCCUPIED]: 'something of that name is filed there already, so nothing was written',
-  [Refusal.UNNAMEABLE]: 'a note cannot be called that',
-  [Refusal.NOT_A_STENCIL]: 'that note is not a stencil',
-  [Refusal.NOT_A_DECK]: 'that note is not a deck',
-  [Refusal.DECK_TOO_LARGE]: 'that deck is longer than this reads',
-  [Refusal.NOT_A_PRESET]: 'that note is not a preset',
-  [Refusal.STALE]: 'that note changed on disk, so nothing was written',
+const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
+  [ProtoErrorCode.UNSPECIFIED]: 'that note could not be read, and numen did not say why',
+  [ProtoErrorCode.MISSING]: 'that note is not in the vault',
+  [ProtoErrorCode.NOT_A_NOTE]: 'that file is not a note',
+  [ProtoErrorCode.NOT_TEXT]: 'that file is not text',
+  [ProtoErrorCode.TOO_LARGE]: 'that note is longer than this reads',
+  [ProtoErrorCode.BODY_REFUSED]: 'a note begins below its frontmatter, and that text begins with one',
+  [ProtoErrorCode.UNREADABLE]: 'the frontmatter of that note cannot be read',
+  [ProtoErrorCode.OCCUPIED]: 'something of that name is filed there already, so nothing was written',
+  [ProtoErrorCode.UNNAMEABLE]: 'a note cannot be called that',
+  [ProtoErrorCode.NOT_A_STENCIL]: 'that note is not a stencil',
+  [ProtoErrorCode.NOT_A_DECK]: 'that note is not a deck',
+  [ProtoErrorCode.DECK_TOO_LARGE]: 'that deck is longer than this reads',
+  [ProtoErrorCode.NOT_A_PRESET]: 'that note is not a preset',
+  [ProtoErrorCode.STALE]: 'that note changed on disk, so nothing was written',
 }
 
-/** What one refusal says, and nothing where the answer was not refused. */
-export const refusalWords = (refusal: Refusal | undefined): string =>
-  refusal === undefined ? '' : REFUSED[refusal]
+/** What one error code says, and nothing where there was no error. */
+export const formatErrorCodeMessage = (errorCode: ProtoErrorCode | undefined): string =>
+  errorCode === undefined ? '' : ERROR_CODE_MESSAGES[errorCode]

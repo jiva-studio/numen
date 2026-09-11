@@ -46,7 +46,6 @@ export interface Settings {
   readonly counts: BudgetUnit
   readonly backlog: number
   readonly load: Load
-  readonly hasEvenLoad?: boolean
   readonly evenLoad: boolean
   readonly learned: Rule
   readonly interval: number
@@ -84,7 +83,6 @@ export const DEFAULTS: Settings = {
   counts: 'cards',
   backlog: 100,
   load: {},
-  hasEvenLoad: true,
   evenLoad: true,
   learned: 'interval',
   interval: 21,
@@ -150,7 +148,6 @@ export interface Point {
   readonly retained: number
   readonly owed: number
   readonly through: number
-  readonly isSufficient?: boolean
   readonly enough: boolean
   readonly closed: readonly BudgetName[]
   readonly clears: number

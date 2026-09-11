@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { RefusalReason } from '../shared/core'
+import type { ErrorCode } from '../shared/core'
 import type { Cards, VaultCard, Problem } from '../shared/flashcards/cards'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../flashcards-preset-tab/core'
 import { fileOpeners } from '../shared/tabs/openers'
@@ -55,7 +55,7 @@ const calling = (card: { values: readonly { field: string; text: string }[] }): 
 /** A vault holding one deck, writing down every write it was asked for. */
 const vault = (
   answers: {
-    refusal?: RefusalReason
+    error?: ErrorCode
     problems?: readonly Problem[]
     bound?: number
     /** The write answers that the file moved past what the tab read. */
@@ -67,7 +67,7 @@ const vault = (
     /** The vault is out of reach, and a read of the deck reaches nothing. */
     unreachable?: boolean
     /** What a write of the deck is refused for. */
-    wrote?: RefusalReason
+    wrote?: ErrorCode
     /** How many listings of the stencils go unanswered before one answers. */
     unlisted?: number
     /** The presets the vault holds, where a test wants other ones. */
@@ -77,7 +77,7 @@ const vault = (
     /** What is said against what the deck names. */
     saying?: string
     /** What putting the deck on a preset is refused for. */
-    notScheduled?: RefusalReason
+    notScheduled?: ErrorCode
     /** Putting the deck on a preset answers that the file moved past it. */
     schedulingChanged?: boolean
   } = {},
@@ -100,21 +100,21 @@ const vault = (
         held: 1,
       }
     },
-    createDeck: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
+    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
+    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
     renameField: async () => ({
       decks: [],
       cards: 0,
       notWritten: [],
-      refusal: null,
+      error: null,
       changed: false,
       at: '',
     }),
     readDeck: async (path) => {
       reads += 1
       if (answers.unreachable) throw new Error('out of reach')
-      if (answers.refusal) {
-        return { deck: null, refusal: answers.refusal, at: '', bound: answers.bound ?? 0 }
+      if (answers.error) {
+        return { deck: null, error: answers.error, at: '', bound: answers.bound ?? 0 }
       }
       return {
         deck: {
@@ -126,7 +126,7 @@ const vault = (
           tail: '',
           problems: answers.problems ?? [],
         },
-        refusal: null,
+        error: null,
         at: `read ${reads}`,
         bound: 0,
       }
@@ -135,13 +135,13 @@ const vault = (
       written.push(`${path} ${deck.cards.map(calling).join(', ') || '—'}`)
       wrote.push(deck)
       seen.push(presented)
-      if (answers.wrote) return { refusal: answers.wrote, changed: false, at: '', bound: 0 }
-      if (answers.changed) return { refusal: null, changed: true, at: '', bound: 0 }
+      if (answers.wrote) return { error: answers.wrote, changed: false, at: '', bound: 0 }
+      if (answers.changed) return { error: null, changed: true, at: '', bound: 0 }
       cards = deck.cards
-      return { refusal: null, changed: false, at: 'written', bound: 0 }
+      return { error: null, changed: false, at: 'written', bound: 0 }
     },
-    readStencil: async () => ({ stencil: null, refusal: 'missing', at: '' }),
-    writeStencil: async () => ({ refusal: null, changed: false, at: '' }),
+    readStencil: async () => ({ stencil: null, error: 'missing', at: '' }),
+    writeStencil: async () => ({ error: null, changed: false, at: '' }),
   }
 
   /** Which preset the deck names, as the vault answers it. */
@@ -152,7 +152,7 @@ const vault = (
   const presets: Presets = {
     read: async (path) => ({
       preset: { path, title: 'Sanskrit', settings: DEFAULTS, problems: [], ...SCHEDULING },
-      refusal: null,
+      error: null,
       at: '',
       bounds: NO_BOUNDS,
     }),
@@ -161,7 +161,7 @@ const vault = (
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
-    makes: async () => ({ path: '', refusal: null }),
+    makes: async () => ({ path: '', error: null }),
     scheduling: async () => ({
       preset: {
         path: by,
@@ -170,20 +170,20 @@ const vault = (
         problems: answers.saying ? [answers.saying] : [],
         ...SCHEDULING,
       },
-      refusal: null,
+      error: null,
       at: '',
       bounds: NO_BOUNDS,
     }),
     schedules: async (deck, preset, seen) => {
       put.push({ deck, preset, seen })
       if (answers.notScheduled) {
-        return { refusal: answers.notScheduled, changed: false, at: '' }
+        return { error: answers.notScheduled, changed: false, at: '' }
       }
-      if (answers.schedulingChanged) return { refusal: null, changed: true, at: '' }
+      if (answers.schedulingChanged) return { error: null, changed: true, at: '' }
       by = preset
-      return { refusal: null, changed: false, at: 'scheduled' }
+      return { error: null, changed: false, at: 'scheduled' }
     },
-    write: async () => ({ refusal: null, changed: false, at: '' }),
+    write: async () => ({ error: null, changed: false, at: '' }),
     curve: async () => ({
       goal: 'minutes',
       grid: [],
@@ -289,7 +289,7 @@ describe('a card written in a deck', () => {
   it('stands in the deck the tab draws', async () => {
     const { tab } = await open()
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
 
     expect(tab.deck.value.cards.map(calling)).toStrictEqual(['Llama', 'Alpaca', 'Vicuña'])
   })
@@ -297,7 +297,7 @@ describe('a card written in a deck', () => {
   it('stands under where the vault files the stencil it was cut by', async () => {
     const { tab } = await open()
 
-    tab.adds('Animal', [], null)
+    tab.addCard('Animal', [], null)
 
     expect(tab.deck.value.cards.at(-1)?.stencilPath).toBe('Animal.md')
   })
@@ -305,7 +305,7 @@ describe('a card written in a deck', () => {
   it('carries no mark, which is written where the deck is made whole', async () => {
     const { tab } = await open()
 
-    tab.adds('Animal', [], null)
+    tab.addCard('Animal', [], null)
 
     expect(tab.deck.value.cards.at(-1)?.mark).toBe('')
   })
@@ -313,7 +313,7 @@ describe('a card written in a deck', () => {
   it('leaves the tab unsaved, and marks it', async () => {
     const { decks, tab } = await open()
 
-    tab.adds('Animal', [], null)
+    tab.addCard('Animal', [], null)
 
     expect(tab.shown.value.state).toBe('unsaved')
     expect(decks.kind.marked?.(tab)).toBe('unsaved')
@@ -322,7 +322,7 @@ describe('a card written in a deck', () => {
   it('reaches the vault as the cards of that file, with the file it was read from', async () => {
     const { decks, tab, written, seen } = await open()
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
 
     expect(written).toStrictEqual(['Animals.md Llama, Alpaca, Vicuña'])
@@ -332,7 +332,7 @@ describe('a card written in a deck', () => {
   it('reaches the vault carrying the mark and the heading the file gave it', async () => {
     const { decks, tab, wrote } = await open()
 
-    tab.writes('k7m2xq9fzp', 'Height', 1, 'about 46"')
+    tab.writeCardField('k7m2xq9fzp', 'Height', 1, 'about 46"')
     await decks.flush()
 
     expect(wrote()[0]?.cards[0]?.mark).toBe('k7m2xq9fzp')
@@ -352,7 +352,7 @@ describe('a deck whose file moved past what was read', () => {
   it('is stale once the write comes back saying the file changed', async () => {
     const { decks, tab } = await open({ changed: true })
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
 
     expect(tab.shown.value.state).toBe('stale')
@@ -361,9 +361,9 @@ describe('a deck whose file moved past what was read', () => {
   it('keeps what the person wrote when they say so, over whatever the file holds', async () => {
     const { decks, tab, written, seen } = await open({ changed: true })
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
-    tab.keep()
+    tab.keepMine()
     await settles()
 
     expect(written).toHaveLength(2)
@@ -373,9 +373,9 @@ describe('a deck whose file moved past what was read', () => {
   it('reads the file again when the person takes what it holds', async () => {
     const { decks, tab, reads } = await open({ changed: true })
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
-    tab.take()
+    tab.takeFile()
     await settles()
 
     expect(reads()).toBe(2)
@@ -386,22 +386,22 @@ describe('a deck whose file moved past what was read', () => {
 
 describe('a deck the vault refused', () => {
   it('says which bound it is over, and draws no card', async () => {
-    const { tab } = await open({ refusal: 'deckTooLarge', bound: 8388608 })
+    const { tab } = await open({ error: 'deckTooLarge', bound: 8388608 })
 
-    expect(tab.saying.value).toBe(words.tooLarge(8388608))
+    expect(tab.errorMessage.value).toBe(words.tooLarge(8388608))
     expect(tab.deck.value.cards).toStrictEqual([])
   })
 
   it('says the note is not a deck where that is what it is', async () => {
-    const { tab } = await open({ refusal: 'notADeck' })
+    const { tab } = await open({ error: 'notADeck' })
 
-    expect(tab.saying.value).toBe(words.notADeck)
+    expect(tab.errorMessage.value).toBe(words.notADeck)
   })
 
   it('says nothing where the deck was read', async () => {
     const { tab } = await open()
 
-    expect(tab.saying.value).toBe('')
+    expect(tab.errorMessage.value).toBe('')
   })
 })
 
@@ -475,7 +475,7 @@ describe('a value written over', () => {
     for (const one of WRITTEN) {
       const { tab } = await open({ cards: only(one) })
 
-      tab.writes('k7m2xq9fzp', 'Name', 1, 'Vicuña')
+      tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
       expect(tab.deck.value.cards[0]?.values).toStrictEqual([{ field: 'Name', text: 'Vicuña' }])
     }
@@ -484,7 +484,7 @@ describe('a value written over', () => {
   it('is written after the rest where the field is another one the stencil declares', async () => {
     const { tab } = await open({ cards: only('cards/Animal') })
 
-    tab.writes('k7m2xq9fzp', 'Height', 1, 'about 45"')
+    tab.writeCardField('k7m2xq9fzp', 'Height', 1, 'about 45"')
 
     expect(tab.deck.value.cards[0]?.values).toStrictEqual([
       { field: 'Name', text: 'Llama' },
@@ -495,7 +495,7 @@ describe('a value written over', () => {
   it('is the one of two under a field that was typed in, and the other stands', async () => {
     const { tab } = await open({ cards: twice })
 
-    tab.writes('k7m2xq9fzp', 'Name', 2, 'Vicuña')
+    tab.writeCardField('k7m2xq9fzp', 'Name', 2, 'Vicuña')
 
     expect(tab.deck.value.cards[0]?.values).toStrictEqual([
       { field: 'Name', text: 'Llama' },
@@ -506,7 +506,7 @@ describe('a value written over', () => {
   it('is written for a card whose link reached no stencil', async () => {
     const { tab } = await open({ cards: only('Gone', '') })
 
-    tab.writes('k7m2xq9fzp', 'Name', 1, 'Vicuña')
+    tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
     expect(tab.deck.value.cards[0]?.values).toStrictEqual([{ field: 'Name', text: 'Vicuña' }])
   })
@@ -514,7 +514,7 @@ describe('a value written over', () => {
   it('leaves the heading the file gave the card exactly as it stands', async () => {
     const { tab } = await open({ cards: only('Gone', '') })
 
-    tab.writes('k7m2xq9fzp', 'Name', 1, 'Vicuña')
+    tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
     expect(tab.deck.value.cards[0]?.heading).toBe('Llama')
   })
@@ -524,7 +524,7 @@ describe('a section of a deck the window holds', () => {
   it('is made at the end, and reaches the vault with the deck', async () => {
     const { decks, tab, wrote } = await open()
 
-    tab.addsSection('Roots')
+    tab.addSection('Roots')
     expect(tab.sections.value.map((section) => section.name)).toStrictEqual(['Roots'])
 
     await decks.flush()
@@ -534,7 +534,7 @@ describe('a section of a deck the window holds', () => {
   it('takes the name it was given', async () => {
     const { tab } = await open({ sections: [{ name: 'Roots', preamble: '' }] })
 
-    tab.namesSection(tab.sections.value[0]?.id ?? '', 'Roots and shoots')
+    tab.renameSection(tab.sections.value[0]?.id ?? '', 'Roots and shoots')
 
     expect(tab.sections.value.map((section) => section.name)).toStrictEqual(['Roots and shoots'])
   })
@@ -545,7 +545,7 @@ describe('a section of a deck the window holds', () => {
       cards: CARDS.map((card) => ({ ...card, section: 0 })),
     })
 
-    tab.removesSection(tab.sections.value[0]?.id ?? '')
+    tab.removeSection(tab.sections.value[0]?.id ?? '')
 
     expect(tab.sections.value).toStrictEqual([])
     expect(tab.deck.value.cards.map(calling)).toStrictEqual(['Llama', 'Alpaca'])
@@ -627,7 +627,7 @@ describe('a deck read again under the window', () => {
      being typed into stands, and the caret with it. */
   it('keeps the identity of a card the file has named since it was drawn', async () => {
     const one = await open()
-    one.tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     const made = one.tab.deck.value.cards.at(-1)?.id ?? ''
     await one.decks.kept.settles(one.tab.id)
 
@@ -659,7 +659,7 @@ describe('a deck read again under the window', () => {
   it('keeps the identity of a section the file still holds', async () => {
     const one = await open({ sections: [{ name: 'Roots', preamble: '' }] })
     const stood = one.tab.deck.value.sections[0]?.id ?? ''
-    one.tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await one.decks.kept.settles(one.tab.id)
 
     one.holds([
@@ -728,11 +728,11 @@ describe('a deck read again under the window', () => {
      being typed into is the same card. */
   it('keeps it where the typing went on while the write was away', async () => {
     const one = await open()
-    one.tab.adds('Animal', [{ field: 'Name', text: 'Vic' }], null)
+    one.tab.addCard('Animal', [{ field: 'Name', text: 'Vic' }], null)
     const made = one.tab.deck.value.cards.at(-1)?.id ?? ''
     await one.decks.kept.settles(one.tab.id)
 
-    one.tab.writes(made, 'Name', 1, 'Vicuña')
+    one.tab.writeCardField(made, 'Name', 1, 'Vicuña')
 
     one.holds([
       ...CARDS,
@@ -836,16 +836,16 @@ describe('a deck the vault could not be reached for', () => {
   it('says the vault could not be reached, where the read reached nothing', async () => {
     const { tab } = await open({ unreachable: true })
 
-    expect(tab.saying.value).toBe(words.unreachable)
+    expect(tab.errorMessage.value).toBe(words.unreachable)
   })
 
   it('says the file could not be written, where that is what was refused', async () => {
     const { decks, tab } = await open({ wrote: 'unreadable' })
 
-    tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.kept.settles(decks.all()[0] ?? '')
 
-    expect(tab.saying.value).toBe(words.notSaved)
+    expect(tab.errorMessage.value).toBe(words.notSaved)
   })
 })
 
@@ -869,14 +869,14 @@ describe('the preset a deck is scheduled by', () => {
     expect(tab.scheduled.value).toStrictEqual({
       path: 'Sanskrit.md',
       name: 'Sanskrit',
-      saying: '',
+      errorMessage: '',
     })
   })
 
   it('is the defaults for a deck naming none', async () => {
     const { tab } = await open()
 
-    expect(tab.scheduled.value).toStrictEqual({ path: '', name: words.defaults, saying: '' })
+    expect(tab.scheduled.value).toStrictEqual({ path: '', name: words.defaults, errorMessage: '' })
   })
 
   it('offers the defaults first, and a preset nothing names by its file', async () => {
@@ -892,7 +892,7 @@ describe('the preset a deck is scheduled by', () => {
   it('carries the file the deck was read at, so a write lands on what was read', async () => {
     const { tab, put } = await open()
 
-    tab.schedules('Sanskrit.md')
+    tab.setSchedule('Sanskrit.md')
     await settles()
 
     expect(put).toStrictEqual([{ deck: 'Animals.md', preset: 'Sanskrit.md', seen: 'read 1' }])
@@ -900,9 +900,9 @@ describe('the preset a deck is scheduled by', () => {
 
   it('writes what the deck owes before it writes the preset', async () => {
     const { tab, put, written } = await open()
-    tab.writes('k7m2xq9fzp', 'Name', 1, 'Vicuña')
+    tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
-    tab.schedules('Sanskrit.md')
+    tab.setSchedule('Sanskrit.md')
     await settles()
 
     expect(written).toStrictEqual(['Animals.md Vicuña, Alpaca'])
@@ -916,7 +916,7 @@ describe('the preset a deck is scheduled by', () => {
     const { tab, reads } = await open()
     const was = reads()
 
-    tab.schedules('Sanskrit.md')
+    tab.setSchedule('Sanskrit.md')
     await settles()
 
     expect(reads()).toBeGreaterThan(was)
@@ -926,20 +926,20 @@ describe('the preset a deck is scheduled by', () => {
   it('says a choice the vault would not write, and leaves the preset standing', async () => {
     const { tab } = await open({ by: 'Sanskrit.md', notScheduled: 'notAPreset' })
 
-    tab.schedules('presets/Slow.md')
+    tab.setSchedule('presets/Slow.md')
     await settles()
 
-    expect(tab.scheduled.value.saying).toBe(words.notScheduled)
+    expect(tab.scheduled.value.errorMessage).toBe(words.notScheduled)
     expect(tab.scheduled.value.path).toBe('Sanskrit.md')
   })
 
   it('says a deck the file moved past since the window read it', async () => {
     const { tab } = await open({ schedulingChanged: true })
 
-    tab.schedules('Sanskrit.md')
+    tab.setSchedule('Sanskrit.md')
     await settles()
 
-    expect(tab.scheduled.value.saying).toBe(words.notScheduledChanged)
+    expect(tab.scheduled.value.errorMessage).toBe(words.notScheduledChanged)
     expect(tab.scheduled.value.path).toBe('')
   })
 
@@ -947,6 +947,6 @@ describe('the preset a deck is scheduled by', () => {
     const { tab } = await open({ saying: 'Sanskrit reaches no note, and the defaults stand' })
 
     expect(tab.scheduled.value.path).toBe('')
-    expect(tab.scheduled.value.saying).toContain('reaches no note')
+    expect(tab.scheduled.value.errorMessage).toContain('reaches no note')
   })
 })

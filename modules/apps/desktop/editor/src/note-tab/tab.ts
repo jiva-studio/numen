@@ -5,8 +5,7 @@ import {
   dirty,
   stateOf,
   waiting,
-  MENDABLE_REFUSALS,
-  type Effect,
+  MENDABLE_ERRORS,
   type Event,
   type FilePath,
   type Move,
@@ -72,8 +71,8 @@ const answered = (tab: Tab, generation: number, answer: ReadResult): Transition 
   const state = stateOf(tab)
   const loading = state === 'loading'
   const stale = generation !== tab.reading
-  if (answer.kind === 'refused') {
-    return loading && !stale ? { tab: { ...tab, refused: answer.refusal }, effects: [] } : still(tab)
+  if (answer.kind === 'error') {
+    return loading && !stale ? { tab: { ...tab, error: answer.error }, effects: [] } : still(tab)
   }
   if (answer.kind === 'missing') {
     if (stale) return still(tab)
@@ -82,7 +81,7 @@ const answered = (tab: Tab, generation: number, answer: ReadResult): Transition 
   if (loading) return shows(tab, answer.body, answer.at)
   if (state === 'gone') return shows({ ...tab, isDeleted: false }, answer.body, answer.at)
   if (stale) return still(tab)
-  if (state === 'stale' || (state as string) === 'overtaken') return shows({ ...tab, isStale: false }, answer.body, answer.at)
+  if (state === 'stale') return shows({ ...tab, isStale: false }, answer.body, answer.at)
   if (dirty(tab)) return still(tab)
   return shows(tab, answer.body, answer.at)
 }
@@ -94,18 +93,18 @@ const armFor = (since: number, at: number, limits: WriteLimits): number =>
   Math.max(0, Math.min(limits.quiet, since + limits.bound - at))
 
 /**
- * A refusal about the body is cleared by typing when there is a written baseline.
+ * An error about the body is cleared by typing when there is a written baseline.
  */
 const mends = (tab: Tab): boolean =>
-  tab.written !== null && tab.refused !== null && MENDABLE_REFUSALS.includes(tab.refused)
+  tab.written !== null && tab.error !== null && MENDABLE_ERRORS.includes(tab.error)
 
 const typed = (tab: Tab, body: string, at: number, limits: WriteLimits): Transition => {
   const state = stateOf(tab)
   if (state === 'loading') return still(tab)
-  const refused = mends(tab) ? null : tab.refused
+  const error = mends(tab) ? null : tab.error
   const since = tab.since ?? at
-  const next: Tab = { ...tab, shown: body, since, refused }
-  if (state === 'stale' || (state as string) === 'overtaken') return still(next)
+  const next: Tab = { ...tab, shown: body, since, error }
+  if (state === 'stale') return still(next)
   return { tab: next, effects: [{ kind: 'arm', after: armFor(since, at, limits) }] }
 }
 
@@ -119,9 +118,9 @@ const fired = (tab: Tab): Transition => {
 
 const landed = (tab: Tab, answer: WriteResult): Transition => {
   if (tab.pendingWrite === null) return still(tab)
-  if (answer.kind === 'refused') {
+  if (answer.kind === 'error') {
     return {
-      tab: { ...tab, pendingWrite: null, hasPendingWrite: false, refused: answer.refusal },
+      tab: { ...tab, pendingWrite: null, hasPendingWrite: false, error: answer.error },
       effects: [],
     }
   }
@@ -183,14 +182,14 @@ const settling = (tab: Tab): Transition => {
 /** Keep: what is on screen goes to the file. */
 const keeping = (tab: Tab): Transition => {
   const state = stateOf(tab)
-  if (state !== 'stale' && (state as string) !== 'overtaken' && state !== 'gone') return still(tab)
+  if (state !== 'stale' && state !== 'gone') return still(tab)
   return begins(tab, null)
 }
 
 /** Take: the file is read again, replacing the buffer. */
 const taking = (tab: Tab): Transition => {
   const state = stateOf(tab)
-  if (state !== 'stale' && (state as string) !== 'overtaken') return still(tab)
+  if (state !== 'stale') return still(tab)
   const reading = tab.reading + 1
   return {
     tab: { ...tab, reading },
@@ -203,14 +202,14 @@ const taking = (tab: Tab): Transition => {
  */
 const closing = (tab: Tab): Transition => {
   const state = stateOf(tab)
-  if (tab.refused && state === 'stuck') {
-    if (tab.written !== null && dirty(tab) && MENDABLE_REFUSALS.includes(tab.refused)) {
-      return { tab, effects: [{ kind: 'say', refusal: tab.refused }, { kind: 'hold' }] }
+  if (tab.error && state === 'stuck') {
+    if (tab.written !== null && dirty(tab) && MENDABLE_ERRORS.includes(tab.error)) {
+      return { tab, effects: [{ kind: 'say', error: tab.error }, { kind: 'hold' }] }
     }
-    return { tab, effects: [{ kind: 'say', refusal: tab.refused }, { kind: 'close' }] }
+    return { tab, effects: [{ kind: 'say', error: tab.error }, { kind: 'close' }] }
   }
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
-  if (state === 'stale' || (state as string) === 'overtaken') return { tab, effects: [{ kind: 'hold' }] }
+  if (state === 'stale') return { tab, effects: [{ kind: 'hold' }] }
   if (state === 'unsaved') {
     const going = begins(tab, seenOf(tab))
     return { tab: going.tab, effects: [...going.effects, { kind: 'hold' }] }

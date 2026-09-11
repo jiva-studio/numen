@@ -5,7 +5,7 @@
 import { createClient } from '@connectrpc/connect'
 import { CardsService } from '@numen/protocol'
 import { transport } from '@numen/wire'
-import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
+import { fingerprint, errorIn, staleIn, stamp } from '../answers'
 import type { Cards } from './types'
 import { carding, decked, offered, stencilled } from './serialize'
 
@@ -22,16 +22,14 @@ export const cards: Cards = {
   },
   createDeck: async (title, folder) => {
     const answer = await cardsService.createDeck({ title, path: folder })
-    const error = refusalIn(answer)
-    return { path: answer.path, error, refusal: error }
+    const error = errorIn(answer)
+    return { path: answer.path, error }
   },
-  makeDeck: async (title, folder) => cards.createDeck(title, folder),
   createStencil: async (title, folder, fields) => {
     const answer = await cardsService.createStencil({ title, path: folder, fields: [...fields] })
-    const error = refusalIn(answer)
-    return { path: answer.path, error, refusal: error }
+    const error = errorIn(answer)
+    return { path: answer.path, error }
   },
-  makeStencil: async (title, folder, fields) => cards.createStencil(title, folder, fields),
   renameField: async (path, from, to, seen) => {
     const answer = await cardsService.renameStencilField({
       path,
@@ -46,7 +44,7 @@ export const cards: Cards = {
         path: one.path,
         text: one.problem?.text ?? '',
       })),
-      refusal: refusalIn(answer),
+      error: errorIn(answer),
       changed: staleIn(answer),
       at: stamp(answer.at) ?? '',
     }
@@ -55,7 +53,7 @@ export const cards: Cards = {
     const answer = await cardsService.readDeck({ path })
     return {
       deck: answer.deck ? decked(answer.deck) : null,
-      refusal: refusalIn(answer),
+      error: errorIn(answer),
       at: stamp(answer.at) ?? '',
       bound: Number(answer.bound),
     }
@@ -70,7 +68,7 @@ export const cards: Cards = {
       ...(seen === null ? {} : { seen: fingerprint(seen) }),
     })
     return {
-      refusal: refusalIn(answer),
+      error: errorIn(answer),
       changed: staleIn(answer),
       at: stamp(answer.at) ?? '',
       bound: Number(answer.bound),
@@ -80,7 +78,7 @@ export const cards: Cards = {
     const answer = await cardsService.readStencil({ path })
     return {
       stencil: answer.stencil ? stencilled(answer.stencil) : null,
-      refusal: refusalIn(answer),
+      error: errorIn(answer),
       at: stamp(answer.at) ?? '',
     }
   },
@@ -99,7 +97,7 @@ export const cards: Cards = {
       ...(seen === null ? {} : { seen: fingerprint(seen) }),
     })
     return {
-      refusal: refusalIn(answer),
+      error: errorIn(answer),
       changed: staleIn(answer),
       at: stamp(answer.at) ?? '',
     }

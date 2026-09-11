@@ -62,13 +62,13 @@ const notes = (states: Record<string, State> = {}) => {
       path: where(id),
       body: '',
       state: states[where(id)] ?? 'clean',
-      refusal: null,
+      error: null,
     }),
     where,
     address: () => null,
     cues: () => [],
     copy: () => '',
-    saying: () => '',
+    getErrorMessage: () => '',
     typed: () => {},
     save: () => {},
     keep: () => said.push('keep'),
@@ -153,7 +153,7 @@ describe('a link in the prose followed', () => {
   it('opens the note it names, in a tab beside the one it was written in', async () => {
     const one = await written({ 'name://Entropy': 'physics/Entropy.md' })
 
-    one.state.follows('name://Entropy')
+    one.state.followLink('name://Entropy')
     await flushPromises()
 
     expect(one.open()).toHaveLength(2)
@@ -163,7 +163,7 @@ describe('a link in the prose followed', () => {
   it('opens nothing where no note answers to it', async () => {
     const one = await written()
 
-    one.state.follows('name://Nowhere')
+    one.state.followLink('name://Nowhere')
     await flushPromises()
 
     expect(one.open()).toHaveLength(1)
@@ -172,7 +172,7 @@ describe('a link in the prose followed', () => {
   it('opens nothing for an address that names no note at all', async () => {
     const one = await written({ 'https://example.com': 'physics/Entropy.md' })
 
-    one.state.follows('https://example.com')
+    one.state.followLink('https://example.com')
     await flushPromises()
 
     expect(one.open()).toHaveLength(1)
@@ -186,7 +186,7 @@ describe('a note opened', () => {
     await nextTick()
 
     const drew = editor()
-    state.drew(drew.drawn)
+    state.setEditor(drew.drawn)
     await nextTick()
 
     expect(drew.focused).toEqual([-1])
@@ -197,7 +197,7 @@ describe('a note opened', () => {
     const state = one.noted.opens('Note.md', 12)
     const drew = editor()
 
-    state.drew(drew.drawn)
+    state.setEditor(drew.drawn)
     await nextTick()
 
     expect(drew.focused).toEqual([12])
@@ -207,11 +207,11 @@ describe('a note opened', () => {
     const one = window()
     const state = one.noted.opens('Note.md')
     const early = editor(false)
-    state.drew(early.drawn)
+    state.setEditor(early.drawn)
     await nextTick()
 
     const drew = editor()
-    state.drew(drew.drawn)
+    state.setEditor(drew.drawn)
     await nextTick()
 
     expect(early.focused).toContain(-1)
@@ -222,7 +222,7 @@ describe('a note opened', () => {
     const one = window()
     const state = one.noted.opens('Note.md')
     const drew = editor()
-    state.drew(drew.drawn)
+    state.setEditor(drew.drawn)
     await nextTick()
 
     state.measure()
@@ -234,7 +234,7 @@ describe('a note opened', () => {
     const one = window()
     const state = one.noted.opens('Note.md')
     const drew = editor()
-    state.drew(drew.drawn)
+    state.setEditor(drew.drawn)
     await nextTick()
 
     one.noted.entersAt('Note.md')
@@ -333,7 +333,7 @@ describe('a note that was renamed', () => {
     const one = window()
     const state = one.noted.opens('Note.md')
     const drew = editor()
-    state.drew(drew.drawn)
+    state.setEditor(drew.drawn)
     await nextTick()
     one.moves('Note.md', 'Renamed.md')
     await nextTick()

@@ -8,13 +8,13 @@
  * the watcher, and appears at the next of those.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { troubleWords } from '@numen/wire'
-import { movedTo, type Entry, type Move } from '../shared/core'
+import { formatErrorMessage } from '@numen/wire'
+import { getRenamedPath, type FileEntry, type PathRename } from '../shared/core'
 
 /** Everything a files tab asks of the application. */
 export interface Folders {
   /** What one folder holds, in the order to draw it. The root is the empty path. */
-  list(folder: string): Promise<readonly Entry[]>
+  list(folder: string): Promise<readonly FileEntry[]>
 }
 
 /** The vault's root, which is the folder every other one is under. */
@@ -25,7 +25,7 @@ export const ROOT = ''
  * folder that is closed holds none until it opens.
  */
 export interface ListingRow {
-  readonly entry: Entry
+  readonly entry: FileEntry
   readonly rows: readonly ListingRow[]
 }
 
@@ -65,19 +65,19 @@ export type FileTree = ReturnType<typeof useFileTree>
 
 export function useFileTree(core: Folders) {
   /** What each folder that has been read holds, under the path of the folder. */
-  const held = shallowRef<ReadonlyMap<string, readonly Entry[]>>(new Map())
+  const held = shallowRef<ReadonlyMap<string, readonly FileEntry[]>>(new Map())
   /** The folders drawn open. The root is one of them for as long as the tab is. */
   const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
   /** The rows the person is standing on, by the paths they stand for. */
   const chosen = shallowRef<readonly string[]>([])
   /** What the folders could not be read as, in words the window puts up for it. */
-  const trouble = ref('')
+  const error = ref('')
 
   /** Whether the tab this tree stands in is still open. */
   let alive = true
 
   /** What one folder holds, and nothing for a folder that has not been read. */
-  const entriesIn = (folder: string): readonly Entry[] => held.value.get(folder) ?? []
+  const entriesIn = (folder: string): readonly FileEntry[] => held.value.get(folder) ?? []
 
   /** Whether a folder is drawn open. */
   const opened = (folder: string): boolean => open.value.has(folder)
@@ -96,7 +96,7 @@ export function useFileTree(core: Folders) {
   const openRows = computed<readonly string[]>(() => [...open.value])
 
   /** What a path stands for, and nothing where the tree draws no row on it. */
-  const entryAt = (path: string): Entry | null =>
+  const entryAt = (path: string): FileEntry | null =>
     entriesIn(folderOf(path)).find((one) => one.path === path) ?? null
 
   /** One folder asked for and kept. A folder that could not be read is said. */
@@ -105,10 +105,10 @@ export function useFileTree(core: Folders) {
       const entries = await core.list(folder)
       if (!alive) return
       held.value = new Map(held.value).set(folder, entries)
-      trouble.value = ''
-    } catch (error) {
+      error.value = ''
+    } catch (err) {
       if (!alive) return
-      trouble.value = troubleWords(error)
+      error.value = formatErrorMessage(err)
     }
   }
 
@@ -171,9 +171,9 @@ export function useFileTree(core: Folders) {
    * a change naming nothing is the whole tree. A chosen row that moved is
    * chosen at where it went.
    */
-  const changed = async (paths: readonly string[] = [], renamed: readonly Move[] = []) => {
+  const changed = async (paths: readonly string[] = [], renamed: readonly PathRename[] = []) => {
     if (renamed.length > 0) {
-      chosen.value = chosen.value.map((one) => movedTo(renamed, one) || one)
+      chosen.value = chosen.value.map((one) => getRenamedPath(renamed, one) || one)
     }
     const named = [...paths, ...renamed.flatMap((one) => [one.from, one.to])]
     if (named.length === 0) return void (await again())
@@ -202,7 +202,7 @@ export function useFileTree(core: Folders) {
     rows,
     openRows,
     chosen,
-    trouble,
+    error,
     entriesIn,
     opened,
     entryAt,

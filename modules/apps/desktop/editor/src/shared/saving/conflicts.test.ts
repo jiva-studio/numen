@@ -11,7 +11,7 @@ import { raiseConflicts, type Notes } from './conflicts'
 import type { Conflict } from './flushing'
 
 /** The words this test puts its notes in. A screen has more; these are enough. */
-type Word = 'clean' | 'unsaved' | 'stale' | 'overtaken' | 'gone'
+type Word = 'clean' | 'unsaved' | 'stale' | 'gone'
 
 /** Notes in the states the test puts them in, each under its own identity. */
 const notes = () => {
@@ -64,18 +64,9 @@ describe('a note the file moved past', () => {
     expect(one.paths()).toEqual(['Note.md'])
   })
 
-  it('is a question the quit waits for', async () => {
-    const one = window()
-
-    one.stands('Note.md', 'overtaken')
-    await nextTick()
-
-    expect(one.paths()).toEqual(['Note.md'])
-  })
-
   it('answers with what the person chose', async () => {
     const one = window()
-    one.stands('Note.md', 'overtaken')
+    one.stands('Note.md', 'stale')
     await nextTick()
 
     await one.answer('Note.md', 'keep')
@@ -83,9 +74,9 @@ describe('a note the file moved past', () => {
     expect(one.said).toEqual(['keep Note.md'])
   })
 
-  it('is dropped once the note is no longer overtaken', async () => {
+  it('is dropped once the note is no longer stale', async () => {
     const one = window()
-    one.stands('Note.md', 'overtaken')
+    one.stands('Note.md', 'stale')
     await nextTick()
 
     one.stands('Note.md', 'clean')
@@ -96,7 +87,7 @@ describe('a note the file moved past', () => {
 
   it('is raised once while it stands, however often the notes change', async () => {
     const one = window()
-    one.stands('Note.md', 'overtaken')
+    one.stands('Note.md', 'stale')
     await nextTick()
     one.stands('Other.md', 'unsaved')
     await nextTick()

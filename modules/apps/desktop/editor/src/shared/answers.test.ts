@@ -1,20 +1,18 @@
 /**
- * The file an answer came out of, and what a refusal is called.
+ * The file an answer came out of, and what an error is called.
  *
  * The window carries the file as one string and never reads into it, so the
  * only thing that matters about it is that the parts come back out as they went
  * in — a path with spaces in it included.
  */
 import { describe, expect, it } from 'vitest'
-import { Refusal } from '@numen/protocol'
+import { Refusal as ProtoErrorCode } from '@numen/protocol'
 import {
   asset,
   ERROR_CODE,
   errorIn,
   fingerprint,
   named,
-  REFUSAL,
-  refusalIn,
   staleIn,
   stamp,
   waiting,
@@ -42,40 +40,32 @@ describe('the file an answer came out of', () => {
   })
 })
 
-describe('what a refusal is called', () => {
-  // The table is keyed by the schema, so the compiler asks for every refusal.
+describe('what an error is called', () => {
+  // The table is keyed by the schema, so the compiler asks for every error code.
   // What it cannot ask is which of them the silence belongs to.
-  it('leaves a file that moved past the caller the one refusal with no word', () => {
-    expect(ERROR_CODE[Refusal.STALE]).toBeNull()
-    expect(REFUSAL[Refusal.STALE]).toBeNull()
+  it('leaves a file that moved past the caller the one error with no word', () => {
+    expect(ERROR_CODE[ProtoErrorCode.STALE]).toBeNull()
     expect(Object.values(ERROR_CODE).filter((word) => word === null)).toHaveLength(1)
   })
 
   it('reads a file that moved past the caller off the answer that says so', () => {
-    expect(staleIn({ refusal: Refusal.STALE })).toBe(true)
-    expect(staleIn({ refusal: Refusal.MISSING })).toBe(false)
+    expect(staleIn({ refusal: ProtoErrorCode.STALE })).toBe(true)
+    expect(staleIn({ refusal: ProtoErrorCode.MISSING })).toBe(false)
     expect(staleIn({})).toBe(false)
   })
 
-  it('reads a refusal off an answer that carries one', () => {
-    expect(errorIn({ refusal: Refusal.MISSING })).toBe('missing')
-    expect(errorIn({ refusal: Refusal.TOO_LARGE })).toBe('tooLarge')
-    expect(refusalIn({ refusal: Refusal.MISSING })).toBe('missing')
-    expect(refusalIn({ refusal: Refusal.TOO_LARGE })).toBe('tooLarge')
+  it('reads an error off an answer that carries one', () => {
+    expect(errorIn({ refusal: ProtoErrorCode.MISSING })).toBe('missing')
+    expect(errorIn({ refusal: ProtoErrorCode.TOO_LARGE })).toBe('tooLarge')
   })
 
-  // Nothing refused is not the same as a refusal nobody named, so an answer
-  // that was not refused says nothing rather than saying it is unreadable.
-  it('says nothing about an answer that was not refused', () => {
+  it('says nothing about an answer with no error', () => {
     expect(errorIn({})).toBeNull()
-    expect(refusalIn({})).toBeNull()
     expect(errorIn({ refusal: undefined })).toBeNull()
-    expect(refusalIn({ refusal: undefined })).toBeNull()
   })
 
-  it('calls a refusal it has no word of its own for unreadable', () => {
-    expect(errorIn({ refusal: Refusal.UNSPECIFIED })).toBe('unreadable')
-    expect(refusalIn({ refusal: Refusal.UNSPECIFIED })).toBe('unreadable')
+  it('calls an error it has no word of its own for unreadable', () => {
+    expect(errorIn({ refusal: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
   })
 })
 

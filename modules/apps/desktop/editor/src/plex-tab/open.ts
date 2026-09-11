@@ -4,7 +4,6 @@
 import { computed, ref } from 'vue'
 import type {
   PlexNeighbourhood,
-  PlexPart,
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'

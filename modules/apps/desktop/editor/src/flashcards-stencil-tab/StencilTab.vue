@@ -19,58 +19,47 @@ const marks = computed(() => props.state.marks.value)
 
 // --- Handlers ---
 function onKeep() {
-  const keep = props.state.keepMine ?? props.state.keep
-  keep()
+  props.state.keepMine()
 }
 
 function onTake() {
-  const take = props.state.takeFile ?? props.state.take
-  take()
+  props.state.takeFile()
 }
 
 function onAddField(name: string) {
-  const add = props.state.addField ?? props.state.addsField
-  add(name)
+  props.state.addField(name)
 }
 
 function onRenameField(field: string, name: string) {
-  const rename = props.state.renameField ?? props.state.namesField
-  rename(field, name)
+  props.state.renameField(field, name)
 }
 
 function onRemoveField(field: string) {
-  const remove = props.state.removeField ?? props.state.removesField
-  remove(field)
+  props.state.removeField(field)
 }
 
 function onMoveField(field: string, at: InsertionPoint) {
-  const move = props.state.moveField ?? props.state.movesField
-  move(field, at)
+  props.state.moveField(field, at)
 }
 
 function onAddFace(name: string) {
-  const add = props.state.addFace ?? props.state.addsFace
-  add(name)
+  props.state.addFace(name)
 }
 
 function onRenameFace(id: string, name: string) {
-  const rename = props.state.renameFace ?? props.state.namesFace
-  rename(id, name)
+  props.state.renameFace(id, name)
 }
 
 function onRemoveFace(id: string) {
-  const remove = props.state.removeFace ?? props.state.removesFace
-  remove(id)
+  props.state.removeFace(id)
 }
 
 function onMoveFace(id: string, at: InsertionPoint) {
-  const move = props.state.moveFace ?? props.state.movesFace
-  move(id, at)
+  props.state.moveFace(id, at)
 }
 
 function onWriteFace(id: string, half: Half, text: string) {
-  const write = props.state.writeFaceHalf ?? props.state.writes
-  write(id, half, text)
+  props.state.writeFaceHalf(id, half, text)
 }
 
 // --- Helpers ---
@@ -79,7 +68,7 @@ function onWriteFace(id: string, half: Half, text: string) {
 <template>
   <div class="stencil-tab">
     <FileConflictPrompt
-      :saying="props.state.saying.value"
+      :errorMessage="props.state.errorMessage.value"
       :conflict="conflictIn(props.state.shown.value.state)"
       :words="words"
       @keep="onKeep"

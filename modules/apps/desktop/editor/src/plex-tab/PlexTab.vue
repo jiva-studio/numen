@@ -113,8 +113,8 @@ function closeMenu(chose?: string) {
 
 <template>
   <div class="plex" @contextmenu="onContextMenu">
-    <p v-if="props.state.view.trouble.value" class="caution">
-      {{ props.state.view.trouble.value }}
+    <p v-if="props.state.view.error.value" class="caution">
+      {{ props.state.view.error.value }}
     </p>
 
     <Plex

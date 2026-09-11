@@ -35,6 +35,6 @@ function onWiden(wide: number) {
     @go="onGoToPage"
     @wide="onWiden"
   >
-    <template #silence>{{ props.state.trouble.value }}</template>
+    <template #silence>{{ props.state.error.value }}</template>
   </Reader>
 </template>

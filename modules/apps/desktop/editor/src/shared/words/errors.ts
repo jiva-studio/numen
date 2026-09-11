@@ -20,8 +20,6 @@ export const ERRORS: Record<ErrorCode, string> = {
   notAPreset: 'that note is not a preset',
 }
 
-export const REFUSED = ERRORS
-
 /** What the list of vaults reports as error for a command, in words a person reads. */
 export const VAULT_ERRORS: Record<VaultErrorCode, string> = {
   unreadable: 'that folder is not there, or cannot be read',
@@ -34,5 +32,3 @@ export const VAULT_ERRORS: Record<VaultErrorCode, string> = {
   noTrash: 'this machine has nowhere to put what is deleted',
   asking: 'a tab is holding text you have to answer for, so the window stayed where it was',
 }
-
-export const UNVAULTED = VAULT_ERRORS

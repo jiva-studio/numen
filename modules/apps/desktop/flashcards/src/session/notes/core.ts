@@ -4,7 +4,7 @@
  * Nothing here draws. What arrives is turned into the plain values the panel
  * carries, so what the schema calls things stops at this file.
  */
-import { refusalWords } from '@numen/wire'
+import { formatErrorCodeMessage } from '@numen/wire'
 
 import { cards } from '../../core'
 
@@ -45,7 +45,7 @@ export const around = async (vault: string, deck: string): Promise<DeckNeighbour
       label: one.label,
       points: one.points,
       ambiguous: one.ambiguous,
-      refusal: refusalWords(one.refusal),
+      refusal: formatErrorCodeMessage(one.refusal),
     })),
     unread: answer.unread,
   }

@@ -1,7 +1,7 @@
 /**
  * The notes whose file moved past what was read, told to the flush.
  *
- * A conflict is raised while the tab stands overtaken and dropped when it
+ * A conflict is raised while the tab stands stale and dropped when it
  * stops, so the window waits on exactly what is still to be settled.
  */
 import { watch } from 'vue'
@@ -28,7 +28,7 @@ export function raiseConflicts(notes: Notes, going: ConflictRaiser) {
     () =>
       notes.all().filter((id) => {
         const c = conflictIn(notes.shown(id).state)
-        return c === 'stale' || c === 'overtaken'
+        return c === 'stale'
       }),
     (stale) => {
       for (const id of stale) {

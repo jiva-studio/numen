@@ -26,7 +26,6 @@ export interface VaultResult {
   /** The vault as the list has it now. Null where the list is as it was. */
   vault: Vault | null
   error?: VaultErrorCode | null
-  refusal?: VaultRefusalReason | null
 }
 
 /** Why the list is as it was, or why the window is showing what it was showing. */
@@ -40,7 +39,6 @@ export type VaultErrorCode =
   | 'unknown'
   | 'noTrash'
   | 'asking'
-export type VaultRefusalReason = VaultErrorCode
 
 /** The vaults an installation holds, and what changes them. */
 export interface Vaults {
@@ -62,7 +60,7 @@ export interface Vaults {
    * A vault taken off the list. The folder stays where it is, and goes to the
    * trash this machine keeps when the call asks for it.
    */
-  remove(id: string, trash: boolean): Promise<VaultRefusalReason | null>
+  remove(id: string, trash: boolean): Promise<VaultErrorCode | null>
   /** Another vault shown in this window, in place of the one it was showing. */
-  open(id: string): Promise<VaultRefusalReason | null>
+  open(id: string): Promise<VaultErrorCode | null>
 }

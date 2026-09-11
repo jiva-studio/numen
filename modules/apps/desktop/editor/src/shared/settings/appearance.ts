@@ -319,7 +319,7 @@ export function windowAppearance(
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
-      if (mine.current) said(words.unworn, 'refusal')
+      if (mine.current) said(words.unworn, 'error')
     }
   }
 
@@ -345,7 +345,7 @@ export function windowAppearance(
       answer = await core.appearance()
     } catch (error) {
       console.error(error)
-      said(words.unlisted, 'refusal')
+      said(words.unlisted, 'error')
       return
     }
     list.value = answer.themes
@@ -514,7 +514,7 @@ export function windowAppearance(
 
     const failed = await core.chooses(applied.value, mode.value, settings.value)
     if (!failed) return
-    said(failed, 'refusal')
+    said(failed, 'error')
     applied.value = was.applied
     mode.value = was.mode
     await puts()
@@ -536,7 +536,7 @@ export function windowAppearance(
 
     const failed = await core.chooses(applied.value, mode.value, settings.value)
     if (!failed) return
-    said(failed, 'refusal')
+    said(failed, 'error')
     settings.value = was
   }
 

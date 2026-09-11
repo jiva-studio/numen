@@ -20,11 +20,11 @@ export interface DeckPreset {
    * What is wrong with what the deck names — a preset the vault no longer
    * holds, a note that is not a preset — and nothing where nothing is.
    */
-  readonly saying: string
+  readonly errorMessage: string
 }
 
 /** A deck naming no preset, which is scheduled by the defaults. */
-const BY_DEFAULT: DeckPreset = { path: '', name: words.defaults, saying: '' }
+const BY_DEFAULT: DeckPreset = { path: '', name: words.defaults, errorMessage: '' }
 
 /** One preset a deck may be put on, as the line offers it. */
 export interface Choice {
@@ -72,12 +72,12 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   /** The preset a deck names, as the line at the top of it draws it. */
   const scheduledOf = (read: ReadResult): DeckPreset => {
     if (read.preset === null) return BY_DEFAULT
-    const saying = read.preset.problems[0] ?? ''
-    if (read.preset.path === '') return { ...BY_DEFAULT, saying }
+    const errorMessage = read.preset.problems[0] ?? ''
+    if (read.preset.path === '') return { ...BY_DEFAULT, errorMessage }
     return {
       path: read.preset.path,
       name: read.preset.title || words.unnamed(read.preset.path),
-      saying,
+      errorMessage,
     }
   }
 
@@ -109,7 +109,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
     try {
       const answer = await presets.schedules(path, preset, store.at(id))
       if (answer.changed) says(id, words.notScheduledChanged)
-      else if ((answer.error ?? answer.refusal) !== null) says(id, words.notScheduled)
+      else if (answer.error !== null) says(id, words.notScheduled)
       else says(id, '')
     } catch {
       // The vault did not answer, and the deck is on the preset it was on. The
@@ -137,7 +137,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   const scheduledAt = (id: string): DeckPreset => {
     const held = scheduled.value.get(store.where(id)) ?? BY_DEFAULT
     const said = chose.value.get(id) ?? ''
-    return said === '' ? held : { ...held, saying: said }
+    return said === '' ? held : { ...held, errorMessage: said }
   }
 
   /** What was known about a file no tab of this window stands at any longer. */

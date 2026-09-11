@@ -85,7 +85,7 @@ describe('the file drawn', () => {
     await state.keeps()
     await tab.vm.$nextTick()
 
-    expect(tab.get('[role="status"]').text()).toContain(words.overtaken)
+    expect(tab.get('[role="status"]').text()).toContain(words.stale)
     const answers = tab.findAll('button')
     expect(answers.map((one) => one.text())).toStrictEqual([words.keep, words.take])
 

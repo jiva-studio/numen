@@ -3,8 +3,8 @@
  * pointing at an address, made in a folder under the name it is given, and put
  * in front of the person in a tab of its own.
  */
-import { troubleWords } from '@numen/wire'
-import type { CreateResult, RefusalReason } from '../note'
+import { formatErrorMessage } from '@numen/wire'
+import type { CreateResult, ErrorCode } from '../note'
 import type { MessageWriter } from '../notices/messages'
 import type { FileOpeners } from './openers'
 
@@ -23,8 +23,8 @@ export interface VaultCreator {
 
 /** What creating one of the four says in the window's voice. */
 export interface CreateWords {
-  /** What the vault refused, in words a person reads. */
-  readonly refused: Record<RefusalReason, string>
+  /** What the vault reported as error, in words a person reads. */
+  readonly errors: Record<ErrorCode, string>
 }
 
 /** What creating each of the four asks of the vault, each entry naming its own. */
@@ -56,14 +56,14 @@ export function fileCreators(vault: VaultCreator, puts: FileOpeners, words: Crea
   ): Promise<string> => {
     try {
       const answer = await asks[what](vault, folder, name, fields)
-      const error = answer.error ?? answer.refusal
+      const error = answer.error
       if (error) {
-        said(words.refused[error], 'refusal')
+        said(words.errors[error], 'error')
         return ''
       }
       return answer.path
     } catch (error) {
-      said(troubleWords(error), 'refusal')
+      said(formatErrorMessage(error), 'error')
       return ''
     }
   }

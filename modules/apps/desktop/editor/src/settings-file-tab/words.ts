@@ -10,7 +10,6 @@ export const WORDS = {
   reading: 'Reading the file',
   /** The file moved past what this tab read, and the two ways out. */
   stale: 'This file changed on disk, so it stopped saving.',
-  overtaken: 'This file changed on disk, so it stopped saving.',
   keep: 'Keep mine',
   take: "Take the file's",
 }

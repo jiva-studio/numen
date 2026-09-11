@@ -61,11 +61,10 @@ describe('making a deck', () => {
     expect(await cards.createDeck('Words', 'Decks')).toEqual({
       path: 'Decks/Words.md',
       error: null,
-      refusal: null,
     })
   })
 
-  it('carries the refusal in the words the window uses', async () => {
+  it('carries the error in the words the window uses', async () => {
     answers({ path: '', refusal: 'REFUSAL_OCCUPIED' })
 
     expect((await cards.createDeck('Words', 'Decks')).error).toBe('occupied')
@@ -79,7 +78,6 @@ describe('making a stencil', () => {
     expect(await cards.createStencil('Word', '', ['Front', 'Back'])).toEqual({
       path: 'Word.md',
       error: null,
-      refusal: null,
     })
     expect(asked[0]).toEqual({ title: 'Word', fields: ['Front', 'Back'] })
   })
@@ -126,7 +124,7 @@ describe('reading a deck', () => {
     const answer = await cards.readDeck('Notes.md')
 
     expect(answer.deck).toBeNull()
-    expect(answer.refusal).toBe('notADeck')
+    expect(answer.error).toBe('notADeck')
     expect(answer.at).toBe('')
   })
 
@@ -200,7 +198,7 @@ describe('writing a deck', () => {
     )
 
     expect(answer.changed).toBe(true)
-    expect(answer.refusal).toBeNull()
+    expect(answer.error).toBeNull()
   })
 })
 
@@ -262,7 +260,7 @@ describe('renaming a field', () => {
       decks: ['Words.md', 'Roots.md'],
       cards: 12,
       notWritten: [{ path: 'Old.md', text: 'Front' }],
-      refusal: null,
+      error: null,
       changed: false,
       at: '12 34 Word.md',
     })

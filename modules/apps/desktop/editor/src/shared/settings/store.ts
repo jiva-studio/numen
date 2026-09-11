@@ -7,7 +7,7 @@
  * leaves out.
  */
 import { ref, shallowRef } from 'vue'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import type { Model, SettingEdit } from './configuration'
 import type { MessageWriter } from '../notices/messages'
 import { write } from './write'
@@ -66,7 +66,7 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
       // The vault answered with something no settings can be read out of. It is
       // not a vault that has gone away, and a write followed by this leaves the
       // person watching their setting go back with no word for it.
-      said(words.unreadSettings, 'refusal')
+      said(words.unreadSettings, 'error')
       return
     }
     path.value = answer.path
@@ -92,7 +92,7 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
     try {
       await core.choosesSetting(written)
     } catch (thrown) {
-      said(`${words.unturned} ${troubleWords(thrown)}`, 'refusal')
+      said(`${words.unturned} ${formatErrorMessage(thrown)}`, 'error')
     }
     await start()
   }

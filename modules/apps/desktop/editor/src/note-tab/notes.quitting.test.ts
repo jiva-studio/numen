@@ -77,31 +77,31 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     },
     read: async (path): Promise<NoteResult> =>
       files.has(path)
-        ? { body: files.get(path) ?? '', refusal: null }
-        : { body: '', refusal: 'missing' },
+        ? { body: files.get(path) ?? '', error: null }
+        : { body: '', error: 'missing' },
     write: async (path, body): Promise<NoteResult> => {
       if (held) await new Promise<void>((through) => (held = through))
       wrote.push({ path, body })
       files.set(path, body)
-      return { body: '', refusal: null }
+      return { body: '', error: null }
     },
-    create: async () => ({ path: '', refusal: null }),
+    create: async () => ({ path: '', error: null }),
     join: async () => null,
     rename: async (path, title) => ({
       path,
       title,
       frontmatter: false,
       moved: null,
-      refusal: null,
+      error: null,
       changed: false,
     }),
-    remove: async () => ({ trashed: '', dangling: [], refusal: null }),
+    remove: async () => ({ trashed: '', dangling: [], error: null }),
     list: async () => [],
-    move: async () => ({ moved: null, refusal: null }),
+    move: async () => ({ moved: null, error: null }),
     createFolder: async () => null,
-    createUrl: async () => ({ path: '', error: null, refusal: null }),
+    createUrl: async () => ({ path: '', error: null }),
     makeFolder: async () => null,
-    makeURL: async () => ({ path: '', error: null, refusal: null }),
+    makeURL: async () => ({ path: '', error: null }),
     syncing: async () => true,
     hanging: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
     choosesSyncing: async () => null,

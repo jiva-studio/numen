@@ -5,15 +5,15 @@
  * and this is what every one of them starts from.
  */
 import type {
+  CreateResult,
+  ErrorCode,
   Link,
-  MakeResult,
   Move,
   Neighbourhood,
   NewNote,
   NoteEdit,
   NoteHeading,
   NoteResult,
-  RefusalReason,
   RemoveResult,
   RenameResult,
 } from './note'
@@ -54,18 +54,14 @@ export interface Core {
     /** How far reading the vault has got. */
     scan: {
       isReady: boolean
-      ready: boolean
       failureReason: string
-      failed: string
       unwatchedPath: string
-      unwatched: string
     }
     /** How far searching it by meaning has got. */
     coverage: {
       chunkCount: bigint
       embeddedCount: bigint
       isEmbedding: boolean
-      embedding: boolean
     }
   }>
   /**
@@ -77,7 +73,6 @@ export interface Core {
   changes(signal: AbortSignal): AsyncIterable<{
     paths: string[]
     shouldReload: boolean
-    reload: boolean
     renamed: readonly Move[]
   }>
   /** A change being made to a note's prose, reported while it is being made. */
@@ -122,12 +117,12 @@ export interface Core {
     seen: { prose: string; at: string } | null,
   ): Promise<NoteResult & { at?: string; changed?: boolean }>
   /** A note made, named after the title it is given and joined as it is written. */
-  create(note: NewNote): Promise<MakeResult>
+  create(note: NewNote): Promise<CreateResult>
   /**
    * A relationship written into one note. The note at the other end is left
    * alone: a link is one end's account of a relationship.
    */
-  join(path: string, link: Link): Promise<RefusalReason | null>
+  join(path: string, link: Link): Promise<ErrorCode | null>
   /**
    * A note given a different name. Whichever of the title and the filename
    * names it is brought into line, and the file follows where a title and a
@@ -206,14 +201,12 @@ export interface Core {
     seen: string | null,
   ): Promise<{ readonly changed: boolean }>
   /** An empty folder. The folders above it are made with it. */
-  createFolder(path: string): Promise<RefusalReason | null>
-  makeFolder?(path: string): Promise<RefusalReason | null>
+  createFolder(path: string): Promise<ErrorCode | null>
   /**
    * The file a web address is kept in, named by the address until a fetch says
    * what is there.
    */
   createUrl(url: string, folder: string): Promise<CreateResult>
-  makeURL?(url: string, folder: string): Promise<MakeResult>
   /**
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.

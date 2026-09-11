@@ -37,13 +37,13 @@ export const filesCore: FilesCore = {
   createUrl: async (url, folder) => {
     const answer = await files.createURL({ url, path: folder })
     const error = errorIn(answer)
-    return { path: answer.path, error, refusal: error }
+    return { path: answer.path, error }
   },
   makeFolder: async (path) => errorIn(await files.createFolder({ path })),
   makeURL: async (url, folder) => {
     const answer = await files.createURL({ url, path: folder })
     const error = errorIn(answer)
-    return { path: answer.path, error, refusal: error }
+    return { path: answer.path, error }
   },
   fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })

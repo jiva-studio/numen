@@ -13,15 +13,14 @@ import type { FileConflict } from './flushing'
 export interface FileConflictWords {
   readonly gone: string
   readonly makeAgain: string
-  readonly stale?: string
-  readonly overtaken?: string
+  readonly stale: string
   readonly keep: string
   readonly take: string
 }
 
 defineProps<{
   /** What could not be read or written, in words a person reads. */
-  saying: string
+  errorMessage: string
   /** Which conflict the file the tab holds stands in, if it stands in one. */
   conflict: FileConflict
   words: FileConflictWords
@@ -36,15 +35,15 @@ defineEmits<{
 </script>
 
 <template>
-  <p v-if="saying" class="caution" role="alert">{{ saying }}</p>
+  <p v-if="errorMessage" class="caution" role="alert">{{ errorMessage }}</p>
 
   <p v-if="conflict === 'gone'" class="caution caution--conflict" role="status">
     {{ words.gone }}
     <button type="button" class="answer" @click="$emit('keep')">{{ words.makeAgain }}</button>
   </p>
 
-  <p v-if="conflict === 'stale' || conflict === 'overtaken'" class="caution caution--conflict" role="status">
-    {{ words.stale ?? words.overtaken }}
+  <p v-if="conflict === 'stale'" class="caution caution--conflict" role="status">
+    {{ words.stale }}
     <button type="button" class="answer" @click="$emit('keep')">{{ words.keep }}</button>
     <button type="button" class="answer" @click="$emit('take')">{{ words.take }}</button>
   </p>

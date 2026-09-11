@@ -6,10 +6,10 @@
  * decided here: the plex reports the shape of a gesture and nothing else.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import { troubleWords } from '@numen/wire'
-import type { Core, Link, RefusalReason, Role } from '../shared/core'
+import { formatErrorMessage } from '@numen/wire'
+import type { Core, ErrorCode, Link, Role } from '../shared/core'
 import type { MessageWriter } from '../shared/notices/messages'
-import { REFUSED } from '../shared/words'
+import { ERRORS } from '../shared/words'
 
 /**
  * The role a link carries to seat a note where the gesture put it. A seat and
@@ -58,8 +58,8 @@ const names = 100
  * What a person is told when a note could not be made or joined. A name that
  * is taken is a name to choose again, and nothing has been renamed.
  */
-const words: Record<RefusalReason, string> = {
-  ...REFUSED,
+const words: Record<ErrorCode, string> = {
+  ...ERRORS,
   occupied: 'a note of that name is filed there already',
 }
 
@@ -81,13 +81,13 @@ export function noteCreator(core: Core, said: MessageWriter) {
     title: string,
     folder: string,
     links: readonly Link[],
-  ): Promise<NoteRef | RefusalReason | null> {
+  ): Promise<NoteRef | ErrorCode | null> {
     try {
       const made = await core.create({ title, folder, links })
-      if (made.refusal !== null) return made.refusal
+      if (made.error) return made.error
       return { path: made.path, title }
     } catch (error) {
-      said(troubleWords(error), 'refusal')
+      said(formatErrorMessage(error), 'error')
       return null
     }
   }
@@ -105,7 +105,7 @@ export function noteCreator(core: Core, said: MessageWriter) {
       if (made === 'occupied') continue
       return answered(made)
     }
-    said(exhausted, 'refusal')
+    said(exhausted, 'error')
     return null
   }
 
@@ -131,10 +131,10 @@ export function noteCreator(core: Core, said: MessageWriter) {
   }
 
   /** What a note that was asked for came to, said to the person where it failed. */
-  const answered = (made: NoteRef | RefusalReason | null): NoteRef | null => {
+  const answered = (made: NoteRef | ErrorCode | null): NoteRef | null => {
     if (made === null) return null
     if (typeof made === 'string') {
-      said(words[made], 'refusal')
+      said(words[made], 'error')
       return null
     }
     said('')
@@ -149,15 +149,15 @@ export function noteCreator(core: Core, said: MessageWriter) {
     const role = carries[seat]
     if (!role) return false
     try {
-      const refusal = await core.join(from, { to, role })
-      if (refusal !== null) {
-        said(words[refusal], 'refusal')
+      const joinError = await core.join(from, { to, role })
+      if (joinError !== null) {
+        said(words[joinError], 'error')
         return false
       }
       said('')
       return true
     } catch (error) {
-      said(troubleWords(error), 'refusal')
+      said(formatErrorMessage(error), 'error')
       return false
     }
   }

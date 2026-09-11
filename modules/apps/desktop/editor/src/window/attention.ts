@@ -45,7 +45,6 @@ export function useAttention({ core, tabs, held }: AttentionDeps) {
       }
     }),
   })
-  const attends = getAttention
 
   const attention = computed<Attention>(() => getAttention())
   watch(

@@ -49,22 +49,15 @@ export function createNoteTab(
   return {
     id,
     shown: computed(() => notes.shown(id)),
-    saying: computed(() => notes.saying(id)),
+    errorMessage: computed(() => notes.getErrorMessage(id)),
     change: computed(() => changes.shown(notes.where(id))),
     updateBody: (body: string) => notes.typed(id, body),
-    typed: (body: string) => notes.typed(id, body),
     save: () => notes.save(id),
     keepMine: () => notes.keep(id),
-    keep: () => notes.keep(id),
     takeFile: () => notes.take(id),
-    take: () => notes.take(id),
     setEditor: (editor: unknown) => keyboard.drew(id, editor),
-    drew: (editor: unknown) => keyboard.drew(id, editor),
     measure: () => keyboard.measure(id),
     followLink,
-    followUrl: followLink,
-    follows: followLink,
     close: closeTab,
-    shuts: closeTab,
   }
 }

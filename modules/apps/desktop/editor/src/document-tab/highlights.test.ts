@@ -13,12 +13,12 @@ describe('useDocumentHighlights', () => {
       getHighlights: async () => [pageHighlights],
     }
     const at = ref(0)
-    const trouble = ref('')
+    const error = ref('')
     const onGoToPage = vi.fn(async (page: number) => {
       at.value = page
     })
 
-    const hl = useDocumentHighlights(documents, 'doc.pdf', at, trouble, onGoToPage, () => true)
+    const hl = useDocumentHighlights(documents, 'doc.pdf', at, error, onGoToPage, () => true)
 
     await hl.highlight([pageHighlights])
     expect(onGoToPage).toHaveBeenCalledWith(1)

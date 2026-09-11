@@ -9,7 +9,7 @@ import { computed, shallowRef } from 'vue'
 
 import { noticed } from '@numen/ui'
 import type { Notice, Task, Tone } from '@numen/ui'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 
 export function useNotices() {
   /** What the window is doing behind itself, which stands above what it said. */
@@ -45,7 +45,7 @@ export function useNotices() {
    * nothing to say, and nothing is raised for it.
    */
   const failed = (why: unknown) => {
-    const said = sentence(troubleWords(why))
+    const said = sentence(formatErrorMessage(why))
     if (said) says(said, 'alarm')
   }
 

@@ -7,6 +7,7 @@ import {
   Rule as Rules,
   PresetsService,
 } from '@numen/protocol'
+import { goalNames, goalOf, namesOf, transport } from '@numen/wire'
 import type {
   Bounds as BoundsMessage,
   Curve as CurveMessage,
@@ -15,8 +16,7 @@ import type {
   Settings as SettingsMessage,
   SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
-import { goalNames, goalOf, namesOf, transport } from '@numen/wire'
-import { fingerprint, refusalIn, staleIn, stamp } from '../shared/answers'
+import { fingerprint, errorIn, staleIn, stamp } from '../shared/answers'
 import {
   DEFAULTS,
   NOWHERE,
@@ -45,7 +45,7 @@ export const presets: Presets = {
   ),
   makes: async (title, folder) => {
     const answer = await asking.createPreset({ title, path: folder })
-    return { path: answer.path, error: refusalIn(answer) }
+    return { path: answer.path, error: errorIn(answer) }
   },
   schedules: async (deck, preset, seen) => {
     const answer = await asking.scheduleDeck({
@@ -53,7 +53,7 @@ export const presets: Presets = {
       preset,
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: refusalIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
+    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   write: async (path, settings, seen) => {
     const answer = await asking.writePreset({
@@ -61,7 +61,7 @@ export const presets: Presets = {
       settings: sent(settings),
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: refusalIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
+    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   curve: async (path, settings) => {
     const answer = await asking.computeCurve({ path, settings: sent(settings) })
@@ -77,7 +77,7 @@ const took = (answer: {
   bounds?: SettingsBoundsMessage | undefined
 }): ReadResult => ({
   preset: answer.preset ? held(answer.preset) : null,
-  error: refusalIn(answer),
+  error: errorIn(answer),
   at: stamp(answer.at) ?? '',
   bounds: bounded(answer.bounds),
 })
@@ -123,7 +123,6 @@ const settingsOf = (said: SettingsMessage | undefined): Settings =>
         counts: COUNTED[said.counts] ?? DEFAULTS.counts,
         backlog: said.backlog,
         load: said.load,
-        hasEvenLoad: said.evenLoad,
         evenLoad: said.evenLoad,
         learned: LEARNED[said.learned] ?? DEFAULTS.learned,
         interval: said.interval,
@@ -140,7 +139,7 @@ const sent = (settings: Settings) => ({
   counts: COUNTING[settings.counts],
   backlog: settings.backlog,
   load: { ...settings.load },
-  evenLoad: settings.hasEvenLoad ?? settings.evenLoad,
+  evenLoad: settings.evenLoad,
   learned: RULING[settings.learned],
   interval: settings.interval,
 })
@@ -156,7 +155,6 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     retained: one.retained,
     owed: one.owed,
     through: one.through,
-    isSufficient: one.enough,
     enough: one.enough,
     closed: one.closed,
     clears: one.clears,

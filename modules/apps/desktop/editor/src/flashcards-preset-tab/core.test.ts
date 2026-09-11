@@ -32,9 +32,8 @@ const RULE_KEYS: Record<Rule, string> = { interval: 'interval', retention: 'rete
 
 describe('a preset naming nothing', () => {
   it('is scheduled by what the corpus says', () => {
-    const { hasEvenLoad: _, ...defaults } = DEFAULTS
     expect({
-      ...defaults,
+      ...DEFAULTS,
       goal: GOAL_KEYS[DEFAULTS.goal],
       counts: BUDGET_UNIT_KEYS[DEFAULTS.counts],
       learned: RULE_KEYS[DEFAULTS.learned],

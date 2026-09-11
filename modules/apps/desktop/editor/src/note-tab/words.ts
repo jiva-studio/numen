@@ -1,16 +1,15 @@
 /** What a note tab says: the questions its file puts, and the two ways out. */
-import type { Refusal } from './tabState'
+import type { NoteErrorCode } from './tabState'
 
 export const WORDS = {
   stale: 'The file changed on disk, so this note stopped saving.',
-  overtaken: 'The file changed on disk, so this note stopped saving.',
   gone: 'This note is no longer in the vault, so saving stopped. What is here is still yours.',
   makeAgain: 'make it again',
   keep: 'Keep mine',
   take: "Take the file's",
 }
 
-export const REFUSAL_WORDS: Record<Refusal, string> = {
+export const ERROR_MESSAGES: Record<NoteErrorCode, string> = {
   notANote: 'this file is not a note',
   notText: 'this file is not text',
   tooLarge: 'this note is longer than the editor holds',

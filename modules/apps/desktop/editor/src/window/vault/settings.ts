@@ -8,7 +8,7 @@ import { DEFAULT_PARTS } from '../../shared/settings/hanging'
 import { DEFAULT_STARTS } from '../../shared/settings/review'
 import { settingAt } from '../../shared/settings/store'
 import { write } from '../../shared/settings/write'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import type { Configuration, Core, HangingSettings, ReviewSettings } from '../../shared/core'
 
 const SYNCS = ['naming', 'sync_title_and_filename']
@@ -36,7 +36,7 @@ const puts = async (
       settings: written.map((one) => ({ at: [...one.at], value: write(one.value) })),
     })
   } catch (thrown) {
-    return troubleWords(thrown)
+    return formatErrorMessage(thrown)
   }
   return null
 }

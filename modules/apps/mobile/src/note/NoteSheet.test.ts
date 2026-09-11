@@ -4,7 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { Refusal } from '@numen/protocol'
-import { refusalWords } from '@numen/wire'
+import { formatErrorCodeMessage } from '@numen/wire'
 import NoteSheet from './NoteSheet.vue'
 import type { Core } from '../core'
 
@@ -18,7 +18,7 @@ describe('a note the core refused', () => {
     const sheet = mount(NoteSheet, { props: { core, path: 'Gone.md' }, attachTo: document.body })
     await flushPromises()
 
-    expect(sheet.emitted('trouble')).toStrictEqual([[refusalWords(Refusal.MISSING)]])
+    expect(sheet.emitted('trouble')).toStrictEqual([[formatErrorCodeMessage(Refusal.MISSING)]])
     expect(sheet.emitted('trouble')![0]![0]).not.toMatch(/\d/)
     expect(sheet.emitted('close')).toHaveLength(1)
 
@@ -36,7 +36,7 @@ describe('a note the core refused', () => {
     await sheet.get('[data-testid="keep"]').trigger('click')
     await flushPromises()
 
-    expect(sheet.emitted('trouble')).toStrictEqual([[refusalWords(Refusal.STALE)]])
+    expect(sheet.emitted('trouble')).toStrictEqual([[formatErrorCodeMessage(Refusal.STALE)]])
     expect(sheet.emitted('trouble')![0]![0]).not.toMatch(/\d/)
     expect(sheet.emitted('close')).toBeUndefined()
 

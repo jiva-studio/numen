@@ -51,7 +51,7 @@ function onOpen(url: string) {
 <template>
   <div class="note">
     <FileConflictPrompt
-      :saying="props.state.saying.value"
+      :errorMessage="props.state.errorMessage.value"
       :conflict="conflictIn(props.state.shown.value.state)"
       :words="words"
       @keep="onKeep"

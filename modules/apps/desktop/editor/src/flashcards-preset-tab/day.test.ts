@@ -73,17 +73,17 @@ const opened = async (settings: Partial<Settings>, answer?: Curve) => {
         stops: StopReason.NOTHING,
         stopsOn: StopReason.NOTHING,
       },
-      refusal: null,
+      error: null,
       at: 'one',
       bounds: BOUNDS,
     }),
-    scheduling: async () => ({ preset: null, refusal: null, at: '', bounds: NO_BOUNDS }),
+    scheduling: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
-    makes: async () => ({ path: '', refusal: null }),
-    schedules: async () => ({ refusal: null, changed: false, at: '' }),
+    makes: async () => ({ path: '', error: null }),
+    schedules: async () => ({ error: null, changed: false, at: '' }),
     write: async (_path, put) => {
       written.push(put)
-      return { refusal: null, changed: false, at: 'two' }
+      return { error: null, changed: false, at: 'two' }
     },
     // A curve nobody answers leaves the sketch standing, which is what the
     // arithmetic here is read off.

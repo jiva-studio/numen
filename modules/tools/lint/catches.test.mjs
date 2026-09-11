@@ -77,7 +77,7 @@ test('what the catch rule refuses', () => {
     {
       says: 'a catch that tells the person what went wrong',
       allowed: true,
-      source: 'try { open() } catch (why) { said(troubleWords(why), "refusal") }',
+      source: 'try { open() } catch (why) { said(formatErrorMessage(why), "refusal") }',
     },
     {
       says: 'a catch that puts the error back',
@@ -87,7 +87,7 @@ test('what the catch rule refuses', () => {
     {
       says: 'a catch naming the error inside a template literal',
       allowed: true,
-      source: 'try { open() } catch (why) { wrong.value = `unread ${troubleWords(why)}` }',
+      source: 'try { open() } catch (why) { wrong.value = `unread ${formatErrorMessage(why)}` }',
     },
     {
       says: 'a catch carrying a block comment',

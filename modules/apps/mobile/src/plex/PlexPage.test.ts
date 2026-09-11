@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { IonToast } from '@ionic/vue'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import PlexPage from './PlexPage.vue'
 import { reach } from '../core'
 
@@ -36,7 +36,7 @@ describe('a core that cannot be reached', () => {
     const { page, open, said } = await toastAfter(thrown)
 
     expect(open).toBe(true)
-    expect(said).toBe(troubleWords(thrown))
+    expect(said).toBe(formatErrorMessage(thrown))
     expect(said).not.toContain('ECONNREFUSED')
 
     page.unmount()

@@ -17,7 +17,7 @@ import { iconFor } from '../shared/icons'
 /** A tab standing on one note, with a child beside it and no menu open. */
 const held = () =>
   ({
-    view: { trouble: ref('') },
+    view: { error: ref('') },
     picture: ref({
       nodes: [
         { id: 'Root.md', title: 'Root', seat: 'focus' },

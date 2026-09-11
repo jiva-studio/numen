@@ -54,7 +54,7 @@ const viewOn = (at: string, related: readonly string[] = [], types: Types = {}) 
   const view = {
     neighbourhood: ref(around(at, related, types)),
     here: ref(at),
-    trouble: ref(''),
+    error: ref(''),
     go: async (path: string) => {
       went.push(path)
       view.here.value = path
@@ -267,7 +267,7 @@ describe('a plex drawing nothing', () => {
     const view = {
       neighbourhood: ref(null),
       here: ref(''),
-      trouble: ref(''),
+      error: ref(''),
       go: async () => {},
       follows: () => {},
       close: () => {},
@@ -1159,16 +1159,16 @@ describe('the plex the person is looking at', () => {
     expect(one.looking()).toBe('Two.md')
   })
 
-  it('does not carry the trouble of a tab that closed to the one before it', async () => {
+  it('does not carry the error of a tab that closed to the one before it', async () => {
     const one = window()
     const first = await one.holds('One.md')
     const second = await one.holds('Two.md')
-    second.state.view.trouble.value = 'Two.md is not in the vault'
+    second.state.view.error.value = 'Two.md is not in the vault'
 
     one.shuts(second.id)
 
     expect(one.looking()).toBe('One.md')
-    expect(first.state.view.trouble.value).toBe('')
+    expect(first.state.view.error.value).toBe('')
   })
 
   it('is the one before it when the tab in front closes', async () => {

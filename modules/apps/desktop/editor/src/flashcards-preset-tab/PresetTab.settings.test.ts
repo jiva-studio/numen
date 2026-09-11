@@ -147,9 +147,9 @@ describe('what the tab says went wrong', () => {
   }
 
   it('offers reading the file again beside what it says', async () => {
-    const { tab, done } = saying(words.refused('missing'))
+    const { tab, done } = saying(words.notRead('missing'))
     const alert = tab.get('[role="alert"]')
-    expect(alert.text()).toContain(words.refused('missing'))
+    expect(alert.text()).toContain(words.notRead('missing'))
     await alert.get('button').trigger('click')
     expect(done).toStrictEqual(['again'])
   })

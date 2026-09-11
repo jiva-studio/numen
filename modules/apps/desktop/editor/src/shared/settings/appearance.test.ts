@@ -276,7 +276,7 @@ describe('the theme the keyboard is standing on', () => {
     one.worn.shows('mine:sea')
     await settles()
 
-    expect(one.told.at(-1)).toStrictEqual({ text: words.unworn, kind: 'refusal' })
+    expect(one.told.at(-1)).toStrictEqual({ text: words.unworn, kind: 'error' })
     expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
   })
 
@@ -606,7 +606,7 @@ describe('the size that was chosen', () => {
 
     expect(one.told.at(-1)).toStrictEqual({
       text: 'appearance.interface_scale is 3, which is outside 0.8 to 2',
-      kind: 'refusal',
+      kind: 'error',
     })
     expect(sizes(one.sheet)).toBe(SIZED)
   })
@@ -656,7 +656,7 @@ describe('the row that was chosen', () => {
 
     expect(one.told.at(-1)).toStrictEqual({
       text: 'the settings could not be written',
-      kind: 'refusal',
+      kind: 'error',
     })
     expect(one.worn.applied.value).toBe('preset:numen')
     expect(dressing(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])

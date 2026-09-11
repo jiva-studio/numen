@@ -10,12 +10,12 @@ describe('a writer under a name', () => {
     const command = log.under('command')
 
     command('The note is in the trash')
-    command('a note of that name is filed there', 'refusal')
+    command('a note of that name is filed there', 'error')
 
     expect(log.messages.value).toHaveLength(1)
     expect(log.messages.value[0]).toMatchObject({
       name: 'command',
-      kind: 'refusal',
+      kind: 'error',
       text: 'a note of that name is filed there',
     })
   })
@@ -47,7 +47,7 @@ describe('a writer under a name', () => {
   it('clears what it wrote when it writes nothing', () => {
     const log = messageLog()
     log.under('command')('Renamed')
-    log.under('made')('a note of that name is filed there', 'refusal')
+    log.under('made')('a note of that name is filed there', 'error')
 
     log.under('command')('')
 
@@ -69,7 +69,7 @@ describe('a message the person is finished with', () => {
   it('is dropped by the identity it was given, and nothing else is', () => {
     const log = messageLog()
     log.under('command')('Renamed')
-    log.under('made')('Filed there already', 'refusal')
+    log.under('made')('Filed there already', 'error')
     const first = log.messages.value[0]!
 
     log.forget(first.id)

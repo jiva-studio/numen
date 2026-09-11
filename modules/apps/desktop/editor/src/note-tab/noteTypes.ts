@@ -1,16 +1,15 @@
 /**
  * Domain types for open notes and their storage.
  */
-import type { NoteResult } from '../shared/core'
-import type { NoteBaseline, Refusal, State, waiting } from './tabState'
+import type { ErrorCode, NoteResult } from '../shared/core'
+import type { NoteBaseline, State, waiting } from './tabState'
 
 /** One open note as the window draws it. */
 export interface OpenNote {
   readonly path: string
   readonly body: string
   readonly state: State
-  readonly error?: Refusal | null
-  readonly refusal: Refusal | null
+  readonly error: ErrorCode | null
 }
 
 /**

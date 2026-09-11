@@ -17,21 +17,14 @@ export interface NoteTabDeps extends NoteTitlesDeps {
 export interface NoteTabState {
   readonly id: string
   readonly shown: ComputedRef<OpenNote>
-  readonly saying: ComputedRef<string>
+  readonly errorMessage: ComputedRef<string>
   readonly change: ComputedRef<Change | null>
   updateBody(body: string): void
-  typed(body: string): void
   save(): void
   keepMine(): void
-  keep(): void
   takeFile(): void
-  take(): void
   setEditor(editor: unknown): void
-  drew(editor: unknown): void
   measure(): void
   followLink(url: string): void
-  followUrl(url: string): void
-  follows(address: string): void
   close(id: string): void
-  shuts(id: string): void
 }

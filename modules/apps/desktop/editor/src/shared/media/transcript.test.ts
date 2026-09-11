@@ -160,7 +160,7 @@ describe('a recording nothing has listened to', () => {
     await settled()
 
     expect(heard.cues.value).toStrictEqual([])
-    expect(heard.trouble.value).toBe('')
+    expect(heard.error.value).toBe('')
   })
 })
 
@@ -171,7 +171,7 @@ describe('a build that cannot read a transcript', () => {
 
     await settled()
 
-    expect(heard.trouble.value).toContain('numen did not answer')
+    expect(heard.error.value).toContain('numen did not answer')
     expect(heard.address.value).toBe(SUMMARY.mediaUrl)
   })
 })
@@ -348,7 +348,7 @@ describe('a recording opened at a place in its words', () => {
     await heard.reach({ from: 900_000, to: 900_006 })
 
     expect(sought).toStrictEqual([])
-    expect(heard.trouble.value).toBe('')
+    expect(heard.error.value).toBe('')
   })
 
   it('says what it could not ask, and plays on', async () => {
@@ -360,8 +360,8 @@ describe('a recording opened at a place in its words', () => {
 
     await heard.reach({ from: 22, to: 28 })
 
-    expect(heard.trouble.value).toContain('numen did not answer')
-    expect(heard.trouble.value).not.toContain('the words are being written')
+    expect(heard.error.value).toContain('numen did not answer')
+    expect(heard.error.value).not.toContain('the words are being written')
   })
 })
 
@@ -639,7 +639,7 @@ describe('what the tab says where the words would stand', () => {
 
     heard.ticks(true)
 
-    expect(heard.trouble.value).toContain('numen did not answer')
+    expect(heard.error.value).toContain('numen did not answer')
     expect(heard.note.value).toBe(WORDS.transcribing)
   })
 
@@ -655,8 +655,8 @@ describe('what the tab says where the words would stand', () => {
     await still()
 
     expect(heard.note.value).toBe('')
-    expect(heard.trouble.value).toContain('numen did not answer')
-    expect(heard.trouble.value).not.toContain('being listened to')
+    expect(heard.error.value).toContain('numen did not answer')
+    expect(heard.error.value).not.toContain('being listened to')
   })
 
   it('is that a run is going, where nothing went wrong', async () => {
@@ -819,7 +819,7 @@ describe('the words as a person edits them', () => {
     heard.typed('Mine.\nThe second thing said.\nThe third thing said.')
     await still()
 
-    expect(heard.trouble.value).toContain('numen did not answer')
+    expect(heard.error.value).toContain('numen did not answer')
     expect(heard.cues.value).toStrictEqual(CUES)
   })
 

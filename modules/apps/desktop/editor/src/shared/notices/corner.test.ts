@@ -84,7 +84,7 @@ describe('a document being read', () => {
 })
 
 describe('work that stopped badly', () => {
-  it('is drawn as trouble and not as something still running', () => {
+  it('is drawn as alarm and not as something still running', () => {
     const drawn = corner([reading({ failed: 'nothing to read with' })])
 
     expect(drawn[0]?.tone).toBe('alarm')
@@ -250,8 +250,8 @@ describe('what the window said', () => {
     expect(drawn[0]).toMatchObject({ tone: 'caution', stay: 'kept' })
   })
 
-  it('draws a refusal as trouble that stands until it is put away', () => {
-    const drawn = corner([], [told({ kind: 'refusal', text: 'a note of that name is filed there' })])
+  it('draws an error that stands until it is put away', () => {
+    const drawn = corner([], [told({ kind: 'error', text: 'a note of that name is filed there' })])
 
     expect(drawn[0]).toMatchObject({ tone: 'alarm', stay: 'kept' })
   })

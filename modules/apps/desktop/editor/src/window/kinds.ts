@@ -3,7 +3,7 @@
  */
 import { computed, shallowRef, watch } from 'vue'
 import { useConversation } from '@numen/ui'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import { cards } from '../shared/flashcards/cards'
 import { presets } from '../flashcards-preset-tab/core'
 import { documents } from '../document-tab/wire'
@@ -96,7 +96,7 @@ export function useWindowKinds({
     opening: window.opening,
     first: () => window.first(),
     dragged,
-    says: (text) => told(text, 'refusal'),
+    says: (text) => told(text, 'error'),
     writes: async () => (await editing.making.createUntitled('', []))?.path ?? '',
     creatable: CREATABLE,
   })
@@ -168,7 +168,7 @@ export function useWindowKinds({
     try {
       await running.fetches(path)
     } catch (error) {
-      told(troubleWords(error), 'refusal')
+      told(formatErrorMessage(error), 'error')
       return
     }
     editing.notes.changed([path])
@@ -186,7 +186,7 @@ export function useWindowKinds({
       },
     },
     puts,
-    { refused: words.refused },
+    { errors: words.errors },
     told,
   )
 
@@ -214,7 +214,7 @@ export function useWindowKinds({
     stencils: (folder, name) => made.makes('stencil', folder, name, [cardWords.newField]),
     presets: (folder, name) => made.makes('preset', folder, name),
     imports: (folder, address) => made.imports(folder, address),
-    says: (text) => told(text, 'refusal'),
+    says: (text) => told(text, 'error'),
     canRun: (run) => runs.canRun(run),
   })
 

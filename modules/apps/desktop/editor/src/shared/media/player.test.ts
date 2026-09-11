@@ -30,9 +30,9 @@ function stands() {
     /** How many times it was asked to play, and to stop. */
     started: 0,
     stopped: 0,
-    /** What a call to play answers with, and what it refuses with. */
-    refuses: false,
-    refusal: new Error('the window would not') as Error,
+    /** What a call to play answers with, and what it fails with. */
+    fails: false,
+    playError: new Error('the window would not') as Error,
 
     addEventListener(name: string, run: () => void) {
       const held = listeners.get(name) ?? []
@@ -42,7 +42,7 @@ function stands() {
 
     play() {
       element.started++
-      if (element.refuses) return Promise.reject(element.refusal)
+      if (element.fails) return Promise.reject(element.playError)
       element.paused = false
       fires('play')
       return Promise.resolve()
@@ -193,7 +193,7 @@ describe('a recording played', () => {
 
   it('is not playing where the window refused it, and says so', async () => {
     const { plays, element } = player()
-    element.refuses = true
+    element.fails = true
 
     plays.play(TALK)
     await Promise.resolve()
@@ -205,8 +205,8 @@ describe('a recording played', () => {
 
   it('says nothing of a play the window itself cut short', async () => {
     const { plays, element } = player()
-    element.refuses = true
-    element.refusal = Object.assign(new Error('another recording took it'), {
+    element.fails = true
+    element.playError = Object.assign(new Error('another recording took it'), {
       name: 'AbortError',
     })
 

@@ -1,7 +1,7 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { StopReason } from '@numen/protocol'
 import { many, percent, plural } from '@numen/ui'
-import type { RefusalReason } from '../shared/core'
+import type { ErrorCode } from '../shared/core'
 import type { BudgetUnit, Goal, Rule } from './core'
 import type { Field } from './curve'
 
@@ -65,11 +65,11 @@ const FIELDS: Record<Field, readonly [string, string]> = {
 }
 
 /**
- * What a read of the preset was refused for. A refusal only a write answers
- * with, and one only a deck or a stencil is refused with, has no sentence here
+ * What a read of the preset encountered as an error. An error only a write answers
+ * with, and one only a deck or a stencil encounters, has no sentence here
  * and is said in the one line under it.
  */
-const READING: Record<RefusalReason, string | null> = {
+const READING: Record<ErrorCode, string | null> = {
   missing: 'This preset is no longer in the vault, so what stands here is what was last read.',
   notANote: 'What stands at this path is not a note, so there are no settings in it to read.',
   notText: 'This file is not text, so there are no settings in it to read.',
@@ -84,15 +84,14 @@ const READING: Record<RefusalReason, string | null> = {
   deckTooLarge: null,
 }
 
-/** The read was refused and the vault named no reason the window knows. */
+/** The read encountered an error and the vault named no reason the window knows. */
 const UNREAD = 'This preset could not be read, and the vault named no reason.'
 
 /**
  * What a write of the settings was refused for. Each says where the settings
- * stand, which is in the tab: a refused write leaves the file as it was. A
- * refusal only a deck or a stencil is written with has no sentence here.
+ * stand, which is in the tab: a failed write leaves the file as it was.
  */
-const WRITING: Record<RefusalReason, string | null> = {
+const WRITING: Record<ErrorCode, string | null> = {
   missing:
     'This preset is no longer in the vault, so nothing was written. ' +
     'These settings are still here.',
@@ -302,10 +301,10 @@ export const WORDS = {
   /** The file moved under the window, and the two answers to that. */
   changed: 'This file changed on disk, so nothing was written.',
   reads: 'Read it again',
-  /** What a read was refused for. */
-  refused: (refusal: RefusalReason) => READING[refusal] ?? UNREAD,
+  /** What a read failed for. */
+  notRead: (error: ErrorCode) => READING[error] ?? UNREAD,
   /** What a write was refused for, and where the settings stand after it. */
-  notSaved: (refusal: RefusalReason) => WRITING[refusal] ?? UNWRITTEN,
+  notSaved: (error: ErrorCode) => WRITING[error] ?? UNWRITTEN,
   /** The vault answered a read with neither settings nor a reason. */
   unreachable: 'The vault would not answer for this preset, and did not say why.',
   /** The vault answered a write with neither a file nor a reason. */

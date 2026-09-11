@@ -140,7 +140,7 @@ export const useWindow = () => {
     const stands = (await core.fileKinds([path])).get(path)
     if (stands?.type !== 'deck') return editing.schedules.shows(path)
     const answer = await presets.scheduling(path)
-    if (answer.error) return told(words.refused[answer.error], 'refusal')
+    if (answer.error) return told(words.errors[answer.error], 'error')
     if (!answer.preset?.path) return told(words.noPreset, 'caution')
     editing.schedules.shows(answer.preset.path, answer.preset.title)
   }

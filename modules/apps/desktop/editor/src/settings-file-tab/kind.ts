@@ -6,7 +6,7 @@
  * wrong with it, and the file is left as it was.
  */
 import { computed, readonly, ref } from 'vue'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { SETTINGS_FILE } from '../shared/tabs/workspace'
 import SettingsFileTab from './SettingsFileTab.vue'
@@ -33,7 +33,7 @@ export type SettingsFileTabState = ReturnType<typeof useSettingsFileTab>
 /**
  * The file as it stands, what is typed over it, and what is wrong with what was
  * typed. It is kept the way a note is kept: a keep presents the file the tab
- * last read, and a file that moved past it stands overtaken until the person
+ * last read, and a file that moved past it stands stale until the person
  * keeps theirs or takes the file's.
  */
 export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void) {
@@ -56,7 +56,7 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
     try {
       answer = await core.settingsFile()
     } catch (thrown) {
-      wrong.value = `${words.unread} ${troubleWords(thrown)}`
+      wrong.value = `${words.unread} ${formatErrorMessage(thrown)}`
       return
     }
     held.value = answer.written
@@ -77,7 +77,7 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
     try {
       answer = await core.writesSettingsFile(typed.value, seen)
     } catch (thrown) {
-      wrong.value = `${words.unwritten} ${troubleWords(thrown)}`
+      wrong.value = `${words.unwritten} ${formatErrorMessage(thrown)}`
       return
     }
     // Nothing was written, and the tab stands stale until the person says
@@ -112,8 +112,6 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
     read: readonly(read),
     /** Whether the file moved past what was read. */
     isStale: readonly(isStale),
-    stale: readonly(isStale),
-    overtaken: readonly(isStale),
     again,
     keeps,
     keep,
@@ -124,7 +122,7 @@ export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void)
 
 /** What the tab carries beside its name, and nothing where there is nothing to say. */
 const mark = (state: SettingsFileTabState): string | undefined => {
-  if (state.isStale?.value || state.stale?.value || state.overtaken?.value) return 'stale'
+  if (state.isStale.value) return 'stale'
   return state.changed.value ? '•' : undefined
 }
 

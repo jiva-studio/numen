@@ -7,7 +7,7 @@
  * `deps.ts`; what a command does to the vaults is `vaults.ts`. Nothing here
  * draws anything.
  */
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import { all, naming, type CommandDeps, type CommandHandler, type Words } from './deps'
 import { atItsFile, makes, makesFolder, moves, renames, settles, travels } from './noteHandlers'
 import type { CommandInvocation } from './target'
@@ -52,12 +52,12 @@ const carried: Record<string, CommandHandler> = {
   deleteText: async (invocation, on, words) => {
     if (await on.runs.deletesTranscript(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
-    on.says(words.unrunnable, 'refusal')
+    on.says(words.unrunnable, 'error')
   },
   deleteCopy: async (invocation, on, words) => {
     if (await on.runs.deletesCopy(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
-    on.says(words.unrunnable, 'refusal')
+    on.says(words.unrunnable, 'error')
   },
   ask: (invocation, on) => on.goes.asks(`${invocation.path} — `),
   copy: (invocation, on) => on.copies(invocation.path),
@@ -96,17 +96,17 @@ export async function does(invocation: CommandInvocation | null, on: CommandDeps
   try {
     await carry(atItsFile(invocation, on), on, words)
   } catch (error) {
-    on.says(troubleWords(error), 'refusal')
+    on.says(formatErrorMessage(error), 'error')
   }
 }
 
 
 
-/** What an artifact stands at when the ask did not come off, which is said as a refusal. */
+/** What an artifact stands at when the ask did not come off, which is said as an error. */
 const WENT_WRONG: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'failed']
 
 /**
- * An artifact asked for over a file. What it now stands at is one troubleWords,
+ * An artifact asked for over a file. What it now stands at is one message,
  * which is what the person is told; a run under way shows what it is doing in
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
@@ -114,17 +114,17 @@ const WENT_WRONG: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'faile
 const began = (invocation: CommandInvocation, outcome: Outcome, on: CommandDeps, words: Words): void => {
   if (!outcome.able) {
     on.runSupport.cannotRun(invocation.id)
-    return on.says(words.unrunnable, 'refusal')
+    return on.says(words.unrunnable, 'error')
   }
   // A file nothing here could read carries what the run said about it, and that
-  // stands after the troubleWords.
+  // stands after the message.
   //
   // A run over an address is its own answer: it fetches whenever it is asked,
   // and what it fetched is not what a model heard in a recording.
   const why =
     invocation.id === 'downloadText' ? words.fetched[outcome.made] : words.made[outcome.of][outcome.made]
   const said = outcome.error ? `${why} ${outcome.error}` : why
-  on.says(said, WENT_WRONG.includes(outcome.made) ? 'refusal' : 'report')
+  on.says(said, WENT_WRONG.includes(outcome.made) ? 'error' : 'report')
 }
 
 
@@ -153,9 +153,9 @@ const removes = async (invocation: CommandInvocation, destroy: boolean, on: Comm
       continue
     }
     const answer = await on.files.removes(path, destroy)
-    const error = answer.error ?? answer.refusal
+    const error = answer.error
     if (error) {
-      refused.push((words.errors ?? words.refused)[error])
+      refused.push(words.errors[error])
       continue
     }
     if (tab.held) on.notes.shuts(tab.held)
@@ -163,7 +163,7 @@ const removes = async (invocation: CommandInvocation, destroy: boolean, on: Comm
     if (opening) await on.goes.leaves(path, opening)
   }
 
-  if (refused.length > 0) return on.says(all(...refused), 'refusal')
+  if (refused.length > 0) return on.says(all(...refused), 'error')
   if (waiting) return on.says(words.unanswered, 'caution')
   on.says(naming(words.dangling, dangling))
 }

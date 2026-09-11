@@ -15,7 +15,7 @@ import {
   type PlexNeighbourhood,
   type PlexRelatedSeat,
 } from '@numen/ui'
-import { refusalWords, troubleWords } from '@numen/wire'
+import { formatErrorCodeMessage, formatErrorMessage } from '@numen/wire'
 import NoteSheet from '../note/NoteSheet.vue'
 import { reach, type Core } from '../core'
 import { follow } from './following'
@@ -49,7 +49,7 @@ async function made(from: string, seat: PlexRelatedSeat) {
   if (!title?.trim()) return
   const created = await core.value.notes.createNote({ title: title.trim(), path: '' })
   if (!created.path) {
-    trouble.value = refusalWords(created.refusal)
+    trouble.value = formatErrorCodeMessage(created.refusal)
     return
   }
   await joined(from, created.path, seat)
@@ -62,7 +62,7 @@ async function joined(from: string, to: string, seat: PlexRelatedSeat) {
   if (!isCreatable(seat)) return
   const said = await core.value.notes.writeLink({ path: from, link: { to, role: ROLES[seat] } })
   if (said.refusal) {
-    trouble.value = refusalWords(said.refusal)
+    trouble.value = formatErrorCodeMessage(said.refusal)
     return
   }
   await draw(at.value)
@@ -75,7 +75,7 @@ onMounted(async () => {
     // The vault is still being read; the picture is drawn again as it lands.
     follow(core.value, () => void draw(at.value))
   } catch (why) {
-    trouble.value = troubleWords(why)
+    trouble.value = formatErrorMessage(why)
   }
 })
 </script>

@@ -1,14 +1,14 @@
 /**
  * What every client of the application shares: the file an answer came out of,
- * and what a refusal is called in the window's own words.
+ * and what an error is called in the window's own words.
  *
  * A file is one value a caller carries about and never reads into. The schema
  * holds the parts; what a tab does with one is present it back unchanged, so
  * the parts stay here and the string goes everywhere else.
  */
 import { Code, type ConnectError } from '@connectrpc/connect'
-import { Refusal } from '@numen/protocol'
-import type { ErrorCode, RefusalReason } from './note'
+import { Refusal as ProtoErrorCode } from '@numen/protocol'
+import type { ErrorCode } from './note'
 
 /** The file an answer came out of, as the one string the window carries. */
 export const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
@@ -28,34 +28,32 @@ export const fingerprint = (at: string) => {
  * `changed`. Keyed by the schema, so an error code added to it has to be given a
  * word or that same silence here before this compiles.
  */
-export const REFUSAL: Record<Refusal, ErrorCode | null> = {
-  [Refusal.UNSPECIFIED]: 'unreadable',
-  [Refusal.MISSING]: 'missing',
-  [Refusal.NOT_A_NOTE]: 'notANote',
-  [Refusal.NOT_TEXT]: 'notText',
-  [Refusal.TOO_LARGE]: 'tooLarge',
-  [Refusal.BODY_REFUSED]: 'bodyRefused',
-  [Refusal.UNREADABLE]: 'unreadable',
-  [Refusal.OCCUPIED]: 'occupied',
-  [Refusal.UNNAMEABLE]: 'unnameable',
-  [Refusal.NOT_A_STENCIL]: 'notAStencil',
-  [Refusal.NOT_A_DECK]: 'notADeck',
-  [Refusal.DECK_TOO_LARGE]: 'deckTooLarge',
-  [Refusal.NOT_A_PRESET]: 'notAPreset',
-  [Refusal.STALE]: null,
+export const ERROR_CODE: Record<ProtoErrorCode, ErrorCode | null> = {
+  [ProtoErrorCode.UNSPECIFIED]: 'unreadable',
+  [ProtoErrorCode.MISSING]: 'missing',
+  [ProtoErrorCode.NOT_A_NOTE]: 'notANote',
+  [ProtoErrorCode.NOT_TEXT]: 'notText',
+  [ProtoErrorCode.TOO_LARGE]: 'tooLarge',
+  [ProtoErrorCode.BODY_REFUSED]: 'bodyRefused',
+  [ProtoErrorCode.UNREADABLE]: 'unreadable',
+  [ProtoErrorCode.OCCUPIED]: 'occupied',
+  [ProtoErrorCode.UNNAMEABLE]: 'unnameable',
+  [ProtoErrorCode.NOT_A_STENCIL]: 'notAStencil',
+  [ProtoErrorCode.NOT_A_DECK]: 'notADeck',
+  [ProtoErrorCode.DECK_TOO_LARGE]: 'deckTooLarge',
+  [ProtoErrorCode.NOT_A_PRESET]: 'notAPreset',
+  [ProtoErrorCode.STALE]: null,
 }
-export const ERROR_CODE = REFUSAL
 
 /** What one answer encountered as an error, and nothing where it succeeded. */
-export const errorIn = (from: { refusal?: Refusal | undefined }): ErrorCode | null =>
-  from.refusal === undefined ? null : (ERROR_CODE[from.refusal] ?? null)
-
-export const refusalIn = (from: { refusal?: Refusal | undefined }): ErrorCode | null =>
-  from.refusal === undefined ? null : (REFUSAL[from.refusal] ?? null)
+export const errorIn = (from: { refusal?: ProtoErrorCode | undefined; error?: ProtoErrorCode | undefined }): ErrorCode | null => {
+  const err = from.error ?? from.refusal
+  return err === undefined ? null : (ERROR_CODE[err] ?? null)
+}
 
 /** Whether the file an answer is about had moved past what the caller read. */
-export const staleIn = (from: { refusal?: Refusal | undefined }): boolean =>
-  from.refusal === Refusal.STALE
+export const staleIn = (from: { refusal?: ProtoErrorCode | undefined; error?: ProtoErrorCode | undefined }): boolean =>
+  (from.error ?? from.refusal) === ProtoErrorCode.STALE
 
 /**
  * Where a file of the vault is asked about. The path is written out whole, so a
@@ -74,7 +72,7 @@ export const named = (seen: string): string => {
   return `size=${at.size}&mtime=${at.mtime}`
 }
 
-/** How often a document that is busy is waited out before it is a refusal. */
+/** How often a document that is busy is waited out before it errors. */
 const PATIENCE = 3
 
 /** How long the window waits before asking a busy document again. */

@@ -82,39 +82,24 @@ export interface DeckTabState {
   /** What is wrong with the file, against the card it stands on. */
   readonly marks: ComputedRef<Marks>
   /** What the whole file was refused for, in words a person reads. */
-  readonly saying: ComputedRef<string>
+  readonly errorMessage: ComputedRef<string>
   /** The preset this deck is scheduled by. */
   readonly scheduled: ComputedRef<DeckPreset>
   /** The presets this deck may be put on, the defaults first. */
   readonly choices: ComputedRef<readonly Choice[]>
-  schedules(preset: string): void
   setSchedule(preset: string): void
-  adds(
-    stencil: string,
-    values: readonly { field: string; text: string }[],
-    section: string | null,
-  ): void
   addCard(
     stencil: string,
     values: readonly { field: string; text: string }[],
     section: string | null,
   ): void
-  removes(card: string): void
   removeCard(card: string): void
-  moves(card: string, at: string | null): void
   moveCard(card: string, at: string | null): void
-  writes(card: string, field: string, nth: number, text: string): void
   writeCardField(card: string, field: string, nth: number, text: string): void
-  addsSection(name: string): void
   addSection(name: string): void
-  namesSection(section: string, name: string): void
   renameSection(section: string, name: string): void
-  removesSection(section: string): void
   removeSection(section: string): void
-  keep(): void
   keepMine(): void
-  take(): void
   takeFile(): void
-  shuts(id: string): void
   close(id: string): void
 }

@@ -17,7 +17,7 @@ import type { SearchMode } from '../../shared/command/search'
 import type {
   Presence,
   Vault,
-  VaultRefusalReason,
+  VaultErrorCode,
   VaultResult,
 } from '../../shared/core'
 
@@ -54,7 +54,7 @@ export const fetched: Record<Presences, Presence> = {
   [Presences.NOTHING_TO_FETCH]: 'nothing to fetch',
 }
 
-const unvaulted: Record<VaultsRefusal, VaultRefusalReason> = {
+const unvaulted: Record<VaultsRefusal, VaultErrorCode> = {
   [VaultsRefusal.UNSPECIFIED]: 'unreadable',
   [VaultsRefusal.UNREADABLE]: 'unreadable',
   [VaultsRefusal.COPY]: 'copy',
@@ -67,7 +67,7 @@ const unvaulted: Record<VaultsRefusal, VaultRefusalReason> = {
   [VaultsRefusal.ASKING]: 'asking',
 }
 
-export const turnedDown = (from: { error?: VaultsRefusal | undefined; refusal?: VaultsRefusal | undefined }): VaultRefusalReason | null => {
+export const turnedDown = (from: { error?: VaultsRefusal | undefined; refusal?: VaultsRefusal | undefined }): VaultErrorCode | null => {
   const code = from.error ?? from.refusal
   return code === undefined ? null : unvaulted[code]
 }
@@ -101,6 +101,5 @@ export const mapVaultResult = (from: {
   return {
     vault: from.vault ? mapVault(from.vault) : null,
     error,
-    refusal: error,
   }
 }

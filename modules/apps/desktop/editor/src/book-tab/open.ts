@@ -3,7 +3,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { BookSpan } from '@numen/ui'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '../shared/core'
 import type { MessageWriter } from '../shared/notices/messages'
 import { pointedAt } from './markup'
@@ -81,7 +81,7 @@ export function useBookReader(
       markup.value = pointedAt(markupContent, (name) => books.getEntryUrl(path, name, seen.value))
     } catch (error) {
       if (!open || asked !== wanted) return
-      said(troubleWords(error), 'refusal')
+      said(formatErrorMessage(error), 'error')
     }
   }
 
@@ -102,7 +102,7 @@ export function useBookReader(
       await draw(documentAt(saidBook.documents, saidBook.span.begins))
     } catch (error) {
       if (!open) return
-      said(troubleWords(error), 'refusal')
+      said(formatErrorMessage(error), 'error')
     }
   }
 

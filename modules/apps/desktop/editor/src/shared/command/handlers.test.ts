@@ -12,9 +12,9 @@ import { invocationOf, type CommandInvocation, type CommandTarget } from './targ
 import { reaching, type CommandDeps, type Store } from './deps'
 import { does } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '../artifacts'
-import type { Movement } from '../file'
-import type { RefusalReason, RemoveResult, RenameResult } from '../note'
-import type { Vault, VaultRefusalReason, VaultResult } from '../vaults'
+import type { FileMoveResult } from '../file'
+import type { ErrorCode, RemoveResult, RenameResult } from '../note'
+import type { Vault, VaultErrorCode, VaultResult } from '../vaults'
 import { WORDS as words } from '../words'
 
 /** What is in front, which every invocation is carried out over. */
@@ -44,7 +44,7 @@ const renamed = (over: Partial<RenameResult> = {}): RenameResult => ({
   title: 'Entropy',
   frontmatter: false,
   moved: null,
-  refusal: null,
+  error: null,
   changed: false,
   ...over,
 })
@@ -60,7 +60,7 @@ const outcome = (of: Artifact, made: ArtifactState, error = ''): Outcome => ({
 const removed = (over: Partial<RemoveResult> = {}): RemoveResult => ({
   trashed: '.trash/Ontology.md',
   dangling: [],
-  refusal: null,
+  error: null,
   ...over,
 })
 
@@ -84,11 +84,11 @@ const window = (
     /** What the list of vaults answered adding or renaming one. */
     added?: VaultResult
     /** What the list of vaults refused forgetting, erasing or opening one. */
-    turnedDown?: VaultRefusalReason
+    turnedDown?: VaultErrorCode
     /** What moving a file came back with. */
-    movement?: Movement
+    movement?: FileMoveResult
     /** What making a folder was refused with. */
-    folderRefused?: RefusalReason
+    folderRefused?: ErrorCode
     /** What the file in front carries. */
     carries?: ArtifactStates
     /** How asking for an artifact of a file came out. */
@@ -104,7 +104,7 @@ const window = (
   /** The voice each sentence was said in, one to a sentence. */
   const tones: string[] = []
   const at = answers.at ?? 'physics/Ontology.md'
-  const refusal = answers.turnedDown ?? null
+  const turnedDown = answers.turnedDown ?? null
   /** The runs this one window has been told this build cannot do. */
   const runs = runSupport()
   const on: CommandDeps = {
@@ -123,7 +123,7 @@ const window = (
       },
       moves: async (from, to) => {
         done.push(`moves ${from} ${to}`)
-        return answers.movement ?? { moved: null, refusal: null }
+        return answers.movement ?? { moved: null, error: null }
       },
       makesFolder: async (path) => {
         done.push(`makes folder ${path}`)
@@ -194,19 +194,19 @@ const window = (
       },
       add: async (path, name) => {
         done.push(`add ${path} ${name || '—'}`)
-        return answers.added ?? { vault: known('heat', 'Heat'), refusal: null }
+        return answers.added ?? { vault: known('heat', 'Heat'), error: null }
       },
       rename: async (id, name) => {
         done.push(`renames vault ${id} ${name}`)
-        return answers.added ?? { vault: known(id, name), refusal: null }
+        return answers.added ?? { vault: known(id, name), error: null }
       },
       remove: async (id, trash) => {
         done.push(trash ? `erases ${id}` : `forgets ${id}`)
-        return refusal
+        return turnedDown
       },
       open: async (id) => {
         done.push(`opens vault ${id}`)
-        return refusal
+        return turnedDown
       },
       calls: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
       reloads: () => void done.push('reloads'),
@@ -371,7 +371,7 @@ describe('a note made', () => {
 
 /**
  * What the window says an artifact of a file now stands at, as a report. Work
- * that came off is one of these: only what did not is a refusal.
+ * that came off is one of these: only what did not is an error.
  */
 const REPORTED: readonly ArtifactState[] = ['queued', 'running', 'done']
 
@@ -413,15 +413,15 @@ describe('an artifact asked for over a file', () => {
     }
   })
 
-  // Only a run under way is a report. Everything else is a refusal: the person
+  // Only a run under way is a report. Everything else is an error: the person
   // asked for work, and none is being done.
-  it('says a run under way as a report and the rest as refusals', async () => {
+  it('says a run under way as a report and the rest as errors', async () => {
     for (const made of REACHED) {
       const { one, invocation } = asked(made)
 
       await carry(invocation, one.on)
 
-      expect(one.tones, made).toStrictEqual([REPORTED.includes(made) ? 'report' : 'refusal'])
+      expect(one.tones, made).toStrictEqual([REPORTED.includes(made) ? 'report' : 'error'])
     }
   })
 
@@ -501,7 +501,7 @@ describe('the transcript of a recording deleted', () => {
     await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.said).toStrictEqual([why])
-    expect(one.tones).toStrictEqual(['refusal'])
+    expect(one.tones).toStrictEqual(['error'])
   })
 
   it('says this build cannot do it, and offers it nowhere after that', async () => {
@@ -537,7 +537,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([words.overtaken])
+    expect(one.said).toStrictEqual([words.stale])
   })
 
   it('is renamed where no tab of the window holds it', async () => {
@@ -581,27 +581,27 @@ describe('a note renamed', () => {
   })
 
   it('says the name was taken, and that the note carries the new one', async () => {
-    const one = window({ renamed: renamed({ refusal: 'occupied' }) })
+    const one = window({ renamed: renamed({ error: 'occupied' }) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([words.refused.occupied])
+    expect(one.said).toStrictEqual([words.errors.occupied])
   })
 
   it('says a note whose frontmatter cannot be read cannot be renamed', async () => {
-    const one = window({ renamed: renamed({ refusal: 'unreadable' }) })
+    const one = window({ renamed: renamed({ error: 'unreadable' }) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([words.refused.unreadable])
+    expect(one.said).toStrictEqual([words.errors.unreadable])
   })
 
   it('says a name no file can be named', async () => {
-    const one = window({ renamed: renamed({ refusal: 'unnameable' }) })
+    const one = window({ renamed: renamed({ error: 'unnameable' }) })
 
     await carry(invocationOf('title', front(), '...'), one.on)
 
-    expect(one.said).toStrictEqual([words.refused.unnameable])
+    expect(one.said).toStrictEqual([words.errors.unnameable])
   })
 })
 
@@ -665,7 +665,7 @@ describe('a note removed', () => {
   })
 
   it('keeps the tab of a note the vault would not remove', async () => {
-    const one = window({ removed: removed({ refusal: 'missing' }) })
+    const one = window({ removed: removed({ error: 'missing' }) })
 
     await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
@@ -673,11 +673,11 @@ describe('a note removed', () => {
   })
 
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
-    const one = window({ removed: removed({ refusal: 'missing' }) })
+    const one = window({ removed: removed({ error: 'missing' }) })
 
     await carry(invocationOf('remove', front()), one.on)
 
-    expect(one.said).toStrictEqual([words.refused.missing])
+    expect(one.said).toStrictEqual([words.errors.missing])
     expect(one.done.at(-1)).toBe('removes physics/Ontology.md false')
   })
 
@@ -732,7 +732,7 @@ describe('several files removed at once', () => {
         ...one.on.files,
         removes: async (path, destroy) => {
           one.done.push(`removes ${path} ${destroy}`)
-          return removed(path === 'physics/Ontology.md' ? { refusal: 'missing' } : {})
+          return removed(path === 'physics/Ontology.md' ? { error: 'missing' } : {})
         },
       },
     }
@@ -743,7 +743,7 @@ describe('several files removed at once', () => {
       'removes physics/Ontology.md false',
       'removes physics/Heat.pdf false',
     ])
-    expect(one.said).toStrictEqual([words.refused.missing])
+    expect(one.said).toStrictEqual([words.errors.missing])
   })
 })
 
@@ -779,7 +779,7 @@ describe('a file filed somewhere else', () => {
   })
 
   it('stays where it is where something of that name is filed there', async () => {
-    const one = window({ movement: { moved: null, refusal: 'occupied' } })
+    const one = window({ movement: { moved: null, error: 'occupied' } })
 
     await carry(moved('notes/Ontology.md'), one.on)
 
@@ -787,11 +787,11 @@ describe('a file filed somewhere else', () => {
   })
 
   it('says nothing of a note renamed, which is what a move is not', async () => {
-    const one = window({ movement: { moved: null, refusal: 'occupied' } })
+    const one = window({ movement: { moved: null, error: 'occupied' } })
 
     await carry(moved('notes/Ontology.md'), one.on)
 
-    expect(one.said).not.toContain(words.refused.occupied)
+    expect(one.said).not.toContain(words.errors.occupied)
   })
 
   it('asks the vault for nothing where it landed where it already was', async () => {
@@ -935,7 +935,7 @@ describe('another vault under this window', () => {
     await carry(invocationOf('openVault', heat()), one.on)
 
     expect(one.done).toStrictEqual(['opens vault heat'])
-    expect(one.said).toStrictEqual([words.unvaulted.showing])
+    expect(one.said).toStrictEqual([words.vaultErrors.showing])
   })
 })
 
@@ -963,11 +963,11 @@ describe('a vault made', () => {
   })
 
   it('says a folder that lies inside a vault already added', async () => {
-    const one = window({ added: { vault: null, refusal: 'overlaps' } })
+    const one = window({ added: { vault: null, error: 'overlaps' } })
 
     await carry(invocationOf('newVault', front()), one.on)
 
-    expect(one.said).toStrictEqual([words.unvaulted.overlaps])
+    expect(one.said).toStrictEqual([words.vaultErrors.overlaps])
   })
 })
 
@@ -989,11 +989,11 @@ describe('a vault renamed', () => {
   })
 
   it('says a name another vault is already called', async () => {
-    const one = window({ added: { vault: null, refusal: 'nameTaken' } })
+    const one = window({ added: { vault: null, error: 'nameTaken' } })
 
     await carry(invocationOf('renameVault', front(), 'Heat'), one.on)
 
-    expect(one.said).toStrictEqual([words.unvaulted.nameTaken])
+    expect(one.said).toStrictEqual([words.vaultErrors.nameTaken])
   })
 })
 
@@ -1014,7 +1014,7 @@ describe('a vault taken off the list', () => {
 
     await carry(invocationOf('forgetVault', heat()), one.on)
 
-    expect(one.said).toStrictEqual([words.unvaulted.lastVault])
+    expect(one.said).toStrictEqual([words.vaultErrors.lastVault])
   })
 
   it('is erased where erasing was what was asked', async () => {
@@ -1030,7 +1030,7 @@ describe('a vault taken off the list', () => {
 
     await carry(invocationOf('eraseVault', heat(), 'Heat'), one.on)
 
-    expect(one.said).toStrictEqual([words.unvaulted.noTrash])
+    expect(one.said).toStrictEqual([words.vaultErrors.noTrash])
   })
 
   it('says the vault in front of the person, which the window stands on', async () => {
@@ -1038,19 +1038,19 @@ describe('a vault taken off the list', () => {
 
     await carry(invocationOf('forgetVault', front()), one.on)
 
-    expect(one.said).toStrictEqual([words.unvaulted.showing])
+    expect(one.said).toStrictEqual([words.vaultErrors.showing])
   })
 })
 
-describe('what the list of vaults refused', () => {
+describe('what the list of vaults reported as error', () => {
   it('reaches the person in the window’s own words, whichever it was', async () => {
-    for (const refusal of Object.keys(words.unvaulted) as VaultRefusalReason[]) {
-      const one = window({ turnedDown: refusal })
+    for (const err of Object.keys(words.vaultErrors) as VaultErrorCode[]) {
+      const one = window({ turnedDown: err })
 
       await carry(invocationOf('openVault', front()), one.on)
 
-      expect(words.unvaulted[refusal], refusal).not.toBe('')
-      expect(one.said, refusal).toStrictEqual([words.unvaulted[refusal]])
+      expect(words.vaultErrors[err], err).not.toBe('')
+      expect(one.said, err).toStrictEqual([words.vaultErrors[err]])
     }
   })
 })

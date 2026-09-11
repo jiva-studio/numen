@@ -2,7 +2,7 @@
  * Page highlights and span targeting for a document.
  */
 import { computed, shallowRef, type Ref } from 'vue'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '../shared/core'
 import type { Documents, PageHighlight, Rect } from './types'
 
@@ -10,7 +10,7 @@ export function useDocumentHighlights(
   documents: Documents,
   path: string,
   at: Ref<number>,
-  trouble: Ref<string>,
+  error: Ref<string>,
   onGoToPage: (page: number) => Promise<void>,
   isOpen: () => boolean,
 ) {
@@ -40,9 +40,9 @@ export function useDocumentHighlights(
       const where = await documents.getHighlights(path, spans)
       if (!isOpen()) return
       await highlight(where)
-    } catch (error) {
+    } catch (thrown) {
       if (!isOpen()) return
-      trouble.value = troubleWords(error)
+      error.value = formatErrorMessage(thrown)
     }
   }
 

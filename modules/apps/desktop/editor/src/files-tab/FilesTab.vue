@@ -138,8 +138,8 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
 
 <template>
   <div class="files" @dragover="onDragOver" @drop="onDrop">
-    <p v-if="props.state.list.trouble.value" class="caution">
-      {{ props.state.list.trouble.value }}
+    <p v-if="props.state.list.error.value" class="caution">
+      {{ props.state.list.error.value }}
     </p>
 
     <Tree

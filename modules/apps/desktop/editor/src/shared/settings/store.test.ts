@@ -72,7 +72,7 @@ describe('what stands at a setting', () => {
     const { kept, said } = holding('not JSON at all')
     await kept.start()
     expect(kept.at(['agent'])).toBeUndefined()
-    expect(said).toHaveBeenLastCalledWith('The settings could not be read.', 'refusal')
+    expect(said).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
   })
 })
 
@@ -103,7 +103,7 @@ describe('a setting written', () => {
     await kept.puts(['agent', 'use'], 'claude')
     expect(said).toHaveBeenLastCalledWith(
       'That setting could not be written: numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
-      'refusal',
+      'error',
     )
   })
 })

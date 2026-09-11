@@ -151,8 +151,6 @@ const models = getModels
 function setSetting(at: readonly string[], value: unknown): void {
   installation.value.writes([{ at, value: write(value) }])
 }
-const puts = setSetting
-const picks = onModelChange
 </script>
 
 <template>

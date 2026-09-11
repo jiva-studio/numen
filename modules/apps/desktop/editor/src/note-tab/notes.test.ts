@@ -40,36 +40,36 @@ function fake(over: Partial<FakeCore> = {}) {
     flushed: async () => {},
     read: async (path) =>
       files.has(path)
-        ? { body: files.get(path) ?? '', refusal: null, at: marked(files.get(path) ?? '') }
-        : { body: '', refusal: 'missing' },
+        ? { body: files.get(path) ?? '', error: null, at: marked(files.get(path) ?? '') }
+        : { body: '', error: 'missing' },
     write: async (path, body, seen) => {
       wrote.push({ path, body })
       const held = files.get(path)
       // A note still holding either the prose or the file that prose came out of
       // is the note this caller read.
       if (seen && held !== undefined && held !== seen.prose && marked(held) !== seen.path) {
-        return { body: '', refusal: null, changed: true }
+        return { body: '', error: null, changed: true }
       }
       files.set(path, body)
-      return { body: '', refusal: null, at: marked(body) }
+      return { body: '', error: null, at: marked(body) }
     },
-    create: async () => ({ path: '', refusal: null }),
+    create: async () => ({ path: '', error: null }),
     join: async () => null,
     rename: async (path) => ({
       path,
       title: '',
       frontmatter: false,
       moved: null,
-      refusal: null,
+      error: null,
       changed: false,
     }),
-    remove: async () => ({ trashed: '', dangling: [], refusal: null }),
+    remove: async () => ({ trashed: '', dangling: [], error: null }),
     list: async () => [],
-    move: async () => ({ moved: null, refusal: null }),
+    move: async () => ({ moved: null, error: null }),
     createFolder: async () => null,
-    createUrl: async () => ({ path: '', error: null, refusal: null }),
+    createUrl: async () => ({ path: '', error: null }),
     makeFolder: async () => null,
-    makeURL: async () => ({ path: '', error: null, refusal: null }),
+    makeURL: async () => ({ path: '', error: null }),
     syncing: async () => true,
     hanging: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
     choosesSyncing: async () => null,
@@ -133,15 +133,15 @@ describe('opening a note', () => {
     expect(wrote[0]).toEqual({ path: 'New.md', body: 'a first line' })
   })
 
-  it('sticks on a refusal, and says why in words a person reads', async () => {
-    const { core } = fake({ read: async () => ({ body: '', refusal: 'notText' }) })
+  it('sticks on an error, and says why in words a person reads', async () => {
+    const { core } = fake({ read: async () => ({ body: '', error: 'notText' }) })
     const notes = openNotes(core, { limits: quick })
 
     notes.open('photo.md')
     await settle()
 
     expect(notes.shown('photo.md').state).toBe('stuck')
-    expect(notes.saying('photo.md')).toBe('this file is not text')
+    expect(notes.getErrorMessage('photo.md')).toBe('this file is not text')
   })
 })
 
@@ -467,7 +467,6 @@ describe('a note that changed on disk under a save', () => {
 
     expect(notes.shown('Heat.md').state).toBe('stale')
     expect(notes.stale('Heat.md')?.says).toBe('this note changed on disk, and saving stopped')
-    expect(notes.overtaken('Heat.md')?.says).toBe('this note changed on disk, and saving stopped')
     expect(notes.shown('Heat.md').body).toBe('mine')
 
     notes.typed('Heat.md', 'mine and more')
@@ -486,7 +485,6 @@ describe('a note that changed on disk under a save', () => {
     expect(files.get('Heat.md')).toBe('mine')
     expect(notes.shown('Heat.md').state).toBe('clean')
     expect(notes.stale('Heat.md')).toBeNull()
-    expect(notes.overtaken('Heat.md')).toBeNull()
   })
 
   it("takes the file's, and what it holds replaces what was typed", async () => {
@@ -498,7 +496,6 @@ describe('a note that changed on disk under a save', () => {
     expect(notes.shown('Heat.md').body).toBe('theirs')
     expect(notes.shown('Heat.md').state).toBe('clean')
     expect(notes.stale('Heat.md')).toBeNull()
-    expect(notes.overtaken('Heat.md')).toBeNull()
   })
 
   it('does not stop a note whose own two saves follow each other', async () => {
@@ -537,7 +534,7 @@ describe('a core that cannot be reached', () => {
 describe('a save that was refused', () => {
   it('says why in the tab it was refused on, for as long as that tab is open', async () => {
     const { core, files } = fake({
-      write: async () => ({ body: '', refusal: 'bodyRefused' }),
+      write: async () => ({ body: '', error: 'bodyRefused' }),
     })
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })
@@ -547,7 +544,7 @@ describe('a save that was refused', () => {
     notes.typed('Heat.md', '---\nnot a body\n---\n')
     await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
 
-    expect(notes.saying('Heat.md')).toBe(
+    expect(notes.getErrorMessage('Heat.md')).toBe(
       'a note begins below its frontmatter, and this text begins with one',
     )
   })
@@ -566,7 +563,7 @@ describe('a save that was refused', () => {
     notes.typed('Heat.md', 'one two')
     await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
 
-    expect(notes.saying('Heat.md')).toBe(
+    expect(notes.getErrorMessage('Heat.md')).toBe(
       'the vault could not be reached, so this note was not written',
     )
   })
@@ -589,7 +586,7 @@ describe('closing a note that could not be written', () => {
 
     await notes.shut('Heat.md')
     expect(notes.all()).toEqual(['Heat.md'])
-    expect(notes.saying('Heat.md')).toBe(
+    expect(notes.getErrorMessage('Heat.md')).toBe(
       'the vault could not be reached, so this note was not written',
     )
 
@@ -598,7 +595,7 @@ describe('closing a note that could not be written', () => {
   })
 
   it('lets a note it could never read go the first time', async () => {
-    const { core } = fake({ read: async () => ({ body: '', refusal: 'notText' }) })
+    const { core } = fake({ read: async () => ({ body: '', error: 'notText' }) })
     const notes = openNotes(core, { limits: quick })
     notes.open('photo.md')
     await settle()
@@ -612,46 +609,46 @@ describe('closing a note that could not be written', () => {
 describe('a note that points somewhere', () => {
   const linked = {
     body: 'What I made of it.',
-    refusal: null,
+    error: null,
     at: marked('What I made of it.'),
-    address: {
+    link: {
       url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       embed: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1',
     },
   }
 
-  it('carries the address, beside the prose it was read with', async () => {
+  it('carries the link, beside the prose it was read with', async () => {
     const { core } = fake({ read: async () => linked })
     const notes = openNotes(core, { limits: quick })
 
     notes.open('Entropy.md')
     await settle()
 
-    expect(notes.address('Entropy.md')).toStrictEqual(linked.address)
+    expect(notes.link('Entropy.md')).toStrictEqual(linked.link)
     expect(notes.shown('Entropy.md').body).toBe('What I made of it.')
   })
 
   it('points nowhere once a read says it points nowhere', async () => {
-    let address: (typeof linked)['address'] | undefined = linked.address
+    let link: (typeof linked)['link'] | undefined = linked.link
     const { core } = fake({
       read: async () => ({
         body: '',
-        refusal: null,
+        error: null,
         at: marked(''),
-        ...(address ? { address } : {}),
+        ...(link ? { link } : {}),
       }),
     })
     const notes = openNotes(core, { limits: quick })
 
     notes.open('Entropy.md')
     await settle()
-    expect(notes.address('Entropy.md')).not.toBeNull()
+    expect(notes.link('Entropy.md')).not.toBeNull()
 
-    address = undefined
+    link = undefined
     notes.changed(['Entropy.md'])
     await settle()
 
-    expect(notes.address('Entropy.md')).toBeNull()
+    expect(notes.link('Entropy.md')).toBeNull()
   })
 })
 
@@ -664,6 +661,6 @@ describe('a note that points nowhere', () => {
     notes.open('Heat.md')
     await settle()
 
-    expect(notes.address('Heat.md')).toBeNull()
+    expect(notes.link('Heat.md')).toBeNull()
   })
 })

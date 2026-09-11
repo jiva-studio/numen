@@ -20,14 +20,14 @@ const tab = (over: Partial<Tab> = {}): Tab => ({
   isStale: false,
   since: null,
   reading: 1,
-  refused: null,
+  error: null,
   ...over,
 })
 
 const kinds = (effects: readonly Effect[]) => effects.map((effect) => effect.kind)
 
 /** A tab whose write was told the file carries another fingerprint. */
-const overtaken = (over: Partial<Tab> = {}): Tab =>
+const stale = (over: Partial<Tab> = {}): Tab =>
   tabAfter(tab({ shown: 'mine', pendingWrite: 'mine', since: 10, ...over }), {
     kind: 'written',
     answer: { kind: 'changed' },
@@ -49,9 +49,9 @@ describe('the states', () => {
       written: null,
       shown: 'typed',
       pendingWrite: 'typed',
-      refused: 'tooLarge',
+      error: 'tooLarge',
     })
-    const readable = { ...everything, refused: null }
+    const readable = { ...everything, error: null }
 
     expect(stateOf(everything)).toBe('stuck')
     expect(stateOf(readable)).toBe('loading')
@@ -156,7 +156,7 @@ describe('a read answers missing', () => {
     expect(next.effects).toEqual([])
   })
 
-  it('leaves a tab standing on a live file alone where the read was overtaken', () => {
+  it('leaves a tab standing on a live file alone where the read was stale', () => {
     // The note moved, the tab followed it and asked again. The read left behind
     // answers about the name the tab has left, and the file it is on is there.
     const reading = tab({ reading: 3 })
@@ -167,25 +167,25 @@ describe('a read answers missing', () => {
   })
 })
 
-describe('a read answers a refusal', () => {
+describe('a read answers an error', () => {
   it('sticks a loading tab', () => {
     const next = tabAfter(tab({ written: null, shown: '' }), {
       kind: 'read',
       generation: 1,
-      answer: { kind: 'refused', refusal: 'notText' },
+      answer: { kind: 'error', error: 'notText' },
     })
 
-    expect(next.tab.refused).toBe('notText')
+    expect(next.tab.error).toBe('notText')
     expect(stateOf(next.tab)).toBe('stuck')
     expect(next.effects).toEqual([])
   })
 
-  it('leaves a loading tab alone where the read was overtaken', () => {
+  it('leaves a loading tab alone where the read was stale', () => {
     const reading = tab({ written: null, shown: '', reading: 2 })
     const next = tabAfter(reading, {
       kind: 'read',
       generation: 1,
-      answer: { kind: 'refused', refusal: 'notText' },
+      answer: { kind: 'error', error: 'notText' },
     })
 
     expect(next).toEqual({ tab: reading, effects: [] })
@@ -193,21 +193,21 @@ describe('a read answers a refusal', () => {
   })
 
   it('strands nothing: a tab that never read its note is not mended by typing', () => {
-    // Clearing the refusal here would take the tab back to loading, where the
+    // Clearing the error here would take the tab back to loading, where the
     // interval does nothing, and what the person typed would never be written.
     const stuck = tabAfter(tab({ written: null, shown: '' }), {
       kind: 'read',
       generation: 1,
-      answer: { kind: 'refused', refusal: 'tooLarge' },
+      answer: { kind: 'error', error: 'tooLarge' },
     }).tab
 
     const typed = tabAfter(stuck, { kind: 'typed', body: 'anything', at: 10 })
 
-    expect(typed.tab.refused).toBe('tooLarge')
+    expect(typed.tab.error).toBe('tooLarge')
     expect(stateOf(typed.tab)).toBe('stuck')
     expect(tabAfter(typed.tab, { kind: 'fired' }).effects).toEqual([])
     expect(tabAfter(typed.tab, { kind: 'closing' }).effects).toEqual([
-      { kind: 'say', refusal: 'tooLarge' },
+      { kind: 'say', error: 'tooLarge' },
       { kind: 'close' },
     ])
   })
@@ -217,7 +217,7 @@ describe('a read answers a refusal', () => {
     const next = tabAfter(reading, {
       kind: 'read',
       generation: 2,
-      answer: { kind: 'refused', refusal: 'tooLarge' },
+      answer: { kind: 'error', error: 'tooLarge' },
     })
 
     expect(next.tab).toEqual(reading)
@@ -257,25 +257,25 @@ describe('the person types', () => {
     expect(next.effects).toEqual([{ kind: 'arm', after: waiting.quiet }])
   })
 
-  it('mends a refusal that is about the body', () => {
-    const next = tabAfter(tab({ shown: 'huge', refused: 'tooLarge', since: 10 }), {
+  it('mends an error that is about the body', () => {
+    const next = tabAfter(tab({ shown: 'huge', error: 'tooLarge', since: 10 }), {
       kind: 'typed',
       body: 'small',
       at: 20,
     })
 
-    expect(next.tab.refused).toBeNull()
+    expect(next.tab.error).toBeNull()
     expect(stateOf(next.tab)).toBe('unsaved')
   })
 
-  it('leaves a refusal that is a condition of the file', () => {
-    const next = tabAfter(tab({ shown: 'edit', refused: 'unreadable', since: 10 }), {
+  it('leaves an error that is a condition of the file', () => {
+    const next = tabAfter(tab({ shown: 'edit', error: 'unreadable', since: 10 }), {
       kind: 'typed',
       body: 'edited',
       at: 20,
     })
 
-    expect(next.tab.refused).toBe('unreadable')
+    expect(next.tab.error).toBe('unreadable')
     expect(stateOf(next.tab)).toBe('stuck')
   })
 
@@ -322,7 +322,7 @@ describe('the interval fires', () => {
   })
 
   it('writes nothing while the tab is stuck', () => {
-    const stuck = tab({ shown: 'two', refused: 'unreadable', since: 10 })
+    const stuck = tab({ shown: 'two', error: 'unreadable', since: 10 })
     const next = tabAfter(stuck, { kind: 'fired' })
 
     expect(next.tab).toEqual(stuck)
@@ -436,8 +436,8 @@ describe('a write answers changed', () => {
     expect(next.effects).toEqual([])
   })
 
-  it('arms nothing while the person types into an overtaken tab', () => {
-    const next = tabAfter(overtaken(), { kind: 'typed', body: 'mine and more', at: 2000 })
+  it('arms nothing while the person types into a stale tab', () => {
+    const next = tabAfter(stale(), { kind: 'typed', body: 'mine and more', at: 2000 })
 
     expect(next.tab.shown).toBe('mine and more')
     expect(stateOf(next.tab)).toBe('stale')
@@ -445,7 +445,7 @@ describe('a write answers changed', () => {
   })
 
   it('writes nothing when an interval armed before it fires', () => {
-    const stopped = overtaken()
+    const stopped = stale()
     const next = tabAfter(stopped, { kind: 'fired' })
 
     expect(next.tab).toEqual(stopped)
@@ -453,7 +453,7 @@ describe('a write answers changed', () => {
   })
 
   it('reads nothing when the vault changes under it', () => {
-    const stopped = overtaken()
+    const stopped = stale()
 
     expect(tabAfter(stopped, { kind: 'changed', paths: ['Note.md'], renamed: [] })).toEqual({
       tab: stopped,
@@ -466,7 +466,7 @@ describe('a write answers changed', () => {
   })
 
   it('holds a tab that the person types back to what was written', () => {
-    const stopped = overtaken()
+    const stopped = stale()
     const back = tabAfter(stopped, { kind: 'typed', body: 'one', at: 2000 }).tab
 
     expect(dirty(back)).toBe(false)
@@ -477,10 +477,10 @@ describe('a write answers changed', () => {
   })
 
   it('discards an answer to a write it is no longer waiting on', () => {
-    const stopped = overtaken()
+    const stopped = stale()
     const next = tabAfter(stopped, {
       kind: 'written',
-      answer: { kind: 'refused', refusal: 'tooLarge' },
+      answer: { kind: 'error', error: 'tooLarge' },
     })
 
     expect(next.tab).toEqual(stopped)
@@ -490,7 +490,7 @@ describe('a write answers changed', () => {
 
 describe('the person keeps theirs', () => {
   it('writes what is shown, comparing nothing', () => {
-    const next = tabAfter(overtaken(), { kind: 'keeping' })
+    const next = tabAfter(stale(), { kind: 'keeping' })
 
     expect(next.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'mine', seen: null }])
     expect(stateOf(next.tab)).toBe('saving')
@@ -498,7 +498,7 @@ describe('the person keeps theirs', () => {
   })
 
   it('takes what that write answers with, and the tab is clean', () => {
-    const writing = tabAfter(overtaken(), { kind: 'keeping' }).tab
+    const writing = tabAfter(stale(), { kind: 'keeping' }).tab
     const next = tabAfter(writing, { kind: 'written', answer: { kind: 'ok', at: 'a3' } })
 
     expect(next.tab.written).toBe('mine')
@@ -506,7 +506,7 @@ describe('the person keeps theirs', () => {
     expect(stateOf(next.tab)).toBe('clean')
   })
 
-  it('does nothing to a tab that was not overtaken', () => {
+  it('does nothing to a tab that was not stale', () => {
     const unsaved = tab({ shown: 'two', since: 10 })
 
     expect(tabAfter(unsaved, { kind: 'keeping' })).toEqual({ tab: unsaved, effects: [] })
@@ -514,8 +514,8 @@ describe('the person keeps theirs', () => {
 })
 
 describe("the person takes the file's", () => {
-  it('reads again, and the tab stays overtaken until that read lands', () => {
-    const next = tabAfter(overtaken(), { kind: 'taking' })
+  it('reads again, and the tab stays stale until that read lands', () => {
+    const next = tabAfter(stale(), { kind: 'taking' })
 
     expect(next.tab.reading).toBe(2)
     expect(stateOf(next.tab)).toBe('stale')
@@ -523,7 +523,7 @@ describe("the person takes the file's", () => {
   })
 
   it('replaces the buffer with what the read answers, unsaved as the tab is', () => {
-    const reading = tabAfter(overtaken(), { kind: 'taking' }).tab
+    const reading = tabAfter(stale(), { kind: 'taking' }).tab
     const next = tabAfter(reading, {
       kind: 'read',
       generation: 2,
@@ -538,7 +538,7 @@ describe("the person takes the file's", () => {
   })
 
   it('leaves the bound to start again with the next change', () => {
-    const typing = tabAfter(overtaken(), { kind: 'typed', body: 'mine and more', at: 1000 }).tab
+    const typing = tabAfter(stale(), { kind: 'typed', body: 'mine and more', at: 1000 }).tab
     const reading = tabAfter(typing, { kind: 'taking' }).tab
     const took = tabAfter(reading, {
       kind: 'read',
@@ -552,8 +552,8 @@ describe("the person takes the file's", () => {
     ])
   })
 
-  it('stays overtaken for a read that is out of date', () => {
-    const reading = tabAfter(overtaken(), { kind: 'taking' }).tab
+  it('stays stale for a read that is out of date', () => {
+    const reading = tabAfter(stale(), { kind: 'taking' }).tab
     const next = tabAfter(reading, {
       kind: 'read',
       generation: 1,
@@ -565,14 +565,14 @@ describe("the person takes the file's", () => {
   })
 
   it('says the note is not there where the file is gone, since there is nothing to take', () => {
-    const reading = tabAfter(overtaken(), { kind: 'taking' }).tab
+    const reading = tabAfter(stale(), { kind: 'taking' }).tab
     const next = tabAfter(reading, { kind: 'read', generation: 2, answer: { kind: 'missing' } })
 
     expect(next.tab.shown).toBe(reading.shown)
     expect(stateOf(next.tab)).toBe('gone')
   })
 
-  it('does nothing to a tab that was not overtaken', () => {
+  it('does nothing to a tab that was not stale', () => {
     const clean = tab()
 
     expect(tabAfter(clean, { kind: 'taking' })).toEqual({ tab: clean, effects: [] })
@@ -609,13 +609,13 @@ describe('a save is asked for', () => {
   })
 
   it('writes nothing while the tab is stuck', () => {
-    const stuck = tab({ shown: 'two', refused: 'unreadable', since: 10 })
+    const stuck = tab({ shown: 'two', error: 'unreadable', since: 10 })
 
     expect(tabAfter(stuck, { kind: 'saving' })).toEqual({ tab: stuck, effects: [] })
   })
 
-  it('writes nothing for an overtaken tab, which the person answers', () => {
-    const stopped = overtaken()
+  it('writes nothing for a stale tab, which the person answers', () => {
+    const stopped = stale()
 
     expect(tabAfter(stopped, { kind: 'saving' })).toEqual({ tab: stopped, effects: [] })
   })
@@ -657,8 +657,8 @@ describe('a file about to be renamed or removed', () => {
     expect(kinds(next.effects)).toEqual(['disarm'])
   })
 
-  it('writes nothing for an overtaken tab, whose question is the person to answer', () => {
-    const stopped = overtaken()
+  it('writes nothing for a stale tab, whose question is the person to answer', () => {
+    const stopped = stale()
     const next = tabAfter(stopped, { kind: 'settling' })
 
     expect(next.tab).toEqual(stopped)
@@ -689,11 +689,11 @@ describe('a file about to be renamed or removed', () => {
   })
 })
 
-describe('a write answers a refusal', () => {
+describe('a write answers an error', () => {
   it('sticks the tab, drops what was owed, and leaves the buffer editable', () => {
     const next = tabAfter(tab({ shown: 'two', pendingWrite: 'two', hasPendingWrite: true, since: 10 }), {
       kind: 'written',
-      answer: { kind: 'refused', refusal: 'tooLarge' },
+      answer: { kind: 'error', error: 'tooLarge' },
     })
 
     expect(stateOf(next.tab)).toBe('stuck')
@@ -741,7 +741,7 @@ describe('the vault changes', () => {
     const held: Tab[] = [
       tab({ written: null, shown: '' }),
       tab({ shown: 'two', pendingWrite: 'two', since: 10 }),
-      tab({ refused: 'unreadable' }),
+      tab({ error: 'unreadable' }),
     ]
 
     for (const one of held) {
@@ -788,8 +788,8 @@ describe('a close is asked for', () => {
     expect(next.effects).toEqual([{ kind: 'close' }])
   })
 
-  it('holds an overtaken tab, writing nothing and leaving the question standing', () => {
-    const next = tabAfter(overtaken(), { kind: 'closing' })
+  it('holds a stale tab, writing nothing and leaving the question standing', () => {
+    const next = tabAfter(stale(), { kind: 'closing' })
 
     expect(kinds(next.effects)).toEqual(['hold'])
     expect(stateOf(next.tab)).toBe('stale')
@@ -797,11 +797,11 @@ describe('a close is asked for', () => {
   })
 
   it('says why a stuck tab cannot be written before it goes', () => {
-    const next = tabAfter(tab({ shown: 'two', refused: 'unreadable', since: 10 }), {
+    const next = tabAfter(tab({ shown: 'two', error: 'unreadable', since: 10 }), {
       kind: 'closing',
     })
 
-    expect(next.effects).toEqual([{ kind: 'say', refusal: 'unreadable' }, { kind: 'close' }])
+    expect(next.effects).toEqual([{ kind: 'say', error: 'unreadable' }, { kind: 'close' }])
   })
 })
 

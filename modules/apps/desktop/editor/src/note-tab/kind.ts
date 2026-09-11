@@ -1,14 +1,13 @@
 /**
  * Window registration and tab state for note tabs.
  */
-import { computed, type ComputedRef } from 'vue'
+import { computed } from 'vue'
 import type { PlexShowing } from '@numen/ui'
 import type { Store } from '../shared/command/deps'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { NOTE } from '../shared/tabs/workspace'
-import type { Change } from './drawing'
 import type { noteChanges } from './changes'
-import type { OpenNote, openNotes } from './notes'
+import type { openNotes } from './notes'
 import { noteKeyboard, ITSELF } from './keyboard'
 import { noteTitles, type NoteTitlesDeps } from './titles'
 import NoteTab from './NoteTab.vue'
@@ -104,7 +103,7 @@ export function useNoteTab(
   /** The tab holding a note lets go of it, wherever the window draws it. */
   const shuts = (id: string) => {
     const tab = handle.each<NoteTabState>(NOTE).find((one) => one.state.id === id)
-    tab?.state.shuts(tab.id)
+    tab?.state.close(tab.id)
   }
 
   /**
@@ -139,11 +138,11 @@ export function useNoteTab(
     attends: (state) => ({ path: standsAt(state) }),
     getAttention: (state) => ({ path: standsAt(state) }),
     shuts: (state, id) => {
-      state.shuts(id)
+      state.close(id)
       return false
     },
     onClose: (state, id) => {
-      state.shuts(id)
+      state.close(id)
       return false
     },
     // What an open note owes at the quit is written by the quit, which the
@@ -157,7 +156,7 @@ export function useNoteTab(
     has: (id) => notes.has(id),
     where: (id) => notes.where(id),
     called: (id) => names.called(id),
-    asking: (id) => notes.overtaken(id) !== null,
+    asking: (id) => notes.stale(id) !== null,
     settles: (id) => notes.settles(id),
     shuts,
     holding: (path) => tabbed.value.get(path) ?? null,

@@ -95,14 +95,14 @@ describe('the note in focus goes away', () => {
 
     holds = false
     await plex.go('Note.md')
-    expect(plex.trouble.value).toContain('Note.md')
+    expect(plex.error.value).toContain('Note.md')
     // The path it asked about is kept, which is the only way back to it.
     expect(plex.here.value).toBe('Note.md')
     expect(plex.neighbourhood.value?.focus.path).toBe('Note.md')
 
     holds = true
     await plex.go('Note.md')
-    expect(plex.trouble.value).toBe('')
+    expect(plex.error.value).toBe('')
   })
 })
 
@@ -119,7 +119,7 @@ describe('a plex whose tab has closed', () => {
     plex.close()
     await going
 
-    expect(plex.trouble.value).toBe('')
+    expect(plex.error.value).toBe('')
   })
 
   it('travels nowhere else', async () => {

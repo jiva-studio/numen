@@ -64,23 +64,14 @@ export function createStencilFields(
   }
 
   const actionsFor = (id: string) => ({
-    addsField: (name: string) => turns(id, fieldAdded(getStencil(id), name)),
     addField: (name: string) => turns(id, fieldAdded(getStencil(id), name)),
-    namesField: (field: string, name: string) => void renameFieldOnWire(id, field, name),
     renameField: (field: string, name: string) => void renameFieldOnWire(id, field, name),
-    removesField: (field: string) => turns(id, fieldGone(getStencil(id), field)),
     removeField: (field: string) => turns(id, fieldGone(getStencil(id), field)),
-    movesField: (field: string, at: string | null) => turns(id, fieldDropped(getStencil(id), field, at)),
     moveField: (field: string, at: string | null) => turns(id, fieldDropped(getStencil(id), field, at)),
-    addsFace: (name: string) => turns(id, faceAdded(getStencil(id), name)),
     addFace: (name: string) => turns(id, faceAdded(getStencil(id), name)),
-    namesFace: (face: string, name: string) => turns(id, faceNamed(getStencil(id), face, name)),
     renameFace: (face: string, name: string) => turns(id, faceNamed(getStencil(id), face, name)),
-    removesFace: (face: string) => turns(id, faceGone(getStencil(id), face)),
     removeFace: (face: string) => turns(id, faceGone(getStencil(id), face)),
-    movesFace: (face: string, at: string | null) => turns(id, faceDropped(getStencil(id), face, at)),
     moveFace: (face: string, at: string | null) => turns(id, faceDropped(getStencil(id), face, at)),
-    writes: (face: string, half: Half, text: string) => turns(id, faceWritten(getStencil(id), face, half, text)),
     writeFaceHalf: (face: string, half: Half, text: string) => turns(id, faceWritten(getStencil(id), face, half, text)),
   })
 

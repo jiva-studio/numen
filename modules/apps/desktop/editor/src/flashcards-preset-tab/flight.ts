@@ -58,10 +58,10 @@ export const sendWrite = async (
     flight.changed.value = true
     return
   }
-  const writeError = answer.error ?? answer.refusal
+  const writeError = answer.error
   if (writeError) {
     flight.saying.value = words.notSaved(writeError)
-    said(flight.saying.value, 'refusal')
+    said(flight.saying.value, 'error')
     return
   }
   flight.saying.value = ''

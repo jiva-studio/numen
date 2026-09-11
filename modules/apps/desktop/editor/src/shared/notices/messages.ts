@@ -10,11 +10,11 @@ import { shallowRef, type Ref } from 'vue'
 /**
  * What kind of thing the window said.
  *
- * A refusal is what did not happen. A caution is worth reading and needs
+ * An error is what did not happen. A caution is worth reading and needs
  * nothing done at once. A report is what a command did. A state is so until
  * something else makes it not so.
  */
-export type MessageKind = 'refusal' | 'error' | 'caution' | 'report' | 'state'
+export type MessageKind = 'error' | 'caution' | 'report' | 'state'
 
 /** One message the window holds. */
 export interface WindowMessage {

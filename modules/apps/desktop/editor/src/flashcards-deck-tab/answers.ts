@@ -5,7 +5,7 @@
  * It is filed under the path the file stands at, so a file that moved carries
  * it along and a file no tab stands at any longer lets it go.
  */
-import type { ErrorCode, RefusalReason } from '../shared/core'
+import type { ErrorCode } from '../shared/core'
 import type { Problem } from '../shared/flashcards/cards'
 import { fileOf } from '../shared/paths'
 import { WORDS as words } from '../shared/flashcards/words'
@@ -44,7 +44,6 @@ export function answers() {
     answer: {
       readonly problems: readonly Problem[]
       readonly error?: ErrorCode | null
-      readonly refusal?: RefusalReason | null
       readonly bound: number
       /** The title the file carries, and nothing where the read reached none. */
       readonly title: string | null
@@ -52,7 +51,7 @@ export function answers() {
   ): void => {
     told.set(path, {
       problems: answer.problems,
-      reading: answer.error ?? answer.refusal ?? null,
+      reading: answer.error ?? null,
       writing: null,
       bound: answer.bound,
     })
@@ -64,7 +63,6 @@ export function answers() {
     path: string,
     answer: {
       readonly error?: ErrorCode | null
-      readonly refusal?: RefusalReason | null
       readonly bound: number
     },
   ): void => {
@@ -72,7 +70,7 @@ export function answers() {
     told.set(path, {
       problems: said.problems,
       reading: said.reading,
-      writing: answer.error ?? answer.refusal ?? null,
+      writing: answer.error ?? null,
       bound: answer.bound,
     })
   }
@@ -87,11 +85,11 @@ export function answers() {
   }
 
   /**
-   * What a refused tab was refused for, in words a person reads. A vault that
-   * answered nothing at all left the tab refused and said no word of its own.
+   * What an errored tab failed for, in words a person reads. A vault that
+   * answered nothing at all left the tab failed and said no word of its own.
    */
-  const saying = (path: string, refused: boolean): string => {
-    if (!refused) return ''
+  const getErrorMessage = (path: string, hasError: boolean): string => {
+    if (!hasError) return ''
     const said = at(path)
     if (said.reading !== null) return whyOf(said.reading, said.bound) ?? words.refused
     if (said.writing !== null) return whyOf(said.writing, said.bound) ?? words.notSaved
@@ -122,5 +120,5 @@ export function answers() {
     titles.delete(from)
   }
 
-  return { reads, writes, problemsAt, saying, called, names, forgets, moved }
+  return { reads, writes, problemsAt, getErrorMessage, called, names, forgets, moved }
 }

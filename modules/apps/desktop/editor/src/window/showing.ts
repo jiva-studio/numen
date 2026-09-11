@@ -3,7 +3,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import type { Core, Move, NoteEdit, Span, Task } from '../shared/core'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import { useWindowStreams } from './streams'
 
 /**
@@ -51,7 +51,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
   const failure = ref('')
   /** What the window itself lost touch with, said until it has it back. */
   const lost = ref('')
-  const trouble = ref('')
+  const error = ref('')
   const unwatched = ref('')
   /** Why an agent cannot be reached, as the vault last answered. */
   const unreachable = ref('')
@@ -103,7 +103,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
     name.value = state.name
     // Read once: this is the folder the page was drawn on.
     if (at.value === '') at.value = state.path
-    trouble.value = state.scan.failed
+    error.value = state.scan.failed
     unwatched.value = state.scan.unwatched
     chunks.value = Number(state.coverage.chunkCount)
     embedded.value = Number(state.coverage.embeddedCount)
@@ -173,7 +173,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
         await wait(100)
       }
     } catch (error) {
-      failure.value = troubleWords(error)
+      failure.value = formatErrorMessage(error)
       isIndexing.value = false
     }
   }
@@ -184,7 +184,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
     indexing: isIndexing,
     failure,
     lost,
-    trouble,
+    error,
     unwatched,
     unreachable,
     hasNote,

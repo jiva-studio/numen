@@ -74,9 +74,9 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
       makes: (title: string, folder: string) => {
         if (!reached) throw new Error('the vault could not be reached')
         const path = `${folder ? `${folder}/` : ''}${title}.note`
-        if (filed.has(path)) return { path: '', refusal: 'occupied' as const }
+        if (filed.has(path)) return { path: '', error: 'occupied' as const }
         filed.add(path)
-        return { path, refusal: null }
+        return { path, error: null }
       },
     }
   })(),
@@ -146,7 +146,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
       decks: [] as string[],
       cards: 0,
       notWritten: [] as { path: string; text: string }[],
-      refusal: null as null | string,
+      error: null as import('../note').ErrorCode | null,
       changed: false,
       at: 'a2',
     },
@@ -215,8 +215,8 @@ vi.mock('../../window/vault', () => ({
       asked.chose += 1
       return ''
     },
-    add: async () => ({ vault: null, refusal: null }),
-    rename: async () => ({ vault: null, refusal: null }),
+    add: async () => ({ vault: null, error: null }),
+    rename: async () => ({ vault: null, error: null }),
     remove: async () => null,
     open: async (id: string) => {
       asked.opened.push(id)
@@ -256,36 +256,28 @@ vi.mock('../../window/vault', () => ({
     write: async () => ({ at: 'a2' }),
     create: async ({ title }: { title: string }) => {
       asked.made.push(title)
-      return { path: `${title}.md`, refusal: null }
+      return { path: `${title}.md`, error: null }
     },
     rename: async (path: string, title: string) => {
       asked.renamed.push(`${path} ${title}`)
-      return { path, title, by: 'frontmatter', moved: null, refusal: null }
+      return { path, title, by: 'frontmatter', moved: null, error: null }
     },
     remove: async (path: string, destroy?: boolean) => {
       asked.removed.push(`${path} ${destroy ?? false}`)
-      return { trashed: `.trash/${path}`, dangling: [], refusal: null }
+      return { trashed: `.trash/${path}`, dangling: [], error: null }
     },
     list: async (folder: string) => folders[folder] ?? [],
     move: async (from: string, to: string) => {
       asked.moved.push(`${from} ${to}`)
-      return { moved: null, refusal: null }
+      return { moved: null, error: null }
     },
     createFolder: async (path: string) => {
       asked.folders.push(path)
       return null
     },
-    makeFolder: async (path: string) => {
-      asked.folders.push(path)
-      return null
-    },
     createUrl: async (url: string, folder: string) => {
       asked.urls.push(`${url} ${folder}`)
-      return { path: folder ? `${folder}/made.url` : 'made.url', error: null, refusal: null }
-    },
-    makeURL: async (url: string, folder: string) => {
-      asked.urls.push(`${url} ${folder}`)
-      return { path: folder ? `${folder}/made.url` : 'made.url', error: null, refusal: null }
+      return { path: folder ? `${folder}/made.url` : 'made.url', error: null }
     },
     changes: held,
     editing: held,
@@ -407,7 +399,7 @@ vi.mock('../flashcards/cards', () => ({
         tail: '',
         problems: [],
       },
-      refusal: null,
+      error: null,
       at: 'a1',
       bound: 0,
     }),
@@ -417,16 +409,16 @@ vi.mock('../flashcards/cards', () => ({
     ) => {
       asked.cards.push(`deck ${path}`)
       asked.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
-      return { refusal: null, changed: false, at: 'a2', bound: 0 }
+      return { error: null, changed: false, at: 'a2', bound: 0 }
     },
     readStencil: async (path: string) => ({
       stencil: { path, title: path, fields: [], faces: [], problems: [] },
-      refusal: null,
+      error: null,
       at: 'a1',
     }),
     writeStencil: async (path: string) => {
       asked.cards.push(`stencil ${path}`)
-      return { refusal: null, changed: false, at: 'a2' }
+      return { error: null, changed: false, at: 'a2' }
     },
   },
 }))
@@ -556,7 +548,7 @@ afterEach(() => {
     decks: [],
     cards: 0,
     notWritten: [],
-    refusal: null,
+    error: null,
     changed: false,
     at: 'a2',
   }

@@ -41,7 +41,7 @@ export interface State {
 
 /** How each kind of word is drawn, and how long it stands. */
 const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
-  refusal: { tone: 'alarm', stay: 'kept' },
+  error: { tone: 'alarm', stay: 'kept' },
   caution: { tone: 'caution', stay: 'kept' },
   report: { tone: 'plain', stay: 'read' },
   state: { tone: 'plain', stay: 'holds' },

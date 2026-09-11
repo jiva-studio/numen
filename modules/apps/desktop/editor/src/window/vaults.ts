@@ -35,7 +35,7 @@ export function useVaults({ core, words, log, chunks, embedded, embedding }: Vau
       shown.value = one ? { id: one.id, name: one.name } : { id: '', name: '' }
     } catch {
       // The layout the window opens with is the one the list's answer decides.
-      unlisted(words.unlistedVaults, 'refusal')
+      unlisted(words.unlistedVaults, 'error')
     }
   }
 

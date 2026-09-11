@@ -3,21 +3,21 @@
  * vault refuses or cannot be asked at all.
  */
 import { describe, expect, it } from 'vitest'
-import type { RefusalReason } from '../note'
+import type { ErrorCode } from '../note'
 import { writer } from '../testing/writer'
-import { REFUSED } from '../words'
+import { ERRORS } from '../words'
 import { fileOpeners } from './openers'
 import { fileMakers, type VaultCreator } from './makers'
 
 /** The vault answering what it was told, and writing down what it was asked to make. */
 const maker = (
-  refusal: RefusalReason | null = null,
+  error: ErrorCode | null = null,
   throws = false,
 ): VaultCreator & { asked: string[] } => {
   const asked: string[] = []
   const answer = async (path: string) => {
     if (throws) throw new Error('the vault is not there')
-    return { path: refusal ? '' : path, refusal }
+    return { path: error ? '' : path, error }
   }
   return {
     asked,
@@ -41,7 +41,7 @@ const maker = (
 }
 
 /** Everything making one of the four says. */
-const MAKING = { refused: REFUSED }
+const MAKING = { errors: ERRORS }
 
 describe('a deck, a stencil or a preset made', () => {
   it('is asked of the vault under the name and the folder it was given', async () => {
@@ -90,7 +90,7 @@ describe('a deck, a stencil or a preset made', () => {
     const made = fileMakers(maker('occupied'), puts, MAKING, told.says)
 
     expect(await made.decks('zoology', 'Animals')).toBe('')
-    expect(told.said).toStrictEqual([REFUSED.occupied])
+    expect(told.said).toStrictEqual([ERRORS.occupied])
   })
 
   it('says a vault that could not be asked at all', async () => {

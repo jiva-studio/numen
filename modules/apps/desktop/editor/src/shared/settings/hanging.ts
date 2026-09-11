@@ -127,7 +127,7 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
 
     const failed = await core.choosesHanging(now)
     if (!failed) return
-    said(`${words.unturned} ${failed}`, 'refusal')
+    said(`${words.unturned} ${failed}`, 'error')
     hangs.value = was
   }
 
@@ -146,7 +146,7 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
 
     const failed = await core.choosesHanging(hangs.value, now)
     if (!failed) return
-    said(`${words.unturned} ${failed}`, 'refusal')
+    said(`${words.unturned} ${failed}`, 'error')
     parts.value = was
   }
 

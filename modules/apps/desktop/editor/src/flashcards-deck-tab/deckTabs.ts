@@ -39,15 +39,15 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
     read: async (path) => {
       const answer = await cards.readDeck(path)
       const deck = answer.deck ? deckOf(answer.deck) : null
-      const error = answer.error ?? answer.refusal
+      const error = answer.error
       said.reads(path, {
         problems: answer.deck?.problems ?? [],
         error,
         bound: answer.bound,
         title: answer.deck?.title ?? null,
       })
-      if (error !== null) return { body: '', error, refusal: error }
-      return { body: deck ? deckBodyOf(deck) : '', error: null, refusal: null, at: answer.at }
+      if (error !== null) return { body: '', error }
+      return { body: deck ? deckBodyOf(deck) : '', error: null, at: answer.at }
     },
     write: async (path, body, seen) => {
       const deck = deckIn(body)
@@ -61,12 +61,11 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
         },
         seen?.path ?? null,
       )
-      const error = answer.error ?? answer.refusal
+      const error = answer.error
       said.writes(path, { error, bound: answer.bound })
       return {
         body: '',
         error,
-        refusal: error,
         at: answer.at,
         changed: answer.changed,
       }
@@ -101,29 +100,16 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
       sections: computed(() => drawnSectionsOf(deck.value)),
       stencils,
       marks: computed(() => marksAt(id)),
-      saying: computed(() =>
-        said.saying(store.where(id), (store.shown(id).error ?? store.shown(id).refusal) !== null),
+      errorMessage: computed(() =>
+        said.getErrorMessage(store.where(id), store.shown(id).error !== null),
       ),
       scheduled: computed(() => scheduledAt(id)),
       choices,
-      schedules: (preset) => void schedules(id, preset),
       setSchedule: (preset) => void schedules(id, preset),
       ...actions,
-      keep: () => store.keep(id),
       keepMine: () => store.keep(id),
-      take: () => store.take(id),
       takeFile: () => store.take(id),
       /** The tab stands until the deck says the write is done, and goes then. */
-      shuts: (tab) => {
-        const path = store.where(id)
-        void store.shut(id).then((gone) => {
-          if (!gone) return
-          read.closes(id)
-          scheduled.closes(id)
-          forgets(path)
-          handle.closes(tab)
-        })
-      },
       close: (tab) => {
         const path = store.where(id)
         void store.shut(id).then((gone) => {
@@ -150,7 +136,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
   /** The tab holding a deck lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
     const tab = handle.each<DeckTabState>(DECK).find((one) => one.state.id === id)
-    tab?.state.shuts(tab.id)
+    tab?.state.close(tab.id)
   }
 
   /** The decks, as a command reaches the ones the window has open. */
@@ -158,7 +144,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
     has: (id) => store.all().includes(id),
     where: (id) => store.where(id),
     called: (id) => said.called(store.where(id)),
-    asking: (id) => (store.stale?.(id) ?? store.overtaken(id)) !== null,
+    asking: (id) => store.stale(id) !== null,
     settles: (id) => store.settles(id),
     shuts,
     holding: (path) => store.all().find((id) => store.where(id) === path) ?? null,
@@ -218,7 +204,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
       listsPresetsAgain()
     },
     shuts: (one, id) => {
-      one.shuts(id)
+      one.close(id)
       return false
     },
     // What an open deck owes at the quit is written by the quit, which the

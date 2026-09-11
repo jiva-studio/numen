@@ -49,25 +49,25 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     tasks: async function* () {
       await held()
     },
-    read: async () => ({ body: '', refusal: null }),
-    write: async () => ({ body: '', refusal: null }),
-    create: async () => ({ path: '', refusal: null }),
+    read: async () => ({ body: '', error: null }),
+    write: async () => ({ body: '', error: null }),
+    create: async () => ({ path: '', error: null }),
     join: async () => null,
     rename: async (path, title) => ({
       path,
       title,
       frontmatter: false,
       moved: null,
-      refusal: null,
+      error: null,
       changed: false,
     }),
-    remove: async () => ({ trashed: '', dangling: [], refusal: null }),
+    remove: async () => ({ trashed: '', dangling: [], error: null }),
     list: async () => [],
-    move: async () => ({ moved: null, refusal: null }),
+    move: async () => ({ moved: null, error: null }),
     createFolder: async () => null,
-    createUrl: async () => ({ path: '', error: null, refusal: null }),
+    createUrl: async () => ({ path: '', error: null }),
     makeFolder: async () => null,
-    makeURL: async () => ({ path: '', error: null, refusal: null }),
+    makeURL: async () => ({ path: '', error: null }),
     syncing: async () => true,
     hanging: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
     choosesSyncing: async () => null,
@@ -405,7 +405,7 @@ describe('a vault that could not be read', () => {
     await nap()
 
     expect(window.indexing.value).toBe(false)
-    expect(window.trouble.value).toBe('permission denied')
+    expect(window.error.value).toBe('permission denied')
     expect(window.holds.value).toBe(false)
   })
 })
@@ -418,7 +418,7 @@ describe('a vault with a note in it', () => {
     await nap()
 
     expect(window.holds.value).toBe(true)
-    expect(window.trouble.value).toBe('')
+    expect(window.error.value).toBe('')
   })
 })
 

@@ -83,7 +83,7 @@ export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
 
     const failed = await core.choosesSyncing(now)
     if (!failed) return
-    said(`${words.unturned} ${failed}`, 'refusal')
+    said(`${words.unturned} ${failed}`, 'error')
     kept.value = was
   }
 

@@ -17,7 +17,7 @@ const props = defineProps<{ state: DeckTabState }>()
 // --- State ---
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { choices, drawn, marks, saying, scheduled, sections, shown, stencils } = props.state
+const { choices, drawn, marks, errorMessage, scheduled, sections, shown, stencils } = props.state
 
 /** What the grid draws against the cards it was handed. */
 const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
@@ -48,8 +48,7 @@ function onOpenScheduleMenu(event: Event) {
 
 function onChooseSchedule(path: string) {
   asking.value = null
-  const schedule = props.state.setSchedule ?? props.state.schedules
-  schedule(path)
+  props.state.setSchedule(path)
 }
 
 function onDismissScheduleMenu() {
@@ -57,48 +56,39 @@ function onDismissScheduleMenu() {
 }
 
 function onAddCard(stencil: string, section: string | null) {
-  const add = props.state.addCard ?? props.state.adds
-  add(stencil, empty(stencil), section)
+  props.state.addCard(stencil, empty(stencil), section)
 }
 
 function onRemoveCard(id: string) {
-  const remove = props.state.removeCard ?? props.state.removes
-  remove(id)
+  props.state.removeCard(id)
 }
 
 function onMoveCard(id: string, at: InsertionPoint) {
-  const move = props.state.moveCard ?? props.state.moves
-  move(id, at)
+  props.state.moveCard(id, at)
 }
 
 function onWriteCard(id: string, field: string, nth: number, text: string) {
-  const write = props.state.writeCardField ?? props.state.writes
-  write(id, field, nth, text)
+  props.state.writeCardField(id, field, nth, text)
 }
 
 function onAddSection(name: string) {
-  const addSec = props.state.addSection ?? props.state.addsSection
-  addSec(name)
+  props.state.addSection(name)
 }
 
 function onRenameSection(id: string, name: string) {
-  const renameSec = props.state.renameSection ?? props.state.namesSection
-  renameSec(id, name)
+  props.state.renameSection(id, name)
 }
 
 function onRemoveSection(id: string) {
-  const removeSec = props.state.removeSection ?? props.state.removesSection
-  removeSec(id)
+  props.state.removeSection(id)
 }
 
 function onKeep() {
-  const keep = props.state.keepMine ?? props.state.keep
-  keep()
+  props.state.keepMine()
 }
 
 function onTake() {
-  const take = props.state.takeFile ?? props.state.take
-  take()
+  props.state.takeFile()
 }
 
 // --- Helpers ---
@@ -113,7 +103,7 @@ function empty(stencil: string) {
 <template>
   <div class="deck-tab">
     <FileConflictPrompt
-      :saying="saying"
+      :errorMessage="errorMessage"
       :conflict="conflictIn(shown.state)"
       :words="words"
       @keep="onKeep"
@@ -138,8 +128,8 @@ function empty(stencil: string) {
         {{ scheduled.name }}
         <ChevronDown class="deck-tab__icon" aria-hidden="true" />
       </button>
-      <span v-if="scheduled.saying" role="status" class="deck-tab__wrong">
-        {{ scheduled.saying }}
+      <span v-if="scheduled.errorMessage" role="status" class="deck-tab__wrong">
+        {{ scheduled.errorMessage }}
       </span>
     </p>
 

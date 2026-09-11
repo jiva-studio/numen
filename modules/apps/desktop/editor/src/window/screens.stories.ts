@@ -314,7 +314,7 @@ const SECTIONS = [
 
 const DECK_STATE: DeckTabState = {
   id: 'Sanskrit/Roots.md',
-  shown: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', refusal: null })),
+  shown: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', error: null })),
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
   drawn: computed(() => CARDS),
   sections: computed(() => SECTIONS),
@@ -347,7 +347,7 @@ export const Deck: Story = {
 
 const STENCIL_STATE: StencilTabState = {
   id: 'Sanskrit/Word.md',
-  shown: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', refusal: null })),
+  shown: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', error: null })),
   stencil: computed(() => ({
     fields: WORD.fields,
     preamble: '',

@@ -16,5 +16,3 @@ export const isWebUrl = (typed: string): boolean => {
   }
 }
 
-export const isWebAddress = isWebUrl
-

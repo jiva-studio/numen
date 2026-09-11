@@ -2,7 +2,7 @@
  * Reader state and controls for an open document.
  */
 import { ref, shallowRef } from 'vue'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '../shared/core'
 import { useDocumentNavigation } from './navigation'
 import { useDocumentViewport } from './viewport'
@@ -36,7 +36,7 @@ export type DocumentReaderState = ReturnType<typeof useDocumentReader>
 export function useDocumentReader(documents: Documents, path: string) {
   const pages = shallowRef<readonly Page[]>([])
   const seen = ref('')
-  const trouble = ref('')
+  const error = ref('')
   let open = true
 
   const navigation = useDocumentNavigation(pages)
@@ -50,9 +50,9 @@ export function useDocumentReader(documents: Documents, path: string) {
       if (!open) return
       pages.value = said.pages
       seen.value = 'fingerprint' in said ? said.fingerprint : said.at
-    } catch (error) {
+    } catch (thrown) {
       if (!open) return
-      trouble.value = troubleWords(error)
+      error.value = formatErrorMessage(thrown)
     }
   }
 
@@ -68,7 +68,7 @@ export function useDocumentReader(documents: Documents, path: string) {
     documents,
     path,
     navigation.at,
-    trouble,
+    error,
     go,
     () => open,
   )
@@ -98,7 +98,7 @@ export function useDocumentReader(documents: Documents, path: string) {
     highlightedOn: highlights.highlightedOn,
     also: highlights.also,
     alsoOn: highlights.alsoOn,
-    trouble,
+    error,
     go,
     next,
     back,

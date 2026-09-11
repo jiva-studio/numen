@@ -1,10 +1,10 @@
 /**
  * Wire adapters and vault communication for flashcard stencil tabs.
  */
-import type { Move, RefusalReason } from '../shared/core'
+import type { PathRename, ErrorCode } from '../shared/core'
 import type { Cards, Problem } from '../shared/flashcards/cards'
 import type { MessageWriter } from '../shared/notices/messages'
-import { REFUSED } from '../shared/words'
+import { ERRORS } from '../shared/words'
 import { WORDS as words } from '../shared/flashcards/words'
 import {
   facesOf,
@@ -16,8 +16,8 @@ import {
 /** What the vault said about one file the last time it was read or written. */
 export interface VaultAnswer {
   readonly problems: readonly Problem[]
-  readonly reading: RefusalReason | null
-  readonly writing: RefusalReason | null
+  readonly reading: ErrorCode | null
+  readonly writing: ErrorCode | null
   readonly at: string
 }
 
@@ -35,13 +35,13 @@ export function createStencilWire(
     const stencil = answer.stencil ? stencilOf(answer.stencil) : null
     told.set(path, {
       problems: answer.stencil?.problems ?? [],
-      reading: answer.refusal,
+      reading: answer.error,
       writing: null,
       at: answer.at,
     })
     if (answer.stencil) titles.set(path, answer.stencil.title)
-    if (answer.refusal !== null) return { body: '', refusal: answer.refusal }
-    return { body: stencil ? stencilBodyOf(stencil) : '', refusal: null, at: answer.at }
+    if (answer.error !== null) return { body: '', error: answer.error }
+    return { body: stencil ? stencilBodyOf(stencil) : '', error: null, at: answer.at }
   }
 
   const write = async (path: string, body: string, seen?: { at?: string } | null) => {
@@ -56,10 +56,10 @@ export function createStencilWire(
     told.set(path, {
       problems: said.problems,
       reading: said.reading,
-      writing: answer.refusal,
-      at: answer.changed || answer.refusal !== null ? said.at : answer.at,
+      writing: answer.error,
+      at: answer.changed || answer.error !== null ? said.at : answer.at,
     })
-    return { body: '', refusal: answer.refusal, at: answer.at, changed: answer.changed }
+    return { changed: answer.changed, error: answer.error, at: answer.at }
   }
 
   const renameField = async (
@@ -70,20 +70,20 @@ export function createStencilWire(
   ): Promise<void> => {
     if (!name || name === field) return
     const answer = await cards.renameField(path, field, name, (told.get(path) ?? NOTHING).at || null)
-    if (answer.refusal !== null) return says(REFUSED[answer.refusal], 'refusal')
+    if (answer.error !== null) return says(ERRORS[answer.error], 'error')
     if (answer.changed) {
-      says(words.notRenamed, 'refusal')
+      says(words.notRenamed, 'error')
       return onChanged([path])
     }
     if (answer.cards > 0) says(words.renamed(answer.cards, answer.decks.length))
     if (answer.notWritten.length > 0) {
-      says(words.notWritten(answer.notWritten.map((one) => one.path)), 'refusal')
+      says(words.notWritten(answer.notWritten.map((one) => one.path)), 'error')
     }
     onChanged([path])
   }
 
-  const getSaying = (path: string, refusal: RefusalReason | null): string => {
-    if (refusal === null) return ''
+  const getErrorMessage = (path: string, error: ErrorCode | null): string => {
+    if (error === null) return ''
     const said = told.get(path) ?? NOTHING
     if (said.reading !== null) {
       return said.reading === 'notAStencil' ? words.notAStencil : words.refused
@@ -112,7 +112,7 @@ export function createStencilWire(
     titles.delete(path)
   }
 
-  const movePaths = (renamed: readonly Move[]): void => {
+  const movePaths = (renamed: readonly PathRename[]): void => {
     for (const went of renamed) {
       const said = told.get(went.from)
       if (said) told.set(went.to, said)
@@ -127,7 +127,7 @@ export function createStencilWire(
     read,
     write,
     renameField,
-    getSaying,
+    getErrorMessage,
     getProblems,
     getTitle,
     setTitle,

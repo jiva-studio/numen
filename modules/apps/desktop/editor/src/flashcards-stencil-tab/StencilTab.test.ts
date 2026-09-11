@@ -38,8 +38,8 @@ const drawn = async (problems: readonly Problem[] = []) => {
 
   const core: Cards = {
     stencils: async () => ({ stencils: [], held: 0 }),
-    createDeck: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null, refusal: null }),
+    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
+    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
     // The vault writes the name in the fields and in the braces of every face.
     renameField: async (path, from, to) => {
       renamed.push(`${path} ${from} ${to}`)
@@ -50,16 +50,16 @@ const drawn = async (problems: readonly Problem[] = []) => {
         front: braces(face.front),
         back: braces(face.back),
       }))
-      return { decks: [], cards: 0, notWritten: [], refusal: null, changed: false, at: 'renamed' }
+      return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
     },
-    readDeck: async () => ({ deck: null, refusal: 'missing', at: '', bound: 0 }),
-    writeDeck: async () => ({ refusal: null, changed: false, at: '', bound: 0 }),
+    readDeck: async () => ({ deck: null, error: 'missing', at: '', bound: 0 }),
+    writeDeck: async () => ({ error: null, changed: false, at: '', bound: 0 }),
     readStencil: async (path) => ({
       stencil: { path, title: 'Animal', fields, preamble: '', faces, tail: '', problems },
-      refusal: null,
+      error: null,
       at: 'read',
     }),
-    writeStencil: async () => ({ refusal: null, changed: false, at: 'written' }),
+    writeStencil: async () => ({ error: null, changed: false, at: 'written' }),
   }
 
   const held = useWindowTabs()
@@ -131,7 +131,7 @@ describe('a mark on a face', () => {
     const first = tab.stencil.value.faces[0]?.id ?? ''
     const second = tab.stencil.value.faces[1]?.id ?? ''
 
-    tab.removesFace(first)
+    tab.removeFace(first)
     await settles()
 
     expect(window.find(`[data-face="${second}"]`).find('[data-wrong]').text()).toBe(

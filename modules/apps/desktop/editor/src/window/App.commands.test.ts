@@ -37,7 +37,7 @@ import {
   settles,
   sourceSaid,
 } from '../shared/testing/window'
-import { REFUSED, WORDS } from '../shared/words'
+import { ERRORS, WORDS } from '../shared/words'
 
 describe('the palette', () => {
   /** A keystroke taken on the window, and whether the window took it. */
@@ -355,7 +355,7 @@ describe('a command reached by its own keystroke', () => {
     expect(deck.shown.value.path).not.toBe('Animals.md')
   })
 
-  it('says the refusal and opens nothing where the name is taken already', async () => {
+  it('says the error and opens nothing where the name is taken already', async () => {
     const window = await drawnWithPalette()
 
     const makes = async () => {
@@ -371,7 +371,7 @@ describe('a command reached by its own keystroke', () => {
     await makes()
 
     expect(paneKinds(window).flat().filter((kind) => kind === 'deck')).toHaveLength(1)
-    expect(window.text()).toContain(REFUSED.occupied)
+    expect(window.text()).toContain(ERRORS.occupied)
   })
 
   it('makes a stencil the same way, and opens no deck', async () => {
@@ -577,9 +577,9 @@ describe('a command asked for on a node of the plex', () => {
   it('says in the tab what that tab could not show', async () => {
     const window = await drawn()
     const tab = window.findComponent(PlexTab)
-    const state = tab.props('state') as { view: { trouble: { value: string } } }
+    const state = tab.props('state') as { view: { error: { value: string } } }
 
-    state.view.trouble.value = 'Gone.md is not in the vault'
+    state.view.error.value = 'Gone.md is not in the vault'
     await settles()
 
     expect(tab.find('.caution').text()).toBe('Gone.md is not in the vault')
@@ -738,14 +738,14 @@ describe('a file the window has open in an editor of cards, removed from the tre
   it('writes the card nobody had saved before the file goes', async () => {
     const window = await holding('New deck', 'Animals')
     const state = window.findComponent(DeckTab).props('state') as {
-      adds(
+      addCard(
         stencil: string,
         values: readonly { field: string; text: string }[],
         section: string | null,
       ): void
     }
 
-    state.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    state.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await removes(window, 'Animals.note')
 
     // Making the deck is no write, so the only one is what the person added.

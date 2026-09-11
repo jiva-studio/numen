@@ -12,7 +12,6 @@ import type {
   VaultCard,
   VaultDeck,
   VaultFace,
-  VaultSection,
   VaultStencil,
 } from './types'
 

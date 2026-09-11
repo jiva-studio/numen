@@ -10,9 +10,9 @@ import type { RunSupport } from './runs'
 import type { CommandInvocation, VaultRef } from './target'
 import type { EditorKind } from '../tabs/openers'
 import type { Artifact, ArtifactState, ArtifactRunner } from '../artifacts'
-import type { Movement } from '../file'
-import type { ErrorCode, RefusalReason, RemoveResult, RenameResult } from '../note'
-import type { VaultErrorCode, VaultRefusalReason, Vaults } from '../vaults'
+import type { FileMoveResult } from '../file'
+import type { ErrorCode, RemoveResult, RenameResult } from '../note'
+import type { VaultErrorCode, Vaults } from '../vaults'
 import type { MessageWriter } from '../notices/messages'
 
 
@@ -108,9 +108,9 @@ export interface VaultWriter {
    * A file or a folder filed somewhere else. The last segment of `to` is what
    * it is called from now on.
    */
-  moves(from: string, to: string): Promise<Movement>
+  moves(from: string, to: string): Promise<FileMoveResult>
   /** An empty folder. The folders above it are made with it. */
-  makesFolder(path: string): Promise<RefusalReason | null>
+  makesFolder(path: string): Promise<ErrorCode | null>
 }
 
 /** The files a command makes from nothing, each put in front of the person. */
@@ -208,11 +208,9 @@ export interface CommandDeps {
 /** Everything carrying a command out says in the window's voice. */
 export interface Words {
   /** What the vault reported as error, in words a person reads. */
-  readonly errors?: Record<ErrorCode, string>
-  readonly refused: Record<RefusalReason, string>
-  /** What the list of vaults refused, in words a person reads. */
-  readonly vaultErrors?: Record<VaultErrorCode, string>
-  readonly unvaulted: Record<VaultRefusalReason, string>
+  readonly errors: Record<ErrorCode, string>
+  /** What the list of vaults reported as error, in words a person reads. */
+  readonly vaultErrors: Record<VaultErrorCode, string>
   /** What the machine's own folder picker is titled. */
   readonly folder: string
   /** The links that reach nothing now, which nothing repairs. */
@@ -222,8 +220,7 @@ export interface Words {
   /** The note is waiting on the person, and its file stays where it is. */
   readonly unanswered: string
   /** The note holds prose nobody here has seen, so nothing was written. */
-  readonly stale?: string
-  readonly overtaken?: string
+  readonly stale: string
   /** A name at the destination is taken, and the file stayed where it was. */
   readonly occupied: string
   /** This build cannot do the run at all, and stops offering it. */
