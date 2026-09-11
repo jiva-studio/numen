@@ -45,7 +45,7 @@ export const noteOperations: NoteOperations = {
       links: note.links.map(mapLink),
     })
     const error = errorIn(answer)
-    return { path: answer.path, error, refusal: error }
+    return { path: answer.path, error }
   },
   join: async (path, link) => errorIn(await notes.writeLink({ path, link: mapLink(link) })),
   rename: async (path, title) => {
@@ -58,7 +58,6 @@ export const noteOperations: NoteOperations = {
       frontmatter: writes[answer.by],
       moved: answer.moved ? mapMoveResult(answer.moved) : null,
       error,
-      refusal: error,
       hasChanged: staleIn(answer),
       changed: staleIn(answer),
     }

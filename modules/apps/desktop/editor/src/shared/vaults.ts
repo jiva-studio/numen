@@ -26,7 +26,7 @@ export interface VaultResult {
   /** The vault as the list has it now. Null where the list is as it was. */
   vault: Vault | null
   error?: VaultErrorCode | null
-  refusal: VaultRefusalReason | null
+  refusal?: VaultRefusalReason | null
 }
 
 /** Why the list is as it was, or why the window is showing what it was showing. */

@@ -19,9 +19,9 @@ export interface VaultAnswer {
    */
   readonly problems: readonly Problem[]
   /** What the last read of the file encountered as error. */
-  readonly reading: RefusalReason | null
+  readonly reading: ErrorCode | null
   /** What the last write of it encountered as error. */
-  readonly writing: RefusalReason | null
+  readonly writing: ErrorCode | null
   /** The size a deck is read up to, where that is what caused the error. */
   readonly bound: number
 }
@@ -44,7 +44,7 @@ export function answers() {
     answer: {
       readonly problems: readonly Problem[]
       readonly error?: ErrorCode | null
-      readonly refusal: RefusalReason | null
+      readonly refusal?: RefusalReason | null
       readonly bound: number
       /** The title the file carries, and nothing where the read reached none. */
       readonly title: string | null
@@ -52,7 +52,7 @@ export function answers() {
   ): void => {
     told.set(path, {
       problems: answer.problems,
-      reading: answer.error ?? answer.refusal,
+      reading: answer.error ?? answer.refusal ?? null,
       writing: null,
       bound: answer.bound,
     })
@@ -64,7 +64,7 @@ export function answers() {
     path: string,
     answer: {
       readonly error?: ErrorCode | null
-      readonly refusal: RefusalReason | null
+      readonly refusal?: RefusalReason | null
       readonly bound: number
     },
   ): void => {
@@ -72,7 +72,7 @@ export function answers() {
     told.set(path, {
       problems: said.problems,
       reading: said.reading,
-      writing: answer.error ?? answer.refusal,
+      writing: answer.error ?? answer.refusal ?? null,
       bound: answer.bound,
     })
   }
@@ -80,10 +80,9 @@ export function answers() {
   /** What is wrong with a file, as the marks against its cards are made from. */
   const problemsAt = (path: string): readonly Problem[] => at(path).problems
 
-  /** The words one refusal is put in, and nothing for one this file has none for. */
-  const whyOf = (refusal: RefusalReason | null, bound: number): string | null => {
-    if (refusal === 'deckTooLarge') return words.tooLarge(bound)
-    if (refusal === 'notADeck') return words.notADeck
+  const whyOf = (errorCode: ErrorCode | null, bound: number): string | null => {
+    if (errorCode === 'deckTooLarge') return words.tooLarge(bound)
+    if (errorCode === 'notADeck') return words.notADeck
     return null
   }
 

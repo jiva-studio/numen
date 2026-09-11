@@ -52,14 +52,15 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
     read: async (path) => {
       const answer = await cards.readDeck(path)
       const deck = answer.deck ? deckOf(answer.deck) : null
+      const error = answer.error ?? answer.refusal
       said.reads(path, {
         problems: answer.deck?.problems ?? [],
-        refusal: answer.refusal,
+        error,
         bound: answer.bound,
         title: answer.deck?.title ?? null,
       })
-      if (answer.refusal !== null) return { body: '', refusal: answer.refusal }
-      return { body: deck ? deckBodyOf(deck) : '', refusal: null, at: answer.at }
+      if (error !== null) return { body: '', error, refusal: error }
+      return { body: deck ? deckBodyOf(deck) : '', error: null, refusal: null, at: answer.at }
     },
     write: async (path, body, seen) => {
       const deck = deckIn(body)
@@ -73,10 +74,12 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
         },
         seen?.path ?? null,
       )
-      said.writes(path, { refusal: answer.refusal, bound: answer.bound })
+      const error = answer.error ?? answer.refusal
+      said.writes(path, { error, bound: answer.bound })
       return {
         body: '',
-        refusal: answer.refusal,
+        error,
+        refusal: error,
         at: answer.at,
         changed: answer.changed,
       }
@@ -133,7 +136,9 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
       sections: computed(() => drawnSectionsOf(deck.value)),
       stencils,
       marks: computed(() => marksAt(id)),
-      saying: computed(() => said.saying(store.where(id), store.shown(id).refusal !== null)),
+      saying: computed(() =>
+        said.saying(store.where(id), (store.shown(id).error ?? store.shown(id).refusal) !== null),
+      ),
       scheduled: computed(() => scheduledAt(id)),
       choices,
       schedules: (preset) => void schedules(id, preset),

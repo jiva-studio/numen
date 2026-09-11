@@ -48,7 +48,7 @@ export const presets: Presets = {
   ),
   makes: async (title, folder) => {
     const answer = await asking.createPreset({ title, path: folder })
-    return { path: answer.path, refusal: refusalIn(answer) }
+    return { path: answer.path, error: refusalIn(answer) }
   },
   schedules: async (deck, preset, seen) => {
     const answer = await asking.scheduleDeck({
@@ -56,7 +56,7 @@ export const presets: Presets = {
       preset,
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { refusal: refusalIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
+    return { error: refusalIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   write: async (path, settings, seen) => {
     const answer = await asking.writePreset({
@@ -64,7 +64,7 @@ export const presets: Presets = {
       settings: sent(settings),
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { refusal: refusalIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
+    return { error: refusalIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   curve: async (path, settings) => {
     const answer = await asking.computeCurve({ path, settings: sent(settings) })
@@ -80,7 +80,7 @@ const took = (answer: {
   bounds?: SettingsBoundsMessage | undefined
 }): ReadResult => ({
   preset: answer.preset ? held(answer.preset) : null,
-  refusal: refusalIn(answer),
+  error: refusalIn(answer),
   at: stamp(answer.at) ?? '',
   bounds: bounded(answer.bounds),
 })

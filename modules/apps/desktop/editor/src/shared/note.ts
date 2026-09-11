@@ -95,7 +95,7 @@ export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
 export interface NoteResult {
   body: string
   error?: ErrorCode | null
-  refusal: RefusalReason | null
+  refusal?: RefusalReason | null
   /** Where a link note points, and nothing on every other note. */
   link?: LinkAddress
   address?: Address
@@ -163,7 +163,7 @@ export interface CreateResult {
   /** Where the file is filed. Empty when nothing was made. */
   path: string
   error?: ErrorCode | null
-  refusal: RefusalReason | null
+  refusal?: RefusalReason | null
 }
 export type MakeResult = CreateResult
 
@@ -181,7 +181,7 @@ export interface RenameResult {
   /** What the file did. Null when it stayed where it was. */
   moved: MoveResult | null
   error?: ErrorCode | null
-  refusal: RefusalReason | null
+  refusal?: RefusalReason | null
   /** The note holds prose nobody here has seen, and nothing was written. */
   hasChanged: boolean
   changed: boolean
@@ -205,5 +205,5 @@ export interface RemoveResult {
   /** The notes whose links pointed at it and now reach nothing. */
   dangling: readonly string[]
   error?: ErrorCode | null
-  refusal: RefusalReason | null
+  refusal?: RefusalReason | null
 }

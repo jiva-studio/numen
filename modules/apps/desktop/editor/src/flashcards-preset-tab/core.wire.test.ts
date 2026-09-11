@@ -77,7 +77,7 @@ describe('the settings of a preset', () => {
     const answer = await presets.read('Notes.md')
 
     expect(answer.preset).toBeNull()
-    expect(answer.refusal).toBe('notAPreset')
+    expect(answer.error).toBe('notAPreset')
   })
 })
 
@@ -115,7 +115,7 @@ describe('making a preset', () => {
 
     expect(await presets.makes('Daily', 'Presets')).toEqual({
       path: 'Presets/Daily.md',
-      refusal: null,
+      error: null,
     })
   })
 })
@@ -142,7 +142,7 @@ describe('putting a deck on a preset', () => {
     answers({ refusal: 'REFUSAL_STALE' })
 
     expect(await presets.schedules('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual({
-      refusal: null,
+      error: null,
       changed: true,
       at: '',
     })

@@ -19,7 +19,6 @@ export const filesCore: FilesCore = {
       trashed: answer.trashed,
       dangling: answer.dangling,
       error,
-      refusal: error,
     }
   },
   list: async (folder) => (await files.listFiles({ path: folder })).entries.map(mapEntry),
@@ -29,14 +28,13 @@ export const filesCore: FilesCore = {
     return {
       moved: answer.moved ? mapMoveResult(answer.moved) : null,
       error,
-      refusal: error,
     }
   },
   makeFolder: async (path) => errorIn(await files.createFolder({ path })),
   makeURL: async (url, folder) => {
     const answer = await files.createURL({ url, path: folder })
     const error = errorIn(answer)
-    return { path: answer.path, error, refusal: error }
+    return { path: answer.path, error }
   },
   fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })

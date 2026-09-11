@@ -109,7 +109,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
     try {
       const answer = await presets.schedules(path, preset, store.at(id))
       if (answer.changed) says(id, words.notScheduledChanged)
-      else if (answer.refusal !== null) says(id, words.notScheduled)
+      else if ((answer.error ?? answer.refusal) !== null) says(id, words.notScheduled)
       else says(id, '')
     } catch {
       // The vault did not answer, and the deck is on the preset it was on. The

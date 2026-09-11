@@ -156,8 +156,10 @@ const unvaulted: Record<VaultsRefusal, VaultRefusalReason> = {
   [VaultsRefusal.ASKING]: 'asking',
 }
 
-export const turnedDown = (from: { refusal?: VaultsRefusal | undefined }): VaultRefusalReason | null =>
-  from.refusal === undefined ? null : unvaulted[from.refusal]
+export const turnedDown = (from: { error?: VaultsRefusal | undefined; refusal?: VaultsRefusal | undefined }): VaultRefusalReason | null => {
+  const code = from.error ?? from.refusal
+  return code === undefined ? null : unvaulted[code]
+}
 
 /**
  * What a client has left, in the words the window uses. Keyed by the schema,
@@ -189,6 +191,7 @@ export const mapBaseline = (seen: { prose: string; path: string }) => ({
 
 export const mapNoteResult = (from: {
   body?: string | undefined
+  error?: Refusal | undefined
   refusal?: Refusal | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   url?: string | undefined
@@ -250,6 +253,7 @@ export const mapVault = (one: VaultMessage): Vault => ({
 
 export const mapVaultResult = (from: {
   vault?: VaultMessage | undefined
+  error?: VaultsRefusal | undefined
   refusal?: VaultsRefusal | undefined
 }): VaultResult => {
   const error = turnedDown(from)

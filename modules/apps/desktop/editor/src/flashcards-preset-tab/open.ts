@@ -55,7 +55,8 @@ export const readPreset = async (
     one.curves.waiting.value = false
     return
   }
-  one.flight.saying.value = answer.refusal === null ? '' : words.refused(answer.refusal)
+  const readError = answer.error ?? answer.refusal
+  one.flight.saying.value = readError === null ? '' : words.refused(readError)
   one.flight.changed.value = false
   one.flight.at = answer.at
   bounds.value = answer.bounds

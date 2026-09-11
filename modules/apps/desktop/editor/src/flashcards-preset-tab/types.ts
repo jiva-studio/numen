@@ -7,7 +7,7 @@ import {
   type StopReason,
 } from '@numen/protocol'
 import type { Goal } from '@numen/wire'
-import type { RefusalReason } from '../shared/core'
+import type { ErrorCode, RefusalReason } from '../shared/core'
 import type { Field } from './curve'
 
 export type { Goal, Field }
@@ -125,14 +125,14 @@ export interface Preset {
 /** What reading a preset came back with. */
 export interface ReadResult {
   readonly preset: Preset | null
-  readonly refusal: RefusalReason | null
+  readonly error: ErrorCode | null
   readonly at: string
   readonly bounds: SettingsBounds
 }
 
 /** What writing a preset came back with. */
 export interface WriteResult {
-  readonly refusal: RefusalReason | null
+  readonly error: ErrorCode | null
   readonly changed: boolean
   readonly at: string
 }
@@ -140,7 +140,7 @@ export interface WriteResult {
 /** What making a preset came back with. */
 export interface MakeResult {
   readonly path: string
-  readonly refusal: RefusalReason | null
+  readonly error: ErrorCode | null
 }
 
 /** What a preset comes to at one place of the grid. */

@@ -40,6 +40,6 @@ export interface FileMoveResult {
   /** What the file did. Null when it stayed where it was. */
   moved: MoveResult | null
   error?: ErrorCode | null
-  refusal: RefusalReason | null
+  refusal?: RefusalReason | null
 }
 export type Movement = FileMoveResult
