@@ -14,8 +14,8 @@ import { onMounted, ref } from 'vue'
 import BookTab from './BookTab.vue'
 import { WorkspaceLayout, pane } from '@numen/ui'
 import type { Workspace } from '@numen/ui'
-import { useBookTab } from './kind'
-import { useBookReader, type Book, type Books } from './open'
+import { useBookTab } from './useBookTab'
+import { useBookReader, type Book, type Books } from './useBookReader'
 import { WORDS as words } from './words'
 
 /** How long a wait goes on where the browser sets the pace: a turn it animates. */

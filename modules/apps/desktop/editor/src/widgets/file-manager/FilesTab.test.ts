@@ -1,18 +1,13 @@
 /**
  * A files tab drawn, in a document.
- *
- * What is asked here is what the tree is handed and what it is not: a row's
- * identity is the path the vault files it under, a folder that is closed hands
- * over nothing it holds, and the menu offers what can be done to the row it was
- * asked for on and nothing else.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Menu, Tree } from '@numen/ui'
 import type { Entry } from '../../shared/core'
 import FilesTab from './FilesTab.vue'
-import { useFilesTab, type FilesTabState } from './kind'
-import { useFileTree, ROOT } from './listing'
+import { useFilesTab, type FilesTabState } from './useFilesTab'
+import { useFileTree, ROOT } from './useFileTree'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
@@ -38,20 +33,21 @@ const drawn = async (open: readonly string[] = []) => {
   const done: string[] = []
   const list = useFileTree({ list: async (at: string) => held[at] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
-    lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
-    runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
-    moves: async (from, to) => void done.push(`moves ${from} ${to}`),
-    drags: (paths) => void done.push(`drags ${paths.join(' ') || '—'}`),
-    makes: async (path) => void done.push(`makes ${path}`),
-    writes: async (folder) => `${folder}Untitled note.md`,
-    decks: async (folder, name) => `${folder}${name}`,
-    stencils: async (folder, name) => `${folder}${name}`,
-    presets: async (folder, name) => `${folder}${name}`,
-    imports: async () => '',
-    says: (text) => void done.push(`says ${text}`),
+    openDestination: (landing) =>
+      void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
+    runCommand: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
+    movePath: async (from, to) => void done.push(`moves ${from} ${to}`),
+    setDraggedPaths: (paths) => void done.push(`drags ${paths.join(' ') || '—'}`),
+    createFolder: async (path) => void done.push(`makes ${path}`),
+    createNote: async (folderPath) => `${folderPath}Untitled note.md`,
+    createDeck: async (folderPath, name) => `${folderPath}${name}`,
+    createStencil: async (folderPath, name) => `${folderPath}${name}`,
+    createPreset: async (folderPath, name) => `${folderPath}${name}`,
+    importAddress: async () => '',
+    showError: (text) => void done.push(`says ${text}`),
   })
-  await list.opens(ROOT)
-  for (const at of open) await list.opens(at)
+  await list.openFolder(ROOT)
+  for (const at of open) await list.openFolder(at)
   const window = mount(FilesTab, { props: { state: tab } })
   await settles()
   return { done, list, tab, window }
@@ -101,7 +97,6 @@ describe('the tree the tab draws', () => {
       valueFor: (row: string | null) => string
     }
 
-    // The attribute the window's own drag and drop looks a target up by.
     expect(marking.attribute).toBe('data-file-drop-target')
     expect(marking.valueFor('physics')).toBe('physics')
     expect(marking.valueFor('physics/Kelvin.md')).toBe('physics')
@@ -156,7 +151,7 @@ describe('a row the tree reports', () => {
     window.findComponent(Tree).vm.$emit('select', ['Entropy.md', 'Cover.png'])
     await settles()
 
-    expect(list.chosen.value).toStrictEqual(['Entropy.md', 'Cover.png'])
+    expect(list.selectedPaths.value).toStrictEqual(['Entropy.md', 'Cover.png'])
     expect(window.findComponent(Tree).props('selected')).toStrictEqual([
       'Entropy.md',
       'Cover.png',
@@ -200,7 +195,7 @@ describe('the menu on a row', () => {
 
   const menuOn = async (path: string | null, chosen: readonly string[] = []) => {
     const { list, window } = await drawn()
-    if (chosen.length) list.chooses(chosen)
+    if (chosen.length) list.selectPaths(chosen)
     window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
     await settles()
     return window.findComponent(Menu).props('items') as readonly { id: string; group?: string }[]
@@ -289,19 +284,19 @@ describe('a folder that could not be read', () => {
       },
     })
     const tab: FilesTabState = useFilesTab(list, {
-      lands: () => {},
-      runs: () => {},
-      moves: async () => {},
-      drags: () => {},
-      makes: async () => {},
-      writes: async () => '',
-      decks: async () => '',
-      stencils: async () => '',
-      presets: async () => '',
-      imports: async () => '',
-      says: () => {},
+      openDestination: () => {},
+      runCommand: () => {},
+      movePath: async () => {},
+      setDraggedPaths: () => {},
+      createFolder: async () => {},
+      createNote: async () => '',
+      createDeck: async () => '',
+      createStencil: async () => '',
+      createPreset: async () => '',
+      importAddress: async () => '',
+      showError: () => {},
     })
-    await list.opens(ROOT)
+    await list.openFolder(ROOT)
 
     const window = mount(FilesTab, { props: { state: tab } })
     await settles()

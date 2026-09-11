@@ -8,7 +8,7 @@
  * moved past what was read puts the person the two answers a note puts.
  */
 import { Editor } from '@numen/ui'
-import type { SettingsFileTabState } from './kind'
+import type { SettingsFileTabState } from './useTextEditor'
 import { WORDS as words } from './words'
 
 // --- Props & Emits ---

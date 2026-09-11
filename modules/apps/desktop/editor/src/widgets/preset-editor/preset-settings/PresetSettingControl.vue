@@ -5,7 +5,7 @@
 import { computed } from 'vue'
 import { NumberField, SegmentedControl, Select, Slider, Switch, WeekdayChips, WEEK } from '@numen/ui'
 import type { Day } from '@numen/ui'
-import type { PresetTabState, SettingValue } from '../kind'
+import type { PresetTabState, SettingValue } from '../types'
 import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from '../core'
 import type { Bounds, BudgetUnit } from '../core'
 import { round, type Field } from '../curve'

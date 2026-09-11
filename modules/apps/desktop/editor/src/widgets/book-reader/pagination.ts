@@ -4,30 +4,30 @@
 import type { ContentsEntry } from '@numen/ui'
 import type { Book, BookWords, SpineDocument } from './types'
 
-export function pageAt(pageBytes: number, pages: number, at: number): number {
+export function getPageNumber(pageBytes: number, pages: number, offset: number): number {
   if (pages <= 0 || pageBytes <= 0) return 0
-  return Math.min(Math.max(Math.floor(at / pageBytes) + 1, 1), pages)
+  return Math.min(Math.max(Math.floor(offset / pageBytes) + 1, 1), pages)
 }
 
-export function documentAt(
+export function getDocumentAtOffset(
   documents: readonly SpineDocument[],
-  at: number,
+  offset: number,
 ): SpineDocument | undefined {
   let found: SpineDocument | undefined
   for (const one of documents) {
-    if (one.span.begins > at) break
+    if (one.span.begins > offset) break
     found = one
   }
   return found
 }
 
-const namedIn = (document: SpineDocument): string => {
+function getDocumentTitle(document: SpineDocument): string {
   const last = document.path.split('/').pop() ?? document.path
   const dot = last.lastIndexOf('.')
   return dot > 0 ? last.slice(0, dot) : last
 }
 
-export function contentsOf(book: Book, words: BookWords): readonly ContentsEntry[] {
+export function getContents(book: Book, words: BookWords): readonly ContentsEntry[] {
   if (book.parts.length !== 0) {
     return book.parts.map((one) => ({
       title: one.title,
@@ -42,5 +42,5 @@ export function contentsOf(book: Book, words: BookWords): readonly ContentsEntry
       level: 0,
     }))
   }
-  return book.documents.map((one) => ({ title: namedIn(one), at: one.span.begins, level: 0 }))
+  return book.documents.map((one) => ({ title: getDocumentTitle(one), at: one.span.begins, level: 0 }))
 }

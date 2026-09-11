@@ -10,6 +10,7 @@ export type NoteOperations = Pick<
   Core,
   | 'neighbourhood'
   | 'opening'
+  | 'getInitialOpenPath'
   | 'editing'
   | 'read'
   | 'write'
@@ -23,6 +24,7 @@ export type NoteOperations = Pick<
 export const noteOperations: NoteOperations = {
   neighbourhood: async (path) => mapNeighbourhood(await notes.getNeighbourhood({ path })),
   opening: async () => (await notes.getOpeningNote({})).note ?? null,
+  getInitialOpenPath: async () => (await notes.getOpeningNote({})).note ?? null,
   async *editing(signal) {
     for await (const said of notes.watchEdits({}, { signal })) {
       yield {

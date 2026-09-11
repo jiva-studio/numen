@@ -7,8 +7,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { iconFor, iconOfKind, iconOfNote } from '../shared/icons'
-import { PRESET } from '../shared/tabs/workspace'
-import { commandsOf } from '../shared/command/commands'
+import { PRESET } from '../entities/tab/workspace'
+import { commandsOf } from '../features/command-palette/commands'
 import { itemsFor } from '../widgets/file-manager/menu'
 import { ITEMS, NONE } from '../widgets/plex-graph/menu'
 import { waysIn } from '../widgets/welcome/screen'

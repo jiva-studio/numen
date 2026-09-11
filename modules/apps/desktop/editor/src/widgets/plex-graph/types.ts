@@ -10,7 +10,7 @@ import type {
   PlexShowing,
 } from '@numen/ui'
 import type { NoteHeading, NoteType, PathRename } from '../../shared/core'
-import type { PlexView } from './view'
+import type { PlexView } from './usePlexView'
 
 /** Where the menu stands, and the node it was asked for on. */
 export interface MenuRequest {
@@ -44,39 +44,50 @@ export interface PlexTabDeps {
   readonly creatable: readonly PlexRelatedSeat[]
 }
 
-/** What one plex tab holds. */
-export interface PlexTabState {
+export interface PlexViewState {
   readonly view: PlexView
   readonly picture: ComputedRef<PlexNeighbourhood | null>
   readonly empty: ComputedRef<boolean>
   readonly dragged: ComputedRef<readonly string[]>
-  readonly menu: Ref<MenuRequest | null>
   readonly creatable: readonly PlexRelatedSeat[]
-  typeOf(node: string): NoteType
-  partsOf(node: string): readonly PlexPart[]
-  readonly mostParts: Readonly<Ref<number>>
-  reads(): Promise<void>
-  readParts(): Promise<void>
-  entered(node: string, part: string): void
-  openPart(node: string, part: string): void
-  activate(node: string): void
-  made(from: string, seat: PlexRelatedSeat): Promise<void>
-  createNode(from: string, seat: PlexRelatedSeat): Promise<void>
-  joined(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
-  joinNodes(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
-  brought(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
-  bringNodes(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
-  opens(node: string, showing?: PlexShowing): void
-  openNode(node: string, showing?: PlexShowing): void
-  writes(): Promise<void>
-  createNote(): Promise<void>
-  asks(asked: MenuRequest): void
+}
+
+export interface PlexMenuState {
+  readonly menu: Ref<MenuRequest | null>
   openMenu(asked: MenuRequest): void
   dismiss(): void
-  chose(id: string): void
   chooseMenuItem(id: string): void
-  follows(renamed: readonly PathRename[]): void
-  followMoves(renamed: readonly PathRename[]): void
-  nameOf(path: string): string
-  getName(path: string): string
+  asks(asked: MenuRequest): void
+  chose(id: string): void
 }
+
+export interface PlexPartsState {
+  readonly mostParts: Readonly<Ref<number>>
+  typeOf(node: string): NoteType
+  partsOf(node: string): readonly PlexPart[]
+  reads(): Promise<void>
+  readParts(): Promise<void>
+  openPart(node: string, part: string): void
+  entered(node: string, part: string): void
+}
+
+export interface PlexNodeActions {
+  activate(node: string): void
+  createNode(from: string, seat: PlexRelatedSeat): Promise<void>
+  made(from: string, seat: PlexRelatedSeat): Promise<void>
+  joinNodes(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
+  joined(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
+  bringNodes(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
+  brought(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
+  openNode(node: string, showing?: PlexShowing): void
+  opens(node: string, showing?: PlexShowing): void
+  createNote(): Promise<void>
+  writes(): Promise<void>
+  followMoves(renamed: readonly PathRename[]): void
+  follows(renamed: readonly PathRename[]): void
+  getName(path: string): string
+  nameOf(path: string): string
+}
+
+/** What one plex tab holds. */
+export type PlexTabState = PlexViewState & PlexMenuState & PlexPartsState & PlexNodeActions

@@ -6,8 +6,8 @@ import {
   cardEnded,
   type InsertionPoint,
 } from '@numen/ui'
-import type { Value } from '../../shared/flashcards/cards'
-import { generateId, type IdMaker } from '../../shared/flashcards/identity'
+import type { Value } from '../../entities/deck/cards'
+import { generateId, type IdMaker } from '../../entities/deck/identity'
 import { nameOf } from '../../shared/paths'
 import type { BufferCard, BufferDeck } from './types'
 
@@ -22,7 +22,7 @@ export const addCard = (
   stencilPath: string,
   values: readonly Value[],
   section: string | null = null,
-  mint: IdMaker = generateId,
+  generateCardId: IdMaker = generateId,
 ): BufferDeck => {
   const ranks = new Map(deck.sections.map((each, index) => [each.id, index]))
   const rank = (id: string | null): number => (id === null ? -1 : (ranks.get(id) ?? -1))
@@ -38,7 +38,7 @@ export const addCard = (
     cards: [
       ...deck.cards.slice(0, at),
       {
-        id: mint(),
+        id: generateCardId(),
         mark: '',
         section: section !== null && ranks.has(section) ? section : null,
         heading: '',
@@ -113,9 +113,13 @@ export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): Buff
 }
 
 /** A section made at the end of the deck, holding no card. */
-export const addSection = (deck: BufferDeck, name: string, mint: IdMaker = generateId): BufferDeck => ({
+export const addSection = (
+  deck: BufferDeck,
+  name: string,
+  generateSectionId: IdMaker = generateId,
+): BufferDeck => ({
   ...deck,
-  sections: [...deck.sections, { id: mint(), name, preamble: '' }],
+  sections: [...deck.sections, { id: generateSectionId(), name, preamble: '' }],
 })
 
 /** A section under another name. */

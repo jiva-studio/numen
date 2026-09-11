@@ -6,7 +6,7 @@ import { configure } from 'storybook/test'
 import { reachCheck, type Proof } from '../../../../libs/ui/.storybook/check'
 import '@numen/ui/styles.css'
 // The window's own sheet, which every tab in it is drawn under.
-import '../src/app.css'
+import '../src/app/app.css'
 import './preview.css'
 
 // A story waits on a real browser drawing a frame, and two engines draw at

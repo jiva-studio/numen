@@ -10,11 +10,11 @@ import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 import { dayAfter } from '@numen/ui'
 
-import { usePresetTab } from './kind'
+import { usePresetTab } from './usePresetTab'
 import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from './core'
 import { BOUNDS } from './drawn'
-import type { WindowHandle } from '../../shared/tabs/windowTabs'
-import type { FileOpeners } from '../../shared/tabs/openers'
+import type { WindowHandle } from '../../entities/tab/windowTabs'
+import type { FileOpeners } from '../../entities/tab/openers'
 
 /** The review day the window is told, which is the day holding one in the morning. */
 const DAY = '2026-09-04'

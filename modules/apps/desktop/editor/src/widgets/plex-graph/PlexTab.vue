@@ -44,8 +44,7 @@ const picture = useTemplateRef<{ focusNode: (id: string) => void }>('picture')
 function onContextMenu(event: MouseEvent) {
   if (!empty.value) return
   event.preventDefault()
-  const openMenu = props.state.openMenu ?? props.state.asks
-  openMenu({
+  props.state.openMenu({
     node: null,
     at: { x: event.clientX, y: event.clientY },
     opening: 'pointer',
@@ -57,27 +56,27 @@ function onActivateNode(node: string) {
 }
 
 function onCreateNode(from: string, seat: PlexRelatedSeat) {
-  void (props.state.createNode ?? props.state.made)(from, seat)
+  void props.state.createNode(from, seat)
 }
 
 function onLinkNodes(from: string, to: string, seat: PlexRelatedSeat) {
-  void (props.state.joinNodes ?? props.state.joined)(from, to, seat)
+  void props.state.joinNodes(from, to, seat)
 }
 
 function onBringNodes(dragged: readonly string[], seat: PlexRelatedSeat) {
-  void (props.state.bringNodes ?? props.state.brought)(dragged, seat)
+  void props.state.bringNodes(dragged, seat)
 }
 
 function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuOpening) {
-  (props.state.openMenu ?? props.state.asks)({ node, at, opening })
+  props.state.openMenu({ node, at, opening })
 }
 
 function onShowNode(node: string, how: PlexShowing) {
-  (props.state.openNode ?? props.state.opens)(node, how)
+  props.state.openNode(node, how)
 }
 
 function onEnterPart(node: string, part: string) {
-  (props.state.openPart ?? props.state.entered)(node, part)
+  props.state.openPart(node, part)
 }
 
 function onDismissPicture() {
@@ -106,7 +105,7 @@ function getNodeIcon(node: string): LucideIcon | null {
 function closeMenu(chose?: string) {
   const node = menu.value?.node ?? null
   if (chose === undefined) props.state.dismiss()
-  else (props.state.chooseMenuItem ?? props.state.chose)(chose)
+  else props.state.chooseMenuItem(chose)
   if (node !== null) picture.value?.focusNode(node)
 }
 </script>

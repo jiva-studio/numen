@@ -6,10 +6,10 @@ import { computed } from 'vue'
 import { NumberField, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
-import type { SettingsTabState } from './kind'
+import type { SettingsTabState } from './useSettingsTab'
 import AT from './paths.json'
 import { choicesFor } from './models'
-import { write } from '../../shared/settings/write'
+import { write } from '../../entities/settings/write'
 import { WORDS as words } from './words'
 
 // --- Props & Emits ---

@@ -8,8 +8,7 @@ import type { Position, Row, RowMarker } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 
 import { iconFor, iconOfEntry } from '../../shared/icons'
-import type { DropPosition, FilesTabState } from './types'
-import type { ListingRow } from './listing'
+import type { DropPosition, FilesTabState, ListingRow } from './types'
 import { addressDropped, carriesAddress } from './drag'
 import { itemsFor } from './menu'
 import { WORDS as words } from './words'
@@ -20,19 +19,18 @@ const props = defineProps<{ state: FilesTabState }>()
 // --- State ---
 /**
  * The mark the window's drag and drop reads: the attribute it looks a target
- * up by, carrying the folder a file let go there is filed in. The window puts
- * `file-drop-target-active` on whichever it is over.
+ * up by, carrying the folder a file let go there is filed in.
  */
 const dropTarget = computed<RowMarker>(() => ({
   attribute: 'data-file-drop-target',
-  valueFor: (row: string | null) => props.state.folderFor(row),
+  valueFor: (row: string | null) => props.state.getFolderFor(row),
 }))
 
 const rows = computed(() => drawn(props.state.list.rows.value))
 
 /** The row whose name is in a field, which the tree opens and closes itself. */
 const renaming = computed({
-  get: () => props.state.renaming.value,
+  get: () => props.state.renamingPath.value,
   set: (row: string | null) => props.state.setRenamingPath(row),
 })
 
@@ -41,16 +39,15 @@ const items = computed(() => {
   const asked = props.state.menu.value
   if (!asked || asked.path === null) return itemsFor(null, false, props.state.canRun)
 
-  const entry = props.state.list.entryAt(asked.path)
+  const entry = props.state.list.getEntryAt(asked.path)
   const on = {
     source: entry?.kind ?? 'other',
     folder: entry?.folder ?? false,
   }
-  return itemsFor(on, props.state.over(asked.path).length > 1, props.state.canRun)
+  return itemsFor(on, props.state.getOverPaths(asked.path).length > 1, props.state.canRun)
 })
 
 // --- Handlers ---
-/** An address dragged out of a browser, made into the file it is kept in. */
 function onDrop(event: DragEvent) {
   const address = addressDropped(event.dataTransfer)
   if (!address) return
@@ -58,7 +55,6 @@ function onDrop(event: DragEvent) {
   void props.state.importAddress(address)
 }
 
-/** A drag carrying an address is one this tab takes. */
 function onDragOver(event: DragEvent) {
   if (carriesAddress(event.dataTransfer?.types)) event.preventDefault()
 }
@@ -71,8 +67,8 @@ function onCloseEntry(row: string) {
   props.state.close(row)
 }
 
-function onSelectEntries(rows: readonly string[]) {
-  props.state.select(rows)
+function onSelectEntries(selectedRows: readonly string[]) {
+  props.state.select(selectedRows)
 }
 
 function onActivateEntry(row: string) {
@@ -83,20 +79,20 @@ function onRenameEntry(row: string, name: string) {
   void props.state.rename(row, name)
 }
 
-function onMoveEntries(rows: readonly string[], at: DropPosition) {
-  void props.state.move(rows, at)
+function onMoveEntries(targetRows: readonly string[], at: DropPosition) {
+  void props.state.move(targetRows, at)
 }
 
-function onDragEntries(rows: readonly string[]) {
-  props.state.drag(rows)
+function onDragEntries(draggedRows: readonly string[]) {
+  props.state.drag(draggedRows)
 }
 
 function onDropEntries() {
   props.state.drop()
 }
 
-function onRemoveEntries(rows: readonly string[]) {
-  props.state.remove(rows)
+function onRemoveEntries(removedRows: readonly string[]) {
+  props.state.remove(removedRows)
 }
 
 function onOpenMenu(row: string | null, at: Position) {
@@ -108,13 +104,12 @@ function onChooseMenuItem(id: string) {
 }
 
 function onDismissMenu() {
-  props.state.dismiss()
+  props.state.dismissMenu()
 }
 
 // --- Helpers ---
-/** The tree as the component takes it, a path standing for each row. */
-function drawn(rows: readonly ListingRow[]): Row[] {
-  return rows.map((one) => ({
+function drawn(listingRows: readonly ListingRow[]): Row[] {
+  return listingRows.map((one) => ({
     id: one.entry.path,
     name: one.entry.name,
     holds: one.entry.folder,
@@ -122,24 +117,19 @@ function drawn(rows: readonly ListingRow[]): Row[] {
   }))
 }
 
-/** The icon drawn beside a name, for whatever the vault holds at that row. */
 function entryIcon(id: string, open: boolean): LucideIcon {
-  return iconOfEntry(props.state.list.entryAt(id), open)
+  return iconOfEntry(props.state.list.getEntryAt(id), open)
 }
 
-/**
- * A file the vault holds no source for is not reported by the watcher, so the
- * tree is read again whenever the window comes back to the front.
- */
-const again = () => void props.state.list.again()
-onMounted(() => globalThis.addEventListener('focus', again))
-onUnmounted(() => globalThis.removeEventListener('focus', again))
+const refreshTree = () => void props.state.list.refresh()
+onMounted(() => globalThis.addEventListener('focus', refreshTree))
+onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
 </script>
 
 <template>
   <div class="files" @dragover="onDragOver" @drop="onDrop">
-    <p v-if="props.state.list.error.value" class="caution">
-      {{ props.state.list.error.value }}
+    <p v-if="props.state.list.errorMessage.value" class="caution">
+      {{ props.state.list.errorMessage.value }}
     </p>
 
     <Tree
@@ -147,7 +137,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
       class="files__tree"
       :rows="rows"
       :open="props.state.list.openRows.value"
-      :selected="props.state.list.chosen.value"
+      :selected="props.state.list.selectedPaths.value"
       :name="words.tree"
       :counted="words.dragging"
       :marking="dropTarget"
@@ -185,7 +175,6 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
 </template>
 
 <style scoped>
-/* The tree takes what the band above it leaves. */
 .files {
   display: flex;
   flex-direction: column;
@@ -197,13 +186,6 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
   min-block-size: 0;
 }
 
-/* Where a file dragged in from outside would land. The window puts this class
-   on the element under the pointer for as long as the drag is over it. */
-.files__tree :deep(.file-drop-target-active),
-.files__tree.file-drop-target-active {
-}
-
-/* Lucide draws on a 24 grid, and the stroke is given in those units. */
 .files__icon {
   inline-size: 0.875rem;
   block-size: 0.875rem;

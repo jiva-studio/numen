@@ -8,8 +8,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
-import { useFilesTab, type FilesTabState } from './kind'
-import { useFileTree, ROOT } from './listing'
+import { useFilesTab, type FilesTabState } from './useFilesTab'
+import { useFileTree, ROOT } from './useFileTree'
 import type { Entry } from '../../shared/core'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
@@ -38,22 +38,22 @@ const VAULT: Record<string, readonly Entry[]> = {
 const opened = (open: readonly string[]): FilesTabState => {
   const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
-    lands: () => {},
-    runs: () => {},
-    moves: async () => {},
-    drags: () => {},
-    makes: async () => {},
-    writes: async (at) => `${at}Untitled note.md`,
-    decks: async (at, name) => `${at}${name}`,
-    stencils: async (at, name) => `${at}${name}`,
-    presets: async (at, name) => `${at}${name}`,
-    imports: async () => '',
-    says: () => {},
+    openDestination: () => {},
+    runCommand: () => {},
+    movePath: async () => {},
+    setDraggedPaths: () => {},
+    createFolder: async () => {},
+    createNote: async (at) => `${at}Untitled note.md`,
+    createDeck: async (at, name) => `${at}${name}`,
+    createStencil: async (at, name) => `${at}${name}`,
+    createPreset: async (at, name) => `${at}${name}`,
+    importAddress: async () => '',
+    showError: () => {},
   })
 
   void (async () => {
-    await list.opens(ROOT)
-    for (const at of open) await list.opens(at)
+    await list.openFolder(ROOT)
+    for (const at of open) await list.openFolder(at)
   })()
 
   return state

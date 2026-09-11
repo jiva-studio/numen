@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Neighbourhood, Seat } from '../../shared/core'
 import { asPlex } from './picture'
-import { createTickets } from './tickets'
+import { createNodeIdMap } from './nodeIdMap'
 
 /** A note and what sits around it: seat, label, the note it comes through, and
  *  whether the other note names the relationship too. */
@@ -22,12 +22,12 @@ const around = (focus: string, related: NeighbourRow[]): Neighbourhood => ({
 })
 
 /**
- * The picture, and the note each ticket in it stands for. Every note here is
+ * The picture, and the note each node ID in it stands for. Every note here is
  * one carrying no identifier, which is the note the picture has to draw.
  */
 const drawing = (neighbourhood: ReturnType<typeof around>) => {
-  const tickets = createTickets()
-  return { plex: asPlex(neighbourhood, tickets.of), note: tickets.note }
+  const map = createNodeIdMap()
+  return { plex: asPlex(neighbourhood, map.getNodeId), note: map.getNodePath }
 }
 
 /**
@@ -123,11 +123,11 @@ describe('what a note is drawn under', () => {
   ])
 
   it('is the ticket the note holds, and never the file it is filed under', () => {
-    const tickets = createTickets()
+    const map = createNodeIdMap()
     const plex = asPlex(held, (path) => `#${path}`)
 
     expect(plex.nodes.map((node) => node.id)).toEqual(['#Here', '#Above', '#Below', '#Beside'])
-    expect(tickets.note('Here')).toBe('')
+    expect(map.getNodePath('Here')).toBe('')
   })
 
   it('calls every note of one picture something different from every other', () => {

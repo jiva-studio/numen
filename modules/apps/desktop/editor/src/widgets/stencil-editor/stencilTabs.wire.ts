@@ -3,10 +3,10 @@
  */
 import type { PathRename, ErrorCode } from '../../shared/core'
 import type { NoteBaseline } from '../note-editor/tabState'
-import type { Cards, Problem } from '../../shared/flashcards/cards'
+import type { Cards, Problem } from '../../entities/deck/cards'
 import type { MessageWriter } from '../../shared/notices/messages'
 import { ERRORS } from '../../shared/words'
-import { WORDS as words } from '../../shared/flashcards/words'
+import { WORDS as words } from '../../entities/deck/words'
 import {
   facesOf,
   stencilBodyOf,

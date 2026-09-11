@@ -4,7 +4,7 @@
  */
 import { Reader } from '@numen/ui'
 import { WORDS as words } from './words'
-import type { DocumentTabState } from './kind'
+import type { DocumentTabState } from './useDocumentTab'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: DocumentTabState }>()
@@ -13,7 +13,7 @@ const props = defineProps<{ state: DocumentTabState }>()
 
 // --- Handlers ---
 function onGoToPage(page: number) {
-  void props.state.go(page)
+  void props.state.goToPage(page)
 }
 
 function onWiden(wide: number) {
@@ -27,8 +27,8 @@ function onWiden(wide: number) {
   <Reader
     :ref="(reader: unknown) => props.state.setPageHandle(reader)"
     :pages="props.state.pages.value"
-    :at="props.state.at.value"
-    :picture="props.state.pictureOf"
+    :at="props.state.pageNumber.value"
+    :picture="props.state.getPageImageUrl"
     :highlights="props.state.highlightedOn"
     :also="props.state.alsoOn"
     :words="words"

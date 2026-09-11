@@ -321,7 +321,7 @@ vi.mock('../../widgets/book-reader/wire', () => ({
   },
 }))
 
-vi.mock('../media/wire', () => ({
+vi.mock('../../entities/media/wire', () => ({
   recordings: {
     getSummary: async (path: string) => {
       asked.listened.push(path)
@@ -373,7 +373,7 @@ vi.mock('../artifacts', () => ({
   },
 }))
 
-vi.mock('../flashcards/cards', () => ({
+vi.mock('../../entities/deck/cards', () => ({
   cards: {
     // A card is named by the first field of the stencil it is cut by, so the
     // window is told of one.
@@ -437,7 +437,7 @@ vi.mock('../flashcards/cards', () => ({
 
 vi.mock('../../widgets/agent-chat/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
-vi.mock('../settings/theme', () => ({
+vi.mock('../../entities/settings/theme', () => ({
   themes: {
     appearance: async () => ({
       themes: [

@@ -1,6 +1,6 @@
 /** What the window keeps a recording tab by, and what draws it. */
-import type { Medium } from '../../shared/media/kind'
-import { RECORDING } from '../../shared/tabs/workspace'
+import type { Medium } from '../../entities/media/kind'
+import { RECORDING } from '../../entities/tab/workspace'
 import RecordingTab from './RecordingTab.vue'
 
 /** The recordings of the vault, played. */

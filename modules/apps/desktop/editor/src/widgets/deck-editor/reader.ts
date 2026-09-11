@@ -6,9 +6,9 @@
  * screen leaves that one standing, so the card a person is typing into is not
  * drawn again under a fresh identity.
  */
-import type { Problem } from '../../shared/flashcards/cards'
+import type { Problem } from '../../entities/deck/cards'
 import { deckIn, applyHead, applyName, sameDeck, type BufferDeck } from './deck'
-import { marksOf, sameMarks, type Marks } from '../../shared/flashcards/marks'
+import { marksOf, sameMarks, type Marks } from '../../entities/deck/marks'
 
 /** The string a tab holds, and the file it stands at. */
 export interface ShownStore {

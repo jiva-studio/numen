@@ -14,7 +14,7 @@ import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
 import SettingsTab from '../widgets/settings/SettingsTab.vue'
-import type { Installation } from '../widgets/settings/kind'
+import type { Installation } from '../widgets/settings/useSettingsTab'
 import PresetTab from '../widgets/preset-editor/PresetTab.vue'
 import {
   DEFAULTS,
@@ -24,26 +24,26 @@ import {
   type Settings as Scheduling,
   type SettingsBounds,
 } from '../widgets/preset-editor/core'
-import type { PresetTabState } from '../widgets/preset-editor/kind'
+import type { PresetTabState } from '../widgets/preset-editor/types'
 import DeckTab from '../widgets/deck-editor/DeckTab.vue'
-import type { DeckTabState } from '../widgets/deck-editor/deckTabs'
+import type { DeckTabState } from '../widgets/deck-editor/useDeckTabs'
 import StencilTab from '../widgets/stencil-editor/StencilTab.vue'
-import type { StencilTabState } from '../widgets/stencil-editor/stencilTabs'
-import type { Marks } from '../shared/flashcards/marks'
+import type { StencilTabState } from '../widgets/stencil-editor/useStencilTabs'
+import type { Marks } from '../entities/deck/marks'
 import RecordingTab from '../widgets/media-recording/RecordingTab.vue'
-import { useTranscript, type Recordings } from '../shared/media/transcript'
-import type { Cue } from '../shared/media/cues'
-import type { Player } from '../shared/media/player'
-import { useTranscriptTab } from '../shared/media/kind'
+import { useTranscript, type Recordings } from '../entities/media/transcript'
+import type { Cue } from '../entities/media/cues'
+import type { Player } from '../entities/media/player'
+import { useTranscriptTab } from '../entities/media/kind'
 import DocumentTab from '../widgets/document-viewer/DocumentTab.vue'
-import { useDocumentTab } from '../widgets/document-viewer/kind'
-import { useDocumentReader, type Documents } from '../widgets/document-viewer/open'
+import { useDocumentTab } from '../widgets/document-viewer/useDocumentTab'
+import { useDocumentReader, type Documents } from '../widgets/document-viewer/useDocumentReader'
 import FilesTab from '../widgets/file-manager/FilesTab.vue'
-import { useFilesTab } from '../widgets/file-manager/kind'
-import { useFileTree, ROOT } from '../widgets/file-manager/listing'
+import { useFilesTab } from '../widgets/file-manager/useFilesTab'
+import { useFileTree, ROOT } from '../widgets/file-manager/useFileTree'
 import type { Entry } from '../shared/core'
 import { iconOfKind } from '../shared/icons'
-import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '../shared/tabs/workspace'
+import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '../entities/tab/workspace'
 
 /** Every tab this file draws, under the identity the window opens it at. */
 const TABS: readonly Tab[] = [
@@ -591,21 +591,21 @@ const VAULT: Record<string, readonly Entry[]> = {
 const files = (open: readonly string[]) => {
   const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
   const state = useFilesTab(list, {
-    lands: () => {},
-    runs: () => {},
-    moves: async () => {},
-    drags: () => {},
-    makes: async () => {},
-    writes: async () => '',
-    decks: async () => '',
-    stencils: async () => '',
-    presets: async () => '',
-    imports: async () => '',
-    says: () => {},
+    openDestination: () => {},
+    runCommand: () => {},
+    movePath: async () => {},
+    setDraggedPaths: () => {},
+    createFolder: async () => {},
+    createNote: async () => '',
+    createDeck: async () => '',
+    createStencil: async () => '',
+    createPreset: async () => '',
+    importAddress: async () => '',
+    showError: () => {},
   })
   const read = (async () => {
-    await list.opens(ROOT)
-    for (const at of open) await list.opens(at)
+    await list.openFolder(ROOT)
+    for (const at of open) await list.openFolder(at)
   })()
   return { state, read }
 }
@@ -786,7 +786,7 @@ export const Recognised: Story = {
         state,
         // The reading a search sent a person into: the book turns to the page
         // the passage stands on, and the passage is highlighted where it stands.
-        opens: () => state.reach({ from: 0, to: 1 }),
+        opens: () => state.focusSpans({ from: 0, to: 1 }),
       },
     )
   },

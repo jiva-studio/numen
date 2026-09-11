@@ -4,31 +4,40 @@
 import type { ComputedRef } from 'vue'
 import type { Half } from '@numen/ui'
 import type { OpenNote } from '../note-editor/notes'
-import type { Marks } from '../../shared/flashcards/marks'
+import type { Marks } from '../../entities/deck/marks'
 import type { BufferStencil } from './stencil'
 
-/** What one stencil tab holds. */
-export interface StencilTabState {
-  /** The identity this stencil opened under, which its tab keeps wherever it goes. */
+export interface StencilDataState {
   readonly id: string
-  /** The stencil as the window draws it: the state it is in, and what it stands at. */
   readonly shown: ComputedRef<OpenNote>
-  /** The fields and the faces, as the editor draws them. */
   readonly stencil: ComputedRef<BufferStencil>
-  /** What is wrong with the file, against the face or the field it stands on. */
   readonly marks: ComputedRef<Marks>
-  /** What the whole file was refused for, in words a person reads. */
   readonly errorMessage: ComputedRef<string>
+}
+
+export interface StencilFieldActions {
   addField(name: string): void
   renameField(field: string, name: string): void
   removeField(field: string): void
   moveField(field: string, at: string | null): void
+}
+
+export interface StencilFaceActions {
   addFace(name: string): void
   renameFace(id: string, name: string): void
   removeFace(id: string): void
   moveFace(id: string, at: string | null): void
   writeFaceHalf(id: string, half: Half, text: string): void
+}
+
+export interface StencilTabLifecycle {
   keepMine(): void
   takeFile(): void
   close(id: string): void
 }
+
+/** What one stencil tab holds. */
+export type StencilTabState = StencilDataState &
+  StencilFieldActions &
+  StencilFaceActions &
+  StencilTabLifecycle

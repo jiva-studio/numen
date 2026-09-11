@@ -18,7 +18,7 @@ import {
   type Settings,
   type SettingsBounds,
 } from './core'
-import type { PresetTabState } from './kind'
+import type { PresetTabState } from './usePresetTab'
 
 /**
  * How far each setting goes, as the application answers a read. A test says

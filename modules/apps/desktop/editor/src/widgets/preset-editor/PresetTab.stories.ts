@@ -18,7 +18,7 @@ import {
   type SettingsBounds,
 } from './core'
 import { BACKLOG_HIGH, HIGH, WIDE } from './plot'
-import type { PresetTabState } from './kind'
+import type { PresetTabState } from './types'
 import { WORDS as words } from './words'
 
 const point = (over: Partial<Point> = {}): Point => ({

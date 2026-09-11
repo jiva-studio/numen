@@ -34,7 +34,7 @@ const {
 const nothing = computed(() => idle(curve.value))
 
 /** What is said in the control's place where the goal has nothing to work on. */
-const saidInstead = computed(() => {
+const emptyGoalExplanation = computed(() => {
   if (nothing.value === 'unpointed') return words.unpointed
   if (nothing.value === 'noCards') return words.noCards(curve.value.decks)
   return nothing.value === 'beginsNothing' ? words.beginsNothing : ''
@@ -55,7 +55,7 @@ const reading = computed(() =>
 const stopped = computed(() => words.stopped(stoppedAt.value))
 
 // --- Handlers ---
-function onAgain() {
+function onRefresh() {
   props.state.again()
 }
 
@@ -80,14 +80,14 @@ function onSettleSlider() {
          and it waits on nothing in the vault. -->
     <p v-if="errorMessage" role="alert" class="preset__warning preset__answering">
       {{ errorMessage }}
-      <button type="button" class="answer" @click="onAgain">
+      <button type="button" class="answer" @click="onRefresh">
         {{ words.reads }}
       </button>
     </p>
 
     <p v-if="changed" role="status" class="preset__warning preset__answering">
       {{ words.changed }}
-      <button type="button" class="answer" @click="onAgain">
+      <button type="button" class="answer" @click="onRefresh">
         {{ words.reads }}
       </button>
     </p>
@@ -111,7 +111,7 @@ function onSettleSlider() {
             @update:model-value="onSelectGoal"
           />
 
-          <p v-if="nothing" class="preset__unpointed" data-preset="unpointed">{{ saidInstead }}</p>
+          <p v-if="nothing" class="preset__unpointed" data-preset="unpointed">{{ emptyGoalExplanation }}</p>
 
           <template v-else>
             <CurveSlider

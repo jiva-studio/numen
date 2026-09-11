@@ -13,7 +13,7 @@ import type {
 } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
 import { namesOf } from '@numen/wire'
-import type { SearchMode } from '../../shared/command/search'
+import type { SearchMode } from '../../features/command-palette/search'
 import type {
   Presence,
   Vault,

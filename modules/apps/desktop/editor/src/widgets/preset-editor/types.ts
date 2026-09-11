@@ -208,19 +208,24 @@ export interface Presets {
 /** What a person can put into one row of the receipt. */
 export type SettingValue = number | string | boolean | Load
 
-/** What one preset tab holds. */
-export interface PresetTabState {
+export interface PresetSettingsData {
   readonly id: string
   readonly settings: Readonly<Ref<Settings>>
-  readonly curve: Readonly<Ref<Curve>>
-  readonly material: Readonly<Ref<PresetCounts | null>>
-  readonly place: Readonly<Ref<number>>
-  readonly waiting: Readonly<Ref<boolean>>
   readonly bounds: Readonly<Ref<SettingsBounds>>
   readonly problems: Readonly<Ref<readonly string[]>>
   readonly stopped: Readonly<Ref<StopReason>>
   readonly errorMessage: Readonly<Ref<string>>
   readonly changed: Readonly<Ref<boolean>>
+  readonly material: Readonly<Ref<PresetCounts | null>>
+}
+
+export interface PresetCurveData {
+  readonly curve: Readonly<Ref<Curve>>
+  readonly place: Readonly<Ref<number>>
+  readonly waiting: Readonly<Ref<boolean>>
+}
+
+export interface PresetTabActions {
   again(): void
   chooses(goal: Goal): void
   moves(place: number): void
@@ -228,3 +233,6 @@ export interface PresetTabState {
   types(field: Field, value: SettingValue): void
   shuts(id: string): void
 }
+
+/** What one preset tab holds. */
+export type PresetTabState = PresetSettingsData & PresetCurveData & PresetTabActions

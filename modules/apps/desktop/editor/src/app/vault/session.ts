@@ -8,7 +8,9 @@ import type { Core } from '../../shared/core'
 export type SessionCore = Pick<
   Core,
   'state' | 'agentUnreachable' | 'changes' | 'focus' | 'attending' | 'tasks' | 'quitting' | 'flushed'
->
+> & {
+  setFocus(open: Parameters<Core['attending']>[0]): Promise<void>
+}
 
 export const sessionCore: SessionCore = {
   state: async () => {
@@ -46,6 +48,9 @@ export const sessionCore: SessionCore = {
   },
   focus: (signal) => workspace.watchFocus({}, { signal }),
   attending: async (open) => {
+    await workspace.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
+  },
+  setFocus: async (open) => {
     await workspace.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
   },
   async *tasks(signal) {

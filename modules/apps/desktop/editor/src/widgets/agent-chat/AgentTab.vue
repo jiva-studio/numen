@@ -5,7 +5,7 @@
 import { Agent } from '@numen/ui'
 import type { Turn } from '@numen/ui'
 import { WORDS as words } from './words'
-import type { AgentTabState } from './kind'
+import type { AgentTabState } from './useAgentConversation'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: AgentTabState }>()

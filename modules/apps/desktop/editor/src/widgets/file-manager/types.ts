@@ -2,10 +2,23 @@
  * Type declarations for the files tab domain.
  */
 import type { Ref } from 'vue'
-import type { Source } from '../../shared/core'
-import type { SearchDestination } from '../../shared/command/search'
-import type { FileTree } from './listing'
+import type { FileEntry, PathRename, Source } from '../../shared/core'
+import type { SearchDestination } from '../../features/command-palette/search'
 import type { RunGuard } from './menu'
+
+/** Everything a files tab asks of the file storage/vault. */
+export interface Folders {
+  /** What one folder holds, in the order to draw it. The root is the empty path. */
+  list(folder: string): Promise<readonly FileEntry[]>
+}
+
+/**
+ * One line of the tree: what it stands for, and the lines drawn under it.
+ */
+export interface ListingRow {
+  readonly entry: FileEntry
+  readonly rows: readonly ListingRow[]
+}
 
 /** Where the menu stands, and what it was asked for on. */
 export interface MenuRequest {
@@ -19,31 +32,51 @@ export type DropPosition = { readonly into: string | null } | { readonly before:
 
 /** What a files tab asks of the window it is drawn in. */
 export interface FilesTabDeps {
-  lands(going: SearchDestination | null): void
-  runs(id: string, paths: readonly string[], name: string, source: Source): void
-  moves(from: string, to: string): Promise<void>
-  drags(paths: readonly string[]): void
-  makes(path: string): Promise<void>
-  writes(folder: string): Promise<string>
-  decks(folder: string, name: string): Promise<string>
-  stencils(folder: string, name: string): Promise<string>
-  presets(folder: string, name: string): Promise<string>
-  imports(folder: string, address: string): Promise<string>
-  says(text: string): void
+  openDestination(destination: SearchDestination | null): void
+  runCommand(id: string, paths: readonly string[], name: string, source: Source): void
+  movePath(from: string, to: string): Promise<void>
+  setDraggedPaths(paths: readonly string[]): void
+  createFolder(path: string): Promise<void>
+  createNote(folder: string): Promise<string>
+  createDeck(folder: string, name: string): Promise<string>
+  createStencil(folder: string, name: string): Promise<string>
+  createPreset(folder: string, name: string): Promise<string>
+  importAddress(folder: string, address: string): Promise<string>
+  showError(text: string): void
   canRun?: RunGuard
 }
 
-/** One of the three files the vault names itself, made in a folder. */
+/** One of the custom files the vault makes, made in a folder. */
 export type FileMaker = (folder: string, name: string) => Promise<string>
+
+export interface FileTree {
+  readonly rows: Ref<readonly ListingRow[]>
+  readonly openRows: Ref<readonly string[]>
+  readonly selectedPaths: Ref<readonly string[]>
+  readonly errorMessage: Ref<string>
+  getEntriesInFolder(folder: string): readonly FileEntry[]
+  isFolderOpen(folder: string): boolean
+  getEntryAt(path: string): FileEntry | null
+  loadFolder(folder: string): Promise<void>
+  openFolder(folder: string): Promise<void>
+  closeFolder(folder: string): void
+  toggleFolder(folder: string): void
+  selectPaths(paths: readonly string[]): void
+  revealPath(path: string): Promise<void>
+  refresh(): Promise<void>
+  refreshChanged(paths?: readonly string[], renamed?: readonly PathRename[]): Promise<void>
+  getUniqueNameInFolder(folder: string, word: string): string
+  close(): void
+}
 
 /** What one files tab holds. */
 export interface FilesTabState {
   readonly list: FileTree
   readonly menu: Ref<MenuRequest | null>
-  readonly renaming: Ref<string | null>
+  readonly renamingPath: Ref<string | null>
   setRenamingPath(path: string | null): void
-  over(path: string): readonly string[]
-  folderFor(path: string | null): string
+  getOverPaths(path: string): readonly string[]
+  getFolderFor(path: string | null): string
   activate(path: string): void
   open(path: string): void
   close(path: string): void
@@ -55,11 +88,11 @@ export interface FilesTabState {
   remove(paths: readonly string[]): void
   createFolder(path: string | null): Promise<void>
   createNote(path: string | null): Promise<void>
-  createOne(path: string | null, makes: FileMaker, name: string): Promise<void>
+  createOne(path: string | null, createEntry: FileMaker, name: string): Promise<void>
   importAddress(address: string): Promise<string>
   openMenu(asked: MenuRequest): void
-  dismiss(): void
+  dismissMenu(): void
   chooseMenuItem(id: string): void
-  nameOf(path: string): string
+  getNameOf(path: string): string
   canRun: RunGuard
 }

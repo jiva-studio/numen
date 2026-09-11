@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import PlexTab from './PlexTab.vue'
-import type { MenuRequest, PlexTabState } from './kind'
+import type { MenuRequest, PlexTabState } from './types'
 import { WORDS as words } from './words'
 import type { NoteType } from '../../shared/core'
 import { iconFor } from '../../shared/icons'
@@ -32,13 +32,22 @@ const held = () =>
     mostParts: ref(6),
     typeOf: () => 'note',
     activate: () => {},
+    createNode: async () => {},
     made: async () => {},
+    joinNodes: async () => {},
     joined: async () => {},
+    bringNodes: async () => {},
     brought: async () => {},
+    openNode: () => {},
     opens: () => {},
+    openPart: () => {},
+    entered: () => {},
+    openMenu: () => {},
     asks: () => {},
     dismiss: () => {},
+    chooseMenuItem: () => {},
     chose: () => {},
+    getName: () => '',
     nameOf: () => '',
   }) as unknown as PlexTabState
 
@@ -101,6 +110,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
       ...held(),
       picture: ref(null),
       empty: ref(true),
+      openMenu: (one: MenuRequest) => void asked.push(one),
       asks: (one: MenuRequest) => void asked.push(one),
     } as unknown as PlexTabState
     return { tab, asked }
