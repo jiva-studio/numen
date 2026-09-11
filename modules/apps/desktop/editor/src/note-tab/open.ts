@@ -37,11 +37,11 @@ export function createNoteTab(
     })
   }
 
-  const followLink = (address: string) => {
-    if (!pointsAtNote(address)) return
+  const followLink = (url: string) => {
+    if (!pointsAtNote(url)) return
     const from = notes.where(id)
-    void vault.resolve(from, [address]).then((landed) => {
-      const path = landed.get(address)
+    void vault.resolve(from, [url]).then((landed) => {
+      const path = landed.get(url)
       if (path) void puts.opens(path, '', 'beside')
     })
   }
@@ -62,6 +62,7 @@ export function createNoteTab(
     drew: (editor: unknown) => keyboard.drew(id, editor),
     measure: () => keyboard.measure(id),
     followLink,
+    followUrl: followLink,
     follows: followLink,
     close: closeTab,
     shuts: closeTab,

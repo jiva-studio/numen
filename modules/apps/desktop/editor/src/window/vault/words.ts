@@ -206,7 +206,7 @@ export const mapNoteResult = (from: {
     refusal: error,
     changed: staleIn(from),
     ...(at === undefined ? {} : { at }),
-    ...(link === undefined ? {} : { link, address: link }),
+    ...(link === undefined ? {} : { link }),
   }
 }
 

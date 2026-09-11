@@ -248,7 +248,8 @@ export interface Words extends EmptyWords {
    * An address asked for: the field, what stands in it, what Enter does, and
    * what is said of words that are no address.
    */
-  readonly address: string
+  readonly url: string
+  readonly address?: string
   readonly typeAddress: string
   readonly importIt: string
   readonly notAnAddress: string

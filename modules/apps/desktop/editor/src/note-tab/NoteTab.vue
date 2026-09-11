@@ -41,8 +41,8 @@ function onSave() {
   props.state.save()
 }
 
-function onOpen(address: string) {
-  props.state.followLink(address)
+function onOpen(url: string) {
+  props.state.followLink(url)
 }
 
 // --- Helpers ---

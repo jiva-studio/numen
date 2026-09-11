@@ -110,6 +110,7 @@ export const WORDS = {
   naming: 'Name',
   typeName: 'What is it called',
   callIt: 'Call it',
+  url: 'Address',
   address: 'Address',
   typeAddress: 'Paste a link',
   importIt: 'Import',

@@ -1,9 +1,5 @@
 /**
  * What the window is showing, and the rules for changing it.
- *
- * Apart from the template because these are the rules that decide whether the
- * window keeps up with the vault, and a rule inside a component is a rule that
- * is only exercised by looking at the screen.
  */
 import { ref, shallowRef } from 'vue'
 import type { Core, Move, NoteEdit, Span, Task } from '../shared/core'
@@ -50,7 +46,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
   const name = ref('')
   /** The folder the vault the window is showing sat in when the page was drawn. */
   const at = ref('')
-  const indexing = ref(true)
+  const isIndexing = ref(true)
   /** The core could not be reached: nothing else in the window is true. */
   const failure = ref('')
   /** What the window itself lost touch with, said until it has it back. */
@@ -60,7 +56,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
   /** Why an agent cannot be reached, as the vault last answered. */
   const unreachable = ref('')
   /** Whether the vault holds a note to show at all. */
-  const holds = ref(false)
+  const hasNote = ref(false)
   /** The note the vault opens with, for whatever has nowhere else to start. */
   const opening = ref('')
   /**
@@ -77,7 +73,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
    * False is the ordinary state of an installation with no model: the vault is
    * searched by its words, and the count of embedded chunks stays where it is.
    */
-  const embedding = ref(false)
+  const isEmbedding = ref(false)
   /**
    * Everything the application is doing behind the window. It arrives whole
    * and is shown whole, and a new kind of work is an entry here.
@@ -99,7 +95,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
   /** The note the vault opens with, and whether it holds one at all. */
   async function first() {
     const note = await core.opening()
-    holds.value = note !== null
+    hasNote.value = note !== null
     opening.value = note?.path ?? ''
     return opening.value
   }
@@ -119,7 +115,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
     unwatched.value = state.scan.unwatched
     chunks.value = Number(state.coverage.chunkCount)
     embedded.value = Number(state.coverage.embeddedCount)
-    embedding.value = state.coverage.embedding
+    isEmbedding.value = state.coverage.embedding
     return state
   }
 
@@ -229,7 +225,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
         const note = await first()
         if (!open) return
         if (note) {
-          indexing.value = false
+          isIndexing.value = false
           // The vault holds a note to show: everything showing it reads now.
           await told([], [])
           void follow()
@@ -241,7 +237,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
         // A vault that could not be read is not an empty one, and neither is
         // one still being read. Both end the waiting; only one is empty.
         if (state.scan.failed || state.scan.ready) {
-          indexing.value = false
+          isIndexing.value = false
           void follow()
           void watch()
           void draw()
@@ -252,24 +248,27 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
       }
     } catch (error) {
       failure.value = troubleWords(error)
-      indexing.value = false
+      isIndexing.value = false
     }
   }
 
   return {
     name,
-    indexing,
+    isIndexing,
+    indexing: isIndexing,
     failure,
     lost,
     trouble,
     unwatched,
     unreachable,
-    holds,
+    hasNote,
+    holds: hasNote,
     opening,
     first,
     chunks,
     embedded,
-    embedding,
+    isEmbedding,
+    embedding: isEmbedding,
     tasks,
     start,
     follow,

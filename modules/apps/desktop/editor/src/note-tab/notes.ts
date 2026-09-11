@@ -228,7 +228,8 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
       turn(id, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
       return
     }
-    if (answered.address) addresses.value.set(id, answered.address)
+    const link = answered.link ?? answered.address
+    if (link) addresses.value.set(id, link)
     else addresses.value.delete(id)
     turn(id, {
       kind: 'read',

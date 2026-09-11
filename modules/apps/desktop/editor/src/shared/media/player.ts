@@ -27,6 +27,7 @@ const FAILED: Record<number, string> = {
 /** What plays a recording, as whatever draws the controls reads it. */
 export interface Player {
   /** What is loaded now, and nothing where the window is silent. */
+  readonly url: Readonly<Ref<string>>
   readonly address: Readonly<Ref<string>>
   /** Where it stands, in milliseconds. */
   readonly at: Readonly<Ref<number>>
@@ -37,11 +38,11 @@ export interface Player {
   readonly failed: Readonly<Ref<string>>
 
   /** Load a recording, leaving whatever was loaded before it. */
-  load(address: string): void
-  play(address: string): void
+  load(url: string): void
+  play(url: string): void
   pause(): void
   /** Play a millisecond of the recording at an address, loading it first. */
-  seek(address: string, ms: number): void
+  seek(url: string, ms: number): void
 }
 
 /** What makes the element a sound is played through. A test says otherwise. */
@@ -106,6 +107,7 @@ export function audio(makes: AudioFactory = made): Player {
   }
 
   return {
+    url: readonly(address),
     address: readonly(address),
     at: readonly(at),
     duration: readonly(duration),

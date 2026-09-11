@@ -62,7 +62,7 @@ export function useCommandPalette(
   const known = shallowRef<readonly Vault[]>([])
   /** Which of them that answer said this window is showing. */
   const showing = ref('')
-  const working = ref(false)
+  const isWorking = ref(false)
   /** What the vault could not be asked, in words a person reads. */
   const said = ref('')
 
@@ -146,7 +146,7 @@ export function useCommandPalette(
     found.value = []
     known.value = []
     showing.value = ''
-    working.value = false
+    isWorking.value = false
     said.value = ''
   }
 
@@ -158,11 +158,11 @@ export function useCommandPalette(
     const mine = asked.ask()
     if (!query) {
       found.value = []
-      working.value = false
+      isWorking.value = false
       said.value = ''
       return
     }
-    working.value = true
+    isWorking.value = true
     said.value = ''
     await wait(HOLD)
     if (!mine.current) return
@@ -178,14 +178,14 @@ export function useCommandPalette(
       console.error(error)
       said.value = words.notAsked
     } finally {
-      if (mine.current) working.value = false
+      if (mine.current) isWorking.value = false
     }
   }
 
   /** Every vault the installation holds, asked for as the step that lists them opens. */
   const lists = async () => {
     const mine = asked.ask()
-    working.value = true
+    isWorking.value = true
     said.value = ''
     try {
       const listed = await core.vaults()
@@ -200,7 +200,7 @@ export function useCommandPalette(
       console.error(error)
       said.value = words.notAsked
     } finally {
-      if (mine.current) working.value = false
+      if (mine.current) isWorking.value = false
     }
   }
 
@@ -219,7 +219,8 @@ export function useCommandPalette(
     found,
     known,
     showing,
-    working,
+    isWorking,
+    working: isWorking,
     said,
     calling,
     named,

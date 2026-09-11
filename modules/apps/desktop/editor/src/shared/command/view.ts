@@ -122,7 +122,7 @@ export function view(state: ViewState) {
     const raw = text.trim()
     return {
       id: 'address',
-      title: words.address,
+      title: words.url ?? words.address,
       items: isWebUrl(raw)
         ? [
             {

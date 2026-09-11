@@ -29,7 +29,8 @@ export interface NoteTabState {
   setEditor(editor: unknown): void
   drew(editor: unknown): void
   measure(): void
-  followLink(address: string): void
+  followLink(url: string): void
+  followUrl(url: string): void
   follows(address: string): void
   close(id: string): void
   shuts(id: string): void
