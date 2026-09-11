@@ -2,7 +2,7 @@
  * Stencil listing and schedule coordination for deck tabs.
  */
 import { computed, shallowRef } from 'vue'
-import type { Move } from '../../shared/core'
+import type { PathRename } from '../../shared/core'
 import type { Cards, StencilSummary } from '../../shared/flashcards/cards'
 import type { Presets } from '../preset-editor/core'
 import type { openNotes } from '../note-editor/notes'
@@ -44,7 +44,7 @@ export function useDeckScheduleWiring(
 
   const scheduled = useDeckSchedule(presets, store)
 
-  const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
+  const changed = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     for (const went of renamed) {
       scheduled.moved(went.from, went.to)
     }

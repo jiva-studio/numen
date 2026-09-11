@@ -283,7 +283,7 @@ describe('a note that was renamed', () => {
     one.noted.calls('Renamed.md', 'Renamed')
 
     expect(one.noted.called('Renamed.md')).toBe('Renamed')
-    expect(one.noted.kind.called(one.noted.held(one.idOf('Renamed.md')))).toBe('Renamed')
+    expect(one.noted.kind.called?.(one.noted.held(one.idOf('Renamed.md')))).toBe('Renamed')
   })
 
   it('leaves the name it had free, so a note made under it opens a tab of its own', async () => {

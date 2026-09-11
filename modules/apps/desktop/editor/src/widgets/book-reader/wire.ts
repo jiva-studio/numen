@@ -28,13 +28,11 @@ export const books: Books = {
       parts: answer.parts.map((one) => ({
         title: one.title,
         offset: one.offset,
-        at: one.offset,
         level: one.level,
       })),
       printed: answer.printedPages.map((one) => ({
         label: one.label,
         offset: one.offset,
-        at: one.offset,
       })),
       pages: answer.pageCount,
       pageBytes: answer.pageBytes,

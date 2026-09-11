@@ -63,7 +63,7 @@ export function asPlex(
       // one they had written themselves.
       label: related.label,
       through: related.through,
-      mutual: related.mutual,
+      mutual: related.isMutual,
     })
   }
 
@@ -125,7 +125,7 @@ export function alike(one: Neighbourhood | null, other: Neighbourhood | null): b
       related.seat === against.seat &&
       related.label === against.label &&
       related.through === against.through &&
-      related.mutual === against.mutual
+      related.isMutual === against.isMutual
     )
   })
 }

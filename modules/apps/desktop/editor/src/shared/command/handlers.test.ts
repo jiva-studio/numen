@@ -131,29 +131,29 @@ const window = (
       },
     },
     runs: {
-      carries: async (path) => {
+      getArtifactStates: async (path) => {
         done.push(`carries ${path}`)
         return answers.carries ?? {}
       },
-      corrects: async (path) => {
+      correctArtifact: async (path) => {
         done.push(`corrects ${path}`)
         return answers.outcome ?? outcome('transcript.corrected', 'running')
       },
-      fetches: async (path) => {
+      fetchArtifact: async (path) => {
         done.push(`fetches ${path}`)
         return answers.outcome ?? outcome('transcript', 'running')
       },
-      makes: async (path, of) => {
+      createArtifact: async (path, of) => {
         done.push(`makes ${of} ${path}`)
         return answers.outcome ?? outcome(of, 'running')
       },
-      deletesTranscript: async (path: string) => {
+      deleteTranscript: async (path: string) => {
         done.push(`deletes the text of ${path}`)
         if (answers.deleteRefused)
           throw new ConnectError(answers.deleteRefused, Code.FailedPrecondition)
         return answers.undeletable !== true
       },
-      deletesCopy: async (path: string) => {
+      deleteCopy: async (path: string) => {
         done.push(`deletes the copy of ${path}`)
         return answers.undeletable !== true
       },
@@ -573,7 +573,7 @@ describe('a note renamed', () => {
   })
 
   it('says nothing of the title it wrote into the frontmatter', async () => {
-    const one = window({ renamed: renamed({ frontmatter: true }) })
+    const one = window({ renamed: renamed({ hasFrontmatter: true }) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 

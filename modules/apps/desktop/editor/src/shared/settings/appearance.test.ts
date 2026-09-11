@@ -60,9 +60,9 @@ const sizes = (sheet: Document) => dressing(sheet)[2]
 
 const APPEARANCE: Appearance = {
   themes: [
-    { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
-    { name: 'preset:dracula', title: 'dracula', shipped: true, pinned: true },
-    { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
+    { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
+    { name: 'preset:dracula', title: 'dracula', isBuiltIn: true, isPinned: true },
+    { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
   ],
   applied: 'preset:numen',
   mode: 'system',

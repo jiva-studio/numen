@@ -108,7 +108,7 @@ describe('a recording loaded', () => {
 
     plays.load(TALK)
 
-    expect(plays.address.value).toBe(TALK)
+    expect(plays.url.value).toBe(TALK)
     expect(element.loaded).toStrictEqual([TALK])
     expect(element.started).toBe(0)
     expect(plays.playing.value).toBe(false)
@@ -130,7 +130,7 @@ describe('a recording loaded', () => {
 
     plays.load('')
 
-    expect(plays.address.value).toBe('')
+    expect(plays.url.value).toBe('')
     expect(element.loaded).toStrictEqual([])
   })
 
@@ -141,7 +141,7 @@ describe('a recording loaded', () => {
 
     plays.load(OTHER)
 
-    expect(plays.address.value).toBe(OTHER)
+    expect(plays.url.value).toBe(OTHER)
     expect(plays.at.value).toBe(0)
     expect(plays.duration.value).toBe(0)
   })
@@ -187,7 +187,7 @@ describe('a recording played', () => {
     await Promise.resolve()
 
     expect(element.loaded).toStrictEqual([TALK, OTHER])
-    expect(plays.address.value).toBe(OTHER)
+    expect(plays.url.value).toBe(OTHER)
     expect(plays.playing.value).toBe(true)
   })
 
@@ -323,7 +323,7 @@ describe('the element a window plays through', () => {
     plays.seek(TALK, 1_000)
     plays.pause()
 
-    expect(plays.address.value).toBe('')
+    expect(plays.url.value).toBe('')
     expect(plays.playing.value).toBe(false)
     expect(plays.failed.value).toBe(WORDS.unreadable)
   })

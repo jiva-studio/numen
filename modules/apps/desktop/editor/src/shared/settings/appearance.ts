@@ -280,7 +280,7 @@ export function windowAppearance(
   /** Whether the theme worn declares light and dark itself. */
   const isPinned = computed(() => {
     const theme = list.value.find((one) => one.name === worn.value)
-    return theme?.isPinned ?? theme?.pinned ?? false
+    return theme?.isPinned ?? false
   })
   const pinned = isPinned
 
@@ -399,7 +399,7 @@ export function windowAppearance(
    * true of it alone.
    */
   const shelf = (shipping: boolean): readonly StepRow[] => {
-    const off = list.value.filter((one) => one.shipped === shipping)
+    const off = list.value.filter((one) => one.isBuiltIn === shipping)
     const named = (one: Theme): StepRow => ({
       id: one.name,
       title: one.title,
@@ -424,7 +424,7 @@ export function windowAppearance(
       silence: words.noneOwned,
     }
     const worn = list.value.find((one) => one.name === applied.value)
-    return worn && !worn.shipped ? [own, shipping] : [shipping, own]
+    return worn && !worn.isBuiltIn ? [own, shipping] : [shipping, own]
   }
 
   /** What is said about a mode: why it cannot be chosen, or that it is the one. */

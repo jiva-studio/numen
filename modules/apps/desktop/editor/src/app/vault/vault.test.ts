@@ -60,7 +60,7 @@ describe('the file a save presents', () => {
     asked.writeNote.mockResolvedValue({})
 
     const read = await core.read(at.path)
-    await core.write(at.path, 'prose and more', { prose: read.body, path: read.at ?? '' })
+    await core.write(at.path, 'prose and more', { prose: read.body, at: read.at ?? '' })
 
     expect(asked.writeNote.mock.calls[0]?.[0]).toEqual({
       path: at.path,

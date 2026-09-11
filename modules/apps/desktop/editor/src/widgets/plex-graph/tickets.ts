@@ -46,3 +46,5 @@ export function createTickets() {
 
   return { of, note, keeps, moved }
 }
+
+export type Tickets = ReturnType<typeof createTickets>

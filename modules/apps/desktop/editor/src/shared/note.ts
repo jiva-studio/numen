@@ -118,6 +118,7 @@ export type ErrorCode =
   | 'notADeck'
   | 'deckTooLarge'
   | 'notAPreset'
+  | 'unreachable'
 
 /** A note to make: what it is called, where it goes, and what it arrives joined to. */
 export interface NewNote {

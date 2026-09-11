@@ -9,6 +9,8 @@
  */
 import { formatErrorMessage } from '@numen/wire'
 import { all, naming, type CommandDeps, type CommandHandler, type Words } from './deps'
+export type { CommandDeps }
+import type { CommandInvocation } from './target'
 import {
   atItsFile,
   createNoteCommand,
@@ -47,22 +49,22 @@ const carried: Record<string, CommandHandler> = {
   remove: (invocation, on, words) => removes(invocation, false, on, words),
   destroy: (invocation, on, words) => removes(invocation, true, on, words),
   transcribe: async (invocation, on, words) =>
-    began(invocation, await on.runs.makes(invocation.file, 'transcript'), on, words),
+    began(invocation, await on.runs.createArtifact(invocation.file, 'transcript'), on, words),
   recognise: async (invocation, on, words) =>
-    began(invocation, await on.runs.makes(invocation.file, 'ocr'), on, words),
+    began(invocation, await on.runs.createArtifact(invocation.file, 'ocr'), on, words),
   downloadText: async (invocation, on, words) =>
-    began(invocation, await on.runs.fetches(invocation.file), on, words),
+    began(invocation, await on.runs.fetchArtifact(invocation.file), on, words),
   downloadCopy: async (invocation, on, words) =>
-    began(invocation, await on.runs.makes(invocation.file, 'copy'), on, words),
+    began(invocation, await on.runs.createArtifact(invocation.file, 'copy'), on, words),
   proofread: async (invocation, on, words) =>
-    began(invocation, await on.runs.corrects(invocation.file), on, words),
+    began(invocation, await on.runs.correctArtifact(invocation.file), on, words),
   deleteText: async (invocation, on, words) => {
-    if (await on.runs.deletesTranscript(invocation.file)) return
+    if (await on.runs.deleteTranscript(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
     on.says(words.unrunnable, 'error')
   },
   deleteCopy: async (invocation, on, words) => {
-    if (await on.runs.deletesCopy(invocation.file)) return
+    if (await on.runs.deleteCopy(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
     on.says(words.unrunnable, 'error')
   },

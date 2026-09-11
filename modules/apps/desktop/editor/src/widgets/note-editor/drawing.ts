@@ -44,7 +44,7 @@ export function drawing(limits: HoldLimits = holding) {
 
   /** A change was reported. */
   const told = (said: NoteEdit): TimerRequest | null => {
-    if (!said.done) {
+    if (!said.isComplete) {
       changes.set(said.path, {
         id: said.change,
         from: said.span.from,

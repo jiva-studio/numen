@@ -17,7 +17,7 @@ import { WORDS as bookWords } from '../widgets/book-reader/words'
 import { CREATABLE } from '../widgets/note-editor/maker'
 import type { CommandTarget } from '../shared/command/target'
 import { invocationOf } from '../shared/command/target'
-import { does } from '../shared/command/handlers'
+import { does, type CommandDeps } from '../shared/command/handlers'
 import { lands, type DestinationDeps } from '../shared/command/destination'
 import type { FileOpeners } from '../shared/tabs/openers'
 import { fileMakers } from '../shared/tabs/makers'
@@ -45,7 +45,6 @@ import type { useEditing } from './editing'
 import type { useSettings } from './settings'
 import type { useVaults } from './vaults'
 import type { useWindowShowing } from './showing'
-import type { CommandInvocation } from '../shared/command/target'
 
 export interface WindowKindsDeps {
   core: Core
@@ -60,7 +59,7 @@ export interface WindowKindsDeps {
   window: ReturnType<typeof useWindowShowing>
   where: () => CommandTarget
   carries: (id: string, target: CommandTarget) => void
-  doing: () => (action: CommandInvocation) => void
+  doing: () => CommandDeps
 }
 
 /**
@@ -166,7 +165,7 @@ export function useWindowKinds({
 
   const fetches = async (path: string): Promise<void> => {
     try {
-      await running.fetches(path)
+      await running.fetchArtifact(path)
     } catch (error) {
       told(formatErrorMessage(error), 'error')
       return

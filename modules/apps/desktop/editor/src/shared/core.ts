@@ -8,6 +8,7 @@ import type {
   CreateResult,
   ErrorCode,
   Link,
+  PathRename,
   Neighbourhood,
   NewNote,
   NoteEdit,
@@ -72,7 +73,7 @@ export interface Core {
   changes(signal: AbortSignal): AsyncIterable<{
     paths: string[]
     shouldReload: boolean
-    renamed: readonly Move[]
+    renamed: readonly PathRename[]
   }>
   /** A change being made to a note's prose, reported while it is being made. */
   editing(signal: AbortSignal): AsyncIterable<NoteEdit>

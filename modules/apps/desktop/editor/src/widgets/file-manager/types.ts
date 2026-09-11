@@ -15,7 +15,7 @@ export interface MenuRequest {
 }
 
 /** Where rows let go of landed, as the tree reports it. */
-export type DropPosition = { readonly into: string } | { readonly before: string }
+export type DropPosition = { readonly into: string | null } | { readonly before: string }
 
 /** What a files tab asks of the window it is drawn in. */
 export interface FilesTabDeps {

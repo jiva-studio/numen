@@ -345,16 +345,28 @@ vi.mock('../media/wire', () => ({
 
 vi.mock('../artifacts', () => ({
   running: {
-    carries: async (path: string) => {
+    getArtifactStates: async (path: string) => {
       asked.carried.push(path)
       if (!said.carrying) throw new Error('what the file carries cannot be asked')
       return said.carries[path] ?? {}
     },
-    makes: async (path: string, of: string) => {
+    createArtifact: async (path: string, of: string) => {
       asked.ran.push(`${of} ${path}`)
       return { able: true, of, made: 'queued', error: '' }
     },
-    drops: async (path: string) => {
+    correctArtifact: async (path: string) => {
+      asked.ran.push(`transcript.corrected ${path}`)
+      return { able: true, of: 'transcript.corrected' as const, made: 'queued' as const, error: '' }
+    },
+    fetchArtifact: async (path: string) => {
+      asked.ran.push(`transcript ${path}`)
+      return { able: true, of: 'transcript' as const, made: 'queued' as const, error: '' }
+    },
+    deleteTranscript: async (path: string) => {
+      asked.ran.push(`drop ${path}`)
+      return true
+    },
+    deleteCopy: async (path: string) => {
       asked.ran.push(`drop ${path}`)
       return true
     },
@@ -429,8 +441,8 @@ vi.mock('../settings/theme', () => ({
   themes: {
     appearance: async () => ({
       themes: [
-        { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
-        { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
+        { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
+        { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
       ],
       applied: said.applied,
       mode: said.mode,

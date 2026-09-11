@@ -41,7 +41,7 @@ const around = (
     seat: 'child',
     through: '',
     label: '',
-    mutual: false,
+    isMutual: false,
     path,
     title: path.replace(/\.md$/, ''),
     type: types[path] ?? 'note',
@@ -728,7 +728,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
           seat: one.seat,
           label: '',
           through: one.through ?? '',
-          mutual: false,
+          isMutual: false,
         })),
       }
     },
@@ -1396,14 +1396,14 @@ describe('what a plex tab is called', () => {
     const one = window()
     const { state } = await one.holds('Root.md')
 
-    expect(one.kind.called(state)).toBe('Root')
+    expect(one.kind.called?.(state)).toBe('Root')
   })
 
   it('is the word for a plex while it stands nowhere', async () => {
     const one = window('')
     const { state } = await one.holds()
 
-    expect(one.kind.called(state)).toBe('Plex')
+    expect(one.kind.called?.(state)).toBe('Plex')
   })
 })
 

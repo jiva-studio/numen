@@ -82,6 +82,7 @@ const READING: Record<ErrorCode, string | null> = {
   notAStencil: null,
   notADeck: null,
   deckTooLarge: null,
+  unreachable: 'The vault would not answer for this preset, and did not say why.',
 }
 
 /** The read encountered an error and the vault named no reason the window knows. */
@@ -117,6 +118,7 @@ const WRITING: Record<ErrorCode, string | null> = {
   notAStencil: null,
   notADeck: null,
   deckTooLarge: null,
+  unreachable: 'The vault would not answer for this preset, and did not say why.',
 }
 
 /** The write was refused and the vault named no reason the window knows. */

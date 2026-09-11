@@ -18,6 +18,7 @@ export const ERRORS: Record<ErrorCode, string> = {
   notADeck: 'that note is not a deck',
   deckTooLarge: 'that deck is longer than this reads',
   notAPreset: 'that note is not a preset',
+  unreachable: 'the vault could not be reached',
 }
 
 /** What the list of vaults reports as error for a command, in words a person reads. */

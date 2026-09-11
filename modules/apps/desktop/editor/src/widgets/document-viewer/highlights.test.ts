@@ -9,6 +9,7 @@ describe('useDocumentHighlights', () => {
 
   it('sets and looks up page highlights', async () => {
     const documents: Documents = {
+      getDocumentLayout: async () => ({ pages: [], fingerprint: '' }),
       getPageUrl: () => '',
       getHighlights: async () => [pageHighlights],
     }

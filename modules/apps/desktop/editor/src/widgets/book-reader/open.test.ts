@@ -33,8 +33,8 @@ const BOOK: Book = {
     { path: 'text/part0003.xhtml', span: { begins: 6_000, ends: 9_000 } },
   ],
   parts: [
-    { title: 'Ādi Parva', at: 0, level: 0 },
-    { title: 'Сказание о сожжении леса', at: 3_600, level: 1 },
+    { title: 'Ādi Parva', offset: 0, level: 0 },
+    { title: 'Сказание о сожжении леса', offset: 3_600, level: 1 },
   ],
   printed: [],
   pages: 3,
@@ -49,8 +49,8 @@ const UNNAMED: Book = { ...BOOK, parts: [] }
 const PRINTED: Book = {
   ...UNNAMED,
   printed: [
-    { label: 'i', at: 0 },
-    { label: '1', at: 3_600 },
+    { label: 'i', offset: 0 },
+    { label: '1', offset: 3_600 },
   ],
 }
 

@@ -11,7 +11,7 @@ const said = (over: Partial<NoteEdit> = {}): NoteEdit => ({
   path: 'Entropy.md',
   span: { from: 0, to: 5 },
   text: 'Order',
-  done: false,
+  isComplete: false,
   ...over,
 })
 
@@ -56,7 +56,7 @@ describe('a change that has ended', () => {
   it('stays until the note changes under it', () => {
     const changes = noteChanges(limits)
     changes.told(said())
-    changes.told(said({ done: true }))
+    changes.told(said({ isComplete: true }))
 
     changes.arrived('Entropy.md')
     expect(changes.shown('Entropy.md')).not.toBeNull()
@@ -68,7 +68,7 @@ describe('a change that has ended', () => {
   it('is let go of on the longer bound where the text never arrives', () => {
     const changes = noteChanges(limits)
     changes.told(said())
-    changes.told(said({ done: true }))
+    changes.told(said({ isComplete: true }))
 
     vi.advanceTimersByTime(limits.bound)
 

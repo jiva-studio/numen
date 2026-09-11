@@ -28,7 +28,6 @@ const FAILED: Record<number, string> = {
 export interface Player {
   /** What is loaded now, and nothing where the window is silent. */
   readonly url: Readonly<Ref<string>>
-  readonly address: Readonly<Ref<string>>
   /** Where it stands, in milliseconds. */
   readonly at: Readonly<Ref<number>>
   /** How long it runs, in milliseconds, and zero until the recording says. */
@@ -108,7 +107,6 @@ export function audio(makes: AudioFactory = made): Player {
 
   return {
     url: readonly(address),
-    address: readonly(address),
     at: readonly(at),
     duration: readonly(duration),
     playing: readonly(playing),

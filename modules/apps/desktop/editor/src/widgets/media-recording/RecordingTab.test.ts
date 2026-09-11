@@ -44,7 +44,7 @@ function talk(cues: readonly Cue[] = CUES): Recordings {
 function played(): Player {
   const address = ref('')
   return {
-    address,
+    url: address,
     at: ref(0),
     duration: ref(0),
     playing: ref(false),

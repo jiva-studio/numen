@@ -2,7 +2,7 @@
  * Reader state and controls for an open book.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { BookSpan } from '@numen/ui'
+import type { BookSpan, ContentsEntry } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '../../shared/core'
 import type { MessageWriter } from '../../shared/notices/messages'
@@ -45,7 +45,7 @@ export function useBookReader(
   const title = ref('')
   const span = ref<BookSpan>({ begins: 0, ends: 0 })
   const documents = shallowRef<readonly SpineDocument[]>([])
-  const contents = shallowRef<readonly ReturnType<typeof contentsOf>[number]>([])
+  const contents = shallowRef<readonly ContentsEntry[]>([])
   const pages = ref(0)
   const pageBytes = ref(0)
   const at = ref(0)

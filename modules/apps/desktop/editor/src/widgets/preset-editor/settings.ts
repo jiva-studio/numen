@@ -31,7 +31,9 @@ export const reconcileSettings = (
 ): Settings => {
   if (theirs.size === 0) return read
   const out: MutableSettings = { ...read }
-  for (const field of theirs) out[field] = was[field]
+  for (const field of theirs) {
+    ;(out as Record<keyof Settings, unknown>)[field] = was[field]
+  }
   return out
 }
 

@@ -9,7 +9,7 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import type { Move, NoteHeading, NoteType } from '../../shared/core'
+import type { NoteHeading, NoteType, PathRename } from '../../shared/core'
 import type { PlexView } from './view'
 
 /** Where the menu stands, and the node it was asked for on. */
@@ -75,8 +75,8 @@ export interface PlexTabState {
   dismiss(): void
   chose(id: string): void
   chooseMenuItem(id: string): void
-  follows(renamed: readonly Move[]): void
-  followMoves(renamed: readonly Move[]): void
+  follows(renamed: readonly PathRename[]): void
+  followMoves(renamed: readonly PathRename[]): void
   nameOf(path: string): string
   getName(path: string): string
 }

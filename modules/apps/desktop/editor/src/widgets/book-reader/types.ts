@@ -13,8 +13,6 @@ export interface SpineDocument {
 export interface BookPart {
   readonly title: string
   readonly offset: number
-  /** Backward-compatible alias for offset. */
-  readonly at?: number
   readonly level: number
 }
 
@@ -22,8 +20,6 @@ export interface BookPart {
 export interface PrintedPage {
   readonly label: string
   readonly offset: number
-  /** Backward-compatible alias for offset. */
-  readonly at?: number
 }
 
 /** Book manifest and metadata. */

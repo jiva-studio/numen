@@ -1,7 +1,7 @@
 /**
  * Tab-level card and section mutations for flashcard deck tabs.
  */
-import type { StencilSummary } from '../../shared/flashcards/cards'
+import type { StencilSummary, Value } from '../../shared/flashcards/cards'
 import {
   addCard,
   addSection,
@@ -11,9 +11,7 @@ import {
   removeCard,
   removeSection,
   renameSection,
-  type BufferCard,
   type BufferDeck,
-  type BufferSection,
 } from './deck'
 
 export function deckTabActions(
@@ -23,15 +21,15 @@ export function deckTabActions(
   getOffers: () => readonly StencilSummary[],
 ) {
   return {
-    addCard: (stencil: string, values: readonly string[], section?: string) =>
+    addCard: (stencil: string, values: readonly Value[], section: string | null = null) =>
       turns(id, addCard(deckAt(id), stencil, pathOfCut(getOffers(), stencil), values, section)),
-    removeCard: (card: BufferCard) => turns(id, removeCard(deckAt(id), card)),
-    moveCard: (card: BufferCard, at: number) => turns(id, dropCard(deckAt(id), card, at)),
-    writeCardField: (card: BufferCard, field: string, nth: number, text: string) =>
+    removeCard: (card: string) => turns(id, removeCard(deckAt(id), card)),
+    moveCard: (card: string, at: string | null) => turns(id, dropCard(deckAt(id), card, at)),
+    writeCardField: (card: string, field: string, nth: number, text: string) =>
       turns(id, fillCard(deckAt(id), card, field, nth, text)),
     addSection: (name: string) => turns(id, addSection(deckAt(id), name)),
-    renameSection: (section: BufferSection, name: string) =>
+    renameSection: (section: string, name: string) =>
       turns(id, renameSection(deckAt(id), section, name)),
-    removeSection: (section: BufferSection) => turns(id, removeSection(deckAt(id), section)),
+    removeSection: (section: string) => turns(id, removeSection(deckAt(id), section)),
   }
 }

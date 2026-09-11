@@ -100,13 +100,13 @@ describe('what a book tab is called', () => {
   it('is what the book calls itself', () => {
     const held = useBookTab(read('library/mbh-04.epub', 'Virāṭa Parva'))
 
-    expect(kindOver(held).called(held)).toBe('Virāṭa Parva')
+    expect(kindOver(held).called?.(held)).toBe('Virāṭa Parva')
   })
 
   it('is the name of the file, for a book that calls itself nothing', () => {
     const held = useBookTab(read('library/sub/mbh-04.epub'))
 
-    expect(kindOver(held).called(held)).toBe('mbh-04.epub')
+    expect(kindOver(held).called?.(held)).toBe('mbh-04.epub')
   })
 })
 

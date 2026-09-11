@@ -17,7 +17,7 @@ const around = (focus: string, related: NeighbourRow[]): Neighbourhood => ({
     seat,
     label,
     through,
-    mutual: mutual ?? false,
+    isMutual: mutual ?? false,
   })),
 })
 

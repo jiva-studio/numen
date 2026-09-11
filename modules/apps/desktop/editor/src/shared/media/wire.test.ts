@@ -10,7 +10,7 @@ vi.mock('@connectrpc/connect', async (actual) => ({
 
 vi.mock('../artifacts', () => ({
   running: {
-    carries: vi.fn().mockResolvedValue({ 'transcript.corrected': 'done' }),
+    getArtifactStates: vi.fn().mockResolvedValue({ 'transcript.corrected': 'done' }),
   },
 }))
 

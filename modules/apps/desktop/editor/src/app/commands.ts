@@ -47,7 +47,7 @@ export interface CommandsDepsOptions {
   pointed: { deleted?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
   plexes: () => { travel: (path: string) => Promise<void> | void; leaves: (from: string, to: string) => Promise<void> | void }
-  agents: () => { asks: (text: string) => void }
+  agents: () => { askQuestion: (text: string) => Promise<void> | void }
   opening: () => string
   told: MessageWriter
 }
@@ -93,24 +93,24 @@ export function useCommands(options: CommandsDepsOptions) {
       makesFolder: (path) => core.createFolder(path),
     },
     runs: {
-      carries: (path) => running.carries(path),
-      makes: async (path, of) => {
-        const outcome = await running.makes(path, of)
+      getArtifactStates: (path) => running.getArtifactStates(path),
+      createArtifact: async (path, of) => {
+        const outcome = await running.createArtifact(path, of)
         void carrying(path)
         return outcome
       },
-      fetches: async (path) => {
-        const outcome = await running.fetches(path)
+      fetchArtifact: async (path) => {
+        const outcome = await running.fetchArtifact(path)
         void carrying(path)
         return outcome
       },
-      corrects: async (path) => {
-        const outcome = await running.corrects(path)
+      correctArtifact: async (path) => {
+        const outcome = await running.correctArtifact(path)
         void carrying(path)
         return outcome
       },
-      deletesTranscript: async (path) => {
-        const able = await running.deletesTranscript(path)
+      deleteTranscript: async (path) => {
+        const able = await running.deleteTranscript(path)
         if (able) {
           ;(recorded.onDelete ?? recorded.deleted)?.(path)
           ;(pointed.onDelete ?? pointed.deleted)?.(path)
@@ -118,9 +118,11 @@ export function useCommands(options: CommandsDepsOptions) {
         void carrying(path)
         return able
       },
-      deletesCopy: async (path) => {
-        const able = await running.deletesCopy(path)
-        void carrying(path)
+      deleteCopy: async (path) => {
+        const able = await running.deleteCopy(path)
+        if (able) {
+          void carrying(path)
+        }
         return able
       },
     },

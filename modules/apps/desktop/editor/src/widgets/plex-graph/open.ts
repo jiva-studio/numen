@@ -7,7 +7,7 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import type { Move, NoteType } from '../../shared/core'
+import type { NoteType, PathRename } from '../../shared/core'
 import { fileOf } from '../../shared/paths'
 import { NEW_NOTE, OFFERED } from './menu'
 import { asPlex, typesIn } from './picture'
@@ -127,7 +127,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (path) deps.runs(id, path, nameOf(path))
   }
 
-  const follows = (renamed: readonly Move[]) => {
+  const follows = (renamed: readonly PathRename[]) => {
     view.follows(renamed)
     tickets.moved(renamed)
   }

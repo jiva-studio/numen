@@ -31,14 +31,14 @@ export function contentsOf(book: Book, words: BookWords): readonly ContentsEntry
   if (book.parts.length !== 0) {
     return book.parts.map((one) => ({
       title: one.title,
-      at: one.offset ?? one.at ?? 0,
+      at: one.offset,
       level: one.level,
     }))
   }
   if (book.printed.length !== 0) {
     return book.printed.map((one) => ({
       title: `${words.page} ${one.label}`,
-      at: one.offset ?? one.at ?? 0,
+      at: one.offset,
       level: 0,
     }))
   }

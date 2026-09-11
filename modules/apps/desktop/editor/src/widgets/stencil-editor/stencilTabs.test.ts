@@ -134,7 +134,7 @@ describe('a stencil opened', () => {
   it('is called what the file is called', async () => {
     const { stencils, tab } = await open()
 
-    expect(stencils.kind.called(tab)).toBe('Animal')
+    expect(stencils.kind.called?.(tab)).toBe('Animal')
   })
 })
 

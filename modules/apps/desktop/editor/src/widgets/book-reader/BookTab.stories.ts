@@ -74,14 +74,14 @@ const NAMED: Book = {
   span: { begins: 0, ends: document_.ends },
   documents: [{ path: 'OEBPS/part0001.xhtml', span: { begins: 0, ends: document_.ends } }],
   parts: [
-    { title: 'Ādi Parva', at: document_.offsets[0]!, level: 0 },
-    { title: 'Слово о свете', at: document_.offsets[2]!, level: 1 },
-    { title: 'The columns', at: document_.offsets[6]!, level: 1 },
+    { title: 'Ādi Parva', offset: document_.offsets[0]!, level: 0 },
+    { title: 'Слово о свете', offset: document_.offsets[2]!, level: 1 },
+    { title: 'The columns', offset: document_.offsets[6]!, level: 1 },
   ],
   printed: [],
   pages: 12,
   pageBytes: Math.ceil(document_.ends / 12),
-  at: '20480 1700000000000000000 mahabharata.epub',
+  fingerprint: '20480 1700000000000000000 mahabharata.epub',
 }
 
 /** The same book, naming nothing and printed on nothing, as half this corpus is. */
@@ -139,7 +139,7 @@ const CROSSED: Book = {
   printed: [],
   pages: 24,
   pageBytes: Math.ceil(SECOND.ends / 24),
-  at: '20480 1700000000000000000 mahabharata.epub',
+  fingerprint: '20480 1700000000000000000 mahabharata.epub',
 }
 
 /** That book on a shelf, each document of the spine drawn as it stands. */
@@ -271,7 +271,7 @@ export const APlaceChosenIsTurnedTo: Story = {
     await waitFor(
       async () => {
         const run = runsOf(canvasElement).find(
-          (one) => Number(one.dataset['offset']) === wanted.at,
+          (one) => Number(one.dataset['offset']) === wanted.offset,
         )!
         const box = run.getClientRects()[0]!
         const area = areaOf(canvasElement).getBoundingClientRect()

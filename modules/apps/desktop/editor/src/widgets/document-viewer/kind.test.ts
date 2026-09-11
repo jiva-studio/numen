@@ -90,10 +90,10 @@ describe('a document tab', () => {
 
   it('is called by the file and not by the folders above it', () => {
     const { kind } = kindOf()
-    expect(kind.called(useDocumentTab(read('physics/heat/Boltzmann 1877.pdf')))).toBe(
+    expect(kind.called?.(useDocumentTab(read('physics/heat/Boltzmann 1877.pdf')))).toBe(
       'Boltzmann 1877.pdf',
     )
-    expect(kind.called(useDocumentTab(read('Boltzmann.pdf')))).toBe('Boltzmann.pdf')
+    expect(kind.called?.(useDocumentTab(read('Boltzmann.pdf')))).toBe('Boltzmann.pdf')
   })
 
   // A document is its own tab, so the same one opened again is the tab it is

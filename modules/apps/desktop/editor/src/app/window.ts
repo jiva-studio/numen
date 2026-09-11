@@ -174,8 +174,8 @@ export const useWindow = () => {
     told,
   })
 
-  const shut = (id: string, hold: () => void) => {
-    if (!held.shut(id)) hold()
+  const shut = (id: string, hold?: () => void) => {
+    if (!held.shut(id)) hold?.()
   }
 
   const starts = async () => {

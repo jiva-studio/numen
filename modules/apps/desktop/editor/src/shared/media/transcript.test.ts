@@ -92,7 +92,7 @@ function played() {
   const sought: number[] = []
 
   const player: Player = {
-    address,
+    url: address,
     at,
     duration,
     playing,
@@ -273,7 +273,7 @@ describe('the one player the window has', () => {
 
     heard.play()
 
-    expect(player.address.value).toBe(SUMMARY.mediaUrl)
+    expect(player.url.value).toBe(SUMMARY.mediaUrl)
     expect(heard.playing.value).toBe(true)
   })
 
@@ -468,7 +468,7 @@ describe('a recording tab that closes', () => {
     heard.close()
 
     expect(player.playing.value).toBe(true)
-    expect(player.address.value).toBe('http://127.0.0.1:1/files/w/v/another.mp3')
+    expect(player.url.value).toBe('http://127.0.0.1:1/files/w/v/another.mp3')
   })
 
   it('leaves the recording where it stopped, for whoever opens it again', async () => {
@@ -483,7 +483,7 @@ describe('a recording tab that closes', () => {
     const again = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    expect(player.address.value).toBe(SUMMARY.mediaUrl)
+    expect(player.url.value).toBe(SUMMARY.mediaUrl)
     expect(again.now.value).toBe(6_200)
   })
 })
@@ -496,7 +496,7 @@ describe('a recording tab as it opens', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    expect(player.address.value).toBe(SUMMARY.mediaUrl)
+    expect(player.url.value).toBe(SUMMARY.mediaUrl)
     expect(player.playing.value).toBe(false)
     expect(heard.playing.value).toBe(false)
   })
@@ -509,7 +509,7 @@ describe('a recording tab as it opens', () => {
     useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    expect(player.address.value).toBe('http://127.0.0.1:1/files/w/v/another.mp3')
+    expect(player.url.value).toBe('http://127.0.0.1:1/files/w/v/another.mp3')
     expect(player.playing.value).toBe(true)
   })
 })

@@ -3,7 +3,7 @@
  */
 import type { Ref, ShallowRef } from 'vue'
 import { following } from '@numen/ui'
-import type { Core, Move, NoteEdit, Span, Task } from '../shared/core'
+import type { Core, PathRename, NoteEdit, Span, Task } from '../shared/core'
 
 export interface WindowStreamsDeps {
   readonly core: Core
@@ -15,7 +15,7 @@ export interface WindowStreamsDeps {
   readonly tasks: ShallowRef<readonly Task[]>
   readonly swapped: () => Promise<boolean>
   readonly reloads: () => void
-  readonly told: (paths: readonly string[], renamed: readonly Move[]) => Promise<void> | void
+  readonly told: (paths: readonly string[], renamed: readonly PathRename[]) => Promise<void> | void
   readonly first: () => Promise<string>
   readonly ask: () => Promise<unknown>
   readonly drawing: (edit: NoteEdit) => void
@@ -61,11 +61,11 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
     follows(
       () => core.changes(listening.signal),
       async (change) => {
-        if (change.paths.length === 0 && !change.reload && change.renamed.length === 0) return
+        if (change.paths.length === 0 && !change.shouldReload && change.renamed.length === 0) return
         // A reload standing at another folder is another vault under this
         // window, and the page is drawn again on it.
-        if (change.reload && (await swapped())) return void reloads()
-        await told(change.reload ? [] : change.paths, change.renamed)
+        if (change.shouldReload && (await swapped())) return void reloads()
+        await told(change.shouldReload ? [] : change.paths, change.renamed)
         // The note the vault opens with is asked for again when it moves.
         if (change.renamed.some((went) => went.from === opening.value)) {
           try {

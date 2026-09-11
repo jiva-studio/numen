@@ -57,7 +57,7 @@ describe('the settings tab', () => {
 
   it('is called what the settings are called', () => {
     const settings = settling(window_().handle, installation())
-    expect(settings.kind.called(settings.state)).toBe(words.settings)
+    expect(settings.kind.called?.(settings.state)).toBe(words.settings)
   })
 
   // The settings are the installation's and not a file's, so every way to them

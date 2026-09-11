@@ -255,7 +255,7 @@ describe('a deck opened', () => {
   it('is called what the file is called', async () => {
     const { decks, id, held } = await open()
 
-    expect(decks.kind.called(held.handle.holds<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
+    expect(decks.kind.called?.(held.handle.holds<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
   })
 
   it('offers every stencil the vault holds as a cut', async () => {

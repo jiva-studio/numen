@@ -106,10 +106,10 @@ const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
 
 const INSTALLATION: Installation = {
   themes: ref([
-    { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
-    { name: 'preset:dracula', title: 'dracula', shipped: true, pinned: true },
-    { name: 'preset:solarized', title: 'solarized', shipped: true, pinned: false },
-    { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
+    { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
+    { name: 'preset:dracula', title: 'dracula', isBuiltIn: true, isPinned: true },
+    { name: 'preset:solarized', title: 'solarized', isBuiltIn: true, isPinned: false },
+    { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
   ]),
   applied: ref('preset:numen'),
   mode: ref('system'),
@@ -221,7 +221,7 @@ const PRESET_STATE: PresetTabState = {
   bounds: shallowRef(BOUNDS),
   problems: shallowRef([]),
   stopped: ref(StopReason.NOTHING),
-  saying: ref(''),
+  errorMessage: ref(''),
   changed: ref(false),
   again: () => {},
   chooses: () => {},
@@ -320,24 +320,24 @@ const DECK_STATE: DeckTabState = {
   sections: computed(() => SECTIONS),
   stencils: computed(() => [ROOT_CUT, WORD]),
   marks: computed(() => NO_MARKS),
-  saying: computed(() => ''),
-  scheduled: computed(() => ({ path: 'Sanskrit.md', name: 'Sanskrit', saying: '' })),
+  errorMessage: computed(() => ''),
+  scheduled: computed(() => ({ path: 'Sanskrit.md', name: 'Sanskrit', errorMessage: '' })),
   choices: computed(() => [
     { path: '', name: 'The defaults' },
     { path: 'Sanskrit.md', name: 'Sanskrit' },
     { path: 'Anatomy.md', name: 'Anatomy' },
   ]),
-  schedules: () => {},
-  adds: () => {},
-  removes: () => {},
-  moves: () => {},
-  writes: () => {},
-  addsSection: () => {},
-  namesSection: () => {},
-  removesSection: () => {},
-  keep: () => {},
-  take: () => {},
-  shuts: () => {},
+  setSchedule: () => {},
+  addCard: () => {},
+  removeCard: () => {},
+  moveCard: () => {},
+  writeCardField: () => {},
+  addSection: () => {},
+  renameSection: () => {},
+  removeSection: () => {},
+  keepMine: () => {},
+  takeFile: () => {},
+  close: () => {},
 }
 
 /** The cards of a deck, under the sections they stand in. */
@@ -377,19 +377,19 @@ const STENCIL_STATE: StencilTabState = {
     tail: '',
   })),
   marks: computed(() => NO_MARKS),
-  saying: computed(() => ''),
-  addsField: () => {},
-  namesField: () => {},
-  removesField: () => {},
-  movesField: () => {},
-  addsFace: () => {},
-  namesFace: () => {},
-  removesFace: () => {},
-  movesFace: () => {},
-  writes: () => {},
-  keep: () => {},
-  take: () => {},
-  shuts: () => {},
+  errorMessage: computed(() => ''),
+  addField: () => {},
+  renameField: () => {},
+  removeField: () => {},
+  moveField: () => {},
+  addFace: () => {},
+  renameFace: () => {},
+  removeFace: () => {},
+  moveFace: () => {},
+  writeFaceHalf: () => {},
+  keepMine: () => {},
+  takeFile: () => {},
+  close: () => {},
 }
 
 /** The fields a stencil names, and the faces that show them. */
@@ -470,7 +470,7 @@ const MEDIA = 'vault://Lectures/Lecture 4.mp3'
 const RUNS = 1_842_000
 
 const PLAYER: Player = {
-  address: ref(MEDIA),
+  url: ref(MEDIA),
   at: ref(47_200),
   duration: ref(RUNS),
   playing: ref(true),
@@ -736,7 +736,7 @@ const asking = (
       await drawn()
       const row = document.querySelector(`[data-tree-row="${CSS.escape(path)}"]`)
       const box = row?.getBoundingClientRect()
-      state.asks({ path, at: { x: (box?.left ?? 0) + 24, y: box?.bottom ?? 0 } })
+      state.openMenu({ path, at: { x: (box?.left ?? 0) + 24, y: box?.bottom ?? 0 } })
     })
     return { layout, TABS, state, file, FILES, iconOfTab }
   },

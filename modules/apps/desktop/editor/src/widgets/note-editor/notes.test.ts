@@ -8,8 +8,8 @@ const idle = {
   id: '',
   name: '',
   path: '',
-  scan: { ready: true, failed: '', unwatched: '' },
-  coverage: { chunkCount: 0n, embeddedCount: 0n, embedding: false },
+  scan: { isReady: true, failureReason: '', unwatchedPath: '' },
+  coverage: { chunkCount: 0n, embeddedCount: 0n, isEmbedding: false },
   agentUnreachable: '',
 }
 
@@ -47,7 +47,7 @@ function fake(over: Partial<FakeCore> = {}) {
       const held = files.get(path)
       // A note still holding either the prose or the file that prose came out of
       // is the note this caller read.
-      if (seen && held !== undefined && held !== seen.prose && marked(held) !== seen.path) {
+      if (seen && held !== undefined && held !== seen.prose && marked(held) !== seen.at) {
         return { body: '', error: null, changed: true }
       }
       files.set(path, body)
@@ -58,18 +58,16 @@ function fake(over: Partial<FakeCore> = {}) {
     rename: async (path) => ({
       path,
       title: '',
-      frontmatter: false,
+      hasFrontmatter: false,
       moved: null,
       error: null,
-      changed: false,
+      hasChanged: false,
     }),
     remove: async () => ({ trashed: '', dangling: [], error: null }),
     list: async () => [],
     move: async () => ({ moved: null, error: null }),
     createFolder: async () => null,
     createUrl: async () => ({ path: '', error: null }),
-    makeFolder: async () => null,
-    makeURL: async () => ({ path: '', error: null }),
     syncing: async () => true,
     hanging: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
     choosesSyncing: async () => null,

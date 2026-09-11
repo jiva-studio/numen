@@ -50,7 +50,7 @@ export function useVaults({ core, words, log, chunks, embedded, embedding }: Vau
   const carrying = async (path: string) => {
     if (!path) return
     try {
-      const held = await running.carries(path)
+      const held = await running.getArtifactStates(path)
       makes.value = new Map(makes.value).set(path, held)
     } catch {
       // A file that cannot be asked about is one nothing is known of, and every

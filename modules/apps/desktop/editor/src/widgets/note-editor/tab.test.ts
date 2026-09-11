@@ -294,7 +294,7 @@ describe('the interval fires', () => {
 
     expect(stateOf(next.tab)).toBe('saving')
     expect(next.tab.pendingWrite).toBe('two')
-    expect(next.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', path: 'a1' } }])
+    expect(next.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', at: 'a1' } }])
   })
 
   it('owes a write while one is in the air', () => {
@@ -380,7 +380,7 @@ describe('a write answers ok', () => {
     expect(stateOf(next.tab)).toBe('saving')
     expect(next.tab.hasPendingWrite).toBe(false)
     expect(next.effects).toEqual([
-      { kind: 'write', path: 'Note.md', body: 'three', seen: { prose: 'two', path: 'a2' } },
+      { kind: 'write', path: 'Note.md', body: 'three', seen: { prose: 'two', at: 'a2' } },
     ])
   })
 })
@@ -392,13 +392,13 @@ describe('the fingerprint the file was read at', () => {
     const first = tabAfter(tabAfter(tab(), { kind: 'typed', body: 'two', at: 0 }).tab, {
       kind: 'fired',
     })
-    expect(first.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', path: 'a1' } }])
+    expect(first.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', at: 'a1' } }])
 
     const landed = tabAfter(first.tab, { kind: 'written', answer: { kind: 'ok', at: 'a2' } })
     const again = tabAfter(landed.tab, { kind: 'typed', body: 'three', at: 100 })
     const second = tabAfter(again.tab, { kind: 'fired' })
 
-    expect(second.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'three', seen: { prose: 'two', path: 'a2' } }])
+    expect(second.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'three', seen: { prose: 'two', at: 'a2' } }])
   })
 
   it('is nothing for a file that was not there, and that write compares nothing', () => {
@@ -583,7 +583,7 @@ describe('a save is asked for', () => {
   it('writes what is unsaved now', () => {
     const next = tabAfter(tab({ shown: 'two', since: 10 }), { kind: 'saving' })
 
-    expect(next.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', path: 'a1' } }])
+    expect(next.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', at: 'a1' } }])
     expect(stateOf(next.tab)).toBe('saving')
   })
 
@@ -636,7 +636,7 @@ describe('a file about to be renamed or removed', () => {
 
     expect(next.effects).toEqual([
       { kind: 'disarm' },
-      { kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', path: 'a1' } },
+      { kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', at: 'a1' } },
     ])
     expect(stateOf(next.tab)).toBe('saving')
   })
@@ -763,7 +763,7 @@ describe('a close is asked for', () => {
     const next = tabAfter(tab({ shown: 'two', since: 10 }), { kind: 'closing' })
 
     expect(kinds(next.effects)).toEqual(['write', 'hold'])
-    expect(next.effects[0]).toEqual({ kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', path: 'a1' } })
+    expect(next.effects[0]).toEqual({ kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', at: 'a1' } })
     expect(stateOf(next.tab)).toBe('saving')
   })
 

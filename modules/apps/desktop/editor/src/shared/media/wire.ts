@@ -25,7 +25,7 @@ const toCue = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: o
  * them while it writes, and what the file carries says so.
  */
 const editable = async (path: string): Promise<boolean> => {
-  const carried = await running.carries(path)
+  const carried = await running.getArtifactStates(path)
   return carried['transcript.corrected'] !== 'running'
 }
 
@@ -44,7 +44,7 @@ export const recordings: Recordings = {
       url: answer.url,
     }
   },
-  getTaskStates: (path) => running.carries(path),
+  getTaskStates: (path) => running.getArtifactStates(path),
   readTranscript: async (path) => {
     const answer = await waiting(() => served.transcripts.readTranscript({ path }))
     return { cues: answer.cues.map(toCue), prose: '', editable: await editable(path) }

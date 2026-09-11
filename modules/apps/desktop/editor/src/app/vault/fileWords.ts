@@ -11,6 +11,7 @@ import type {
 } from '@numen/protocol'
 import type {
   BookFormat,
+  DocumentFormat,
   Entry,
   MoveResult,
   Source,
@@ -29,13 +30,13 @@ const holding: Record<SourceKind, Source> = {
 export const sourceKind = (of: SourceKind): Source => holding[of] ?? 'other'
 
 /** How a book at a path is drawn, in the words the window uses. */
-const drawn: Record<BookFormats, BookFormat | undefined> = {
+const drawn: Record<BookFormats, BookFormat | DocumentFormat | undefined> = {
   [BookFormats.UNSPECIFIED]: undefined,
   [BookFormats.PDF]: 'pdf',
   [BookFormats.EPUB]: 'epub',
 }
 
-export const bookFormat = (of: BookFormats): BookFormat | undefined => drawn[of]
+export const bookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined => drawn[of]
 
 /** One row of a listing, kept as the plain value the window carries it as. */
 export const mapEntry = (one: EntryMessage): Entry => ({

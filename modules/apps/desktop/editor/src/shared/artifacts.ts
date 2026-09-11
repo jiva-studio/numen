@@ -32,7 +32,6 @@ export const running: ArtifactRunner = {
     }
     return held
   },
-  carries: (path) => running.getArtifactStates(path),
   createArtifact: async (path, of) => {
     try {
       const answer = await artifacts.createArtifact({ path, kind: asking[of] })
@@ -49,7 +48,6 @@ export const running: ArtifactRunner = {
       throw error
     }
   },
-  makes: (path, of) => running.createArtifact(path, of),
   correctArtifact: async (path) => {
     // Which text is put right follows from the file: a recording carries a
     // transcript and a scan carries a reading.
@@ -57,7 +55,6 @@ export const running: ArtifactRunner = {
     const of: Artifact = held.transcript === undefined ? 'ocr.corrected' : 'transcript.corrected'
     return running.createArtifact(path, of)
   },
-  corrects: (path) => running.correctArtifact(path),
   fetchArtifact: async (path) => {
     // Which of the two the text at an address is, is the vault's to say: it
     // knows the address, and this asks for the one it says the note carries.
@@ -65,11 +62,8 @@ export const running: ArtifactRunner = {
     const of: Artifact = held.transcript === undefined ? 'article' : 'transcript'
     return running.createArtifact(path, of)
   },
-  fetches: (path) => running.fetchArtifact(path),
   deleteTranscript: (path) => taken(path, Kinds.TRANSCRIPT),
-  deletesTranscript: (path) => taken(path, Kinds.TRANSCRIPT),
   deleteCopy: (path) => taken(path, Kinds.COPY),
-  deletesCopy: (path) => taken(path, Kinds.COPY),
 }
 
 /** One of what a file carries, taken away, and whether this build can do it. */
@@ -177,33 +171,27 @@ export type Outcome =
 /** Reads which artifacts a file currently carries. */
 export interface ArtifactInspector {
   getArtifactStates(path: string): Promise<ArtifactStates>
-  carries(path: string): Promise<ArtifactStates>
 }
 
 /** Initiates creation/recognition of an artifact for a file. */
 export interface ArtifactProducer {
   createArtifact(path: string, of: Artifact): Promise<Outcome>
-  makes(path: string, of: Artifact): Promise<Outcome>
 }
 
 /** Corrects a file's OCR reading or transcript. */
 export interface ArtifactCorrector {
   correctArtifact(path: string): Promise<Outcome>
-  corrects(path: string): Promise<Outcome>
 }
 
 /** Fetches content (transcript or article) for a URL address. */
 export interface ArtifactFetcher {
   fetchArtifact(path: string): Promise<Outcome>
-  fetches(path: string): Promise<Outcome>
 }
 
 /** Removes artifact data from disk. */
 export interface ArtifactDeleter {
   deleteTranscript(path: string): Promise<boolean>
-  deletesTranscript(path: string): Promise<boolean>
   deleteCopy(path: string): Promise<boolean>
-  deletesCopy(path: string): Promise<boolean>
 }
 
 /** Composed interface combining all artifact capabilities. */

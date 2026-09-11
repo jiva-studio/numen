@@ -153,7 +153,6 @@ export function useCommandPalette(
     found,
     known,
     showing,
-    isWorking,
     working: isWorking,
     said,
     calling: steps.calling,
@@ -183,7 +182,7 @@ export function useCommandPalette(
   const chose = (item: string, action: string): CommandInvocation | null => {
     const step = steps.here.value
     if (!step) return asks(action, on.value)
-    return steps.chooseInStep(step, item, action, found.value, known.value, draws.aside)
+    return steps.chooseInStep(step, item, action, found.value, known.value, (one) => Boolean(draws.aside(one)))
   }
 
   return {

@@ -34,7 +34,7 @@ export type FilePath = string
 /** What a tab last saw of its note: the prose a read gave it, and which file that read came out of. */
 export interface NoteBaseline {
   readonly prose: string
-  readonly path: FilePath
+  readonly at: string
 }
 
 /** What a tab holds. */

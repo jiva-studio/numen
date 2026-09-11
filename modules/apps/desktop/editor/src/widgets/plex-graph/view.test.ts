@@ -179,7 +179,7 @@ describe('a vault that changed somewhere else', () => {
           seat: 'child' as const,
           label: '',
           through: '',
-          mutual: false,
+          isMutual: false,
         })),
       })),
     )

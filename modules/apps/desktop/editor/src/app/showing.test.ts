@@ -22,8 +22,8 @@ const settled = {
   id: '01JQVAULTPHYSICS0000000000',
   name: 'Vault',
   path: '/vaults/Physics',
-  scan: { ready: true, failed: '', unwatched: '' },
-  coverage: { chunkCount: 0n, embeddedCount: 0n, embedding: false },
+  scan: { isReady: true, failureReason: '', unwatchedPath: '' },
+  coverage: { chunkCount: 0n, embeddedCount: 0n, isEmbedding: false },
   agentUnreachable: '',
 }
 
@@ -56,18 +56,16 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     rename: async (path, title) => ({
       path,
       title,
-      frontmatter: false,
+      hasFrontmatter: false,
       moved: null,
       error: null,
-      changed: false,
+      hasChanged: false,
     }),
     remove: async () => ({ trashed: '', dangling: [], error: null }),
     list: async () => [],
     move: async () => ({ moved: null, error: null }),
     createFolder: async () => null,
     createUrl: async () => ({ path: '', error: null }),
-    makeFolder: async () => null,
-    makeURL: async () => ({ path: '', error: null }),
     syncing: async () => true,
     hanging: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
     choosesSyncing: async () => null,
@@ -113,7 +111,7 @@ describe('the stream of changes', () => {
     const core = fake({
       changes: async function* () {
         streams++
-        yield { paths: ['Note.md'], reload: false, renamed: [] }
+        yield { paths: ['Note.md'], shouldReload: false, renamed: [] }
       },
     })
     const waits: number[] = []
@@ -153,7 +151,7 @@ describe('the stream of changes', () => {
   it('says what changed, and waits for whatever is drawn from it', async () => {
     const core = fake({
       changes: async function* () {
-        yield { paths: ['Somewhere/Else.md'], reload: false, renamed: [] }
+        yield { paths: ['Somewhere/Else.md'], shouldReload: false, renamed: [] }
       },
     })
     const one = heard(core)
@@ -166,7 +164,7 @@ describe('the stream of changes', () => {
   it('says a reload names nothing at all, so everything reads again', async () => {
     const core = fake({
       changes: async function* () {
-        yield { paths: ['Note.md'], reload: true, renamed: [] }
+        yield { paths: ['Note.md'], shouldReload: true, renamed: [] }
       },
     })
     const one = heard(core)
@@ -179,7 +177,7 @@ describe('the stream of changes', () => {
   it('says where a note went, for whatever is showing it to follow', async () => {
     const core = fake({
       changes: async function* () {
-        yield { paths: [], reload: false, renamed: [{ from: 'Note.md', to: 'Renamed.md' }] }
+        yield { paths: [], shouldReload: false, renamed: [{ from: 'Note.md', to: 'Renamed.md' }] }
       },
     })
     const one = heard(core)
@@ -195,7 +193,7 @@ describe('the stream of changes', () => {
       opening: async () => ({ path: opens }),
       changes: async function* () {
         opens = 'Renamed.md'
-        yield { paths: [], reload: false, renamed: [{ from: 'Opening.md', to: 'Renamed.md' }] }
+        yield { paths: [], shouldReload: false, renamed: [{ from: 'Opening.md', to: 'Renamed.md' }] }
       },
     })
     const one = heard(core)
@@ -214,7 +212,7 @@ describe('the stream of changes', () => {
         return { path: 'Opening.md' }
       },
       changes: async function* () {
-        yield { paths: [], reload: false, renamed: [{ from: 'Other.md', to: 'Renamed.md' }] }
+        yield { paths: [], shouldReload: false, renamed: [{ from: 'Other.md', to: 'Renamed.md' }] }
       },
     })
     const one = heard(core)
@@ -252,8 +250,8 @@ describe('another vault under this window', () => {
     fake({
       state,
       changes: async function* () {
-        for (const path of ahead) yield { paths: [path], reload: false, renamed: [] }
-        yield { paths: [], reload: true, renamed: [] }
+        for (const path of ahead) yield { paths: [path], shouldReload: false, renamed: [] }
+        yield { paths: [], shouldReload: true, renamed: [] }
         await held()
       },
       focus: async function* () {
@@ -396,7 +394,7 @@ describe('a vault that could not be read', () => {
       opening: async () => null,
       state: async () => ({
         ...settled,
-        scan: { ready: false, failed: 'permission denied', unwatched: '' },
+        scan: { isReady: false, failureReason: 'permission denied', unwatchedPath: '' },
       }),
     })
     const window = useWindowShowing(core, { wait: async () => window.close() })
@@ -427,7 +425,7 @@ describe('a vault that is not being followed', () => {
     const core = fake({
       state: async () => ({
         ...settled,
-        scan: { ...settled.scan, unwatched: 'too many watches' },
+        scan: { ...settled.scan, unwatchedPath: 'too many watches' },
       }),
     })
     const window = useWindowShowing(core, { wait: async () => window.close() })
@@ -444,7 +442,7 @@ describe('chunks with nothing to embed them', () => {
     const core = fake({
       state: async () => ({
         ...settled,
-        coverage: { chunkCount: 4823n, embeddedCount: 0n, embedding: false },
+        coverage: { chunkCount: 4823n, embeddedCount: 0n, isEmbedding: false },
       }),
     })
     const window = useWindowShowing(core, { wait: async () => window.close() })

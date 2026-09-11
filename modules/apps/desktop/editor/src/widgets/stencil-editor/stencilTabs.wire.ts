@@ -2,6 +2,7 @@
  * Wire adapters and vault communication for flashcard stencil tabs.
  */
 import type { PathRename, ErrorCode } from '../../shared/core'
+import type { NoteBaseline } from '../note-editor/tabState'
 import type { Cards, Problem } from '../../shared/flashcards/cards'
 import type { MessageWriter } from '../../shared/notices/messages'
 import { ERRORS } from '../../shared/words'
@@ -44,7 +45,7 @@ export function createStencilWire(
     return { body: stencil ? stencilBodyOf(stencil) : '', error: null, at: answer.at }
   }
 
-  const write = async (path: string, body: string, seen?: { at?: string } | null) => {
+  const write = async (path: string, body: string, seen: NoteBaseline | null = null) => {
     const stencil = stencilIn(body)
     const answer = await cards.writeStencil(
       path,
@@ -59,7 +60,7 @@ export function createStencilWire(
       writing: answer.error,
       at: answer.changed || answer.error !== null ? said.at : answer.at,
     })
-    return { changed: answer.changed, error: answer.error, at: answer.at }
+    return { body: '', changed: answer.changed, error: answer.error, at: answer.at }
   }
 
   const renameField = async (

@@ -111,7 +111,6 @@ export const WORDS = {
   typeName: 'What is it called',
   callIt: 'Call it',
   url: 'Address',
-  address: 'Address',
   typeAddress: 'Paste a link',
   importIt: 'Import',
   notAnAddress: 'That is not a link a browser would open',

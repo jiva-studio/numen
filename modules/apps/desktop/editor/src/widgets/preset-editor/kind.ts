@@ -3,7 +3,7 @@
  */
 import { shallowRef } from 'vue'
 import type { PlexShowing } from '@numen/ui'
-import type { Move } from '../../shared/core'
+import type { PathRename } from '../../shared/core'
 import type { MessageWriter } from '../../shared/notices/messages'
 import type { TabKind, WindowHandle } from '../../shared/tabs/windowTabs'
 import type { FileOpeners } from '../../shared/tabs/openers'
@@ -69,7 +69,7 @@ export function usePresetTab(
 
   puts.holds('preset', shows)
 
-  const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
+  const changed = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     for (const went of renamed) {
       const title = titles.get(went.from)
       if (title !== undefined) titles.set(went.to, title)

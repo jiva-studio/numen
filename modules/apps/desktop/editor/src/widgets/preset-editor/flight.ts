@@ -9,12 +9,9 @@ import { WORDS as words } from './words'
 /** State tracking write flight and dirty settings for one preset file. */
 export interface WriteFlight {
   at: string
-  isWriting: boolean
   writing: boolean
-  isSelected: boolean
   wanted: boolean
   flight: Promise<void> | null
-  hasMessage: boolean
   told: boolean
   readonly theirs: Set<keyof Settings>
   readonly changed: Ref<boolean>
@@ -25,10 +22,8 @@ export function createWriteFlight(): WriteFlight {
   return {
     at: '',
     writing: false,
-    isSelected: false,
     wanted: false,
     flight: null,
-    hasMessage: false,
     told: false,
     theirs: new Set<keyof Settings>(),
     changed: ref(false),
@@ -66,7 +61,6 @@ export const sendWrite = async (
   flight.errorMessage.value = ''
   flight.at = answer.at
   flight.theirs.clear()
-  flight.hasMessage = false
   flight.told = false
 }
 
@@ -78,10 +72,8 @@ const executeFlight = async (
   said: MessageWriter,
 ): Promise<void> => {
   await sendWrite(flight, path, settings, core, said)
-  flight.isWriting = false
   flight.writing = false
-  const again = (flight.isSelected || flight.wanted) && !flight.changed.value
-  flight.isSelected = false
+  const again = flight.wanted && !flight.changed.value
   flight.wanted = false
   if (again) {
     await requestWrite(flight, path, settings, core, said)
@@ -98,12 +90,10 @@ export const requestWrite = (
   core: Presets,
   said: MessageWriter,
 ): Promise<void> => {
-  if (flight.isWriting || flight.writing) {
-    flight.isSelected = true
+  if (flight.writing) {
     flight.wanted = true
     return flight.flight ?? Promise.resolve()
   }
-  flight.isWriting = true
   flight.writing = true
   const inFlight = executeFlight(flight, path, settings, core, said)
   flight.flight = inFlight
@@ -135,8 +125,7 @@ export const canCloseTab = async (
 ): Promise<boolean> => {
   await flushWrites(flight, path, settings, core, said)
   if (flight.theirs.size === 0 && !flight.changed.value) return true
-  if (flight.hasMessage || flight.told) return true
-  flight.hasMessage = true
+  if (flight.told) return true
   flight.told = true
   return false
 }

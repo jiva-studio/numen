@@ -77,8 +77,8 @@ const configured = (pinned = false, file: Record<string, unknown> = {}) => {
     file: ref('/numen.json'),
     opensFile: () => void done.push('opens the file'),
     themes: ref([
-      { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
-      { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
+      { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
+      { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
     ]),
     applied: ref('preset:numen'),
     mode: ref('system'),

@@ -121,7 +121,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   /** The web address a url points at, and nothing on every other source. */
   const points = ref('')
   /** Whether the recording the player holds is this one. */
-  const held = computed(() => address.value !== '' && through.address.value === address.value)
+  const held = computed(() => address.value !== '' && through.url.value === address.value)
 
   /**
    * How long the recording runs. The application says, and the recording
@@ -240,7 +240,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
       // The player holding nothing takes this recording, so the controls read
       // how long it runs before anybody presses play. One already in the
       // player is left where it is, and a url plays where it is drawn.
-      if (!points.value && address.value && through.address.value === '') {
+      if (!points.value && address.value && through.url.value === '') {
         through.load(address.value)
       }
 

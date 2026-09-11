@@ -51,7 +51,7 @@ const talk = (cues: readonly Cue[]): Recordings => ({
 const played = (): Player => {
   const address = ref('')
   return {
-    address,
+    url: address,
     at: ref(0),
     duration: ref(85_000),
     playing: ref(false),

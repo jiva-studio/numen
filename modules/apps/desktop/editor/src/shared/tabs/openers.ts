@@ -6,7 +6,7 @@
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */
 import type { PlexShowing } from '@numen/ui'
-import type { BookFormat, FileKind } from '../file'
+import type { BookFormat, DocumentFormat, FileKind } from '../file'
 import type { NoteType, Span } from '../note'
 
 /**
@@ -41,7 +41,7 @@ export interface FileOpenerDeps {
 /** A source a reader is asked for, by kind and, where one format is read its own way, by format. */
 export interface ReaderKey {
   readonly kind: FileKind['kind']
-  readonly format?: BookFormat
+  readonly format?: BookFormat | DocumentFormat
 }
 
 /** What a file the vault could not be asked about at all is opened as. */
@@ -63,7 +63,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
   }
 
   /** The key a reader is held under: the kind, and the format where one claims it. */
-  const keyOf = (kind: FileKind['kind'], format?: BookFormat): string =>
+  const keyOf = (kind: FileKind['kind'], format?: BookFormat | DocumentFormat): string =>
     format ? `${kind}/${format}` : kind
 
   /**

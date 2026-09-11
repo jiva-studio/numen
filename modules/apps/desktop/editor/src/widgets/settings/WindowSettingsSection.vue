@@ -29,12 +29,12 @@ const themes = computed<readonly SelectChoice[]>(() =>
   [...installation.value.themes.value]
     .sort(
       (one, other) =>
-        Number(other.isBuiltIn ?? other.shipped) - Number(one.isBuiltIn ?? one.shipped),
+        Number(other.isBuiltIn) - Number(one.isBuiltIn),
     )
     .map((one) => ({
       id: one.name,
       text: one.title,
-      group: (one.isBuiltIn ?? one.shipped) ? words.shipped : words.owned,
+      group: one.isBuiltIn ? words.shipped : words.owned,
     })),
 )
 

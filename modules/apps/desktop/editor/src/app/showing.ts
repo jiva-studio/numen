@@ -2,7 +2,7 @@
  * What the window is showing, and the rules for changing it.
  */
 import { ref, shallowRef } from 'vue'
-import type { Core, Move, NoteEdit, Span, Task } from '../shared/core'
+import type { Core, PathRename, NoteEdit, Span, Task } from '../shared/core'
 import { formatErrorMessage } from '@numen/wire'
 import { useWindowStreams } from './streams'
 
@@ -22,7 +22,7 @@ export interface ShowingOptions {
    * What hears that the vault changed, and is waited for. A change carrying no
    * paths names nothing: everything showing the vault reads again.
    */
-  told?(paths: readonly string[], renamed?: readonly Move[]): void | Promise<void>
+  told?(paths: readonly string[], renamed?: readonly PathRename[]): void | Promise<void>
   /** What hears about a change to a note while it is being made. */
   drawing?(said: NoteEdit): void
   /** What puts a note in front of the person, asked for from outside the window. */
@@ -103,11 +103,11 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
     name.value = state.name
     // Read once: this is the folder the page was drawn on.
     if (at.value === '') at.value = state.path
-    error.value = state.scan.failed
-    unwatched.value = state.scan.unwatched
+    error.value = state.scan.failureReason
+    unwatched.value = state.scan.unwatchedPath
     chunks.value = Number(state.coverage.chunkCount)
     embedded.value = Number(state.coverage.embeddedCount)
-    isEmbedding.value = state.coverage.embedding
+    isEmbedding.value = state.coverage.isEmbedding
     return state
   }
 
@@ -162,7 +162,7 @@ export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
         }
         // A vault that could not be read is not an empty one, and neither is
         // one still being read. Both end the waiting; only one is empty.
-        if (state.scan.failed || state.scan.ready) {
+        if (state.scan.failureReason || state.scan.isReady) {
           isIndexing.value = false
           void follow()
           void watch()

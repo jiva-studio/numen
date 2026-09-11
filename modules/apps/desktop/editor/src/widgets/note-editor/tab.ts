@@ -56,7 +56,7 @@ const shows = (tab: Tab, body: string, filePath: FilePath | null): Transition =>
 
 /** What the tab last saw, for a write to present. */
 const seenOf = (tab: Tab): NoteBaseline | null =>
-  tab.written === null || tab.filePath === null ? null : { prose: tab.written, path: tab.filePath }
+  tab.written === null || tab.filePath === null ? null : { prose: tab.written, at: tab.filePath }
 
 /** A write of what is on screen now, presenting what it is given. */
 const begins = (tab: Tab, seen: NoteBaseline | null): Transition => ({

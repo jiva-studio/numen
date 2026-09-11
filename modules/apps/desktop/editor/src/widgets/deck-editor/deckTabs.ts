@@ -3,7 +3,7 @@
  */
 import { computed } from 'vue'
 import type { PlexShowing } from '@numen/ui'
-import type { Move } from '../../shared/core'
+import type { PathRename } from '../../shared/core'
 import type { Cards } from '../../shared/flashcards/cards'
 import type { Store } from '../../shared/command/deps'
 import type { Presets } from '../preset-editor/core'
@@ -59,7 +59,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
           sections: sectionsOf(deck),
           tail: deck.tail,
         },
-        seen?.path ?? null,
+        seen?.at ?? null,
       )
       const error = answer.error
       said.writes(path, { error, bound: answer.bound })
@@ -227,7 +227,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
    * The vault changed: every open deck hears it, and the stencils and the
    * presets are listed again. A window holding no deck asks for neither.
    */
-  const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
+  const changed = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     for (const went of renamed) {
       said.moved(went.from, went.to)
     }

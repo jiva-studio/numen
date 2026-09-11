@@ -74,9 +74,9 @@ export const mapLink = (link: Link) => ({
   label: link.label ?? '',
 })
 
-export const mapBaseline = (seen: { prose: string; path: string }) => ({
+export const mapBaseline = (seen: { prose: string; at: string }) => ({
   prose: seen.prose,
-  at: fingerprint(seen.path),
+  at: fingerprint(seen.at),
 })
 
 export const mapNoteResult = (from: {

@@ -5,6 +5,7 @@ import type { Documents, Page } from './types'
 
 describe('useDocumentViewport', () => {
   const documents: Documents = {
+    getDocumentLayout: async () => ({ pages: [], fingerprint: '' }),
     getPageUrl: (path, page, width, seen) => `${path}/p${page}?w=${width}&s=${seen ?? ''}`,
     getHighlights: async () => [],
   }

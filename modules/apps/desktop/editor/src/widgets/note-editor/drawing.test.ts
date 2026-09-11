@@ -13,7 +13,7 @@ const said = (over: Partial<NoteEdit> = {}): NoteEdit => ({
   path: 'Note.md',
   span: { from: 2, to: 12 },
   text: 'An axe',
-  done: false,
+  isComplete: false,
   ...over,
 })
 
@@ -42,14 +42,14 @@ describe('a change that is over', () => {
   it('is still drawn, because the note has not caught up', () => {
     const drawn = drawing()
     drawn.told(said())
-    drawn.told(said({ done: true }))
+    drawn.told(said({ isComplete: true }))
     expect(drawn.shown('Note.md')).not.toBeNull()
   })
 
   it('waits the bound out where its text never arrives', () => {
     const drawn = drawing()
     drawn.told(said())
-    expect(drawn.told(said({ done: true }))).toEqual({
+    expect(drawn.told(said({ isComplete: true }))).toEqual({
       path: 'Note.md',
       after: holding.bound,
     })
@@ -58,14 +58,14 @@ describe('a change that is over', () => {
   it('is let go of shortly after the note changes under it', () => {
     const drawn = drawing()
     drawn.told(said())
-    drawn.told(said({ done: true }))
+    drawn.told(said({ isComplete: true }))
     expect(drawn.arrived('Note.md')).toEqual({ path: 'Note.md', after: holding.settle })
   })
 
   it('is gone once the interval fires', () => {
     const drawn = drawing()
     drawn.told(said())
-    drawn.told(said({ done: true }))
+    drawn.told(said({ isComplete: true }))
     drawn.fired('Note.md')
     expect(drawn.shown('Note.md')).toBeNull()
   })
@@ -87,7 +87,7 @@ describe('a note that changed on its own', () => {
 describe('the end of a change nobody is drawing', () => {
   it('arms nothing', () => {
     const drawn = drawing()
-    expect(drawn.told(said({ done: true }))).toBeNull()
+    expect(drawn.told(said({ isComplete: true }))).toBeNull()
   })
 })
 
