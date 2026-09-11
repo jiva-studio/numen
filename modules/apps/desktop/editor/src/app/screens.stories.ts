@@ -13,8 +13,8 @@ import { WorkspaceLayout, branch, pane } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
-import SettingsTab from '../widgets/settings/SettingsTab.vue'
-import type { Installation } from '../widgets/settings/useSettingsTab'
+import SettingsTab from '../widgets/settings/components/SettingsTab.vue'
+import type { Installation } from '../widgets/settings/composables/useSettingsTab'
 import PresetTab from '../widgets/preset-editor/PresetTab.vue'
 import {
   DEFAULTS,
@@ -25,10 +25,10 @@ import {
   type SettingsBounds,
 } from '../widgets/preset-editor/core'
 import type { PresetTabState } from '../widgets/preset-editor/types'
-import DeckTab from '../widgets/deck-editor/DeckTab.vue'
-import type { DeckTabState } from '../widgets/deck-editor/useDeckTabs'
-import StencilTab from '../widgets/stencil-editor/StencilTab.vue'
-import type { StencilTabState } from '../widgets/stencil-editor/useStencilTabs'
+import DeckTab from '../widgets/deck-editor/components/DeckTab.vue'
+import type { DeckTabState } from '../widgets/deck-editor/composables/useDeckTabs'
+import StencilTab from '../widgets/stencil-editor/components/StencilTab.vue'
+import type { StencilTabState } from '../widgets/stencil-editor/composables/useStencilTabs'
 import type { Marks } from '../entities/deck/marks'
 import RecordingTab from '../widgets/media-recording/RecordingTab.vue'
 import { useTranscript, type Recordings } from '../entities/media/transcript'

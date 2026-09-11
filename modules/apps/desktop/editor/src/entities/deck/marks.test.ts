@@ -2,11 +2,11 @@
  * Where each problem the vault reports is drawn, asked without a screen.
  */
 import { describe, expect, it } from 'vitest'
-import { marksOf } from './marks'
-import type { Problem } from './cards'
+import { createMarks } from './marks'
+import type { DeckProblem } from './cards'
 
 /** One problem as the vault reports one, against nothing in particular. */
-const problem = (over: Partial<Problem> = {}): Problem => ({
+const problem = (over: Partial<DeckProblem> = {}): DeckProblem => ({
   fault: 'cardWithoutAStencil',
   card: null,
   face: null,
@@ -17,13 +17,13 @@ const problem = (over: Partial<Problem> = {}): Problem => ({
 
 describe('where a problem is drawn', () => {
   it('is the card it was read against, counted from the first', () => {
-    const marks = marksOf([problem({ card: 1 })], ['c1', 'c2'], [])
+    const marks = createMarks([problem({ card: 1 })], ['c1', 'c2'], [])
     expect(marks.at.get('c2')).toStrictEqual(['a card under no stencil'])
     expect(marks.at.has('c1')).toBe(false)
   })
 
   it('is the identity the card was drawn under, so two of one mark are told apart', () => {
-    const marks = marksOf(
+    const marks = createMarks(
       [
         problem({ fault: 'markCarriedTwice', card: 1, text: 'a mark carried twice' }),
         problem({ fault: 'markCarriedTwice', card: 2, text: 'a mark carried twice' }),
@@ -35,7 +35,7 @@ describe('where a problem is drawn', () => {
   })
 
   it('stands every problem of one card together, in the order they were read', () => {
-    const marks = marksOf(
+    const marks = createMarks(
       [problem({ card: 0, text: 'first' }), problem({ card: 0, text: 'second' })],
       ['c1'],
       [],
@@ -44,7 +44,7 @@ describe('where a problem is drawn', () => {
   })
 
   it('is the face it was read against', () => {
-    const marks = marksOf(
+    const marks = createMarks(
       [problem({ fault: 'faceMissingASide', face: 0, text: 'no back' })],
       [],
       ['f1', 'f2'],
@@ -53,7 +53,7 @@ describe('where a problem is drawn', () => {
   })
 
   it('is the field of the card where it names both, so it is said under that value', () => {
-    const marks = marksOf(
+    const marks = createMarks(
       [problem({ fault: 'fieldWrittenTwice', card: 1, field: 'Name', text: 'twice' })],
       ['c1', 'c2'],
       [],
@@ -63,7 +63,7 @@ describe('where a problem is drawn', () => {
   })
 
   it('is the field where it stands against no card and no face', () => {
-    const marks = marksOf(
+    const marks = createMarks(
       [problem({ fault: 'fieldDeclaredTwice', field: 'Height', text: 'declared twice' })],
       [],
       [],
@@ -73,12 +73,12 @@ describe('where a problem is drawn', () => {
   })
 
   it('is the file where it stands against none of the three', () => {
-    const marks = marksOf([problem({ text: 'something else' })], ['c1'], [])
+    const marks = createMarks([problem({ text: 'something else' })], ['c1'], [])
     expect(marks.whole).toStrictEqual(['something else'])
   })
 
   it('is the file where the card it names was not read', () => {
-    expect(marksOf([problem({ card: 5 })], ['c1'], []).whole).toStrictEqual([
+    expect(createMarks([problem({ card: 5 })], ['c1'], []).whole).toStrictEqual([
       'a card under no stencil',
     ])
   })

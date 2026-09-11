@@ -20,7 +20,7 @@ const generated = new Set(['modules/libs/protocol'])
  * same, which is the dialect this rule was written to find.
  */
 export const baseline = [
-  'modules/apps/desktop/editor/src/note-tab/drawing.ts',
+  'modules/apps/desktop/editor/src/widgets/note-editor/drawing.ts',
 ]
 
 /** Every Go module of the repository, found by its go.mod. */

@@ -16,7 +16,7 @@ import { useWindowStreams } from './useWindowStreams'
  * window's; nothing here knows what a tab holds.
  */
 /** What the window hands the reading of a vault, beside the vault itself. */
-export interface ShowingOptions {
+export interface DisplayOptions {
   wait?(ms: number): Promise<unknown>
   /**
    * What hears that the vault changed, and is waited for. A change carrying no
@@ -36,7 +36,7 @@ export interface ShowingOptions {
   reloads?(): void
 }
 
-export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
+export function useWindowDisplay(core: Core, how: DisplayOptions = {}) {
   const wait = how.wait ?? sleep
   const told = how.told ?? (() => {})
   const drawing = how.drawing ?? (() => {})

@@ -4,14 +4,14 @@
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { ErrorCode } from '../../shared/core'
-import type { Cards, VaultCard, Problem } from '../../entities/deck/cards'
-import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../preset-editor/core'
-import { fileOpeners } from '../../entities/tab/openers'
-import { useWindowTabs } from '../../entities/tab/windowTabs'
-import { DECK } from '../../entities/tab/workspace'
+import type { ErrorCode } from '../../../shared/core'
+import type { Cards, VaultCard, DeckProblem } from '../../../entities/deck/cards'
+import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../../preset-editor/core'
+import { fileOpeners } from '../../../entities/tab/openers'
+import { useWindowTabs } from '../../../entities/tab/windowTabs'
+import { DECK } from '../../../entities/tab/workspace'
 import { useDeckTabs, type DeckTabState } from './useDeckTabs'
-import { WORDS as words } from '../../entities/deck/words'
+import { WORDS as words } from '../../../entities/deck/words'
 
 /** A preset that schedules, which is what every preset here is. */
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
@@ -56,7 +56,7 @@ const calling = (card: { values: readonly { field: string; text: string }[] }): 
 const vault = (
   answers: {
     error?: ErrorCode
-    problems?: readonly Problem[]
+    problems?: readonly DeckProblem[]
     bound?: number
     /** The write answers that the file moved past what the tab read. */
     changed?: boolean
@@ -406,7 +406,7 @@ describe('a deck the vault refused', () => {
 })
 
 describe('what is wrong with a deck', () => {
-  const stencilless: Problem = {
+  const stencilless: DeckProblem = {
     fault: 'cardWithoutAStencil',
     card: 1,
     face: null,
@@ -587,7 +587,7 @@ describe('a deck read again under the window', () => {
 
   // The file is read wrong in a way that stands against one card, so a mark
   // that went is a mark this can see going.
-  const stencilless: Problem = {
+  const stencilless: DeckProblem = {
     fault: 'cardWithoutAStencil',
     card: 1,
     face: null,

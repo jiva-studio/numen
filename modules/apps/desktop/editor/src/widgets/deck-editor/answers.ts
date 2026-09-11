@@ -6,7 +6,7 @@
  * it along and a file no tab stands at any longer lets it go.
  */
 import type { ErrorCode } from '../../shared/core'
-import type { Problem } from '../../entities/deck/cards'
+import type { DeckProblem } from '../../entities/deck/cards'
 import { fileOf } from '../../shared/paths'
 import { WORDS as words } from '../../entities/deck/words'
 
@@ -17,7 +17,7 @@ export interface VaultAnswer {
    * card each stands on is decided against the deck the grid is drawing, so a
    * card the window is holding through a re-read keeps its mark.
    */
-  readonly problems: readonly Problem[]
+  readonly problems: readonly DeckProblem[]
   /** What the last read of the file encountered as error. */
   readonly reading: ErrorCode | null
   /** What the last write of it encountered as error. */
@@ -42,7 +42,7 @@ export function answers() {
   const reads = (
     path: string,
     answer: {
-      readonly problems: readonly Problem[]
+      readonly problems: readonly DeckProblem[]
       readonly error?: ErrorCode | null
       readonly bound: number
       /** The title the file carries, and nothing where the read reached none. */
@@ -76,7 +76,7 @@ export function answers() {
   }
 
   /** What is wrong with a file, as the marks against its cards are made from. */
-  const problemsAt = (path: string): readonly Problem[] => at(path).problems
+  const problemsAt = (path: string): readonly DeckProblem[] => at(path).problems
 
   const whyOf = (errorCode: ErrorCode | null, bound: number): string | null => {
     if (errorCode === 'deckTooLarge') return words.tooLarge(bound)

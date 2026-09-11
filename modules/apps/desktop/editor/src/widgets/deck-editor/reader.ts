@@ -6,9 +6,9 @@
  * screen leaves that one standing, so the card a person is typing into is not
  * drawn again under a fresh identity.
  */
-import type { Problem } from '../../entities/deck/cards'
-import { deckIn, applyHead, applyName, sameDeck, type BufferDeck } from './deck'
-import { marksOf, sameMarks, type Marks } from '../../entities/deck/marks'
+import type { DeckProblem } from '../../entities/deck/cards'
+import { deserializeBufferDeckFromString, applyHead, applyName, sameDeck, type BufferDeck } from './deck'
+import { createMarks, areMarksEqual, type Marks } from '../../entities/deck/marks'
 
 /** The string a tab holds, and the file it stands at. */
 export interface ShownStore {
@@ -17,7 +17,7 @@ export interface ShownStore {
 }
 
 /** The reader one window has, over the decks that window holds. */
-export function reader(store: ShownStore, problemsAt: (path: string) => readonly Problem[]) {
+export function reader(store: ShownStore, problemsAt: (path: string) => readonly DeckProblem[]) {
   /** The last string a deck was read out of, and what it came to. */
   const parsed = new Map<string, { body: string; deck: BufferDeck }>()
 
@@ -31,7 +31,7 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
     // reading as the one on screen leaves that one standing, and a deck the
     // file has named a card of since keeps that card's identity, so the card a
     // person is typing into is not drawn again.
-    const read = deckIn(body)
+    const read = deserializeBufferDeckFromString(body)
     const deck = held
       ? sameDeck(held.deck, read)
         ? applyHead(held.deck, read)
@@ -42,7 +42,7 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
   }
 
   /** The problems one tab was last marked from, and the marks that came of it. */
-  const marked = new Map<string, { problems: readonly Problem[]; marks: Marks }>()
+  const marked = new Map<string, { problems: readonly DeckProblem[]; marks: Marks }>()
 
   /**
    * What is wrong with a file, against the card the grid is drawing. A problem
@@ -55,14 +55,14 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
     const problems = problemsAt(store.where(id))
     const held = marked.get(id)
     if (held && held.problems === problems) return held.marks
-    const read = marksOf(
+    const read = createMarks(
       problems,
       deckAt(id).cards.map((card) => card.id),
       [],
     )
     // Marks saying what the last ones said leave what is drawn against the
     // file standing.
-    const marks = held && sameMarks(held.marks, read) ? held.marks : read
+    const marks = held && areMarksEqual(held.marks, read) ? held.marks : read
     marked.set(id, { problems, marks })
     return marks
   }

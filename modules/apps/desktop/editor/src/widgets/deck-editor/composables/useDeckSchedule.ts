@@ -2,8 +2,8 @@
  * Which preset schedules a deck, and putting one on another.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PresetChoice, Presets, ReadResult } from '../preset-editor/core'
-import { WORDS as words } from '../../entities/deck/words'
+import type { PresetChoice, Presets, ReadResult } from '../../preset-editor/core'
+import { WORDS as words } from '../../../entities/deck/words'
 
 /** The preset a deck is scheduled by, as the line at the top of it draws it. */
 export interface DeckPreset {
@@ -52,6 +52,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
       offered.value = await presets.list()
       offeredOk = true
     } catch {
+      // Preset listing failed.
       offeredOk = false
     }
   }
@@ -79,6 +80,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
     try {
       read = await presets.scheduling(path)
     } catch {
+      // Reading preset scheduling failed.
       return
     }
     scheduled.value.set(path, scheduledOf(read))
@@ -101,6 +103,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
       else if (answer.error !== null) says(id, words.notScheduled)
       else says(id, '')
     } catch {
+      // Scheduling preset failed.
       says(id, words.unreachable)
       return
     }

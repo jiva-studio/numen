@@ -3,7 +3,7 @@
  */
 import type { PathRename, ErrorCode } from '../../shared/core'
 import type { NoteBaseline } from '../note-editor/tabState'
-import type { Cards, Problem } from '../../entities/deck/cards'
+import type { Cards, DeckProblem } from '../../entities/deck/cards'
 import type { MessageWriter } from '../../shared/notices/messages'
 import { ERRORS } from '../../shared/words'
 import { WORDS as words } from '../../entities/deck/words'
@@ -16,7 +16,7 @@ import {
 
 /** What the vault said about one file the last time it was read or written. */
 export interface VaultAnswer {
-  readonly problems: readonly Problem[]
+  readonly problems: readonly DeckProblem[]
   readonly reading: ErrorCode | null
   readonly writing: ErrorCode | null
   readonly at: string
@@ -95,7 +95,7 @@ export function createStencilWire(
     return words.unreachable
   }
 
-  const getProblems = (path: string): readonly Problem[] => {
+  const getProblems = (path: string): readonly DeckProblem[] => {
     return (told.get(path) ?? NOTHING).problems
   }
 

@@ -43,7 +43,7 @@ export const modules = [
     at: 'modules/apps/desktop/editor',
     sources: ['src'],
     written: 'modules/apps/desktop/editor/src',
-    reads: 'src/App.vue',
+    reads: 'src/app/App.vue',
     says: 'The notes window: reaches the components, the wire and the schema.',
   },
   {

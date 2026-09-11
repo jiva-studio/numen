@@ -15,8 +15,8 @@ import {
   WorkspaceLayout,
   type PaletteGroup,
 } from '@numen/ui'
-import AgentTab from '../widgets/agent-chat/AgentTab.vue'
-import DeckTab from '../widgets/deck-editor/DeckTab.vue'
+import AgentTab from '../widgets/agent-chat/components/AgentTab.vue'
+import DeckTab from '../widgets/deck-editor/components/DeckTab.vue'
 import FilesTab from '../widgets/file-manager/FilesTab.vue'
 import { NEW_DECK, NEW_STENCIL } from '../widgets/file-manager/menu'
 import NoteTab from '../widgets/note-editor/NoteTab.vue'

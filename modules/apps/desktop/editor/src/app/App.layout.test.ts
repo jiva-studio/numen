@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { Plex, Tree, WelcomePage } from '@numen/ui'
-import AgentTab from '../widgets/agent-chat/AgentTab.vue'
+import AgentTab from '../widgets/agent-chat/components/AgentTab.vue'
 import DocumentTab from '../widgets/document-viewer/DocumentTab.vue'
 import FilesTab from '../widgets/file-manager/FilesTab.vue'
 import NoteTab from '../widgets/note-editor/NoteTab.vue'

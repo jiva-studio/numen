@@ -3,8 +3,8 @@
  */
 import { cards } from '../entities/deck/cards'
 import { presets } from '../widgets/preset-editor/core'
-import { useDeckTabs } from '../widgets/deck-editor/useDeckTabs'
-import { useStencilTabs } from '../widgets/stencil-editor/useStencilTabs'
+import { useDeckTabs } from '../widgets/deck-editor/composables/useDeckTabs'
+import { useStencilTabs } from '../widgets/stencil-editor/composables/useStencilTabs'
 import { usePresetTab } from '../widgets/preset-editor/usePresetTab'
 import { noteChanges } from '../widgets/note-editor/changes'
 import { openNotes } from '../widgets/note-editor/notes'
@@ -18,7 +18,7 @@ import type { MessageLog } from '../shared/notices/messages'
 import type { FileOpeners } from '../entities/tab/openers'
 import type { useWindowTabs } from '../entities/tab/windowTabs'
 
-export interface EditingDeps {
+export interface NoteEditorsDeps {
   core: Core
   log: MessageLog
   puts: FileOpeners
@@ -26,7 +26,7 @@ export interface EditingDeps {
   day: () => string
 }
 
-export function useEditing({ core, log, puts, held, day }: EditingDeps) {
+export function useNoteEditors({ core, log, puts, held, day }: NoteEditorsDeps) {
   const changes = noteChanges()
   const notes = openNotes(core, { replaced: changes.arrived })
   const making = noteCreator(core, log.under('made'))

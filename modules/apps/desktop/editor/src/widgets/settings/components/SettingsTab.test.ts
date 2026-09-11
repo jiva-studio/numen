@@ -11,11 +11,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { computed, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
-import type { Model, SettingEdit } from '../../entities/settings/configuration'
-import { settingAt as at } from '../../entities/settings/store'
+import type { Model, SettingEdit } from '../../../entities/settings/configuration'
+import { settingAt as at } from '../../../entities/settings/store'
 import SettingsTab from './SettingsTab.vue'
-import type { Installation } from './useSettingsTab'
-import { WORDS as words } from './words'
+import type { Installation } from '../composables/useSettingsTab'
+import { WORDS as words } from '../words'
 
 /** A model somebody typed into the file themselves, addressed and not named. */
 const OWN = 'https://models.example/held/v3/rec/eslav_rec_mobile.onnx'

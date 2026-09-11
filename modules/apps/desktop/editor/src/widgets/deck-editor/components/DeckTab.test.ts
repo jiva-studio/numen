@@ -8,15 +8,15 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { ErrorCode } from '../../shared/core'
-import type { Cards, VaultCard, Problem } from '../../entities/deck/cards'
-import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../preset-editor/core'
-import { fileOpeners } from '../../entities/tab/openers'
-import { useWindowTabs } from '../../entities/tab/windowTabs'
-import { DECK } from '../../entities/tab/workspace'
+import type { ErrorCode } from '../../../shared/core'
+import type { Cards, VaultCard, DeckProblem } from '../../../entities/deck/cards'
+import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../../preset-editor/core'
+import { fileOpeners } from '../../../entities/tab/openers'
+import { useWindowTabs } from '../../../entities/tab/windowTabs'
+import { DECK } from '../../../entities/tab/workspace'
 import DeckTab from './DeckTab.vue'
-import { useDeckTabs, type DeckTabState } from './useDeckTabs'
-import { WORDS as words } from '../../entities/deck/words'
+import { useDeckTabs, type DeckTabState } from '../composables/useDeckTabs'
+import { WORDS as words } from '../../../entities/deck/words'
 
 /** A preset that schedules, which is what every preset here is. */
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
@@ -66,7 +66,7 @@ const SECTIONS = [{ name: 'Roots', preamble: '' }]
 
 /** A window with one deck open, drawn. */
 const drawn = async (
-  problems: readonly Problem[] = [],
+  problems: readonly DeckProblem[] = [],
   scheduling: {
     /** The presets the vault holds. */
     presets?: readonly PresetChoice[]
@@ -183,7 +183,7 @@ const drawn = async (
 const tileOf = (window: Awaited<ReturnType<typeof drawn>>['window'], card: string) =>
   window.find(`[data-card="${card}"]`)
 
-const stencilless: Problem = {
+const stencilless: DeckProblem = {
   fault: 'cardWithoutAStencil',
   card: 1,
   face: null,

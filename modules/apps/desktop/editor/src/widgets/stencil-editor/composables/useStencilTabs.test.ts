@@ -3,14 +3,14 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
-import type { ErrorCode } from '../../shared/core'
-import type { Cards, VaultFace, Problem, FieldRenameResult } from '../../entities/deck/cards'
-import { fileOpeners } from '../../entities/tab/openers'
-import { useWindowTabs } from '../../entities/tab/windowTabs'
-import { STENCIL } from '../../entities/tab/workspace'
-import { ERRORS } from '../../shared/words'
+import type { ErrorCode } from '../../../shared/core'
+import type { Cards, VaultFace, DeckProblem, FieldRenameResult } from '../../../entities/deck/cards'
+import { fileOpeners } from '../../../entities/tab/openers'
+import { useWindowTabs } from '../../../entities/tab/windowTabs'
+import { STENCIL } from '../../../entities/tab/workspace'
+import { ERRORS } from '../../../shared/words'
 import { useStencilTabs, type StencilTabState } from './useStencilTabs'
-import { WORDS as words } from '../../entities/deck/words'
+import { WORDS as words } from '../../../entities/deck/words'
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => fileOpeners({ fileKinds: async () => new Map() })
@@ -26,7 +26,7 @@ const FACES: readonly VaultFace[] = [
 const vault = (
   answers: {
     error?: ErrorCode
-    problems?: readonly Problem[]
+    problems?: readonly DeckProblem[]
     changed?: boolean
     /** What renaming a field comes back with, where a test wants another answer. */
     renaming?: FieldRenameResult
@@ -380,7 +380,7 @@ describe('what is wrong with a stencil', () => {
 describe('a stencil read again under the window', () => {
   // The file is read wrong in a way that stands against one face, so a mark
   // that went is a mark this can see going.
-  const sideless: Problem = {
+  const sideless: DeckProblem = {
     fault: 'faceMissingASide',
     card: null,
     face: 0,

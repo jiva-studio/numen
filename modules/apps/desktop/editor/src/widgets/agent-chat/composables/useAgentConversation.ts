@@ -3,16 +3,16 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
-import { same, spotOf, spotsIn } from './places'
-import type { TabKind, WindowHandle } from '../../entities/tab/windowTabs'
-import { AGENT } from '../../entities/tab/workspace'
-import AgentTab from './AgentTab.vue'
-import { WORDS as words } from './words'
-import { firstLine } from './title'
-import type { AgentTabDeps, NoteRef } from './types'
+import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '../../../shared/links'
+import type { TabKind, WindowHandle } from '../../../entities/tab/windowTabs'
+import { AGENT } from '../../../entities/tab/workspace'
+import AgentTab from '../components/AgentTab.vue'
+import { WORDS as words } from '../words'
+import { firstLine } from '../title'
+import type { AgentTabDeps, NoteRef } from '../types'
 
-export { firstLine } from './title'
-export type { AgentTabDeps, NoteRef } from './types'
+export { firstLine } from '../title'
+export type { AgentTabDeps, NoteRef } from '../types'
 
 /** What one agent tab holds. */
 export type AgentTabState = ReturnType<typeof useAgentConversation>
@@ -83,10 +83,12 @@ export function useAgentConversation(talk: Conversation, deps: AgentTabDeps) {
    * at. Any other link is left to whatever would follow it.
    */
   const followLink = (turn: Turn, href: string, press: MouseEvent) => {
-    const here = spotOf(href)
+    const here = parseLinkTarget(href)
     if (here) {
       press.preventDefault()
-      const named = spotsIn(turn.text).filter((spot) => spot.path === here.path && !same(spot, here))
+      const named = extractLinkTargets(turn.text).filter(
+        (target) => target.path === here.path && !areLinkTargetsEqual(target, here),
+      )
       deps.opens(
         here.path,
         ...[here, ...named].map(({ start, length }) => ({ from: start, to: start + length })),

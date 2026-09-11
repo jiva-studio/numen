@@ -5,14 +5,14 @@ import { computed, type ComputedRef } from 'vue'
 import type { Notice } from '@numen/ui'
 import { cornerOf } from '../shared/notices/corner'
 import type { MessageLog } from '../shared/notices/messages'
-import type { useWindowShowing } from './useWindowShowing'
+import type { useWindowDisplay } from './useWindowDisplay'
 import type { useSettings } from './useSettings'
 import type { useVaults } from './useVaults'
 import { WORDS as words } from '../shared/words'
 
 export interface WindowNoticesDeps {
   log: MessageLog
-  window: ReturnType<typeof useWindowShowing>
+  window: ReturnType<typeof useWindowDisplay>
   settings: ReturnType<typeof useSettings>
   vaults: ReturnType<typeof useVaults>
 }

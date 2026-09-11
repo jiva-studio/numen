@@ -4,7 +4,7 @@
 import type { DeckCard, DeckSection, Stencil } from '@numen/ui'
 import type { StencilSummary, VaultCard } from '../../entities/deck/cards'
 import type { BufferDeck } from './types'
-import { cardsOf, sectionsOf } from './serialize'
+import { serializeBufferCardsToVaultCards, serializeBufferSectionsToVaultSections } from './serialize'
 
 export const drawnSectionsOf = (deck: BufferDeck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
@@ -38,7 +38,7 @@ export const stencilsOf = (offers: readonly StencilSummary[]): readonly Stencil[
 
 /** The cards as somebody wrote them, without the heading a write reads back. */
 const written = (deck: BufferDeck): readonly Omit<VaultCard, 'heading'>[] =>
-  cardsOf(deck).map(({ heading: _heading, ...card }) => card)
+  serializeBufferCardsToVaultCards(deck).map(({ heading: _heading, ...card }) => card)
 
 /**
  * Whether two decks read the same.
@@ -46,7 +46,7 @@ const written = (deck: BufferDeck): readonly Omit<VaultCard, 'heading'>[] =>
 export const sameDeck = (one: BufferDeck, other: BufferDeck): boolean =>
   one.preamble === other.preamble &&
   one.tail === other.tail &&
-  JSON.stringify(sectionsOf(one)) === JSON.stringify(sectionsOf(other)) &&
+  JSON.stringify(serializeBufferSectionsToVaultSections(one)) === JSON.stringify(serializeBufferSectionsToVaultSections(other)) &&
   JSON.stringify(written(one)) === JSON.stringify(written(other))
 
 /**

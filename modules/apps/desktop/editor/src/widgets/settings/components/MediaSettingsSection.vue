@@ -5,12 +5,12 @@
 import { computed } from 'vue'
 import { NumberField, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
-import SettingRow from './setting-row/SettingRow.vue'
-import type { SettingsTabState } from './useSettingsTab'
-import AT from './paths.json'
-import { choicesFor } from './models'
-import { write } from '../../entities/settings/write'
-import { WORDS as words } from './words'
+import SettingRow from '../setting-row/SettingRow.vue'
+import type { SettingsTabState } from '../composables/useSettingsTab'
+import AT from '../paths.json'
+import { choicesFor } from '../models'
+import { write } from '../../../entities/settings/write'
+import { WORDS as words } from '../words'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: SettingsTabState }>()

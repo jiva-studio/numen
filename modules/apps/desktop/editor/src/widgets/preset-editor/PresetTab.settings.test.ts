@@ -12,6 +12,7 @@ import PresetTab from './PresetTab.vue'
 import tabSource from './PresetTab.vue?raw'
 import rowsSource from './preset-settings/PresetSettings.vue?raw'
 import sliderSource from './curve-slider/CurveSlider.vue?raw'
+import tilesSource from './curve-slider/CurveTiles.vue?raw'
 import { NO_BOUNDS, type Field, type PresetTabState, type SettingValue } from './types'
 import { BOUNDS, drawn, rows, tabAt } from './drawn'
 import { WORDS as words } from './words'
@@ -277,7 +278,7 @@ describe('the line the tab is read against', () => {
 
   /** The blocks of the column that draw a box, and the ones that draw none. */
   const BOXED = [
-    [sliderSource, '.curve-slider__material'],
+    [tilesSource, '.curve-slider__material'],
     [sliderSource, '.curve-slider__island'],
     [tabSource, '.preset__stopped'],
   ] as const

@@ -2,14 +2,14 @@
  * Stencil listing and schedule coordination for deck tabs.
  */
 import { computed, shallowRef } from 'vue'
-import type { PathRename } from '../../shared/core'
-import type { Cards, StencilSummary } from '../../entities/deck/cards'
-import type { Presets } from '../preset-editor/core'
-import type { openNotes } from '../note-editor/notes'
+import type { PathRename } from '../../../shared/core'
+import type { Cards, StencilSummary } from '../../../entities/deck/cards'
+import type { Presets } from '../../preset-editor/core'
+import type { openNotes } from '../../note-editor/notes'
 import { useDeckSchedule } from './useDeckSchedule'
-import { sameOffers, stencilsOf } from './deck'
+import { sameOffers, stencilsOf } from '../deck'
 
-export function useDeckScheduleWiring(
+export function useDeckScheduleSync(
   cards: Cards,
   presets: Presets,
   store: ReturnType<typeof openNotes>,
@@ -25,6 +25,7 @@ export function useDeckScheduleWiring(
       listedOk = true
       if (!sameOffers(offers.value, listed)) offers.value = listed
     } catch {
+      // Listing stencils failed.
       listedOk = false
     }
   }

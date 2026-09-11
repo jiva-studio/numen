@@ -21,7 +21,7 @@ export type NoteOperations = Pick<
   | 'resolve'
 >
 
-export const noteOperations: NoteOperations = {
+export const notesCore: NoteOperations = {
   neighbourhood: async (path) => mapNeighbourhood(await notes.getNeighbourhood({ path })),
   opening: async () => (await notes.getOpeningNote({})).note ?? null,
   getInitialOpenPath: async () => (await notes.getOpeningNote({})).note ?? null,
@@ -82,5 +82,3 @@ export const noteOperations: NoteOperations = {
     )
   },
 }
-
-export const notesCore = noteOperations

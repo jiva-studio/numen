@@ -20,7 +20,7 @@ import {
   renameNoteCommand,
   settleTab,
 } from './noteHandlers'
-import { adds, calls, forgets, shows } from './vaults'
+import { addVault, renameVault, removeVault, showVault } from './vaults'
 import type { Outcome, ArtifactState } from '../../shared/artifacts'
 import { AGENT, FILES, PLEX, SETTINGS } from '../../entities/tab/workspace'
 
@@ -89,11 +89,11 @@ const carried: Record<string, CommandHandler> = {
   parts: (invocation, on) => on.settings.parts(invocation.name),
   first: (_, on, words) => navigateToPath(on.goes.opening(), on, words),
   goto: (invocation, on, words) => navigateToPath(invocation.path, on, words),
-  openVault: (invocation, on, words) => shows(invocation.vault.id, on, words),
-  newVault: (_, on, words) => adds(on, words),
-  renameVault: (invocation, on, words) => calls(invocation, on, words),
-  forgetVault: (invocation, on, words) => forgets(invocation, false, on, words),
-  eraseVault: (invocation, on, words) => forgets(invocation, true, on, words),
+  openVault: (invocation, on, words) => showVault(invocation.vault.id, on, words),
+  newVault: (_, on, words) => addVault(on, words),
+  renameVault: (invocation, on, words) => renameVault(invocation, on, words),
+  forgetVault: (invocation, on, words) => removeVault(invocation, false, on, words),
+  eraseVault: (invocation, on, words) => removeVault(invocation, true, on, words),
 }
 
 /** A command carried out. Nothing chosen does nothing at all. */

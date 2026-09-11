@@ -204,15 +204,6 @@ const {
 </template>
 
 <style scoped>
-.curve-slider__material {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: var(--numen-node-gap);
-  min-block-size: var(--curve-slider-tile);
-  margin: 0;
-}
-
 .curve-slider__island {
   display: flex;
   flex-direction: column;

@@ -8,7 +8,7 @@ import { NO_DECK, type BufferDeck } from './types'
 /**
  * A deck as the vault read it.
  */
-export const deckOf = (read: VaultDeck, mint: IdMaker = generateId): BufferDeck => {
+export const deserializeVaultDeck = (read: VaultDeck, mint: IdMaker = generateId): BufferDeck => {
   const held = new Map<string, number>()
   for (const card of read.cards) held.set(card.mark, (held.get(card.mark) ?? 0) + 1)
   const sections = read.sections.map((section) => ({
@@ -36,7 +36,7 @@ export const deckOf = (read: VaultDeck, mint: IdMaker = generateId): BufferDeck 
 /**
  * A deck as one string, which is what the tab holding it is dirty against.
  */
-export const deckBodyOf = (deck: BufferDeck): string =>
+export const serializeBufferDeckToString = (deck: BufferDeck): string =>
   JSON.stringify({
     preamble: deck.preamble,
     tail: deck.tail,
@@ -58,12 +58,13 @@ export const deckBodyOf = (deck: BufferDeck): string =>
   })
 
 /** The deck a string stands for. A string holding nothing is a deck of no cards. */
-export const deckIn = (body: string): BufferDeck => (body ? (JSON.parse(body) as BufferDeck) : NO_DECK)
+export const deserializeBufferDeckFromString = (body: string): BufferDeck =>
+  body ? (JSON.parse(body) as BufferDeck) : NO_DECK
 
 /**
  * The cards of a deck, in the shape the vault takes them.
  */
-export const cardsOf = (deck: BufferDeck): readonly VaultCard[] => {
+export const serializeBufferCardsToVaultCards = (deck: BufferDeck): readonly VaultCard[] => {
   const at = new Map(deck.sections.map((section, index) => [section.id, index]))
   return deck.cards.map(({ mark, section, heading, stencilLink, stencilPath, preamble, values }) => ({
     mark,
@@ -77,5 +78,5 @@ export const cardsOf = (deck: BufferDeck): readonly VaultCard[] => {
 }
 
 /** The sections of a deck, in the shape the vault takes them. */
-export const sectionsOf = (deck: BufferDeck): readonly VaultSection[] =>
+export const serializeBufferSectionsToVaultSections = (deck: BufferDeck): readonly VaultSection[] =>
   deck.sections.map(({ name, preamble }) => ({ name, preamble }))

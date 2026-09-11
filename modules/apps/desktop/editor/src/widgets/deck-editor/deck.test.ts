@@ -4,12 +4,12 @@ import { CARD_HEAD, cardEndOf } from '@numen/ui'
 import type { VaultDeck } from '../../entities/deck/cards'
 import {
   addCard,
-  deckBodyOf,
-  cardsOf,
+  serializeBufferDeckToString,
+  serializeBufferCardsToVaultCards,
   dropCard,
   stencilsOf,
-  deckIn,
-  deckOf,
+  deserializeBufferDeckFromString,
+  deserializeVaultDeck,
   drawnOf,
   fillCard,
   pathOfCut,
@@ -18,7 +18,7 @@ import {
   addSection,
   removeSection,
   renameSection,
-  sectionsOf,
+  serializeBufferSectionsToVaultSections,
   type BufferDeck,
 } from './deck'
 
@@ -66,7 +66,7 @@ const read = (over: Partial<VaultDeck> = {}): VaultDeck => ({
 const LLAMA = 'k7m2xq9fzp'
 const ALPACA = '3n8vr4tqch'
 
-const deck = (over: Partial<VaultDeck> = {}): BufferDeck => deckOf(read(over), minting())
+const deck = (over: Partial<VaultDeck> = {}): BufferDeck => deserializeVaultDeck(read(over), minting())
 
 describe('a deck as the window holds it', () => {
   it('knows every card by the mark the file carries for it', () => {
@@ -96,7 +96,7 @@ describe('a deck as the window holds it', () => {
     const bare = read()
     const held = deck({
       sections: [{ name: 'Roots', preamble: '' }],
-      cards: [{ ...bare.cards[0]!, sectionIndex:0 }, bare.cards[1]!],
+      cards: [{ ...bare.cards[0]!, sectionIndex: 0 }, bare.cards[1]!],
     })
     expect(held.cards.map((card) => card.section)).toStrictEqual([held.sections[0]?.id, null])
   })
@@ -107,10 +107,10 @@ describe('a deck as the window holds it', () => {
     const bare = read()
     const held = deck({
       sections: [{ name: 'Roots', preamble: '' }],
-      cards: [{ ...bare.cards[0]!, sectionIndex:7 }, bare.cards[1]!],
+      cards: [{ ...bare.cards[0]!, sectionIndex: 7 }, bare.cards[1]!],
     })
     expect(held.cards.map((card) => card.section)).toStrictEqual([null, null])
-    expect(cardsOf(held).map((card) => card.sectionIndex)).toStrictEqual([null, null])
+    expect(serializeBufferCardsToVaultCards(held).map((card) => card.sectionIndex)).toStrictEqual([null, null])
   })
 
   it('keeps the preamble, the tail and each card’s preamble as the file had them', () => {
@@ -122,15 +122,15 @@ describe('a deck as the window holds it', () => {
 
   it('is the same string read out and written back', () => {
     const held = deck()
-    expect(deckIn(deckBodyOf(held))).toStrictEqual(held)
+    expect(deserializeBufferDeckFromString(serializeBufferDeckToString(held))).toStrictEqual(held)
   })
 
   it('is a deck of no cards where nothing has been read', () => {
-    expect(deckIn('')).toStrictEqual({ preamble: '', cards: [], sections: [], tail: '' })
+    expect(deserializeBufferDeckFromString('')).toStrictEqual({ preamble: '', cards: [], sections: [], tail: '' })
   })
 
   it('hands the vault the cards without the identities it minted', () => {
-    expect(cardsOf(deck())[0]).toStrictEqual({
+    expect(serializeBufferCardsToVaultCards(deck())[0]).toStrictEqual({
       mark: LLAMA,
       sectionIndex: null,
       heading: 'Llama',
@@ -149,14 +149,14 @@ describe('a deck as the window holds it', () => {
     const bare = read()
     const held = deck({
       sections: [{ name: 'Roots', preamble: '' }, { name: 'Leaves', preamble: '' }],
-      cards: [{ ...bare.cards[0]!, sectionIndex:1 }, bare.cards[1]!],
+      cards: [{ ...bare.cards[0]!, sectionIndex: 1 }, bare.cards[1]!],
     })
-    expect(cardsOf(held).map((card) => card.sectionIndex)).toStrictEqual([1, null])
+    expect(serializeBufferCardsToVaultCards(held).map((card) => card.sectionIndex)).toStrictEqual([1, null])
   })
 
   it('hands the vault the sections without the identities it minted', () => {
     const held = deck({ sections: [{ name: 'Roots', preamble: 'about the roots\n' }] })
-    expect(sectionsOf(held)).toStrictEqual([{ name: 'Roots', preamble: 'about the roots\n' }])
+    expect(serializeBufferSectionsToVaultSections(held)).toStrictEqual([{ name: 'Roots', preamble: 'about the roots\n' }])
   })
 })
 
@@ -585,7 +585,7 @@ describe('whether two readings of a file read the same', () => {
       cards: [{ ...other.cards[0]!, values: [{ field: 'Height', text: 'about 6ft' }] }],
     }
 
-    expect(sameDeck(deck(), deckOf(wrote, minting()))).toBe(false)
+    expect(sameDeck(deck(), deserializeVaultDeck(wrote, minting()))).toBe(false)
   })
 
   // The heading is read back from the first field wherever the deck is written,
@@ -599,7 +599,7 @@ describe('whether two readings of a file read the same', () => {
       cards: [{ ...other.cards[0]!, heading: 'about 45"' }, ...other.cards.slice(1)],
     }
 
-    expect(sameDeck(deck(), deckOf(wrote, minting()))).toBe(true)
+    expect(sameDeck(deck(), deserializeVaultDeck(wrote, minting()))).toBe(true)
   })
 
   it('is not so for prose around the cards written elsewhere', () => {

@@ -14,7 +14,7 @@ import {
   type BufferDeck,
 } from './deck'
 
-export function useDeckTabActions(
+export function createDeckTabActions(
   id: string,
   deckAt: (id: string) => BufferDeck,
   turns: (id: string, deck: BufferDeck) => void,

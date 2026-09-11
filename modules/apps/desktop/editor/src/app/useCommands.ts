@@ -15,7 +15,7 @@ import type { CommandDeps, Notes } from '../features/command-palette/deps'
 import type { RunSupport } from '../features/command-palette/runs'
 import type { IndexCoverage } from '../shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '../shared/notices/messages'
-import type { fileMakers } from '../entities/tab/makers'
+import type { createFileCreators } from '../entities/tab/makers'
 import type { useWindowTabs } from '../entities/tab/windowTabs'
 import { WORDS } from '../shared/words'
 import type { NoteCreator } from '../widgets/note-editor/maker'
@@ -34,7 +34,7 @@ export interface CommandsDepsOptions {
   runs: RunSupport
   coverage: () => IndexCoverage
   making: NoteCreator
-  made: ReturnType<typeof fileMakers>
+  made: ReturnType<typeof createFileCreators>
   shown: Ref<VaultRef>
   reloads: () => void
   carrying: (path: string) => Promise<void>

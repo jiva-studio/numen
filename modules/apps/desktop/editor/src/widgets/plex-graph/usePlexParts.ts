@@ -30,6 +30,7 @@ export function usePlexParts(
       if (!mine.current) return
       parts.value = new Map([...found].map(([path, held]) => [path, asParts(held)]))
     } catch {
+      // Reading parts failed.
       if (mine.current) parts.value = new Map()
     }
   }

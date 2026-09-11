@@ -5,11 +5,11 @@
 import { computed } from 'vue'
 import { cardBlanks, cardFields, DeckEditor } from '@numen/ui'
 import type { InsertionPoint } from '@numen/ui'
-import FileConflictPrompt from '../../features/file-conflict/FileConflictPrompt.vue'
-import { conflictIn } from '../../features/file-conflict/flushing'
-import type { DeckTabState } from './types'
+import FileConflictPrompt from '../../../features/file-conflict/FileConflictPrompt.vue'
+import { conflictIn } from '../../../features/file-conflict/flushing'
+import type { DeckTabState } from '../types'
 import DeckScheduleBar from './DeckScheduleBar.vue'
-import { WORDS as words } from '../../entities/deck/words'
+import { WORDS as words } from '../../../entities/deck/words'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: DeckTabState }>()

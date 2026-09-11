@@ -54,6 +54,7 @@ export function createNoteQueue(
     try {
       answered = await core.read(path)
     } catch {
+      // Core read failed.
       turn(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
       return
     }
@@ -82,6 +83,7 @@ export function createNoteQueue(
     try {
       answered = await core.write(path, body, seen)
     } catch {
+      // Core write failed.
       turn(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })
       return
     }

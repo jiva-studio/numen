@@ -15,12 +15,12 @@ import { createMediaTypeProbe } from '../entities/media/player'
 import { WORDS as words } from '../shared/words'
 import { AGENT, FILES, PLEX, begun } from '../entities/tab/workspace'
 
-import { useEditing } from './useEditing'
+import { useNoteEditors } from './useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
 import { useAttention } from './useAttention'
 import { useCommands } from './useCommands'
-import { useWindowShowing } from './useWindowShowing'
+import { useWindowDisplay } from './useWindowDisplay'
 import { useWindowNotices } from './useWindowNotices'
 import { useWindowKinds } from './useWindowKinds'
 import { useAppHotkeys } from './useAppHotkeys'
@@ -36,7 +36,7 @@ export const useWindow = () => {
   const runs = runSupport()
   const plays = createMediaTypeProbe()
 
-  const editing = useEditing({
+  const editing = useNoteEditors({
     core,
     log,
     puts,
@@ -44,7 +44,7 @@ export const useWindow = () => {
     day: () => settings.dayBegins.day.value,
   })
 
-  const window = useWindowShowing(core, {
+  const window = useWindowDisplay(core, {
     told: async (paths, renamed) => {
       editing.notes.changed(paths, renamed)
       editing.decks.changed(paths, renamed)
@@ -204,13 +204,10 @@ export const useWindow = () => {
 
   return {
     carries,
-    artifactStates: carries,
     commands: commandsModule.commands,
     doing: commandsModule.doing,
-    tasks: commandsModule.doing,
     failure: window.failure,
     going: editing.going,
-    navigate: editing.going,
     held,
     layout,
     listed: vaultsModule.listed,
@@ -218,12 +215,9 @@ export const useWindow = () => {
     notices,
     palette: commandsModule.palette,
     places: kinds.places,
-    openTabs: kinds.places,
     shut,
-    closeTab: shut,
     tabIcon: attention.tabIcon,
     titled: editing.titled,
     where,
-    currentVault: where,
   }
 }

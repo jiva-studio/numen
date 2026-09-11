@@ -3,31 +3,31 @@
  */
 import { computed } from 'vue'
 import type { PlexShowing } from '@numen/ui'
-import type { PathRename } from '../../shared/core'
-import type { Cards } from '../../entities/deck/cards'
-import type { Store } from '../../features/command-palette/deps'
-import type { Presets } from '../preset-editor/core'
-import { answers } from './answers'
-import { reader } from './reader'
-import { useDeckScheduleWiring } from './useDeckScheduleWiring'
-import { useDeckTabActions } from './useDeckTabActions'
-import { openNotes } from '../note-editor/notes'
-import { markOf } from '../note-editor/tab'
-import type { TabKind, WindowHandle } from '../../entities/tab/windowTabs'
-import type { FileOpeners } from '../../entities/tab/openers'
-import { DECK } from '../../entities/tab/workspace'
-import DeckTab from './DeckTab.vue'
+import type { PathRename } from '../../../shared/core'
+import type { Cards } from '../../../entities/deck/cards'
+import type { Store } from '../../../features/command-palette/deps'
+import type { Presets } from '../../preset-editor/core'
+import { answers } from '../answers'
+import { reader } from '../reader'
+import { useDeckScheduleSync } from './useDeckScheduleSync'
+import { createDeckTabActions } from '../deckTabActions'
+import { openNotes } from '../../note-editor/notes'
+import { markOf } from '../../note-editor/tab'
+import type { TabKind, WindowHandle } from '../../../entities/tab/windowTabs'
+import type { FileOpeners } from '../../../entities/tab/openers'
+import { DECK } from '../../../entities/tab/workspace'
+import DeckTab from '../components/DeckTab.vue'
 import {
   drawnSectionsOf,
-  deckBodyOf,
-  cardsOf,
-  deckIn,
-  deckOf,
+  serializeBufferDeckToString,
+  serializeBufferCardsToVaultCards,
+  deserializeBufferDeckFromString,
+  deserializeVaultDeck,
   drawnOf,
-  sectionsOf,
+  serializeBufferSectionsToVaultSections,
   type BufferDeck,
-} from './deck'
-import type { DeckTabState } from './types'
+} from '../deck'
+import type { DeckTabState } from '../types'
 
 export type { DeckTabState }
 
@@ -42,7 +42,7 @@ export function useDeckTabs(
   const store = openNotes({
     read: async (path) => {
       const answer = await cards.readDeck(path)
-      const deck = answer.deck ? deckOf(answer.deck) : null
+      const deck = answer.deck ? deserializeVaultDeck(answer.deck) : null
       const error = answer.error
       said.reads(path, {
         problems: answer.deck?.problems ?? [],
@@ -51,16 +51,16 @@ export function useDeckTabs(
         title: answer.deck?.title ?? null,
       })
       if (error !== null) return { body: '', error }
-      return { body: deck ? deckBodyOf(deck) : '', error: null, at: answer.at }
+      return { body: deck ? serializeBufferDeckToString(deck) : '', error: null, at: answer.at }
     },
     write: async (path, body, seen) => {
-      const deck = deckIn(body)
+      const deck = deserializeBufferDeckFromString(body)
       const answer = await cards.writeDeck(
         path,
         {
           preamble: deck.preamble,
-          cards: cardsOf(deck),
-          sections: sectionsOf(deck),
+          cards: serializeBufferCardsToVaultCards(deck),
+          sections: serializeBufferSectionsToVaultSections(deck),
           tail: deck.tail,
         },
         seen?.at ?? null,
@@ -79,19 +79,19 @@ export function useDeckTabs(
   const read = reader(store, said.problemsAt)
   const { deckAt, marksAt } = read
 
-  const wiring = useDeckScheduleWiring(cards, presets, store)
+  const wiring = useDeckScheduleSync(cards, presets, store)
   const { offers, stencils, lists, listsAgain, scheduled } = wiring
   const { choices, listsPresets, listsPresetsAgain, asks, schedules, scheduledAt } = scheduled
 
   const updateDeckState = (id: string, deck: BufferDeck): void => {
-    const body = deckBodyOf(deck)
+    const body = serializeBufferDeckToString(deck)
     read.holds(id, body, deck)
     store.typed(id, body)
   }
 
   const createDeckTabState = (id: string): DeckTabState => {
     const deck = computed(() => deckAt(id))
-    const actions = useDeckTabActions(id, deckAt, updateDeckState, () => offers.value)
+    const actions = createDeckTabActions(id, deckAt, updateDeckState, () => offers.value)
 
     return {
       id,

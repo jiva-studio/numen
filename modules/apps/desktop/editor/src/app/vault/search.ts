@@ -7,7 +7,7 @@ import type { SearchDeps } from '../../features/command-palette/search'
 
 export type SearchOperations = SearchDeps
 
-export const searchOperations: SearchOperations = {
+export const searchCore: SearchOperations = {
   names: async (query, limit) => {
     const answer = await search.searchNames({ query, limit })
     return answer.found.map((one) => ({
@@ -35,5 +35,3 @@ export const searchOperations: SearchOperations = {
     }))
   },
 }
-
-export const searchCore = searchOperations

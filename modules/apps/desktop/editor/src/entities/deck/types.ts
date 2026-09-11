@@ -28,7 +28,7 @@ export type Fault =
 /**
  * Something in a file that could not be acted on and was not guessed at.
  */
-export interface Problem {
+export interface DeckProblem {
   readonly fault: Fault
   /** The card it stands against, counted from the first, or nothing. */
   readonly card: number | null
@@ -90,7 +90,7 @@ export interface VaultDeck extends Surrounds {
   readonly cards: readonly VaultCard[]
   /** The sections, in the order they stand in the note. */
   readonly sections: readonly VaultSection[]
-  readonly problems: readonly Problem[]
+  readonly problems: readonly DeckProblem[]
 }
 
 /** One way a stencil shows a card. */
@@ -108,7 +108,7 @@ export interface VaultStencil extends Surrounds {
   readonly title: string
   readonly fields: readonly string[]
   readonly faces: readonly VaultFace[]
-  readonly problems: readonly Problem[]
+  readonly problems: readonly DeckProblem[]
 }
 
 /** What reading a deck came back with. */
@@ -168,26 +168,11 @@ export interface FieldRenameResult {
 }
 
 /**
- * The stencils and the decks of the vault this window is showing.
+ * Deck persistence and lifecycle operations.
  */
-export interface Cards {
-  /** Every stencil in the vault, by what it is called and what it asks for. */
-  stencils(limit?: number): Promise<{ stencils: readonly StencilSummary[]; held: number }>
+export interface DeckService {
   /** A deck of no cards, filed in that folder under a name made from the title. */
   createDeck(title: string, folder: string): Promise<CreateResult>
-  /**
-   * A stencil declaring those fields and showing no face, the same way.
-   */
-  createStencil(title: string, folder: string, fields: readonly string[]): Promise<CreateResult>
-  /**
-   * A field of a stencil under another name, wherever that name is written.
-   */
-  renameField(
-    path: string,
-    from: string,
-    to: string,
-    seen: string | null,
-  ): Promise<FieldRenameResult>
   readDeck(path: string): Promise<DeckReadResult>
   /**
    * Sections and cards into a deck, in the order they are given.
@@ -202,6 +187,27 @@ export interface Cards {
     },
     seen: string | null,
   ): Promise<DeckWriteResult>
+}
+
+/**
+ * Stencil metadata and schema operations.
+ */
+export interface StencilService {
+  /** Every stencil in the vault, by what it is called and what it asks for. */
+  stencils(limit?: number): Promise<{ stencils: readonly StencilSummary[]; held: number }>
+  /**
+   * A stencil declaring those fields and showing no face, the same way.
+   */
+  createStencil(title: string, folder: string, fields: readonly string[]): Promise<CreateResult>
+  /**
+   * A field of a stencil under another name, wherever that name is written.
+   */
+  renameField(
+    path: string,
+    from: string,
+    to: string,
+    seen: string | null,
+  ): Promise<FieldRenameResult>
   readStencil(path: string): Promise<StencilReadResult>
   /** Fields and faces into a stencil, making the file where there is none. */
   writeStencil(
@@ -211,3 +217,8 @@ export interface Cards {
     seen: string | null,
   ): Promise<StencilWriteResult>
 }
+
+/**
+ * The stencils and the decks of the vault this window is showing.
+ */
+export interface Cards extends DeckService, StencilService {}

@@ -16,17 +16,17 @@ import {
   stencilIn,
   type BufferStencil,
 } from './stencil'
-import { marksOf, sameMarks, type Marks } from '../../entities/deck/marks'
-import type { Problem } from '../../entities/deck/cards'
+import { createMarks, areMarksEqual, type Marks } from '../../entities/deck/marks'
+import type { DeckProblem } from '../../entities/deck/cards'
 
 export function createStencilFields(
   getBody: (id: string) => string,
   onTyped: (id: string, body: string) => void,
-  getProblems: (id: string) => readonly Problem[],
+  getProblems: (id: string) => readonly DeckProblem[],
   renameFieldOnWire: (id: string, field: string, name: string) => void,
 ) {
   const parsed = new Map<string, { body: string; stencil: BufferStencil }>()
-  const marked = new Map<string, { problems: readonly Problem[]; marks: Marks }>()
+  const marked = new Map<string, { problems: readonly DeckProblem[]; marks: Marks }>()
 
   const getStencil = (id: string): BufferStencil => {
     const body = getBody(id)
@@ -42,12 +42,12 @@ export function createStencilFields(
     const problems = getProblems(id)
     const held = marked.get(id)
     if (held && held.problems === problems) return held.marks
-    const read = marksOf(
+    const read = createMarks(
       problems,
       [],
       getStencil(id).faces.map((face) => face.id),
     )
-    const marks = held && sameMarks(held.marks, read) ? held.marks : read
+    const marks = held && areMarksEqual(held.marks, read) ? held.marks : read
     marked.set(id, { problems, marks })
     return marks
   }

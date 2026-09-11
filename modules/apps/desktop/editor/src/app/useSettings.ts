@@ -15,7 +15,7 @@ import { reviewSetting } from '../entities/settings/review'
 import { OFF, ON, SYNCING, syncSetting } from '../entities/settings/sync'
 import { HANGING, PARTS, useHangingSetting } from '../entities/settings/hanging'
 import { settingsStore } from '../entities/settings/store'
-import { settling } from '../widgets/settings/useSettingsTab'
+import { useSettingsTab } from '../widgets/settings/composables/useSettingsTab'
 import { createSettingsFileTabKind } from '../widgets/text-editor/useTextEditor'
 import type { PaletteLists } from '../features/command-palette/lists'
 import type { Core } from '../shared/core'
@@ -42,7 +42,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
 
   const file = createSettingsFileTabKind(held.handle, core, () => void rest.start())
 
-  const configured = settling(held.handle, {
+  const configured = useSettingsTab(held.handle, {
     themes: dressed.list,
     applied: dressed.applied,
     mode: dressed.mode,

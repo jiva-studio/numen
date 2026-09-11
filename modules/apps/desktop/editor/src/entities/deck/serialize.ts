@@ -7,7 +7,7 @@ import type {
 } from '@numen/protocol'
 import type {
   Fault,
-  Problem,
+  DeckProblem,
   StencilSummary,
   VaultCard,
   VaultDeck,
@@ -30,7 +30,7 @@ const faulted: Record<Faults, Fault> = {
 }
 
 /** One problem, with where it stands kept as a number or as nothing. */
-export const problemOf = (one: ProblemMessage): Problem => ({
+export const deserializeDeckProblem = (one: ProblemMessage): DeckProblem => ({
   fault: faulted[one.fault],
   card: one.card ?? null,
   face: one.face ?? null,
@@ -39,7 +39,7 @@ export const problemOf = (one: ProblemMessage): Problem => ({
 })
 
 /** One stencil of the list, kept as the plain value the window carries it as. */
-export const offered = (one: {
+export const deserializeStencilSummary = (one: {
   path: string
   title: string
   fields: string[]
@@ -49,7 +49,7 @@ export const offered = (one: {
   fields: one.fields,
 })
 
-export const carded = (one: CardMessage): VaultCard => ({
+export const deserializeCard = (one: CardMessage): VaultCard => ({
   mark: one.mark,
   sectionIndex: one.sectionIndex ?? null,
   heading: one.heading,
@@ -62,7 +62,7 @@ export const carded = (one: CardMessage): VaultCard => ({
 /**
  * One card in the shape the schema carries it.
  */
-export const carding = (one: VaultCard) => ({
+export const serializeCardToWire = (one: VaultCard) => ({
   mark: one.mark,
   ...(one.sectionIndex === null ? {} : { sectionIndex: one.sectionIndex }),
   heading: one.heading,
@@ -72,30 +72,28 @@ export const carding = (one: VaultCard) => ({
 })
 
 /** A deck as the window carries it. */
-export const decked = (one: DeckMessage): VaultDeck => ({
+export const deserializeDeck = (one: DeckMessage): VaultDeck => ({
   path: one.path,
   title: one.title,
   preamble: one.preamble,
-  cards: one.cards.map(carded),
+  cards: one.cards.map(deserializeCard),
   sections: one.sections.map((section) => ({ name: section.name, preamble: section.preamble })),
   tail: one.tail,
-  problems: one.problems.map(problemOf),
+  problems: one.problems.map(deserializeDeckProblem),
 })
 
-/** A stencil as the window carries it. */
-export const stencilled = (one: StencilMessage): VaultStencil => ({
+/** One stencil as the vault reads it. */
+export const deserializeStencil = (one: StencilMessage): VaultStencil => ({
   path: one.path,
   title: one.title,
-  fields: one.fields,
   preamble: one.preamble,
-  faces: one.faces.map(
-    (face): VaultFace => ({
-      name: face.name,
-      preamble: face.preamble,
-      front: face.front,
-      back: face.back,
-    }),
-  ),
   tail: one.tail,
-  problems: one.problems.map(problemOf),
+  fields: one.fields,
+  faces: one.faces.map((face) => ({
+    name: face.name,
+    preamble: face.preamble,
+    front: face.front,
+    back: face.back,
+  })),
+  problems: one.problems.map(deserializeDeckProblem),
 })

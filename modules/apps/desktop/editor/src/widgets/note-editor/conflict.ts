@@ -6,14 +6,12 @@ import type { PathRename } from '../../shared/core'
 import type { ConflictWords } from './noteTypes'
 import { ERROR_MESSAGES, STALE_CONFLICT } from './words'
 
-export const stale = STALE_CONFLICT
-
 export function isStale(tab: Tab): boolean {
   return stateOf(tab) === 'stale'
 }
 
 export function staleOf(tab: Tab | undefined): ConflictWords | null {
-  return tab && isStale(tab) ? stale : null
+  return tab && isStale(tab) ? STALE_CONFLICT : null
 }
 
 export function getErrorMessage(tab: Tab | undefined): string {

@@ -8,13 +8,13 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Cards, VaultFace, Problem } from '../../entities/deck/cards'
-import { fileOpeners } from '../../entities/tab/openers'
-import { useWindowTabs } from '../../entities/tab/windowTabs'
-import { STENCIL } from '../../entities/tab/workspace'
+import type { Cards, VaultFace, DeckProblem } from '../../../entities/deck/cards'
+import { fileOpeners } from '../../../entities/tab/openers'
+import { useWindowTabs } from '../../../entities/tab/windowTabs'
+import { STENCIL } from '../../../entities/tab/workspace'
 import StencilTab from './StencilTab.vue'
-import { useStencilTabs, type StencilTabState } from './useStencilTabs'
-import { WORDS as words } from '../../entities/deck/words'
+import { useStencilTabs, type StencilTabState } from '../composables/useStencilTabs'
+import { WORDS as words } from '../../../entities/deck/words'
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => fileOpeners({ fileKinds: async () => new Map() })
@@ -27,7 +27,7 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 enableAutoUnmount(afterEach)
 
 /** A window with one stencil open, drawn. */
-const drawn = async (problems: readonly Problem[] = []) => {
+const drawn = async (problems: readonly DeckProblem[] = []) => {
   /** Each field rename the editor asked the vault for. */
   const renamed: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
@@ -75,7 +75,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   return { window, tab, renamed }
 }
 
-const missing: Problem = {
+const missing: DeckProblem = {
   fault: 'faceMissingASide',
   card: null,
   face: 1,
@@ -83,7 +83,7 @@ const missing: Problem = {
   text: 'this face has no back',
 }
 
-const twice: Problem = {
+const twice: DeckProblem = {
   fault: 'fieldDeclaredTwice',
   card: null,
   face: null,

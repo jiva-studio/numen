@@ -3,10 +3,10 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { settling, type Installation } from './useSettingsTab'
-import { WORDS as words } from './words'
-import { SETTINGS } from '../../entities/tab/workspace'
-import type { WindowHandle } from '../../entities/tab/windowTabs'
+import { useSettingsTab, type Installation } from './useSettingsTab'
+import { WORDS as words } from '../words'
+import { SETTINGS } from '../../../entities/tab/workspace'
+import type { WindowHandle } from '../../../entities/tab/windowTabs'
 
 /** A window, writing down what it was asked to open. */
 const window_ = () => {
@@ -50,20 +50,20 @@ const installation = (): Installation =>
 describe('the settings tab', () => {
   it('holds the installation the window already keeps', () => {
     const held = installation()
-    const settings = settling(window_().handle, held)
+    const settings = useSettingsTab(window_().handle, held)
     expect(settings.state.installation).toBe(held)
     expect(settings.kind.opens('')).toBe(settings.state)
   })
 
   it('is called what the settings are called', () => {
-    const settings = settling(window_().handle, installation())
+    const settings = useSettingsTab(window_().handle, installation())
     expect(settings.kind.called?.(settings.state)).toBe(words.settings)
   })
 
   // The settings are the installation's and not a file's, so every way to them
   // arrives at one tab.
   it('is one tab to a window, whatever it is opened on', () => {
-    const settings = settling(window_().handle, installation())
+    const settings = useSettingsTab(window_().handle, installation())
     expect(settings.kind.kind).toBe(SETTINGS)
     expect(settings.kind.identity?.('anything')).toBe(SETTINGS)
     expect(settings.kind.identity?.('something else')).toBe(SETTINGS)
@@ -71,7 +71,7 @@ describe('the settings tab', () => {
 
   it('is put in front when the window is asked to show it', () => {
     const { handle, opened } = window_()
-    settling(handle, installation()).shows()
+    useSettingsTab(handle, installation()).shows()
     expect(opened).toEqual([SETTINGS])
   })
 })

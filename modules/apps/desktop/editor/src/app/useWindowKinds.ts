@@ -20,10 +20,10 @@ import { invocationOf } from '../features/command-palette/target'
 import { does, type CommandDeps } from '../features/command-palette/handlers'
 import { lands, type DestinationDeps } from '../features/command-palette/destination'
 import type { FileOpeners } from '../entities/tab/openers'
-import { fileMakers } from '../entities/tab/makers'
+import { createFileCreators } from '../entities/tab/makers'
 import type { useWindowTabs } from '../entities/tab/windowTabs'
 import type { MessageLog } from '../shared/notices/messages'
-import { agentKind, useAgentConversation } from '../widgets/agent-chat/useAgentConversation'
+import { agentKind, useAgentConversation } from '../widgets/agent-chat/composables/useAgentConversation'
 import { documentKind, useDocumentTab } from '../widgets/document-viewer/useDocumentTab'
 import { bookKind, useBookTab } from '../widgets/book-reader/useBookTab'
 import { recordingKind, type MediaTabDeps } from '../entities/media/kind'
@@ -41,10 +41,10 @@ import { WORDS as words } from '../shared/words'
 import { CONVERSATION, minted } from '../entities/tab/workspace'
 import type { Source, Core } from '../shared/core'
 import type { runSupport } from '../features/command-palette/runs'
-import type { useEditing } from './useEditing'
+import type { useNoteEditors } from './useNoteEditors'
 import type { useSettings } from './useSettings'
 import type { useVaults } from './useVaults'
-import type { useWindowShowing } from './useWindowShowing'
+import type { useWindowDisplay } from './useWindowDisplay'
 
 export interface WindowKindsDeps {
   core: Core
@@ -53,10 +53,10 @@ export interface WindowKindsDeps {
   held: ReturnType<typeof useWindowTabs>
   runs: ReturnType<typeof runSupport>
   plays: ReturnType<typeof createMediaTypeProbe>
-  editing: ReturnType<typeof useEditing>
+  editing: ReturnType<typeof useNoteEditors>
   settings: ReturnType<typeof useSettings>
   vaults: ReturnType<typeof useVaults>
-  window: ReturnType<typeof useWindowShowing>
+  window: ReturnType<typeof useWindowDisplay>
   where: () => CommandTarget
   carries: (id: string, target: CommandTarget) => void
   doing: () => CommandDeps
@@ -173,7 +173,7 @@ export function useWindowKinds({
     editing.notes.changed([path])
   }
 
-  const made = fileMakers(
+  const made = createFileCreators(
     {
       createDeck: (title, folder) => cards.createDeck(title, folder),
       createStencil: (title, folder, fields) => cards.createStencil(title, folder, fields),

@@ -18,7 +18,6 @@ export const showVault = async (id: string, on: CommandDeps, words: Words): Prom
   if (error) return on.says(words.vaultErrors[error], 'error')
   on.vaults.reloads()
 }
-export const shows = showVault
 
 /**
  * A folder chosen on this machine, added as a vault and opened. A person who
@@ -32,7 +31,6 @@ export const addVault = async (on: CommandDeps, words: Words): Promise<void> => 
   if (!answer.vault) return
   await showVault(answer.vault.id, on, words)
 }
-export const adds = addVault
 
 /** A vault called something else. Its folder keeps the name it has on disk. */
 export const renameVault = async (
@@ -45,7 +43,6 @@ export const renameVault = async (
   if (answer.error) return on.says(words.vaultErrors[answer.error], 'error')
   if (answer.vault) on.vaults.calls({ id: answer.vault.id, name: answer.vault.name })
 }
-export const calls = renameVault
 
 /**
  * A vault taken off the list. Erasing it puts the folder in the trash this
@@ -61,5 +58,4 @@ export const removeVault = async (
   const error = await on.vaults.remove(id, erase)
   if (error) on.says(words.vaultErrors[error], 'error')
 }
-export const forgets = removeVault
 

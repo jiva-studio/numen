@@ -5,11 +5,11 @@
  */
 import { computed } from 'vue'
 import { Button } from '@numen/ui'
-import type { SettingsTabState } from './useSettingsTab'
+import type { SettingsTabState } from '../composables/useSettingsTab'
 import WindowSettingsSection from './WindowSettingsSection.vue'
 import MediaSettingsSection from './MediaSettingsSection.vue'
 import AgentSettingsSection from './AgentSettingsSection.vue'
-import { WORDS as words } from './words'
+import { WORDS as words } from '../words'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: SettingsTabState }>()

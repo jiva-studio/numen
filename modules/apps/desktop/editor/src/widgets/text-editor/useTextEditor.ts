@@ -28,8 +28,7 @@ export interface SettingsFileTabDeps {
 }
 
 /** What one tab of the settings file holds. */
-export type SettingsFileTabState = ReturnType<typeof useSettingsFileTab>
-export const useTextEditor = useSettingsFileTab
+export type SettingsFileTabState = ReturnType<typeof useTextEditor>
 
 /**
  * The file as it stands, what is typed over it, and what is wrong with what was
@@ -37,7 +36,7 @@ export const useTextEditor = useSettingsFileTab
  * last read, and a file that moved past it stands stale until the person
  * keeps theirs or takes the file's.
  */
-export function useSettingsFileTab(core: SettingsFileTabDeps, reads: () => void) {
+export function useTextEditor(core: SettingsFileTabDeps, reads: () => void) {
   /** The bytes the file held when it was last read. */
   const held = ref('')
   const typed = ref('')
@@ -139,7 +138,7 @@ export function createSettingsFileTabKind(
   const kind: TabKind<SettingsFileTabState, typeof SETTINGS_FILE> = {
     kind: SETTINGS_FILE,
     opens: () => {
-      const state = useSettingsFileTab(core, reads)
+      const state = useTextEditor(core, reads)
       void state.again()
       return state
     },

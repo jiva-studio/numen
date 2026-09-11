@@ -5,13 +5,13 @@
  * write, and this is a second way to the same values. A row here and the
  * command of the same name in the palette go through one piece of code.
  */
-import type { Ref } from 'vue'
-import type { Model, SettingEdit } from '../../entities/settings/configuration'
-import type { TabKind, WindowHandle } from '../../entities/tab/windowTabs'
-import { SETTINGS } from '../../entities/tab/workspace'
-import type { Bounds, Mode, Ranges, Sizes, Theme } from '../../entities/settings/theme'
-import SettingsTab from './SettingsTab.vue'
-import { WORDS as words } from './words'
+import { ref, type Ref } from 'vue'
+import type { Model, SettingEdit } from '../../../entities/settings/configuration'
+import type { TabKind, WindowHandle } from '../../../entities/tab/windowTabs'
+import { SETTINGS } from '../../../entities/tab/workspace'
+import type { Bounds, Mode, Ranges, Sizes, Theme } from '../../../entities/settings/theme'
+import SettingsTab from '../components/SettingsTab.vue'
+import { WORDS as words } from '../words'
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
@@ -62,12 +62,16 @@ export interface SettingsTabState {
 }
 
 export function useSettingsTab(handle: WindowHandle, installation: Installation) {
+  const isOpen = ref(false)
   const state: SettingsTabState = { installation }
 
   /** One settings tab to a window: the settings are the installation's, not a file's. */
   const kind: TabKind<SettingsTabState, typeof SETTINGS> = {
     kind: SETTINGS,
-    opens: () => state,
+    opens: () => {
+      isOpen.value = true
+      return state
+    },
     called: () => words.settings,
     getTitle: () => words.settings,
     draws: SettingsTab,
@@ -75,9 +79,10 @@ export function useSettingsTab(handle: WindowHandle, installation: Installation)
   }
 
   /** The settings put in front of the person. */
-  const shows = (): void => void handle.opens(SETTINGS)
+  const shows = (): void => {
+    isOpen.value = true
+    void handle.opens(SETTINGS)
+  }
 
-  return { kind, state, shows }
+  return { kind, state, shows, isOpen }
 }
-
-export const settling = useSettingsTab
