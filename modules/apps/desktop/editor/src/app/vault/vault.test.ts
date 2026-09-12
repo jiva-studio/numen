@@ -149,7 +149,7 @@ describe('files domain', () => {
 })
 
 describe('settings domain', () => {
-  it('handles syncing, hanging, settings, settingsFile, and reviewing', async () => {
+  it('handles the sync, hanging, settings, settings-file and review settings', async () => {
     const writtenSettings = JSON.stringify({
       naming: { sync_title_and_filename: true },
       appearance: { hang_parts_under_a_node: true, parts_under_a_node: 3 },
@@ -191,7 +191,7 @@ describe('settings domain', () => {
 })
 
 describe('notes domain', () => {
-  it('handles neighbourhood, opening, rename, headings, and resolve', async () => {
+  it('handles neighbourhood, the opening path, rename, headings, and resolve', async () => {
     asked.getNeighbourhood.mockResolvedValue({
       focus: { path: 'a.md', title: 'A' },
       related: [],
@@ -226,7 +226,7 @@ describe('notes domain', () => {
 })
 
 describe('session domain', () => {
-  it('handles state, agentUnreachable, attending, and flushed', async () => {
+  it('handles state, agentUnreachable, setFocus, and flushed', async () => {
     asked.getVaultState.mockResolvedValue({
       id: 'v1',
       name: 'V1',
