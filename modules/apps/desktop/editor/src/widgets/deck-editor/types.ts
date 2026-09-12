@@ -3,9 +3,9 @@
  */
 import type { ComputedRef } from 'vue'
 import type { OpenNote } from '@/entities/note'
-import type { Marks } from '@/entities/deck/marks'
-import type { Surrounds } from '@/entities/deck/surrounds'
-import type { Value } from '@/entities/deck/cards'
+import type { Marks } from '@/entities/deck'
+import type { Surrounds } from '@/entities/deck'
+import type { Value } from '@/entities/deck'
 import type { DeckCard, DeckSection, Stencil } from '@numen/ui'
 import type { Choice, DeckPreset } from './model/useDeckSchedule'
 

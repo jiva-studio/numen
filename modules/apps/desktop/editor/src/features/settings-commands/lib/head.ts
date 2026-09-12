@@ -5,7 +5,7 @@
  * of the three it is: the mode, the theme's own file, and the two multipliers.
  * The theme's stands after the mode's and the sizes after both.
  */
-import type { Sizes } from '@/entities/settings/theme'
+import type { Sizes } from '@/entities/settings'
 
 /** The elements the page carries: the mode's, the theme's, and the sizes'. */
 export interface StyleElements {

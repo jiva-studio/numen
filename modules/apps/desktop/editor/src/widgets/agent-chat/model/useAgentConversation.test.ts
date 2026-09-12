@@ -10,8 +10,8 @@ import type { Conversation, Turn } from '@numen/ui'
 import { firstLine, useAgentConversation, type AgentTabState } from './useAgentConversation'
 import { agentKind } from '../kind'
 import type { Span } from '@/shared/span'
-import { useWindowTabs } from '@/entities/tab/windowTabs'
-import { AGENT } from '@/entities/tab/workspace'
+import { useWindowTabs } from '@/entities/tab'
+import { AGENT } from '@/entities/tab'
 
 /** A talk that records what it was asked, and the places its lines name. */
 const talked = (places: Record<string, { path: string; span: Span }> = {}) => {

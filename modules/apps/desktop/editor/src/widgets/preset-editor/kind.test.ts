@@ -24,8 +24,8 @@ import {
 } from './types'
 import { BOUNDS } from './drawn'
 import type { ErrorCode } from '@/shared/errors'
-import type { WindowHandle } from '@/entities/tab/windowTabs'
-import type { FileOpeners } from '@/entities/tab/openers'
+import type { WindowHandle } from '@/entities/tab'
+import type { FileOpeners } from '@/entities/tab'
 import { WORDS as words } from './words'
 
 const point = (over: Partial<Point> = {}): Point => ({

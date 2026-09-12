@@ -9,7 +9,7 @@ import SettingRow from './setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../model/useSettingsTab'
 import AT from '../paths.json'
 import { choicesFor } from '../models'
-import { write } from '@/entities/settings/write'
+import { write } from '@/entities/settings'
 import { WORDS as words } from '../words'
 
 // --- Props & Emits ---

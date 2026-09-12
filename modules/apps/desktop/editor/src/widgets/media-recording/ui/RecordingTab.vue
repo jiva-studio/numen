@@ -8,9 +8,9 @@
  */
 import { computed } from 'vue'
 import { Player } from '@numen/ui'
-import MediaLayout from '@/entities/media/MediaLayout.vue'
-import { DELETE_TEXT, PROOFREAD, WORDS as words } from '@/entities/media/words'
-import type { MediaTabState } from '@/entities/media/kind'
+import { MediaLayout } from '@/entities/media'
+import { DELETE_TEXT, PROOFREAD, WORDS as words } from '@/entities/media'
+import type { MediaTabState } from '@/entities/media'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: MediaTabState }>()

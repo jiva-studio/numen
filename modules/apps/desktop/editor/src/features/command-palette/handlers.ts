@@ -22,7 +22,7 @@ import {
 } from './noteHandlers'
 import { addVault, renameVault, removeVault, showVault } from './vaults'
 import type { Outcome, ArtifactState } from '@/shared/artifacts'
-import { AGENT, FILES, PLEX, SETTINGS } from '@/entities/tab/workspace'
+import { AGENT, FILES, PLEX, SETTINGS } from '@/entities/tab'
 
 /** What each command comes to. A command with no entry here does nothing. */
 const carried: Record<string, CommandHandler> = {

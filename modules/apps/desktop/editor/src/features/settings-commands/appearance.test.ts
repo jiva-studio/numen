@@ -8,7 +8,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { StepGroup } from '@/features/command-palette/@x/settings-commands'
-import type { Appearance, Themes } from '@/entities/settings/theme'
+import type { Appearance, Themes } from '@/entities/settings'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from './lib/head'
 import { INTERFACE_SCALE, TEXT_SCALE, windowAppearance } from './appearance'
 import { WORDS as words } from '@/shared/words'

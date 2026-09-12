@@ -7,7 +7,7 @@ import type { ArtifactStates } from '@/shared/artifacts'
 import type { VaultList } from '@/shared/vaults'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog } from '@/shared/notices/messages'
-import type { VaultRef } from '@/features/command-palette/target'
+import type { VaultRef } from '@/features/command-palette'
 import { WORDS } from '@/shared/words'
 import type { VaultCore } from './vault'
 

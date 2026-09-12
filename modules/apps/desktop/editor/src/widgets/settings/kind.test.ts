@@ -6,8 +6,8 @@ import { ref } from 'vue'
 import { useSettingsTab } from './kind'
 import type { Installation } from './model/useSettingsTab'
 import { WORDS as words } from './words'
-import { SETTINGS } from '@/entities/tab/workspace'
-import type { WindowHandle } from '@/entities/tab/windowTabs'
+import { SETTINGS } from '@/entities/tab'
+import type { WindowHandle } from '@/entities/tab'
 
 /** A window, writing down what it was asked to open. */
 const window_ = () => {

@@ -4,13 +4,13 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { ErrorCode } from '@/shared/errors'
-import type { Cards, VaultFace, DeckProblem, FieldRenameResult } from '@/entities/deck/cards'
-import { fileOpeners } from '@/entities/tab/openers'
-import { useWindowTabs } from '@/entities/tab/windowTabs'
-import { STENCIL } from '@/entities/tab/workspace'
+import type { Cards, VaultFace, DeckProblem, FieldRenameResult } from '@/entities/deck'
+import { fileOpeners } from '@/entities/tab'
+import { useWindowTabs } from '@/entities/tab'
+import { STENCIL } from '@/entities/tab'
 import { ERRORS } from '@/shared/words'
 import { useStencilTabs, type StencilTabState } from './kind'
-import { WORDS as words } from '@/entities/deck/words'
+import { WORDS as words } from '@/entities/deck'
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => fileOpeners({ fileKinds: async () => new Map() })

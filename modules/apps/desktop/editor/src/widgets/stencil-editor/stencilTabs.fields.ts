@@ -16,8 +16,8 @@ import {
   stencilIn,
   type BufferStencil,
 } from './stencil'
-import { createMarks, areMarksEqual, type Marks } from '@/entities/deck/marks'
-import type { DeckProblem } from '@/entities/deck/cards'
+import { createMarks, areMarksEqual, type Marks } from '@/entities/deck'
+import type { DeckProblem } from '@/entities/deck'
 
 export function createStencilFields(
   getBody: (id: string) => string,

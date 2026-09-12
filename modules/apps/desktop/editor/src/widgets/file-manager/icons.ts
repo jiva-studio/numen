@@ -6,7 +6,7 @@
 import { File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
 import type { Entry } from '@/shared/file'
 import { iconOfSource } from '@/shared/icons'
-import { iconOfNote } from '@/entities/note/icons'
+import { iconOfNote } from '@/entities/note'
 
 export const iconOfEntry = (entry: Entry | null | undefined, open: boolean): LucideIcon => {
   if (!entry) return File

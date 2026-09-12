@@ -7,7 +7,7 @@
  * run over it.
  */
 import type { MenuItem } from '@numen/ui'
-import { commandsOf, overNote } from '@/features/command-palette/commands'
+import { commandsOf, overNote } from '@/features/command-palette'
 import type { Source } from '@/shared/file'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as own } from './words'

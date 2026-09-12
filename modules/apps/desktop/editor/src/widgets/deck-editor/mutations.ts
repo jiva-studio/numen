@@ -6,8 +6,8 @@ import {
   cardEnded,
   type InsertionPoint,
 } from '@numen/ui'
-import type { Value } from '@/entities/deck/cards'
-import { generateId, type IdMaker } from '@/entities/deck/identity'
+import type { Value } from '@/entities/deck'
+import { generateId, type IdMaker } from '@/entities/deck'
 import { nameOf } from '@/shared/paths'
 import type { BufferCard, BufferDeck } from './types'
 

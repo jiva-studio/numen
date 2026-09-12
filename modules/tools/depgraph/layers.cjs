@@ -1,3 +1,6 @@
+const { existsSync, readdirSync } = require('node:fs')
+const { join } = require('node:path')
+
 // The layers a module's folders stand in, and which way they may point.
 //
 // A layer reaches what stands below it and never what stands above. A layer cut
@@ -90,6 +93,42 @@ for (const [name, { sliced }] of Object.entries(LAYERS)) {
     to: {
       path: `^src/${name}/([^/]+)/`,
       pathNot: [`^src/${name}/$1/`, `^src/${name}/[^/]+/@x/`, HARNESS],
+    },
+  })
+}
+
+// A slice that hands out a door is reached through it and nowhere else, so
+// what a slice is for is read in one place and what it does inside is its own.
+//
+// Which slices have one is read off the tree being cruised, not written down
+// here: a slice is covered the day it declares a door and not before, and a
+// module that has declared none is judged by the rules above alone. The cruise
+// runs from the module's own folder, which is what `src` below is relative to.
+//
+// The module's own barrel at `src/index.ts` is where a package's public API is
+// assembled, and it names what it hands out.
+const doors = (layer) => {
+  const at = join('src', layer)
+  if (!existsSync(at)) return []
+  return readdirSync(at, { withFileTypes: true })
+    .filter((one) => one.isDirectory() && existsSync(join(at, one.name, 'index.ts')))
+    .map((one) => one.name)
+}
+
+for (const [name, { sliced }] of Object.entries(LAYERS)) {
+  if (!sliced) continue
+  const held = doors(name)
+  if (held.length === 0) continue
+  forbidden.push({
+    name: `no-reaching-past-a-${name}-slices-door`,
+    comment:
+      `A slice of \`${name}/\` that hands out an \`index.ts\` is reached through it ` +
+      'and nowhere else. A file named past it is one the slice never offered.',
+    severity: 'error',
+    from: { path: '^src/', pathNot: [`^src/${name}/`, HARNESS, '^src/index\\.ts$'] },
+    to: {
+      path: `^src/${name}/(?:${held.join('|')})/.`,
+      pathNot: [`^src/${name}/[^/]+/index\\.ts$`, `^src/${name}/[^/]+/@x/`],
     },
   })
 }

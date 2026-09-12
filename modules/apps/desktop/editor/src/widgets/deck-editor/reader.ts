@@ -6,9 +6,9 @@
  * screen leaves that one standing, so the card a person is typing into is not
  * drawn again under a fresh identity.
  */
-import type { DeckProblem } from '@/entities/deck/cards'
+import type { DeckProblem } from '@/entities/deck'
 import { deserializeBufferDeckFromString, applyHead, applyName, sameDeck, type BufferDeck } from './deck'
-import { createMarks, areMarksEqual, type Marks } from '@/entities/deck/marks'
+import { createMarks, areMarksEqual, type Marks } from '@/entities/deck'
 
 /** The string a tab holds, and the file it stands at. */
 export interface ShownStore {

@@ -12,7 +12,6 @@
  */
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import test from 'node:test'
 import { depcruise, here, layers } from './modules.mjs'
@@ -35,10 +34,13 @@ function cruised(name) {
   }
 }
 
-/** The rules that read which way an edge points, which is every rule but the ring. */
-const DIRECTION = createRequire(import.meta.url)('./layers.cjs')
-  .forbidden.map((one) => one.name)
-  .filter((one) => one !== 'no-folder-going-round')
+/**
+ * Whether a rule reads which way an edge points, which every rule does but the
+ * ring. The names cannot be read off the config from here: it builds its door
+ * rules from the folders of whatever tree it is loaded in, and a fixture's
+ * folders are not this one's.
+ */
+const direction = (one) => one !== 'no-folder-going-round'
 
 /** Every file a fixture holds is named, so a walk that lost one fails here. */
 function readAll(read, files, name) {
@@ -56,7 +58,7 @@ function readAll(read, files, name) {
  * direction rules found something they did not.
  */
 function accountedFor(refused, edges, only) {
-  const held = only ? refused.filter((one) => only.includes(one.by)) : refused
+  const held = only ? refused.filter((one) => only(one.by)) : refused
   for (const one of edges) {
     const found = held.find((wrong) => wrong.edge === one.edge)
     if (one.by === null) {
@@ -82,7 +84,7 @@ const layered = [
   {
     says: 'a shared module reaching a feature',
     by: 'no-shared-reaches-above-itself',
-    edge: 'src/shared/lib/sorting.ts → src/features/cards/deck.ts',
+    edge: 'src/shared/lib/sorting.ts → src/features/cards/index.ts',
   },
   {
     says: 'a shared module reaching a screen',
@@ -115,9 +117,9 @@ const layered = [
     edge: 'src/shared/ui/menu/item.ts → src/shared/lib/place.ts',
   },
   {
-    says: 'a screen reaching a feature',
+    says: 'a screen reaching a feature through its door',
     by: null,
-    edge: 'src/screens/agent.ts → src/features/thread/turn.ts',
+    edge: 'src/screens/agent.ts → src/features/thread/index.ts',
   },
   {
     says: 'a screen reaching the shared layer',
@@ -125,9 +127,14 @@ const layered = [
     edge: 'src/screens/agent.ts → src/shared/ui/menu/item.ts',
   },
   {
-    says: 'the barrel at the root reaching a feature',
+    says: 'the barrel at the root reaching a feature through its door',
     by: null,
-    edge: 'src/index.ts → src/features/cards/deck.ts',
+    edge: 'src/index.ts → src/features/cards/index.ts',
+  },
+  {
+    says: 'a screen reaching past a feature\'s door',
+    by: 'no-reaching-past-a-features-slices-door',
+    edge: 'src/screens/agent.ts → src/features/cards/deck-editor/editor.ts',
   },
 ]
 
@@ -149,7 +156,7 @@ test('a tree laid out in layers', () => {
     ],
     'layers',
   )
-  accountedFor(refused, layered, DIRECTION)
+  accountedFor(refused, layered, direction)
 })
 
 /** The flat fixture: a folder naming no layer is a screen. */
@@ -223,7 +230,7 @@ test('a window laid out flat, where every folder is a screen', () => {
     ],
     'screens',
   )
-  accountedFor(refused, flat, DIRECTION)
+  accountedFor(refused, flat, direction)
 })
 
 /**

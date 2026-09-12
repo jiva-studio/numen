@@ -6,8 +6,8 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
-import type { Model, SettingEdit } from '@/entities/settings/configuration'
-import type { Bounds, Mode, Ranges, Sizes, Theme } from '@/entities/settings/theme'
+import type { Model, SettingEdit } from '@/entities/settings'
+import type { Bounds, Mode, Ranges, Sizes, Theme } from '@/entities/settings'
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {

@@ -9,7 +9,7 @@ import { afterEach, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { panesOf, WorkspaceLayout, type Workspace } from '@numen/ui'
-import type { Tab } from '@/entities/tab/tab'
+import type { Tab } from '@/entities/tab'
 
 
 const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoisted(() => ({
@@ -296,15 +296,27 @@ vi.mock('@/app/vault', () => ({
   },
 }))
 
-vi.mock('@/widgets/document-viewer/api/wire', () => ({
+/**
+ * A vault answer a slice hands out through its `index.ts`. A mock of the module
+ * behind the door does not stand in what the door passes on, so the door is
+ * mocked too, over the rest of what it gives.
+ */
+const documentsSaid = {
   documents: {
     getDocumentLayout: async () => ({ pages: [{ width: 100, height: 100 }], fingerprint: '' }),
     getPageUrl: () => '',
     getHighlights: async () => [],
   },
+}
+
+vi.mock('@/widgets/document-viewer/api/wire', () => documentsSaid)
+
+vi.mock('@/widgets/document-viewer', async (original) => ({
+  ...(await original<typeof import('@/widgets/document-viewer')>()),
+  ...documentsSaid,
 }))
 
-vi.mock('@/widgets/book-reader/api/wire', () => ({
+const booksSaid = {
   books: {
     getBook: async (path: string) => ({
       title: path,
@@ -319,9 +331,16 @@ vi.mock('@/widgets/book-reader/api/wire', () => ({
     readMarkup: async () => '<p data-offset="0">the book</p>',
     getEntryUrl: () => '',
   },
+}
+
+vi.mock('@/widgets/book-reader/api/wire', () => booksSaid)
+
+vi.mock('@/widgets/book-reader', async (original) => ({
+  ...(await original<typeof import('@/widgets/book-reader')>()),
+  ...booksSaid,
 }))
 
-vi.mock('@/entities/media/wire', () => ({
+const recordingsSaid = {
   recordings: {
     getSummary: async (path: string) => {
       asked.listened.push(path)
@@ -341,6 +360,13 @@ vi.mock('@/entities/media/wire', () => ({
     findCueTime: async (path: string, span: { from: number }) =>
       said.transcribed.cues.find((one) => one.from >= span.from)?.from ?? null,
   },
+}
+
+vi.mock('@/entities/media/wire', () => recordingsSaid)
+
+vi.mock('@/entities/media', async (original) => ({
+  ...(await original<typeof import('@/entities/media')>()),
+  ...recordingsSaid,
 }))
 
 vi.mock('@/shared/artifacts', () => ({
@@ -373,7 +399,7 @@ vi.mock('@/shared/artifacts', () => ({
   },
 }))
 
-vi.mock('@/entities/deck/cards', () => ({
+const cardsSaid = {
   cards: {
     // A card is named by the first field of the stencil it is cut by, so the
     // window is told of one.
@@ -433,11 +459,25 @@ vi.mock('@/entities/deck/cards', () => ({
       return { error: null, changed: false, at: 'a2' }
     },
   },
+}
+
+vi.mock('@/entities/deck/cards', () => cardsSaid)
+
+vi.mock('@/entities/deck', async (original) => ({
+  ...(await original<typeof import('@/entities/deck')>()),
+  ...cardsSaid,
 }))
 
-vi.mock('@/widgets/agent-chat/api/core', () => ({ core: { ask: held, finish: async () => {} } }))
+const agentSaid = { core: { ask: held, finish: async () => {} } }
 
-vi.mock('@/entities/settings/theme', () => ({
+vi.mock('@/widgets/agent-chat/api/core', () => agentSaid)
+
+vi.mock('@/widgets/agent-chat', async (original) => ({
+  ...(await original<typeof import('@/widgets/agent-chat')>()),
+  ...agentSaid,
+}))
+
+const themesSaid = {
   themes: {
     appearance: async () => ({
       themes: [
@@ -460,6 +500,13 @@ vi.mock('@/entities/settings/theme', () => ({
     },
     changed: held,
   },
+}
+
+vi.mock('@/entities/settings/theme', () => themesSaid)
+
+vi.mock('@/entities/settings', async (original) => ({
+  ...(await original<typeof import('@/entities/settings')>()),
+  ...themesSaid,
 }))
 
 const App = (await import('@/app/App.vue')).default

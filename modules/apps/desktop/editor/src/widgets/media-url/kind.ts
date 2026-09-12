@@ -1,6 +1,6 @@
 /** What the window keeps a url tab by, and what draws it. */
-import type { Medium } from '@/entities/media/kind'
-import { URL } from '@/entities/tab/workspace'
+import type { Medium } from '@/entities/media'
+import { URL } from '@/entities/tab'
 import UrlTab from './ui/UrlTab.vue'
 
 /** The urls of the vault, opened at what is at the address. */

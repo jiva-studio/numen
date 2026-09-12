@@ -18,10 +18,10 @@ import type { ErrorCode } from '@/shared/errors'
 import type { PathRename } from '@/shared/paths'
 import type { CreateResult, Entry, FileKind, Movement } from '@/shared/file'
 import type { Task } from '@/shared/notices/task'
-import type { Configuration, SettingEdit } from '@/entities/settings/configuration'
-import type { HangingSettings } from '@/entities/settings/hanging'
-import type { ReviewSettings } from '@/entities/settings/review'
-import type { Attention } from '@/entities/tab/tab'
+import type { Configuration, SettingEdit } from '@/entities/settings'
+import type { HangingSettings } from '@/entities/settings'
+import type { ReviewSettings } from '@/entities/settings'
+import type { Attention } from '@/entities/tab'
 
 export interface Core {
   neighbourhood(path: string): Promise<Neighbourhood>

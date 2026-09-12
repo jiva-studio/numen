@@ -6,7 +6,7 @@
  */
 import type { PaletteKeys, VaultRow, WelcomeAction } from '@numen/ui'
 import type { VaultList } from '@/shared/vaults'
-import { keysOf } from '@/features/command-palette/chords'
+import { keysOf } from '@/features/command-palette'
 import { WORDS as own } from './words'
 
 /** What the welcome screen is drawn over. */

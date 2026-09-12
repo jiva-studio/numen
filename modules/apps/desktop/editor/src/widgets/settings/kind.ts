@@ -2,8 +2,8 @@
  * The settings tab, as the window keeps it.
  */
 import { ref } from 'vue'
-import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
-import { SETTINGS } from '@/entities/tab/workspace'
+import type { TabKind, WindowHandle } from '@/entities/tab'
+import { SETTINGS } from '@/entities/tab'
 import SettingsTab from './ui/SettingsTab.vue'
 import type { Installation, SettingsTabState } from './model/useSettingsTab'
 import { WORDS as words } from './words'

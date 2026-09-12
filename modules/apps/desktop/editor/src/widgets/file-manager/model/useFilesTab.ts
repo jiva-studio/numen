@@ -3,7 +3,7 @@
  */
 import { ref } from 'vue'
 import type { Entry, Source } from '@/shared/file'
-import type { SearchDestination } from '@/features/command-palette/search'
+import type { SearchDestination } from '@/features/command-palette'
 import { fileOf } from '@/shared/paths'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import {

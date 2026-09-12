@@ -3,8 +3,8 @@
  */
 import { computed } from 'vue'
 import { pointsAtNote } from '@numen/ui'
-import type { WindowHandle } from '@/entities/tab/windowTabs'
-import type { FileOpeners } from '@/entities/tab/openers'
+import type { WindowHandle } from '@/entities/tab'
+import type { FileOpeners } from '@/entities/tab'
 import type { noteChanges } from './changes'
 import type { noteKeyboard } from './keyboard'
 import type { openNotes } from '@/entities/note'

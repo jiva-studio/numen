@@ -1,8 +1,8 @@
 /**
  * Window registration for agent tabs.
  */
-import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
-import { AGENT } from '@/entities/tab/workspace'
+import type { TabKind, WindowHandle } from '@/entities/tab'
+import { AGENT } from '@/entities/tab'
 import AgentTab from './ui/AgentTab.vue'
 import { WORDS as words } from './words'
 import { firstLine } from './title'

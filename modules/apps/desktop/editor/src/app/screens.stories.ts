@@ -13,37 +13,35 @@ import { WorkspaceLayout, branch, pane } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
-import SettingsTab from '@/widgets/settings/ui/SettingsTab.vue'
-import type { Installation } from '@/widgets/settings/model/useSettingsTab'
-import PresetTab from '@/widgets/preset-editor/ui/PresetTab.vue'
+import { SettingsTab, type Installation } from '@/widgets/settings'
 import {
   DEFAULTS,
+  PresetTab,
   type Curve,
   type Point,
   type PresetCounts,
+  type PresetTabState,
   type Settings as Scheduling,
   type SettingsBounds,
-} from '@/widgets/preset-editor/types'
-import type { PresetTabState } from '@/widgets/preset-editor/types'
-import DeckTab from '@/widgets/deck-editor/ui/DeckTab.vue'
-import type { DeckTabState } from '@/widgets/deck-editor/model/useDeckTabs'
-import StencilTab from '@/widgets/stencil-editor/ui/StencilTab.vue'
-import type { StencilTabState } from '@/widgets/stencil-editor/types'
-import type { Marks } from '@/entities/deck/marks'
-import RecordingTab from '@/widgets/media-recording/ui/RecordingTab.vue'
-import { useTranscript, type Recordings } from '@/entities/media/transcript'
-import type { Cue } from '@/entities/media/cues'
-import type { Player } from '@/entities/media/player'
-import { useTranscriptTab } from '@/entities/media/kind'
-import DocumentTab from '@/widgets/document-viewer/ui/DocumentTab.vue'
-import { useDocumentTab } from '@/widgets/document-viewer/model/useDocumentTab'
-import { useDocumentReader, type Documents } from '@/widgets/document-viewer/model/useDocumentReader'
-import FilesTab from '@/widgets/file-manager/ui/FilesTab.vue'
-import { useFilesTab } from '@/widgets/file-manager/model/useFilesTab'
-import { useFileTree, ROOT } from '@/widgets/file-manager/model/useFileTree'
+} from '@/widgets/preset-editor'
+import { DeckTab, type DeckTabState } from '@/widgets/deck-editor'
+import { StencilTab, type StencilTabState } from '@/widgets/stencil-editor'
+import type { Marks } from '@/entities/deck'
+import { RecordingTab } from '@/widgets/media-recording'
+import { useTranscript, type Recordings } from '@/entities/media'
+import type { Cue } from '@/entities/media'
+import type { Player } from '@/entities/media'
+import { useTranscriptTab } from '@/entities/media'
+import {
+  DocumentTab,
+  useDocumentReader,
+  useDocumentTab,
+  type Documents,
+} from '@/widgets/document-viewer'
+import { FilesTab, ROOT, useFilesTab, useFileTree } from '@/widgets/file-manager'
 import type { Entry } from '@/shared/file'
-import { iconOfKind } from '@/entities/tab/icons'
-import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '@/entities/tab/workspace'
+import { iconOfKind } from '@/entities/tab'
+import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '@/entities/tab'
 
 /** Every tab this file draws, under the identity the window opens it at. */
 const TABS: readonly Tab[] = [

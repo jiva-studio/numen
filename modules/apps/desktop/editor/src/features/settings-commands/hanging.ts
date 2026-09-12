@@ -8,8 +8,8 @@
 import { ref } from 'vue'
 import type { StepGroup, StepRow } from '@/features/command-palette/@x/settings-commands'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { DEFAULT_PARTS, ladder } from '@/entities/settings/hanging'
-import type { HangingSettings } from '@/entities/settings/hanging'
+import { DEFAULT_PARTS, hangingLadder as ladder } from '@/entities/settings'
+import type { HangingSettings } from '@/entities/settings'
 
 /** The command whose step offers the two, and the one that offers the counts. */
 export const HANGING = 'hanging'

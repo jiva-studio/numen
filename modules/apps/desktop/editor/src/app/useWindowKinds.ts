@@ -4,47 +4,49 @@
 import { computed, shallowRef, watch } from 'vue'
 import { useConversation } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
-import { cards } from '@/entities/deck/cards'
-import { presets } from '@/entities/deck/presets'
-import { documents } from '@/widgets/document-viewer/api/wire'
-import { books } from '@/widgets/book-reader/api/wire'
-import { recordings } from '@/entities/media/wire'
+import { cards } from '@/entities/deck'
+import { presets } from '@/entities/deck'
+import {
+  documentKind,
+  documents,
+  useDocumentReader,
+  useDocumentTab,
+} from '@/widgets/document-viewer'
+import { bookKind, books, useBookReader, useBookTab, WORDS as bookWords } from '@/widgets/book-reader'
+import { recordings } from '@/entities/media'
 import { running } from '@/shared/artifacts'
-import { usePlexView } from '@/widgets/plex-graph/model/usePlexView'
-import { useDocumentReader } from '@/widgets/document-viewer/model/useDocumentReader'
-import { useBookReader } from '@/widgets/book-reader/model/useBookReader'
-import { WORDS as bookWords } from '@/widgets/book-reader/words'
-import { CREATABLE } from '@/widgets/note-editor/maker'
-import type { CommandTarget } from '@/features/command-palette/target'
-import { invocationOf } from '@/features/command-palette/target'
-import { does, type CommandDeps } from '@/features/command-palette/handlers'
-import { lands, type DestinationDeps } from '@/features/command-palette/destination'
-import type { FileOpeners } from '@/entities/tab/openers'
-import { createFileCreators } from '@/entities/tab/makers'
-import type { useWindowTabs } from '@/entities/tab/windowTabs'
+import { plexKind, usePlexView } from '@/widgets/plex-graph'
+import { CREATABLE } from '@/widgets/note-editor'
+import {
+  does,
+  invocationOf,
+  lands,
+  type CommandDeps,
+  type CommandTarget,
+  type DestinationDeps,
+  type runSupport,
+} from '@/features/command-palette'
+import type { FileOpeners } from '@/entities/tab'
+import { createFileCreators } from '@/entities/tab'
+import type { useWindowTabs } from '@/entities/tab'
 import type { MessageLog } from '@/shared/notices/messages'
-import { agentKind } from '@/widgets/agent-chat/kind'
-import { useAgentConversation } from '@/widgets/agent-chat/model/useAgentConversation'
-import { documentKind } from '@/widgets/document-viewer/kind'
-import { useDocumentTab } from '@/widgets/document-viewer/model/useDocumentTab'
-import { bookKind } from '@/widgets/book-reader/kind'
-import { useBookTab } from '@/widgets/book-reader/model/useBookTab'
-import { recordingKind, type MediaTabDeps } from '@/entities/media/kind'
-import { RECORDINGS } from '@/widgets/media-recording/kind'
-import { URLS } from '@/widgets/media-url/kind'
-import { useTranscript } from '@/entities/media/transcript'
-import type { createMediaTypeProbe } from '@/entities/media/player'
-import { filesKind } from '@/widgets/file-manager/kind'
-import { useFileTree } from '@/widgets/file-manager/model/useFileTree'
-import { plexKind } from '@/widgets/plex-graph/kind'
-import { core as agent } from '@/widgets/agent-chat/api/core'
-import { WORDS as talk } from '@/widgets/agent-chat/words'
-import { WORDS as cardWords } from '@/entities/deck/words'
+import {
+  agentKind,
+  core as agent,
+  useAgentConversation,
+  WORDS as talk,
+} from '@/widgets/agent-chat'
+import { recordingKind, type MediaTabDeps } from '@/entities/media'
+import { RECORDINGS } from '@/widgets/media-recording'
+import { URLS } from '@/widgets/media-url'
+import { useTranscript } from '@/entities/media'
+import type { createMediaTypeProbe } from '@/entities/media'
+import { filesKind, useFileTree } from '@/widgets/file-manager'
+import { WORDS as cardWords } from '@/entities/deck'
 import { WORDS as words } from '@/shared/words'
-import { CONVERSATION, minted } from '@/entities/tab/workspace'
+import { CONVERSATION, minted } from '@/entities/tab'
 import type { Source } from '@/shared/file'
 import type { Core } from '@/app/ports/core'
-import type { runSupport } from '@/features/command-palette/runs'
 import type { useNoteEditors } from './useNoteEditors'
 import type { useSettings } from './useSettings'
 import type { useVaults } from './useVaults'

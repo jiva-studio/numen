@@ -2,9 +2,9 @@
  * Window registration for document tabs.
  */
 import type { Span } from '@/shared/span'
-import type { FileOpeners } from '@/entities/tab/openers'
-import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
-import { DOCUMENT } from '@/entities/tab/workspace'
+import type { FileOpeners } from '@/entities/tab'
+import type { TabKind, WindowHandle } from '@/entities/tab'
+import { DOCUMENT } from '@/entities/tab'
 import DocumentTab from './ui/DocumentTab.vue'
 import { fileOf } from '@/shared/paths'
 import type { DocumentTabState } from './model/useDocumentTab'

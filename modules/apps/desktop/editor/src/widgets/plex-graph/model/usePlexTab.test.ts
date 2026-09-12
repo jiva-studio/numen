@@ -16,8 +16,8 @@ import { WORDS as words } from '../words'
 import type { NoteHeading, Neighbourhood, Seat } from '@/entities/note'
 import type { NoteType } from '@/shared/file'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
-import { useWindowTabs, type AnyTabKind } from '@/entities/tab/windowTabs'
-import { PLEX } from '@/entities/tab/workspace'
+import { useWindowTabs, type AnyTabKind } from '@/entities/tab'
+import { PLEX } from '@/entities/tab'
 
 /** A moment for whatever a gesture asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))

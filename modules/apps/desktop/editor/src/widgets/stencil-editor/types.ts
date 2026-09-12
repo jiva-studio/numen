@@ -4,7 +4,7 @@
 import type { ComputedRef } from 'vue'
 import type { Half } from '@numen/ui'
 import type { OpenNote } from '@/entities/note'
-import type { Marks } from '@/entities/deck/marks'
+import type { Marks } from '@/entities/deck'
 import type { BufferStencil } from './stencil'
 
 export interface StencilDataState {

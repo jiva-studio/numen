@@ -13,8 +13,8 @@ import type {
 } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
 import { namesOf } from '@numen/wire'
-import type { SearchMode } from '@/features/command-palette/search'
-import type { Presence } from '@/entities/settings/configuration'
+import type { SearchMode } from '@/features/command-palette'
+import type { Presence } from '@/entities/settings'
 import type { Vault, VaultErrorCode, VaultResult } from '@/shared/vaults'
 
 /**

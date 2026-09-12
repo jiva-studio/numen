@@ -3,7 +3,7 @@
  */
 import { search } from './clients'
 import { modes, noteType, run, sourceKind } from './words'
-import type { SearchDeps } from '@/features/command-palette/search'
+import type { SearchDeps } from '@/features/command-palette'
 
 export type SearchOperations = SearchDeps
 

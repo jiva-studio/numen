@@ -8,7 +8,7 @@ import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from '../menu'
 import { iconFor } from '@/shared/icons'
-import { iconOfNote } from '@/entities/note/icons'
+import { iconOfNote } from '@/entities/note'
 import type { PlexTabState } from '../types'
 import { WORDS as words } from '../words'
 

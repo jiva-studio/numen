@@ -2,7 +2,7 @@
  * UI representation mappings and comparisons for decks and stencils.
  */
 import type { DeckCard, DeckSection, Stencil } from '@numen/ui'
-import type { StencilSummary, VaultCard } from '@/entities/deck/cards'
+import type { StencilSummary, VaultCard } from '@/entities/deck'
 import type { BufferDeck } from './types'
 import { serializeBufferCardsToVaultCards, serializeBufferSectionsToVaultSections } from './serialize'
 

@@ -4,7 +4,7 @@
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { CommandDeps, Words } from './deps'
 import type { CommandInvocation } from './target'
-import { NOTE } from '@/entities/tab/workspace'
+import { NOTE } from '@/entities/tab'
 
 /** A tab asked to settle: which one it was, and whether it is still waiting. */
 export interface SettleResult {

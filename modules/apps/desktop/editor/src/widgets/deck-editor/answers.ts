@@ -6,9 +6,9 @@
  * it along and a file no tab stands at any longer lets it go.
  */
 import type { ErrorCode } from '@/shared/errors'
-import type { DeckProblem } from '@/entities/deck/cards'
+import type { DeckProblem } from '@/entities/deck'
 import { fileOf } from '@/shared/paths'
-import { WORDS as words } from '@/entities/deck/words'
+import { WORDS as words } from '@/entities/deck'
 
 /** What the vault said about one file the last time it was read or written. */
 export interface VaultAnswer {

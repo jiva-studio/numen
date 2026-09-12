@@ -1,22 +1,19 @@
 /**
  * Editing, conflict handling, and flushing for open notes and flashcard stores.
  */
-import { cards } from '@/entities/deck/cards'
-import { presets } from '@/entities/deck/presets'
-import { useDeckTabs } from '@/widgets/deck-editor/model/useDeckTabs'
-import { useStencilTabs } from '@/widgets/stencil-editor/kind'
-import { usePresetTab } from '@/widgets/preset-editor/kind'
-import { noteChanges } from '@/widgets/note-editor/changes'
+import { cards } from '@/entities/deck'
+import { presets } from '@/entities/deck'
+import { useDeckTabs } from '@/widgets/deck-editor'
+import { useStencilTabs } from '@/widgets/stencil-editor'
+import { usePresetTab } from '@/widgets/preset-editor'
+import { noteChanges, noteCreator, useNoteTab } from '@/widgets/note-editor'
 import { openNotes } from '@/entities/note'
-import { noteCreator } from '@/widgets/note-editor/maker'
-import { useNoteTab } from '@/widgets/note-editor/kind'
-import { useFileFlush } from '@/features/file-conflict/flushing'
-import { raiseConflicts } from '@/features/file-conflict/conflicts'
-import { reaching, type Store } from '@/features/command-palette/deps'
+import { raiseConflicts, useFileFlush } from '@/features/file-conflict'
+import { reaching, type Store } from '@/features/command-palette'
 import type { Core } from '@/app/ports/core'
 import type { MessageLog } from '@/shared/notices/messages'
-import type { FileOpeners } from '@/entities/tab/openers'
-import type { useWindowTabs } from '@/entities/tab/windowTabs'
+import type { FileOpeners } from '@/entities/tab'
+import type { useWindowTabs } from '@/entities/tab'
 
 export interface NoteEditorsDeps {
   core: Core

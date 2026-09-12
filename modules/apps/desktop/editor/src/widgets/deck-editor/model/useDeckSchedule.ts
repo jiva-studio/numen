@@ -2,8 +2,8 @@
  * Which preset schedules a deck, and putting one on another.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PresetChoice, Presets, ReadResult } from '@/entities/deck/presets'
-import { WORDS as words } from '@/entities/deck/words'
+import type { PresetChoice, Presets, ReadResult } from '@/entities/deck'
+import { WORDS as words } from '@/entities/deck'
 
 /** The preset a deck is scheduled by, as the line at the top of it draws it. */
 export interface DeckPreset {

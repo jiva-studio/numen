@@ -4,14 +4,12 @@
 import type { Ref } from "vue"
 import { vaults, type VaultCore } from "./vault"
 import { running } from "@/shared/artifacts"
-import { WORDS as cardWords } from "@/entities/deck/words"
-import type { CommandDeps, Notes } from "@/features/command-palette/deps"
-import type { RunSupport } from "@/features/command-palette/runs"
+import { WORDS as cardWords } from "@/entities/deck"
+import type { CommandDeps, Notes, RunSupport, VaultRef } from "@/features/command-palette"
 import type { MessageWriter } from "@/shared/notices/messages"
-import type { createFileCreators } from "@/entities/tab/makers"
-import type { useWindowTabs } from "@/entities/tab/windowTabs"
-import type { NoteCreator } from "@/widgets/note-editor/maker"
-import type { VaultRef } from "@/features/command-palette/target"
+import type { createFileCreators } from "@/entities/tab"
+import type { useWindowTabs } from "@/entities/tab"
+import type { NoteCreator } from "@/widgets/note-editor"
 
 export interface CommandDepsOptions {
   core: VaultCore

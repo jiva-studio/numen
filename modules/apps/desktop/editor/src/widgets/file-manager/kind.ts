@@ -2,8 +2,8 @@
  * Window tab registration for the files tab.
  */
 import type { PathRename } from '@/shared/paths'
-import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
-import { FILES } from '@/entities/tab/workspace'
+import type { TabKind, WindowHandle } from '@/entities/tab'
+import { FILES } from '@/entities/tab'
 import FilesTab from './ui/FilesTab.vue'
 import { useFilesTab } from './model/useFilesTab'
 import { ROOT } from './model/useFileTree'

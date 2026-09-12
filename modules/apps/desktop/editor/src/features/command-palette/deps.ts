@@ -8,7 +8,7 @@
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { RunSupport } from './runs'
 import type { CommandInvocation, VaultRef } from './target'
-import type { EditorKind } from '@/entities/tab/openers'
+import type { EditorKind } from '@/entities/tab'
 import type { Artifact, ArtifactState, ArtifactRunner } from '@/shared/artifacts'
 import type { Movement } from '@/shared/file'
 import type { RemoveResult, RenameResult } from '@/entities/note'

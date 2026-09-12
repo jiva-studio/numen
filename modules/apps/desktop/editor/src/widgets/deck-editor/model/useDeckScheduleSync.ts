@@ -3,9 +3,9 @@
  */
 import { computed, shallowRef } from 'vue'
 import type { PathRename } from '@/shared/paths'
-import type { Cards, StencilSummary } from '@/entities/deck/cards'
+import type { Cards, StencilSummary } from '@/entities/deck'
 import type { openNotes } from '@/entities/note'
-import type { Presets } from '@/entities/deck/presets'
+import type { Presets } from '@/entities/deck'
 import { useDeckSchedule } from './useDeckSchedule'
 import { sameOffers, stencilsOf } from '../deck'
 

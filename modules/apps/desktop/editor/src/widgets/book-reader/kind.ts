@@ -2,9 +2,9 @@
  * Window registration for book tabs.
  */
 import type { Span } from '@/shared/span'
-import type { FileOpeners } from '@/entities/tab/openers'
-import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
-import { BOOK } from '@/entities/tab/workspace'
+import type { FileOpeners } from '@/entities/tab'
+import type { TabKind, WindowHandle } from '@/entities/tab'
+import { BOOK } from '@/entities/tab'
 import BookTab from './ui/BookTab.vue'
 import type { BookTabState } from './model/useBookTab'
 

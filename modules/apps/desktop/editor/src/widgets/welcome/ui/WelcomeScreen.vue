@@ -10,14 +10,18 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { opensVault, WelcomePage } from '@numen/ui'
 import type { Tab } from '@numen/ui'
-import { invocationOf, type CommandTarget, type VaultRef } from '@/features/command-palette/target'
-import type { Commands } from '@/features/command-palette/palette'
+import {
+  does,
+  invocationOf,
+  keysOf,
+  type CommandDeps,
+  type Commands,
+  type CommandTarget,
+  type SearchState,
+  type VaultRef,
+} from '@/features/command-palette'
 import type { VaultList } from '@/shared/vaults'
-import type { CommandDeps } from '@/features/command-palette/deps'
-import { does } from '@/features/command-palette/handlers'
-import type { SearchState } from '@/features/command-palette/search'
 import { iconFor } from '@/shared/icons'
-import { keysOf } from '@/features/command-palette/chords'
 import { VERSION } from '../version'
 import { COMMANDS, vaultsOn, waysIn } from '../screen'
 import { WORDS as words } from '@/shared/words'

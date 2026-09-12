@@ -11,7 +11,7 @@ import type {
   PresetCounts,
   Settings,
   SettingsBounds,
-} from '@/entities/deck/presets'
+} from '@/entities/deck'
 
 export type {
   Goal,
@@ -31,7 +31,7 @@ export type {
   Curve,
   PresetChoice,
   Presets,
-} from '@/entities/deck/presets'
+} from '@/entities/deck'
 export {
   GOALS,
   BUDGET_UNITS,
@@ -43,7 +43,7 @@ export {
   DEFAULTS,
   NO_BOUNDS,
   NOWHERE,
-} from '@/entities/deck/presets'
+} from '@/entities/deck'
 
 export type { Field }
 

@@ -2,21 +2,27 @@
  * Command palette, keyboard shortcut dispatch, and command execution.
  */
 import type { Ref } from 'vue'
-import { chorded, commandFor } from '@/features/command-palette/chords'
-import { does } from '@/features/command-palette/handlers'
-import { useCommandPalette } from '@/features/command-palette/palette'
-import { useSearch } from '@/features/command-palette/search'
-import type { CommandTarget, VaultRef } from '@/features/command-palette/target'
+import {
+  chorded,
+  commandFor,
+  does,
+  useCommandPalette,
+  useSearch,
+  type CommandDeps,
+  type CommandTarget,
+  type Notes,
+  type NoteLookup,
+  type PaletteLists,
+  type RunSupport,
+  type VaultRef,
+} from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
-import type { NoteLookup, PaletteLists } from '@/features/command-palette/lists'
-import type { CommandDeps, Notes } from '@/features/command-palette/deps'
-import type { RunSupport } from '@/features/command-palette/runs'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
-import type { createFileCreators } from '@/entities/tab/makers'
-import type { useWindowTabs } from '@/entities/tab/windowTabs'
+import type { createFileCreators } from '@/entities/tab'
+import type { useWindowTabs } from '@/entities/tab'
 import { WORDS } from '@/shared/words'
-import type { NoteCreator } from '@/widgets/note-editor/maker'
+import type { NoteCreator } from '@/widgets/note-editor'
 import type { VaultCore } from './vault'
 
 type Words = typeof WORDS

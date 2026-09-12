@@ -1,7 +1,7 @@
 /** What a gesture in a deck makes of the file, asked without a screen. */
 import { describe, expect, it } from 'vitest'
 import { CARD_HEAD, cardEndOf } from '@numen/ui'
-import type { VaultDeck } from '@/entities/deck/cards'
+import type { VaultDeck } from '@/entities/deck'
 import {
   addCard,
   serializeBufferDeckToString,

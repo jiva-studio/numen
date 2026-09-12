@@ -5,13 +5,13 @@
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 import type { ErrorCode } from '@/shared/errors'
-import type { Cards, VaultCard, DeckProblem } from '@/entities/deck/cards'
-import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck/presets'
-import { fileOpeners } from '@/entities/tab/openers'
-import { useWindowTabs } from '@/entities/tab/windowTabs'
-import { DECK } from '@/entities/tab/workspace'
+import type { Cards, VaultCard, DeckProblem } from '@/entities/deck'
+import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
+import { fileOpeners } from '@/entities/tab'
+import { useWindowTabs } from '@/entities/tab'
+import { DECK } from '@/entities/tab'
 import { useDeckTabs, type DeckTabState } from './useDeckTabs'
-import { WORDS as words } from '@/entities/deck/words'
+import { WORDS as words } from '@/entities/deck'
 
 /** A preset that schedules, which is what every preset here is. */
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }

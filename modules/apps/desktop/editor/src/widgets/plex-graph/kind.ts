@@ -1,8 +1,8 @@
 /**
  * Window registration and navigation for plex graph tabs.
  */
-import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
-import { PLEX } from '@/entities/tab/workspace'
+import type { TabKind, WindowHandle } from '@/entities/tab'
+import { PLEX } from '@/entities/tab'
 import type { PathRename } from '@/shared/paths'
 import { usePlexTab } from './model/usePlexTab'
 import type { PlexView } from './model/usePlexView'

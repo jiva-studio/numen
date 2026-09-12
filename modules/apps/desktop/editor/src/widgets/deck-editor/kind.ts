@@ -2,8 +2,8 @@
  * Window registration for flashcard deck tabs.
  */
 import { markOf } from '@/entities/note'
-import type { TabKind } from '@/entities/tab/windowTabs'
-import { DECK } from '@/entities/tab/workspace'
+import type { TabKind } from '@/entities/tab'
+import { DECK } from '@/entities/tab'
 import DeckTab from './ui/DeckTab.vue'
 import type { DeckTabState } from './types'
 

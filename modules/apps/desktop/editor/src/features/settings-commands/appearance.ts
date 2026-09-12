@@ -20,7 +20,7 @@ import {
   ladder,
   reaches,
   typedSize,
-} from '@/entities/settings/appearance'
+} from '@/entities/settings'
 import type {
   Appearance,
   Mode,
@@ -29,7 +29,7 @@ import type {
   Sizes,
   Theme,
   Themes,
-} from '@/entities/settings/theme'
+} from '@/entities/settings'
 import { IS_SIZES, after, declared, dressing } from './lib/head'
 
 /** Everything the appearance says in the window's voice. */

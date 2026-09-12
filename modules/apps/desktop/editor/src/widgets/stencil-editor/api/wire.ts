@@ -4,10 +4,10 @@
 import type { NoteBaseline } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { PathRename } from '@/shared/paths'
-import type { Cards, DeckProblem } from '@/entities/deck/cards'
+import type { Cards, DeckProblem } from '@/entities/deck'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'
-import { WORDS as words } from '@/entities/deck/words'
+import { WORDS as words } from '@/entities/deck'
 import {
   facesOf,
   stencilBodyOf,
