@@ -4,7 +4,7 @@
 import { notes } from './clients'
 import { mapBaseline, mapLink, mapMoveResult, mapNeighbourhood, mapNoteResult, run, writes } from './words'
 import { errorIn, staleIn } from '@/shared/answers'
-import type { Core } from '@/shared/core'
+import type { Core } from '@/app/ports/core'
 
 export type NoteOperations = Pick<
   Core,

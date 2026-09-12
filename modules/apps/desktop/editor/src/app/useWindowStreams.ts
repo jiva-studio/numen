@@ -3,7 +3,9 @@
  */
 import type { Ref, ShallowRef } from 'vue'
 import { following } from '@numen/ui'
-import type { Core, NoteEdit, Task } from '@/shared/core'
+import type { Core } from '@/app/ports/core'
+import type { NoteEdit } from '@/entities/note'
+import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
 import type { Span } from '@/shared/span'
 

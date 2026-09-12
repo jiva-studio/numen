@@ -5,7 +5,7 @@
  * window standing on a vault, or on none, puts in front of the person.
  */
 import type { PaletteKeys, VaultRow, WelcomeAction } from '@numen/ui'
-import type { VaultList } from '@/shared/core'
+import type { VaultList } from '@/shared/vaults'
 import { keysOf } from '@/features/command-palette/chords'
 import { WORDS as own } from './words'
 

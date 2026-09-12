@@ -8,11 +8,11 @@
  * moved past what was read puts the person the two answers a note puts.
  */
 import { Editor } from '@numen/ui'
-import type { SettingsFileTabState } from '../composables/useTextEditor'
+import type { TextEditorTabState } from '../composables/useTextEditor'
 import { WORDS as words } from '../words'
 
 // --- Props & Emits ---
-const props = defineProps<{ state: SettingsFileTabState }>()
+const props = defineProps<{ state: TextEditorTabState }>()
 
 // --- State ---
 // The tab's state outlives this component, so what it holds is bound once here

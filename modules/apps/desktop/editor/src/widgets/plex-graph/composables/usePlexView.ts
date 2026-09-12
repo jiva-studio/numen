@@ -7,7 +7,7 @@
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { answerGuard } from '@/shared/questions'
-import type { Neighbourhood } from '@/shared/core'
+import type { Neighbourhood } from '@/entities/note'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import { alike } from '../picture'
 

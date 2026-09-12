@@ -9,13 +9,8 @@ import type {
   Entry as EntryMessage,
   MoveResult as MoveResultMessage,
 } from '@numen/protocol'
-import type {
-  BookFormat,
-  DocumentFormat,
-  Entry,
-  MoveResult,
-  Source,
-} from '@/shared/core'
+import type { BookFormat, DocumentFormat, Entry, Source } from '@/shared/file'
+import type { MoveResult } from '@/entities/note'
 import { noteType } from './noteWords'
 
 /** A source this window has no word for is a file it holds no source for. */

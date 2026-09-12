@@ -6,17 +6,17 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { useTextEditor, type SettingsFileTabDeps } from './useTextEditor'
+import { useTextEditor, type TextEditorTabDeps } from './useTextEditor'
 import { WORDS as words } from '../words'
 
 const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
 
 /** A vault holding that file, and everything it was asked to write. */
-const vault = (answers: Partial<SettingsFileTabDeps> = {}) => {
+const vault = (answers: Partial<TextEditorTabDeps> = {}) => {
   const wrote: string[] = []
   /** What each write presented as the file it last read. */
   const presented: (string | null)[] = []
-  const core: SettingsFileTabDeps = {
+  const core: TextEditorTabDeps = {
     getSettingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
     saveSettingsFile: (written, seen) => {
       wrote.push(written)
@@ -162,7 +162,7 @@ describe('a file that moved past what the tab read', () => {
     let stands = HELD
     const wrote: string[] = []
     const reads = vi.fn()
-    const core: SettingsFileTabDeps = {
+    const core: TextEditorTabDeps = {
       getSettingsFile: () => Promise.resolve({ written: stands, path: '/numen.json' }),
       saveSettingsFile: (written, seen) => {
         if (seen !== null && seen !== stands) return Promise.resolve({ changed: true })

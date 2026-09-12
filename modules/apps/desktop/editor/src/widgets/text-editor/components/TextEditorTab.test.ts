@@ -7,15 +7,15 @@
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { mount } from '@vue/test-utils'
-import SettingsFileTab from './SettingsFileTab.vue'
-import { useTextEditor, type SettingsFileTabDeps } from '../composables/useTextEditor'
+import TextEditorTab from './TextEditorTab.vue'
+import { useTextEditor, type TextEditorTabDeps } from '../composables/useTextEditor'
 import { WORDS as words } from '../words'
 
 const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
 
-const drawn = async (answers: Partial<SettingsFileTabDeps> = {}) => {
+const drawn = async (answers: Partial<TextEditorTabDeps> = {}) => {
   const wrote: string[] = []
-  const core: SettingsFileTabDeps = {
+  const core: TextEditorTabDeps = {
     getSettingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
     saveSettingsFile: (written) => {
       wrote.push(written)
@@ -25,7 +25,7 @@ const drawn = async (answers: Partial<SettingsFileTabDeps> = {}) => {
   }
   const state = useTextEditor(core, () => {})
   await state.again()
-  return { wrote, state, tab: mount(SettingsFileTab, { props: { state } }) }
+  return { wrote, state, tab: mount(TextEditorTab, { props: { state } }) }
 }
 
 describe('the file drawn', () => {

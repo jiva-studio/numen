@@ -9,7 +9,7 @@ import { settingsCore } from './settings'
 import { vaultsCore } from './vaults'
 import type { CommandsDeps } from '@/features/command-palette/target'
 import type { SearchDeps } from '@/features/command-palette/search'
-import type { Core } from '@/shared/core'
+import type { Core } from '@/app/ports/core'
 
 export type VaultCore = Core & SearchDeps & CommandsDeps
 

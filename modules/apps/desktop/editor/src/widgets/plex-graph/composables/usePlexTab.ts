@@ -7,7 +7,7 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import type { NoteType } from '@/shared/core'
+import type { NoteType } from '@/entities/note'
 import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
 import { PLEX } from '@/entities/tab/workspace'
 import { fileOf, type PathRename } from '@/shared/paths'

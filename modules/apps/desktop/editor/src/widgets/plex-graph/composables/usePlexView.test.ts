@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { usePlexView, type Neighbours } from './usePlexView'
-import type { Neighbourhood } from '@/shared/core'
+import type { Neighbourhood } from '@/entities/note'
 
 const answer = (path: string): Neighbourhood => ({
   focus: { path, title: path },

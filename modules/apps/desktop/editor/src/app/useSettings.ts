@@ -16,9 +16,9 @@ import { OFF, ON, SYNCING, syncSetting } from '@/entities/settings/sync'
 import { HANGING, PARTS, useHangingSetting } from '@/entities/settings/hanging'
 import { settingsStore } from '@/entities/settings/store'
 import { useSettingsTab } from '@/widgets/settings/composables/useSettingsTab'
-import { createSettingsFileTabKind } from '@/widgets/text-editor/composables/useTextEditor'
+import { createTextEditorTabKind } from '@/widgets/text-editor/composables/useTextEditor'
 import type { PaletteLists } from '@/features/command-palette/lists'
-import type { Core } from '@/shared/core'
+import type { Core } from '@/app/ports/core'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab/windowTabs'
@@ -40,7 +40,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
   const oneName = syncSetting(core, words, log.under('named'))
   const rest = settingsStore(core, words, log.under('configured'))
 
-  const file = createSettingsFileTabKind(held.handle, core, () => void rest.start())
+  const file = createTextEditorTabKind(held.handle, core, () => void rest.start())
 
   const configured = useSettingsTab(held.handle, {
     themes: dressed.list,

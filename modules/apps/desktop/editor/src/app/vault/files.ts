@@ -4,7 +4,7 @@
 import { files } from './clients'
 import { bookFormat, mapEntry, mapMoveResult, noteType, sourceKind } from './words'
 import { errorIn } from '@/shared/answers'
-import type { Core } from '@/shared/core'
+import type { Core } from '@/app/ports/core'
 
 export type FilesCore = Pick<
   Core,

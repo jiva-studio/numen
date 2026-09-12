@@ -9,7 +9,7 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import type { NoteHeading, NoteType } from '@/shared/core'
+import type { NoteHeading, NoteType } from '@/entities/note'
 import type { PathRename } from '@/shared/paths'
 import type { PlexView } from './composables/usePlexView'
 

@@ -1,7 +1,7 @@
 /** The changes a note is drawn with, and the intervals they are let go of on. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { noteChanges } from './changes'
-import type { NoteEdit } from '@/shared/core'
+import type { NoteEdit } from '@/entities/note'
 
 const limits = { settle: 10, bound: 40, abandoned: 100 }
 

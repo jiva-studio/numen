@@ -6,19 +6,9 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { openNotes } from './notes'
+import { openNotes, type Notes } from './notes'
 import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from '@/features/file-conflict/flushing'
-import type { NoteResult, Core } from '@/shared/core'
-
-/** A vault that has been read and is doing nothing. */
-const idle = {
-  id: '',
-  name: '',
-  path: '',
-  scan: { isReady: true, failureReason: '', unwatchedPath: '' },
-  coverage: { chunkCount: 0n, embeddedCount: 0n, isEmbedding: false },
-  agentUnreachable: '',
-}
+import type { NoteResult } from './note'
 
 /** What the application says over the quit stream, when a test says it. */
 function stream() {
@@ -58,19 +48,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
   /** Writes wait here until a test lets them through. */
   let held: (() => void) | null = null
 
-  const core: Core & FlushDeps = {
-    neighbourhood: async () => ({}) as never,
-    headings: async () => new Map(),
-    fileKinds: async () => new Map(),
-    resolve: async () => new Map(),
-    getInitialOpenPath: async () => null,
-    state: async () => idle,
-    agentUnreachable: async () => '',
-    changes: async function* () {},
-    focus: async function* () {},
-    setFocus: async () => {},
-    editing: async function* () {},
-    tasks: async function* () {},
+  const core: Notes & FlushDeps = {
     quitting,
     flushed: async (token: string, result: FlushResult = 'written') => {
       answered.push({ token, result })
@@ -85,31 +63,6 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
       files.set(path, body)
       return { body: '', error: null }
     },
-    create: async () => ({ path: '', error: null }),
-    join: async () => null,
-    rename: async (path, title) => ({
-      path,
-      title,
-      hasFrontmatter: false,
-      moved: null,
-      error: null,
-      hasChanged: false,
-    }),
-    remove: async () => ({ trashed: '', dangling: [], error: null }),
-    list: async () => [],
-    move: async () => ({ moved: null, error: null }),
-    createFolder: async () => null,
-    createUrl: async () => ({ path: '', error: null }),
-    getSyncEnabled: async () => true,
-    getHangingSettings: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
-    setSyncEnabled: async () => null,
-    setHangingSettings: async () => null,
-    getReviewSettings: async () => ({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),
-    setReviewSettings: async () => null,
-    getSettings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
-    updateSettings: async () => {},
-    getSettingsFile: async () => ({ written: '{}', path: '/numen.json' }),
-    saveSettingsFile: async () => ({ changed: false }),
   }
   return {
     core,

@@ -9,11 +9,11 @@ import { computed, readonly, ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
 import { SETTINGS_FILE } from '@/entities/tab/workspace'
-import SettingsFileTab from '../components/SettingsFileTab.vue'
+import TextEditorTab from '../components/TextEditorTab.vue'
 import { WORDS as words } from '../words'
 
 /** What this asks of the vault. */
-export interface SettingsFileTabDeps {
+export interface TextEditorTabDeps {
   /** The settings file as its person wrote it, and where it stands. */
   getSettingsFile(): Promise<{ readonly written: string; readonly path: string }>
   /**
@@ -28,7 +28,7 @@ export interface SettingsFileTabDeps {
 }
 
 /** What one tab of the settings file holds. */
-export type SettingsFileTabState = ReturnType<typeof useTextEditor>
+export type TextEditorTabState = ReturnType<typeof useTextEditor>
 
 /**
  * The file as it stands, what is typed over it, and what is wrong with what was
@@ -36,7 +36,7 @@ export type SettingsFileTabState = ReturnType<typeof useTextEditor>
  * last read, and a file that moved past it stands stale until the person
  * keeps theirs or takes the file's.
  */
-export function useTextEditor(core: SettingsFileTabDeps, reads: () => void) {
+export function useTextEditor(core: TextEditorTabDeps, reads: () => void) {
   /** The bytes the file held when it was last read. */
   const held = ref('')
   const typed = ref('')
@@ -52,7 +52,7 @@ export function useTextEditor(core: SettingsFileTabDeps, reads: () => void) {
   const isStale = ref(false)
 
   const again = async (): Promise<void> => {
-    let answer: Awaited<ReturnType<SettingsFileTabDeps['getSettingsFile']>>
+    let answer: Awaited<ReturnType<TextEditorTabDeps['getSettingsFile']>>
     try {
       answer = await core.getSettingsFile()
     } catch (thrown) {
@@ -73,7 +73,7 @@ export function useTextEditor(core: SettingsFileTabDeps, reads: () => void) {
    */
   const writes = async (seen: string | null): Promise<void> => {
     if (!read.value) return
-    let answer: Awaited<ReturnType<SettingsFileTabDeps['saveSettingsFile']>>
+    let answer: Awaited<ReturnType<TextEditorTabDeps['saveSettingsFile']>>
     try {
       answer = await core.saveSettingsFile(typed.value, seen)
     } catch (thrown) {
@@ -121,7 +121,7 @@ export function useTextEditor(core: SettingsFileTabDeps, reads: () => void) {
 }
 
 /** What the tab carries beside its name, and nothing where there is nothing to say. */
-const mark = (state: SettingsFileTabState): string | undefined => {
+const mark = (state: TextEditorTabState): string | undefined => {
   if (state.isStale.value) return 'stale'
   return state.changed.value ? '•' : undefined
 }
@@ -130,12 +130,12 @@ const mark = (state: SettingsFileTabState): string | undefined => {
  * The settings file's tab. There is one file, so opening it again is the tab it
  * already stands in.
  */
-export function createSettingsFileTabKind(
+export function createTextEditorTabKind(
   handle: WindowHandle,
-  core: SettingsFileTabDeps,
+  core: TextEditorTabDeps,
   reads: () => void,
 ) {
-  const kind: TabKind<SettingsFileTabState, typeof SETTINGS_FILE> = {
+  const kind: TabKind<TextEditorTabState, typeof SETTINGS_FILE> = {
     kind: SETTINGS_FILE,
     opens: () => {
       const state = useTextEditor(core, reads)
@@ -145,7 +145,7 @@ export function createSettingsFileTabKind(
     called: () => words.called,
     getTitle: () => words.called,
     marked: mark,
-    draws: SettingsFileTab,
+    draws: TextEditorTab,
     identity: () => SETTINGS_FILE,
   }
 

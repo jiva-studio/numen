@@ -7,10 +7,21 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
-import type { Core, Link, Role } from '@/shared/core'
+import type { CreateResult, Link, NewNote, Role } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'
+
+/** What making a note asks of the vault. */
+export interface NoteMaker {
+  /** A note made, named after the title it is given and joined as it is written. */
+  create(note: NewNote): Promise<CreateResult>
+  /**
+   * A relationship written into one note. The note at the other end is left
+   * alone: a link is one end's account of a relationship.
+   */
+  join(path: string, link: Link): Promise<ErrorCode | null>
+}
 
 /**
  * The role a link carries to seat a note where the gesture put it. A seat and
@@ -73,7 +84,7 @@ export interface NoteRef {
   readonly title: string
 }
 
-export function noteCreator(core: Core, said: MessageWriter) {
+export function noteCreator(core: NoteMaker, said: MessageWriter) {
   /**
    * One note asked for. A name the vault has already filed is handed back as
    * `occupied` for the caller to answer for.

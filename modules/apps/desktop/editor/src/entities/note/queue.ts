@@ -1,7 +1,7 @@
 /**
  * Save timers, settling coordination, and read/write execution for open notes.
  */
-import type { LinkAddress, NoteResult } from '@/shared/core'
+import type { LinkAddress, NoteResult } from './note'
 import type { ErrorCode } from '@/shared/errors'
 import type { Notes } from './noteTypes'
 import type { Event, NoteBaseline, NoteErrorCode } from './tab'

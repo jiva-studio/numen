@@ -12,7 +12,7 @@ import { plexKind, usePlexTab, type PlexTabState, type PlexEditor, type PlexTabD
 import { ITEMS, NEW_NOTE } from '../menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
-import type { NoteHeading, Neighbourhood, NoteType, Seat } from '@/shared/core'
+import type { NoteHeading, Neighbourhood, NoteType, Seat } from '@/entities/note'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import { useWindowTabs, type AnyTabKind } from '@/entities/tab/windowTabs'
 import { PLEX } from '@/entities/tab/workspace'

@@ -7,8 +7,8 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { CREATABLE, UNTITLED, noteCreator } from './maker'
-import type { Core, CreateResult, Link, NewNote } from '@/shared/core'
+import { CREATABLE, UNTITLED, noteCreator, type NoteMaker } from './maker'
+import type { CreateResult, Link, NewNote } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
 import { writer } from '@/testing/writer'
 
@@ -22,7 +22,7 @@ const pathOf = (note: NewNote): string =>
 function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
   const asked: NewNote[] = []
   const joined: { path: string; link: Link }[] = []
-  const core = {
+  const core: NoteMaker = {
     create: async (note: NewNote): Promise<CreateResult> => {
       asked.push(note)
       return answers.shift() ?? { path: pathOf(note), error: null }
@@ -31,7 +31,7 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
       joined.push({ path, link })
       return errors.shift() ?? null
     },
-  } as unknown as Core
+  }
   return { core, asked, joined, ...writer() }
 }
 
@@ -118,7 +118,7 @@ describe('making a note in a seat of another', () => {
       create: async () => {
         throw new Error('the vault is out of reach')
       },
-    } as unknown as Core
+    } as unknown as NoteMaker
     const { says, last } = writer()
     const making = noteCreator(core, says)
 

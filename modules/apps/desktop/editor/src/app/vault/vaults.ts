@@ -4,7 +4,7 @@
 import { vaultsService, windowService, WINDOW } from './clients'
 import { mapVault, mapVaultResult, turnedDown } from './words'
 import type { CommandsDeps } from '@/features/command-palette/target'
-import type { Vaults } from '@/shared/core'
+import type { Vaults } from '@/shared/vaults'
 
 /** The vaults this installation holds, in the shape the window asks about them. */
 export const vaults: Vaults = {

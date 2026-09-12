@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Menu, Tree } from '@numen/ui'
-import type { Entry } from '@/shared/core'
+import type { Entry } from '@/shared/file'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../composables/useFilesTab'
 import { useFileTree, ROOT } from '../composables/useFileTree'

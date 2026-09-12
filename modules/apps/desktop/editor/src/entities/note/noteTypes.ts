@@ -1,7 +1,7 @@
 /**
  * Domain types for open notes and their storage.
  */
-import type { NoteResult } from '@/shared/core'
+import type { NoteResult } from './note'
 import type { ErrorCode } from '@/shared/errors'
 import type { NoteBaseline, State, waiting } from './tabState'
 

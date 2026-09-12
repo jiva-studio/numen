@@ -1,43 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { openNotes, type Notes } from './notes'
-import type { Core } from '@/shared/core'
-
-/** A vault that has been read and is doing nothing. */
-const idle = {
-  id: '',
-  name: '',
-  path: '',
-  scan: { isReady: true, failureReason: '', unwatchedPath: '' },
-  coverage: { chunkCount: 0n, embeddedCount: 0n, isEmbedding: false },
-  agentUnreachable: '',
-}
 
 /** A file's fingerprint, which follows what the file holds. */
 const marked = (body: string): string => `at:${body}`
 
-/** Everything a tab asks of the core, and the rest of what a window asks. */
-type FakeCore = Omit<Core, 'read' | 'write'> & Notes
-
 /** A core that answers reads and writes from what a test puts in it. */
-function fake(over: Partial<FakeCore> = {}) {
+function fake(over: Partial<Notes> = {}) {
   const files = new Map<string, string>()
   const wrote: { path: string; body: string }[] = []
-  const core: FakeCore = {
-    neighbourhood: async () => ({}) as never,
-    headings: async () => new Map(),
-    fileKinds: async () => new Map(),
-    resolve: async () => new Map(),
-    getInitialOpenPath: async () => null,
-    state: async () => idle,
-    agentUnreachable: async () => '',
-    changes: async function* () {},
-    focus: async function* () {},
-    setFocus: async () => {},
-    editing: async function* () {},
-    tasks: async function* () {},
-    quitting: async function* () {},
-    flushed: async () => {},
+  const core: Notes = {
     read: async (path) =>
       files.has(path)
         ? { body: files.get(path) ?? '', error: null, at: marked(files.get(path) ?? '') }
@@ -53,31 +25,6 @@ function fake(over: Partial<FakeCore> = {}) {
       files.set(path, body)
       return { body: '', error: null, at: marked(body) }
     },
-    create: async () => ({ path: '', error: null }),
-    join: async () => null,
-    rename: async (path) => ({
-      path,
-      title: '',
-      hasFrontmatter: false,
-      moved: null,
-      error: null,
-      hasChanged: false,
-    }),
-    remove: async () => ({ trashed: '', dangling: [], error: null }),
-    list: async () => [],
-    move: async () => ({ moved: null, error: null }),
-    createFolder: async () => null,
-    createUrl: async () => ({ path: '', error: null }),
-    getSyncEnabled: async () => true,
-    getHangingSettings: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
-    setSyncEnabled: async () => null,
-    setHangingSettings: async () => null,
-    getReviewSettings: async () => ({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),
-    setReviewSettings: async () => null,
-    getSettings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
-    updateSettings: async () => {},
-    getSettingsFile: async () => ({ written: '{}', path: '/numen.json' }),
-    saveSettingsFile: async () => ({ changed: false }),
     ...over,
   }
   return { core, files, wrote }
@@ -319,7 +266,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     // A write slower than the interval armed by the keystroke before it.
-    const slow: FakeCore = {
+    const slow: Notes = {
       ...core,
       write: async (path, body, seen) => {
         await new Promise((wake) => setTimeout(wake, 20))

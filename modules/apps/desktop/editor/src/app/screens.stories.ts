@@ -41,7 +41,7 @@ import { useDocumentReader, type Documents } from '@/widgets/document-viewer/com
 import FilesTab from '@/widgets/file-manager/components/FilesTab.vue'
 import { useFilesTab } from '@/widgets/file-manager/composables/useFilesTab'
 import { useFileTree, ROOT } from '@/widgets/file-manager/composables/useFileTree'
-import type { Entry } from '@/shared/core'
+import type { Entry } from '@/shared/file'
 import { iconOfKind } from '@/entities/tab/icons'
 import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '@/entities/tab/workspace'
 

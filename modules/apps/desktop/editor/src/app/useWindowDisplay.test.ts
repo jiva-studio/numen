@@ -6,9 +6,10 @@
  */
 import { describe, expect, it } from 'vitest'
 import { useWindowDisplay } from './useWindowDisplay'
-import type { Core, Task } from '@/shared/core'
+import type { Core } from '@/app/ports/core'
+import type { Task } from '@/shared/notices/task'
 import type { Span } from '@/shared/span'
-import type { Neighbourhood } from '@/shared/core'
+import type { Neighbourhood } from '@/entities/note'
 
 const answer = (path: string): Neighbourhood => ({
   focus: { path, title: path },

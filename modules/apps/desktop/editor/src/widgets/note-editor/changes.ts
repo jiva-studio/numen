@@ -5,7 +5,7 @@
  * holding the answers where the template can draw them.
  */
 import { ref } from 'vue'
-import type { NoteEdit } from '@/shared/core'
+import type { NoteEdit } from '@/entities/note'
 import { drawing, holding, type Change, type HoldLimits, type TimerRequest } from './drawing'
 
 /** Every change in flight, filed by the note it stands on. */

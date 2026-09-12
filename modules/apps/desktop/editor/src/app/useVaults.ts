@@ -3,7 +3,8 @@
  */
 import { ref, shallowRef, type Ref } from 'vue'
 import { running } from '@/shared/artifacts'
-import type { ArtifactStates, VaultList } from '@/shared/core'
+import type { ArtifactStates } from '@/shared/artifacts'
+import type { VaultList } from '@/shared/vaults'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { VaultRef } from '@/features/command-palette/target'

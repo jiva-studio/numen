@@ -9,7 +9,7 @@ import { afterEach, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { panesOf, WorkspaceLayout, type Workspace } from '@numen/ui'
-import type { Tab } from '@/shared/core'
+import type { Tab } from '@/entities/tab/tab'
 
 
 const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoisted(() => ({
