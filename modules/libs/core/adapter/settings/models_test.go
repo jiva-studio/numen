@@ -96,9 +96,9 @@ func TestTheAgentAnswersWithWhateverTheMachineAnswersWith(t *testing.T) {
 func TestAModelWhoseFilesAreHereIsPresent(t *testing.T) {
 	held := alone(t)
 	dir := t.TempDir()
-	written(t, filepath.Join(dir, embed.ModelFile))
-	written(t, filepath.Join(dir, embed.TokenizerFile))
-	held = runningIn(t, held, dir)
+	writeEmptyFile(t, filepath.Join(dir, embed.ModelFile))
+	writeEmptyFile(t, filepath.Join(dir, embed.TokenizerFile))
+	held = setModelDir(t, held, dir)
 
 	if got := models(t, held, EmbeddingModelAt)[0].Presence; got != port.Present {
 		t.Errorf("the model in %s stands at %v", dir, got)
@@ -109,7 +109,7 @@ func TestAModelWhoseFilesAreHereIsPresent(t *testing.T) {
 // at, and that is where the row reads it.
 func TestAModelInTheCacheIsPresent(t *testing.T) {
 	held := alone(t)
-	held = runningIn(t, held, "")
+	held = setModelDir(t, held, "")
 	snapshot := filepath.Join(
 		os.Getenv("XDG_CACHE_HOME"), "huggingface", "hub",
 		"models--intfloat--multilingual-e5-small", "snapshots", "0a1b2c3d",
@@ -118,7 +118,7 @@ func TestAModelInTheCacheIsPresent(t *testing.T) {
 	if err := os.MkdirAll(snapshot, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	written(t, filepath.Join(snapshot, embed.ModelFile))
+	writeEmptyFile(t, filepath.Join(snapshot, embed.ModelFile))
 
 	if got := models(t, held, EmbeddingModelAt)[0].Presence; got != port.Present {
 		t.Errorf("the model in the cache stands at %v", got)
@@ -127,7 +127,7 @@ func TestAModelInTheCacheIsPresent(t *testing.T) {
 
 // A model this machine runs and has not fetched is a wait, and the row says so.
 func TestAModelWhoseFilesAreNotHereIsNotFetched(t *testing.T) {
-	held := runningIn(t, alone(t), t.TempDir())
+	held := setModelDir(t, alone(t), t.TempDir())
 
 	if got := models(t, held, EmbeddingModelAt)[0].Presence; got != port.NotFetched {
 		t.Errorf("a model nothing has fetched stands at %v", got)
@@ -173,7 +173,7 @@ func TestTheModelTheSettingsNameIsOfferedToo(t *testing.T) {
 	dir := t.TempDir()
 	held.Indexing.Recognition.Dir = dir
 	held.Indexing.Recognition.Recognise.Name = "https://example.invalid/reads-tamil.onnx"
-	written(t, filepath.Join(dir, "reads-tamil.onnx"))
+	writeEmptyFile(t, filepath.Join(dir, "reads-tamil.onnx"))
 
 	got := models(t, held, RecognitionModelAt)
 	one := got[len(got)-1]
@@ -192,11 +192,11 @@ func alone(t *testing.T) Config {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	held := Defaults()
 	held.Indexing.Recognition.Dir = t.TempDir()
-	return runningIn(t, held, t.TempDir())
+	return setModelDir(t, held, t.TempDir())
 }
 
-// runningIn is the settings with the model this machine runs read out of dir.
-func runningIn(t *testing.T, held Config, dir string) Config {
+// setModelDir is the settings with the model this machine runs read out of dir.
+func setModelDir(t *testing.T, held Config, dir string) Config {
 	t.Helper()
 	local, ok := held.Indexing.Embedding.Indexing.Local()
 	if !ok {
@@ -207,8 +207,8 @@ func runningIn(t *testing.T, held Config, dir string) Config {
 	return held
 }
 
-// runningAt is the folder the settings read the model this machine runs out of.
-func runningAt(t *testing.T, held Config) string {
+// getModelDir is the folder the settings read the model this machine runs out of.
+func getModelDir(t *testing.T, held Config) string {
 	t.Helper()
 	local, ok := held.Indexing.Embedding.Indexing.Local()
 	if !ok {
@@ -217,8 +217,8 @@ func runningAt(t *testing.T, held Config) string {
 	return local.Dir
 }
 
-// written is an empty file where a fetch would have put one.
-func written(t *testing.T, at string) {
+// writeEmptyFile is an empty file where a fetch would have put one.
+func writeEmptyFile(t *testing.T, at string) {
 	t.Helper()
 	if err := os.WriteFile(at, nil, 0o600); err != nil {
 		t.Fatal(err)
@@ -250,12 +250,12 @@ func at(path []string) string { return strings.Join(path, ".") }
 func TestEveryRowOfAProviderReachingAServiceHasNothingToFetch(t *testing.T) {
 	held := alone(t)
 	// The model the preset offers, fetched, and left where a fetch put it.
-	dir := runningAt(t, held)
+	dir := getModelDir(t, held)
 	held.Indexing.Embedding.Indexing.Use = embed.UseService
 	held.Indexing.Embedding.Model.Name = "baai/bge-m3"
 
-	written(t, filepath.Join(dir, embed.ModelFile))
-	written(t, filepath.Join(dir, embed.TokenizerFile))
+	writeEmptyFile(t, filepath.Join(dir, embed.ModelFile))
+	writeEmptyFile(t, filepath.Join(dir, embed.TokenizerFile))
 
 	for _, one := range models(t, held, EmbeddingModelAt) {
 		if one.Presence != port.NothingToFetch {
@@ -282,7 +282,7 @@ func TestAProviderRunningAModelHereSaysWhereItsFilesAre(t *testing.T) {
 func TestARowIsAskedAboutItsOwnFilesAndNotItsNeighbours(t *testing.T) {
 	held := alone(t)
 	mine := filepath.Join(t.TempDir(), "of-my-own.onnx")
-	written(t, mine)
+	writeEmptyFile(t, mine)
 	held.Indexing.Recognition.Recognise.Name = "https://models.example/of-my-own.onnx"
 	held.Indexing.Recognition.Recognise.Path = mine
 

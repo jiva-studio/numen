@@ -83,7 +83,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	if err != nil {
 		return nil, err
 	}
-	first, err := chosen(registry, asked)
+	first, err := chooseVault(registry, asked)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		closeEmbedder = func() error { return nil }
 	}
 
-	wake := waking(settled)
+	wake := newNudges(settled)
 
 	// Where a passage sits on the page is asked of whichever producer made the
 	// text it is a place in, which is what the index records.
@@ -121,13 +121,13 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	highlighting.Documents = cfg.TextExtractor()
 
 	api := &API{
-		Listeners: following(),
-		Places:    focusing(),
+		Listeners: newChangeAudience(),
+		Places:    newPlaceAudience(),
 		Edits:     drawing(),
 		Window:    &wire.Window{Named: wire.Editor, Tasking: tasks},
 		Wrote:     func() { raise(wake.notes) },
 		Readers:   cfg.VaultReaders(),
-		Viewer:    keepingDrawings(cfg.PageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
+		Viewer:    newCachingViewer(cfg.PageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
 		Highlight: &highlighting,
 		Notes: Notes{
 			Queries: db.Queries(),

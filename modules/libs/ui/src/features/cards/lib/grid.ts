@@ -91,7 +91,7 @@ export interface Grid {
  * has, and a card naming a section that was not handed in stands before the
  * first section, where every card handed in is drawn and counted.
  */
-export function grid(
+export function getGrid(
   cards: readonly DeckCard[],
   sections: readonly DeckSection[],
   stencils: readonly Stencil[],

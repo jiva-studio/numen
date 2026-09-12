@@ -15,9 +15,9 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// adding is the use case over a registry of its own, and the registry, which a
+// newAdd is the use case over a registry of its own, and the registry, which a
 // test reads to see what was written.
-func adding(t *testing.T) (vaults.Add, *appstate.VaultRegistry) {
+func newAdd(t *testing.T) (vaults.Add, *appstate.VaultRegistry) {
 	t.Helper()
 	registry := registryAt(t)
 	return vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now), registry
@@ -40,7 +40,7 @@ func folder(t *testing.T, name string) string {
 
 func TestANameAnotherVaultHasGetsANumber(t *testing.T) {
 	t.Parallel()
-	add, registry := adding(t)
+	add, registry := newAdd(t)
 	var names []string
 	for range 3 {
 		v, err := add.Execute(folder(t, "notes"), "")
@@ -70,7 +70,7 @@ func TestANameIsTakenWhateverItsCaseAndComposition(t *testing.T) {
 	t.Parallel()
 	// A folder name from a file picker arrives decomposed and the same name
 	// typed at a command line arrives composed.
-	add, _ := adding(t)
+	add, _ := newAdd(t)
 	if _, err := add.Execute(folder(t, "first"), norm.NFC.String("Café")); err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestANameIsTakenWhateverItsCaseAndComposition(t *testing.T) {
 
 func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 	t.Parallel()
-	add, _ := adding(t)
+	add, _ := newAdd(t)
 	outer := folder(t, "outer")
 	if _, err := add.Execute(outer, ""); err != nil {
 		t.Fatal(err)
@@ -104,7 +104,7 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 
 func TestAVaultHoldingAnotherIsRefused(t *testing.T) {
 	t.Parallel()
-	add, _ := adding(t)
+	add, _ := newAdd(t)
 	outer := folder(t, "outer")
 	inner := filepath.Join(outer, "inner")
 	if err := os.MkdirAll(inner, 0o755); err != nil {
@@ -120,7 +120,7 @@ func TestAVaultHoldingAnotherIsRefused(t *testing.T) {
 
 func TestAFolderReachedThroughASymlinkIsTheFolderItself(t *testing.T) {
 	t.Parallel()
-	add, registry := adding(t)
+	add, registry := newAdd(t)
 	target := folder(t, "notes")
 	link := filepath.Join(t.TempDir(), "link")
 	if err := os.Symlink(target, link); err != nil {

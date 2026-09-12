@@ -22,16 +22,16 @@ export interface PlexDragState {
 /** What following a drag takes: the drawing, the picture, and the rules. */
 export interface PlexDragDeps {
   /** The drawing, which turns screen pixels into the plex's own coordinates. */
-  readonly surface: () => SVGSVGElement | null
+  readonly getSurface: () => SVGSVGElement | null
   /** What is being dragged, each of them opaque. Empty while nothing is. */
-  readonly dragged: () => readonly string[]
-  readonly frame: () => PlexFrame
-  readonly options: () => PlexOptions
-  readonly viewport: () => Size
+  readonly getDragged: () => readonly string[]
+  readonly getFrame: () => PlexFrame
+  readonly getOptions: () => PlexOptions
+  readonly getViewport: () => Size
   /** Seats a gesture is allowed to produce. */
-  readonly allowed: () => readonly PlexRelatedSeat[]
+  readonly getAllowedSeats: () => readonly PlexRelatedSeat[]
   /** How far from the focus the pointer stands before it names a direction. */
-  readonly threshold: () => number
+  readonly getThreshold: () => number
   readonly settle: (dragged: readonly string[], seat: PlexRelatedSeat) => void
 }
 
@@ -51,12 +51,12 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
     const now = at.value
     if (!now) return null
     return getDropSeat({
-      frame: drag.frame(),
-      options: drag.options(),
-      viewport: drag.viewport(),
+      frame: drag.getFrame(),
+      options: drag.getOptions(),
+      viewport: drag.getViewport(),
       at: now,
-      seats: drag.allowed(),
-      threshold: drag.threshold(),
+      seats: drag.getAllowedSeats(),
+      threshold: drag.getThreshold(),
     })
   })
 
@@ -77,7 +77,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   }
 
   const move = (event: PointerEvent) => {
-    const element = drag.surface()
+    const element = drag.getSurface()
     at.value = element ? positionIn(element, event) : null
   }
 
@@ -91,7 +91,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
 
   const follow = () => {
     if (detach) return
-    holding = drag.dragged()
+    holding = drag.getDragged()
 
     const onMove = (event: PointerEvent) => move(event)
     const onUp = (up: PointerEvent) => finish(up)
@@ -117,7 +117,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   }
 
   watch(
-    () => drag.dragged().length > 0,
+    () => drag.getDragged().length > 0,
     (dragging) => (dragging ? follow() : stop()),
     { immediate: true },
   )

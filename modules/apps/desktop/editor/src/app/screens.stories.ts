@@ -126,8 +126,8 @@ const INSTALLATION: Installation = {
   dayStarts: ref('04:00'),
   latestDayStarts: ref('12:00'),
   chooseDayStarts: () => {},
-  setting: () => undefined,
-  models: () => [],
+  getSetting: () => undefined,
+  getModels: () => [],
   write: () => {},
   file: ref('/numen.json'),
   openFile: () => {},
@@ -221,7 +221,7 @@ const PRESET_STATE: PresetTabState = {
   stopped: ref(StopReason.NOTHING),
   errorMessage: ref(''),
   hasChanged: ref(false),
-  again: () => {},
+  reload: () => {},
   chooseGoal: () => {},
   moveSlider: () => {},
   settle: () => {},
@@ -500,7 +500,7 @@ export const Recording: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      useTranscriptTab(useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
+      useTranscriptTab(useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runCommand: () => {} }),
     ),
 }
 
@@ -510,7 +510,7 @@ export const NoTranscript: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      useTranscriptTab(useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
+      useTranscriptTab(useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runCommand: () => {} }),
     ),
 }
 
@@ -521,7 +521,7 @@ export const NoTranscript: Story = {
 export const Transcribing: Story = {
   render: () => {
     const state = useTranscriptTab(useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
-      runs: () => {},
+      runCommand: () => {},
     })
     state.setWorking(true)
     return window(`${RECORDING}:lecture`, RecordingTab, state)
@@ -766,7 +766,7 @@ export const Transcribed: Story = {
       tab: `${RECORDING}:lecture`,
       pane: RecordingTab,
       state: useTranscriptTab(useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
-        runs: () => {},
+        runCommand: () => {},
       }),
     }),
 }

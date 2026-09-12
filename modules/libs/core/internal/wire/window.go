@@ -110,14 +110,14 @@ func (w *Window) WatchTasks(
 			if !ok {
 				return nil
 			}
-			if err := out.Send(&v1.WatchTasksResponse{Tasks: doing(list)}); err != nil {
+			if err := out.Send(&v1.WatchTasksResponse{Tasks: describeTasks(list)}); err != nil {
 				return err
 			}
 			last = list
 			repeat.Reset(Again)
 
 		case <-repeat.C:
-			if err := out.Send(&v1.WatchTasksResponse{Tasks: doing(last)}); err != nil {
+			if err := out.Send(&v1.WatchTasksResponse{Tasks: describeTasks(last)}); err != nil {
 				return err
 			}
 		}
@@ -176,7 +176,7 @@ func (w *Window) ReportFlush(
 	if err := w.answers(r.Msg.GetWindow()); err != nil {
 		return nil, err
 	}
-	w.clients.flushed(r.Msg.GetToken(), left(r.Msg.GetResult()))
+	w.clients.recordFlush(r.Msg.GetToken(), left(r.Msg.GetResult()))
 	return connect.NewResponse(&v1.ReportFlushResponse{}), nil
 }
 
@@ -228,7 +228,7 @@ func (w *Window) Settling(ctx context.Context) bool {
 	case <-round.over:
 	case <-ctx.Done():
 	}
-	return !round.pending() && w.clients.current() == round
+	return !round.isPending() && w.clients.current() == round
 }
 
 // WaitForAnswers waits for the round in progress to end with every page having
@@ -252,8 +252,8 @@ func (w *Window) WaitForAnswers(ctx context.Context) bool {
 // it. What the pages hold from here belongs to the vault in front of them.
 func (w *Window) Over() { w.clients.over() }
 
-// doing is the work as the schema says it.
-func doing(list []task.Task) []*v1.Task {
+// describeTasks is the work as the schema says it.
+func describeTasks(list []task.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, at := range list {
 		out = append(out, &v1.Task{
@@ -349,8 +349,8 @@ type round struct {
 	past    bool
 }
 
-// pending reports whether a question a person has to answer is outstanding.
-func (r *round) pending() bool {
+// isPending reports whether a question a person has to answer is outstanding.
+func (r *round) isPending() bool {
 	select {
 	case <-r.questions:
 		return true
@@ -379,7 +379,7 @@ func (l *leaving) listen() (string, <-chan string, func()) {
 	l.next++
 	p := &client{told: make(chan string, 1)}
 	l.pages[token] = p
-	if l.asking() {
+	if l.isAsking() {
 		p.told <- token
 	}
 	l.reckon()
@@ -387,8 +387,8 @@ func (l *leaving) listen() (string, <-chan string, func()) {
 	return token, p.told, func() { l.left(token, p) }
 }
 
-// asking reports whether a round is running. The lock is held.
-func (l *leaving) asking() bool {
+// isAsking reports whether a round is running. The lock is held.
+func (l *leaving) isAsking() bool {
 	return l.round != nil && !l.round.past
 }
 
@@ -420,7 +420,7 @@ func (l *leaving) ask() *round {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if l.asking() {
+	if l.isAsking() {
 		l.round.past = true
 		close(l.round.over)
 	}
@@ -449,7 +449,7 @@ func (l *leaving) over() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if !l.asking() {
+	if !l.isAsking() {
 		return
 	}
 	l.round.past = true
@@ -462,14 +462,14 @@ func (l *leaving) current() *round {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if !l.asking() {
+	if !l.isAsking() {
 		return nil
 	}
 	return l.round
 }
 
-// flushed records what one page has left.
-func (l *leaving) flushed(token string, said owed) {
+// recordFlush records what one page has left.
+func (l *leaving) recordFlush(token string, said owed) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 

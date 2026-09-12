@@ -15,7 +15,7 @@ func spanOf(t *testing.T, front, key string) (int, string, bool) {
 	if err != nil {
 		t.Fatalf("opening %q: %v", front, err)
 	}
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil || node == nil {
 		t.Fatalf("reading %q: %v", front, err)
 	}

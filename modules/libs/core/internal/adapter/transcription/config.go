@@ -175,10 +175,10 @@ func (s SegmenterModel) least() int {
 	return s.Least
 }
 
-// cutting is every setting a segment is cut by, as one value. Each of them
+// describeCutting is every setting a segment is cut by, as one value. Each of them
 // moves where a segment ends, and a segment that ends elsewhere is transcribed
 // as other words.
-func (s SegmenterModel) cutting() string {
+func (s SegmenterModel) describeCutting() string {
 	return fmt.Sprintf("%.2f/%d/%d/%d/%d/%d",
 		s.threshold(), s.silence(), s.pad(), s.longest(), s.shortest(), s.least())
 }

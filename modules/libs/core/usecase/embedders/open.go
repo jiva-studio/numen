@@ -38,8 +38,8 @@ func Fetched(model port.EmbeddingModel, name string, open OpenModel) Provider {
 	return Provider{model: model, name: name, fetch: open}
 }
 
-// named says whether this half was placed anywhere.
-func (p Provider) named() bool { return p.held != nil || p.fetch != nil }
+// isPlaced says whether this half was placed anywhere.
+func (p Provider) isPlaced() bool { return p.held != nil || p.fetch != nil }
 
 // Which half of the work a provider is for. An arrival is called by its role
 // and its name, and two providers naming one repository are two lines.
@@ -61,18 +61,18 @@ const (
 func Open(
 	ctx context.Context, tasks *task.Tasks, indexing, query Provider,
 ) (filling, asking port.Embedder, close func() error) {
-	if !indexing.named() {
+	if !indexing.isPlaced() {
 		return nil, nil, nil
 	}
-	first := open(ctx, tasks, indexing.arriving(forIndexing))
-	if !query.named() {
+	first := open(ctx, tasks, indexing.newArrival(forIndexing))
+	if !query.isPlaced() {
 		return first.Filling(), first.Asking(), first.Close
 	}
 
-	at := query.arriving(forQuery)
+	at := query.newArrival(forQuery)
 	second := open(ctx, tasks, at)
 	go func() {
-		if err := agreeing(ctx, first, second); err != nil {
+		if err := compareModels(ctx, first, second); err != nil {
 			_ = second.Disown(err)
 			reportError(tasks, at, err)
 		}
@@ -84,7 +84,7 @@ func Open(
 // is arriving, which waits for it instead. It answers under the identity the
 // index is filled with, whichever half of the work it was named for.
 func One(ctx context.Context, from Provider) (port.Embedder, func() error) {
-	if !from.named() {
+	if !from.isPlaced() {
 		return nil, nil
 	}
 	held := open(ctx, nil, arrival{from: from})
@@ -101,7 +101,7 @@ func open(ctx context.Context, tasks *task.Tasks, at arrival) *embedding.Embedde
 		return held
 	}
 
-	tell := preparing(tasks, at)
+	tell := newProgressReport(tasks, at)
 	tell(0, 0)
 	go func() {
 		model, err := at.from.fetch(ctx, tell)
@@ -116,11 +116,12 @@ func open(ctx context.Context, tasks *task.Tasks, at arrival) *embedding.Embedde
 	return held
 }
 
-// agreeing is the two providers answering one text alike, once both are here.
+// compareModels is the two providers answering one text alike, once both are
+// here.
 //
 // A comparison that did not happen is not agreement, and only a context that
 // ended excuses one.
-func agreeing(ctx context.Context, first, second *embedding.Embedder) error {
+func compareModels(ctx context.Context, first, second *embedding.Embedder) error {
 	// unchecked is a comparison nobody got an answer out of. A run somebody
 	// stopped is owed no answer.
 	unchecked := func(why error) error {
@@ -161,20 +162,20 @@ type arrival struct {
 	id, name string
 }
 
-// arriving is how one provider appears while it is on its way, under the name it
-// is reached by and the half of the work it was named for.
-func (p Provider) arriving(role string) arrival {
+// newArrival is how one provider appears while it is on its way, under the name
+// it is reached by and the half of the work it was named for.
+func (p Provider) newArrival(role string) arrival {
 	return arrival{from: p, id: "getting ready: " + role + ": " + p.name, name: p.name}
 }
 
-// preparing tells the list how far the model has got, counted in the bytes of
-// it that are here. Fetching it and compiling it are one wait.
+// newProgressReport tells the list how far the model has got, counted in the
+// bytes of it that are here. Fetching it and compiling it are one wait.
 //
 // The count is bytes and says so, and the sizes a person reads them in are the
 // window's to write. A share is drawn once some of the model is here.
 //
 // A run with no list to tell is told nothing and still asks.
-func preparing(tasks *task.Tasks, at arrival) func(done, total int64) {
+func newProgressReport(tasks *task.Tasks, at arrival) func(done, total int64) {
 	if tasks == nil {
 		return func(int64, int64) {}
 	}

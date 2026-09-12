@@ -32,9 +32,9 @@ function createPress(threshold = 4) {
   const scope = effectScope()
   const press = scope.run(() =>
     usePressDrag<string, Position>({
-      threshold: () => threshold,
-      clock: () => clock,
-      landingAt: (_item, at) => (at.x < 500 ? at : null),
+      getThreshold: () => threshold,
+      getClock: () => clock,
+      getLandingAt: (_item, at) => (at.x < 500 ? at : null),
       settle,
       begin,
     }),

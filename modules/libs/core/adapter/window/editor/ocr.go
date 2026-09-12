@@ -18,7 +18,7 @@ func (a *API) ReadOcr(
 	ctx context.Context,
 	r *connect.Request[v1.ReadOcrRequest],
 ) (*connect.Response[v1.ReadOcrResponse], error) {
-	showing, ref, err := a.carrying(ctx, r.Msg.GetPath(), v1.ArtifactKind_ARTIFACT_KIND_OCR)
+	showing, ref, err := a.getArtifactFile(ctx, r.Msg.GetPath(), v1.ArtifactKind_ARTIFACT_KIND_OCR)
 	if err != nil {
 		return nil, err
 	}
@@ -35,18 +35,18 @@ func (a *API) ReadOcr(
 
 	found, err := a.Highlight.Execute(ctx, showing, ref.Path, runs)
 	if err != nil {
-		return nil, connect.NewError(refusedDrawing(err), err)
+		return nil, connect.NewError(getDrawCode(err), err)
 	}
 
 	out := &v1.ReadOcrResponse{Runs: make([]*v1.Run, 0, len(found))}
 	for _, one := range found {
-		out.Runs = append(out.Runs, &v1.Run{Text: one.Text, Boxes: boxed(one.Boxes)})
+		out.Runs = append(out.Runs, &v1.Run{Text: one.Text, Boxes: newBoxes(one.Boxes)})
 	}
 	return connect.NewResponse(out), nil
 }
 
-// boxed is where a run of the text was read, as a caller reads it.
-func boxed(boxes []highlight.Box) []*v1.Box {
+// newBoxes is where a run of the text was read, as a caller reads it.
+func newBoxes(boxes []highlight.Box) []*v1.Box {
 	out := make([]*v1.Box, 0, len(boxes))
 	for _, one := range boxes {
 		out = append(out, &v1.Box{

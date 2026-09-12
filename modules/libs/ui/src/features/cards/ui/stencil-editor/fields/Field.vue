@@ -39,7 +39,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   /** A field is dragged over this row. */
-  (event: 'over', at: InsertionPoint | undefined, press: DragEvent): void
+  (event: 'dragOver', at: InsertionPoint | undefined, press: DragEvent): void
   (event: 'drop'): void
   /** This field taken up by the pointer, and let go again. */
   (event: 'lift', press: DragEvent): void
@@ -50,7 +50,7 @@ const emit = defineEmits<{
 }>()
 
 /** Why what is in the name box cannot be used, and nothing while it can. */
-const objections = computed(() => props.naming.objection(props.row.field))
+const objections = computed(() => props.naming.getObjection(props.row.field))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => {
@@ -72,7 +72,7 @@ const onGripKey = (event: KeyboardEvent): void => {
     :data-names="row.names || undefined"
     :data-dragged="row.dragged || undefined"
     :data-before="before || undefined"
-    @dragover.stop="emit('over', row.names ? undefined : row.field, $event)"
+    @dragover.stop="emit('dragOver', row.names ? undefined : row.field, $event)"
     @drop.stop="emit('drop')"
   >
     <CardRow class="stencil__row" :data-objections="objections ?? undefined">

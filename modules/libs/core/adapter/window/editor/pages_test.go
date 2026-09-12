@@ -32,9 +32,9 @@ import (
 // pinning the dark half.
 const mine = ":root{color-scheme:dark;--numen-surface:#010203}"
 
-// drawn is the whole handler as the application hands it over: the questions,
+// newPageHandler is the whole handler as the application hands it over: the questions,
 // the themes, and the built page behind them.
-func drawn(t *testing.T, cfg container.Config) (http.Handler, numenv1connect.ThemeServiceHandler) {
+func newPageHandler(t *testing.T, cfg container.Config) (http.Handler, numenv1connect.ThemeServiceHandler) {
 	t.Helper()
 
 	files, err := Pages()
@@ -59,11 +59,11 @@ func puts(t *testing.T, cfg container.Config, name, body string) {
 
 func choose(t *testing.T, themes numenv1connect.ThemeServiceHandler, name string, mode v1.Mode) {
 	t.Helper()
-	chose(t, themes, &v1.WriteAppearanceRequest{Name: name, Mode: mode})
+	writeAppearance(t, themes, &v1.WriteAppearanceRequest{Name: name, Mode: mode})
 }
 
-// chose is one choice as a client makes it, whatever of it the client names.
-func chose(t *testing.T, themes numenv1connect.ThemeServiceHandler, asked *v1.WriteAppearanceRequest) {
+// writeAppearance is one choice as a client makes it, whatever of it the client names.
+func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, asked *v1.WriteAppearanceRequest) {
 	t.Helper()
 	out, err := themes.WriteAppearance(t.Context(), connect.NewRequest(asked))
 	if err != nil {
@@ -77,9 +77,9 @@ func chose(t *testing.T, themes numenv1connect.ThemeServiceHandler, asked *v1.Wr
 // size is a size a choice names.
 func size(said float64) *float64 { return &said }
 
-// handed is what comes back at exactly this path. The page is handed over as
+// getResponse is what comes back at exactly this path. The page is handed over as
 // the empty path as well, which no URL parses to.
-func handed(handler http.Handler, path string) *httptest.ResponseRecorder {
+func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r.URL.Path = path
 	out := httptest.NewRecorder()
@@ -100,7 +100,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 
 	handler := (&API{}).Serving(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetOf("a.pdf")} {
-		if said := handed(handler, path).Header().Get("Content-Security-Policy"); said != held {
+		if said := getResponse(handler, path).Header().Get("Content-Security-Policy"); said != held {
 			t.Errorf("%q is held to %q", path, said)
 		}
 	}
@@ -117,7 +117,7 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 		t.Errorf("the window may frame %q", got)
 	}
 
-	said := handed((&API{}).Serving(http.NotFoundHandler()), "/").
+	said := getResponse((&API{}).Serving(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
 	if !strings.Contains(said, "frame-src 'self';") {
 		t.Errorf("the policy reads %q", said)
@@ -146,7 +146,7 @@ func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
 		numenv1connect.NoteServiceReadNoteProcedure,
 		numenv1connect.SearchServiceSearchNamesProcedure,
 	} {
-		if code := handed(handler, route).Code; code != http.StatusMethodNotAllowed {
+		if code := getResponse(handler, route).Code; code != http.StatusMethodNotAllowed {
 			t.Errorf("%s answered %d, want %d", route, code, http.StatusMethodNotAllowed)
 		}
 	}
@@ -162,7 +162,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	asked := []string{"", "/", "/index.html", assetOf("a.pdf"), questions + "Find"}
 
 	for _, path := range asked {
-		if code := handed(handler, path).Code; code == http.StatusServiceUnavailable {
+		if code := getResponse(handler, path).Code; code == http.StatusServiceUnavailable {
 			t.Errorf("%q was refused at %d with the window still open", path, code)
 		}
 	}
@@ -170,7 +170,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	api.Shut()
 
 	for _, path := range asked {
-		if code := handed(handler, path).Code; code != http.StatusServiceUnavailable {
+		if code := getResponse(handler, path).Code; code != http.StatusServiceUnavailable {
 			t.Errorf("%q was answered %d by a window being taken away", path, code)
 		}
 	}
@@ -178,14 +178,14 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 
 // The page arrives wearing the theme, at every address it is asked for under.
 func TestThePageOpensWearingTheTheme(t *testing.T) {
-	cfg := installed(t)
-	handler, themes := drawn(t, cfg)
+	cfg := newConfig(t)
+	handler, themes := newPageHandler(t, cfg)
 	puts(t, cfg, "sea.css", mine)
 	choose(t, themes, "mine:sea", v1.Mode_MODE_DARK)
 
 	for _, path := range []string{"", "/", "/index.html"} {
 		t.Run(strconv.Quote(path), func(t *testing.T) {
-			out := handed(handler, path)
+			out := getResponse(handler, path)
 			if out.Code != http.StatusOK {
 				t.Fatalf("answered %d", out.Code)
 			}
@@ -212,17 +212,17 @@ func TestThePageOpensWearingTheTheme(t *testing.T) {
 // after the theme: they are what a person set this window to, inside the bounds
 // each goes to, and the window is drawn at what they say.
 func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
-	cfg := installed(t)
-	handler, themes := drawn(t, cfg)
+	cfg := newConfig(t)
+	handler, themes := newPageHandler(t, cfg)
 	puts(t, cfg, "sea.css", mine)
-	chose(t, themes, &v1.WriteAppearanceRequest{
+	writeAppearance(t, themes, &v1.WriteAppearanceRequest{
 		Name:           "mine:sea",
 		Mode:           v1.Mode_MODE_DARK,
 		InterfaceScale: size(1.25),
 		TextScale:      size(1.5),
 	})
 
-	head, _, found := strings.Cut(handed(handler, "/").Body.String(), appearance.HeadEnd)
+	head, _, found := strings.Cut(getResponse(handler, "/").Body.String(), appearance.HeadEnd)
 	if !found {
 		t.Fatal("the page has no head")
 	}
@@ -249,14 +249,14 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 
 // A window drawn at 1.5 goes on being drawn at 1.5.
 func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
-	cfg := installed(t)
+	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	if err := os.WriteFile(file, []byte(`{"appearance":{"zoom":1.5}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	handler, _ := drawn(t, cfg)
+	handler, _ := newPageHandler(t, cfg)
 
-	if !strings.Contains(handed(handler, "/").Body.String(), "--numen-interface-scale: 1.5") {
+	if !strings.Contains(getResponse(handler, "/").Body.String(), "--numen-interface-scale: 1.5") {
 		t.Error("the page is not drawn at what the file says")
 	}
 }
@@ -289,21 +289,21 @@ func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
 
 // The head is read for each request: a theme chosen is worn by the next reload.
 func TestTheHeadIsReadForEachRequest(t *testing.T) {
-	cfg := installed(t)
-	handler, themes := drawn(t, cfg)
+	cfg := newConfig(t)
+	handler, themes := newPageHandler(t, cfg)
 	puts(t, cfg, "sea.css", mine)
 
-	if strings.Contains(handed(handler, "/").Body.String(), mine) {
+	if strings.Contains(getResponse(handler, "/").Body.String(), mine) {
 		t.Fatal("the page is wearing a theme nobody chose")
 	}
 	choose(t, themes, "mine:sea", v1.Mode_MODE_DARK)
-	if !strings.Contains(handed(handler, "/").Body.String(), mine) {
+	if !strings.Contains(getResponse(handler, "/").Body.String(), mine) {
 		t.Error("the page is still wearing what it opened in")
 	}
 
 	// The file behind the name is read again as well.
 	puts(t, cfg, "sea.css", ":root{--numen-surface:#040506}")
-	if !strings.Contains(handed(handler, "/").Body.String(), "#040506") {
+	if !strings.Contains(getResponse(handler, "/").Body.String(), "#040506") {
 		t.Error("the page is wearing the file as it was")
 	}
 }
@@ -316,7 +316,7 @@ func TestAPageThatCannotSayWhatItWearsIsServedAsItWasBuilt(t *testing.T) {
 		t.Skipf("no interface in this binary: %v", err)
 	}
 
-	out := handed((&API{}).Serving(files), "/")
+	out := getResponse((&API{}).Serving(files), "/")
 	if out.Code != http.StatusOK {
 		t.Fatalf("answered %d", out.Code)
 	}
@@ -327,12 +327,12 @@ func TestAPageThatCannotSayWhatItWearsIsServedAsItWasBuilt(t *testing.T) {
 
 // A theme naming the end of the element it is spliced into does not end it.
 func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
-	cfg := installed(t)
-	handler, themes := drawn(t, cfg)
+	cfg := newConfig(t)
+	handler, themes := newPageHandler(t, cfg)
 	puts(t, cfg, "loud.css", ":root{--numen-surface:#010203}</STYLE><b>out here</b>")
 	choose(t, themes, "mine:loud", v1.Mode_MODE_SYSTEM)
 
-	body := handed(handler, "/").Body.String()
+	body := getResponse(handler, "/").Body.String()
 	head, rest, found := strings.Cut(body, appearance.HeadEnd)
 	if !found {
 		t.Fatal("the page has no head")
@@ -391,7 +391,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	}
 	// A page is the one thing left under this route, and drawing one looks the
 	// file up before anything else. That look is where the door stands.
-	api := &API{Readers: readers, Viewer: looking(nil)}
+	api := &API{Readers: readers, Viewer: newViewer(nil)}
 	api.Viewer.open = func([]byte) (scan, error) { return nil, errNoPage }
 	api.show(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
 	handler := api.Serving(http.NotFoundHandler())

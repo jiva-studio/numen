@@ -98,7 +98,7 @@ const reading =
         markup: chapter.markup,
         span: chapter.span,
         highlights,
-        moved: (to: number) => {
+        onMove: (to: number) => {
           at.value = to
         },
         larger: () => {
@@ -118,7 +118,7 @@ const reading =
           :at="at"
           :text-size="size"
           :highlights="highlights"
-          @moved="moved"
+          @move="onMove"
         />
       </div>
     `,
@@ -149,7 +149,7 @@ const outOfSight =
         room,
         markup,
         span: chapter.span,
-        go: (to: number) => {
+        onMove: (to: number) => {
           at.value = to
         },
       }
@@ -163,7 +163,7 @@ const outOfSight =
             :span="span"
             :book="span"
             :at="at"
-            @moved="moved"
+            @move="onMove"
           />
         </div>
       </div>

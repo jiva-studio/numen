@@ -184,7 +184,7 @@ func (d drawing) minutes(ctx context.Context) (Curve, error) {
 	}
 
 	out := Curve{Goal: GoalMinutes, Now: Nowhere, Suggested: Nowhere}
-	top := ceiling(carried(load), float64(p.MinutesADay))
+	top := ceiling(getSessionMinutes(load), float64(p.MinutesADay))
 	for i := range Points {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
 	}
@@ -286,16 +286,16 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
 
 	out := Curve{Goal: GoalDate, Now: Nowhere, Suggested: Nowhere}
-	open := run.Day.StartOf(now)
+	open := run.Day.GetStart(now)
 	by := p.By.Format(Named)
-	if p.By.IsZero() || by < run.Day.Names(open) {
+	if p.By.IsZero() || by < run.Day.GetName(open) {
 		return out, nil
 	}
 	// How far off the day the file names is, counting the day holding now as
 	// none. A day further off than the projection reaches stands nowhere on the
 	// range, and the range is drawn as far as it goes.
 	named := 0
-	for day := open; run.Day.Names(day) < by; day = day.AddDate(0, 0, 1) {
+	for day := open; run.Day.GetName(day) < by; day = day.AddDate(0, 0, 1) {
 		named++
 		if named > MostAhead {
 			named = Nowhere.Index
@@ -316,7 +316,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 	//
 	// A place runs a horizon of Ahead days, and of its own day where that stands
 	// further off.
-	steps := naming(spread(last-first+1, Points), named-first)
+	steps := setNearestStep(spread(last-first+1, Points), named-first)
 	out.Grid = make([]float64, len(steps))
 	out.Days = make([]string, len(steps))
 	out.Points = make([]Point, len(steps))
@@ -337,7 +337,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 		// review holds is read off the first day this run admits.
 		opening, session := ran.Session()
 		out.Grid[i] = float64(day)
-		out.Days[i] = run.Day.Names(aiming.By)
+		out.Days[i] = run.Day.GetName(aiming.By)
 		one := Point{
 			// What it costs is what the days up to that one spend, and the days
 			// past it are no part of getting through by it.
@@ -348,7 +348,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 			Owed:     ran.Backlog[day],
 			Retained: back,
 			Share:    ran.Through[day],
-			Enough:   ran.reached(day),
+			Enough:   ran.hasReached(day),
 			Short:    ran.Short,
 			Closed:   BudgetNames{ClosedPaused},
 			Clears:   ran.Clears,
@@ -371,7 +371,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 		out.Now = Place{
 			Index: nearest(out.Grid, float64(named)),
 			Value: float64(named),
-			Day:   run.Day.Names(open.AddDate(0, 0, named)),
+			Day:   run.Day.GetName(open.AddDate(0, 0, named)),
 		}
 	}
 	// What is suggested is the soonest day the material can be learned by:
@@ -436,7 +436,7 @@ func point(p Projection) Point {
 		Retained: back,
 		Owed:     p.Owed,
 		Share:    p.Through[len(p.Through)-1],
-		Closed:   closing(p),
+		Closed:   getSessionClosed(p),
 		Short:    p.Short,
 		Clears:   p.Clears,
 		Learned:  p.Learned,
@@ -445,9 +445,9 @@ func point(p Projection) Point {
 	}
 }
 
-// closing is what closed the first day the preset admits. A preset admession no
-// day is closed by the pause.
-func closing(p Projection) BudgetNames {
+// getSessionClosed is what closed the first day the preset admits. A preset
+// admession no day is closed by the pause.
+func getSessionClosed(p Projection) BudgetNames {
 	day, any := p.Session()
 	if !any {
 		return BudgetNames{ClosedPaused}
@@ -471,9 +471,9 @@ func session(p Projection) Point {
 	return out
 }
 
-// carried is how long the first day the preset admits took, which is what
-// carrying the whole load costs on the next session.
-func carried(p Projection) float64 {
+// getSessionMinutes is how long the first day the preset admits took, which is
+// what carrying the whole load costs on the next session.
+func getSessionMinutes(p Projection) float64 {
 	day, any := p.Session()
 	if !any {
 		return 0

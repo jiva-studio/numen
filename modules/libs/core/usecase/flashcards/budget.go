@@ -39,11 +39,11 @@ type allowance struct {
 	spent  review.Spent
 }
 
-// budgeted works out the day's budgets over the cards standing.
+// getBudgets works out the day's budgets over the cards standing.
 //
 // What has been answered since the day opened is off it, so a second session
 // takes up where the first left off.
-func budgeted(
+func getBudgets(
 	ctx context.Context, v domain.Vault, reading *PresetReads, day review.Day,
 	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 	log ReviewLog, by review.Scheduler, at func(retention float64) review.Scheduler,
@@ -90,12 +90,12 @@ func budgeted(
 	for deck, path := range asked {
 		counting[deck] = settings[path].Counts
 	}
-	named := day.Names(now)
+	named := day.GetName(now)
 	out.faced = review.Faced(day, named, log.Answers)
 
 	// A card face stands in one deck and one preset, so a preset's day is the
 	// sum of the days of the decks that name it.
-	out.spentUnder = review.SpentUnder(day, named, log.Answers, in, counting)
+	out.spentUnder = review.GetSpentUnder(day, named, log.Answers, in, counting)
 	spent := make(map[string]review.Spent, len(settings))
 	for deck, one := range out.spentUnder {
 		at := spent[asked[deck]]
@@ -276,9 +276,9 @@ type deckShare struct {
 	debt, begun  int
 }
 
-// remaining is how many of a deck's cards no share has taken, which is what the
-// deck still owes of the day.
-func (q *deckShare) remaining(out taken) int {
+// countRemaining is how many of a deck's cards no share has taken, which is
+// what the deck still owes of the day.
+func (q *deckShare) countRemaining(out taken) int {
 	held := 0
 	for _, at := range q.owed {
 		if !out.owed[at] {
@@ -293,9 +293,10 @@ func (q *deckShare) remaining(out taken) int {
 	return held
 }
 
-// given is how much of the day a deck has had, in the time it took: what an
-// earlier session spent of today, and what the deck's own share has just spent.
-func (b *budgets) given(q *deckShare, cost review.AnswerCost) time.Duration {
+// getTimeSpent is how much of the day a deck has had, in the time it took: what
+// an earlier session spent of today, and what the deck's own share has just
+// spent.
+func (b *budgets) getTimeSpent(q *deckShare, cost review.AnswerCost) time.Duration {
 	return b.spentUnder[q.deck].Took +
 		time.Duration(q.debt)*cost.Review + time.Duration(q.begun)*cost.New
 }
@@ -374,12 +375,12 @@ func (b *budgets) spends(owed, fresh []CardFace) taken {
 		// in the order of the time the day has given them already, least first.
 		remaining := make(map[string]int, len(decks))
 		for _, q := range decks {
-			remaining[q.deck] = q.remaining(out)
+			remaining[q.deck] = q.countRemaining(out)
 		}
 		slices.SortStableFunc(decks, func(x, y *deckShare) int {
 			return cmp.Or(
 				cmp.Compare(remaining[y.deck], remaining[x.deck]),
-				cmp.Compare(b.given(x, one.cost), b.given(y, one.cost)),
+				cmp.Compare(b.getTimeSpent(x, one.cost), b.getTimeSpent(y, one.cost)),
 			)
 		})
 		for _, q := range decks {

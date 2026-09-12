@@ -29,7 +29,7 @@ type changing struct {
 
 func changeable(t *testing.T, notes map[string]string) changing {
 	t.Helper()
-	db, v := indexed(t, notes)
+	db, v := newIndexedVault(t, notes)
 	refresh := vaults.NewRefresh(
 		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
 	return changing{
@@ -63,7 +63,7 @@ func (c changing) remove() note.Remove {
 		filesystem.VaultWriters{}, c.db.Links(), c.db.SourcesKnown(), c.index)
 }
 
-func (c changing) linking() note.EditLinks {
+func (c changing) newEditLinks() note.EditLinks {
 	return note.NewEditLinks(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
 }
@@ -425,7 +425,7 @@ func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 		"Heat.md":    "# Heat\n",
 	})
 
-	if _, err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
+	if _, err := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
 		Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 		Role:   domain.RoleParent,
 		Label:  "follows from",
@@ -459,7 +459,7 @@ func TestPointingANoteAtAPlaceUnderATypeReplacesTheEntryItHad(t *testing.T) {
 			"  - to: Grammar\n    role: parent\n---\n# Roots\n",
 	})
 
-	at, err := c.linking().PointAt(t.Context(), c.vault, "Roots.md", "preset",
+	at, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", "preset",
 		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
@@ -504,7 +504,7 @@ func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
 	})
 	before := c.read(t, "Entropy.md")
 
-	if _, err := c.linking().Remove(t.Context(), c.vault, "Heat.md",
+	if _, err := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
 		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, "",
 		domain.Fingerprint{}); err != nil {
 		t.Fatal(err)

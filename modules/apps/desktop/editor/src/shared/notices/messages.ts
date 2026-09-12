@@ -35,7 +35,7 @@ export interface MessageLog {
   /** A writer under a name of its own. */
   under(name: string): MessageWriter
   /** A message the person is finished with, by the identity it was given. */
-  forget(id: string): void
+  dismiss(id: string): void
 }
 
 /**
@@ -67,9 +67,9 @@ export function messageLog(): MessageLog {
       messages.value = [...rest, { id: `${name}#${minted}`, name, kind, text }]
     }
 
-  const forget = (id: string): void => {
+  const dismiss = (id: string): void => {
     messages.value = messages.value.filter((one) => one.id !== id)
   }
 
-  return { messages, under, forget }
+  return { messages, under, dismiss }
 }

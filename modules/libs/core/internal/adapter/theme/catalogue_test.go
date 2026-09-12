@@ -27,7 +27,7 @@ func put(t *testing.T, catalogue theme.Catalogue, name, body string) {
 	}
 }
 
-func named(themes []theme.Theme) []string {
+func getNames(themes []theme.Theme) []string {
 	names := make([]string, 0, len(themes))
 	for _, one := range themes {
 		names = append(names, one.Name)
@@ -78,7 +78,7 @@ func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
 		"preset:cobalt2",
 	} {
 		if !holds(themes, name) {
-			t.Errorf("no %s among %v", name, named(themes))
+			t.Errorf("no %s among %v", name, getNames(themes))
 		}
 	}
 }
@@ -119,7 +119,7 @@ func TestAPersonsThemeStandsBesideThePresetItsNameIsShared(t *testing.T) {
 
 	themes := catalogue.Themes()
 	if !holds(themes, "preset:dracula") || !holds(themes, "mine:dracula") {
-		t.Fatalf("one hides the other: %v", named(themes))
+		t.Fatalf("one hides the other: %v", getNames(themes))
 	}
 	text, err := catalogue.Text("mine:dracula")
 	if err != nil {
@@ -184,7 +184,7 @@ func TestAFileTooLargeToSpliceIntoThePageIsNoTheme(t *testing.T) {
 		t.Error("a file past the bound is offered")
 	}
 	if !holds(themes, "mine:small") {
-		t.Errorf("a file at the bound is not offered: %v", named(themes))
+		t.Errorf("a file at the bound is not offered: %v", getNames(themes))
 	}
 	if _, err := catalogue.Text("mine:vast"); err == nil {
 		t.Error("a file past the bound was read")
@@ -223,7 +223,7 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 
 	themes := catalogue.Themes()
 	if !holds(themes, theme.Default) {
-		t.Errorf("nothing to wear: %v", named(themes))
+		t.Errorf("nothing to wear: %v", getNames(themes))
 	}
 	for _, one := range themes {
 		if one.Shelf == theme.Mine {
@@ -240,7 +240,7 @@ func TestACatalogueWithNoFolderOffersWhatShips(t *testing.T) {
 	var catalogue theme.Catalogue
 	themes := catalogue.Themes()
 	if !holds(themes, theme.Default) {
-		t.Errorf("nothing to wear: %v", named(themes))
+		t.Errorf("nothing to wear: %v", getNames(themes))
 	}
 	if _, err := catalogue.Text("mine:dracula"); err == nil {
 		t.Error("a theme was read out of a folder that is not there")

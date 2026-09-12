@@ -29,7 +29,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 	for range vaults {
 		held = append(held, benchDeck(cards))
 	}
-	api, all := windowed(b, held...)
+	api, all := newAPI(b, held...)
 	for _, v := range all {
 		benchAnswers(b, api, v, cards, days, perDay)
 	}
@@ -50,7 +50,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 	// A vault is read when the window opens it, and that is done before the
 	// clock starts: what is measured here is what counting one costs.
 	for _, v := range all {
-		for api.counted(ctx, v).GetReading() {
+		for api.countVault(ctx, v).GetReading() {
 			time.Sleep(time.Millisecond)
 		}
 	}
@@ -87,7 +87,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 	b.Run("OneAfterAnother", func(b *testing.B) {
 		for b.Loop() {
 			for _, v := range all {
-				if one := api.counted(ctx, v); one.GetUnread() != "" {
+				if one := api.countVault(ctx, v); one.GetUnread() != "" {
 					b.Fatal(one.GetUnread())
 				}
 			}

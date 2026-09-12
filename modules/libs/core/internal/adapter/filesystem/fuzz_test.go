@@ -83,8 +83,8 @@ func FuzzInside(f *testing.F) {
 			t.Fatalf("%q is both the vault's (%s) and the application's (%s)",
 				path, asVault, asOurs)
 		}
-		held(t, root, path, "within", false, asVault, vaultReal, vaultErr)
-		held(t, root, path, "service", true, asOurs, oursReal, oursErr)
+		checkRule(t, root, path, "within", false, asVault, vaultReal, vaultErr)
+		checkRule(t, root, path, "service", true, asOurs, oursReal, oursErr)
 
 		// A path that could not name anything inside a vault is refused before
 		// the filesystem is asked anything at all.
@@ -99,13 +99,13 @@ func FuzzInside(f *testing.F) {
 		if got, err := inside(root, path, DefaultServiceDir); err != nil != (vaultErr != nil) || got != asVault {
 			t.Fatalf("inside(%q) gave %q, %v and within gave %q, %v", path, got, err, asVault, vaultErr)
 		}
-		if got, err := followed(root, path, DefaultServiceDir); err != nil != (vaultErr != nil) || got != vaultReal {
-			t.Fatalf("followed(%q) gave %q, %v and within gave %q, %v", path, got, err, vaultReal, vaultErr)
+		if got, err := resolveLinks(root, path, DefaultServiceDir); err != nil != (vaultErr != nil) || got != vaultReal {
+			t.Fatalf("resolveLinks(%q) gave %q, %v and within gave %q, %v", path, got, err, vaultReal, vaultErr)
 		}
 	})
 }
 
-// held fails unless a rule that answered handed back a path under the root,
+// checkRule fails unless a rule that answered handed back a path under the root,
 // both where it lands and where it lands with every link resolved, and unless a
 // rule that refused handed back nothing at all.
 //
@@ -113,7 +113,7 @@ func FuzzInside(f *testing.F) {
 // to answer. A link is a second spelling for a place, and it is the place the
 // two divide between them, so a path spelled as the vault's that lands in the
 // application's folder is the application's and within may not take it.
-func held(t *testing.T, root, path, rule string, application bool, target, real string, err error) {
+func checkRule(t *testing.T, root, path, rule string, application bool, target, real string, err error) {
 	t.Helper()
 	if err != nil {
 		if target != "" || real != "" {

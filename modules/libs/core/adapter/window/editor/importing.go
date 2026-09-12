@@ -38,7 +38,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	if !api.Writing.begin() {
 		return
 	}
-	defer api.Writing.done()
+	defer api.Writing.finish()
 
 	at := task.Task{ID: importingFiles + " " + into, Doing: "Bringing files in", About: into}
 	api.say(at)
@@ -52,12 +52,12 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 		api.say(at)
 		return
 	}
-	if said := errorsIn(brought.Errors); said != "" {
+	if said := describeImportFailures(brought.Errors); said != "" {
 		at.Error = said
 		api.say(at)
 		return
 	}
-	api.finished(at.ID)
+	api.finishTask(at.ID)
 }
 
 // directlyIn is what of a drop sits in the folder it was let go over. What
@@ -73,9 +73,9 @@ func directlyIn(into string, landed []string) []string {
 	return shown
 }
 
-// errorsIn is what a drop could not bring in, in one sentence. Nothing is said
-// where every file arrived.
-func errorsIn(errs []vaults.Error) string {
+// describeImportFailures says what a drop could not bring in, in one sentence.
+// Nothing is said where every file arrived.
+func describeImportFailures(errs []vaults.ImportFailure) string {
 	if len(errs) == 0 {
 		return ""
 	}

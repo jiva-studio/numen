@@ -95,7 +95,7 @@ func mark(at int) string { return fmt.Sprintf("card%06d", at) }
 // two presets of the same day hold as many cards as their cards cost.
 func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Slow.md":        preset("goal: minutes_a_day\nnew_a_day: 10\nminutes_a_day: 1\n"),
 		"Quick.md":       preset("goal: minutes_a_day\nnew_a_day: 10\nminutes_a_day: 1\n"),
@@ -129,7 +129,7 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 // the small hours of the morning belong to the day before.
 func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"Light.md": preset(
 			"new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nload: {sat: 50}\n"),
@@ -157,7 +157,7 @@ func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 // stops when the next one opens.
 func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"By.md": preset("goal: by_date\nby_date: 2026-09-05\n" +
 			"new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -185,7 +185,7 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 // answered since the day opened is off the day's budget.
 func TestASecondSessionTakesUpWhereTheFirstLeftOff(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":       term,
 		"Five.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Five.md": deckOf("Five", 20, 0),
@@ -212,7 +212,7 @@ func TestACardAnsweredAgainSpendsOneCardOrEveryShow(t *testing.T) {
 		counts string
 		cards  int
 	}{{"cards", 2}, {"shows", 0}} {
-		s := opened(t, map[string]string{
+		s := openVault(t, map[string]string{
 			"Term.md": term,
 			"Two.md": preset("counts: " + one.counts +
 				"\nnew_a_day: 0\nreviews_a_day: 2\nminutes_a_day: 0\n"),
@@ -247,7 +247,7 @@ func TestAFaceTheDayHasChargedIsFreeInALaterSession(t *testing.T) {
 		counts string
 		cards  int
 	}{{"cards", 1}, {"shows", 0}} {
-		s := opened(t, map[string]string{
+		s := openVault(t, map[string]string{
 			"Term.md": term,
 			"One.md": preset("counts: " + one.counts +
 				"\nnew_a_day: 0\nreviews_a_day: 1\nminutes_a_day: 0\n"),
@@ -272,7 +272,7 @@ func TestAFaceTheDayHasChargedIsFreeInALaterSession(t *testing.T) {
 // steps to settle are the three the day holds, and no fourth is begun.
 func TestADaysCardsAreCountedInCardsAndNotShows(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Three.md":       preset("new_a_day: 3\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Three.md": deckOf("Three", 6, 0),
@@ -301,7 +301,7 @@ func TestADaysCardsAreCountedInCardsAndNotShows(t *testing.T) {
 // leaves the others where they were.
 func TestTwoPresetsInOneSessionKeepTheirOwnBudgets(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":       term,
 		"Few.md":        preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"Many.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -325,7 +325,7 @@ func TestTwoPresetsInOneSessionKeepTheirOwnBudgets(t *testing.T) {
 // is empty for the day. A deck scheduled by another preset is untouched.
 func TestAPresetOfNoCardsADaySchedulesNothing(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":          term,
 		"Paused.md":        preset("new_a_day: 0\nreviews_a_day: 0\n"),
 		"decks/Paused.md":  deckOf("Paused", 6, 0),
@@ -345,7 +345,7 @@ func TestAPresetOfNoCardsADaySchedulesNothing(t *testing.T) {
 // naming that day nothing carries all of them on it.
 func TestALightDayCutsTheDaysCards(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"Light.md": preset(
 			"new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nload: {sat: 50}\n"),
@@ -368,7 +368,7 @@ func TestALightDayCutsTheDaysCards(t *testing.T) {
 // three answers at the twenty seconds a new card costs.
 func TestTheMinutesCloseTheDayUnderAGoalOfMinutes(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Short.md":       preset("goal: minutes_a_day\nnew_a_day: 10\nminutes_a_day: 1\n"),
 		"decks/Short.md": deckOf("Short", 10, 0),
@@ -410,7 +410,7 @@ func TestTheBudgetTheGoalDoesNotNameMovesNothing(t *testing.T) {
 		}, 4},
 	} {
 		for _, aside := range one.aside {
-			s := opened(t, map[string]string{
+			s := openVault(t, map[string]string{
 				"Term.md":     term,
 				"On.md":       preset(one.goal + aside),
 				"decks/On.md": deckOf("On", 40, 0),
@@ -430,7 +430,7 @@ func TestTheBudgetTheGoalDoesNotNameMovesNothing(t *testing.T) {
 // preset are asked their own day.
 func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"Steady.md": preset("goal: minutes_a_day\nminutes_a_day: 34\n" +
 			"new_a_day: 12\nreviews_a_day: 0\n"),
@@ -451,7 +451,7 @@ func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 		t.Errorf("the preset of no reviews was asked %d cards, want its 20",
 			got["decks/Steady.md"])
 	}
-	if owed := asked(sat) - unseen(sat); owed != 6 {
+	if owed := countQueue(sat) - unseen(sat); owed != 6 {
 		t.Errorf("the day was asked %d cards it owed, want 6", owed)
 	}
 	if got["decks/Loose.md"] != 20 {
@@ -464,7 +464,7 @@ func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 // left to begin it in. Neither the minutes nor the counts cut it short.
 func TestAGoalOfADatePacesTheDayOverTheDaysLeft(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		// Ten days from the Saturday to the day it aims at, counting both, and
 		// a card is learned the day it is answered, so every one of them is a
@@ -482,7 +482,7 @@ func TestAGoalOfADatePacesTheDayOverTheDaysLeft(t *testing.T) {
 // What is owed is what the session asks: the same numbers, deck by deck.
 func TestWhatIsOwedIsWhatTheSessionAsks(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Few.md":         preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Few.md":   deckOf("Few", 10, 0),
@@ -491,7 +491,7 @@ func TestWhatIsOwedIsWhatTheSessionAsks(t *testing.T) {
 	now := func() time.Time { return saturday }
 
 	sat := byDeck(s.sessionAt(t, today, saturday))
-	owing, err := s.owedAt(today, now).Execute(t.Context(), s.vault)
+	owing, err := s.newCountCardsDueAt(today, now).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -507,18 +507,18 @@ func TestWhatIsOwedIsWhatTheSessionAsks(t *testing.T) {
 	}
 }
 
-// asked is how many card faces a session holds, over every deck.
-func asked(sat flashcards.SessionResult) int { return len(sat.Queue) }
+// countQueue is how many card faces a session holds, over every deck.
+func countQueue(sat flashcards.SessionResult) int { return len(sat.Queue) }
 
 // The decks naming no preset are one scope, so a second deck of them is a
 // second deck of the same day and not a second day's work.
 func TestDecksNamingNoPresetShareTheDefaultsBudget(t *testing.T) {
 	t.Parallel()
-	one := opened(t, map[string]string{
+	one := openVault(t, map[string]string{
 		"Term.md":      term,
 		"decks/One.md": deckOf("", 80, 0),
 	})
-	two := opened(t, map[string]string{
+	two := openVault(t, map[string]string{
 		"Term.md":      term,
 		"decks/One.md": deckOf("", 80, 0),
 		"decks/Two.md": deckOf("", 80, 100),
@@ -526,10 +526,10 @@ func TestDecksNamingNoPresetShareTheDefaultsBudget(t *testing.T) {
 
 	held := int(time.Duration(review.Defaults().MinutesADay) *
 		time.Minute / review.DefaultCost.New)
-	if got := asked(one.sessionAt(t, today, saturday)); got != held {
+	if got := countQueue(one.sessionAt(t, today, saturday)); got != held {
 		t.Fatalf("one deck on the defaults was asked %d cards, want %d", got, held)
 	}
-	if got := asked(two.sessionAt(t, today, saturday)); got != held {
+	if got := countQueue(two.sessionAt(t, today, saturday)); got != held {
 		t.Errorf("two decks on the defaults were asked %d cards, want %d", got, held)
 	}
 }
@@ -538,7 +538,7 @@ func TestDecksNamingNoPresetShareTheDefaultsBudget(t *testing.T) {
 // another beside it.
 func TestDecksNamingOnePresetShareItsBudget(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":       term,
 		"Six.md":        preset("new_a_day: 6\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/One.md":  deckOf("Six", 20, 0),
@@ -561,14 +561,14 @@ func TestDecksNamingOnePresetShareItsBudget(t *testing.T) {
 // minute under each of two is two minutes of cards.
 func TestTwoPresetsOfAMinuteEachHoldTwoMinutesOfCards(t *testing.T) {
 	t.Parallel()
-	apart := opened(t, map[string]string{
+	apart := openVault(t, map[string]string{
 		"Term.md":      term,
 		"First.md":     preset("goal: minutes_a_day\nnew_a_day: 50\nminutes_a_day: 1\n"),
 		"Second.md":    preset("goal: minutes_a_day\nnew_a_day: 50\nminutes_a_day: 1\n"),
 		"decks/One.md": deckOf("First", 20, 0),
 		"decks/Two.md": deckOf("Second", 20, 100),
 	})
-	together := opened(t, map[string]string{
+	together := openVault(t, map[string]string{
 		"Term.md":      term,
 		"First.md":     preset("goal: minutes_a_day\nnew_a_day: 50\nminutes_a_day: 1\n"),
 		"decks/One.md": deckOf("First", 20, 0),
@@ -576,10 +576,10 @@ func TestTwoPresetsOfAMinuteEachHoldTwoMinutesOfCards(t *testing.T) {
 	})
 
 	held := int(time.Minute / review.DefaultCost.New)
-	if got := asked(together.sessionAt(t, today, saturday)); got != held {
+	if got := countQueue(together.sessionAt(t, today, saturday)); got != held {
 		t.Fatalf("one minute over both decks was asked %d cards, want %d", got, held)
 	}
-	if got := asked(apart.sessionAt(t, today, saturday)); got != 2*held {
+	if got := countQueue(apart.sessionAt(t, today, saturday)); got != 2*held {
 		t.Errorf("a minute under each of two presets was asked %d cards, want %d", got, 2*held)
 	}
 }
@@ -588,7 +588,7 @@ func TestTwoPresetsOfAMinuteEachHoldTwoMinutesOfCards(t *testing.T) {
 // one goes on asking the other.
 func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":      term,
 		"New.md":       preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/New.md": deckOf("New", 6, 0),
@@ -604,7 +604,7 @@ func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
 	if got := unseen(sat); got != 2 {
 		t.Errorf("the day was asked %d new cards, want the two it keeps", got)
 	}
-	if got := asked(sat) - unseen(sat); got != 0 {
+	if got := countQueue(sat) - unseen(sat); got != 0 {
 		t.Errorf("a day keeping no reviews was asked %d of them", got)
 	}
 }
@@ -613,7 +613,7 @@ func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
 // the preset it now names.
 func TestADeckRepointedBetweenSessionsIsHeldToItsNewPreset(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":     term,
 		"Few.md":      preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"Many.md":     preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -634,7 +634,7 @@ func TestADeckRepointedBetweenSessionsIsHeldToItsNewPreset(t *testing.T) {
 // so a deck repointed halfway through a day carries the morning with it.
 func TestADeckRepointedInTheMiddleOfADayCarriesTheDaySpent(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":     term,
 		"Few.md":      preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"Many.md":     preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -660,7 +660,7 @@ func TestADeckRepointedInTheMiddleOfADayCarriesTheDaySpent(t *testing.T) {
 // day has already spent stands against it either way.
 func TestALimitEditedInTheMiddleOfADayHoldsAtOnce(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":     term,
 		"On.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("On", 20, 0),
@@ -690,7 +690,7 @@ func TestALimitEditedInTheMiddleOfADayHoldsAtOnce(t *testing.T) {
 // showings the day already held are charged for from that moment.
 func TestCountsEditedInTheMiddleOfADayCountsTheDayAgain(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("counts: cards\nnew_a_day: 0\nreviews_a_day: 3\n" +
 			"minutes_a_day: 0\n"),
@@ -709,13 +709,13 @@ func TestCountsEditedInTheMiddleOfADayCountsTheDayAgain(t *testing.T) {
 	}
 
 	evening := saturday.Add(2 * time.Hour)
-	if got := asked(s.sessionAt(t, today, evening)); got != 2 {
+	if got := countQueue(s.sessionAt(t, today, evening)); got != 2 {
 		t.Fatalf("counting in cards the evening was asked %d cards, want 2", got)
 	}
 
 	write(t, s, "On.md", preset("counts: shows\nnew_a_day: 0\nreviews_a_day: 3\n"+
 		"minutes_a_day: 0\n"))
-	if got := asked(s.sessionAt(t, today, evening)); got != 0 {
+	if got := countQueue(s.sessionAt(t, today, evening)); got != 0 {
 		t.Errorf("counting in shows the evening was asked %d cards, want none", got)
 	}
 }
@@ -724,7 +724,7 @@ func TestCountsEditedInTheMiddleOfADayCountsTheDayAgain(t *testing.T) {
 // the cards the day had already begun stop with them.
 func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":     term,
 		"On.md":       preset("new_a_day: 5\nreviews_a_day: 5\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("On", 20, 0),
@@ -736,12 +736,12 @@ func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 		again(t, morning, mark(i), 6*time.Second)
 	}
 	evening := saturday.Add(time.Hour)
-	if got := asked(s.sessionAt(t, today, evening)); got == 0 {
+	if got := countQueue(s.sessionAt(t, today, evening)); got == 0 {
 		t.Fatal("the running preset was asked nothing")
 	}
 
 	write(t, s, "On.md", preset("new_a_day: 0\nreviews_a_day: 0\nminutes_a_day: 0\n"))
-	if got := asked(s.sessionAt(t, today, evening)); got != 0 {
+	if got := countQueue(s.sessionAt(t, today, evening)); got != 0 {
 		t.Errorf("a paused preset was asked %d cards", got)
 	}
 }
@@ -750,7 +750,7 @@ func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 // moment.
 func TestADayMovedBehindUsStopsThePresetAtOnce(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("goal: by_date\nby_date: 2026-09-30\nlearned: retention\n" +
 			"new_a_day: 4\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -772,7 +772,7 @@ func TestADayMovedBehindUsStopsThePresetAtOnce(t *testing.T) {
 // and is read only while the goal names it.
 func TestAGoalMovedOffADayStartsThePresetAgain(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("goal: by_date\nby_date: 2026-09-01\n" +
 			"new_a_day: 4\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -793,7 +793,7 @@ func TestAGoalMovedOffADayStartsThePresetAgain(t *testing.T) {
 // the small hours are the evening's day still.
 func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":     term,
 		"Five.md":     preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("Five", 30, 0),
@@ -825,7 +825,7 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 // on the whole of the budget.
 func TestADayCarryingNoneOfTheLoadIsAskedNothing(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":     term,
 		"On.md":       preset("new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nload: {sun: 0}\n"),
 		"decks/On.md": deckOf("On", 40, 0),
@@ -850,7 +850,7 @@ func TestADayCarryingNoneOfTheLoadIsAskedNothing(t *testing.T) {
 // the times the answers carry and not the order the runs arrived in.
 func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":     term,
 		"One.md":      preset("new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("One", 4, 0),
@@ -875,7 +875,7 @@ func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
 // so what a session asks is the cards at the target now in force.
 func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("retention: 0.7\nnew_a_day: 0\nreviews_a_day: 50\n" +
 			"minutes_a_day: 0\n"),
@@ -895,7 +895,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := asked(s.sessionAt(t, today, saturday)); got != 0 {
+	if got := countQueue(s.sessionAt(t, today, saturday)); got != 0 {
 		t.Fatalf("asking for 0.7 of the cards back, %d were owed today", got)
 	}
 
@@ -910,7 +910,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	if now[on].Due.Equal(was[on].Due) {
 		t.Errorf("the target moved and the card still comes round at %v", now[on].Due)
 	}
-	if got := asked(s.sessionAt(t, today, saturday)); got != 3 {
+	if got := countQueue(s.sessionAt(t, today, saturday)); got != 3 {
 		t.Errorf("asking for 0.99 of the cards back, %d were owed today, want 3", got)
 	}
 }
@@ -1014,7 +1014,7 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 		what:  "a day already partly spent",
 		front: "goal: minutes_a_day\nminutes_a_day: 3\nnew_a_day: 6\n",
 		cards: 40,
-		gave:  spentToday(20),
+		gave:  newSpentToday(20),
 	}, {
 		// The counts close a day steered by a date, and the minutes never do.
 		what: "counting cards, on a day already partly spent",
@@ -1022,14 +1022,14 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 			"counts: cards\nnew_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
 			saturday.AddDate(0, 0, day).Format(review.Named)),
 		cards: 40,
-		gave:  spentToday(20),
+		gave:  newSpentToday(20),
 	}, {
 		what: "counting showings, on a day already partly spent",
 		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
 			"counts: shows\nnew_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
 			saturday.AddDate(0, 0, day).Format(review.Named)),
 		cards: 40,
-		gave:  spentToday(20),
+		gave:  newSpentToday(20),
 	}, {
 		what: "a date",
 		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
@@ -1039,7 +1039,7 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 		gave:  answersAt(15, -30, review.Good),
 	}} {
 		t.Run(one.what, func(t *testing.T) {
-			s := opened(t, map[string]string{
+			s := openVault(t, map[string]string{
 				"Term.md":     term,
 				"On.md":       preset(one.front),
 				"decks/On.md": deckOf("On", one.cards, 0),
@@ -1078,7 +1078,7 @@ func admession(p review.Preset, day review.Day, now time.Time) time.Time {
 		if !p.Admits(day, now, review.Spent{}, 0, 0).Paused() {
 			return now
 		}
-		now = day.EndOf(now)
+		now = day.GetEnd(now)
 	}
 	return now
 }
@@ -1090,14 +1090,14 @@ func answersAt(cards, days int, r review.Rating) func(*testing.T, vaulted) {
 		t.Helper()
 		before := s.run(t, saturday.AddDate(0, 0, days))
 		for i := range cards {
-			said(t, before, mark(i), r, 6*time.Second)
+			answerWith(t, before, mark(i), r, 6*time.Second)
 		}
 	}
 }
 
-// spentToday is a day a person is already partway through: card faces owed from
-// a month back, some of them answered twice since the day opened.
-func spentToday(cards int) func(*testing.T, vaulted) {
+// newSpentToday is a day a person is already partway through: card faces owed
+// from a month back, some of them answered twice since the day opened.
+func newSpentToday(cards int) func(*testing.T, vaulted) {
 	return func(t *testing.T, s vaulted) {
 		t.Helper()
 		answersAt(cards, -30, review.Good)(t, s)
@@ -1109,11 +1109,11 @@ func spentToday(cards int) func(*testing.T, vaulted) {
 	}
 }
 
-// backlogged is a vault whose preset has a debt before it and material it has
-// not begun, so a day has both to choose between.
-func backlogged(t *testing.T, front string) vaulted {
+// newBacklogVault is a vault whose preset has a debt before it and material it
+// has not begun, so a day has both to choose between.
+func newBacklogVault(t *testing.T, front string) vaulted {
 	t.Helper()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":     term,
 		"On.md":       preset(front),
 		"decks/On.md": deckOf("On", 40, 0),
@@ -1136,19 +1136,19 @@ func TestTheBacklogShareSaysWhatTheDayIsSpentOn(t *testing.T) {
 	// is more of each than the day can carry.
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
 
-	all := s0(t, backlogged(t, day+"backlog: 100\n"))
+	all := s0(t, newBacklogVault(t, day+"backlog: 100\n"))
 	if all.seen != 20 || all.fresh == 0 {
 		t.Errorf("giving the debt all of the day asked %+v, want every card owed and "+
 			"the rest of the day on new ones", all)
 	}
-	none := s0(t, backlogged(t, day+"backlog: 0\n"))
+	none := s0(t, newBacklogVault(t, day+"backlog: 0\n"))
 	if none.fresh != 20 || none.seen == 0 {
 		t.Errorf("giving the debt none of the day asked %+v, want every new card and "+
 			"the rest of the day on owed ones", none)
 	}
 	// An odd day gives the extra card to the debt, so the two are never more
 	// than one apart.
-	half := s0(t, backlogged(t, day+"backlog: 50\n"))
+	half := s0(t, newBacklogVault(t, day+"backlog: 50\n"))
 	if half.seen-half.fresh < 0 || half.seen-half.fresh > 1 {
 		t.Errorf("splession the day evenly asked %+v", half)
 	}
@@ -1163,8 +1163,8 @@ func TestAPresetNamingNoBacklogShareIsUnchanged(t *testing.T) {
 	t.Parallel()
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
 
-	was := s0(t, backlogged(t, day+"backlog: 100\n"))
-	if got := s0(t, backlogged(t, day)); got != was {
+	was := s0(t, newBacklogVault(t, day+"backlog: 100\n"))
+	if got := s0(t, newBacklogVault(t, day)); got != was {
 		t.Errorf("a preset naming no share asked %+v, and one naming a hundred %+v", got, was)
 	}
 	if was.seen != 20 {
@@ -1176,7 +1176,7 @@ func TestAPresetNamingNoBacklogShareIsUnchanged(t *testing.T) {
 // never left part spent because one half of it had nothing to offer.
 func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("goal: retention\nbacklog: 50\n" +
 			"new_a_day: 20\nreviews_a_day: 20\nminutes_a_day: 0\n"),
@@ -1190,7 +1190,7 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 
 	sat := s.sessionAt(t, today, saturday)
 	fresh := unseen(sat)
-	if seen := asked(sat) - fresh; seen != 2 || fresh != 20 {
+	if seen := countQueue(sat) - fresh; seen != 2 || fresh != 20 {
 		t.Errorf("the day asked %d owed and %d new, want the two owed and its twenty new",
 			seen, fresh)
 	}
@@ -1201,14 +1201,14 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 	t.Parallel()
 	for _, share := range []string{"backlog: 0\n", "backlog: 100\n"} {
-		s := backlogged(t, "goal: by_date\nby_date: 2026-09-14\nlearned: retention\n"+share+
+		s := newBacklogVault(t, "goal: by_date\nby_date: 2026-09-14\nlearned: retention\n"+share+
 			"new_a_day: 1\nreviews_a_day: 1\nminutes_a_day: 0\n")
 
 		sat := s.sessionAt(t, today, saturday)
 		fresh := unseen(sat)
 		// Twenty owed, and twenty unbegun over the ten days to the day it aims
 		// at, which is two a day.
-		if seen := asked(sat) - fresh; seen != 20 || fresh != 2 {
+		if seen := countQueue(sat) - fresh; seen != 20 || fresh != 2 {
 			t.Errorf("under %q the day asked %d owed and %d new, want 20 and 2",
 				share, seen, fresh)
 		}
@@ -1222,7 +1222,7 @@ func s0(t *testing.T, s vaulted) session {
 	t.Helper()
 	sat := s.sessionAt(t, today, saturday)
 	fresh := unseen(sat)
-	return session{seen: asked(sat) - fresh, fresh: fresh}
+	return session{seen: countQueue(sat) - fresh, fresh: fresh}
 }
 
 // The share of the day that goes to the debt moves the day where the day is one
@@ -1243,7 +1243,7 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 	for name, day := range map[string]string{"minutes": minutes, "retention": target} {
 		spent[name] = make(map[int]int)
 		for _, share := range []int{100, 50, 0} {
-			one := s0(t, backlogged(t, fmt.Sprintf("%sbacklog: %d\n", day, share)))
+			one := s0(t, newBacklogVault(t, fmt.Sprintf("%sbacklog: %d\n", day, share)))
 			spent[name][share] = one.seen
 		}
 	}
@@ -1266,7 +1266,7 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 	t.Parallel()
 	for _, counts := range []string{"cards", "shows"} {
-		s := opened(t, map[string]string{
+		s := openVault(t, map[string]string{
 			"Term.md": term,
 			"On.md": preset("goal: minutes_a_day\nminutes_a_day: 1\n" +
 				"new_a_day: 0\nreviews_a_day: 0\ncounts: " + counts + "\n"),

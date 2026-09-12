@@ -32,7 +32,7 @@ func atScale(t *testing.T, m port.EmbeddingModel, scale float64) string {
 // for. A byte quantised at one scale means something else at another, and the
 // index has nothing but the recipe to tell it so.
 func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
-	db := opened(t)
+	db := openDB(t)
 	ctx := t.Context()
 
 	before := atScale(t, quantising, 0.3)

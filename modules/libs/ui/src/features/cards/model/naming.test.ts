@@ -66,15 +66,15 @@ describe('useNaming', () => {
 
   it('stands the name a thing carries while nothing is being typed over it', () => {
     const { naming } = overFields(FIELDS)
-    expect(naming.text('Height')).toBe('Height')
-    expect(naming.objection('Height')).toBeNull()
+    expect(naming.getText('Height')).toBe('Height')
+    expect(naming.getObjection('Height')).toBeNull()
   })
 
   it('stands what is typed in the box it is typed in, and in no other', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Tall')
-    expect(naming.text('Height')).toBe('Tall')
-    expect(naming.text('Weight')).toBe('Weight')
+    expect(naming.getText('Height')).toBe('Tall')
+    expect(naming.getText('Weight')).toBe('Weight')
     // It stands there until it is committed, and nothing is renamed meanwhile.
     expect(renamed).toEqual([])
   })
@@ -84,7 +84,7 @@ describe('useNaming', () => {
     naming.setDraft('Height', 'Tallness')
     naming.commit('Height')
     expect(renamed).toEqual([['Height', 'Tallness']])
-    expect(naming.text('Height')).toBe('Height')
+    expect(naming.getText('Height')).toBe('Height')
   })
 
   it('drops the space around a name it commits', () => {
@@ -97,7 +97,7 @@ describe('useNaming', () => {
   it('objects to nothing where a thing is typed the name it already carries', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Height')
-    expect(naming.objection('Height')).toBeNull()
+    expect(naming.getObjection('Height')).toBeNull()
     naming.commit('Height')
     expect(renamed).toEqual([])
   })
@@ -105,7 +105,7 @@ describe('useNaming', () => {
   it('objects to a name another one carries, and renames nothing', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Weight')
-    expect(naming.objection('Height')).toBe('taken')
+    expect(naming.getObjection('Height')).toBe('taken')
     naming.commit('Height')
     expect(renamed).toEqual([])
   })
@@ -113,7 +113,7 @@ describe('useNaming', () => {
   it('objects to a name with nothing in it, and renames nothing', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', '   ')
-    expect(naming.objection('Height')).toBe('blank')
+    expect(naming.getObjection('Height')).toBe('blank')
     naming.commit('Height')
     expect(renamed).toEqual([])
   })
@@ -121,7 +121,7 @@ describe('useNaming', () => {
   it('objects to a brace in a field’s name, which no slot could write', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'How {{tall}}')
-    expect(naming.objection('Height')).toBe('braced')
+    expect(naming.getObjection('Height')).toBe('braced')
     naming.commit('Height')
     expect(renamed).toEqual([])
   })
@@ -129,7 +129,7 @@ describe('useNaming', () => {
   it('takes a brace in a face’s name, which stands in a heading', () => {
     const { naming, renamed } = overFaces(new Map([['one', 'One']]))
     naming.setDraft('one', 'What {{Name}} is')
-    expect(naming.objection('one')).toBeNull()
+    expect(naming.getObjection('one')).toBeNull()
     naming.commit('one')
     expect(renamed).toEqual([['one', 'What {{Name}} is']])
   })
@@ -142,7 +142,7 @@ describe('useNaming', () => {
       ]),
     )
     naming.setDraft('one', 'Two')
-    expect(naming.objection('one')).toBe('taken')
+    expect(naming.getObjection('one')).toBe('taken')
     naming.commit('one')
     expect(renamed).toEqual([])
   })
@@ -152,10 +152,10 @@ describe('useNaming', () => {
   it('consults on a commit the objection that was drawn', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Weight')
-    const drawn = naming.objection('Height')
+    const drawn = naming.getObjection('Height')
     naming.commit('Height')
     expect(drawn).toBe('taken')
-    expect(naming.objection('Height')).toBeNull()
+    expect(naming.getObjection('Height')).toBeNull()
     expect(renamed).toEqual([])
   })
 
@@ -171,7 +171,7 @@ describe('useNaming', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Tallness')
     press(naming, 'Height', 'Escape')
-    expect(naming.text('Height')).toBe('Height')
+    expect(naming.getText('Height')).toBe('Height')
     naming.commit('Height')
     expect(renamed).toEqual([])
   })
@@ -180,6 +180,6 @@ describe('useNaming', () => {
     const { naming } = overFields(FIELDS)
     naming.setDraft('Height', 'Tallness')
     press(naming, 'Height', 'a')
-    expect(naming.text('Height')).toBe('Tallness')
+    expect(naming.getText('Height')).toBe('Tallness')
   })
 })

@@ -226,7 +226,7 @@ describe('the other keys a spin button answers', () => {
 describe('leaving the field', () => {
   /** Every number the field has come to rest at, in the order it rested at them. */
   const getSettles = (field: ReturnType<typeof mountField>): readonly unknown[] =>
-    (field.emitted('settles') ?? []).map((said) => (said as unknown[])[0])
+    (field.emitted('settle') ?? []).map((said) => (said as unknown[])[0])
 
   it('says nothing where nothing was typed into it', async () => {
     const field = mountField()

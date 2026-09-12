@@ -83,10 +83,10 @@ func (p played) Close() error { return nil }
 // recordingPath is where the recording sits in the vault under test.
 const recordingPath = "library/talk.mp3"
 
-// recorded is the bytes of the file the words were spoken into. Nothing here
-// reads them: what the recording says comes from the model, and the model is a
-// fake.
-func recorded(words []string) []byte {
+// newRecording is the bytes of the file the words were spoken into. Nothing
+// here reads them: what the recording says comes from the model, and the model
+// is a fake.
+func newRecording(words []string) []byte {
 	return []byte("a recording of " + strings.Join(words, "|"))
 }
 
@@ -94,7 +94,7 @@ func recorded(words []string) []byte {
 // its artifact is named by.
 func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, *shelf, *voice, string) {
 	t.Helper()
-	raw := recorded(words)
+	raw := newRecording(words)
 	shelved := newLibrary()
 	shelved.hold(recordingPath, domain.KindRecording, raw, 1)
 	index := newStore()
@@ -109,8 +109,8 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	}, first, index, kept, model, text.Fingerprint(raw)
 }
 
-// spoken is the words of an artifact, in the order they were said.
-func spoken(t *testing.T, raw []byte) []string {
+// getWords is the words of an artifact, in the order they were said.
+func getWords(t *testing.T, raw []byte) []string {
 	t.Helper()
 	_, cues := transcript.Parse(raw)
 	out := make([]string, 0, len(cues))
@@ -151,7 +151,7 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	if !bytes.HasPrefix(raw, []byte(transcript.Head+"\n")) {
 		t.Fatalf("the artifact is not WebVTT: %q", raw)
 	}
-	if said := spoken(t, raw); !slices.Equal(said, model.words) {
+	if said := getWords(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
 	if _, err := shelf.Read(t.Context(), text.Partial("asr", hash)); err == nil {
@@ -192,7 +192,7 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said := spoken(t, raw); !slices.Equal(said, model.words) {
+	if said := getWords(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
 	// The stretch the stopped run did not write down is the only one heard
@@ -227,7 +227,7 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said := spoken(t, raw); !slices.Equal(said, model.words) {
+	if said := getWords(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
 	if bytes.Contains(raw, []byte("half a thought")) {
@@ -408,7 +408,7 @@ func TestAskingForARecordingToBeHeardAgain(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nothing was written the second time: %v", err)
 	}
-	if said := spoken(t, raw); len(said) != 2 {
+	if said := getWords(t, raw); len(said) != 2 {
 		t.Errorf("the transcript reads back as %v", said)
 	}
 }

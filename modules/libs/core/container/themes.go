@@ -39,7 +39,7 @@ type appearances struct {
 	say  func(string)
 }
 
-func (a appearances) Read() (theme.Appearance, error) { return a.cfg.dressed(a.said) }
+func (a appearances) Read() (theme.Appearance, error) { return a.cfg.readAppearance(a.said) }
 
 func (a appearances) Write(chosen theme.Appearance) error { return a.cfg.wear(chosen, a.said) }
 
@@ -68,9 +68,9 @@ func (l *scales) over(worn *theme.Appearance) {
 	}
 }
 
-// chose lets go of what was said this launch about a size a person has now
+// clearSizes lets go of what was said this launch about a size a person has now
 // chosen for themselves.
-func (l *scales) chose(chosen theme.Appearance) {
+func (l *scales) clearSizes(chosen theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if chosen.InterfaceScale > 0 {
@@ -91,9 +91,9 @@ func (c Config) catalogue() (theme.Catalogue, error) {
 	return theme.Open()
 }
 
-// dressed and wear are the settings file as the themes need it: one section of
-// it read, and up to four fields of it written.
-func (c Config) dressed(said *scales) (theme.Appearance, error) {
+// readAppearance and wear are the settings file as the themes need it: one
+// section of it read, and up to four fields of it written.
+func (c Config) readAppearance(said *scales) (theme.Appearance, error) {
 	path, err := c.settingsFile()
 	if err != nil {
 		return theme.Appearance{}, err
@@ -142,6 +142,6 @@ func (c Config) wear(chosen theme.Appearance, said *scales) error {
 	if err := settings.Save(path, writing...); err != nil {
 		return err
 	}
-	said.chose(chosen)
+	said.clearSizes(chosen)
 	return nil
 }

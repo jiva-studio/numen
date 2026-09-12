@@ -68,9 +68,9 @@ func (s *site) Download(_ context.Context, at domain.URL, into io.Writer) (port.
 
 const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"
 
-// downloading is a vault holding one link note, and the store what is
+// newImportURL is a vault holding one link note, and the store what is
 // downloaded for it is kept in.
-func downloading(t *testing.T, written string, from *site) (ImportURL, *shelf, string) {
+func newImportURL(t *testing.T, written string, from *site) (ImportURL, *shelf, string) {
 	t.Helper()
 	shelved := newLibrary()
 	shelved.hold(videoNote, domain.KindURL, []byte(written), 1)
@@ -103,7 +103,7 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 		{Text: "what was said", From: 1500, To: 4200},
 		{Text: "what was said next", From: 4200, To: 9100},
 	}}
-	u, kept, address := downloading(t, pointsAtAVideo, from)
+	u, kept, address := newImportURL(t, pointsAtAVideo, from)
 
 	res, err := u.Execute(t.Context(), first, videoNote)
 	if err != nil {
@@ -121,7 +121,7 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nothing stands under the address: %v", err)
 	}
-	if got := spoken(t, raw); len(got) != 2 || got[0] != "what was said" {
+	if got := getWords(t, raw); len(got) != 2 || got[0] != "what was said" {
 		t.Errorf("the words read %v", got)
 	}
 	if _, err := kept.Read(t.Context(), text.Beside(text.Captions, hash)); err != nil {
@@ -133,7 +133,7 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 // for is what stands until they ask for it afresh.
 func TestAnAddressAlreadyDownloaded(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
-	u, _, _ := downloading(t, aPastedAddress, from)
+	u, _, _ := newImportURL(t, aPastedAddress, from)
 
 	if _, err := u.Execute(t.Context(), first, videoNote); err != nil {
 		t.Fatal(err)
@@ -151,7 +151,7 @@ func TestAnAddressAlreadyDownloaded(t *testing.T) {
 // again every time the vault is scanned.
 func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 	from := &site{title: "Entropy explained"}
-	u, kept, address := downloading(t, pointsAtAVideo, from)
+	u, kept, address := newImportURL(t, pointsAtAVideo, from)
 
 	res, err := u.Execute(t.Context(), first, videoNote)
 	if err != nil {
@@ -169,7 +169,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 // A page is its prose, without the furniture around it, and it is kept as prose.
 func TestThePagePointedAt(t *testing.T) {
 	from := &site{title: "Entropy — a page", prose: "A measure of disorder."}
-	u, kept, _ := downloading(t,
+	u, kept, _ := newImportURL(t,
 		"[InternetShortcut]\nURL=https://example.com/entropy\n", from)
 
 	res, err := u.Execute(t.Context(), first, videoNote)
@@ -199,7 +199,7 @@ func TestANoteThatPointsNowhere(t *testing.T) {
 		"[InternetShortcut]\n",
 		"[InternetShortcut]\nURL=file:///etc/passwd\n",
 	} {
-		u, _, _ := downloading(t, written, &site{})
+		u, _, _ := newImportURL(t, written, &site{})
 		if _, err := u.Execute(t.Context(), first, videoNote); err == nil {
 			t.Errorf("%q was downloaded for: %v", written, err)
 		}
@@ -210,7 +210,7 @@ func TestANoteThatPointsNowhere(t *testing.T) {
 // nobody. What is there has a name, and the note takes it.
 func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
-	u, _, _ := downloading(t, aPastedAddress, from)
+	u, _, _ := newImportURL(t, aPastedAddress, from)
 	named := []string{}
 	u.Names = func(_ context.Context, _ domain.Vault, path, title string) (string, error) {
 		named = append(named, path+" → "+title)
@@ -233,7 +233,7 @@ func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
 func TestAFilePersonNamedKeepsItsName(t *testing.T) {
 	const theirs = "notes/Entropy.url"
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
-	u, _, _ := downloading(t,
+	u, _, _ := newImportURL(t,
 		"[InternetShortcut]\nURL=https://youtu.be/dQw4w9WgXcQ\n", from)
 	u.Readers.(vaults)[first.ID].hold(theirs, domain.KindURL, []byte(pointsAtAVideo), 1)
 	named := 0
@@ -254,7 +254,7 @@ func TestAFilePersonNamedKeepsItsName(t *testing.T) {
 // download and the vault stays the person's own writing.
 func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
-	u, kept, address := downloading(t, pointsAtAVideo, from)
+	u, kept, address := newImportURL(t, pointsAtAVideo, from)
 
 	got, err := u.Copy(t.Context(), first, videoNote)
 	if err != nil {
@@ -276,7 +276,7 @@ func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 // person sees in their own folder and plays from where it lies.
 func TestACopyKeptBesideTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
-	u, kept, address := downloading(t, pointsAtAVideo, from)
+	u, kept, address := newImportURL(t, pointsAtAVideo, from)
 	held := newLibrary()
 	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
 	u.Readers = vaults{first.ID: held}
@@ -307,7 +307,7 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 // A copy already beside the note is not downloaded a second time.
 func TestACopyAlreadyBesideTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
-	u, _, _ := downloading(t, pointsAtAVideo, from)
+	u, _, _ := newImportURL(t, pointsAtAVideo, from)
 	held := newLibrary()
 	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
 	u.Readers = vaults{first.ID: held}

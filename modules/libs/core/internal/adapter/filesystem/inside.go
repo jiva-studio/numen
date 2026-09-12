@@ -30,10 +30,10 @@ func inside(root, path, serviceDir string) (string, error) {
 	return target, err
 }
 
-// followed is where the bytes of a note are: the path with every link on the
+// resolveLinks is where the bytes of a note are: the path with every link on the
 // way to it resolved. A write renames over this one, and a note kept as a link
 // to another file in the vault is a link afterwards.
-func followed(root, path, serviceDir string) (string, error) {
+func resolveLinks(root, path, serviceDir string) (string, error) {
 	_, real, err := within(root, path, serviceDir)
 	return real, err
 }
@@ -46,14 +46,14 @@ func followed(root, path, serviceDir string) (string, error) {
 // `link/ocr/abc.txt`, where `link` is a link to the service folder, reads as the
 // vault's and is the application's, and it is the second that decides.
 func within(root, path, serviceDir string) (target, real string, err error) {
-	clean, err := cleaned(path)
+	clean, err := cleanPath(path)
 	if err != nil {
 		return "", "", err
 	}
 	if ours(clean, serviceDir) {
 		return "", "", fmt.Errorf("%s belongs to the application, not to the vault", path)
 	}
-	target, real, landed, err := contained(root, clean)
+	target, real, landed, err := resolveContained(root, clean)
 	if err != nil {
 		return "", "", err
 	}
@@ -72,14 +72,14 @@ func within(root, path, serviceDir string) (target, real string, err error) {
 // That property is the subject of a test. A path whose spelling and whose
 // landing disagree is neither's, and both refuse it.
 func service(root, path, serviceDir string) (target, real string, err error) {
-	clean, err := cleaned(path)
+	clean, err := cleanPath(path)
 	if err != nil {
 		return "", "", err
 	}
 	if !ours(clean, serviceDir) {
 		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
-	target, real, landed, err := contained(root, clean)
+	target, real, landed, err := resolveContained(root, clean)
 	if err != nil {
 		return "", "", err
 	}
@@ -100,10 +100,10 @@ func ours(clean, serviceDir string) bool {
 	return len(clean) == len(serviceDir) || clean[len(serviceDir)] == '/'
 }
 
-// cleaned is a path a vault could hold, in the one form the rules are written
+// cleanPath is a path a vault could hold, in the one form the rules are written
 // against. A path that could not name anything inside a vault is refused here
 // and never reaches the filesystem.
-func cleaned(path string) (string, error) {
+func cleanPath(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("%w: it is empty", ErrOutside)
 	}
@@ -120,11 +120,11 @@ func cleaned(path string) (string, error) {
 	return clean, nil
 }
 
-// contained is the containment rule and nothing else: where a cleaned path
+// resolveContained is the containment rule and nothing else: where a cleaned path
 // lands on this machine, where it lands once every link on the way to it is
 // resolved, and that landing named from the root, all three of them under the
 // root or none of them anything.
-func contained(root, clean string) (target, real, landed string, err error) {
+func resolveContained(root, clean string) (target, real, landed string, err error) {
 	target = filepath.Join(root, filepath.FromSlash(clean))
 
 	// A folder inside the vault may be a link to somewhere else — a synced

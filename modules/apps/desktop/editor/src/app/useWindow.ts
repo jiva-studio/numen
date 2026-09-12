@@ -44,10 +44,10 @@ export const useWindow = () => {
 
   const window = useWindowDisplay(core, {
     onVaultChanged: async (paths, renamed) => {
-      editing.notes.changed(paths, renamed)
-      editing.decks.changed(paths, renamed)
-      editing.stencils.changed(paths, renamed)
-      editing.schedules.changed(paths, renamed)
+      editing.notes.applyPathChanges(paths, renamed)
+      editing.decks.applyPathChanges(paths, renamed)
+      editing.stencils.applyPathChanges(paths, renamed)
+      editing.schedules.applyPathChanges(paths, renamed)
       commandsModule.commands.applyRenames(renamed)
       await kinds.files.refreshChangedPaths(paths, renamed)
       await kinds.plexes.refresh(renamed)
@@ -85,7 +85,7 @@ export const useWindow = () => {
   const getTarget = (): CommandTarget => {
     const front = held.handle.front()
     const tab = front?.id ?? ''
-    const on = front && held.getTab(tab)?.kind.over?.(front.state)
+    const on = front && held.getTab(tab)?.kind.getTarget?.(front.state)
     const file = on?.file ?? ''
     return {
       tab,
@@ -128,10 +128,10 @@ export const useWindow = () => {
 
   const knows: NoteLookup = {
     getTitle: (path) => {
-      const heldId = editing.reached.holding(path)
+      const heldId = editing.reached.getTabAt(path)
       return heldId === null ? kinds.plexes.getName(path) : editing.getTitle(heldId)
     },
-    holding: (path) => editing.reached.holding(path),
+    getTabAt: (path) => editing.reached.getTabAt(path),
   }
 
   const openTabs = useOpenTabs({ core, held })
@@ -139,7 +139,7 @@ export const useWindow = () => {
   const openPreset = async (path: string): Promise<void> => {
     const kind = (await core.fileKinds([path])).get(path)
     if (kind?.type !== 'deck') return editing.schedules.openPreset(path)
-    const answer = await presets.scheduling(path)
+    const answer = await presets.getDeckPreset(path)
     if (answer.error) return writeMessage(words.errors[answer.error], 'error')
     if (!answer.preset?.path) return writeMessage(words.noPreset, 'caution')
     editing.schedules.openPreset(answer.preset.path, answer.preset.title)
@@ -170,7 +170,7 @@ export const useWindow = () => {
     files: () => kinds.files,
     plexes: () => kinds.plexes,
     agents: () => kinds.agents,
-    opening: () => window.opening.value,
+    getOpeningNote: () => window.opening.value,
     writeMessage,
   })
 

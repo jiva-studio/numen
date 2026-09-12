@@ -56,7 +56,7 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
 
 // --- Handlers ---
 function onRefresh() {
-  props.state.again()
+  props.state.reload()
 }
 
 function onSelectGoal(one: string) {
@@ -120,7 +120,7 @@ function onSettleSlider() {
               :place="place"
               :value-text="reading"
               :waiting="waiting"
-              @moves="onMoveSlider"
+              @move="onMoveSlider"
               @settle="onSettleSlider"
             />
           </template>

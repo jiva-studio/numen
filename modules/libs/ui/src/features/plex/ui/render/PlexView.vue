@@ -86,7 +86,7 @@ const roleOf = (node: PlacedNode): GestureRole => {
 /** The node the attention has settled on, as that node reports it. */
 const restedOn = ref<string | null>(null)
 
-const rest = (id: string, isResting: boolean) => {
+const settle = (id: string, isResting: boolean) => {
   if (isResting) restedOn.value = id
   else if (restedOn.value === id) restedOn.value = null
 }
@@ -169,7 +169,7 @@ const dragging = computed(() =>
       :ref="(view) => holdNode(node.id, view)"
       @menu="(at, opening) => emit('menu', node.id, at, opening)"
       @enter="(part) => emit('enter', node.id, part)"
-      @rest="rest(node.id, $event)"
+      @settle="settle(node.id, $event)"
     >
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>

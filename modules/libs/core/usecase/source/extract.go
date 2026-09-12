@@ -104,7 +104,7 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 	if err := u.discover(ctx, v, reader, &res, &swept); err != nil {
 		return res, err
 	}
-	if err := u.forgotten(ctx, v, reader, &res); err != nil {
+	if err := u.dropMissingText(ctx, v, reader, &res); err != nil {
 		return res, err
 	}
 	if err := u.cut(ctx, v, reader, &res); err != nil {
@@ -171,7 +171,7 @@ func (u Extract) discover(
 		// What those paths stood on, before the rows saying so are taken out.
 		// Which of those readings nothing stands on any more is a question for
 		// once every source has been cut.
-		went, err := u.recognised(ctx, v, kind, gone)
+		went, err := u.readSourceTexts(ctx, v, kind, gone)
 		if err != nil {
 			return err
 		}
@@ -184,9 +184,9 @@ func (u Extract) discover(
 	return nil
 }
 
-// recognised is the reading each of these paths stood on, for the ones that
-// stood on any.
-func (u Extract) recognised(
+// readSourceTexts is the reading each of these paths stood on, for the ones
+// that stood on any.
+func (u Extract) readSourceTexts(
 	ctx context.Context,
 	v domain.Vault,
 	kind domain.SourceKind,
@@ -256,14 +256,14 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	return nil
 }
 
-// forgotten finds the sources whose producer's files are no longer there.
+// dropMissingText finds the sources whose producer's files are no longer there.
 //
 // The store is a folder on the person's disk and they may empty it. A source
 // whose text went with it answers a search with nothing and would go on doing
 // so, because its recipe is still the one in use: nothing else asks after it.
 // Recording it afresh with no recipe clears which producer made its text, so the
 // next pass cuts it from the document again.
-func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
+func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
 	if u.Derived == nil {
 		return nil
 	}
@@ -459,7 +459,7 @@ func (u Extract) source(
 		return fmt.Errorf("write the chunks of %s: %w", path, err)
 	}
 	res.Extracted++
-	res.Chunks += counted(chunks)
+	res.Chunks += countChunks(chunks)
 	u.progress(*res)
 	return nil
 }
@@ -473,7 +473,7 @@ func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibilit
 		// The name of a section is kept on the chunk that begins it, and on that
 		// one only: a small chunk standing at the same offset is inside it, and
 		// one section named twice is one section answering twice.
-		c.Opens = doc.NamesAt(large.Start)
+		c.Opens = doc.GetNamesAt(large.Start)
 		for _, small := range large.Small {
 			c.Small = append(c.Small, chunkAt(doc, small))
 		}
@@ -493,8 +493,8 @@ func chunkAt(doc *text.Document, c chunking.Chunk) domain.Chunk {
 	}
 }
 
-// counted is how many chunks of both sizes a cut produced.
-func counted(chunks []domain.Chunk) int {
+// countChunks is how many chunks of both sizes a cut produced.
+func countChunks(chunks []domain.Chunk) int {
 	n := len(chunks)
 	for _, c := range chunks {
 		n += len(c.Small)

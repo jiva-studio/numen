@@ -35,17 +35,17 @@ func legible(chunk string, reads Legibility) bool {
 	words, dirty := 0, 0
 	for _, token := range strings.Fields(chunk) {
 		words++
-		if !spelled(token) {
+		if !isSpelled(token) {
 			dirty++
 		}
 	}
 	return float64(dirty)/float64(words) <= reads.Dirty
 }
 
-// spelled says whether one word is written the way words are: letters, the marks
+// isSpelled says whether one word is written the way words are: letters, the marks
 // that belong to them, digits, and the few characters that join a word to
 // itself, with anything else only at its ends.
-func spelled(token string) bool {
+func isSpelled(token string) bool {
 	inside := strings.TrimFunc(token, func(r rune) bool {
 		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
 	})

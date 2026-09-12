@@ -27,9 +27,9 @@ var benchModel = port.EmbeddingModel{
 	Name: "bench-model", Dimensions: 1024, MaxTokens: 512, Pooling: "mean", From: "bench",
 }
 
-// owing is an index holding one vault of `sources` sources, each cut into a
-// large chunk with `per` small ones inside it, and no vectors at all.
-func owing(b *testing.B, sources, per int) *DB {
+// openUnembeddedDB is an index holding one vault of `sources` sources, each cut
+// into a large chunk with `per` small ones inside it, and no vectors at all.
+func openUnembeddedDB(b *testing.B, sources, per int) *DB {
 	b.Helper()
 	ctx := b.Context()
 
@@ -76,7 +76,7 @@ func owing(b *testing.B, sources, per int) *DB {
 // statement over the same rows and differ by the identifier each row is handed
 // back under.
 func BenchmarkUnembedded(b *testing.B) {
-	db := owing(b, 200, 100)
+	db := openUnembeddedDB(b, 200, 100)
 	ctx := b.Context()
 	recipe := benchModel.Recipe()
 	rows := db.ChunkQueries()
@@ -102,7 +102,7 @@ func BenchmarkUnembedded(b *testing.B) {
 // through the port. The port reads a row number back out of every identifier it
 // is given before the write begins.
 func BenchmarkSaveVectors(b *testing.B) {
-	db := owing(b, 2, 100)
+	db := openUnembeddedDB(b, 2, 100)
 	ctx := b.Context()
 
 	found, err := db.ChunkQueries().Unembedded(ctx, benchVault.ID, benchModel.Recipe(), 0, chunksPerPage)

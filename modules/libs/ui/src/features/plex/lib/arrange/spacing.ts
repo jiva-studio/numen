@@ -27,21 +27,21 @@ const HALVINGS = 8
 /**
  * The widest gaps the window still holds.
  *
- * `fits` answers whether an arrangement laid out with the given gaps stays
+ * `canFit` answers whether an arrangement laid out with the given gaps stays
  * inside the window. It is asked, not worked out here, so a placement of any
  * shape is measured by the arrangement it produces.
  */
 export function spacingFor(
   options: PlexOptions,
-  fits: (spacing: Spacing) => boolean,
+  canFit: (spacing: Spacing) => boolean,
 ): Spacing {
   const set = spacingAsSet(options)
-  if (!options.viewport || options.spread <= 1 || !fits(set)) return set
+  if (!options.viewport || options.spread <= 1 || !canFit(set)) return set
 
   let spacing = set
   for (const opening of OPENS) {
     const factor = widest(options.spread, (candidate) =>
-      fits({ ...spacing, [opening]: set[opening] * candidate }),
+      canFit({ ...spacing, [opening]: set[opening] * candidate }),
     )
     spacing = { ...spacing, [opening]: set[opening] * factor }
   }

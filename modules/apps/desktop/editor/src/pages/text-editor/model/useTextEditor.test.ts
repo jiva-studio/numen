@@ -32,16 +32,16 @@ const vault = (answers: Partial<TextEditorTabDeps> = {}) => {
 describe('the file as it stands', () => {
   it('is read whole, byte for byte', async () => {
     const { held } = vault()
-    await held.again()
+    await held.reload()
 
     expect(held.text.value).toBe(HELD)
-    expect(held.read.value).toBe(true)
+    expect(held.isRead.value).toBe(true)
     expect(held.changed.value).toBe(false)
   })
 
   it('is nothing until it has been read', () => {
     const { held } = vault()
-    expect(held.read.value).toBe(false)
+    expect(held.isRead.value).toBe(false)
     expect(held.text.value).toBe('')
   })
 
@@ -49,19 +49,19 @@ describe('the file as it stands', () => {
     const { held } = vault({
       getSettingsFile: () => Promise.reject(new Error('the folder is not there')),
     })
-    await held.again()
+    await held.reload()
 
     expect(held.errorMessage.value).toBe(
       `${words.unread} numen did not answer, so nothing was done — it may have stopped, and the window keeps trying`,
     )
-    expect(held.read.value).toBe(false)
+    expect(held.isRead.value).toBe(false)
   })
 })
 
 describe('what is typed over it', () => {
   it('is marked as differing from what the file held', async () => {
     const { held } = vault()
-    await held.again()
+    await held.reload()
 
     held.type('{}\n')
     expect(held.changed.value).toBe(true)
@@ -72,7 +72,7 @@ describe('what is typed over it', () => {
 
   it('is written as it was typed', async () => {
     const { held, wrote } = vault()
-    await held.again()
+    await held.reload()
 
     held.type('{\n  "agent": { "use": "" }\n}\n')
     await held.save()
@@ -84,7 +84,7 @@ describe('what is typed over it', () => {
 
   it('presents the file the tab last read', async () => {
     const { held, presented } = vault()
-    await held.again()
+    await held.reload()
 
     held.type('{}\n')
     await held.save()
@@ -102,7 +102,7 @@ describe('what is typed over it', () => {
 
   it('has every setting read again once it is written', async () => {
     const { held, reads } = vault()
-    await held.again()
+    await held.reload()
     held.type('{}\n')
     await held.save()
 
@@ -121,7 +121,7 @@ describe('a file the settings cannot be read out of', () => {
 
   it('is refused, with what is wrong said', async () => {
     const { held } = createUnwritableVault()
-    await held.again()
+    await held.reload()
     held.type('{ "agent": ')
     await held.save()
 
@@ -131,7 +131,7 @@ describe('a file the settings cannot be read out of', () => {
 
   it('is left in the editor, as it was typed', async () => {
     const { held } = createUnwritableVault()
-    await held.again()
+    await held.reload()
     held.type('{ "agent": ')
     await held.save()
 
@@ -141,7 +141,7 @@ describe('a file the settings cannot be read out of', () => {
 
   it('has nothing read again', async () => {
     const { held, reads } = createUnwritableVault()
-    await held.again()
+    await held.reload()
     held.type('{ "agent": ')
     await held.save()
 
@@ -172,7 +172,7 @@ describe('a file that moved past what the tab read', () => {
       },
     }
     const held = useTextEditor(core, reads)
-    await held.again()
+    await held.reload()
     stands = MOVED
     held.type(TYPED)
     await held.save()

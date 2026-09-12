@@ -36,9 +36,9 @@ const (
 	Article = "article"
 )
 
-// timed says whether a producer writes words with the times they were said at.
+// isTimed says whether a producer writes words with the times they were said at.
 // Those are WebVTT and open in a player; everything else is prose.
-func timed(producer string) bool { return producer == ASR || producer == Captions }
+func isTimed(producer string) bool { return producer == ASR || producer == Captions }
 
 // Transcript is where text with the times it was said at is kept, and Copies
 // where the bytes of a video are.
@@ -56,7 +56,7 @@ const (
 // kind one producer writes is that producer's own name: there is nothing to
 // tell its files apart from.
 func kind(producer string) string {
-	if timed(producer) {
+	if isTimed(producer) {
 		return Transcript
 	}
 	return producer
@@ -66,7 +66,7 @@ func kind(producer string) string {
 // hash, then the producer where the kind has more than one, then what the file
 // is.
 func under(producer, hash, what string) string {
-	if timed(producer) {
+	if isTimed(producer) {
 		return Transcript + "/" + hash + "." + producer + what
 	}
 	return producer + "/" + hash + what
@@ -115,9 +115,9 @@ func (r Reader) Of(ctx context.Context, path, producer, hash string) (*Document,
 		// fetched for the address they wrote it about are one text, and an
 		// offset in it falls in whichever of the two it lands in.
 		if strings.HasSuffix(path, domain.NoteExtension) {
-			return r.pointed(ctx, path, producer, hash)
+			return r.readLinkNote(ctx, path, producer, hash)
 		}
-		return r.recognised(ctx, producer, hash)
+		return r.readRecognition(ctx, producer, hash)
 	}
 	ref, err := r.Vault.Stat(ctx, path)
 	if err != nil {
@@ -130,9 +130,9 @@ func (r Reader) Of(ctx context.Context, path, producer, hash string) (*Document,
 	return Read(ctx, r.Documents, ref, raw)
 }
 
-// recognised is a source whose text a producer wrote. A recognition still
+// readRecognition is a source whose text a producer wrote. A recognition still
 // running is the source's text while it runs.
-func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, error) {
+func (r Reader) readRecognition(ctx context.Context, from, hash string) (*Document, error) {
 	if r.Derived == nil {
 		return nil, ErrUnreadable
 	}
@@ -151,19 +151,19 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 	return nil, ErrUnreadable
 }
 
-// pointed is a link note: the prose its person wrote, and what was fetched from
-// the address it points at, as one text.
+// readLinkNote is a link note: the prose its person wrote, and what was
+// fetched from the address it points at, as one text.
 //
 // The prose comes first because it is what the person opened the note to write.
 // A note whose fetch brought back nothing is its prose alone, and one nothing
 // has fetched for yet is the same.
-func (r Reader) pointed(ctx context.Context, path, producer, hash string) (*Document, error) {
+func (r Reader) readLinkNote(ctx context.Context, path, producer, hash string) (*Document, error) {
 	raw, err := r.Vault.Read(ctx, path)
 	if err != nil {
 		return nil, err
 	}
 	doc := &Document{Text: markdown.Body(raw)}
-	fetched, err := r.recognised(ctx, producer, hash)
+	fetched, err := r.readRecognition(ctx, producer, hash)
 	if errors.Is(err, ErrUnreadable) {
 		return doc, nil
 	}
@@ -241,7 +241,7 @@ func Composed(
 	producer, hash string,
 	raw []byte,
 ) (*Document, error) {
-	if timed(producer) {
+	if isTimed(producer) {
 		put, err := beside(ctx, store, Corrections(producer, hash))
 		if err != nil {
 			return nil, err
@@ -299,7 +299,7 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 		prose, marks, named = correction.Prose(prose, marks, highlight.Unpack(boxes), named, put)
 	}
 	doc := &Document{Text: prose}
-	for _, p := range divided(prose, named) {
+	for _, p := range getPartStarts(prose, named) {
 		doc.Parts = append(doc.Parts, p)
 		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
@@ -323,13 +323,13 @@ func Transcribed(raw []byte) *Document {
 	return doc
 }
 
-// divided is the parts a sidecar names, as parts of the prose. A part is named
-// by its heading run as the scan was read, mangled or not.
+// getPartStarts is the parts a sidecar names, as parts of the prose. A part is
+// named by its heading run as the scan was read, mangled or not.
 //
 // The parts of one artifact begin in the order the prose is read and end within
 // it. A sidecar that says otherwise was written for other bytes, and none of it
 // is used.
-func divided(prose string, parts []ocr.Part) []chunking.PartStart {
+func getPartStarts(prose string, parts []ocr.Part) []chunking.PartStart {
 	out := make([]chunking.PartStart, 0, len(parts))
 	at := 0
 	for _, p := range parts {
@@ -362,7 +362,7 @@ func Fingerprint(raw []byte) string {
 // The extension is the producer's: a transcript is WebVTT and opens in a player
 // under the name a player knows it by.
 func Artifact(from, hash string) string {
-	if timed(from) {
+	if isTimed(from) {
 		return under(from, hash, ".vtt")
 	}
 	return under(from, hash, ".txt")
@@ -371,7 +371,7 @@ func Artifact(from, hash string) string {
 // Partial is the name a producer's recognition still running is kept under. It
 // is not an artifact until it is complete, and nothing reads it back as one.
 func Partial(from, hash string) string {
-	if timed(from) {
+	if isTimed(from) {
 		return under(from, hash, ".partial.vtt")
 	}
 	return under(from, hash, ".partial")
@@ -385,7 +385,7 @@ func Partial(from, hash string) string {
 // under the extension that format is opened by; a reading's are one record to
 // a line put right, keyed by the box the line was read from.
 func Corrections(from, hash string) string {
-	if timed(from) {
+	if isTimed(from) {
 		return under(from, hash, ".corrected.vtt")
 	}
 	return under(from, hash, ".corrected")
@@ -444,7 +444,7 @@ func Beside(from, hash string) string { return under(from, hash, ".json") }
 // Each producer's own files are named: a sweep works through this list, and a
 // transcription writes no coordinates or parts.
 func Names(from, hash string) []string {
-	if timed(from) {
+	if isTimed(from) {
 		return []string{
 			Artifact(from, hash),
 			Partial(from, hash),

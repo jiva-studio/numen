@@ -150,7 +150,7 @@ func (t *TranscriptionWorker) Start(v domain.Vault, path string) port.StartOutco
 func (t *TranscriptionWorker) Waiting() int {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return t.queue.waiting()
+	return t.queue.countWaiting()
 }
 
 // drain transcribes every recording a person named, in the order they named
@@ -198,12 +198,12 @@ func (t *TranscriptionWorker) Queue(
 	t.going.Add(1)
 	go func() {
 		defer t.going.Done()
-		t.queueing(ctx, known, every, v)
+		t.runRounds(ctx, known, every, v)
 	}()
 }
 
-// queueing is the round, and the wait between rounds.
-func (t *TranscriptionWorker) queueing(
+// runRounds is the round, and the wait between rounds.
+func (t *TranscriptionWorker) runRounds(
 	ctx context.Context,
 	known port.SourceQueries,
 	every time.Duration,
@@ -233,7 +233,7 @@ func (t *TranscriptionWorker) round(ctx context.Context, known port.SourceQuerie
 	defer t.release(mine)
 
 	t.drain(ctx)
-	for _, path := range t.owing(ctx, known, v) {
+	for _, path := range t.getUntranscribed(ctx, known, v) {
 		if ctx.Err() != nil {
 			break
 		}
@@ -248,12 +248,12 @@ func (t *TranscriptionWorker) round(ctx context.Context, known port.SourceQuerie
 	t.drainAndRelease(ctx)
 }
 
-// owing is the recordings this vault holds that no model has written the words
-// of, and that this run has had no answer about.
+// getUntranscribed is the recordings this vault holds that no model has written
+// the words of, and that this run has had no answer about.
 //
 // The index knows both: every recording it holds, and which of them stand on a
 // text a producer made. What is left of the first by the second is the work.
-func (t *TranscriptionWorker) owing(ctx context.Context, known port.SourceQueries, v domain.Vault) []string {
+func (t *TranscriptionWorker) getUntranscribed(ctx context.Context, known port.SourceQueries, v domain.Vault) []string {
 	if known == nil {
 		return nil
 	}
@@ -274,7 +274,7 @@ func (t *TranscriptionWorker) owing(ctx context.Context, known port.SourceQuerie
 	under := t.with.Unasked
 	out := make([]string, 0, len(held))
 	for path, ref := range held {
-		if t.answered[named(v, path)] {
+		if t.answered[getKey(v, path)] {
 			continue
 		}
 		if under > 0 && ref.Size > under {
@@ -319,7 +319,7 @@ func (t *TranscriptionWorker) drainAndRelease(ctx context.Context) {
 	for {
 		t.drain(ctx)
 		t.mu.Lock()
-		if t.queue.waiting() == 0 || ctx.Err() != nil {
+		if t.queue.countWaiting() == 0 || ctx.Err() != nil {
 			if t.idle != nil {
 				t.idle()
 			}
@@ -346,16 +346,16 @@ func (t *TranscriptionWorker) one(ctx context.Context, v domain.Vault, path stri
 	case errors.Is(err, context.Canceled):
 		// A transcription somebody stopped is one that is over, and the
 		// recording is where the next round finds it.
-		t.done(id)
+		t.finishTask(id)
 	case err != nil:
 		// The recording is left where the next round finds it. A store that
 		// would not write and an index that would not answer are the machine,
 		// and the recording has said nothing about itself.
 		t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path, Error: err.Error()}, asked)
 	case res.Busy:
-		t.done(id)
+		t.finishTask(id)
 	default:
-		t.done(id)
+		t.finishTask(id)
 		t.recordAnswer(v, path)
 		if !res.Silent && !res.Unopened {
 			t.proofread(ctx, v, path, asked)
@@ -434,7 +434,7 @@ func (t *TranscriptionWorker) proofreadTranscript(
 ) (ProofreadTranscriptResult, error) {
 	said := t.with.Proofreading
 
-	id := proofreadingID(path)
+	id := proofreadID(path)
 	fail := func(err error) {
 		t.say(task.Task{
 			ID: id, Doing: "Proofreading a transcript", About: path, Error: err.Error(),
@@ -450,7 +450,7 @@ func (t *TranscriptionWorker) proofreadTranscript(
 		return ProofreadTranscriptResult{Path: path}, err
 	}
 	if !held {
-		t.done(id)
+		t.finishTask(id)
 		return ProofreadTranscriptResult{Path: path}, nil
 	}
 
@@ -481,7 +481,7 @@ func (t *TranscriptionWorker) proofreadTranscript(
 		// The transcript is held by another run, and that run is the one whose
 		// progress the list carries.
 	default:
-		t.done(id)
+		t.finishTask(id)
 	}
 	return res, err
 }
@@ -581,7 +581,7 @@ func (t *TranscriptionWorker) transcribe(
 func (t *TranscriptionWorker) recordAnswer(v domain.Vault, path string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.answered[named(v, path)] = true
+	t.answered[getKey(v, path)] = true
 }
 
 // Forget puts a recording back within the queue's reach. The answer it gave is
@@ -589,7 +589,7 @@ func (t *TranscriptionWorker) recordAnswer(v domain.Vault, path string) {
 func (t *TranscriptionWorker) Forget(v domain.Vault, path string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	delete(t.answered, named(v, path))
+	delete(t.answered, getKey(v, path))
 }
 
 func (t *TranscriptionWorker) context() context.Context {
@@ -609,7 +609,7 @@ func (t *TranscriptionWorker) say(at task.Task, asked bool) {
 	}
 }
 
-func (t *TranscriptionWorker) done(id string) {
+func (t *TranscriptionWorker) finishTask(id string) {
 	if t.with.Tasks != nil {
 		t.with.Tasks.Done(id)
 	}

@@ -25,9 +25,9 @@ withDefaults(
 
 defineEmits<{
   /** A vault on the list chosen. */
-  (event: 'opens', id: string): void
+  (event: 'open', id: string): void
   /** The row below the list pressed. */
-  (event: 'offers'): void
+  (event: 'takeOffer'): void
 }>()
 
 defineSlots<{
@@ -67,7 +67,7 @@ const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
           :whole="one.path"
           :keys="getVaultKeys(at, one)"
           :disabled="one.working"
-          @click="$emit('opens', one.id)"
+          @click="$emit('open', one.id)"
         >
           <!-- What the window has to say about this one, drawn at the far
                end of its row. What that is belongs to the window. -->
@@ -82,7 +82,7 @@ const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
       :text="offer.text"
       :aside="offer.detail"
       :keys="offer.keys"
-      @click="$emit('offers')"
+      @click="$emit('takeOffer')"
     />
   </section>
 </template>

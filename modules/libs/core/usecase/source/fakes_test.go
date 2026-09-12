@@ -145,14 +145,14 @@ func (s *store) Unembedded(_ context.Context, vaultID domain.VaultID, model port
 	if limit <= 0 {
 		return nil, "", fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
-	from, err := resuming(after)
+	from, err := parseCursor(after)
 	if err != nil {
 		return nil, "", err
 	}
 	var out []domain.Passage
 	var last int64
-	for _, c := range s.ordered() {
-		if c.vault != vaultID || c.parent == 0 || c.id <= from || s.embedded(c.id, model) {
+	for _, c := range s.getOrderedChunks() {
+		if c.vault != vaultID || c.parent == 0 || c.id <= from || s.hasVector(c.id, model) {
 			continue
 		}
 		// The source says which text its chunks are places in, as the query
@@ -180,8 +180,8 @@ func chunkID(row int64) domain.ChunkID {
 	return domain.ChunkID(strconv.FormatInt(row, 10))
 }
 
-// resuming is the chunk a walk carries on after, and zero for the beginning.
-func resuming(after port.ChunkCursor) (int64, error) {
+// parseCursor is the chunk a walk carries on after, and zero for the beginning.
+func parseCursor(after port.ChunkCursor) (int64, error) {
 	if after == "" {
 		return 0, nil
 	}
@@ -316,10 +316,10 @@ func (s *store) holds(chunk domain.ChunkID) bool {
 	return false
 }
 
-// made is the vectors this store holds for one chunk.
-func (s *store) made(c storedChunk) []port.Vector { return s.vectors[chunkID(c.id)] }
+// getVectors is the vectors this store holds for one chunk.
+func (s *store) getVectors(c storedChunk) []port.Vector { return s.vectors[chunkID(c.id)] }
 
-func (s *store) embedded(chunk int64, model port.EmbeddingModel) bool {
+func (s *store) hasVector(chunk int64, model port.EmbeddingModel) bool {
 	for _, v := range s.vectors[chunkID(chunk)] {
 		if v.Model == model {
 			return true
@@ -328,9 +328,9 @@ func (s *store) embedded(chunk int64, model port.EmbeddingModel) bool {
 	return false
 }
 
-// ordered is the chunks by their own number, which is the order every answer
-// about them is given in.
-func (s *store) ordered() []storedChunk {
+// getOrderedChunks is the chunks by their own number, which is the order every
+// answer about them is given in.
+func (s *store) getOrderedChunks() []storedChunk {
 	out := slices.Clone(s.chunks)
 	slices.SortFunc(out, func(a, b storedChunk) int { return cmp.Compare(a.id, b.id) })
 	return out
@@ -340,7 +340,7 @@ func (s *store) ordered() []storedChunk {
 // runs over.
 func (s *store) small(vaultID domain.VaultID) []storedChunk {
 	var out []storedChunk
-	for _, c := range s.ordered() {
+	for _, c := range s.getOrderedChunks() {
 		if c.vault == vaultID && c.parent != 0 {
 			out = append(out, c)
 		}
@@ -361,8 +361,9 @@ var (
 	}
 )
 
-// printedAs is the bytes of a document printed as these pages, a page to a line.
-func printedAs(pages [][]string) []byte {
+// printPages is the bytes of a document printed as these pages, a page to a
+// line.
+func printPages(pages [][]string) []byte {
 	var out strings.Builder
 	for _, words := range pages {
 		out.WriteString(strings.Join(words, " ") + "\n")

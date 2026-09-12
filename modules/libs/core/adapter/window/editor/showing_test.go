@@ -48,9 +48,9 @@ type showing struct {
 	second domain.Vault
 }
 
-// swapping opens a window on the first of two vaults, both on the list this
+// openTwoVaults opens a window on the first of two vaults, both on the list this
 // installation keeps.
-func swapping(t *testing.T) *showing {
+func openTwoVaults(t *testing.T) *showing {
 	t.Helper()
 
 	cfg := container.Config{
@@ -61,8 +61,8 @@ func swapping(t *testing.T) *showing {
 	if err != nil {
 		t.Fatal(err)
 	}
-	first := listed(t, cfg, registry, "one", map[string]string{entropy: noteNamed("Entropy")})
-	second := listed(t, cfg, registry, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
+	first := newListedVault(t, cfg, registry, "one", map[string]string{entropy: noteNamed("Entropy")})
+	second := newListedVault(t, cfg, registry, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
 
 	opened, err := editor.Open(t.Context(), cfg, "one", os.Stderr)
 	if err != nil {
@@ -92,8 +92,8 @@ func swapping(t *testing.T) *showing {
 	return f
 }
 
-// listed writes a folder of notes, makes it a vault and puts it on the list.
-func listed(
+// newListedVault writes a folder of notes, makes it a vault and puts it on the list.
+func newListedVault(
 	t *testing.T,
 	cfg container.Config,
 	registry port.VaultRegistry,
@@ -151,8 +151,8 @@ func (f *showing) state(t *testing.T) *v1.GetVaultStateResponse {
 	return out.Msg
 }
 
-// named is the notes the window answers with under a name.
-func (f *showing) named(t *testing.T, query string) []string {
+// getFoundNames is the notes the window answers with under a name.
+func (f *showing) getFoundNames(t *testing.T, query string) []string {
 	t.Helper()
 
 	found, err := f.client.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: query}))
@@ -170,7 +170,7 @@ func (f *showing) named(t *testing.T, query string) []string {
 // installation, so the identity of the vault in front of the person is the
 // window's answer and not the list's.
 func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
-	f := swapping(t)
+	f := openTwoVaults(t)
 
 	if got := f.shows(t, wire.Editor); got != string(f.first.ID) {
 		t.Errorf("the window says it is showing %q, want %s", got, string(f.first.ID))
@@ -210,7 +210,7 @@ func (f *showing) shows(t *testing.T, window string) string {
 // afterwards is the vault that arrived and nothing of the one that went, and
 // every page is told that what it holds was read somewhere else.
 func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
-	f := swapping(t)
+	f := openTwoVaults(t)
 
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
@@ -242,10 +242,10 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	if name := f.state(t).GetName(); name != "two" {
 		t.Errorf("the window says it is showing %q", name)
 	}
-	if got := f.named(t, "Enthalpy"); len(got) == 0 {
+	if got := f.getFoundNames(t, "Enthalpy"); len(got) == 0 {
 		t.Error("the vault that arrived does not answer for the note it holds")
 	}
-	if got := f.named(t, "Entropy"); len(got) != 0 {
+	if got := f.getFoundNames(t, "Entropy"); len(got) != 0 {
 		t.Errorf("the vault that went still answers for %v", got)
 	}
 
@@ -280,7 +280,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 // TestTheWindowOpensTheVaultItShowedLast, so that a person who changed vault
 // finds it there the next time.
 func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
-	f := swapping(t)
+	f := openTwoVaults(t)
 
 	if err := f.opened.Show(t.Context(), f.second); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
@@ -303,7 +303,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 // TestTheVaultThatWentIsNoLongerFollowed. The watch and the passes behind a
 // vault end with it, so what happens in that vault afterwards reaches nobody.
 func TestTheVaultThatWentIsNoLongerFollowed(t *testing.T) {
-	f := swapping(t)
+	f := openTwoVaults(t)
 
 	if err := f.opened.Show(t.Context(), f.second); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
@@ -363,7 +363,7 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 // TestTheVaultAlreadyShownIsNotOpenedAgain. Nothing is taken down and nothing
 // is read again, and the window is where it was.
 func TestTheVaultAlreadyShownIsNotOpenedAgain(t *testing.T) {
-	f := swapping(t)
+	f := openTwoVaults(t)
 
 	if err := f.opened.Show(t.Context(), f.first); err != nil {
 		t.Fatalf("the vault already shown was refused: %v", err)
@@ -371,7 +371,7 @@ func TestTheVaultAlreadyShownIsNotOpenedAgain(t *testing.T) {
 	if state := f.state(t); !state.GetScan().GetReady() {
 		t.Error("the vault already shown is being read again")
 	}
-	if got := f.named(t, "Entropy"); len(got) == 0 {
+	if got := f.getFoundNames(t, "Entropy"); len(got) == 0 {
 		t.Error("the window stopped answering for the vault it is showing")
 	}
 }
@@ -395,7 +395,7 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 		}},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			f := swapping(t)
+			f := openTwoVaults(t)
 			one.spoil(t, f.second)
 
 			if err := f.opened.Show(t.Context(), f.second); err == nil {
@@ -405,7 +405,7 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 			if state.GetName() != "one" || !state.GetScan().GetReady() {
 				t.Errorf("the window is on %+v", state)
 			}
-			if got := f.named(t, "Entropy"); len(got) == 0 {
+			if got := f.getFoundNames(t, "Entropy"); len(got) == 0 {
 				t.Error("the window stopped answering for the vault it had")
 			}
 		})
@@ -439,7 +439,7 @@ func (f *showing) listens(t *testing.T) (*connect.ServerStreamForClient[v1.Watch
 // TestAPageThatSaysNothingCostsTheSwapItsBound. A page whose script has stopped
 // answers never, and the vault asked for arrives once the bound is spent.
 func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
-	f := swapping(t)
+	f := openTwoVaults(t)
 
 	// A page that listens and answers nothing.
 	_, done := f.listens(t)
@@ -465,7 +465,7 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 // asked about is theirs to answer, and the vault it was typed in stays in front
 // of them.
 func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
-	f := swapping(t)
+	f := openTwoVaults(t)
 
 	stream, done := f.listens(t)
 	defer done()
@@ -502,7 +502,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	if name := f.state(t).GetName(); name != "one" {
 		t.Errorf("the window is showing %q", name)
 	}
-	if got := f.named(t, "Entropy"); len(got) == 0 {
+	if got := f.getFoundNames(t, "Entropy"); len(got) == 0 {
 		t.Error("the window stopped answering for the vault it had")
 	}
 }
@@ -510,7 +510,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 // TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther. One settling runs at a
 // time. The second to arrive is refused, and the first runs to its end.
 func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
-	f := swapping(t)
+	f := openTwoVaults(t)
 
 	stream, done := f.listens(t)
 	defer done()
@@ -578,7 +578,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 // reads one reads it where the swap publishes it. A request that arrives in the
 // middle is answered by a vault or refused, and never by a pass that stopped.
 func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
-	f := swapping(t)
+	f := openTwoVaults(t)
 
 	asking, stop := context.WithCancel(t.Context())
 	var asked sync.WaitGroup

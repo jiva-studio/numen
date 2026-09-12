@@ -25,15 +25,15 @@ export interface TreeMetrics {
 
 export interface RowDragOptions {
   /** What is drawn, nested, and the rows of it that are drawn now. */
-  readonly rows: () => readonly Row[]
-  readonly shown: () => readonly ShownRow[]
+  readonly getRows: () => readonly Row[]
+  readonly getShownRows: () => readonly ShownRow[]
   /** The tree as it stands on screen, and nothing until it is drawn. */
   readonly measure: () => TreeMetrics | null
   /** How far the pointer travels before a press becomes a drag. */
-  readonly threshold: () => number
-  readonly clock: () => Clock
+  readonly getThreshold: () => number
+  readonly getClock: () => Clock
   /** How many rows are being dragged, said at the pointer. */
-  readonly counted: () => (rows: number) => string
+  readonly getCountWords: () => (rows: number) => string
   /** What the tree says a drag came to. */
   readonly tell: RowDragTell
 }
@@ -63,9 +63,9 @@ export interface RowDragState {
 
 export function useRowDrag(options: RowDragOptions): RowDragState {
   const { dragging, at, position, lift } = usePressDrag<readonly RowId[], RowLanding>({
-    threshold: options.threshold,
-    clock: options.clock,
-    landingAt: getLandingAt,
+    getThreshold: options.getThreshold,
+    getClock: options.getClock,
+    getLandingAt,
     settle: (rows, found) => {
       if (found) options.tell('move', rows, found)
       options.tell('drop')
@@ -84,7 +84,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     const held = dragging.value
     const where = position.value
     if (!held?.moved || !where) return null
-    return dragLabel(options.shown(), held.item, where, options.counted())
+    return dragLabel(options.getShownRows(), held.item, where, options.getCountWords())
   })
 
   /** Where the pointer is, read off the drawing: the rows are one height each. */
@@ -101,11 +101,11 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
       where.y <= over.bottom
     if (!inside) return null
 
-    const shown = options.shown()
+    const shown = options.getShownRows()
     const found = landing(shown, rows, where.y - drawn.top, drawn.height)
     if (!found) return null
 
-    return isRefused(options.rows(), rows, holderOf(shown, found)) ? null : found
+    return isRefused(options.getRows(), rows, holderOf(shown, found)) ? null : found
   }
 
   return { into, before, lifted, label, moved, at, lift }

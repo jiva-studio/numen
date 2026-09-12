@@ -173,11 +173,11 @@ func At(path string) (Config, error) {
 	if cfg.Version < 1 {
 		cfg.Version = 1
 	}
-	cfg.carrying(path, raw)
+	cfg.readInterfaceScale(path, raw)
 	if err := cfg.Appearance.Check(); err != nil {
 		return Config{}, err
 	}
-	cfg.wearing()
+	cfg.checkMode()
 	if _, hour := cfg.Review.Starts(); !hour {
 		cfg.say("review.day_starts is an hour of the day, 00:00 to %s, and %s stands",
 			review.Clock(LatestDayStarts), review.Clock(DefaultStarts()))
@@ -185,10 +185,10 @@ func At(path string) (Config, error) {
 	return cfg, nil
 }
 
-// wearing stands the machine's own choice where the file names a word that is
+// checkMode stands the machine's own choice where the file names a word that is
 // no half of a colour pair, and says so. The word is left in the file, where
 // the person wrote it and where they will read it again.
-func (c *Config) wearing() {
+func (c *Config) checkMode() {
 	switch c.Appearance.Mode {
 	case ModeSystem, ModeLight, ModeDark:
 		return
@@ -198,13 +198,13 @@ func (c *Config) wearing() {
 	c.Appearance.Mode = ModeSystem
 }
 
-// carrying reads `appearance.zoom` as the setting that replaced it, and gives
-// the field that name in the file. Both are how large the window is drawn, so
-// the number stands as it was and the window is drawn the size it was.
+// readInterfaceScale reads `appearance.zoom` as the setting that replaced it,
+// and gives the field that name in the file. Both are how large the window is
+// drawn, so the number stands as it was and the window is drawn the size it was.
 //
 // A file that cannot be written is read this way at every launch, and drawn at
 // the same size at every launch.
-func (c *Config) carrying(path string, raw []byte) {
+func (c *Config) readInterfaceScale(path string, raw []byte) {
 	var file struct {
 		Appearance struct {
 			Zoom           *float64 `json:"zoom"`
@@ -252,7 +252,7 @@ func write(path string, cfg Config) error {
 	if err != nil {
 		return err
 	}
-	return reaching(path, func(path string) error {
+	return runOnFile(path, func(path string) error {
 		return replace(path, append(raw, '\n'))
 	})
 }

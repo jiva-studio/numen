@@ -16,9 +16,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// indexed waits until the vault holds the note at this path, which is what says
-// the walk that reads a file it has just been given is over.
-func indexed(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
+// waitForIndex waits until the vault holds the note at this path, which is what
+// says the walk that reads a file it has just been given is over.
+func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
 		shown, err := opened.Index.Queries().Notes(t.Context(), v.ID, []string{path})
@@ -60,7 +60,7 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			}
 			// The note is in the index before it is renamed. A rename racing the
 			// walk that first reads the file files it at two paths at once.
-			indexed(t, opened, v, "Entropy.md")
+			waitForIndex(t, opened, v, "Entropy.md")
 
 			core := agentCore(cfg, opened, v.Path, io.Discard)
 			renamed, err := core.Notes.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")

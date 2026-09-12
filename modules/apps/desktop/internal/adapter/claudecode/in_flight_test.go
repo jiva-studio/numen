@@ -10,9 +10,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
-// counting is a program standing in for the command line that records how many
-// of itself run at once. It holds its turn long enough for the others to start.
-func counting(t *testing.T) (command []string, most func() int) {
+// makeCounter is a program standing in for the command line that records how
+// many of itself run at once. It holds its turn long enough for the others to
+// start.
+func makeCounter(t *testing.T) (command []string, most func() int) {
 	t.Helper()
 	dir := t.TempDir()
 	at := filepath.Join(dir, "now")
@@ -54,7 +55,7 @@ func batches(n int) []proofread.Batch {
 // the profile allows.
 func TestNoMoreRunsStandAtOnceThanWereAllowed(t *testing.T) {
 	for _, allowed := range []int{1, 2, 3} {
-		command, most := counting(t)
+		command, most := makeCounter(t)
 		by := &Proofreader{Command: command, Instruction: "put it right", InFlight: allowed}
 
 		if _, err := by.Proofread(t.Context(), batches(6)); err != nil {
@@ -70,7 +71,7 @@ func TestNoMoreRunsStandAtOnceThanWereAllowed(t *testing.T) {
 
 // A profile naming none runs one at a time.
 func TestAProfileNamingNoneRunsOneAtATime(t *testing.T) {
-	command, most := counting(t)
+	command, most := makeCounter(t)
 	by := &Proofreader{Command: command, Instruction: "put it right"}
 
 	if _, err := by.Proofread(t.Context(), batches(4)); err != nil {
@@ -84,7 +85,7 @@ func TestAProfileNamingNoneRunsOneAtATime(t *testing.T) {
 // The limit is the proofreader's and not one run's: two callers asking at once
 // take no more of a person's own model between them than the profile allows.
 func TestTwoCallersAtOnceShareTheLimit(t *testing.T) {
-	command, most := counting(t)
+	command, most := makeCounter(t)
 	by := &Proofreader{Command: command, Instruction: "put it right", InFlight: 2}
 
 	var wg sync.WaitGroup

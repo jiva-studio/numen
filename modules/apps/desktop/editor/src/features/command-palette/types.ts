@@ -2,7 +2,7 @@
  * What a command is, and what it is asked over.
  *
  * Nothing here decides anything: the table of commands is `lib/table.ts`, when
- * each is offered is `lib/where.ts`, the words they are drawn in are `words.ts`,
+ * each is offered is `lib/offered.ts`, the words they are drawn in are `words.ts`,
  * and what the window offers one being carried out is `model/deps.ts`.
  */
 import type { PaletteKeys } from '@numen/ui'
@@ -98,7 +98,7 @@ export interface Command {
   /** The group it is offered in. */
   readonly group: CommandGroup
   /** Whether it is offered at all over what is in front, in this window. */
-  where(at: CommandTarget, runs: RunSupport): boolean
+  isOffered(at: CommandTarget, runs: RunSupport): boolean
   /** What stands in the field when its step opens, for the person to replace. */
   getFieldText?(at: CommandTarget): string
   /** What its step says, where that step confirms or asks for the name back. */
@@ -181,7 +181,7 @@ export interface NoteLookup {
   /** What it is called now, and nothing where the window names it nothing. */
   getTitle(path: string): string
   /** The identity of the tab holding it, and nothing where none holds it. */
-  holding(path: string): string | null
+  getTabAt(path: string): string | null
 }
 
 /**
@@ -202,11 +202,11 @@ export interface RunSupport {
  */
 export interface Notes {
   /** The identity of the tab standing at a file, and nothing where none does. */
-  holding(path: string): string | null
+  getTabAt(path: string): string | null
   /** The file a note stands at now, under the identity it opened under. */
-  where(id: string): string
+  getPath(id: string): string
   /** Whether the note owes the person an answer about what its file now holds. */
-  asking(id: string): boolean
+  isAsking(id: string): boolean
   /** Answers once nothing of that note is on its way to the file. */
   settle(id: string): Promise<void>
   /** The tab holding a note lets go of it. */
@@ -228,15 +228,15 @@ export interface Store {
   /** Whether this store holds a file open under that identity. */
   has(id: string): boolean
   /** The file one of them stands at now, under the identity it opened under. */
-  where(id: string): string
+  getPath(id: string): string
   /** What it is called, under the identity it opened under. */
   getTitle(id: string): string
   /** Whether it owes the person an answer about what its file now holds. */
-  asking(id: string): boolean
+  isAsking(id: string): boolean
   /** Answers once nothing of it is on its way to the file. */
   settle(id: string): Promise<void>
   /** The tab holding it lets go of it. */
   close(id: string): void
   /** The identity of the tab standing at a file, and nothing where none does. */
-  holding(path: string): string | null
+  getTabAt(path: string): string | null
 }

@@ -49,7 +49,7 @@ export function createFilesKind({
       writeMessage(formatErrorMessage(error), 'error')
       return
     }
-    editing.notes.changed([path])
+    editing.notes.applyPathChanges([path])
   }
 
   const made = createFileCreators(
@@ -93,7 +93,7 @@ export function createFilesKind({
     createDeck: (folder, name) => made.createFile('deck', folder, name),
     createStencil: (folder, name) => made.createFile('stencil', folder, name, [cardWords.newField]),
     createPreset: (folder, name) => made.createFile('preset', folder, name),
-    importUrl: (folder, url) => made.imports(folder, url),
+    importUrl: (folder, url) => made.createUrl(folder, url),
     showError: (text) => writeMessage(text, 'error'),
     canRun: (run) => runs.canRun(run),
   })

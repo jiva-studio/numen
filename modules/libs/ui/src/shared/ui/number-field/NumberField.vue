@@ -46,7 +46,7 @@ const model = defineModel<number | null>({ default: null })
 
 const emit = defineEmits<{
   /** The field come to rest at a number other than the one it was resting at. */
-  settles: [value: number | null]
+  settle: [value: number | null]
 }>()
 
 const bounds = computed(() => ({ min: props.min, max: props.max, step: props.step }))
@@ -120,7 +120,7 @@ const settle = async () => {
   typed.value = formatNumber(now)
   if (now !== rested) {
     rested = now
-    emit('settles', now)
+    emit('settle', now)
   }
   await nextTick()
   if (!isTextForValue(typed.value, model.value)) {

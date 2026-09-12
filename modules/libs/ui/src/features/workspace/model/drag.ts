@@ -39,14 +39,14 @@ export interface TabDragOptions {
   /** The element the whole workspace is drawn in. */
   readonly frame: Readonly<ShallowRef<HTMLElement | null>>
   /** What a tab is, for the name drawn at the pointer. */
-  readonly tabOf: (id: TabId) => Tab | undefined
+  readonly getTab: (id: TabId) => Tab | undefined
   /** Where identities for what a gesture makes come from. */
-  readonly naming: () => NodeIdFactory
+  readonly getIdFactory: () => NodeIdFactory
   /** How close to the outer edge divides the whole workspace. */
-  readonly edge: () => number
+  readonly getEdge: () => number
   /** How far the pointer travels before a press becomes a drag. */
-  readonly threshold: () => number
-  readonly clock: () => Clock
+  readonly getThreshold: () => number
+  readonly getClock: () => Clock
 }
 
 export interface TabDragState {
@@ -66,9 +66,9 @@ export interface TabDragState {
 
 export function useTabDrag(options: TabDragOptions): TabDragState {
   const { dragging, at: landing, position, lift } = usePressDrag<Drag, TabLanding>({
-    threshold: options.threshold,
-    clock: options.clock,
-    landingAt: (_item, at) => landingAt(at.x, at.y),
+    getThreshold: options.getThreshold,
+    getClock: options.getClock,
+    getLandingAt: (_item, at) => landingAt(at.x, at.y),
     settle: (item, at) => {
       if (at) land(item, at)
     },
@@ -81,7 +81,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   const label = computed(() => {
     const held = dragging.value
     if (!held?.moved) return null
-    return options.tabOf(held.item.tab)?.title ?? held.item.tab
+    return options.getTab(held.item.tab)?.title ?? held.item.tab
   })
 
   function press(tab: TabId, at: PointerEvent): void {
@@ -94,7 +94,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   }
 
   function land(drag: Drag, at: TabLanding): void {
-    const ids = options.naming()
+    const ids = options.getIdFactory()
     const workspace = options.workspace
 
     if (at.kind === 'edge') {
@@ -144,7 +144,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
       return { kind: 'strip', pane: id, slot, box: local(caretAt(slot, tabs, rectOf(strip))) }
     }
 
-    const side = edgeOf({ x, y }, rectOf(held), options.edge())
+    const side = edgeOf({ x, y }, rectOf(held), options.getEdge())
     if (side) return { kind: 'edge', side, box: local(overlayFor(side, rectOf(held))) }
 
     if (!pane || !id) return null

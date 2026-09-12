@@ -26,7 +26,7 @@ The ubiquitous language of the project: domain terms, storage entities, protocol
 | recognition | The execution run of an OCR model over a document's pages to produce recognized text and coordinates. | reading |
 | text layer | Deterministic text extracted directly from a PDF without OCR. | |
 | spread | The layout unit of a reflowing EPUB book (one or two columns turned together). | page |
-| span | A character or byte range (`{ from, to }`) indicating text offsets within a file or source. | stretch |
+| span | A range (`{ from, to }`): byte offsets within a file or source, or milliseconds within a recording. | stretch |
 | passage | A search result match containing surrounding text excerpt and source coordinates. | chunk |
 | highlight | Normalized page bounding boxes covering a text span on a document page. | |
 | search mode | The retrieval ranking method: `Lexical`, `Dense`, `ByName`, or `Hybrid`. | |

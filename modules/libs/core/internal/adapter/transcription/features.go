@@ -31,7 +31,7 @@ const (
 // logMel is one stretch of 16 kHz mono audio as the encoder takes it: the bands
 // one after another, each holding every frame, and how many frames there are.
 func logMel(samples []float32) ([]float32, int) {
-	power := spectrogram(emphasised(samples))
+	power := spectrogram(applyPreemphasis(samples))
 	frames := len(power)
 	if frames == 0 {
 		return nil, 0
@@ -75,9 +75,9 @@ func normalise(row []float32) {
 	}
 }
 
-// emphasised lifts the high end of one stretch. The first sample stands as it
+// applyPreemphasis lifts the high end of one stretch. The first sample stands as it
 // is, having nothing before it.
-func emphasised(samples []float32) []float64 {
+func applyPreemphasis(samples []float32) []float64 {
 	out := make([]float64, len(samples))
 	for i, v := range samples {
 		if i == 0 {
@@ -97,7 +97,7 @@ func spectrogram(x []float64) [][]float64 {
 	if len(x) == 0 {
 		return nil
 	}
-	padded := reflected(x, fftSize/2)
+	padded := padReflect(x, fftSize/2)
 	frames := len(x)/hopSize + 1
 	window := hann()
 	bins := fftSize/2 + 1
@@ -120,9 +120,9 @@ func spectrogram(x []float64) [][]float64 {
 	return out
 }
 
-// reflected is one signal with by samples of itself mirrored onto each end, the
+// padReflect is one signal with by samples of itself mirrored onto each end, the
 // edge sample not repeated.
-func reflected(x []float64, by int) []float64 {
+func padReflect(x []float64, by int) []float64 {
 	out := make([]float64, 0, len(x)+2*by)
 	for i := by; i > 0; i-- {
 		out = append(out, x[at(i, len(x))])

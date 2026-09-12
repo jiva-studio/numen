@@ -105,7 +105,7 @@ const add = (): void => {
         :wrong="wrongWith(row.field)"
         :before="row.field === at"
         :words="words"
-        @over="over"
+        @drag-over="over"
         @drop="drop"
         @lift="(press) => lift(row.field, press)"
         @release="release"

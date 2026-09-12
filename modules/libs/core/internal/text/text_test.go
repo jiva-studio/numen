@@ -42,9 +42,9 @@ func book() []ocr.Page {
 	}
 }
 
-// written is the artifact a recognition of the book leaves, and the parts a
-// layout model named in it.
-func written(t *testing.T) (raw []byte, parts []byte) {
+// writeRecognition is the artifact a recognition of the book leaves, and the
+// parts a layout model named in it.
+func writeRecognition(t *testing.T) (raw []byte, parts []byte) {
 	t.Helper()
 	raw, _, _ = ocr.Write(book())
 	prose, _ := ocr.Read(raw)
@@ -74,7 +74,7 @@ func at(t *testing.T, doc *text.Document, passage string) int {
 	return offset
 }
 
-func located(t *testing.T, doc *text.Document, passage, want string) {
+func checkLocation(t *testing.T, doc *text.Document, passage, want string) {
 	t.Helper()
 	if got := doc.Locate(at(t, doc, passage)); got != want {
 		t.Errorf("%q is located at %q, want %q", passage, got, want)
@@ -82,16 +82,16 @@ func located(t *testing.T, doc *text.Document, passage, want string) {
 }
 
 func TestAReadingWithPartsLocatesAPassageBySectionAndPage(t *testing.T) {
-	raw, parts := written(t)
+	raw, parts := writeRecognition(t)
 	doc := text.Recognised(raw, parts, nil, nil)
 
-	located(t, doc, ganges, sectionOne+", page 3 of the file")
-	located(t, doc, padmavati, sectionTwo+", page 4 of the file")
-	located(t, doc, birth, docTitle+", page 2 of the file")
+	checkLocation(t, doc, ganges, sectionOne+", page 3 of the file")
+	checkLocation(t, doc, padmavati, sectionTwo+", page 4 of the file")
+	checkLocation(t, doc, birth, docTitle+", page 2 of the file")
 }
 
 func TestAReadingWithPartsNamesThem(t *testing.T) {
-	raw, parts := written(t)
+	raw, parts := writeRecognition(t)
 	doc := text.Recognised(raw, parts, nil, nil)
 
 	want := []chunking.PartStart{
@@ -105,21 +105,21 @@ func TestAReadingWithPartsNamesThem(t *testing.T) {
 }
 
 func TestAReadingWithNoPartsLocatesAPassageByPageAlone(t *testing.T) {
-	raw, _ := written(t)
+	raw, _ := writeRecognition(t)
 	doc := text.Recognised(raw, nil, nil, nil)
 
-	located(t, doc, ganges, "page 3 of the file")
-	located(t, doc, padmavati, "page 4 of the file")
+	checkLocation(t, doc, ganges, "page 3 of the file")
+	checkLocation(t, doc, padmavati, "page 4 of the file")
 	if len(doc.Parts) != 0 {
 		t.Errorf("a reading with no parts names %+v", doc.Parts)
 	}
 }
 
 func TestAPassageBeforeTheFirstPartIsLocatedByPageAlone(t *testing.T) {
-	raw, parts := written(t)
+	raw, parts := writeRecognition(t)
 	doc := text.Recognised(raw, parts, nil, nil)
 
-	located(t, doc, frontMatter, "page 1 of the file")
+	checkLocation(t, doc, frontMatter, "page 1 of the file")
 }
 
 func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
@@ -135,12 +135,12 @@ func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
 	if doc.Text[:len(docTitle)] != docTitle {
 		t.Fatalf("the prose begins %q, want it to begin with the title", doc.Text[:len(docTitle)])
 	}
-	located(t, doc, docTitle, docTitle+", page 1 of the file")
-	located(t, doc, birth, docTitle+", page 1 of the file")
+	checkLocation(t, doc, docTitle, docTitle+", page 1 of the file")
+	checkLocation(t, doc, birth, docTitle+", page 1 of the file")
 }
 
 func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
-	raw, _ := written(t)
+	raw, _ := writeRecognition(t)
 	prose, _ := ocr.Read(raw)
 	parts := ocr.Pack([]ocr.Part{
 		{Start: strings.Index(prose, sectionTwo), Length: len(sectionTwo), Depth: 1},
@@ -151,11 +151,11 @@ func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
 	if len(doc.Parts) != 0 {
 		t.Errorf("the document names %+v", doc.Parts)
 	}
-	located(t, doc, ganges, "page 3 of the file")
+	checkLocation(t, doc, ganges, "page 3 of the file")
 }
 
 func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
-	raw, _ := written(t)
+	raw, _ := writeRecognition(t)
 	prose, _ := ocr.Read(raw)
 	parts := ocr.Pack([]ocr.Part{
 		{Start: strings.Index(prose, sectionOne), Length: len(sectionOne), Depth: 1},
@@ -166,7 +166,7 @@ func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
 	if len(doc.Parts) != 0 {
 		t.Errorf("the document names %+v", doc.Parts)
 	}
-	located(t, doc, ganges, "page 3 of the file")
+	checkLocation(t, doc, ganges, "page 3 of the file")
 }
 
 func TestAPartsSidecarIsSweptWithTheRest(t *testing.T) {

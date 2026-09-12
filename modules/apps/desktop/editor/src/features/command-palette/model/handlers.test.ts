@@ -162,27 +162,27 @@ const window = (
       },
     },
     makers: {
-      decks: async (folder, name) => {
+      createDeck: async (folder, name) => {
         done.push(`decks ${folder || '—'} ${name}`)
         return folder ? `${folder}/${name}` : name
       },
-      stencils: async (folder, name) => {
+      createStencil: async (folder, name) => {
         done.push(`stencils ${folder || '—'} ${name}`)
         return folder ? `${folder}/${name}` : name
       },
-      presets: async (folder, name) => {
+      createPreset: async (folder, name) => {
         done.push(`presets ${folder || '—'} ${name}`)
         return folder ? `${folder}/${name}` : name
       },
-      imports: async (folder, address) => {
+      createUrl: async (folder, address) => {
         done.push(`imports ${folder || '—'} ${address}`)
         return folder ? `${folder}/note.md` : 'note.md'
       },
     },
     notes: {
-      holding: (path) => (path === at ? 'held' : null),
-      where: (id) => (id === 'held' ? at : id),
-      asking: () => answers.asking === true,
+      getTabAt: (path) => (path === at ? 'held' : null),
+      getPath: (id) => (id === 'held' ? at : id),
+      isAsking: () => answers.asking === true,
       settle: async (id) => void done.push(`settle ${id}`),
       close: (id) => void done.push(`close ${id}`),
       openFile: (path, title, showing) => void done.push(`openFile ${path} ${title} ${showing}`),
@@ -211,28 +211,28 @@ const window = (
         done.push(`opens vault ${id}`)
         return turnedDown
       },
-      calls: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
+      showVault: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
       reload: () => void done.push('reloads'),
     },
     goes: {
       revealPath: (path) => void done.push(`revealPath ${path}`),
       travel: async (path) => void done.push(`travel ${path}`),
       leave: async (from, to) => void done.push(`leave ${from} ${to}`),
-      opening: () => 'Root.md',
+      getOpeningNote: () => 'Root.md',
       openTab: (kind) => void done.push(`openTab ${kind}`),
-      preset: async (path) => void done.push(`preset ${path}`),
+      openPreset: async (path) => void done.push(`preset ${path}`),
       closeTab: (tab) => void done.push(`closeTab ${tab}`),
       ask: (text) => void done.push(`ask ${text}`),
       search: () => void done.push('search'),
     },
     settings: {
-      appearance: async (chosen) => void done.push(`appearance ${chosen}`),
-      syncing: async (chosen) => void done.push(`syncing ${chosen}`),
-      hanging: async (chosen) => void done.push(`hanging ${chosen}`),
-      parts: async (chosen) => void done.push(`parts ${chosen}`),
+      chooseAppearance: async (chosen) => void done.push(`appearance ${chosen}`),
+      chooseSync: async (chosen) => void done.push(`syncing ${chosen}`),
+      chooseHanging: async (chosen) => void done.push(`hanging ${chosen}`),
+      chooseParts: async (chosen) => void done.push(`parts ${chosen}`),
     },
     runSupport: runs,
-    copies: (path) => void done.push(`copies ${path}`),
+    copyPath: (path) => void done.push(`copies ${path}`),
     writeMessage: (text, kind) => {
       if (!text) return
       said.push(text)
@@ -652,7 +652,7 @@ describe('a note removed', () => {
 
   it('leaves the plexes alone where the vault opens with no note at all', async () => {
     const one = window()
-    const nowhere: CommandDeps = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
+    const nowhere: CommandDeps = { ...one.on, goes: { ...one.on.goes, getOpeningNote: () => '' } }
 
     await carry(invocationOf('remove', front()), nowhere)
 
@@ -902,7 +902,7 @@ describe('a command over the vault', () => {
 
   it('says a vault that opens with no note at all', async () => {
     const one = window()
-    const empty: CommandDeps = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
+    const empty: CommandDeps = { ...one.on, goes: { ...one.on.goes, getOpeningNote: () => '' } }
 
     await runInvocation(invocationOf('first', front()), empty, words)
 
@@ -1088,12 +1088,12 @@ describe('the open files a command reaches', () => {
   /** One store, holding one file open at one path under one identity. */
   const store = (id: string, path: string, steps: string[]): Store => ({
     has: (one) => one === id,
-    where: (one) => (one === id ? path : one),
+    getPath: (one) => (one === id ? path : one),
     getTitle: (one) => (one === id ? `${id} called` : ''),
-    asking: () => false,
+    isAsking: () => false,
     settle: async (one) => void steps.push(`settle ${one}`),
     close: (one) => void steps.push(`close ${one}`),
-    holding: (one) => (one === path ? id : null),
+    getTabAt: (one) => (one === path ? id : null),
   })
 
   const over = () => {
@@ -1105,9 +1105,9 @@ describe('the open files a command reaches', () => {
   it('is the tab of whichever store stands at the file', () => {
     const one = over()
 
-    expect(one.notes.holding('Ontology.md')).toBe('note')
-    expect(one.notes.holding('Animals.md')).toBe('Animals.md')
-    expect(one.notes.holding('Loose.md')).toBeNull()
+    expect(one.notes.getTabAt('Ontology.md')).toBe('note')
+    expect(one.notes.getTabAt('Animals.md')).toBe('Animals.md')
+    expect(one.notes.getTabAt('Loose.md')).toBeNull()
   })
 
   it('settles and shuts the store holding the identity, and no other', async () => {
@@ -1125,8 +1125,8 @@ describe('the open files a command reaches', () => {
     await one.notes.settle('Gone.md')
     one.notes.close('Gone.md')
 
-    expect(one.notes.where('Gone.md')).toBe('Gone.md')
-    expect(one.notes.asking('Gone.md')).toBe(false)
+    expect(one.notes.getPath('Gone.md')).toBe('Gone.md')
+    expect(one.notes.isAsking('Gone.md')).toBe(false)
     expect(one.done).toStrictEqual([])
   })
 })

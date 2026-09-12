@@ -35,7 +35,7 @@ func TestADayIsNamedForTheDayAPersonWouldSayItWas(t *testing.T) {
 		{"2026-08-30T03:59:00", "2026-08-29"},
 		{"2026-08-30T04:00:00", "2026-08-30"},
 	} {
-		if got := counting.Names(moment(t, one.at)); got != one.want {
+		if got := counting.GetName(moment(t, one.at)); got != one.want {
 			t.Errorf("%s is named %q, want %q", one.at, got, one.want)
 		}
 	}
@@ -89,8 +89,8 @@ func TestADaySaysHowEachOfTheFourWasAnswered(t *testing.T) {
 	}
 }
 
-// answeredOn is days a person answered on, as many as each says.
-func answeredOn(days map[string]int) map[string]review.Tally {
+// makeTallies is days a person answered on, as many as each says.
+func makeTallies(days map[string]int) map[string]review.Tally {
 	out := make(map[string]review.Tally, len(days))
 	for day, answered := range days {
 		out[day] = review.Tally{Answered: answered, Good: answered}
@@ -123,7 +123,7 @@ func TestWhatADayCameToUnderEachPreset(t *testing.T) {
 		said("01G", root, "2026-08-31T09:00:00", 4*time.Second),
 	}
 
-	got := review.SpentUnder(counting, "2026-08-29", answers, under, nil)
+	got := review.GetSpentUnder(counting, "2026-08-29", answers, under, nil)
 
 	// Each card face is new the first time it is answered, and counts once for
 	// the day however many answers it took.
@@ -154,14 +154,14 @@ func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 		})
 	}
 
-	cards := review.SpentUnder(counting, "2026-08-29", answers, under,
+	cards := review.GetSpentUnder(counting, "2026-08-29", answers, under,
 		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitCards})
 	want := review.Spent{Answered: 1, New: 1, Took: 36 * time.Second}
 	if cards["Steady.md"] != want {
 		t.Errorf("counting in cards the day came to %+v, want %+v", cards["Steady.md"], want)
 	}
 
-	shows := review.SpentUnder(counting, "2026-08-29", answers, under,
+	shows := review.GetSpentUnder(counting, "2026-08-29", answers, under,
 		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitShows})
 	want = review.Spent{Answered: 9, New: 1, Reviews: 8, Took: 36 * time.Second}
 	if shows["Steady.md"] != want {
@@ -184,7 +184,7 @@ func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
 			Rating: review.Good, Took: 7 * time.Second},
 	}
 
-	got := review.SpentUnder(counting, "2026-08-31", answers, under, nil)
+	got := review.GetSpentUnder(counting, "2026-08-31", answers, under, nil)
 
 	want := review.Spent{Answered: 1, Reviews: 1, Took: 5 * time.Second}
 	if got["Steady.md"] != want {
@@ -198,7 +198,7 @@ func TestALongAnswerIsCountedAtItsBound(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	under := map[review.CardFaceID]string{on: ""}
 
-	got := review.SpentUnder(counting, "2026-08-29", []review.Answer{
+	got := review.GetSpentUnder(counting, "2026-08-29", []review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-29T09:00:00"),
 			Rating: review.Good, Took: time.Hour},
 	}, under, nil)
@@ -242,7 +242,7 @@ func TestTheFacesADayAnsweredAreCountedByTheDayTheyFallIn(t *testing.T) {
 
 // A streak is the days up to now with no gap in them.
 func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
-	days := answeredOn(map[string]int{
+	days := makeTallies(map[string]int{
 		"2026-08-25": 4,
 		// the 26th is a day nobody answered on
 		"2026-08-27": 2,
@@ -257,7 +257,7 @@ func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 // A day nobody has answered on yet does not end a streak. A person who has not
 // sat down this morning has not broken anything.
 func TestADayNotAnsweredOnYetDoesNotEndAStreak(t *testing.T) {
-	days := answeredOn(map[string]int{"2026-08-27": 2, "2026-08-28": 9})
+	days := makeTallies(map[string]int{"2026-08-27": 2, "2026-08-28": 9})
 
 	if got := review.Streak(counting, days, moment(t, "2026-08-29T09:00:00")); got != 2 {
 		t.Errorf("the streak is %d in the morning, want the two days behind it", got)
@@ -271,7 +271,7 @@ func TestADayNotAnsweredOnYetDoesNotEndAStreak(t *testing.T) {
 // A streak counted in the small hours is the evening's, because the night
 // belongs to the day it began in.
 func TestAStreakInTheSmallHoursIsTheEveningsStill(t *testing.T) {
-	days := answeredOn(map[string]int{"2026-08-28": 3, "2026-08-29": 5})
+	days := makeTallies(map[string]int{"2026-08-28": 3, "2026-08-29": 5})
 	if got := review.Streak(counting, days, moment(t, "2026-08-30T02:00:00")); got != 2 {
 		t.Errorf("the streak is %d at two in the morning, want 2", got)
 	}
@@ -282,9 +282,9 @@ func TestAStreakInTheSmallHoursIsTheEveningsStill(t *testing.T) {
 func TestADayWithNoZoneIsTheMachinesOwn(t *testing.T) {
 	here := review.Day{Starts: review.DayStarts}
 	now := time.Now()
-	days := answeredOn(map[string]int{
-		here.Names(now):                   1,
-		here.Names(now.AddDate(0, 0, -1)): 1,
+	days := makeTallies(map[string]int{
+		here.GetName(now):                   1,
+		here.GetName(now.AddDate(0, 0, -1)): 1,
 	})
 
 	if got := review.Streak(here, days, now); got != 2 {

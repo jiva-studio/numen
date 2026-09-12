@@ -44,23 +44,23 @@ export interface FileMakers {
    * A deck made in a folder under the name it is given. The path it landed at,
    * and nothing where none was made.
    */
-  decks(folder: string, name: string): Promise<string>
+  createDeck(folder: string, name: string): Promise<string>
   /** A stencil made the same way. */
-  stencils(folder: string, name: string): Promise<string>
+  createStencil(folder: string, name: string): Promise<string>
   /** A preset made the same way, naming none of its settings. */
-  presets(folder: string, name: string): Promise<string>
+  createPreset(folder: string, name: string): Promise<string>
   /**
    * A note pointing at an address, named by the address until what is at it
    * says what it is called. The path it landed at, and nothing where none was
    * made.
    */
-  imports(folder: string, address: string): Promise<string>
+  createUrl(folder: string, address: string): Promise<string>
 }
 
 /** The vaults this installation holds, as a command changes which one shows. */
 export interface VaultSwitcher extends Vaults {
   /** The vault the window is showing, under the name it has now. */
-  calls(vault: VaultRef): void
+  showVault(vault: VaultRef): void
   /**
    * The page drawn again, on the vault the window shows now. Every tab and
    * every plex belonged to the vault that has gone.
@@ -77,14 +77,14 @@ export interface WindowNavigator {
   /** Every plex standing on a note travels to another one. */
   leave(from: string, to: string): Promise<void>
   /** The note the vault opens with. */
-  opening(): string
+  getOpeningNote(): string
   /** A tab of a kind, opened and put in front. */
   openTab(kind: string): void
   /**
    * The preset of a note, in a tab of its own: the note itself where it is one,
    * and the preset a deck is scheduled by where it is a deck.
    */
-  preset(path: string): Promise<void>
+  openPreset(path: string): Promise<void>
   /** A tab let go of. */
   closeTab(tab: string): void
   /** Something to ask, put in the agent the person was last in. */
@@ -100,13 +100,13 @@ export interface SettingsWriter {
    * colour pair the tokens are read as, or how large one of the two kinds of
    * text is set.
    */
-  appearance(chosen: string): Promise<void>
+  chooseAppearance(chosen: string): Promise<void>
   /** Whether a note's title and the name of its file are kept as one name. */
-  syncing(chosen: string): Promise<void>
+  chooseSync(chosen: string): Promise<void>
   /** Whether a node hangs the parts of its note under it. */
-  hanging(chosen: string): Promise<void>
+  chooseHanging(chosen: string): Promise<void>
   /** How many parts a node hangs at once. */
-  parts(chosen: string): Promise<void>
+  chooseParts(chosen: string): Promise<void>
 }
 
 /** The one line the window says a command's answer in. */
@@ -143,7 +143,7 @@ export interface RunContext {
 export interface CommandDeps extends VaultContext, TabContext, RunContext, Voice {
   readonly settings: SettingsWriter
   /** A path put on the clipboard. */
-  copies(path: string): void
+  copyPath(path: string): void
 }
 
 /** One command, carried out. */

@@ -22,7 +22,7 @@ import (
 // read: everything else the person answered is still theirs.
 func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	store, err := s.logs.Open(s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -47,7 +47,7 @@ func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 // against.
 func TestWhatAVaultHoldsIsEveryRunItWasReadFrom(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	other := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
 
@@ -114,7 +114,7 @@ func (l listing) List(ctx context.Context, name string) ([]port.Entry, error) {
 // another machine tidied up while this one was reading.
 func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -158,7 +158,7 @@ func (closed) Read(context.Context, string) ([]byte, error) { return nil, errClo
 // counted as nothing.
 func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -183,7 +183,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 // shadowed the moment the real vault comes back.
 func TestASessionIntoAVaultThatIsGoneStops(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	writing := s.run(t, time.Now())
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -247,7 +247,7 @@ func (f *filling) Append(ctx context.Context, name string, content []byte) error
 // line ends, and going on would put the next answer behind whatever landed.
 func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	full := &brimming{DerivedStores: s.logs}
@@ -286,7 +286,7 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 // same kind of event: everything else the person answered is returned.
 func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	shut := s.run(t, time.Now().AddDate(0, 0, -1))
@@ -327,7 +327,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 // and not a failure.
 func TestAVaultNobodyReviewedHoldsNoRuns(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 
 	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {

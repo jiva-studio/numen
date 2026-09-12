@@ -128,7 +128,7 @@ export interface PlexNodeEvents {
    * The attention has settled on this node, or has left it. A widened box is
    * drawn last of all, and which box that is only the whole picture knows.
    */
-  (event: 'rest', resting: boolean): void
+  (event: 'settle', resting: boolean): void
   /** A part of this node was chosen. The identifier is the caller's. */
   (event: 'enter', part: string): void
 }

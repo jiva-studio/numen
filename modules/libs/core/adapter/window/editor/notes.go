@@ -18,7 +18,7 @@ import (
 func (a *API) ReadNote(
 	ctx context.Context, r *connect.Request[v1.ReadNoteRequest],
 ) (*connect.Response[v1.ReadNoteResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (a *API) ReadNote(
 func (a *API) WriteNote(
 	ctx context.Context, r *connect.Request[v1.WriteNoteRequest],
 ) (*connect.Response[v1.WriteNoteResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -52,13 +52,13 @@ func (a *API) WriteNote(
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
-	at, err := a.Notes.Write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
+	defer a.Writing.finish()
+	at, err := a.Notes.Write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newLastRead(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save. It is told in the
 	// same breath where the index did not follow, because the prose is on disk
 	// and search does not hold it.
-	behind := a.unlevelled(err)
+	behind := a.isUnlevelled(err)
 	if err == nil || behind {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
@@ -84,25 +84,25 @@ func (a *API) WriteNote(
 func (a *API) CreateNote(
 	ctx context.Context, r *connect.Request[v1.CreateNoteRequest],
 ) (*connect.Response[v1.CreateNoteResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
-	links, err := a.written(ctx, r.Msg.GetLinks())
+	links, err := a.getLinks(ctx, r.Msg.GetLinks())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	made, err := a.Notes.Create.Execute(ctx, showing, note.NewNote{
 		Title: r.Msg.GetTitle(),
 		Path:  r.Msg.GetPath(),
 		Links: links,
 	})
-	behind := a.unlevelled(err)
+	behind := a.isUnlevelled(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so that is the answer. What comes
 		// after the write is the index catching up, and the watcher does it
@@ -126,7 +126,7 @@ func (a *API) CreateNote(
 func (a *API) WriteLink(
 	ctx context.Context, r *connect.Request[v1.WriteLinkRequest],
 ) (*connect.Response[v1.WriteLinkResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (a *API) WriteLink(
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	// The request names no fingerprint, so the write is held to what the note is
 	// at the moment it is made.
@@ -176,7 +176,7 @@ func (a *API) GetOpeningNote(
 func (a *API) GetNeighbourhood(
 	ctx context.Context, r *connect.Request[v1.GetNeighbourhoodRequest],
 ) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func (a *API) GetNeighbourhood(
 func (a *API) ResolveAddresses(
 	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 ) (*connect.Response[v1.ResolveAddressesResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -250,9 +250,9 @@ func (a *API) ResolveAddresses(
 	return connect.NewResponse(out), nil
 }
 
-// written turns the links a request carries into the links a note is written
+// getLinks turns the links a request carries into the links a note is written
 // with, and refuses the lot where one of them cannot be written.
-func (a *API) written(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
+func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
 	if len(links) == 0 {
 		return nil, nil
 	}
@@ -280,16 +280,16 @@ func (a *API) writes(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	if l.GetTo() == "" {
 		return domain.Link{}, errors.New("a link needs a note to go to")
 	}
-	target, err := a.addressed(ctx, l.GetTo())
+	target, err := a.getAddress(ctx, l.GetTo())
 	if err != nil {
 		return domain.Link{}, err
 	}
 	return domain.Link{Target: target, Role: role, Label: l.GetLabel()}, nil
 }
 
-// addressed is the note at the other end as a link carries it. A build with no
+// getAddress is the note at the other end as a link carries it. A build with no
 // index cannot ask what else is filed under the name, and writes the name.
-func (a *API) addressed(ctx context.Context, to string) (domain.Address, error) {
+func (a *API) getAddress(ctx context.Context, to string) (domain.Address, error) {
 	if a.Notes.Queries == nil {
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
 	}
@@ -344,9 +344,9 @@ func fingerprintOf(ref domain.Fingerprint) *v1.Fingerprint {
 	return &v1.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
-// seenOf is what a client says it last saw of a note. Nothing said is nothing
+// newLastRead is what a client says it last saw of a note. Nothing said is nothing
 // compared, and the write lands on whatever the note now holds.
-func seenOf(seen *v1.LastRead) *note.LastRead {
+func newLastRead(seen *v1.LastRead) *note.LastRead {
 	if seen == nil {
 		return nil
 	}

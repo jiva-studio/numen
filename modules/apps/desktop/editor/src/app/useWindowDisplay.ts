@@ -42,7 +42,7 @@ export interface DisplayOptions {
 }
 
 export function useWindowDisplay(
-  core: VaultPort & Pick<NotePort, 'editing'>,
+  core: VaultPort & Pick<NotePort, 'watchEdits'>,
   how: DisplayOptions = {},
 ) {
   const wait = how.wait ?? sleep

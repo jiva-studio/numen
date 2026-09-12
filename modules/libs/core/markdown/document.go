@@ -79,7 +79,7 @@ func Open(raw []byte) (*Document, error) {
 			d.front = rest[from:at]
 			d.shut = rest[at:next]
 			d.body = rest[next:]
-			if _, err := d.mapping(); err != nil {
+			if _, err := d.readMapping(); err != nil {
 				return nil, err
 			}
 			return d, nil

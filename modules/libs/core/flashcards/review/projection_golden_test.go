@@ -88,7 +88,7 @@ func projections(t *testing.T) string {
 			if err != nil {
 				t.Fatal(err)
 			}
-			written(&out, ran)
+			writeProjection(&out, ran)
 
 			// The day the whole material stands learned is drawn on a second run
 			// of the same place, in which nothing is forgotten.
@@ -114,23 +114,25 @@ func goldenDays(days int) []int {
 	return out
 }
 
-// written puts one projection down, every scalar and every series of it.
-func written(out *strings.Builder, p review.Projection) {
+// writeProjection puts one projection down, every scalar and every series of
+// it.
+func writeProjection(out *strings.Builder, p review.Projection) {
 	fmt.Fprintf(out, "days %d faces %d seen %d owed %d clears %d learned %d learns %d short %d\n",
 		p.Days, p.Faces, p.Seen, p.Owed, p.Clears, p.Learned, p.Learns, p.Short)
 	fmt.Fprintf(out, "answered %d reviews %.6f minutes %.6f admits %d\n",
 		p.Answered, p.ReviewsADay, p.MinutesADay, p.Admits())
 	fmt.Fprintf(out, "load %s\n", numbers(p.Load))
 	fmt.Fprintf(out, "backlog %s\n", numbers(p.Backlog))
-	fmt.Fprintf(out, "spent %s\n", spent(p.Spent))
-	fmt.Fprintf(out, "admitted %s\n", admitted(p.Admitted))
-	fmt.Fprintf(out, "closed %s\n", closed(p.Closed))
+	fmt.Fprintf(out, "spent %s\n", formatSpent(p.Spent))
+	fmt.Fprintf(out, "admitted %s\n", formatAdmitted(p.Admitted))
+	fmt.Fprintf(out, "closed %s\n", formatClosed(p.Closed))
 	fmt.Fprintf(out, "through %s\n", shares(p.Through))
-	fmt.Fprintf(out, "retained %s\n", shares(kept(p.Retained)))
+	fmt.Fprintf(out, "retained %s\n", shares(getRetainedShares(p.Retained)))
 }
 
-// kept is the share that came back on each day the run answers for, in order.
-func kept(one review.RetentionByDay) []float64 {
+// getRetainedShares is the share that came back on each day the run answers
+// for, in order.
+func getRetainedShares(one review.RetentionByDay) []float64 {
 	days := one.Days()
 	out := make([]float64, 0, len(days))
 	for _, day := range days {
@@ -148,7 +150,7 @@ func numbers(one []int) string {
 	return strings.Join(out, ",")
 }
 
-func spent(one []time.Duration) string {
+func formatSpent(one []time.Duration) string {
 	out := make([]string, len(one))
 	for i, each := range one {
 		out[i] = each.String()
@@ -156,7 +158,7 @@ func spent(one []time.Duration) string {
 	return strings.Join(out, ",")
 }
 
-func admitted(one []bool) string {
+func formatAdmitted(one []bool) string {
 	var out strings.Builder
 	for _, each := range one {
 		if each {
@@ -168,7 +170,7 @@ func admitted(one []bool) string {
 	return out.String()
 }
 
-func closed(one []review.BudgetNames) string {
+func formatClosed(one []review.BudgetNames) string {
 	out := make([]string, len(one))
 	for i, each := range one {
 		named := make([]string, len(each))

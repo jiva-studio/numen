@@ -22,11 +22,11 @@ export interface Drag<Item> {
  */
 export interface Press<Item, At> {
   /** How far the pointer travels before a press becomes a drag. */
-  readonly threshold: () => number
+  readonly getThreshold: () => number
   /** The clock the release is held against. */
-  readonly clock: () => Clock
+  readonly getClock: () => Clock
   /** Where letting go here would put what is held. */
-  readonly landingAt: (item: Item, at: Position) => At | null
+  readonly getLandingAt: (item: Item, at: Position) => At | null
   /** What letting go after a drag comes to. The landing is nothing off any target. */
   readonly settle: (item: Item, at: At | null) => void
   /** Said once, when the press turns into a drag. */
@@ -62,12 +62,12 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     const now: Position = { x: event.clientX, y: event.clientY }
     const moved =
       held.moved ||
-      Math.abs(now.x - start.x) > press.threshold() ||
-      Math.abs(now.y - start.y) > press.threshold()
+      Math.abs(now.x - start.x) > press.getThreshold() ||
+      Math.abs(now.y - start.y) > press.getThreshold()
 
     dragging.value = { item: held.item, moved }
     position.value = moved ? now : null
-    at.value = moved ? press.landingAt(held.item, now) : null
+    at.value = moved ? press.getLandingAt(held.item, now) : null
 
     if (moved && !held.moved) press.begin?.(held.item)
   }
@@ -82,7 +82,7 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     if (held?.moved) press.settle(held.item, found)
     // Held one frame longer: the click that follows the release reads it and
     // stands down.
-    press.clock().schedule(() => {
+    press.getClock().schedule(() => {
       dragging.value = null
     })
   }

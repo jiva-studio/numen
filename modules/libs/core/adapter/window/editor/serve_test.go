@@ -176,10 +176,10 @@ func openingWith(
 	t.Cleanup(func() { db.Close() })
 
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled, time.Now)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	api := &API{
-		Listeners: following(),
-		Places:    focusing(),
+		Listeners: newChangeAudience(),
+		Places:    newPlaceAudience(),
 		Notes: Notes{
 			Queries: db.Queries(),
 			Links:   db.Links(),
@@ -200,7 +200,7 @@ func openingWith(
 	line, done := api.Listeners.listen()
 	t.Cleanup(done)
 
-	wake := waking(still)
+	wake := newNudges(still)
 	api.Wrote = func() { raise(wake.notes) }
 
 	ctx, stop := context.WithCancel(t.Context())
@@ -440,9 +440,9 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 	})
 }
 
-// runningBehind publishes the passes a request is answered through, the way a
+// setPasses publishes the passes a request is answered through, the way a
 // vault arriving in the window does.
-func runningBehind(api *API, change func(*passes)) {
+func setPasses(api *API, change func(*passes)) {
 	on := passes{}
 	if held := api.showing.Load(); held != nil {
 		on = *held
@@ -516,8 +516,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	readers := filesystem.VaultReaders{}
 	watcher := byHand()
 	api := &API{
-		Listeners: following(),
-		Places:    focusing(),
+		Listeners: newChangeAudience(),
+		Places:    newPlaceAudience(),
 		Window:    &wire.Window{Named: wire.Editor, Tasking: task.New()},
 		Notes:     Notes{Queries: db.Queries(), Links: db.Links()},
 	}
@@ -526,7 +526,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	out := &saying{}
 	ctx, stop := context.WithCancel(t.Context())
 	wait := begin(ctx, v, cfg, db, api, cfg.VaultOpenerWith(db, readers, watcher),
-		readers, nil, waking(settled), &pending{}, out)
+		readers, nil, newNudges(settled), &pending{}, out)
 	t.Cleanup(func() {
 		stop()
 		wait()

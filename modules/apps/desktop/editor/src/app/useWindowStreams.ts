@@ -11,7 +11,8 @@ import type { PathRename } from '@/shared/paths'
 import type { Span } from '@/shared/span'
 
 export interface WindowStreamsDeps {
-  readonly core: Pick<VaultPort, 'changes' | 'focus' | 'tasks'> & Pick<NotePort, 'editing'>
+  readonly core: Pick<VaultPort, 'watchVaultChanges' | 'watchFocus' | 'watchTasks'> &
+    Pick<NotePort, 'watchEdits'>
   readonly listening: AbortController
   readonly isOpen: () => boolean
   readonly setLost: (said: string) => void
@@ -52,8 +53,8 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
 
   /** Every stream is read the same way, and taken up again the same way. */
   const follows = createFollower({
-    open: isOpen,
-    lost: setLost,
+    isOpen,
+    setLost,
     wait,
   })
 
@@ -67,7 +68,7 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
    */
   const follow = () =>
     follows(
-      () => core.changes(listening.signal),
+      () => core.watchVaultChanges(listening.signal),
       async (change) => {
         if (change.paths.length === 0 && !change.shouldReload && change.renamed.length === 0) return
         // A reload standing at another folder is another vault under this
@@ -94,7 +95,7 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
   /** Follows the changes being made to notes. */
   const draw = () =>
     follows(
-      () => core.editing(listening.signal),
+      () => core.watchEdits(listening.signal),
       (said) => {
         // The stream opens by saying nothing, which is how an open one is told
         // from one that never opened.
@@ -109,7 +110,7 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
    */
   const watch = () =>
     follows(
-      () => core.focus(listening.signal),
+      () => core.watchFocus(listening.signal),
       async (asked) => {
         if (!asked.path) return
         const spans = asked.spans
@@ -128,7 +129,7 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
    */
   const followTasks = () =>
     follows(
-      () => core.tasks(listening.signal),
+      () => core.watchTasks(listening.signal),
       async (list) => {
         const ran = tasks.value.length > 0
         tasks.value = list

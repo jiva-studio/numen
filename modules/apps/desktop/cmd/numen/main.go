@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	cfg := configured(os.Stderr)
+	cfg := makeConfig(os.Stderr)
 	var letting agentOptions
 	var said sizes
 	var vault string
@@ -64,10 +64,10 @@ func main() {
 	}
 }
 
-// configured is what this binary starts from: what the machine supplies the
+// makeConfig is what this binary starts from: what the machine supplies the
 // core, and where the core says what it went wrong at and carried on past. That
 // is the same place everything else this binary could not do is said.
-func configured(out io.Writer) container.Config {
+func makeConfig(out io.Writer) container.Config {
 	cfg := platform.Config()
 	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, "numen:", err) }
 	return cfg
@@ -194,12 +194,12 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		// question standing asks for nothing: the person is answering it, and
 		// this refusal is the whole of what a stale goroutine may do.
 		ShouldQuit: func() bool {
-			return asked(going, seen, func() { application.Get().Quit() })
+			return requestQuit(going, seen, func() { application.Get().Quit() })
 		},
 	})
 
 	window = app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  titled(opened.Showing(), opened.API.Attended()),
+		Title:  getWindowTitle(opened.Showing(), opened.API.Attended()),
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
@@ -213,7 +213,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
-	naming := func(open domain.OpenTabs) { window.SetTitle(titled(opened.Showing(), open)) }
+	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.Showing(), open)) }
 	opened.API.Attends = naming
 
 	// Files let go of over the window, copied into the folder the mark under
@@ -252,7 +252,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// A cancelled event is where the hooks stop, and the destroy the window
 	// registered for itself is one of the listeners after them.
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		if !closing(ctx, going, seen, opened.WaitForAnswers, window.Close) {
+		if !closeWindow(ctx, going, seen, opened.WaitForAnswers, window.Close) {
 			event.Cancel()
 		}
 	})
@@ -265,10 +265,10 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 // the empty path. The name is the one the window's own drag and drop looks for.
 const droppedInto = "data-file-drop-target"
 
-// titled is what the window is called: the application, and the file the
-// person is looking at. A window with no file in front of it is called after
-// the vault it is showing.
-func titled(v domain.Vault, open domain.OpenTabs) string {
+// getWindowTitle is what the window is called: the application, and the file
+// the person is looking at. A window with no file in front of it is called
+// after the vault it is showing.
+func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
 	if front, held := open.Fronted(); held && front.Path != "" {
 		return "numen — " + path.Base(front.Path)
 	}

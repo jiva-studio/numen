@@ -1,7 +1,7 @@
 /**
  * What the corner emits, and what it does not.
  *
- * A card that has been read tells whoever handed it in that they may forget it.
+ * A card that has been read tells whoever handed it in that they may dismiss it.
  * Nobody outside can see that happen, so it is asserted here.
  */
 import { describe, expect, it } from 'vitest'
@@ -29,12 +29,12 @@ describe('a card the person is finished with', () => {
     const { clock, wind } = wound()
     const corner = draw([report], clock)
 
-    expect(corner.emitted('gone')).toBeUndefined()
+    expect(corner.emitted('dismiss')).toBeUndefined()
 
     wind(SETTLE * 10)
     await corner.setProps({ notices: [report] })
 
-    expect(corner.emitted('gone')).toStrictEqual([['renamed']])
+    expect(corner.emitted('dismiss')).toStrictEqual([['renamed']])
   })
 
   it('is named once when it is put away', async () => {
@@ -43,7 +43,7 @@ describe('a card the person is finished with', () => {
 
     await corner.findAll('.notice__away')[1]!.trigger('click')
 
-    expect(corner.emitted('gone')).toStrictEqual([['occupied']])
+    expect(corner.emitted('dismiss')).toStrictEqual([['occupied']])
   })
 
   it('is not named twice when it is put away and then read out', async () => {
@@ -54,7 +54,7 @@ describe('a card the person is finished with', () => {
     wind(SETTLE * 10)
     await corner.setProps({ notices: [report] })
 
-    expect(corner.emitted('gone')).toStrictEqual([['renamed']])
+    expect(corner.emitted('dismiss')).toStrictEqual([['renamed']])
   })
 
   it('is never named for work, however long it runs', async () => {
@@ -64,7 +64,7 @@ describe('a card the person is finished with', () => {
     wind(SETTLE * 100)
     await corner.setProps({ notices: [work] })
 
-    expect(corner.emitted('gone')).toBeUndefined()
+    expect(corner.emitted('dismiss')).toBeUndefined()
   })
 
   it('is never named for trouble, which waits for the person', async () => {
@@ -74,7 +74,7 @@ describe('a card the person is finished with', () => {
     wind(SETTLE * 100)
     await corner.setProps({ notices: [error] })
 
-    expect(corner.emitted('gone')).toBeUndefined()
+    expect(corner.emitted('dismiss')).toBeUndefined()
     expect(corner.findAll('article.notice')).toHaveLength(1)
   })
 })
@@ -93,7 +93,7 @@ describe('a corner nothing is holding any more', () => {
     wind(SETTLE * 10)
     await corner.setProps({ notices: [report] })
 
-    expect(corner.emitted('gone')).toStrictEqual([['embedding'], ['renamed']])
+    expect(corner.emitted('dismiss')).toStrictEqual([['embedding'], ['renamed']])
   })
 })
 

@@ -20,16 +20,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// unlevelled brings nothing level: what is asked in these tests is what the
+// levelNothing brings nothing level: what is asked in these tests is what the
 // schema carries, and there is no index behind them to find it in.
-func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 
 // editable is a vault with a read and a save on it and nothing behind them.
 // What is asked here is what the schema carries.
 func editable(t *testing.T, notes map[string]string) *API {
 	t.Helper()
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled, time.Now)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	api := &API{
 		Notes: Notes{
 			Read:  &note.Read{Readers: filesystem.VaultReaders{}},
@@ -181,7 +181,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 			})
 		}},
 		filesystem.VaultWriters{},
-		unlevelled,
+		levelNothing,
 		time.Now,
 	)
 	api.Notes.Linking = &linking

@@ -26,7 +26,7 @@ export function createTextEditorTabKind(
     kind: SETTINGS_FILE,
     open: () => {
       const state = useTextEditor(core, readSettings)
-      void state.again()
+      void state.reload()
       return state
     },
     getTitle: () => words.called,

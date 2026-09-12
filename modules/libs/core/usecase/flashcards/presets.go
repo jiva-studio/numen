@@ -179,7 +179,7 @@ func (r *PresetReads) Of(ctx context.Context, v domain.Vault, deck string) (Pres
 	if held, ok := r.scheduling[deck]; ok {
 		return held, nil
 	}
-	out, err := r.scheduled(ctx, v, deck)
+	out, err := r.getSchedulingPreset(ctx, v, deck)
 	if err != nil {
 		return PresetContents{}, err
 	}
@@ -188,8 +188,8 @@ func (r *PresetReads) Of(ctx context.Context, v domain.Vault, deck string) (Pres
 	return out, nil
 }
 
-// scheduled works out which preset schedules the deck at path.
-func (r *PresetReads) scheduled(
+// getSchedulingPreset works out which preset schedules the deck at path.
+func (r *PresetReads) getSchedulingPreset(
 	ctx context.Context, v domain.Vault, deck string,
 ) (PresetContents, error) {
 	if r.Links == nil {
@@ -283,7 +283,7 @@ func (r *PresetReads) read(ctx context.Context, v domain.Vault, path string) (Pr
 // An error is the vault being out of reach. What is wrong with the note itself
 // is an outcome or a problem, and the preset stands at the defaults.
 func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
-	out, err := u.opened(ctx, v, path)
+	out, err := u.readPreset(ctx, v, path)
 	if err != nil {
 		return PresetContents{}, err
 	}
@@ -291,8 +291,9 @@ func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetC
 	return out, nil
 }
 
-// opened is the note at path as a preset, before it is asked what it schedules.
-func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
+// readPreset is the note at path as a preset, before it is asked what it
+// schedules.
+func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
 	out := PresetContents{Path: path, Settings: review.Defaults()}
 
 	reader, err := u.Readers.Open(v)

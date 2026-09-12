@@ -90,7 +90,7 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 				continue
 			}
 			read++
-			if why := refused(from, strings.TrimPrefix(to, module)); why != "" {
+			if why := getRefusal(from, strings.TrimPrefix(to, module)); why != "" {
 				wrong = append(wrong, from+" reaches "+strings.TrimPrefix(to, module)+": "+why)
 			}
 		}
@@ -145,7 +145,7 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 				continue
 			}
 			held := strings.TrimPrefix(to, module)
-			if adapting(held) || held == "container" {
+			if isAdapter(held) || held == "container" {
 				wrong = append(wrong, path+" is tested through "+held)
 			}
 		}
@@ -189,7 +189,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 			return err
 		}
 		pkg := within("..", path)
-		if strings.HasSuffix(path, "_test.go") || !adapting(pkg) {
+		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -198,7 +198,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 		}
 		read++
 		reached[family(pkg)] = true
-		for _, one := range claimed(file) {
+		for _, one := range getClaimedPorts(file) {
 			wrong = append(wrong, path+" names port."+one)
 		}
 		return nil
@@ -297,7 +297,7 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 			return err
 		}
 		pkg := within("..", path)
-		if adapting(pkg) || pkg == "container" {
+		if isAdapter(pkg) || pkg == "container" {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
@@ -313,7 +313,7 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 			if err != nil || !strings.HasPrefix(to, module) {
 				continue
 			}
-			if held := strings.TrimPrefix(to, module); adapting(held) {
+			if held := strings.TrimPrefix(to, module); isAdapter(held) {
 				wrong = append(wrong, path+" builds "+held+" from inside "+pkg)
 			}
 		}
@@ -375,7 +375,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			return err
 		}
 		pkg := within("..", path)
-		if strings.HasSuffix(path, "_test.go") || adapting(pkg) || holds(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || holds(machinery, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -514,7 +514,7 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 			return err
 		}
 		pkg := within("..", path)
-		if strings.HasSuffix(path, "_test.go") || adapting(pkg) || holds(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || holds(machinery, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -575,7 +575,7 @@ func identities(file *ast.File) []identity {
 		for _, one := range held.Fields.List {
 			for _, name := range one.Names {
 				if name.IsExported() && strings.HasSuffix(name.Name, "ID") {
-					found = append(found, identity{spec.Name.Name, name.Name, spelled(one.Type)})
+					found = append(found, identity{spec.Name.Name, name.Name, getTypeName(one.Type)})
 				}
 			}
 		}
@@ -584,9 +584,9 @@ func identities(file *ast.File) []identity {
 	return found
 }
 
-// spelled is a type as it is written, and empty for one this rule reads
+// getTypeName is a type as it is written, and empty for one this rule reads
 // nothing into.
-func spelled(at ast.Expr) string {
+func getTypeName(at ast.Expr) string {
 	switch held := at.(type) {
 	case *ast.Ident:
 		return held.Name
@@ -682,7 +682,7 @@ func adapters(file *ast.File, own string) map[string]bool {
 			continue
 		}
 		held := strings.TrimPrefix(to, module)
-		if !adapting(held) || family(held) == own {
+		if !isAdapter(held) || family(held) == own {
 			continue
 		}
 		name := held[strings.LastIndex(held, "/")+1:]
@@ -694,13 +694,14 @@ func adapters(file *ast.File, own string) map[string]bool {
 	return named
 }
 
-// claimed are the ports a file declares itself to answer, by the blank name.
+// getClaimedPorts are the ports a file declares itself to answer, by the blank
+// name.
 //
 // A blank standing among other names is the same claim as one standing alone,
 // and a declaration inside a function is the same claim as one beside the
 // package's own. A variable that holds a port is not one: it is given the
 // adapter, and names what it was given.
-func claimed(file *ast.File) []string {
+func getClaimedPorts(file *ast.File) []string {
 	var held []string
 	ast.Inspect(file, func(node ast.Node) bool {
 		decl, is := node.(*ast.GenDecl)
@@ -747,7 +748,7 @@ func mount() {
 		t.Fatal(err)
 	}
 	want := []string{"VaultReader", "VaultWriter", "Recording"}
-	if got := claimed(file); !slices.Equal(got, want) {
+	if got := getClaimedPorts(file); !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
 }
@@ -772,7 +773,7 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 			return err
 		}
 		pkg := within("..", path)
-		if strings.HasSuffix(path, "_test.go") || !adapting(pkg) {
+		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
@@ -809,7 +810,7 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 //
 // The tests are read: a port a test alone still asks for is asked for.
 func TestEveryPortIsAskedForSomewhereElse(t *testing.T) {
-	unasked, err := unnamedOutside("..", filepath.Join("..", "port"), true)
+	unasked, err := getUnnamedTypes("..", filepath.Join("..", "port"), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -827,7 +828,7 @@ func TestEveryPortIsAskedForSomewhereElse(t *testing.T) {
 // the boundary's is read, not parsed: what the index holds is the domain's, and
 // what an adapter is configured with is the boundary's.
 func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
-	unnamed, err := unnamedOutside("..", filepath.Join("..", "port"), false)
+	unnamed, err := getUnnamedTypes("..", filepath.Join("..", "port"), false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -841,7 +842,7 @@ func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
 // above are passing on the naming and not on an empty walk.
 func TestWhatThePortRuleRefuses(t *testing.T) {
 	at := filepath.Join("..", "port")
-	unnamed, err := unnamedOutside(at, at, false)
+	unnamed, err := getUnnamedTypes(at, at, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -862,7 +863,7 @@ func TestWhatThePortRuleRefuses(t *testing.T) {
 // was written to check the answer, so the method exists to be tested and
 // nothing else is asking.
 func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
-	uncalled, err := uncalledOutside("..", filepath.Join("..", "port"))
+	uncalled, err := getUncalledMethods("..", filepath.Join("..", "port"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -875,7 +876,7 @@ func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
 // the rule has to come back with the methods below.
 func TestWhatThePortMethodRuleRefuses(t *testing.T) {
 	at := filepath.Join("..", "port")
-	uncalled, err := uncalledOutside(at, at)
+	uncalled, err := getUncalledMethods(at, at)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -886,13 +887,13 @@ func TestWhatThePortMethodRuleRefuses(t *testing.T) {
 	}
 }
 
-// uncalledOutside are the methods port/'s interfaces declare that no file of
+// getUncalledMethods are the methods port/'s interfaces declare that no file of
 // the tree outside it, and outside a test, names as a selector.
 //
 // A selector is what a call site of a method looks like whatever holds the
 // value, so the match is on the name alone: an interface the core reaches
 // through a variable never says port.X at the call site.
-func uncalledOutside(root, dir string) ([]string, error) {
+func getUncalledMethods(root, dir string) ([]string, error) {
 	declared, err := methodsIn(dir)
 	if err != nil {
 		return nil, err
@@ -983,12 +984,12 @@ func methodsIn(dir string) (map[string]string, error) {
 	return declared, nil
 }
 
-// unnamedOutside are the exported types port/ declares that no file of the tree
-// outside it names as port.X. onlyPorts reads the interfaces alone.
+// getUnnamedTypes are the exported types port/ declares that no file of the
+// tree outside it names as port.X. onlyPorts reads the interfaces alone.
 //
 // The tests are read: a type a test alone still names is named.
-func unnamedOutside(root, dir string, onlyPorts bool) ([]string, error) {
-	declared, err := declaredIn(dir)
+func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
+	declared, err := getDeclaredTypes(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -1037,9 +1038,9 @@ func unnamedOutside(root, dir string, onlyPorts bool) ([]string, error) {
 	return unnamed, nil
 }
 
-// declaredIn are the exported types a folder's own files declare, each said to
-// be an interface or not.
-func declaredIn(dir string) (map[string]bool, error) {
+// getDeclaredTypes are the exported types a folder's own files declare, each
+// said to be an interface or not.
+func getDeclaredTypes(dir string) (map[string]bool, error) {
 	held, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -1164,15 +1165,17 @@ func within(root, path string) string {
 	return filepath.ToSlash(held)
 }
 
-// adapting says whether a package is an adapter, wherever it stands. An adapter
-// the compiler holds sits under internal/ and is held to the same rules.
-func adapting(pkg string) bool {
+// isAdapter says whether a package is an adapter, wherever it stands. An
+// adapter the compiler holds sits under internal/ and is held to the same
+// rules.
+func isAdapter(pkg string) bool {
 	return strings.HasPrefix(pkg, "adapter/") ||
 		strings.HasPrefix(pkg, "internal/adapter/")
 }
 
-// refused says why one package may not reach another, and nothing where it may.
-func refused(from, to string) string {
+// getRefusal says why one package may not reach another, and nothing where it
+// may.
+func getRefusal(from, to string) string {
 	for _, held := range baseline[from] {
 		if to == held || strings.HasPrefix(to, held+"/") {
 			return ""
@@ -1180,24 +1183,24 @@ func refused(from, to string) string {
 	}
 
 	switch {
-	case adapting(from):
+	case isAdapter(from):
 		if to == "container" {
 			return "an adapter is given what it needs and assembles nothing"
 		}
-		if adapting(to) && !sibling(from, to) {
+		if isAdapter(to) && !sibling(from, to) {
 			return "an adapter is given what it needs and takes no other adapter"
 		}
 		if strings.HasPrefix(to, "usecase/") && !driving[family(from)] {
 			return "a driven adapter stands behind a port and runs no scenario"
 		}
 	case from == "container":
-		if !assembling(to) {
+		if !isAssembled(to) {
 			return "the composition root assembles the core and does none of its work"
 		}
 	// Fixtures build the real adapters, and only a test is compiled from them.
 	case holds([]string{"internal/testsupport", "internal/testonly"}, from):
 	default:
-		if adapting(to) || to == "container" {
+		if isAdapter(to) || to == "container" {
 			return "the core reaches no adapter and nothing that assembles one"
 		}
 		if holds(pure, from) && !holds(pure, to) {
@@ -1217,11 +1220,11 @@ func holds(these []string, pkg string) bool {
 	return false
 }
 
-// assembling says whether a package is one the composition root puts together:
+// isAssembled says whether a package is one the composition root puts together:
 // an adapter, a scenario, and the two languages the two are named in.
-func assembling(to string) bool {
+func isAssembled(to string) bool {
 	return to == "container" || to == "domain" || to == "port" ||
-		adapting(to) || strings.HasPrefix(to, "usecase/")
+		isAdapter(to) || strings.HasPrefix(to, "usecase/")
 }
 
 // sibling says whether two packages are one adapter: its own folder and every
@@ -1249,9 +1252,10 @@ func family(pkg string) string {
 	return strings.Join(held[:depth], "/")
 }
 
-// standing are the adapters in one folder, named under it. A folder that groups
-// adapters is not an adapter, so what stands under it is read in its place.
-func standing(dir, at string) ([]string, error) {
+// getAdaptersIn are the adapters in one folder, named under it. A folder that
+// groups adapters is not an adapter, so what stands under it is read in its
+// place.
+func getAdaptersIn(dir, at string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -1266,7 +1270,7 @@ func standing(dir, at string) ([]string, error) {
 			found = append(found, one.Name())
 			continue
 		}
-		deeper, err := standing(filepath.Join(dir, one.Name()), below)
+		deeper, err := getAdaptersIn(filepath.Join(dir, one.Name()), below)
 		if err != nil {
 			return nil, err
 		}
@@ -1288,7 +1292,7 @@ var public = []string{
 // outside composes sits under internal/adapter, where the compiler holds it, so
 // binding it to a port stays this package's work.
 func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
-	found, err := standing(filepath.Join("..", "adapter"), "adapter")
+	found, err := getAdaptersIn(filepath.Join("..", "adapter"), "adapter")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1315,7 +1319,7 @@ var held = []string{
 
 // The adapters under internal/ are these and no others.
 func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
-	found, err := standing(filepath.Join("..", "internal", "adapter"), "internal/adapter")
+	found, err := getAdaptersIn(filepath.Join("..", "internal", "adapter"), "internal/adapter")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1386,7 +1390,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"container", "adapter/index", false},
 		{"container", "task", false},
 	} {
-		why := refused(one.from, one.to)
+		why := getRefusal(one.from, one.to)
 		if one.refuses && why == "" {
 			t.Errorf("%s reaches %s and is not refused", one.from, one.to)
 		}

@@ -32,7 +32,7 @@ export function agentKind(handle: WindowHandle, open: () => AgentTabState, about
       state.finish()
       return true
     },
-    over: () => about(),
+    getTarget: () => about(),
   }
 
   /** Something to ask, put in the agent the person was last in and put in front. */

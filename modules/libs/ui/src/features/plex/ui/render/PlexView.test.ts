@@ -415,7 +415,7 @@ describe('the box the attention has settled on', () => {
     const view = mountResting()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
 
-    boxOf(view, 'staying').vm.$emit('rest', true)
+    boxOf(view, 'staying').vm.$emit('settle', true)
     await view.vm.$nextTick()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Going, child', 'Staying, child'])
   })
@@ -424,7 +424,7 @@ describe('the box the attention has settled on', () => {
     const view = mountResting()
     const was = view.get('[aria-label^="Staying"]').element
 
-    boxOf(view, 'staying').vm.$emit('rest', true)
+    boxOf(view, 'staying').vm.$emit('settle', true)
     await view.vm.$nextTick()
 
     expect(view.get('[aria-label^="Staying"]').element).toBe(was)
@@ -432,10 +432,10 @@ describe('the box the attention has settled on', () => {
 
   it('goes back to where it was drawn once the hand has left it', async () => {
     const view = mountResting()
-    boxOf(view, 'staying').vm.$emit('rest', true)
+    boxOf(view, 'staying').vm.$emit('settle', true)
     await view.vm.$nextTick()
 
-    boxOf(view, 'staying').vm.$emit('rest', false)
+    boxOf(view, 'staying').vm.$emit('settle', false)
     await view.vm.$nextTick()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
   })

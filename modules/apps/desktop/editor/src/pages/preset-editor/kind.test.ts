@@ -105,7 +105,7 @@ const openPresetTab = async (
       bounds: BOUNDS,
       ...reading(times++),
     }),
-    scheduling: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
+    getDeckPreset: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
     createPreset: async () => ({ path: '', error: null }),
     scheduleDeck: async () => ({ error: null, changed: false, at: '' }),
@@ -132,7 +132,7 @@ const openPresetTab = async (
     asked,
     closed,
     getState: kind.getState,
-    changed: kind.changed,
+    applyPathChanges: kind.applyPathChanges,
     flush: kind.flush,
   }
 }
@@ -169,7 +169,7 @@ const opening = async (file: Partial<Settings>) => {
         bounds: BOUNDS,
       }
     },
-    scheduling: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
+    getDeckPreset: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
     createPreset: async () => ({ path: '', error: null }),
     scheduleDeck: async () => ({ error: null, changed: false, at: '' }),
@@ -325,9 +325,9 @@ describe('the curve behind the knob', () => {
   })
 
   it('leaves the knob where it stands where the file says what it already said', async () => {
-    const { state, changed } = await openPresetTab()
+    const { state, applyPathChanges } = await openPresetTab()
     state.moveSlider(3)
-    changed(['Steady.md'])
+    applyPathChanges(['Steady.md'])
     await after()
     expect(state.place.value).toBe(3)
   })
@@ -336,10 +336,10 @@ describe('the curve behind the knob', () => {
   // again is a curve to ask for again however little the settings moved.
   it('is asked afresh on a re-read, so a deck pointed here since is seen', async () => {
     let decks = 0
-    const { state, changed } = await openPresetTab({}, () => ({ ...curve, decks: decks++ }))
+    const { state, applyPathChanges } = await openPresetTab({}, () => ({ ...curve, decks: decks++ }))
     expect(state.curve.value.decks).toBe(0)
 
-    changed(['Steady.md'])
+    applyPathChanges(['Steady.md'])
     await after()
     expect(state.curve.value.decks).toBe(1)
   })
@@ -421,8 +421,8 @@ describe('a preset no tab has open', () => {
   })
 
   it('is what a renamed preset becomes once its tab is shut', async () => {
-    const { state, getState, changed } = await openPresetTab()
-    changed([], [{ from: 'Steady.md', to: 'Slow.md' }])
+    const { state, getState, applyPathChanges } = await openPresetTab()
+    applyPathChanges([], [{ from: 'Steady.md', to: 'Slow.md' }])
     state.close('Slow.md')
     await after()
     expect(getState('Slow.md')).toBeUndefined()
@@ -571,16 +571,16 @@ describe('what a tab still owes the file', () => {
 
 describe('a file read again', () => {
   it('leaves a setting moved since the read where the person left it', async () => {
-    const { state, changed } = await openPresetTab()
+    const { state, applyPathChanges } = await openPresetTab()
     state.updateSetting('newADay', 4)
-    changed(['Steady.md'])
+    applyPathChanges(['Steady.md'])
     await after()
     expect(state.settings.value.newADay).toBe(4)
   })
 
   it('takes the file up where nothing stands unwritten', async () => {
-    const { state, changed } = await openPresetTab()
-    changed(['Steady.md'])
+    const { state, applyPathChanges } = await openPresetTab()
+    applyPathChanges(['Steady.md'])
     await after()
     expect(state.settings.value.newADay).toBe(STEADY.newADay)
   })
@@ -588,7 +588,7 @@ describe('a file read again', () => {
   // Moving one field is not a claim on the rest: the file has the say over
   // every setting this person did not touch.
   it('takes up every setting beside the one that was moved', async () => {
-    const { state, changed } = await openPresetTab({}, curve, (time) =>
+    const { state, applyPathChanges } = await openPresetTab({}, curve, (time) =>
       time === 0
         ? {}
         : {
@@ -603,7 +603,7 @@ describe('a file read again', () => {
           },
     )
     state.updateSetting('newADay', 4)
-    changed(['Steady.md'])
+    applyPathChanges(['Steady.md'])
     await after()
 
     expect(state.settings.value.newADay).toBe(4)
@@ -612,7 +612,7 @@ describe('a file read again', () => {
   })
 
   it('drops the problems of the file it read before, where it is refused', async () => {
-    const { state, changed } = await openPresetTab({}, curve, (time) =>
+    const { state, applyPathChanges } = await openPresetTab({}, curve, (time) =>
       time === 0
         ? {
             preset: {
@@ -628,7 +628,7 @@ describe('a file read again', () => {
     )
     expect(state.problems.value).toHaveLength(1)
 
-    changed(['Steady.md'])
+    applyPathChanges(['Steady.md'])
     await after()
     expect(state.problems.value).toStrictEqual([])
   })

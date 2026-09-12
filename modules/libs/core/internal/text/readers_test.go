@@ -22,17 +22,17 @@ import (
 // re-extracted for ever, with nothing said anywhere.
 func TestEveryReaderDeclaredIsOneReadersAnswersWith(t *testing.T) {
 	answered := text.Readers()
-	for name, value := range declared(t) {
+	for name, value := range findDeclaredReaders(t) {
 		if !slices.Contains(answered, value) {
 			t.Errorf("%s is %q, and Readers() answers with %q", name, value, answered)
 		}
 	}
 }
 
-// declared is every `Reader…` constant this package declares, by name. The
-// source is what is read: a constant nothing names is a constant reflection
-// cannot reach.
-func declared(t *testing.T) map[string]string {
+// findDeclaredReaders is every `Reader…` constant this package declares, by
+// name. The source is what is read: a constant nothing names is a constant
+// reflection cannot reach.
+func findDeclaredReaders(t *testing.T) map[string]string {
 	t.Helper()
 	entries, err := os.ReadDir(".")
 	if err != nil {

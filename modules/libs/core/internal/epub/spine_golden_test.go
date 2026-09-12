@@ -36,7 +36,7 @@ const textGolden = "testdata/seam.text"
 // A change meaning to move the text moves this file with it, under -update, and
 // the diff is what it moved.
 func TestABookIsReadAsTheGoldenSaysItIs(t *testing.T) {
-	got := written(read(t, seamBook(t)))
+	got := formatGolden(read(t, seamBook(t)))
 	if *update {
 		if err := os.WriteFile(textGolden, []byte(got), 0o644); err != nil {
 			t.Fatal(err)
@@ -52,9 +52,9 @@ func TestABookIsReadAsTheGoldenSaysItIs(t *testing.T) {
 	}
 }
 
-// written is the book as the golden holds it. The text comes last, so a diff in
+// formatGolden is the book as the golden holds it. The text comes last, so a diff in
 // the numbers is read before a diff in the words.
-func written(book *epub.Book) string {
+func formatGolden(book *epub.Book) string {
 	var out strings.Builder
 	fmt.Fprintf(&out, "title\t%s\ntier\t%s\nlayout\t%s\ndirection\t%s\nbytes\t%d\npage\t%d\npages\t%d\n",
 		book.Title, book.Tier, book.Layout, book.Direction, len(book.Text), book.PageBytes(), book.PageCount())
@@ -99,7 +99,7 @@ func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 	book := read(t, seamBook(t))
 	drawn := seamMarkup(t)
 
-	runs := offsets(t, parsed(t, drawn.HTML()))
+	runs := offsets(t, parseHTML(t, drawn.HTML()))
 	if len(runs) == 0 {
 		t.Fatal("the corpus says no offsets")
 	}
@@ -125,7 +125,7 @@ func TestAPictureIsNamedByTheEntryItIsDrawnFrom(t *testing.T) {
 	book := read(t, seamBook(t))
 	drawn := seamMarkup(t)
 
-	named := pictures(parsed(t, drawn.HTML()))
+	named := pictures(parseHTML(t, drawn.HTML()))
 	if len(named) == 0 {
 		t.Fatal("the document draws no picture")
 	}
@@ -147,8 +147,8 @@ func TestALinkInsideTheBookNamesADocumentOrAPlaceInThisOne(t *testing.T) {
 	}
 
 	var within, down, away int
-	for _, found := range elements(parsed(t, seamMarkup(t).HTML()), "a") {
-		href := valued(found, "href")
+	for _, found := range elements(parseHTML(t, seamMarkup(t).HTML()), "a") {
+		href := getAttribute(found, "href")
 		target, fragment, _ := strings.Cut(href, "#")
 		switch {
 		case strings.Contains(target, ":"):
@@ -183,7 +183,7 @@ func seamMarkup(t *testing.T) *epub.Markup {
 // seamBook zips the committed fixture the corpus is drawn from.
 func seamBook(t *testing.T) []byte {
 	t.Helper()
-	return zipped(t, partsIn(t, filepath.Join("testdata", "seam")))
+	return buildReversedArchive(t, partsIn(t, filepath.Join("testdata", "seam")))
 }
 
 // pictures are the entries of the archive a document draws, and none of the
@@ -191,7 +191,7 @@ func seamBook(t *testing.T) []byte {
 func pictures(root *html.Node) []string {
 	var out []string
 	for _, found := range elements(root, "img") {
-		if src := valued(found, "src"); src != "" && !strings.HasPrefix(src, "data:") {
+		if src := getAttribute(found, "src"); src != "" && !strings.HasPrefix(src, "data:") {
 			out = append(out, src)
 		}
 	}

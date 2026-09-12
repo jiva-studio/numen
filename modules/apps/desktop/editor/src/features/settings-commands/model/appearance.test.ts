@@ -94,7 +94,7 @@ const TENTHS = [
 const folder = () => {
   let wake: ((names: readonly string[]) => void) | null = null
   return {
-    changed: async function* (): AsyncIterable<readonly string[]> {
+    watchThemes: async function* (): AsyncIterable<readonly string[]> {
       for (;;) yield await new Promise<readonly string[]>((now) => (wake = now))
     },
     /** These themes changed, and the window has answered for them. */
@@ -117,20 +117,20 @@ const window = (over: Partial<Appearance> = {}, css = SERVED) => {
   let textError = ''
   const texts: Record<string, string> = {}
   const core: Themes = {
-    appearance: async () => {
+    getAppearance: async () => {
       listed += 1
       return appearance
     },
-    text: async (name) => {
+    readTheme: async (name) => {
       asked.push(name)
       if (textError) throw new Error(textError)
       return texts[name] ?? `:root { --numen-surface: ${name} }`
     },
-    chooses: async (name, mode, sizes) => {
+    writeAppearance: async (name, mode, sizes) => {
       chosen.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
       return failed
     },
-    changed: said.changed,
+    watchThemes: said.watchThemes,
   }
   /** What the window was told, in the order it was told. */
   const told: { text: string; kind: string }[] = []
@@ -205,10 +205,10 @@ describe('the page as it was served', () => {
     const sheet = document.implementation.createHTMLDocument('numen')
     const bare = windowAppearance(
       {
-        appearance: async () => APPEARANCE,
-        text: async (name) => `:root { --numen-surface: ${name} }`,
-        chooses: async () => '',
-        changed: async function* (): AsyncIterable<readonly string[]> {
+        getAppearance: async () => APPEARANCE,
+        readTheme: async (name) => `:root { --numen-surface: ${name} }`,
+        writeAppearance: async () => '',
+        watchThemes: async function* (): AsyncIterable<readonly string[]> {
           await new Promise<never>(() => {})
         },
       },
@@ -354,12 +354,12 @@ describe('the themes the step offers', () => {
 
 describe('the three halves the step offers', () => {
   const rows = (one: Awaited<ReturnType<typeof startWindow>>) =>
-    one.worn.modes().flatMap((group) => group.items)
+    one.worn.getModeGroups().flatMap((group) => group.items)
 
   it('draws the three in one group of their own, and says which is read', async () => {
     const one = await startWindow({ mode: 'light' })
 
-    expect(one.worn.modes().map((group) => group.id)).toStrictEqual(['half'])
+    expect(one.worn.getModeGroups().map((group) => group.id)).toStrictEqual(['half'])
     expect(rows(one).map((row) => row.id)).toStrictEqual(['mode:system', 'mode:light', 'mode:dark'])
     expect(rows(one).map((row) => row.detail)).toStrictEqual([undefined, words.current, undefined])
   })
@@ -392,7 +392,7 @@ describe('the three halves the step offers', () => {
 
 describe('the sizes the two steps offer', () => {
   const rows = (one: Awaited<ReturnType<typeof startWindow>>, command: string) =>
-    one.worn.sizes(command).flatMap((group) => group.items)
+    one.worn.getSizeGroups(command).flatMap((group) => group.items)
 
   it('walks each range from end to end, in quarters, with both ends on it', async () => {
     const one = await startWindow()
@@ -408,8 +408,8 @@ describe('the sizes the two steps offer', () => {
   it('draws each in a group of its own, named for what that size moves', async () => {
     const one = await startWindow()
 
-    expect(one.worn.sizes(INTERFACE_SCALE).map((group) => group.title)).toStrictEqual([words.drawing])
-    expect(one.worn.sizes(TEXT_SCALE).map((group) => group.title)).toStrictEqual([words.setting])
+    expect(one.worn.getSizeGroups(INTERFACE_SCALE).map((group) => group.title)).toStrictEqual([words.drawing])
+    expect(one.worn.getSizeGroups(TEXT_SCALE).map((group) => group.title)).toStrictEqual([words.setting])
   })
 
   it('offers nothing at all until the application has said how far a size goes', async () => {
@@ -462,7 +462,7 @@ describe('the sizes the two steps offer', () => {
 
 describe('the number a person types at a size', () => {
   const rows = (one: Awaited<ReturnType<typeof startWindow>>, command: string, text: string) =>
-    one.worn.sizes(command, text).flatMap((group) => group.items)
+    one.worn.getSizeGroups(command, text).flatMap((group) => group.items)
 
   it('stands as a row of its own, in its place between the steps', async () => {
     const one = await startWindow()

@@ -37,7 +37,7 @@ func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	if err != nil {
 		return err
 	}
-	defer closing(open.Close)
+	defer closeIfOpen(open.Close)
 	if open.Unembedded != nil {
 		fmt.Fprintf(out, "not embedding %s: %v\n", v.Name, open.Unembedded)
 	}

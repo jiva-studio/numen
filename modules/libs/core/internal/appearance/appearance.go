@@ -59,14 +59,14 @@ func (s Settings) Styles() string {
 	// The mode first and the theme second. A theme pinning `color-scheme` is
 	// the later of two declarations weighing the same, and light and dark are
 	// then that theme's own.
-	out := styled(IsMode, ":root { color-scheme: "+scheme(s.Mode)+"; }")
+	out := buildStyleElement(IsMode, ":root { color-scheme: "+scheme(s.Mode)+"; }")
 	if s.Theme != "" {
-		out += styled(IsTheme, s.Theme)
+		out += buildStyleElement(IsTheme, s.Theme)
 	}
 	// The two sizes last. They are what a person set this window to, inside the
 	// bounds each goes to, and the element carrying them is the last word on
 	// them.
-	return out + sized(s.InterfaceScale, s.TextScale)
+	return out + buildSizeElement(s.InterfaceScale, s.TextScale)
 }
 
 // Into is the page carrying those elements, put where the head ends. A page
@@ -79,10 +79,10 @@ func Into(text []byte, styles string) []byte {
 	return slices.Concat(text[:at], []byte(styles), text[at:])
 }
 
-// sized is the two multipliers as the page carries them: how large the
+// buildSizeElement is the two multipliers as the page carries them: how large the
 // interface is drawn, which is the root's font size, and how large the text a
 // person reads is set.
-func sized(drawn, set float64) string {
+func buildSizeElement(drawn, set float64) string {
 	var held []string
 	if drawn > 0 {
 		held = append(held, "--numen-interface-scale: "+number(drawn))
@@ -93,7 +93,7 @@ func sized(drawn, set float64) string {
 	if len(held) == 0 {
 		return ""
 	}
-	return styled(IsSizes, ":root { "+strings.Join(held, "; ")+"; }")
+	return buildStyleElement(IsSizes, ":root { "+strings.Join(held, "; ")+"; }")
 }
 
 // number is a multiplier as CSS takes it, at the shortest that reads back as
@@ -112,10 +112,10 @@ func scheme(mode ColorScheme) string {
 	}
 }
 
-// styled is one stylesheet as the page carries it, marked as the one of the
+// buildStyleElement is one stylesheet as the page carries it, marked as the one of the
 // three it is. A `</style>` in a theme's file is written as the CSS escape for
 // it, which is the same declaration and ends no element.
-func styled(is, css string) string {
+func buildStyleElement(is, css string) string {
 	escaped := ending.ReplaceAllStringFunc(css, func(found string) string {
 		return `<\` + found[len("<"):]
 	})

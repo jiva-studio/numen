@@ -29,7 +29,7 @@ export function createNoteTab(
 ): NoteTabState {
   const closeTab = (tab: string) => {
     keyboard.cancelFocusRequest(id)
-    changes.shut(notes.getPath(id))
+    changes.closeNote(notes.getPath(id))
     void notes.close(id).then((gone) => {
       if (!gone) return
       names.forgetTab(id)

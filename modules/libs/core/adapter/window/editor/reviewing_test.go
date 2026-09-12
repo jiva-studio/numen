@@ -17,7 +17,7 @@ import (
 // dayStarts is the hour the settings hold, read off the settings whole.
 func dayStarts(t *testing.T, f *going) string {
 	t.Helper()
-	held, is := setting(t, f, "review", "day_starts").(string)
+	held, is := getSetting(t, f, "review", "day_starts").(string)
 	if !is {
 		t.Fatalf("the hour is not written as an hour")
 	}

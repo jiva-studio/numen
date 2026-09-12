@@ -35,7 +35,7 @@ func recorder(t *testing.T, answer string) (command []string, wrote string) {
 	return []string{script}, wrote
 }
 
-func held(t *testing.T, dir, name string) string {
+func readFile(t *testing.T, dir, name string) string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(dir, name))
 	if err != nil {
@@ -64,11 +64,11 @@ func TestABatchGoesOnTheInputAndTheFlagsOnTheCommandLine(t *testing.T) {
 		t.Errorf("the reply came back as %q", out[7])
 	}
 
-	if got := held(t, wrote, "stdin"); got != proofread.Ask(aBatch) {
+	if got := readFile(t, wrote, "stdin"); got != proofread.Ask(aBatch) {
 		t.Errorf("the input was %q", got)
 	}
 
-	argv := strings.Split(strings.TrimSuffix(held(t, wrote, "argv"), "\036"), "\036")
+	argv := strings.Split(strings.TrimSuffix(readFile(t, wrote, "argv"), "\036"), "\036")
 	want := append([]string{"-p", "--strict-mcp-config", "--model", "haiku", "--disallowed-tools"},
 		disallowed...)
 	want = append(want, "--append-system-prompt", proofread.ScanInstruction)
@@ -87,7 +87,7 @@ func TestTheCommandLineIsStartedInAnEmptyFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if there := held(t, wrote, "there"); there != "" {
+	if there := readFile(t, wrote, "there"); there != "" {
 		t.Errorf("started among %q", there)
 	}
 }
@@ -101,10 +101,10 @@ func TestTheInstructionIsTheCallersOwn(t *testing.T) {
 	if _, err := by.Proofread(t.Context(), []proofread.Batch{aBatch}); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(held(t, wrote, "argv"), proofread.SpeechInstruction) {
+	if !strings.Contains(readFile(t, wrote, "argv"), proofread.SpeechInstruction) {
 		t.Error("the instruction the caller gave was not appended")
 	}
-	if strings.Contains(held(t, wrote, "argv"), "--model") {
+	if strings.Contains(readFile(t, wrote, "argv"), "--model") {
 		t.Error("a model nobody named was chosen")
 	}
 }
@@ -159,7 +159,7 @@ func TestTheFolderTheRunWasStartedInGoesWithIt(t *testing.T) {
 
 			_, _ = by.Proofread(t.Context(), []proofread.Batch{aBatch})
 
-			where := strings.TrimSpace(held(t, filepath.Dir(told), "where"))
+			where := strings.TrimSpace(readFile(t, filepath.Dir(told), "where"))
 			if where == "" {
 				t.Fatal("the run said nothing about where it stood")
 			}

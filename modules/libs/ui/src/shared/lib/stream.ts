@@ -24,9 +24,9 @@ export const LOST = 'lost touch with numen — the window keeps trying'
 /** What following a stream reads of the window it is following for. */
 export interface StreamDeps {
   /** Whether the window is still open. Nothing is followed once it is not. */
-  open(): boolean
+  isOpen(): boolean
   /** What the window lost touch with, said until it has it back. */
-  lost(said: string): void
+  setLost(said: string): void
   wait(ms: number): Promise<unknown>
   /**
    * What the follower lets go of when a stream ends: whatever it holds answers
@@ -46,23 +46,23 @@ export function createFollower(deps: StreamDeps) {
     each: (said: Said) => void | Promise<void>,
     again = AGAIN,
   ): Promise<void> {
-    while (deps.open()) {
+    while (deps.isOpen()) {
       try {
         for await (const said of stream()) {
-          if (!deps.open()) return
+          if (!deps.isOpen()) return
           await each(said)
         }
       } catch {
         // Anything the reading throws ends this one and is said as losing
         // touch, which is what all but one of them are. The exception is a
         // fault in `each`, and this cannot tell the two apart.
-        if (!deps.open()) return
-        deps.lost(LOST)
+        if (!deps.isOpen()) return
+        deps.setLost(LOST)
       }
       deps.reset?.()
       await deps.wait(again)
       // Taken up again, so what was said about losing it no longer holds.
-      if (deps.open()) deps.lost('')
+      if (deps.isOpen()) deps.setLost('')
     }
   }
 }

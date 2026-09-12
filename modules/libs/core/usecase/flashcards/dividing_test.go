@@ -18,21 +18,21 @@ const counts = "goal: retention\nnew_a_day: 30\nreviews_a_day: 0\n"
 // deckAt is the path of the deck standing at this place.
 func deckAt(at int) string { return fmt.Sprintf("decks/D%d.md", at) }
 
-// dividing is a vault of one preset and as many decks, each holding the cards
-// it is given and none of them answered.
-func dividing(t testing.TB, front string, decks ...int) vaulted {
+// newDeckVault is a vault of one preset and as many decks, each holding the
+// cards it is given and none of them answered.
+func newDeckVault(t testing.TB, front string, decks ...int) vaulted {
 	t.Helper()
 	files := map[string]string{"Term.md": term, "Steady.md": preset(front)}
 	for at, cards := range decks {
 		files[deckAt(at)] = deckOf("Steady", cards, at*1000)
 	}
-	return opened(t, files)
+	return openVault(t, files)
 }
 
 // rows is what the front door says each deck holds at this instant.
 func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 	t.Helper()
-	out, err := s.owedAt(today, func() time.Time { return now }).Execute(t.Context(), s.vault)
+	out, err := s.newCountCardsDueAt(today, func() time.Time { return now }).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func (s vaulted) sits(t *testing.T, now time.Time, deck string) int {
 // more decks.
 func TestDecksOwingTheSameDivideTheDayEqually(t *testing.T) {
 	t.Parallel()
-	s := dividing(t, counts, 40, 40, 40)
+	s := newDeckVault(t, counts, 40, 40, 40)
 	got := s.rows(t, when)
 	for at := range 3 {
 		if got[deckAt(at)] != 10 {
@@ -100,7 +100,7 @@ func TestDecksOwingTheSameDivideTheDayEqually(t *testing.T) {
 // A deck owing nine times another's takes nine times the share.
 func TestADeckOwingMoreTakesTheLargerShare(t *testing.T) {
 	t.Parallel()
-	s := dividing(t, counts, 90, 10)
+	s := newDeckVault(t, counts, 90, 10)
 	got := s.rows(t, when)
 	if got[deckAt(0)] != 27 || got[deckAt(1)] != 3 {
 		t.Errorf("a deck owing 90 beside one owing 10 holds %d and %d of a day of 30, and nine times the share is 27 and 3",
@@ -116,7 +116,7 @@ func TestADeckOwingMoreTakesTheLargerShare(t *testing.T) {
 // the cards the other two could not afford out of their own.
 func TestADeckThatCannotUseItsShareLeavesItToTheOthers(t *testing.T) {
 	t.Parallel()
-	s := dividing(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
+	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
 		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 1)
 	got := s.rows(t, when)
 	if got[deckAt(2)] != 0 {
@@ -136,7 +136,7 @@ func TestADeckThatCannotUseItsShareLeavesItToTheOthers(t *testing.T) {
 // A deck holding nothing takes no share of the day.
 func TestADeckHoldingNothingTakesNoShare(t *testing.T) {
 	t.Parallel()
-	s := dividing(t, counts, 0, 40, 40)
+	s := newDeckVault(t, counts, 0, 40, 40)
 	got := s.rows(t, when)
 	if got[deckAt(0)] != 0 {
 		t.Errorf("a deck of no cards holds %d", got[deckAt(0)])
@@ -151,7 +151,7 @@ func TestADeckHoldingNothingTakesNoShare(t *testing.T) {
 // divided.
 func TestOneDeckTakesTheWholeDay(t *testing.T) {
 	t.Parallel()
-	s := dividing(t, counts, 40)
+	s := newDeckVault(t, counts, 40)
 	if got := s.rows(t, when)[deckAt(0)]; got != 30 {
 		t.Errorf("the one deck of the vault holds %d of a day of 30", got)
 	}
@@ -160,7 +160,7 @@ func TestOneDeckTakesTheWholeDay(t *testing.T) {
 // The minutes are divided the same way the counts are.
 func TestTheMinutesOfADayAreDividedOverTheDecksToo(t *testing.T) {
 	t.Parallel()
-	s := dividing(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
+	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
 		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 60)
 	got := s.rows(t, when)
 	// A third of twenty minutes buys twenty cards nobody has begun.
@@ -190,7 +190,7 @@ func TestTheDeckRowIsWhatPressingTheDeckHandsOver(t *testing.T) {
 		{"goal: by_date\nby_date: 2026-06-01\nlearned: retention\n", []int{30, 10, 10}},
 	} {
 		t.Run(fmt.Sprint(shape.decks), func(t *testing.T) {
-			s := dividing(t, shape.front, shape.decks...)
+			s := newDeckVault(t, shape.front, shape.decks...)
 			got := s.rows(t, when)
 			for at := range shape.decks {
 				deck := deckAt(at)
@@ -209,7 +209,7 @@ func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 	t.Parallel()
 	for _, order := range [][]int{{0, 1, 2}, {2, 1, 0}, {1, 0, 2}} {
 		t.Run(fmt.Sprint(order), func(t *testing.T) {
-			s := dividing(t, counts, 40, 40, 40)
+			s := newDeckVault(t, counts, 40, 40, 40)
 			whole, each := 0, make(map[string]int)
 			for _, at := range order {
 				took := s.sits(t, when, deckAt(at))
@@ -234,8 +234,8 @@ func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 // in.
 func TestTheDivisionDoesNotTurnOnWhereADeckStands(t *testing.T) {
 	t.Parallel()
-	first := dividing(t, counts, 90, 10).rows(t, when)
-	second := dividing(t, counts, 10, 90).rows(t, when)
+	first := newDeckVault(t, counts, 90, 10).rows(t, when)
+	second := newDeckVault(t, counts, 10, 90).rows(t, when)
 	if first[deckAt(0)] != second[deckAt(1)] || first[deckAt(1)] != second[deckAt(0)] {
 		t.Errorf("a deck of 90 beside one of 10 holds %d and %d, and the other way round %d and %d",
 			first[deckAt(0)], first[deckAt(1)], second[deckAt(0)], second[deckAt(1)])

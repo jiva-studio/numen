@@ -21,11 +21,11 @@ import (
 func (a *API) ListStencils(
 	ctx context.Context, r *connect.Request[v1.ListStencilsRequest],
 ) (*connect.Response[v1.ListStencilsResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
-	held, count, err := a.Cards.List.Execute(ctx, showing, offering(r.Msg.GetLimit()))
+	held, count, err := a.Cards.List.Execute(ctx, showing, getStencilLimit(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -38,9 +38,9 @@ func (a *API) ListStencils(
 	return connect.NewResponse(out), nil
 }
 
-// offering is how many stencils one answer carries. Nothing asked for takes the
+// getStencilLimit is how many stencils one answer carries. Nothing asked for takes the
 // ceiling, and so does more than the ceiling.
-func offering(limit int32) int {
+func getStencilLimit(limit int32) int {
 	if limit <= 0 || limit > maxStencils {
 		return maxStencils
 	}
@@ -85,14 +85,14 @@ func (a *API) CreateDeck(
 func (a *API) makes(
 	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, *v1.ErrorCode, bool, error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return cards.CreateNoteResult{}, nil, false, err
 	}
 	if !a.Writing.begin() {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	made, err := cut(showing, cards.New{Title: title, Path: folder})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
@@ -101,7 +101,7 @@ func (a *API) makes(
 		}
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.
-		return made, nil, a.unlevelled(err), nil
+		return made, nil, a.isUnlevelled(err), nil
 	}
 	if errors.Is(err, cards.ErrNoFields) {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeInvalidArgument, err)
@@ -120,14 +120,14 @@ func (a *API) makes(
 func (a *API) RenameStencilField(
 	ctx context.Context, r *connect.Request[v1.RenameStencilFieldRequest],
 ) (*connect.Response[v1.RenameStencilFieldResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	renamed, err := a.Cards.RenameField.Execute(ctx, showing, cards.Rename{
 		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
@@ -137,8 +137,8 @@ func (a *API) RenameStencilField(
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		out := renamedOf(renamed)
-		out.Unlevelled = a.unlevelled(err)
+		out := newRenameResponse(renamed)
+		out.Unlevelled = a.isUnlevelled(err)
 		return connect.NewResponse(out), nil
 	}
 	// The name a rename is given is the client's: one the stencil does not
@@ -157,7 +157,7 @@ func (a *API) RenameStencilField(
 func (a *API) ReadStencil(
 	ctx context.Context, r *connect.Request[v1.ReadStencilRequest],
 ) (*connect.Response[v1.ReadStencilResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (a *API) ReadStencil(
 func (a *API) ReadDeck(
 	ctx context.Context, r *connect.Request[v1.ReadDeckRequest],
 ) (*connect.Response[v1.ReadDeckResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -214,24 +214,24 @@ func (a *API) ReadDeck(
 func (a *API) WriteDeck(
 	ctx context.Context, r *connect.Request[v1.WriteDeckRequest],
 ) (*connect.Response[v1.WriteDeckResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
-	body, err := format.DeckBody(writtenDeck(r.Msg))
+	body, err := format.DeckBody(newDeck(r.Msg))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	wrote, err := a.Cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.unlevelled(err)
+	behind := a.isUnlevelled(err)
 	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()
@@ -259,7 +259,7 @@ func (a *API) WriteDeck(
 func (a *API) WriteStencil(
 	ctx context.Context, r *connect.Request[v1.WriteStencilRequest],
 ) (*connect.Response[v1.WriteStencilResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -271,14 +271,14 @@ func (a *API) WriteStencil(
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	at, err := a.Cards.Write.Stencil(
 		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.unlevelled(err)
+	behind := a.isUnlevelled(err)
 	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()

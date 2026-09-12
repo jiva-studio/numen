@@ -33,7 +33,7 @@ func (s *sequence) at(what string) {
 	s.said = append(s.said, what)
 }
 
-func (s *sequence) taken() []string {
+func (s *sequence) getAll() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]string(nil), s.said...)
@@ -183,7 +183,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		t.Fatalf("the agent's write was refused: %v", err)
 	}
 
-	if got := recorded.taken(); len(got) != 2 || got[0] != "levelled" || got[1] != "closed" {
+	if got := recorded.getAll(); len(got) != 2 || got[0] != "levelled" || got[1] != "closed" {
 		t.Errorf("the quit went %v", got)
 	}
 }

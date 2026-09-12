@@ -93,7 +93,7 @@ const notes = (states: Record<string, State> = {}) => {
 /** What is being typed, which nothing here reads beyond letting a tab go. */
 const drawings = () => {
   const shut: string[] = []
-  const store = { shown: () => 0, shut: (path: string) => shut.push(path) }
+  const store = { shown: () => 0, closeNote: (path: string) => shut.push(path) }
   return { store: store as unknown as ReturnType<typeof noteChanges>, shut }
 }
 
@@ -146,7 +146,7 @@ describe('a link in the prose followed', () => {
     const one = window({}, {}, reaches)
     one.openNote('Note.md')
     await flushPromises()
-    return { ...one, state: one.noted.openTab(one.noted.kept.holding('Note.md') ?? 'Note.md') }
+    return { ...one, state: one.noted.openTab(one.noted.kept.getTabAt('Note.md') ?? 'Note.md') }
   }
 
   it('opens the note it names, in a tab beside the one it was written in', async () => {
@@ -156,7 +156,7 @@ describe('a link in the prose followed', () => {
     await flushPromises()
 
     expect(one.open()).toHaveLength(2)
-    expect(one.noted.kept.holding('physics/Entropy.md')).not.toBeNull()
+    expect(one.noted.kept.getTabAt('physics/Entropy.md')).not.toBeNull()
   })
 
   it('opens nothing where no note answers to it', async () => {
@@ -309,12 +309,12 @@ describe('a note that was renamed', () => {
     const one = window()
     one.openNote('Note.md')
     await nextTick()
-    const id = one.noted.kept.holding('Note.md')
+    const id = one.noted.kept.getTabAt('Note.md')
     one.moveNote('Note.md', 'Renamed.md')
     await nextTick()
 
-    expect(one.noted.kept.holding('Renamed.md')).toBe(id)
-    expect(one.noted.kept.holding('Note.md')).toBeNull()
+    expect(one.noted.kept.getTabAt('Renamed.md')).toBe(id)
+    expect(one.noted.kept.getTabAt('Note.md')).toBeNull()
     expect(one.noted.createNoteTabState(id ?? '').note.value.path).toBe('Renamed.md')
   })
 
@@ -505,7 +505,7 @@ describe('what a command asked over a note tab is over', () => {
     one.openNote('Note.md', 'A note')
     await nextTick()
 
-    expect(one.noted.kind.over!(stateOf(one))).toStrictEqual({
+    expect(one.noted.kind.getTarget!(stateOf(one))).toStrictEqual({
       path: 'Note.md',
       title: 'A note',
     })
@@ -518,7 +518,7 @@ describe('what a command asked over a note tab is over', () => {
     one.moveNote('Note.md', 'Moved.md')
     await nextTick()
 
-    expect(one.noted.kind.over!(stateOf(one)).path).toBe('Moved.md')
+    expect(one.noted.kind.getTarget!(stateOf(one)).path).toBe('Moved.md')
   })
 })
 

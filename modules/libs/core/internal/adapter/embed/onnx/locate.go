@@ -63,7 +63,7 @@ func locate(ctx context.Context, cfg embed.LocalModel, progress FetchProgress) (
 	}
 
 	repo := hub.New(cfg.Name).WithProgressBar(false)
-	folder, sizes, err := published(repo)
+	folder, sizes, err := listRepoFiles(repo)
 	if err != nil {
 		return paths{}, fmt.Errorf("what %s publishes: %w", cfg.Name, err)
 	}
@@ -71,13 +71,13 @@ func locate(ctx context.Context, cfg embed.LocalModel, progress FetchProgress) (
 		return paths{}, fmt.Errorf("%s publishes no %s/%s: it has %v", cfg.Name, modelFolder, file, folder)
 	}
 
-	files := wanted(folder, file)
+	files := selectModelFiles(folder, file)
 	var total int64
 	for _, name := range files {
 		total += sizes[name]
 	}
 	if dir, err := repo.CacheDir(); err == nil {
-		defer arriving(dir, files, sizes, total, progress)()
+		defer reportProgress(dir, files, sizes, total, progress)()
 	}
 
 	p := paths{}
@@ -106,9 +106,9 @@ func locate(ctx context.Context, cfg embed.LocalModel, progress FetchProgress) (
 	return p, nil
 }
 
-// published is what a repository holds beside its models, by the names they
-// have inside that folder, and how large each is.
-func published(repo *hub.Repo) ([]string, map[string]int64, error) {
+// listRepoFiles is what a repository holds beside its models, by the names
+// they have inside that folder, and how large each is.
+func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, error) {
 	var out []string
 	sizes := map[string]int64{}
 	for info, err := range repo.IterFileInfos() {
@@ -125,12 +125,12 @@ func published(repo *hub.Repo) ([]string, map[string]int64, error) {
 	return out, sizes, nil
 }
 
-// arriving reports how much of the model is on this machine while it comes
-// down, and hands back what stops the reporting.
+// reportProgress reports how much of the model is on this machine while it
+// comes down, and hands back what stops the reporting.
 //
 // What is counted is the bytes under the repository's own place in the cache,
 // which is what has arrived.
-func arriving(dir string, files []string, sizes map[string]int64, total int64, progress FetchProgress) func() {
+func reportProgress(dir string, files []string, sizes map[string]int64, total int64, progress FetchProgress) func() {
 	if progress == nil || total <= 0 {
 		return func() {}
 	}
@@ -145,7 +145,7 @@ func arriving(dir string, files []string, sizes map[string]int64, total int64, p
 			case <-done:
 				return
 			case <-tick.C:
-				progress(min(weighed(dir, files, sizes), total), total)
+				progress(min(sumBytes(dir, files, sizes), total), total)
 			}
 		}
 	}()
@@ -155,13 +155,13 @@ func arriving(dir string, files []string, sizes map[string]int64, total int64, p
 	}
 }
 
-// weighed is how many bytes of the files named stand under a folder. A folder
+// sumBytes is how many bytes of the files named stand under a folder. A folder
 // holding another build of the same model holds bytes that are not this one's,
 // and a file part-written counts for no more than the size it will take.
 //
 // A cache files one copy of a model and hangs its names off it, so a name is
 // weighed as what it points at.
-func weighed(dir string, files []string, sizes map[string]int64) int64 {
+func sumBytes(dir string, files []string, sizes map[string]int64) int64 {
 	wanted := make(map[string]int64, len(files))
 	for _, name := range files {
 		wanted[name] = sizes[name]
@@ -185,14 +185,14 @@ func weighed(dir string, files []string, sizes map[string]int64) int64 {
 	return sum
 }
 
-// wanted is everything the model named is made of, out of what stands beside
-// it: the model, and every file that is not another model's.
+// selectModelFiles is everything the model named is made of, out of what stands
+// beside it: the model, and every file that is not another model's.
 //
 // A model too large for one file keeps its weights in a second under its own
 // name, and a graph may point at a constant in a third. A folder holds the full
 // build and the quantised ones together, and taking one means leaving the
 // gigabytes belonging to the others.
-func wanted(folder []string, named string) []string {
+func selectModelFiles(folder []string, named string) []string {
 	var others []string
 	for _, name := range folder {
 		if name != named && strings.HasSuffix(name, ".onnx") {

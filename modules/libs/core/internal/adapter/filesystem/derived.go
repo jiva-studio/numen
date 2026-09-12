@@ -379,7 +379,7 @@ func (d *DerivedStore) List(_ context.Context, name string) ([]port.Entry, error
 	if err != nil {
 		return nil, err
 	}
-	clean, err := cleaned(name)
+	clean, err := cleanPath(name)
 	if err != nil {
 		return nil, err
 	}
@@ -530,7 +530,7 @@ func (d *DerivedStore) area(clean string) (string, bool) {
 // The store's folder need not exist: as much of each path as does exist is
 // resolved, which is the same rule a write into the vault is judged by.
 func (d *DerivedStore) at(name string) (string, error) {
-	clean, err := cleaned(name)
+	clean, err := cleanPath(name)
 	if err != nil {
 		return "", err
 	}

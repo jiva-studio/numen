@@ -100,7 +100,7 @@ const TEMPLATE = `
       :picture="picture"
       :highlights="highlightsOn"
       @go="go"
-      @wide="wide = $event"
+      @measure="wide = $event"
     >
       <template #silence>Nothing drawn yet</template>
     </Reader>

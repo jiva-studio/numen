@@ -29,7 +29,7 @@ const props = withDefaults(
 /** What it is read out as, where that is not what it draws. */
 const label = computed(() => {
   if (props.due === null) return props.words.counting
-  return props.bare ? props.words.counted(props.due) : undefined
+  return props.bare ? props.words.formatDue(props.due) : undefined
 })
 </script>
 
@@ -46,7 +46,7 @@ const label = computed(() => {
          whether the figure has landed or not. -->
     <Skeleton v-if="due === null" wide="0.8rem" high="0.7em" pill />
     <template v-else-if="bare">{{ due }}</template>
-    <template v-else>{{ words.counted(due) }}</template>
+    <template v-else>{{ words.formatDue(due) }}</template>
   </span>
 </template>
 

@@ -74,7 +74,7 @@ func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult
 	var out MarkCardsResult
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
-		if err != nil || deck.Outcome != note.Ok || !unmarked(deck.Body) {
+		if err != nil || deck.Outcome != note.Ok || !hasUnmarkedCard(deck.Body) {
 			continue
 		}
 
@@ -96,8 +96,8 @@ func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult
 	return out, nil
 }
 
-// unmarked reports whether any card of a deck carries no mark.
-func unmarked(d format.Deck) bool {
+// hasUnmarkedCard reports whether any card of a deck carries no mark.
+func hasUnmarkedCard(d format.Deck) bool {
 	for _, c := range d.Cards {
 		if c.Mark == "" {
 			return true

@@ -25,9 +25,9 @@ func modelDir(t *testing.T) string {
 	return dir
 }
 
-// runningIn is the settings with the model this machine runs read out of dir,
-// and that model: the two a run here is opened with.
-func runningIn(t *testing.T, cfg embed.Config, dir string) (embed.Config, embed.LocalModel) {
+// setLocalModel is the settings with the model this machine runs read out of
+// dir, and that model: the two a run here is opened with.
+func setLocalModel(t *testing.T, cfg embed.Config, dir string) (embed.Config, embed.LocalModel) {
 	t.Helper()
 	local, ok := cfg.Indexing.Local()
 	if !ok {
@@ -40,7 +40,7 @@ func runningIn(t *testing.T, cfg embed.Config, dir string) (embed.Config, embed.
 
 func open(t *testing.T, dir string) *onnx.Embedder {
 	t.Helper()
-	cfg, local := runningIn(t, embed.Defaults(), dir)
+	cfg, local := setLocalModel(t, embed.Defaults(), dir)
 	e, err := onnx.Open(t.Context(), cfg.Stored(), local, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +50,7 @@ func open(t *testing.T, dir string) *onnx.Embedder {
 }
 
 func TestAMissingDirectoryIsNamedInTheError(t *testing.T) {
-	cfg, local := runningIn(t, embed.Defaults(), t.TempDir())
+	cfg, local := setLocalModel(t, embed.Defaults(), t.TempDir())
 	_, err := onnx.Open(t.Context(), cfg.Stored(), local, nil)
 	if err == nil {
 		t.Fatal("want an error")
@@ -63,7 +63,7 @@ func TestAMissingDirectoryIsNamedInTheError(t *testing.T) {
 func TestDimensionsMustBeKnown(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.Dimensions = 0
-	cfg, local := runningIn(t, cfg, t.TempDir())
+	cfg, local := setLocalModel(t, cfg, t.TempDir())
 	if _, err := onnx.Open(t.Context(), cfg.Stored(), local, nil); err == nil {
 		t.Fatal("want an error")
 	}
@@ -74,7 +74,7 @@ func TestDimensionsMustBeKnown(t *testing.T) {
 func TestWhereATextIsCutOffMustBeSaid(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.MaxTokens = 0
-	cfg, local := runningIn(t, cfg, t.TempDir())
+	cfg, local := setLocalModel(t, cfg, t.TempDir())
 	_, err := onnx.Open(t.Context(), cfg.Stored(), local, nil)
 	if err == nil || !strings.Contains(err.Error(), "cut off") {
 		t.Fatalf("got %v", err)
@@ -85,7 +85,7 @@ func TestAPoolingNobodyImplementsIsRefused(t *testing.T) {
 	// A model is pooled the way it was trained to be, or it is refused here.
 	cfg := embed.Defaults()
 	cfg.Model.Pooling = "cls"
-	cfg, local := runningIn(t, cfg, t.TempDir())
+	cfg, local := setLocalModel(t, cfg, t.TempDir())
 	_, err := onnx.Open(t.Context(), cfg.Stored(), local, nil)
 	if err == nil || !strings.Contains(err.Error(), "cls") {
 		t.Fatalf("got %v", err)

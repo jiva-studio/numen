@@ -48,10 +48,10 @@ func TestEditLoad(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled, time.Now)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	api := &API{
-		Listeners: following(),
-		Places:    focusing(),
+		Listeners: newChangeAudience(),
+		Places:    newPlaceAudience(),
 		Notes: Notes{
 			Queries: db.Queries(),
 			Links:   db.Links(),
@@ -64,7 +64,7 @@ func TestEditLoad(t *testing.T) {
 	opened := cfg.VaultOpener(db)
 
 	reading := time.Now()
-	wait := begin(t.Context(), v, cfg, db, api, opened, filesystem.VaultReaders{}, nil, waking(time.Hour), &pending{}, io.Discard)
+	wait := begin(t.Context(), v, cfg, db, api, opened, filesystem.VaultReaders{}, nil, newNudges(time.Hour), &pending{}, io.Discard)
 	t.Cleanup(wait)
 	for !api.Ready.Load() && api.Error.Why() == "" {
 		time.Sleep(50 * time.Millisecond)

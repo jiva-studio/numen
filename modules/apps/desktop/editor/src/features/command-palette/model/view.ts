@@ -32,7 +32,7 @@ export function view(state: ViewState) {
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [
         { id: one.id, text: one.text },
-        ...(also && also.where(over, runs) ? [{ id: also.id, text: also.text }] : []),
+        ...(also && also.isOffered(over, runs) ? [{ id: also.id, text: also.text }] : []),
       ],
     }
   }
@@ -46,7 +46,7 @@ export function view(state: ViewState) {
     const word = text.trim().toLowerCase()
     const items = (group: CommandGroup): readonly PaletteItem[] =>
       inGroup(commands, group)
-        .filter((one) => one.where(over, runs))
+        .filter((one) => one.isOffered(over, runs))
         .map((one) => renderItem(one, over, word))
         .filter((item) => item !== null)
 

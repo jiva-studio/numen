@@ -7,7 +7,12 @@
  */
 import { computed, ref } from 'vue'
 
-import { around, core as agent, useAgentPanel, useNotesPanel } from '@/pages/session'
+import {
+  createAgentPort as agent,
+  getDeckNeighbourhood,
+  useAgentPanel,
+  useNotesPanel,
+} from '@/pages/session'
 import type { PanelPlace } from '@/pages/session'
 import type { CardFace } from '@/entities/card'
 
@@ -69,7 +74,7 @@ export const usePanels = (deps: PanelsDeps) => {
     },
     vault: deps.vault,
     deck: () => deps.card()?.deck ?? '',
-    around,
+    getDeckNeighbourhood,
     showNotice: deps.showNotice,
   })
 

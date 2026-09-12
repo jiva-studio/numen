@@ -82,11 +82,11 @@ const frame = useTemplateRef<HTMLElement>('frame')
 const { moved, overlay, label, position, landing, press } = useTabDrag({
   workspace,
   frame,
-  tabOf,
-  naming: () => props.naming ?? mint,
-  edge: () => props.edge,
-  threshold: () => props.threshold,
-  clock: () => props.clock,
+  getTab: tabOf,
+  getIdFactory: () => props.naming ?? mint,
+  getEdge: () => props.edge,
+  getThreshold: () => props.threshold,
+  getClock: () => props.clock,
 })
 
 function choose(tab: TabId): void {

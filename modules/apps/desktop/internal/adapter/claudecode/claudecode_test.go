@@ -16,10 +16,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// started is an agent whose command line is a script printing what it was told
-// to print. What is tested is the reading and the stopping: the tools are the
-// server's business and the answering is the model's.
-func started(t *testing.T, prints string) port.Run {
+// startAgent is an agent whose command line is a script printing what it was
+// told to print. What is tested is the reading and the stopping: the tools are
+// the server's business and the answering is the model's.
+func startAgent(t *testing.T, prints string) port.Run {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -57,8 +57,8 @@ func started(t *testing.T, prints string) port.Run {
 	return work
 }
 
-// heard is every step of a piece of work, in order.
-func heard(t *testing.T, work port.Run) []port.Step {
+// getSteps is every step of a piece of work, in order.
+func getSteps(t *testing.T, work port.Run) []port.Step {
 	t.Helper()
 
 	var steps []port.Step
@@ -72,11 +72,11 @@ const connected = `{"type":"system","subtype":"init","session_id":"s1",` +
 	`"mcp_servers":[{"name":"numen","status":"connected"}]}`
 
 func TestSaysWhatTheAgentSaid(t *testing.T) {
-	work := started(t, connected+"\n"+
+	work := startAgent(t, connected+"\n"+
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"Two notes."}]}}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false,"result":"Two notes."}`)
 
-	steps := heard(t, work)
+	steps := getSteps(t, work)
 	if len(steps) != 2 {
 		t.Fatalf("expected saying and stopping, got %d steps: %+v", len(steps), steps)
 	}
@@ -89,12 +89,12 @@ func TestSaysWhatTheAgentSaid(t *testing.T) {
 }
 
 func TestNamesAToolAsItNamedItself(t *testing.T) {
-	work := started(t, connected+"\n"+
+	work := startAgent(t, connected+"\n"+
 		`{"type":"assistant","message":{"content":[{"type":"tool_use","name":"mcp__numen__note_search",`+
 		`"input":{"query":"entropy"}}]}}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false}`)
 
-	steps := heard(t, work)
+	steps := getSteps(t, work)
 	if steps[0].Kind != port.StepToolCall || steps[0].Tool != "Search notes" || steps[0].About != "entropy" {
 		t.Errorf("expected the tool's own title and what it was asked, got %+v", steps[0])
 	}
@@ -103,11 +103,11 @@ func TestNamesAToolAsItNamedItself(t *testing.T) {
 // A tool this vault does not serve is named as the agent named it: there is
 // nothing declared here to read it by.
 func TestNamesAToolItWasNotToldAbout(t *testing.T) {
-	work := started(t, connected+"\n"+
+	work := startAgent(t, connected+"\n"+
 		`{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"ls"}}]}}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false}`)
 
-	steps := heard(t, work)
+	steps := getSteps(t, work)
 	if steps[0].Tool != "Bash" || steps[0].About != "" {
 		t.Errorf("steps are %+v", steps)
 	}
@@ -115,7 +115,7 @@ func TestNamesAToolItWasNotToldAbout(t *testing.T) {
 
 // Words arrive a piece at a time, and a call is shown once it is whole.
 func TestReadsWordsAndCallsAsTheyAreWritten(t *testing.T) {
-	work := started(t, connected+"\n"+
+	work := startAgent(t, connected+"\n"+
 		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"Two "}}}`+"\n"+
 		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"notes."}}}`+"\n"+
 		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","name":"mcp__numen__note_search"}}}`+"\n"+
@@ -125,7 +125,7 @@ func TestReadsWordsAndCallsAsTheyAreWritten(t *testing.T) {
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"Two notes."}]}}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false}`)
 
-	steps := heard(t, work)
+	steps := getSteps(t, work)
 
 	var said []string
 	var calls []port.Step
@@ -153,22 +153,22 @@ func TestReadsWordsAndCallsAsTheyAreWritten(t *testing.T) {
 }
 
 func TestPassesOverALineItCannotRead(t *testing.T) {
-	work := started(t, connected+"\n"+
+	work := startAgent(t, connected+"\n"+
 		"not json at all\n"+
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"still here"}]}}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false}`)
 
-	steps := heard(t, work)
+	steps := getSteps(t, work)
 	if steps[0].Kind != port.StepSaying || steps[0].Text != "still here" {
 		t.Errorf("a line it could not read stopped the work: %+v", steps)
 	}
 }
 
 func TestSaysWhyItStopped(t *testing.T) {
-	work := started(t, connected+"\n"+
+	work := startAgent(t, connected+"\n"+
 		`{"type":"result","subtype":"error_max_turns","is_error":true,"result":"went round too many times"}`)
 
-	steps := heard(t, work)
+	steps := getSteps(t, work)
 	last := steps[len(steps)-1]
 	if last.Kind != port.StepStopped || last.Detail != "went round too many times" {
 		t.Errorf("last step is %+v", last)
@@ -176,10 +176,10 @@ func TestSaysWhyItStopped(t *testing.T) {
 }
 
 func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
-	work := started(t, `{"type":"system","subtype":"init","session_id":"s1","mcp_servers":[]}`+"\n"+
+	work := startAgent(t, `{"type":"system","subtype":"init","session_id":"s1","mcp_servers":[]}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false}`)
 
-	steps := heard(t, work)
+	steps := getSteps(t, work)
 	last := steps[len(steps)-1]
 	if last.Kind != port.StepStopped || !strings.Contains(last.Detail, "without this vault") {
 		t.Errorf("an agent that never got the tools answered anyway: %+v", last)
@@ -189,19 +189,19 @@ func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
 // A message of somebody else's shape must not stop the reading: what a user
 // message carries is not what an assistant message carries.
 func TestReadsPastAMessageOfAnotherShape(t *testing.T) {
-	work := started(t, connected+"\n"+
+	work := startAgent(t, connected+"\n"+
 		`{"type":"user","message":{"role":"user","content":"a string, not blocks"}}`+"\n"+
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"after"}]}}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false}`)
 
-	steps := heard(t, work)
+	steps := getSteps(t, work)
 	if steps[0].Kind != port.StepSaying || steps[0].Text != "after" {
 		t.Errorf("steps are %+v", steps)
 	}
 }
 
 func TestStoppingLeavesNothingRunning(t *testing.T) {
-	work := started(t, connected+"\n"+
+	work := startAgent(t, connected+"\n"+
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"a word"}]}}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false}`)
 
@@ -220,28 +220,28 @@ func TestStoppingLeavesNothingRunning(t *testing.T) {
 // A version that says nothing about servers is not a version that says the
 // vault never arrived.
 func TestSaysNothingWhenTheLineSaysNothingAboutServers(t *testing.T) {
-	work := started(t, `{"type":"system","subtype":"init","session_id":"s1"}`+"\n"+
+	work := startAgent(t, `{"type":"system","subtype":"init","session_id":"s1"}`+"\n"+
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"here"}]}}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false}`)
 
-	steps := heard(t, work)
+	steps := getSteps(t, work)
 	last := steps[len(steps)-1]
 	if last.Kind != port.StepStopped || last.Detail != "" {
 		t.Errorf("last step is %+v", last)
 	}
 }
 
-// recorded is what the agent's command line was called with, from a script that
+// getArgv is what the agent's command line was called with, from a script that
 // writes down its arguments and answers nothing.
-func recorded(t *testing.T) []string {
+func getArgv(t *testing.T) []string {
 	t.Helper()
-	return recordedWith(t, func(*claudecode.Agent) {})
+	return getArgvWith(t, func(*claudecode.Agent) {})
 }
 
-// recordedWith is recorded with the agent changed before it is started.
-func recordedWith(t *testing.T, change func(*claudecode.Agent)) []string {
+// getArgvWith is getArgv with the agent changed before it is started.
+func getArgvWith(t *testing.T, change func(*claudecode.Agent)) []string {
 	t.Helper()
-	return given(t, change).argv
+	return runAgent(t, change).argv
 }
 
 // run is what the child was given: the arguments on its command line, what
@@ -253,9 +253,9 @@ type run struct {
 	config string
 }
 
-// given runs the agent against a script standing in for the command, and
+// runAgent runs the agent against a script standing in for the command, and
 // answers with what that script was given.
-func given(t *testing.T, change func(*claudecode.Agent)) run {
+func runAgent(t *testing.T, change func(*claudecode.Agent)) run {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -289,7 +289,7 @@ func given(t *testing.T, change func(*claudecode.Agent)) run {
 		t.Fatal(err)
 	}
 	// Drained so that the script has run and written before it is read.
-	heard(t, work)
+	getSteps(t, work)
 
 	raw, err := os.ReadFile(written)
 	if err != nil {
@@ -309,7 +309,7 @@ func given(t *testing.T, change func(*claudecode.Agent)) run {
 // a command line it would be read for options first — a question beginning with
 // a dash is a flag, and the words after it are that flag's.
 func TestTheQuestionGoesOnTheInputAndNotOnTheCommandLine(t *testing.T) {
-	said := given(t, func(*claudecode.Agent) {})
+	said := runAgent(t, func(*claudecode.Agent) {})
 
 	if said.asked != "what is here?" {
 		t.Errorf("the child was asked %q on its input", said.asked)
@@ -322,7 +322,7 @@ func TestTheQuestionGoesOnTheInputAndNotOnTheCommandLine(t *testing.T) {
 // The agent may look something up and may not touch this machine, so the run
 // names the whole set of tools it is started with.
 func TestTheAgentBringsOnlyTheToolsItIsNamed(t *testing.T) {
-	argv := recorded(t)
+	argv := getArgv(t)
 
 	at := -1
 	for i, arg := range argv {
@@ -356,7 +356,7 @@ func TestTheAgentBringsOnlyTheToolsItIsNamed(t *testing.T) {
 // is offered on --tools and allowed by name here, and both are what let it be
 // called.
 func TestTheAllowanceNamesTheSearchAndThisVaultsTools(t *testing.T) {
-	argv := recordedWith(t, func(a *claudecode.Agent) {
+	argv := getArgvWith(t, func(a *claudecode.Agent) {
 		a.Allowed = []string{claudecode.Tool("note_read"), claudecode.Tool("note_edit")}
 	})
 
@@ -372,7 +372,7 @@ func TestTheAllowanceNamesTheSearchAndThisVaultsTools(t *testing.T) {
 // An agent allowed none of this vault's tools is still allowed the search: the
 // flag stands whether the allowance names a vault tool or not.
 func TestTheSearchIsAllowedWithoutAnyVaultTool(t *testing.T) {
-	argv := recordedWith(t, func(a *claudecode.Agent) { a.Allowed = nil })
+	argv := getArgvWith(t, func(a *claudecode.Agent) { a.Allowed = nil })
 
 	if allowed := after(t, argv, "--allowedTools"); allowed != "WebSearch" {
 		t.Errorf("the allowance is %q", allowed)
@@ -394,7 +394,7 @@ func after(t *testing.T, argv []string, flag string) string {
 // One server, named in full, and no chance of another being read from the
 // machine's own configuration.
 func TestTheAgentReachesThisVaultAndNothingElse(t *testing.T) {
-	out := given(t, func(*claudecode.Agent) {})
+	out := runAgent(t, func(*claudecode.Agent) {})
 
 	if !slices.Contains(out.argv, "--strict-mcp-config") {
 		t.Errorf("another server's configuration may still be read: %q", out.argv)
@@ -408,7 +408,7 @@ func TestTheAgentReachesThisVaultAndNothingElse(t *testing.T) {
 // readable by every user on the machine. It travels in a file the child is
 // given the path of, and the file goes when the run does.
 func TestTheTokenIsNotOnTheChildsCommandLine(t *testing.T) {
-	out := given(t, func(*claudecode.Agent) {})
+	out := runAgent(t, func(*claudecode.Agent) {})
 
 	for _, arg := range out.argv {
 		if strings.Contains(arg, "let-me-in") {
@@ -455,7 +455,7 @@ func TestTheFocusedNotesNameIsNotInTheSystemPrompt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	heard(t, work)
+	getSteps(t, work)
 
 	raw, err := os.ReadFile(written)
 	if err != nil {
@@ -498,7 +498,7 @@ func TestTheConfigurationIsReadableByThisUserAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	heard(t, work)
+	getSteps(t, work)
 
 	held, err := os.ReadFile(written)
 	if err != nil {
@@ -526,7 +526,7 @@ const (
 // The moment a request to the model begins is written into the stream, and it is
 // the moment a wait starts.
 func TestSaysWhenTheModelWasAskedSomething(t *testing.T) {
-	steps := heard(t, started(t, strings.Join([]string{connected, requesting}, "\n")))
+	steps := getSteps(t, startAgent(t, strings.Join([]string{connected, requesting}, "\n")))
 
 	if !slices.Contains(kinds(steps), port.StepThinking) {
 		t.Errorf("nothing says the model was asked: %+v", steps)
@@ -535,7 +535,7 @@ func TestSaysWhenTheModelWasAskedSomething(t *testing.T) {
 
 // A tool answering is the end of that tool, and the stream says so.
 func TestSaysWhenTheToolAnswered(t *testing.T) {
-	steps := heard(t, started(t, strings.Join([]string{connected, answered}, "\n")))
+	steps := getSteps(t, startAgent(t, strings.Join([]string{connected, answered}, "\n")))
 
 	if !slices.Contains(kinds(steps), port.StepAnswered) {
 		t.Errorf("nothing says the tool finished: %+v", steps)
@@ -556,7 +556,7 @@ func TestReportsACallWhileItIsStillBeingWritten(t *testing.T) {
 		delta(body),
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
 	}
-	steps := heard(t, started(t, strings.Join(lines, "\n")))
+	steps := getSteps(t, startAgent(t, strings.Join(lines, "\n")))
 
 	var calls []port.Step
 	for _, s := range steps {
@@ -611,7 +611,7 @@ func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
 		delta(`"}`),
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
 	}
-	steps := heard(t, started(t, strings.Join(lines, "\n")))
+	steps := getSteps(t, startAgent(t, strings.Join(lines, "\n")))
 
 	reports := 0
 	for _, step := range steps {
@@ -631,7 +631,7 @@ func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
 // What a call does to the vault is what a person watching it wants to know, and
 // the tool's own declaration is what says so.
 func TestSaysWhatACallDoesToTheVault(t *testing.T) {
-	steps := heard(t, started(t, connected+"\n"+wrote))
+	steps := getSteps(t, startAgent(t, connected+"\n"+wrote))
 
 	if steps[0].Kind != port.StepEdit {
 		t.Errorf("a call that writes a note is %+v", steps[0])
@@ -645,7 +645,7 @@ func TestSaysWhatACallDoesToTheVault(t *testing.T) {
 // A client follows the agent by opening what it is working in, and a path is the
 // only thing that says which note that is.
 func TestSaysWhichNoteACallIsWorkingIn(t *testing.T) {
-	steps := heard(t, started(t, connected+"\n"+wrote))
+	steps := getSteps(t, startAgent(t, connected+"\n"+wrote))
 
 	if steps[0].Place.Path != "physics/entropy.md" {
 		t.Errorf("the call is working in %+v", steps[0].Place)
@@ -660,7 +660,7 @@ func TestSaysWhichNoteACallIsWorkingIn(t *testing.T) {
 // nothing about the tools it may use has any bearing on it. A question typed
 // into a panel is not asking for one.
 func TestTheAgentReadsNothingThisMachineHoldsForIt(t *testing.T) {
-	argv := recorded(t)
+	argv := getArgv(t)
 
 	at := slices.Index(argv, "--setting-sources")
 	if at < 0 {
@@ -681,7 +681,7 @@ func TestTheAgentReadsNothingThisMachineHoldsForIt(t *testing.T) {
 // knows, and says the vault was missing after the answer.
 func TestThisVaultsToolsSurviveWhatIsRefused(t *testing.T) {
 	for _, own := range []bool{false, true} {
-		argv := recordedWith(t, func(a *claudecode.Agent) { a.ReadsHooksAndSkills = own })
+		argv := getArgvWith(t, func(a *claudecode.Agent) { a.ReadsHooksAndSkills = own })
 
 		if slices.Contains(argv, "--safe-mode") {
 			t.Errorf("own=%v: safe mode disables MCP servers, this vault's included", own)
@@ -696,7 +696,7 @@ func TestThisVaultsToolsSurviveWhatIsRefused(t *testing.T) {
 // from elsewhere, and a settings file inside one is a vault naming commands for
 // this machine to run.
 func TestAVaultsOwnConfigurationIsNeverRead(t *testing.T) {
-	argv := recordedWith(t, func(a *claudecode.Agent) { a.ReadsHooksAndSkills = true })
+	argv := getArgvWith(t, func(a *claudecode.Agent) { a.ReadsHooksAndSkills = true })
 
 	if slices.Contains(argv, "--safe-mode") {
 		t.Error("the person asked for their own configuration and got none")
@@ -766,7 +766,7 @@ sleep 120
 		if pid == 0 {
 			t.Fatalf("the agent of conversation %q never started", conversation)
 		}
-		if !running(pid) {
+		if !isRunning(pid) {
 			t.Fatalf("the agent of conversation %q is not running", conversation)
 		}
 		pids[conversation] = pid
@@ -781,7 +781,7 @@ sleep 120
 	for conversation, pid := range pids {
 		gone := false
 		for range 200 {
-			if !running(pid) {
+			if !isRunning(pid) {
 				gone = true
 				break
 			}
@@ -838,7 +838,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 			t.Fatal(err)
 		}
 		t.Cleanup(func() { work.Stop() })
-		heard(t, work)
+		getSteps(t, work)
 	}
 
 	asks("left", "one")
@@ -846,7 +846,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 
 	// A first question has no session behind it to go on with.
 	for conversation, asked := range map[string]string{"one": "left", "two": "right"} {
-		if session := resumed(argvOf(t, dir, asked)); session != "" {
+		if session := getResumedSession(argvOf(t, dir, asked)); session != "" {
 			t.Errorf("the first question of conversation %q went on with %q, want none",
 				conversation, session)
 		}
@@ -855,10 +855,10 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	asks("left-again", "one")
 	asks("right-again", "two")
 
-	if session := resumed(argvOf(t, dir, "left-again")); session != "s-left" {
+	if session := getResumedSession(argvOf(t, dir, "left-again")); session != "s-left" {
 		t.Errorf("conversation %q went on with %q, want %q", "one", session, "s-left")
 	}
-	if session := resumed(argvOf(t, dir, "right-again")); session != "s-right" {
+	if session := getResumedSession(argvOf(t, dir, "right-again")); session != "s-right" {
 		t.Errorf("conversation %q went on with %q, want %q", "two", session, "s-right")
 	}
 	if session := claude.Carrying("one"); session != "s-left-again" {
@@ -900,8 +900,8 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 
 	left, right := takes("left", "one"), takes("right", "two")
-	heard(t, left)
-	heard(t, right)
+	getSteps(t, left)
+	getSteps(t, right)
 
 	if session := claude.Carrying("one"); session != "s-left" {
 		t.Errorf("conversation %q is carrying %q, want %q", "one", session, "s-left")
@@ -938,13 +938,13 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 			t.Fatal(err)
 		}
 		t.Cleanup(func() { work.Stop() })
-		heard(t, work)
+		getSteps(t, work)
 	}
 
 	asks("first")
 	asks("second")
 
-	if session := resumed(argvOf(t, dir, "second")); session != "" {
+	if session := getResumedSession(argvOf(t, dir, "second")); session != "" {
 		t.Errorf("a question in no conversation went on with %q, want none", session)
 	}
 	if session := claude.Carrying(""); session != "" {
@@ -1027,9 +1027,9 @@ func argvOf(t *testing.T, dir, asked string) []string {
 	return strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
 }
 
-// resumed is the session a run was told to go on with, empty when it was told
-// none.
-func resumed(argv []string) string {
+// getResumedSession is the session a run was told to go on with, empty when it
+// was told none.
+func getResumedSession(argv []string) string {
 	at := slices.Index(argv, "--resume")
 	if at < 0 || at+1 >= len(argv) {
 		return ""
@@ -1063,7 +1063,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 			t.Fatal(err)
 		}
 		t.Cleanup(func() { work.Stop() })
-		heard(t, work)
+		getSteps(t, work)
 	}
 
 	asks("left", "one")
@@ -1130,13 +1130,13 @@ sleep 120
 		t.Fatal(err)
 	}
 
-	if !ended(closing) {
+	if !hasEnded(closing) {
 		die(closing)
 		t.Error("the agent of a conversation that is over is still running")
 	}
 	for range left.Steps() {
 	}
-	if !running(answering) {
+	if !isRunning(answering) {
 		t.Error("the conversation left open stopped answering")
 	}
 	if session := claude.Carrying("two"); session != "s-right" {
@@ -1161,12 +1161,12 @@ func pidOf(t *testing.T, dir, asked string) int {
 	return 0
 }
 
-// ended reports whether a process is over. One this process started stays
+// hasEnded reports whether a process is over. One this process started stays
 // visible until it is waited for, so what says it is over is that it can no
 // longer be found.
-func ended(pid int) bool {
+func hasEnded(pid int) bool {
 	for range 200 {
-		if !running(pid) {
+		if !isRunning(pid) {
 			return true
 		}
 		time.Sleep(10 * time.Millisecond)

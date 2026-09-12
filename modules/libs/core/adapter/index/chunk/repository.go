@@ -446,10 +446,10 @@ func Replace(ctx context.Context, tx *writing.Transaction, source, vault int64, 
 			}
 		}
 	}
-	if err := remove(ctx, tx, held.unclaimed()); err != nil {
+	if err := remove(ctx, tx, held.getUnclaimedRows()); err != nil {
 		return err
 	}
-	return forget(ctx, tx, held.forgotten())
+	return forget(ctx, tx, held.getForgottenHashes())
 }
 
 // put is the row one chunk is held on, and moves or writes it.
@@ -550,9 +550,9 @@ func (h *rows) claim(key textID) (int64, bool) {
 	return row, true
 }
 
-// unclaimed is the rows of the source no chunk holds, in order, so that a cut
-// writes the same thing twice running.
-func (h *rows) unclaimed() []int64 {
+// getUnclaimedRows is the rows of the source no chunk holds, in order, so that
+// a cut writes the same thing twice running.
+func (h *rows) getUnclaimedRows() []int64 {
 	out := make([]int64, 0, len(h.left))
 	for row := range h.left {
 		out = append(out, row)
@@ -627,9 +627,9 @@ func nullable(s string) any {
 	return s
 }
 
-// forgotten is the text of the rows no chunk holds: what this source used to
-// hold and does not any more.
-func (h *rows) forgotten() []string {
+// getForgottenHashes is the text of the rows no chunk holds: what this source
+// used to hold and does not any more.
+func (h *rows) getForgottenHashes() []string {
 	out := make([]string, 0, len(h.left))
 	for row := range h.left {
 		if hash := h.hash[row]; hash != "" {

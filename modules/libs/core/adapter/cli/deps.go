@@ -180,9 +180,9 @@ type ProofreadTranscript struct {
 	Close     func() error
 }
 
-// closing gives back what an opener opened, and does nothing where it opened
-// nothing.
-func closing(close func() error) {
+// closeIfOpen gives back what an opener opened, and does nothing where it
+// opened nothing.
+func closeIfOpen(close func() error) {
 	if close != nil {
 		_ = close()
 	}

@@ -28,12 +28,12 @@ var reads = []string{
 
 // The reading server stands on what it does not serve, so the list is exact:
 // one writing tool reaching it fails this.
-// unlevelled brings nothing level. It stands where a use case that never
+// levelNothing brings nothing level. It stands where a use case that never
 // writes is built, so nothing ever calls it.
-func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 
 func TestTheReadingServerServesTheToolsThatRead(t *testing.T) {
-	cfg, db := opened(t)
+	cfg, db := openIndex(t)
 	v := testsupport.NewVault(t, kinetics())
 	session := sessionOf(t, mcp.NewReading(reader(t, cfg, db, v)))
 	exactly(t, serves(t, session), reads)
@@ -42,7 +42,7 @@ func TestTheReadingServerServesTheToolsThatRead(t *testing.T) {
 // An agent is told that everything it can call reads, and how to say where an
 // answer came from, because the window it answers into opens no link.
 func TestTheReadingInstructionsSayWhatThisAgentCanDo(t *testing.T) {
-	cfg, db := opened(t)
+	cfg, db := openIndex(t)
 	v := testsupport.NewVault(t, kinetics())
 	session := sessionOf(t, mcp.NewReading(reader(t, cfg, db, v)))
 
@@ -57,7 +57,7 @@ func TestTheReadingInstructionsSayWhatThisAgentCanDo(t *testing.T) {
 // Every reading use case is here and no writing one is, so a tool that reached
 // a writer would find nothing there.
 func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
-	cfg, db := opened(t)
+	cfg, db := openIndex(t)
 	v := testsupport.NewVault(t, kinetics())
 	session := sessionOf(t, mcp.NewReading(reader(t, cfg, db, v)))
 
@@ -90,7 +90,7 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 // vault answers with another vault's notes and nothing fails. Two vaults whose
 // prose shares no words, asked in both directions, is what says so.
 func TestTheReadingToolsAnswerAboutOneVaultOnly(t *testing.T) {
-	cfg, db := opened(t)
+	cfg, db := openIndex(t)
 	physics := side{
 		what:  "physics",
 		vault: testsupport.NewVault(t, kinetics()),
@@ -182,7 +182,7 @@ func (s side) answers(t *testing.T) {
 		t.Errorf("%s reads its own note as a source without %q: %q", s.what, s.own, run.Text)
 	}
 
-	hand := dealt(t, s.session, map[string]any{"path": s.deck})
+	hand := readCards(t, s.session, map[string]any{"path": s.deck})
 	if hand.Total == 0 {
 		t.Errorf("%s reads no card out of its own deck", s.what)
 	}
@@ -230,8 +230,8 @@ func says(t *testing.T, session *sdk.ClientSession, name string, args any) strin
 	return string(raw)
 }
 
-// opened is one index, which is where every vault of an installation is held.
-func opened(t *testing.T) (container.Config, *container.Index) {
+// openIndex is one index, which is where every vault of an installation is held.
+func openIndex(t *testing.T) (container.Config, *container.Index) {
 	t.Helper()
 	cfg := container.Config{IndexPath: indexfile.Path(t)}
 	db, err := cfg.OpenIndex(t.Context())
@@ -258,7 +258,7 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 	queries := db.Queries()
 	// Only the tools that read are served here, and none of them writes, so
 	// nothing is ever brought level.
-	cutting := cfg.Cards(queries, db.Links(), unlevelled)
+	cutting := cfg.Cards(queries, db.Links(), levelNothing)
 
 	return mcp.Core{
 		Showing: mcp.ShowingOne(v, v.Path),

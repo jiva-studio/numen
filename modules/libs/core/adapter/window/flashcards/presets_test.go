@@ -25,8 +25,8 @@ var elsewhere = map[string]string{
 		"\n### Meaning\n\nA green woodpecker\n",
 }
 
-// scheduled is the preset one vault's deck is scheduled by.
-func scheduled(t *testing.T, api *API, v domain.Vault, path string) *v1.Preset {
+// getDeckPreset is the preset one vault's deck is scheduled by.
+func getDeckPreset(t *testing.T, api *API, v domain.Vault, path string) *v1.Preset {
 	t.Helper()
 	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
 		&v1.GetVaultDeckPresetRequest{Vault: string(v.ID), Deck: path}))
@@ -43,10 +43,10 @@ func scheduled(t *testing.T, api *API, v domain.Vault, path string) *v1.Preset {
 // holds. The window is over every vault at once, and the two decks here stand
 // at the same path.
 func TestAPresetIsReadFromTheVaultTheRequestNames(t *testing.T) {
-	api, held := windowed(t, pointed, elsewhere)
+	api, held := newAPI(t, pointed, elsewhere)
 	one, two := held[0], held[1]
 
-	first := scheduled(t, api, one, "decks/Words.md")
+	first := getDeckPreset(t, api, one, "decks/Words.md")
 	if first.GetPath() != "Sanskrit.md" || first.GetTitle() != "Sanskrit" {
 		t.Errorf("the first vault is scheduled by %+v", first)
 	}
@@ -54,7 +54,7 @@ func TestAPresetIsReadFromTheVaultTheRequestNames(t *testing.T) {
 		t.Errorf("the first vault's settings are %+v", first.GetSettings())
 	}
 
-	second := scheduled(t, api, two, "decks/Words.md")
+	second := getDeckPreset(t, api, two, "decks/Words.md")
 	if second.GetPath() != "Grammar.md" || second.GetTitle() != "Grammar" {
 		t.Errorf("the second vault is scheduled by %+v", second)
 	}
@@ -79,11 +79,11 @@ const typedByHand = "---\ntype: deck\nlinks:\n" +
 	"\n## Yaffle\n\n[[Term]]\n\n### Word\n\nYaffle\n" +
 	"\n### Meaning\n\nA green woodpecker\n"
 
-// Starting a session mints a mark for the card that carries none, and the deck it
+// Starting a session gives a mark to the card that carries none, and the deck it
 // writes is level in the index by the time the session is handed over. Nothing
 // else is running over the vault, and nothing rescans it.
-func TestAMarkMintedOnSessionDownLevelsTheDeck(t *testing.T) {
-	api, held := windowed(t, handwritten)
+func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
+	api, held := newAPI(t, handwritten)
 	v := held[0]
 
 	at := filepath.Join(v.Path, "decks", "Words.md")
@@ -92,11 +92,11 @@ func TestAMarkMintedOnSessionDownLevelsTheDeck(t *testing.T) {
 	}
 
 	// The index still holds the deck as it was scanned, so it names no preset.
-	if before := scheduled(t, api, v, "decks/Words.md"); before.GetPath() != "" {
+	if before := getDeckPreset(t, api, v, "decks/Words.md"); before.GetPath() != "" {
 		t.Fatalf("the deck already stands under %+v", before)
 	}
 
-	started(t, api, v)
+	startSession(t, api, v)
 
 	written, err := os.ReadFile(at)
 	if err != nil {
@@ -106,7 +106,7 @@ func TestAMarkMintedOnSessionDownLevelsTheDeck(t *testing.T) {
 		t.Fatalf("the card was given no mark: %q", written)
 	}
 
-	after := scheduled(t, api, v, "decks/Words.md")
+	after := getDeckPreset(t, api, v, "decks/Words.md")
 	if after.GetPath() != "Sanskrit.md" || after.GetTitle() != "Sanskrit" {
 		t.Errorf("the deck stands under %+v", after)
 	}
@@ -115,7 +115,7 @@ func TestAMarkMintedOnSessionDownLevelsTheDeck(t *testing.T) {
 // A question about the presets of a vault this installation does not hold is
 // refused, and nothing is read for it.
 func TestAQuestionAboutThePresetsOfAVaultNobodyHoldsIsRefused(t *testing.T) {
-	api, _ := windowed(t, pointed)
+	api, _ := newAPI(t, pointed)
 
 	_, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
 		&v1.GetVaultDeckPresetRequest{Vault: "nobody", Deck: "decks/Words.md"}))

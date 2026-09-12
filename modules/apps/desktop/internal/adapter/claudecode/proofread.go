@@ -157,7 +157,7 @@ func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch
 // starts is the command line to run and what stands before its own arguments.
 func (p *Proofreader) starts() (string, []string) {
 	if len(p.Command) == 0 {
-		return installed(), nil
+		return findCommand(), nil
 	}
 	return p.Command[0], p.Command[1:]
 }

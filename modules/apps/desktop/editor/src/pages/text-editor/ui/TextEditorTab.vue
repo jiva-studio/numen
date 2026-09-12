@@ -17,7 +17,7 @@ const props = defineProps<{ state: TextEditorTabState }>()
 // --- State ---
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { errorMessage, isStale, read, text } = props.state
+const { errorMessage, isStale, isRead, text } = props.state
 
 // --- Handlers ---
 function onKeep() {
@@ -52,7 +52,7 @@ function onSave() {
     </p>
 
     <Editor
-      v-if="read"
+      v-if="isRead"
       :model-value="text"
       :live="false"
       language="json"

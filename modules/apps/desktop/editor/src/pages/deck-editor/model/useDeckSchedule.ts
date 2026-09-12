@@ -32,7 +32,7 @@ export interface ScheduledStore {
   getPath(id: string): string
   at(id: string): string
   settle(id: string): Promise<void>
-  changed(paths: readonly string[]): void
+  applyPathChanges(paths: readonly string[]): void
 }
 
 /** The scheduler one window has, over the decks that window holds. */
@@ -78,7 +78,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   const refreshDeckPreset = async (path: string): Promise<void> => {
     let read: ReadResult
     try {
-      read = await presets.scheduling(path)
+      read = await presets.getDeckPreset(path)
     } catch {
       // Reading preset scheduling failed.
       return
@@ -107,7 +107,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
       setChoiceMessage(id, words.unreachable)
       return
     }
-    store.changed([path])
+    store.applyPathChanges([path])
     await refreshDeckPreset(path)
   }
 

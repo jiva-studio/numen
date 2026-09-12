@@ -17,20 +17,20 @@ import (
 
 // The fingerprint of the recording a test asks about. A run keeps what it wrote
 // about a recording under it, and whoever asks works it out the same way.
-func sounded() string { return derived.Fingerprint([]byte(sound)) }
+func getSoundFingerprint() string { return derived.Fingerprint([]byte(sound)) }
 
 // A run that got no words out of a source wrote down what came of it, and
 // asking again says that.
 func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
 	const said = "the mp3 recording: mp3: MPEG version 2.5 is not supported"
 	talks := willRun()
-	api, _ := running(t,
+	api, _ := openRunWindow(t,
 		stored{derived.Answer(asr, hashed): []byte(derived.Unopened + ": " + said + "\n")},
 		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 		willRun(), talks,
 	)
 
-	made := making(t, api, talk, transcriptOf)
+	made := createArtifact(t, api, talk, transcriptOf)
 	if made.GetState() != v1.State_STATE_FAILED {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
@@ -57,13 +57,13 @@ func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			talks := willRun()
-			api, _ := running(t,
-				stored{derived.Answer(derived.ASR, sounded()): []byte(one.gave)},
-				indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Hash: sounded()}},
+			api, _ := openRunWindow(t,
+				stored{derived.Answer(derived.ASR, getSoundFingerprint()): []byte(one.gave)},
+				indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Hash: getSoundFingerprint()}},
 				willRun(), talks,
 			)
 
-			made := making(t, api, talk, transcriptOf)
+			made := createArtifact(t, api, talk, transcriptOf)
 			if made.GetState() != one.state {
 				t.Fatalf("it was answered %s", made.GetState())
 			}
@@ -81,13 +81,13 @@ func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 // the answer stands under the bytes, and nothing else names them.
 func TestARecordingAnsweredIsFoundWhereTheIndexHoldsNothing(t *testing.T) {
 	talks := willRun()
-	api, _ := running(t,
-		stored{derived.Answer(derived.ASR, sounded()): []byte(derived.Silent + "\n")},
-		nothingRead(),
+	api, _ := openRunWindow(t,
+		stored{derived.Answer(derived.ASR, getSoundFingerprint()): []byte(derived.Silent + "\n")},
+		newEmptyIndex(),
 		willRun(), talks,
 	)
 
-	if made := making(t, api, talk, transcriptOf); made.GetState() != v1.State_STATE_EMPTY {
+	if made := createArtifact(t, api, talk, transcriptOf); made.GetState() != v1.State_STATE_EMPTY {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
 	if talks.times != 0 {
@@ -98,7 +98,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexHoldsNothing(t *testing.T) {
 // What a run finished stands over what it once answered.
 func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 	talks := willRun()
-	api, _ := running(t,
+	api, _ := openRunWindow(t,
 		stored{
 			derived.Artifact(asr, hashed): []byte("what the model heard"),
 			derived.Answer(asr, hashed):   []byte(derived.Silent + "\n"),
@@ -107,7 +107,7 @@ func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 		willRun(), talks,
 	)
 
-	if made := making(t, api, talk, transcriptOf); made.GetState() != v1.State_STATE_DONE {
+	if made := createArtifact(t, api, talk, transcriptOf); made.GetState() != v1.State_STATE_DONE {
 		t.Errorf("it was answered %s", made.GetState())
 	}
 }
@@ -117,16 +117,16 @@ func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 func TestARecordingDoneIsDoneWhereTheIndexNamesNoProducer(t *testing.T) {
 	const heard = "what the model heard"
 	talks := willRun()
-	api, _ := running(t,
+	api, _ := openRunWindow(t,
 		stored{
-			derived.Artifact(derived.ASR, sounded()): []byte(heard),
-			derived.Answer(derived.ASR, sounded()):   []byte(derived.Silent + "\n"),
+			derived.Artifact(derived.ASR, getSoundFingerprint()): []byte(heard),
+			derived.Answer(derived.ASR, getSoundFingerprint()):   []byte(derived.Silent + "\n"),
 		},
-		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Hash: sounded()}},
+		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Hash: getSoundFingerprint()}},
 		willRun(), talks,
 	)
 
-	made := making(t, api, talk, transcriptOf)
+	made := createArtifact(t, api, talk, transcriptOf)
 	if made.GetState() != v1.State_STATE_DONE {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
@@ -183,12 +183,12 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	talks := willRun()
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
-		Highlight: &source.Highlight{Sources: nothingRead(), Derived: stores},
+		Highlight: &source.Highlight{Sources: newEmptyIndex(), Derived: stores},
 	}
 	api.show(vault)
-	runningBehind(api, func(on *passes) { on.transcribes = talks })
+	setPasses(api, func(on *passes) { on.transcribes = talks })
 
-	made := making(t, api, talk, transcriptOf)
+	made := createArtifact(t, api, talk, transcriptOf)
 	if made.GetState() != v1.State_STATE_FAILED {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
@@ -203,9 +203,9 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 // A recording nothing has answered is put through a run.
 func TestARecordingNothingAnsweredIsRun(t *testing.T) {
 	talks := willRun()
-	api, _ := running(t, stored{}, nothingRead(), willRun(), talks)
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), talks)
 
-	if made := making(t, api, talk, transcriptOf); made.GetState() != v1.State_STATE_RUNNING {
+	if made := createArtifact(t, api, talk, transcriptOf); made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
 	if talks.times != 1 {

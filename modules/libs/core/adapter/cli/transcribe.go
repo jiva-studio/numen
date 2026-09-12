@@ -46,7 +46,7 @@ func transcribeCommand(ctx context.Context, out io.Writer, deps Deps, args []str
 	if err != nil {
 		return fmt.Errorf("nothing to transcribe with: %w", err)
 	}
-	defer closing(open.Close)
+	defer closeIfOpen(open.Close)
 
 	transcribe, cut := open.Transcribe, open.Cut
 	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], transcribe.By.Transcription())

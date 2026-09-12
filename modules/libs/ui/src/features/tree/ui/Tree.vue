@@ -8,7 +8,7 @@
  * press with a modifier means and says the selection it came to.
  */
 import { computed, useTemplateRef } from 'vue'
-import { flatten, markOf, type Row, type RowMarker, type RowId } from '../lib/row'
+import { flatten, getMarkOf, type Row, type RowMarker, type RowId } from '../lib/row'
 import type { RowLanding } from '../lib/drop'
 import { useRowDrag } from '../model/drag'
 import { useTreeGestures } from '../model/gestures'
@@ -108,8 +108,8 @@ const selection = useRowSelection(
 const { picked } = selection
 
 const drag = useRowDrag({
-  rows: () => props.rows,
-  shown: () => shown.value,
+  getRows: () => props.rows,
+  getShownRows: () => shown.value,
   measure: () => {
     const drawn = list.value
     const over = box.value?.getBoundingClientRect()
@@ -118,9 +118,9 @@ const drag = useRowDrag({
     const row = first && rows.getRowElement(first.id)?.getBoundingClientRect()
     return { over, top: drawn.getBoundingClientRect().top, height: row ? row.height : 0 }
   },
-  threshold: () => props.threshold,
-  clock: () => props.clock,
-  counted: () => props.counted,
+  getThreshold: () => props.threshold,
+  getClock: () => props.clock,
+  getCountWords: () => props.counted,
   tell: emit,
 })
 const { into, before, lifted, label, at } = drag
@@ -137,13 +137,13 @@ const {
   onFieldBlur,
   onKeyDown,
 } = useTreeGestures({
-  shown: () => shown.value,
-  selected: () => props.selected,
+  getShownRows: () => shown.value,
+  getSelected: () => props.selected,
   renamingPath,
   rows,
   selection,
   drag,
-  menuAt: (row) => {
+  getMenuAt: (row) => {
     const box = rows.getRowElement(row)?.getBoundingClientRect()
     return box ? { x: box.left, y: box.bottom } : null
   },
@@ -156,7 +156,7 @@ const {
     ref="box"
     class="tree numen min-h-0 bg-surface font-sans text-base text-ink"
     :data-into="at && 'into' in at && at.into === null ? '' : undefined"
-    v-bind="markOf(marking, null)"
+    v-bind="getMarkOf(marking, null)"
     @contextmenu.prevent="onContextMenu"
   >
     <div
@@ -179,7 +179,7 @@ const {
         :before="row.id === before"
         :tabbed="row.id === tabbed"
         :renaming="renamingPath === row.id"
-        :mark="markOf(marking, row.id)"
+        :mark="getMarkOf(marking, row.id)"
         @focus="onRowFocus(row.id)"
         @pointerdown="onRowPointerDown(row.id, $event)"
         @click="onRowClick(row)"

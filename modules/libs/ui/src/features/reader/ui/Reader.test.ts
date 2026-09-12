@@ -29,7 +29,7 @@ const room = async (wrapper: ReturnType<typeof mount>, wide: number, high: numbe
 
 /** The widths the reader has asked for, in the order it asked. */
 const getWidths = (wrapper: ReturnType<typeof mount>) =>
-  (wrapper.emitted('wide') ?? []).map((one) => (one as [number])[0])
+  (wrapper.emitted('measure') ?? []).map((one) => (one as [number])[0])
 
 describe('the room a document is read in', () => {
   it('asks for a width once it knows how big the room is', async () => {

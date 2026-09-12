@@ -74,7 +74,7 @@ func (o *Installation) Settle(ctx context.Context) bool {
 		return false
 	}
 
-	settled := settling(ctx, o.API.Window, &o.API.Writing)
+	settled := settle(ctx, o.API.Window, &o.API.Writing)
 	o.shutting.over(settled)
 	return settled
 }
@@ -87,14 +87,14 @@ func (o *Installation) WaitForAnswers(ctx context.Context) bool {
 	return o.API.Window.WaitForAnswers(ctx)
 }
 
-// settling is everything owed landing: every client writes what only it holds,
+// settle is everything owed landing: every client writes what only it holds,
 // and then the writes already taken finish. It answers with whether the vault
 // settled.
 //
 // A client that says nothing is bounded by ctx. A client raising a question
 // ends the round: the vault and the door stay open, and the wait from there is
 // on a person. The writes are not bounded.
-func settling(ctx context.Context, pages *wire.Window, writes *inflight) bool {
+func settle(ctx context.Context, pages *wire.Window, writes *inflight) bool {
 	if !pages.Settling(ctx) {
 		return false
 	}

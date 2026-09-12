@@ -81,10 +81,10 @@ export function createFileCreators(vault: VaultCreator, tabOpeners: FileOpeners,
 
   return {
     createFile,
-    decks: (folder: string, name: string) => createAndOpenFile('deck', folder, name),
-    stencils: (folder: string, name: string, fields: readonly string[]) =>
+    createDeck: (folder: string, name: string) => createAndOpenFile('deck', folder, name),
+    createStencil: (folder: string, name: string, fields: readonly string[]) =>
       createAndOpenFile('stencil', folder, name, fields),
-    presets: (folder: string, name: string) => createAndOpenFile('preset', folder, name),
-    imports: (folder: string, address: string) => createAndOpenFile('url', folder, address),
+    createPreset: (folder: string, name: string) => createAndOpenFile('preset', folder, name),
+    createUrl: (folder: string, address: string) => createAndOpenFile('url', folder, address),
   }
 }

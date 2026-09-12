@@ -31,7 +31,7 @@ func searchCommand(
 	if err != nil {
 		return err
 	}
-	defer closing(open.Close)
+	defer closeIfOpen(open.Close)
 	if open.Words != nil {
 		fmt.Fprintf(errOut, "searching by words alone: %v\n", open.Words)
 	}

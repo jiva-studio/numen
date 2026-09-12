@@ -36,11 +36,11 @@ var places = []string{
 	"/nix/var/nix/profiles/default/bin/claude",
 }
 
-// installed is the command line to start: the path first, then the places.
+// findCommand is the command line to start: the path first, then the places.
 //
 // The bare name is the answer when it is nowhere, and starting that says it is
 // not installed.
-func installed() string {
+func findCommand() string {
 	if named, err := exec.LookPath("claude"); err == nil {
 		return named
 	}

@@ -128,7 +128,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 		if in.Limit > 0 {
 			limit = in.Limit
 		}
-		held, count, err := core.Cards.List.Execute(ctx, core.shown().Vault, limit)
+		held, count, err := core.Cards.List.Execute(ctx, core.getShownVault().Vault, limit)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -178,7 +178,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 		if in.Mark == "" && in.Limit > maxCards {
 			return nil, out{}, fmt.Errorf("read at most %d cards at a time", maxCards)
 		}
-		read, err := core.Cards.Read.Deck(ctx, core.shown().Vault, in.Path)
+		read, err := core.Cards.Read.Deck(ctx, core.getShownVault().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -204,11 +204,11 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 			if err != nil {
 				return nil, out{}, err
 			}
-			res.Cards = append(res.Cards, only(carded(read.Body.Cards[at]), in.Fields))
+			res.Cards = append(res.Cards, only(newCard(read.Body.Cards[at]), in.Fields))
 			return nil, res, nil
 		}
 		for _, card := range read.Body.Cards[from:min(from+limit, len(read.Body.Cards))] {
-			res.Cards = append(res.Cards, only(carded(card), in.Fields))
+			res.Cards = append(res.Cards, only(newCard(card), in.Fields))
 		}
 		return nil, res, nil
 	})
@@ -247,17 +247,17 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 			return nil, WriteOutcome{}, fmt.Errorf(
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
-		// Where the card went, so that the mark minted for it is the one this
+		// Where the card went, so that the mark given to it is the one this
 		// answers with.
 		stands := 0
-		written, minted, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, given, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.DeckContents, file *format.DeckFile) error {
 				card := format.Card{StencilLink: in.Stencil, Values: values(in.Values)}
 				if in.Section == nil {
 					stands = len(read.Body.Cards)
 					return file.AddCard(card)
 				}
-				at, err := placed(read.Body, *in.Section)
+				at, err := findSectionEnd(read.Body, *in.Section)
 				if err != nil {
 					return err
 				}
@@ -267,7 +267,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, WriteOutcome{}, err
 		}
-		written.Mark = markOf(minted, stands)
+		written.Mark = getMark(given, stands)
 		return nil, written, nil
 	})
 
@@ -295,7 +295,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 			return nil, WriteOutcome{}, fmt.Errorf(
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
-		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.DeckContents, file *format.DeckFile) error {
 				card := domain.CardID(in.Mark)
 				// A call writing nothing still says whether the deck holds the
@@ -336,7 +336,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Field       string `json:"field" jsonschema:"the field to take off, as card_read gives it under field"`
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, WriteOutcome, error) {
-		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
 			func(_ cards.DeckContents, file *format.DeckFile) error {
 				return file.RemoveValue(domain.CardID(in.Mark), in.Field)
 			})
@@ -359,7 +359,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Mark        string `json:"mark" jsonschema:"the card's mark, as card_read gives it"`
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, WriteOutcome, error) {
-		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
 			func(_ cards.DeckContents, file *format.DeckFile) error {
 				return file.RemoveCard(domain.CardID(in.Mark))
 			})
@@ -380,7 +380,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Name        string `json:"name" jsonschema:"what the section is called"`
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, WriteOutcome, error) {
-		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
 			func(_ cards.DeckContents, file *format.DeckFile) error {
 				return file.AddSection(format.Section{Name: in.Name})
 			})
@@ -403,7 +403,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Name        string `json:"name" jsonschema:"what it is called from now on"`
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, WriteOutcome, error) {
-		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
 			func(_ cards.DeckContents, file *format.DeckFile) error {
 				return file.RenameSection(in.Section, in.Name)
 			})
@@ -426,7 +426,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Section     int    `json:"section" jsonschema:"where the section stands in the deck's sections, counted from the first, as card_read gives them"`
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, WriteOutcome, error) {
-		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
+		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
 			func(_ cards.DeckContents, file *format.DeckFile) error {
 				return file.RemoveSection(in.Section)
 			})
@@ -449,7 +449,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		Title  string `json:"title" jsonschema:"what the deck is called"`
 		Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	}) (*sdk.CallToolResult, cards.CreateNoteResult, error) {
-		made, err := core.Cards.Create.Deck(ctx, core.shown().Vault, cards.New{
+		made, err := core.Cards.Create.Deck(ctx, core.getShownVault().Vault, cards.New{
 			Title: in.Title, Path: in.Folder,
 		})
 		return nil, made, err
@@ -472,7 +472,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		Faces  []Face   `json:"faces" jsonschema:"the ways a card cut by this stencil is shown"`
 		Folder string   `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	}) (*sdk.CallToolResult, cards.CreateNoteResult, error) {
-		body, err := core.Cards.StencilBody("", faced(in.Faces), "")
+		body, err := core.Cards.StencilBody("", newFaceTemplates(in.Faces), "")
 		if err != nil {
 			return nil, cards.CreateNoteResult{}, err
 		}
@@ -480,7 +480,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 			return nil, cards.CreateNoteResult{}, fmt.Errorf(
 				"a stencil of %d bytes is more than this writes at once, which is %d", len(body), maxBytes)
 		}
-		made, err := core.Cards.Create.Stencil(ctx, core.shown().Vault, cards.New{
+		made, err := core.Cards.Create.Stencil(ctx, core.getShownVault().Vault, cards.New{
 			Title: in.Title, Body: body, Path: in.Folder, Fields: in.Fields,
 		})
 		return nil, made, err
@@ -514,7 +514,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 			Cards      int      `json:"cards" jsonschema:"how many headings were rewritten"`
 			NotWritten []string `json:"notWritten,omitempty" jsonschema:"the decks the rename could not be written to, which keep the old heading"`
 		}
-		showing := core.shown().Vault
+		showing := core.getShownVault().Vault
 		held, err := core.Notes.Queries.OfType(ctx, showing.ID, domain.TypeDeck)
 		if err != nil {
 			return nil, out{}, err
@@ -555,7 +555,7 @@ type WriteOutcome struct {
 	Mark        string `json:"mark,omitempty" jsonschema:"the mark the card just written is addressed by, for as long as it exists"`
 }
 
-// changing reads a deck, opens its body for splicing, hands it to change, and
+// changeDeck reads a deck, opens its body for splicing, hands it to change, and
 // puts back what comes out, with the mark every card that carried none was
 // given.
 //
@@ -563,15 +563,15 @@ type WriteOutcome struct {
 // replaced. The preamble, the tail, and every section and card the change did
 // not name are written as the bytes they arrived as, down to the blank lines
 // and the whitespace the person left at the ends of their lines.
-func changing(
+func changeDeck(
 	ctx context.Context, core Core, path, fingerprint string,
 	change func(read cards.DeckContents, file *format.DeckFile) error,
-) (WriteOutcome, []format.MintedMark, error) {
+) (WriteOutcome, []format.CardMark, error) {
 	seen, err := parseFingerprint(fingerprint)
 	if err != nil {
 		return WriteOutcome{}, nil, err
 	}
-	v := core.shown().Vault
+	v := core.getShownVault().Vault
 	read, err := core.Cards.Read.Deck(ctx, v, path)
 	if err != nil {
 		return WriteOutcome{}, nil, err
@@ -595,7 +595,7 @@ func changing(
 		Path:        path,
 		Fingerprint: fingerprintOf(wrote.Fingerprint),
 		Cards:       len(file.Deck(domain.Fingerprint{}).Cards),
-	}, wrote.Minted, nil
+	}, wrote.Given, nil
 }
 
 // index is where the card of a mark stands. A deck holding no card of it is
@@ -622,10 +622,10 @@ func index(held []format.Card, carried string) (int, error) {
 	return at, nil
 }
 
-// markOf is the mark the card standing at one place was given, and nothing
+// getMark is the mark the card standing at one place was given, and nothing
 // where it carried one already.
-func markOf(minted []format.MintedMark, at int) string {
-	for _, one := range minted {
+func getMark(given []format.CardMark, at int) string {
+	for _, one := range given {
 		if one.Card == at {
 			return string(one.Mark)
 		}
@@ -633,10 +633,10 @@ func markOf(minted []format.MintedMark, at int) string {
 	return ""
 }
 
-// placed is where a card written at the end of one of a deck's sections stands,
-// counted from the deck's first card. A card goes at the end of its section,
-// which is in front of the first card of a later one.
-func placed(d format.Deck, section int) (int, error) {
+// findSectionEnd is where a card written at the end of one of a deck's sections
+// stands, counted from the deck's first card. A card goes at the end of its
+// section, which is in front of the first card of a later one.
+func findSectionEnd(d format.Deck, section int) (int, error) {
 	if section < 0 || section >= len(d.Sections) {
 		return 0, fmt.Errorf(
 			"this deck has %d sections, so there is none standing at %d", len(d.Sections), section)
@@ -649,7 +649,7 @@ func placed(d format.Deck, section int) (int, error) {
 	return len(d.Cards), nil
 }
 
-func carded(card format.Card) Card {
+func newCard(card format.Card) Card {
 	out := Card{Mark: string(card.Mark), Section: card.Section, Stencil: card.StencilLink}
 	for _, v := range card.Values {
 		out.Values = append(out.Values, FieldValue{Field: v.Field, Text: v.Text})
@@ -683,7 +683,7 @@ func values(vs []FieldValue) []format.Value {
 	return out
 }
 
-func faced(fs []Face) []format.FaceTemplate {
+func newFaceTemplates(fs []Face) []format.FaceTemplate {
 	out := make([]format.FaceTemplate, 0, len(fs))
 	for _, f := range fs {
 		out = append(out, format.FaceTemplate{Name: f.Name, Front: f.Front, Back: f.Back})

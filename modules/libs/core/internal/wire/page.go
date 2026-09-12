@@ -68,7 +68,7 @@ func Page(
 		files.ServeHTTP(w, r)
 		return
 	}
-	if said, is := chosen(r.Context(), themes); is {
+	if said, is := readAppearanceSettings(r.Context(), themes); is {
 		text = appearance.Into(text, said.Styles())
 	}
 
@@ -78,14 +78,14 @@ func Page(
 	_, _ = w.Write(text)
 }
 
-// chosen is what the settings say a window shows, and whether they could say
-// anything at all.
+// readAppearanceSettings is what the settings say a window shows, and whether
+// they could say anything at all.
 //
 // It is asked for every request, so a theme chosen, a size chosen, or a file in
 // the person's folder edited, shows on the next reload. Settings that cannot
 // say what they hold put nothing in the page, and the tokens the build carries
 // stand.
-func chosen(
+func readAppearanceSettings(
 	ctx context.Context, themes numenv1connect.ThemeServiceHandler,
 ) (appearance.Settings, bool) {
 	if themes == nil {

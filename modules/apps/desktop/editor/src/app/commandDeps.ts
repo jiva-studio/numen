@@ -29,7 +29,7 @@ export interface CommandDepsOptions {
   files: () => { revealPath: (path: string) => void }
   plexes: () => { travel: (path: string) => Promise<void> | void; leavePath: (from: string, to: string) => Promise<void> | void }
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
-  opening: () => string
+  getOpeningNote: () => string
   runs: RunSupport
   writeMessage: MessageWriter
   search?: () => void
@@ -54,7 +54,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     files,
     plexes,
     agents,
-    opening,
+    getOpeningNote,
     runs,
     writeMessage,
   } = options
@@ -103,11 +103,11 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     },
     makers: {
       ...made,
-      stencils: (folder, name) => made.stencils(folder, name, [cardWords.newField]),
+      createStencil: (folder, name) => made.createStencil(folder, name, [cardWords.newField]),
     },
     vaults: {
       ...vaults,
-      calls: (vault) => (shown.value = vault),
+      showVault: (vault) => (shown.value = vault),
       reload,
     },
     goes: {
@@ -118,30 +118,30 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
       leave: async (from, to) => {
         await plexes().leavePath(from, to)
       },
-      opening,
+      getOpeningNote,
       openTab: (kind) => void held.openTabOfKind(kind),
-      preset: (path) => openPreset(path),
+      openPreset: (path) => openPreset(path),
       closeTab: (tab) => held.requestClose(tab),
       ask: (text) => void agents().askQuestion(text),
       search: options.search ?? (() => {}),
     },
     settings: {
-      appearance: async (chosen) => {
+      chooseAppearance: async (chosen) => {
         await dressed.chooseItem(chosen)
       },
-      syncing: async (chosen) => {
+      chooseSync: async (chosen) => {
         await oneName.choose(chosen)
       },
-      hanging: async (chosen) => {
+      chooseHanging: async (chosen) => {
         await hungParts.choose(chosen)
       },
-      parts: async (chosen) => {
+      chooseParts: async (chosen) => {
         await hungParts.chooseCount(chosen)
       },
     },
     notes: reached,
     runSupport: runs,
-    copies: (path) => void navigator.clipboard?.writeText(path),
+    copyPath: (path) => void navigator.clipboard?.writeText(path),
     writeMessage,
   }
 }

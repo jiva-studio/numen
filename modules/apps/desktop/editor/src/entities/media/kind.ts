@@ -27,7 +27,7 @@ export interface MediaTabDeps {
    * commands are. `called` is what the tab calls the recording, which is what a
    * step asking for an answer names.
    */
-  runs(id: string, path: string, called: string): void
+  runCommand(id: string, path: string, called: string): void
   /**
    * Whether this build can do a run at all, which decides whether the tab
    * offers it. A window that says nothing offers every run.
@@ -59,9 +59,9 @@ export function useTranscriptTab(read: TranscriptState, deps: MediaTabDeps) {
   const deletable = computed(() => written.value && !read.isWorking.value && canRun(DELETE_TEXT))
 
   const called = fileOf(read.path)
-  const transcribe = () => deps.runs(TRANSCRIBE, read.path, called)
-  const proofread = () => deps.runs(PROOFREAD, read.path, called)
-  const deleteTranscript = () => deps.runs(DELETE_TEXT, read.path, called)
+  const transcribe = () => deps.runCommand(TRANSCRIBE, read.path, called)
+  const proofread = () => deps.runCommand(PROOFREAD, read.path, called)
+  const deleteTranscript = () => deps.runCommand(DELETE_TEXT, read.path, called)
 
   return {
     ...read,
@@ -109,7 +109,7 @@ export function recordingKind<K extends string>(
       state.close()
       return true
     },
-    over: (state) => ({ file: state.path, source: as.source }),
+    getTarget: (state) => ({ file: state.path, source: as.source }),
     getOpenTab: (state) =>
       ({
         path: state.path,
@@ -144,7 +144,7 @@ export function recordingKind<K extends string>(
    */
   const reloadTranscript = (path: string) => {
     for (const one of handle.each<MediaTabState>(as.tab)) {
-      if (one.state.path === path) one.state.again()
+      if (one.state.path === path) one.state.reload()
     }
   }
 

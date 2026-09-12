@@ -88,8 +88,8 @@ func (a *ahead) take() bool {
 	}
 }
 
-// done gives the slot back.
-func (a *ahead) done() { <-a.reading }
+// release gives the slot back.
+func (a *ahead) release() { <-a.reading }
 
 const (
 	// patience is what a request waits for the document it is about.
@@ -98,25 +98,25 @@ const (
 	drawnAhead = 30 * time.Second
 )
 
-// drawnBy holds a document open with what the application draws with.
-func drawnBy(docs port.PageRenderer) func([]byte) (scan, error) {
+// newDocumentOpener holds a document open with what the application draws with.
+func newDocumentOpener(docs port.PageRenderer) func([]byte) (scan, error) {
 	return func(raw []byte) (scan, error) {
 		return docs.Draw(context.Background(), raw)
 	}
 }
 
-// looking is a window with nothing open yet, and nothing kept on disk. What is
+// newViewer is a window with nothing open yet, and nothing kept on disk. What is
 // kept there outlives the window, so where it goes is said where the window is
 // served and not here.
-func looking(docs port.PageRenderer) *viewer {
+func newViewer(docs port.PageRenderer) *viewer {
 	v := &viewer{
-		open:     drawnBy(docs),
+		open:     newDocumentOpener(docs),
 		patience: patience,
 		ahead:    ahead{reading: make(chan struct{}, 1), within: drawnAhead},
 	}
-	v.docs.Store(keeping())
+	v.docs.Store(newDocuments())
 	v.drawn.Store(drawings())
-	v.read.Store(holding(mostRead, readIdleFor))
+	v.read.Store(newBooks(mostRead, readIdleFor))
 	return v
 }
 
@@ -131,8 +131,8 @@ func (v *viewer) close() {
 // empty closes the documents the window has open, lets go of the books, and
 // drops the pages drawn. It goes on looking, at whatever it is given next.
 func (v *viewer) empty() {
-	v.docs.Swap(keeping()).close()
-	v.read.Swap(holding(mostRead, readIdleFor)).close()
+	v.docs.Swap(newDocuments()).close()
+	v.read.Swap(newBooks(mostRead, readIdleFor)).close()
 	v.drawn.Store(drawings())
 }
 
@@ -151,11 +151,11 @@ func (a *API) GetDocument(
 
 	reader, print, err := a.stat(ctx, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(refusedDrawing(err), err)
+		return nil, connect.NewError(getDrawCode(err), err)
 	}
 	doc, give, err := a.opening(ctx, reader, print)
 	if err != nil {
-		return nil, connect.NewError(refusedDrawing(err), err)
+		return nil, connect.NewError(getDrawCode(err), err)
 	}
 	defer give()
 
@@ -191,7 +191,7 @@ const pagesName = "pages"
 // never changes. A file rewritten under the same name is a different address,
 // and this one is gone.
 func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
-	at, wide, named, err := wanted(where, r.URL.Query())
+	at, wide, named, err := parsePageQuery(where, r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -305,7 +305,7 @@ func (a *API) drawing(ctx context.Context, reader port.VaultReader, key pictureI
 	if err != nil {
 		return nil, err
 	}
-	return encoded(drawn)
+	return encodePage(drawn)
 }
 
 // readAhead draws the page after this one, so that turning to it finds it
@@ -320,7 +320,7 @@ func (a *API) readAhead(reader port.VaultReader, key pictureID) {
 		return
 	}
 	go func() {
-		defer a.Viewer.ahead.done()
+		defer a.Viewer.ahead.release()
 		ctx, cancel := context.WithTimeout(a.behind(), a.Viewer.ahead.within)
 		defer cancel()
 		// Nobody asked for this page. One that would not draw is drawn again
@@ -372,8 +372,8 @@ func (d *document) picture(at, width int) (image.Image, error) {
 	return drawn, nil
 }
 
-// encoded is a drawn page as the bytes that cross to the window.
-func encoded(drawn image.Image) ([]byte, error) {
+// encodePage is a drawn page as the bytes that cross to the window.
+func encodePage(drawn image.Image) ([]byte, error) {
 	var out bytes.Buffer
 	if err := jpeg.Encode(&out, drawn, &jpeg.Options{Quality: quality}); err != nil {
 		return nil, err
@@ -381,10 +381,10 @@ func encoded(drawn image.Image) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-// wanted is which page the window asks for and how wide, in the pixels of the
+// parsePageQuery is which page the window asks for and how wide, in the pixels of the
 // device it draws on. A document is asked for a page of it and no other place
 // in it.
-func wanted(where string, query url.Values) (at, width int, named fingerprint, err error) {
+func parsePageQuery(where string, query url.Values) (at, width int, named fingerprint, err error) {
 	asked, found := strings.CutPrefix(where, pagesName+"/")
 	if !found {
 		return 0, 0, fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
@@ -397,30 +397,30 @@ func wanted(where string, query url.Values) (at, width int, named fingerprint, e
 	if err != nil || width < 1 || width > widestPage {
 		return 0, 0, fingerprint{}, fmt.Errorf("wide: %q is not a width", query.Get("wide"))
 	}
-	named, err = printed(query)
+	named, err = parseFingerprint(query)
 	if err != nil {
 		return 0, 0, fingerprint{}, err
 	}
 	return at, width, named, nil
 }
 
-// refusedDrawing is the code a question about a document that could not be
+// getDrawCode is the code a question about a document that could not be
 // answered is refused under.
 //
 // A document another reader holds is unavailable and not a failure: the caller
 // asks again. Everything else a caller can act on says which of its own doing
 // it was.
-func refusedDrawing(err error) connect.Code {
+func getDrawCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, errBusy):
 		return connect.CodeUnavailable
 	case errors.Is(err, errNoPage), errors.Is(err, errChanged),
 		errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
 		return connect.CodeNotFound
-	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), misnamed(err):
+	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), isMisnamed(err):
 		return connect.CodeFailedPrecondition
 	default:
-		return reaching(err)
+		return getReachCode(err)
 	}
 }
 
@@ -436,7 +436,7 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, port.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), misnamed(err):
+	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), isMisnamed(err):
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)
@@ -445,10 +445,10 @@ func refuse(w http.ResponseWriter, err error) {
 	}
 }
 
-// keepingDrawings is a window that keeps the pages it draws where this machine
+// newCachingViewer is a window that keeps the pages it draws where this machine
 // keeps what it can make again.
-func keepingDrawings(docs port.PageRenderer) *viewer {
-	v := looking(docs)
-	v.kept = shelved()
+func newCachingViewer(docs port.PageRenderer) *viewer {
+	v := newViewer(docs)
+	v.kept = newDiskCache()
 	return v
 }

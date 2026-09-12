@@ -22,22 +22,22 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// opened is a vault with a window's worth of machinery behind it — the index,
+// openVault is a vault with a window's worth of machinery behind it — the index,
 // the first scan, the watcher — and a client talking to it the way the window
 // does.
 //
 // What is asked here is the wire: that a change reaches a client over the
 // stream, in the shape the schema describes. What a change means is asked of
 // the use case, where no server is needed to ask it.
-func opened(t *testing.T, notes map[string]string) (questions, string) {
+func openVault(t *testing.T, notes map[string]string) (questions, string) {
 	t.Helper()
-	client, _, root, _ := serving(t, notes)
+	client, _, root, _ := openVaultWithWindow(t, notes)
 	return client, root
 }
 
-// serving is that same vault, with the window's half of it as well, for a test
+// openVaultWithWindow is that same vault, with the window's half of it as well, for a test
 // asking what something the window does reaches the client as.
-func serving(t *testing.T, notes map[string]string) (
+func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	questions, numenv1connect.WindowServiceClient, string, *editor.Installation,
 ) {
 	t.Helper()
@@ -112,7 +112,7 @@ func serving(t *testing.T, notes map[string]string) (
 // TestAnEditReachesAListener is the whole path: a file on disk, the watcher,
 // the index, and the stream a window listens to.
 func TestAnEditReachesAListener(t *testing.T) {
-	client, root := opened(t, map[string]string{
+	client, root := openVault(t, map[string]string{
 		"Note.md":  "---\ntitle: Note\n---\n\n# Note\n",
 		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
 	})
@@ -174,7 +174,7 @@ func TestAnEditReachesAListener(t *testing.T) {
 // TestABookDroppedInReachesAListener. A client draws every file the vault
 // holds, and a book is one of them.
 func TestABookDroppedInReachesAListener(t *testing.T) {
-	client, root := opened(t, map[string]string{
+	client, root := openVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	})
 

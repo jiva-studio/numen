@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// serving says whether the tools are in front of the agents.
-func (s *Endpoint) serving() bool {
+// isServing says whether the tools are in front of the agents.
+func (s *Endpoint) isServing() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.close != nil
@@ -33,7 +33,7 @@ func newEndpoint() *Endpoint {
 func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	s := newEndpoint()
 	s.On()
-	if !s.serving() {
+	if !s.isServing() {
 		t.Fatal("the tools were never served")
 	}
 
@@ -64,7 +64,7 @@ func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	case <-second:
 	case <-time.After(time.Second):
 	}
-	served := s.serving()
+	served := s.isServing()
 
 	close(release)
 	swaps.Wait()
@@ -72,7 +72,7 @@ func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	if served {
 		t.Error("the tools were served again while a swap was running")
 	}
-	if !s.serving() {
+	if !s.isServing() {
 		t.Error("the tools were not served again once the swap was over")
 	}
 }

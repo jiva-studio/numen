@@ -159,7 +159,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     has,
     at,
     setBody,
-    changed: (paths: readonly string[], renamed: readonly Move[] = []) =>
+    applyPathChanges: (paths: readonly string[], renamed: readonly Move[] = []) =>
       conflicts.notifyChanged(getOpenIds, paths, renamed),
     save,
     keep: conflicts.keep,

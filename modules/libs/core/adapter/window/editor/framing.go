@@ -26,7 +26,7 @@ const embedRoute = "embed"
 // played by is the domain's to say, and a host learned about later is played
 // here without this route learning anything.
 func (l *Loopback) Embed(at domain.URL) string {
-	if l == nil || l.stopped.Load() || playing(at) == "" {
+	if l == nil || l.stopped.Load() || getPlayerURL(at) == "" {
 		return ""
 	}
 	return l.address + "/" + l.token + "/" + embedRoute + "/" + url.PathEscape(string(at))
@@ -53,8 +53,8 @@ window.addEventListener('message', function (said) {
 })
 </script>`))
 
-// framing serves that page for one address.
-func (l *Loopback) framing(w http.ResponseWriter, r *http.Request, raw string) {
+// serveFrame serves that page for one address.
+func (l *Loopback) serveFrame(w http.ResponseWriter, r *http.Request, raw string) {
 	written, err := url.PathUnescape(raw)
 	if err != nil {
 		http.Error(w, "not an address", http.StatusBadRequest)
@@ -65,12 +65,12 @@ func (l *Loopback) framing(w http.ResponseWriter, r *http.Request, raw string) {
 		http.Error(w, "not an address", http.StatusBadRequest)
 		return
 	}
-	played := playing(at)
+	played := getPlayerURL(at)
 	if played == "" {
 		http.Error(w, "nothing plays what is at that address", http.StatusBadRequest)
 		return
 	}
-	host, ok := framed(played)
+	host, ok := getFrameOrigin(played)
 	if !ok {
 		http.Error(w, "nothing plays what is at that address", http.StatusBadRequest)
 		return
@@ -96,11 +96,11 @@ func (l *Loopback) framing(w http.ResponseWriter, r *http.Request, raw string) {
 	})
 }
 
-// framed is the origin a player is played from, and whether the window may
+// getFrameOrigin is the origin a player is played from, and whether the window may
 // frame it at all. A player composed for a host nobody named is played nowhere:
 // the list and what composes an address are one decision, and this is where the
 // two are held to each other.
-func framed(played string) (string, bool) {
+func getFrameOrigin(played string) (string, bool) {
 	address, err := url.Parse(played)
 	if err != nil {
 		return "", false
@@ -129,9 +129,9 @@ var videoSites = map[string]bool{
 	"youtu.be":             true,
 }
 
-// playing is where a frame plays what is at an address, and nothing where this
+// getPlayerURL is where a frame plays what is at an address, and nothing where this
 // window knows no player for it.
-func playing(at domain.URL) string {
+func getPlayerURL(at domain.URL) string {
 	address, err := url.Parse(string(at))
 	if err != nil || !videoSites[strings.TrimPrefix(address.Hostname(), "www.")] {
 		return ""

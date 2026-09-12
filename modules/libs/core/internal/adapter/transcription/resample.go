@@ -9,18 +9,18 @@ import (
 // zeroes on each side.
 const sincWidth = 16
 
-// resampled is one signal at another rate.
+// resample is one signal at another rate.
 //
 // Each output sample is what the input says at that moment, band-limited to
 // whichever of the two rates is the lower.
-func resampled(ctx context.Context, in []float32, from, to int) ([]float32, error) {
+func resample(ctx context.Context, in []float32, from, to int) ([]float32, error) {
 	if from == to || from <= 0 || len(in) == 0 {
 		return in, nil
 	}
 	ratio := float64(to) / float64(from)
 	cutoff := math.Min(ratio, 1)
 	reach := sincWidth / cutoff
-	kernel := weighing(cutoff, reach)
+	kernel := buildKernel(cutoff, reach)
 
 	out := make([]float32, int(float64(len(in))*ratio))
 	for i := range out {
@@ -59,8 +59,8 @@ type kernel struct {
 	step float64
 }
 
-// weighing works the kernel out over its whole reach.
-func weighing(cutoff, reach float64) kernel {
+// buildKernel works the kernel out over its whole reach.
+func buildKernel(cutoff, reach float64) kernel {
 	step := float64(kernelSteps)
 	held := make([]float64, int(reach*step)+2)
 	for i := range held {

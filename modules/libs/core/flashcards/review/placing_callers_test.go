@@ -40,8 +40,8 @@ func TestTheSessionAndTheProjectionAreWhatPlacesADay(t *testing.T) {
 			t.Fatal(err)
 		}
 		read++
-		declared += declaring(file, "Places")
-		calls = append(calls, calling(file, "Places")...)
+		declared += countDeclarations(file, "Places")
+		calls = append(calls, getCallers(file, "Places")...)
 	}
 
 	// A walk that read none of the package, or one that did not find the
@@ -110,16 +110,17 @@ func TestWhatThePlacingRuleRefuses(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", one.why, err)
 		}
-		if got := calling(file, "Places"); !slices.Equal(got, one.calls) {
+		if got := getCallers(file, "Places"); !slices.Equal(got, one.calls) {
 			t.Errorf("%s: %v, and the rule reads %v", one.why, one.calls, got)
 		}
 	}
 }
 
-// calling is every function of a file whose body calls this one, named by the
-// type it is a method of and by its own name. A function calling it more than
-// once is named once: what the rule counts is arithmetics and not call sites.
-func calling(file *ast.File, name string) []string {
+// getCallers is every function of a file whose body calls this one, named by
+// the type it is a method of and by its own name. A function calling it more
+// than once is named once: what the rule counts is arithmetics and not call
+// sites.
+func getCallers(file *ast.File, name string) []string {
 	var out []string
 	for _, decl := range file.Decls {
 		at, is := decl.(*ast.FuncDecl)
@@ -138,14 +139,15 @@ func calling(file *ast.File, name string) []string {
 			return true
 		})
 		if calls {
-			out = append(out, named(at))
+			out = append(out, getFuncName(at))
 		}
 	}
 	return out
 }
 
-// declaring is how many functions of a file are declared under this name.
-func declaring(file *ast.File, name string) int {
+// countDeclarations is how many functions of a file are declared under this
+// name.
+func countDeclarations(file *ast.File, name string) int {
 	out := 0
 	for _, decl := range file.Decls {
 		if at, is := decl.(*ast.FuncDecl); is && at.Name.Name == name {
@@ -155,8 +157,8 @@ func declaring(file *ast.File, name string) int {
 	return out
 }
 
-// named is what a function is called, a method by the type it is of.
-func named(at *ast.FuncDecl) string {
+// getFuncName is what a function is called, a method by the type it is of.
+func getFuncName(at *ast.FuncDecl) string {
 	if at.Recv == nil || len(at.Recv.List) == 0 {
 		return at.Name.Name
 	}

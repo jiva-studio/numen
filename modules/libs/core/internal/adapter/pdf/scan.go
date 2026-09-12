@@ -61,7 +61,7 @@ func (s *Scan) Size(index int) (wide, high float64, err error) {
 // page drawn too small loses the marks over its letters, and one drawn too large
 // is read no better and costs the square of the difference.
 func (s *Scan) Image(index, dpi int) (drawing image.Image, err error) {
-	defer survived("drawing a page", &drawing, &err)
+	defer recoverPanic("drawing a page", &drawing, &err)
 	if index < 0 || index >= s.doc.pages {
 		return nil, fmt.Errorf("pdf: page %d of %d", index, s.doc.pages)
 	}

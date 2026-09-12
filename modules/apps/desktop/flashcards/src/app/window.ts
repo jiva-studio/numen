@@ -26,7 +26,7 @@ export const useWindow = () => {
   /** The vault whose decks are open, and whose cards are being asked. */
   const vault = ref('')
 
-  const { notices, showNotice, reportError, setTasks, putAway } = useNotices()
+  const { notices, showNotice, reportError, setTasks, dismissNotice } = useNotices()
   const { vaults, counting: busy, day: today, count, stop } = useReviewCounter({ cards, reportError })
   const state = useReviewSession({ cards, reportError })
   const done = useReviewDays({ cards, reportError })
@@ -134,12 +134,12 @@ export const useWindow = () => {
   }
 
   const { handleKey } = createWindowKeys({
-    screen: () => on.value,
-    vaults: () => vaults.value,
-    chosen: () => chosen.value,
-    byDeck: () => schedules.byDeck.value,
-    shown: () => state.shown.value,
-    showing: () => showing.value,
+    getScreen: () => on.value,
+    getVaults: () => vaults.value,
+    getChosenVault: () => chosen.value,
+    getPresetsByDeck: () => schedules.byDeck.value,
+    isShown: () => state.shown.value,
+    getShowing: () => showing.value,
     choose,
     start: (deck) => void start(deck),
     show: state.show,
@@ -173,7 +173,7 @@ export const useWindow = () => {
     /** The window's own: which screen is on, and what it has to say. */
     on,
     notices,
-    putAway,
+    dismissNotice,
 
     /** The list of vaults, and the way into one. */
     vaults: { list: vaults, counting: busy, choose },

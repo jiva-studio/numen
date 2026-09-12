@@ -103,7 +103,7 @@ func TestThePathIsAskedFirst(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	want := filepath.Join(onPath, "claude")
-	if got := installed(); got != want {
+	if got := findCommand(); got != want {
 		t.Errorf("start %q, want %q", got, want)
 	}
 }
@@ -115,7 +115,7 @@ func TestNowhereStartsTheBareName(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
 
-	if got := installed(); got != "claude" {
+	if got := findCommand(); got != "claude" {
 		t.Errorf("start %q, want %q", got, "claude")
 	}
 }

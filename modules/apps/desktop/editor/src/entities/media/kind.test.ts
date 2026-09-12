@@ -34,7 +34,7 @@ const kind = (state: MediaTabState) => {
   return recordingKind(
     window.handle,
     () => state as unknown as TranscriptState,
-    { runs: () => {} },
+    { runCommand: () => {} },
     fileOpeners({ fileKinds: async () => new Map() }),
     played,
   ).kind
@@ -44,7 +44,7 @@ describe('what a command asked over a recording tab is over', () => {
   it('is the file it plays, which is what a run is asked over', () => {
     const held = recording('talks/Ants.mp3', 4000, 9000)
 
-    expect(kind(held).over!(held)).toStrictEqual({
+    expect(kind(held).getTarget!(held)).toStrictEqual({
       file: 'talks/Ants.mp3',
       source: 'recording',
     })

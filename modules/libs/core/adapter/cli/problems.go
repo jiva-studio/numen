@@ -22,7 +22,7 @@ func problemsCommand(ctx context.Context, out io.Writer, deps Deps, args []strin
 	if err != nil {
 		return err
 	}
-	defer closing(open.Close)
+	defer closeIfOpen(open.Close)
 
 	var named []domain.Check
 	for _, name := range args[1:] {

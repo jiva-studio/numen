@@ -18,8 +18,8 @@ const pointsAtAVideo = "https://youtu.be/dQw4w9WgXcQ"
 // page holding the player is served over this run's socket, and the host is
 // told an address on this machine.
 func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
-	back, handler := played(t, &API{})
-	at := pointing(t, pointsAtAVideo)
+	back, handler := openLoopback(t, &API{})
+	at := parseURL(t, pointsAtAVideo)
 
 	address := back.Embed(at)
 	if !strings.HasPrefix(address, back.address+"/") {
@@ -36,7 +36,7 @@ func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
 	if !strings.Contains(page, "origin="+url.QueryEscape(back.address)) {
 		t.Errorf("the host is told nothing about who frames it: %s", page)
 	}
-	if !strings.Contains(page, playing(at)) {
+	if !strings.Contains(page, getPlayerURL(at)) {
 		t.Errorf("the page frames %q, want the player of %q", page, string(at))
 	}
 }
@@ -45,8 +45,8 @@ func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
 // adapter's to say. A host learned about later is played here without this
 // route learning anything about it.
 func TestTheRouteCarriesTheAddressAndNotOneHostsIdentifier(t *testing.T) {
-	back, _ := played(t, &API{})
-	at := pointing(t, pointsAtAVideo)
+	back, _ := openLoopback(t, &API{})
+	at := parseURL(t, pointsAtAVideo)
 
 	address := back.Embed(at)
 
@@ -62,11 +62,11 @@ func TestTheRouteCarriesTheAddressAndNotOneHostsIdentifier(t *testing.T) {
 // socket every process on this machine can knock at, so what it may do is
 // written on it.
 func TestThePageHoldingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
-	back, handler := played(t, &API{})
+	back, handler := openLoopback(t, &API{})
 
 	answer := httptest.NewRecorder()
 	handler.ServeHTTP(answer,
-		httptest.NewRequest(http.MethodGet, back.Embed(pointing(t, pointsAtAVideo)), nil))
+		httptest.NewRequest(http.MethodGet, back.Embed(parseURL(t, pointsAtAVideo)), nil))
 
 	said := answer.Header().Get("Content-Security-Policy")
 	if !strings.Contains(said, "default-src 'none'") {
@@ -80,7 +80,7 @@ func TestThePageHoldingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
 // An address nothing plays is refused. The route serves a player, and is not a
 // way to ask this socket for a page of somebody else's.
 func TestAnEmbedAddressNothingPlays(t *testing.T) {
-	back, handler := played(t, &API{})
+	back, handler := openLoopback(t, &API{})
 
 	for _, raw := range []string{
 		url.PathEscape("https://example.com/entropy"),
@@ -97,8 +97,8 @@ func TestAnEmbedAddressNothingPlays(t *testing.T) {
 	}
 }
 
-// pointing is one address a note points at.
-func pointing(t *testing.T, written string) domain.URL {
+// parseURL is one address a note points at.
+func parseURL(t *testing.T, written string) domain.URL {
 	t.Helper()
 	at, err := domain.ParseURL(written)
 	if err != nil {

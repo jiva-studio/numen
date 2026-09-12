@@ -17,7 +17,7 @@ import type { FileOpeners } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 
 export interface NoteEditorsDeps {
-  core: NotePort & Pick<VaultPort, 'quitting' | 'flushed'>
+  core: NotePort & Pick<VaultPort, 'watchQuit' | 'reportFlush'>
   log: MessageLog
   tabOpeners: FileOpeners
   held: ReturnType<typeof useWindowTabs>

@@ -72,10 +72,6 @@ export const baseline = new Map([
       // between the two features, and the story is where it is held. The
       // editor itself reaches nothing of the workspace.
       'no-features-slice-reaches-a-slice: src/features/editor/ui/Editor.stories.ts → src/features/workspace/index.ts',
-      // The plex's fixtures are built by its arranging tests and read by them:
-      // `fixtures/build.test.ts` arranges what it builds, and every test under
-      // The workspace's fixtures build a window out of `lib`'s own branches and
-      // panes, and `lib`'s tests read the windows they build.
     ],
   ],
 ])

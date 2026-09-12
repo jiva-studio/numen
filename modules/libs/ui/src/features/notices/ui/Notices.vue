@@ -23,8 +23,8 @@ const props = withDefaults(
     notices?: readonly Notice[]
     /** What the corner is announced as. */
     name?: string
-    /** What the way to put one away is called. */
-    putAway?: string
+    /** What the way to dismiss one is called. */
+    dismiss?: string
     /** What the ones folded away behind the rest are counted as. */
     more?: string
     /** How long work runs before it is worth a card. */
@@ -39,7 +39,7 @@ const props = withDefaults(
   {
     notices: () => [],
     name: 'Background work',
-    putAway: 'Put away',
+    dismiss: 'Put away',
     more: 'more',
     wait: WAIT,
     room: ROOM,
@@ -50,7 +50,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   /** A card is finished with: read long enough, or put away. */
-  (event: 'gone', id: string): void
+  (event: 'dismiss', id: string): void
 }>()
 
 const stack = useTemplateRef<HTMLElement>('stack')
@@ -61,19 +61,19 @@ const {
   opened,
   leftOn,
   holdCard,
-  put,
+  dismissByHand,
   onPointerOver,
   onPointerOut,
   onFocusIn,
   onFocusOut,
 } = useNoticeCards({
   stack,
-  notices: () => props.notices,
-  wait: () => props.wait,
-  room: () => props.room,
-  clock: () => props.clock(),
-  hidden: () => props.hidden(),
-  gone: (id) => emit('gone', id),
+  getNotices: () => props.notices,
+  getWait: () => props.wait,
+  getRoom: () => props.room,
+  getNow: () => props.clock(),
+  isHidden: () => props.hidden(),
+  dismiss: (id) => emit('dismiss', id),
 })
 
 /** What the corner is read out through. */
@@ -111,10 +111,10 @@ const { told, cried } = useAnnouncer(() => drawn.value)
           :key="one.id"
           :ref="(card) => holdCard(one.id, card)"
           :one="one"
-          :put-away="putAway"
+          :dismiss="dismiss"
           :left="leftOn(one)"
           @pointerover="onPointerOver"
-          @put="put(one.id)"
+          @dismiss="dismissByHand(one.id)"
         />
       </TransitionGroup>
     </aside>

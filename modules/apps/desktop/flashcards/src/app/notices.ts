@@ -58,11 +58,11 @@ export function useNotices() {
   }
 
   /** One card let go of. Work put away is the corner's own to keep away. */
-  const putAway = (id: string) => {
+  const dismissNotice = (id: string) => {
     told.value = told.value.filter((one) => one.id !== id)
   }
 
-  return { notices, showNotice, reportError, setTasks, putAway }
+  return { notices, showNotice, reportError, setTasks, dismissNotice }
 }
 
 /** One thing said, as a sentence: it opens with a capital and it ends. */

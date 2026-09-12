@@ -31,7 +31,7 @@ func TestAFileIsOnePartOfItsAddress(t *testing.T) {
 		{"a name with a space in it", assetOf("library/A Book.pdf"), "library/A Book.pdf", ""},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			got, ok := addressed(httptest.NewRequest("GET", one.url, nil))
+			got, ok := parseAssetAddress(httptest.NewRequest("GET", one.url, nil))
 			if !ok {
 				t.Fatalf("%s is not an address", one.url)
 			}
@@ -45,7 +45,7 @@ func TestAFileIsOnePartOfItsAddress(t *testing.T) {
 
 func TestWhatIsNotAnAssetIsNotAnAddress(t *testing.T) {
 	for _, url := range []string{"/assets/", "/assets", "/elsewhere/a.pdf"} {
-		if _, ok := addressed(httptest.NewRequest("GET", url, nil)); ok {
+		if _, ok := parseAssetAddress(httptest.NewRequest("GET", url, nil)); ok {
 			t.Errorf("%s was read as an address", url)
 		}
 	}

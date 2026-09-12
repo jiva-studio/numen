@@ -10,7 +10,7 @@ import type { VaultPort } from '@/app/ports/vault'
 export type NoteOperations = Pick<
   NotePort,
   | 'neighbourhood'
-  | 'editing'
+  | 'watchEdits'
   | 'read'
   | 'write'
   | 'create'
@@ -24,7 +24,7 @@ export type NoteOperations = Pick<
 export const notesCore: NoteOperations = {
   neighbourhood: async (path) => mapNeighbourhood(await notes.getNeighbourhood({ path })),
   getInitialOpenPath: async () => (await notes.getOpeningNote({})).note ?? null,
-  async *editing(signal) {
+  async *watchEdits(signal) {
     for await (const said of notes.watchEdits({}, { signal })) {
       yield {
         change: said.change,

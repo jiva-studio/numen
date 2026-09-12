@@ -33,11 +33,11 @@ withDefaults(
 
 defineEmits<{
   /** A way chosen, by the identifier the caller gave it. */
-  (event: 'runs', id: string): void
+  (event: 'run', id: string): void
   /** A vault on the list chosen. */
-  (event: 'opens', id: string): void
+  (event: 'open', id: string): void
   /** The row below the list pressed. */
-  (event: 'offers'): void
+  (event: 'takeOffer'): void
 }>()
 
 defineSlots<{
@@ -63,7 +63,7 @@ defineSlots<{
               :icon="one.icon"
               :text="one.text"
               :keys="one.keys"
-              @click="$emit('runs', one.id)"
+              @click="$emit('run', one.id)"
             />
           </li>
         </ul>
@@ -73,8 +73,8 @@ defineSlots<{
         :vaults="vaults"
         :heading="heading"
         :offer="offer"
-        @opens="$emit('opens', $event)"
-        @offers="$emit('offers')"
+        @open="$emit('open', $event)"
+        @take-offer="$emit('takeOffer')"
       >
         <template v-if="$slots.waiting" #waiting>
           <slot name="waiting" />

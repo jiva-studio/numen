@@ -71,8 +71,8 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
   const syncing = ref(true)
   const isHanging = ref(true)
   const installation: Installation = {
-    setting: (path) => at(file, path),
-    models: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
+    getSetting: (path) => at(file, path),
+    getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
     write: (said) => void written.push(...said),
     file: ref('/numen.json'),
     openFile: () => void done.push('opens the file'),

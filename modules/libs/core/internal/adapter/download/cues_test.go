@@ -18,7 +18,7 @@ const machineWritten = `{"events":[
 // that scrolls two lines at a time says one stretch of speech once, and a cue
 // that stood twice would put the words into the index twice.
 func TestWhatWasSaidStandsOnce(t *testing.T) {
-	cues, err := cued([]byte(machineWritten))
+	cues, err := parseCues([]byte(machineWritten))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestWhatWasSaidStandsOnce(t *testing.T) {
 // A cue ends where the next begins, so the moment on the player belongs to one
 // stretch of speech.
 func TestACueEndsWhereTheNextBegins(t *testing.T) {
-	cues, err := cued([]byte(machineWritten))
+	cues, err := parseCues([]byte(machineWritten))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestACueEndsWhereTheNextBegins(t *testing.T) {
 // A person's own captions arrive as they were published: one event to a cue,
 // nothing overlapping and nothing repeated.
 func TestCaptionsAPersonPublished(t *testing.T) {
-	cues, err := cued([]byte(
+	cues, err := parseCues([]byte(
 		`{"events":[{"tStartMs":0,"dDurationMs":2000,"segs":[{"utf8":"The first line."}]},` +
 			`{"tStartMs":2000,"dDurationMs":3000,"segs":[{"utf8":"The second."}]}]}`))
 	if err != nil {
@@ -66,10 +66,10 @@ func TestCaptionsAPersonPublished(t *testing.T) {
 
 // Bytes that are not what they claim are the file's fault and not the run's.
 func TestCaptionsThatWillNotRead(t *testing.T) {
-	if _, err := cued([]byte("this is not what a site publishes")); err == nil {
+	if _, err := parseCues([]byte("this is not what a site publishes")); err == nil {
 		t.Error("anything at all was read as captions")
 	}
-	cues, err := cued([]byte(`{"events":[]}`))
+	cues, err := parseCues([]byte(`{"events":[]}`))
 	if err != nil || len(cues) != 0 {
 		t.Errorf("a video with nothing said in it is %+v (%v)", cues, err)
 	}

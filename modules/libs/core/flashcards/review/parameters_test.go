@@ -18,7 +18,7 @@ func own() fsrs.Parameters {
 // difficulty as its own: they mean what those numbers say they mean, and one
 // read as the other is a wrong day given confidently.
 func TestANumberTheArithmeticReadsIsAnotherName(t *testing.T) {
-	was := weighed(own())
+	was := hashParameters(own())
 
 	for _, one := range []struct {
 		what   string
@@ -32,7 +32,7 @@ func TestANumberTheArithmeticReadsIsAnotherName(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			other := own()
 			one.change(&other)
-			if got := weighed(other); got == was {
+			if got := hashParameters(other); got == was {
 				t.Errorf("%s changed and the name is still %q", one.what, got)
 			}
 		})
@@ -43,13 +43,13 @@ func TestANumberTheArithmeticReadsIsAnotherName(t *testing.T) {
 	for i := range own().W {
 		other := own()
 		other.W[i] += 0.001
-		if got := weighed(other); got == was {
+		if got := hashParameters(other); got == was {
 			t.Errorf("weight %d changed and the name is still %q", i, got)
 		}
 	}
 
 	// The same parameters are the same name, at this launch and the next.
-	if got := weighed(own()); got != was {
+	if got := hashParameters(own()); got != was {
 		t.Errorf("the same parameters are named %q and then %q", was, got)
 	}
 }
@@ -59,7 +59,7 @@ func TestANumberTheArithmeticReadsIsAnotherName(t *testing.T) {
 // that renames, reorders or adds a field: the name is worked out from the
 // numbers by name, and not from how the library's struct happens to print.
 func TestAFieldTheArithmeticDoesNotReadIsTheSameName(t *testing.T) {
-	was := weighed(own())
+	was := hashParameters(own())
 
 	for _, one := range []struct {
 		what   string
@@ -71,7 +71,7 @@ func TestAFieldTheArithmeticDoesNotReadIsTheSameName(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			other := own()
 			one.change(&other)
-			if got := weighed(other); got != was {
+			if got := hashParameters(other); got != was {
 				t.Errorf("%s changed and the name moved from %q to %q", one.what, was, got)
 			}
 		})

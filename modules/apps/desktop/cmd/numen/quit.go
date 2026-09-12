@@ -15,13 +15,13 @@ type visibility struct {
 	show func()
 }
 
-// closing is the window being asked to go, and answers with whether it may.
+// closeWindow is the window being asked to go, and answers with whether it may.
 //
 // The window goes out of sight first and the vault settles behind it. A page
 // holding text a person has to answer for calls the close off, the window comes
 // back, and the close is asked for again once they have answered. That wait is
 // on a person and is not measured.
-func closing(
+func closeWindow(
 	ctx context.Context,
 	g *going,
 	s visibility,
@@ -42,7 +42,7 @@ func closing(
 	return false
 }
 
-// asked is a quit that did not come through the window, and answers with
+// requestQuit is a quit that did not come through the window, and answers with
 // whether the application may go.
 //
 // It is answered on the thread the page is served on, so the window is hidden
@@ -50,8 +50,8 @@ func closing(
 // over. A settling that ended with a question standing puts the window back and
 // asks for nothing: the person is answering it, and that is the whole of what
 // the goroutine left behind may do.
-func asked(g *going, s visibility, quit func()) bool {
-	if g.settled() {
+func requestQuit(g *going, s visibility, quit func()) bool {
+	if g.isSettled() {
 		return true
 	}
 	go func() {
@@ -107,8 +107,8 @@ func (g *going) wait() bool {
 	return this.settled
 }
 
-// settled reports whether there is nothing left owed.
-func (g *going) settled() bool {
+// isSettled reports whether there is nothing left owed.
+func (g *going) isSettled() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.done

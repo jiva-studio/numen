@@ -21,7 +21,7 @@ export interface ActionPanelState {
 export function useActionPanel(
   getActions: () => readonly PaletteAction[],
   /** The item the panel is about, by its identity. */
-  lit: () => string | undefined,
+  getLit: () => string | undefined,
   /** An item was chosen, and what was asked of it. */
   choose: (item: string, action: string) => void,
   /** The palette asks to be put away. */
@@ -34,7 +34,7 @@ export function useActionPanel(
   })
 
   const chooseAction = (action: string): void => {
-    const item = lit()
+    const item = getLit()
     if (item) choose(item, action)
   }
 

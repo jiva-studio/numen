@@ -31,12 +31,12 @@ type address struct {
 	where string
 }
 
-// addressed takes an asset's address apart.
+// parseAssetAddress takes an asset's address apart.
 //
 // The escaped path is what is read: Go decodes before a handler is reached, and
 // a decoded separator runs the id and the place after it together. A place is
 // as many segments as the file names it with, each escaped on its own.
-func addressed(r *http.Request) (address, bool) {
+func parseAssetAddress(r *http.Request) (address, bool) {
 	rest := strings.TrimPrefix(r.URL.EscapedPath(), assetsRoute)
 	if rest == "" || rest == r.URL.EscapedPath() {
 		return address{}, false
@@ -68,7 +68,7 @@ func addressed(r *http.Request) (address, bool) {
 // The reader the file is read by names the places it has, and a file no reader
 // reads has none.
 func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
-	at, ok := addressed(r)
+	at, ok := parseAssetAddress(r)
 	if !ok {
 		http.Error(w, "not an asset", http.StatusBadRequest)
 		return
@@ -93,7 +93,7 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 func assetOf(path string) string { return assetsRoute + url.PathEscape(path) }
 
 func pageOf(path string, at, wide int, print fingerprint) string {
-	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetOf(path), pagesName, at, wide, printing(print))
+	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetOf(path), pagesName, at, wide, formatFingerprint(print))
 }
 
 // An address that names which bytes it is about answers those bytes or nothing,
@@ -104,14 +104,14 @@ const immutable = "public, max-age=31536000, immutable"
 // The address is gone: the caller asks the vault again and is given another.
 var errChanged = errors.New("the file changed since this address was given out")
 
-// printing is a fingerprint as an address carries it, and printed is it read
+// formatFingerprint is a fingerprint as an address carries it, and parseFingerprint is it read
 // back. The path is a segment of the address already, so what is written here
 // is the rest of what says which bytes the file is.
-func printing(print fingerprint) string {
+func formatFingerprint(print fingerprint) string {
 	return fmt.Sprintf("size=%d&mtime=%d", print.size, print.mtime)
 }
 
-func printed(query url.Values) (fingerprint, error) {
+func parseFingerprint(query url.Values) (fingerprint, error) {
 	size, err := strconv.ParseInt(query.Get("size"), 10, 64)
 	if err != nil {
 		return fingerprint{}, fmt.Errorf("size: %q is not a size", query.Get("size"))

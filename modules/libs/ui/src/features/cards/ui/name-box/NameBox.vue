@@ -21,7 +21,7 @@ const props = defineProps<{
 }>()
 
 /** Whether what is typed cannot be used. */
-const hasObjection = (): boolean => props.naming.objection(props.over) !== null
+const hasObjection = (): boolean => props.naming.getObjection(props.over) !== null
 </script>
 
 <template>
@@ -30,7 +30,7 @@ const hasObjection = (): boolean => props.naming.objection(props.over) !== null
     class="name-box"
     type="text"
     size="1"
-    :value="naming.text(over)"
+    :value="naming.getText(over)"
     :placeholder="stem"
     :aria-label="stem"
     :aria-invalid="hasObjection() || undefined"

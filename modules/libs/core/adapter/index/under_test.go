@@ -25,11 +25,11 @@ func under(t *testing.T, db *DB, vault domain.Vault, path string) []string {
 // A folder holds what its own path prefixes, and a sibling whose name begins
 // with the folder's is not under it.
 func TestWhatIsUnderAFolderIsEverythingItHolds(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "physics/Entropy.md", "Entropy")
-	noted(t, db, first, "physics/heat/Heat.md", "Heat")
-	noted(t, db, first, "physics-old/Stray.md", "Stray")
-	noted(t, db, first, "Outside.md", "Outside")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
+	saveNamedNote(t, db, first, "physics/heat/Heat.md", "Heat")
+	saveNamedNote(t, db, first, "physics-old/Stray.md", "Stray")
+	saveNamedNote(t, db, first, "Outside.md", "Outside")
 	book(t, db, first, "physics/A Book.epub", 1)
 
 	want := []string{"physics/A Book.epub", "physics/Entropy.md", "physics/heat/Heat.md"}
@@ -40,9 +40,9 @@ func TestWhatIsUnderAFolderIsEverythingItHolds(t *testing.T) {
 
 // A file is what is at its own path, and holds nothing.
 func TestWhatIsUnderAFileIsTheFile(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "physics/Entropy.md", "Entropy")
-	noted(t, db, first, "physics/Entropy.md.bak.md", "A copy")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
+	saveNamedNote(t, db, first, "physics/Entropy.md.bak.md", "A copy")
 
 	want := []string{"physics/Entropy.md"}
 	if got := under(t, db, first, "physics/Entropy.md"); !slices.Equal(got, want) {
@@ -53,8 +53,8 @@ func TestWhatIsUnderAFileIsTheFile(t *testing.T) {
 // What a source is, as well as where it is: a caller acts on the difference
 // between a note and a book.
 func TestWhatIsUnderAPathSaysWhichKindEachSourceIs(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "physics/Entropy.md", "Entropy")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
 	book(t, db, first, "physics/A Book.epub", 1)
 
 	held := map[string]domain.SourceKind{}
@@ -76,9 +76,9 @@ func TestWhatIsUnderAPathSaysWhichKindEachSourceIs(t *testing.T) {
 // One database holds every vault, and a path means something inside one of
 // them. Both vaults file something under the same folder name.
 func TestWhatIsUnderAPathIsOneVaultsAlone(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "physics/Entropy.md", "Entropy")
-	noted(t, db, second, "physics/Quasar.md", "Quasar")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
+	saveNamedNote(t, db, second, "physics/Quasar.md", "Quasar")
 
 	if got := under(t, db, first, "physics"); !slices.Equal(got, []string{"physics/Entropy.md"}) {
 		t.Errorf("the first vault holds %v", got)

@@ -91,7 +91,7 @@ const MARKS: Record<State, string | undefined> = {
   clean: undefined,
 }
 
-export const markOf = (state: State): string | undefined => MARKS[state]
+export const getMarkOf = (state: State): string | undefined => MARKS[state]
 
 /** What a read answers. */
 export type ReadResult =

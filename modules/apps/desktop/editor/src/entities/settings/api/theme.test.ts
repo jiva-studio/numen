@@ -44,7 +44,7 @@ describe('every theme there is', () => {
       }),
     )
 
-    const { themes: every } = await themes.appearance()
+    const { themes: every } = await themes.getAppearance()
     expect(every).toEqual([
       { name: 'preset/Numen.css', title: 'Numen', isBuiltIn: true, isPinned: false },
       { name: 'own/Dusk.css', title: 'Dusk', isBuiltIn: false, isPinned: true },
@@ -60,7 +60,7 @@ describe('which half of a colour pair is read', () => {
       [Modes.SYSTEM, 'system'],
     ] as const) {
       asked.listThemes.mockResolvedValue(createAnswer({ mode: said }))
-      expect((await themes.appearance()).mode).toBe(word)
+      expect((await themes.getAppearance()).mode).toBe(word)
     }
   })
 
@@ -68,12 +68,12 @@ describe('which half of a colour pair is read', () => {
   // a window that was never told anything is drawn as.
   it('is the system’s where the window has no word for what was said', async () => {
     asked.listThemes.mockResolvedValue(createAnswer({ mode: 99 }))
-    expect((await themes.appearance()).mode).toBe('system')
+    expect((await themes.getAppearance()).mode).toBe('system')
   })
 
   it('is carried back to the application as the schema names it', async () => {
     asked.writeAppearance.mockResolvedValue({ error: '' })
-    await themes.chooses('own/Dusk.css', 'dark', { interfaceScale: 1.25, textScale: 1.5 })
+    await themes.writeAppearance('own/Dusk.css', 'dark', { interfaceScale: 1.25, textScale: 1.5 })
 
     expect(asked.writeAppearance.mock.calls[0]?.[0]).toEqual({
       name: 'own/Dusk.css',
@@ -87,7 +87,7 @@ describe('which half of a colour pair is read', () => {
 describe('how far a size goes', () => {
   it('is the two ends the application named', async () => {
     asked.listThemes.mockResolvedValue(createAnswer())
-    const { sizes, bounds } = await themes.appearance()
+    const { sizes, bounds } = await themes.getAppearance()
 
     expect(sizes).toEqual({ interfaceScale: 1, textScale: 1 })
     expect(bounds).toEqual({
@@ -103,7 +103,7 @@ describe('how far a size goes', () => {
       createAnswer({ interfaceScaleBounds: undefined, textScaleBounds: undefined }),
     )
 
-    expect((await themes.appearance()).bounds).toEqual({
+    expect((await themes.getAppearance()).bounds).toEqual({
       interfaceScale: { least: 0, most: 0 },
       textScale: { least: 0, most: 0 },
     })
@@ -113,20 +113,20 @@ describe('how far a size goes', () => {
 describe('the rest of what is asked', () => {
   it('hands back the text of a theme’s file as it stands', async () => {
     asked.readTheme.mockResolvedValue({ css: ':root { --numen-surface: black }' })
-    expect(await themes.text('own/Dusk.css')).toBe(':root { --numen-surface: black }')
+    expect(await themes.readTheme('own/Dusk.css')).toBe(':root { --numen-surface: black }')
     expect(asked.readTheme.mock.calls[0]?.[0]).toEqual({ name: 'own/Dusk.css' })
   })
 
   it('says why a choice was refused, and says nothing where it was not', async () => {
     asked.writeAppearance.mockResolvedValue({ error: 'that size is outside its bounds' })
-    expect(await themes.chooses('preset/Numen.css', 'light', { interfaceScale: 9, textScale: 1 })).toBe(
-      'that size is outside its bounds',
-    )
+    expect(
+      await themes.writeAppearance('preset/Numen.css', 'light', { interfaceScale: 9, textScale: 1 }),
+    ).toBe('that size is outside its bounds')
 
     asked.writeAppearance.mockResolvedValue({ error: '' })
-    expect(await themes.chooses('preset/Numen.css', 'light', { interfaceScale: 1, textScale: 1 })).toBe(
-      '',
-    )
+    expect(
+      await themes.writeAppearance('preset/Numen.css', 'light', { interfaceScale: 1, textScale: 1 }),
+    ).toBe('')
   })
 
   it('names the themes the person’s folder changed, as they land', async () => {
@@ -136,7 +136,7 @@ describe('the rest of what is asked', () => {
     })
 
     const heard: (readonly string[])[] = []
-    for await (const names of themes.changed(new AbortController().signal)) heard.push(names)
+    for await (const names of themes.watchThemes(new AbortController().signal)) heard.push(names)
 
     expect(heard).toEqual([['own/Dusk.css'], ['own/Dusk.css', 'own/Dawn.css']])
   })

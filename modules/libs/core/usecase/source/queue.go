@@ -27,7 +27,7 @@ func (q *queue) add(v domain.Vault, path string) bool {
 	if q.queued == nil {
 		q.queued = map[string]bool{}
 	}
-	key := named(v, path)
+	key := getKey(v, path)
 	if q.queued[key] {
 		return false
 	}
@@ -44,12 +44,12 @@ func (q *queue) take() (wanted, bool) {
 	}
 	one := q.line[0]
 	q.line = q.line[1:]
-	delete(q.queued, named(one.vault, one.path))
+	delete(q.queued, getKey(one.vault, one.path))
 	return one, true
 }
 
-// waiting is how many sources are named and not yet taken up.
-func (q *queue) waiting() int { return len(q.line) }
+// countWaiting is how many sources are named and not yet taken up.
+func (q *queue) countWaiting() int { return len(q.line) }
 
-// named is one source of one vault, as the one string a set is keyed by.
-func named(v domain.Vault, path string) string { return string(v.ID) + "\x00" + path }
+// getKey is one source of one vault, as the one string a set is keyed by.
+func getKey(v domain.Vault, path string) string { return string(v.ID) + "\x00" + path }

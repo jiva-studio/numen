@@ -57,10 +57,12 @@ func (f *DeckFile) Bytes() []byte { return f.doc.Bytes() }
 // Body is the deck's prose as it now stands.
 func (f *DeckFile) Body() string { return f.doc.Body() }
 
-// Stamped writes the identifier a file carrying none is to carry, and reports
-// whether it wrote one. The application changing what a note holds is what
-// writes an identifier into it.
-func (f *DeckFile) Stamped(identifier string) (bool, error) { return stamped(f.doc, identifier) }
+// WriteIdentifier writes the identifier a file carrying none is to carry, and
+// reports whether it wrote one. The application changing what a note holds is
+// what writes an identifier into it.
+func (f *DeckFile) WriteIdentifier(identifier string) (bool, error) {
+	return writeIdentifier(f.doc, identifier)
+}
 
 // Deck is what the file now says.
 func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
@@ -68,19 +70,19 @@ func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 	return deck
 }
 
-// Whole makes every card of the file whole and reports the marks it minted,
-// which is what Whole does to a body. The file keeps its own line endings.
+// Whole makes every card of the file whole and reports the marks it gave, which
+// is what Whole does to a body. The file keeps its own line endings.
 func (f *DeckFile) Whole(
-	stencils map[string]Stencil, mint func() (domain.CardID, error),
-) ([]MintedMark, error) {
-	body, minted, err := Whole(markdown.Normalised(f.doc.Body()), stencils, mint)
+	stencils map[string]Stencil, createID func() (domain.CardID, error),
+) ([]CardMark, error) {
+	body, given, err := Whole(markdown.Normalised(f.doc.Body()), stencils, createID)
 	if err != nil {
 		return nil, err
 	}
 	if err := f.doc.SetBody(body); err != nil {
 		return nil, err
 	}
-	return minted, nil
+	return given, nil
 }
 
 // SetValue writes what the card of a mark holds under one field. A field the
@@ -94,7 +96,7 @@ func (f *DeckFile) Whole(
 // the deck is made whole, not here.
 func (f *DeckFile) SetValue(card domain.CardID, field, value string) error {
 	body := []byte(f.doc.Body())
-	span, err := f.carrying(body, card)
+	span, err := f.getCardSpan(body, card)
 	if err != nil {
 		return err
 	}
@@ -118,7 +120,7 @@ func (f *DeckFile) SetValue(card domain.CardID, field, value string) error {
 // where the deck is made whole, not here.
 func (f *DeckFile) RemoveValue(card domain.CardID, field string) error {
 	body := []byte(f.doc.Body())
-	span, err := f.carrying(body, card)
+	span, err := f.getCardSpan(body, card)
 	if err != nil {
 		return err
 	}
@@ -133,7 +135,7 @@ func (f *DeckFile) RemoveValue(card domain.CardID, field string) error {
 		// A value nothing stood under was last in the file, and what is above
 		// it now ends on the one break a file ends with.
 		if to == len(body) {
-			head = trimmedEnd(body, 0, head)
+			head = getTrimmedEnd(body, 0, head)
 			if head > 0 {
 				written = "\n"
 			}
@@ -148,7 +150,7 @@ func (f *DeckFile) RemoveValue(card domain.CardID, field string) error {
 // already holds stay where they stand.
 func (f *DeckFile) SetStencil(card domain.CardID, name string) error {
 	body := []byte(f.doc.Body())
-	span, err := f.carrying(body, card)
+	span, err := f.getCardSpan(body, card)
 	if err != nil {
 		return err
 	}
@@ -163,7 +165,7 @@ func (f *DeckFile) SetStencil(card domain.CardID, name string) error {
 // and every value under it. What stood above and below is left where it was.
 func (f *DeckFile) RemoveCard(card domain.CardID) error {
 	body := []byte(f.doc.Body())
-	span, err := f.carrying(body, card)
+	span, err := f.getCardSpan(body, card)
 	if err != nil {
 		return err
 	}
@@ -174,7 +176,7 @@ func (f *DeckFile) RemoveCard(card domain.CardID) error {
 	// A card nothing stood under was last, and what is above it now ends on the
 	// one break a file ends with.
 	if to == len(body) {
-		head = trimmedEnd(body, 0, head)
+		head = getTrimmedEnd(body, 0, head)
 		if head > 0 {
 			written = "\n"
 		}
@@ -182,10 +184,10 @@ func (f *DeckFile) RemoveCard(card domain.CardID) error {
 	return f.doc.SpliceBody(head, to, written)
 }
 
-// carrying is where the card of a mark stands. A deck holding none of that mark
-// is ErrNoSuchCard, and a deck holding two is ErrTwoCards: choosing between
-// them is choosing which of the two the person meant.
-func (f *DeckFile) carrying(body []byte, card domain.CardID) (cardSpan, error) {
+// getCardSpan is where the card of a mark stands. A deck holding none of that
+// mark is ErrNoSuchCard, and a deck holding two is ErrTwoCards: choosing
+// between them is choosing which of the two the person meant.
+func (f *DeckFile) getCardSpan(body []byte, card domain.CardID) (cardSpan, error) {
 	_, spans := readDeck(domain.Fingerprint{}, body)
 	at := -1
 	for i, span := range spans {
@@ -238,7 +240,7 @@ func (f *DeckFile) RemoveSection(at int) error {
 	// on the one break a file ends with.
 	written := ""
 	if to == len(body) {
-		head = trimmedEnd(body, 0, head)
+		head = getTrimmedEnd(body, 0, head)
 		if head > 0 {
 			written = "\n"
 		}

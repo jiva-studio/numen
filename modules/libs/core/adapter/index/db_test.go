@@ -122,7 +122,7 @@ func TestVectorSearchIsInTheBuild(t *testing.T) {
 // 384-dimension model can embed with it.
 func TestTheVectorIndexIsFittedToTheModel(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 
 	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
@@ -141,31 +141,31 @@ func TestTheVectorIndexIsFittedToTheModel(t *testing.T) {
 // is kept by the text it was bought for.
 func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 
 	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
 	narrow(t, db, first, 384)
-	made := counted(t, db, `SELECT count(*) FROM vectors`)
+	made := countRows(t, db, `SELECT count(*) FROM vectors`)
 	if made == 0 {
 		t.Fatal("nothing was kept for the text that was embedded")
 	}
-	if coarse := counted(t, db, `SELECT count(*) FROM chunks_vec`); coarse != made {
+	if coarse := countRows(t, db, `SELECT count(*) FROM chunks_vec`); coarse != made {
 		t.Fatalf("%d of %d vectors reached the coarse index", coarse, made)
 	}
 
 	if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 		t.Fatal(err)
 	}
-	if left := counted(t, db, `SELECT count(*) FROM vectors`); left != made {
+	if left := countRows(t, db, `SELECT count(*) FROM vectors`); left != made {
 		t.Errorf("%d of %d vectors survived a change of width", left, made)
 	}
 
 	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
-	if back := counted(t, db, `SELECT count(*) FROM chunks_vec`); back != made {
+	if back := countRows(t, db, `SELECT count(*) FROM chunks_vec`); back != made {
 		t.Errorf("the width came back and %d of %d vectors are in the coarse index", back, made)
 	}
 }

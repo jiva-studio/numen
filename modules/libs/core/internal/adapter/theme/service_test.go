@@ -36,7 +36,7 @@ func (d *dressing) Write(one theme.Appearance) error {
 
 func (d *dressing) Warn(said string) { d.said = append(d.said, said) }
 
-func dressed(t *testing.T, worn theme.Appearance) *dressing {
+func createDressing(t *testing.T, worn theme.Appearance) *dressing {
 	t.Helper()
 	kept := &dressing{worn: worn}
 	kept.service = &theme.Service{
@@ -68,7 +68,7 @@ func (d *dressing) choose(t *testing.T, name string, mode v1.Mode) string {
 }
 
 func TestTheListSaysWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
-	worn := dressed(t, theme.Appearance{ThemeName: "preset:dracula", Mode: appearance.Dark})
+	worn := createDressing(t, theme.Appearance{ThemeName: "preset:dracula", Mode: appearance.Dark})
 	put(t, worn.service.Catalogue, "mine.css", ":root { --numen-surface: #000000 }")
 
 	answer := worn.themes(t)
@@ -94,7 +94,7 @@ func TestTheListSaysWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
 }
 
 func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
-	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	worn := createDressing(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	put(t, worn.service.Catalogue, "kept.css", ":root { --numen-surface: #123456 }")
 
 	for name, want := range map[string]string{
@@ -129,7 +129,7 @@ func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
 }
 
 func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
-	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	worn := createDressing(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	if failed := worn.choose(t, "preset:nord", v1.Mode_MODE_DARK); failed != "" {
 		t.Fatalf("refused: %s", failed)
 	}
@@ -143,7 +143,7 @@ func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 
 // A client says how far a size goes before a person types a number into it.
 func TestTheListSaysTheTwoSizesAndHowFarEachGoes(t *testing.T) {
-	worn := dressed(t, theme.Appearance{
+	worn := createDressing(t, theme.Appearance{
 		ThemeName:      theme.Default,
 		Mode:           appearance.System,
 		InterfaceScale: 1.25,
@@ -165,7 +165,7 @@ func TestTheListSaysTheTwoSizesAndHowFarEachGoes(t *testing.T) {
 // A window that has been dressed by nothing is drawn at the size it was
 // designed at.
 func TestASettingsFileNamingNoSizeIsDrawnAsDesigned(t *testing.T) {
-	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	worn := createDressing(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 
 	answer := worn.themes(t)
 	if answer.GetInterfaceScale() != theme.AsDesigned || answer.GetTextScale() != theme.AsDesigned {
@@ -175,7 +175,7 @@ func TestASettingsFileNamingNoSizeIsDrawnAsDesigned(t *testing.T) {
 
 // One size is one command, and choosing it says nothing about the other.
 func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
-	worn := dressed(t, theme.Appearance{
+	worn := createDressing(t, theme.Appearance{
 		ThemeName:      theme.Default,
 		Mode:           appearance.System,
 		InterfaceScale: 1.25,
@@ -202,7 +202,7 @@ func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 // The settings are left as they are, and the person is standing in front of the
 // list that was chosen from.
 func TestAChoiceThatCannotBeWornIsRefusedAndSaysWhy(t *testing.T) {
-	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	worn := createDressing(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	for _, chosen := range []struct {
 		name string
 		mode v1.Mode
@@ -225,7 +225,7 @@ func TestAChoiceThatCannotBeWornIsRefusedAndSaysWhy(t *testing.T) {
 }
 
 func TestASettingsFileThatWouldNotTakeTheChoiceSaysSo(t *testing.T) {
-	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	worn := createDressing(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	worn.refuses = errNotWritten
 	if failed := worn.choose(t, "preset:nord", v1.Mode_MODE_DARK); !strings.Contains(failed, "read-only") {
 		t.Errorf("refused with %q", failed)
@@ -235,7 +235,7 @@ func TestASettingsFileThatWouldNotTakeTheChoiceSaysSo(t *testing.T) {
 // A theme deleted out of the folder does not leave the window undressed, and the
 // name it was under is what the person is told.
 func TestAThemeTheSettingsNameThatIsGoneIsSaidAndTheDefaultWorn(t *testing.T) {
-	worn := dressed(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
+	worn := createDressing(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
 	answer := worn.themes(t)
 	if answer.GetApplied() != theme.Default {
 		t.Errorf("wears %q", answer.GetApplied())

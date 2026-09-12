@@ -19,7 +19,7 @@ import (
 func (a *API) GetDeckPreset(
 	ctx context.Context, r *connect.Request[v1.GetDeckPresetRequest],
 ) (*connect.Response[v1.GetDeckPresetResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (a *API) GetDeckPreset(
 func (a *API) ListPresets(
 	ctx context.Context, _ *connect.Request[v1.ListPresetsRequest],
 ) (*connect.Response[v1.ListPresetsResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -84,21 +84,21 @@ func (a *API) CreatePreset(
 func (a *API) ScheduleDeck(
 	ctx context.Context, r *connect.Request[v1.ScheduleDeckRequest],
 ) (*connect.Response[v1.ScheduleDeckResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	at, err := a.Presets.Point(
 		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.unlevelled(err)
+	behind := a.isUnlevelled(err)
 	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()
@@ -122,7 +122,7 @@ func (a *API) ScheduleDeck(
 func (a *API) ReadPreset(
 	ctx context.Context, r *connect.Request[v1.ReadPresetRequest],
 ) (*connect.Response[v1.ReadPresetResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (a *API) ReadPreset(
 func (a *API) WritePreset(
 	ctx context.Context, r *connect.Request[v1.WritePresetRequest],
 ) (*connect.Response[v1.WritePresetResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -158,13 +158,13 @@ func (a *API) WritePreset(
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	at, err := a.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.unlevelled(err)
+	behind := a.isUnlevelled(err)
 	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()
@@ -194,7 +194,7 @@ func (a *API) WritePreset(
 func (a *API) ComputeCurve(
 	ctx context.Context, r *connect.Request[v1.ComputeCurveRequest],
 ) (*connect.Response[v1.ComputeCurveResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}

@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 )
 
-// saving saves one note of a title of its own through the opening given.
-func saving(t *testing.T, db *DB, v domain.Vault, path, title string) error {
+// saveNote saves one note of a title of its own through the opening given.
+func saveNote(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
 	return db.Notes().Cut(chunking.Sizes{}, chunking.Legibility{}).Save(t.Context(), v.ID, []domain.Note{{
 		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: walked},
@@ -25,7 +25,7 @@ func saving(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 // open.
 func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "index.db")
-	one := openedAt(t, path)
+	one := openDBAt(t, path)
 
 	two, err := Open(t.Context(), path)
 	if err != nil {
@@ -33,7 +33,7 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 	}
 	t.Cleanup(func() { two.Close() })
 
-	if err := saving(t, one, first, "notes/entropy.md", "Entropy"); err != nil {
+	if err := saveNote(t, one, first, "notes/entropy.md", "Entropy"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -50,7 +50,7 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 // note either lands or is refused loudly.
 func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "index.db")
-	one := openedAt(t, path)
+	one := openDBAt(t, path)
 
 	two, err := Open(t.Context(), path)
 	if err != nil {
@@ -69,7 +69,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				name := fmt.Sprintf("%s-%d", who, i)
-				err := saving(t, db, first, "notes/"+name+".md", name)
+				err := saveNote(t, db, first, "notes/"+name+".md", name)
 				if err != nil {
 					mu.Lock()
 					failed = append(failed, err)

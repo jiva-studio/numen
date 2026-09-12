@@ -26,7 +26,7 @@ const workspace = inject(WORKSPACE_CONTEXT)
 const titleOf = (tab: TabId): string => workspace?.value.tabOf(tab)?.title ?? tab
 
 /** What a tab is carrying, and nothing for a tab carrying nothing. */
-const markOf = (tab: TabId): string | undefined => workspace?.value.tabOf(tab)?.mark
+const getMarkOf = (tab: TabId): string | undefined => workspace?.value.tabOf(tab)?.mark
 
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
@@ -137,7 +137,7 @@ function out(event: KeyboardEvent): void {
         :aria-controls="panelName(at)"
         :tab="tab"
         :title="titleOf(tab)"
-        :mark="markOf(tab)"
+        :mark="getMarkOf(tab)"
         :showing="tab === pane.active"
         :focused="tab === pane.active && focused"
         @lift="emit('lift', tab, $event)"

@@ -219,7 +219,7 @@ func pick(from, name string, candidates []string) (chosen string, ambiguous bool
 	// link was written in — the neighbour is likelier than the stranger.
 	best, bestShared := candidates[0], -1
 	for _, c := range candidates {
-		if shared := sharedPrefix(from, c); shared > bestShared {
+		if shared := countSharedPrefix(from, c); shared > bestShared {
 			best, bestShared = c, shared
 		}
 	}
@@ -236,7 +236,7 @@ func where(keys []string, want string) int {
 	return -1
 }
 
-func sharedPrefix(a, b string) int {
+func countSharedPrefix(a, b string) int {
 	as, bs := strings.Split(path.Dir(a), "/"), strings.Split(path.Dir(b), "/")
 	n := 0
 	for n < len(as) && n < len(bs) && as[n] == bs[n] {

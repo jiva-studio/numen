@@ -100,7 +100,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 	// sent, and whoever is drawing the note has to be told wherever the note's
 	// own name ended up.
 	var called error
-	if renaming(travelling, from, to) {
+	if isRename(travelling, from, to) {
 		called = u.Notes.Called(ctx, v, to)
 	}
 
@@ -108,7 +108,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		settled, err := u.Notes.Settle(ctx, v, source.Path, relocated(from, to, source.Path), pointing[source.Path])
+		settled, err := u.Notes.Settle(ctx, v, source.Path, getMovedPath(from, to, source.Path), pointing[source.Path])
 		res.Repaired = append(res.Repaired, settled.Repaired...)
 		res.Dangling = append(res.Dangling, settled.Dangling...)
 		if err != nil {
@@ -118,10 +118,10 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 	return res, called
 }
 
-// renaming is whether this move is one note given a different name, in the
+// isRename is whether this move is one note given a different name, in the
 // folder and under the extension it already has. Travelling is everything the
 // index files under from.
-func renaming(travelling []domain.Fingerprint, from, to string) bool {
+func isRename(travelling []domain.Fingerprint, from, to string) bool {
 	if pathpkg.Dir(from) != pathpkg.Dir(to) || pathpkg.Ext(from) != pathpkg.Ext(to) {
 		return false
 	}
@@ -132,8 +132,8 @@ func renaming(travelling []domain.Fingerprint, from, to string) bool {
 		travelling[0].Path == from && travelling[0].Kind == domain.KindNote
 }
 
-// relocated is where a path under from is once from is at to.
-func relocated(from, to, path string) string {
+// getMovedPath is where a path under from is once from is at to.
+func getMovedPath(from, to, path string) string {
 	if path == from {
 		return to
 	}

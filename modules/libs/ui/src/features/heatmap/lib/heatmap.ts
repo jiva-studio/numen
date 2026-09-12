@@ -98,7 +98,7 @@ export function measureGrid(metrics: HeatmapMetrics): { columns: number; cell: n
  * answered on it. Today holds what was answered, because that is the number a
  * person is adding to.
  */
-export function days(
+export function getDays(
   columns: number,
   now: Date,
   did: ReadonlyMap<string, Tally>,

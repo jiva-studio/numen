@@ -16,10 +16,10 @@ import (
 // large chunk holds what a chunk inside one holds.
 var said = []string{"compost", "leaves", "peelings", "turned", "rot down", ""}
 
-// cutting generates a source cut into large chunks with small chunks inside
+// drawChunks generates a source cut into large chunks with small chunks inside
 // them. What a chunk holds is what identifies it, so the words are what varies;
 // where it stands is what a cut moves, and it moves with the text.
-func cutting(t *rapid.T, name string) []chunk.Chunk {
+func drawChunks(t *rapid.T, name string) []chunk.Chunk {
 	word := rapid.SampledFrom(said)
 	inside := rapid.Custom(func(t *rapid.T) chunk.Chunk {
 		return chunk.Chunk{Text: word.Draw(t, "small")}
@@ -53,26 +53,26 @@ type textOf struct {
 	small bool
 }
 
-// asked is what a cutting asks the index to hold, as many times as it asks.
-func asked(chunks []chunk.Chunk) map[textOf]int {
+// countChunks is what a cut asks the index to hold, as many times as it asks.
+func countChunks(chunks []chunk.Chunk) map[textOf]int {
 	out := map[textOf]int{}
 	for _, large := range chunks {
-		out[textOf{hash: hashed(large.Text)}]++
+		out[textOf{hash: hashText(large.Text)}]++
 		for _, small := range large.Small {
-			out[textOf{hash: hashed(small.Text), small: true}]++
+			out[textOf{hash: hashText(small.Text), small: true}]++
 		}
 	}
 	return out
 }
 
-func hashed(text string) string {
+func hashText(text string) string {
 	sum := sha256.Sum256([]byte(text))
 	return hex.EncodeToString(sum[:])
 }
 
-// standing is the rows one source stands on, by the text and the size each
+// getSourceRows is the rows one source stands on, by the text and the size each
 // holds.
-func standing(t *testing.T, db *DB, source int64) map[textOf][]int64 {
+func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 	t.Helper()
 	cursor, err := db.read.QueryContext(t.Context(),
 		`SELECT id, hash, parent_id IS NOT NULL FROM chunks WHERE source_id = ? ORDER BY id`, source)
@@ -139,20 +139,20 @@ func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
 
 	var kept, twice, gone int
 	rapid.Check(t, func(t *rapid.T) {
-		was := cutting(t, "the first cut")
-		now := cutting(t, "the second cut")
+		was := drawChunks(t, "the first cut")
+		now := drawChunks(t, "the second cut")
 
-		db := opened(outer)
+		db := openDB(outer)
 		source := cutSource(outer, db, "library/a.epub", was)
-		before := standing(outer, db, source)
+		before := getSourceRows(outer, db, source)
 
 		if err := db.Chunks().ReplaceChunks(outer.Context(), first.ID, "book", "library/a.epub", now); err != nil {
 			t.Fatal(err)
 		}
-		after := standing(outer, db, source)
+		after := getSourceRows(outer, db, source)
 
 		// The source stands on exactly the chunks this cut asked for.
-		if want := asked(now); !maps.Equal(howMany(after), want) {
+		if want := countChunks(now); !maps.Equal(howMany(after), want) {
 			t.Fatalf("%v cut again as %v stands on %v, want %v",
 				was, now, howMany(after), want)
 		}

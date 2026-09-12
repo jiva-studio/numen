@@ -99,7 +99,7 @@ const createPresetTab = (args: Knobs): PresetTabState => {
     stopped: ref(StopReason.NOTHING),
     errorMessage: ref(''),
     hasChanged: ref(false),
-    again: fn(),
+    reload: fn(),
     chooseGoal: fn(),
     moveSlider: (at: number) => {
       place.value = at

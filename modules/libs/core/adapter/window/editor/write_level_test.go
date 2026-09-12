@@ -16,9 +16,9 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// openedWindow is a window put together the way a person's window is: through
+// openInstallation is a window put together the way a person's window is: through
 // Open, on a vault of this test's own.
-func openedWindow(t *testing.T) *Installation {
+func openInstallation(t *testing.T) *Installation {
 	t.Helper()
 
 	cfg := container.Config{
@@ -54,7 +54,7 @@ func openedWindow(t *testing.T) *Installation {
 // The writer the window saves through is made with what levels it, and this
 // fails where it is not.
 func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
-	opened := openedWindow(t)
+	opened := openInstallation(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
 	written, err := opened.API.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{

@@ -24,17 +24,17 @@ export interface PaletteKeysOptions {
   readonly places: PalettePlacesState
   /** Whether the action panel stands over the palette. */
   readonly panel: Ref<boolean>
-  readonly offered: () => readonly PaletteAction[]
+  readonly getOfferedActions: () => readonly PaletteAction[]
   readonly typed: Ref<string>
   /** Whether the palette is drawn at all, and which step it is on. */
-  readonly open: () => boolean
-  readonly step: () => string
+  readonly isOpen: () => boolean
+  readonly getStep: () => string
   /** The item the keyboard stands on as a step opens. */
-  readonly opensOn: () => string
+  readonly getOpensOn: () => string
   /** Where the keyboard goes back to once the palette closes. */
-  readonly from: () => HTMLElement | null
+  readonly getOpenedFrom: () => HTMLElement | null
   /** Backspace in an empty field, and Escape. */
-  readonly back: () => void
+  readonly goBack: () => void
   readonly dismiss: () => void
 }
 
@@ -48,7 +48,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   // The keyboard comes back to the field when the panel over it goes, and a
   // palette that is going takes it somewhere else itself.
   watch(panel, async (now) => {
-    if (now || !options.open()) return
+    if (now || !options.isOpen()) return
     await nextTick()
     field.value?.focus()
   })
@@ -61,7 +61,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
     }
     // A chord that opens nothing is left to whoever else answers it.
     if (isActionsChord(event)) {
-      if (!options.offered().length) return
+      if (!options.getOfferedActions().length) return
       event.preventDefault()
       panel.value = true
     } else if (event.key === 'ArrowDown') step(1)
@@ -73,7 +73,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
       places.chooseAt(places.here.value, event.shiftKey)
     } else if (event.key === 'Backspace' && typed.value === '') {
       event.preventDefault()
-      options.back()
+      options.goBack()
     } else if (event.key === 'Escape') {
       event.preventDefault()
       options.dismiss()
@@ -89,7 +89,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
    */
   const enter = async (): Promise<void> => {
     panel.value = false
-    places.goTo(findKeptPlace(places.places.value, options.opensOn() || places.held.value))
+    places.goTo(findKeptPlace(places.places.value, options.getOpensOn() || places.held.value))
     await nextTick()
     field.value?.focus()
     field.value?.select()
@@ -99,27 +99,27 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   const leave = (): void => {
     panel.value = false
     places.held.value = ''
-    const back = options.from()
+    const back = options.getOpenedFrom()
     if (back?.isConnected) back.focus()
   }
 
-  watch(options.open, (now) => {
+  watch(options.isOpen, (now) => {
     if (now) void enter()
     else leave()
   })
 
   /** A step of its own: its own question, and what stands in the field selected. */
-  watch(options.step, () => {
-    if (options.open()) void enter()
+  watch(options.getStep, () => {
+    if (options.isOpen()) void enter()
   })
 
   onMounted(() => {
-    if (options.open()) void enter()
+    if (options.isOpen()) void enter()
   })
 
   // A palette can go while it is still open, and the keyboard goes back with it.
   onBeforeUnmount(() => {
-    if (options.open()) leave()
+    if (options.isOpen()) leave()
   })
 
   return { onKey }

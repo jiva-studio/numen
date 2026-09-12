@@ -231,7 +231,7 @@ describe('notes domain', () => {
 })
 
 describe('session domain', () => {
-  it('handles state, agentUnreachable, writeOpenTabs, and flushed', async () => {
+  it('handles state, agentUnreachable, writeOpenTabs, and reportFlush', async () => {
     asked.getVaultState.mockResolvedValue({
       id: 'v1',
       name: 'V1',
@@ -250,7 +250,7 @@ describe('session domain', () => {
     expect(asked.writeOpenTabs).toHaveBeenCalled()
 
     asked.reportFlush.mockResolvedValue({})
-    await core.flushed('tok', 'written')
+    await core.reportFlush('tok', 'written')
     expect(asked.reportFlush).toHaveBeenCalled()
   })
 })

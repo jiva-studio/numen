@@ -12,9 +12,9 @@ import (
 
 // The window asks for every setting and writes one of them back.
 
-// setting is what stands at a path through the settings, read off the whole of
+// getSetting is what stands at a path through the settings, read off the whole of
 // them. What the file leaves out stands there at its default.
-func setting(t *testing.T, f *going, at ...string) any {
+func getSetting(t *testing.T, f *going, at ...string) any {
 	t.Helper()
 	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
@@ -255,8 +255,8 @@ func TestWhatAnErrorSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 	}
 }
 
-// presented is the file a client says it last read.
-func presented(written string) *string { return &written }
+// newString is the file a client says it last read.
+func newString(written string) *string { return &written }
 
 // The settings page and the file's own tab both write this file. A tab
 // presenting a file the settings page has since patched is answered the
@@ -283,7 +283,7 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 	said, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
 		&v1.WriteSettingsFileRequest{
 			Written: "{\n  \"agent\": { \"use\": \"claude\" }\n}\n",
-			Seen:    presented(was.Msg.GetWritten()),
+			Seen:    newString(was.Msg.GetWritten()),
 		},
 	))
 	if err != nil {
@@ -312,7 +312,7 @@ func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
 	written := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 
 	said, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
-		&v1.WriteSettingsFileRequest{Written: written, Seen: presented(was.Msg.GetWritten())},
+		&v1.WriteSettingsFileRequest{Written: written, Seen: newString(was.Msg.GetWritten())},
 	))
 	if err != nil {
 		t.Fatal(err)

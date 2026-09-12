@@ -58,9 +58,9 @@ func ReducedFilename(title string) (name string, exact bool) {
 		last = r
 	}
 
-	name = trimmedEnds(b.String())
+	name = trimEnds(b.String())
 	if len(name) > maxFilename {
-		name = trimmedEnds(cutRunes(name, maxFilename))
+		name = trimEnds(cutRunes(name, maxFilename))
 	}
 	if name == "" {
 		return "", false
@@ -88,10 +88,10 @@ func isDevice(name string) bool {
 	return stem[:3] == "COM" || stem[:3] == "LPT"
 }
 
-// trimmedEnds is a name carrying at neither end a dot or a space. A leading dot
+// trimEnds is a name carrying at neither end a dot or a space. A leading dot
 // files the note where nothing looks, a trailing one is dropped by Windows, and
 // a space is no part of the name a link is written by.
-func trimmedEnds(name string) string {
+func trimEnds(name string) string {
 	return strings.TrimFunc(name, func(r rune) bool {
 		return r == '.' || unicode.IsSpace(r)
 	})

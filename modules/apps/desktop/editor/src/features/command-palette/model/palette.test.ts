@@ -62,7 +62,7 @@ const createLookup = () => {
   const tabs = ref<Record<string, string>>({})
   const knows: NoteLookup = {
     getTitle: (path) => titles.value[path] ?? '',
-    holding: (path) => tabs.value[path] ?? null,
+    getTabAt: (path) => tabs.value[path] ?? null,
   }
   return {
     knows,
@@ -781,7 +781,7 @@ describe('a command that asks for a note', () => {
       },
       words,
       () => at.value,
-      { getTitle: () => '', holding: () => null },
+      { getTitle: () => '', getTabAt: () => null },
       { getStepGroups: () => [], previewItem: () => {} },
       runSupport(),
       async () => {},
@@ -1078,7 +1078,7 @@ describe('a command that asks for a vault', () => {
       },
       words,
       () => at.value,
-      { getTitle: () => '', holding: () => null },
+      { getTitle: () => '', getTabAt: () => null },
       { getStepGroups: () => [], previewItem: () => {} },
       runSupport(),
       async () => {},

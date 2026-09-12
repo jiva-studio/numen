@@ -129,7 +129,7 @@ func Assemble(lines []Line) (string, []Box) {
 	var out strings.Builder
 	var kept []Box
 	for _, line := range group(lines) {
-		text, boxes := written(line)
+		text, boxes := writeLine(line)
 		if text == "" {
 			continue
 		}
@@ -168,26 +168,26 @@ func group(lines []Line) [][]Line {
 	var out [][]Line
 	var current []Line
 	for _, line := range sorted {
-		if len(current) > 0 && shared(current, line) < 0.5 {
-			out = append(out, ordered(current))
+		if len(current) > 0 && measureVerticalOverlap(current, line) < 0.5 {
+			out = append(out, sortLine(current))
 			current = nil
 		}
 		current = append(current, line)
 	}
 	if len(current) > 0 {
-		out = append(out, ordered(current))
+		out = append(out, sortLine(current))
 	}
 	return out
 }
 
-func ordered(line []Line) []Line {
+func sortLine(line []Line) []Line {
 	sort.SliceStable(line, func(a, b int) bool { return line[a].Box.Min.X < line[b].Box.Min.X })
 	return line
 }
 
-// shared is how much of the shorter of the two a line and a box have in common
-// vertically.
-func shared(line []Line, box Line) float64 {
+// measureVerticalOverlap is how much of the shorter of the two a line and a box
+// have in common vertically.
+func measureVerticalOverlap(line []Line, box Line) float64 {
 	top, bottom := box.Box.Min.Y, box.Box.Max.Y
 	height := box.Box.Dy()
 	for _, l := range line {
@@ -201,14 +201,14 @@ func shared(line []Line, box Line) float64 {
 	return float64(max(bottom-top, 0)) / float64(height)
 }
 
-// written is one line of the page, and where in it each box was read. The
+// writeLine is one line of the page, and where in it each box was read. The
 // offsets are in the line's own text.
 //
 // Detection cuts a line where the printing leaves a gap, so two boxes of one
 // line are two words. The gap itself is not measurable here: a detector widens
 // every box it returns by a fixed number of pixels, and neighbours therefore
 // overlap however far apart the words were.
-func written(line []Line) (string, []Box) {
+func writeLine(line []Line) (string, []Box) {
 	var out strings.Builder
 	var kept []Box
 	for _, one := range line {

@@ -392,7 +392,7 @@ describe('a stencil read again under the window', () => {
     const one = await open({ problems: [sideless] })
     const was = { stencil: one.tab.stencil.value, marks: one.tab.marks.value }
 
-    one.stencils.changed(['Animal.md'])
+    one.stencils.applyPathChanges(['Animal.md'])
     await settle()
 
     // Each of them the same thing, and not merely a thing that reads the same:
@@ -406,7 +406,7 @@ describe('a stencil read again under the window', () => {
     // The face the editor is drawing, under the identity it was drawn with.
     const face = one.tab.stencil.value.faces[0]?.id ?? ''
 
-    one.stencils.changed(['Animal.md'])
+    one.stencils.applyPathChanges(['Animal.md'])
     await settle()
 
     expect(one.tab.marks.value.at.get(face)).toStrictEqual(['no back'])
@@ -417,7 +417,7 @@ describe('a stencil read again under the window', () => {
     const was = one.tab.stencil.value
 
     one.setFaces([{ name: 'Recall', preamble: '', front: '{{Height}}', back: '{{Life span}}' }])
-    one.stencils.changed(['Animal.md'])
+    one.stencils.applyPathChanges(['Animal.md'])
     await settle()
 
     expect(one.tab.stencil.value.faces.map((face) => face.name)).toStrictEqual(['Recall'])
@@ -429,7 +429,7 @@ describe('a stencil renamed under the window', () => {
   it('is the tab it has when it is asked for at the name it now carries', async () => {
     const one = await open()
 
-    one.stencils.changed(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
+    one.stencils.applyPathChanges(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
     await settle()
     one.road.openNewFile('Beast.md', '', 'stencil')
     await settle()
@@ -441,7 +441,7 @@ describe('a stencil renamed under the window', () => {
   it('is called what the file was called, before the name it went to is read', async () => {
     const one = await open()
 
-    one.stencils.changed(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
+    one.stencils.applyPathChanges(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
 
     expect(one.stencils.getTitle('Beast.md')).toBe('Animal')
   })

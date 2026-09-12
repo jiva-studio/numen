@@ -94,7 +94,7 @@ func readsEverything(step string) bool {
 // call a scan makes.
 func TestEveryQuestionIsAnsweredThroughAnIndex(t *testing.T) {
 	ctx := t.Context()
-	db := populated(t)
+	db := openPopulatedDB(t)
 
 	if err := (DatabaseMaintenance{db.write}).Changed(ctx); err != nil {
 		t.Fatal(err)
@@ -119,11 +119,11 @@ func TestEveryQuestionIsAnsweredThroughAnIndex(t *testing.T) {
 	}
 }
 
-// populated fills two vaults. One vault cannot show which index a question is
-// answered through: a filter on a column that only ever holds one value is free
-// whichever way the planner applies it, and it chooses on what it is told is
-// there.
-func populated(t *testing.T) *DB {
+// openPopulatedDB fills two vaults. One vault cannot show which index a question
+// is answered through: a filter on a column that only ever holds one value is
+// free whichever way the planner applies it, and it chooses on what it is told
+// is there.
+func openPopulatedDB(t *testing.T) *DB {
 	t.Helper()
 	ctx := t.Context()
 	db, err := Open(ctx, migrated.Path(t))

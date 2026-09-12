@@ -163,15 +163,15 @@ func TestWriteMakesTheFileWhereThereIsNone(t *testing.T) {
 	}
 }
 
-// seen is the file a caller presents as the one it last read.
-func seen(written string) *string { return &written }
+// newLastRead is the file a caller presents as the one it last read.
+func newLastRead(written string) *string { return &written }
 
 func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
 	read := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 	held := "{\n  \"agent\": { \"use\": \"codex\" }\n}\n"
 	path := beside(t, held)
 
-	err := settings.Write(path, []byte(`{"agent": {"use": "gemini"}}`), seen(read))
+	err := settings.Write(path, []byte(`{"agent": {"use": "gemini"}}`), newLastRead(read))
 	if !errors.Is(err, port.ErrStale) {
 		t.Fatalf("refused with %v, wanted the file to have moved past what was read", err)
 	}
@@ -187,7 +187,7 @@ func TestWriteOverTheFileThatWasReadLands(t *testing.T) {
 	path := beside(t, held)
 	written := "{\n  \"agent\": { \"use\": \"gemini\" }\n}\n"
 
-	if err := settings.Write(path, []byte(written), seen(held)); err != nil {
+	if err := settings.Write(path, []byte(written), newLastRead(held)); err != nil {
 		t.Fatalf("writing: %v", err)
 	}
 
@@ -203,7 +203,7 @@ func TestWriteOverAFileThatIsNotThereLands(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
 	written := "{\n  \"agent\": { \"use\": \"gemini\" }\n}\n"
 
-	if err := settings.Write(path, []byte(written), seen("{}\n")); err != nil {
+	if err := settings.Write(path, []byte(written), newLastRead("{}\n")); err != nil {
 		t.Fatalf("writing: %v", err)
 	}
 

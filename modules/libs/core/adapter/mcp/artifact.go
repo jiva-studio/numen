@@ -155,7 +155,7 @@ func addArtifactTools(server *sdk.Server, core Core) {
 // hashOf is the hash everything made from one file stands under. A url stands
 // under its address, and the index recorded that when it walked past.
 func hashOf(ctx context.Context, core Core, path string) (string, error) {
-	said, held, err := core.Sources.Queries.Reading(ctx, core.shown().Vault.ID, path)
+	said, held, err := core.Sources.Queries.Reading(ctx, core.getShownVault().Vault.ID, path)
 	if err != nil || !held {
 		return "", err
 	}
@@ -168,7 +168,7 @@ func artifactsOf(ctx context.Context, core Core, path string) ([]Artifact, error
 	if err != nil || hash == "" {
 		return nil, err
 	}
-	store, err := core.Sources.Derived.Open(core.shown().Vault)
+	store, err := core.Sources.Derived.Open(core.getShownVault().Vault)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func wordsOf(ctx context.Context, core Core, path, producer string) (string, err
 	if err != nil || hash == "" {
 		return "", err
 	}
-	store, err := core.Sources.Derived.Open(core.shown().Vault)
+	store, err := core.Sources.Derived.Open(core.getShownVault().Vault)
 	if err != nil {
 		return "", err
 	}

@@ -31,7 +31,7 @@ export interface VaultPort {
    * vault the window is showing.
    */
   agentUnreachable(): Promise<string>
-  changes(signal: AbortSignal): AsyncIterable<{
+  watchVaultChanges(signal: AbortSignal): AsyncIterable<{
     paths: string[]
     shouldReload: boolean
     renamed: readonly PathRename[]
@@ -45,13 +45,13 @@ export interface VaultPort {
    * it: an agent is told to read a document, and this is where the person
    * watching sees it happen.
    */
-  tasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
+  watchTasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
   /**
    * The places something else asked to be put in front of the person: a
    * source, and the span of its own text meant, counted in bytes. A length
    * of zero names the source and no place inside it.
    */
-  focus(signal: AbortSignal): AsyncIterable<{
+  watchFocus(signal: AbortSignal): AsyncIterable<{
     path: string
     spans: readonly { from: number; to: number }[]
   }>
@@ -61,7 +61,7 @@ export interface VaultPort {
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.
    */
-  quitting(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
+  watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
   /** Everything this client owed has been written. */
-  flushed(token: string, owed?: 'written' | 'asking'): Promise<void>
+  reportFlush(token: string, owed?: 'written' | 'asking'): Promise<void>
 }

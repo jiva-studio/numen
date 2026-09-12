@@ -84,7 +84,7 @@ func ReadStencil(n domain.Note) Stencil {
 		}
 		lead, leadEnd := run(body, sec.from, leadTo)
 		face.Preamble = lead
-		read = trimmedEnd(body, sec.head, sec.from)
+		read = getTrimmedEnd(body, sec.head, sec.from)
 		if lead != "" {
 			read = leadEnd
 		}
@@ -96,7 +96,7 @@ func ReadStencil(n domain.Note) Stencil {
 				to = sides[opening[k+1]].head
 			}
 			value, valueEnd := run(body, side.from, to)
-			read = trimmedEnd(body, side.head, side.from)
+			read = getTrimmedEnd(body, side.head, side.from)
 			if value != "" {
 				read = valueEnd
 			}

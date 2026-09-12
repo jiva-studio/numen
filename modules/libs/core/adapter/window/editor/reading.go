@@ -37,7 +37,7 @@ type nudges struct {
 	still time.Duration
 }
 
-func waking(still time.Duration) nudges {
+func newNudges(still time.Duration) nudges {
 	return nudges{
 		sources: make(chan struct{}, 1),
 		notes:   make(chan struct{}, 1),
@@ -153,7 +153,7 @@ func begin(
 	// first is the vault's first reading: the walk, and the notes written while
 	// it ran read once more. It answers whether the vault was read.
 	first := func() bool {
-		defer api.finished(walkingNotes)
+		defer api.finishTask(walkingNotes)
 
 		// The walk runs behind the window, which answers from what it has
 		// reached. A later one is the index being brought level with a vault
@@ -274,10 +274,10 @@ func readSources(
 		if res.Extracted > 0 {
 			fmt.Fprintf(out, "%s: %d books, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 		}
-		api.finished(readingBooks)
+		api.finishTask(readingBooks)
 	case errors.Is(read, context.Canceled):
 		// Asked to stop. What it cut is correct as far as it got.
-		api.finished(readingBooks)
+		api.finishTask(readingBooks)
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it
 		// out.
@@ -314,7 +314,7 @@ func cutSource(
 	case err == nil:
 		// The pages that were read are cut, and a cut that failed before this
 		// one is over.
-		api.finished(readingBooks)
+		api.finishTask(readingBooks)
 	case !errors.Is(err, context.Canceled):
 		cut(err)
 	}
@@ -411,7 +411,7 @@ func embedSources(
 
 	switch _, err := making.MakeVectors(under, v); {
 	case err == nil, errors.Is(err, context.Canceled):
-		api.finished(makingVectors)
+		api.finishTask(makingVectors)
 	default:
 		// A vault short of the vectors it owes is searched by its words alone,
 		// and the reason for it stands in the list.

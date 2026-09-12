@@ -22,12 +22,12 @@ func spread(days, places int) []int {
 	return out
 }
 
-// naming puts one place of the range on the grid, in place of the place
+// setNearestStep puts one place of the range on the grid, in place of the place
 // nearest it. The two ends stand: a range begins tomorrow and reaches as far as
 // it reaches, whatever day the file names.
 //
 // The point under the place is worked out for the day the preset aims at.
-func naming(steps []int, at int) []int {
+func setNearestStep(steps []int, at int) []int {
 	if at < 0 || len(steps) < 3 {
 		return steps
 	}

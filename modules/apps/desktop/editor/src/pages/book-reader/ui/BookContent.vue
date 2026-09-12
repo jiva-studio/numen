@@ -20,8 +20,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  moved: [offset: number]
-  followed: [path: string]
+  move: [offset: number]
+  follow: [path: string]
   toggleListing: []
 }>()
 
@@ -30,12 +30,12 @@ const book = useTemplateRef<BookHandle>('book')
 const way = useTemplateRef<HTMLElement>('way')
 
 // --- Handlers ---
-function onMoved(offset: number) {
-  emit('moved', offset)
+function onMove(offset: number) {
+  emit('move', offset)
 }
 
-function onFollowed(targetPath: string) {
-  emit('followed', targetPath)
+function onFollow(targetPath: string) {
+  emit('follow', targetPath)
 }
 
 function onToggleListing() {
@@ -74,8 +74,8 @@ defineExpose({
     :otherHighlights="props.otherHighlights"
     :chapter="props.chapter"
     :words="words"
-    @moved="onMoved"
-    @followed="onFollowed"
+    @move="onMove"
+    @follow="onFollow"
   >
     <template #way>
       <button

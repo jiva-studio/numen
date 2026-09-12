@@ -18,19 +18,37 @@
 import { code } from './source.mjs'
 
 /**
+ * baseline are the Go functions still named by a gerund or a participle, and
+ * the list only shrinks. A name here is debt somebody wrote down; a name that
+ * has left the source has to leave this list, and the test below refuses one
+ * that nothing is called any more.
+ */
+export const goBaseline = []
+
+/**
  * The words of ours ending in -ing or -ed that name a thing rather than the
  * doing of one, and what each means. A factory here is free to take a plain
  * noun, and several of the windows' do.
+ *
+ * A base-form verb that merely finishes in those letters stands here too: no
+ * machine can tell `embed` from `offered` by its ending.
  */
 export const nouns = {
+  bring: 'to carry something to where the caller is',
+  ceiling: 'the number a count is not let past',
   drawing: 'a picture',
+  embed: 'to turn a text into the direction that stands for it',
+  feed: 'to hand something on to what is waiting for it',
   heading: 'a line a section of a note stands under',
   landing: 'where something let go comes to rest',
   opening: 'the way in, and how wide it is',
   reading: 'what a document was read as',
   recording: 'a sound file',
   routing: 'the way a line is taken from one place to another',
+  seed: 'the number a run of chance is started from',
+  sibling: 'a note under the same parent',
   spacing: 'the room left between things',
+  string: 'the text a value is written as, which is Go’s own word for it',
   timing: 'when something happens, and how long it takes',
 }
 
@@ -175,4 +193,19 @@ export function takes(source) {
     }
   }
   return found
+}
+
+const GO_DECLARED = /^func\s+(?:\([^)]*\)\s*)?([A-Za-z_]\w*)/gm
+
+/**
+ * Every function and method one Go file declares. gofmt puts a declaration of
+ * the file's own at the left margin and nothing else, so a margin is all this
+ * has to read.
+ *
+ * A method is read here where a TypeScript one is not: Go hangs it on a type by
+ * a receiver and it is declared at the margin like any other function, so the
+ * caller reads `day.GetName()` exactly as it reads `getName()`.
+ */
+export function goDeclares(source) {
+  return [...code(source).matchAll(GO_DECLARED)].map((one) => one[1])
 }

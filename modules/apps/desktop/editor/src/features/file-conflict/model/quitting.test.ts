@@ -49,8 +49,8 @@ function fake(getQuits: () => AsyncIterable<{ token: string; flush: boolean }>) 
   let held: (() => void) | null = null
 
   const core: Notes & FlushDeps = {
-    quitting: getQuits,
-    flushed: async (token: string, result: FlushResult = 'written') => {
+    watchQuit: getQuits,
+    reportFlush: async (token: string, result: FlushResult = 'written') => {
       answered.push({ token, result })
     },
     read: async (path): Promise<NoteResult> =>

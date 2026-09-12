@@ -170,7 +170,7 @@ func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
 	by := &deaf{}
 	listening, v := listens(t, by)
-	owed := listening.owing(t.Context(), recognised{"talks/one.mp3"}, v)
+	owed := listening.getUntranscribed(t.Context(), recognised{"talks/one.mp3"}, v)
 	if len(owed) != 0 {
 		t.Errorf("the queue owes %v", owed)
 	}
@@ -266,7 +266,7 @@ func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
 	listening.with.Unasked = 10 << 20
 
 	known := sized{recordings: map[string]int64{"album.flac": 400 << 20}}
-	if owed := listening.owing(t.Context(), known, v); len(owed) != 0 {
+	if owed := listening.getUntranscribed(t.Context(), known, v); len(owed) != 0 {
 		t.Fatalf("the queue took %v on its own", owed)
 	}
 
@@ -387,14 +387,14 @@ func TestALargeRecordingIsLeftForTheHand(t *testing.T) {
 		"talk.mp3":   5 << 20,
 		"album.flac": 400 << 20,
 	}}
-	owed := held.owing(t.Context(), known, v)
+	owed := held.getUntranscribed(t.Context(), known, v)
 	if len(owed) != 1 || owed[0] != "talk.mp3" {
 		t.Errorf("the queue took %v", owed)
 	}
 
 	// Naming no size takes whatever the vault holds.
 	held.with.Unasked = 0
-	if owed := held.owing(t.Context(), known, v); len(owed) != 2 {
+	if owed := held.getUntranscribed(t.Context(), known, v); len(owed) != 2 {
 		t.Errorf("with no limit the queue took %v", owed)
 	}
 }

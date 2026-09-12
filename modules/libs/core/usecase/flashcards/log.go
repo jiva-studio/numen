@@ -54,8 +54,8 @@ func (h ReviewLog) History() review.History {
 	return h.order()
 }
 
-// ordered is a reading that works its order out at the first asking.
-func ordered(answers []review.Answer) func() review.History {
+// newHistory is a reading that works its order out at the first asking.
+func newHistory(answers []review.Answer) func() review.History {
 	return sync.OnceValue(func() review.History { return review.Give(answers) })
 }
 
@@ -96,7 +96,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 		out.Answers = append(out.Answers, ran.Answers...)
 		out.Files = append(out.Files, port.Entry{Name: file.Name, Size: ran.Size})
 	}
-	out.order = ordered(out.Answers)
+	out.order = newHistory(out.Answers)
 	return out, nil
 }
 
@@ -127,7 +127,7 @@ func (u Log) ReadFile(
 	if errors.Is(err, fs.ErrNotExist) {
 		return LogFile{Gone: true}, nil
 	}
-	if errors.Is(err, fs.ErrPermission) || locked(err) {
+	if errors.Is(err, fs.ErrPermission) || isLocked(err) {
 		return LogFile{Shut: true, Skipped: 1}, nil
 	}
 	if err != nil {

@@ -19,7 +19,7 @@ export const isOnVault = (at: CommandTarget): boolean => at.vault.id !== ''
  * A run over the file in front, which the vault has to hold that kind of and
  * this build has to be able to do.
  */
-export const getWhereOnSource =
+export const getOfferOnSource =
   (run: string, source: Source) =>
   (at: CommandTarget, runs: RunSupport): boolean =>
     at.ready && at.file !== '' && at.source === source && runs.canRun(run)
@@ -29,10 +29,10 @@ export const getWhereOnSource =
  * and not on its kind alone: a book already read is not offered to be read. A
  * file nothing has been asked about carries nothing, and is offered.
  */
-export const getWhereOnEvidence =
+export const getOfferOnEvidence =
   (run: string, source: Source, isOffered: (states: ArtifactStates) => boolean) =>
   (at: CommandTarget, runs: RunSupport): boolean =>
-    getWhereOnSource(run, source)(at, runs) && (isEmpty(at.made) || isOffered(at.made))
+    getOfferOnSource(run, source)(at, runs) && (isEmpty(at.made) || isOffered(at.made))
 
 const isEmpty = (states: ArtifactStates): boolean => Object.keys(states).length === 0
 

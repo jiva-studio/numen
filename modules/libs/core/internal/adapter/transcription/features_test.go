@@ -86,7 +86,7 @@ func TestFFTAgainstDefinition(t *testing.T) {
 // The signal is mirrored at each end, and the sample on the edge is not said
 // twice.
 func TestReflected(t *testing.T) {
-	got := reflected([]float64{1, 2, 3, 4}, 2)
+	got := padReflect([]float64{1, 2, 3, 4}, 2)
 	want := []float64{3, 2, 1, 2, 3, 4, 3, 2}
 	if len(got) != len(want) {
 		t.Fatalf("%v, and it should be %v", got, want)
@@ -99,7 +99,7 @@ func TestReflected(t *testing.T) {
 }
 
 func TestEmphasised(t *testing.T) {
-	got := emphasised([]float32{1, 1, 1})
+	got := applyPreemphasis([]float32{1, 1, 1})
 	if got[0] != 1 {
 		t.Fatalf("the first sample is %g", got[0])
 	}

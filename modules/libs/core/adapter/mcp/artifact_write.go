@@ -26,12 +26,12 @@ func addArtifactWriteTool(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "artifact_write",
 		Title: "Write an artifact",
-		Description: "Write a stretch of a transcript as it should read. What the site " +
+		Description: "Write a span of a transcript as it should read. What the site " +
 			"or the model produced is never rewritten: the corrections go beside it, " +
 			"and taking them away brings back what was transcribed.\n\nThe cues you send " +
-			"stand in place of every cue that begins inside the stretch they cover, so a " +
-			"transcript is corrected a stretch at a time the way `artifact_read` reads " +
-			"one. Name `start` and `length`, in milliseconds, only to replace a stretch " +
+			"stand in place of every cue that begins inside the span they cover, so a " +
+			"transcript is corrected a span at a time the way `artifact_read` reads " +
+			"one. Name `start` and `length`, in milliseconds, only to replace a span " +
 			"wider than what you send — to take words out, say. Send WebVTT, times and all: a transcript " +
 			"without its times is not one, and the times are what a person's click " +
 			"in the tab lands on. Only `transcript` is written here — a reading off a " +
@@ -40,9 +40,9 @@ func addArtifactWriteTool(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path   string `json:"path" jsonschema:"the file it was made from"`
 		Kind   string `json:"kind" jsonschema:"which of them to write: transcript"`
-		Words  string `json:"words" jsonschema:"the stretch as it should read, as WebVTT with the times each cue was said between"`
-		Start  int    `json:"start,omitempty" jsonschema:"where the stretch begins, in milliseconds; the first cue sent by default"`
-		Length int    `json:"length,omitempty" jsonschema:"how long the stretch is, in milliseconds; what the cues sent cover by default"`
+		Words  string `json:"words" jsonschema:"the span as it should read, as WebVTT with the times each cue was said between"`
+		Start  int    `json:"start,omitempty" jsonschema:"where the span begins, in milliseconds; the first cue sent by default"`
+		Length int    `json:"length,omitempty" jsonschema:"how long the span is, in milliseconds; what the cues sent cover by default"`
 	}) (*sdk.CallToolResult, struct {
 		Cues int `json:"cues" jsonschema:"how many cues the transcript now holds"`
 	}, error) {
@@ -65,7 +65,7 @@ func addArtifactWriteTool(server *sdk.Server, core Core) {
 			if one.Kind != kindTranscript {
 				continue
 			}
-			cues, err := corrected(ctx, core, in.Path, one.Producer, put, in.Start, in.Length)
+			cues, err := writeCorrections(ctx, core, in.Path, one.Producer, put, in.Start, in.Length)
 			if err != nil {
 				return nil, out{}, err
 			}
@@ -75,9 +75,9 @@ func addArtifactWriteTool(server *sdk.Server, core Core) {
 	})
 }
 
-// corrected writes the transcript with those cues standing in place of the ones
-// the stretch covers, and answers with how many it now holds.
-func corrected(
+// writeCorrections writes the transcript with those cues standing in place of
+// the ones the span covers, and answers with how many it now holds.
+func writeCorrections(
 	ctx context.Context, core Core, path, producer string,
 	put []transcript.Cue, start, length int,
 ) (int, error) {
@@ -89,7 +89,7 @@ func corrected(
 	if err != nil || hash == "" {
 		return 0, err
 	}
-	store, err := core.Sources.Derived.Open(core.shown().Vault)
+	store, err := core.Sources.Derived.Open(core.getShownVault().Vault)
 	if err != nil {
 		return 0, err
 	}
@@ -106,7 +106,7 @@ func corrected(
 	defer release()
 
 	_, stood := transcript.Parse([]byte(words))
-	whole := standing(stood, put, start, length)
+	whole := spliceCues(stood, put, start, length)
 	written := append(transcript.Marshal(whole), transcript.Hand()...)
 	if err := store.Write(ctx, text.Corrections(producer, hash), written); err != nil {
 		return 0, err
@@ -117,10 +117,10 @@ func corrected(
 	return len(whole), nil
 }
 
-// standing is the cues as they now read: the ones outside the stretch as they
+// spliceCues is the cues as they now read: the ones outside the span as they
 // were, and the ones sent in place of every cue beginning inside it.
-func standing(stood, put []transcript.Cue, start, length int) []transcript.Cue {
-	// The cues sent are what they cover: a call naming no stretch replaces what
+func spliceCues(stood, put []transcript.Cue, start, length int) []transcript.Cue {
+	// The cues sent are what they cover: a call naming no span replaces what
 	// stands between the first of them and the last, and never the whole of it.
 	if length <= 0 {
 		start, length = put[0].From, put[len(put)-1].To-put[0].From

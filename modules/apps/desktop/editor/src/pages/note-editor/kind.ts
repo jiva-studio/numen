@@ -7,7 +7,7 @@ import type { Store } from '@/features/command-palette'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { NOTE } from '@/entities/tab'
 import type { noteChanges } from './model/changes'
-import { markOf, type openNotes } from '@/entities/note'
+import { getMarkOf, type openNotes } from '@/entities/note'
 import { noteKeyboard, ITSELF } from './model/keyboard'
 import { noteTitles, type NoteTitlesDeps } from './model/titles'
 import NoteTab from './ui/NoteTab.vue'
@@ -124,11 +124,11 @@ export function useNoteTab(
     kind: NOTE,
     open: (id) => openTab(id),
     getTitle: (state) => names.getTitle(state.id),
-    getMark: (state) => markOf(state.note.value.state),
+    getMark: (state) => getMarkOf(state.note.value.state),
     pane: NoteTab,
     identity: (id) => id,
     onShow: (state) => state.measure(),
-    over: (state) => {
+    getTarget: (state) => {
       const path = getPath(state)
       return { path, title: path ? names.getTitle(state.id) : '' }
     },
@@ -145,12 +145,12 @@ export function useNoteTab(
   /** The notes, as a command reaches the ones the window has open. */
   const kept: Store = {
     has: (id) => notes.has(id),
-    where: (id) => notes.getPath(id),
+    getPath: (id) => notes.getPath(id),
     getTitle: (id) => names.getTitle(id),
-    asking: (id) => notes.stale(id) !== null,
+    isAsking: (id) => notes.stale(id) !== null,
     settle: (id) => notes.settle(id),
     close: closeTab,
-    holding: (path) => tabbed.value.get(path) ?? null,
+    getTabAt: (path) => tabbed.value.get(path) ?? null,
   }
 
   return {

@@ -23,7 +23,7 @@ import (
 func BenchmarkRun(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {
-			l, v := scanned(b, vaultOf(b, notes))
+			l, v := scanBenchVault(b, vaultOf(b, notes))
 			b.ResetTimer()
 			for range b.N {
 				if _, err := l.Run(b.Context(), v); err != nil {
@@ -36,7 +36,7 @@ func BenchmarkRun(b *testing.B) {
 
 // BenchmarkRunDangling is the quiet check on its own: one query, no resolving.
 func BenchmarkRunDangling(b *testing.B) {
-	l, v := scanned(b, vaultOf(b, 10_000))
+	l, v := scanBenchVault(b, vaultOf(b, 10_000))
 	b.ResetTimer()
 	for range b.N {
 		if _, err := l.Run(b.Context(), v, domain.CheckDangling); err != nil {
@@ -61,7 +61,7 @@ func vaultOf(b *testing.B, notes int) map[string]string {
 	return out
 }
 
-func scanned(b *testing.B, notes map[string]string) (check.Checks, domain.Vault) {
+func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain.Vault) {
 	b.Helper()
 	v := testsupport.NewVault(b, notes)
 	db, err := container.Config{

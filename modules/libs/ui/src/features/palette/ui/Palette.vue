@@ -89,7 +89,7 @@ const emit = defineEmits<{
    * The item the keyboard is standing on, said whenever it moves. A list that
    * changes under the keyboard says this once, when it has settled.
    */
-  (event: 'lit', item: PaletteLit): void
+  (event: 'light', item: PaletteLit): void
   /**
    * Backspace was pressed in an empty field. The caller keeps the steps and
    * decides what going back means.
@@ -122,7 +122,7 @@ const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 const places = usePalettePlaces({
   groups: () => props.groups,
   typed,
-  tellLit: (item) => emit('lit', item),
+  tellLit: (item) => emit('light', item),
   tellChoice: (item, action) => emit('choose', item, action),
 })
 const { placed, said, here, lit, offered, held, chooseAt } = places
@@ -150,13 +150,13 @@ const { onKey } = usePaletteKeys({
   reveal,
   places,
   panel,
-  offered: () => offered.value,
+  getOfferedActions: () => offered.value,
   typed,
-  open: () => props.open,
-  step: () => props.step,
-  opensOn: () => props.opensOn,
-  from: () => props.from,
-  back: () => emit('back'),
+  isOpen: () => props.open,
+  getStep: () => props.step,
+  getOpensOn: () => props.opensOn,
+  getOpenedFrom: () => props.from,
+  goBack: () => emit('back'),
   dismiss: () => emit('dismiss'),
 })
 
@@ -199,7 +199,7 @@ const onOver = (at: number, event: PointerEvent) => {
         :here="here"
         :uid="uid"
         :name="name"
-        @over="onOver"
+        @point-at="onOver"
         @choose="chooseAt"
       >
         <template v-if="$slots.icon" #icon="{ id }">

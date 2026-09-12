@@ -6,12 +6,10 @@
  * comment and a string answer for nothing, and neither does a name the file
  * took from its own title.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { basename, dirname, extname, join, relative } from 'node:path'
-import { blocks, code, root, sources } from './source.mjs'
+import { basename, dirname, extname } from 'node:path'
+import { blocks, code, goModules, goSources, sources } from './source.mjs'
 
-/** The one Go module whose files nobody wrote. */
-const generated = new Set(['modules/libs/protocol'])
+export { goModules as modules, goSources }
 
 /**
  * baseline are the files whose name is answered only by a word taken from that
@@ -20,43 +18,6 @@ const generated = new Set(['modules/libs/protocol'])
  * same, which is the dialect this rule was written to find.
  */
 export const baseline = []
-
-/** Every Go module of the repository, found by its go.mod. */
-export function modules() {
-  const found = []
-  for (const under of ['modules/libs', 'modules/apps']) {
-    for (const one of readdirSync(join(root, under), { withFileTypes: true })) {
-      if (!one.isDirectory()) continue
-      const at = `${under}/${one.name}`
-      if (existsSync(join(root, at, 'go.mod')) && !generated.has(at)) found.push({ at })
-    }
-  }
-  return found
-}
-
-/** What is nobody's writing: a dependency, a fixture, a generated schema. */
-const skipped = new Set(['node_modules', 'dist', 'gen', 'testdata', 'frontend'])
-
-function walk(at, found) {
-  for (const name of readdirSync(at)) {
-    if (skipped.has(name)) continue
-    const path = join(at, name)
-    if (statSync(path).isDirectory()) walk(path, found)
-    else if (name.endsWith('.go') && !name.endsWith('.pb.go')) found.push(path)
-  }
-  return found
-}
-
-/** Every hand-written Go file of the modules above, and the text in it. */
-export function goSources() {
-  const found = []
-  for (const one of modules()) {
-    for (const path of walk(join(root, one.at), [])) {
-      found.push({ at: relative(root, path), text: readFileSync(path, 'utf8') })
-    }
-  }
-  return found
-}
 
 /** The words of one name, as a reader says them. */
 export const words = (name) =>

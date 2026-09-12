@@ -49,7 +49,7 @@ func Open(root string, opts Options) (*VaultReader, error) {
 	if cfg, err := ReadConfig(abs, opts.ServiceDir); err == nil && len(cfg.Ignore) > 0 {
 		opts.Ignore = cfg.Ignore
 	}
-	return &VaultReader{root: abs, opts: opts, ignored: opts.ignored()}, nil
+	return &VaultReader{root: abs, opts: opts, ignored: opts.compileIgnoring()}, nil
 }
 
 func (s *VaultReader) Root() string { return s.root }
@@ -85,7 +85,7 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.Fingerprint) erro
 			if p == s.root {
 				return nil
 			}
-			if s.skipped(rel, d.Name()) {
+			if s.isSkipped(rel, d.Name()) {
 				return fs.SkipDir
 			}
 			return nil
@@ -218,16 +218,16 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if err := readable(path, info); err != nil {
 		return nil, err
 	}
-	if err := s.sized(path, info); err != nil {
+	if err := s.checkSize(path, info); err != nil {
 		return nil, err
 	}
 	return os.ReadFile(target)
 }
 
-// sized holds a note to the most one is read whole at. A book and a recording
+// checkSize holds a note to the most one is read whole at. A book and a recording
 // are read a part at a time by a caller that knows how large the thing it is
 // reading is.
-func (s *VaultReader) sized(path string, info fs.FileInfo) error {
+func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
 	bound := s.opts.maxNoteBytes()
 	if !s.opts.isNote(pathpkg.Base(path)) || info.Size() <= bound {
 		return nil
@@ -309,10 +309,10 @@ func (s *VaultReader) leftAlone(path string) error {
 	return fmt.Errorf("%s: %w", path, ErrNotANote)
 }
 
-// skipped says whether a walk stops at a folder and does not descend. The walk
+// isSkipped says whether a walk stops at a folder and does not descend. The walk
 // and the watcher both ask it, so neither of them looks where the other does
 // not.
-func (s *VaultReader) skipped(path, name string) bool {
+func (s *VaultReader) isSkipped(path, name string) bool {
 	return s.opts.isService(name) || s.ignored.MatchesPath(path+"/")
 }
 

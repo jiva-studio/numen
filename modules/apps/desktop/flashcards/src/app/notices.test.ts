@@ -11,7 +11,7 @@ describe('what the window has to say', () => {
     one.showNotice('the second', 'caution')
 
     const first = one.notices.value[0]!
-    one.putAway(first.id)
+    one.dismissNotice(first.id)
     one.showNotice('the third', 'caution')
 
     expect(one.notices.value.map((said) => said.says)).toEqual(['the second', 'the third'])
@@ -52,7 +52,7 @@ describe('what the window has to say', () => {
   it('puts away nothing when the name is not one it holds', () => {
     const one = useNotices()
     one.showNotice('the first', 'caution')
-    one.putAway('nothing')
+    one.dismissNotice('nothing')
 
     expect(one.notices.value).toHaveLength(1)
   })

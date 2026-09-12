@@ -17,8 +17,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// writing opens an empty vault for writing.
-func writing(t *testing.T) (port.VaultWriter, string) {
+// openWriter opens an empty vault for writing.
+func openWriter(t *testing.T) (port.VaultWriter, string) {
 	t.Helper()
 	root := t.TempDir()
 	w, err := filesystem.VaultWriters{}.Open(domain.Vault{Path: root})
@@ -33,7 +33,7 @@ func writing(t *testing.T) (port.VaultWriter, string) {
 // those is a file the index does not know about, that nothing on screen shows,
 // and that another program obeys.
 func TestNothingIsMovedIntoAnotherToolsFolder(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	if err := w.Create(ctx, "SKILL.md", []byte("# Skill\n")); err != nil {
@@ -71,7 +71,7 @@ func TestNothingIsMovedIntoAnotherToolsFolder(t *testing.T) {
 // Where a note goes when it is taken out of the vault's sight is deliberately not
 // a note-place, and moving one there is what removal does.
 func TestANoteCanStillBeMovedOutOfSight(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	if err := w.Create(ctx, "Entropy.md", []byte("# Entropy\n")); err != nil {
@@ -87,7 +87,7 @@ func TestANoteCanStillBeMovedOutOfSight(t *testing.T) {
 
 // A note moved to a place a note may live is an ordinary move.
 func TestANoteMovesWhereANoteMayLive(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	if err := w.Create(ctx, "Entropy.md", []byte("# Entropy\n")); err != nil {
@@ -101,9 +101,9 @@ func TestANoteMovesWhereANoteMayLive(t *testing.T) {
 	}
 }
 
-// laid puts a file in the vault behind the writer's back, for the kinds the
+// placeFile puts a file in the vault behind the writer's back, for the kinds the
 // writer does not create.
-func laid(t *testing.T, root, path string) {
+func placeFile(t *testing.T, root, path string) {
 	t.Helper()
 	full := filepath.Join(root, filepath.FromSlash(path))
 	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
@@ -117,7 +117,7 @@ func laid(t *testing.T, root, path string) {
 // A vault holds books and whatever else the person filed there, and every one
 // of them moves.
 func TestAnyFileOfTheVaultMoves(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	moves := map[string]string{
@@ -126,7 +126,7 @@ func TestAnyFileOfTheVaultMoves(t *testing.T) {
 		"notes.txt":   "assets/notes.txt",
 	}
 	for from := range moves {
-		laid(t, root, from)
+		placeFile(t, root, from)
 	}
 
 	for from, to := range moves {
@@ -145,12 +145,12 @@ func TestAnyFileOfTheVaultMoves(t *testing.T) {
 
 // A folder moves whole, and everything under it arrives with it.
 func TestAFolderMovesWithWhatIsUnderIt(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
-	laid(t, root, "physics/Entropy.md")
-	laid(t, root, "physics/deeper/Heat.md")
-	laid(t, root, "physics/A Book.epub")
+	placeFile(t, root, "physics/Entropy.md")
+	placeFile(t, root, "physics/deeper/Heat.md")
+	placeFile(t, root, "physics/A Book.epub")
 
 	if err := w.Move(ctx, "physics", "science/physics"); err != nil {
 		t.Fatalf("the folder did not move: %v", err)
@@ -168,11 +168,11 @@ func TestAFolderMovesWithWhatIsUnderIt(t *testing.T) {
 // A destination that is taken is refused, and what was going there stays where
 // it is.
 func TestAMoveOntoATakenNameIsRefused(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
-	laid(t, root, "scan.png")
-	laid(t, root, "assets/scan.png")
+	placeFile(t, root, "scan.png")
+	placeFile(t, root, "assets/scan.png")
 
 	if err := w.Move(ctx, "scan.png", "assets/scan.png"); !errors.Is(err, port.ErrOccupied) {
 		t.Errorf("want ErrOccupied, got %v", err)
@@ -184,11 +184,11 @@ func TestAMoveOntoATakenNameIsRefused(t *testing.T) {
 
 // Taking a file off the disk is open to every file the vault holds.
 func TestAnyFileOfTheVaultIsRemoved(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	for _, path := range []string{"library/A Book.epub", "assets/scan.png", "notes/Entropy.md"} {
-		laid(t, root, path)
+		placeFile(t, root, path)
 		if err := w.Remove(ctx, path); err != nil {
 			t.Errorf("remove %s: %v", path, err)
 		}
@@ -201,7 +201,7 @@ func TestAnyFileOfTheVaultIsRemoved(t *testing.T) {
 // A folder is made on its own, with the folders above it, and one that is
 // already there is the outcome that was asked for.
 func TestAFolderIsMade(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	if err := w.MakeFolder(ctx, "science/physics"); err != nil {
@@ -218,7 +218,7 @@ func TestAFolderIsMade(t *testing.T) {
 		t.Errorf("making it again: %v", err)
 	}
 
-	laid(t, root, "science/Entropy.md")
+	placeFile(t, root, "science/Entropy.md")
 	if err := w.MakeFolder(ctx, "science/Entropy.md"); !errors.Is(err, port.ErrOccupied) {
 		t.Errorf("a folder over a file: want ErrOccupied, got %v", err)
 	}
@@ -381,7 +381,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 // A folder does not go inside itself. The window's tree refuses the gesture, and
 // a caller that asks for it anyway is refused here.
 func TestAFolderIsNotMovedInsideItself(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	if err := w.Create(ctx, "physics/Entropy.md", []byte("# Entropy\n")); err != nil {
@@ -404,7 +404,7 @@ func TestAFolderIsNotMovedInsideItself(t *testing.T) {
 // A file handed to the window is any kind of file, and it lands under the name
 // it was handed over with.
 func TestAFileIsBroughtInFromOutside(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	if err := w.Bring(ctx, "scans/Cover.png", strings.NewReader("PNG")); err != nil {
@@ -441,7 +441,7 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 
 // A folder whose name begins with another folder's is not inside it.
 func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	if err := w.Create(ctx, "physics/Entropy.md", []byte("# Entropy\n")); err != nil {
@@ -461,7 +461,7 @@ func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
 // archive can leave such a link, and a note written through it would land on
 // the application's own state.
 func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	held := filepath.Join(root, filesystem.DefaultServiceDir, "ocr")
@@ -545,7 +545,7 @@ func TestAVaultReachedThroughALinkIsWrittenLikeAnyOther(t *testing.T) {
 // is a name this vault saves. The temporary file written beside it carries a
 // leading dot and a suffix of its own, and the whole of that has to fit as well.
 func TestANoteWithALongNameIsSaved(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	// 249 bytes, which is longer than a filesystem takes once twelve more are
@@ -589,7 +589,7 @@ func TestANoteWithALongNameIsSaved(t *testing.T) {
 // the note itself. What the writer sees is two names for one file, which is
 // what a filesystem that does tell them apart is given a link to make.
 func TestANameThatIsAlreadyThisFileIsNotTaken(t *testing.T) {
-	w, root := writing(t)
+	w, root := openWriter(t)
 	ctx := t.Context()
 
 	if err := w.Create(ctx, "note.md", []byte("# Note\n")); err != nil {
@@ -643,7 +643,7 @@ func sameFile(t *testing.T, one, other string) bool {
 // A name another file stands at is taken, whatever the filesystem does with
 // case.
 func TestANameAnotherFileStandsAtIsRefused(t *testing.T) {
-	w, _ := writing(t)
+	w, _ := openWriter(t)
 	ctx := t.Context()
 
 	if err := w.Create(ctx, "Note.md", []byte("# Note\n")); err != nil {

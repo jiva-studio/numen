@@ -217,7 +217,7 @@ export const SettlesWhenTheKeyIsLetGo: Story = {
             :min="args.min"
             :max="args.max"
             :step="args.step"
-            @settles="rests.push($event)"
+            @settle="rests.push($event)"
           />
         </div>
         <span data-slot="rests">{{ rests.join(' ') }}</span>

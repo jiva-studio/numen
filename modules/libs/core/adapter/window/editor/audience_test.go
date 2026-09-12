@@ -9,7 +9,7 @@ import (
 
 // A listener that fell behind is told to read everything again.
 func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
-	following := following()
+	following := newChangeAudience()
 	line, done := following.listen()
 	defer done()
 
@@ -32,7 +32,7 @@ func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
 // What matters is the last place asked for: one asked for while a listener is
 // busy replaces the one it has not read.
 func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
-	focusing := focusing()
+	focusing := newPlaceAudience()
 	line, done := focusing.listen()
 	defer done()
 
@@ -50,7 +50,7 @@ func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 }
 
 func TestNobodyIsToldAfterTheyStopListening(t *testing.T) {
-	focusing := focusing()
+	focusing := newPlaceAudience()
 	line, done := focusing.listen()
 	done()
 

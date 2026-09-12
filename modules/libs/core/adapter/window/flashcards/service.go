@@ -46,7 +46,7 @@ func (a *API) WatchCardsDue(
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
 	standing := func() *v1.WatchCardsDueResponse {
-		return &v1.WatchCardsDueResponse{Day: a.Day.Names(a.now()), Vaults: listed}
+		return &v1.WatchCardsDueResponse{Day: a.Day.GetName(a.now()), Vaults: listed}
 	}
 	if err := out.Send(standing()); err != nil {
 		return err
@@ -66,7 +66,7 @@ func (a *API) WatchCardsDue(
 	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
 
-	counted := a.counting(ctx, wanted(known))
+	counted := a.countVaults(ctx, orderVaults(known))
 	for counted != nil {
 		select {
 		case one, open := <-counted:
@@ -87,10 +87,10 @@ func (a *API) WatchCardsDue(
 	return nil
 }
 
-// wanted is the order the vaults are counted in: the current one, then the rest
-// as the list holds them. A person coming back to this window is most often
-// coming back to the vault they were last in.
-func wanted(known []vaults.KnownVault) []domain.Vault {
+// orderVaults is the order the vaults are counted in: the current one, then the
+// rest as the list holds them. A person coming back to this window is most
+// often coming back to the vault they were last in.
+func orderVaults(known []vaults.KnownVault) []domain.Vault {
 	order := make([]domain.Vault, 0, len(known))
 	for _, one := range known {
 		if one.Current {
@@ -105,10 +105,10 @@ func wanted(known []vaults.KnownVault) []domain.Vault {
 	return order
 }
 
-// counting works the vaults out, a few at a time, and hands each over as it
+// countVaults works the vaults out, a few at a time, and hands each over as it
 // comes. A vault that takes a minute holds up nothing but the ones behind it in
 // the queue.
-func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.VaultCardsDue {
+func (a *API) countVaults(ctx context.Context, all []domain.Vault) <-chan *v1.VaultCardsDue {
 	counted := make(chan *v1.VaultCardsDue)
 	go func() {
 		defer close(counted)
@@ -126,7 +126,7 @@ func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.Vault
 				defer running.Done()
 				defer func() { <-room }()
 				select {
-				case counted <- a.counted(ctx, v):
+				case counted <- a.countVault(ctx, v):
 				case <-ctx.Done():
 				}
 			}()
@@ -136,7 +136,7 @@ func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.Vault
 	return counted
 }
 
-func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
+func (a *API) countVault(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
 	one := &v1.VaultCardsDue{Id: string(v.ID), Name: v.Name, Path: v.Path}
 
 	// The vault is brought up to date before it is counted. Nothing is counted
@@ -219,7 +219,7 @@ func (a *API) StartSession(
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	run, err := a.opened(ctx, v)
+	run, err := a.openRun(ctx, v)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -231,12 +231,12 @@ func (a *API) StartSession(
 		Skipped:   int32(session.Skipped),
 	}
 	for _, one := range session.Queue {
-		out.Asked = append(out.Asked, askedOf(one))
+		out.Asked = append(out.Asked, newAsked(one))
 	}
 	return connect.NewResponse(out), nil
 }
 
-func askedOf(one flashcards.QueuedCardFace) *v1.Asked {
+func newAsked(one flashcards.QueuedCardFace) *v1.Asked {
 	front, back := one.Lay()
 	return &v1.Asked{
 		Deck:    one.Deck,
@@ -273,14 +273,14 @@ func (a *API) AnswerCard(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	run, err := a.runs.named(v.ID, r.Msg.GetRun())
+	run, err := a.runs.getRun(v.ID, r.Msg.GetRun())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
 	on := review.CardFaceID{Card: r.Msg.GetMark(), Face: r.Msg.GetFace()}
 	record := flashcards.NewRecord(run, a.now)
-	given, err := record.Answer(ctx, on, rating(r.Msg.GetRating()),
+	given, err := record.Answer(ctx, on, newRating(r.Msg.GetRating()),
 		time.Duration(r.Msg.GetTookMs())*time.Millisecond)
 	if err != nil {
 		if errors.Is(err, flashcards.ErrNoRating) {
@@ -292,9 +292,9 @@ func (a *API) AnswerCard(
 	return connect.NewResponse(&v1.AnswerCardResponse{Answer: given.ID}), nil
 }
 
-// rating is the four a person may say. Anything else is refused by the use case,
-// which is where the rule is.
-func rating(r v1.Rating) review.Rating {
+// newRating is the four a person may say. Anything else is refused by the use
+// case, which is where the rule is.
+func newRating(r v1.Rating) review.Rating {
 	switch r {
 	case v1.Rating_RATING_AGAIN:
 		return review.Again
@@ -317,7 +317,7 @@ func (a *API) TakeBackAnswer(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	run, err := a.runs.named(v.ID, r.Msg.GetRun())
+	run, err := a.runs.getRun(v.ID, r.Msg.GetRun())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}

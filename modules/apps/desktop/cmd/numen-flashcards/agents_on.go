@@ -51,7 +51,7 @@ func (r *reaching) Opened(_ context.Context, v domain.Vault) {
 	_ = r.swapping.Around(func() error { return nil })
 }
 
-func (r *reaching) showing() domain.Vault {
+func (r *reaching) getVault() domain.Vault {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.vault
@@ -79,7 +79,7 @@ func serveAgents(
 		return func() error { return nil }
 	}
 
-	secret, err := agents.Mint()
+	secret, err := agents.CreateToken()
 	if err != nil {
 		api.Unreachable.Store(err.Error())
 		fmt.Fprintln(out, "numen-flashcards: no agent:", err)
@@ -94,14 +94,14 @@ func serveAgents(
 	held := &reaching{}
 	held.swapping = &agents.Endpoint{
 		Serve: func() (func() error, error) {
-			v := held.showing()
+			v := held.getVault()
 			root, err := filepath.Abs(v.Path)
 			if err != nil {
 				return nil, err
 			}
 			served, err := agents.Serve(ctx, agents.Options{
 				Config:  cfg,
-				Core:    reviewing(cfg, db, notes, cutting, api, v, root, out),
+				Core:    makeReviewCore(cfg, db, notes, cutting, api, v, root, out),
 				Reviews: true,
 				Token:   secret,
 				Root:    root,
@@ -113,7 +113,7 @@ func serveAgents(
 			api.Answers(served.Agent)
 			return served.Close, nil
 		},
-		Showing:      held.showing,
+		Showing:      held.getVault,
 		Handler:      api.Answers,
 		Unreachable:  func(why string) { api.Unreachable.Store(why) },
 		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
@@ -136,7 +136,7 @@ func serveAgents(
 // Nothing embeds behind this window, so a search answers by the words the vault
 // holds. Nothing scans either: a card the agent writes is levelled in the index
 // by the paths it touched.
-func reviewing(
+func makeReviewCore(
 	cfg container.Config,
 	db *container.Index,
 	notes container.Notes,

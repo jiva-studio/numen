@@ -98,17 +98,17 @@ func stoppings(t *testing.T) []stopping {
 		{
 			name: "an index that is not a database",
 			cfg:  container.Config{IndexPath: corrupt},
-			why:  opened(t, corrupt),
+			why:  openIndex(t, corrupt),
 		},
 		{
 			name: "an index path that is a folder",
 			cfg:  container.Config{IndexPath: folder},
-			why:  opened(t, folder),
+			why:  openIndex(t, folder),
 		},
 		{
 			name: "an index folder nobody may write in",
 			cfg:  container.Config{IndexPath: filepath.Join(shut, "index.db")},
-			why:  opened(t, filepath.Join(shut, "index.db")),
+			why:  openIndex(t, filepath.Join(shut, "index.db")),
 		},
 		{
 			name: "a settings file that is not JSON",
@@ -128,8 +128,8 @@ func stoppings(t *testing.T) []stopping {
 	}
 }
 
-// opened is the trouble an index at a path comes back with.
-func opened(t *testing.T, path string) error {
+// openIndex is the trouble an index at a path comes back with.
+func openIndex(t *testing.T, path string) error {
 	t.Helper()
 	db, err := index.Open(t.Context(), path)
 	if err == nil {
@@ -157,7 +157,7 @@ func TestEveryRefusalSaysWhatToDoAboutIt(t *testing.T) {
 	}
 	for _, one := range stoppings(t) {
 		t.Run(one.name, func(t *testing.T) {
-			said := stopped(one.cfg, one.why)
+			said := getRefusal(one.cfg, one.why)
 			if said.Heading == "" {
 				t.Error("the page is drawn under no heading")
 			}
@@ -195,7 +195,7 @@ func TestARefusalNamesWhatCouldNotBeOpened(t *testing.T) {
 		"a size the command line does not take":  startingAtAll,
 	}
 	for _, one := range stoppings(t) {
-		said := stopped(one.cfg, one.why)
+		said := getRefusal(one.cfg, one.why)
 		if said.Heading != want[one.name] {
 			t.Errorf("%s is drawn under %q, want %q", one.name, said.Heading, want[one.name])
 		}
@@ -213,7 +213,7 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 	}
 	by := map[string]refusal{}
 	for _, one := range stoppings(t) {
-		by[one.name] = stopped(one.cfg, one.why)
+		by[one.name] = getRefusal(one.cfg, one.why)
 	}
 
 	folder, shut := by["an index path that is a folder"], by["an index folder nobody may write in"]
@@ -236,12 +236,12 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 // A number a size does not take is answered where it was written: the field in
 // the file, or the flag on the command line.
 func TestASizeIsAnsweredWhereItWasWritten(t *testing.T) {
-	file := stopped(container.Config{}, settings.TextScaleBounds.Check("appearance.text_scale", 4))
+	file := getRefusal(container.Config{}, settings.TextScaleBounds.Check("appearance.text_scale", 4))
 	if !strings.Contains(file.Remedy, "appearance.text_scale") {
 		t.Errorf("a size in the file is answered with %q", file.Remedy)
 	}
 
-	line := stopped(container.Config{}, settings.TextScaleBounds.Check("-text-scale", 4))
+	line := getRefusal(container.Config{}, settings.TextScaleBounds.Check("-text-scale", 4))
 	if !strings.Contains(line.Remedy, "-text-scale") {
 		t.Errorf("a size on the command line is answered with %q", line.Remedy)
 	}

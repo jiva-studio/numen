@@ -43,12 +43,12 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
   const changed = computed(() => typed.value !== held.value)
 
   /** Whether the file has been read at all. */
-  const read = ref(false)
+  const isRead = ref(false)
 
   /** Whether the file moved past what was last read, so keeping it stopped. */
   const isStale = ref(false)
 
-  const again = async (): Promise<void> => {
+  const reload = async (): Promise<void> => {
     let answer: Awaited<ReturnType<TextEditorTabDeps['getSettingsFile']>>
     try {
       answer = await core.getSettingsFile()
@@ -59,7 +59,7 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
     held.value = answer.written
     typed.value = answer.written
     wrong.value = ''
-    read.value = true
+    isRead.value = true
     isStale.value = false
   }
 
@@ -68,8 +68,8 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
    * the settings cannot be read out of is refused, and every row of the settings
    * page is read again once one has been written.
    */
-  const writes = async (baseline: string | null): Promise<void> => {
-    if (!read.value) return
+  const write = async (baseline: string | null): Promise<void> => {
+    if (!isRead.value) return
     let answer: Awaited<ReturnType<TextEditorTabDeps['saveSettingsFile']>>
     try {
       answer = await core.saveSettingsFile(typed.value, baseline)
@@ -90,12 +90,12 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
   }
 
   /** What was typed written into the file the tab read. */
-  const save = (): Promise<void> => writes(held.value)
+  const save = (): Promise<void> => write(held.value)
 
   /** Keep: what is typed goes to the file, whatever the file now holds. */
   const keep = async (): Promise<void> => {
     if (!isStale.value) return
-    await writes(null)
+    await write(null)
   }
 
   return {
@@ -106,13 +106,13 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
     errorMessage: readonly(wrong),
     changed,
     /** Whether the file has been read at all. */
-    read: readonly(read),
+    isRead: readonly(isRead),
     /** Whether the file moved past what was read. */
     isStale: readonly(isStale),
-    again,
+    reload,
     save,
     keep,
     /** Take: the file is read again, and that read replaces what is typed. */
-    take: again,
+    take: reload,
   }
 }

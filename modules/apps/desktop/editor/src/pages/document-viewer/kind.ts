@@ -25,7 +25,7 @@ export function documentKind(handle: WindowHandle, open: (path: string) => Docum
       state.close()
       return true
     },
-    over: (state) => ({ file: state.path, source: 'book' }),
+    getTarget: (state) => ({ file: state.path, source: 'book' }),
     getOpenTab: (state) => ({
       path: state.path,
       document: { page: state.pageNumber.value + 1, pageCount: state.pages.value.length },

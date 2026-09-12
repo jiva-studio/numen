@@ -11,9 +11,9 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
-// shaped is a vault holding one note, and the shape of it taken before anything
+// makeVaultAndShape is a vault holding one note, and the shape of it taken before anything
 // else arrives.
-func shaped(t *testing.T) (string, *folders) {
+func makeVaultAndShape(t *testing.T) (string, *folders) {
 	t.Helper()
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "Note.md"), []byte("# Note\n"), 0o644); err != nil {
@@ -23,16 +23,16 @@ func shaped(t *testing.T) (string, *folders) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	shape, err := remembered(reader)
+	shape, err := readShape(reader)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return root, shape
 }
 
-// filled writes a folder of notes into the vault, the way a sync client
+// writeFolderOfNotes writes a folder of notes into the vault, the way a sync client
 // unpacking an archive does.
-func filled(t *testing.T, root, name string, notes int) string {
+func writeFolderOfNotes(t *testing.T, root, name string, notes int) string {
 	t.Helper()
 	at := filepath.Join(root, name)
 	if err := os.MkdirAll(at, 0o755); err != nil {
@@ -51,8 +51,8 @@ func filled(t *testing.T, root, name string, notes int) string {
 // empties the backlog walks nothing: a folder new to the watch is handed back
 // as a name, and it is walked beside the backlog that goes on emptying.
 func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
-	root, shape := shaped(t)
-	at := filled(t, root, "library", 3)
+	root, shape := makeVaultAndShape(t)
+	at := writeFolderOfNotes(t, root, "library", 3)
 
 	paths, whole, walk := shape.concerns(at)
 	if whole {
@@ -77,8 +77,8 @@ func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
 // TestAWalkStopsWhenTheWatchDoes. A vault being let go of is not a vault to go
 // on reading the disk for.
 func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
-	root, shape := shaped(t)
-	at := filled(t, root, "library", 3)
+	root, shape := makeVaultAndShape(t)
+	at := writeFolderOfNotes(t, root, "library", 3)
 
 	ctx, stop := context.WithCancel(t.Context())
 	stop()
@@ -90,8 +90,8 @@ func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 // TestAFolderThatArrivesIsReportedThroughTheDebounce. The walk stands beside
 // the debounce, so what it finds has to come back to it.
 func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
-	root, shape := shaped(t)
-	at := filled(t, root, "library", 2)
+	root, shape := makeVaultAndShape(t)
+	at := writeFolderOfNotes(t, root, "library", 2)
 
 	raw := make(chan notify.EventInfo, 4)
 	changes := make(chan []string)

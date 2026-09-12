@@ -28,11 +28,11 @@ func (w *window) Focus(_ context.Context, at domain.Place) error {
 	return nil
 }
 
-// watched is the tools as an agent meets them, with somebody looking at the
-// vault.
-func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window) {
+// newSessionWithWindow is the tools as an agent meets them, with somebody
+// looking at the vault.
+func newSessionWithWindow(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window) {
 	t.Helper()
-	_, core := built(t, notes)
+	_, core := newCoreWithNotes(t, notes)
 	looking := &window{}
 	core.View = looking
 	tells := note.TellEdit(func(ctx context.Context, said domain.Edit) {
@@ -45,11 +45,11 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	})
 	core.Notes.Move.Drawing = moving
 	core.Notes.Rename.Drawing = moving
-	return connectedTo(t, core), looking
+	return newSessionOver(t, core), looking
 }
 
 func TestFocusPutsANoteInFrontOfThePerson(t *testing.T) {
-	session, looking := watched(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
+	session, looking := newSessionWithWindow(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 
 	out := call[struct {
 		Focused struct {
@@ -62,7 +62,7 @@ func TestFocusPutsANoteInFrontOfThePerson(t *testing.T) {
 		t.Errorf("answered with %+v", out.Focused)
 	}
 	// A note is put in front of the person whole. Nothing about it names a
-	// stretch, so nothing is asked for one.
+	// span, so nothing is asked for one.
 	want := domain.Place{Path: "notes/Entropy.md"}
 	if len(looking.asked) != 1 || !reflect.DeepEqual(looking.asked[0], want) {
 		t.Errorf("the window was asked for %v", looking.asked)
@@ -70,7 +70,7 @@ func TestFocusPutsANoteInFrontOfThePerson(t *testing.T) {
 }
 
 func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
-	session, looking := watched(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
+	session, looking := newSessionWithWindow(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
 		Name: "note_focus", Arguments: map[string]any{"path": "notes/nowhere.md"},
@@ -87,9 +87,9 @@ func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
 }
 
 func TestFocusSaysSoWhenTheWindowWouldNot(t *testing.T) {
-	_, core := built(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
+	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 	core.View = &window{fails: errors.New("nobody is looking")}
-	session := connectedTo(t, core)
+	session := newSessionOver(t, core)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
 		Name: "note_focus", Arguments: map[string]any{"path": "notes/Entropy.md"},
@@ -105,8 +105,8 @@ func TestFocusSaysSoWhenTheWindowWouldNot(t *testing.T) {
 // Without a window there is nobody to show anything to, and the tools an agent
 // would call are not there to call.
 func TestNoWindowMeansNoTool(t *testing.T) {
-	_, core := built(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
-	session := connectedTo(t, core)
+	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
+	session := newSessionOver(t, core)
 
 	listed, err := session.ListTools(t.Context(), nil)
 	if err != nil {
@@ -128,7 +128,7 @@ var library = map[string]string{
 // A person asked to be shown a passage of a book, and what the agent hands over
 // is the place: the document, and where in its text to open.
 func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
-	session, looking := watched(t, library)
+	session, looking := newSessionWithWindow(t, library)
 
 	out := call[struct {
 		Shown   bool   `json:"shown"`
@@ -147,7 +147,7 @@ func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
 }
 
 func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
-	session, looking := watched(t, library)
+	session, looking := newSessionWithWindow(t, library)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
 		Name:      "source_focus",
@@ -187,7 +187,7 @@ func (w *window) Moved(_ context.Context, went domain.Move) error {
 // file behind it, and every change made afterwards is made somewhere they are
 // not looking. So the window is told where the note went.
 func TestRenamingANoteSaysWhereItWent(t *testing.T) {
-	s, looking := watched(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	s, looking := newSessionWithWindow(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	call[struct {
 		Path string `json:"path"`

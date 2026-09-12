@@ -14,7 +14,7 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "file_read",
 		Title: "Read a range of a file",
-		Description: "Read a stretch of any file the vault holds, by its path from the " +
+		Description: "Read a span of any file the vault holds, by its path from the " +
 			"vault folder. Reach for this when a path is named and the file behind it is " +
 			"neither a note nor a document the vault has read — a transcript somebody " +
 			"typed, an export, whatever they put in the folder — and when a file is long " +
@@ -41,7 +41,7 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 			Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the range did"`
 		}
 		contents, err := file.Read{Readers: core.Readers}.Execute(
-			ctx, core.shown().Vault, in.Path, in.Start, in.Length)
+			ctx, core.getShownVault().Vault, in.Path, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err
 		}

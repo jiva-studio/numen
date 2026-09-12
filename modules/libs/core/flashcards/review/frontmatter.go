@@ -73,11 +73,11 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		problems = append(problems, "a preset aiming at a day says which day, under by_date")
 	}
 
-	p.MinutesADay = counted(front, "minutes_a_day", MinutesADayBounds, p.MinutesADay, &problems)
-	p.NewADay = counted(front, "new_a_day", NewADayBounds, p.NewADay, &problems)
-	p.ReviewsADay = counted(front, "reviews_a_day", ReviewsADayBounds, p.ReviewsADay, &problems)
-	p.Backlog = counted(front, "backlog", BacklogBounds, p.Backlog, &problems)
-	p.Interval = counted(front, "interval", IntervalBounds, p.Interval, &problems)
+	p.MinutesADay = readWholeNumber(front, "minutes_a_day", MinutesADayBounds, p.MinutesADay, &problems)
+	p.NewADay = readWholeNumber(front, "new_a_day", NewADayBounds, p.NewADay, &problems)
+	p.ReviewsADay = readWholeNumber(front, "reviews_a_day", ReviewsADayBounds, p.ReviewsADay, &problems)
+	p.Backlog = readWholeNumber(front, "backlog", BacklogBounds, p.Backlog, &problems)
+	p.Interval = readWholeNumber(front, "interval", IntervalBounds, p.Interval, &problems)
 
 	if raw, present := front["retention"]; present && raw != nil {
 		value, ok := number(raw)
@@ -158,9 +158,9 @@ func DayName(day time.Weekday) string {
 	return strings.ToLower(day.String()[:3])
 }
 
-// counted is one setting written in whole numbers, and what the note said
-// about it.
-func counted(
+// readWholeNumber is one setting written in whole numbers, and what the note
+// said about it.
+func readWholeNumber(
 	front map[string]any, key string, bounds Bounds, fallback int, problems *[]string,
 ) int {
 	raw, present := front[key]

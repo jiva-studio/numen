@@ -13,8 +13,8 @@ const window = (streams = 3) => {
   const lost: string[] = []
   let taken = 0
   const follows = createFollower({
-    open: () => taken <= streams,
-    lost: (said) => lost.push(said),
+    isOpen: () => taken <= streams,
+    setLost: (said) => lost.push(said),
     wait: async (ms) => {
       taken++
       waits.push(ms)
@@ -92,7 +92,7 @@ describe('a stream that fails', () => {
 
 describe('a window that has closed', () => {
   it('follows nothing, and waits for nothing', async () => {
-    const closed = createFollower({ open: () => false, lost: () => {}, wait: async () => {} })
+    const closed = createFollower({ isOpen: () => false, setLost: () => {}, wait: async () => {} })
     const heard: string[] = []
 
     await closed(createStream('a change'), (said) => void heard.push(said))
@@ -103,7 +103,7 @@ describe('a window that has closed', () => {
   it('drops what arrives after it closed', async () => {
     let open = true
     const heard: string[] = []
-    const follows = createFollower({ open: () => open, lost: () => {}, wait: async () => {} })
+    const follows = createFollower({ isOpen: () => open, setLost: () => {}, wait: async () => {} })
 
     await follows(createStream('one', 'two'), (said) => {
       heard.push(said)
@@ -119,8 +119,8 @@ describe('what a follower holds for one reading of a stream', () => {
     const order: string[] = []
     let taken = 0
     const follows = createFollower({
-      open: () => taken <= 2,
-      lost: () => {},
+      isOpen: () => taken <= 2,
+      setLost: () => {},
       wait: async () => {
         taken++
         order.push('waits')
@@ -137,8 +137,8 @@ describe('what a follower holds for one reading of a stream', () => {
     const order: string[] = []
     let taken = 0
     const follows = createFollower({
-      open: () => taken < 1,
-      lost: () => void order.push('lost'),
+      isOpen: () => taken < 1,
+      setLost: () => void order.push('lost'),
       wait: async () => {
         taken++
       },

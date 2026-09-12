@@ -107,7 +107,7 @@ type assignment struct {
 func (u Schedules) plain() assignment {
 	return assignment{
 		under: review.By(u.By),
-		mark:  marked([]string{u.By.Name(), u.opening(), review.Defaults().Placing()}),
+		mark:  getMark([]string{u.By.Name(), u.opening(), review.Defaults().Placing()}),
 	}
 }
 
@@ -121,12 +121,12 @@ func (u Schedules) opening() string {
 	return "day\t" + review.Clock(u.Day.Starts) + "\t" + in
 }
 
-// asking is the scheduler each card face is worked out by, over a reading of
-// this vault's presets of its own.
+// getAssignment is the scheduler each card face is worked out by, over a
+// reading of this vault's presets of its own.
 //
 // A card face whose deck names no preset is worked out at the defaults, and so
 // is every card of a vault nothing has read yet.
-func (u Schedules) asking(ctx context.Context, v domain.Vault) (assignment, error) {
+func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignment, error) {
 	if u.Presets.Links == nil || u.CardFaces.Notes == nil {
 		return u.plain(), nil
 	}
@@ -174,7 +174,7 @@ func (u Schedules) under(
 	for face, one := range under {
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.Name()+"\t"+one.Preset.Placing())
 	}
-	out.mark = marked(marks)
+	out.mark = getMark(marks)
 	out.under = func(face review.CardFaceID) review.SchedulingPolicy {
 		if one, held := under[face]; held {
 			return one
@@ -184,10 +184,10 @@ func (u Schedules) under(
 	return out, nil
 }
 
-// marked is one name for an assignment, whatever order it was walked in. It is
+// getMark is one name for an assignment, whatever order it was walked in. It is
 // a digest because a vault of many cards names many card faces, and what a mark
 // is asked is whether it is the one that stands.
-func marked(lines []string) string {
+func getMark(lines []string) string {
 	slices.Sort(lines)
 	sum := sha256.New()
 	for _, one := range lines {
@@ -218,11 +218,11 @@ func (u Schedules) Execute(
 	if err != nil {
 		return nil, err
 	}
-	asks, err := u.asking(ctx, v)
+	asks, err := u.getAssignment(ctx, v)
 	if err != nil {
 		return nil, err
 	}
-	if out, ok := u.remembered(ctx, v, files, asks.mark); ok {
+	if out, ok := u.readRemembered(ctx, v, files, asks.mark); ok {
 		return out, nil
 	}
 
@@ -230,7 +230,7 @@ func (u Schedules) Execute(
 	if err != nil {
 		return nil, err
 	}
-	return u.filled(ctx, v, held, asks), nil
+	return u.replayAndRemember(ctx, v, held, asks), nil
 }
 
 // From is where a log that has already been read leaves every card face. A
@@ -238,11 +238,11 @@ func (u Schedules) Execute(
 func (u Schedules) From(
 	ctx context.Context, v domain.Vault, held ReviewLog,
 ) (map[review.CardFaceID]review.Schedule, error) {
-	asks, err := u.asking(ctx, v)
+	asks, err := u.getAssignment(ctx, v)
 	if err != nil {
 		return nil, err
 	}
-	return u.replayed(ctx, v, held, asks), nil
+	return u.getSchedulesCached(ctx, v, held, asks), nil
 }
 
 // worked is where a log a caller has already read leaves the card faces of one
@@ -252,45 +252,46 @@ func (u Schedules) From(
 // caller here holds the card faces of one preset. A cache is thrown away when
 // what it was worked out under changes, so the two are never one answer and the
 // cache takes no part: neither read nor written.
-func (u Schedules) worked(held ReviewLog, asks assignment) map[review.CardFaceID]review.Schedule {
-	return projected(u.Day, held, asks)
+func (u Schedules) getSchedules(held ReviewLog, asks assignment) map[review.CardFaceID]review.Schedule {
+	return replaySchedules(u.Day, held, asks)
 }
 
-// replayed is the same, with what a replay came to kept for the next launch.
+// getSchedulesCached is the same, with what a replay came to kept for the next
+// launch.
 //
 // Every path through this asks the cache first. A session and the front door
 // stand on the same log and the same assignment, so the second of them to run
 // is told what the first worked out.
-func (u Schedules) replayed(
+func (u Schedules) getSchedulesCached(
 	ctx context.Context, v domain.Vault, held ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
-	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
+	if out, ok := u.readRemembered(ctx, v, held.Files, asks.mark); ok {
 		return out
 	}
-	return u.filled(ctx, v, held, asks)
+	return u.replayAndRemember(ctx, v, held, asks)
 }
 
-// filled works the answers out and remembers what they came to. It is what a
-// caller that has already found the cache out of date asks for.
-func (u Schedules) filled(
+// replayAndRemember works the answers out and remembers what they came to. It
+// is what a caller that has already found the cache out of date asks for.
+func (u Schedules) replayAndRemember(
 	ctx context.Context, v domain.Vault, held ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
-	out := projected(u.Day, held, asks)
+	out := replaySchedules(u.Day, held, asks)
 	u.remember(ctx, v, held.Files, asks.mark, out)
 	return out
 }
 
-// projected is where the answers leave every card face, and is what a caller
-// that only reads them asks for.
-func projected(
+// replaySchedules is where the answers leave every card face, and is what a
+// caller that only reads them asks for.
+func replaySchedules(
 	d review.Day, held ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
 	return held.History().Replay(d, asks.under)
 }
 
-// remembered is what was worked out last time, when it was worked out from the
-// runs the vault now holds and under the targets now in force.
-func (u Schedules) remembered(
+// readRemembered is what was worked out last time, when it was worked out from
+// the runs the vault now holds and under the targets now in force.
+func (u Schedules) readRemembered(
 	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
 ) (map[review.CardFaceID]review.Schedule, bool) {
 	if u.Cache == nil {

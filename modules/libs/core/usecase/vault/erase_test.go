@@ -28,9 +28,9 @@ func (b *bin) Trash(path string) error {
 	return b.fails
 }
 
-// erasing wires the use case over one registry, recording the order the folder
+// newErase wires the use case over one registry, recording the order the folder
 // and the rows go in.
-func erasing(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows, *[]string) {
+func newErase(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows, *[]string) {
 	steps := &[]string{}
 	trash := &bin{steps: steps}
 	index := &indexRows{steps: steps}
@@ -44,7 +44,7 @@ func erasing(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows, 
 func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 	t.Parallel()
 	_, gone, registry := twoVaults(t)
-	erase, trash, index, steps := erasing(registry)
+	erase, trash, index, steps := newErase(registry)
 
 	res, err := erase.Execute(t.Context(), gone)
 	if err != nil {
@@ -71,7 +71,7 @@ func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 	t.Parallel()
 	_, gone, registry := twoVaults(t)
-	erase, trash, index, _ := erasing(registry)
+	erase, trash, index, _ := newErase(registry)
 
 	// The folder at the path a registry entry names is some other folder now.
 	if err := os.RemoveAll(filepath.Join(gone.Path, ".numen")); err != nil {
@@ -95,7 +95,7 @@ func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
 	t.Parallel()
 	_, gone, registry := twoVaults(t)
-	erase, trash, index, _ := erasing(registry)
+	erase, trash, index, _ := newErase(registry)
 
 	if err := os.RemoveAll(gone.Path); err != nil {
 		t.Fatal(err)
@@ -121,12 +121,12 @@ func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
 
 func TestEraseRefusesTheOnlyVaultBeforeTouchingItsFolder(t *testing.T) {
 	t.Parallel()
-	add, registry := adding(t)
+	add, registry := newAdd(t)
 	only, err := add.Execute(folder(t, "personal"), "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	erase, trash, _, _ := erasing(registry)
+	erase, trash, _, _ := newErase(registry)
 
 	if _, err := erase.Execute(t.Context(), only); !errors.Is(err, vaults.ErrLastVault) {
 		t.Fatalf("the last vault was answered %v", err)

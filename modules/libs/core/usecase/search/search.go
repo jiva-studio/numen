@@ -63,8 +63,8 @@ type Parameters struct {
 	Kinds []domain.SourceKind
 }
 
-// filled supplies what the caller left out.
-func (p Parameters) filled() Parameters {
+// fill supplies what the caller left out.
+func (p Parameters) fill() Parameters {
 	if p.Limit <= 0 {
 		p.Limit = defaultLimit
 	}
@@ -137,7 +137,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	if p.Floor == 0 {
 		p.Floor = u.floor
 	}
-	p = p.filled()
+	p = p.fill()
 
 	var rankings [][]domain.Passage
 	if p.Lexical > 0 {
@@ -226,7 +226,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	for _, p := range found {
 		prose, held := read[p.Source]
 		if !held && !gone[p.Source] {
-			prose, err = extracted(ctx, of, p.Source, p.Producer, p.SourceHash)
+			prose, err = extractText(ctx, of, p.Source, p.Producer, p.SourceHash)
 			if port.NoNote(err) || errors.Is(err, errUnreadable) {
 				gone[p.Source] = true
 				continue
@@ -251,7 +251,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 // not a failure of the search: the passage is dropped and the rest answer.
 var errUnreadable = errors.New("nothing could be read from the source")
 
-// extracted is the text a source's chunks are places in.
+// extractText is the text a source's chunks are places in.
 //
 // A note's text is its file. A book's is what taking the text out of it produces,
 // and a chunk's offsets belong to that, not to the bytes on disk: slicing the
@@ -260,7 +260,7 @@ var errUnreadable = errors.New("nothing could be read from the source")
 //
 // Which reader produces it is decided in one place, so that what a search slices
 // and what an extractor cut are the same text.
-func extracted(ctx context.Context, reader text.Reader, path, from, hash string) (string, error) {
+func extractText(ctx context.Context, reader text.Reader, path, from, hash string) (string, error) {
 	doc, err := reader.Of(ctx, path, from, hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		return "", errUnreadable
@@ -329,7 +329,7 @@ const (
 // to run. Every mode but the one named is silenced, so a caller drawing them
 // apart is shown one of them and not one and a half.
 func Typing(mode Mode, limit int) Parameters {
-	p := Parameters{Limit: limit, Growing: true}.filled()
+	p := Parameters{Limit: limit, Growing: true}.fill()
 	switch mode {
 	case Lexical:
 		p.Dense, p.Named = 0, 0

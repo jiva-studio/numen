@@ -16,7 +16,7 @@ import type { ScaleChoice } from '../lib/appearanceValues'
 
 /** What choosing a row reaches: the settings it writes, and what it wears. */
 export interface ChoiceDeps {
-  readonly core: Pick<Themes, 'chooses'>
+  readonly core: Pick<Themes, 'writeAppearance'>
   readonly write: MessageWriter
   readonly list: Ref<readonly Theme[]>
   readonly applied: Ref<string>
@@ -95,7 +95,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
     stood.value = ''
     settings.value = onto(was, choice.which, choice.size)
 
-    const failed = await core.chooses(applied.value, mode.value, settings.value)
+    const failed = await core.writeAppearance(applied.value, mode.value, settings.value)
     if (!failed) return
     write(failed, 'error')
     settings.value = was
@@ -118,7 +118,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
     stood.value = ''
     await applyAppearance()
 
-    const failed = await core.chooses(applied.value, mode.value, settings.value)
+    const failed = await core.writeAppearance(applied.value, mode.value, settings.value)
     if (!failed) return
     write(failed, 'error')
     applied.value = was.applied

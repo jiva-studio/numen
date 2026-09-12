@@ -29,7 +29,7 @@ const reader = async (book = BOOK) => {
 
 /** The offsets the reader has asked to be sent to, in the order it asked. */
 const getMoves = (wrapper: Awaited<ReturnType<typeof reader>>) =>
-  (wrapper.emitted('moved') ?? []).map((one) => (one as [number])[0])
+  (wrapper.emitted('move') ?? []).map((one) => (one as [number])[0])
 
 /**
  * A key the tab caught and handed down, answered with whether it turned the
@@ -172,7 +172,7 @@ describe('a link inside a book', () => {
 
     await press(held, 'the second parva')
 
-    expect(held.emitted('followed')).toEqual([['OEBPS/second.xhtml']])
+    expect(held.emitted('follow')).toEqual([['OEBPS/second.xhtml']])
   })
 
   it('asks for the offset the place stands at, inside the document being read', async () => {
@@ -189,7 +189,7 @@ describe('a link inside a book', () => {
     await press(held, 'elsewhere')
 
     expect(getMoves(held)).toHaveLength(0)
-    expect(held.emitted('followed')).toBeUndefined()
+    expect(held.emitted('follow')).toBeUndefined()
   })
 })
 

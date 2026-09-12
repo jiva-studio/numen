@@ -74,7 +74,7 @@ func (s *Service) ListThemes(
 	_ context.Context,
 	_ *connect.Request[v1.ListThemesRequest],
 ) (*connect.Response[v1.ListThemesResponse], error) {
-	worn := s.worn()
+	worn := s.getAppearance()
 	applied, missing := s.Catalogue.Applied(worn.ThemeName)
 	if missing != "" {
 		s.say(fmt.Sprintf("there is no theme called %s, so the window wears %s", missing, applied))
@@ -86,7 +86,7 @@ func (s *Service) ListThemes(
 		listed = append(listed, &v1.Theme{
 			Name:   one.Name,
 			Title:  one.Title,
-			Shelf:  shelved(one.Shelf),
+			Shelf:  encodeShelf(one.Shelf),
 			Pinned: one.Pinned,
 		})
 	}
@@ -96,13 +96,13 @@ func (s *Service) ListThemes(
 		Mode:                 wire.ModeOf(worn.Mode),
 		InterfaceScale:       worn.InterfaceScale,
 		TextScale:            worn.TextScale,
-		InterfaceScaleBounds: bounded(s.InterfaceScaleBounds),
-		TextScaleBounds:      bounded(s.TextScaleBounds),
+		InterfaceScaleBounds: encodeBounds(s.InterfaceScaleBounds),
+		TextScaleBounds:      encodeBounds(s.TextScaleBounds),
 	}), nil
 }
 
-// bounded is how far a size goes, as the schema says it.
-func bounded(held Bounds) *v1.Bounds {
+// encodeBounds is how far a size goes, as the schema says it.
+func encodeBounds(held Bounds) *v1.Bounds {
 	return &v1.Bounds{Least: held.Least, Most: held.Most}
 }
 
@@ -133,19 +133,19 @@ func (s *Service) WriteAppearance(
 	_ context.Context,
 	req *connect.Request[v1.WriteAppearanceRequest],
 ) (*connect.Response[v1.WriteAppearanceResponse], error) {
-	refuse := func(reason string) (*connect.Response[v1.WriteAppearanceResponse], error) {
+	respond := func(reason string) (*connect.Response[v1.WriteAppearanceResponse], error) {
 		return connect.NewResponse(&v1.WriteAppearanceResponse{Error: reason}), nil
 	}
 
 	name := req.Msg.GetName()
 	if _, err := s.Catalogue.Text(name); err != nil {
-		return refuse(err.Error())
+		return respond(err.Error())
 	}
 	if req.Msg.GetMode() == v1.Mode_MODE_UNSPECIFIED {
-		return refuse(fmt.Sprintf("%s: which half of a pair to read was not said", name))
+		return respond(fmt.Sprintf("%s: which half of a pair to read was not said", name))
 	}
 	if s.Settings == nil {
-		return refuse("this build writes no settings")
+		return respond("this build writes no settings")
 	}
 	chosen := Appearance{
 		ThemeName:      name,
@@ -154,7 +154,7 @@ func (s *Service) WriteAppearance(
 		TextScale:      req.Msg.GetTextScale(),
 	}
 	if err := s.Settings.Write(chosen); err != nil {
-		return refuse(err.Error())
+		return respond(err.Error())
 	}
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
@@ -200,10 +200,10 @@ func (s *Service) WatchThemes(
 // tells a handler its client has gone.
 const again = time.Second
 
-// worn is what the settings say, and this product's own palette at the size it
+// getAppearance is what the settings say, and this product's own palette at the size it
 // was designed at, under the system's choice, where they say nothing or could
 // not be read.
-func (s *Service) worn() Appearance {
+func (s *Service) getAppearance() Appearance {
 	worn := Appearance{
 		ThemeName:      Default,
 		Mode:           appearance.System,
@@ -237,7 +237,7 @@ func (s *Service) say(why string) {
 	}
 }
 
-func shelved(shelf Shelf) v1.Shelf {
+func encodeShelf(shelf Shelf) v1.Shelf {
 	switch shelf {
 	case Preset:
 		return v1.Shelf_SHELF_PRESET

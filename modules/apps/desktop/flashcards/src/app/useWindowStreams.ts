@@ -33,8 +33,8 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   let open = true
 
   const follows = createFollower({
-    open: () => open,
-    lost: deps.reportError,
+    isOpen: () => open,
+    setLost: deps.reportError,
     wait: (ms) => new Promise((then) => setTimeout(then, ms)),
   })
 

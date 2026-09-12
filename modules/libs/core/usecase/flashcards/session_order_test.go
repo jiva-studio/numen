@@ -29,7 +29,7 @@ func says(at int) review.CardFaceID {
 // leaves the rest of the pile standing.
 func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":       term,
 		"Two.md":        preset("new_a_day: 0\nreviews_a_day: 2\nminutes_a_day: 0\n"),
 		"decks/Five.md": deckOf("Two", 5, 0),
@@ -57,7 +57,7 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 // order, card face by card face.
 func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":    term,
 		"One.md":     preset("new_a_day: 2\nreviews_a_day: 2\nminutes_a_day: 0\n"),
 		"Two.md":     preset("new_a_day: 3\nreviews_a_day: 2\nminutes_a_day: 0\n"),

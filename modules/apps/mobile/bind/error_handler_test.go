@@ -11,7 +11,7 @@ import (
 // failure nobody is ever told about.
 func TestTheCoreSaysWhatItCarriedOnPast(t *testing.T) {
 	var said strings.Builder
-	cfg := configured(t.TempDir(), &said)
+	cfg := makeConfig(t.TempDir(), &said)
 	if cfg.ErrorHandler == nil {
 		t.Fatal("the core has nowhere to say what it carried on past")
 	}

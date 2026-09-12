@@ -11,15 +11,15 @@ export const createNotes = (
 ): Notes => {
   const holder = (id: string): Store | undefined => stores.find((one) => one.has(id))
   return {
-    holding: (path) => {
+    getTabAt: (path) => {
       for (const one of stores) {
-        const held = one.holding(path)
+        const held = one.getTabAt(path)
         if (held !== null) return held
       }
       return null
     },
-    where: (id) => holder(id)?.where(id) ?? id,
-    asking: (id) => holder(id)?.asking(id) ?? false,
+    getPath: (id) => holder(id)?.getPath(id) ?? id,
+    isAsking: (id) => holder(id)?.isAsking(id) ?? false,
     settle: async (id) => {
       await holder(id)?.settle(id)
     },

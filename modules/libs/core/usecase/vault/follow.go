@@ -91,7 +91,7 @@ func (f *Watch) Run(ctx context.Context) {
 				continue
 			}
 			f.handleError(nil)
-			f.changed(VaultChanges{Paths: res.Changed(), Assets: res.Assets})
+			f.reportChanges(VaultChanges{Paths: res.Changed(), Assets: res.Assets})
 
 		case <-f.lost:
 			// More changed at once than could be followed, or something went
@@ -104,12 +104,12 @@ func (f *Watch) Run(ctx context.Context) {
 			f.handleError(nil)
 			// Read again from the top, so whatever changed is among what the
 			// walk finds.
-			f.changed(VaultChanges{Reload: true})
+			f.reportChanges(VaultChanges{Reload: true})
 		}
 	}
 }
 
-func (f *Watch) changed(m VaultChanges) {
+func (f *Watch) reportChanges(m VaultChanges) {
 	if f.follow.Changed != nil {
 		f.follow.Changed(m)
 	}

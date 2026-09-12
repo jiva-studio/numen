@@ -35,18 +35,18 @@ type Endpoint struct {
 // errClosed is what a call asked for after the door is shut gets.
 var errClosed = errors.New("this vault is closing")
 
-// counting takes what an agent asks for, so that closing can wait for what it
+// countCalls takes what an agent asks for, so that closing can wait for what it
 // is in the middle of.
 //
 // Every method an agent calls is bounded work — a tool call is a change to the
 // vault and to the index behind it. The stream a session holds open is not a
 // method and is not counted.
-func (e *Endpoint) counting(next sdk.MethodHandler) sdk.MethodHandler {
+func (e *Endpoint) countCalls(next sdk.MethodHandler) sdk.MethodHandler {
 	return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
 		if !e.calls.begin() {
 			return nil, errClosed
 		}
-		defer e.calls.done()
+		defer e.calls.end()
 		return next(ctx, method, req)
 	}
 }
@@ -75,7 +75,7 @@ func (c *calls) begin() bool {
 	return true
 }
 
-func (c *calls) done() {
+func (c *calls) end() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -139,7 +139,7 @@ func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHan
 	}
 
 	endpoint := &Endpoint{}
-	server.AddReceivingMiddleware(endpoint.counting)
+	server.AddReceivingMiddleware(endpoint.countCalls)
 	handler := sdk.NewStreamableHTTPHandler(
 		func(*http.Request) *sdk.Server { return server },
 		&sdk.StreamableHTTPOptions{

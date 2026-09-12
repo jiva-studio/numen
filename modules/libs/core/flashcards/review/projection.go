@@ -148,9 +148,9 @@ func (p Projection) minutesADay(through int) float64 {
 	return all.Minutes() / float64(days)
 }
 
-// reached reports whether every card face that can be learned by this day of
+// hasReached reports whether every card face that can be learned by this day of
 // the run stands learned on it. Short is how many cannot be, whatever the pace.
-func (p Projection) reached(day int) bool {
+func (p Projection) hasReached(day int) bool {
 	if p.Faces == 0 {
 		return true
 	}
@@ -180,7 +180,7 @@ func (p Projection) Session() (int, bool) {
 // this one. A card face nobody has answered is not overdue either, because it
 // has had no day.
 func Overdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
-	opened := d.StartOf(now)
+	opened := d.GetStart(now)
 	out := 0
 	for _, s := range at {
 		if s.Seen() && s.Due.Before(opened) {
@@ -222,7 +222,7 @@ func (s Simulation) Run(
 	// The day the whole material stands learned is asked of a preset counting by
 	// an interval and aiming at no date. The other two are answered by a level
 	// and by their own date.
-	rule, _, _ := p.counting()
+	rule, _, _ := p.getLearnedRule()
 	learns := NeverLearns
 	if rule != RuleInterval || p.Goal == GoalDate {
 		learns = LearnsUnasked
@@ -239,7 +239,7 @@ func (s Simulation) Run(
 	left := unseen
 	var spent time.Duration
 
-	open := s.Day.StartOf(now)
+	open := s.Day.GetStart(now)
 	// Where the answers so far have left every card face is what the days
 	// ahead are loaded with, and which day of the run first asks for it. A card
 	// face falling due past the run is asked for on none of them.
@@ -279,7 +279,7 @@ func (s Simulation) Run(
 		if err := ctx.Err(); err != nil {
 			return Projection{}, err
 		}
-		ends := s.Day.EndOf(open)
+		ends := s.Day.GetEnd(open)
 		var used time.Duration
 
 		// What the day admits is the one answer, and it is the answer the
@@ -376,7 +376,7 @@ func (s Simulation) Run(
 				}
 				shown[at]++
 				cards[at] = s.answers(cards[at], open, ends, p, on)
-				reckoned.answered(at, cards[at], ends)
+				reckoned.countAnswer(at, cards[at], ends)
 				if s.Day.Owed(cards[at], open) && shown[at] < MostShowings {
 					again = append(again, at)
 					continue
@@ -404,7 +404,7 @@ func (s Simulation) Run(
 			one := s.answers(Schedule{}, open, ends, p, on)
 			cards = append(cards, one)
 			shown = append(shown, 1)
-			reckoned.begun(one, ends)
+			reckoned.countBegun(one, ends)
 			at := len(cards) - 1
 			if s.Day.Owed(one, open) && shown[at] < MostShowings {
 				again = append(again, at)
@@ -505,7 +505,7 @@ type learnedCount struct {
 // reckons opens the count over the card faces a run begins with, at the instant
 // it opens on.
 func reckons(p Preset, cards []Schedule, at time.Time) *learnedCount {
-	rule, _, retention := p.counting()
+	rule, _, retention := p.getLearnedRule()
 	out := &learnedCount{preset: p, carried: rule == RuleInterval, target: retention}
 	if out.carried {
 		out.learned = make([]bool, len(cards))
@@ -522,8 +522,8 @@ func reckons(p Preset, cards []Schedule, at time.Time) *learnedCount {
 	return out
 }
 
-// answered carries one card face the day has answered.
-func (r *learnedCount) answered(card int, c Schedule, at time.Time) {
+// countAnswer carries one card face the day has answered.
+func (r *learnedCount) countAnswer(card int, c Schedule, at time.Time) {
 	if !r.carried {
 		return
 	}
@@ -539,8 +539,8 @@ func (r *learnedCount) answered(card int, c Schedule, at time.Time) {
 	r.count--
 }
 
-// begun carries one card face the day has begun.
-func (r *learnedCount) begun(c Schedule, at time.Time) {
+// countBegun carries one card face the day has begun.
+func (r *learnedCount) countBegun(c Schedule, at time.Time) {
 	if !r.carried {
 		return
 	}

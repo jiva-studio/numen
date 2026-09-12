@@ -6,7 +6,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Card from './Card.vue'
 import { type DeckSection, type CardWords, type DeckCard } from '../../../lib/deck'
-import { grid, type Tile } from '../../../lib/grid'
+import { getGrid, type Tile } from '../../../lib/grid'
 import type { Stencil } from '../../../lib/card'
 
 const CUTS: readonly Stencil[] = [{ name: 'Animal', fields: ['Name', 'Height'] }]
@@ -32,7 +32,7 @@ const tileOf = (
   cards: readonly DeckCard[] = CARDS,
   sections: readonly DeckSection[] = [],
 ): Tile => {
-  const laid = grid(cards, sections, CUTS, null)
+  const laid = getGrid(cards, sections, CUTS, null)
     .runs.flatMap((run) => run.tiles)
     .find((tile) => tile.id === id)
   if (!laid) throw new Error(`no tile for ${id}`)

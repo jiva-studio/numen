@@ -69,7 +69,7 @@ func (b *Book) Markup(docPath string) (*Markup, error) {
 	// picture, and what a reader draws is that picture. One that draws none is
 	// answered with the text it carries and nothing else.
 	if doc.mediaType == mediaSVG {
-		if at, ok := b.wrapped(path.Dir(docPath), raw); ok {
+		if at, ok := b.findSVGImage(path.Dir(docPath), raw); ok {
 			nodes = append([]Node{{Name: "img", Attributes: []Attribute{{Name: "src", Value: at}}}}, nodes...)
 		}
 	}
@@ -77,9 +77,9 @@ func (b *Book) Markup(docPath string) (*Markup, error) {
 	return &Markup{Path: docPath, Offset: doc.Offset, Length: doc.Length, Nodes: nodes}, nil
 }
 
-// wrapped is the picture an SVG is drawn around: the first image element of it
+// findSVGImage is the picture an SVG is drawn around: the first image element of it
 // naming an entry the archive holds, or one written into the file itself.
-func (b *Book) wrapped(base string, raw []byte) (string, bool) {
+func (b *Book) findSVGImage(base string, raw []byte) (string, bool) {
 	decoder := xml.NewDecoder(bytes.NewReader(raw))
 	decoder.Strict = false
 	decoder.CharsetReader = func(_ string, in io.Reader) (io.Reader, error) { return in, nil }
@@ -128,9 +128,9 @@ func newBuilder(base string) *builder {
 	return &builder{base: base, stack: []Node{{}}}
 }
 
-// opened starts an element and reports whether one was started. An element that
+// openElement starts an element and reports whether one was started. An element that
 // is not drawn is passed through to its children.
-func (b *builder) opened(n *html.Node, offset int) bool {
+func (b *builder) openElement(n *html.Node, offset int) bool {
 	if b == nil || !drawn[n.DataAtom] {
 		return false
 	}

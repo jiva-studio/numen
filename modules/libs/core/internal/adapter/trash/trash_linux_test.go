@@ -176,7 +176,7 @@ func TestNowhereToPutIt(t *testing.T) {
 
 	// No trash of this login, so the volume's own is the only one there could
 	// be, and its root refuses one.
-	if err := sent(at, ""); !errors.Is(err, port.ErrNoTrash) {
+	if err := sendTo(at, ""); !errors.Is(err, port.ErrNoTrash) {
 		t.Errorf("trashing %s gave %v, want %v", at, err, port.ErrNoTrash)
 	}
 	if _, err := os.Lstat(filepath.Join(at, "note.md")); err != nil {

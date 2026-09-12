@@ -97,7 +97,7 @@ func (u Presets) Save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if err := bounded(settings); err != nil {
+	if err := checkBounds(settings); err != nil {
 		return domain.Fingerprint{}, err
 	}
 	at, err := u.save(ctx, v, path, settings, fingerprint)
@@ -125,7 +125,7 @@ func (u Presets) save(
 	}
 	on, err := reader.Stat(ctx, path)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, mapMissingNote(err))
 	}
 	// The bound a note is written under is the bound it is read under.
 	if on.Size > note.MaxBytes {
@@ -140,7 +140,7 @@ func (u Presets) save(
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, mapMissingNote(err))
 	}
 	n := markdown.Parse(against, raw)
 	if n.Type != domain.TypePreset {
@@ -274,9 +274,9 @@ var week = []time.Weekday{
 	time.Friday, time.Saturday, time.Sunday,
 }
 
-// bounded is what in the settings may not be written, and is nil when all of
-// them may.
-func bounded(p review.Preset) error {
+// checkBounds is what in the settings may not be written, and is nil when all
+// of them may.
+func checkBounds(p review.Preset) error {
 	if !review.KnownGoal(p.Goal) {
 		return fmt.Errorf("%w: goal %s is not %s, %s or %s",
 			ErrOutOfBounds, p.Goal, review.GoalMinutes, review.GoalRetention, review.GoalDate)
@@ -328,9 +328,9 @@ func bounded(p review.Preset) error {
 	return nil
 }
 
-// missing is note.ErrNoNote where the vault holds nothing at the path, and the
-// error as it arrived otherwise.
-func missing(err error) error {
+// mapMissingNote is note.ErrNoNote where the vault holds nothing at the path,
+// and the error as it arrived otherwise.
+func mapMissingNote(err error) error {
 	if errors.Is(err, fs.ErrNotExist) {
 		return note.ErrNoNote
 	}

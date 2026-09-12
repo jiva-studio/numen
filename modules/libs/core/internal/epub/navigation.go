@@ -22,12 +22,12 @@ type entry struct {
 // other one is read.
 func navigationParts(files map[string]*zip.File, read packageDoc, text *extractor) []Part {
 	if raw, ok := contents(files[read.ncx]); ok {
-		if parts := text.named(ncxNavMap(raw, path.Dir(read.ncx))); len(parts) >= minimumParts {
+		if parts := text.getParts(ncxNavMap(raw, path.Dir(read.ncx))); len(parts) >= minimumParts {
 			return parts
 		}
 	}
 	if raw, ok := contents(files[read.nav]); ok {
-		return text.named(navDocument(raw, path.Dir(read.nav)))
+		return text.getParts(navDocument(raw, path.Dir(read.nav)))
 	}
 	return nil
 }

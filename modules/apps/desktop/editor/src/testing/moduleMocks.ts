@@ -6,10 +6,12 @@
  * door is mocked too, over the rest of what it gives.
  */
 import { vi } from 'vitest'
+import type { Books } from '@/pages/book-reader/types'
+import type { Documents } from '@/pages/document-viewer/types'
 import { requests } from './requests'
 import { held, maker, said } from './answers'
 
-const documentsSaid = {
+const documentsSaid: { documents: Documents } = {
   documents: {
     getDocumentLayout: async () => ({ pages: [{ width: 100, height: 100 }], fingerprint: '' }),
     getPageUrl: () => '',
@@ -24,17 +26,19 @@ vi.mock('@/pages/document-viewer', async (original) => ({
   ...documentsSaid,
 }))
 
-const booksSaid = {
+// The port is named in the type, so a member the slice renames stops the
+// typecheck here instead of answering undefined to a test that still passes.
+const booksSaid: { books: Books } = {
   books: {
     getBook: async (path: string) => ({
       title: path,
-      span: { begins: 0, ends: 900 },
-      documents: [{ path: 'text/one.xhtml', span: { begins: 0, ends: 900 } }],
+      span: { from: 0, to: 900 },
+      documents: [{ path: 'text/one.xhtml', span: { from: 0, to: 900 } }],
       parts: [],
-      printed: [],
+      printedPages: [],
       pages: 1,
       pageBytes: 900,
-      at: '20480 1700000000000000000 book.epub',
+      fingerprint: '20480 1700000000000000000 book.epub',
     }),
     readMarkup: async () => '<p data-offset="0">the book</p>',
     getEntryUrl: () => '',
@@ -179,7 +183,7 @@ vi.mock('@/pages/agent-chat', async (original) => ({
 
 const themesSaid = {
   themes: {
-    appearance: async () => ({
+    getAppearance: async () => ({
       themes: [
         { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
         { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
@@ -189,8 +193,8 @@ const themesSaid = {
       sizes: said.sizes,
       bounds: { interfaceScale: { least: 0.8, most: 2 }, textScale: { least: 0.8, most: 1.75 } },
     }),
-    text: async (name: string) => `:root { --numen-surface: ${name} }`,
-    chooses: async (
+    readTheme: async (name: string) => `:root { --numen-surface: ${name} }`,
+    writeAppearance: async (
       name: string,
       mode: string,
       sizes: { interfaceScale: number; textScale: number },
@@ -198,7 +202,7 @@ const themesSaid = {
       requests.worn.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
       return said.writeError
     },
-    changed: held,
+    watchThemes: held,
   },
 }
 

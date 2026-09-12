@@ -40,7 +40,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 
 	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model, nil)
 
-	at := listed(t, api, makingVectors)
+	at := findTask(t, api, makingVectors)
 	if at == nil {
 		t.Fatal("the pass that could not embed took itself out of the list")
 	}
@@ -67,7 +67,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 
 	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model, nil)
 
-	if at := listed(t, api, makingVectors); at != nil {
+	if at := findTask(t, api, makingVectors); at != nil {
 		t.Errorf("a pass that embedded what was owed is still being done: %+v", *at)
 	}
 }
@@ -158,7 +158,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	}()
 
 	for range 20 {
-		if at := listed(t, api, makingVectors); at != nil {
+		if at := findTask(t, api, makingVectors); at != nil {
 			t.Fatalf("a model still on its way is shown as indexing: %+v", *at)
 		}
 		time.Sleep(time.Millisecond)
@@ -167,7 +167,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	arriving.Landed(model, nil)
 	<-over
 
-	if at := listed(t, api, makingVectors); at != nil {
+	if at := findTask(t, api, makingVectors); at != nil {
 		t.Errorf("the pass that embedded what was owed is still being done: %+v", *at)
 	}
 	if model.times() == 0 {
@@ -222,7 +222,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 
 	readSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, nil, nil, io.Discard)
 
-	at := listed(t, api, readingBooks)
+	at := findTask(t, api, readingBooks)
 	if at == nil {
 		t.Fatal("the pass that could not read the books took itself out of the list")
 	}
@@ -262,9 +262,9 @@ func cut(t *testing.T, db *container.Index, api *API) {
 	}
 }
 
-// listed is one piece of work as the list holds it, or nothing where the list
+// findTask is one piece of work as the list holds it, or nothing where the list
 // does not hold it.
-func listed(t *testing.T, api *API, id string) *task.Task {
+func findTask(t *testing.T, api *API, id string) *task.Task {
 	t.Helper()
 
 	for _, at := range api.Window.Tasking.List() {
@@ -389,7 +389,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 		t.Error("the nudge a recognition raised was taken and not put back")
 	}
 
-	if at := listed(t, api, makingVectors); at != nil && at.Error != "" {
+	if at := findTask(t, api, makingVectors); at != nil && at.Error != "" {
 		t.Errorf("standing aside is shown as a failure: %q", at.Error)
 	}
 

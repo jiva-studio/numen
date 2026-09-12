@@ -1364,7 +1364,7 @@ describe('what a command asked over a plex tab is over', () => {
     const one = window()
     const { state } = await one.openTab('physics/Ontology.md')
 
-    expect(one.kind.over!(state)).toStrictEqual({
+    expect(one.kind.getTarget!(state)).toStrictEqual({
       path: 'physics/Ontology.md',
       title: 'physics/Ontology',
     })
@@ -1374,7 +1374,7 @@ describe('what a command asked over a plex tab is over', () => {
     const one = window('')
     const { state } = await one.openTab()
 
-    expect(one.kind.over!(state)).toStrictEqual({ path: '', title: '' })
+    expect(one.kind.getTarget!(state)).toStrictEqual({ path: '', title: '' })
   })
 })
 

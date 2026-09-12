@@ -39,10 +39,10 @@ func chunksOf(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 // A folder is filed somewhere else with everything under it, whatever kind of
 // file that is, and what was made from each source stays on the source.
 func TestAMovedFolderTakesEverythingUnderIt(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "physics/Entropy.md", "Entropy")
-	noted(t, db, first, "physics/heat/Heat.md", "Heat")
-	noted(t, db, first, "physics-old/Stray.md", "Stray")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
+	saveNamedNote(t, db, first, "physics/heat/Heat.md", "Heat")
+	saveNamedNote(t, db, first, "physics-old/Stray.md", "Stray")
 	book(t, db, first, "physics/A Book.epub", 1)
 	held := chunksOf(t, db, first, "physics/Entropy.md")
 	if len(held) == 0 {
@@ -75,9 +75,9 @@ func TestAMovedFolderTakesEverythingUnderIt(t *testing.T) {
 // One database holds every vault, and a folder of one name moves in the vault
 // it was named in.
 func TestAMovedFolderMovesInOneVaultAlone(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "physics/Entropy.md", "Entropy")
-	noted(t, db, second, "physics/Quasar.md", "Quasar")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
+	saveNamedNote(t, db, second, "physics/Quasar.md", "Quasar")
 
 	if err := db.Sources().MoveSources(t.Context(), first.ID, "physics", "science"); err != nil {
 		t.Fatal(err)
@@ -94,8 +94,8 @@ func TestAMovedFolderMovesInOneVaultAlone(t *testing.T) {
 // A path is bytes on disk and characters in the index, and a folder whose name
 // is not Latin holds the two apart.
 func TestAMovedFolderCarriesANameThatIsNotLatin(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "физика/Энтропия.md", "Энтропия")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "физика/Энтропия.md", "Энтропия")
 
 	if err := db.Sources().MoveSources(t.Context(), first.ID, "физика", "physics"); err != nil {
 		t.Fatal(err)
@@ -111,9 +111,9 @@ func TestAMovedFolderCarriesANameThatIsNotLatin(t *testing.T) {
 // between the two puts the file in afresh under its new path. The move lands,
 // and the row that carries the note's chunks is the one that keeps the path.
 func TestAMoveLandsWhereAScanHasAlreadyFiledTheFile(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "Old.md", "Old", "Entropy is")
-	noted(t, db, first, "Entropy.md", "Old")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "Old.md", "Old", "Entropy is")
+	saveNamedNote(t, db, first, "Entropy.md", "Old")
 	held := chunksOf(t, db, first, "Old.md")
 	if len(held) == 0 {
 		t.Fatal("the note was indexed with no chunks, and this test asks what happens to them")
@@ -137,8 +137,8 @@ func TestAMoveLandsWhereAScanHasAlreadyFiledTheFile(t *testing.T) {
 // A move that goes nowhere leaves the note where it is: the row standing at the
 // path is the row about to be filed there.
 func TestAMoveOntoItsOwnPathKeepsTheNote(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "Entropy.md", "Entropy", "Entropy is")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "Entropy.md", "Entropy", "Entropy is")
 	held := chunksOf(t, db, first, "Entropy.md")
 
 	if err := db.Sources().MoveSources(t.Context(), first.ID, "Entropy.md", "Entropy.md"); err != nil {
@@ -155,24 +155,24 @@ func TestAMoveOntoItsOwnPathKeepsTheNote(t *testing.T) {
 
 // A note called by its filename is searched by the name it now carries.
 func TestARenamedNoteIsFoundByTheNameItLandsUnder(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "Torpor.md", "Torpor")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "Torpor.md", "Torpor")
 
 	if err := db.Sources().MoveSources(t.Context(), first.ID, "Torpor.md", "Hibernation.md"); err != nil {
 		t.Fatal(err)
 	}
 
-	found := named(t, db, first, "Hibernation")
+	found := getNames(t, db, first, "Hibernation")
 	if len(found) != 1 {
 		t.Fatalf("the name it landed under found %d notes: %+v", len(found), found)
 	}
 	if found[0].Path != "Hibernation.md" || found[0].Title != "Hibernation" {
 		t.Errorf("found %+v, want the note under its new name", found[0])
 	}
-	if got := marked(found[0]); got != "[Hibernation]" {
+	if got := describeMatch(found[0]); got != "[Hibernation]" {
 		t.Errorf("marked %q, want %q", got, "[Hibernation]")
 	}
-	if stale := named(t, db, first, "Torpor"); len(stale) != 0 {
+	if stale := getNames(t, db, first, "Torpor"); len(stale) != 0 {
 		t.Errorf("the name it left still answers with %+v", stale)
 	}
 }

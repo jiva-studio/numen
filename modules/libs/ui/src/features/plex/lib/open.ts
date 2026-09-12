@@ -69,13 +69,13 @@ export function scrollBy(
   wheel: { readonly delta: number; readonly mode: number },
   leftover: number,
 ): { by: number; left: number } {
-  const pixels = leftover + wheel.delta * stride(hung, wheel.mode)
+  const pixels = leftover + wheel.delta * getStride(hung, wheel.mode)
   const by = Math.trunc(pixels / hung.partHeight)
   return { by, left: pixels - by * hung.partHeight }
 }
 
 /** What one of a wheel's own units comes to in pixels: a line, or a window. */
-function stride(hung: HungParts, mode: number): number {
+function getStride(hung: HungParts, mode: number): number {
   if (mode === LINES) return hung.partHeight
   if (mode === WINDOWS) return hung.shown * hung.partHeight
   return 1

@@ -17,7 +17,7 @@ export function createNoteQueue(
   turn: (id: string, event: Event) => void,
   hasTab: (id: string) => boolean,
   setAddress: (id: string, address: LinkAddress | null) => void,
-  onWritten: (id: string) => void,
+  resumeClosing: (id: string) => void,
 ) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   const settling = new Map<string, () => void>()
@@ -96,7 +96,7 @@ export function createNoteQueue(
           ? { kind: 'ok', at: answered.at ?? '' }
           : { kind: 'error', error: errorOf(answered.error) },
     })
-    onWritten(id)
+    resumeClosing(id)
   }
 
   const forget = (id: string): void => {

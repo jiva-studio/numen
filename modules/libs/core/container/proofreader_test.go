@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
-// carrying is a container carrying one profile under a name.
-func carrying(name string, profile proofreading.Profile) container.Config {
+// makeConfig is a container carrying one profile under a name.
+func makeConfig(name string, profile proofreading.Profile) container.Config {
 	cfg := proofreading.Defaults()
 	cfg.Profiles = map[string]proofreading.Profile{name: profile}
 	return container.Config{Proofreading: cfg}
@@ -34,7 +34,7 @@ func TestAContainerNobodyGaveSettingsProofreadsWithNothing(t *testing.T) {
 // A name no profile carries is said. A person who named one and is silently
 // given nothing has no way to find out that nothing is proofreading.
 func TestAProfileNameNoProfileCarriesIsRefused(t *testing.T) {
-	held := carrying("openrouter", proofreading.ServiceDefaults())
+	held := makeConfig("openrouter", proofreading.ServiceDefaults())
 
 	proofreader, why := held.Proofreader("agent", proofread.ScanInstruction)
 	if why == nil {
@@ -53,7 +53,7 @@ func TestAProfileNameNoProfileCarriesIsRefused(t *testing.T) {
 func TestAServiceWithoutAModelNameIsRefused(t *testing.T) {
 	t.Setenv(proofreading.KeyEnvVar, "sk-test")
 
-	_, why := carrying("openrouter", proofreading.ServiceDefaults()).
+	_, why := makeConfig("openrouter", proofreading.ServiceDefaults()).
 		Proofreader("openrouter", proofread.ScanInstruction)
 	if why == nil {
 		t.Fatal("no reason")
@@ -68,7 +68,7 @@ func TestAModelWithoutAKeyGivesTheReasonAndNoProofreader(t *testing.T) {
 	service := proofreading.ServiceDefaults()
 	service.Name = "some-model"
 
-	proofreader, why := carrying("openrouter", service).
+	proofreader, why := makeConfig("openrouter", service).
 		Proofreader("openrouter", proofread.ScanInstruction)
 	if why == nil {
 		t.Fatal("no reason")
@@ -88,7 +88,7 @@ func TestTheProofreadingSettingsGivenAreTheOnesUsed(t *testing.T) {
 	// Nowhere: no test reaches a service.
 	service.BaseURL = "http://127.0.0.1:1/v1"
 
-	proofreader, why := carrying("openrouter", service).
+	proofreader, why := makeConfig("openrouter", service).
 		Proofreader("openrouter", proofread.ScanInstruction)
 	if why != nil {
 		t.Fatal(why)
@@ -109,7 +109,7 @@ func TestAnAgentProfileIsOpenedByThePlatform(t *testing.T) {
 	profile.Command = []string{"/somewhere/claude"}
 
 	var asked container.ProofreaderSpec
-	held := carrying("agent", profile)
+	held := makeConfig("agent", profile)
 	held.AgentProofreader = func(said container.ProofreaderSpec) (port.Proofreader, error) {
 		asked = said
 		return spelling{}, nil
@@ -135,7 +135,7 @@ func TestAnAgentProfileWithoutAPlatformIsRefused(t *testing.T) {
 	profile := proofreading.AgentDefaults()
 	profile.Model = "haiku"
 
-	_, why := carrying("agent", profile).Proofreader("agent", proofread.ScanInstruction)
+	_, why := makeConfig("agent", profile).Proofreader("agent", proofread.ScanInstruction)
 	if why == nil {
 		t.Fatal("no reason")
 	}
@@ -147,7 +147,7 @@ func TestAProofreaderWithAQueueLeavesPagesWithIt(t *testing.T) {
 	service := proofreading.ServiceDefaults()
 	service.Name = "test-model"
 
-	queue, why := carrying("openrouter", service).
+	queue, why := makeConfig("openrouter", service).
 		ProofreadQueue("openrouter", proofread.ScanInstruction)
 	if why != nil {
 		t.Fatalf("want no reason, got %v", why)
@@ -164,7 +164,7 @@ func TestAServiceWithoutAQueueLeavesNothing(t *testing.T) {
 	service.Name = "test-model"
 	service.BatchURL = ""
 
-	queue, why := carrying("openrouter", service).
+	queue, why := makeConfig("openrouter", service).
 		ProofreadQueue("openrouter", proofread.ScanInstruction)
 	if why != nil {
 		t.Fatalf("want no reason, got %v", why)
@@ -179,7 +179,7 @@ func TestAnAgentProfileLeavesNothing(t *testing.T) {
 	profile := proofreading.AgentDefaults()
 	profile.Model = "haiku"
 
-	queue, why := carrying("agent", profile).ProofreadQueue("agent", proofread.ScanInstruction)
+	queue, why := makeConfig("agent", profile).ProofreadQueue("agent", proofread.ScanInstruction)
 	if why != nil {
 		t.Fatalf("want no reason, got %v", why)
 	}
@@ -203,7 +203,7 @@ func (spelling) Proofread(_ context.Context, _ []proofread.Batch) (map[int]strin
 func TestAProfileReachedThroughNeitherIsRefused(t *testing.T) {
 	for _, use := range []string{"", "telepathy"} {
 		profile := proofreading.Profile{Use: use, Name: "some-model", Model: "haiku"}
-		held := carrying("mine", profile)
+		held := makeConfig("mine", profile)
 		held.AgentProofreader = func(container.ProofreaderSpec) (port.Proofreader, error) {
 			return spelling{}, nil
 		}
@@ -231,7 +231,7 @@ func TestHowManyRunsStandAtOnceReachesThePlatform(t *testing.T) {
 	profile.InFlight = 3
 
 	var asked container.ProofreaderSpec
-	held := carrying("agent", profile)
+	held := makeConfig("agent", profile)
 	held.AgentProofreader = func(said container.ProofreaderSpec) (port.Proofreader, error) {
 		asked = said
 		return spelling{}, nil

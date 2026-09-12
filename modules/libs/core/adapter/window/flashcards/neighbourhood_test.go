@@ -27,7 +27,7 @@ var joined = map[string]string{
 // Reading around a deck reaches only the vaults this installation holds, and a
 // question about another is refused.
 func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T) {
-	api, _ := windowed(t, joined)
+	api, _ := newAPI(t, joined)
 
 	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
 		Vault: "no-vault-of-this-identity",
@@ -48,7 +48,7 @@ func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T
 // editor names it, so a person meets one vocabulary for a refused note and not
 // one for each window.
 func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
-	api, held := windowed(t, joined)
+	api, held := newAPI(t, joined)
 	v := held[0]
 
 	// The index still resolves the link; the file behind it is gone. That is

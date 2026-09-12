@@ -73,9 +73,9 @@ describe('a deck, a stencil or a preset made', () => {
     }
     const made = createFileCreators(maker(), tabOpeners, MAKING, () => {})
 
-    await made.decks('zoology', 'Animals')
-    await made.stencils('zoology', 'Words', ['Front'])
-    await made.presets('', 'Slow')
+    await made.createDeck('zoology', 'Animals')
+    await made.createStencil('zoology', 'Words', ['Front'])
+    await made.createPreset('', 'Slow')
 
     expect(opened).toStrictEqual([
       'deck zoology/Animals.md',
@@ -89,7 +89,7 @@ describe('a deck, a stencil or a preset made', () => {
     const told = writer()
     const made = createFileCreators(maker('occupied'), tabOpeners, MAKING, told.write)
 
-    expect(await made.decks('zoology', 'Animals')).toBe('')
+    expect(await made.createDeck('zoology', 'Animals')).toBe('')
     expect(told.said).toStrictEqual([ERRORS.occupied])
   })
 
@@ -97,7 +97,7 @@ describe('a deck, a stencil or a preset made', () => {
     const told = writer()
     const made = createFileCreators(maker(null, true), fileOpeners({ fileKinds: async () => new Map() }), MAKING, told.write)
 
-    expect(await made.decks('zoology', 'Animals')).toBe('')
+    expect(await made.createDeck('zoology', 'Animals')).toBe('')
     expect(told.said.join(' ')).not.toContain('the vault is not there')
     expect(told.said.join(' ')).toContain('numen did not answer')
   })

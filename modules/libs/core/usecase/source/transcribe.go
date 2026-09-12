@@ -148,7 +148,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	recording, err := u.By.Open(ctx, raw)
 	if err != nil {
 		res.Unopened = true
-		return res, u.answer(ctx, v, ref, hash, area, store, text.Unopened+": "+said(err.Error()))
+		return res, u.answer(ctx, v, ref, hash, area, store, text.Unopened+": "+describeFailure(err.Error()))
 	}
 	defer recording.Close()
 	res.Length = recording.Length()
@@ -168,7 +168,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// again.
 	opened := size > 0
 	write := func(cues []transcript.Cue, transcribed int) error {
-		body := appended(transcript.Marshal(cues), opened)
+		body := trimHeader(transcript.Marshal(cues), opened)
 		if err := store.Append(ctx, partial, append(body, transcript.Reaches(transcribed)...)); err != nil {
 			return err
 		}
@@ -303,14 +303,15 @@ func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, h
 	return store.Write(ctx, text.Beside(area, hash), append(raw, '\n'))
 }
 
-// said is a failure as one line, which is what a file holding one line takes.
-func said(why string) string {
+// describeFailure is a failure as one line, which is what a file holding one
+// line takes.
+func describeFailure(why string) string {
 	return strings.Join(strings.Fields(why), " ")
 }
 
-// appended is a run of cues as they are added to a file that has been written
+// trimHeader is a run of cues as they are added to a file that has been written
 // to already. The header stands once, at the top.
-func appended(raw []byte, opened bool) []byte {
+func trimHeader(raw []byte, opened bool) []byte {
 	if !opened {
 		return raw
 	}

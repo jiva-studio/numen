@@ -32,9 +32,9 @@ func Levelled(err error, paths ...string) error {
 	return fmt.Errorf("%w: %s: %w", ErrUnlevelled, strings.Join(paths, ", "), err)
 }
 
-// missing is ErrNoNote where the vault holds no note at the path, and the error
-// as it arrived otherwise.
-func missing(err error) error {
+// mapMissingNote is ErrNoNote where the vault holds no note at the path, and
+// the error as it arrived otherwise.
+func mapMissingNote(err error) error {
 	if errors.Is(err, fs.ErrNotExist) {
 		return ErrNoNote
 	}
@@ -120,7 +120,7 @@ func (e Edit) splice(
 		// arrives when the application changes a note's contents.
 		raw = nil
 	default:
-		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, mapMissingNote(err))
 	}
 
 	// Every edit is a read, a think and a write, and the person may save the
@@ -130,7 +130,7 @@ func (e Edit) splice(
 	against := e.Fingerprint
 	if against.IsZero() && !e.Overwrite {
 		if looked != nil {
-			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(looked))
+			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, mapMissingNote(looked))
 		}
 		against = on
 	}

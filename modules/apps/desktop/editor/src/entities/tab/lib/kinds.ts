@@ -52,7 +52,7 @@ export interface TabKind<TabState, K extends string = string> {
    */
   onKeyPress?(state: TabState, event: KeyboardEvent): boolean
   /** What a command asked over one of its tabs is over. */
-  over?(state: TabState): TabTarget
+  getTarget?(state: TabState): TabTarget
   /** What one of its tabs holds, as whoever answers for the person is told it. */
   getOpenTab?(state: TabState): OpenTab<K>
   /**

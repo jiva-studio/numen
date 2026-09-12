@@ -197,6 +197,6 @@ export const WORDS = {
   /** The corner where what is running behind the window is shown. */
   wordsOnly: 'Searching by words only — no model set',
   working: 'Background work',
-  putAway: 'Put away',
+  dismiss: 'Put away',
   more: 'more',
 }

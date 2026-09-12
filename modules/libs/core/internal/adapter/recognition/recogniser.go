@@ -136,7 +136,7 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 		if !r.body[region.Label] {
 			continue
 		}
-		crop, corner := cropped(page, region.Rect, r.margin)
+		crop, corner := cropRegion(page, region.Rect, r.margin)
 		if crop == nil {
 			continue
 		}
@@ -154,7 +154,7 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 					line.Box[0]+corner.X, line.Box[1]+corner.Y,
 					line.Box[2]+corner.X, line.Box[3]+corner.Y,
 				),
-				Text:  spaced(line.Text),
+				Text:  collapseSpaces(line.Text),
 				Score: line.Score,
 			})
 		}
@@ -175,14 +175,14 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 	return out, nil
 }
 
-// cropped is the part of the page a region covers, widened, and drawn into an
+// cropRegion is the part of the page a region covers, widened, and drawn into an
 // image of its own.
 //
 // Where it was cut from comes back with it: a box the recogniser returns is
 // addressed from the crop, and has to be read as a box of the page. The
 // widening is because the first letter of a line sits on the boundary the
 // layout model drew.
-func cropped(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
+func cropRegion(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
 	wider := rect.Inset(-margin).Intersect(page.Bounds())
 	if wider.Empty() {
 		return nil, image.Point{}
@@ -210,8 +210,8 @@ func set(names []string) map[string]bool {
 	return out
 }
 
-// spaced is one line as the recogniser wrote it, with a run of space between
+// collapseSpaces is one line as the recogniser wrote it, with a run of space between
 // words standing as one space.
-func spaced(text string) string {
+func collapseSpaces(text string) string {
 	return strings.Join(strings.Fields(text), " ")
 }

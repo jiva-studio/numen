@@ -136,7 +136,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   }
 
   /** The words are asked for again, and what stands on screen is whatever comes back. */
-  const again = () => {
+  const reload = () => {
     drop()
     void readRecording()
   }
@@ -222,7 +222,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     setFollowing,
     setProse,
     keep,
-    again,
+    reload,
     playing,
     play,
     pause,

@@ -80,11 +80,11 @@ func (s *Server) Close() error {
 func Serve(ctx context.Context, opts Options) (*Server, error) {
 	secret := opts.Token
 	if secret == "" {
-		minted, err := Token(opts.Config)
+		token, err := GetToken(opts.Config)
 		if err != nil {
 			return nil, err
 		}
-		secret = minted
+		secret = token
 	}
 	addr := opts.Addr
 	if addr == "" {

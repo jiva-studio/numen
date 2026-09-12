@@ -90,7 +90,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		Section:  "indexing.embedding",
 		Runtime:  cfg.Runtime,
 		Download: cfg.Download,
-		Fetching: fetching(progress),
+		Fetching: createFetchListener(progress),
 	})
 	if err != nil {
 		return nil, err
@@ -202,7 +202,7 @@ func (e *Embedder) encode(text string) []int {
 // A batch is laid out at the length of its longest text. The runtime takes a
 // shape as it comes.
 func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
-	rows, seq, ids, mask, types := padded(batch, e.pad)
+	rows, seq, ids, mask, types := padBatch(batch, e.pad)
 
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -302,10 +302,10 @@ func chooseOutput(named []string) (string, error) {
 	return "", fmt.Errorf("answers with %v, and a vector is read from one of %v", named, outputs)
 }
 
-// fetching is what fetching the runtime reports to. What is coming down is
-// named to the runtime's own listener and not to this one, which is told about
-// a model.
-func fetching(progress FetchProgress) func(string, int64, int64) {
+// createFetchListener is what fetching the runtime reports to. What is coming
+// down is named to the runtime's own listener and not to this one, which is
+// told about a model.
+func createFetchListener(progress FetchProgress) func(string, int64, int64) {
 	if progress == nil {
 		return nil
 	}

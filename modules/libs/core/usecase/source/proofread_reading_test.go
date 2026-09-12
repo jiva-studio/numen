@@ -59,9 +59,9 @@ func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map
 	return out, nil
 }
 
-// proofreading is a reading of the fixture, already written down, and a
+// newProofreadReading is a reading of the fixture, already written down, and a
 // ProofreadReading over it.
-func proofreading(t *testing.T, says map[int]string) (ProofreadReading, domain.Vault, *shelf, *corrector) {
+func newProofreadReading(t *testing.T, says map[int]string) (ProofreadReading, domain.Vault, *shelf, *corrector) {
 	t.Helper()
 	read, v, _, shelved, _ := reading(t, "the words", outline)
 	if _, err := read.Execute(t.Context(), v, documentPath); err != nil {
@@ -84,7 +84,7 @@ func corrects(at int, text string) string { return fmt.Sprintf("%d|%s", at, text
 // settings hand over and the constructor takes it without a word. A caller that
 // forgot to refuse it first is answered, not brought down mid-reading.
 func TestNothingIsProofreadWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
-	put, v, _, by := proofreading(t, nil)
+	put, v, _, by := newProofreadReading(t, nil)
 
 	if _, err := NewProofreadReading(put.Readers, put.Derived, nil).
 		Execute(t.Context(), v, documentPath); !errors.Is(err, errNothingProofreads) {
@@ -99,11 +99,11 @@ func TestNothingIsProofreadWhereNothingWasConfiguredToProofreadWith(t *testing.T
 }
 
 func TestTheCorrectionsGoBesideTheReadingAndTheReadingIsNotTouched(t *testing.T) {
-	put, v, shelved, _ := proofreading(t, map[int]string{
+	put, v, shelved, _ := newProofreadReading(t, map[int]string{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
 	})
-	was := kept(t, shelved, textNames(t, shelved).artifact)
+	was := readShelf(t, shelved, textNames(t, shelved).artifact)
 
 	res, err := put.Execute(t.Context(), v, documentPath)
 	if err != nil {
@@ -114,14 +114,14 @@ func TestTheCorrectionsGoBesideTheReadingAndTheReadingIsNotTouched(t *testing.T)
 	}
 
 	names := textNames(t, shelved)
-	if string(kept(t, shelved, names.artifact)) != string(was) {
+	if string(readShelf(t, shelved, names.artifact)) != string(was) {
 		t.Error("the reading was rewritten")
 	}
-	if put := correction.Unpack(kept(t, shelved, names.corrections)); len(put) != 2 {
+	if put := correction.Unpack(readShelf(t, shelved, names.corrections)); len(put) != 2 {
 		t.Errorf("what is kept beside the reading is %+v", put)
 	}
 	var stood checkpoint
-	if err := json.Unmarshal(kept(t, shelved, names.far), &stood); err != nil {
+	if err := json.Unmarshal(readShelf(t, shelved, names.far), &stood); err != nil {
 		t.Fatal(err)
 	}
 	if stood.By != "a proofreader" || stood.Pages != 4 {
@@ -130,14 +130,14 @@ func TestTheCorrectionsGoBesideTheReadingAndTheReadingIsNotTouched(t *testing.T)
 }
 
 func TestACorrectedReadingIsTheTextTheSourceIsCutFrom(t *testing.T) {
-	put, v, shelved, _ := proofreading(t, map[int]string{0: corrects(0, "the WORDS 1")})
+	put, v, shelved, _ := newProofreadReading(t, map[int]string{0: corrects(0, "the WORDS 1")})
 
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
 
 	names := textNames(t, shelved)
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, kept(t, shelved, names.artifact))
+	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,7 +147,7 @@ func TestACorrectedReadingIsTheTextTheSourceIsCutFrom(t *testing.T) {
 }
 
 func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
-	put, v, shelved, _ := proofreading(t, map[int]string{
+	put, v, shelved, _ := newProofreadReading(t, map[int]string{
 		0: corrects(0, "the "+proofread.Opens+"WORDS"+proofread.Closes+" 1"),
 		1: corrects(1, "the WORDS 2"),
 	})
@@ -161,7 +161,7 @@ func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
 	}
 
 	names := textNames(t, shelved)
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, kept(t, shelved, names.artifact))
+	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +171,7 @@ func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
 }
 
 func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
-	put, v, shelved, by := proofreading(t, map[int]string{
+	put, v, shelved, by := newProofreadReading(t, map[int]string{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
 	})
@@ -204,7 +204,7 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 	}
 
 	names := textNames(t, shelved)
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, kept(t, shelved, names.artifact))
+	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +216,7 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 }
 
 func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
-	put, v, shelved, _ := proofreading(t, map[int]string{0: corrects(0, "the WORDS 1")})
+	put, v, shelved, _ := newProofreadReading(t, map[int]string{0: corrects(0, "the WORDS 1")})
 	names := textNames(t, shelved)
 	stood, err := json.Marshal(checkpoint{By: "somebody else", Pages: 3})
 	if err != nil {
@@ -236,7 +236,7 @@ func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
 	if res.Resumed != 0 {
 		t.Errorf("took up %d pages another proofreader had", res.Resumed)
 	}
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, kept(t, shelved, names.artifact))
+	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +246,7 @@ func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
 }
 
 func TestOneRunToAReading(t *testing.T) {
-	put, v, shelved, by := proofreading(t, nil)
+	put, v, shelved, by := newProofreadReading(t, nil)
 	shelved.hold(textNames(t, shelved).corrections)
 
 	res, err := put.Execute(t.Context(), v, documentPath)
@@ -262,7 +262,7 @@ func TestOneRunToAReading(t *testing.T) {
 }
 
 func TestAReadingThatIsNotThereIsNothingToProofread(t *testing.T) {
-	put, v, shelved, _ := proofreading(t, nil)
+	put, v, shelved, _ := newProofreadReading(t, nil)
 	names := textNames(t, shelved)
 	if err := shelved.Remove(t.Context(), names.artifact); err != nil {
 		t.Fatal(err)
@@ -278,7 +278,7 @@ func TestAReadingThatIsNotThereIsNothingToProofread(t *testing.T) {
 }
 
 func TestASourceIsCutAgainAsItsPagesArePutRight(t *testing.T) {
-	put, v, _, _ := proofreading(t, map[int]string{0: corrects(0, "the WORDS 1")})
+	put, v, _, _ := newProofreadReading(t, map[int]string{0: corrects(0, "the WORDS 1")})
 	cuts := 0
 	put.Cut = func(context.Context, domain.Vault, string) error {
 		cuts++
@@ -295,7 +295,7 @@ func TestASourceIsCutAgainAsItsPagesArePutRight(t *testing.T) {
 }
 
 func TestABatchThatWasNotCutIsAskedAboutAgain(t *testing.T) {
-	put, v, shelved, by := proofreading(t, map[int]string{
+	put, v, shelved, by := newProofreadReading(t, map[int]string{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
 	})
@@ -353,7 +353,7 @@ func textNames(t *testing.T, shelved *shelf) names {
 	return names{}
 }
 
-func kept(t *testing.T, shelved *shelf, name string) []byte {
+func readShelf(t *testing.T, shelved *shelf, name string) []byte {
 	t.Helper()
 	raw, err := shelved.Read(t.Context(), name)
 	if err != nil {
@@ -372,7 +372,7 @@ type proofreadQueue struct {
 	gone bool
 }
 
-func leaving(says map[int]string) *proofreadQueue {
+func newProofreadQueue(says map[int]string) *proofreadQueue {
 	return &proofreadQueue{
 		corrector: &corrector{says: says},
 		left:      map[string][]int{},
@@ -410,15 +410,15 @@ func (q *proofreadQueue) Collect(_ context.Context, name string) (map[int]string
 func stands(t *testing.T, shelved *shelf) checkpoint {
 	t.Helper()
 	var stood checkpoint
-	if err := json.Unmarshal(kept(t, shelved, textNames(t, shelved).far), &stood); err != nil {
+	if err := json.Unmarshal(readShelf(t, shelved, textNames(t, shelved).far), &stood); err != nil {
 		t.Fatal(err)
 	}
 	return stood
 }
 
 func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
-	put, v, shelved, _ := proofreading(t, nil)
-	left := leaving(map[int]string{0: corrects(0, "the WORDS 1")})
+	put, v, shelved, _ := newProofreadReading(t, nil)
+	left := newProofreadQueue(map[int]string{0: corrects(0, "the WORDS 1")})
 	put.Queue = left
 	put.By = left
 
@@ -456,7 +456,7 @@ func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
 	}
 
 	names := textNames(t, shelved)
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, kept(t, shelved, names.artifact))
+	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -466,8 +466,8 @@ func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
 }
 
 func TestABatchTheProofreaderHasForgottenIsLeftAgain(t *testing.T) {
-	put, v, shelved, _ := proofreading(t, nil)
-	left := leaving(nil)
+	put, v, shelved, _ := newProofreadReading(t, nil)
+	left := newProofreadQueue(nil)
 	put.Queue = left
 	put.By = left
 
@@ -494,7 +494,7 @@ func TestABatchTheProofreaderHasForgottenIsLeftAgain(t *testing.T) {
 // A reading nothing is left to be asked about is not work, and nothing is told
 // about it.
 func TestAReadingAtItsLastPageReportsNoProgress(t *testing.T) {
-	put, v, _, _ := proofreading(t, map[int]string{0: corrects(0, "the WORDS 1")})
+	put, v, _, _ := newProofreadReading(t, map[int]string{0: corrects(0, "the WORDS 1")})
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}

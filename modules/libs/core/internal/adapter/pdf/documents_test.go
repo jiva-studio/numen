@@ -14,7 +14,7 @@ import (
 // error and not the end of the process the person's window runs in.
 func TestAPanicInsideTheLibraryIsAnErrorAboutOnePage(t *testing.T) {
 	drawn, err := func() (drawing image.Image, err error) {
-		defer survived("drawing a page", &drawing, &err)
+		defer recoverPanic("drawing a page", &drawing, &err)
 		panic("page 3 of 2")
 	}()
 
@@ -39,7 +39,7 @@ func TestAPanicInsideTheLibraryIsAnErrorAboutOnePage(t *testing.T) {
 func TestWhatDidNotPanicIsLeftAlone(t *testing.T) {
 	wanted := errors.New("the page is not there")
 	drawn, err := func() (drawing image.Image, err error) {
-		defer survived("drawing a page", &drawing, &err)
+		defer recoverPanic("drawing a page", &drawing, &err)
 		return image.NewRGBA(image.Rect(0, 0, 1, 1)), wanted
 	}()
 

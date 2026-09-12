@@ -14,7 +14,7 @@ import FacePane from './FacePane.vue'
 import FaceStrip from './FaceStrip.vue'
 import type { Half, StepDirection } from '../../../lib/order'
 import {
-  panes,
+  getPanes,
   STENCIL_WORDS,
   type FaceRow,
   type Pane,
@@ -72,7 +72,7 @@ const setBox = (pane: Pane, element: Element | ComponentPublicInstance | null): 
 }
 
 /** The four parts this face's window is divided into. */
-const divided = computed<readonly Pane[]>(() => panes(props.face, props.words))
+const divided = computed<readonly Pane[]>(() => getPanes(props.face, props.words))
 
 /** The part a field would be written into. */
 const isAimed = (pane: Pane): boolean => pane.mode === 'written' && aimed.value === pane.half

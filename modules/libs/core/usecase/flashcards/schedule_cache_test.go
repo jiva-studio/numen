@@ -22,12 +22,12 @@ func TestTheFrontDoorConsultsTheScheduleCache(t *testing.T) {
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
-	first := l.counting(t, func() error { _, err := l.owed.Execute(ctx, l.vault); return err })
+	first := l.countLoads(t, func() error { _, err := l.owed.Execute(ctx, l.vault); return err })
 	if first.Rewritten != 1 {
 		t.Errorf("the first request wrote the cache %d times, want 1", first.Rewritten)
 	}
 
-	warm := l.counting(t, func() error { _, err := l.owed.Execute(ctx, l.vault); return err })
+	warm := l.countLoads(t, func() error { _, err := l.owed.Execute(ctx, l.vault); return err })
 	if warm.Consulted == 0 {
 		t.Error("a warm request never consulted the cache")
 	}
@@ -46,7 +46,7 @@ func TestStartingASessionConsultsTheScheduleCache(t *testing.T) {
 	if _, err := l.owed.Execute(ctx, l.vault); err != nil {
 		t.Fatal(err)
 	}
-	warm := l.counting(t, func() error {
+	warm := l.countLoads(t, func() error {
 		_, err := l.sat.Execute(ctx, l.vault, flashcards.Scope{})
 		return err
 	})
@@ -67,7 +67,7 @@ func TestTheHistoryConsultsTheScheduleCache(t *testing.T) {
 	if _, err := l.owed.Execute(ctx, l.vault); err != nil {
 		t.Fatal(err)
 	}
-	warm := l.counting(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
+	warm := l.countLoads(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
 	// The day counts are kept in a cache of their own, and the first request
 	// over this vault fills it.
 	if warm.Rewritten > 1 {

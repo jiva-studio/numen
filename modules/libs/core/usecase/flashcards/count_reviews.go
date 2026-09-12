@@ -89,7 +89,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 		return ReviewCounts{}, err
 	}
 
-	was := u.remembered(ctx, v)
+	was := u.readRemembered(ctx, v)
 	now := countCache{V: countedVersion}
 	out := ReviewCounts{Days: make(map[string]review.Tally)}
 
@@ -140,18 +140,18 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 					return ReviewCounts{}, err
 				}
 			}
-			days = review.Counted(u.Day, given(ran.Answers, seen))
+			days = review.Counted(u.Day, getUncounted(ran.Answers, seen))
 		}
 		for _, id := range one.IDs {
 			seen[id] = true
 		}
 		for day, count := range days {
-			out.Days[day] = added(out.Days[day], count)
+			out.Days[day] = addTallies(out.Days[day], count)
 			out.Answered += count.Answered
 		}
 	}
 
-	held.order = ordered(held.Answers)
+	held.order = newHistory(held.Answers)
 	u.remember(ctx, v, now)
 	out.Streak = review.Streak(u.Day, out.Days, u.Now())
 
@@ -166,9 +166,10 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	return out, nil
 }
 
-// added is two days' answers put together, which is how the runs of one day are
-// added up: a person may have answered in two sessions, and it is one day.
-func added(one, other review.Tally) review.Tally {
+// addTallies is two days' answers put together, which is how the runs of one
+// day are added up: a person may have answered in two sessions, and it is one
+// day.
+func addTallies(one, other review.Tally) review.Tally {
 	return review.Tally{
 		Answered: one.Answered + other.Answered,
 		Again:    one.Again + other.Again,
@@ -198,8 +199,8 @@ func repeats(ids []string, seen map[string]bool) bool {
 	return false
 }
 
-// given is the lines of a run no other run was counted for.
-func given(answers []review.Answer, seen map[string]bool) []review.Answer {
+// getUncounted is the lines of a run no other run was counted for.
+func getUncounted(answers []review.Answer, seen map[string]bool) []review.Answer {
 	out := make([]review.Answer, 0, len(answers))
 	for _, a := range answers {
 		if !seen[a.ID] {
@@ -233,19 +234,19 @@ func (u CountReviews) ahead(
 	}
 
 	now := u.Now()
-	ends := u.Day.EndOf(now)
+	ends := u.Day.GetEnd(now)
 	for _, s := range schedules {
 		if !s.Seen() || s.Due.Before(ends) {
 			continue
 		}
-		falls[u.Day.Names(s.Due)]++
+		falls[u.Day.GetName(s.Due)]++
 	}
 	return falls, held.History().Retained(u.Schedules.By, u.Day), nil
 }
 
-// remembered is what was counted last time, by the name of the run it was
+// readRemembered is what was counted last time, by the name of the run it was
 // counted from. A cache of another shape is nothing remembered.
-func (u CountReviews) remembered(ctx context.Context, v domain.Vault) map[string]cachedRun {
+func (u CountReviews) readRemembered(ctx context.Context, v domain.Vault) map[string]cachedRun {
 	if u.Cache == nil {
 		return nil
 	}

@@ -108,7 +108,7 @@ func TestCollectingRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 
-	w := recognising(t, nil)
+	w := newWatched(t, nil)
 	w.RecognitionWorker.with.Proofreading = ProofreadingConfig{
 		Named: true, Batch: 1,
 		Queue: func(string) (port.ProofreadQueue, error) { return leaves{}, nil },

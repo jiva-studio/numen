@@ -47,11 +47,11 @@ function onToggleListing() {
   isListingOpen.value = !isListingOpen.value
 }
 
-function onMoved(offset: number) {
+function onMove(offset: number) {
   void props.state.goToOffset(offset)
 }
 
-function onFollowed(targetPath: string) {
+function onFollow(targetPath: string) {
   void props.state.followLink(targetPath)
 }
 
@@ -104,8 +104,8 @@ onBeforeUnmount(cleanupWindowListeners)
         :other-highlights="props.state.otherHighlights.value"
         :chapter="props.state.chapter.value"
         :is-listing-open="isListingOpen"
-        @moved="onMoved"
-        @followed="onFollowed"
+        @move="onMove"
+        @follow="onFollow"
         @toggle-listing="onToggleListing"
       />
     </div>

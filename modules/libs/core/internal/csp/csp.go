@@ -19,9 +19,9 @@ import "strings"
 // Inline style is allowed: a page positions what it draws through the style
 // attribute.
 func (s Sources) Policy() string {
-	return "default-src 'self'; img-src " + named(s.Images) +
-		"; media-src " + named(s.Media) +
-		"; frame-src " + named(s.Frames) +
+	return "default-src 'self'; img-src " + listSources(s.Images) +
+		"; media-src " + listSources(s.Media) +
+		"; frame-src " + listSources(s.Frames) +
 		"; style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"
@@ -44,7 +44,7 @@ type Sources struct {
 	Frames []string
 }
 
-// named is a window's own handler and whatever else is allowed beside it.
-func named(also []string) string {
+// listSources is a window's own handler and whatever else is allowed beside it.
+func listSources(also []string) string {
 	return strings.Join(append([]string{"'self'"}, also...), " ")
 }

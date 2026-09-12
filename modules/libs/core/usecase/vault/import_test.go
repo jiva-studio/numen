@@ -28,9 +28,9 @@ func outside(t *testing.T, files map[string]string) string {
 	return root
 }
 
-// arrived is what the vault holds at a path, and the test stops where it holds
-// nothing.
-func arrived(t *testing.T, root, path string) string {
+// readArrived is what the vault holds at a path, and the test stops where it
+// holds nothing.
+func readArrived(t *testing.T, root, path string) string {
 	t.Helper()
 	body, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
 	if err != nil {
@@ -58,10 +58,10 @@ func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 		t.Fatalf("files stayed outside: %v", brought.Errors)
 	}
 
-	if body := arrived(t, v.Path, "physics/Cover.png"); body != "PNG" {
+	if body := readArrived(t, v.Path, "physics/Cover.png"); body != "PNG" {
 		t.Errorf("the picture arrived as %q", body)
 	}
-	if body := arrived(t, v.Path, "physics/Notes.md"); body != "# Notes\n" {
+	if body := readArrived(t, v.Path, "physics/Notes.md"); body != "# Notes\n" {
 		t.Errorf("the note arrived as %q", body)
 	}
 	if _, err := os.Stat(filepath.Join(from, "Cover.png")); err != nil {
@@ -97,7 +97,7 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 		t.Errorf("%d files and folders landed", len(brought.Landed))
 	}
 
-	if body := arrived(t, v.Path, "scans/pages/Two.png"); body != "TWO" {
+	if body := readArrived(t, v.Path, "scans/pages/Two.png"); body != "TWO" {
 		t.Errorf("a file under the folder arrived as %q", body)
 	}
 	info, err := os.Stat(filepath.Join(v.Path, "scans", "empty"))
@@ -128,10 +128,10 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	if !errors.Is(brought.Errors[0].Why, port.ErrOccupied) {
 		t.Errorf("the error: want ErrOccupied, got %v", brought.Errors[0].Why)
 	}
-	if body := arrived(t, v.Path, "Cover.png"); body != "MINE" {
+	if body := readArrived(t, v.Path, "Cover.png"); body != "MINE" {
 		t.Errorf("the file that was there was replaced with %q", body)
 	}
-	if body := arrived(t, v.Path, "Kelvin.md"); body != "# Kelvin\n" {
+	if body := readArrived(t, v.Path, "Kelvin.md"); body != "# Kelvin\n" {
 		t.Errorf("the note beside it arrived as %q", body)
 	}
 }

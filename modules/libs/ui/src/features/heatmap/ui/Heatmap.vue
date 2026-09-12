@@ -14,7 +14,7 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { Tooltip } from './tooltip'
 import type { Box } from '@/shared/lib/place'
 import { DaySummary } from './day-summary'
-import { days, measureGrid, ROWS } from '../lib/heatmap'
+import { getDays, measureGrid, ROWS } from '../lib/heatmap'
 import type { Day, Tally } from '../lib/heatmap'
 import { useWidth } from '../model/width'
 import type { Words } from '../lib/words'
@@ -43,7 +43,7 @@ const room = useWidth(root)
 const laid = computed(() =>
   measureGrid({ width: room.value, cell: props.cell, gap: props.gap }),
 )
-const shown = computed(() => days(laid.value.columns, props.now, props.did, props.due))
+const shown = computed(() => getDays(laid.value.columns, props.now, props.did, props.due))
 
 const step = computed(() => laid.value.cell + laid.value.gap)
 

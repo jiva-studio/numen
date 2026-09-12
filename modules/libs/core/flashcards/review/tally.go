@@ -6,13 +6,13 @@ import "time"
 // the day it began on, in the zone the days are counted in.
 const Named = "2006-01-02"
 
-// Names the day an answer given at this instant falls in.
+// GetName is the name of the day an answer given at this instant falls in.
 //
 // It is the day a person would say they answered on, which is the day the
 // review day began — an answer given at one in the morning belongs to the day
 // before, and is named for it.
-func (d Day) Names(at time.Time) string {
-	return d.Opened(at).Format(Named)
+func (d Day) GetName(at time.Time) string {
+	return d.GetDate(at).Format(Named)
 }
 
 // Tally is one day's answers: how many were given, and how each of the four was
@@ -50,7 +50,7 @@ func Counted(d Day, answers []Answer) map[string]Tally {
 		}
 		seen[a.ID] = true
 
-		day := d.Names(a.At)
+		day := d.GetName(a.At)
 		one := out[day]
 		one.Answered++
 		switch a.Rating {
@@ -84,8 +84,8 @@ type Spent struct {
 	Took     time.Duration
 }
 
-// SpentUnder is what the day named came to under each preset, by the path the
-// card faces are grouped under.
+// GetSpentUnder is what the day named came to under each preset, by the path
+// the card faces are grouped under.
 //
 // A card face nothing groups is left out, and so is an answer taken back. Each
 // answer counts for what Answer.Counted makes of it.
@@ -93,15 +93,15 @@ type Spent struct {
 // Counts says how each preset counts, by the same path, and a path it does not
 // name counts in cards: a card face counts once for the day however many times
 // it is answered in it. Every one of those answers counts its time either way.
-func SpentUnder(
+func GetSpentUnder(
 	d Day, day string, answers []Answer,
 	under map[CardFaceID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
-	return Give(answers).SpentUnder(d, day, under, counts)
+	return Give(answers).GetSpentUnder(d, day, under, counts)
 }
 
-// SpentUnder is the same over a history already in order.
-func (h History) SpentUnder(
+// GetSpentUnder is the same over a history already in order.
+func (h History) GetSpentUnder(
 	d Day, day string, under map[CardFaceID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
 	// Which card faces have been answered before the answer in hand, over the
@@ -114,7 +114,7 @@ func (h History) SpentUnder(
 	for _, a := range h {
 		first := !before[a.CardFace]
 		before[a.CardFace] = true
-		if d.Names(a.At) != day {
+		if d.GetName(a.At) != day {
 			continue
 		}
 		path, held := under[a.CardFace]
@@ -149,7 +149,7 @@ func Faced(d Day, day string, answers []Answer) map[CardFaceID]bool {
 func (h History) Faced(d Day, day string) map[CardFaceID]bool {
 	out := make(map[CardFaceID]bool)
 	for _, a := range h {
-		if d.Names(a.At) == day {
+		if d.GetName(a.At) == day {
 			out[a.CardFace] = true
 		}
 	}
@@ -164,13 +164,13 @@ func (h History) Faced(d Day, day string) map[CardFaceID]bool {
 // did answer on counts from itself.
 func Streak(d Day, days map[string]Tally, now time.Time) int {
 	at := now.In(d.zone())
-	if days[d.Names(at)].Answered == 0 {
+	if days[d.GetName(at)].Answered == 0 {
 		// Today is not answered yet, so the count is of the days behind it.
 		at = at.AddDate(0, 0, -1)
 	}
 
 	out := 0
-	for days[d.Names(at)].Answered > 0 {
+	for days[d.GetName(at)].Answered > 0 {
 		out++
 		at = at.AddDate(0, 0, -1)
 	}

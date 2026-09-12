@@ -56,7 +56,7 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 		return res, err
 	}
 
-	from, hash, stood, err := u.produced(ctx, v, reader, path)
+	from, hash, stood, err := u.getProducer(ctx, v, reader, path)
 	if err != nil {
 		return res, err
 	}
@@ -77,7 +77,7 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	// A store the person emptied leaves the index standing on a reading, and
 	// those rows are this use case's to take away as well.
 	names := text.Names(from, hash)
-	held, err := u.kept(ctx, store, names)
+	held, err := u.hasAnyName(ctx, store, names)
 	if err != nil {
 		return res, err
 	}
@@ -110,12 +110,12 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	return res, store.Remove(ctx, partial)
 }
 
-// produced is the producer and the fingerprint a recording's transcript is kept
-// under, and whether the index says the recording stands on one.
+// getProducer is the producer and the fingerprint a recording's transcript is
+// kept under, and whether the index says the recording stands on one.
 //
 // A recording that gave no words is recorded as standing on nothing, and what
 // the run wrote is kept under the fingerprint of the bytes.
-func (u DropTranscript) produced(
+func (u DropTranscript) getProducer(
 	ctx context.Context,
 	v domain.Vault,
 	reader port.VaultReader,
@@ -135,8 +135,8 @@ func (u DropTranscript) produced(
 	return u.area(), text.Fingerprint(raw), false, nil
 }
 
-// kept says whether the store has something under any of these names.
-func (u DropTranscript) kept(ctx context.Context, store port.DerivedStore, names []string) (bool, error) {
+// hasAnyName says whether the store has something under any of these names.
+func (u DropTranscript) hasAnyName(ctx context.Context, store port.DerivedStore, names []string) (bool, error) {
 	for _, name := range names {
 		switch _, err := store.Read(ctx, name); {
 		case err == nil:

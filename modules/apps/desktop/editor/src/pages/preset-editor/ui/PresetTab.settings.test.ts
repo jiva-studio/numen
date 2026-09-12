@@ -150,13 +150,13 @@ describe('what the tab says went wrong', () => {
     const alert = tab.get('[role="alert"]')
     expect(alert.text()).toContain(words.notRead('missing'))
     await alert.get('button').trigger('click')
-    expect(done).toStrictEqual(['again'])
+    expect(done).toStrictEqual(['reload'])
   })
 
   it('offers it for a refused write as well as a refused read', async () => {
     const { tab, done } = mountWithError(words.notSaved('unreadable'))
     await tab.get('[role="alert"] button').trigger('click')
-    expect(done).toStrictEqual(['again'])
+    expect(done).toStrictEqual(['reload'])
   })
 
   it('offers nothing where there is nothing to say', () => {
@@ -176,7 +176,7 @@ describe('a file that changed under the tab', () => {
     const said = tab.get('[role="status"].preset__answering')
     expect(said.text()).toContain(words.changed)
     await said.get('button').trigger('click')
-    expect(one.done).toStrictEqual(['again'])
+    expect(one.done).toStrictEqual(['reload'])
   })
 
   it('says nothing where the file is the one the tab read', () => {

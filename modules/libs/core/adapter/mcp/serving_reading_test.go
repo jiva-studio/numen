@@ -13,14 +13,14 @@ import (
 // wire is offered the tools that read and no others. What a build registers is
 // held elsewhere; this is what a caller finds on the port.
 func TestAPortServingTheReadingToolsOffersNoOther(t *testing.T) {
-	_, core := served(t)
+	_, core := newCore(t)
 	endpoint, err := mcp.ServeReadingHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { endpoint.Close(t.Context()) })
 
-	tools, err := listing(t, endpoint.URL)
+	tools, err := listTools(t, endpoint.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,14 +35,14 @@ func TestAPortServingTheReadingToolsOffersNoOther(t *testing.T) {
 // written from there because that is what a person is doing; a deck and a
 // stencil are what a vault is arranged into, and nothing there makes one.
 func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
-	_, core := served(t)
+	_, core := newCore(t)
 	endpoint, err := mcp.ServeReviewingHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { endpoint.Close(t.Context()) })
 
-	tools, err := listing(t, endpoint.URL)
+	tools, err := listTools(t, endpoint.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,8 +55,8 @@ func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 	})
 }
 
-// listing is what an agent presenting the token is offered over the wire.
-func listing(t *testing.T, url string) (*sdk.ListToolsResult, error) {
+// listTools is what an agent presenting the token is offered over the wire.
+func listTools(t *testing.T, url string) (*sdk.ListToolsResult, error) {
 	t.Helper()
 
 	client := sdk.NewClient(&sdk.Implementation{Name: "a test"}, nil)

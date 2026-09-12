@@ -39,12 +39,12 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 	if err != nil {
 		return fmt.Errorf("nothing to fetch with: %w", err)
 	}
-	defer closing(open.Close)
+	defer closeIfOpen(open.Close)
 
 	importing := open.ImportURL
 	importing.Again = again
 	if copying {
-		return copied(ctx, out, importing, v, args[1])
+		return copyURL(ctx, out, importing, v, args[1])
 	}
 	fmt.Fprintf(out, "downloading what %s points at\n", args[1])
 
@@ -65,8 +65,8 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 	return nil
 }
 
-// copied fetches a copy of what an address points at, onto this disk.
-func copied(
+// copyURL fetches a copy of what an address points at, onto this disk.
+func copyURL(
 	ctx context.Context,
 	out io.Writer,
 	importing source.ImportURL,
@@ -85,17 +85,17 @@ func copied(
 	switch {
 	case res.TooLarge():
 		fmt.Fprintf(out, "%s would take %s, over the %s a copy may be\n",
-			res.Path, sized(res.Bytes), sized(res.Limit))
+			res.Path, describeSize(res.Bytes), describeSize(res.Limit))
 	case res.Existed:
-		fmt.Fprintf(out, "a copy of %s is already here\n", sized(res.Bytes))
+		fmt.Fprintf(out, "a copy of %s is already here\n", describeSize(res.Bytes))
 	default:
-		fmt.Fprintf(out, "a copy of %s is here\n", sized(res.Bytes))
+		fmt.Fprintf(out, "a copy of %s is here\n", describeSize(res.Bytes))
 	}
 	return nil
 }
 
-// sized is how large something is, in the unit a person reads it in.
-func sized(bytes int64) string {
+// describeSize is how large something is, in the unit a person reads it in.
+func describeSize(bytes int64) string {
 	if bytes < 1<<20 {
 		return fmt.Sprintf("%d bytes", bytes)
 	}

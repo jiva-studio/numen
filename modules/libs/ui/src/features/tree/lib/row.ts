@@ -33,7 +33,7 @@ export interface RowMarker {
 }
 
 /** What a row is marked with, and nothing where it is marked with nothing. */
-export const markOf = (
+export const getMarkOf = (
   mark: RowMarker | undefined,
   row: RowId | null,
 ): Record<string, string> => {

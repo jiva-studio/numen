@@ -16,7 +16,7 @@ import (
 // the days are named for the day they began on.
 func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	other := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
 
@@ -39,11 +39,11 @@ func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
 	if got.Answered != 3 {
 		t.Errorf("the vault holds %d answers, want 3", got.Answered)
 	}
-	if got.Days[today.Names(yesterday)].Answered != 2 {
-		t.Errorf("yesterday came to %d, want 2: %v", got.Days[today.Names(yesterday)].Answered, got.Days)
+	if got.Days[today.GetName(yesterday)].Answered != 2 {
+		t.Errorf("yesterday came to %d, want 2: %v", got.Days[today.GetName(yesterday)].Answered, got.Days)
 	}
-	if got.Days[today.Names(time.Now())].Answered != 1 {
-		t.Errorf("today came to %d, want 1: %v", got.Days[today.Names(time.Now())].Answered, got.Days)
+	if got.Days[today.GetName(time.Now())].Answered != 1 {
+		t.Errorf("today came to %d, want 1: %v", got.Days[today.GetName(time.Now())].Answered, got.Days)
 	}
 	if got.Streak != 2 {
 		t.Errorf("the streak is %d, want the two days answered", got.Streak)
@@ -54,7 +54,7 @@ func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
 // not a failure.
 func TestAVaultNobodyAnsweredHasNoDays(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -71,7 +71,7 @@ func TestAVaultNobodyAnsweredHasNoDays(t *testing.T) {
 // every answer before it.
 func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	first := s.run(t, time.Now().AddDate(0, 0, -1))
@@ -110,7 +110,7 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 // counting as they are written.
 func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	other := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
 
@@ -143,12 +143,12 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 // day holds what the person answered.
 func TestARunCopiedUnderAnotherNameIsCountedOnce(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	conflicted(t, s)
+	writeConflictedCopies(t, s)
 
 	// Once from the files, and again from what the first counting kept.
 	for _, from := range []string{"the files", "the counting kept"} {
@@ -160,15 +160,15 @@ func TestARunCopiedUnderAnotherNameIsCountedOnce(t *testing.T) {
 			t.Errorf("counted from %s, the vault holds %d answers, want the one given",
 				from, got.Answered)
 		}
-		if day := got.Days[today.Names(time.Now())].Answered; day != 1 {
+		if day := got.Days[today.GetName(time.Now())].Answered; day != 1 {
 			t.Errorf("counted from %s, today came to %d, want 1: %v", from, day, got.Days)
 		}
 	}
 }
 
-// conflicted puts a copy of every run beside it, under the name a synchroniser
-// that met a conflict leaves.
-func conflicted(t *testing.T, s vaulted) {
+// writeConflictedCopies puts a copy of every run beside it, under the name a
+// synchroniser that met a conflict leaves.
+func writeConflictedCopies(t *testing.T, s vaulted) {
 	t.Helper()
 	at := filepath.Join(s.vault.Path, ".numen", "flashcards")
 	for _, name := range runsOf(t, s) {
@@ -211,7 +211,7 @@ func spaces(n int) []byte {
 // the week ahead of them as well as the year behind.
 func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	// Answered easily, so it is days away rather than minutes.
@@ -229,8 +229,8 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Due[today.Names(due)] != 1 {
-		t.Errorf("the day it falls on comes to %d, want the card: %v", got.Due[today.Names(due)], got.Due)
+	if got.Due[today.GetName(due)] != 1 {
+		t.Errorf("the day it falls on comes to %d, want the card: %v", got.Due[today.GetName(due)], got.Due)
 	}
 	if len(got.Due) != 1 {
 		t.Errorf("what is still to come is %v, want the one card", got.Due)
@@ -241,7 +241,7 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 // what the front door counts, and this says what is after it.
 func TestACardNobodyAnsweredIsNotStillToCome(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -266,10 +266,10 @@ type countedCachedRun struct {
 	IDs  []string                `json:"ids"`
 }
 
-// claiming puts a cache of its own over the vault's counting: the runs are the
-// ones a counting just wrote, so the cache names this vault's files at the
+// writeCache puts a cache of its own over the vault's counting: the runs are
+// the ones a counting just wrote, so the cache names this vault's files at the
 // length they stand at, and what each day came to is the test's to say.
-func claiming(t *testing.T, s vaulted, version int, days map[string]review.Tally) {
+func writeCache(t *testing.T, s vaulted, version int, days map[string]review.Tally) {
 	t.Helper()
 	if _, err := s.counted.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -301,13 +301,13 @@ func claiming(t *testing.T, s vaulted, version int, days map[string]review.Tally
 // answers are there to be counted again.
 func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
-	claiming(t, s, 0, map[string]review.Tally{"1999-01-01": {Answered: 99, Good: 99}})
+	writeCache(t, s, 0, map[string]review.Tally{"1999-01-01": {Answered: 99, Good: 99}})
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -325,13 +325,13 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 // says the shape is what the reading turns on and not the file's name.
 func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
-	claiming(t, s, 2, map[string]review.Tally{"1999-01-01": {Answered: 99, Good: 99}})
+	writeCache(t, s, 2, map[string]review.Tally{"1999-01-01": {Answered: 99, Good: 99}})
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -346,7 +346,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 // same as one that keeps it.
 func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -359,7 +359,7 @@ func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Answered != 1 || got.Days[today.Names(time.Now())].Answered != 1 {
+	if got.Answered != 1 || got.Days[today.GetName(time.Now())].Answered != 1 {
 		t.Errorf("counted %+v", got)
 	}
 }
@@ -369,7 +369,7 @@ func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 // rather than refusing to count at all.
 func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
@@ -394,7 +394,7 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 // A card owed today is not still to come either, however it was answered.
 func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	// Answered again, so it comes back in minutes and is owed today.

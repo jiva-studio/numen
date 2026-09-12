@@ -23,7 +23,7 @@ import (
 // A picture is what the watcher reports to nobody, so the stream is the only
 // way the tree finds out about one.
 func TestAFileLetGoOfOverTheTreeArrivesAndIsSaid(t *testing.T) {
-	client, _, root, opened := serving(t, map[string]string{
+	client, _, root, opened := openVaultWithWindow(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 
@@ -80,7 +80,7 @@ func TestAFileLetGoOfOverTheTreeArrivesAndIsSaid(t *testing.T) {
 // A file that is already there stays as it is, and what stopped the drop stands
 // in the list of what the window is doing.
 func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
-	_, drawn, root, opened := serving(t, map[string]string{"Entropy.md": "# Mine\n"})
+	_, drawn, root, opened := openVaultWithWindow(t, map[string]string{"Entropy.md": "# Mine\n"})
 
 	outside := t.TempDir()
 	theirs := filepath.Join(outside, "Entropy.md")

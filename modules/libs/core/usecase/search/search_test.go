@@ -47,7 +47,7 @@ type corpus struct {
 	second domain.Vault
 }
 
-func indexed(t *testing.T) corpus {
+func newCorpus(t *testing.T) corpus {
 	t.Helper()
 	ctx := t.Context()
 
@@ -142,8 +142,8 @@ func (c corpus) search(embedder port.Embedder) search.Search {
 
 var model = port.EmbeddingModel{Name: "test", Dimensions: dimensions}
 
-// pointing is a vector whose every dimension has the sign given.
-func pointing(sign float32) []float32 {
+// newVector is a vector whose every dimension has the sign given.
+func newVector(sign float32) []float32 {
 	v := make([]float32, dimensions)
 	for i := range v {
 		v[i] = sign
@@ -151,11 +151,12 @@ func pointing(sign float32) []float32 {
 	return v
 }
 
-// leaning agrees with `pointing(+1)` on all but an eighth of its dimensions.
-// The two stand at a cosine of 0.75, which is near enough for either to be an
-// answer to the other and far enough for the nearer one to be recognisable.
-func leaning() []float32 {
-	v := pointing(+1)
+// newNearVector agrees with `newVector(+1)` on all but an eighth of its
+// dimensions. The two stand at a cosine of 0.75, which is near enough for
+// either to be an answer to the other and far enough for the nearer one to be
+// recognisable.
+func newNearVector() []float32 {
+	v := newVector(+1)
 	for i := range dimensions / 8 {
 		v[i] = -1
 	}
@@ -198,20 +199,20 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// One database holds every vault, and each half is checked on its own: either
 	// can lose the vault filter.
 	ctx := t.Context()
-	c := indexed(t)
+	c := newCorpus(t)
 	c.cut(t, c.first, "notes/Entropy.md", "a measure of disorder")
 	c.cut(t, c.second, "notes/Quasar.md", "a distant beacon")
 
 	// The vaults point different ways, and the query below is the second's own
 	// vector: nearest to everything it holds, and near enough to the first's for
 	// those to be answers too.
-	c.vectorise(t, c.first, leaning())
-	c.vectorise(t, c.second, pointing(+1))
+	c.vectorise(t, c.first, newNearVector())
+	c.vectorise(t, c.second, newVector(+1))
 
 	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	near, err := dense.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), nil, 20, search.DefaultFloor)
+	near, err := dense.Nearest(ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 20, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +242,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 
 	// And the merge of the two, which is what a caller asks for.
-	found, err := c.search(oneWay{direction: pointing(+1)}).Execute(ctx, c.first, "shared", search.Parameters{})
+	found, err := c.search(oneWay{direction: newVector(+1)}).Execute(ctx, c.first, "shared", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +256,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 	// Asked from the other side, with the vector the first vault's own chunks
 	// carry.
-	for _, p := range c.searchIn(t, c.second, "disorder", oneWay{direction: leaning()}) {
+	for _, p := range c.searchIn(t, c.second, "disorder", oneWay{direction: newNearVector()}) {
 		if !strings.Contains(p.Source, "Quasar") {
 			t.Errorf("the second vault answered with %s, which belongs to the first", p.Source)
 		}
@@ -275,11 +276,11 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 	// The vector index is optional and may never finish filling, so the words
 	// half alone is a whole search.
 	ctx := t.Context()
-	c := indexed(t)
+	c := newCorpus(t)
 
 	for name, embedder := range map[string]port.Embedder{
 		"with no embedder at all":        nil,
-		"with an embedder and no vector": oneWay{direction: pointing(+1)},
+		"with an embedder and no vector": oneWay{direction: newVector(+1)},
 	} {
 		t.Run(name, func(t *testing.T) {
 			found, err := c.search(embedder).Execute(ctx, c.first, "disorder", search.Parameters{})
@@ -298,7 +299,7 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 
 func TestAModelOutOfReachLeavesTheWordsToAnswer(t *testing.T) {
 	ctx := t.Context()
-	c := indexed(t)
+	c := newCorpus(t)
 
 	var said []error
 	finds := search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil,
@@ -321,7 +322,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	// A question nobody is waiting for any more is not a question the words
 	// answer on their own.
 	ctx := t.Context()
-	c := indexed(t)
+	c := newCorpus(t)
 
 	finds := search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil,
 		outOfReach{why: context.Canceled}, 0, func(error) {})
@@ -333,7 +334,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 
 func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 	ctx := t.Context()
-	c := indexed(t)
+	c := newCorpus(t)
 	c.cut(t, c.first, "notes/Entropy.md",
 		"disorder once", "disorder twice", "disorder again",
 		"disorder once more", "disorder at last")
@@ -356,7 +357,7 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 func TestAPassageIsReadFromTheFileAndNotFromTheIndex(t *testing.T) {
 	// The text is not stored. A passage carries the words only because the file
 	// was opened at the place the chunk names.
-	c := indexed(t)
+	c := newCorpus(t)
 
 	found := c.searchIn(t, c.first, "shared", nil)
 	if len(found) != 2 {
@@ -377,7 +378,7 @@ func TestAPassageIsReadFromTheFileAndNotFromTheIndex(t *testing.T) {
 //
 // This is the shape a chapter of a book has: the chapter names its subject once,
 // in its heading, and a paragraph further on says it four times.
-func (c corpus) sectioned(t *testing.T, v domain.Vault, path string) {
+func (c corpus) writeSections(t *testing.T, v domain.Vault, path string) {
 	t.Helper()
 	chunks := []chunk.Chunk{
 		{
@@ -402,8 +403,8 @@ func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 	// middle of a chapter outranks the chapter's own opening. Asked where a book
 	// speaks about a thing, what a person wants is the section about it.
 	ctx := t.Context()
-	c := indexed(t)
-	c.sectioned(t, c.first, "notes/Entropy.md")
+	c := newCorpus(t)
+	c.writeSections(t, c.first, "notes/Entropy.md")
 
 	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "Madhavendra Puri", nil, 20, false)
 	if err != nil {
@@ -432,7 +433,7 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 	// The window puts the caret where the words were found. A note's
 	// frontmatter stands before its prose and is no line of it.
 	ctx := t.Context()
-	c := indexed(t)
+	c := newCorpus(t)
 
 	const path = "notes/Isotherm.md"
 	const held = "The curve holds throughout."
@@ -468,8 +469,8 @@ func TestANameThatMatchesNoSectionChangesNothing(t *testing.T) {
 	// A search by name answers about sections alone. A question about words that
 	// name no section is the search there was before it.
 	ctx := t.Context()
-	c := indexed(t)
-	c.sectioned(t, c.first, "notes/Entropy.md")
+	c := newCorpus(t)
+	c.writeSections(t, c.first, "notes/Entropy.md")
 
 	found, err := c.search(nil).Execute(ctx, c.first, "disciple", search.Parameters{})
 	if err != nil {
@@ -492,8 +493,8 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 	// Every other test here has a query a search by words can answer, so a meaning
 	// half that answered nothing was a search that still looked right.
 	ctx := t.Context()
-	c := indexed(t)
-	c.vectorise(t, c.first, pointing(+1))
+	c := newCorpus(t)
+	c.vectorise(t, c.first, newVector(+1))
 
 	// A word no note in the vault says, so nothing lexical can match it.
 	const unsaid = "zzqqxx"
@@ -505,7 +506,7 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 		t.Fatalf("a search by words answered %d passages to a word nothing says", len(words))
 	}
 
-	found, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, unsaid, search.Parameters{})
+	found, err := c.search(oneWay{newVector(+1)}).Execute(ctx, c.first, unsaid, search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -519,11 +520,11 @@ func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 	// anything else joins on nothing, and the failure is silence rather than an
 	// error: a search by words answers and the search looks like it worked.
 	ctx := t.Context()
-	c := indexed(t)
-	c.vectorise(t, c.first, pointing(+1))
+	c := newCorpus(t)
+	c.vectorise(t, c.first, newVector(+1))
 
 	under, err := c.db.ChunkQueries().Nearest(
-		ctx, c.first.ID, model.Recipe(), pointing(+1), nil, 10, search.DefaultFloor)
+		ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +533,7 @@ func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 	}
 
 	astray, err := c.db.ChunkQueries().Nearest(
-		ctx, c.first.ID, model.String(), pointing(+1), nil, 10, search.DefaultFloor)
+		ctx, c.first.ID, model.String(), newVector(+1), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -546,11 +547,11 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	// look everywhere, a search answers with whatever the vault holds most of,
 	// and the person who said "in the book" is handed a note.
 	ctx := t.Context()
-	c := indexed(t)
-	c.sectioned(t, c.first, "notes/Entropy.md")
-	c.vectorise(t, c.first, pointing(+1))
+	c := newCorpus(t)
+	c.writeSections(t, c.first, "notes/Entropy.md")
+	c.vectorise(t, c.first, newVector(+1))
 
-	everywhere, err := c.search(oneWay{pointing(+1)}).
+	everywhere, err := c.search(oneWay{newVector(+1)}).
 		Execute(ctx, c.first, "Madhavendra Puri", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
@@ -561,7 +562,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 
 	// This vault holds notes alone, so a question about books is answered by
 	// nothing: what is asserted is that the kind reached every half.
-	books, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
+	books, err := c.search(oneWay{newVector(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
 		search.Parameters{Kinds: []domain.SourceKind{domain.KindBook}})
 	if err != nil {
 		t.Fatal(err)
@@ -570,7 +571,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 		t.Errorf("%d passages came back from the books of a vault that holds none", len(books))
 	}
 
-	notes, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
+	notes, err := c.search(oneWay{newVector(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
 		search.Parameters{Kinds: []domain.SourceKind{domain.KindNote}})
 	if err != nil {
 		t.Fatal(err)
@@ -585,9 +586,9 @@ func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 	// One half left unfiltered answers about the wrong kind, and the fused
 	// order carries it: a way that ignores the kind is a half that undoes it.
 	ctx := t.Context()
-	c := indexed(t)
-	c.sectioned(t, c.first, "notes/Entropy.md")
-	c.vectorise(t, c.first, pointing(+1))
+	c := newCorpus(t)
+	c.writeSections(t, c.first, "notes/Entropy.md")
+	c.vectorise(t, c.first, newVector(+1))
 	queries := c.db.ChunkQueries()
 	books := []domain.SourceKind{domain.KindBook}
 
@@ -607,7 +608,7 @@ func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by name answered %d sections of books in a vault of notes", len(named))
 	}
 
-	dense, err := queries.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), books, 20, -1)
+	dense, err := queries.Nearest(ctx, c.first.ID, model.Recipe(), newVector(+1), books, 20, -1)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -49,7 +49,7 @@ type atom struct {
 	unbroken bool
 }
 
-// writing generates a first line as a run of pieces the test knows the bounds
+// drawAtoms generates a first line as a run of pieces the test knows the bounds
 // of: prose the cut may fall anywhere in, and the runs it may not — a wikilink,
 // an embed, a run of emphasis, and the shapes that stand one inside another.
 //
@@ -57,7 +57,7 @@ type atom struct {
 // so a piece the cut may fall inside can neither open a run of its own nor
 // close one an earlier piece opened. That is what lets the test say where every
 // unbroken run is without working it out the way the code under test does.
-func writing(t *rapid.T) []atom {
+func drawAtoms(t *rapid.T) []atom {
 	prose := rapid.StringMatching(`[\p{L}\p{N} ,.;:()-]{4,40}`)
 	target := rapid.StringMatching(`[\p{L}\p{N} .-]{4,30}`)
 	inner := rapid.StringMatching(`[\p{L}\p{N} ,.;:()-]{4,30}`)
@@ -106,7 +106,7 @@ func TestTheCutNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 	t.Parallel()
 	var cut, straddled int
 	rapid.Check(t, func(t *rapid.T) {
-		atoms := writing(t)
+		atoms := drawAtoms(t)
 
 		var line strings.Builder
 		type span struct{ from, to int }

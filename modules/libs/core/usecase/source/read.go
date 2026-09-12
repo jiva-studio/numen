@@ -89,7 +89,7 @@ func (u Read) Execute(
 	}
 
 	res.Whole = len(doc.Text)
-	res.Start, res.Length = held(doc.Text, start, length)
+	res.Start, res.Length = getRuneBounds(doc.Text, start, length)
 	if res.Length == 0 {
 		return res, nil
 	}
@@ -98,9 +98,9 @@ func (u Read) Execute(
 	return res, nil
 }
 
-// held is a run within the text, standing on whole characters. A run beginning
-// past the end of the text is no run at all.
-func held(prose string, start, length int) (int, int) {
+// getRuneBounds is a run within the text, standing on whole characters. A run
+// beginning past the end of the text is no run at all.
+func getRuneBounds(prose string, start, length int) (int, int) {
 	if start >= len(prose) {
 		return len(prose), 0
 	}

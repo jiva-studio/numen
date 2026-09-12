@@ -23,7 +23,7 @@ func seatsOf(n domain.Neighbourhood) []string {
 
 func neighbourhoodOf(t *testing.T, files map[string]string, path string) domain.Neighbourhood {
 	t.Helper()
-	db, v := indexed(t, files)
+	db, v := newIndexedVault(t, files)
 	n, err := note.ShowNeighbourhood{Links: db.Links(), Notes: db.Queries()}.
 		Execute(t.Context(), v, path)
 	if err != nil {
@@ -54,9 +54,9 @@ func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 	}
 }
 
-// drawnOn renders the line between two notes as it is seen from one of them:
-// the seat, the label where there is one, and whether the edge is mutual.
-func drawnOn(t *testing.T, files map[string]string, from, to string) string {
+// describeEdge renders the line between two notes as it is seen from one of
+// them: the seat, the label where there is one, and whether the edge is mutual.
+func describeEdge(t *testing.T, files map[string]string, from, to string) string {
 	t.Helper()
 	for _, r := range neighbourhoodOf(t, files, from).Related {
 		if r.Path != to {
@@ -134,10 +134,10 @@ func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 				"Area.md": written("Area", c.area),
 				"Idea.md": written("Idea", c.idea),
 			}
-			if got := drawnOn(t, files, "Area.md", "Idea.md"); got != c.fromArea {
+			if got := describeEdge(t, files, "Area.md", "Idea.md"); got != c.fromArea {
 				t.Errorf("from Area: got %q, want %q", got, c.fromArea)
 			}
-			if got := drawnOn(t, files, "Idea.md", "Area.md"); got != c.fromIdea {
+			if got := describeEdge(t, files, "Idea.md", "Area.md"); got != c.fromIdea {
 				t.Errorf("from Idea: got %q, want %q", got, c.fromIdea)
 			}
 		})
@@ -152,10 +152,10 @@ func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n    label: lays them\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: came out of one\n---\n\n# Egg\n",
 	}
-	if got := drawnOn(t, mutualParents, "Chicken.md", "Egg.md"); got != "parent lays them" {
+	if got := describeEdge(t, mutualParents, "Chicken.md", "Egg.md"); got != "parent lays them" {
 		t.Errorf("got %q, want the parent seat and the word written here", got)
 	}
-	if got := drawnOn(t, mutualParents, "Egg.md", "Chicken.md"); got != "parent came out of one" {
+	if got := describeEdge(t, mutualParents, "Egg.md", "Chicken.md"); got != "parent came out of one" {
 		t.Errorf("got %q, want the parent seat and the word written here", got)
 	}
 
@@ -165,10 +165,10 @@ func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n    label: was laid\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n    label: hatched\n---\n\n# Egg\n",
 	}
-	if got := drawnOn(t, mutualChildren, "Chicken.md", "Egg.md"); got != "parent hatched" {
+	if got := describeEdge(t, mutualChildren, "Chicken.md", "Egg.md"); got != "parent hatched" {
 		t.Errorf("got %q, want the parent seat and the word written at the end it came from", got)
 	}
-	if got := drawnOn(t, mutualChildren, "Egg.md", "Chicken.md"); got != "parent was laid" {
+	if got := describeEdge(t, mutualChildren, "Egg.md", "Chicken.md"); got != "parent was laid" {
 		t.Errorf("got %q, want the parent seat and the word written at the end it came from", got)
 	}
 }
@@ -229,7 +229,7 @@ func TestTheHigherSeatWins(t *testing.T) {
 func TestANeighbourhoodStaysInsideItsVault(t *testing.T) {
 	t.Parallel()
 	const shared = "notes/Entropy.md"
-	db, here := indexed(t, map[string]string{
+	db, here := newIndexedVault(t, map[string]string{
 		shared:    "---\ntitle: Entropy here\nid: 01M02ACGM0FYMSXNDP29C90JN1\n---\n\n# Entropy here\n",
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"note://01M02ACGM0FYMSXNDP29C90JN2\"\n    role: child\n---\n\n# Area\n",
 	})
@@ -306,7 +306,7 @@ func TestTheSameVaultDrawsTheSameWayTwice(t *testing.T) {
 // TestAVaultOpensOnItsFirstNote.
 func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 	t.Parallel()
-	db, v := indexed(t, map[string]string{
+	db, v := newIndexedVault(t, map[string]string{
 		"Area.md": "---\ntitle: Area\n---\n\n# Area\n",
 		"Idea.md": "---\ntitle: Idea\n---\n\n# Idea\n",
 	})
@@ -333,7 +333,7 @@ func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 
 func TestAnEmptyVaultOpensOnNothing(t *testing.T) {
 	t.Parallel()
-	db, v := indexed(t, map[string]string{})
+	db, v := newIndexedVault(t, map[string]string{})
 
 	_, found, err := db.Queries().Opening(t.Context(), v.ID)
 	if err != nil {

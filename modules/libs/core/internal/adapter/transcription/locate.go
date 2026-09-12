@@ -45,7 +45,7 @@ func locate(ctx context.Context, cfg Config) (through, paths, error) {
 	}
 
 	found := paths{from: "settings"}
-	for _, one := range wanted(cfg, &found) {
+	for _, one := range getWantedFiles(cfg, &found) {
 		if *one.dst, err = model(ctx, cfg, one.path, one.name, one.kind); err != nil {
 			return through{}, paths{}, err
 		}
@@ -64,9 +64,9 @@ type wantedFile struct {
 	path, name, kind string
 }
 
-// wanted is every file a transcription reads. The transducer is four of them,
+// getWantedFiles is every file a transcription reads. The transducer is four of them,
 // published as four names in one folder.
-func wanted(cfg Config, into *paths) []wantedFile {
+func getWantedFiles(cfg Config, into *paths) []wantedFile {
 	under := func(name string) string {
 		if cfg.Model.Repo == "" {
 			return ""
@@ -111,10 +111,10 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 	return found, nil
 }
 
-// named is what a model is called, for the record kept beside what it produced.
+// getModelName is what a model is called, for the record kept beside what it produced.
 // A name in the settings stands, and a model without one is called after the
 // file it was loaded from.
-func named(name, at string) string {
+func getModelName(name, at string) string {
 	if name != "" {
 		return name
 	}

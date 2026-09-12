@@ -71,7 +71,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	held, spent := context.WithTimeout(ctx, HandedOverIn)
 	defer spent()
 
-	if !settling(held, o.API.Window, &o.API.Writing) {
+	if !settle(held, o.API.Window, &o.API.Writing) {
 		return errAsking
 	}
 
@@ -241,19 +241,19 @@ func (o *Installation) forget() {
 	o.API.Unwatched.Store("")
 
 	for _, pass := range []string{walkingNotes, readingBooks, makingVectors, wordsAlone} {
-		o.API.finished(pass)
+		o.API.finishTask(pass)
 	}
 	if o.why != nil {
 		o.API.say(task.Task{ID: makingVectors, Doing: "Indexing", Error: o.why.Error()})
 	}
 }
 
-// chosen is the vault this window opens: the one a person named, else the one
+// chooseVault is the vault this window opens: the one a person named, else the one
 // shown last, else the first this installation holds. An installation holding
 // none answers with no vault at all.
 //
 // A vault named and not on the list is refused, and the window does not open.
-func chosen(registry port.VaultRegistry, asked string) (domain.Vault, error) {
+func chooseVault(registry port.VaultRegistry, asked string) (domain.Vault, error) {
 	if asked != "" {
 		return vaults.NewFind(registry).Execute(asked)
 	}

@@ -23,7 +23,7 @@ const STEPS = { least: 1, most: WHOLE }
 
 // --- Handlers ---
 function onModelChange(at: readonly string[], name: string) {
-  const model = installation.value.models(at).find((one) => one.name === name)
+  const model = installation.value.getModels(at).find((one) => one.name === name)
   if (model) installation.value.write(model.writes)
   else setSetting(at, name)
 }
@@ -34,24 +34,24 @@ function onSettingChange(at: readonly string[], value: unknown) {
 
 // --- Helpers ---
 function getSettingString(at: readonly string[]): string {
-  const value = installation.value.setting(at)
+  const value = installation.value.getSetting(at)
   return typeof value === 'string' ? value : ''
 }
 const said = getSettingString
 
 function isSettingEnabled(at: readonly string[]): boolean {
-  return installation.value.setting(at) === true
+  return installation.value.getSetting(at) === true
 }
 const on = isSettingEnabled
 
 function getSettingNumber(at: readonly string[]): number | null {
-  const value = installation.value.setting(at)
+  const value = installation.value.getSetting(at)
   return typeof value === 'number' ? value : null
 }
 const counted = getSettingNumber
 
 function getModels(at: readonly string[]): readonly SelectChoice[] {
-  return choicesFor(installation.value.models(at), getSettingString(at), words)
+  return choicesFor(installation.value.getModels(at), getSettingString(at), words)
 }
 const models = getModels
 
@@ -129,7 +129,7 @@ function setSetting(at: readonly string[], value: unknown): void {
         :step="1"
         :aria-labelledby="labelledBy"
         class="settings__number"
-        @settles="(count: number | null) => count !== null && onSettingChange(AT.agentSteps, count)"
+        @settle="(count: number | null) => count !== null && onSettingChange(AT.agentSteps, count)"
       />
     </SettingRow>
 

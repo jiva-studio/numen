@@ -68,7 +68,7 @@ export interface PresetCurveData {
 }
 
 export interface PresetTabActions {
-  again(): void
+  reload(): void
   chooseGoal(goal: Goal): void
   moveSlider(place: number): void
   settle(): void

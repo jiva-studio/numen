@@ -133,7 +133,7 @@ export type { Half, InsertionPoint } from './features/cards'
  * Where a card let go at the head of a deck lands, before its first section,
  * and where one let go past the last card standing under a heading lands.
  */
-export { blanks as cardBlanks, getRunEnd as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './features/cards'
+export { getBlanks as cardBlanks, getRunEnd, endOf as cardEndOf, HEAD as CARD_HEAD } from './features/cards'
 export { getDeclaredFields as cardFields } from './features/cards'
 export type { DeckCard, DeckSection } from './features/cards'
 export type { Stencil } from './features/cards'

@@ -226,7 +226,7 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 				Hash:    hashes[at],
 				Model:   model,
 				Kind:    port.QuantisedInt8,
-				Value:   signed(quantised),
+				Value:   packVector(quantised),
 				Coarse:  embedding.Coarse(quantised),
 			})
 		}
@@ -246,8 +246,9 @@ func (u Embed) progress(res EmbedResult) {
 	}
 }
 
-// signed is a quantised vector as the bytes that are stored, one per dimension.
-func signed(q []int8) []byte {
+// packVector is a quantised vector as the bytes that are stored, one per
+// dimension.
+func packVector(q []int8) []byte {
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

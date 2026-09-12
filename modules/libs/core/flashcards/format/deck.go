@@ -102,7 +102,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 			lead, leadEnd := run(body, s.from, end)
 			d.Sections = append(d.Sections, Section{Name: s.name, Preamble: lead})
 			under = len(d.Sections) - 1
-			read = trimmedEnd(body, s.head, s.from)
+			read = getTrimmedEnd(body, s.head, s.from)
 			if lead != "" {
 				read = leadEnd
 			}
@@ -119,9 +119,9 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 
 		target, leadFrom := stencil(body, s.from, s.to)
 		card.StencilLink = target
-		read = trimmedEnd(body, s.head, s.from)
+		read = getTrimmedEnd(body, s.head, s.from)
 		if target != "" {
-			read = trimmedEnd(body, s.from, leadFrom)
+			read = getTrimmedEnd(body, s.from, leadFrom)
 			span.linkFrom, span.linkTo = lineFrom(body, s.from, read), read
 		}
 		lead, leadEnd := run(body, leadFrom, s.to)
@@ -140,7 +140,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 				break
 			}
 			value, valueEnd := run(body, f.from, f.to)
-			read = trimmedEnd(body, f.head, f.from)
+			read = getTrimmedEnd(body, f.head, f.from)
 			if value != "" {
 				read = valueEnd
 			}

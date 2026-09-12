@@ -110,7 +110,7 @@ func columnOffset(block []byte, lines []int, line, column int) int {
 	return at
 }
 
-func leading(line string) string {
+func getIndent(line string) string {
 	return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
 }
 

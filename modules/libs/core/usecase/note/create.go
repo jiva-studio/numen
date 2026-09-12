@@ -77,11 +77,11 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		return CreateResult{}, err
 	}
 
-	content, err := titled(markdown.Create(identifier, in.Body), title, exact)
+	content, err := writeTitle(markdown.Create(identifier, in.Body), title, exact)
 	if err != nil {
 		return CreateResult{}, err
 	}
-	content, err = joined(content, in.Links)
+	content, err = writeLinks(content, in.Links)
 	if err != nil {
 		return CreateResult{}, err
 	}
@@ -114,10 +114,10 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	return made, nil
 }
 
-// titled writes the note's name into its frontmatter, where the filename
+// writeTitle writes the note's name into its frontmatter, where the filename
 // cannot carry the whole of it. A filename that carries it names the note, and
 // nothing is written.
-func titled(content []byte, title string, exact bool) ([]byte, error) {
+func writeTitle(content []byte, title string, exact bool) ([]byte, error) {
 	if exact {
 		return content, nil
 	}
@@ -131,9 +131,9 @@ func titled(content []byte, title string, exact bool) ([]byte, error) {
 	return doc.Bytes(), nil
 }
 
-// joined writes relationships into frontmatter that has just been made, through
-// the splicing every other link goes through: one set of quoting rules, not two.
-func joined(content []byte, links []domain.Link) ([]byte, error) {
+// writeLinks writes relationships into frontmatter that has just been made,
+// through the splicing every other link goes through: one set of quoting rules.
+func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
 	if len(links) == 0 {
 		return content, nil
 	}

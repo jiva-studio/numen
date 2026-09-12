@@ -22,7 +22,7 @@ import {
   type DeckCard,
   type Wrong,
 } from '../../lib/deck'
-import { grid, isMoved, type Run } from '../../lib/grid'
+import { getGrid, isMoved, type Run } from '../../lib/grid'
 import { getFreeName, type InsertionPoint, type StepDirection } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
 
@@ -71,7 +71,7 @@ const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint 
   move: (held, at) => emit('move', held, at),
 })
 
-const shown = computed(() => grid(props.cards, props.sections, props.stencils, dragged.value))
+const shown = computed(() => getGrid(props.cards, props.sections, props.stencils, dragged.value))
 
 // --- Handlers ---
 function onDragOver(targetAt: InsertionPoint | undefined, event: DragEvent): void {
@@ -142,7 +142,7 @@ function onAddSection(): void {
       :at="at"
       :asking="asking === run.id"
       :words="words"
-      @over="onDragOver"
+      @drag-over="onDragOver"
       @drop="onDrop"
       @rename-section="onRenameSection"
       @remove-section="onRemoveSection"

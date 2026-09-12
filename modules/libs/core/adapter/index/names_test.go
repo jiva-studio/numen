@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// noted puts one note in, with the headings given inside it.
-func noted(t *testing.T, db *DB, vault domain.Vault, path, title string, headings ...string) {
+// saveNamedNote puts one note in, with the headings given inside it.
+func saveNamedNote(t *testing.T, db *DB, vault domain.Vault, path, title string, headings ...string) {
 	t.Helper()
 
 	n := domain.Note{
@@ -24,8 +24,8 @@ func noted(t *testing.T, db *DB, vault domain.Vault, path, title string, heading
 	}
 }
 
-// named is the names one vault answers a query with.
-func named(t *testing.T, db *DB, vault domain.Vault, query string) []domain.NameMatch {
+// getNames is the names one vault answers a query with.
+func getNames(t *testing.T, db *DB, vault domain.Vault, query string) []domain.NameMatch {
 	t.Helper()
 
 	found, err := db.NoteQueries().Names(t.Context(), vault.ID, query, 20)
@@ -35,9 +35,9 @@ func named(t *testing.T, db *DB, vault domain.Vault, query string) []domain.Name
 	return found
 }
 
-// marked is the name a match stands for, with the runs that matched wrapped in
-// brackets, so a test reads what a person would see.
-func marked(m domain.NameMatch) string {
+// describeMatch is the name a match stands for, with the runs that matched
+// wrapped in brackets, so a test reads what a person would see.
+func describeMatch(m domain.NameMatch) string {
 	text := m.Title
 	if m.Heading != "" {
 		text = m.Heading
@@ -54,10 +54,10 @@ func marked(m domain.NameMatch) string {
 }
 
 func TestANoteIsFoundByItsOwnTitle(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/entropy.md", "Entropy")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
 
-	found := named(t, db, first, "ent")
+	found := getNames(t, db, first, "ent")
 
 	if len(found) != 1 {
 		t.Fatalf("found %d names, want 1: %+v", len(found), found)
@@ -67,16 +67,16 @@ func TestANoteIsFoundByItsOwnTitle(t *testing.T) {
 	}
 	// A word reached by its prefix is marked whole: the index matched the
 	// word, and the word is what it has to say.
-	if got := marked(found[0]); got != "[Entropy]" {
+	if got := describeMatch(found[0]); got != "[Entropy]" {
 		t.Errorf("marked %q, want %q — the run that matched is what says why", got, "[Entropy]")
 	}
 }
 
 func TestANoteIsFoundByAHeadingInsideIt(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
 
-	found := named(t, db, first, "entropy")
+	found := getNames(t, db, first, "entropy")
 
 	if len(found) != 1 {
 		t.Fatalf("found %d names, want 1: %+v", len(found), found)
@@ -87,17 +87,17 @@ func TestANoteIsFoundByAHeadingInsideIt(t *testing.T) {
 	if found[0].Line != 0 {
 		t.Errorf("the heading stands on line %d, want 0", found[0].Line)
 	}
-	if got := marked(found[0]); got != "[Entropy] over one cycle" {
+	if got := describeMatch(found[0]); got != "[Entropy] over one cycle" {
 		t.Errorf("marked %q, want the run inside the heading", got)
 	}
 }
 
 func TestATitleComesBeforeAHeading(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
-	noted(t, db, first, "notes/entropy.md", "Entropy")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
+	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
 
-	found := named(t, db, first, "entropy")
+	found := getNames(t, db, first, "entropy")
 
 	if len(found) != 2 {
 		t.Fatalf("found %d names, want 2: %+v", len(found), found)
@@ -111,11 +111,11 @@ func TestATitleComesBeforeAHeading(t *testing.T) {
 }
 
 func TestOneNoteContributesOnlySoManyHeadings(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/thermo.md", "Thermodynamics",
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/thermo.md", "Thermodynamics",
 		"Entropy and heat", "Entropy and work", "Entropy and time", "Entropy and information")
 
-	found := named(t, db, first, "entropy")
+	found := getNames(t, db, first, "entropy")
 
 	if len(found) != mostHeadingsOfANote {
 		t.Fatalf("found %d headings of one note, want %d: %+v",
@@ -131,17 +131,17 @@ const mostHeadingsOfANote = 2
 // note with more matching headings than the whole answer holds is thinned
 // first, so the notes ranking below it still reach the person.
 func TestOneNoteDoesNotCrowdOutTheOthers(t *testing.T) {
-	db := opened(t)
+	db := openDB(t)
 
 	crowded := make([]string, 0, 40)
 	for i := range 40 {
 		crowded = append(crowded, "Entropy "+string(rune('a'+i%26))+string(rune('a'+i/26)))
 	}
-	noted(t, db, first, "notes/thermo.md", "Thermodynamics", crowded...)
-	noted(t, db, first, "notes/engine.md", "Engines", "Entropy of an engine")
-	noted(t, db, first, "notes/time.md", "Time", "Entropy and the arrow")
+	saveNamedNote(t, db, first, "notes/thermo.md", "Thermodynamics", crowded...)
+	saveNamedNote(t, db, first, "notes/engine.md", "Engines", "Entropy of an engine")
+	saveNamedNote(t, db, first, "notes/time.md", "Time", "Entropy and the arrow")
 
-	found := named(t, db, first, "entropy")
+	found := getNames(t, db, first, "entropy")
 
 	notes := map[string]int{}
 	for _, m := range found {
@@ -158,84 +158,84 @@ func TestOneNoteDoesNotCrowdOutTheOthers(t *testing.T) {
 }
 
 func TestANameGoesWhenTheNoteDoes(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/entropy.md", "Entropy", "Entropy and heat")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy", "Entropy and heat")
 
 	if err := db.Notes().Remove(t.Context(), first.ID, []string{"notes/entropy.md"}); err != nil {
 		t.Fatal(err)
 	}
 
-	if found := named(t, db, first, "entropy"); len(found) != 0 {
+	if found := getNames(t, db, first, "entropy"); len(found) != 0 {
 		t.Errorf("found %+v after the note was removed, want nothing", found)
 	}
 }
 
 func TestAHeadingThatWasTakenOutOfANoteStopsAnswering(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
-	noted(t, db, first, "notes/carnot.md", "The Carnot cycle", "Work over one cycle")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
+	saveNamedNote(t, db, first, "notes/carnot.md", "The Carnot cycle", "Work over one cycle")
 
-	if found := named(t, db, first, "entropy"); len(found) != 0 {
+	if found := getNames(t, db, first, "entropy"); len(found) != 0 {
 		t.Errorf("found %+v, want nothing: the heading is no longer in the note", found)
 	}
-	if found := named(t, db, first, "work"); len(found) != 1 {
+	if found := getNames(t, db, first, "work"); len(found) != 1 {
 		t.Errorf("found %d names for the heading that is there now, want 1", len(found))
 	}
 }
 
 func TestATitleThatChangedStopsAnsweringUnderTheOldOne(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/entropy.md", "Entropy")
-	noted(t, db, first, "notes/entropy.md", "Enthalpy")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
+	saveNamedNote(t, db, first, "notes/entropy.md", "Enthalpy")
 
-	if found := named(t, db, first, "entropy"); len(found) != 0 {
+	if found := getNames(t, db, first, "entropy"); len(found) != 0 {
 		t.Errorf("found %+v under the title the note no longer carries, want nothing", found)
 	}
-	if found := named(t, db, first, "enthalpy"); len(found) != 1 {
+	if found := getNames(t, db, first, "enthalpy"); len(found) != 1 {
 		t.Errorf("found %d names under the title it now carries, want 1", len(found))
 	}
 }
 
 func TestANameStaysInsideItsVault(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/entropy.md", "Entropy", "Entropy and heat")
-	noted(t, db, second, "notes/engine.md", "Engine", "Engine and work")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy", "Entropy and heat")
+	saveNamedNote(t, db, second, "notes/engine.md", "Engine", "Engine and work")
 
-	if found := named(t, db, second, "entropy"); len(found) != 0 {
+	if found := getNames(t, db, second, "entropy"); len(found) != 0 {
 		t.Errorf("the second vault answered %+v about the first, want nothing", found)
 	}
-	if found := named(t, db, first, "engine"); len(found) != 0 {
+	if found := getNames(t, db, first, "engine"); len(found) != 0 {
 		t.Errorf("the first vault answered %+v about the second, want nothing", found)
 	}
 
 	// Each answers about itself, so neither is silent for a reason of its own.
-	if found := named(t, db, first, "entropy"); len(found) == 0 {
+	if found := getNames(t, db, first, "entropy"); len(found) == 0 {
 		t.Error("the first vault answered nothing about its own name")
 	}
-	if found := named(t, db, second, "engine"); len(found) == 0 {
+	if found := getNames(t, db, second, "engine"); len(found) == 0 {
 		t.Error("the second vault answered nothing about its own name")
 	}
 }
 
 func TestOnlyTheLastWordIsMatchedOnItsPrefix(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/one.md", "Entropy of mixing")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/one.md", "Entropy of mixing")
 
-	if found := named(t, db, first, "entropy mix"); len(found) != 1 {
+	if found := getNames(t, db, first, "entropy mix"); len(found) != 1 {
 		t.Errorf("found %d names for a word still being typed, want 1", len(found))
 	}
-	if found := named(t, db, first, "entro mixing"); len(found) != 0 {
+	if found := getNames(t, db, first, "entro mixing"); len(found) != 0 {
 		t.Errorf("found %+v, want nothing: only the last word is a prefix", found)
 	}
 }
 
 func TestARunIsCountedTheWayAClientCountsText(t *testing.T) {
-	db := opened(t)
+	db := openDB(t)
 	// The emoji is one character to a reader and two code units to a client,
 	// so a run counted in characters would land a place early.
-	noted(t, db, first, "notes/waving.md", "👋 Entropy")
+	saveNamedNote(t, db, first, "notes/waving.md", "👋 Entropy")
 
-	found := named(t, db, first, "entropy")
+	found := getNames(t, db, first, "entropy")
 
 	if len(found) != 1 {
 		t.Fatalf("found %d names, want 1", len(found))

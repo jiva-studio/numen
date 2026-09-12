@@ -75,7 +75,7 @@ const (
 // build that could not open its own index cannot serve its own interface
 // either.
 func (refusal) page(cfg container.Config, why error) ([]byte, error) {
-	said := stopped(cfg, why)
+	said := getRefusal(cfg, why)
 
 	if built, ok := debug.ReadBuildInfo(); ok {
 		if version := built.Main.Version; version != "" && version != "(devel)" {
@@ -95,19 +95,19 @@ func (refusal) page(cfg container.Config, why error) ([]byte, error) {
 	return []byte(out.String()), nil
 }
 
-// stopped is the state the application is in, said in its own words: what it
+// getRefusal is the state the application is in, said in its own words: what it
 // could not open, what it found, and what a person can do about it.
-func stopped(cfg container.Config, why error) refusal {
+func getRefusal(cfg container.Config, why error) refusal {
 	var outside *settings.OutsideBounds
 	if errors.As(why, &outside) {
-		return sized(cfg, outside)
+		return getSizeRefusal(cfg, outside)
 	}
 
 	// sqlite says what it could not do as a result code, and the sentence it
 	// carries beside it is the library's own.
 	var coded interface{ Code() int }
 	if errors.As(why, &coded) {
-		return indexing(cfg, coded.Code(), why)
+		return getIndexRefusal(cfg, coded.Code(), why)
 	}
 
 	var syntax *json.SyntaxError
@@ -130,9 +130,9 @@ func stopped(cfg container.Config, why error) refusal {
 	}
 }
 
-// sized is a number a size does not take, from the file or from the command
-// line.
-func sized(cfg container.Config, outside *settings.OutsideBounds) refusal {
+// getSizeRefusal is a number a size does not take, from the file or from the
+// command line.
+func getSizeRefusal(cfg container.Config, outside *settings.OutsideBounds) refusal {
 	far := fmt.Sprintf("%v to %v", outside.Least, outside.Most)
 	written := fmt.Sprint(outside.Number)
 
@@ -169,9 +169,9 @@ const (
 	cannotOpen   = 14
 )
 
-// indexing is the index refusing to open, which is one fault for each way a
-// path can fail to be an index.
-func indexing(cfg container.Config, code int, why error) refusal {
+// getIndexRefusal is the index refusing to open, which is one fault for each
+// way a path can fail to be an index.
+func getIndexRefusal(cfg container.Config, code int, why error) refusal {
 	at := indexAt(cfg)
 	said := refusal{Heading: openingTheIndex, Facts: []fact{{"index", at}}}
 

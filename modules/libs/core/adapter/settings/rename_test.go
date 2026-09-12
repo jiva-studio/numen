@@ -33,7 +33,7 @@ func TestWhatIsNotRenamed(t *testing.T) {
 			`{"appearance":{"zoom":1.5}}`, nil,
 		},
 	} {
-		back, done := named([]byte(held.file), held.at, "interface_scale")
+		back, done := renameMember([]byte(held.file), held.at, "interface_scale")
 		if done {
 			t.Errorf("%s: renamed, leaving %s", what, back)
 		}
@@ -47,7 +47,7 @@ func TestWhatIsNotRenamed(t *testing.T) {
 // whatever lies between the two.
 func TestARenamedFieldKeepsItsValueAndItsPlace(t *testing.T) {
 	const held = "{\n  \"appearance\": {\n    \"zoom\"  :  1.50,\n    \"mode\": \"dark\"\n  }\n}\n"
-	back, done := named([]byte(held), []string{"appearance", "zoom"}, "interface_scale")
+	back, done := renameMember([]byte(held), []string{"appearance", "zoom"}, "interface_scale")
 	if !done {
 		t.Fatal("nothing was renamed")
 	}

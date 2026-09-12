@@ -59,7 +59,7 @@ export function useCommandPalette(
   const on = computed<CommandTarget>(() => at())
 
   const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
-    invocationOf(id, over, name, over.path ? knows.holding(over.path) : null)
+    invocationOf(id, over, name, over.path ? knows.getTabAt(over.path) : null)
 
   const drop = () => {
     asked.drop()
@@ -164,7 +164,7 @@ export function useCommandPalette(
 
   const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
     const command = byId.get(id)
-    if (!command || !command.where(over, runs)) return null
+    if (!command || !command.isOffered(over, runs)) return null
     if (!command.needs) return invocation(command.id, over)
     if (!open.value) {
       steps.reset()
@@ -176,7 +176,7 @@ export function useCommandPalette(
 
   const getObjection = (id: string, over: CommandTarget): string => {
     const command = byId.get(id)
-    if (!command || command.where(over, runs)) return ''
+    if (!command || command.isOffered(over, runs)) return ''
     return over.ready ? words.noNote : words.noVault
   }
 

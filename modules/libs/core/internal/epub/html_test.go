@@ -14,7 +14,7 @@ import (
 // of its own — in its text, in an attribute value, in what a picture is
 // described as — writes text and nothing else.
 func TestABooksOwnMarkupIsText(t *testing.T) {
-	book := read(t, spined(t, oneDocumentOpf, map[string]string{
+	book := read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{
 		"OEBPS/one.xhtml": `<html><body>
 			<p>Alpha &lt;/p&gt;&lt;script&gt;alert(1)&lt;/script&gt; omega</p>
 			<p title='he said "yes" &gt; no'>Beta</p>
@@ -33,7 +33,7 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 			t.Errorf("the markup carries %q:\n%s", written, page)
 		}
 	}
-	root := parsed(t, page)
+	root := parseHTML(t, page)
 	if found := elements(root, "script"); len(found) > 0 {
 		t.Errorf("a script element was written:\n%s", page)
 	}
@@ -49,7 +49,7 @@ func TestABooksOwnMarkupIsText(t *testing.T) {
 	} {
 		got := ""
 		for _, found := range elements(root, one.name) {
-			if said := valued(found, one.attribute); said != "" {
+			if said := getAttribute(found, one.attribute); said != "" {
 				got = said
 			}
 		}
@@ -68,7 +68,7 @@ func TestEveryRunOfTextSaysWhereItStands(t *testing.T) {
 		t.Fatalf("markup: %v", err)
 	}
 
-	runs := offsets(t, parsed(t, drawn.HTML()))
+	runs := offsets(t, parseHTML(t, drawn.HTML()))
 	if len(runs) == 0 {
 		t.Fatal("the markup says no offsets")
 	}
@@ -89,7 +89,7 @@ func TestEveryRunOfTextSaysWhereItStands(t *testing.T) {
 // and an entry the archive does not hold is not there.
 func TestAnEntryOfTheArchive(t *testing.T) {
 	const plate = "\x89PNG\r\n\x1a\nand the rest of it"
-	book := read(t, spined(t, oneDocumentOpf, map[string]string{
+	book := read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{
 		"OEBPS/one.xhtml":   `<html><body><p><img src="plate.png" alt="A plate"/></p></body></html>`,
 		"OEBPS/plate.png":   plate,
 		"OEBPS/notes.xhtml": `<html><body><p>Beside the spine</p></body></html>`,
@@ -130,7 +130,7 @@ func offsets(t *testing.T, root *html.Node) []run {
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			// A book writes spans of its own, and the run is the one that says
 			// where it stands.
-			if said := valued(c, epub.OffsetAttribute); said != "" {
+			if said := getAttribute(c, epub.OffsetAttribute); said != "" {
 				at, err := strconv.Atoi(said)
 				if err != nil {
 					t.Fatalf("a run says it stands at %q", said)
@@ -145,7 +145,7 @@ func offsets(t *testing.T, root *html.Node) []run {
 	return out
 }
 
-func parsed(t *testing.T, page string) *html.Node {
+func parseHTML(t *testing.T, page string) *html.Node {
 	t.Helper()
 	root, err := html.Parse(strings.NewReader(page))
 	if err != nil {
@@ -178,7 +178,7 @@ func text(n *html.Node) string {
 	return out.String()
 }
 
-func valued(n *html.Node, name string) string {
+func getAttribute(n *html.Node, name string) string {
 	for _, a := range n.Attr {
 		if a.Key == name {
 			return a.Val

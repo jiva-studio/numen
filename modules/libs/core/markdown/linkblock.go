@@ -74,7 +74,7 @@ func (d *Document) block() (block, error) {
 	switch {
 	case items == nil || empty(items):
 		return b, nil
-	case items.Kind != yaml.SequenceNode || flowing(items):
+	case items.Kind != yaml.SequenceNode || hasFlowStyle(items):
 		return block{}, ErrInline
 	}
 
@@ -108,7 +108,7 @@ func (d *Document) block() (block, error) {
 			address:  valueOf(item, "to"),
 		})
 		if i == 0 {
-			b.indent = leading(string(d.front[lines[at-1]:lines[at]]))
+			b.indent = getIndent(string(d.front[lines[at-1]:lines[at]]))
 		}
 	}
 	return b, nil
@@ -402,7 +402,7 @@ func asItWasWritten(was, to string) string {
 	if !strings.HasPrefix(was, "[[") || !strings.HasSuffix(was, "]]") || len(was) < 4 {
 		return to
 	}
-	return "[[" + to + keptAfterTarget(was[2:len(was)-2]) + "]]"
+	return "[[" + to + getAfterTarget(was[2:len(was)-2]) + "]]"
 }
 
 // Links are the relationships written in the `links:` block. Links written in
@@ -411,7 +411,7 @@ func asItWasWritten(was, to string) string {
 // Reading does not need the block to be laid out so that one entry can be
 // changed, so this asks less of it than a write does.
 func (d *Document) Links() ([]domain.Link, error) {
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil || node == nil {
 		return nil, err
 	}

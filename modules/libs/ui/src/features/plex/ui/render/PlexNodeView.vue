@@ -93,7 +93,7 @@ const { open, box, handle } = useOpenBox(
 // A box that has begun to open is already over its neighbours.
 watch(
   () => open.value > 0,
-  (now) => emit('rest', now),
+  (now) => emit('settle', now),
 )
 
 /**
@@ -179,8 +179,10 @@ const hue = computed(() => ({
 }
 
 /* While the plex is moving, the fill is a seat's colour too: the focused node
-   is painted from its own pair, and follows the move as the outline does. */
-[data-moving] :deep(.plex__box) {
+   is painted from its own pair, and follows the move as the outline does.
+   The node stands between: a `:deep` with nothing of this component's in front
+   of it hangs the scope on the ancestor, which is the frame's and not ours. */
+[data-moving] .plex__node :deep(.plex__box) {
   transition:
     fill var(--numen-plex-move, var(--numen-motion)) var(--numen-easing),
     stroke var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);

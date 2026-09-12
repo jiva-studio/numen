@@ -16,7 +16,7 @@ import { computed } from 'vue'
 import { Button, percent } from '@numen/ui'
 
 import { through } from '../lib/progress'
-import { goalWords, leftWords } from '../words'
+import { getGoalWords, getLeftWords } from '../words'
 import type { Preset } from '../types'
 
 const props = defineProps<{
@@ -66,10 +66,10 @@ const tiles = computed<Tile[]>(() =>
     const over = done > 1
     return {
       one,
-      goal: one.paused || (one.settings ? goalWords(one.settings, props.today) : ''),
+      goal: one.paused || (one.settings ? getGoalWords(one.settings, props.today) : ''),
       wrong: one.wrong,
       says: over ? 'over budget' : percent(done),
-      left: one.paused ? '' : leftWords(one),
+      left: one.paused ? '' : getLeftWords(one),
       over,
       opens: !one.paused && one.cards > 0,
     }

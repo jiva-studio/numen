@@ -3,7 +3,7 @@
  */
 import {
   CARD_HEAD,
-  cardEnded,
+  getRunEnd,
   type InsertionPoint,
 } from '@numen/ui'
 import type { Value } from '@/entities/deck'
@@ -100,7 +100,7 @@ export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): Buff
     return seat
   }
 
-  const run = cardEnded(at)
+  const run = getRunEnd(at)
   if (run !== null) {
     const section = run === CARD_HEAD ? null : run
     if (section !== null && !deck.sections.some((each) => each.id === section)) return deck

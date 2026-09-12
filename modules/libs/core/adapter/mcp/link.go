@@ -31,7 +31,7 @@ func addLinkReadingTools(server *sdk.Server, core Core) {
 			Links     []ResolvedLink `json:"links"`
 			Backlinks []ResolvedLink `json:"backlinks"`
 		}
-		found, err := core.Notes.Links.Execute(ctx, core.shown().Vault, in.Path)
+		found, err := core.Notes.Links.Execute(ctx, core.getShownVault().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -66,7 +66,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		// Asked of the whole call, before a file is opened.
 		size := 0
 		for _, add := range in.Links {
-			size += carried(add.Link)
+			size += countLinkBytes(add.Link)
 		}
 		if size > maxBytes {
 			return nil, out{}, fmt.Errorf(
@@ -115,7 +115,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 			}
 			group := batches[from]
 			written, err := core.Notes.Linking.Add(
-				ctx, core.shown().Vault, from, held[from], group[0], group[1:]...)
+				ctx, core.getShownVault().Vault, from, held[from], group[0], group[1:]...)
 			if err != nil {
 				for _, i := range at[from] {
 					res.Added[i].Refused = sayError(err)
@@ -152,7 +152,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 			return nil, ChangeOutcome{}, err
 		}
 		written, err := core.Notes.Linking.Update(
-			ctx, core.shown().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
+			ctx, core.getShownVault().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
 				Role:  domain.LinkRole(in.Role),
 				Type:  in.Type,
 				Label: in.Label,
@@ -181,7 +181,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, ChangeOutcome{}, err
 		}
-		written, err := core.Notes.Linking.Remove(ctx, core.shown().Vault, in.From,
+		written, err := core.Notes.Linking.Remove(ctx, core.getShownVault().Vault, in.From,
 			domain.ParseAddress(in.To), domain.LinkRole(in.Role), seen)
 		if err != nil {
 			return nil, ChangeOutcome{}, err
@@ -242,7 +242,7 @@ func writes(l Link) domain.Link {
 	}
 }
 
-func written(links []Link) []domain.Link {
+func newLinks(links []Link) []domain.Link {
 	if len(links) == 0 {
 		return nil
 	}
@@ -253,9 +253,9 @@ func written(links []Link) []domain.Link {
 	return out
 }
 
-// carried is how many bytes a link will put in a file. Every field of one is
-// written into the frontmatter, so every field is measured.
-func carried(l Link) int {
+// countLinkBytes is how many bytes a link will put in a file. Every field of one
+// is written into the frontmatter, so every field is measured.
+func countLinkBytes(l Link) int {
 	return len(l.To) + len(l.Role) + len(l.Type) + len(l.Label) + len(l.Why)
 }
 

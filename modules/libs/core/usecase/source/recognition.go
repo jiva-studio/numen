@@ -27,9 +27,9 @@ var errLateRuntime = errors.New("what reads a scan arrived just now; open numen 
 // of a clock and share the name it would give them.
 func recognitionID(nth uint64) string { return fmt.Sprintf("recognition-%d", nth) }
 
-// proofreadingID is what putting one file's text right is called, wherever it is
+// proofreadID is what putting one file's text right is called, wherever it is
 // shown. One file is one line, and it replaces itself as the text is put right.
-func proofreadingID(path string) string { return "proofreading-" + path }
+func proofreadID(path string) string { return "proofreading-" + path }
 
 // OpenRecogniser opens what reads a scanned page, when there is one to read.
 // It is told how far the fetching of what it needs has got.
@@ -159,7 +159,7 @@ func (r *RecognitionWorker) Start(v domain.Vault, path string) port.StartOutcome
 	r.going.Add(1)
 	go func() {
 		defer r.going.Done()
-		defer r.stopped(mine)
+		defer r.stopRun(mine)
 		r.drain(r.context())
 	}()
 	return port.Began
@@ -169,7 +169,7 @@ func (r *RecognitionWorker) Start(v domain.Vault, path string) port.StartOutcome
 func (r *RecognitionWorker) Waiting() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.queue.waiting()
+	return r.queue.countWaiting()
 }
 
 // drain recognises every document a person named, in the order they named them.
@@ -213,7 +213,7 @@ func (r *RecognitionWorker) one(ctx context.Context, v domain.Vault, path string
 	r.last = id
 	r.mu.Unlock()
 
-	r.done(before)
+	r.finishTask(before)
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 
 	err := r.recognise(ctx, v, id, path)
@@ -224,7 +224,7 @@ func (r *RecognitionWorker) one(ctx context.Context, v domain.Vault, path string
 	switch {
 	case err == nil, errors.Is(err, context.Canceled):
 		// A recognition somebody stopped is a recognition that is over.
-		r.done(id)
+		r.finishTask(id)
 	default:
 		// A failure nobody was shown is a failure nobody can act on, so it
 		// stays in the list until it is dismissed or the next recognition
@@ -233,9 +233,9 @@ func (r *RecognitionWorker) one(ctx context.Context, v domain.Vault, path string
 	}
 }
 
-// stopped stops the running where this run is still the one running, so a
+// stopRun stops the running where this run is still the one running, so a
 // recognition that ended where nothing expected it to leaves nothing running.
-func (r *RecognitionWorker) stopped(run uint64) {
+func (r *RecognitionWorker) stopRun(run uint64) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.runs == run {
@@ -332,14 +332,14 @@ func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path 
 
 	right, held, err := said.Reading(r.with.Readers, r.with.Derived)
 	if err != nil {
-		r.say(task.Task{ID: proofreadingID(path), Doing: "Proofreading a reading", About: path, Error: err.Error()})
+		r.say(task.Task{ID: proofreadID(path), Doing: "Proofreading a reading", About: path, Error: err.Error()})
 		return
 	}
 	if !held {
 		return
 	}
 
-	id := proofreadingID(path)
+	id := proofreadID(path)
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
 	right.Cut = r.Cut
@@ -356,7 +356,7 @@ func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path 
 
 	switch {
 	case err == nil, errors.Is(err, context.Canceled):
-		r.done(id)
+		r.finishTask(id)
 	default:
 		r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path, Error: err.Error()})
 	}
@@ -375,7 +375,7 @@ func (r *RecognitionWorker) says(at task.Task, asked bool) {
 	}
 }
 
-func (r *RecognitionWorker) done(id string) {
+func (r *RecognitionWorker) finishTask(id string) {
 	if r.with.Tasks != nil {
 		r.with.Tasks.Done(id)
 	}
@@ -402,12 +402,12 @@ func (r *RecognitionWorker) Collecting(
 	r.going.Add(1)
 	go func() {
 		defer r.going.Done()
-		r.collecting(ctx, known, queue, every, vaults)
+		r.runRounds(ctx, known, queue, every, vaults)
 	}()
 }
 
-// collecting is the round over every vault, and the wait between rounds.
-func (r *RecognitionWorker) collecting(
+// runRounds is the round over every vault, and the wait between rounds.
+func (r *RecognitionWorker) runRounds(
 	ctx context.Context,
 	known port.SourceQueries,
 	queue port.ProofreadQueue,
@@ -477,7 +477,7 @@ func (r *RecognitionWorker) collect(
 		if ctx.Err() != nil {
 			return
 		}
-		id := proofreadingID(one.Path)
+		id := proofreadID(one.Path)
 		res, err := ProofreadReading{
 			Readers:         r.with.Readers,
 			Derived:         r.with.Derived,
@@ -506,7 +506,7 @@ func (r *RecognitionWorker) collect(
 		case res.None, res.Read >= res.Pages:
 			// A reading with nothing left to put right is a run nobody is
 			// waiting on.
-			r.done(id)
+			r.finishTask(id)
 		default:
 			r.says(task.Task{
 				ID: id, Doing: "Proofreading a reading", About: one.Path,

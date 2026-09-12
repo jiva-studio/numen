@@ -33,13 +33,13 @@ const (
 // windows before. A run of windows it is sure enough about is a segment, closed
 // by the quiet after it and widened a little at each end.
 func (t *Transcriber) segments(ctx context.Context, sound []float32) ([]port.Audio, error) {
-	scores, err := t.voiced(ctx, sound)
+	scores, err := t.scoreSpeech(ctx, sound)
 	if err != nil {
 		return nil, err
 	}
 
 	windows := func(ms int) int { return ms * sampleRate / (1000 * speechWindow) }
-	found := joined(
+	found := joinShortSpans(
 		runs(scores, t.cutting.threshold(),
 			windows(t.cutting.silence()), windows(t.cutting.pad()),
 			windows(t.cutting.longest()), windows(t.cutting.shortest())),
@@ -59,13 +59,13 @@ func (t *Transcriber) segments(ctx context.Context, sound []float32) ([]port.Aud
 	return out, nil
 }
 
-// joined puts a span too short to stand on its own together with the one
+// joinShortSpans puts a span too short to stand on its own together with the one
 // after it, up to the longest a span may run to.
 //
 // A person pausing in the middle of a sentence closes a span, and what comes
 // back is a line holding one word. A line is a thing somebody reads, and the
 // model hears a sentence better than it hears a word out of one.
-func joined(found []span, least, longest int) []span {
+func joinShortSpans(found []span, least, longest int) []span {
 	out := make([]span, 0, len(found))
 	for _, one := range found {
 		if len(out) == 0 {
@@ -83,9 +83,9 @@ func joined(found []span, least, longest int) []span {
 	return out
 }
 
-// voiced is how sure the model is that each window of the recording carries
+// scoreSpeech is how sure the model is that each window of the recording carries
 // speech. A last window short of the model's own is filled out with silence.
-func (t *Transcriber) voiced(ctx context.Context, sound []float32) ([]float32, error) {
+func (t *Transcriber) scoreSpeech(ctx context.Context, sound []float32) ([]float32, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -213,7 +213,7 @@ func runs(scores []float32, threshold float32, silence, pad, longest, shortest i
 
 	var cut []span
 	for _, one := range wider {
-		cut = append(cut, divided(one, scores, longest)...)
+		cut = append(cut, splitLongSpan(one, scores, longest)...)
 	}
 
 	out = out[:0]
@@ -225,10 +225,10 @@ func runs(scores []float32, threshold float32, silence, pad, longest, shortest i
 	return out
 }
 
-// divided cuts a span that runs on too long into pieces the model is given
+// splitLongSpan cuts a span that runs on too long into pieces the model is given
 // one at a time. Each cut falls on the quietest window of the second half of
 // what is left, so that a sentence is broken where the speaker paused.
-func divided(one span, scores []float32, longest int) []span {
+func splitLongSpan(one span, scores []float32, longest int) []span {
 	if longest <= 1 {
 		return []span{one}
 	}

@@ -15,7 +15,7 @@ import (
 // known yet, and a person is told which.
 func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	unread := domain.Vault{ID: "nobody-scanned-this", Name: "Unread", Path: s.vault.Path}
 
 	_, err := s.standings.Execute(t.Context(), unread)
@@ -28,7 +28,7 @@ func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
 // their cards. What was wrong with it is settled in the editor.
 func TestADeckThatCannotBeReadLeavesTheOthersStanding(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 
 	whole, err := s.standings.Execute(t.Context(), s.vault)
 	if err != nil {

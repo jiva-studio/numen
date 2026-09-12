@@ -30,7 +30,7 @@ import type {
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {
   read: async (path) => parseRead(await presetsService.readPreset({ path })),
-  scheduling: async (deck) => parseRead(await presetsService.getDeckPreset({ deck })),
+  getDeckPreset: async (deck) => parseRead(await presetsService.getDeckPreset({ deck })),
   list: async () =>
     (await presetsService.listPresets({})).presets.map((one) => ({ path: one.path, title: one.title })),
   createPreset: async (title, folder) => {

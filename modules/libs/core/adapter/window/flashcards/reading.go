@@ -41,11 +41,11 @@ func (r *readings) forget(id domain.VaultID) {
 	delete(r.why, id)
 }
 
-// begins claims a vault for reading. It hands back the reader and the life to
+// claim claims a vault for reading. It hands back the reader and the life to
 // run it under where this call is the one that begins it, and no reader where
 // the vault has been read, is being read, could not be read, or where this
 // window reads nothing.
-func (r *readings) begins(
+func (r *readings) claim(
 	v domain.Vault,
 ) (read ReadVault, under context.Context, underway bool, reason string) {
 	r.mu.Lock()
@@ -69,8 +69,8 @@ func (r *readings) begins(
 	return r.read, r.under, true, ""
 }
 
-// ended is what one reading came to: the vault is read, or it is why it is not.
-func (r *readings) ended(v domain.Vault, err error) {
+// finish is what one reading came to: the vault is read, or it is why it is not.
+func (r *readings) finish(v domain.Vault, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.underway, v.ID)
@@ -101,17 +101,17 @@ func (a *API) Reading(ctx context.Context, read ReadVault) {
 // from there. One vault is read once at a time however many counts ask for it,
 // and a reading that failed is not begun again until the vault moves.
 func (a *API) reading(ctx context.Context, v domain.Vault) (underway bool, reason string) {
-	read, behind, running, reason := a.readings.begins(v)
+	read, behind, running, reason := a.readings.claim(v)
 	if read == nil {
 		return running, reason
 	}
 	//nolint:contextcheck // a vault is read for the life of the window, under behind, not under the count that asked
-	go a.walk(behind, read, v, a.carries(ctx, v))
+	go a.walk(behind, read, v, a.hasVault(ctx, v))
 	return true, ""
 }
 
-// carries is whether the index already holds this vault.
-func (a *API) carries(ctx context.Context, v domain.Vault) bool {
+// hasVault is whether the index already holds this vault.
+func (a *API) hasVault(ctx context.Context, v domain.Vault) bool {
 	if a.Notes == nil {
 		return false
 	}
@@ -138,14 +138,14 @@ func (a *API) walk(ctx context.Context, read ReadVault, v domain.Vault, held boo
 
 	err := read(ctx, v)
 
-	a.readings.ended(v, err)
+	a.readings.finish(v, err)
 
 	if err != nil {
 		at.Error = err.Error()
 		a.say(at)
 		return
 	}
-	a.finished(at.ID)
+	a.finishTask(at.ID)
 	a.Moved()
 }
 

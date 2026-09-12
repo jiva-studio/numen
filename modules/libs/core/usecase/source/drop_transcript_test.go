@@ -11,11 +11,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
-// dropping is one vault holding one recording, with the run that writes its
-// words down, the cut that follows it, and the drop that takes both away.
-func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain.Vault, *store, *shelf, *voice, string) {
+// newDropTranscript is one vault holding one recording, with the run that
+// writes its words down, the cut that follows it, and the drop that takes both
+// away.
+func newDropTranscript(t *testing.T, words ...string) (Transcribe, DropTranscript, domain.Vault, *store, *shelf, *voice, string) {
 	t.Helper()
-	raw := recorded(words)
+	raw := newRecording(words)
 	shelved := newLibrary()
 	shelved.hold(recordingPath, domain.KindRecording, raw, 1)
 	index := newStore()
@@ -46,7 +47,7 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 // cutFrom is the text of the chunks one source was cut into.
 func cutFrom(index *store, v domain.Vault, path string) []string {
 	var out []string
-	for _, c := range index.ordered() {
+	for _, c := range index.getOrderedChunks() {
 		if c.vault == v.ID && c.path == path {
 			out = append(out, c.text)
 		}
@@ -55,7 +56,7 @@ func cutFrom(index *store, v domain.Vault, path string) []string {
 }
 
 func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
-	listen, drop, v, index, kept, _, hash := dropping(t, "first thing", "second thing")
+	listen, drop, v, index, kept, _, hash := newDropTranscript(t, "first thing", "second thing")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -94,7 +95,7 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 
 func TestARecordingIsHeardAgainAfterItsTranscriptIsDropped(t *testing.T) {
 	// The two runs share no word, so a chunk says which of them cut it.
-	listen, drop, v, index, kept, model, hash := dropping(t, "udyana", "vrksa", "bija")
+	listen, drop, v, index, kept, model, hash := newDropTranscript(t, "udyana", "vrksa", "bija")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -116,7 +117,7 @@ func TestARecordingIsHeardAgainAfterItsTranscriptIsDropped(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the recording was not written down again: %v", err)
 	}
-	if said := spoken(t, raw); !slices.Equal(said, model.words) {
+	if said := getWords(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
 	if index.sources[v.ID][recordingPath].Producer != text.ASR {
@@ -138,7 +139,7 @@ func TestARecordingIsHeardAgainAfterItsTranscriptIsDropped(t *testing.T) {
 func TestTheAnswerOfARecordingWithNoSpeechIsDropped(t *testing.T) {
 	// A recording that gave no words stands on nothing, so what the run wrote
 	// is found by the fingerprint of the bytes.
-	listen, drop, v, index, kept, _, hash := dropping(t, "", "")
+	listen, drop, v, index, kept, _, hash := newDropTranscript(t, "", "")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -163,7 +164,7 @@ func TestTheAnswerOfARecordingWithNoSpeechIsDropped(t *testing.T) {
 }
 
 func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
-	_, drop, v, index, kept, _, _ := dropping(t, "one")
+	_, drop, v, index, kept, _, _ := newDropTranscript(t, "one")
 
 	res, err := drop.Execute(t.Context(), v, recordingPath)
 	if err != nil {
@@ -195,7 +196,7 @@ func (w watching) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e 
 // The recording is held for as long as the drop takes, so nothing listens to it
 // and writes words the drop is about to say it has none of.
 func TestTheRecordingIsHeldUntilTheIndexIsWritten(t *testing.T) {
-	listen, drop, v, index, kept, _, hash := dropping(t, "one", "two")
+	listen, drop, v, index, kept, _, hash := newDropTranscript(t, "one", "two")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -219,7 +220,7 @@ func TestTheRecordingIsHeldUntilTheIndexIsWritten(t *testing.T) {
 // The store is a folder on the person's disk and they may empty it. What the
 // index says about words nothing holds is the drop's to take away.
 func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
-	listen, drop, v, index, kept, _, hash := dropping(t, "one", "two")
+	listen, drop, v, index, kept, _, hash := newDropTranscript(t, "one", "two")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -248,7 +249,7 @@ func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
 // A recording that gave no words is out of the queue's reach for the life of a
 // run, and dropping its answer puts it back.
 func TestDroppingAnAnswerPutsTheRecordingBackInReach(t *testing.T) {
-	listen, drop, v, _, _, _, _ := dropping(t, "", "")
+	listen, drop, v, _, _, _, _ := newDropTranscript(t, "", "")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -265,7 +266,7 @@ func TestDroppingAnAnswerPutsTheRecordingBackInReach(t *testing.T) {
 }
 
 func TestATranscriptBeingWrittenIsNotDropped(t *testing.T) {
-	listen, drop, v, index, kept, _, hash := dropping(t, "one", "two")
+	listen, drop, v, index, kept, _, hash := newDropTranscript(t, "one", "two")
 
 	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)

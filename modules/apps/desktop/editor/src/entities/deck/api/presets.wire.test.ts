@@ -154,7 +154,7 @@ describe('the preset a deck is scheduled by', () => {
   it('is read under the deck and not under a path', async () => {
     replyWith({ preset: { path: '', title: '' } })
 
-    expect((await presets.scheduling('Deck.md')).preset?.path).toBe('')
+    expect((await presets.getDeckPreset('Deck.md')).preset?.path).toBe('')
     expect(asked[0]).toEqual({ deck: 'Deck.md' })
   })
 })

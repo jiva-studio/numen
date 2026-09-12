@@ -73,12 +73,12 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 		t.Errorf("the second run embedded %d chunks, want the %d the first did not", res.Embedded, want)
 	}
 	for _, chunk := range small {
-		switch len(index.made(chunk)) {
+		switch len(index.getVectors(chunk)) {
 		case 1:
 		case 0:
 			t.Fatalf("chunk %d was skipped by both runs", chunk.id)
 		default:
-			t.Fatalf("chunk %d was embedded %d times", chunk.id, len(index.made(chunk)))
+			t.Fatalf("chunk %d was embedded %d times", chunk.id, len(index.getVectors(chunk)))
 		}
 	}
 	if len(index.vectors) != len(small) {
@@ -135,8 +135,8 @@ func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
 		}
 	}
 	for _, chunk := range small {
-		if len(index.made(chunk)) != 1 {
-			t.Fatalf("chunk %d carries %d vectors", chunk.id, len(index.made(chunk)))
+		if len(index.getVectors(chunk)) != 1 {
+			t.Fatalf("chunk %d carries %d vectors", chunk.id, len(index.getVectors(chunk)))
 		}
 	}
 
@@ -262,12 +262,12 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, chunk := range mine {
-		if len(index.made(chunk)) != 1 {
-			t.Fatalf("chunk %d of its own vault carries %d vectors", chunk.id, len(index.made(chunk)))
+		if len(index.getVectors(chunk)) != 1 {
+			t.Fatalf("chunk %d of its own vault carries %d vectors", chunk.id, len(index.getVectors(chunk)))
 		}
 	}
 	for _, chunk := range theirs {
-		if len(index.made(chunk)) != 0 {
+		if len(index.getVectors(chunk)) != 0 {
 			t.Fatalf("embedding the first vault gave chunk %d of the second a vector", chunk.id)
 		}
 	}
@@ -276,9 +276,9 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, chunk := range append(append([]storedChunk{}, mine...), theirs...) {
-		if len(index.made(chunk)) != 1 {
+		if len(index.getVectors(chunk)) != 1 {
 			t.Fatalf("chunk %d carries %d vectors after both vaults were embedded",
-				chunk.id, len(index.made(chunk)))
+				chunk.id, len(index.getVectors(chunk)))
 		}
 	}
 }

@@ -93,5 +93,5 @@ export function usePresetTab(
     )
   }
 
-  return { kind, getState, changed: applyPathChanges, getTitle, openPreset, flush }
+  return { kind, getState, applyPathChanges, getTitle, openPreset, flush }
 }

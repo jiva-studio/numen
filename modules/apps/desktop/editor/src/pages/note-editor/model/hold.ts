@@ -76,10 +76,10 @@ export function holdChanges(limits: HoldLimits = HOLD_LIMITS) {
   }
 
   /** A note the window is no longer showing. */
-  const shut = (path: string): void => handleTimeout(path)
+  const closeNote = (path: string): void => handleTimeout(path)
 
   /** What one note is drawn with, or nothing. */
   const getChange = (path: string): Change | null => changes.get(path) ?? null
 
-  return { reportChange, handleNoteChange, handleTimeout, shut, getChange }
+  return { reportChange, handleNoteChange, handleTimeout, closeNote, getChange }
 }

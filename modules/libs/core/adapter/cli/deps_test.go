@@ -22,9 +22,9 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// derived is the shelf this installation keeps its own files on inside a vault:
-// what a reading wrote, and what a transcription wrote.
-func derived(options filesystem.Options) filesystem.DerivedStores {
+// getDerived is the shelf this installation keeps its own files on inside a
+// vault: what a reading wrote, and what a transcription wrote.
+func getDerived(options filesystem.Options) filesystem.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: options,
 		Area:    filesystem.OCRDir,
@@ -69,7 +69,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				return cli.Scan{}, err
 			}
 			readers := filesystem.VaultReaders{Options: options}
-			store, err := derived(options).Open(v)
+			store, err := getDerived(options).Open(v)
 			if err != nil {
 				_ = db.Close()
 				return cli.Scan{}, err
@@ -106,7 +106,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			}
 			return cli.Search{
 				Search: search.New(db.ChunkQueries(), filesystem.VaultReaders{Options: options},
-					derived(options), pdf.Documents{}, nil, 0, errorHandler),
+					getDerived(options), pdf.Documents{}, nil, 0, errorHandler),
 				Close: db.Close,
 			}, nil
 		},

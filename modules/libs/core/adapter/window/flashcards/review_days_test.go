@@ -16,10 +16,10 @@ var counting = review.Day{Starts: review.DayStarts}
 // What a vault was answered on comes back a day at a time, oldest first,
 // because what draws it draws it along a line of time.
 func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
 
-	session := started(t, api, v)
+	session := startSession(t, api, v)
 	for _, card := range session.GetAsked() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
@@ -45,15 +45,15 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 	if len(said.GetDays()) != 1 {
 		t.Fatalf("answered on %d days, want the one", len(said.GetDays()))
 	}
-	if got := said.GetDays()[0]; got.GetDay() != counting.Names(time.Now()) {
-		t.Errorf("the day is %q, want %q", got.GetDay(), counting.Names(time.Now()))
+	if got := said.GetDays()[0]; got.GetDay() != counting.GetName(time.Now()) {
+		t.Errorf("the day is %q, want %q", got.GetDay(), counting.GetName(time.Now()))
 	}
 }
 
 // A vault nobody answered has nothing to draw, which is an answer and not a
 // failure.
 func TestAVaultNobodyAnsweredHasNothingToDraw(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 
 	out, err := api.ListReviewDays(t.Context(),
 		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(held[0].ID)}))
@@ -69,10 +69,10 @@ func TestAVaultNobodyAnsweredHasNothingToDraw(t *testing.T) {
 // week ahead as well as the weeks behind. A card answered easily is sent days
 // away, and the day it is sent to is a day nobody has answered on.
 func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
 
-	session := started(t, api, v)
+	session := startSession(t, api, v)
 	if len(session.GetAsked()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
@@ -100,7 +100,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 		t.Errorf("%d cards fall on %s, want the one", coming.GetAnswered(), coming.GetDay())
 	}
 	// A day is written so that it sorts as text the way it sorts in time.
-	if today := counting.Names(time.Now()); coming.GetDay() <= today {
+	if today := counting.GetName(time.Now()); coming.GetDay() <= today {
 		t.Errorf("what is coming falls on %s, which is not after %s", coming.GetDay(), today)
 	}
 	// What was answered is still answered: the two are counted apart.
@@ -113,7 +113,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 // who answered everything this morning has an empty grid behind them and a full
 // one ahead.
 func TestNothingIsComingWhereNothingWasAnswered(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 
 	out, err := api.ListReviewDays(t.Context(),
 		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(held[0].ID)}))
@@ -146,7 +146,7 @@ func TestTheDaysComeBackOldestFirst(t *testing.T) {
 
 // A question about a vault the installation does not hold is refused.
 func TestAVaultNobodyHoldsIsRefused(t *testing.T) {
-	api, _ := windowed(t)
+	api, _ := newAPI(t)
 
 	_, err := api.ListReviewDays(t.Context(),
 		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: "nothing"}))

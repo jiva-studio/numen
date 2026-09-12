@@ -60,7 +60,7 @@ export function windowAppearance(
   const fileOf = async (name: string): Promise<string> => {
     const kept = files.get(name)
     if (kept !== undefined) return kept
-    const css = await core.text(name)
+    const css = await core.readTheme(name)
     files.set(name, css)
     return css
   }
@@ -117,8 +117,8 @@ export function windowAppearance(
   /** Let go of the stream the window is listening to. */
   const listening = new AbortController()
   const follows = createFollower({
-    open: () => open,
-    lost: (gone) => (lost.value = gone),
+    isOpen: () => open,
+    setLost: (gone) => (lost.value = gone),
     wait,
   })
 
@@ -126,7 +126,7 @@ export function windowAppearance(
   const loadAppearance = async () => {
     let answer: Appearance
     try {
-      answer = await core.appearance()
+      answer = await core.getAppearance()
     } catch (error) {
       console.error(error)
       write(words.unlisted, 'error')
@@ -152,7 +152,7 @@ export function windowAppearance(
    */
   const follow = () =>
     follows(
-      () => core.changed(listening.signal),
+      () => core.watchThemes(listening.signal),
       async (names) => {
         if (!names.length) return
         for (const name of names) files.delete(name)
@@ -177,9 +177,9 @@ export function windowAppearance(
     drawing()
   }
 
-  const themeGroups = () => getThemeGroups(list.value, applied.value, words)
-  const modes = () => getModeGroups(mode.value, choice.isPinned.value, words)
-  const sizes = (command: string, text = '') =>
+  const listThemeGroups = () => getThemeGroups(list.value, applied.value, words)
+  const listModeGroups = () => getModeGroups(mode.value, choice.isPinned.value, words)
+  const listSizeGroups = (command: string, text = '') =>
     getSizeGroups(command, text, settings.value, bounds.value, words)
 
   return {
@@ -191,9 +191,9 @@ export function windowAppearance(
     isPinned: choice.isPinned,
     pinned: choice.isPinned,
     lost,
-    getThemeGroups: themeGroups,
-    modes,
-    sizes,
+    getThemeGroups: listThemeGroups,
+    getModeGroups: listModeGroups,
+    getSizeGroups: listSizeGroups,
     previewItem: choice.previewItem,
     chooseItem: choice.chooseItem,
     start,

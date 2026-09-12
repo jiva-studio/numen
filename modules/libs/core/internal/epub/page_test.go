@@ -44,7 +44,7 @@ func TestThePagesABookIsRead(t *testing.T) {
 func TestAPageIsThatManyLetters(t *testing.T) {
 	written := func(letter string) *epub.Book {
 		t.Helper()
-		return read(t, spined(t, oneDocumentOpf, map[string]string{
+		return read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{
 			"OEBPS/one.xhtml": "<html><body><p>" + strings.Repeat(letter, 20_000) + "</p></body></html>",
 		}))
 	}

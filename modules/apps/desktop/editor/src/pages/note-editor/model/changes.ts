@@ -42,10 +42,10 @@ export function noteChanges(limits: HoldLimits = HOLD_LIMITS) {
   const handleNoteChange = (path: string): void => carry(path, decided.handleNoteChange(path))
 
   /** A note the window is no longer showing. */
-  const shut = (path: string): void => {
+  const closeNote = (path: string): void => {
     clearTimeout(timers.get(path))
     timers.delete(path)
-    decided.shut(path)
+    decided.closeNote(path)
     carry(path, null)
   }
 
@@ -58,5 +58,5 @@ export function noteChanges(limits: HoldLimits = HOLD_LIMITS) {
     timers.clear()
   }
 
-  return { reportChange, handleNoteChange, shut, getChange, close }
+  return { reportChange, handleNoteChange, closeNote, getChange, close }
 }

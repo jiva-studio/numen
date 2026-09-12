@@ -172,9 +172,9 @@ describe('coming to rest', () => {
     await handle(control).trigger('keyup', { key: 'ArrowRight' })
 
     expect(getEmitted(control)).toEqual([41])
-    expect(control.emitted('settles')).toEqual([[41]])
+    expect(control.emitted('settle')).toEqual([[41]])
     const order = Object.keys(control.emitted())
-    expect(order.indexOf('update:modelValue')).toBeLessThan(order.indexOf('settles'))
+    expect(order.indexOf('update:modelValue')).toBeLessThan(order.indexOf('settle'))
   })
 
   it('says nothing about settling while the keys are still walking it', async () => {
@@ -182,7 +182,7 @@ describe('coming to rest', () => {
     await walkTrack(control, [41, 42, 43])
 
     expect(getEmitted(control)).toEqual([41, 42, 43])
-    expect(control.emitted('settles')).toBeUndefined()
+    expect(control.emitted('settle')).toBeUndefined()
   })
 
   it('says it once, at where the walk left it, when the key is let go of', async () => {
@@ -190,7 +190,7 @@ describe('coming to rest', () => {
     await walkTrack(control, [41, 42, 43])
     await handle(control).trigger('keyup', { key: 'ArrowRight' })
 
-    expect(control.emitted('settles')).toEqual([[43]])
+    expect(control.emitted('settle')).toEqual([[43]])
   })
 
   it('says nothing where the walk left the handle where it began', async () => {
@@ -198,7 +198,7 @@ describe('coming to rest', () => {
     await handle(control).trigger('keydown', { key: 'ArrowLeft' })
     await handle(control).trigger('keyup', { key: 'ArrowLeft' })
 
-    expect(control.emitted('settles')).toBeUndefined()
+    expect(control.emitted('settle')).toBeUndefined()
   })
 
   // A handle the keyboard leaves in the middle of a walk is a handle let go of.
@@ -207,6 +207,6 @@ describe('coming to rest', () => {
     await walkTrack(control, [41])
     await handle(control).trigger('blur')
 
-    expect(control.emitted('settles')).toEqual([[41]])
+    expect(control.emitted('settle')).toEqual([[41]])
   })
 })

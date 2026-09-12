@@ -36,16 +36,16 @@ const HANDLERS: Record<string, CommandHandler> = {
   jump: (invocation, on, words) => createNoteCommand(invocation, 'jump', on, words),
   note: (invocation, on, words) => createNoteCommand(invocation, null, on, words),
   deck: async (invocation, on) => {
-    if (invocation.name) await on.makers.decks('', invocation.name)
+    if (invocation.name) await on.makers.createDeck('', invocation.name)
   },
   stencil: async (invocation, on) => {
-    if (invocation.name) await on.makers.stencils('', invocation.name)
+    if (invocation.name) await on.makers.createStencil('', invocation.name)
   },
   newPreset: async (invocation, on) => {
-    if (invocation.name) await on.makers.presets('', invocation.name)
+    if (invocation.name) await on.makers.createPreset('', invocation.name)
   },
   importUrl: async (invocation, on) => {
-    if (invocation.name) await on.makers.imports('', invocation.name)
+    if (invocation.name) await on.makers.createUrl('', invocation.name)
   },
   title: (invocation, on, words) => renameNoteCommand(invocation, on, words),
   remove: (invocation, on, words) => removeFiles(invocation, false, on, words),
@@ -71,9 +71,9 @@ const HANDLERS: Record<string, CommandHandler> = {
     on.writeMessage(words.unrunnable, 'error')
   },
   ask: (invocation, on) => on.goes.ask(`${invocation.path} — `),
-  copy: (invocation, on) => on.copies(invocation.path),
+  copy: (invocation, on) => on.copyPath(invocation.path),
   reveal: (invocation, on) => on.goes.revealPath(invocation.path),
-  preset: (invocation, on) => on.goes.preset(invocation.path),
+  preset: (invocation, on) => on.goes.openPreset(invocation.path),
   settings: (_, on) => on.goes.openTab(SETTINGS),
   move: (invocation, on, words) => moveFileCommand(invocation, on, words),
   createFolder: (invocation, on, words) => createFolderCommand(invocation, on, words),
@@ -82,14 +82,14 @@ const HANDLERS: Record<string, CommandHandler> = {
   agent: (_, on) => on.goes.openTab(AGENT),
   close: (invocation, on) => on.goes.closeTab(invocation.tab),
   find: (_, on) => on.goes.search(),
-  appearance: (invocation, on) => on.settings.appearance(invocation.name),
-  mode: (invocation, on) => on.settings.appearance(invocation.name),
-  interfaceScale: (invocation, on) => on.settings.appearance(invocation.name),
-  textScale: (invocation, on) => on.settings.appearance(invocation.name),
-  syncing: (invocation, on) => on.settings.syncing(invocation.name),
-  hanging: (invocation, on) => on.settings.hanging(invocation.name),
-  parts: (invocation, on) => on.settings.parts(invocation.name),
-  first: (_, on, words) => navigateToPath(on.goes.opening(), on, words),
+  appearance: (invocation, on) => on.settings.chooseAppearance(invocation.name),
+  mode: (invocation, on) => on.settings.chooseAppearance(invocation.name),
+  interfaceScale: (invocation, on) => on.settings.chooseAppearance(invocation.name),
+  textScale: (invocation, on) => on.settings.chooseAppearance(invocation.name),
+  syncing: (invocation, on) => on.settings.chooseSync(invocation.name),
+  hanging: (invocation, on) => on.settings.chooseHanging(invocation.name),
+  parts: (invocation, on) => on.settings.chooseParts(invocation.name),
+  first: (_, on, words) => navigateToPath(on.goes.getOpeningNote(), on, words),
   goto: (invocation, on, words) => navigateToPath(invocation.path, on, words),
   openVault: (invocation, on, words) => showVault(invocation.vault.id, on, words),
   newVault: (_, on, words) => addVault(on, words),
@@ -160,7 +160,7 @@ const removeFiles = async (
   const dangling: string[] = []
   const errors: string[] = []
   let waiting = false
-  const opening = on.goes.opening()
+  const opening = on.goes.getOpeningNote()
 
   for (const path of getInvocationPaths(invocation)) {
     const tab = await settleTab(path, on)

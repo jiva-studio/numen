@@ -64,12 +64,12 @@ func (c claimed) Claim(_ context.Context, name string) (func() error, error) {
 	return func() error { return nil }, nil
 }
 
-// running is a window over a vault holding a scan, a recording and a note, with
+// openRunWindow is a window over a vault holding a scan, a recording and a note, with
 // the runs a test hands it and whatever a run before this one wrote down.
 //
 // read is what the index says each source's text came from; a source it does
 // not name is one nothing has produced a text of.
-func running(
+func openRunWindow(
 	t *testing.T,
 	held port.DerivedStore,
 	read indexed,
@@ -93,7 +93,7 @@ func running(
 	// no address at all says a url carries nothing.
 	api.Imports = &source.ImportURL{By: reachingASite{}}
 	api.show(vault)
-	runningBehind(api, func(on *passes) { on.recognises, on.transcribes = scans, hears })
+	setPasses(api, func(on *passes) { on.recognises, on.transcribes = scans, hears })
 	return api, api.Serving(http.NotFoundHandler())
 }
 
@@ -105,8 +105,8 @@ var noteRead = note.NewRead(filesystem.VaultReaders{})
 func willRun() *asking   { return &asking{takes: port.Began} }
 func willQueue() *asking { return &asking{takes: port.Queued} }
 
-// nothingRead is an index holding no produced text at all.
-func nothingRead() indexed { return indexed{} }
+// newEmptyIndex is an index holding no produced text at all.
+func newEmptyIndex() indexed { return indexed{} }
 
 // The artifacts a test asks for, as the schema names them.
 const (
@@ -125,9 +125,9 @@ func makes(api *API, path string, of v1.ArtifactKind) (*connect.Response[v1.Crea
 	}))
 }
 
-// making asks for one artifact of one file to be made, and fails the test where
+// createArtifact asks for one artifact of one file to be made, and fails the test where
 // the window would not.
-func making(t *testing.T, api *API, path string, of v1.ArtifactKind) *v1.Artifact {
+func createArtifact(t *testing.T, api *API, path string, of v1.ArtifactKind) *v1.Artifact {
 	t.Helper()
 	out, err := makes(api, path, of)
 	if err != nil {
@@ -136,8 +136,8 @@ func making(t *testing.T, api *API, path string, of v1.ArtifactKind) *v1.Artifac
 	return out.Msg.GetArtifact()
 }
 
-// carrying is what a file carries, by the artifact each row is of.
-func carrying(t *testing.T, api *API, path string) map[v1.ArtifactKind]v1.State {
+// getArtifactStates is what a file carries, by the artifact each row is of.
+func getArtifactStates(t *testing.T, api *API, path string) map[v1.ArtifactKind]v1.State {
 	t.Helper()
 	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: path}))
 	if err != nil {
@@ -150,8 +150,8 @@ func carrying(t *testing.T, api *API, path string) map[v1.ArtifactKind]v1.State 
 	return by
 }
 
-// refusedMaking is the code the window would not make an artifact under.
-func refusedMaking(t *testing.T, api *API, path string, of v1.ArtifactKind) connect.Code {
+// getRefusedCode is the code the window would not make an artifact under.
+func getRefusedCode(t *testing.T, api *API, path string, of v1.ArtifactKind) connect.Code {
 	t.Helper()
 	out, err := makes(api, path, of)
 	if err == nil {
@@ -164,9 +164,9 @@ func refusedMaking(t *testing.T, api *API, path string, of v1.ArtifactKind) conn
 // vault.
 func TestAScanIsReadWhenTheWindowAsksForIt(t *testing.T) {
 	scans := willRun()
-	api, _ := running(t, stored{}, nothingRead(), scans, willRun())
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), scans, willRun())
 
-	made := making(t, api, book, readingOf)
+	made := createArtifact(t, api, book, readingOf)
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the scan was answered %s", made.GetState())
 	}
@@ -181,9 +181,9 @@ func TestAScanIsReadWhenTheWindowAsksForIt(t *testing.T) {
 // A recording the window asks for is heard.
 func TestARecordingIsHeardWhenTheWindowAsksForIt(t *testing.T) {
 	hears := willRun()
-	api, _ := running(t, stored{}, nothingRead(), willRun(), hears)
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), hears)
 
-	made := making(t, api, talk, transcriptOf)
+	made := createArtifact(t, api, talk, transcriptOf)
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the recording was answered %s", made.GetState())
 	}
@@ -208,9 +208,9 @@ func TestASourceNamedWhileARunIsGoingWaitsItsTurn(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			scans, hears := willQueue(), willQueue()
-			api, _ := running(t, stored{}, nothingRead(), scans, hears)
+			api, _ := openRunWindow(t, stored{}, newEmptyIndex(), scans, hears)
 
-			made := making(t, api, one.path, one.of)
+			made := createArtifact(t, api, one.path, one.of)
 			if made.GetState() != v1.State_STATE_QUEUED {
 				t.Fatalf("it was answered %s", made.GetState())
 			}
@@ -237,9 +237,9 @@ func TestAFileOnlyCarriesTheArtifactsItsKindDoes(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			scans, hears := willRun(), willRun()
-			api, _ := running(t, stored{}, nothingRead(), scans, hears)
+			api, _ := openRunWindow(t, stored{}, newEmptyIndex(), scans, hears)
 
-			if code := refusedMaking(t, api, one.path, one.of); code != connect.CodeInvalidArgument {
+			if code := getRefusedCode(t, api, one.path, one.of); code != connect.CodeInvalidArgument {
 				t.Errorf("a file carrying no such artifact was refused %s", code)
 			}
 			if scans.times+hears.times != 0 {
@@ -252,9 +252,9 @@ func TestAFileOnlyCarriesTheArtifactsItsKindDoes(t *testing.T) {
 // An artifact no file carries is refused before the vault is read at all.
 func TestAnArtifactNoFileCarriesIsNotMade(t *testing.T) {
 	scans, hears := willRun(), willRun()
-	api, _ := running(t, stored{}, nothingRead(), scans, hears)
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), scans, hears)
 
-	if code := refusedMaking(t, api, book, v1.ArtifactKind(99)); code != connect.CodeInvalidArgument {
+	if code := getRefusedCode(t, api, book, v1.ArtifactKind(99)); code != connect.CodeInvalidArgument {
 		t.Errorf("an artifact nothing makes was refused %s", code)
 	}
 	if scans.times+hears.times != 0 {
@@ -278,13 +278,13 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			const wrote = "what the model wrote"
 			scans, hears := willRun(), willRun()
-			api, _ := running(t,
+			api, _ := openRunWindow(t,
 				stored{derived.Artifact(one.from, one.hash): []byte(wrote)},
 				indexed{one.path: {Fingerprint: domain.Fingerprint{Path: one.path}, Producer: one.from, Hash: one.hash}},
 				scans, hears,
 			)
 
-			made := making(t, api, one.path, one.of)
+			made := createArtifact(t, api, one.path, one.of)
 			if made.GetState() != v1.State_STATE_DONE {
 				t.Fatalf("a source already done was answered %s", made.GetState())
 			}
@@ -312,7 +312,7 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			const far = "as far as it has got"
 			scans, hears := willRun(), willRun()
-			api, _ := running(t,
+			api, _ := openRunWindow(t,
 				claimed{
 					stored: stored{derived.Partial(one.from, one.hash): []byte(far)},
 					name:   derived.Partial(one.from, one.hash),
@@ -321,7 +321,7 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 				scans, hears,
 			)
 
-			made := making(t, api, one.path, one.of)
+			made := createArtifact(t, api, one.path, one.of)
 			if made.GetState() != v1.State_STATE_RUNNING {
 				t.Fatalf("a source a run holds was answered %s", made.GetState())
 			}
@@ -346,7 +346,7 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 		{"a recording", transcriptOf, talk, asr, hashed},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			api, _ := running(t,
+			api, _ := openRunWindow(t,
 				stored{derived.Partial(one.from, one.hash): []byte("as far as it got")},
 				indexed{one.path: {Fingerprint: domain.Fingerprint{Path: one.path}, Producer: one.from, Hash: one.hash}},
 				willQueue(), willQueue(),
@@ -354,10 +354,10 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 
 			// What the run left is on disk, and the source is told apart from
 			// one nothing has touched until it is named afresh.
-			if state := carrying(t, api, one.path)[one.of]; state != v1.State_STATE_STOPPED {
+			if state := getArtifactStates(t, api, one.path)[one.of]; state != v1.State_STATE_STOPPED {
 				t.Errorf("a run that stopped left the source %s", state)
 			}
-			made := making(t, api, one.path, one.of)
+			made := createArtifact(t, api, one.path, one.of)
 			if made.GetState() != v1.State_STATE_QUEUED {
 				t.Fatalf("it was answered %s", made.GetState())
 			}
@@ -369,7 +369,7 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 // gives the name it was writing under back.
 func TestASourceDoneIsDoneEvenWhereAPartialStands(t *testing.T) {
 	scans := willRun()
-	api, _ := running(t,
+	api, _ := openRunWindow(t,
 		stored{
 			derived.Artifact(reader, scanned): []byte("what the model wrote"),
 			derived.Partial(reader, scanned):  []byte("what it wrote on the way"),
@@ -378,7 +378,7 @@ func TestASourceDoneIsDoneEvenWhereAPartialStands(t *testing.T) {
 		scans, willRun(),
 	)
 
-	if made := making(t, api, book, readingOf); made.GetState() != v1.State_STATE_DONE {
+	if made := createArtifact(t, api, book, readingOf); made.GetState() != v1.State_STATE_DONE {
 		t.Errorf("it was answered %s", made.GetState())
 	}
 	if scans.times != 0 {
@@ -390,12 +390,12 @@ func TestASourceDoneIsDoneEvenWhereAPartialStands(t *testing.T) {
 // one begins it.
 func TestASourceCarryingItsOwnTextHasNotBeenRun(t *testing.T) {
 	scans := willRun()
-	api, _ := running(t, stored{},
+	api, _ := openRunWindow(t, stored{},
 		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}, Hash: scanned}},
 		scans, willRun(),
 	)
 
-	if made := making(t, api, book, readingOf); made.GetState() != v1.State_STATE_RUNNING {
+	if made := createArtifact(t, api, book, readingOf); made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the scan was answered %s", made.GetState())
 	}
 	if scans.times != 1 {
@@ -406,13 +406,13 @@ func TestASourceCarryingItsOwnTextHasNotBeenRun(t *testing.T) {
 // A path the vault does not hold is not something a person can act on, and is
 // refused as an error.
 func TestARunOverAPathTheVaultDoesNotHoldIsNotFound(t *testing.T) {
-	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
 	for of, path := range map[v1.ArtifactKind]string{
 		readingOf:    "library/nothing.pdf",
 		transcriptOf: "talks/nothing.mp3",
 	} {
-		if code := refusedMaking(t, api, path, of); code != connect.CodeNotFound {
+		if code := getRefusedCode(t, api, path, of); code != connect.CodeNotFound {
 			t.Errorf("asked for a run over nothing and was refused %s", code)
 		}
 	}
@@ -421,10 +421,10 @@ func TestARunOverAPathTheVaultDoesNotHoldIsNotFound(t *testing.T) {
 // A vault is in the window before what runs behind it is, so a run asked for in
 // between reaches no runner and the caller asks again.
 func TestARunAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
-	api, _ := running(t, stored{}, nothingRead(), nil, nil)
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), nil, nil)
 
 	for of, path := range map[v1.ArtifactKind]string{readingOf: book, transcriptOf: talk} {
-		if code := refusedMaking(t, api, path, of); code != connect.CodeUnavailable {
+		if code := getRefusedCode(t, api, path, of); code != connect.CodeUnavailable {
 			t.Errorf("asked before the passes were up and was refused %s", code)
 		}
 	}
@@ -434,10 +434,10 @@ func TestARunAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 // a question that only asks.
 func TestListingWhatAFileCarriesBeginsNoRun(t *testing.T) {
 	scans, hears := willRun(), willRun()
-	api, _ := running(t, stored{}, nothingRead(), scans, hears)
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), scans, hears)
 
 	for _, path := range []string{book, talk} {
-		carrying(t, api, path)
+		getArtifactStates(t, api, path)
 	}
 	if scans.times+hears.times != 0 {
 		t.Error("a run was given a source by a question that only asked")

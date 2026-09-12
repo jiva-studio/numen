@@ -28,7 +28,7 @@ const (
 // A page whose text layer says nothing gives no boxes, and a scan gives none at
 // all.
 func (b *Book) Highlights(raw []byte, pages []int) ([]highlight.Box, error) {
-	wanted := ordered(pages, len(b.Pages))
+	wanted := getOrderedPages(pages, len(b.Pages))
 	if len(wanted) == 0 {
 		return nil, nil
 	}
@@ -46,9 +46,9 @@ func (b *Book) Highlights(raw []byte, pages []int) ([]highlight.Box, error) {
 	return boxes, nil
 }
 
-// ordered is the pages asked for, each of them once and in reading order. A
+// getOrderedPages is the pages asked for, each of them once and in reading order. A
 // page the document does not have is not a page.
-func ordered(pages []int, most int) []int {
+func getOrderedPages(pages []int, most int) []int {
 	seen := make(map[int]bool, len(pages))
 	out := make([]int, 0, len(pages))
 	for _, page := range pages {
@@ -170,8 +170,8 @@ func (d *document) paper(page requests.Page) (sheet, bool) {
 
 // box is one word of a page, over the fraction of it the word covers.
 func (p sheet) box(page, start, length int, word responses.CharPosition) highlight.Box {
-	x0, y0 := p.drawn(word.Left, word.Top)
-	x1, y1 := p.drawn(word.Right, word.Bottom)
+	x0, y0 := p.getDrawnPoint(word.Left, word.Top)
+	x1, y1 := p.getDrawnPoint(word.Right, word.Bottom)
 	return highlight.Box{
 		Page: page,
 		Span: domain.Span{From: start, To: start + length},
@@ -184,13 +184,13 @@ func (p sheet) box(page, start, length int, word responses.CharPosition) highlig
 	}
 }
 
-// drawn is where a point of the page falls on the page as it is drawn: a
+// getDrawnPoint is where a point of the page falls on the page as it is drawn: a
 // fraction of it, measured from its top left corner.
 //
 // A page's text is written with the origin at the bottom left corner, and the
 // page is drawn with the origin at the top left and turned by however much it
 // asks to be.
-func (p sheet) drawn(x, y float64) (float32, float32) {
+func (p sheet) getDrawnPoint(x, y float64) (float32, float32) {
 	wide, high := p.width, p.height
 	switch p.turn {
 	case 1:

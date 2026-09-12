@@ -55,8 +55,8 @@ func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
 	}
-	lines := spoken(cues)
-	step := size - shared(size, overlap)
+	lines := getSpokenLines(cues)
+	step := size - getSharedLines(size, overlap)
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
 		end := min(start+size, len(lines))
@@ -85,8 +85,8 @@ func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
 		return nil
 	}
 
-	lines := spoken(cues)
-	step := size - shared(size, overlap)
+	lines := getSpokenLines(cues)
+	step := size - getSharedLines(size, overlap)
 	var out []Batch
 	reach := -1
 	for _, cut := range cuts {
@@ -110,9 +110,9 @@ func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
 	return out
 }
 
-// spoken is every cue that says something, as a line known by the index of its
-// cue in the transcript.
-func spoken(cues []transcript.Cue) []Line {
+// getSpokenLines is every cue that says something, as a line known by the index
+// of its cue in the transcript.
+func getSpokenLines(cues []transcript.Cue) []Line {
 	var out []Line
 	for at, cue := range cues {
 		if cue.Text == "" {
@@ -123,10 +123,10 @@ func spoken(cues []transcript.Cue) []Line {
 	return out
 }
 
-// shared is how many lines a batch keeps from the one before it: never as many
-// as size, so each batch reaches further into the transcript than its
+// getSharedLines is how many lines a batch keeps from the one before it: never
+// as many as size, so each batch reaches further into the transcript than its
 // neighbour.
-func shared(size, overlap int) int {
+func getSharedLines(size, overlap int) int {
 	if overlap < 0 {
 		return 0
 	}

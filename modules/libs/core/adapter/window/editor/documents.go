@@ -115,8 +115,8 @@ const (
 	openIdleFor = 2 * time.Minute
 )
 
-// keeping is a window with nothing open yet.
-func keeping() *documents {
+// newDocuments is a window with nothing open yet.
+func newDocuments() *documents {
 	return &documents{
 		open:    map[fingerprint]*document{},
 		limit:   mostOpen,

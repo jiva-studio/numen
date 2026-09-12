@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { FieldValue } from './card'
-import { faceRows, fieldRows, panes, STENCIL_WORDS, type StencilFace } from './stencil'
+import { faceRows, fieldRows, getPanes, STENCIL_WORDS, type StencilFace } from './stencil'
 
 describe('fieldRows', () => {
   const FIELDS = ['Height', 'Weight']
@@ -119,7 +119,7 @@ describe('panes', () => {
     return drawn
   }
 
-  const getPanes = (face: StencilFace) => panes(faceOf(face, FIELDS, SAMPLE))
+  const getFacePanes = (face: StencilFace) => getPanes(faceOf(face, FIELDS, SAMPLE))
 
   const FULL: StencilFace = {
     id: 'recognise',
@@ -129,7 +129,7 @@ describe('panes', () => {
   }
 
   it('divides a face into four, the markup of each half before what it comes to', () => {
-    expect(getPanes(FULL).map((pane) => [pane.half, pane.mode])).toEqual([
+    expect(getFacePanes(FULL).map((pane) => [pane.half, pane.mode])).toEqual([
       ['front', 'written'],
       ['front', 'preview'],
       ['back', 'written'],
@@ -138,7 +138,7 @@ describe('panes', () => {
   })
 
   it('stands the markup in one part and the sample filling it in the next', () => {
-    expect(getPanes(FULL).map((pane) => pane.text)).toEqual([
+    expect(getFacePanes(FULL).map((pane) => pane.text)).toEqual([
       '{{Name}}',
       'Llama',
       '{{Height}}',
@@ -147,7 +147,7 @@ describe('panes', () => {
   })
 
   it('calls each part what it holds', () => {
-    expect(getPanes(FULL).map((pane) => pane.said)).toEqual([
+    expect(getFacePanes(FULL).map((pane) => pane.said)).toEqual([
       'Front',
       'Preview',
       'Back',
@@ -156,28 +156,28 @@ describe('panes', () => {
   })
 
   it('announces a preview by the face and the half it is of', () => {
-    expect(getPanes(FULL)[1]?.named).toBe('Preview: Recognise Front')
+    expect(getFacePanes(FULL)[1]?.named).toBe('Preview: Recognise Front')
   })
 
   it('calls a part blank while nothing but space stands in it', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: ' \n ', back: '{{Height}}' }
-    expect(getPanes(face).map((pane) => pane.blank)).toEqual([true, true, false, false])
+    expect(getFacePanes(face).map((pane) => pane.blank)).toEqual([true, true, false, false])
   })
 
   it('calls a part blank where what is written fills out to nothing', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: '{{Blank}}', back: '' }
-    const drawn = panes(faceOf(face, ['Blank'], [{ field: 'Blank', text: '' }]))
+    const drawn = getPanes(faceOf(face, ['Blank'], [{ field: 'Blank', text: '' }]))
     expect(drawn[0]?.blank).toBe(false)
     expect(drawn[1]?.blank).toBe(true)
   })
 
   it('says a stray slot under the markup naming it, and not under the preview', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: '{{Colour}}', back: '' }
-    expect(getPanes(face).map((pane) => pane.stray)).toEqual([['Colour'], [], [], []])
+    expect(getFacePanes(face).map((pane) => pane.stray)).toEqual([['Colour'], [], [], []])
   })
 
   it('draws every part with the words it was handed', () => {
-    const drawn = panes(faceOf(FULL, FIELDS, SAMPLE), {
+    const drawn = getPanes(faceOf(FULL, FIELDS, SAMPLE), {
       ...STENCIL_WORDS,
       front: 'Recto',
       back: 'Verso',

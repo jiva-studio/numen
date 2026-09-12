@@ -398,7 +398,7 @@ describe('a box with more of its title to show', () => {
     mounted.world.tick(0)
     mounted.world.tick(OPENING / 2)
     await mounted.node.vm.$nextTick()
-    expect(mounted.node.emitted('rest')).toStrictEqual([[true]])
+    expect(mounted.node.emitted('settle')).toStrictEqual([[true]])
   })
 
   it('is put back once the hand has left it', async () => {
@@ -410,7 +410,7 @@ describe('a box with more of its title to show', () => {
     await mounted.node.vm.$nextTick()
 
     expect(boxOf(mounted.node)).toStrictEqual({ width: 144, x: -72 })
-    expect(mounted.node.emitted('rest')).toStrictEqual([[true], [false]])
+    expect(mounted.node.emitted('settle')).toStrictEqual([[true], [false]])
   })
 
   it('begins the wait again where the picture moved it under the hand', async () => {
@@ -452,7 +452,7 @@ describe('a box with nothing more to show', () => {
   it('stays as it was placed however long the hand is on it', async () => {
     const node = await rest({ wide: null })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
-    expect(node.emitted('rest')).toBeUndefined()
+    expect(node.emitted('settle')).toBeUndefined()
   })
 
   it('stays as it was placed while a gesture is under way', async () => {
@@ -517,13 +517,13 @@ describe('the parts a node hangs', () => {
   it('hangs nothing for a node with none, however long the hand stays', async () => {
     const node = await rest(mountInside([]))
     expect(node.find('.plex__part').exists()).toBe(false)
-    expect(node.emitted('rest')).toBeUndefined()
+    expect(node.emitted('settle')).toBeUndefined()
   })
 
   it('opens for them although the title already fits its box', async () => {
     const node = await rest(mountInside(parts(2)))
     expect(node.findAll('.plex__part')).toHaveLength(2)
-    expect(node.emitted('rest')).toStrictEqual([[true]])
+    expect(node.emitted('settle')).toStrictEqual([[true]])
   })
 
   it('draws them in the order they were given', async () => {

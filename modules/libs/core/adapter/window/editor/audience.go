@@ -36,8 +36,8 @@ type listener[T any] struct {
 	behind bool
 }
 
-// held is how many messages one listener may have waiting.
-func (a *audience[T]) held() int { return max(a.room, 1) }
+// getRoom is how many messages one listener may have waiting.
+func (a *audience[T]) getRoom() int { return max(a.room, 1) }
 
 func (a *audience[T]) listen() (<-chan T, func()) {
 	a.mu.Lock()
@@ -48,7 +48,7 @@ func (a *audience[T]) listen() (<-chan T, func()) {
 	}
 	id := a.next
 	a.next++
-	l := &listener[T]{ch: make(chan T, a.held())}
+	l := &listener[T]{ch: make(chan T, a.getRoom())}
 	a.listeners[id] = l
 
 	return l.ch, func() {
@@ -84,11 +84,11 @@ func (a *audience[T]) queue(l *listener[T], message T) bool {
 	waiting := unread(l.ch)
 
 	fitted := false
-	switch at := a.replacing(waiting, message); {
+	switch at := a.findReplaced(waiting, message); {
 	case at >= 0:
 		waiting[at] = message
 		fitted = true
-	case len(waiting) < a.held():
+	case len(waiting) < a.getRoom():
 		waiting = append(waiting, message)
 		fitted = true
 	}
@@ -99,9 +99,9 @@ func (a *audience[T]) queue(l *listener[T], message T) bool {
 	return fitted
 }
 
-// replacing is where in the line a message stands that this one says again, or
+// findReplaced is where in the line a message stands that this one says again, or
 // -1 when this message replaces nothing.
-func (a *audience[T]) replacing(waiting []T, message T) int {
+func (a *audience[T]) findReplaced(waiting []T, message T) int {
 	if !a.latest {
 		return -1
 	}

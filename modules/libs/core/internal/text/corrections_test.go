@@ -73,8 +73,8 @@ func (b beside) Claim(context.Context, string) (func() error, error) {
 	return func() error { return nil }, nil
 }
 
-// said is the transcript of the talk as somebody put it right.
-func said() []byte {
+// writeCorrections is the transcript of the talk as somebody put it right.
+func writeCorrections() []byte {
 	return transcript.Marshal([]transcript.Cue{
 		{Text: opening, From: 1500, To: 4200},
 		{Text: putRight, From: 5025000, To: 5028000},
@@ -86,15 +86,15 @@ func said() []byte {
 // moments they were said at stand where they were.
 func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
 	store := beside{
-		text.Artifact(text.ASR, "abc123"):    heard(),
-		text.Corrections(text.ASR, "abc123"): said(),
+		text.Artifact(text.ASR, "abc123"):    writeTranscript(),
+		text.Corrections(text.ASR, "abc123"): writeCorrections(),
 	}
 
-	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
+	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}
-	located(t, doc, putRight, "1:23:45")
+	checkLocation(t, doc, putRight, "1:23:45")
 	if strings.Contains(doc.Text, middle) {
 		t.Errorf("the transcript still reads as what was heard:\n%s", doc.Text)
 	}
@@ -102,13 +102,13 @@ func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
 
 // Taking away what a transcript was put right to gives back what was heard.
 func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
-	store := beside{text.Artifact(text.ASR, "abc123"): heard()}
+	store := beside{text.Artifact(text.ASR, "abc123"): writeTranscript()}
 
-	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
+	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}
-	located(t, doc, middle, "1:23:45")
+	checkLocation(t, doc, middle, "1:23:45")
 }
 
 // A sweep works through the names a producer writes, and what a transcript was
@@ -120,8 +120,8 @@ func TestWhatATranscriptWasPutRightToIsSweptWithIt(t *testing.T) {
 	}
 
 	store := beside{
-		text.Artifact(text.ASR, "abc123"): heard(),
-		name:                              said(),
+		text.Artifact(text.ASR, "abc123"): writeTranscript(),
+		name:                              writeCorrections(),
 	}
 	for _, held := range text.Names(text.ASR, "abc123") {
 		if err := store.Remove(t.Context(), held); err != nil {

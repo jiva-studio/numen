@@ -14,7 +14,7 @@ import { DARK, expectDark } from '@/shared/fixtures/theme'
 interface Knobs {
   notices: readonly Notice[]
   name: string
-  putAway: string
+  dismiss: string
   more: string
   wait: number
   room: number
@@ -89,7 +89,7 @@ const over = (args: Knobs) => ({
       <Notices
         :notices="args.notices"
         :name="args.name"
-        :put-away="args.putAway"
+        :dismiss="args.dismiss"
         :more="args.more"
         :wait="args.wait"
         :room="args.room"
@@ -116,7 +116,7 @@ const meta = {
   },
   argTypes: {
     name: { control: 'text' },
-    putAway: { control: 'text' },
+    dismiss: { control: 'text' },
     more: { control: 'text' },
     wait: { control: 'number' },
     room: { control: 'number' },
@@ -129,7 +129,7 @@ const meta = {
   args: {
     notices: [EMBEDDING],
     name: 'Background work',
-    putAway: 'Put away',
+    dismiss: 'Put away',
     more: 'more',
     wait: 0,
     room: 4,

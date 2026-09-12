@@ -343,7 +343,7 @@ func tinyBook(tb testing.TB, replace map[string]string, omit ...string) []byte {
 	for _, at := range omit {
 		delete(parts, at)
 	}
-	return zipped(tb, parts)
+	return buildReversedArchive(tb, parts)
 }
 
 // tinyParts is the committed fixture as the files it is made of.
@@ -379,12 +379,12 @@ func partsIn(tb testing.TB, root string) map[string][]byte {
 	return parts
 }
 
-// zipped writes the files into one archive.
+// buildReversedArchive writes the files into one archive.
 //
 // The mimetype comes first because the specification asks for it. The rest are
 // written in reverse, so that the order of the archive is not the order of the
 // book.
-func zipped(tb testing.TB, parts map[string][]byte) []byte {
+func buildReversedArchive(tb testing.TB, parts map[string][]byte) []byte {
 	tb.Helper()
 	names := slices.Sorted(maps.Keys(parts))
 	slices.Reverse(names)
@@ -442,7 +442,7 @@ func intersect(names, wanted []string) []string {
 // hundred kilobytes of zeros expand to as much as the format allows, and reading
 // that is how opening a book ends the process.
 func TestADocumentLargerThanAChapterIsLeftUnread(t *testing.T) {
-	book := read(t, packed(t, map[string][]byte{
+	book := read(t, buildArchive(t, map[string][]byte{
 		"mimetype": []byte("application/epub+zip"),
 		"META-INF/container.xml": []byte(`<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
 			<rootfiles><rootfile full-path="content.opf" media-type="application/oebps-package+xml"/></rootfiles>
@@ -468,8 +468,8 @@ func TestADocumentLargerThanAChapterIsLeftUnread(t *testing.T) {
 	}
 }
 
-// packed is an archive of exactly the parts given.
-func packed(t *testing.T, parts map[string][]byte) []byte {
+// buildArchive is an archive of exactly the parts given.
+func buildArchive(t *testing.T, parts map[string][]byte) []byte {
 	t.Helper()
 
 	var out bytes.Buffer
@@ -511,7 +511,7 @@ func TestHowABookIsLaidOut(t *testing.T) {
 	})
 
 	t.Run("a book laid out once and read right to left", func(t *testing.T) {
-		book := read(t, spined(t, laidOutOpf, map[string]string{
+		book := read(t, buildSpineArchive(t, laidOutOpf, map[string]string{
 			"OEBPS/one.xhtml": `<html><body><p>Iota.</p></body></html>`,
 			"OEBPS/two.xhtml": `<html><body><p>Kappa is the note at the back.</p></body></html>`,
 		}))
@@ -579,7 +579,7 @@ func TestAnEncryptedBook(t *testing.T) {
 		want:   epub.ErrEncrypted,
 	}} {
 		t.Run(c.name, func(t *testing.T) {
-			raw := spined(t, laidOutOpf, map[string]string{
+			raw := buildSpineArchive(t, laidOutOpf, map[string]string{
 				"OEBPS/one.xhtml": `<html><body><p>Lambda.</p></body></html>`,
 				"OEBPS/two.xhtml": `<html><body><p>Mu.</p></body></html>`,
 				"META-INF/encryption.xml": `<?xml version="1.0"?>
@@ -611,8 +611,8 @@ func TestAnEncryptedBook(t *testing.T) {
 	}
 }
 
-// spined is an archive of one package document and the files it names.
-func spined(t *testing.T, opf string, files map[string]string) []byte {
+// buildSpineArchive is an archive of one package document and the files it names.
+func buildSpineArchive(t *testing.T, opf string, files map[string]string) []byte {
 	t.Helper()
 	parts := map[string][]byte{
 		"mimetype": []byte("application/epub+zip"),
@@ -624,5 +624,5 @@ func spined(t *testing.T, opf string, files map[string]string) []byte {
 	for at, raw := range files {
 		parts[at] = []byte(raw)
 	}
-	return packed(t, parts)
+	return buildArchive(t, parts)
 }

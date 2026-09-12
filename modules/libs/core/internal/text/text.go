@@ -58,22 +58,22 @@ type namedPlace struct {
 // neither.
 func (d *Document) Locate(offset int) string {
 	named := make([]string, 0, 2)
-	if i := preceding(d.named, offset); i >= 0 {
+	if i := findPrecedingIndex(d.named, offset); i >= 0 {
 		named = append(named, d.named[i].Name)
 	}
-	if i := preceding(d.paged, offset); i >= 0 {
+	if i := findPrecedingIndex(d.paged, offset); i >= 0 {
 		named = append(named, d.paged[i].Name)
 	}
 	return strings.Join(named, ", ")
 }
 
-// NamesAt are the parts that begin exactly at an offset: what a section
+// GetNamesAt answers the parts that begin exactly at an offset: what a section
 // starting here is called.
 //
 // A part and the first subsection inside it can begin at one place, and both
 // name it. What is answered is every name, outermost first, so a question about
 // either reaches the same place.
-func (d *Document) NamesAt(offset int) []string {
+func (d *Document) GetNamesAt(offset int) []string {
 	var names []string
 	for _, m := range d.named {
 		if m.Offset == offset {
@@ -96,7 +96,7 @@ func page(at int) string {
 	return fmt.Sprintf("page %d of the file", at+1)
 }
 
-func preceding(namedPlaces []namedPlace, offset int) int {
+func findPrecedingIndex(namedPlaces []namedPlace, offset int) int {
 	return sort.Search(len(namedPlaces), func(i int) bool { return namedPlaces[i].Offset > offset }) - 1
 }
 

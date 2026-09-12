@@ -33,7 +33,7 @@ function onWiden(wide: number) {
     :otherHighlights="props.state.getOtherHighlightsOn"
     :words="words"
     @go="onGoToPage"
-    @wide="onWiden"
+    @measure="onWiden"
   >
     <template #silence>{{ props.state.error.value }}</template>
   </Reader>

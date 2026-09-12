@@ -26,16 +26,16 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// connected is the tools as an agent meets them: over a real session, through
+// newSession is the tools as an agent meets them: over a real session, through
 // the protocol, rather than by calling the handlers directly.
-func connected(t *testing.T, notes map[string]string) (*sdk.ClientSession, domain.Vault) {
+func newSession(t *testing.T, notes map[string]string) (*sdk.ClientSession, domain.Vault) {
 	t.Helper()
-	v, core := built(t, notes)
-	return connectedTo(t, core), v
+	v, core := newCoreWithNotes(t, notes)
+	return newSessionOver(t, core), v
 }
 
-// connectedTo is the same session over tools a test has adjusted.
-func connectedTo(t *testing.T, core mcp.Core) *sdk.ClientSession {
+// newSessionOver is the same session over tools a test has adjusted.
+func newSessionOver(t *testing.T, core mcp.Core) *sdk.ClientSession {
 	t.Helper()
 	return sessionOf(t, mcp.New(core))
 }
@@ -56,14 +56,14 @@ func sessionOf(t *testing.T, server *sdk.Server) *sdk.ClientSession {
 	return session
 }
 
-// served is a vault whose tools are built but not connected, for the questions
+// newCore is a vault whose tools are built but not connected, for the questions
 // that are about the transport rather than about the tools.
-func served(t *testing.T) (domain.Vault, mcp.Core) {
+func newCore(t *testing.T) (domain.Vault, mcp.Core) {
 	t.Helper()
-	return built(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	return newCoreWithNotes(t, map[string]string{"Entropy.md": "# Entropy\n"})
 }
 
-func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
+func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 	t.Helper()
 
 	v := testsupport.NewVault(t, notes)
@@ -166,7 +166,7 @@ func deckFingerprint(t *testing.T, s *sdk.ClientSession, path string) string {
 	}](t, s, "card_read", map[string]any{"path": path}).Fingerprint
 }
 
-func failing(t *testing.T, s *sdk.ClientSession, name string, args any) string {
+func getRefusal(t *testing.T, s *sdk.ClientSession, name string, args any) string {
 	t.Helper()
 	res, err := s.CallTool(t.Context(), &sdk.CallToolParams{Name: name, Arguments: args})
 	if err != nil {
@@ -190,7 +190,7 @@ func text(res *sdk.CallToolResult) string {
 
 // An agent is told where the vault is once, so that no answer has to repeat it.
 func TestTheVaultIsLocatedInTheInstructions(t *testing.T) {
-	session, v := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, v := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	if got := session.InitializeResult().Instructions; !strings.Contains(got, v.Path) {
 		t.Errorf("the vault's folder is not in the instructions:\n%s", got)
 	}
@@ -199,7 +199,7 @@ func TestTheVaultIsLocatedInTheInstructions(t *testing.T) {
 // The tools an agent is given say what they take; the instructions say how a
 // book is asked, which is what nothing about one tool's arguments can say.
 func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
-	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	said := session.InitializeResult().Instructions
 	for _, rule := range []string{"source_focus", "source_read", "own words", "numen:"} {
 		if !strings.Contains(said, rule) {
@@ -211,7 +211,7 @@ func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 // A note an answer speaks about is a place the person can go, and the brackets
 // are the form that takes.
 func TestHowANoteIsNamedInAnAnswerIsInTheInstructions(t *testing.T) {
-	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	said := session.InitializeResult().Instructions
 	for _, rule := range []string{"[[Harmonic oscillator]]", "[[note://<identifier>]]"} {
 		if !strings.Contains(said, rule) {
@@ -221,7 +221,7 @@ func TestHowANoteIsNamedInAnAnswerIsInTheInstructions(t *testing.T) {
 }
 
 func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
-	session, _ := connected(t, nil)
+	session, _ := newSession(t, nil)
 	exactly(t, serves(t, session), []string{
 		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
 		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
@@ -245,12 +245,12 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 // what the other two windows serve. The set is exact, so a tool added to the
 // server is a tool this window is knowingly given.
 func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
-	_, core := built(t, nil)
+	_, core := newCoreWithNotes(t, nil)
 	core.Vaults = onTheList(t).core.Vaults
 	core.View = &window{}
 	core.Attending = func() domain.OpenTabs { return domain.OpenTabs{} }
 
-	exactly(t, serves(t, connectedTo(t, core)), []string{
+	exactly(t, serves(t, newSessionOver(t, core)), []string{
 		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
 		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
 		"note_focus",
@@ -271,13 +271,13 @@ func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
 // Both of these put megabytes of new text in the folder a person syncs, and an
 // agent weighing an hour's work on their behalf is told so before it calls.
 func TestReadingAndListeningSayWhatTheyWriteIntoTheVault(t *testing.T) {
-	session, _ := connected(t, nil)
+	session, _ := newSession(t, nil)
 
 	for tool, area := range map[string]string{
 		"source_recognise":  filesystem.OCRDir,
 		"source_transcribe": filesystem.TranscriptDir,
 	} {
-		said := describing(t, session, tool)
+		said := getToolDescription(t, session, tool)
 		for _, rule := range []string{
 			"into the vault",
 			filesystem.DefaultServiceDir + "/" + area,
@@ -327,9 +327,9 @@ func exactly(t *testing.T, served, want []string) {
 }
 
 func TestANoteIsMadeAndFoundThroughTheTools(t *testing.T) {
-	session, _ := connected(t, nil)
+	session, _ := newSession(t, nil)
 
-	made := created(t, session, map[string]any{
+	made := createNotes(t, session, map[string]any{
 		"title": "Entropy", "body": "A measure of disorder.\n",
 	})
 	if len(made) != 1 || made[0].Refused != "" {
@@ -352,9 +352,9 @@ func TestANoteIsMadeAndFoundThroughTheTools(t *testing.T) {
 
 // A note asks to be joined as it is made, so it never stands unattached.
 func TestANoteIsMadeAlreadyJoined(t *testing.T) {
-	session, _ := connected(t, map[string]string{"Momentum.md": "# Momentum\n"})
+	session, _ := newSession(t, map[string]string{"Momentum.md": "# Momentum\n"})
 
-	made := created(t, session, map[string]any{
+	made := createNotes(t, session, map[string]any{
 		"title": "Impulse",
 		"links": []map[string]any{
 			{"to": "Momentum", "role": "parent", "label": "part of"},
@@ -379,9 +379,9 @@ func TestANoteIsMadeAlreadyJoined(t *testing.T) {
 // made must not take the others down with it — nor be reported as though it
 // had been made.
 func TestOneNoteRefusedLeavesTheRestMade(t *testing.T) {
-	session, vault := connected(t, nil)
+	session, vault := newSession(t, nil)
 
-	made := created(t, session,
+	made := createNotes(t, session,
 		map[string]any{"title": "Impulse"},
 		map[string]any{"title": "Momentum", "links": []map[string]any{
 			{"to": "Impulse", "role": "nonsense"},
@@ -409,9 +409,9 @@ func TestOneNoteRefusedLeavesTheRestMade(t *testing.T) {
 	}
 }
 
-// created makes each note in its own call, which is the only way the tool takes
-// them. The outcomes come back in the order they were asked for.
-func created(t *testing.T, session *sdk.ClientSession, notes ...map[string]any) []mcp.CreateOutcome {
+// createNotes makes each note in its own call, which is the only way the tool
+// takes them. The outcomes come back in the order they were asked for.
+func createNotes(t *testing.T, session *sdk.ClientSession, notes ...map[string]any) []mcp.CreateOutcome {
 	t.Helper()
 	out := make([]mcp.CreateOutcome, 0, len(notes))
 	for _, note := range notes {
@@ -423,7 +423,7 @@ func created(t *testing.T, session *sdk.ClientSession, notes ...map[string]any) 
 // A path that names nothing is an answer, not a failure: the note may have gone
 // since the agent last looked.
 func TestGetSeparatesWhatIsThereFromWhatIsNot(t *testing.T) {
-	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	got := call[struct {
 		Notes   []mcp.Note `json:"notes"`
@@ -440,7 +440,7 @@ func TestGetSeparatesWhatIsThereFromWhatIsNot(t *testing.T) {
 }
 
 func TestReadingGivesBackWhatWritingWants(t *testing.T) {
-	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	read := call[struct {
 		Notes []mcp.Contents `json:"notes"`
@@ -476,7 +476,7 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 
 	// What the read gave is two writes behind, and a write presenting it is
 	// refused.
-	if got := failing(t, session, "note_rewrite", map[string]any{
+	if got := getRefusal(t, session, "note_rewrite", map[string]any{
 		"path": "Entropy.md", "body": "# Entropy\n\nOnce more.\n",
 		"fingerprint": read.Notes[0].Fingerprint,
 	}); !strings.Contains(got, "changed") {
@@ -491,12 +491,12 @@ type wrote struct {
 }
 
 func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 	})
 
-	added := added(t, session, map[string]any{
+	added := addLinks(t, session, map[string]any{
 		"from": "Heat.md", "to": "Entropy", "role": "parent", "label": "follows from",
 	})
 	if len(added) != 1 || added[0].Refused != "" {
@@ -523,13 +523,13 @@ func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
 // and one that carries no known role costs only itself — not the links sharing
 // a note with it.
 func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 		"Work.md":    "# Work\n",
 	})
 
-	added := added(t, session,
+	added := addLinks(t, session,
 		map[string]any{"from": "Heat.md", "to": "Entropy", "role": "parent"},
 		map[string]any{"from": "Heat.md", "to": "Work", "role": "nonsense"},
 		map[string]any{"from": "Heat.md", "to": "Work", "role": "jump"},
@@ -566,13 +566,13 @@ func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
 // write did not finish. Told only that it failed, a caller writes it again and
 // is refused the name it already holds.
 func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
-	v, core := built(t, nil)
+	v, core := newCoreWithNotes(t, nil)
 	core.Notes.Create.Index = func(context.Context, domain.Vault, []string) error {
 		return errors.New("the index is not level")
 	}
-	session := connectedTo(t, core)
+	session := newSessionOver(t, core)
 
-	made := created(t, session, map[string]any{"title": "Entropy"})
+	made := createNotes(t, session, map[string]any{"title": "Entropy"})
 	if len(made) != 1 || made[0].Refused == "" {
 		t.Fatalf("want the failure reported: %+v", made)
 	}
@@ -587,10 +587,10 @@ func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
 // Every field of a link lands in the frontmatter, so the cap has to measure
 // them. A body under the cap with an enormous label is a write over it.
 func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsWritten(t *testing.T) {
-	session, vault := connected(t, nil)
+	session, vault := newSession(t, nil)
 
 	huge := strings.Repeat("x", (1<<20)+1)
-	if got := failing(t, session, "note_create", map[string]any{
+	if got := getRefusal(t, session, "note_create", map[string]any{
 		"title": "Entropy",
 		"links": []map[string]any{{"to": "Heat", "role": "ref", "label": huge}},
 	}); !strings.Contains(got, "carries at once") {
@@ -607,12 +607,12 @@ func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 // person's own save. Each names it, and each is refused where the note moved
 // under it.
 func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 		"Work.md":    "# Work\n",
 	})
-	added(t, session, map[string]any{
+	addLinks(t, session, map[string]any{
 		"from": "Heat.md", "to": "Entropy", "role": "parent", "label": "follows from",
 	})
 
@@ -623,7 +623,7 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 		"fingerprint": stale,
 	})
 
-	out := added(t, session, map[string]any{
+	out := addLinks(t, session, map[string]any{
 		"from": "Heat.md", "to": "Work", "role": "jump", "fingerprint": stale,
 	})
 	if len(out) != 1 || !strings.Contains(out[0].Refused, "no longer the one that was read") {
@@ -636,7 +636,7 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 		},
 		"link_remove": {"from": "Heat.md", "to": "Entropy", "fingerprint": stale},
 	} {
-		if got := failing(t, session, tool, args); !strings.Contains(got, "changed") {
+		if got := getRefusal(t, session, tool, args); !strings.Contains(got, "changed") {
 			t.Errorf("%s over an edit nobody saw: %q", tool, got)
 		}
 	}
@@ -651,10 +651,10 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 	}
 }
 
-// added writes links through link_add. Every writer takes a fingerprint, so a
+// addLinks writes links through link_add. Every writer takes a fingerprint, so a
 // link a test wrote without naming one is written against the note as it
 // stands.
-func added(t *testing.T, session *sdk.ClientSession, links ...map[string]any) []mcp.AddOutcome {
+func addLinks(t *testing.T, session *sdk.ClientSession, links ...map[string]any) []mcp.AddOutcome {
 	t.Helper()
 	for _, link := range links {
 		if _, named := link["fingerprint"]; !named {
@@ -667,7 +667,7 @@ func added(t *testing.T, session *sdk.ClientSession, links ...map[string]any) []
 }
 
 func TestRemovingIsReversible(t *testing.T) {
-	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	removed := call[struct {
 		Removed []note.RemoveResult `json:"removed"`
@@ -689,7 +689,7 @@ func TestRemovingIsReversible(t *testing.T) {
 // note_remove takes notes. A folder holds as many notes as somebody filed
 // under it, and removing one by naming the folder is not what this tool does.
 func TestRemovingAFolderIsRefused(t *testing.T) {
-	session, v := connected(t, map[string]string{
+	session, v := newSession(t, map[string]string{
 		"Reading/Entropy.md": "# Entropy\n",
 		"Reading/Order.md":   "# Order\n",
 	})
@@ -712,13 +712,13 @@ func TestRemovingAFolderIsRefused(t *testing.T) {
 
 // A ceiling that truncated in silence would read as "that is all there is".
 func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
-	session, _ := connected(t, nil)
+	session, _ := newSession(t, nil)
 
 	paths := make([]string, 60)
 	for i := range paths {
 		paths[i] = "note.md"
 	}
-	if got := failing(t, session, "note_titles", map[string]any{"paths": paths}); !strings.Contains(got, "50") {
+	if got := getRefusal(t, session, "note_titles", map[string]any{"paths": paths}); !strings.Contains(got, "50") {
 		t.Errorf("want a refusal naming the limit, got %q", got)
 	}
 }
@@ -726,9 +726,9 @@ func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
 // The vault a tool works on is one folder, and a path that leaves it is not a
 // path this vault holds.
 func TestAPathOutsideTheVaultIsRefused(t *testing.T) {
-	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	got := failing(t, session, "note_rewrite", map[string]any{
+	got := getRefusal(t, session, "note_rewrite", map[string]any{
 		"path": "../../escaped.md", "body": "no\n", "fingerprint": "0-0",
 	})
 	if !strings.Contains(got, "vault") {
@@ -737,7 +737,7 @@ func TestAPathOutsideTheVaultIsRefused(t *testing.T) {
 }
 
 func TestTwoNotesOfOneNameAreReported(t *testing.T) {
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"Entropy.md":         "# Entropy\n",
 		"physics/Entropy.md": "# Entropy\n",
 	})
@@ -753,7 +753,7 @@ func TestTwoNotesOfOneNameAreReported(t *testing.T) {
 // A dot in a name is part of the name, and the note is filed under all of it.
 func TestANoteWhoseNameCarriesDotsIsFoundByIt(t *testing.T) {
 	const lecture = "Seminar 1.2–1.3 — Lisbon, 9 July 1973"
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"notes/" + lecture + ".md": "# " + lecture + "\n",
 	})
 
@@ -771,7 +771,7 @@ func TestALinkToASharedNameSaysItIsAmbiguous(t *testing.T) {
 	// Neither is at the root, so neither is the exact path the name spells, and
 	// neither sits beside the note that wrote the link. Only then is the name
 	// left to answer for two notes at once.
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
 		"chemistry/Entropy.md": "# Entropy\n",
 		"Heat.md":              "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
@@ -791,7 +791,7 @@ func TestALinkToASharedNameSaysItIsAmbiguous(t *testing.T) {
 // A problem belongs to the note somebody opens to settle it, and says which
 // check found it so a person can take one kind at a time.
 func TestProblemsSayWhichCheckFoundThem(t *testing.T) {
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
 		"chemistry/Entropy.md": "# Entropy\n",
 		"Heat.md":              "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
@@ -836,7 +836,7 @@ func TestProblemsSayWhichCheckFoundThem(t *testing.T) {
 // What note_read gives back is what note_rewrite takes: an agent that reads,
 // edits and writes must not end up with the frontmatter inside the prose.
 func TestReadingGivesBackOnlyTheProse(t *testing.T) {
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"Entropy.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n",
 	})
 
@@ -849,7 +849,7 @@ func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 
 	// And a caller that hands back a whole note is told, rather than quietly
 	// given a note with two frontmatter blocks in it.
-	got := failing(t, session, "note_rewrite", map[string]any{
+	got := getRefusal(t, session, "note_rewrite", map[string]any{
 		"path":        "Entropy.md",
 		"body":        "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n\nMore.\n",
 		"fingerprint": fingerprint(t, session, "Entropy.md"),
@@ -862,8 +862,9 @@ func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 // reading is one call of note_read, whole: what came back, and what each path
 // that did not come back stopped on.
 type reading struct {
-	Notes  []mcp.Contents `json:"notes"`
-	Errors []mcp.Error    `json:"errors"`
+	Notes   []mcp.Contents    `json:"notes"`
+	Missing []string          `json:"missing"`
+	Errors  []mcp.ReadFailure `json:"errors"`
 }
 
 // put writes a file into a vault that is already being served, for the ones a
@@ -878,7 +879,7 @@ func put(t *testing.T, v domain.Vault, path, raw string) {
 // The vault holds notes, and a folder holds whatever the person keeps in it. An
 // agent asking for a book gets the refusal and not the book.
 func TestReadingRefusesWhatIsNotANote(t *testing.T) {
-	session, v := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, v := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	put(t, v, "library.epub", "PK\x03\x04 chapters of somebody else's book")
 
 	got := call[reading](t, session, "note_read", map[string]any{
@@ -903,7 +904,7 @@ func TestReadingRefusesWhatIsNotANote(t *testing.T) {
 // One byte that is not UTF-8 becomes U+FFFD wherever the answer is shown, and
 // the next write puts those characters where the person's bytes were.
 func TestReadingRefusesAFileThatIsNotText(t *testing.T) {
-	session, v := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, v := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	put(t, v, "Pasted.md", "# Pasted\n\xff\xfe from somewhere\n")
 
 	got := call[reading](t, session, "note_read", map[string]any{
@@ -922,7 +923,7 @@ func TestReadingRefusesAFileThatIsNotText(t *testing.T) {
 
 // One note nobody can carry does not cost the others their answer.
 func TestReadingSaysWhichNoteIsTooLargeAndCarriesOn(t *testing.T) {
-	session, v := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	session, v := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	put(t, v, "Export.md", "# Export\n"+strings.Repeat("pasted in from somewhere ", note.MaxBytes/20))
 
 	got := call[reading](t, session, "note_read", map[string]any{
@@ -931,21 +932,23 @@ func TestReadingSaysWhichNoteIsTooLargeAndCarriesOn(t *testing.T) {
 	if len(got.Notes) != 1 || got.Notes[0].Path != "Entropy.md" {
 		t.Fatalf("the rest of the batch did not come back: %+v", got.Notes)
 	}
-	if len(got.Errors) != 2 || got.Errors[0].Path != "Export.md" || got.Errors[1].Path != "gone.md" {
-		t.Fatalf("want the large note and the path with no file behind it: %+v", got.Errors)
+	if len(got.Errors) != 1 || got.Errors[0].Path != "Export.md" {
+		t.Fatalf("want the large note: %+v", got.Errors)
 	}
 	if !strings.Contains(got.Errors[0].Why, "open the file") {
 		t.Errorf("the error does not say what to do instead: %q", got.Errors[0].Why)
 	}
-	if !strings.Contains(got.Errors[1].Why, "no note at this path") {
-		t.Errorf("the error does not say the path holds nothing: %q", got.Errors[1].Why)
+	// A path with no file behind it is not a failure to read one: a note the
+	// agent last saw may have been removed since.
+	if len(got.Missing) != 1 || got.Missing[0] != "gone.md" {
+		t.Fatalf("want the path with no file behind it: %+v", got.Missing)
 	}
 }
 
 // A batch is many operations, not one. What happened to each has to come back,
 // or a caller recovering from a partial failure starts by undoing what worked.
 func TestABatchSaysWhatHappenedToEachNote(t *testing.T) {
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"A.md":         "# A\n",
 		"B.md":         "# B\n",
 		"archive/B.md": "# B already here\n",

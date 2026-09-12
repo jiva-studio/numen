@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { days, getWeight, measureGrid, NOTHING, ROWS } from './heatmap'
+import { getDays, getWeight, measureGrid, NOTHING, ROWS } from './heatmap'
 import { getDayName } from '@/shared/lib/day'
 import type { Tally } from './heatmap'
 
@@ -49,8 +49,8 @@ describe('the days a grid draws', () => {
   const did = new Map<string, Tally>()
 
   it('is a whole week to a column', () => {
-    expect(days(8, new Date('2026-08-29T12:00:00'), did)).toHaveLength(8 * ROWS)
-    expect(days(1, new Date('2026-08-29T12:00:00'), did)).toHaveLength(ROWS)
+    expect(getDays(8, new Date('2026-08-29T12:00:00'), did)).toHaveLength(8 * ROWS)
+    expect(getDays(1, new Date('2026-08-29T12:00:00'), did)).toHaveLength(ROWS)
   })
 
   // The weeks behind run up to the one a person is in, and a few weeks of what
@@ -58,7 +58,7 @@ describe('the days a grid draws', () => {
   it('keeps room after today for what is still to come', () => {
     // Saturday.
     const now = new Date('2026-08-29T12:00:00')
-    const shown = days(20, now, did)
+    const shown = getDays(20, now, did)
     const today = shown.filter((one) => one.today)
 
     expect(today).toHaveLength(1)
@@ -77,7 +77,7 @@ describe('the days a grid draws', () => {
   // The grid is as wide as the room it was given: a week to every column.
   it('draws a week for every column it was given', () => {
     const now = new Date('2026-08-29T12:00:00')
-    const shown = days(30, now, createTallies([['2026-08-28', 3]]))
+    const shown = getDays(30, now, createTallies([['2026-08-28', 3]]))
 
     expect(shown).toHaveLength(30 * ROWS)
     expect(shown.some((one) => one.today)).toBe(true)
@@ -88,7 +88,7 @@ describe('the days a grid draws', () => {
   // done stretches out to the right.
   it('opens on the week a person began in', () => {
     const now = new Date('2026-08-29T12:00:00')
-    const shown = days(30, now, createTallies([['2026-08-28', 3]]))
+    const shown = getDays(30, now, createTallies([['2026-08-28', 3]]))
 
     // The Monday of that week.
     expect(shown[0]!.day).toBe('2026-08-24')
@@ -103,7 +103,7 @@ describe('the days a grid draws', () => {
       ['2024-01-01', 5],
       ['2026-08-28', 3],
     ])
-    const shown = days(12, now, long)
+    const shown = getDays(12, now, long)
 
     expect(shown[0]!.day > '2024-01-01').toBe(true)
     expect(shown.some((one) => one.today)).toBe(true)
@@ -113,13 +113,13 @@ describe('the days a grid draws', () => {
   // A vault whose cards are all still ahead has a beginning too.
   it('opens on this week for a vault with nothing behind it', () => {
     const now = new Date('2026-08-29T12:00:00')
-    const shown = days(30, now, new Map(), new Map([['2026-09-03', 8]]))
+    const shown = getDays(30, now, new Map(), new Map([['2026-09-03', 8]]))
 
     expect(shown[0]!.day).toBe('2026-08-24')
   })
 
   it('gives the room to what is behind where there is little of it', () => {
-    const shown = days(1, new Date('2026-08-29T12:00:00'), did)
+    const shown = getDays(1, new Date('2026-08-29T12:00:00'), did)
     expect(shown).toHaveLength(ROWS)
     expect(shown.some((one) => one.today)).toBe(true)
   })
@@ -137,7 +137,7 @@ describe('the days a grid draws', () => {
       ['2026-08-29', 99],
       ['2026-09-02', 7],
     ])
-    const shown = days(12, now, done, coming)
+    const shown = getDays(12, now, done, coming)
 
     expect(shown.find((one) => one.today)?.did).toBe(4)
     const later = shown.find((one) => one.day === '2026-09-02')
@@ -151,7 +151,7 @@ describe('the days a grid draws', () => {
       [getDayName(on), 12],
       ['2026-08-28', 60],
     ])
-    const shown = days(4, on, counted)
+    const shown = getDays(4, on, counted)
 
     expect(shown.find((one) => one.today)?.did).toBe(12)
     expect(shown.find((one) => one.day === '2026-08-28')?.weight).toBe(4)
@@ -159,7 +159,7 @@ describe('the days a grid draws', () => {
   })
 
   it('draws no days where there is room for no column', () => {
-    expect(days(0, new Date('2026-08-29T12:00:00'), did)).toHaveLength(0)
+    expect(getDays(0, new Date('2026-08-29T12:00:00'), did)).toHaveLength(0)
   })
 })
 

@@ -55,8 +55,8 @@ function onShowTab(id: string) {
   held.onTabShown(id)
 }
 
-function onForgetNotice(id: string) {
-  log.forget(id)
+function dismissNotice(id: string) {
+  log.dismiss(id)
 }
 
 // --- Helpers ---
@@ -94,7 +94,7 @@ function onForgetNotice(id: string) {
           :commands="commands"
           :search="palette"
           :doing="commandDeps"
-          :where="getTarget"
+          :get-target="getTarget"
           :run-command="runCommand"
         />
       </template>
@@ -103,9 +103,9 @@ function onForgetNotice(id: string) {
     <Notices
       :notices="notices"
       :name="words.working"
-      :put-away="words.putAway"
+      :dismiss="words.dismiss"
       :more="words.more"
-      @gone="onForgetNotice"
+      @dismiss="dismissNotice"
     />
 
     <UnsavedChangesPrompt
@@ -118,7 +118,7 @@ function onForgetNotice(id: string) {
       :commands="commands"
       :search="palette"
       :doing="commandDeps"
-      :where="getTarget"
+      :get-target="getTarget"
       :places="destinations"
     />
   </main>

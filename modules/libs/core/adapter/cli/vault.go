@@ -121,7 +121,7 @@ func vaultRename(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	if err != nil {
 		return err
 	}
-	defer closing(rows.Close)
+	defer closeIfOpen(rows.Close)
 
 	renamed, err := vault.NewRename(vaults.Registry, rows.Vaults).Execute(ctx, v, args[1])
 	if err != nil {
@@ -147,7 +147,7 @@ func vaultForget(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	if err != nil {
 		return err
 	}
-	defer closing(rows.Close)
+	defer closeIfOpen(rows.Close)
 
 	forget := vault.NewForget(vaults.Registry, rows.Vaults)
 	if err := forget.Execute(ctx, v); err != nil {
@@ -177,7 +177,7 @@ func vaultErase(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	if err != nil {
 		return err
 	}
-	if !*yes && !agreed(out, v) {
+	if !*yes && !confirmErase(out, v) {
 		return fmt.Errorf("%s was not erased", v.Name)
 	}
 
@@ -185,7 +185,7 @@ func vaultErase(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	if err != nil {
 		return err
 	}
-	defer closing(rows.Close)
+	defer closeIfOpen(rows.Close)
 
 	erase := vault.NewErase(
 		vaults.Identity, vaults.Trash, vault.NewForget(vaults.Registry, rows.Vaults),
@@ -206,9 +206,9 @@ func vaultErase(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	return nil
 }
 
-// agreed says what erasing does and reads the answer from the terminal this was
-// typed at. Only yes is a yes.
-func agreed(out io.Writer, v domain.Vault) bool {
+// confirmErase says what erasing does and reads the answer from the terminal
+// this was typed at. Only yes is a yes.
+func confirmErase(out io.Writer, v domain.Vault) bool {
 	fmt.Fprintf(out, "erase %s?\n  %s goes to the trash this machine keeps\n"+
 		"  the vault leaves the list and the index\ntype yes to erase it: ", v.Name, v.Path)
 	answer, _ := bufio.NewReader(os.Stdin).ReadString('\n')

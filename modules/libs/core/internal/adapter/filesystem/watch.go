@@ -44,7 +44,7 @@ func (w Watcher) Watch(
 
 	// The shape is taken before the first event, because the first event may be
 	// a folder leaving: what it was can only be known from before it went.
-	shape, why := remembered(reader)
+	shape, why := readShape(reader)
 
 	raw := make(chan notify.EventInfo, handover)
 	tree := filepath.Join(reader.Root(), "...")

@@ -35,7 +35,7 @@ func candidates(s Settings) []string {
 			}
 		}
 	}
-	out = append(out, installed(runtimeName(), "*-onnxruntime-*")...)
+	out = append(out, findInstalled(runtimeName(), "*-onnxruntime-*")...)
 	return append(out, runtimeName())
 }
 
@@ -102,20 +102,20 @@ func directories() []string {
 	)
 }
 
-// installed is every file on this machine named for one library, on the
+// findInstalled is every file on this machine named for one library, on the
 // loader's own path and in the package store beside it. The store is searched
 // through the package's name because a machine that has one holds nothing on
 // the loader's path at all.
-func installed(name, pkg string) []string {
+func findInstalled(name, pkg string) []string {
 	var out []string
 	for _, dir := range directories() {
-		out = append(out, matching(filepath.Join(dir, name+"*"))...)
+		out = append(out, findMatching(filepath.Join(dir, name+"*"))...)
 	}
-	return append(out, matching(filepath.Join("/nix/store", pkg, "lib", name+"*"))...)
+	return append(out, findMatching(filepath.Join("/nix/store", pkg, "lib", name+"*"))...)
 }
 
-// matching is the regular files one pattern names.
-func matching(pattern string) []string {
+// findMatching is the regular files one pattern names.
+func findMatching(pattern string) []string {
 	found, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil

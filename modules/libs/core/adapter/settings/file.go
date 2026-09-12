@@ -45,7 +45,7 @@ func Write(path string, raw []byte, seen *string) error {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
 	}
 
-	return reaching(path, func(path string) error {
+	return runOnFile(path, func(path string) error {
 		if err := stands(path, seen); err != nil {
 			return err
 		}

@@ -10,7 +10,7 @@ import (
 )
 
 // A sentence a recording broke across three stretches of speech.
-func broken() proofread.Batch {
+func makeBrokenBatch() proofread.Batch {
 	return proofread.Batch{Number: 1, Joinable: true, Lines: []proofread.Line{
 		{Number: 4, Last: 4, Text: "Krishna is Raj. Krishna is"},
 		{Number: 5, Last: 5, Text: "connected with Raj Dila."},
@@ -21,7 +21,7 @@ func broken() proofread.Batch {
 // A run of lines is answered for as one, and the answer says which lines it
 // covers.
 func TestASentenceBrokenAcrossLinesIsPutBackTogether(t *testing.T) {
-	put, _, ok := proofread.Fixed(broken(), "4-5 | Krishna is Radha, Krishna is connected with Radhika.", 0)
+	put, _, ok := proofread.Fixed(makeBrokenBatch(), "4-5 | Krishna is Radha, Krishna is connected with Radhika.", 0)
 	if !ok {
 		t.Fatal("the batch was refused")
 	}
@@ -36,7 +36,7 @@ func TestASentenceBrokenAcrossLinesIsPutBackTogether(t *testing.T) {
 // A run answered with exactly what its lines already say still puts them
 // together.
 func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
-	put, _, ok := proofread.Fixed(broken(), "4-5 | Krishna is Raj. Krishna is connected with Raj Dila.", 0)
+	put, _, ok := proofread.Fixed(makeBrokenBatch(), "4-5 | Krishna is Raj. Krishna is connected with Raj Dila.", 0)
 	if !ok {
 		t.Fatal("the batch was refused")
 	}
@@ -49,7 +49,7 @@ func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
 // a model reading it. That run is dropped, the rest of the batch stands, and
 // the reply says a sentence ran past the end.
 func TestARunReachingPastTheBatchIsDroppedAndTheRestStands(t *testing.T) {
-	put, past, ok := proofread.Fixed(broken(), "5-9 | whatever it says\n6 | Sure of it.", 0)
+	put, past, ok := proofread.Fixed(makeBrokenBatch(), "5-9 | whatever it says\n6 | Sure of it.", 0)
 	if !ok {
 		t.Fatal("the batch was refused")
 	}
@@ -64,7 +64,7 @@ func TestARunReachingPastTheBatchIsDroppedAndTheRestStands(t *testing.T) {
 // A reply whose runs all stand inside the batch says nothing ran past the end.
 func TestARunInsideTheBatchSaysNothingRanPastIt(t *testing.T) {
 	for _, reply := range []string{"4-5 | Krishna is Radha, connected with Radhika.", "6 | Sure of it.", ""} {
-		if _, past, ok := proofread.Fixed(broken(), reply, 0); !ok || past {
+		if _, past, ok := proofread.Fixed(makeBrokenBatch(), reply, 0); !ok || past {
 			t.Errorf("%q answered %v and ran past %v", reply, ok, past)
 		}
 	}
@@ -72,7 +72,7 @@ func TestARunInsideTheBatchSaysNothingRanPastIt(t *testing.T) {
 
 // A batch the gates refuse says nothing about what ran past its end.
 func TestARefusedBatchSaysNothingRanPastIt(t *testing.T) {
-	if _, past, ok := proofread.Fixed(broken(), "5-9 | whatever it says\n9 | no such line", 0); ok || past {
+	if _, past, ok := proofread.Fixed(makeBrokenBatch(), "5-9 | whatever it says\n9 | no such line", 0); ok || past {
 		t.Errorf("the batch answered %v and ran past %v", ok, past)
 	}
 }
@@ -80,7 +80,7 @@ func TestARefusedBatchSaysNothingRanPastIt(t *testing.T) {
 // A run skipping a line the batch carries is an answer against the wrong
 // numbers.
 func TestARunSkippingALineRefusesTheBatch(t *testing.T) {
-	batch := broken()
+	batch := makeBrokenBatch()
 	batch.Lines = append(batch.Lines[:1], batch.Lines[2:]...)
 	if _, _, ok := proofread.Fixed(batch, "4-6 | whatever it says", 0); ok {
 		t.Error("the batch was taken")
@@ -89,7 +89,7 @@ func TestARunSkippingALineRefusesTheBatch(t *testing.T) {
 
 // A run written backwards is not a run.
 func TestARunWrittenBackwardsRefusesTheBatch(t *testing.T) {
-	if _, _, ok := proofread.Fixed(broken(), "6-4 | whatever it says", 0); ok {
+	if _, _, ok := proofread.Fixed(makeBrokenBatch(), "6-4 | whatever it says", 0); ok {
 		t.Error("the batch was taken")
 	}
 }
@@ -132,7 +132,7 @@ func TestABatchOfSpeechPutsLinesTogether(t *testing.T) {
 // of nothing does.
 func TestAnAnswerOfNothingButMarksRefusesTheBatch(t *testing.T) {
 	for _, reply := range []string{"4 | ...", "4 | —", "4 | "} {
-		if _, _, ok := proofread.Fixed(broken(), reply, 0); ok {
+		if _, _, ok := proofread.Fixed(makeBrokenBatch(), reply, 0); ok {
 			t.Errorf("the batch was taken with %q", reply)
 		}
 	}
@@ -141,7 +141,7 @@ func TestAnAnswerOfNothingButMarksRefusesTheBatch(t *testing.T) {
 // Gathered names the batches whose reply ran on past the last line they carry,
 // in the order they were asked. A batch it refuses names none.
 func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
-	first, second := broken(), broken()
+	first, second := makeBrokenBatch(), makeBrokenBatch()
 	first.Number, second.Number = 1, 2
 	replies := map[int]string{
 		1: "5-9 | whatever it says",
@@ -183,7 +183,7 @@ func TestTwoRunsSharingALineRefuseTheBatch(t *testing.T) {
 		"4-5 | Krishna is Radha.\n5 | Connected with Radhika.",
 		"4 | Krishna is Radha.\n4 | Krishna is Radhika.",
 	} {
-		if _, _, ok := proofread.Fixed(broken(), reply, 0); ok {
+		if _, _, ok := proofread.Fixed(makeBrokenBatch(), reply, 0); ok {
 			t.Errorf("the batch was taken with %q", reply)
 		}
 	}

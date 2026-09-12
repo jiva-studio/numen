@@ -41,7 +41,7 @@ func addViewTools(server *sdk.Server, core Core) {
 			return nil, out{}, errors.New("name the note to put in focus")
 		}
 
-		found, err := core.Notes.Queries.Notes(ctx, core.shown().Vault.ID, []string{in.Path})
+		found, err := core.Notes.Queries.Notes(ctx, core.getShownVault().Vault.ID, []string{in.Path})
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -93,7 +93,7 @@ func addViewTools(server *sdk.Server, core Core) {
 			return nil, out{}, fmt.Errorf("light at most %d places of one document", domain.MostHighlights)
 		}
 
-		ref, err := holding(ctx, core, in.Path)
+		ref, err := getFingerprint(ctx, core, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -111,17 +111,17 @@ func addViewTools(server *sdk.Server, core Core) {
 		if err := core.View.Focus(ctx, at); err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{Shown: true, Looking: showing(ref.Kind, in.Length)}, nil
+		return nil, out{Shown: true, Looking: describeLooking(ref.Kind, in.Length)}, nil
 	})
 }
 
-// holding is what the vault holds at a path, and says so when it holds nothing
-// there. A file the vault leaves alone is a file it does not hold.
-func holding(ctx context.Context, core Core, path string) (domain.Fingerprint, error) {
+// getFingerprint is what the vault holds at a path, and says so when it holds
+// nothing there. A file the vault leaves alone is a file it does not hold.
+func getFingerprint(ctx context.Context, core Core, path string) (domain.Fingerprint, error) {
 	if core.Readers == nil {
 		return domain.Fingerprint{}, errors.New("this vault's files are not open")
 	}
-	reader, err := core.Readers.Open(core.shown().Vault)
+	reader, err := core.Readers.Open(core.getShownVault().Vault)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -135,9 +135,9 @@ func holding(ctx context.Context, core Core, path string) (domain.Fingerprint, e
 	return ref, nil
 }
 
-// showing is what the person now has in front of them, for the agent to say
-// back to them.
-func showing(kind domain.SourceKind, length int) string {
+// describeLooking is what the person now has in front of them, for the agent to
+// say back to them.
+func describeLooking(kind domain.SourceKind, length int) string {
 	switch {
 	case kind == domain.KindNote:
 		return "the note is in front of them, and a note is shown whole"

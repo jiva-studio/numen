@@ -86,10 +86,10 @@ func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 	if len(brought.Landed) != 3 {
 		t.Fatalf("what landed: %v", brought.Landed)
 	}
-	if body := arrived(t, v.Path, "scans/Cover.png"); body != "PNG" {
+	if body := readArrived(t, v.Path, "scans/Cover.png"); body != "PNG" {
 		t.Errorf("the picture arrived as %q", body)
 	}
-	if body := arrived(t, v.Path, "scans/Kelvin.md"); body != "# Kelvin\n" {
+	if body := readArrived(t, v.Path, "scans/Kelvin.md"); body != "# Kelvin\n" {
 		t.Errorf("the note arrived as %q", body)
 	}
 }

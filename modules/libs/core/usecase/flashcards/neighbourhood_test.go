@@ -56,10 +56,10 @@ func reading(
 func around(t *testing.T, notes map[string]string, deck string) flashcards.Neighbourhood {
 	t.Helper()
 	u, add := reading(t)
-	return joined(t, u, add(notes), deck)
+	return getNeighbourhood(t, u, add(notes), deck)
 }
 
-func joined(
+func getNeighbourhood(
 	t *testing.T, u flashcards.ShowNeighbourhood, v domain.Vault, deck string,
 ) flashcards.Neighbourhood {
 	t.Helper()
@@ -70,9 +70,9 @@ func joined(
 	return out
 }
 
-// written is how each entry was addressed, which is all a link that reached no
-// note ever has.
-func written(j flashcards.Neighbourhood) []string {
+// getWrittenLinks is how each entry was addressed, which is all a link that
+// reached no note ever has.
+func getWrittenLinks(j flashcards.Neighbourhood) []string {
 	out := make([]string, 0, len(j.Notes))
 	for _, one := range j.Notes {
 		out = append(out, one.Written)
@@ -247,7 +247,7 @@ func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
 			"\n## Swallow ^3dkmf936tb\n\n### Word\n\nSee [[Nowhere At All]] again.\n",
 	}, "decks/Birds.md")
 
-	if got := written(j); len(got) != 1 || got[0] != "Nowhere At All" {
+	if got := getWrittenLinks(j); len(got) != 1 || got[0] != "Nowhere At All" {
 		t.Fatalf("joined to %v", got)
 	}
 }
@@ -322,7 +322,7 @@ func TestAnAddressThatNamesNoNoteIsNotADanglingNote(t *testing.T) {
 		}
 	}
 	if len(j.Notes) != 1 {
-		t.Fatalf("joined to %v", written(j))
+		t.Fatalf("joined to %v", getWrittenLinks(j))
 	}
 }
 
@@ -343,7 +343,7 @@ func TestALinkIntoAnotherVaultIsNotSomethingToRead(t *testing.T) {
 		"elsewhere.md": "---\nid: " + id + "\n---\n\n# In the other vault\n",
 	})
 
-	j := joined(t, u, v, "decks/Birds.md")
+	j := getNeighbourhood(t, u, v, "decks/Birds.md")
 	if len(j.Notes) != 0 {
 		t.Fatalf("joined to %v", paths(j))
 	}
@@ -361,7 +361,7 @@ func TestANoteDeletedAfterTheScanDoesNotSinkTheOthers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	j := joined(t, u, v, "decks/Birds.md")
+	j := getNeighbourhood(t, u, v, "decks/Birds.md")
 	if len(j.Notes) != 2 {
 		t.Fatalf("joined to %v", paths(j))
 	}
@@ -432,7 +432,7 @@ func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 		"Arithmetic.md": "# Arithmetic\n\nRemainders divide integers evenly.\n",
 	})
 
-	first := joined(t, u, feathers, "decks/Deck.md")
+	first := getNeighbourhood(t, u, feathers, "decks/Deck.md")
 	if len(first.Notes) != 1 || first.Notes[0].Path != "Migration.md" {
 		t.Fatalf("the first vault is joined to %v", paths(first))
 	}
@@ -440,7 +440,7 @@ func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 		t.Errorf("the first vault read the second's note: %q", first.Notes[0].Body)
 	}
 
-	second := joined(t, u, sums, "decks/Deck.md")
+	second := getNeighbourhood(t, u, sums, "decks/Deck.md")
 	if len(second.Notes) != 1 || second.Notes[0].Path != "Arithmetic.md" {
 		t.Fatalf("the second vault is joined to %v", paths(second))
 	}

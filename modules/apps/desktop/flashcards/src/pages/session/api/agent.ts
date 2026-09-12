@@ -16,7 +16,7 @@ import { agentService } from '@/shared/clients'
  * read as instruction; `card_showing` gives the agent the same name as a tool's
  * answer, which is data.
  */
-export const core = (card: CardFace) =>
+export const createAgentPort = (card: CardFace) =>
   agentPort({
     askAgent: (request, options) =>
       agentService.askAgent({ ...request, mark: card.mark, face: card.face }, options),

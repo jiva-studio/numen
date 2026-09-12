@@ -193,7 +193,7 @@ func NewReviewing(core Core) *sdk.Server {
 			Description: "Notes with typed links and spaced repetition.",
 			Version:     Version,
 		},
-		&sdk.ServerOptions{Instructions: reviewingInstructions(core)},
+		&sdk.ServerOptions{Instructions: getReviewingInstructions(core)},
 	)
 
 	addNoteReadingTools(server, core)

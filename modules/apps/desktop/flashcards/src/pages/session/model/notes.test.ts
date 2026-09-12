@@ -30,7 +30,7 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
     },
     vault: () => 'one',
     deck: () => deck.value,
-    around: async (vault, of) => {
+    getDeckNeighbourhood: async (vault, of) => {
       asked.push({ vault, deck: of })
       if (more.refuses) throw new Error('out of reach')
       return { notes: [createNeighbour({ written: of })], unread: 2 } satisfies DeckNeighbourhood
@@ -108,7 +108,7 @@ describe('what is read belongs to the deck', () => {
       },
       vault: () => 'one',
       deck: () => deck.value,
-      around: async (_vault, of) =>
+      getDeckNeighbourhood: async (_vault, of) =>
         new Promise((then) =>
           waiting.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
@@ -140,7 +140,7 @@ describe('what is read belongs to the deck', () => {
       },
       vault: () => 'one',
       deck: () => deck.value,
-      around: async (_vault, of) =>
+      getDeckNeighbourhood: async (_vault, of) =>
         new Promise((then) =>
           waiting.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),

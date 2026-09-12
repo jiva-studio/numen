@@ -8,7 +8,7 @@ import (
 )
 
 // A window dressed in everything a person can set.
-func dressed() appearance.Settings {
+func buildSettings() appearance.Settings {
 	return appearance.Settings{
 		Mode:           appearance.Dark,
 		Theme:          ":root{--numen-surface:#010203}",
@@ -17,17 +17,17 @@ func dressed() appearance.Settings {
 	}
 }
 
-// marked is the head of one of the three elements.
-func marked(is string) string { return `<style ` + appearance.Marker + `="` + is + `">` }
+// buildElementHead is the head of one of the three elements.
+func buildElementHead(is string) string { return `<style ` + appearance.Marker + `="` + is + `">` }
 
 // Each of the three elements the head ends with says which of them it is. A
 // theme's file is a person's own CSS and says nothing about itself, so the mark
 // is the whole of what a window has to tell them apart by.
 func TestEachStyleElementSaysWhichItIs(t *testing.T) {
-	head := dressed().Styles()
+	head := buildSettings().Styles()
 
 	for _, is := range []string{appearance.IsMode, appearance.IsTheme, appearance.IsSizes} {
-		if count := strings.Count(head, marked(is)); count != 1 {
+		if count := strings.Count(head, buildElementHead(is)); count != 1 {
 			t.Errorf("%q is marked %d times in %q", is, count, head)
 		}
 	}
@@ -40,11 +40,11 @@ func TestEachStyleElementSaysWhichItIs(t *testing.T) {
 // theme pinning `color-scheme` is the later of two declarations weighing the
 // same, and the sizes are the last word on how large the window is drawn.
 func TestTheThreeStandInTheOrderTheyWeigh(t *testing.T) {
-	head := dressed().Styles()
+	head := buildSettings().Styles()
 
-	mode := strings.Index(head, marked(appearance.IsMode))
-	theme := strings.Index(head, marked(appearance.IsTheme))
-	sizes := strings.Index(head, marked(appearance.IsSizes))
+	mode := strings.Index(head, buildElementHead(appearance.IsMode))
+	theme := strings.Index(head, buildElementHead(appearance.IsTheme))
+	sizes := strings.Index(head, buildElementHead(appearance.IsSizes))
 	if mode > theme || theme > sizes {
 		t.Errorf("the mode is at %d, the theme at %d, the sizes at %d", mode, theme, sizes)
 	}
@@ -55,7 +55,7 @@ func TestTheThreeStandInTheOrderTheyWeigh(t *testing.T) {
 func TestAWindowAtNoSizeOfItsOwnCarriesNothingMarkedAsTheSizes(t *testing.T) {
 	head := appearance.Settings{Mode: appearance.Light}.Styles()
 
-	if strings.Contains(head, marked(appearance.IsSizes)) {
+	if strings.Contains(head, buildElementHead(appearance.IsSizes)) {
 		t.Errorf("the head ends with %q", head)
 	}
 }
@@ -64,7 +64,7 @@ func TestAWindowAtNoSizeOfItsOwnCarriesNothingMarkedAsTheSizes(t *testing.T) {
 // the element it was spliced into, and that element cannot be ended from
 // inside it.
 func TestAThemeCannotMarkAnElementOfItsOwn(t *testing.T) {
-	forged := `</style>` + marked(appearance.IsMode) + `:root{color-scheme:light}`
+	forged := `</style>` + buildElementHead(appearance.IsMode) + `:root{color-scheme:light}`
 	head := appearance.Settings{Mode: appearance.Dark, Theme: forged}.Styles()
 
 	if count := strings.Count(head, "</style>"); count != 2 {

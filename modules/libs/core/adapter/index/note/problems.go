@@ -11,18 +11,18 @@ import (
 // Noted is what parsing each file turned up. The wording is the parser's and is
 // carried through as it was written.
 func (q *Queries) Noted(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
-	return q.said(ctx, vaultID, "problems")
+	return q.getProblems(ctx, vaultID, "problems")
 }
 
 // Unreadable is the notes whose frontmatter is not YAML.
 func (q *Queries) Unreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
-	return q.said(ctx, vaultID, "frontmatter_errors")
+	return q.getProblems(ctx, vaultID, "frontmatter_errors")
 }
 
-// said reads the two questions that come back as a path and a line of text. What
-// the line means is the caller's to say: a query answers what is stored and does
-// not compose sentences about it.
-func (q *Queries) said(ctx context.Context, vaultID domain.VaultID, statement string) ([]domain.VaultProblem, error) {
+// getProblems reads the two questions that come back as a path and a line of
+// text. What the line means is the caller's to say: a query answers what is
+// stored and does not compose sentences about it.
+func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, statement string) ([]domain.VaultProblem, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil

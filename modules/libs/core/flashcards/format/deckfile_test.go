@@ -372,7 +372,7 @@ func TestAddCard(t *testing.T) {
 	}
 }
 
-// A heading is a projection and a mark is minted where the deck is written, so
+// A heading is a projection and a mark is given where the deck is written, so
 // a card handed over with neither is written with neither.
 func TestAddCardWithNoHeadingAndNoMark(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
@@ -597,7 +597,7 @@ func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
 
 // A heading is one line. A heading composed with a break in it carries the
 // lines under it into the file, where the next read takes a second `##` for a
-// second card and mints it a mark.
+// second card and gives it a mark.
 func TestAHeadingAndASectionsNameAreCutAtTheFirstBreak(t *testing.T) {
 	f, err := format.OpenDeck([]byte("---\ntype: deck\n---\n"))
 	if err != nil {
@@ -670,34 +670,34 @@ func TestRemovingTheLastSectionLeavesNoBlankLine(t *testing.T) {
 	}
 }
 
-// The mark is minted where the deck is made whole, so that is what knows it and
-// what says which card was given which.
-func TestWholeSaysWhichCardsItMinted(t *testing.T) {
+// The mark is created where the deck is made whole, so that is what knows it
+// and what says which card was given which.
+func TestWholeSaysWhichCardsItGave(t *testing.T) {
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
 		"\n## Alpaca ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nAlpaca\n" +
 		"\n## Vicuña\n\n[[Animal]]\n\n### Name\n\nVicuña\n"
-	minting := []domain.CardID{"zpqrstvwxy", "m9n8b7v6c5"}
-	mint := func() (domain.CardID, error) {
-		out := minting[0]
-		minting = minting[1:]
+	ids := []domain.CardID{"zpqrstvwxy", "m9n8b7v6c5"}
+	createID := func() (domain.CardID, error) {
+		out := ids[0]
+		ids = ids[1:]
 		return out, nil
 	}
 
-	_, minted, err := format.Whole(body, map[string]format.Stencil{
+	_, given, err := format.Whole(body, map[string]format.Stencil{
 		"Animal": {Fields: []string{"Name"}},
-	}, mint)
+	}, createID)
 	if err != nil {
 		t.Fatalf("whole: %v", err)
 	}
-	want := []format.MintedMark{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
-	if !slices.Equal(minted, want) {
-		t.Errorf("minted = %+v, want %+v", minted, want)
+	want := []format.CardMark{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
+	if !slices.Equal(given, want) {
+		t.Errorf("given = %+v, want %+v", given, want)
 	}
 }
 
 // A generator that cannot answer says which card was left without a mark, so
 // the write above can name the deck it happened in.
-func TestAMarkThatCouldNotBeMintedSaysWhichCard(t *testing.T) {
+func TestAMarkThatCouldNotBeCreatedSaysWhichCard(t *testing.T) {
 	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
 		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
 	broken := func() (domain.CardID, error) { return "", errors.New("no randomness") }
@@ -824,7 +824,7 @@ func TestChangingOneCardLeavesEveryOtherTheBytesItWas(t *testing.T) {
 // what follows one is always another card's heading.
 func cardRun(t *testing.T, body string, card domain.CardID) string {
 	t.Helper()
-	from := strings.Index(body, "## "+opened(t, body, card))
+	from := strings.Index(body, "## "+getCardHeading(t, body, card))
 	if from < 0 {
 		t.Fatalf("the body holds no card of the mark %s:\n%s", card, body)
 	}
@@ -835,8 +835,8 @@ func cardRun(t *testing.T, body string, card domain.CardID) string {
 	return rest
 }
 
-// opened is the heading line of the card of a mark, without its hashes.
-func opened(t *testing.T, body string, card domain.CardID) string {
+// getCardHeading is the heading line of the card of a mark, without its hashes.
+func getCardHeading(t *testing.T, body string, card domain.CardID) string {
 	t.Helper()
 	for _, line := range strings.Split(markdown.Normalised(body), "\n") {
 		if strings.HasPrefix(line, "## ") && strings.HasSuffix(line, "^"+string(card)) {

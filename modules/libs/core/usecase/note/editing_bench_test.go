@@ -12,9 +12,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// unlevelled brings nothing level. What is measured here is the file being
+// indexNothing brings nothing level. What is measured here is the file being
 // replaced; what the index then costs is a refresh, and is measured as one.
-func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+func indexNothing(context.Context, domain.Vault, []string) error { return nil }
 
 // What these measure: what a person waits for between stopping typing and their
 // note being on disk, and what a window pays per open tab every time the vault
@@ -53,7 +53,7 @@ func BenchmarkSave(b *testing.B) {
 		b.Run(fmt.Sprintf("%d words", size), func(b *testing.B) {
 			v := testsupport.GenerateVault(b, 100)
 			write := note.NewWrite(
-				filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled, time.Now)
+				filesystem.VaultReaders{}, filesystem.VaultWriters{}, indexNothing, time.Now)
 			path := "01/note-000001.md"
 
 			body := ""

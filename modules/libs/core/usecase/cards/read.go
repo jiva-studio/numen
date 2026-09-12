@@ -78,7 +78,7 @@ func NewRead(readers port.VaultReaders, links port.LinkQueries) Read {
 // is an outcome, and the caller is told which one.
 func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckContents, error) {
 	out := DeckContents{Path: path}
-	n, ref, outcome, err := u.looked(ctx, v, path, MaxBytes)
+	n, ref, outcome, err := u.readNote(ctx, v, path, MaxBytes)
 	if err != nil {
 		return DeckContents{}, err
 	}
@@ -89,7 +89,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 	switch outcome {
 	case note.Ok:
 		out.Body, out.Raw = format.ReadDeck(n), n.Body
-		out.Stencils, err = cutting(ctx, u.Links, v.ID, path, out.Body)
+		out.Stencils, err = getStencilPaths(ctx, u.Links, v.ID, path, out.Body)
 		if err != nil {
 			return DeckContents{}, err
 		}
@@ -118,7 +118,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 func (u Read) Cutting(
 	ctx context.Context, v domain.Vault, path string, d format.Deck,
 ) (map[string]format.Stencil, error) {
-	at, err := cutting(ctx, u.Links, v.ID, path, d)
+	at, err := getStencilPaths(ctx, u.Links, v.ID, path, d)
 	if err != nil {
 		return nil, err
 	}
@@ -126,10 +126,10 @@ func (u Read) Cutting(
 	return by, err
 }
 
-// cutting is where each card's wikilink lands, keyed by what stands in the
-// brackets. The link is written in the deck, so it resolves against the deck's
-// own folder the way every name in that file does.
-func cutting(
+// getStencilPaths is where each card's wikilink lands, keyed by what stands in
+// the brackets. The link is written in the deck, so it resolves against the
+// deck's own folder the way every name in that file does.
+func getStencilPaths(
 	ctx context.Context, links port.LinkQueries, vaultID domain.VaultID, path string, d format.Deck,
 ) (map[string]string, error) {
 	if links == nil {
@@ -209,7 +209,7 @@ func notStencils(d format.Deck, ordinary map[string]bool) []format.Problem {
 // Stencil reads the stencil at path. A stencil is a note and is bounded as one.
 func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (StencilContents, error) {
 	out := StencilContents{Path: path}
-	n, ref, outcome, err := u.looked(ctx, v, path, note.MaxBytes)
+	n, ref, outcome, err := u.readNote(ctx, v, path, note.MaxBytes)
 	if err != nil {
 		return StencilContents{}, err
 	}
@@ -220,9 +220,9 @@ func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil
 	return out, nil
 }
 
-// looked is the file at a path: what the vault says is there, and the note its
-// bytes parse to once everything that would refuse them has been asked.
-func (u Read) looked(
+// readNote is the file at a path: what the vault says is there, and the note
+// its bytes parse to once everything that would refuse them has been asked.
+func (u Read) readNote(
 	ctx context.Context, v domain.Vault, path string, bound int64,
 ) (domain.Note, domain.Fingerprint, note.ReadOutcome, error) {
 	reader, err := u.Readers.Open(v)

@@ -162,7 +162,7 @@ const vault = (
         { path: 'presets/Slow.md', title: '' },
       ],
     createPreset: async () => ({ path: '', error: null }),
-    scheduling: async () => ({
+    getDeckPreset: async () => ({
       preset: {
         path: by,
         title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
@@ -560,7 +560,7 @@ describe('the vault changing under the window', () => {
     const decks = useDeckTabs(one.core, one.presets, held.handle, tabOpeners())
     held.registerKinds([decks.kind])
 
-    decks.changed(['Notes.md'])
+    decks.applyPathChanges(['Notes.md'])
     await settle()
 
     expect(one.listed()).toBe(0)
@@ -569,7 +569,7 @@ describe('the vault changing under the window', () => {
   it('lists them again once a deck is open', async () => {
     const { decks, listed } = await open()
 
-    decks.changed(['Notes.md'])
+    decks.applyPathChanges(['Notes.md'])
     await settle()
 
     expect(listed()).toBe(2)
@@ -599,7 +599,7 @@ describe('a deck read again under the window', () => {
     const one = await open({ problems: [stencilless] })
     const was = drawing(one.tab)
 
-    one.decks.changed(['Animals.md'])
+    one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     // Each of them the same thing, and not merely a thing that reads the same:
@@ -616,7 +616,7 @@ describe('a deck read again under the window', () => {
     // The card the grid is drawing, under the identity it was drawn with.
     const second = one.tab.deck.value.cards[1]?.id ?? ''
 
-    one.decks.changed(['Animals.md'])
+    one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     expect(one.tab.marks.value.at.get(second)).toStrictEqual(['a card under no stencil'])
@@ -645,7 +645,7 @@ describe('a deck read again under the window', () => {
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
     ])
-    one.decks.changed(['Animals.md'])
+    one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     expect(one.tab.deck.value.cards.at(-1)?.id).toBe(made)
@@ -674,7 +674,7 @@ describe('a deck read again under the window', () => {
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
     ])
-    one.decks.changed(['Animals.md'])
+    one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     expect(one.tab.deck.value.sections[0]?.id).toBe(stood)
@@ -690,7 +690,7 @@ describe('a deck read again under the window', () => {
     const stood = one.tab.deck.value.cards[0]?.id ?? ''
 
     one.setCards(CARDS.map((card, at) => (at === 0 ? { ...card, heading: 'Llama and yak' } : card)))
-    one.decks.changed(['Animals.md'])
+    one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     expect(one.tab.deck.value.cards[0]?.heading).toBe('Llama and yak')
@@ -716,7 +716,7 @@ describe('a deck read again under the window', () => {
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
     ])
-    one.decks.changed(['Animals.md'])
+    one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     expect(one.tab.deck.value.cards).toHaveLength(CARDS.length + 1)
@@ -746,7 +746,7 @@ describe('a deck read again under the window', () => {
         values: [{ field: 'Name', text: 'Vic' }],
       },
     ])
-    one.decks.changed(['Animals.md'])
+    one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     expect(one.tab.deck.value.cards.at(-1)?.id).toBe(made)
@@ -767,7 +767,7 @@ describe('a deck read again under the window', () => {
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
     ])
-    one.decks.changed(['Animals.md'])
+    one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
     expect(one.tab.drawn.value.map((card) => card.id)).toStrictEqual(['w9s5jd2b1k'])
@@ -778,7 +778,7 @@ describe('a deck read again under the window', () => {
 describe('a deck renamed under the window', () => {
   /** The file the deck was opened at, under the name it was given instead. */
   const renameDeck = (one: Awaited<ReturnType<typeof open>>) =>
-    one.decks.changed(['Beasts.md'], [{ from: 'Animals.md', to: 'Beasts.md' }])
+    one.decks.applyPathChanges(['Beasts.md'], [{ from: 'Animals.md', to: 'Beasts.md' }])
 
   it('is the tab it has when it is asked for at the name it now carries', async () => {
     const one = await open()

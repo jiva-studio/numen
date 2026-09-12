@@ -69,8 +69,8 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     dayStarts: dayBegins.starts,
     latestDayStarts: dayBegins.latest,
     chooseDayStarts: (hour) => void dayBegins.choose(hour),
-    setting: (at) => rest.at(at),
-    models: (at) => rest.getModelsAt(at),
+    getSetting: (at) => rest.at(at),
+    getModels: (at) => rest.getModelsAt(at),
     write: (written) => void rest.writeSettings(written),
     file: rest.path,
     openFile: () => file.openSettingsFile(),
@@ -81,9 +81,9 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
   const kept: PaletteLists = {
     getStepGroups: (command, typed) => {
       if (command === APPEARANCE) return dressed.getThemeGroups()
-      if (command === MODE) return dressed.modes()
+      if (command === MODE) return dressed.getModeGroups()
       if (command === INTERFACE_SCALE || command === TEXT_SCALE)
-        return dressed.sizes(command, typed)
+        return dressed.getSizeGroups(command, typed)
       if (command === SYNCING) return oneName.getSyncingGroups()
       if (command === HANGING) return hungParts.getHangingGroups()
       if (command === PARTS) return hungParts.getPartsGroups()

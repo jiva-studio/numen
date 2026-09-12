@@ -31,7 +31,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** The pointer crossed a row: its number, and the move that took it there. */
-  (event: 'over', at: number, moved: PointerEvent): void
+  (event: 'pointAt', at: number, moved: PointerEvent): void
   /** A row was pressed: its number, and whether the second action was asked for. */
   (event: 'choose', at: number, second: boolean): void
 }>()
@@ -100,7 +100,7 @@ const rowId = (at: number): string => optionId(props.uid, at)
         :aria-disabled="row.item.disabled || undefined"
         :data-here="row.at === here || undefined"
         :data-disabled="row.item.disabled || undefined"
-        @pointermove="emit('over', row.at, $event)"
+        @pointermove="emit('pointAt', row.at, $event)"
         @pointerdown.prevent
         @click="emit('choose', row.at, $event.shiftKey)"
       >

@@ -169,7 +169,7 @@ export default tseslint.config(
   // interactions and does not await what it starts. In the tabs the same rules
   // are on and the tree is clean.
   {
-    files: ['**/*.test.ts', '**/*.stories.ts', 'src/shared/testing/**', '.storybook/**'],
+    files: ['**/*.test.ts', '**/*.stories.ts', 'src/testing/**', '.storybook/**'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',

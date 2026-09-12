@@ -8,7 +8,14 @@ import type { VaultPort } from '@/app/ports/vault'
 
 export type SessionCore = Pick<
   VaultPort,
-  'state' | 'agentUnreachable' | 'changes' | 'focus' | 'writeOpenTabs' | 'tasks' | 'quitting' | 'flushed'
+  | 'state'
+  | 'agentUnreachable'
+  | 'watchVaultChanges'
+  | 'watchFocus'
+  | 'writeOpenTabs'
+  | 'watchTasks'
+  | 'watchQuit'
+  | 'reportFlush'
 >
 
 export const sessionCore: SessionCore = {
@@ -31,7 +38,7 @@ export const sessionCore: SessionCore = {
     }
   },
   agentUnreachable: async () => (await agentService.getAgentState({})).unreachable,
-  changes: async function* (signal) {
+  watchVaultChanges: async function* (signal) {
     for await (const change of vault.watchVaultChanges({}, { signal })) {
       yield {
         paths: change.paths,
@@ -40,11 +47,11 @@ export const sessionCore: SessionCore = {
       }
     }
   },
-  focus: (signal) => workspace.watchFocus({}, { signal }),
+  watchFocus: (signal) => workspace.watchFocus({}, { signal }),
   writeOpenTabs: async (open) => {
     await workspace.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
   },
-  async *tasks(signal) {
+  async *watchTasks(signal) {
     for await (const said of windowService.watchTasks({ window: WINDOW }, { signal })) {
       yield said.tasks.map((at) => ({
         id: at.id,
@@ -58,8 +65,8 @@ export const sessionCore: SessionCore = {
       }))
     }
   },
-  quitting: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
-  flushed: async (token, owed) => {
+  watchQuit: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
+  reportFlush: async (token, owed) => {
     await windowService.reportFlush({ window: WINDOW, token, result: flushResults[owed ?? 'nothing'] })
   },
 }

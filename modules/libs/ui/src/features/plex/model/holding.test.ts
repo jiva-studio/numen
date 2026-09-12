@@ -24,7 +24,7 @@ describe('a rest on a node', () => {
     const { held, reached } = createHolding()
     const event = press()
 
-    held.down(event)
+    held.onPointerDown(event)
     expect(reached).not.toHaveBeenCalled()
 
     vi.advanceTimersByTime(HOLD)
@@ -35,17 +35,17 @@ describe('a rest on a node', () => {
     vi.useFakeTimers()
     const { held } = createHolding()
 
-    held.down(press())
+    held.onPointerDown(press())
     vi.advanceTimersByTime(HOLD)
-    expect(held.resting()).toBe(false)
+    expect(held.isResting()).toBe(false)
   })
 
   it('is given up on by a finger that strays', () => {
     vi.useFakeTimers()
     const { held, reached } = createHolding()
 
-    held.down(press())
-    held.move(press({ clientX: 100 + STRAY + 1 }))
+    held.onPointerDown(press())
+    held.onPointerMove(press({ clientX: 100 + STRAY + 1 }))
     vi.advanceTimersByTime(HOLD)
 
     expect(reached).not.toHaveBeenCalled()
@@ -55,8 +55,8 @@ describe('a rest on a node', () => {
     vi.useFakeTimers()
     const { held, reached } = createHolding()
 
-    held.down(press())
-    held.move(press({ clientX: 100 + STRAY - 1 }))
+    held.onPointerDown(press())
+    held.onPointerMove(press({ clientX: 100 + STRAY - 1 }))
     vi.advanceTimersByTime(HOLD)
 
     expect(reached).toHaveBeenCalledOnce()
@@ -66,7 +66,7 @@ describe('a rest on a node', () => {
     vi.useFakeTimers()
     const { held, reached } = createHolding()
 
-    held.down(press())
+    held.onPointerDown(press())
     held.letGo()
     vi.advanceTimersByTime(HOLD)
 
@@ -77,7 +77,7 @@ describe('a rest on a node', () => {
     vi.useFakeTimers()
     const { held, reached } = createHolding()
 
-    held.down(press({ pointerType: 'mouse' }))
+    held.onPointerDown(press({ pointerType: 'mouse' }))
     vi.advanceTimersByTime(HOLD)
 
     expect(reached).not.toHaveBeenCalled()
@@ -87,7 +87,7 @@ describe('a rest on a node', () => {
     vi.useFakeTimers()
     const { held, reached } = createHolding(() => false)
 
-    held.down(press())
+    held.onPointerDown(press())
     vi.advanceTimersByTime(HOLD)
 
     expect(reached).not.toHaveBeenCalled()
@@ -97,7 +97,7 @@ describe('a rest on a node', () => {
     vi.useFakeTimers()
     const { held, reached, scope } = createHolding()
 
-    held.down(press())
+    held.onPointerDown(press())
     scope.stop()
     vi.advanceTimersByTime(HOLD)
 

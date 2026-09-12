@@ -30,7 +30,7 @@ func TestANameReachesItsNoteWhateverCaseItIsWrittenIn(t *testing.T) {
 		{"a German sharp s", "STRASSE", "straße.md"},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			db, v := indexed(t, map[string]string{
+			db, v := newIndexedVault(t, map[string]string{
 				"source.md": "Points at [[" + one.written + "]].\n",
 				one.filed:   "# The note\n",
 			})
@@ -63,7 +63,7 @@ func TestANameReachesItsNoteWhicheverWayItIsComposed(t *testing.T) {
 			if one.written+".md" == one.filed {
 				t.Fatal("the link and the filename are the same bytes, so nothing is tested")
 			}
-			db, v := indexed(t, map[string]string{
+			db, v := newIndexedVault(t, map[string]string{
 				"source.md": "Points at [[" + one.written + "]].\n",
 				one.filed:   "# The note\n",
 			})
@@ -81,7 +81,7 @@ func TestANameReachesItsNoteWhicheverWayItIsComposed(t *testing.T) {
 
 // The folders on the way to a note answer the way the note's own name does.
 func TestAPathReachesItsNoteWhateverCaseItIsWrittenIn(t *testing.T) {
-	db, v := indexed(t, map[string]string{
+	db, v := newIndexedVault(t, map[string]string{
 		"source.md":           "Points at [[ЗАМЕТКИ/ЭНТРОПИЯ]].\n",
 		"Заметки/Энтропия.md": "# The one that was asked for\n",
 		"архив/Энтропия.md":   "# The stranger\n",
@@ -101,7 +101,7 @@ func TestAPathReachesItsNoteWhateverCaseItIsWrittenIn(t *testing.T) {
 
 // The note a link reaches lists it back.
 func TestANoteListsABacklinkWrittenInAnotherCase(t *testing.T) {
-	db, v := indexed(t, map[string]string{
+	db, v := newIndexedVault(t, map[string]string{
 		"source.md":   "Points at [[энтропия]].\n",
 		"Энтропия.md": "# Энтропия\n",
 	})
@@ -118,7 +118,7 @@ func TestANoteListsABacklinkWrittenInAnotherCase(t *testing.T) {
 // A dotted capital I is a letter of its own outside Turkish, so it names a note
 // of its own.
 func TestATurkishDottedIIsAName(t *testing.T) {
-	db, v := indexed(t, map[string]string{
+	db, v := newIndexedVault(t, map[string]string{
 		"source.md":   "Points at [[İstanbul]].\n",
 		"istanbul.md": "# Somewhere else\n",
 	})

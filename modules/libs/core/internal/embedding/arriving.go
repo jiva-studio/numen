@@ -130,8 +130,8 @@ func (e *Embedder) Filling() port.Embedder { return waitingEmbedder{e} }
 // search the words answer.
 func (e *Embedder) Asking() port.Embedder { return impatient{e} }
 
-// embedding is what the model answers with, once it is here.
-func (e *Embedder) embedding(ctx context.Context, texts []string) ([][]float32, error) {
+// embed is what the model answers with, once it is here.
+func (e *Embedder) embed(ctx context.Context, texts []string) ([][]float32, error) {
 	e.mu.RLock()
 	held := e.held
 	e.mu.RUnlock()
@@ -152,7 +152,7 @@ func (w waitingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32
 	if err := w.e.Wait(ctx); err != nil {
 		return nil, err
 	}
-	return w.e.embedding(ctx, texts)
+	return w.e.embed(ctx, texts)
 }
 
 // Close lets go of the one model both ways of waiting ask.
@@ -174,7 +174,7 @@ func (i impatient) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	if why != nil {
 		return nil, why
 	}
-	return i.e.embedding(ctx, texts)
+	return i.e.embed(ctx, texts)
 }
 
 // Close lets go of the one model both ways of waiting ask.

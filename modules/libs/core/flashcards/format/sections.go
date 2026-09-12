@@ -96,13 +96,13 @@ func run(body []byte, from, to int) (string, int) {
 		}
 		begin = next
 	}
-	end = trimmedEnd(body, begin, end)
+	end = getTrimmedEnd(body, begin, end)
 	return markdown.Normalised(string(body[begin:end])), end
 }
 
-// trimmedEnd is the byte a run's own text stops at, the whitespace that
+// getTrimmedEnd is the byte a run's own text stops at, the whitespace that
 // follows it counted as nobody's.
-func trimmedEnd(body []byte, from, to int) int {
+func getTrimmedEnd(body []byte, from, to int) int {
 	return from + len(bytes.TrimRight(body[from:to], " \t\r\n"))
 }
 

@@ -43,8 +43,8 @@ export interface Installation {
    * The rest of the file: what stands at a setting, the models a setting that
    * names one can be set to, and settings written where they stand.
    */
-  setting(at: readonly string[]): unknown
-  models(at: readonly string[]): readonly Model[]
+  getSetting(at: readonly string[]): unknown
+  getModels(at: readonly string[]): readonly Model[]
   write(written: readonly SettingEdit[]): void
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>

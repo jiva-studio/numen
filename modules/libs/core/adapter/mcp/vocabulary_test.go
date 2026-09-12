@@ -111,7 +111,7 @@ func TestAnEditNamesTheArgumentsItReplacesTextWith(t *testing.T) {
 	}
 	for _, tool := range []string{"note_rewrite", "note_read"} {
 		if words[tool].Match != "" || words[tool].Text != "" {
-			t.Errorf("%s claims to replace a stretch", tool)
+			t.Errorf("%s claims to replace a span", tool)
 		}
 	}
 }

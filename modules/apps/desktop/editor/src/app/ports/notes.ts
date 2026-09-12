@@ -26,7 +26,7 @@ export interface NotePort {
    */
   resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
   /** A change being made to a note's prose, reported while it is being made. */
-  editing(signal: AbortSignal): AsyncIterable<NoteEdit>
+  watchEdits(signal: AbortSignal): AsyncIterable<NoteEdit>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
   read(path: string): Promise<NoteResult & { at?: string }>
   /**

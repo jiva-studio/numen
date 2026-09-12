@@ -26,9 +26,9 @@ describe('what state a composer is in', () => {
   })
 
   it('can be pressed with something to send, and while an answer arrives', () => {
-    expect(COMPOSER_STATES.empty.acts).toBe(false)
-    expect(COMPOSER_STATES.ready.acts).toBe(true)
-    expect(COMPOSER_STATES.writing.acts).toBe(true)
+    expect(COMPOSER_STATES.empty.canAct).toBe(false)
+    expect(COMPOSER_STATES.ready.canAct).toBe(true)
+    expect(COMPOSER_STATES.writing.canAct).toBe(true)
   })
 
   it('stops the answer on its way, and sends the rest of the time', () => {

@@ -34,7 +34,7 @@ export function plexKind(handle: WindowHandle, createView: () => PlexView, deps:
       state.view.close()
       return true
     },
-    over: (state) => {
+    getTarget: (state) => {
       const path = state.view.here.value
       return { path, title: (path && state.getName(path)) || path }
     },

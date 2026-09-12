@@ -82,7 +82,7 @@ const meta: Meta<Knobs> = {
           :days="days"
           :levels="args.levels"
           :disabled="args.disabled"
-          @chooses="onChoose"
+          @choose="onChoose"
         />
       </div>
     `,

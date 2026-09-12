@@ -22,7 +22,7 @@ export function createMediaKinds({
   runCommand,
 }: MediaKindsDeps) {
   const createTabDeps = (source: Source): MediaTabDeps => ({
-    runs: (id, path, called) =>
+    runCommand: (id, path, called) =>
       runCommand(id, {
         ...getTarget(),
         path: '',

@@ -10,17 +10,17 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
-// dividing generates what a preset's decks owe of one of its budgets, and the
-// budget there is to divide between them. A budget larger than the whole of
+// drawDivision generates what a preset's decks owe of one of its budgets, and
+// the budget there is to divide between them. A budget larger than the whole of
 // what is owed and one smaller than any single share both fall inside the
 // range, so both ends of the division are generated as often as the middle.
-func dividing(t *rapid.T) (int, []int) {
+func drawDivision(t *rapid.T) (int, []int) {
 	owes := rapid.SliceOfN(rapid.IntRange(0, 400), 0, 8).Draw(t, "owes")
 	return rapid.IntRange(0, 1200).Draw(t, "budget"), owes
 }
 
-// totalled is what a set of decks owes altogether.
-func totalled(owes []int) int {
+// getTotalOwed is what a set of decks owes altogether.
+func getTotalOwed(owes []int) int {
 	out := 0
 	for _, one := range owes {
 		out += one
@@ -36,9 +36,9 @@ func totalled(owes []int) int {
 func TestTheSharesOfADayAreHandedOutWhole(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		budget, owes := dividing(t)
-		got := totalled(review.Shares(budget, owes))
-		want := min(budget, totalled(owes))
+		budget, owes := drawDivision(t)
+		got := getTotalOwed(review.Shares(budget, owes))
+		want := min(budget, getTotalOwed(owes))
 		if got != want {
 			t.Fatalf("a budget of %v over %v handed out %v, want %v",
 				budget, owes, got, want)
@@ -54,7 +54,7 @@ func TestTheSharesOfADayAreHandedOutWhole(t *testing.T) {
 func TestNoDeckTakesMoreOfTheDayThanItOwes(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		budget, owes := dividing(t)
+		budget, owes := drawDivision(t)
 		for at, share := range review.Shares(budget, owes) {
 			if share < 0 || share > owes[at] {
 				t.Fatalf("a deck owing %v took %v of a budget of %v over %v",
@@ -75,8 +75,8 @@ func TestNoDeckTakesMoreOfTheDayThanItOwes(t *testing.T) {
 func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		budget, owes := dividing(t)
-		total := totalled(owes)
+		budget, owes := drawDivision(t)
+		total := getTotalOwed(owes)
 		if total <= 0 || budget >= total {
 			return
 		}
@@ -99,7 +99,7 @@ func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
 func TestADeckOwingMoreNeverTakesLess(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		budget, owes := dividing(t)
+		budget, owes := drawDivision(t)
 		out := review.Shares(budget, owes)
 		for i := range owes {
 			for j := range owes {
@@ -123,7 +123,7 @@ func TestADeckOwingMoreNeverTakesLess(t *testing.T) {
 func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		budget, owes := dividing(t)
+		budget, owes := drawDivision(t)
 		places := make([]int, len(owes))
 		for at := range places {
 			places[at] = at

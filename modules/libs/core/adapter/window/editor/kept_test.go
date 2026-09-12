@@ -11,7 +11,7 @@ import (
 // onDisk gives a window a folder of its own to keep its drawings in.
 func onDisk(t *testing.T, api *API) *cache {
 	t.Helper()
-	kept := keptIn(t.TempDir())
+	kept := newCacheIn(t.TempDir())
 	t.Cleanup(kept.close)
 	api.Viewer.kept = kept
 	return kept
@@ -32,14 +32,14 @@ func drawingsIn(t *testing.T, kept *cache) int {
 // is drawn once.
 func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 	kept := onDisk(t, api)
 
-	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
-	_, drawn, _ := from.counted()
+	_, drawn, _ := from.getCounts()
 	if n := drawingsIn(t, kept); n != 1 {
 		t.Fatalf("the folder holds %d drawings after one page", n)
 	}
@@ -47,11 +47,11 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	// Nothing in memory, the way a window opened again begins.
 	api.Viewer.drawn.Store(drawings())
 
-	out := ask(handler, drawnAt(t, api, book, 0, 400))
+	out := ask(handler, getPageAddress(t, api, book, 0, 400))
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
 	}
-	if _, again, _ := from.counted(); again != drawn {
+	if _, again, _ := from.getCounts(); again != drawn {
 		t.Errorf("the page was drawn %d times, and %d of them after it was kept", again, again-drawn)
 	}
 	if out.Body.Len() == 0 {
@@ -63,12 +63,12 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 // is another drawing.
 func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 	kept := onDisk(t, api)
 
 	for _, wide := range []int{400, 800} {
-		if out := ask(handler, drawnAt(t, api, book, 0, wide)); out.Code != http.StatusOK {
+		if out := ask(handler, getPageAddress(t, api, book, 0, wide)); out.Code != http.StatusOK {
 			t.Fatalf("asked for a page %d wide and got %d", wide, out.Code)
 		}
 	}
@@ -81,14 +81,14 @@ func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 // for the bytes that were there is a picture of a page that is gone.
 func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 	kept := onDisk(t, api)
 
-	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
-	_, drawn, _ := from.counted()
+	_, drawn, _ := from.getCounts()
 
 	at := filepath.Join(string(api.Showing().Path), book)
 	if err := os.WriteFile(at, []byte("the bytes of another scan entirely"), 0o644); err != nil {
@@ -100,10 +100,10 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	}
 	api.Viewer.drawn.Store(drawings())
 
-	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
 	}
-	if _, again, _ := from.counted(); again <= drawn {
+	if _, again, _ := from.getCounts(); again <= drawn {
 		t.Errorf("the rewritten document was not drawn again: %d drawings both times", drawn)
 	}
 	if n := drawingsIn(t, kept); n != 2 {
@@ -115,12 +115,12 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 // looked at.
 func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 	from := sheets(8)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 	kept := onDisk(t, api)
 
 	for at := 0; at < 4; at++ {
-		if out := ask(handler, drawnAt(t, api, book, at, 400)); out.Code != http.StatusOK {
+		if out := ask(handler, getPageAddress(t, api, book, at, 400)); out.Code != http.StatusOK {
 			t.Fatalf("asked for page %d and got %d", at, out.Code)
 		}
 	}
@@ -129,7 +129,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 	}
 
 	// Older than the rest, the way a page nobody has turned back to is.
-	first := filepath.Join(kept.dir, kept.named(pictureID{document: print(t, api), page: 0, width: 400}))
+	first := filepath.Join(kept.dir, kept.getFileName(pictureID{document: print(t, api), page: 0, width: 400}))
 	old := time.Now().Add(-time.Hour)
 	if err := os.Chtimes(first, old, old); err != nil {
 		t.Fatal(err)
@@ -150,7 +150,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 // closing ends it and waits for it, so nothing is still deleting files in a
 // folder after the process that started it has said it is done.
 func TestTheWindowWaitsForTheSweepItStarted(t *testing.T) {
-	kept := keptIn(t.TempDir())
+	kept := newCacheIn(t.TempDir())
 	page := make([]byte, 1000)
 	kept.limit = 2 * int64(len(page))
 	kept.every = int64(len(page))
@@ -168,7 +168,7 @@ func TestTheWindowWaitsForTheSweepItStarted(t *testing.T) {
 // A page kept after the window has closed starts no sweep: it would be one
 // nobody is left to wait for.
 func TestNoSweepIsStartedAfterTheWindowCloses(t *testing.T) {
-	kept := keptIn(t.TempDir())
+	kept := newCacheIn(t.TempDir())
 	page := make([]byte, 1000)
 	kept.limit = 1
 	kept.every = int64(len(page))

@@ -26,7 +26,7 @@ func proofreadReadingCommand(
 	if err != nil {
 		return err
 	}
-	defer closing(open.Close)
+	defer closeIfOpen(open.Close)
 	if !open.Held {
 		return errors.New("nothing to proofread with: none is configured")
 	}

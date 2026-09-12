@@ -57,7 +57,7 @@ describe('a vault on the list', () => {
 
     await screen.findAll('.welcome-page__row--vault')[1]!.trigger('click')
 
-    expect(screen.emitted('opens')).toStrictEqual([['heat']])
+    expect(screen.emitted('open')).toStrictEqual([['heat']])
   })
 })
 
@@ -75,7 +75,7 @@ describe('a vault the window has not answered for yet', () => {
 
     await screen.findAll('.welcome-page__row--vault')[0]!.trigger('click')
 
-    expect(screen.emitted('opens')).toBeUndefined()
+    expect(screen.emitted('open')).toBeUndefined()
   })
 
   // The letter is the whole of how a row is opened from the keyboard, so a row
@@ -89,7 +89,7 @@ describe('a vault the window has not answered for yet', () => {
 
     await screen.findAll('.welcome-page__row--vault')[0]!.trigger('click')
 
-    expect(screen.emitted('opens')).toStrictEqual([['physics']])
+    expect(screen.emitted('open')).toStrictEqual([['physics']])
   })
 })
 
@@ -160,7 +160,7 @@ describe('the screen drawn narrow', () => {
 
     await screen.get('.welcome-page__row').trigger('click')
 
-    expect(screen.emitted('runs')).toStrictEqual([['find']])
+    expect(screen.emitted('run')).toStrictEqual([['find']])
   })
 
   it('marks what is said under a name, and keeps the whole path on the row', () => {
@@ -234,7 +234,7 @@ describe('the screen drawn short', () => {
       .findAll('.welcome-page__row--vault')[2]!
       .trigger('click')
 
-    expect(screen.emitted('runs')).toStrictEqual([['settings']])
-    expect(screen.emitted('opens')).toStrictEqual([['optics']])
+    expect(screen.emitted('run')).toStrictEqual([['settings']])
+    expect(screen.emitted('open')).toStrictEqual([['optics']])
   })
 })

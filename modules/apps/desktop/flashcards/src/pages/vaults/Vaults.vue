@@ -61,7 +61,7 @@ const waiting = computed(
     :vaults="listed"
     heading="Vaults"
     :version="version"
-    @opens="$emit('choose', $event)"
+    @open="$emit('choose', $event)"
   >
     <!-- The list is where the room is shortest, so the number stands alone. -->
     <template #vault="{ vault }">

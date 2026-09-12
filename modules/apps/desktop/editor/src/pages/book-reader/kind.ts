@@ -32,7 +32,7 @@ export function bookKind(
       state.close()
       return true
     },
-    over: (state) => ({ file: state.path, source: 'book' }),
+    getTarget: (state) => ({ file: state.path, source: 'book' }),
     getOpenTab: (state) => ({
       path: state.path,
       book: {

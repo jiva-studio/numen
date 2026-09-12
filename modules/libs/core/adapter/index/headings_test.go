@@ -7,8 +7,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// divided puts one note in, divided by the headings given at the levels given.
-func divided(t *testing.T, db *DB, vault domain.Vault, path string, headings ...domain.Heading) {
+// saveNoteWithHeadings puts one note in, divided by the headings given at the
+// levels given.
+func saveNoteWithHeadings(t *testing.T, db *DB, vault domain.Vault, path string, headings ...domain.Heading) {
 	t.Helper()
 
 	text := make([]string, 0, len(headings))
@@ -43,8 +44,8 @@ func divisions(
 }
 
 func TestAHeadingComesBackWithItsLevelAndItsLine(t *testing.T) {
-	db := opened(t)
-	divided(t, db, first, "notes/entropy.md",
+	db := openDB(t)
+	saveNoteWithHeadings(t, db, first, "notes/entropy.md",
 		domain.Heading{Level: 1, Text: "What it is", Line: 0},
 		domain.Heading{Level: 2, Text: "Where it came from", Line: 4},
 	)
@@ -62,8 +63,8 @@ func TestAHeadingComesBackWithItsLevelAndItsLine(t *testing.T) {
 }
 
 func TestHeadingsComeBackInTheOrderTheyStand(t *testing.T) {
-	db := opened(t)
-	divided(t, db, first, "notes/entropy.md",
+	db := openDB(t)
+	saveNoteWithHeadings(t, db, first, "notes/entropy.md",
 		domain.Heading{Level: 1, Text: "Last", Line: 12},
 		domain.Heading{Level: 1, Text: "First", Line: 2},
 		domain.Heading{Level: 1, Text: "Middle", Line: 7},
@@ -80,8 +81,8 @@ func TestHeadingsComeBackInTheOrderTheyStand(t *testing.T) {
 }
 
 func TestANoteWithNoHeadingsIsAbsent(t *testing.T) {
-	db := opened(t)
-	divided(t, db, first, "notes/plain.md")
+	db := openDB(t)
+	saveNoteWithHeadings(t, db, first, "notes/plain.md")
 
 	if found := divisions(t, db, first, "notes/plain.md"); len(found) != 0 {
 		t.Errorf("found = %v, want nothing", found)
@@ -89,8 +90,8 @@ func TestANoteWithNoHeadingsIsAbsent(t *testing.T) {
 }
 
 func TestAPathThatNamesNothingIsAbsent(t *testing.T) {
-	db := opened(t)
-	divided(t, db, first, "notes/entropy.md",
+	db := openDB(t)
+	saveNoteWithHeadings(t, db, first, "notes/entropy.md",
 		domain.Heading{Level: 1, Text: "What it is", Line: 0},
 	)
 
@@ -101,9 +102,9 @@ func TestAPathThatNamesNothingIsAbsent(t *testing.T) {
 }
 
 func TestEachNoteAskedAboutIsAnsweredForItself(t *testing.T) {
-	db := opened(t)
-	divided(t, db, first, "notes/one.md", domain.Heading{Level: 1, Text: "Of one", Line: 0})
-	divided(t, db, first, "notes/two.md", domain.Heading{Level: 1, Text: "Of two", Line: 0})
+	db := openDB(t)
+	saveNoteWithHeadings(t, db, first, "notes/one.md", domain.Heading{Level: 1, Text: "Of one", Line: 0})
+	saveNoteWithHeadings(t, db, first, "notes/two.md", domain.Heading{Level: 1, Text: "Of two", Line: 0})
 
 	found := divisions(t, db, first, "notes/one.md", "notes/two.md")
 	if found["notes/one.md"][0].Text != "Of one" || found["notes/two.md"][0].Text != "Of two" {
@@ -112,7 +113,7 @@ func TestEachNoteAskedAboutIsAnsweredForItself(t *testing.T) {
 }
 
 func TestAskingAboutNoNotesAsksTheDatabaseNothing(t *testing.T) {
-	db := opened(t)
+	db := openDB(t)
 
 	if found := divisions(t, db, first); len(found) != 0 {
 		t.Errorf("found = %v, want nothing", found)

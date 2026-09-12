@@ -7,7 +7,7 @@ export type ComposerAction = 'send' | 'stop'
 
 export interface ComposerStateDescriptor {
   /** Whether pressing the disc does anything. */
-  readonly acts: boolean
+  readonly canAct: boolean
   /** What stands on the disc, which is what pressing it does. */
   readonly action: ComposerAction
 }
@@ -17,9 +17,9 @@ export interface ComposerStateDescriptor {
  * of the field and whether it can be pressed both read from here.
  */
 export const COMPOSER_STATES = {
-  empty: { acts: false, action: 'send' },
-  ready: { acts: true, action: 'send' },
-  writing: { acts: true, action: 'stop' },
+  empty: { canAct: false, action: 'send' },
+  ready: { canAct: true, action: 'send' },
+  writing: { canAct: true, action: 'stop' },
 } as const satisfies Record<string, ComposerStateDescriptor>
 
 export type ComposerState = keyof typeof COMPOSER_STATES

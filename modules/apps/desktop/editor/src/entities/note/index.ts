@@ -14,6 +14,6 @@ export type {
 } from './lib/note'
 export { openNotes } from './model/notes'
 export type { Notes, OpenNote } from './lib/noteTypes'
-export { markOf } from './lib/tabState'
+export { getMarkOf } from './lib/tabState'
 export type { NoteBaseline, State } from './lib/tabState'
 export { WORDS } from './words'

@@ -23,7 +23,7 @@ func busy(context.Context, domain.Vault, []string) error {
 // from rather than left to wonder.
 func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 	t.Parallel()
-	s := opened(t, handwritten)
+	s := openVault(t, handwritten)
 
 	// The deck cannot be replaced. What a person meets is the editor holding
 	// the file; this is the same refusal from the same place.
@@ -43,7 +43,7 @@ func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 // nothing has to mint them a second time.
 func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
 	t.Parallel()
-	s := opened(t, handwritten)
+	s := openVault(t, handwritten)
 	marking := s.marking
 	marking.Index = busy
 
@@ -71,7 +71,7 @@ func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
 // the naming above is the refusal and not the ordinary case.
 func TestAVaultWhoseDecksAreWrittenNamesNone(t *testing.T) {
 	t.Parallel()
-	s := opened(t, handwritten)
+	s := openVault(t, handwritten)
 
 	marked, err := s.marking.Execute(t.Context(), s.vault)
 	if err != nil {

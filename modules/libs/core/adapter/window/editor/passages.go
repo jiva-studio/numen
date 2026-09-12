@@ -21,11 +21,11 @@ func spans(text, query string) []domain.Span {
 	if len(words) == 0 || text == "" {
 		return nil
 	}
-	folded, units := folding(text)
+	folded, units := getFoldedRunes(text)
 
 	var at []domain.Span
 	for i, word := range words {
-		wanted, _ := folding(word)
+		wanted, _ := getFoldedRunes(word)
 		if len(wanted) == 0 {
 			continue
 		}
@@ -41,7 +41,7 @@ func spans(text, query string) []domain.Span {
 			at = append(at, domain.Span{From: units[from], To: units[to]})
 		}
 	}
-	return merged(at)
+	return mergeSpans(at)
 }
 
 // wordly is what a word is made of, so that what stands either side of one is
@@ -54,9 +54,9 @@ func opens(runes []rune, at int) bool { return at == 0 || !wordly(runes[at-1]) }
 
 func closes(runes []rune, at int) bool { return at == len(runes) || !wordly(runes[at]) }
 
-// merged is the spans in the order they stand, with ones that touch or overlap
+// mergeSpans is the spans in the order they stand, with ones that touch or overlap
 // made into one. Two words typed can name the same characters.
-func merged(at []domain.Span) []domain.Span {
+func mergeSpans(at []domain.Span) []domain.Span {
 	if len(at) < 2 {
 		return at
 	}
@@ -74,13 +74,13 @@ func merged(at []domain.Span) []domain.Span {
 	return out
 }
 
-// folding is the text one rune at a time with case dropped, and where each of
+// getFoldedRunes is the text one rune at a time with case dropped, and where each of
 // those runes begins for something counting in UTF-16 code units.
 //
 // A rune at a time: folding a whole string can change how many characters it
 // holds. The offsets run one longer than the text, so the end of the last rune
 // is among them.
-func folding(text string) ([]rune, []int) {
+func getFoldedRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
 
@@ -114,7 +114,7 @@ const (
 // The spans move with the text and the ones left outside are dropped, so what
 // comes back addresses what comes back.
 func around(text string, spans []domain.Span, from int) (string, []domain.Span) {
-	runes, units := counting(text)
+	runes, units := getRunes(text)
 	total := units[len(runes)]
 	if total <= glancing {
 		return text, spans
@@ -161,10 +161,10 @@ func around(text string, spans []domain.Span, from int) (string, []domain.Span) 
 	return cut, kept
 }
 
-// counting is the text one rune at a time, and where each of those runes begins
+// getRunes is the text one rune at a time, and where each of those runes begins
 // for something counting in UTF-16 code units. The offsets run one longer than
 // the text, so the end of the last rune is among them.
-func counting(text string) ([]rune, []int) {
+func getRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
 

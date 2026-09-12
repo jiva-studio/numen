@@ -45,9 +45,9 @@ const (
 	readIdleFor = 2 * time.Minute
 )
 
-// holding is a window with no book open yet: how many books it keeps at once,
+// newBooks is a window with no book open yet: how many books it keeps at once,
 // and how long it keeps one nobody is reading.
-func holding(limit int, idleFor time.Duration) *books {
+func newBooks(limit int, idleFor time.Duration) *books {
 	return &books{open: map[fingerprint]*volume{}, limit: limit, idleFor: idleFor}
 }
 

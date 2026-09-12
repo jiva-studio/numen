@@ -44,7 +44,7 @@ func mount(at string, to http.Handler) served { return served{at: at, to: to} }
 // nothing serves it — not because a handler standing there has nothing behind
 // it. Naming none is a build that answers the whole schema.
 func (a *API) Serving(files http.Handler, named ...string) http.Handler {
-	counted := a.counting()
+	counted := a.newQuestionCounter()
 	serves := func(service string) bool {
 		return len(named) == 0 || slices.Contains(named, service)
 	}
@@ -123,13 +123,13 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	// directly: a host is told which address holds its player, and a window
 	// drawn from a scheme of its own has none to give.
 	policy := csp.Sources{
-		Media:  a.Playing.named(),
-		Frames: a.Playing.named(),
+		Media:  a.Playing.getPlayOrigins(),
+		Frames: a.Playing.getPlayOrigins(),
 	}.Policy()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
 		// A window being taken away answers nothing.
-		if a.closed() {
+		if a.isClosed() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
@@ -145,7 +145,7 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 				http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 				return
 			}
-			defer a.questions.done()
+			defer a.questions.finish()
 			a.Asset(w, r)
 		case slices.Contains(wire.OpenedAt, r.URL.Path):
 			wire.Page(w, r, pages, a.Themes, files)
@@ -155,19 +155,19 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	})
 }
 
-// counting takes every question a client asks and gives it back when it is
+// newQuestionCounter takes every question a client asks and gives it back when it is
 // answered, so the index closes with nothing reading it.
 //
 // A stream is left out: it lives as long as the page that opened it, and the
 // window closes while its pages are still drawn.
-func (a *API) counting() connect.HandlerOption {
+func (a *API) newQuestionCounter() connect.HandlerOption {
 	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {
 			return func(ctx context.Context, r connect.AnyRequest) (connect.AnyResponse, error) {
 				if !a.questions.begin() {
 					return nil, connect.NewError(connect.CodeUnavailable, errShut)
 				}
-				defer a.questions.done()
+				defer a.questions.finish()
 				return next(ctx, r)
 			}
 		},

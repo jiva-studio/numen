@@ -56,7 +56,7 @@ const emit = defineEmits<{
   /** The page to turn to, counted from the first. */
   (event: 'go', page: number): void
   /** A page is wanted this many device pixels across. */
-  (event: 'wide', pixels: number): void
+  (event: 'measure', pixels: number): void
 }>()
 
 /** How close a page is drawn. What that may be is `strip.ts`. */
@@ -87,7 +87,7 @@ const middle = computed(() => inFront(laid.value, viewport.value, along.value))
 /** What each page is asked for at. */
 const { drawnWidth } = usePageWidth(
   () => laid.value,
-  (pixels) => emit('wide', pixels),
+  (pixels) => emit('measure', pixels),
 )
 
 /** Where one page is drawn, once a width has been settled on. */

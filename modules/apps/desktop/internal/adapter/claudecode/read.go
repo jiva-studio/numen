@@ -308,17 +308,17 @@ func (rd *parser) calls(callID, tool, arguments string) port.Step {
 	step.Count = len([]rune(arguments))
 	step.About = about(words.Arguments, arguments)
 	if words.Arguments.About == notePath {
-		step.Place = placed(step.About, arguments)
+		step.Place = getPlace(step.About, arguments)
 	}
 	return step
 }
 
-// placed is where a call is working: the path it named, and the stretch of that
-// source's text it named beside it.
+// getPlace is where a call is working: the path it named, and the stretch of
+// that source's text it named beside it.
 //
 // The stretch is read once the arguments parse whole, so it arrives with the
 // report that ends the call. Half a number is another number.
-func placed(path, arguments string) domain.Place {
+func getPlace(path, arguments string) domain.Place {
 	at := domain.Place{Path: path}
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
@@ -341,23 +341,23 @@ func placed(path, arguments string) domain.Place {
 func about(names Arguments, arguments string) string {
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
-		if seen := glimpsed(arguments, names.Element); seen != "" {
+		if seen := getGlimpse(arguments, names.Element); seen != "" {
 			return seen
 		}
-		return glimpsed(arguments, names.About)
+		return getGlimpse(arguments, names.About)
 	}
 	switch value := made[names.About].(type) {
 	case string:
 		return value
 	case []any:
-		return named(value, names.Element)
+		return describeCollection(value, names.Element)
 	}
 	return ""
 }
 
-// named is what a collection of arguments is about: the first element by the
-// name it carries, and how many others there are.
-func named(value []any, inside string) string {
+// describeCollection is what a collection of arguments is about: the first
+// element by the name it carries, and how many others there are.
+func describeCollection(value []any, inside string) string {
 	if len(value) == 0 {
 		return ""
 	}
@@ -419,7 +419,7 @@ func (rd *parser) draw(ctx context.Context) {
 		return
 	}
 	if !rd.drawn {
-		path, stood := glimpsed(arguments, names.About), glimpsed(arguments, names.Match)
+		path, stood := getGlimpse(arguments, names.About), getGlimpse(arguments, names.Match)
 		if path == "" || stood == "" {
 			return
 		}
@@ -440,6 +440,6 @@ func (rd *parser) draw(ctx context.Context) {
 		Path:   rd.path,
 		From:   rd.from,
 		To:     rd.to,
-		Text:   glimpsed(arguments, names.Text),
+		Text:   getGlimpse(arguments, names.Text),
 	})
 }

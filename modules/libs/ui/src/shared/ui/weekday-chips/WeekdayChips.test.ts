@@ -30,7 +30,7 @@ const mountChips = (props: Partial<ChipsProps> = {}) =>
 
 /** Every day the row has handed back, with the level chosen for it. */
 const getChosen = (row: ReturnType<typeof mountChips>): readonly unknown[][] =>
-  (row.emitted('chooses') ?? []) as unknown[][]
+  (row.emitted('choose') ?? []) as unknown[][]
 
 /** The levels on offer, once a chip has been pressed. */
 const getOfferedLabels = (): readonly string[] =>

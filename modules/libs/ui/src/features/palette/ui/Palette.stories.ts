@@ -31,7 +31,7 @@ interface Knobs {
   opensOn: string
   name: string
   onChoose: (item: string, action: string) => void
-  onLit: (item: string) => void
+  onLight: (item: string) => void
   onDismiss: () => void
   onBack: () => void
 }
@@ -166,7 +166,7 @@ const over = (args: Knobs) => ({
         :opens-on="args.opensOn"
         :name="args.name"
         @choose="args.onChoose"
-        @lit="args.onLit"
+        @light="args.onLight"
         @back="args.onBack"
         @dismiss="open = false; args.onDismiss()"
       >
@@ -201,7 +201,7 @@ const meta = {
     groups: { table: { disable: true } },
     step: { table: { disable: true } },
     onChoose: { table: { disable: true } },
-    onLit: { table: { disable: true } },
+    onLight: { table: { disable: true } },
     onDismiss: { table: { disable: true } },
     onBack: { table: { disable: true } },
   },
@@ -213,7 +213,7 @@ const meta = {
     opensOn: '',
     name: 'Palette',
     onChoose: fn(),
-    onLit: fn(),
+    onLight: fn(),
     onDismiss: fn(),
     onBack: fn(),
   },
@@ -297,13 +297,13 @@ export const NothingBehindIt: Story = {
  */
 export const Lit: Story = {
   play: async ({ args }) => {
-    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('entropy'))
+    await waitFor(() => expect(args.onLight).toHaveBeenCalledWith('entropy'))
 
     await userEvent.keyboard('{ArrowDown}')
-    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('enthalpy'))
+    await waitFor(() => expect(args.onLight).toHaveBeenCalledWith('enthalpy'))
 
     await userEvent.keyboard('{ArrowUp}')
-    await waitFor(() => expect(args.onLit).toHaveBeenLastCalledWith('entropy'))
+    await waitFor(() => expect(args.onLight).toHaveBeenLastCalledWith('entropy'))
   },
 }
 
@@ -318,7 +318,7 @@ export const OpensOnAValue: Story = {
     await waitFor(() => expect(lit()).not.toBeNull())
 
     await expect(lit()?.textContent).toContain('Gibbs free energy')
-    await expect(args.onLit).toHaveBeenLastCalledWith('gibbs')
+    await expect(args.onLight).toHaveBeenLastCalledWith('gibbs')
   },
 }
 
@@ -332,7 +332,7 @@ export const OpensOnNothingThere: Story = {
     await waitFor(() => expect(lit()).not.toBeNull())
 
     await expect(lit()?.textContent).toContain('Entropy')
-    await expect(args.onLit).toHaveBeenLastCalledWith('entropy')
+    await expect(args.onLight).toHaveBeenLastCalledWith('entropy')
   },
 }
 
@@ -345,11 +345,11 @@ export const LitAlone: Story = {
     groups: [{ id: 'names', title: 'Names', items: [createItem('entropy', 'Entropy', 'ent')] }],
   },
   play: async ({ args }) => {
-    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('entropy'))
+    await waitFor(() => expect(args.onLight).toHaveBeenCalledWith('entropy'))
 
     await userEvent.keyboard('{ArrowDown}')
     await userEvent.keyboard('{End}')
-    await expect(args.onLit).toHaveBeenCalledTimes(1)
+    await expect(args.onLight).toHaveBeenCalledTimes(1)
   },
 }
 
@@ -362,7 +362,7 @@ export const LitNothing: Story = {
     await waitFor(() => expect(palette()).not.toBeNull())
 
     await userEvent.keyboard('{ArrowDown}')
-    await expect(args.onLit).not.toHaveBeenCalled()
+    await expect(args.onLight).not.toHaveBeenCalled()
   },
 }
 
@@ -380,12 +380,12 @@ export const LitFarDown: Story = {
     ],
   },
   play: async ({ args }) => {
-    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('note-0'))
+    await waitFor(() => expect(args.onLight).toHaveBeenCalledWith('note-0'))
 
     for (let step = 0; step < 59; step += 1) await userEvent.keyboard('{ArrowDown}')
 
-    await waitFor(() => expect(args.onLit).toHaveBeenLastCalledWith('note-59'))
-    await expect(args.onLit).toHaveBeenCalledTimes(60)
+    await waitFor(() => expect(args.onLight).toHaveBeenLastCalledWith('note-59'))
+    await expect(args.onLight).toHaveBeenCalledTimes(60)
   },
 }
 
@@ -409,22 +409,22 @@ export const NotLit: Story = {
     ],
   },
   play: async ({ args }) => {
-    await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('entropy'))
+    await waitFor(() => expect(args.onLight).toHaveBeenCalledWith('entropy'))
 
     await userEvent.keyboard('{ArrowDown}')
-    await waitFor(() => expect(args.onLit).toHaveBeenLastCalledWith('gibbs'))
-    await expect(args.onLit).not.toHaveBeenCalledWith('stuck')
+    await waitFor(() => expect(args.onLight).toHaveBeenLastCalledWith('gibbs'))
+    await expect(args.onLight).not.toHaveBeenCalledWith('stuck')
 
     await userEvent.click(within(document.body).getByText(/cannot be read/))
-    await expect(args.onLit).toHaveBeenLastCalledWith('gibbs')
+    await expect(args.onLight).toHaveBeenLastCalledWith('gibbs')
 
     await userEvent.keyboard('{ArrowUp}')
-    await waitFor(() => expect(args.onLit).toHaveBeenCalledTimes(3))
+    await waitFor(() => expect(args.onLight).toHaveBeenCalledTimes(3))
 
     await userEvent.keyboard('{Control>}k{/Control}')
     await waitFor(() => expect(sheet()).not.toBeNull())
     await userEvent.keyboard('{ArrowDown}')
-    await expect(args.onLit).toHaveBeenCalledTimes(3)
+    await expect(args.onLight).toHaveBeenCalledTimes(3)
   },
 }
 

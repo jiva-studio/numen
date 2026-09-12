@@ -178,7 +178,7 @@ func checkMarkup(t *testing.T, book *epub.Book) {
 				doc.Path, drawn.Offset, drawn.Length, doc.Offset, doc.Length)
 		}
 		want := book.Text[doc.Offset : doc.Offset+doc.Length]
-		if got := said(drawn.Nodes); got != want {
+		if got := getNodeText(drawn.Nodes); got != want {
 			t.Fatalf("the markup of %s says %d bytes and its text is %d:\n%q\n%q",
 				doc.Path, len(got), len(want), excerpt(got, 0), excerpt(want, 0))
 		}
@@ -202,7 +202,7 @@ func checkSpans(t *testing.T, text string, doc epub.Document, nodes []epub.Node,
 			t.Fatalf("a node of %s runs from %d to %d, outside the document at %d for %d",
 				doc.Path, node.Offset, to, doc.Offset, doc.Length)
 		}
-		if got := said([]epub.Node{node}); got != text[node.Offset:to] {
+		if got := getNodeText([]epub.Node{node}); got != text[node.Offset:to] {
 			t.Fatalf("a %q of %s says %q and stands over %q",
 				node.Name, doc.Path, got, text[node.Offset:to])
 		}
@@ -210,8 +210,8 @@ func checkSpans(t *testing.T, text string, doc epub.Document, nodes []epub.Node,
 	}
 }
 
-// said is the text a document's markup carries, in reading order.
-func said(nodes []epub.Node) string {
+// getNodeText is the text a document's markup carries, in reading order.
+func getNodeText(nodes []epub.Node) string {
 	var out strings.Builder
 	var walk func([]epub.Node)
 	walk = func(nodes []epub.Node) {

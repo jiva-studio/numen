@@ -27,7 +27,7 @@ const props = defineProps<{
   search: SearchState
   doing: CommandDeps
   /** What the commands are over, as the window stands now. */
-  where: () => CommandTarget
+  getTarget: () => CommandTarget
   /** Where the window is taken by what the search turns up. */
   places: DestinationDeps
 }>()
@@ -58,7 +58,7 @@ const field = computed(() =>
           props.search.groups.value,
           props.search.typed.value,
           words,
-          props.where(),
+          props.getTarget(),
         ),
         crumb: '',
         step: '',
@@ -90,7 +90,7 @@ async function onChoose(item: string, action: string) {
   if (item === MAKING) {
     const name = props.search.typed.value.trim()
     setSearchOpen(false)
-    await runInvocation(createNoteInvocation(action, name, props.where()), props.doing, words)
+    await runInvocation(createNoteInvocation(action, name, props.getTarget()), props.doing, words)
     return
   }
   const landing = props.search.chooseItem(item, action)
@@ -157,7 +157,7 @@ function rowIcon(id: string) {
     :action-words="actionWords"
     @update:model-value="onTyping"
     @choose="onChoose"
-    @lit="commands.previewItem"
+    @light="commands.previewItem"
     @back="onBack"
     @dismiss="onDismiss"
   >

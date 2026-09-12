@@ -24,11 +24,11 @@ type cutting struct {
 	root   string
 }
 
-func dealing(t *testing.T, notes map[string]string) *cutting {
+func newCutting(t *testing.T, notes map[string]string) *cutting {
 	t.Helper()
 
-	f := quitting(t, nil, notes)
-	scanned(t, f)
+	f := openWindow(t, nil, notes)
+	waitForScan(t, f)
 
 	route, handler := numenv1connect.NewCardsServiceHandler(f.opened.API)
 	mux := http.NewServeMux()
@@ -75,9 +75,9 @@ const dividedRun = "# Camelids\n\nwhat a person wrote about their own deck\n\n" 
 
 const dividedDeck = "---\ntype: deck\n---\n\n" + dividedRun
 
-// valued is what a card holds under one field. A card has no name, so this is
+// getFieldValue is what a card holds under one field. A card has no name, so this is
 // how a test says which card it is looking at.
-func valued(card *v1.Card, field string) string {
+func getFieldValue(card *v1.Card, field string) string {
 	for _, v := range card.GetValues() {
 		if v.GetField() == field {
 			return v.GetText()
@@ -99,7 +99,7 @@ func deck(t *testing.T, f *cutting, path string) *v1.ReadDeckResponse {
 // stands, so a problem's position is an index into the cards the same answer
 // carried.
 func TestAProblemStandsAgainstTheCardItIsAbout(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": threeCards,
 	})
@@ -120,7 +120,7 @@ func TestAProblemStandsAgainstTheCardItIsAbout(t *testing.T) {
 	if problems[0].Card == nil {
 		t.Fatal("a problem about a card came back standing against none")
 	}
-	if name := valued(held[at], "Name"); name != "Alpaca" {
+	if name := getFieldValue(held[at], "Name"); name != "Alpaca" {
 		t.Errorf("the problem stands against card %d, which is %q", at, name)
 	}
 }
@@ -128,7 +128,7 @@ func TestAProblemStandsAgainstTheCardItIsAbout(t *testing.T) {
 // TestACardComesBackWithTheMarkItIsAddressedBy. A card has no name, so a client
 // that cannot read a card's mark cannot say which card it means.
 func TestACardComesBackWithTheMarkItIsAddressedBy(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": threeCards,
 	})
@@ -150,7 +150,7 @@ func TestACardComesBackWithTheMarkItIsAddressedBy(t *testing.T) {
 // a person divides, and which run a card falls in is the deck's and not the
 // card's own text.
 func TestACardSaysWhichSectionItStandsUnder(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
 			"## Guanaco ^p4r7t2wxk9\n\n[[Animal]]\n\n### Name\n\nGuanaco\n\n" +
@@ -182,7 +182,7 @@ func TestACardSaysWhichSectionItStandsUnder(t *testing.T) {
 // TestTwoCardsOfOneMarkStandAgainstBoth. Which of the two a person meant is a
 // thing only they know, so both are shown and both are marked.
 func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
 			"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
@@ -207,7 +207,7 @@ func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 // their own deck outranks a client that read it, thought about it and arrived
 // late.
 func TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": threeCards,
 	})
@@ -242,7 +242,7 @@ func TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 // client did not touch arrives on the other side as the bytes it went in as,
 // the prose under a card's wikilink and under a section's heading among them.
 func TestADeckWrittenBackKeepsTheCardsItHeld(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": dividedDeck,
 	})
@@ -269,10 +269,10 @@ func TestADeckWrittenBackKeepsTheCardsItHeld(t *testing.T) {
 
 // TestAHeadingOfTwoLinesWritesNoSecondCard. A heading is one line, so what a
 // client sends as one is cut where the lines under it begin. A second `##` in
-// there is a card the next read adopts and mints a mark for, and nobody wrote
+// there is a card the next read adopts and gives a mark to, and nobody wrote
 // it.
 func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
-	f := dealing(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
+	f := newCutting(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
 
 	read := deck(t, f, "Animals.md")
 	cards := read.GetDeck().GetCards()
@@ -307,7 +307,7 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 // TestACardUnderASectionTheDeckDoesNotHoldIsRefused. Writing it under whichever
 // section stands last moves somebody's card and says nothing about it.
 func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
-	f := dealing(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
+	f := newCutting(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
 
 	read := deck(t, f, "Animals.md")
 	before := onDisk(t, f.root, "Animals.md")
@@ -336,7 +336,7 @@ func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 // left exactly as it stands, and a person who changed nothing sees the file
 // they wrote.
 func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": threeCards,
 	})
@@ -367,7 +367,7 @@ func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
 // TestAListOfStencilsCutShortSaysHowManyTheVaultHolds. A list that stops at a
 // ceiling and says nothing about it reads as all there is.
 func TestAListOfStencilsCutShortSaysHowManyTheVaultHolds(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
 		"Term.md":   "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n\n## Recall\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 		"Place.md":  "---\ntype: stencil\nfields:\n  - Place\n  - Country\n---\n\n## Recall\n\n### Front\n\n{{Place}}\n\n### Back\n\n{{Country}}\n",
@@ -394,7 +394,7 @@ func TestAListOfStencilsCutShortSaysHowManyTheVaultHolds(t *testing.T) {
 // says it is a deck from the moment it exists, so the read that follows is a
 // deck's read and not a note's.
 func TestADeckMadeIsADeckToRead(t *testing.T) {
-	f := dealing(t, map[string]string{"Animal.md": animal})
+	f := newCutting(t, map[string]string{"Animal.md": animal})
 
 	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
 		Title: "Camelids", Path: "decks",
@@ -424,7 +424,7 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 // TestAStencilMadeDeclaresTheFieldsItWasGiven. A stencil is made with the
 // fields a card cut by it is asked for, the first of which names the card.
 func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
-	f := dealing(t, nil)
+	f := newCutting(t, nil)
 
 	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&v1.CreateStencilRequest{
 		Title: "Bird", Path: "cards", Fields: []string{"Species", "Wingspan"},
@@ -457,7 +457,7 @@ func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 // where the stencil declares it and as a heading in every card that stencil
 // cuts, so the rename reaches them all and says which decks it wrote.
 func TestRenamingAFieldReachesTheDecksThatStencilCuts(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
@@ -493,7 +493,7 @@ func TestRenamingAFieldReachesTheDecksThatStencilCuts(t *testing.T) {
 // `fields` and in the braces of every face that places it, and both are the one
 // file, so one write carries both and the stencil declares what its faces place.
 func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
-	f := dealing(t, map[string]string{"cards/Animal.md": animal})
+	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
 		Path: "cards/Animal.md",
@@ -535,7 +535,7 @@ func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
 // editing their own stencil outranks a client that read it, thought about it
 // and arrived late.
 func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
@@ -578,7 +578,7 @@ func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T
 // TestADeckIsRefusedWhereTheNoteIsAStencil. Two files must agree for a card to
 // be drawn, and a client handed the wrong one is told which it got.
 func TestADeckIsRefusedWhereTheNoteIsAStencil(t *testing.T) {
-	f := dealing(t, map[string]string{"Animal.md": animal})
+	f := newCutting(t, map[string]string{"Animal.md": animal})
 
 	read := deck(t, f, "Animal.md")
 	if code := read.GetError(); code != v1.ErrorCode_ERROR_CODE_NOT_A_DECK {
@@ -593,7 +593,7 @@ func TestADeckIsRefusedWhereTheNoteIsAStencil(t *testing.T) {
 // heading is an ordinary link, so a path from the root and a name carrying an
 // alias reach the same stencil, and the answer says where that stencil is filed.
 func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
-	f := dealing(t, map[string]string{
+	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
 			"## Llama\n\n[[cards/Animal]]\n\n### Name\n\nLlama\n\n" +
@@ -607,7 +607,7 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 	}
 	filed := map[string]string{"Llama": "cards/Animal.md", "Alpaca": "cards/Animal.md", "Vicuña": ""}
 	for _, card := range held {
-		name := valued(card, "Name")
+		name := getFieldValue(card, "Name")
 		if at := card.GetStencilPath(); at != filed[name] {
 			t.Errorf("the stencil of %s is filed at %q, want %q", name, at, filed[name])
 		}

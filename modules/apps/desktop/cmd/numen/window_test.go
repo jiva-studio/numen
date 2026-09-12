@@ -73,7 +73,7 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := titled(c.vault, c.open); got != c.want {
+			if got := getWindowTitle(c.vault, c.open); got != c.want {
 				t.Errorf("the window is called %q", got)
 			}
 		})

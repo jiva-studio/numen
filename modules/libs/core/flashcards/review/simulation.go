@@ -83,7 +83,7 @@ const mostAnswers = 1000
 // week does, so the pace holds for a card face begun on any of them.
 func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{By: by, Day: d}
-	from := d.StartOf(now)
+	from := d.GetStart(now)
 	out := 0
 	for range 7 {
 		one := s.ripens(p, from)
@@ -91,7 +91,7 @@ func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
 			return NeverRipens
 		}
 		out = max(out, one)
-		from = d.EndOf(from)
+		from = d.GetEnd(from)
 	}
 	return out
 }
@@ -101,7 +101,7 @@ func (s Simulation) ripens(p Preset, open time.Time) int {
 	var c Schedule
 	days := 0
 	for range LongestRipening {
-		ends := s.Day.EndOf(open)
+		ends := s.Day.GetEnd(open)
 		if p.Share(open.Weekday()) == 0 {
 			open = ends
 			continue
@@ -152,11 +152,11 @@ func (s Simulation) reaches(p Preset, c Schedule, open, by time.Time) bool {
 		if c.Seen() && !c.Due.Before(by) {
 			break
 		}
-		if c.Seen() && !c.Due.Before(s.Day.EndOf(open)) {
+		if c.Seen() && !c.Due.Before(s.Day.GetEnd(open)) {
 			// Nothing is asked of it until the day its schedule falls in.
-			open = s.Day.StartOf(c.Due)
+			open = s.Day.GetStart(c.Due)
 		}
-		ends := s.Day.EndOf(open)
+		ends := s.Day.GetEnd(open)
 		// A day of the week at none of the load asks it nothing, and the next
 		// day of review picks it up.
 		if p.Share(open.Weekday()) != 0 {
@@ -173,7 +173,7 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	by := s.Day.Ending(p.By)
+	by := s.Day.GetEndOfDate(p.By)
 	out := 0
 	for _, c := range cards {
 		if !s.reaches(p, c, open, by) {

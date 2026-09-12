@@ -34,7 +34,7 @@ withDefaults(
 
 const emit = defineEmits<{
   /** A card is dragged over a place that would take it. */
-  (event: 'over', at: InsertionPoint | undefined, press: DragEvent): void
+  (event: 'dragOver', at: InsertionPoint | undefined, press: DragEvent): void
   (event: 'drop'): void
   (event: 'rename-section', id: string, name: string): void
   (event: 'remove-section', id: string): void
@@ -62,7 +62,7 @@ const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
     class="deck__section-head caret-below"
     :data-section-head="run.section.id"
     :data-before="run.section.id === at || undefined"
-    @dragover.stop="emit('over', run.section.id, $event)"
+    @dragover.stop="emit('dragOver', run.section.id, $event)"
     @drop.stop="emit('drop')"
   >
     <SectionHeading
@@ -80,7 +80,7 @@ const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
     class="deck__head caret-below"
     data-head
     :data-before="run.id === at || undefined"
-    @dragover.stop="emit('over', run.id, $event)"
+    @dragover.stop="emit('dragOver', run.id, $event)"
     @drop.stop="emit('drop')"
   ></div>
 
@@ -90,7 +90,7 @@ const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
       :key="tile.id"
       class="deck__tile caret-beside"
       :data-before="tile.id === at || undefined"
-      @dragover.stop="emit('over', tile.id, $event)"
+      @dragover.stop="emit('dragOver', tile.id, $event)"
       @drop.stop="emit('drop')"
     >
       <Card
@@ -116,7 +116,7 @@ const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
       data-plus
       :data-plus-of="run.section?.id"
       :data-before="getRunEnd(run) === at || undefined"
-      @dragover.stop="emit('over', getRunEnd(run), $event)"
+      @dragover.stop="emit('dragOver', getRunEnd(run), $event)"
       @drop.stop="emit('drop')"
     >
       <!-- The plus stands in the middle. -->

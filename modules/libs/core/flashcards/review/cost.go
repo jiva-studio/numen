@@ -46,7 +46,7 @@ var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 // order to state a property of the cost without a grouping in front of it.
 func Costed(by Scheduler, answers []Answer) AnswerCost {
 	var took answerTimes
-	replayed(by, answers, func(before Schedule, a Answer) {
+	walkAnswers(by, answers, func(before Schedule, a Answer) {
 		took.holds(by.Spaced(before), a.Counted())
 	})
 	return took.cost()
@@ -61,7 +61,7 @@ func Costed(by Scheduler, answers []Answer) AnswerCost {
 // few of stands at the default.
 func CostedUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) map[string]AnswerCost {
 	held := make(map[string]*answerTimes)
-	replayed(by, answers, func(before Schedule, a Answer) {
+	walkAnswers(by, answers, func(before Schedule, a Answer) {
 		path, groups := under[a.CardFace]
 		if !groups {
 			return
@@ -101,22 +101,22 @@ func (t *answerTimes) holds(spaced bool, took time.Duration) {
 // the default where the history is too short to say.
 func (t *answerTimes) cost() AnswerCost {
 	out := DefaultCost
-	if middle, read := middling(t.begun); read {
+	if middle, read := getMedian(t.begun); read {
 		out.New, out.ReadNew = middle, true
 	}
-	if middle, read := middling(t.spaced); read {
+	if middle, read := getMedian(t.spaced); read {
 		out.Review, out.ReadReview = middle, true
 	}
 	return out
 }
 
-// middling is the middle of these answers, and whether there are enough of them
-// to have one.
+// getMedian is the middle of these answers, and whether there are enough of
+// them to have one.
 //
 // Answer times are a right tail: a person answers the door, and the card stands
 // on the screen while they do. The middle is where half the answers fall either
 // side of it, and one long answer moves it by one place.
-func middling(took []time.Duration) (time.Duration, bool) {
+func getMedian(took []time.Duration) (time.Duration, bool) {
 	if len(took) < LeastAnswers {
 		return 0, false
 	}

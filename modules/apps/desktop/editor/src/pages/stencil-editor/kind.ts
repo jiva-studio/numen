@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import type { PlexDestination } from '@numen/ui'
 import type { Cards } from '@/entities/deck'
 import type { Store } from '@/features/command-palette'
-import { openNotes, markOf } from '@/entities/note'
+import { openNotes, getMarkOf } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
@@ -35,7 +35,8 @@ export function useStencilTabs(
     (id) => store.getOpenNote(id).body,
     (id, body) => store.setBody(id, body),
     (id) => wire.getProblems(store.getPath(id)),
-    (id, field, name) => void wire.renameField(store.getPath(id), field, name, store.changed),
+    (id, field, name) =>
+      void wire.renameField(store.getPath(id), field, name, store.applyPathChanges),
   )
 
   const createStencilTabState = (id: string): StencilTabState => {
@@ -74,12 +75,12 @@ export function useStencilTabs(
   /** The stencils, as a command reaches the ones the window has open. */
   const kept: Store = {
     has: (id) => store.getOpenIds().includes(id),
-    where: (id) => store.getPath(id),
+    getPath: (id) => store.getPath(id),
     getTitle: (id) => getTitle(store.getPath(id)),
-    asking: (id) => store.stale(id) !== null,
+    isAsking: (id) => store.stale(id) !== null,
     settle: (id) => store.settle(id),
     close: closeTab,
-    holding: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,
+    getTabAt: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,
   }
 
   const tabbed = computed<ReadonlyMap<string, string>>(
@@ -108,7 +109,7 @@ export function useStencilTabs(
       return createStencilTabState(id)
     },
     getTitle: (one) => getTitle(store.getPath(one.id)),
-    getMark: (one) => markOf(one.note.value.state),
+    getMark: (one) => getMarkOf(one.note.value.state),
     pane: StencilTab,
     identity: (id) => id,
     onClose: (one, id) => {
@@ -128,13 +129,13 @@ export function useStencilTabs(
 
   const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[] = []): void => {
     wire.movePaths(renames)
-    store.changed(paths, renames)
+    store.applyPathChanges(paths, renames)
   }
 
   return {
     kind,
     createStencilTabState,
-    changed: applyPathChanges,
+    applyPathChanges,
     getTitle,
     kept,
     getOpenIds: store.getOpenIds,

@@ -131,7 +131,7 @@ describe('a change in the vault', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.changed(['Heat.md'])
+    notes.applyPathChanges(['Heat.md'])
     await settle()
 
     expect(asked).toEqual(['Heat.md', 'Heat.md'])
@@ -147,7 +147,7 @@ describe('a change in the vault', () => {
 
     notes.setBody('Heat.md', 'mine')
     files.set('Heat.md', 'somebody else')
-    notes.changed(['Heat.md'])
+    notes.applyPathChanges(['Heat.md'])
     await settle()
 
     expect(notes.getOpenNote('Heat.md').body).toBe('mine')
@@ -161,7 +161,7 @@ describe('a change in the vault', () => {
     await settle()
 
     files.set('Heat.md', 'after')
-    notes.changed([])
+    notes.applyPathChanges([])
     await settle()
 
     expect(notes.getOpenNote('Heat.md').body).toBe('after')
@@ -178,7 +178,7 @@ describe('a change in the vault', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.changed(['Other.md'])
+    notes.applyPathChanges(['Other.md'])
     await settle()
 
     expect(asked).toHaveLength(1)
@@ -307,7 +307,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     await settle()
 
     await notes.settle('Heat.md')
-    notes.changed(['Warmth.md'], [{ from: 'Heat.md', to: 'Warmth.md' }])
+    notes.applyPathChanges(['Warmth.md'], [{ from: 'Heat.md', to: 'Warmth.md' }])
     await settle()
 
     expect(notes.getOpenIds()).toEqual(['Heat.md'])
@@ -334,9 +334,9 @@ describe('where a note stands', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.changed([], [{ from: 'Heat.md', to: 'Warmth.md' }])
+    notes.applyPathChanges([], [{ from: 'Heat.md', to: 'Warmth.md' }])
     await settle()
-    notes.changed([], [{ from: 'Warmth.md', to: 'Entropy.md' }])
+    notes.applyPathChanges([], [{ from: 'Warmth.md', to: 'Entropy.md' }])
     await settle()
 
     expect(notes.getPath('Heat.md')).toBe('Entropy.md')
@@ -590,7 +590,7 @@ describe('a note that points somewhere', () => {
     expect(notes.link('Entropy.md')).not.toBeNull()
 
     link = undefined
-    notes.changed(['Entropy.md'])
+    notes.applyPathChanges(['Entropy.md'])
     await settle()
 
     expect(notes.link('Entropy.md')).toBeNull()

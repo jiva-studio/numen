@@ -43,8 +43,8 @@ func (d Day) zone() *time.Location {
 	return d.In
 }
 
-// EndOf is the instant the day holding at gives way to the next.
-func (d Day) EndOf(at time.Time) time.Time {
+// GetEnd is the instant the day holding at gives way to the next.
+func (d Day) GetEnd(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
 	if opened := d.opens(y, m, day); local.Before(opened) {
@@ -53,8 +53,8 @@ func (d Day) EndOf(at time.Time) time.Time {
 	return d.opens(y, m, day+1)
 }
 
-// StartOf is the instant the day holding at began.
-func (d Day) StartOf(at time.Time) time.Time {
+// GetStart is the instant the day holding at began.
+func (d Day) GetStart(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
 	if opened := d.opens(y, m, day); !local.Before(opened) {
@@ -63,10 +63,10 @@ func (d Day) StartOf(at time.Time) time.Time {
 	return d.opens(y, m, day-1)
 }
 
-// Opened is the date the day holding at began on, as a plain date. A day is
+// GetDate is the date the day holding at began on, as a plain date. A day is
 // named and numbered from this, so that it is one day of review whatever the
 // clock did around its boundaries.
-func (d Day) Opened(at time.Time) time.Time {
+func (d Day) GetDate(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
 	date := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
@@ -103,10 +103,10 @@ func wall(at time.Time) time.Time {
 	return time.Date(y, m, day, at.Hour(), at.Minute(), 0, 0, time.UTC)
 }
 
-// Ending is the instant the day of this date gives way to the next. The date
-// is read as it is written, and the boundary falls in the zone the days are
-// counted in.
-func (d Day) Ending(named time.Time) time.Time {
+// GetEndOfDate is the instant the day of this date gives way to the next. The
+// date is read as it is written, and the boundary falls in the zone the days
+// are counted in.
+func (d Day) GetEndOfDate(named time.Time) time.Time {
 	y, m, day := named.Date()
 	return d.opens(y, m, day+1)
 }
@@ -115,5 +115,5 @@ func (d Day) Ending(named time.Time) time.Time {
 // now. A card face that has never been answered is owed the first time it is
 // asked about.
 func (d Day) Owed(s Schedule, now time.Time) bool {
-	return !s.Seen() || s.Due.Before(d.EndOf(now))
+	return !s.Seen() || s.Due.Before(d.GetEnd(now))
 }

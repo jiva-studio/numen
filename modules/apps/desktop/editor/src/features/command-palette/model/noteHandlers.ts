@@ -18,16 +18,16 @@ export interface SettleResult {
  * window holds is at the name it was made over.
  */
 export const atItsFile = (invocation: CommandInvocation, on: TabContext): CommandInvocation =>
-  invocation.note ? { ...invocation, path: on.notes.where(invocation.note) } : invocation
+  invocation.note ? { ...invocation, path: on.notes.getPath(invocation.note) } : invocation
 
 /**
  * The tab holding a note, once nothing of the note is on its way to its file.
  * A tab waiting on the person to answer for it settles nothing and says so.
  */
 export const settleTab = async (path: string, on: TabContext): Promise<SettleResult> => {
-  const held = on.notes.holding(path)
+  const held = on.notes.getTabAt(path)
   if (held === null) return { held, waiting: false }
-  if (on.notes.asking(held)) return { held, waiting: true }
+  if (on.notes.isAsking(held)) return { held, waiting: true }
   await on.notes.settle(held)
   return { held, waiting: false }
 }

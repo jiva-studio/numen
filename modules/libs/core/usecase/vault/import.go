@@ -9,9 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Error is one file that stayed outside the vault, by the name it carries on
-// this machine and by what stopped it.
-type Error struct {
+// ImportFailure is one file that stayed outside the vault, by the name it
+// carries on this machine and by what stopped it.
+type ImportFailure struct {
 	Name string
 	Why  error
 }
@@ -23,7 +23,7 @@ type ImportResult struct {
 	// it under.
 	Landed []string
 	// Errors is each file that stayed where it was.
-	Errors []Error
+	Errors []ImportFailure
 }
 
 // Import copies files from this machine into a folder of the vault.
@@ -72,8 +72,8 @@ func (u Import) Execute(
 			return brought, err
 		}
 		name := u.Files.Named(handle)
-		if err := u.bring(ctx, writer, v, handle, filed(into, name), &brought); err != nil {
-			brought.Errors = append(brought.Errors, Error{Name: name, Why: err})
+		if err := u.bring(ctx, writer, v, handle, joinPath(into, name), &brought); err != nil {
+			brought.Errors = append(brought.Errors, ImportFailure{Name: name, Why: err})
 		}
 	}
 	return brought, nil
@@ -111,8 +111,8 @@ func (u Import) bring(
 			return err
 		}
 		for _, one := range held {
-			if err := u.bring(ctx, writer, v, one.Handle, filed(to, one.Name), brought); err != nil {
-				brought.Errors = append(brought.Errors, Error{Name: one.Name, Why: err})
+			if err := u.bring(ctx, writer, v, one.Handle, joinPath(to, one.Name), brought); err != nil {
+				brought.Errors = append(brought.Errors, ImportFailure{Name: one.Name, Why: err})
 			}
 		}
 		return nil
@@ -142,9 +142,9 @@ var errHoldsTheVault = errors.New("the vault is inside it")
 // holds files and folders.
 var errNotAFile = errors.New("it is neither a file nor a folder")
 
-// filed is where a name goes in a folder of the vault. The root is the empty
+// joinPath is where a name goes in a folder of the vault. The root is the empty
 // path, and a name at the root is the whole of it.
-func filed(folder, name string) string {
+func joinPath(folder, name string) string {
 	if folder == "" {
 		return name
 	}

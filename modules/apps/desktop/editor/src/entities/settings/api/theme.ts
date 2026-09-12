@@ -57,24 +57,24 @@ export interface Appearance {
 
 /** What the window asks about how it is drawn. */
 export interface Themes {
-  appearance(): Promise<Appearance>
+  getAppearance(): Promise<Appearance>
   /** The text of one theme's file, as the file stands when it is asked for. */
-  text(name: string): Promise<string>
+  readTheme(name: string): Promise<string>
   /**
    * The theme, the mode and the two sizes written into the settings, and why
    * they were not. A size outside its bounds is refused and nothing is written.
    */
-  chooses(name: string, mode: Mode, sizes: Sizes): Promise<string>
+  writeAppearance(name: string, mode: Mode, sizes: Sizes): Promise<string>
   /**
    * The themes the person's folder changed, by name, for as long as the window
    * listens. A theme whose file is gone is named here too.
    */
-  changed(signal: AbortSignal): AsyncIterable<readonly string[]>
+  watchThemes(signal: AbortSignal): AsyncIterable<readonly string[]>
 }
 
 /** The same questions, in the shape the window asks them. */
 export const themes: Themes = {
-  appearance: async () => {
+  getAppearance: async () => {
     const answer = await theme.listThemes({})
     return {
       themes: answer.themes.map((one) => ({
@@ -92,8 +92,8 @@ export const themes: Themes = {
       },
     }
   },
-  text: async (name) => (await theme.readTheme({ name })).css,
-  chooses: async (name, mode, sizes) =>
+  readTheme: async (name) => (await theme.readTheme({ name })).css,
+  writeAppearance: async (name, mode, sizes) =>
     (
       await theme.writeAppearance({
         name,
@@ -102,7 +102,7 @@ export const themes: Themes = {
         textScale: sizes.textScale,
       })
     ).error,
-  changed: async function* (signal) {
+  watchThemes: async function* (signal) {
     for await (const said of theme.watchThemes({}, { signal })) yield said.names
   },
 }

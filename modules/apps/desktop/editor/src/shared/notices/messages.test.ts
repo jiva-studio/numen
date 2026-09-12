@@ -72,7 +72,7 @@ describe('a message the person is finished with', () => {
     log.under('made')('Filed there already', 'error')
     const first = log.messages.value[0]!
 
-    log.forget(first.id)
+    log.dismiss(first.id)
 
     expect(log.messages.value.map((one) => one.name)).toStrictEqual(['made'])
   })
@@ -81,7 +81,7 @@ describe('a message the person is finished with', () => {
     const log = messageLog()
     log.under('command')('Renamed')
 
-    log.forget('reading the books')
+    log.dismiss('reading the books')
 
     expect(log.messages.value).toHaveLength(1)
   })

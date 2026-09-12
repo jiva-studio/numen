@@ -15,7 +15,7 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	t.Parallel()
 	// The share of the cards each deck's preset asks to come back, by the deck.
 	shares := map[string]float64{"decks/Roots.md": 0.99, "decks/Terms.md": 0.9}
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 		"Tight.md": "---\ntype: preset\ngoal: retention\nretention: 0.99\n---\n\n# Tight\n",
@@ -79,7 +79,7 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 		what string
 		even bool
 	}{{"an even load", true}, {"no even load", false}} {
-		s := opened(t, map[string]string{
+		s := openVault(t, map[string]string{
 			"Term.md": term,
 			"On.md": preset(fmt.Sprintf("goal: minutes_a_day\nminutes_a_day: 1440\n"+
 				"new_a_day: 0\nreviews_a_day: 9999\neven_load: %t\n", one.even)),
@@ -121,7 +121,7 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 			}
 			asked++
 			came, names := schedules[card.ID].Due, at.Add(said)
-			if today.Names(came) != today.Names(names) {
+			if today.GetName(came) != today.GetName(names) {
 				differ++
 				if off := came.Sub(names); off > worst || -off > worst {
 					worst = max(off, -off)

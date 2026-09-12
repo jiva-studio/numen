@@ -29,9 +29,9 @@ func (q *queued) Collect(context.Context, string) (map[int]string, bool, error) 
 	return nil, false, nil
 }
 
-// placed is an installation with a proofreader for both kinds of text, at the
-// sizes it proofreads at.
-func placed(by *replying, queue *queued) ProofreadingConfig {
+// newProofreadingConfig is an installation with a proofreader for both kinds of
+// text, at the sizes it proofreads at.
+func newProofreadingConfig(by *replying, queue *queued) ProofreadingConfig {
 	return ProofreadingConfig{
 		Named:           true,
 		By:              func(told string) (port.Proofreader, error) { by.told = told; return by, nil },
@@ -49,7 +49,7 @@ func TestAReadingIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 	t.Parallel()
 	by, queue := &replying{}, &queued{}
 
-	right, held, err := placed(by, queue).Reading(nil, nil)
+	right, held, err := newProofreadingConfig(by, queue).Reading(nil, nil)
 	if err != nil || !held {
 		t.Fatalf("held %v, %v", held, err)
 	}
@@ -74,7 +74,7 @@ func TestATranscriptIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 	t.Parallel()
 	by, queue := &replying{}, &queued{}
 
-	right, held, err := placed(by, queue).Transcript(nil, nil)
+	right, held, err := newProofreadingConfig(by, queue).Transcript(nil, nil)
 	if err != nil || !held {
 		t.Fatalf("held %v, %v", held, err)
 	}
@@ -92,7 +92,7 @@ func TestATranscriptIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 func TestEachKindOfTextIsProofreadUnderItsOwnInstruction(t *testing.T) {
 	t.Parallel()
 	by, queue := &replying{}, &queued{}
-	if _, _, err := placed(by, queue).Reading(nil, nil); err != nil {
+	if _, _, err := newProofreadingConfig(by, queue).Reading(nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if by.told != proofread.ScanInstruction || queue.told != proofread.ScanInstruction {
@@ -100,7 +100,7 @@ func TestEachKindOfTextIsProofreadUnderItsOwnInstruction(t *testing.T) {
 	}
 
 	by, queue = &replying{}, &queued{}
-	if _, _, err := placed(by, queue).Transcript(nil, nil); err != nil {
+	if _, _, err := newProofreadingConfig(by, queue).Transcript(nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if by.told != proofread.SpeechInstruction {

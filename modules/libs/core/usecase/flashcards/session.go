@@ -136,10 +136,10 @@ func (u Session) Execute(
 	if err != nil {
 		return SessionResult{}, err
 	}
-	schedules := u.Schedules.replayed(ctx, v, held, asks)
+	schedules := u.Schedules.getSchedulesCached(ctx, v, held, asks)
 
 	now := u.Now()
-	day, err := budgeted(
+	day, err := getBudgets(
 		ctx, v, reading, u.Day, faces, schedules, held,
 		u.Schedules.By, u.Schedules.at, now,
 	)

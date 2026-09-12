@@ -21,7 +21,7 @@ const caret = "^"
 // shows and the mark it carries.
 //
 // A mark is separated from the text by one space, stands last, and is a mark
-// only at the length and in the alphabet marks are minted in. Anything else at
+// only at the length and in the alphabet marks are written in. Anything else at
 // the end of a heading is heading text, and comes back as part of the text.
 func ReadHeading(heading string) (text string, carried domain.CardID) {
 	at := strings.LastIndex(heading, " ")

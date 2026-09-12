@@ -21,8 +21,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// installed is an installation whose own state is this test's alone.
-func installed(t *testing.T) container.Config {
+// makeInstallation is an installation whose own state is this test's alone.
+func makeInstallation(t *testing.T) container.Config {
 	t.Helper()
 	return container.Config{
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
@@ -56,44 +56,44 @@ func listens(addr string) bool {
 	return true
 }
 
-// TestTheTokenIsMintedOnceAndKept. The line an agent is configured with is
+// TestTheTokenIsCreatedOnceAndKept. The line an agent is configured with is
 // written down, so it still names this installation the next time it is asked
 // for.
-func TestTheTokenIsMintedOnceAndKept(t *testing.T) {
-	cfg := installed(t)
+func TestTheTokenIsCreatedOnceAndKept(t *testing.T) {
+	cfg := makeInstallation(t)
 
-	minted, err := Token(cfg)
+	token, err := GetToken(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if minted == "" {
-		t.Fatal("nothing was minted")
+	if token == "" {
+		t.Fatal("nothing was created")
 	}
-	again, err := Token(cfg)
+	again, err := GetToken(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if again != minted {
-		t.Errorf("the token was %q and is now %q", minted, again)
+	if again != token {
+		t.Errorf("the token was %q and is now %q", token, again)
 	}
 }
 
-// TestATokenMintedForAWindowIsKeptNowhere. A window nobody configures an agent
+// TestATokenCreatedForAWindowIsKeptNowhere. A window nobody configures an agent
 // against is reached for as long as it is open, and writes down nothing another
 // window would read.
-func TestATokenMintedForAWindowIsKeptNowhere(t *testing.T) {
-	cfg := installed(t)
+func TestATokenCreatedForAWindowIsKeptNowhere(t *testing.T) {
+	cfg := makeInstallation(t)
 
-	minted, err := Mint()
+	token, err := CreateToken()
 	if err != nil {
 		t.Fatal(err)
 	}
-	again, err := Mint()
+	again, err := CreateToken()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if minted == "" || again == minted {
-		t.Errorf("the token was minted as %q and again as %q", minted, again)
+	if token == "" || again == token {
+		t.Errorf("the token was created as %q and again as %q", token, again)
 	}
 
 	left, err := os.ReadDir(filepath.Dir(cfg.RegistryPath))
@@ -109,7 +109,7 @@ func TestATokenMintedForAWindowIsKeptNowhere(t *testing.T) {
 // machine picks hands back the port it was given, which is what an agent is
 // told to reach.
 func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
-	cfg := installed(t)
+	cfg := makeInstallation(t)
 	cfg.Agent = agent.Config{ServeTools: true}
 
 	served, err := Serve(t.Context(), Options{
@@ -133,7 +133,7 @@ func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 // window's vault, and a second window rewriting it points a person's own agent
 // at whichever started last.
 func TestAWindowThatDoesNotAnnounceWritesNothing(t *testing.T) {
-	cfg := installed(t)
+	cfg := makeInstallation(t)
 	cfg.Agent = agent.Config{ServeTools: true}
 	state := filepath.Dir(cfg.RegistryPath)
 
@@ -158,7 +158,7 @@ func TestAWindowThatDoesNotAnnounceWritesNothing(t *testing.T) {
 // the vault, so it is stopped while the tools it writes through are still
 // there.
 func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
-	cfg := installed(t)
+	cfg := makeInstallation(t)
 	cfg.Agent = agent.Defaults()
 	cfg.Agent.Claude.Command = []string{"/bin/sh", "-c", "exit 0"}
 
@@ -209,7 +209,7 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 // themselves, and a name absent from the allowance is refused under the mode
 // this runs in.
 func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
-	cfg := installed(t)
+	cfg := makeInstallation(t)
 	cfg.Agent = agent.Defaults()
 
 	dir := t.TempDir()

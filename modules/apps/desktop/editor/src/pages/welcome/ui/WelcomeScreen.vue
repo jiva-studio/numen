@@ -35,7 +35,7 @@ const props = defineProps<{
   commands: Commands
   search: SearchState
   doing: CommandDeps
-  where: () => CommandTarget
+  getTarget: () => CommandTarget
   /** A command asked for, which is what every way in but the commands comes to. */
   runCommand: (id: string, at: CommandTarget) => void
 }>()
@@ -52,7 +52,7 @@ const adding = computed(() => {
 })
 
 const ways = computed(() => {
-  const at = props.where()
+  const at = props.getTarget()
   return waysIn({ vault: at.vault.id, ready: at.ready }, words, navigator.userAgent).map((one) => {
     const icon = iconFor(one.id)
     return { ...one, ...(icon ? { icon } : {}) }
@@ -67,17 +67,17 @@ const welcoming = computed(
 )
 
 // --- Handlers ---
-function onRuns(id: string) {
-  if (id !== COMMANDS) return props.runCommand(id, props.where())
+function onRun(id: string) {
+  if (id !== COMMANDS) return props.runCommand(id, props.getTarget())
   ;props.search.setOpen(false)
   ;props.commands.setOpen(true)
 }
 
-function onOpens(id: string) {
+function onOpen(id: string) {
   const one = props.listed.vaults.find((vault) => vault.id === id)
   if (!one) return
   const vault: VaultRef = { id: one.id, name: one.name }
-  void runInvocation(invocationOf('openVault', { ...props.where(), vault }), props.doing, words)
+  void runInvocation(invocationOf('openVault', { ...props.getTarget(), vault }), props.doing, words)
 }
 
 function onKeyDown(event: KeyboardEvent) {
@@ -86,7 +86,7 @@ function onKeyDown(event: KeyboardEvent) {
   const one = at === null ? undefined : onList.value[at]
   if (!one) return
   event.preventDefault()
-  onOpens(one.id)
+  onOpen(one.id)
 }
 
 onMounted(() => globalThis.addEventListener('keydown', onKeyDown))
@@ -100,8 +100,8 @@ onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
     :heading="words.vaults"
     :offer="adding"
     :version="VERSION"
-    @runs="onRuns"
-    @opens="onOpens"
-    @offers="runCommand('newVault', where())"
+    @run="onRun"
+    @open="onOpen"
+    @take-offer="runCommand('newVault', getTarget())"
   />
 </template>

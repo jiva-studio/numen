@@ -95,7 +95,7 @@ describe('a note the window closed', () => {
   it('is drawn with nothing', () => {
     const drawn = holdChanges()
     drawn.reportChange(createEdit())
-    drawn.shut('Note.md')
+    drawn.closeNote('Note.md')
     expect(drawn.getChange('Note.md')).toBeNull()
   })
 })

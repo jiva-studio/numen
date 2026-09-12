@@ -1,6 +1,6 @@
 /** The session screen: the card in front of a person, and the two panels beside it. */
-export { core } from './api/agent'
-export { around } from './api/notes'
+export { createAgentPort } from './api/agent'
+export { getDeckNeighbourhood } from './api/notes'
 export { WORDS } from './lib/agentWords'
 export type { PanelPlace } from './model/carousel'
 export { useNotesPanel } from './model/notes'

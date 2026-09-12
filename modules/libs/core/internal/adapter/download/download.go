@@ -134,15 +134,15 @@ func (f *Downloader) playerFor(at domain.URL) (player, error) {
 }
 
 // A program is a tool as it is started: the command, and the environment the
-// settings name for it. Every run goes through started, so what a setting says
-// about the environment cannot be forgotten at one of them.
+// settings name for it. Every run goes through buildCommand, so what a setting
+// says about the environment cannot be forgotten at one of them.
 type program struct {
 	command []string
 	env     []string
 }
 
-// held says this machine has the tool.
-func (p program) held() bool { return len(p.command) > 0 }
+// isPresent says this machine has the tool.
+func (p program) isPresent() bool { return len(p.command) > 0 }
 
 // at is where the tool itself is, for another tool that runs it. A tool started
 // through something else is not somewhere one path names.
@@ -153,18 +153,18 @@ func (p program) at() string {
 	return p.command[0]
 }
 
-// started is one run of it, with the arguments of that run after its own.
-func (p program) started(ctx context.Context, arguments ...string) *exec.Cmd {
+// buildCommand is one run of it, with the arguments of that run after its own.
+func (p program) buildCommand(ctx context.Context, arguments ...string) *exec.Cmd {
 	running := exec.CommandContext(ctx, p.command[0],
 		append(append([]string(nil), p.command[1:]...), arguments...)...)
 	running.Env = p.env
 	return running
 }
 
-// resolved is the program to run, and nothing where this machine has no such
-// tool. A named command is taken as it stands: a machine that writes the path
-// afresh at every build names whatever does know where the tool is.
-func resolved(named Tool, tool string) program {
+// resolveProgram is the program to run, and nothing where this machine has no
+// such tool. A named command is taken as it stands: a machine that writes the
+// path afresh at every build names whatever does know where the tool is.
+func resolveProgram(named Tool, tool string) program {
 	if len(named.Command) > 0 {
 		return program{
 			command: append(append([]string(nil), named.Command...), named.Arguments...),
@@ -182,7 +182,7 @@ func resolved(named Tool, tool string) program {
 // person is shown when it failed: the tool knows why, and nothing here is going
 // to say it better.
 func run(ctx context.Context, tool program, into io.Writer, arguments ...string) ([]byte, error) {
-	running := tool.started(ctx, arguments...)
+	running := tool.buildCommand(ctx, arguments...)
 	var out, said bytes.Buffer
 	running.Stdout, running.Stderr = &out, &said
 	if into != nil {

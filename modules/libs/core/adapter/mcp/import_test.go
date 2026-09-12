@@ -49,10 +49,10 @@ func (s *site) Download(_ context.Context, _ domain.URL, into io.Writer) (port.C
 	return port.Copy{MediaType: derived.CopyType, Extension: derived.CopyExtension}, err
 }
 
-// importing is the core with one address it can reach.
-func importing(t *testing.T, from *site) (domain.Vault, mcp.Core) {
+// newCoreWithImport is the core with one address it can reach.
+func newCoreWithImport(t *testing.T, from *site) (domain.Vault, mcp.Core) {
 	t.Helper()
-	v, core := served(t)
+	v, core := newCore(t)
 	core.Sources.Import = &source.ImportURL{
 		Readers: filesystem.VaultReaders{},
 		Derived: filesystem.DerivedStores{
@@ -73,7 +73,7 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{
 		{Text: "what was said", From: 1500, To: 4200},
 	}}
-	_, core := importing(t, from)
+	_, core := newCoreWithImport(t, from)
 	session := sessionOf(t, mcp.New(core))
 
 	out := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
@@ -96,7 +96,7 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 // disk, and an agent that was not asked for one does not fetch one.
 func TestAnAgentAsksForACopy(t *testing.T) {
 	from := &site{title: "Entropy explained", bytes: []byte("the bytes of a video")}
-	_, core := importing(t, from)
+	_, core := newCoreWithImport(t, from)
 	session := sessionOf(t, mcp.New(core))
 
 	without := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
@@ -118,7 +118,7 @@ func TestAnAgentAsksForACopy(t *testing.T) {
 // A build that cannot reach an address serves no tool that would: an agent is
 // told what it can do by what it is offered.
 func TestABuildThatReachesNoAddressServesNoImport(t *testing.T) {
-	_, core := served(t)
+	_, core := newCore(t)
 	session := sessionOf(t, mcp.New(core))
 
 	found, err := session.ListTools(t.Context(), nil)
@@ -139,7 +139,7 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{
 		{Text: "what was said", From: 1500, To: 4200},
 	}}
-	v, core := importing(t, from)
+	v, core := newCoreWithImport(t, from)
 	core.Sources.Derived = filesystem.DerivedStores{
 		Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
 	}

@@ -30,13 +30,13 @@ type queries struct {
 // SaveSource records what a file is now, with no recipe: a source saved this way
 // owes its text.
 func (s sources) SaveSource(ctx context.Context, vaultID domain.VaultID, src domain.Source) error {
-	return s.write.SaveSource(ctx, vaultID, stored(src))
+	return s.write.SaveSource(ctx, vaultID, newChunkSource(src))
 }
 
 // SaveExtraction records the source and replaces its chunks in one write, so a
 // recipe is never recorded for chunks that are not there.
 func (s sources) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
-	return s.write.SaveExtraction(ctx, vaultID, stored(e.Source), chunks(e.Chunks))
+	return s.write.SaveExtraction(ctx, vaultID, newChunkSource(e.Source), chunks(e.Chunks))
 }
 
 // RemoveSources takes out the sources at the paths given, and their chunks and
@@ -89,7 +89,7 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 }
 
 func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
-	from, err := resuming(after)
+	from, err := getCursorRow(after)
 	if err != nil {
 		return nil, "", err
 	}
@@ -117,16 +117,16 @@ func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model p
 	return out, next, nil
 }
 
-// resuming is the chunk a walk carries on after. A cursor is a chunk's own
+// getCursorRow is the chunk a walk carries on after. A cursor is a chunk's own
 // address, so it is read the same way, and the empty one is the beginning.
-func resuming(after port.ChunkCursor) (int64, error) {
+func getCursorRow(after port.ChunkCursor) (int64, error) {
 	if after == "" {
 		return 0, nil
 	}
 	return chunk.Row(domain.ChunkID(after))
 }
 
-func stored(s domain.Source) chunk.Source {
+func newChunkSource(s domain.Source) chunk.Source {
 	return chunk.Source{
 		Path:     s.Fingerprint.Path,
 		Kind:     string(s.Fingerprint.Kind),

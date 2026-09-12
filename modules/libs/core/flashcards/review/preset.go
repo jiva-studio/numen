@@ -142,20 +142,20 @@ func (p Preset) Learned(s Schedule, at time.Time) bool {
 	if !s.Seen() {
 		return false
 	}
-	rule, interval, retention := p.counting()
+	rule, interval, retention := p.getLearnedRule()
 	if rule == RuleRetention {
 		return Recall(at.Sub(s.Last), s.Stability) >= retention
 	}
 	return s.Due.Sub(s.Last) >= time.Duration(interval)*24*time.Hour
 }
 
-// counting is the rule a card face is counted learned by here, and the two
-// values a rule reads.
+// getLearnedRule is the rule a card face is counted learned by here, and the
+// two values a rule reads.
 //
 // A preset naming no rule counts by the default rule, and a value the rule
 // cannot hold stands at the default. A preset that says nothing holds its cards
 // to the threshold in Defaults.
-func (p Preset) counting() (LearnedRule, int, float64) {
+func (p Preset) getLearnedRule() (LearnedRule, int, float64) {
 	defaults := Defaults()
 	rule, interval, retention := p.Rule, p.Interval, p.Retention
 	if !KnownRule(rule) {
@@ -308,7 +308,7 @@ func (p Preset) StopsOn(d Day, now time.Time) StopReason {
 	if why := p.Stops(d, now); why != StoppedNothing {
 		return why
 	}
-	if p.Share(d.Opened(now).Weekday()) == 0 {
+	if p.Share(d.GetDate(now).Weekday()) == 0 {
 		return StoppedNoLoad
 	}
 	return StoppedNothing
@@ -333,25 +333,25 @@ func (p Preset) paces(d Day, now time.Time, unbegunCards, daysToLearn int) int {
 	if daysToLearn == NeverRipens {
 		return unbegunCards
 	}
-	in := p.beginning(d, now, daysToLearn)
+	in := p.getRoomToBegin(d, now, daysToLearn)
 	if in <= 0 {
 		return unbegunCards
 	}
 	return int(math.Ceil(float64(unbegunCards) / in))
 }
 
-// beginning is how much room a date leaves for beginning cards: the days of
-// review from the day holding now up to the last one on which a card begun
+// getRoomToBegin is how much room a date leaves for beginning cards: the days
+// of review from the day holding now up to the last one on which a card begun
 // still has its ripening before the day the preset aims at.
 //
 // Each day counts for the share of the load its day of the week carries, and
 // the ripening is counted in days of review, so the days it takes are dropped
 // at the shares they carry.
-func (p Preset) beginning(d Day, now time.Time, ripens int) float64 {
+func (p Preset) getRoomToBegin(d Day, now time.Time, ripens int) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	from, err := time.Parse(Named, d.Names(now))
+	from, err := time.Parse(Named, d.GetName(now))
 	if err != nil {
 		return 0
 	}
@@ -377,7 +377,7 @@ func (p Preset) days(d Day, now time.Time) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	from, err := time.Parse(Named, d.Names(now))
+	from, err := time.Parse(Named, d.GetName(now))
 	if err != nil {
 		return 0
 	}
@@ -406,5 +406,5 @@ func (p Preset) Past(d Day, now time.Time) bool {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return false
 	}
-	return !now.Before(d.Ending(p.By))
+	return !now.Before(d.GetEndOfDate(p.By))
 }

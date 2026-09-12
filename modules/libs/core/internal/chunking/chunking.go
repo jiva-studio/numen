@@ -202,7 +202,7 @@ func whole(text string, divisions []division, s Sizes, l Legibility) []Chunk {
 func smallChunks(text string, words []word, location string, s Sizes, l Legibility) []Chunk {
 	var out []Chunk
 	for _, at := range tile(len(words), s.Small, s.SmallOverlap) {
-		for _, piece := range limited(text, words, at, s.Limit) {
+		for _, piece := range cutToLimit(text, words, at, s.Limit) {
 			c := extent(words, piece, location)
 			body := c.Slice(text)
 			if utf8.RuneCountInString(body) > s.Limit || !legible(body, l) {
@@ -287,10 +287,10 @@ func tile(n, size, overlap int) [][2]int {
 	return out
 }
 
-// limited breaks a range of words into pieces of at most limit characters,
+// cutToLimit breaks a range of words into pieces of at most limit characters,
 // counting the space between words. A word of its own is a piece however long it
 // is.
-func limited(text string, words []word, at [2]int, limit int) [][2]int {
+func cutToLimit(text string, words []word, at [2]int, limit int) [][2]int {
 	from, to := at[0], at[1]
 	if utf8.RuneCountInString(text[words[from].start:words[to-1].end]) <= limit {
 		return [][2]int{at}

@@ -16,9 +16,9 @@ type ShownVault struct {
 	Root  string
 }
 
-// shown is the vault this call is about. A build that named none answers about
-// no vault at all.
-func (c Core) shown() ShownVault {
+// getShownVault is the vault this call is about. A build that named none answers
+// about no vault at all.
+func (c Core) getShownVault() ShownVault {
 	if c.Showing == nil {
 		return ShownVault{}
 	}
@@ -57,7 +57,7 @@ func addVaultGet(server *sdk.Server, core Core) {
 			Notes    int    `json:"notes"`
 			Headings int    `json:"headings"`
 		}
-		shown := core.shown()
+		shown := core.getShownVault()
 		summary, err := core.Notes.Queries.Summary(ctx, shown.Vault.ID)
 		if err != nil {
 			return nil, out{}, err
@@ -97,7 +97,7 @@ func addVaultProblems(server *sdk.Server, core Core) {
 		for _, name := range in.Checks {
 			named = append(named, domain.Check(name))
 		}
-		found, err := core.Notes.Problems.Run(ctx, core.shown().Vault, named...)
+		found, err := core.Notes.Problems.Run(ctx, core.getShownVault().Vault, named...)
 		if err != nil {
 			return nil, out{}, err
 		}

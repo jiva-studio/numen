@@ -156,5 +156,5 @@ export function getCardFieldValues(
 }
 
 /** The empty values a stencil's slots make, for a card nobody has typed into. */
-export const blanks = (fields: readonly string[]): readonly FieldValue[] =>
+export const getBlanks = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: '' }))

@@ -556,8 +556,8 @@ func TestOneOfTwoCopiesTakenOutLeavesTheOtherReading(t *testing.T) {
 
 const talkPath = "talks/a lecture.mp3"
 
-// transcribed is the transcript a model leaves of one talk.
-func transcribed() []byte {
+// newTranscript is the transcript a model leaves of one talk.
+func newTranscript() []byte {
 	return transcript.Marshal([]transcript.Cue{
 		{Text: words(sanskrit, 200), From: 1500, To: 5025000},
 		{Text: words(latin, 200), From: 5025000, To: 5400000},
@@ -595,7 +595,7 @@ func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
 
 	raw := []byte("ID3 and then the samples")
 	shelf.hold(talkPath, domain.KindRecording, raw, 1)
-	if err := made.Write(ctx, text.Artifact(text.ASR, text.Fingerprint(raw)), transcribed()); err != nil {
+	if err := made.Write(ctx, text.Artifact(text.ASR, text.Fingerprint(raw)), newTranscript()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -635,7 +635,7 @@ func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
 	raw := []byte("ID3 and then the samples")
 	shelf.hold(talkPath, domain.KindRecording, raw, 1)
 	hash := text.Fingerprint(raw)
-	if err := made.Write(ctx, text.Artifact(text.ASR, hash), transcribed()); err != nil {
+	if err := made.Write(ctx, text.Artifact(text.ASR, hash), newTranscript()); err != nil {
 		t.Fatal(err)
 	}
 	if err := made.Write(ctx, text.Beside(text.ASR, hash), []byte(`{"model":"parakeet"}`)); err != nil {

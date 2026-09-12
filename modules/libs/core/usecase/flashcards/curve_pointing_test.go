@@ -16,10 +16,11 @@ import (
 // can name it the auxiliary way.
 const sanskrit = "01M02ACGM0FYMSXNDP29C90JNR"
 
-// pointed is a vault of three presets and five decks. Three decks name one
-// preset — one of them by its identifier and two by its name — one deck names
-// another preset, one names none, and the third preset is named by nothing.
-func pointed() map[string]string {
+// newPointedNotes is a vault of three presets and five decks. Three decks name
+// one preset — one of them by its identifier and two by its name — one deck
+// names another preset, one names none, and the third preset is named by
+// nothing.
+func newPointedNotes() map[string]string {
 	return map[string]string{
 		"Term.md": vault["Term.md"],
 		"Sanskrit.md": "---\ntype: preset\nid: " + sanskrit + "\ngoal: minutes_a_day\n" +
@@ -28,11 +29,11 @@ func pointed() map[string]string {
 			"new_a_day: 5\nreviews_a_day: 30\nretention: 0.9\n---\n\n# Grammar\n",
 		"Quiet.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 10\n" +
 			"new_a_day: 4\nreviews_a_day: 20\nretention: 0.85\n---\n\n# Quiet\n",
-		"decks/Roots.md":  pointingDeck(names("Sanskrit"), 0, 8),
-		"decks/Verbs.md":  pointingDeck(names("Sanskrit"), 8, 8),
-		"decks/Chants.md": pointingDeck(names("note://"+sanskrit), 16, 8),
-		"decks/Cases.md":  pointingDeck(names("Grammar"), 24, 8),
-		"decks/Other.md":  pointingDeck("", 32, 8),
+		"decks/Roots.md":  newPointingDeck(names("Sanskrit"), 0, 8),
+		"decks/Verbs.md":  newPointingDeck(names("Sanskrit"), 8, 8),
+		"decks/Chants.md": newPointingDeck(names("note://"+sanskrit), 16, 8),
+		"decks/Cases.md":  newPointingDeck(names("Grammar"), 24, 8),
+		"decks/Other.md":  newPointingDeck("", 32, 8),
 	}
 }
 
@@ -41,8 +42,8 @@ func names(to string) string {
 	return "links:\n  - to: " + to + "\n    role: ref\n    type: preset\n"
 }
 
-// pointingDeck is a deck of cards cards, the first of them numbered from.
-func pointingDeck(links string, from, cards int) string {
+// newPointingDeck is a deck of cards cards, the first of them numbered from.
+func newPointingDeck(links string, from, cards int) string {
 	out := "---\ntype: deck\n" + links + "---\n"
 	for i := from; i < from+cards; i++ {
 		out += fmt.Sprintf(
@@ -72,7 +73,7 @@ func answers(t *testing.T, s vaulted) {
 
 // The decks a curve is worked out over are the decks pointing at the preset,
 // and how many of them there are is counted the same way.
-func scheduling(t *testing.T, s vaulted, path string) (decks []string, faces int) {
+func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces int) {
 	t.Helper()
 	held, err := s.standings.Decks(t.Context(), s.vault)
 	if err != nil {
@@ -128,19 +129,19 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 
 	for _, shape := range shapes {
 		t.Run(shape.name, func(t *testing.T) {
-			whole := opened(t, pointed())
+			whole := openVault(t, newPointedNotes())
 			answers(t, whole)
-			decks, faces := scheduling(t, whole, shape.path)
+			decks, faces := countScheduled(t, whole, shape.path)
 
 			// The same vault with every deck the preset does not schedule taken
 			// out of it, where there is nothing to narrow.
-			notes := maps.Clone(pointed())
+			notes := maps.Clone(newPointedNotes())
 			for path := range notes {
 				if strings.HasPrefix(path, "decks/") && !slices.Contains(decks, path) {
 					delete(notes, path)
 				}
 			}
-			alone := opened(t, notes)
+			alone := openVault(t, notes)
 			answers(t, alone)
 
 			for _, goal := range goals {

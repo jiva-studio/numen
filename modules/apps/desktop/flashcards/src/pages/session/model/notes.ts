@@ -29,7 +29,7 @@ export interface NotesPanelDeps {
   /** The deck the card in front of the person stands in, empty between cards. */
   readonly deck: () => string
   /** What the deck is joined to. */
-  readonly around: (vault: string, deck: string) => Promise<DeckNeighbourhood>
+  readonly getDeckNeighbourhood: (vault: string, deck: string) => Promise<DeckNeighbourhood>
   /** Where the window says what a person has to know. */
   readonly showNotice: (said: string) => void
 }
@@ -63,7 +63,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     asked = deck
     working.value = true
     try {
-      const around = await deps.around(vault, deck)
+      const around = await deps.getDeckNeighbourhood(vault, deck)
       // A card answered while this was in flight moves the session to another
       // deck, and what came back is then about the deck behind it.
       if (asked !== deck) return

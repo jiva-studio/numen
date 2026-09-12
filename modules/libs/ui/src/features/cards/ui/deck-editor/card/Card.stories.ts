@@ -9,7 +9,7 @@ import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Card from './Card.vue'
 import type { DeckCard } from '../../../lib/deck'
-import { grid, type Tile } from '../../../lib/grid'
+import { getGrid, type Tile } from '../../../lib/grid'
 import type { Stencil } from '../../../lib/card'
 
 interface Corpus {
@@ -161,7 +161,7 @@ type Corpora = keyof typeof CORPORA
 
 /** The one card of a corpus, laid out against the stencil that cuts it. */
 const tileOf = (corpus: Corpus): Tile => {
-  const laid = grid([corpus.card], [], corpus.cut ? [corpus.cut] : [], null).runs[0]?.tiles[0]
+  const laid = getGrid([corpus.card], [], corpus.cut ? [corpus.cut] : [], null).runs[0]?.tiles[0]
   if (!laid) throw new Error('a corpus holding no card')
   return laid
 }

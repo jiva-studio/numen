@@ -20,12 +20,12 @@ import (
 // gone: the editor reloads on a vault swap and leaves one behind every time. A
 // write that fails is the one report there is, so the stream makes one.
 func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
-	service := dressed(t, theme.Appearance{}).service
+	service := createDressing(t, theme.Appearance{}).service
 
 	entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 	route, handler := numenv1connect.NewThemeServiceHandler(service)
 	mux := http.NewServeMux()
-	mux.Handle(route, rooted(handler, entered, returned))
+	mux.Handle(route, wrapWithProcessContext(handler, entered, returned))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
@@ -50,9 +50,9 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	}
 }
 
-// rooted serves the handler the way the window does: the request context is the
+// wrapWithProcessContext serves the handler the way the window does: the request context is the
 // process's own, and ends when the application ends and at no other moment.
-func rooted(handler http.Handler, entered, returned chan<- struct{}) http.Handler {
+func wrapWithProcessContext(handler http.Handler, entered, returned chan<- struct{}) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		entered <- struct{}{}
 		defer func() { returned <- struct{}{} }()

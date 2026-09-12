@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	cfg := configured(os.Stderr)
+	cfg := makeConfig(os.Stderr)
 	var telling, noAgent bool
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
@@ -50,22 +50,23 @@ func main() {
 	}
 }
 
-// configured is what this binary starts from: where the core says what it went
+// makeConfig is what this binary starts from: where the core says what it went
 // wrong at and carried on past, which is the same place everything else this
 // binary could not do is said.
-func configured(out io.Writer) container.Config {
+func makeConfig(out io.Writer) container.Config {
 	return container.Config{
 		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen-flashcards:", err) },
 	}
 }
 
-// composed is everything that acts on the vault's notes and cards, built once
-// and in one place. The page and the tools an agent calls are served these and
-// build none of their own, so a dependency named here is named for both.
+// makeNotesAndCards is everything that acts on the vault's notes and cards,
+// built once and in one place. The page and the tools an agent calls are served
+// these and build none of their own, so a dependency named here is named for
+// both.
 //
 // What a write touched is levelled through the opening the vault was opened
 // with, which is what the walk and the watch also go through.
-func composed(
+func makeNotesAndCards(
 	cfg container.Config, db *container.Index, vaults *openVaults,
 ) (container.Notes, container.Cards) {
 	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.level),
@@ -101,7 +102,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// levelled by the paths a write touches.
 	vaults := &openVaults{cfg: cfg, db: db, under: ctx, out: os.Stderr}
 
-	notes, cutting := composed(cfg, db, vaults)
+	notes, cutting := makeNotesAndCards(cfg, db, vaults)
 
 	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.level)
 	api := &window.API{

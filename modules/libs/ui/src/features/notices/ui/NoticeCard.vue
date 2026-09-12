@@ -7,15 +7,15 @@ import { tallyOf, type Notice } from '../lib/notice'
 defineProps<{
   /** The notice this card stands for. */
   one: Notice
-  /** What the way to put it away is called. */
-  putAway: string
+  /** What the way to dismiss it is called. */
+  dismiss: string
   /** How long the count has left, in the words it is read in. */
   left: string
 }>()
 
 const emit = defineEmits<{
   /** A person pressed the way away. */
-  (event: 'put'): void
+  (event: 'dismiss'): void
 }>()
 
 /** The way away, which whoever draws the card keeps the keyboard on. */
@@ -39,8 +39,8 @@ defineExpose({ way })
       ref="way"
       type="button"
       class="notice__away outline-none ring-numen"
-      :aria-label="`${putAway}: ${one.says}`"
-      @click="emit('put')"
+      :aria-label="`${dismiss}: ${one.says}`"
+      @click="emit('dismiss')"
     >
       <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
         <path d="M3 3 L9 9 M9 3 L3 9" />

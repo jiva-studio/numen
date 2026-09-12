@@ -23,18 +23,18 @@ import (
 // types into from what the write is held to.
 func SettingsBounds() *v1.SettingsBounds {
 	return &v1.SettingsBounds{
-		MinutesADay: bounded(review.MinutesADayBounds),
-		NewADay:     bounded(review.NewADayBounds),
-		ReviewsADay: bounded(review.ReviewsADayBounds),
-		Retention:   bounded(review.RetentionBounds),
-		Backlog:     bounded(review.BacklogBounds),
-		Interval:    bounded(review.IntervalBounds),
-		Load:        bounded(review.LoadBounds),
+		MinutesADay: getBounds(review.MinutesADayBounds),
+		NewADay:     getBounds(review.NewADayBounds),
+		ReviewsADay: getBounds(review.ReviewsADayBounds),
+		Retention:   getBounds(review.RetentionBounds),
+		Backlog:     getBounds(review.BacklogBounds),
+		Interval:    getBounds(review.IntervalBounds),
+		Load:        getBounds(review.LoadBounds),
 	}
 }
 
-// bounded is one pair of bounds as the schema carries it.
-func bounded(b review.Bounds) *v1.Bounds {
+// getBounds is one pair of bounds as the schema carries it.
+func getBounds(b review.Bounds) *v1.Bounds {
 	return &v1.Bounds{Least: b.Least, Most: b.Most}
 }
 

@@ -257,7 +257,7 @@ func (q *Queries) Nearest(ctx context.Context, vaultID domain.VaultID, recipe st
 	if len(ranked) > limit {
 		ranked = ranked[:limit]
 	}
-	return q.enclosing(ctx, vault, ranked)
+	return q.getEnclosingPassages(ctx, vault, ranked)
 }
 
 // coarse is the pass over the bit vectors: the chunks of one vault whose signs
@@ -281,12 +281,13 @@ func (q *Queries) coarse(ctx context.Context, vault int64, query []float32, k in
 	return near, rows.Err()
 }
 
-// enclosing is the large chunk each chunk sits inside, in the order given.
+// getEnclosingPassages is the large chunk each chunk sits inside, in the order
+// given.
 //
 // The nearest-neighbour question is asked of the vector index alone: it takes
 // its own ordering and does not join. Where each answer is read from is a
 // second question, asked once per answer.
-func (q *Queries) enclosing(ctx context.Context, vault int64, chunks []int64) ([]domain.Passage, error) {
+func (q *Queries) getEnclosingPassages(ctx context.Context, vault int64, chunks []int64) ([]domain.Passage, error) {
 	if len(chunks) == 0 {
 		return nil, nil
 	}

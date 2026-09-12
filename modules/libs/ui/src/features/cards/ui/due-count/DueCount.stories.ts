@@ -75,7 +75,7 @@ export const Bare: Story = {
     expect(pill?.textContent?.trim()).toBe('12')
 
     // Drawn as the figure alone, and still read out as what it counts.
-    expect(pill?.getAttribute('aria-label')).toBe(DUE_WORDS.counted(12))
+    expect(pill?.getAttribute('aria-label')).toBe(DUE_WORDS.formatDue(12))
   },
 }
 

@@ -44,7 +44,7 @@ func FuzzSetTitle(f *testing.F) {
 		if err := d.SetTitle(title); err != nil {
 			return
 		}
-		keptOutside(t, raw, string(d.Bytes()), "title")
+		checkWriteInsideKey(t, raw, string(d.Bytes()), "title")
 	})
 }
 
@@ -63,7 +63,7 @@ func FuzzAddLink(f *testing.F) {
 		}); err != nil {
 			return
 		}
-		keptOutside(t, raw, string(d.Bytes()), "links")
+		checkWriteInsideKey(t, raw, string(d.Bytes()), "links")
 	})
 }
 
@@ -90,7 +90,7 @@ func FuzzUpdateLink(f *testing.F) {
 			}
 			return
 		}
-		keptOutside(t, was, string(d.Bytes()), "links")
+		checkWriteInsideKey(t, was, string(d.Bytes()), "links")
 	})
 }
 
@@ -114,15 +114,15 @@ func FuzzSetBody(f *testing.F) {
 	})
 }
 
-// keptOutside fails unless the bytes a write replaced all belong to the lines
-// one top-level key owns.
-func keptOutside(t *testing.T, before, after, key string) {
+// checkWriteInsideKey fails unless the bytes a write replaced all belong to the
+// lines one top-level key owns.
+func checkWriteInsideKey(t *testing.T, before, after, key string) {
 	t.Helper()
-	from, to := changed(before, after)
+	from, to := getChangedRun(before, after)
 	if from == to {
 		return
 	}
-	start, end, found := ownedLines(before, key)
+	start, end, found := getOwnedLines(before, key)
 	if !found {
 		return
 	}
@@ -132,9 +132,9 @@ func keptOutside(t *testing.T, before, after, key string) {
 	}
 }
 
-// changed is the run of the note a write replaced: what stands after the bytes
-// both spellings open with, and before the bytes both close with.
-func changed(before, after string) (int, int) {
+// getChangedRun is the run of the note a write replaced: what stands after the
+// bytes both spellings open with, and before the bytes both close with.
+func getChangedRun(before, after string) (int, int) {
 	from := 0
 	for from < len(before) && from < len(after) && before[from] == after[from] {
 		from++
@@ -150,10 +150,10 @@ func changed(before, after string) (int, int) {
 	return from, to
 }
 
-// ownedLines is the widest run of frontmatter one top-level key can be said to
-// own: the key's own line, and the lines below it standing indented under it or
-// hanging from it as a list. It says nothing of a key it cannot find.
-func ownedLines(note, key string) (start, end int, found bool) {
+// getOwnedLines is the widest run of frontmatter one top-level key can be said
+// to own: the key's own line, and the lines below it standing indented under it
+// or hanging from it as a list. It says nothing of a key it cannot find.
+func getOwnedLines(note, key string) (start, end int, found bool) {
 	var starts []int
 	var lines []string
 	for at := 0; at < len(note); {
@@ -187,9 +187,9 @@ func ownedLines(note, key string) (start, end int, found bool) {
 			continue
 		}
 		if !at {
-			margin, at = leading(lines[i]), true
+			margin, at = getIndent(lines[i]), true
 		}
-		if len(leading(lines[i])) == len(margin) && strings.HasPrefix(text, key+":") {
+		if len(getIndent(lines[i])) == len(margin) && strings.HasPrefix(text, key+":") {
 			owner = i
 			break
 		}
@@ -204,7 +204,7 @@ func ownedLines(note, key string) (start, end int, found bool) {
 		if text == "" || strings.HasPrefix(text, "#") {
 			continue
 		}
-		if len(leading(lines[i])) <= len(margin) && !strings.HasPrefix(text, "-") {
+		if len(getIndent(lines[i])) <= len(margin) && !strings.HasPrefix(text, "-") {
 			break
 		}
 		last = i

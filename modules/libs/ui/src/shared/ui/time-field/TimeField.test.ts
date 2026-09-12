@@ -33,7 +33,7 @@ describe('an hour typed', () => {
     const field = mountField()
     await field.get('input').setValue('06:30')
     expect(getEmitted(field)).toStrictEqual(['06:30'])
-    expect(field.emitted('settles')).toStrictEqual([['06:30']])
+    expect(field.emitted('settle')).toStrictEqual([['06:30']])
   })
 
   it('is handed on once where it is the hour already in force', async () => {
@@ -46,7 +46,7 @@ describe('an hour typed', () => {
     const field = mountField()
     await field.get('input').setValue('')
     expect(getEmitted(field)).toStrictEqual([])
-    expect(field.emitted('settles')).toBeUndefined()
+    expect(field.emitted('settle')).toBeUndefined()
   })
 })
 

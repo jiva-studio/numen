@@ -69,7 +69,7 @@ function tab(
   const asked: string[] = []
   const state = useTranscriptTab(
     useTranscript(talk(cues), 'talks/Ants.mp3', { through: createPlayer(), plays }),
-    { runs: (id, path, called) => void asked.push(`${id} ${path} ${called}`), canRun },
+    { runCommand: (id, path, called) => void asked.push(`${id} ${path} ${called}`), canRun },
   )
   return { state, asked }
 }

@@ -72,7 +72,7 @@ type vaulted struct {
 	second domain.Vault
 }
 
-func indexed(t *testing.T) vaulted {
+func newVaults(t *testing.T) vaulted {
 	t.Helper()
 	ctx := t.Context()
 
@@ -113,9 +113,9 @@ func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []stri
 	}
 }
 
-// unlevelled brings nothing level: these tests read the file back and not the
+// indexNothing brings nothing level: these tests read the file back and not the
 // index. The ones that ask the index level it with a whole scan.
-func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+func indexNothing(context.Context, domain.Vault, []string) error { return nil }
 
 func read(t *testing.T, v domain.Vault, path string) string {
 	t.Helper()
@@ -141,7 +141,7 @@ func write(t *testing.T, v domain.Vault, path, raw string) {
 // A deck opened and put back with the prose it came out of is the file it was.
 // Anything less is a diff nobody asked for, on every save, forever.
 func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Mammals.md")
 
 	got, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Mammals.md")
@@ -156,7 +156,7 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	}
 
 	w := cards.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled,
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), indexNothing,
 		time.Now)
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.Fingerprint); err != nil {
 		t.Fatalf("write: %v", err)
@@ -170,7 +170,7 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 // writing the first field twice is the one fault a card writing any field twice
 // is, and it is reported once.
 func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	written := read(t, vs.first, "decks/Mammals.md")
 	replaced := strings.Replace(written,
 		"### Name\n\nLlama\n",
@@ -216,7 +216,7 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
 // lays the card out and nothing says what it is asked for. That is a problem
 // against the deck, on the card it stands against.
 func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	write(t, vs.first, "decks/Loose.md", "---\ntype: deck\n---\n"+
 		"\n## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n"+
 		"\n## Rain\n\n[[Weather]]\n\n### Height\n\nno stencil says what this is\n")
@@ -268,7 +268,7 @@ func prose(t *testing.T, raw string) string {
 // The size is asked of the file before it is opened, so a deck over the bound
 // is refused with none of its bytes read.
 func TestADeckOverTheBoundIsNotRead(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	path := filepath.Join(vs.first.Path, "decks", "Mammals.md")
 	if err := os.Truncate(path, cards.MaxBytes+1); err != nil {
 		t.Fatal(err)
@@ -295,7 +295,7 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 
 // A stencil is a note and is bounded as one, which is a different number.
 func TestAStencilIsBoundedAsANote(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	if cards.MaxBytes == note.MaxBytes {
 		t.Fatal("a deck and a note are bounded the same")
 	}
@@ -315,9 +315,9 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 // A deck that changed since it was read is left alone: someone editing their own
 // file outranks a caller that read it, thought about it, and arrived late.
 func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	w := cards.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled,
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), indexNothing,
 		time.Now)
 
 	first, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Birds.md")
@@ -345,7 +345,7 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 // what it is to everything that reads the vault before a card is written into
 // it.
 func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
 	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Path: "decks"})
@@ -382,7 +382,7 @@ func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 // A preset is made with the key that says what it is and with none of its
 // settings, and every key it does not carry stands at the default.
 func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
 	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Path: "presets"})
@@ -414,7 +414,7 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 // A stencil's first field is what its cards are named by, so a stencil is made
 // with one and nothing is written where there is none.
 func TestAStencilIsMadeWithAFirstField(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
 	if _, err := u.Stencil(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
@@ -435,7 +435,7 @@ func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 // The window asking which kind of card to make is drawn from the vault's own
 // stencils, and from no other vault's.
 func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	u := cards.List{Readers: filesystem.VaultReaders{}, Notes: vs.db.NoteQueries()}
 
 	got, held, err := u.Execute(t.Context(), vs.first, 0)
@@ -471,7 +471,7 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 // A list that stops short opens no file for the stencils it leaves out, and the
 // count still says how many the vault holds.
 func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
-	vs := indexed(t)
+	vs := newVaults(t)
 	counted := &counting{VaultReaders: filesystem.VaultReaders{}}
 
 	got, held, err := (cards.List{Readers: counted, Notes: vs.db.NoteQueries()}).

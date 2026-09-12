@@ -24,7 +24,7 @@ const deletedAt = "2006-01-02T15:04:05"
 
 // send puts the folder in the trash the desktop reads.
 func send(path string) error {
-	return sent(path, home())
+	return sendTo(path, home())
 }
 
 // home is the trash of this login. It is empty where the machine will not say
@@ -41,10 +41,10 @@ func home() string {
 	return filepath.Join(data, "Trash")
 }
 
-// sent puts the folder in the trash of this login, and in the trash at the root
+// sendTo puts the folder in the trash of this login, and in the trash at the root
 // of its own volume when a rename cannot reach the first. A volume that has no
 // trash and takes none has nowhere to put it.
-func sent(path, home string) error {
+func sendTo(path, home string) error {
 	if home != "" {
 		if err := into(home, path, path); !errors.Is(err, syscall.EXDEV) {
 			return err

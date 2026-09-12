@@ -34,12 +34,12 @@ type nothing struct {
 	elsewhere string
 }
 
-// standingOnNothing opens a window on an installation that has added nothing.
+// openEmptyWindow opens a window on an installation that has added nothing.
 //
 // Both the folder this system keeps documents in and the home it would fall
 // back on are somewhere a test owns, so anything made for a person to write in
 // is made where this can see it.
-func standingOnNothing(t *testing.T) *nothing {
+func openEmptyWindow(t *testing.T) *nothing {
 	t.Helper()
 
 	elsewhere := t.TempDir()
@@ -80,7 +80,7 @@ func standingOnNothing(t *testing.T) *nothing {
 // nothing to stand on. A folder appearing in a person's documents is a folder
 // they did not ask for.
 func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	if got := f.opened.Showing(); got != (domain.Vault{}) {
 		t.Errorf("the window opened on %+v, want no vault", got)
@@ -113,7 +113,7 @@ func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T)
 // person can do anything, and one of them refusing is a window that never comes
 // up.
 func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	state, err := f.vault.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
 	if err != nil {
@@ -163,7 +163,7 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 // to four streams as it opens and draws nothing until each has said its first
 // word.
 func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
@@ -235,7 +235,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 // A vault with no identity is every vault at once in one database, and a vault
 // with no path is whichever folder this process happens to be standing in.
 func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	asked := map[string]func() error{
 		"list a folder of the vault": func() error {
@@ -312,7 +312,7 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 // TestAWindowStandingOnNothingSearchesNothing. The palette is a keystroke away
 // from a person who has added no vault, and typing in it turns up nothing.
 func TestAWindowStandingOnNothingSearchesNothing(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	named, err := f.vault.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "one"}))
 	if err != nil {
@@ -336,7 +336,7 @@ func TestAWindowStandingOnNothingSearchesNothing(t *testing.T) {
 // TestNoDocumentIsDrawnForAWindowStandingOnNothing. A document is addressed by
 // its path in the vault, and there is no vault for a path to be in.
 func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	// A file of the folder this process is standing in, which is what a path
 	// with no vault under it reaches. The name is a document's, so the ask is
@@ -387,7 +387,7 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 // TestAVaultAddedToAWindowStandingOnNothingIsShown, which is where the welcome
 // screen's two ways in both end.
 func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	root := t.TempDir()
 	if err := os.WriteFile(

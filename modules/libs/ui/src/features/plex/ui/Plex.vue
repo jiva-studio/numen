@@ -92,13 +92,13 @@ const gesture = usePlexGesture(
  * and says so. What is being dragged it never looks at.
  */
 const dragging = usePlexDrag({
-  surface: () => view.value?.svg ?? null,
-  dragged: () => props.dragged,
-  frame: () => frame.value,
-  options: () => options.value,
-  viewport: () => room.value,
-  allowed: () => props.creatable,
-  threshold: () => props.dragThreshold,
+  getSurface: () => view.value?.svg ?? null,
+  getDragged: () => props.dragged,
+  getFrame: () => frame.value,
+  getOptions: () => options.value,
+  getViewport: () => room.value,
+  getAllowedSeats: () => props.creatable,
+  getThreshold: () => props.dragThreshold,
   settle: (dragged, seat) => emit('bring', dragged, seat),
 })
 

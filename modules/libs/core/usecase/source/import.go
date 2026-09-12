@@ -84,7 +84,7 @@ type ImportURLResult struct {
 // Execute downloads what is at one url's address.
 func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (ImportURLResult, error) {
 	res := ImportURLResult{Path: path}
-	at, ref, store, err := u.pointed(ctx, v, path)
+	at, ref, store, err := u.readURLFile(ctx, v, path)
 	if err != nil {
 		return res, err
 	}
@@ -102,7 +102,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	defer release()
 
 	if u.Again {
-		if err := forgotten(ctx, store, hash); err != nil {
+		if err := dropDownloads(ctx, store, hash); err != nil {
 			return res, err
 		}
 	}
@@ -137,7 +137,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	if err := u.cut(ctx, v, ref.Path); err != nil {
 		return res, err
 	}
-	return u.named(ctx, v, ref, at, said.Title, res)
+	return u.renameURL(ctx, v, ref, at, said.Title, res)
 }
 
 // keeps writes down what came back, under the name of whatever downloaded it,
@@ -170,9 +170,9 @@ func (u ImportURL) silent(
 	return store.Write(ctx, text.Answer(u.By.Downloading(at).Producer, hash), []byte(text.Silent+"\n"))
 }
 
-// pointed is one url: where it points, the file itself, and the store what is
-// downloaded for it is kept in.
-func (u ImportURL) pointed(
+// readURLFile is one url: where it points, the file itself, and the store what
+// is downloaded for it is kept in.
+func (u ImportURL) readURLFile(
 	ctx context.Context, v domain.Vault, path string,
 ) (domain.URL, domain.Fingerprint, port.DerivedStore, error) {
 	none := domain.URL("")
@@ -202,12 +202,12 @@ func (u ImportURL) pointed(
 	return at, ref, store, nil
 }
 
-// named gives the url the name what is at the address calls itself.
+// renameURL gives the url the name what is at the address calls itself.
 //
 // A url still called by the address it points at was named by the paste and by
 // nobody: the person had no name for it yet, and what is there has one. One
 // called anything else was named by the person, and that stands.
-func (u ImportURL) named(
+func (u ImportURL) renameURL(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,

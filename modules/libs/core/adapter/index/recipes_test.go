@@ -11,7 +11,7 @@ import (
 // the model back finds them. What they cost is a store carrying both, and this
 // is the one thing that takes the old ones out.
 func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
-	db := opened(t)
+	db := openDB(t)
 	ctx := t.Context()
 
 	before := atScale(t, quantising, 0.3)

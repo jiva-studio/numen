@@ -18,7 +18,7 @@ type heldWalk struct {
 	let   chan struct{}
 }
 
-func heldVault() heldWalk {
+func newHeldWalk() heldWalk {
 	return heldWalk{began: make(chan struct{}, 2), let: make(chan struct{})}
 }
 
@@ -41,8 +41,8 @@ func (heldWalk) Stat(context.Context, string) (domain.Fingerprint, error) {
 	return domain.Fingerprint{}, nil
 }
 
-// waited says whether a walk began before the wait ran out.
-func (h heldWalk) waited() bool {
+// hasWalkBegun says whether a walk began before the wait ran out.
+func (h heldWalk) hasWalkBegun() bool {
 	select {
 	case <-h.began:
 		return true
@@ -60,7 +60,7 @@ func (h heldWalks) Open(domain.Vault) (port.VaultReader, error) { return h.reade
 // for the first to finish.
 func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 	t.Parallel()
-	held := heldVault()
+	held := newHeldWalk()
 	readers := heldWalks{reader: held}
 	db := openIndex(t)
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
@@ -68,7 +68,7 @@ func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 	done := make(chan error, 2)
 	first, second := scanner(readers, db), scanner(readers, db)
 	go func() { _, err := first.Execute(t.Context(), v); done <- err }()
-	if !held.waited() {
+	if !held.hasWalkBegun() {
 		t.Fatal("the first walk never began")
 	}
 	go func() { _, err := second.Execute(t.Context(), v); done <- err }()
@@ -79,7 +79,7 @@ func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 	}
 	close(held.let)
-	if !held.waited() {
+	if !held.hasWalkBegun() {
 		t.Fatal("the second walk never took its turn")
 	}
 	for range 2 {
@@ -94,7 +94,7 @@ func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 // a vault they each keep their own index of.
 func TestWalksIntoTwoIndexesDoNotWaitOnEachOther(t *testing.T) {
 	t.Parallel()
-	held := heldVault()
+	held := newHeldWalk()
 	readers := heldWalks{reader: held}
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
 
@@ -104,7 +104,7 @@ func TestWalksIntoTwoIndexesDoNotWaitOnEachOther(t *testing.T) {
 		go func() { _, err := scan.Execute(t.Context(), v); done <- err }()
 	}
 	for range 2 {
-		if !held.waited() {
+		if !held.hasWalkBegun() {
 			t.Fatal("a walk of one index waited on a walk of another")
 		}
 	}

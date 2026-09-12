@@ -46,10 +46,10 @@ const naming = useNaming<HeadingObjection>({
 })
 
 /** What is in the box: the name it carries, or what is being typed over it. */
-const text = computed(() => naming.text(props.section.id))
+const text = computed(() => naming.getText(props.section.id))
 
 /** Why what is in the box cannot be used, and nothing while it can. */
-const objections = computed(() => naming.objection(props.section.id))
+const objections = computed(() => naming.getObjection(props.section.id))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => (objections.value === null ? null : props.words.sectionObjection))

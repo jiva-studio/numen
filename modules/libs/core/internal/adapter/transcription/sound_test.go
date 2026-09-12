@@ -7,9 +7,9 @@ import (
 	"testing"
 )
 
-// written is a wav file of one signal: a header saying what the samples are,
+// encodeWav is a wav file of one signal: a header saying what the samples are,
 // and the samples.
-func written(rate, channels int, samples []int16) []byte {
+func encodeWav(rate, channels int, samples []int16) []byte {
 	body := new(bytes.Buffer)
 	for _, one := range samples {
 		binary.Write(body, binary.LittleEndian, one)
@@ -34,7 +34,7 @@ func written(rate, channels int, samples []int16) []byte {
 
 // How long a recording is comes out of its header, before a sample is decoded.
 func TestDurationFromTheHeader(t *testing.T) {
-	raw := written(16000, 1, make([]int16, 8000))
+	raw := encodeWav(16000, 1, make([]int16, 8000))
 	got, err := duration(raw)
 	if err != nil {
 		t.Fatal(err)
@@ -43,7 +43,7 @@ func TestDurationFromTheHeader(t *testing.T) {
 		t.Errorf("half a second of one channel is %d ms", got)
 	}
 
-	raw = written(8000, 2, make([]int16, 8000))
+	raw = encodeWav(8000, 2, make([]int16, 8000))
 	if got, err = duration(raw); err != nil || got != 500 {
 		t.Errorf("half a second of two channels is %d ms (%v)", got, err)
 	}
@@ -59,7 +59,7 @@ func TestARecordingInNoContainerThisReads(t *testing.T) {
 
 // Two channels are heard as one: what they say at each moment, averaged.
 func TestChannelsAreHeardAsOne(t *testing.T) {
-	raw := written(16000, 2, []int16{16384, 0, -16384, 0})
+	raw := encodeWav(16000, 2, []int16{16384, 0, -16384, 0})
 	sound, rate, err := samples(raw)
 	if err != nil {
 		t.Fatal(err)
@@ -85,7 +85,7 @@ func TestSignedSamplesOfAnyWidth(t *testing.T) {
 		{[]byte{0xFF, 0xFF, 0x7F}, 8388607},
 		{[]byte{0x00, 0x00, 0x80}, -8388608},
 	} {
-		if got := signed(one.raw); got != one.want {
+		if got := readSigned(one.raw); got != one.want {
 			t.Errorf("%v is %d and should be %d", one.raw, got, one.want)
 		}
 	}

@@ -138,13 +138,13 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	if err != nil {
 		return CardsDue{}, err
 	}
-	schedules := u.Schedules.replayed(ctx, v, log, asks)
+	schedules := u.Schedules.getSchedulesCached(ctx, v, log, asks)
 	if err := ctx.Err(); err != nil {
 		return CardsDue{}, err
 	}
 
 	now := u.Now()
-	day, err := budgeted(
+	day, err := getBudgets(
 		ctx, v, reading, u.Day, faces, schedules, log,
 		u.Schedules.By, u.Schedules.at, now,
 	)
@@ -215,7 +215,7 @@ func (u CountCardsDue) presets(
 	ctx context.Context, v domain.Vault, reading *PresetReads, day *budgets,
 	due, fresh map[string]int,
 ) ([]PresetCardsDue, error) {
-	out := day.owing(due, fresh)
+	out := day.getCardsDue(due, fresh)
 	if u.CardFaces.Notes == nil {
 		return out, nil
 	}
@@ -263,10 +263,10 @@ func (u CountCardsDue) presets(
 	return out, nil
 }
 
-// owing is what the day comes to under each preset the vault's decks name: the
-// budget the day of the week leaves it, and what has been answered under it
-// since the day opened.
-func (b *budgets) owing(due, fresh map[string]int) []PresetCardsDue {
+// getCardsDue is what the day comes to under each preset the vault's decks
+// name: the budget the day of the week leaves it, and what has been answered
+// under it since the day opened.
+func (b *budgets) getCardsDue(due, fresh map[string]int) []PresetCardsDue {
 	out := make([]PresetCardsDue, 0, len(b.left))
 	for path, one := range b.left {
 		out = append(out, PresetCardsDue{

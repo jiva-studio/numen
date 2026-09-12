@@ -60,7 +60,7 @@ func opening(b *strings.Builder, core Core) {
 	b.WriteString("These tools work on one numen vault: markdown notes in an ordinary folder, ")
 	b.WriteString("joined by typed links into a graph.\n\n")
 
-	shown := core.shown()
+	shown := core.getShownVault()
 	fmt.Fprintf(b, "The vault %q is at %s on this machine.\n", shown.Vault.Name, shown.Root)
 	b.WriteString("Every note is addressed by its path relative to that folder, with forward ")
 	b.WriteString("slashes — `notes/entropy.md`. That path is what every tool takes and returns. ")
@@ -91,9 +91,9 @@ func readingInstructions(core Core) string {
 	return b.String()
 }
 
-// reviewingInstructions is what the window a person runs their cards in tells
+// getReviewingInstructions is what the window a person runs their cards in tells
 // its agent.
-func reviewingInstructions(core Core) string {
+func getReviewingInstructions(core Core) string {
 	var b strings.Builder
 	opening(&b, core)
 

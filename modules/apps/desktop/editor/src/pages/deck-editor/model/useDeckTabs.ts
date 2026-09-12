@@ -135,12 +135,12 @@ export function useDeckTabs(
 
   const kept: Store = {
     has: (id) => store.getOpenIds().includes(id),
-    where: (id) => store.getPath(id),
+    getPath: (id) => store.getPath(id),
     getTitle: (id) => vaultAnswers.getTitle(store.getPath(id)),
-    asking: (id) => store.stale(id) !== null,
+    isAsking: (id) => store.stale(id) !== null,
     settle: (id) => store.settle(id),
     close: closeTabById,
-    holding: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,
+    getTabAt: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,
   }
 
   const tabbed = computed<ReadonlyMap<string, string>>(
@@ -184,14 +184,14 @@ export function useDeckTabs(
     for (const went of renames) {
       vaultAnswers.moveFile(went.from, went.to)
     }
-    store.changed(paths, renames)
+    store.applyPathChanges(paths, renames)
     wiring.applyPathChanges(paths, renames)
   }
 
   return {
     kind,
     createDeckTabState,
-    changed: applyPathChanges,
+    applyPathChanges,
     listStencils,
     getTitle: vaultAnswers.getTitle,
     kept,

@@ -16,7 +16,7 @@ func TestResamplingKeepsTheTone(t *testing.T) {
 		in[n] = float32(math.Sin(2 * math.Pi * hz * float64(n) / from))
 	}
 
-	out, err := resampled(t.Context(), in, from, sampleRate)
+	out, err := resample(t.Context(), in, from, sampleRate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestResamplingKeepsTheTone(t *testing.T) {
 // A recording already at the rate the models take is left alone.
 func TestResamplingWhatIsAlreadyRight(t *testing.T) {
 	in := []float32{1, 2, 3}
-	out, err := resampled(t.Context(), in, sampleRate, sampleRate)
+	out, err := resample(t.Context(), in, sampleRate, sampleRate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestResamplingStopsWhenAsked(t *testing.T) {
 	stop()
 
 	in := make([]float32, 44100*10)
-	if _, err := resampled(ctx, in, 44100, sampleRate); !errors.Is(err, context.Canceled) {
+	if _, err := resample(ctx, in, 44100, sampleRate); !errors.Is(err, context.Canceled) {
 		t.Errorf("stopping the resampling gave %v", err)
 	}
 }

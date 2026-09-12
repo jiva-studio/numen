@@ -71,13 +71,13 @@ var migrated = testsupport.NewTemplate(func(ctx context.Context, path string) er
 	return db.Close()
 })
 
-func opened(t *testing.T) *DB {
+func openDB(t *testing.T) *DB {
 	t.Helper()
-	return openedAt(t, filepath.Join(t.TempDir(), "index.db"))
+	return openDBAt(t, filepath.Join(t.TempDir(), "index.db"))
 }
 
-// openedAt is an index at the path given, holding both vaults and nothing else.
-func openedAt(t *testing.T, path string) *DB {
+// openDBAt is an index at the path given, holding both vaults and nothing else.
+func openDBAt(t *testing.T, path string) *DB {
 	t.Helper()
 	migrated.CopyTo(t, path)
 	db, err := Open(t.Context(), path)
@@ -123,6 +123,10 @@ func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
 	vectorise(t, db, vault, seed)
 }
 
+// testRecipe is the one recipe these tests embed under. A vector is kept under
+// the recipe that made it, so a question about one names it.
+const testRecipe = "model"
+
 // vectorise gives every chunk of a vault that has no vector one at the seed given.
 func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	t.Helper()
@@ -164,7 +168,7 @@ func hashOf(t *testing.T, db *DB, chunk int64) []byte {
 	return raw
 }
 
-func counted(t *testing.T, db *DB, statement string, args ...any) int {
+func countRows(t *testing.T, db *DB, statement string, args ...any) int {
 	t.Helper()
 	var n int
 	if err := db.read.QueryRowContext(t.Context(), statement, args...).Scan(&n); err != nil {
@@ -179,7 +183,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 	// query is the other vault's own vector, so the wrong vault's rows are the
 	// nearer ones and a lost filter puts them first.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0xfe)
 	book(t, db, second, "library/second.epub", 0xff)
 
@@ -215,7 +219,7 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	// whole table: the vault is a filter on the match, and a query that forgets
 	// it answers with another vault's passages.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
 	book(t, db, second, "library/second.epub", 0xff)
 
@@ -249,7 +253,7 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 	// A small chunk is searched and the large chunk enclosing it is read, so a
 	// result arrives with enough text around it to be understood.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
 
 	queries := db.ChunkQueries()
@@ -290,7 +294,7 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 // it answered with.
 func TestAPassageSaysWhatItWasReadOutOf(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	source(t, db, first, "library/talk.epub", domain.KindBook, "opening words")
 	source(t, db, first, "talks/lecture.mp3", domain.KindRecording, "opening words")
 	source(t, db, first, "Entropy.md", domain.KindNote, "opening words")
@@ -352,13 +356,13 @@ func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	// Nothing cascades when a source is written again: the row survives, so its
 	// chunks are cleared by hand, and the rows in both virtual tables with them.
 
-	db := opened(t)
+	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
 
-	chunks := counted(t, db, `SELECT COUNT(*) FROM chunks`)
-	vectors := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
-	vec := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
-	fts := counted(t, db, `SELECT COUNT(*) FROM chunks_fts`)
+	chunks := countRows(t, db, `SELECT COUNT(*) FROM chunks`)
+	vectors := countRows(t, db, `SELECT COUNT(*) FROM vectors`)
+	vec := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`)
+	fts := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts`)
 	if chunks != 3 || vectors != 2 || vec != 2 || fts != 3 {
 		t.Fatalf("cutting once gave %d chunks, %d vectors, %d rows in the vector index, %d in the full-text index",
 			chunks, vectors, vec, fts)
@@ -366,16 +370,16 @@ func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 
 	book(t, db, first, "library/first.epub", 0x00)
 
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks`); got != chunks {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks`); got != chunks {
 		t.Errorf("%d chunks after cutting the same source twice, want %d", got, chunks)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != vectors {
 		t.Errorf("%d vectors after cutting the same source twice, want %d", got, vectors)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vec {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vec {
 		t.Errorf("%d rows in the vector index after cutting the same source twice, want %d", got, vec)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != fts {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != fts {
 		t.Errorf("%d rows in the full-text index after cutting the same source twice, want %d", got, fts)
 	}
 }
@@ -385,7 +389,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	// nothing cascades. Its chunks describe text that has changed, and one left
 	// behind sends a reader to an offset the file no longer has.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 
 	note := domain.Note{
 		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 14, ModTime: walked},
@@ -398,14 +402,14 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 
 	// A note is cut the way a book is: one large chunk over the whole of it, and
 	// the small chunks inside it that carry the vectors.
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NULL`); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NULL`); got != 1 {
 		t.Errorf("%d large chunks for one note", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NOT NULL`); got == 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NOT NULL`); got == 0 {
 		t.Fatal("a note has no small chunks, so nothing about it can be embedded")
 	}
 	vectorise(t, db, first, 0x00)
-	was := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
+	was := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 	if was == 0 {
 		t.Fatal("the note was not embedded, so this test would pass either way")
 	}
@@ -417,18 +421,18 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	}
 
 	// What is left is the note as it stands now, cut once.
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NULL`); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NULL`); got != 1 {
 		t.Errorf("%d large chunks after a note was rewritten", got)
 	}
-	if got := counted(t, db,
+	if got := countRows(t, db,
 		`SELECT COUNT(*) FROM chunks c WHERE c.parent_id IS NOT NULL
 		   AND c.parent_id NOT IN (SELECT id FROM chunks WHERE parent_id IS NULL)`); got != 0 {
 		t.Errorf("%d small chunks sit inside a large one that is gone", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d vectors describe a note that has been rewritten", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d rows in the vector index describe a note that has been rewritten", got)
 	}
 	// The words of the note as it stands now are what the full-text index holds.
@@ -444,7 +448,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	} else if len(stale) != 0 {
 		t.Errorf("the words of the note before it was rewritten still answer: %+v", stale)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM notes`); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM notes`); got != 1 {
 		t.Errorf("%d notes, want the one that was saved twice", got)
 	}
 }
@@ -454,7 +458,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 // never return.
 func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 
 	body := strings.Repeat("entropy is the measure of disorder in a closed system. ", 8)
 	note := domain.Note{
@@ -485,7 +489,7 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 	// The text is not stored, so a passage that outlives its source sends the
 	// reader to a file that is gone.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
 	book(t, db, second, "library/second.epub", 0xff)
 
@@ -508,20 +512,20 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 		t.Errorf("a removed book still answers by its words: %+v", words)
 	}
 	// The second vault is untouched: a removal names a vault as well as a path.
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 2 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 2 {
 		t.Errorf("%d rows in the vector index, want the second vault's two", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != 3 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != 3 {
 		t.Errorf("%d rows in the full-text index, want the second vault's three", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM sources`); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM sources`); got != 1 {
 		t.Errorf("%d sources, want the second vault's one", got)
 	}
 }
 
 func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 
 	note := domain.Note{
 		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 6, ModTime: walked},
@@ -542,13 +546,13 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	if err := db.Notes().Remove(ctx, first.ID, []string{note.Fingerprint.Path}); err != nil {
 		t.Fatal(err)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d rows in the vector index outlived the note they describe", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != 0 {
 		t.Errorf("%d rows in the full-text index outlived the note they describe", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM sources`); got != 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM sources`); got != 0 {
 		t.Errorf("%d sources outlived the note", got)
 	}
 }
@@ -558,7 +562,7 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	// comparing what the index holds against what is on disk. Every question about
 	// sources names a kind.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
 
 	note := domain.Note{
@@ -601,7 +605,7 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	if hashed != 0 {
 		t.Errorf("%d notes carry a content hash", hashed)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM sources WHERE hash IS NOT NULL`); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM sources WHERE hash IS NOT NULL`); got != 1 {
 		t.Errorf("%d sources carry a content hash, want the book", got)
 	}
 }
@@ -611,7 +615,7 @@ func TestAChunkCannotClaimAnotherVault(t *testing.T) {
 	// The vault a chunk carries is what a search constrains on, and the foreign
 	// key ties it to its source's vault.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
 
 	var source, mine, theirs int64
@@ -633,7 +637,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 	// repaired by different work: the file, the recipe that read it, and the
 	// model the vectors came from.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	queries := db.ChunkQueries()
 
 	// The file: a source the index holds and has not cut.
@@ -698,7 +702,7 @@ func TestAnAnswerAboutWhatOwesWorkResumes(t *testing.T) {
 	// A vault holds more chunks than one batch, and the question is asked again
 	// with the last id of the answer before it.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
 	if _, err := db.write.ExecContext(ctx, `DELETE FROM vectors`); err != nil {
 		t.Fatal(err)
@@ -727,7 +731,7 @@ func TestTheChildKeyOfAChunkIsIndexed(t *testing.T) {
 	// something a query plan shows: the delete is a subprogram of the parent's,
 	// so this asks the schema instead.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 
 	for column, want := range map[string]string{"parent_id": "chunks_by_parent", "source_id": "chunks_by_source"} {
 		if !leads(ctx, t, db, "chunks", column) {
@@ -759,7 +763,7 @@ func leads(ctx context.Context, t *testing.T, db *DB, table, column string) bool
 // never reached and a bar stops short of the end for ever.
 func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	vault := first
 
 	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
@@ -852,7 +856,7 @@ func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...str
 // while a pass is making vectors out of what it was told owed one a moment ago.
 func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 
 	cutInto(t, db, first, "library/kept.epub", "kept passage")
 	cutInto(t, db, first, "library/recut.epub", "the passage as it was")
@@ -883,17 +887,20 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 	// both, the one that went carries neither.
 	var gone int
 	for _, p := range owing {
-		held := counted(t, db, `SELECT count(*) FROM chunks WHERE id = ?`, p.Chunk)
+		held := countRows(t, db, `SELECT count(*) FROM chunks WHERE id = ?`, p.Chunk)
 		if held == 0 {
 			gone++
 		}
-		for _, half := range []string{
-			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`,
-			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`,
-		} {
-			if got := counted(t, db, half, p.Chunk); got != held {
-				t.Errorf("chunk %d is held %d times and answers %d to %s", p.Chunk, held, got, half)
-			}
+		if got := countRows(t, db,
+			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`, p.Chunk); got != held {
+			t.Errorf("chunk %d is held %d times and stands in %d rows of the coarse index",
+				p.Chunk, held, got)
+		}
+		if got := countRows(t, db, `SELECT count(*) FROM chunks c
+		                            JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
+		                            WHERE c.id = ?`, testRecipe, p.Chunk); got != held {
+			t.Errorf("chunk %d is held %d times and stands in %d rows of vectors",
+				p.Chunk, held, got)
 		}
 	}
 	if gone != 1 {
@@ -905,7 +912,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	// A nearest-neighbour query answers with k rows whatever was asked. What a
 	// vault holds nothing near is not an answer, and the floor is what says so.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	book(t, db, first, "library/first.epub", 0x00)
 	queries := db.ChunkQueries()
 
@@ -933,7 +940,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 	// several times what is asked for, and what leaves is the one the real
 	// vectors put first.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	cutInto(t, db, first, "library/coarse.epub", "the passage the bits prefer")
 	cutInto(t, db, first, "library/true.epub", "the passage the vectors prefer")
 
@@ -973,7 +980,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 // came back again is not bought a second time.
 func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	cutInto(t, db, first, "library/kept.epub", "the passage that was paid for")
 
 	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
@@ -1000,7 +1007,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Fatalf("%d vectors survived a rebuild of the chunks, want none", got)
 	}
 
@@ -1032,7 +1039,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 // similarity means nothing and the floor lets it through.
 func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	cutInto(t, db, first, "library/first.epub", "a passage two models read")
 	queries := db.ChunkQueries()
 
@@ -1083,7 +1090,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 // as one whose files were deleted, and a vector was bought.
 func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	cutInto(t, db, first, "library/edited.epub", "a passage that will be rewritten")
 	cutInto(t, db, first, "library/gone.epub", "a passage in a book that goes")
 
@@ -1113,7 +1120,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	if err := db.Chunks().SaveVectors(ctx, made); err != nil {
 		t.Fatal(err)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 2 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != 2 {
 		t.Fatalf("%d vectors were kept, want 2", got)
 	}
 
@@ -1121,13 +1128,13 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	if err := db.Chunks().RemoveSources(ctx, first.ID, "book", []string{"library/gone.epub"}); err != nil {
 		t.Fatal(err)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 2 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != 2 {
 		t.Errorf("%d vectors are left after a source went, want both kept", got)
 	}
 
 	// The book that was rewritten.
 	cutInto(t, db, first, "library/edited.epub", "a passage as it is written now")
-	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != 1 {
 		t.Errorf("%d vectors are left after the text was replaced, want 1", got)
 	}
 }
@@ -1138,7 +1145,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 // text. A source that stops holding it says nothing about the others.
 func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	shared := "the same passage, standing in two books"
 	cutInto(t, db, first, "library/one.epub", shared)
 	cutInto(t, db, first, "library/two.epub", shared)
@@ -1170,7 +1177,7 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 		t.Fatal(err)
 	}
 	// One text, one vector, whichever chunk asked for it.
-	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != 1 {
 		t.Fatalf("%d vectors were kept for one text, want 1", got)
 	}
 
@@ -1194,8 +1201,8 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 // and the width agree, what was carried was made by the model now in use, and
 // it is not bought a second time.
 
-// recognised puts in one source whose text a producer made.
-func recognised(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
+// saveRecognisedSource puts in one source whose text a producer made.
+func saveRecognisedSource(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
 	t.Helper()
 
 	if err := db.Chunks().SaveSource(t.Context(), vault.ID, chunk.Source{
@@ -1208,10 +1215,10 @@ func recognised(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
 // What a scan sweeps is its own vault. A source read in another vault is that
 // vault's, and this answer holds none of it.
 func TestRecognisedStaysInsideItsVault(t *testing.T) {
-	db := opened(t)
+	db := openDB(t)
 
-	recognised(t, db, first, "library/first.pdf", "hash-first")
-	recognised(t, db, second, "library/second.pdf", "hash-second")
+	saveRecognisedSource(t, db, first, "library/first.pdf", "hash-first")
+	saveRecognisedSource(t, db, second, "library/second.pdf", "hash-second")
 	book(t, db, first, "library/plain.epub", 1)
 
 	for _, c := range []struct {
@@ -1231,13 +1238,13 @@ func TestRecognisedStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-// sectioned is a book of three sections, where the words of a section's name
+// saveSectionedBook is a book of three sections, where the words of a section's name
 // are said once in its own opening and often in the section after it.
 //
 // This is the shape a chapter of a scanned book has: the chapter says its
 // subject once, in its heading, and a paragraph in the middle of the next
 // section says it four times.
-func sectioned(t *testing.T, db *DB, vault domain.Vault, path string) {
+func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 	t.Helper()
 	ctx := t.Context()
 	chunks := db.Chunks()
@@ -1279,8 +1286,8 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	// Asked where a book speaks about a thing, what a person wants is the
 	// section about it.
 	ctx := t.Context()
-	db := opened(t)
-	sectioned(t, db, first, "library/chaitanya.pdf")
+	db := openDB(t)
+	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
 	queries := db.ChunkQueries()
 
 	lexical, err := queries.Lexical(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
@@ -1317,8 +1324,8 @@ func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
 	// opens it. One section named twice is one section answering twice, and the
 	// second answer is the same place said again.
 	ctx := t.Context()
-	db := opened(t)
-	sectioned(t, db, first, "library/chaitanya.pdf")
+	db := openDB(t)
+	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
 
 	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
@@ -1331,9 +1338,9 @@ func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
 
 func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 	ctx := t.Context()
-	db := opened(t)
-	sectioned(t, db, first, "library/chaitanya.pdf")
-	sectioned(t, db, second, "library/chaitanya.pdf")
+	db := openDB(t)
+	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
+	saveSectionedBook(t, db, second, "library/chaitanya.pdf")
 
 	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
@@ -1348,7 +1355,7 @@ func TestASectionNameLeavesWithTheSourceItCameFrom(t *testing.T) {
 	// A chunk's number is handed to the next chunk that wants one, so a name
 	// left behind by a source that is gone answers for whatever takes it.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 	chunks := db.Chunks()
 
 	if err := chunks.SaveSource(ctx, first.ID, chunk.Source{
@@ -1397,8 +1404,8 @@ func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
 	// name is not dropped with the chunk. A section that is no longer there
 	// answering by name is a passage opening where nothing begins.
 	ctx := t.Context()
-	db := opened(t)
-	sectioned(t, db, first, "library/chaitanya.pdf")
+	db := openDB(t)
+	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
 
 	// Cut again, and this time nothing opens a section.
 	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "book", "library/chaitanya.pdf",
@@ -1424,7 +1431,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 	// and a place a field is dropped in silence. Everything below here can be
 	// right and a section still be unfindable.
 	ctx := t.Context()
-	db := opened(t)
+	db := openDB(t)
 
 	if err := db.Sources().SaveExtraction(ctx, first.ID, domain.SourceChunks{
 		Source: domain.Source{

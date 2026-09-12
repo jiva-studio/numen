@@ -104,7 +104,7 @@ func (c Catalogue) Themes() []Theme {
 			if err != nil {
 				continue
 			}
-			themes = append(themes, described(Preset, entry.Name(), string(text)))
+			themes = append(themes, describeTheme(Preset, entry.Name(), string(text)))
 		}
 	}
 	return append(themes, c.mine()...)
@@ -132,12 +132,12 @@ func (c Catalogue) mine() []Theme {
 		if err != nil {
 			continue
 		}
-		themes = append(themes, described(Mine, entry.Name(), text))
+		themes = append(themes, describeTheme(Mine, entry.Name(), text))
 	}
 	return themes
 }
 
-func described(shelf Shelf, filename, text string) Theme {
+func describeTheme(shelf Shelf, filename, text string) Theme {
 	title := strings.TrimSuffix(filename, Extension)
 	return Theme{
 		Name:   string(shelf) + ":" + title,

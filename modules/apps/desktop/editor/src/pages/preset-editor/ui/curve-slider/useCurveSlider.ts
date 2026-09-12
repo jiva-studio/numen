@@ -25,7 +25,7 @@ export interface CurveSliderProps {
 export function useCurveSlider(
   props: CurveSliderProps,
   emit: {
-    (event: 'moves', place: number): void
+    (event: 'move', place: number): void
     (event: 'settle'): void
   },
 ) {
@@ -132,12 +132,12 @@ export function useCurveSlider(
     event.preventDefault()
     picture.value?.focus()
     picture.value?.setPointerCapture(event.pointerId)
-    emit('moves', getPlaceUnder(event))
+    emit('move', getPlaceUnder(event))
   }
 
   function onPointerMove(event: PointerEvent): void {
     if (!picture.value?.hasPointerCapture(event.pointerId)) return
-    emit('moves', getPlaceUnder(event))
+    emit('move', getPlaceUnder(event))
   }
 
   function onPointerUp(event: PointerEvent): void {
@@ -150,7 +150,7 @@ export function useCurveSlider(
     const step = walkGrid(event.key, props.place, places.value)
     if (step === null) return
     event.preventDefault()
-    emit('moves', step)
+    emit('move', step)
   }
 
   function onKeyUp(event: KeyboardEvent): void {

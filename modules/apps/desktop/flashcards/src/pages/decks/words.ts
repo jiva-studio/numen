@@ -18,8 +18,8 @@ export const STOPPED = {
   noDay: 'by no day',
   /** The day it aimed at is behind us, named where the window holds it. */
   pastDay: 'the day has passed',
-  passed: (day: string) => `${dayWords(day)} has passed`,
-  noLoad: (day: string) => `no load on ${weekdayWords(day)}`,
+  passed: (day: string) => `${getDayWords(day)} has passed`,
+  noLoad: (day: string) => `no load on ${getWeekdayWords(day)}`,
   /** No day of the week carries any of the load, so there is no next day. */
   noWeek: 'no load on any day',
   /** Every card face here is unbegun, and the preset begins none a day. */
@@ -43,7 +43,7 @@ export const LEARNED = {
  *
  * It is the count the session itself will ask, so it is printed as it stands.
  */
-export const leftWords = (one: Preset): string => {
+export const getLeftWords = (one: Preset): string => {
   if (one.cards > 0) return many(one.cards, 'card')
   return isSpent(one) ? STOPPED.full : STOPPED.nothing
 }
@@ -79,15 +79,15 @@ export const getStoppedWords = (why: StopReason, settings: Settings | null, toda
  * What the goal of a preset comes to, in the few words a person reads at a
  * glance. A day is said as a person reads one, and not as the file writes it.
  */
-export const goalWords = (settings: Settings, today: string): string => {
+export const getGoalWords = (settings: Settings, today: string): string => {
   switch (settings.goal) {
     case 'retention':
       return `${percent(settings.retention)} remembered`
     case 'date': {
       if (!settings.byDate) return 'by no day'
       const left = daysBetween(today, settings.byDate)
-      if (left <= 0) return `by ${dayWords(settings.byDate)}`
-      return `${many(left, 'day')} to ${dayWords(settings.byDate)}`
+      if (left <= 0) return `by ${getDayWords(settings.byDate)}`
+      return `${many(left, 'day')} to ${getDayWords(settings.byDate)}`
     }
     case 'minutes':
       if (settings.minutesADay === 0) return STOPPED.noMinutes
@@ -98,9 +98,9 @@ export const goalWords = (settings: Settings, today: string): string => {
 /** A day as a person reads one, without the year they are already in. */
 const short = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' })
 
-const dayWords = (day: string): string => short.format(dayOf(day))
+const getDayWords = (day: string): string => short.format(dayOf(day))
 
 /** The day of the week a day falls on, by its name. */
 const weekday = new Intl.DateTimeFormat(undefined, { weekday: 'long' })
 
-const weekdayWords = (day: string): string => weekday.format(dayOf(day))
+const getWeekdayWords = (day: string): string => weekday.format(dayOf(day))

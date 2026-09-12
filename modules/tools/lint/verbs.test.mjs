@@ -1,12 +1,20 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { sources } from './source.mjs'
-import { baseline, declares, nouns, refused, takes, words } from './verbs.mjs'
+import { goSources, sources } from './source.mjs'
+import { baseline, declares, goBaseline, goDeclares, nouns, refused, takes, words } from './verbs.mjs'
 
 const declared = () => {
   const found = []
   for (const { at, text } of sources(['.ts', '.vue'])) {
     for (const name of declares(text)) found.push({ at, name })
+  }
+  return found
+}
+
+const goDeclared = () => {
+  const found = []
+  for (const { at, text } of goSources()) {
+    for (const name of goDeclares(text)) found.push({ at, name })
   }
   return found
 }
@@ -30,6 +38,31 @@ test('no function of the interface modules is named by a gerund or a participle'
   assert.ok(
     found.some(({ at }) => at.endsWith('apps/mobile/src/core.ts')),
     "the walk did not read the phone's core.ts, so the rule stops at the mobile border",
+  )
+})
+
+/**
+ * The same rule over the Go. A caller reads `day.GetName()` the way it reads
+ * `getName()`, and the core is where most of what the windows draw is decided.
+ */
+test('no function of the Go modules is named by a gerund or a participle', () => {
+  const found = goDeclared()
+  const wrong = found
+    .filter(({ name }) => refused(name) && !goBaseline.includes(name))
+    .map(({ at, name }) => `${at} declares ${name}`)
+  assert.deepEqual(wrong, [])
+
+  // A walk that read no declaration is a rule checked against nothing, and it
+  // passes. The phone is the furthest module, and the core the one that would
+  // be read first if a walk read only one.
+  assert.ok(found.length > 3000, `${found.length} functions read: the walk is not reading the modules`)
+  assert.ok(
+    found.some(({ at }) => at.endsWith('apps/mobile/bind/mobile.go')),
+    "the walk did not read the phone's mobile.go, so the rule stops at the mobile border",
+  )
+  assert.ok(
+    found.some(({ at }) => at.startsWith('modules/libs/core/domain/')),
+    'the walk did not read the core domain, so the rule stops at the core border',
   )
 })
 
@@ -66,8 +99,9 @@ test('what counts as a parameter', () => {
  */
 test('every word in the dictionary names something, and every baseline entry stands', () => {
   const found = declared()
+  const inGo = goDeclared()
   const said = new Set()
-  for (const { name } of found) said.add(words(name)[0])
+  for (const { name } of [...found, ...inGo]) said.add(words(name)[0])
   assert.deepEqual(
     Object.keys(nouns).filter((one) => !said.has(one)),
     [],
@@ -76,6 +110,12 @@ test('every word in the dictionary names something, and every baseline entry sta
   const names = new Set(found.map((one) => one.name))
   assert.deepEqual(
     baseline.filter((one) => !names.has(one)),
+    [],
+  )
+
+  const inGoNames = new Set(inGo.map((one) => one.name))
+  assert.deepEqual(
+    goBaseline.filter((one) => !inGoNames.has(one)),
     [],
   )
 })

@@ -32,19 +32,19 @@ interface CardHandle {
 
 export interface NoticeCardsOptions {
   /** What the window has to say, in the order it is drawn. */
-  readonly notices: () => readonly Notice[]
+  readonly getNotices: () => readonly Notice[]
   /** The corner itself, which a pointer and the keyboard are followed over. */
   readonly stack: Readonly<ShallowRef<HTMLElement | null>>
   /** How long work runs before it is worth a card. */
-  readonly wait: () => number
+  readonly getWait: () => number
   /** How many cards stand at once. */
-  readonly room: () => number
+  readonly getRoom: () => number
   /** What the moment is. */
-  readonly clock: () => number
+  readonly getNow: () => number
   /** Whether nobody is looking. */
-  readonly hidden: () => boolean
-  /** A card is finished with: read long enough, or put away. */
-  readonly gone: (id: string) => void
+  readonly isHidden: () => boolean
+  /** A card is finished with: read long enough, or dismissed. */
+  readonly dismiss: (id: string) => void
 }
 
 export interface NoticeCardsState {
@@ -59,7 +59,7 @@ export interface NoticeCardsState {
   /** A card as it is drawn, held under the notice it stands for. */
   readonly holdCard: (id: string, card: unknown) => void
   /** A card put away by hand. */
-  readonly put: (id: string) => Promise<void>
+  readonly dismissByHand: (id: string) => Promise<void>
   readonly onPointerOver: (event: PointerEvent) => void
   readonly onPointerOut: (event: PointerEvent) => void
   readonly onFocusIn: () => void
@@ -77,8 +77,8 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   /** How long the corner has been held for, and the moment a card is read against. */
   const { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut } = useNoticeStack(
     options.stack,
-    options.clock,
-    options.hidden,
+    options.getNow,
+    options.isHidden,
   )
 
   /** The ones whose caller has already been told they are finished with. */
@@ -93,11 +93,11 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
    */
   const sample = (): void => {
     beat()
-    moving.value = measureMovement(moving.value, options.notices(), now.value)
+    moving.value = measureMovement(moving.value, options.getNotices(), now.value)
   }
 
   watch(
-    options.notices,
+    options.getNotices,
     (all) => {
       sample()
       arrived.value = arrivals(arrived.value, all, read.value)
@@ -115,24 +115,24 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   }
 
   const drawn = computed(() =>
-    getShownNotices(options.notices(), arrived.value, away.value, read.value, options.wait()),
+    getShownNotices(options.getNotices(), arrived.value, away.value, read.value, options.getWait()),
   )
 
   const opened = ref(false)
   const folds = computed(() =>
-    foldNotices(drawn.value, opened.value ? drawn.value.length : options.room()),
+    foldNotices(drawn.value, opened.value ? drawn.value.length : options.getRoom()),
   )
 
   // Asking to see what is behind the rest is asked about what stands then. Once
   // it all fits again, the next stack over the room folds as any other would.
   watch(drawn, (all) => {
-    if (all.length <= options.room()) opened.value = false
+    if (all.length <= options.getRoom()) opened.value = false
   })
 
   /** Whether anything readable has not yet lasted long enough to be drawn. */
   const coming = computed(() => {
     const shown = new Set(drawn.value.map((one) => one.id))
-    return readable(options.notices()).some(
+    return readable(options.getNotices()).some(
       (one) => one.stay !== 'read' && !away.value.has(one.id) && !shown.has(one.id),
     )
   })
@@ -154,10 +154,10 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   })
 
   watchEffect(() => {
-    for (const id of getFinishedNotices(options.notices(), arrived.value, read.value)) {
+    for (const id of getFinishedNotices(options.getNotices(), arrived.value, read.value)) {
       if (forgotten.has(id)) continue
       forgotten.add(id)
-      options.gone(id)
+      options.dismiss(id)
     }
   })
 
@@ -173,12 +173,12 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
    * A card put away, and the keyboard left where it can go on putting them
    * away: on the card that takes the place of the one that went, or on the last.
    */
-  const put = async (id: string): Promise<void> => {
+  const dismissByHand = async (id: string): Promise<void> => {
     const at = folds.value.shown.findIndex((one) => one.id === id)
     const held = cards.get(id)?.way === document.activeElement
     forgotten.add(id)
     away.value = new Set([...away.value, id])
-    options.gone(id)
+    options.dismiss(id)
     if (!held || at < 0) return
     await nextTick()
     const left = folds.value.shown
@@ -192,7 +192,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     opened,
     leftOn,
     holdCard,
-    put,
+    dismissByHand,
     onPointerOver,
     onPointerOut,
     onFocusIn,

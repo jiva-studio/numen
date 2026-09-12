@@ -96,7 +96,7 @@ func TestAFileThatIsNoBook(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{
 		reflowed: "this is not an archive at all",
 	})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: looking(pdf.Documents{})}
+	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
 	api.show(vault)
 	t.Cleanup(api.Viewer.close)
 
@@ -138,7 +138,7 @@ func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
 	// A document the book was not read from is not one to ask for.
 	_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
 		Path: reflowed, Document: "OEBPS/gone.xhtml",
-		Seen: named(print),
+		Seen: newWireFingerprint(print),
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeNotFound {
 		t.Errorf("a document the book does not hold was answered %v", got)
@@ -150,7 +150,7 @@ func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
 func markupOf(t *testing.T, api *API, path, document string, print fingerprint) string {
 	t.Helper()
 	out, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
-		Path: path, Document: document, Seen: named(print),
+		Path: path, Document: document, Seen: newWireFingerprint(print),
 	}))
 	if err != nil {
 		t.Fatalf("asked for %s of %s and was refused: %v", document, path, err)
@@ -158,8 +158,8 @@ func markupOf(t *testing.T, api *API, path, document string, print fingerprint) 
 	return out.Msg.GetMarkup()
 }
 
-// named is a fingerprint as an ask over the schema carries it.
-func named(print fingerprint) *v1.Fingerprint {
+// newWireFingerprint is a fingerprint as an ask over the schema carries it.
+func newWireFingerprint(print fingerprint) *v1.Fingerprint {
 	return &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime}
 }
 
@@ -210,8 +210,8 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 // A book opening on an SVG cover is drawn from the picture the cover wraps, and
 // that address is one this window answers.
 func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
-	vault := testsupport.NewVault(t, map[string]string{reflowed: string(coveredBook(t))})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: looking(pdf.Documents{})}
+	vault := testsupport.NewVault(t, map[string]string{reflowed: string(newCoveredBook(t))})
+	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
 	api.show(vault)
 	t.Cleanup(api.Viewer.close)
 	handler := api.Serving(http.NotFoundHandler())
@@ -236,7 +236,7 @@ func TestAnAddressIntoABookThatChanged(t *testing.T) {
 	stale.size++
 
 	_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
-		Path: reflowed, Document: firstDoc, Seen: named(stale),
+		Path: reflowed, Document: firstDoc, Seen: newWireFingerprint(stale),
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeNotFound {
 		t.Errorf("the markup of a book that changed was answered %v", got)
@@ -255,7 +255,7 @@ func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 	for _, path := range []string{"../outside.epub", "/etc/passwd", "library/nothing.epub"} {
 		t.Run(path, func(t *testing.T) {
 			_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
-				Path: path, Document: firstDoc, Seen: named(print),
+				Path: path, Document: firstDoc, Seen: newWireFingerprint(print),
 			}))
 			if err == nil {
 				t.Errorf("the markup of %s was answered", path)
@@ -269,7 +269,7 @@ func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 
 // An archive is unpacked and parsed once, however many chapters are turned.
 func TestABookIsReadOnceHoweverManyChaptersAreTurned(t *testing.T) {
-	held := holding(mostRead, readIdleFor)
+	held := newBooks(mostRead, readIdleFor)
 	t.Cleanup(held.close)
 
 	var reads int
@@ -294,7 +294,7 @@ func TestABookIsReadOnceHoweverManyChaptersAreTurned(t *testing.T) {
 // Few are held: a book is the whole of its text in memory beside the archive it
 // was read out of.
 func TestOnlyTheBooksInFrontOfThePersonAreHeld(t *testing.T) {
-	held := holding(mostRead, readIdleFor)
+	held := newBooks(mostRead, readIdleFor)
 	t.Cleanup(held.close)
 
 	raw := bookOf(t)
@@ -312,7 +312,7 @@ func TestOnlyTheBooksInFrontOfThePersonAreHeld(t *testing.T) {
 // A caller that ran out of patience is told the book is busy, and the reading
 // goes on and is there for the next ask.
 func TestABookThatIsStillBeingReadIsBusy(t *testing.T) {
-	held := holding(mostRead, readIdleFor)
+	held := newBooks(mostRead, readIdleFor)
 	t.Cleanup(held.close)
 
 	gate := make(chan struct{})
@@ -341,7 +341,7 @@ func TestABookThatIsStillBeingReadIsBusy(t *testing.T) {
 // A book nobody has asked about for a while is let go: what a book holds is
 // memory.
 func TestABookNobodyIsReadingIsLetGo(t *testing.T) {
-	held := holding(mostRead, time.Millisecond)
+	held := newBooks(mostRead, time.Millisecond)
 	t.Cleanup(held.close)
 
 	print := fingerprint{path: reflowed, size: 1}
@@ -387,7 +387,7 @@ func openBooks(held *books) int {
 func readFrom(t *testing.T) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(bookOf(t))})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: looking(pdf.Documents{})}
+	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
 	api.show(vault)
 	t.Cleanup(api.Viewer.close)
 	return api, api.Serving(http.NotFoundHandler())
@@ -400,7 +400,7 @@ func pictureOf(path, entry string, print fingerprint) string {
 	for at, one := range parts {
 		parts[at] = url.PathEscape(one)
 	}
-	return fmt.Sprintf("%s/%s?%s", assetOf(path), strings.Join(parts, "/"), printing(print))
+	return fmt.Sprintf("%s/%s?%s", assetOf(path), strings.Join(parts, "/"), formatFingerprint(print))
 }
 
 // whatBook is what the book is, as the window is told it.
@@ -427,7 +427,7 @@ func partsOf(told *v1.GetBookResponse) []string {
 // in the text and in what the picture is described as.
 func bookOf(t *testing.T) []byte {
 	t.Helper()
-	return archived(t, map[string]string{
+	return newArchive(t, map[string]string{
 		"mimetype": "application/epub+zip",
 		"META-INF/container.xml": `<?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -462,11 +462,11 @@ func bookOf(t *testing.T) []byte {
 	})
 }
 
-// coveredBook is an EPUB whose spine opens on an SVG cover drawn around a
+// newCoveredBook is an EPUB whose spine opens on an SVG cover drawn around a
 // picture the archive carries.
-func coveredBook(t *testing.T) []byte {
+func newCoveredBook(t *testing.T) []byte {
 	t.Helper()
-	return archived(t, map[string]string{
+	return newArchive(t, map[string]string{
 		"mimetype": "application/epub+zip",
 		"META-INF/container.xml": `<?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -493,9 +493,9 @@ func coveredBook(t *testing.T) []byte {
 	})
 }
 
-// archived writes the files into one archive, the mimetype first because the
+// newArchive writes the files into one archive, the mimetype first because the
 // specification asks for it.
-func archived(t *testing.T, parts map[string]string) []byte {
+func newArchive(t *testing.T, parts map[string]string) []byte {
 	t.Helper()
 	var out bytes.Buffer
 	archive := zip.NewWriter(&out)

@@ -117,8 +117,8 @@ func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error
 	return s.asked.Embed(ctx, texts)
 }
 
-// turnedDown is how many askings it has turned down.
-func (s *sulking) turnedDown() int {
+// getTurnedDown is how many askings it has turned down.
+func (s *sulking) getTurnedDown() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.turned
@@ -145,7 +145,7 @@ type walking struct {
 	walks atomic.Int64
 }
 
-func walked() *walking { return &walking{VaultReaders: filesystem.VaultReaders{}} }
+func newWalking() *walking { return &walking{VaultReaders: filesystem.VaultReaders{}} }
 
 func (w *walking) Open(v domain.Vault) (port.VaultReader, error) {
 	reader, err := w.VaultReaders.Open(v)
@@ -165,9 +165,9 @@ func (r counts) Walk(ctx context.Context, fn func(domain.Fingerprint) error) err
 	return r.VaultReader.Walk(ctx, fn)
 }
 
-// vectored is how many of the vault's chunks can carry a vector and how many
+// getVectorProgress is how many of the vault's chunks can carry a vector and how many
 // carry one from the model in use.
-func vectored(t *testing.T, f *behind, model port.Embedder) (held, embedded int64) {
+func getVectorProgress(t *testing.T, f *behind, model port.Embedder) (held, embedded int64) {
 	t.Helper()
 	held, embedded, err := f.index.Progress().Progress(t.Context(), f.vault.ID, model.Model().Recipe())
 	if err != nil {
@@ -180,7 +180,7 @@ func vectored(t *testing.T, f *behind, model port.Embedder) (held, embedded int6
 // owe their vectors from the moment they are written.
 func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	watcher := byHand()
-	readers := walked()
+	readers := newWalking()
 	model := &asked{dims: 64}
 
 	f := openingWith(t, map[string]string{
@@ -188,7 +188,7 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	}, watcher, readers, model, 20*time.Millisecond)
 
 	eventually(t, "the note was never embedded at all", func() bool {
-		held, embedded := vectored(t, f, model)
+		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded
 	})
 	walks := readers.walks.Load()
@@ -197,7 +197,7 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	tells(t, watcher, "Note.md")
 
 	eventually(t, "the note stayed out of search by meaning", func() bool {
-		held, embedded := vectored(t, f, model)
+		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded && model.saw(after[0])
 	})
 	if got := readers.walks.Load(); got != walks {
@@ -212,7 +212,7 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	const saves = 8
 
 	watcher := byHand()
-	readers := walked()
+	readers := newWalking()
 	model := &asked{dims: 64}
 
 	f := openingWith(t, map[string]string{
@@ -220,7 +220,7 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	}, watcher, readers, model, time.Second)
 
 	eventually(t, "the note was never embedded at all", func() bool {
-		held, embedded := vectored(t, f, model)
+		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded
 	})
 	first := model.times()
@@ -233,7 +233,7 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	}
 
 	eventually(t, "the saves were never embedded", func() bool {
-		held, embedded := vectored(t, f, model)
+		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded && model.saw(after[0])
 	})
 
@@ -255,13 +255,13 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 
 	f := openingWith(t, map[string]string{
 		"Note.md": noteWith(before, 200),
-	}, unwatchable{}, walked(), model, 20*time.Millisecond)
+	}, unwatchable{}, newWalking(), model, 20*time.Millisecond)
 
-	eventually(t, "the model was never asked at all", func() bool { return model.turnedDown() > 0 })
+	eventually(t, "the model was never asked at all", func() bool { return model.getTurnedDown() > 0 })
 	if why := f.api.Unwatched.Why(); why == "" {
 		t.Fatal("a vault whose watch never started is shown as followed")
 	}
-	held, embedded := vectored(t, f, model)
+	held, embedded := getVectorProgress(t, f, model)
 	if held == 0 || embedded > 0 {
 		t.Fatalf("%d of %d chunks carry a vector with nothing saved yet", embedded, held)
 	}
@@ -271,7 +271,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	save(t, f, "Note.md", prose(after, 240))
 
 	eventually(t, "what was saved stayed out of search by meaning", func() bool {
-		held, embedded := vectored(t, f, model)
+		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded && model.saw(after[0])
 	})
 }
@@ -294,7 +294,7 @@ func TestANoteWrittenAfterTheScanFailedIsEmbedded(t *testing.T) {
 	tells(t, watcher, "Note.md")
 
 	eventually(t, "what was written stayed out of search by meaning", func() bool {
-		held, embedded := vectored(t, f, model)
+		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded && model.saw(after[0])
 	})
 }

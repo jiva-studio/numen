@@ -15,5 +15,5 @@ func TestEveryShelfIsWrittenFromOne(t *testing.T) {
 	testsupport.Produced(t, map[v1.Shelf]Shelf{
 		v1.Shelf_SHELF_PRESET: Preset,
 		v1.Shelf_SHELF_MINE:   Mine,
-	}, shelved)
+	}, encodeShelf)
 }

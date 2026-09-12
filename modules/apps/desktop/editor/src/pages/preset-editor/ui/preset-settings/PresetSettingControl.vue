@@ -135,7 +135,7 @@ function getFieldCount(field: Field): number | null {
         :aria-labelledby="`preset-${field}`"
         class="preset-settings__slider"
         @update:model-value="(share: number) => onUpdateSlider(field, share)"
-        @settles="onFieldSettle"
+        @settle="onFieldSettle"
       />
       <span class="preset-settings__percent" data-preset="percent">{{
         words.percent(settings.backlog)
@@ -146,7 +146,7 @@ function getFieldCount(field: Field): number | null {
       :days="week"
       :levels="levels"
       :aria-labelledby="`preset-${field}`"
-      @chooses="onSelectLoad"
+      @choose="onSelectLoad"
     />
     <Switch
       v-else-if="field === 'evenLoad'"
@@ -162,7 +162,7 @@ function getFieldCount(field: Field): number | null {
       :aria-labelledby="`preset-${field}`"
       class="preset-settings__number"
       @update:model-value="(value: number | null) => onFieldType(field, value)"
-      @settles="onFieldSettle"
+      @settle="onFieldSettle"
     />
   </span>
 </template>

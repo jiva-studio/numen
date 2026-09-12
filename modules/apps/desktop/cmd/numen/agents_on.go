@@ -65,7 +65,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 		Addr:       addr,
 		Announcing: true,
 		Root:       root,
-		Drafting:   drafting(opened),
+		Drafting:   makeDrafting(opened),
 		Out:        out,
 	})
 	if err != nil {
@@ -82,9 +82,9 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 	return served.Close, nil
 }
 
-// drafting is how a change the agent is making reaches the window before it
+// makeDrafting is how a change the agent is making reaches the window before it
 // lands. Where a stretch stands is the vault's to say.
-func drafting(opened *editor.Installation) claudecode.Drafting {
+func makeDrafting(opened *editor.Installation) claudecode.Drafting {
 	reading := opened.Notes().Read
 	return claudecode.Drafting{
 		Report: func(ctx context.Context, said domain.Edit) {

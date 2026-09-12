@@ -34,9 +34,9 @@ export interface NamingDeps<Why extends Objection> {
 /** What naming answers: what a box holds, what is wrong with it, and the gestures. */
 export interface NamingState<Why extends Objection> {
   /** What is in the box: the name it carries, or what is being typed over it. */
-  readonly text: (over: string) => string
+  readonly getText: (over: string) => string
   /** Why what is in the box cannot be used, and nothing while it can. */
-  readonly objection: (over: string) => Why | null
+  readonly getObjection: (over: string) => Why | null
   /** Something was typed into the box. */
   readonly setDraft: (over: string, text: string) => void
   /** What was typed is committed, and nothing where it objects or says what it said. */
@@ -55,14 +55,14 @@ export function useNaming<Why extends Objection>(deps: NamingDeps<Why>): NamingS
     return held?.over === over ? held.text : null
   }
 
-  const text = (over: string): string => getDraft(over) ?? deps.getName(over)
+  const getText = (over: string): string => getDraft(over) ?? deps.getName(over)
 
   const check = (over: string): NameCheckResult<Why> | null => {
     const said = getDraft(over)
     return said === null ? null : deps.checkName(said, deps.getTakenNames(over))
   }
 
-  const objection = (over: string): Why | null => check(over)?.objection ?? null
+  const getObjection = (over: string): Why | null => check(over)?.objection ?? null
 
   const setDraft = (over: string, text: string): void => {
     draft.value = { over, text }
@@ -90,5 +90,5 @@ export function useNaming<Why extends Objection>(deps: NamingDeps<Why>): NamingS
     }
   }
 
-  return { text, objection, setDraft, commit, onKey }
+  return { getText, getObjection, setDraft, commit, onKey }
 }

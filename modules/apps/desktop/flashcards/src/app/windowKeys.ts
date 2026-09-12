@@ -20,17 +20,17 @@ export type WindowScreen = 'vaults' | 'decks' | 'session'
 /** What the keys ask of the window: what it is showing, and what it can do. */
 export interface WindowKeysDeps {
   /** Which screen is on. */
-  readonly screen: () => WindowScreen
+  readonly getScreen: () => WindowScreen
   /** The vaults, in the order they are drawn. */
-  readonly vaults: () => readonly VaultCardsDue[]
+  readonly getVaults: () => readonly VaultCardsDue[]
   /** The vault whose decks are open, and nothing before one is. */
-  readonly chosen: () => VaultCardsDue | null
+  readonly getChosenVault: () => VaultCardsDue | null
   /** The preset each deck is scheduled by, by the path the deck is filed under. */
-  readonly byDeck: () => ReadonlyMap<string, Preset>
+  readonly getPresetsByDeck: () => ReadonlyMap<string, Preset>
   /** Whether the answer is already showing. */
-  readonly shown: () => boolean
+  readonly isShown: () => boolean
   /** Which of the card and the two panels beside it the window is showing. */
-  readonly showing: () => 'reading' | 'here' | 'asking'
+  readonly getShowing: () => 'reading' | 'here' | 'asking'
   /** Into a vault. */
   readonly choose: (vault: string) => void
   /** Sit down to one deck, or to the whole vault under an empty path. */
@@ -64,7 +64,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
    * arrived carries no letter, and the letter standing at it opens nothing.
    */
   const handleVaultKey = (press: KeyboardEvent) => {
-    const vaults = deps.vaults()
+    const vaults = deps.getVaults()
     const at = getVaultForKey(press, vaults.length)
     const one = at === null ? undefined : vaults[at]
     if (!one || !one.counted) return
@@ -84,7 +84,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
         break
       case 'deck': {
         const deck = vault.decks[asked.at]
-        if (deck && canStart(deck, deps.byDeck())) deps.start(deck.deck)
+        if (deck && canStart(deck, deps.getPresetsByDeck())) deps.start(deck.deck)
         break
       }
       case 'back':
@@ -95,9 +95,9 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
 
   const handleSessionKey = (press: KeyboardEvent) => {
     const asked = getSessionKeyIntent(press, {
-      shown: deps.shown(),
-      asking: deps.showing() === 'asking',
-      reading: deps.showing() === 'reading',
+      shown: deps.isShown(),
+      asking: deps.getShowing() === 'asking',
+      reading: deps.getShowing() === 'reading',
     })
     if (!asked) return
     if (isSwallowed(asked)) press.preventDefault()
@@ -125,17 +125,17 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
         deps.scrollPage(asked.back)
         break
       case 'shut':
-        if (deps.showing() === 'asking') deps.closeAgent()
+        if (deps.getShowing() === 'asking') deps.closeAgent()
         else deps.closeNotes()
         break
     }
   }
 
   const handleKey = (press: KeyboardEvent) => {
-    const on = deps.screen()
+    const on = deps.getScreen()
     if (on === 'vaults') return handleVaultKey(press)
     if (on === 'decks') {
-      const vault = deps.chosen()
+      const vault = deps.getChosenVault()
       return vault ? handleDeckKey(press, vault) : undefined
     }
     if (on === 'session') handleSessionKey(press)

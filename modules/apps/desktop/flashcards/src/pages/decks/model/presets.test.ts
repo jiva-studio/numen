@@ -7,7 +7,7 @@ import type { PresetsClient } from '../api/presets'
 import { canStart, isSpent, through } from '../lib/progress'
 import { CLOSES_NOTHING } from '../types'
 import type { Budget, Preset, Settings, SettingsMessage } from '../types'
-import { getStoppedWords, goalWords, leftWords, STOPPED } from '../words'
+import { getGoalWords, getLeftWords, getStoppedWords, STOPPED } from '../words'
 import type { BudgetKeys, PresetCardsDue, VaultCardsDue } from '@/entities/vault'
 
 const settings = (fields: Partial<Settings> = {}): Settings => ({
@@ -162,22 +162,22 @@ describe('why a preset schedules nothing, in words', () => {
 
 describe('what a goal comes to in words', () => {
   it('says how long a day runs', () => {
-    expect(goalWords(settings({ minutesADay: 20 }), '2026-09-05')).toBe('20 minutes a day')
-    expect(goalWords(settings({ minutesADay: 1 }), '2026-09-05')).toBe('1 minute a day')
-    expect(goalWords(settings({ minutesADay: 0 }), '2026-09-05')).toBe('no budget in time')
+    expect(getGoalWords(settings({ minutesADay: 20 }), '2026-09-05')).toBe('20 minutes a day')
+    expect(getGoalWords(settings({ minutesADay: 1 }), '2026-09-05')).toBe('1 minute a day')
+    expect(getGoalWords(settings({ minutesADay: 0 }), '2026-09-05')).toBe('no budget in time')
   })
 
   it('says the share asked of memory in hundredths', () => {
-    expect(goalWords(settings({ goal: 'retention', retention: 0.9 }), '2026-09-05')).toBe(
+    expect(getGoalWords(settings({ goal: 'retention', retention: 0.9 }), '2026-09-05')).toBe(
       '90% remembered',
     )
-    expect(goalWords(settings({ goal: 'retention', retention: 0.85 }), '2026-09-05')).toBe(
+    expect(getGoalWords(settings({ goal: 'retention', retention: 0.85 }), '2026-09-05')).toBe(
       '85% remembered',
     )
   })
 
   it('says the day, and how far off it is', () => {
-    const said = goalWords(
+    const said = getGoalWords(
       settings({ goal: 'date', byDate: '2026-09-30' }),
       '2026-09-12',
     )
@@ -268,18 +268,18 @@ describe('what starting a session on a preset would ask', () => {
   // The count is what the session will put in front of a person, so it is
   // printed as it stands, under every goal.
   it('is the count itself, whatever budget the preset keeps', () => {
-    expect(leftWords(preset({ cards: 34 }))).toBe('34 cards')
-    expect(leftWords(preset({ cards: 34, budget: budget({ minutes: 0 }) }))).toBe('34 cards')
-    expect(leftWords(preset({ cards: 1 }))).toBe('1 card')
+    expect(getLeftWords(preset({ cards: 34 }))).toBe('34 cards')
+    expect(getLeftWords(preset({ cards: 34, budget: budget({ minutes: 0 }) }))).toBe('34 cards')
+    expect(getLeftWords(preset({ cards: 1 }))).toBe('1 card')
   })
 
   // A tile with nothing to offer says why, as the deck rows under it do.
   it('says the day is full where the budget is what left it nothing', () => {
-    expect(leftWords(preset({ cards: 0, answered: 55, took: 20 }))).toBe('the day is full')
+    expect(getLeftWords(preset({ cards: 0, answered: 55, took: 20 }))).toBe('the day is full')
   })
 
   it('says nothing fell due where the day held none of its cards', () => {
-    expect(leftWords(preset({ cards: 0, answered: 0, took: 0 }))).toBe('nothing today')
+    expect(getLeftWords(preset({ cards: 0, answered: 0, took: 0 }))).toBe('nothing today')
   })
 })
 

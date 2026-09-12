@@ -18,7 +18,7 @@ import { AgentPanel, NotesPanel, Session, SessionSummary } from '@/pages/session
 import { VERSION } from '@/shared/version'
 import { useWindow } from './window'
 
-const { on, notices, putAway, vaults, decks, session } = useWindow()
+const { on, notices, dismissNotice, vaults, decks, session } = useWindow()
 </script>
 
 <template>
@@ -67,7 +67,7 @@ const { on, notices, putAway, vaults, decks, session } = useWindow()
       @read="session.toggleNotes"
     >
       <template #reading>
-        <NotesPanel :held="session.notesPanel" />
+        <NotesPanel ref="page" :held="session.notesPanel" />
       </template>
       <template #panel>
         <AgentPanel :held="session.agentPanel" />
@@ -76,7 +76,7 @@ const { on, notices, putAway, vaults, decks, session } = useWindow()
   </main>
 
   <!-- What the window has to say, in the corner every window says it in. -->
-  <Notices :notices="notices" @gone="putAway" />
+  <Notices :notices="notices" @dismiss="dismissNotice" />
 </template>
 
 <style scoped>

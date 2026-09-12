@@ -44,11 +44,11 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     getInitialOpenPath: async () => ({ path: 'Opening.md' }),
     state: async () => settled,
     agentUnreachable: async () => '',
-    changes: async function* () {},
-    focus: async function* () {},
+    watchVaultChanges: async function* () {},
+    watchFocus: async function* () {},
     writeOpenTabs: async () => {},
-    editing: async function* () {},
-    tasks: async function* () {
+    watchEdits: async function* () {},
+    watchTasks: async function* () {
       await waitForever()
     },
     read: async () => ({ body: '', error: null }),
@@ -78,8 +78,8 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     updateSettings: async () => {},
     getSettingsFile: async () => ({ written: '{}', path: '/numen.json' }),
     saveSettingsFile: async () => ({ changed: false }),
-    quitting: async function* () {},
-    flushed: async () => {},
+    watchQuit: async function* () {},
+    reportFlush: async () => {},
     ...over,
   }
 }
@@ -111,7 +111,7 @@ describe('the stream of changes', () => {
   it('is taken up again when it ends', async () => {
     let streams = 0
     const core = fake({
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         streams++
         yield { paths: ['Note.md'], shouldReload: false, renamed: [] }
       },
@@ -133,10 +133,10 @@ describe('the stream of changes', () => {
   it('is taken up again when it fails, and says what happened', async () => {
     let streams = 0
     const core = fake({
-      changes: function* () {
+      watchVaultChanges: function* () {
         streams++
         throw new Error('connection lost')
-      } as unknown as Core['changes'],
+      } as unknown as Core['watchVaultChanges'],
     })
     const window = useWindowDisplay(core, {
       wait: async () => {
@@ -152,7 +152,7 @@ describe('the stream of changes', () => {
 
   it('says what changed, and waits for whatever is drawn from it', async () => {
     const core = fake({
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         yield { paths: ['Somewhere/Else.md'], shouldReload: false, renamed: [] }
       },
     })
@@ -165,7 +165,7 @@ describe('the stream of changes', () => {
 
   it('says a reload names nothing at all, so everything reads again', async () => {
     const core = fake({
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         yield { paths: ['Note.md'], shouldReload: true, renamed: [] }
       },
     })
@@ -178,7 +178,7 @@ describe('the stream of changes', () => {
 
   it('says where a note went, for whatever is showing it to follow', async () => {
     const core = fake({
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Note.md', to: 'Renamed.md' }] }
       },
     })
@@ -193,7 +193,7 @@ describe('the stream of changes', () => {
     let opens = 'Opening.md'
     const core = fake({
       getInitialOpenPath: async () => ({ path: opens }),
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         opens = 'Renamed.md'
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Opening.md', to: 'Renamed.md' }] }
       },
@@ -213,7 +213,7 @@ describe('the stream of changes', () => {
         asked++
         return { path: 'Opening.md' }
       },
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Other.md', to: 'Renamed.md' }] }
       },
     })
@@ -251,15 +251,15 @@ describe('another vault under this window', () => {
   const createReloadingCore = (state: Core['state'], ahead: readonly string[] = []) =>
     fake({
       state,
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         for (const path of ahead) yield { paths: [path], shouldReload: false, renamed: [] }
         yield { paths: [], shouldReload: true, renamed: [] }
         await waitForever()
       },
-      focus: async function* () {
+      watchFocus: async function* () {
         await waitForever()
       },
-      editing: async function* () {
+      watchEdits: async function* () {
         await waitForever()
       },
     })
@@ -322,7 +322,7 @@ describe('another vault under this window', () => {
 describe('a note asked for from outside the window', () => {
   it('is put in front of the person, wherever the window draws it', async () => {
     const core = fake({
-      focus: async function* () {
+      watchFocus: async function* () {
         yield { path: 'Wanted.md', spans: [] }
       },
     })
@@ -346,7 +346,7 @@ describe('a place inside a source asked for from outside the window', () => {
 
   it('opens the document it stands in, and asks for no note at all', async () => {
     const core = fake({
-      focus: async function* () {
+      watchFocus: async function* () {
         yield { path: 'library/mahabharata.epub', spans: [{ from: 40_512, to: 40_543 }] }
       },
     })
@@ -360,7 +360,7 @@ describe('a place inside a source asked for from outside the window', () => {
 
   it('opens the document at every place the focus names, the first of them first', async () => {
     const core = fake({
-      focus: async function* () {
+      watchFocus: async function* () {
         yield {
           path: 'library/mahabharata.epub',
           spans: [
@@ -381,7 +381,7 @@ describe('a place inside a source asked for from outside the window', () => {
 
   it('asks for the note itself where the focus names no run of a source', async () => {
     const core = fake({
-      focus: async function* () {
+      watchFocus: async function* () {
         yield { path: 'Wanted.md', spans: [{ from: 0, to: 0 }] }
       },
     })
@@ -476,16 +476,16 @@ describe('what the application is doing', () => {
 
   it('is what the stream last said, whole', async () => {
     const core = fake({
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         await waitForever()
       },
-      focus: async function* () {
+      watchFocus: async function* () {
         await waitForever()
       },
-      editing: async function* () {
+      watchEdits: async function* () {
         await waitForever()
       },
-      tasks: async function* () {
+      watchTasks: async function* () {
         yield [reading(16)]
         yield [reading(32)]
         await waitForever()
@@ -504,16 +504,16 @@ describe('what the application is doing', () => {
   it('takes the stream up again, and says nothing about having lost it', async () => {
     let opened = 0
     const core = fake({
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         await waitForever()
       },
-      focus: async function* () {
+      watchFocus: async function* () {
         await waitForever()
       },
-      editing: async function* () {
+      watchEdits: async function* () {
         await waitForever()
       },
-      tasks: async function* () {
+      watchTasks: async function* () {
         opened++
         if (opened === 1) throw new Error('the stream dropped')
         yield [reading(48)]
@@ -541,13 +541,13 @@ describe('what the application is doing', () => {
     // the list empties is the moment they are worth asking for.
     let asks = 0
     const core = fake({
-      changes: async function* () {
+      watchVaultChanges: async function* () {
         await waitForever()
       },
-      focus: async function* () {
+      watchFocus: async function* () {
         await waitForever()
       },
-      editing: async function* () {
+      watchEdits: async function* () {
         await waitForever()
       },
       state: async () => {
@@ -557,7 +557,7 @@ describe('what the application is doing', () => {
           coverage: { ...settled.coverage, chunkCount: BigInt(asks * 1000) },
         }
       },
-      tasks: async function* () {
+      watchTasks: async function* () {
         yield [reading(16)]
         yield []
         await waitForever()

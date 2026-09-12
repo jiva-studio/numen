@@ -63,7 +63,7 @@ func addNoteResolve(server *sdk.Server, core Core) {
 		type out = struct {
 			Paths []string `json:"paths"`
 		}
-		paths, err := core.Notes.Queries.Named(ctx, core.shown().Vault.ID, domain.LinkName(in.Name))
+		paths, err := core.Notes.Queries.Named(ctx, core.getShownVault().Vault.ID, domain.LinkName(in.Name))
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -95,7 +95,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxRefs {
 			return nil, out{}, fmt.Errorf("ask about at most %d notes at a time", maxRefs)
 		}
-		found, err := core.Notes.Queries.Notes(ctx, core.shown().Vault.ID, in.Paths)
+		found, err := core.Notes.Queries.Notes(ctx, core.getShownVault().Vault.ID, in.Paths)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -118,18 +118,20 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 			"here; `note_titles` answers that, and for less. What a note is joined to is " +
 			"not in here either; `link_list` answers that. The fingerprint that comes back is " +
 			"what `note_rewrite` wants: hand it back and the write is refused if the " +
-			"person changed the note in the meantime. A path that could not be read " +
-			"comes back under `errors` saying why, and the rest of the batch still " +
-			"comes back.",
+			"person changed the note in the meantime. A path that names nothing comes " +
+			"back under `missing` and one that could not be read under `errors` saying " +
+			"why, and the rest of the batch still comes back.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Paths []string `json:"paths" jsonschema:"the paths to read"`
 	}) (*sdk.CallToolResult, struct {
-		Notes  []Contents `json:"notes"`
-		Errors []Error    `json:"errors,omitempty"`
+		Notes   []Contents    `json:"notes"`
+		Missing []string      `json:"missing,omitempty"`
+		Errors  []ReadFailure `json:"errors,omitempty"`
 	}, error) {
 		type out = struct {
-			Notes  []Contents `json:"notes"`
-			Errors []Error    `json:"errors,omitempty"`
+			Notes   []Contents    `json:"notes"`
+			Missing []string      `json:"missing,omitempty"`
+			Errors  []ReadFailure `json:"errors,omitempty"`
 		}
 		if len(in.Paths) > maxBodies {
 			return nil, out{}, fmt.Errorf("read at most %d notes at a time", maxBodies)
@@ -140,7 +142,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 			if err := ctx.Err(); err != nil {
 				return nil, out{}, err
 			}
-			contents, err := read.Execute(ctx, core.shown().Vault, path)
+			contents, err := read.Execute(ctx, core.getShownVault().Vault, path)
 			if err != nil {
 				return nil, out{}, err
 			}
@@ -154,8 +156,10 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 					// makes this stale, and the next write is refused.
 					Fingerprint: fingerprintOf(contents.Fingerprint),
 				})
+			case note.Missing:
+				res.Missing = append(res.Missing, path)
 			default:
-				res.Errors = append(res.Errors, Error{Path: path, Why: why(contents)})
+				res.Errors = append(res.Errors, ReadFailure{Path: path, Why: why(contents)})
 			}
 		}
 		return nil, res, nil
@@ -176,7 +180,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 			Focus   Note        `json:"focus"`
 			Related []Neighbour `json:"related"`
 		}
-		found, err := core.Notes.Neighbourhood.Execute(ctx, core.shown().Vault, in.Path)
+		found, err := core.Notes.Neighbourhood.Execute(ctx, core.getShownVault().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -217,16 +221,16 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in NewNote) (*sdk.CallToolResult, CreateOutcome, error) {
 		size := len(in.Body)
 		for _, l := range in.Links {
-			size += carried(l)
+			size += countLinkBytes(l)
 		}
 		if size > maxBytes {
 			return nil, CreateOutcome{}, fmt.Errorf(
 				"a call writing %d bytes is more than this carries at once, which is %d", size, maxBytes)
 		}
 
-		created, err := core.Notes.Create.Execute(ctx, core.shown().Vault, note.NewNote{
+		created, err := core.Notes.Create.Execute(ctx, core.getShownVault().Vault, note.NewNote{
 			Title: in.Title, Body: in.Body, Path: in.Folder,
-			Links: written(in.Links),
+			Links: newLinks(in.Links),
 		})
 		// A path alongside an error means the file was written and something
 		// after it was not; the note is there under that name.
@@ -272,7 +276,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		}
 		// What the file became. A caller writing this note again presents it, and
 		// the one it read is behind by its own write.
-		written, err := core.Notes.Write.Execute(ctx, core.shown().Vault, in.Path, in.Body, ref)
+		written, err := core.Notes.Write.Execute(ctx, core.getShownVault().Vault, in.Path, in.Body, ref)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -313,7 +317,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		done, err := core.Notes.Replace.Execute(ctx, core.shown().Vault, in.Path, in.Match, in.Text, seen)
+		done, err := core.Notes.Replace.Execute(ctx, core.getShownVault().Vault, in.Path, in.Match, in.Text, seen)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -339,7 +343,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Path  string `json:"path" jsonschema:"the note to rename"`
 		Title string `json:"title" jsonschema:"what it is called from now on"`
 	}) (*sdk.CallToolResult, note.RenameResult, error) {
-		renamed, err := core.Notes.Rename.Execute(ctx, core.shown().Vault, in.Path, in.Title)
+		renamed, err := core.Notes.Rename.Execute(ctx, core.getShownVault().Vault, in.Path, in.Title)
 		return nil, renamed, err
 	})
 
@@ -366,7 +370,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			if err := ctx.Err(); err != nil {
 				return nil, out{}, err
 			}
-			moved, err := core.Notes.Move.Execute(ctx, core.shown().Vault, path, note.Into(in.Folder, path))
+			moved, err := core.Notes.Move.Execute(ctx, core.getShownVault().Vault, path, note.Into(in.Folder, path))
 			outcome := MoveOutcome{MoveResult: moved}
 			if err != nil {
 				outcome.MoveResult = note.MoveResult{From: path}
@@ -399,7 +403,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxRefs {
 			return nil, out{}, fmt.Errorf("remove at most %d notes at a time", maxRefs)
 		}
-		reader, err := core.Readers.Open(core.shown().Vault)
+		reader, err := core.Readers.Open(core.getShownVault().Vault)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -418,9 +422,9 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			var removed note.RemoveResult
 			var err error
 			if in.Destroy {
-				removed, err = core.Notes.Remove.Destroy(ctx, core.shown().Vault, path)
+				removed, err = core.Notes.Remove.Destroy(ctx, core.getShownVault().Vault, path)
 			} else {
-				removed, err = core.Notes.Remove.Execute(ctx, core.shown().Vault, path)
+				removed, err = core.Notes.Remove.Execute(ctx, core.getShownVault().Vault, path)
 			}
 			outcome := RemoveOutcome{RemoveResult: removed}
 			if err != nil {
@@ -450,9 +454,10 @@ type Contents struct {
 	Fingerprint string `json:"fingerprint" jsonschema:"hand this to note_rewrite to refuse a write over an edit you did not see"`
 }
 
-// Error is one path that came back with no prose behind it, and what stopped
-// it. A batch of ten notes with one export among them comes back with nine.
-type Error struct {
+// ReadFailure is one path that came back with no prose behind it, and what
+// stopped it. A batch of ten notes with one export among them comes back with
+// nine.
+type ReadFailure struct {
 	Path string `json:"path"`
 	Why  string `json:"why" jsonschema:"why this one was not read"`
 }

@@ -39,12 +39,12 @@ func FuzzRead(f *testing.F) {
 	// A file a copy stopped part way through, and one a byte of which was
 	// written over.
 	f.Add(whole[:len(whole)/2])
-	f.Add(flipped(whole, len(whole)/3))
+	f.Add(flipByte(whole, len(whole)/3))
 	// The central directory says one thing and the entry says another: the two
 	// names disagree, which is what a shop's re-zipper leaves behind.
-	f.Add(renamed(whole))
+	f.Add(renameEntry(whole))
 	// An entry whose header claims a size it has not got.
-	f.Add(oversized(whole))
+	f.Add(overstateEntrySize(whole))
 
 	// A book with no container, one with no package document, and one whose
 	// package document is not a package document.
@@ -68,8 +68,8 @@ func FuzzRead(f *testing.F) {
 	climbing["OEBPS/content.opf"] = bytes.ReplaceAll(
 		climbing["OEBPS/content.opf"], []byte(`href="first.xhtml"`), []byte(`href="../../first.xhtml"`))
 	climbing["../../first.xhtml"] = []byte(`<html><body><p>Out of the archive</p></body></html>`)
-	f.Add(zipped(f, climbing))
-	f.Add(zipped(f, map[string][]byte{
+	f.Add(buildReversedArchive(f, climbing))
+	f.Add(buildReversedArchive(f, map[string][]byte{
 		"mimetype": []byte("application/epub+zip"),
 		"META-INF/container.xml": []byte(`<?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -93,30 +93,30 @@ func FuzzRead(f *testing.F) {
 			    <CipherData><CipherReference URI="` + locked + `"/></CipherData>
 			  </EncryptedData>
 			</encryption>`)
-		f.Add(zipped(f, sealed))
+		f.Add(buildReversedArchive(f, sealed))
 	}
 
 	// A document saying it is written in one encoding and written in another.
 	lying := clone(parts)
 	lying["OEBPS/first.xhtml"] = []byte(
 		"<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n<html><body><p>Alpha</p></body></html>")
-	f.Add(zipped(f, lying))
+	f.Add(buildReversedArchive(f, lying))
 
 	// A document that is not well formed: a tag that never closes, and an
 	// entity that is no entity.
 	torn := clone(parts)
 	torn["OEBPS/second.xhtml"] = []byte(`<html><body><p>Delta<div><span>&nope; &#xZZ;`)
-	f.Add(zipped(f, torn))
+	f.Add(buildReversedArchive(f, torn))
 
 	// An entry of nothing but zeros, which deflates to a few hundred bytes and
 	// is read back as seventeen megabytes: a byte past what one document may
 	// spend. The bound is what refuses it.
 	bomb := clone(parts)
 	bomb["OEBPS/second.xhtml"] = make([]byte, 17<<20)
-	f.Add(zipped(f, bomb))
+	f.Add(buildReversedArchive(f, bomb))
 
 	// An archive that is no book, and nothing at all.
-	f.Add(zipped(f, map[string][]byte{"notes.txt": []byte("a zip that is no book")}))
+	f.Add(buildReversedArchive(f, map[string][]byte{"notes.txt": []byte("a zip that is no book")}))
 	f.Add([]byte(""))
 
 	f.Fuzz(func(t *testing.T, raw []byte) {
@@ -208,7 +208,7 @@ func FuzzRead(f *testing.F) {
 					t.Fatalf("offset %d was put under %q, which begins at %d",
 						offset, where.Part, where.PartOffset)
 				}
-				if !titled(book.Parts, where.Part, where.PartOffset) {
+				if !hasPart(book.Parts, where.Part, where.PartOffset) {
 					t.Fatalf("offset %d was put under %q at %d, which the book does not name",
 						offset, where.Part, where.PartOffset)
 				}
@@ -232,8 +232,8 @@ func holds(documents []epub.Document, at string, offset int) bool {
 	return false
 }
 
-// titled is whether the book names this part, at this offset.
-func titled(parts []epub.Part, title string, offset int) bool {
+// hasPart is whether the book names this part, at this offset.
+func hasPart(parts []epub.Part, title string, offset int) bool {
 	for _, part := range parts {
 		if part.Title == title && part.Offset == offset {
 			return true
@@ -251,8 +251,8 @@ func clone(parts map[string][]byte) map[string][]byte {
 	return made
 }
 
-// flipped is the file with one byte of it written over by another.
-func flipped(raw []byte, at int) []byte {
+// flipByte is the file with one byte of it written over by another.
+func flipByte(raw []byte, at int) []byte {
 	if len(raw) == 0 {
 		return raw
 	}
@@ -262,9 +262,9 @@ func flipped(raw []byte, at int) []byte {
 	return changed
 }
 
-// renamed is the archive with one entry named one thing in the central
+// renameEntry is the archive with one entry named one thing in the central
 // directory and another in the header the entry itself carries.
-func renamed(raw []byte) []byte {
+func renameEntry(raw []byte) []byte {
 	changed := make([]byte, len(raw))
 	copy(changed, raw)
 	if at := bytes.Index(changed, []byte("OEBPS/first.xhtml")); at >= 0 {
@@ -273,9 +273,9 @@ func renamed(raw []byte) []byte {
 	return changed
 }
 
-// oversized is the archive with one entry's central directory claiming far more
+// overstateEntrySize is the archive with one entry's central directory claiming far more
 // bytes than the entry holds.
-func oversized(raw []byte) []byte {
+func overstateEntrySize(raw []byte) []byte {
 	changed := make([]byte, len(raw))
 	copy(changed, raw)
 	// The uncompressed size stands twenty-four bytes into a central directory
@@ -301,11 +301,11 @@ func FuzzMarkup(f *testing.F) {
 	// elements the reader does not draw.
 	torn := clone(tinyParts(f))
 	torn["OEBPS/second.xhtml"] = []byte(`<html><body><p>Delta<div><span>&nope; &#xZZ;`)
-	f.Add(zipped(f, torn))
+	f.Add(buildReversedArchive(f, torn))
 	undrawn := clone(tinyParts(f))
 	undrawn["OEBPS/first.xhtml"] = []byte(
 		`<html><body><form><object><embed>Alpha</embed></object></form><iframe>Beta</iframe></body></html>`)
-	f.Add(zipped(f, undrawn))
+	f.Add(buildReversedArchive(f, undrawn))
 
 	f.Fuzz(func(t *testing.T, raw []byte) {
 		book, err := epub.Read(raw)
@@ -330,11 +330,11 @@ func FuzzMarkup(f *testing.F) {
 					doc.Path, drawn.Offset, drawn.Length, doc.Offset, doc.Length)
 			}
 			want := book.Text[doc.Offset : doc.Offset+doc.Length]
-			if got := said(drawn.Nodes); got != want {
+			if got := getNodeText(drawn.Nodes); got != want {
 				t.Fatalf("the markup of %s says %d bytes and its text is %d",
 					doc.Path, len(got), len(want))
 			}
-			shaped(t, doc, drawn.Nodes)
+			checkNodeShape(t, doc, drawn.Nodes)
 			checkSpans(t, book.Text, doc, drawn.Nodes, doc.Offset+doc.Length)
 			checkHTML(t, book, doc, drawn)
 		}
@@ -352,7 +352,7 @@ func FuzzMarkup(f *testing.F) {
 // The runs say the document's text, in the order the markup writes them.
 func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, drawn *epub.Markup) {
 	t.Helper()
-	root := parsed(t, drawn.HTML())
+	root := parseHTML(t, drawn.HTML())
 	for _, name := range []string{
 		"script", "style", "link", "meta", "iframe", "frame", "object", "embed",
 		"form", "input", "button", "base", "svg", "math", "template",
@@ -405,9 +405,9 @@ func schemeOf(said string) string {
 	return head
 }
 
-// shaped holds every node to being one thing: an element carries a name and
+// checkNodeShape holds every node to being one thing: an element carries a name and
 // holds what is under it, and a run carries text and holds nothing.
-func shaped(t *testing.T, doc epub.Document, nodes []epub.Node) {
+func checkNodeShape(t *testing.T, doc epub.Document, nodes []epub.Node) {
 	t.Helper()
 	for _, node := range nodes {
 		if node.Name != "" && node.Text != "" {
@@ -416,6 +416,6 @@ func shaped(t *testing.T, doc epub.Document, nodes []epub.Node) {
 		if node.Name == "" && len(node.Children) != 0 {
 			t.Fatalf("a run of text in %s holds %d elements", doc.Path, len(node.Children))
 		}
-		shaped(t, doc, node.Children)
+		checkNodeShape(t, doc, node.Children)
 	}
 }

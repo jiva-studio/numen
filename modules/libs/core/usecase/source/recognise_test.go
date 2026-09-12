@@ -207,7 +207,7 @@ func recogniser(t *testing.T, says string) (Recognise, domain.Vault, *store, *sh
 // reading is a Recognise over a vault holding a document printed as these pages.
 func reading(t *testing.T, says string, pages [][]string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
 	t.Helper()
-	raw := printedAs(pages)
+	raw := printPages(pages)
 	shelved := newLibrary()
 	shelved.hold(documentPath, domain.KindBook, raw, 1)
 	v := first
@@ -403,7 +403,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 }
 
 // documentHash is the hash a reading of the document under test is kept under.
-func documentHash() string { return text.Fingerprint(printedAs(outline)) }
+func documentHash() string { return text.Fingerprint(printPages(outline)) }
 
 // reads checks that every coordinate names the words it was read from, in the
 // prose the artifact holds.

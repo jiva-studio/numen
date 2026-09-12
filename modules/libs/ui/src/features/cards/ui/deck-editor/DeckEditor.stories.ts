@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import DeckEditor from './DeckEditor.vue'
-import { blanks, HEAD, type DeckSection, type DeckCard, type Wrong } from '../../lib/deck'
+import { getBlanks, HEAD, type DeckSection, type DeckCard, type Wrong } from '../../lib/deck'
 import { getDeclaredFields, type InsertionPoint } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
 
@@ -346,7 +346,7 @@ const meta: Meta<Knobs> = {
         onAdd: (stencil: string) => {
           const id = `made00000${cards.value.length}`
           const cut = cuts.value.find((each) => each.name === stencil)
-          const filled = blanks(getDeclaredFields(cut?.fields ?? []))
+          const filled = getBlanks(getDeclaredFields(cut?.fields ?? []))
           cards.value = [...cards.value, { id, section: lastSection(), stencil, filled }]
         },
         onRemove: (id: string) => {

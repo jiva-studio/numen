@@ -32,7 +32,7 @@ func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
 	}
 	defer root.Close()
 
-	handle := opened(t, target)
+	handle := openHandle(t, target)
 	closed := make(chan struct{})
 	go func() {
 		defer close(closed)
@@ -55,9 +55,9 @@ func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
 	}
 }
 
-// opened holds a file the way another program does. The share leaves out
+// openHandle holds a file the way another program does. The share leaves out
 // deletion, and Windows refuses a rename over the file while the handle stands.
-func opened(t *testing.T, path string) windows.Handle {
+func openHandle(t *testing.T, path string) windows.Handle {
 	t.Helper()
 
 	name, err := windows.UTF16PtrFromString(path)
@@ -97,7 +97,7 @@ func TestASaveOverAHandleNothingLetsGoIsRefused(t *testing.T) {
 	}
 	defer root.Close()
 
-	handle := opened(t, target)
+	handle := openHandle(t, target)
 	defer windows.CloseHandle(handle)
 
 	if err := rename(root, ".Entropy.md.new", "Entropy.md"); err == nil {

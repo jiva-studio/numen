@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
-// counted is a table of the days of review, loaded with as many card faces on
-// each of these many days past an instant.
-func counted(d review.Day, at time.Time, on map[int]int) *review.DueByDay {
+// makeDueByDay is a table of the days of review, loaded with as many card faces
+// on each of these many days past an instant.
+func makeDueByDay(d review.Day, at time.Time, on map[int]int) *review.DueByDay {
 	out := review.Spreading(d)
 	for day, cards := range on {
 		for range cards {
@@ -41,7 +41,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 	// The Tuesday carries the whole load and nothing yet, which is more than
 	// the half day on the Friday, the three already on the Sunday and the one
 	// on the Monday.
-	on := counted(day, at, map[int]int{5: 0, 6: 0, 7: 3, 8: 1, 9: 0})
+	on := makeDueByDay(day, at, map[int]int{5: 0, 6: 0, 7: 3, 8: 1, 9: 0})
 	if got, want := p.Places(on, at, due), at.AddDate(0, 0, 9); !got.Equal(want) {
 		t.Errorf("the card was put on %s, want %s",
 			got.Format(time.RFC3339), want.Format(time.RFC3339))
@@ -53,7 +53,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 
 	// The day the scheduler named weighs as much as the Monday beside it, and
 	// keeps the card.
-	tied := counted(day, at, map[int]int{5: 3, 6: 0, 7: 0, 8: 0, 9: 1})
+	tied := makeDueByDay(day, at, map[int]int{5: 3, 6: 0, 7: 0, 8: 0, 9: 1})
 	if got := p.Places(tied, at, due); !got.Equal(due) {
 		t.Errorf("a card tied between its own day and the next was put on %s, want %s",
 			got.Format(time.RFC3339), due.Format(time.RFC3339))
@@ -65,7 +65,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 func TestHowLoadedADayOfReviewIs(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
-	on := counted(day, at, map[int]int{0: 2, 1: 1})
+	on := makeDueByDay(day, at, map[int]int{0: 2, 1: 1})
 
 	if got := on.On(at.Add(6 * time.Hour)); got != 2 {
 		t.Errorf("the day holding the two card faces carries %d, want 2", got)
@@ -85,15 +85,15 @@ func TestHowLoadedADayOfReviewIs(t *testing.T) {
 func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	by := review.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	at := learned(by, now, 600)
+	at := makeLearnedFaces(by, now, 600)
 	// No budget binds, so a day carries what falls on it and what is compared is
 	// where the reviews fall.
 	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost, Days: 60}
 	p := review.Preset{Goal: review.GoalRetention, ReviewsADay: 9999}
 
-	lumpy := ran(t, run, now, p, at, 0)
+	lumpy := runProjection(t, run, now, p, at, 0)
 	p.EvenLoad = true
-	even := ran(t, run, now, p, at, 0)
+	even := runProjection(t, run, now, p, at, 0)
 
 	// The first week pays the backlog, which stands where the answers already
 	// given left it.
@@ -131,8 +131,8 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 
 	face := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	stood := review.Give([]review.Answer{
-		answered("01A", face.Card, face.Face, "2026-10-10T08:00:00Z", review.Good),
-		answered("01B", face.Card, face.Face, "2026-10-13T08:00:00Z", review.Good),
+		makeAnswer("01A", face.Card, face.Face, "2026-10-10T08:00:00Z", review.Good),
+		makeAnswer("01B", face.Card, face.Face, "2026-10-13T08:00:00Z", review.Good),
 	}).Replay(day, review.By(by))[face]
 
 	// The answer is given ten days before the night the clock goes back, so the

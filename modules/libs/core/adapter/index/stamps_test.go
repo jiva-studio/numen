@@ -14,7 +14,7 @@ func TestTheSourceRowHoldsNanosecondsSinceTheEpoch(t *testing.T) {
 	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
 	const nanos = 1788433445123456789
 
-	db := opened(t)
+	db := openDB(t)
 	if err := db.Notes().Save(t.Context(), first.ID, []domain.Note{{
 		Fingerprint: domain.Fingerprint{
 			Path: "notes/Compost.md", Kind: domain.KindNote, Size: 12, ModTime: at,
@@ -48,7 +48,7 @@ func TestTheSourceRowHoldsNanosecondsSinceTheEpoch(t *testing.T) {
 // walked, or every scan indexes the whole vault again.
 func TestAFileStampedByAClockIsUnchangedThroughTheIndex(t *testing.T) {
 	at := time.Now()
-	db := opened(t)
+	db := openDB(t)
 
 	ref := domain.Fingerprint{
 		Path: "notes/Leaves.md", Kind: domain.KindNote, Size: 12, ModTime: at,

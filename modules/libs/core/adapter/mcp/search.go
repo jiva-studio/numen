@@ -75,7 +75,7 @@ func addNoteSearch(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		found, err := core.Notes.Search.Execute(ctx, core.shown().Vault, in.Query,
+		found, err := core.Notes.Search.Execute(ctx, core.getShownVault().Vault, in.Query,
 			search.Parameters{Kinds: of, Limit: in.Limit, Each: passagesEach})
 		if err != nil {
 			return nil, out{}, err

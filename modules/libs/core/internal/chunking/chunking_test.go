@@ -117,13 +117,13 @@ func TestCut(t *testing.T) {
 			if len(out) != test.wantLarge {
 				t.Errorf("large chunks: got %d, want %d", len(out), test.wantLarge)
 			}
-			if small := counted(out); small != test.wantSmall {
+			if small := countSmall(out); small != test.wantSmall {
 				t.Errorf("small chunks: got %d, want %d", small, test.wantSmall)
 			}
 			if got := locations(out); !equal(got, test.locations) {
 				t.Errorf("locations: got %v, want %v", got, test.locations)
 			}
-			obeyed(t, test.text, test.parts, test.sizes, out)
+			assertCutRules(t, test.text, test.parts, test.sizes, out)
 		})
 	}
 }
@@ -142,7 +142,7 @@ func TestCutOneLongLine(t *testing.T) {
 			t.Fatalf("large chunk of %d words, at %d", words, c.Start)
 		}
 	}
-	obeyed(t, text, nil, Sizes{}, out)
+	assertCutRules(t, text, nil, Sizes{}, out)
 }
 
 // TestCutOverlaps is the rule that two consecutive chunks share words and that
@@ -176,7 +176,7 @@ func TestCutOverlaps(t *testing.T) {
 	if shared == 0 {
 		t.Fatal("no two chunks shared words")
 	}
-	obeyed(t, text, parts, sizes, out)
+	assertCutRules(t, text, parts, sizes, out)
 }
 
 // TestCutKeepsSmallChunksUnderTheLimit is the rule that a small chunk stays
@@ -208,7 +208,7 @@ func TestCutKeepsSmallChunksUnderTheLimit(t *testing.T) {
 			if seen == 0 {
 				t.Fatal("no small chunks produced")
 			}
-			obeyed(t, test.text, nil, sizes, out)
+			assertCutRules(t, test.text, nil, sizes, out)
 		})
 	}
 }
@@ -250,10 +250,10 @@ func TestCutNothing(t *testing.T) {
 	}
 }
 
-// obeyed asserts what holds of every cut, whatever the sizes: a chunk names its
+// assertCutRules asserts what holds of every cut, whatever the sizes: a chunk names its
 // own words, sits under the chunk enclosing it, carries the name of the part it
 // is in, and never crosses one.
-func obeyed(t *testing.T, text string, parts []PartStart, sizes Sizes, out []Chunk) {
+func assertCutRules(t *testing.T, text string, parts []PartStart, sizes Sizes, out []Chunk) {
 	t.Helper()
 	s := sizes.Resolved()
 	bounds := boundaries(text, parts)
@@ -267,7 +267,7 @@ func obeyed(t *testing.T, text string, parts []PartStart, sizes Sizes, out []Chu
 		wordBounded(t, text, large)
 		if s.Large != Whole {
 			inside(t, bounds, large)
-			named(t, parts, large)
+			assertPartName(t, parts, large)
 			if words := len(strings.Fields(large.Slice(text))); words > s.Large {
 				t.Errorf("large chunk of %d words, bound %d", words, s.Large)
 			}
@@ -275,7 +275,7 @@ func obeyed(t *testing.T, text string, parts []PartStart, sizes Sizes, out []Chu
 		for _, small := range large.Small {
 			wordBounded(t, text, small)
 			inside(t, bounds, small)
-			named(t, parts, small)
+			assertPartName(t, parts, small)
 			if words := len(strings.Fields(small.Slice(text))); words > s.Small {
 				t.Errorf("small chunk of %d words, bound %d", words, s.Small)
 			}
@@ -310,8 +310,8 @@ func inside(t *testing.T, bounds []int, c Chunk) {
 	}
 }
 
-// named asserts a chunk carries the name of the last part at or before it.
-func named(t *testing.T, parts []PartStart, c Chunk) {
+// assertPartName asserts a chunk carries the name of the last part at or before it.
+func assertPartName(t *testing.T, parts []PartStart, c Chunk) {
 	t.Helper()
 	ordered := append([]PartStart(nil), parts...)
 	sort.SliceStable(ordered, func(i, j int) bool { return ordered[i].Offset < ordered[j].Offset })
@@ -338,7 +338,7 @@ func boundaries(text string, parts []PartStart) []int {
 	return out
 }
 
-func counted(out []Chunk) int {
+func countSmall(out []Chunk) int {
 	n := 0
 	for _, c := range out {
 		n += len(c.Small)

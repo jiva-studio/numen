@@ -146,7 +146,7 @@ func (a Allowance) Paused() bool { return a.Stops != StoppedNothing }
 func (p Preset) Admits(
 	d Day, now time.Time, spent Spent, unbegunCards, daysToLearn int,
 ) Allowance {
-	opened := d.Opened(now)
+	opened := d.GetDate(now)
 	out := Allowance{
 		Keeps:  p.on(opened.Weekday()),
 		Limits: p.limits(),

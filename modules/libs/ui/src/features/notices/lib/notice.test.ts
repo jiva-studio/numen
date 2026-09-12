@@ -166,7 +166,7 @@ describe('how long something said stands to be read', () => {
     expect(getFinishedNotices([long], arrived, 10_000_000)).toEqual([])
   })
 
-  it('names the ones whose caller may forget them, and only those', () => {
+  it('names the ones whose caller may dismiss them, and only those', () => {
     const said: Notice = { id: 'renamed', says: 'Renamed', stay: 'read' }
     const kept: Notice = { id: 'occupied', says: 'Filed there already', stay: 'kept' }
     const work: Notice = { id: 'embedding', says: 'Indexing', working: true }

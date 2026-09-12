@@ -45,7 +45,7 @@ func (s *DueByDay) On(at time.Time) int {
 // from the day the clock is counted from. The same answers name the same days
 // in every process.
 func (s *DueByDay) number(at time.Time) int {
-	return int(s.day.Opened(at).Unix() / int64(24*time.Hour/time.Second))
+	return int(s.day.GetDate(at).Unix() / int64(24*time.Hour/time.Second))
 }
 
 // weekday is the day of the week a numbered day of review falls on. The day the

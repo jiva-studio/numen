@@ -125,7 +125,7 @@ const tabAt = (
     stopped: ref(StopReason.NOTHING),
     errorMessage: ref(''),
     hasChanged: ref(false),
-    again: () => void done.push('again'),
+    reload: () => void done.push('reload'),
     chooseGoal: (goal) => void done.push(`choose ${goal}`),
     moveSlider: (at) => {
       place.value = at

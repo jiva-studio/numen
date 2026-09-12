@@ -139,7 +139,7 @@ func (u Highlight) prose(
 func over(prose string, boxes []highlight.Box, runs []domain.Span) []Run {
 	out := make([]Run, 0, len(runs))
 	for _, one := range runs {
-		start, length := held(prose, one.From, one.Len())
+		start, length := getRuneBounds(prose, one.From, one.Len())
 		out = append(out, Run{
 			Text:  prose[start : start+length],
 			Boxes: highlight.Over(boxes, one),

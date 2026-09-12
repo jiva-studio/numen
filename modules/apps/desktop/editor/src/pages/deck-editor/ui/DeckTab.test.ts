@@ -130,7 +130,7 @@ const mountDeck = async (
         { path: 'presets/Slow.md', title: '' },
       ],
     createPreset: async () => ({ path: '', error: null }),
-    scheduling: async () => ({
+    getDeckPreset: async () => ({
       preset: {
         path: by,
         title: by === 'Sanskrit.md' ? 'Sanskrit' : '',

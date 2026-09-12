@@ -14,9 +14,10 @@ import (
 // reads every deck in it. So the vaults stand there by name and by where they
 // are, with nothing counted and nothing said about what they hold.
 func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
-	api, held := windowed(t, deck, other)
+	api, held := newAPI(t, deck, other)
 
-	stream, err := serving(t, api).WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
+		t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,13 +50,14 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 // Each vault's count is a message of its own, so a vault of fifty thousand
 // cards holds up nothing but itself.
 func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
-	api, held := windowed(t, deck, other)
+	api, held := newAPI(t, deck, other)
 
 	// The vaults are read when the window opens them, and what a count comes to
 	// is what is under test here.
 	front(t, api)
 
-	stream, err := serving(t, api).WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
+		t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +110,7 @@ func TestTheVaultOpenedLastIsCountedFirst(t *testing.T) {
 			}
 
 			got := make([]string, 0, len(all))
-			for _, v := range wanted(known) {
+			for _, v := range orderVaults(known) {
 				got = append(got, string(v.ID))
 			}
 			if len(got) != len(c.want) {

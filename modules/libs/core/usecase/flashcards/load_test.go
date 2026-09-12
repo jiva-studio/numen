@@ -139,7 +139,7 @@ type loaded struct {
 func load(tb testing.TB, cards, days, perDay int) loaded {
 	tb.Helper()
 
-	s := opened(tb, loadDeck(cards))
+	s := openVault(tb, loadDeck(cards))
 	on := &loadCounts{}
 	logs := countingStores{inner: s.logs, on: on}
 	schedules := flashcards.Schedules{
@@ -179,8 +179,8 @@ func (l loaded) logRead(tb testing.TB) (flashcards.ReviewLog, error) {
 	return flashcards.Log{Stores: l.logs}.Read(tb.Context(), l.vault)
 }
 
-// counting runs one request with the counters cleared, and says what it asked.
-func (l loaded) counting(tb testing.TB, run func() error) loadCounts {
+// countLoads runs one request with the counters cleared, and says what it asked.
+func (l loaded) countLoads(tb testing.TB, run func() error) loadCounts {
 	tb.Helper()
 	*l.on = loadCounts{}
 	if err := run(); err != nil {

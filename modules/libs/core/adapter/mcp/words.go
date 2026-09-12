@@ -22,12 +22,12 @@ func why(c note.Contents) string {
 		return string(c.Outcome)
 	}
 	// A note past the bound is answered with the size it came to: that is what
-	// an agent asks the file tools for a stretch of.
+	// an agent asks the file tools for a span of.
 	if reason == v1.ErrorCode_ERROR_CODE_TOO_LARGE {
 		return fmt.Sprintf("it is %d bytes, larger than the %d this reads; open the file instead",
 			c.Fingerprint.Size, note.MaxBytes)
 	}
-	return said(reason)
+	return describeCode(reason)
 }
 
 // whyNotADeck says why a path is no deck to write cards into, and nothing where
@@ -58,13 +58,13 @@ func whyNotADeck(read cards.DeckContents) string {
 // carries no code for is handed over as it stands.
 func sayError(err error) string {
 	if reason, refused := wire.ErrorCodeBy(err); refused {
-		return said(reason)
+		return describeCode(reason)
 	}
 	return err.Error()
 }
 
-// said is one error code in the words a tool answers with.
-func said(reason v1.ErrorCode) string {
+// describeCode is one error code in the words a tool answers with.
+func describeCode(reason v1.ErrorCode) string {
 	switch reason {
 	case v1.ErrorCode_ERROR_CODE_MISSING:
 		return "the vault holds no note at this path"

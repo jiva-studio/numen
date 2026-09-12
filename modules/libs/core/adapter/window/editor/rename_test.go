@@ -23,16 +23,16 @@ import (
 // The window renames a note and takes one out of the vault. What the vault
 // answers is what the window has to be able to say about either.
 
-// gone says whether a file is off the disk.
-func gone(t *testing.T, root, path string) bool {
+// isGone says whether a file is off the disk.
+func isGone(t *testing.T, root, path string) bool {
 	t.Helper()
 	_, err := os.Stat(filepath.Join(root, filepath.FromSlash(path)))
 	return os.IsNotExist(err)
 }
 
-// scanned waits for the first read of the vault, which is what puts the notes
+// waitForScan waits for the first read of the vault, which is what puts the notes
 // already on disk into the index and the links they carry with them.
-func scanned(t *testing.T, f *going) {
+func waitForScan(t *testing.T, f *going) {
 	t.Helper()
 	testsupport.WaitFor(t, f.opened.API.Ready.Load)
 }
@@ -40,7 +40,7 @@ func scanned(t *testing.T, f *going) {
 // TestRenamingWritesTheNoteAndMovesTheFile. A note is shown by its title, so
 // the title is what is written, and the file follows it.
 func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
 
@@ -66,7 +66,7 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 	if moved.GetFrom() != "Old.md" || moved.GetTo() != "Entropy.md" {
 		t.Errorf("what the file did came back as %+v", moved)
 	}
-	if !gone(t, f.root, "Old.md") {
+	if !isGone(t, f.root, "Old.md") {
 		t.Error("the note is still filed under the name it had")
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); !strings.Contains(now, "title: Entropy") {
@@ -93,7 +93,7 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 				"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n",
 				"Heat.md":    "---\ntitle: Heat\n---\nA measure.\n",
 			}, c.sync)
-			scanned(t, f)
+			waitForScan(t, f)
 
 			// The palette and the plex menu: a title, and the file follows it
 			// where the two are one name.
@@ -114,7 +114,7 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 			})); err != nil {
 				t.Fatal(err)
 			}
-			if !gone(t, f.root, "Heat.md") {
+			if !isGone(t, f.root, "Heat.md") {
 				t.Error("the file is still filed under the name it had")
 			}
 			want := "title: " + c.called
@@ -145,9 +145,9 @@ func TestTurningTheSettingIsAnsweredByTheNextRename(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n",
 		"Heat.md":    "---\ntitle: Heat\n---\nA measure.\n",
 	}, true)
-	scanned(t, f)
+	waitForScan(t, f)
 
-	if setting(t, f, "naming", "sync_title_and_filename") != true {
+	if getSetting(t, f, "naming", "sync_title_and_filename") != true {
 		t.Fatal("an installation nobody has configured tells the two apart")
 	}
 
@@ -156,7 +156,7 @@ func TestTurningTheSettingIsAnsweredByTheNextRename(t *testing.T) {
 	}
 
 	// Read back through the same window, and then acted on by a rename.
-	if setting(t, f, "naming", "sync_title_and_filename") != false {
+	if getSetting(t, f, "naming", "sync_title_and_filename") != false {
 		t.Error("the setting was turned and the window still says one name")
 	}
 
@@ -208,12 +208,12 @@ func TestTurningTheSettingLeavesTheRestOfTheFileAlone(t *testing.T) {
 // the person's to settle, and a link that resolves is not repaired.
 func TestRenamingLeavesALinkThatMeansAnotherNoteNow(t *testing.T) {
 	const heat = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Entropy.md":         "# Entropy\n",
 		"physics/Entropy.md": "# Entropy\n",
 		"Heat.md":            heat,
 	})
-	scanned(t, f)
+	waitForScan(t, f)
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Entropy.md", Title: "Thermodynamics",
@@ -234,7 +234,7 @@ func TestRenamingLeavesALinkThatMeansAnotherNoteNow(t *testing.T) {
 
 // TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled, and where it still is.
 func TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Old.md":     "# Old\n",
 		"Entropy.md": "# Entropy\n",
 	})
@@ -264,7 +264,7 @@ func TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled(t *testing.T) {
 // the core's, in TestRenamingRefusesATitleNoNoteCanBeGiven.
 func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
 	const held = "# Old\n"
-	f := quitting(t, nil, map[string]string{"Old.md": held})
+	f := openWindow(t, nil, map[string]string{"Old.md": held})
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Old.md", Title: "   ",
@@ -301,7 +301,7 @@ func TestRenamingSaysWhatItCouldNotName(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			f := quitting(t, nil, map[string]string{
+			f := openWindow(t, nil, map[string]string{
 				"Reading.txt": "a list\n",
 				"Broken.md":   "---\nid: [unterminated\n---\n# Broken\n",
 			})
@@ -315,7 +315,7 @@ func TestRenamingSaysWhatItCouldNotName(t *testing.T) {
 			if code := answer.Msg.GetError(); code != c.want {
 				t.Errorf("want %v, got %v", c.want, code)
 			}
-			if !gone(t, f.root, "Entropy.md") {
+			if !isGone(t, f.root, "Entropy.md") {
 				t.Error("a refused rename left a file under the name it was given")
 			}
 		})
@@ -326,11 +326,11 @@ func TestRenamingSaysWhatItCouldNotName(t *testing.T) {
 // wrong because the note it names is gone, so it is reported and not repaired.
 func TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing(t *testing.T) {
 	const pointing = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    pointing,
 	})
-	scanned(t, f)
+	waitForScan(t, f)
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Entropy.md",
@@ -348,7 +348,7 @@ func TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing(t *testing.T) {
 	if len(dangling) != 1 || dangling[0] != "Heat.md" {
 		t.Errorf("what now reaches nothing came back as %v", dangling)
 	}
-	if !gone(t, f.root, "Entropy.md") {
+	if !isGone(t, f.root, "Entropy.md") {
 		t.Error("the note is still where it was")
 	}
 	if now := fileAt(t, f.root, ".trash/Entropy.md"); now != "# Entropy\n" {
@@ -362,7 +362,7 @@ func TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing(t *testing.T) {
 // TestADestroyedNoteLeavesNothingBehind. Nothing brings it back, and the answer
 // names no place in the trash to look.
 func TestADestroyedNoteLeavesNothingBehind(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
+	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Entropy.md", Destroy: true,
@@ -376,7 +376,7 @@ func TestADestroyedNoteLeavesNothingBehind(t *testing.T) {
 	if trashed := answer.Msg.GetTrashed(); trashed != "" {
 		t.Errorf("a destroyed note was said to sit at %q", trashed)
 	}
-	if !gone(t, f.root, "Entropy.md") || !gone(t, f.root, ".trash/Entropy.md") {
+	if !isGone(t, f.root, "Entropy.md") || !isGone(t, f.root, ".trash/Entropy.md") {
 		t.Error("the file is still on the disk")
 	}
 }
@@ -384,7 +384,7 @@ func TestADestroyedNoteLeavesNothingBehind(t *testing.T) {
 // TestARemovedFileIsReportedTheFirstTimeItIsAskedFor. The watcher reports only
 // the paths the vault holds a source for, and a picture is not one of them.
 func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
-	client, root := opened(t, map[string]string{
+	client, root := openVault(t, map[string]string{
 		"Note.md":            "---\ntitle: Note\n---\n\n# Note\n",
 		"assets/diagram.png": "a picture, near enough\n",
 	})
@@ -422,7 +422,7 @@ func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the file was refused: %v", code)
 	}
-	if !gone(t, root, "assets/diagram.png") {
+	if !isGone(t, root, "assets/diagram.png") {
 		t.Fatal("the file is still where it was")
 	}
 
@@ -439,7 +439,7 @@ func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
 // TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing. The door is shut on
 // what would reach the vault after the writes already taken have landed.
 func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
+	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 	t.Cleanup(func() { f.opened.Close() })
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
@@ -507,7 +507,7 @@ func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			f := quitting(t, nil, map[string]string{"Old.md": c.held})
+			f := openWindow(t, nil, map[string]string{"Old.md": c.held})
 
 			answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 				Path: "Old.md", Title: c.title,
@@ -536,11 +536,11 @@ func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
 // exercise the rule are the core's, in
 // TestARenamedNoteIsStillReachedByTheLinksThatNameIt.
 func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n",
 	})
-	scanned(t, f)
+	waitForScan(t, f)
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Entropy.md", Title: "Notes [[draft]]",
@@ -586,10 +586,10 @@ func (staleWriter) Write(
 // here has read is something the person settles, the way a save and a join
 // already put it to them.
 func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
-	scanned(t, f)
+	waitForScan(t, f)
 	f.opened.API.Notes.Rename.Writers = staleWriters{VaultWriters: f.opened.API.Notes.Rename.Writers}
 
 	out, err := f.opened.API.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
@@ -602,7 +602,7 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a note that changed was answered %v", code)
 	}
-	if gone(t, f.opened.API.Showing().Path, "Old.md") {
+	if isGone(t, f.opened.API.Showing().Path, "Old.md") {
 		t.Error("the file moved for a rename that wrote nothing")
 	}
 }

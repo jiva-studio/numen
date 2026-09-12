@@ -20,7 +20,7 @@ func TestMarkup(t *testing.T) {
 	t.Run("the words are the words of the text", func(t *testing.T) {
 		doc := document(t, book, secondDoc)
 		want := book.Text[doc.Offset : doc.Offset+doc.Length]
-		if got := said(drawn.Nodes); got != want {
+		if got := getNodeText(drawn.Nodes); got != want {
 			t.Fatalf("the markup says\n%q\nand the text is\n%q", got, want)
 		}
 	})
@@ -32,11 +32,11 @@ func TestMarkup(t *testing.T) {
 					run.Text, run.Offset, excerpt(book.Text, run.Offset))
 			}
 		}
-		if quoted := element(t, drawn.Nodes, "blockquote"); !strings.Contains(said(quoted.Children), "Eta") {
+		if quoted := element(t, drawn.Nodes, "blockquote"); !strings.Contains(getNodeText(quoted.Children), "Eta") {
 			t.Error("the quotation is not a quotation")
 		}
-		if em := element(t, drawn.Nodes, "em"); said(em.Children) != "emphatic" {
-			t.Errorf("the emphasis says %q", said(em.Children))
+		if em := element(t, drawn.Nodes, "em"); getNodeText(em.Children) != "emphatic" {
+			t.Errorf("the emphasis says %q", getNodeText(em.Children))
 		}
 	})
 
@@ -59,12 +59,12 @@ func TestMarkup(t *testing.T) {
 				t.Errorf("a %s element was drawn", name)
 			}
 		}
-		if strings.Contains(said(drawn.Nodes), "forbidden") {
+		if strings.Contains(getNodeText(drawn.Nodes), "forbidden") {
 			t.Error("a script or a stylesheet reached the markup")
 		}
 		// A form is not drawn and the words inside it are: the text carries
 		// them, and the two say the same thing.
-		if !strings.Contains(said(drawn.Nodes), "Iota") {
+		if !strings.Contains(getNodeText(drawn.Nodes), "Iota") {
 			t.Error("the words inside the form are missing")
 		}
 	})
@@ -142,8 +142,8 @@ func TestASpineDocumentThatIsACoverDrawnAroundAPicture(t *testing.T) {
 		t.Errorf("the cover is drawn from an address the archive answers with %v", err)
 	}
 	doc := document(t, book, "OEBPS/cover.svg")
-	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; said(drawn.Nodes) != want {
-		t.Errorf("the picture says %q and its text is %q", said(drawn.Nodes), want)
+	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; getNodeText(drawn.Nodes) != want {
+		t.Errorf("the picture says %q and its text is %q", getNodeText(drawn.Nodes), want)
 	}
 }
 
@@ -196,7 +196,7 @@ func TestACoverNamesThePictureItDraws(t *testing.T) {
 // coverBook is a book whose spine opens with an SVG cover.
 func coverBook(t *testing.T, cover string) []byte {
 	t.Helper()
-	return spined(t, `<?xml version="1.0"?>
+	return buildSpineArchive(t, `<?xml version="1.0"?>
 		<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
 		  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>A Cover</dc:title></metadata>
 		  <manifest>

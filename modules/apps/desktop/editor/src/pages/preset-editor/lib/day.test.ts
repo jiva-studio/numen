@@ -77,7 +77,7 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
       at: 'one',
       bounds: BOUNDS,
     }),
-    scheduling: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
+    getDeckPreset: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
     createPreset: async () => ({ path: '', error: null }),
     scheduleDeck: async () => ({ error: null, changed: false, at: '' }),

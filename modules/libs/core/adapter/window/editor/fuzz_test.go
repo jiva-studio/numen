@@ -51,7 +51,7 @@ func FuzzAssetAddress(f *testing.F) {
 		print := fingerprint{size: size, mtime: mtime}
 		url := pageOf(path, page, 800, print)
 
-		at, ok := addressed(httptest.NewRequest("GET", url, nil))
+		at, ok := parseAssetAddress(httptest.NewRequest("GET", url, nil))
 		if !ok {
 			t.Fatalf("%q is addressed as %q, which is no address", path, url)
 		}
@@ -64,7 +64,7 @@ func FuzzAssetAddress(f *testing.F) {
 
 		// Which bytes the address is about rides beside it, and says the same
 		// thing on the way back.
-		got, err := printed(httptest.NewRequest("GET", url, nil).URL.Query())
+		got, err := parseFingerprint(httptest.NewRequest("GET", url, nil).URL.Query())
 		if err != nil {
 			t.Fatalf("%q carries %+v and came back: %v", url, print, err)
 		}

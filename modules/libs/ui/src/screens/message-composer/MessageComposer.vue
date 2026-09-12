@@ -46,7 +46,7 @@ const state = computed(() => composerState(text.value, props.working))
 const descriptor = computed(() => COMPOSER_STATES[state.value])
 
 /** Nothing to say, or turned off. */
-const barred = computed(() => props.disabled || !descriptor.value.acts)
+const barred = computed(() => props.disabled || !descriptor.value.canAct)
 
 /** What the disc is called. */
 const named = computed(() =>

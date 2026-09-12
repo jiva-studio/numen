@@ -58,7 +58,7 @@ func (r *recording) Segments(ctx context.Context, from, count int) ([]port.Audio
 		if err != nil {
 			return nil, err
 		}
-		at, err := resampled(ctx, sound, rate, sampleRate)
+		at, err := resample(ctx, sound, rate, sampleRate)
 		if err != nil {
 			return nil, err
 		}
@@ -262,7 +262,7 @@ func (w riffWave) sound() ([]float32, error) {
 			// middle of their range.
 			out[i] = (float32(raw[0]) - 128) / 128
 		case w.format == wavInteger:
-			out[i] = float32(signed(raw)) / float32(int64(1)<<(w.bits-1))
+			out[i] = float32(readSigned(raw)) / float32(int64(1)<<(w.bits-1))
 		default:
 			return nil, fmt.Errorf("the wav recording writes its samples as %d of %d bits", w.format, w.bits)
 		}
@@ -270,8 +270,8 @@ func (w riffWave) sound() ([]float32, error) {
 	return out, nil
 }
 
-// signed is one little-endian sample of any width, as a number.
-func signed(raw []byte) int64 {
+// readSigned is one little-endian sample of any width, as a number.
+func readSigned(raw []byte) int64 {
 	var out int64
 	for i := len(raw) - 1; i >= 0; i-- {
 		out = out<<8 | int64(raw[i])

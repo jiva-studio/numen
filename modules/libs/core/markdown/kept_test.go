@@ -44,9 +44,9 @@ var ours = []string{
 	"fields:\n  - Height\n  - Weight\n",
 }
 
-// noted generates a note: a frontmatter block of some of those keys in some
+// drawNote generates a note: a frontmatter block of some of those keys in some
 // order, and prose under it.
-func noted(t *rapid.T) (raw string, foreign []string) {
+func drawNote(t *rapid.T) (raw string, foreign []string) {
 	blocks := append(append([]string{}, theirs...), ours...)
 	order := rapid.Permutation(blocks).Draw(t, "keys")
 	keys := order[:rapid.IntRange(0, len(order)).Draw(t, "held")]
@@ -92,7 +92,7 @@ func contains(all []string, one string) bool {
 func TestANoteNobodyWroteToComesOutAsItWentIn(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		raw, _ := noted(t)
+		raw, _ := drawNote(t)
 		doc, err := markdown.Open([]byte(raw))
 		if err != nil {
 			return
@@ -110,7 +110,7 @@ func TestANoteNobodyWroteToComesOutAsItWentIn(t *testing.T) {
 func TestWhatTheApplicationDoesNotOwnIsKeptVerbatim(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		raw, foreign := noted(t)
+		raw, foreign := drawNote(t)
 		doc, err := markdown.Open([]byte(raw))
 		if err != nil {
 			return
@@ -139,14 +139,15 @@ func TestWhatTheApplicationDoesNotOwnIsKeptVerbatim(t *testing.T) {
 			if err != nil {
 				return
 			}
-			kept(t, string(doc.Bytes()), foreign, write)
+			checkForeignKeysKept(t, string(doc.Bytes()), foreign, write)
 		}
 	})
 }
 
-// kept fails unless every line of every key the application does not own still
-// stands in the note's frontmatter, unchanged and in the order it stood in.
-func kept(t *rapid.T, note string, foreign []string, wrote string) {
+// checkForeignKeysKept fails unless every line of every key the application
+// does not own still stands in the note's frontmatter, unchanged and in the
+// order it stood in.
+func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote string) {
 	t.Helper()
 	if len(foreign) == 0 {
 		return
@@ -182,7 +183,7 @@ func kept(t *rapid.T, note string, foreign []string, wrote string) {
 func TestAnOwnedKeyReadsBackAsItWasWritten(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		raw, _ := noted(t)
+		raw, _ := drawNote(t)
 		doc, err := markdown.Open([]byte(raw))
 		if err != nil {
 			return

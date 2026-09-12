@@ -51,7 +51,7 @@ func OpenForWriting(root string, opts Options) (*VaultWriter, error) {
 	if cfg, err := ReadConfig(abs, opts.ServiceDir); err == nil && len(cfg.Ignore) > 0 {
 		opts.Ignore = cfg.Ignore
 	}
-	return &VaultWriter{root: abs, opts: opts, ignored: opts.ignored()}, nil
+	return &VaultWriter{root: abs, opts: opts, ignored: opts.compileIgnoring()}, nil
 }
 
 // newFileMode is what a note is created with. An existing note keeps the mode
@@ -132,7 +132,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 		return err
 	}
 	defer root.Close()
-	leaves, err := w.named(source)
+	leaves, err := w.getRelativeName(source)
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func (w *VaultWriter) reach(path string) (string, error) {
 // kept as a link to another file in the vault has its bytes at the other end,
 // and that is what a rename replaces.
 func (w *VaultWriter) file(path string) (string, error) {
-	real, err := followed(w.root, path, w.opts.serviceDir())
+	real, err := resolveLinks(w.root, path, w.opts.serviceDir())
 	if err != nil {
 		return "", err
 	}
@@ -267,7 +267,7 @@ func (w *VaultWriter) inside(path string) (string, error) {
 // for a link while the write is on its way is refused by the machine itself and
 // not by a rule read a moment before. The caller closes the handle.
 func (w *VaultWriter) beneath(target string) (*os.Root, string, error) {
-	name, err := w.named(target)
+	name, err := w.getRelativeName(target)
 	if err != nil {
 		return nil, "", err
 	}
@@ -278,8 +278,8 @@ func (w *VaultWriter) beneath(target string) (*os.Root, string, error) {
 	return root, name, nil
 }
 
-// named is a place on this machine as a name under the vault's root.
-func (w *VaultWriter) named(target string) (string, error) {
+// getRelativeName is a place on this machine as a name under the vault's root.
+func (w *VaultWriter) getRelativeName(target string) (string, error) {
 	name, err := filepath.Rel(w.root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
 		return "", fmt.Errorf("%s: %w", target, ErrOutside)

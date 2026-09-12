@@ -63,7 +63,7 @@ export const getShownNotices = (
     return notice.isAsked || at - (firstSeen.get(notice.id) ?? at) >= wait
   })
 
-/** The notices that have been read, and whose caller may forget them. */
+/** The notices that have been read, and whose caller may dismiss them. */
 export const getFinishedNotices = (
   notices: readonly Notice[],
   firstSeen: ReadonlyMap<string, number>,

@@ -36,7 +36,7 @@ var saturday = time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local)
 // sessions as the day held. A deck naming no preset comes under the defaults.
 func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 	t.Parallel()
-	s := opened(t, scheduled)
+	s := openVault(t, scheduled)
 
 	// Two sessions of the one day, each writing a file of its own.
 	morning := s.run(t, saturday)
@@ -45,7 +45,7 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 	answer(t, evening, "zpqrstvwxy", 9*time.Second)
 	answer(t, evening, "3f4g5h6j7k", 4*time.Second)
 
-	owing, err := s.owedAt(today, func() time.Time { return saturday.Add(10 * time.Hour) }).
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(10 * time.Hour) }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -83,13 +83,13 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 // under them.
 func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":      term,
 		"decks/One.md": deckOf("", 20, 0),
 		"decks/Two.md": deckOf("", 20, 100),
 	})
 
-	owing, err := s.owedAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,9 +116,9 @@ func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
 		files[path] = raw
 	}
 	files["Empty.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 137\n---\n\n# Empty\n"
-	s := opened(t, files)
+	s := openVault(t, files)
 
-	owing, err := s.owedAt(today, func() time.Time { return saturday }).
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -142,7 +142,7 @@ func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
 // answer taken back.
 func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
 	t.Parallel()
-	s := opened(t, scheduled)
+	s := openVault(t, scheduled)
 
 	before := s.run(t, saturday.AddDate(0, 0, -1))
 	answer(t, before, "k7m2xq9fzp", 6*time.Second)
@@ -153,7 +153,7 @@ func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := s.owedAt(today, func() time.Time { return saturday.Add(time.Hour) }).
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -170,12 +170,12 @@ func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
 // preset.
 func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
 	t.Parallel()
-	s := opened(t, scheduled)
+	s := openVault(t, scheduled)
 
 	// One card of one of the two decks the Sanskrit preset schedules.
 	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
 
-	owing, err := s.owedAt(today, func() time.Time { return saturday.Add(time.Hour) }).
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -201,14 +201,14 @@ func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
 // changed replays nothing.
 func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	t.Parallel()
-	s := opened(t, scheduled)
+	s := openVault(t, scheduled)
 	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
 
 	replayed := 0
 	s.kept.At = func(retention float64) review.Scheduler {
 		return replaying{Scheduler: review.NewFSRSAt(retention), answers: &replayed}
 	}
-	owed := s.owedAt(today, func() time.Time { return saturday.Add(time.Hour) })
+	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) })
 
 	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -242,17 +242,17 @@ func (r replaying) Next(
 // as. Every card of this vault is shown through the one face.
 func answer(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
 	t.Helper()
-	return said(t, record, card, review.Good, took)
+	return answerWith(t, record, card, review.Good, took)
 }
 
 // again writes down one card the person could not recall, which comes round
 // again in the same session.
 func again(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
 	t.Helper()
-	return said(t, record, card, review.Again, took)
+	return answerWith(t, record, card, review.Again, took)
 }
 
-func said(
+func answerWith(
 	t *testing.T, record flashcards.Record, card string,
 	rating review.Rating, took time.Duration,
 ) string {
@@ -269,7 +269,7 @@ func said(
 // cards stand under it is counted beside that.
 func TestAnEmptyDeckStillPointsAtItsPreset(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Empty.md":       preset("new_a_day: 4\nreviews_a_day: 20\n"),
 		"Unnamed.md":     preset("new_a_day: 4\nreviews_a_day: 20\n"),
@@ -277,7 +277,7 @@ func TestAnEmptyDeckStillPointsAtItsPreset(t *testing.T) {
 		"decks/Full.md":  deckOf("Empty", 3, 0),
 	})
 
-	owing, err := s.owedAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,13 +298,13 @@ func TestAnEmptyDeckStillPointsAtItsPreset(t *testing.T) {
 // A preset nothing but an empty deck names is still named by that deck.
 func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Empty.md":       preset("new_a_day: 4\nreviews_a_day: 20\n"),
 		"decks/Empty.md": deckOf("Empty", 0, 0),
 	})
 
-	owing, err := s.owedAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -68,7 +68,7 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 		case domain.KnownNoteType(domain.NoteType(name)):
 			n.Type = domain.NoteType(name)
 		default:
-			problems = append(problems, "type "+name+" is not one of "+knownTypes())
+			problems = append(problems, "type "+name+" is not one of "+describeNoteTypes())
 		}
 	}
 
@@ -177,10 +177,10 @@ func (f *Fence) Crosses(line string) bool {
 // Inside reports whether the walk stands within a fence.
 func (f *Fence) Inside() bool { return f.mark != 0 }
 
-// knownTypes names every type a note may carry, as a person reads them. It is
-// built from the types themselves, so a type added to the domain is named here
-// without anything being edited.
-func knownTypes() string {
+// describeNoteTypes names every type a note may carry, as a person reads them.
+// It is built from the types themselves, so a type added to the domain is named
+// here without anything being edited.
+func describeNoteTypes() string {
 	names := make([]string, 0, len(domain.NoteTypes()))
 	for _, one := range domain.NoteTypes() {
 		names = append(names, string(one))

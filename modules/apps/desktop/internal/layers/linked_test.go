@@ -18,11 +18,11 @@ const tools = core + "adapter/mcp"
 // terminal is the binary the command line is served through.
 const terminal = apps + "desktop/cmd/numen-cli"
 
-// linking says whether a listing was compiled from a package, reading a dep as
+// isLinked says whether a listing was compiled from a package, reading a dep as
 // the package itself or as something under it. A prefix on its own would take
 // adapter/mcpsomething for the tools and a rule that refuses more than it was
 // given is as wrong as one that refuses less.
-func linking(deps []string, pkg string) bool {
+func isLinked(deps []string, pkg string) bool {
 	for _, dep := range deps {
 		if dep == pkg || strings.HasPrefix(dep, pkg+"/") {
 			return true
@@ -66,7 +66,7 @@ func TestNothingOfTheToolsIsLinkedIntoTheTerminal(t *testing.T) {
 			t.Fatalf("go list: %v", err)
 		}
 		binaries = append(binaries, pkg.ImportPath)
-		if !linking(pkg.Deps, tools) {
+		if !isLinked(pkg.Deps, tools) {
 			continue
 		}
 		serving = append(serving, pkg.ImportPath)
@@ -110,7 +110,7 @@ func TestWhatTheToolsRuleRefuses(t *testing.T) {
 		{"a listing of nothing", nil, tools, false},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			if linking(one.deps, one.pkg) != one.refused {
+			if isLinked(one.deps, one.pkg) != one.refused {
 				t.Errorf("linking said %v, want %v", !one.refused, one.refused)
 			}
 		})

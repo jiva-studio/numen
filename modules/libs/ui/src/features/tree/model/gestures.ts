@@ -25,15 +25,15 @@ export interface TreeGesturesTell {
 }
 
 export interface TreeGesturesOptions {
-  readonly shown: () => readonly ShownRow[]
-  readonly selected: () => readonly RowId[]
+  readonly getShownRows: () => readonly ShownRow[]
+  readonly getSelected: () => readonly RowId[]
   /** The row whose name is in a field. */
   readonly renamingPath: Ref<RowId | null>
   readonly rows: DrawnRowsState
   readonly selection: RowSelectionState
   readonly drag: RowDragState
   /** Where a menu asked for by the keyboard opens, off the row it is on. */
-  readonly menuAt: (row: RowId) => Position | null
+  readonly getMenuAt: (row: RowId) => Position | null
   readonly tell: TreeGesturesTell
 }
 
@@ -51,7 +51,15 @@ export interface TreeGesturesState {
 }
 
 export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState {
-  const { shown, selected, renamingPath, rows, selection, drag, tell } = options
+  const {
+    getShownRows,
+    getSelected,
+    renamingPath,
+    rows,
+    selection,
+    drag,
+    tell,
+  } = options
 
   function toggleRow(row: ShownRow): void {
     if (row.open) tell('close', row.id)
@@ -88,7 +96,7 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
 
     const how: Press = { joining: event.ctrlKey || event.metaKey, reaching: event.shiftKey }
     selection.said.value = how.joining || how.reaching || !selection.picked.value.has(row)
-    const taken = selection.said.value ? selection.selectRow(row, how) : selected()
+    const taken = selection.said.value ? selection.selectRow(row, how) : getSelected()
 
     drag.lift(getDraggedRows(taken, row), event)
   }
@@ -130,11 +138,11 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
 
     if (event.key === 'Delete' || event.key === 'Backspace') {
       event.preventDefault()
-      if (selected().length > 0) tell('remove', selected())
+      if (getSelected().length > 0) tell('remove', getSelected())
       return
     }
 
-    const on = shown().find((row) => row.id === rows.tabbed.value)
+    const on = getShownRows().find((row) => row.id === rows.tabbed.value)
     if (!on) return
 
     if (event.key === 'Enter') {
@@ -152,7 +160,7 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
 
     if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
       event.preventDefault()
-      const at = options.menuAt(on.id)
+      const at = options.getMenuAt(on.id)
       if (at) requestMenu(on, at)
       return
     }
@@ -160,7 +168,7 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     if (!isTreeKey(event.key)) return
     event.preventDefault()
 
-    const step = stepTo(shown(), rows.tabbed.value, event.key)
+    const step = stepTo(getShownRows(), rows.tabbed.value, event.key)
     if (step.turn?.open) tell('open', step.turn.row)
     else if (step.turn) tell('close', step.turn.row)
     if (step.at !== null) selection.selectRow(step.at, { joining: false, reaching: event.shiftKey })

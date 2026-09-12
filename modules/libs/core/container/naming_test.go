@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
-// wrote is a settings file beside the vault list, which is where an
+// writeSettings is a settings file beside the vault list, which is where an
 // installation pointed somewhere of its own keeps one.
-func wrote(t *testing.T, body string) container.Config {
+func writeSettings(t *testing.T, body string) container.Config {
 	t.Helper()
 	held := t.TempDir()
 	if body != "" {
@@ -25,7 +25,7 @@ func wrote(t *testing.T, body string) container.Config {
 // The setting is read as each rename is made, so a person who turns it in the
 // palette is answered by the next rename and not by the next launch.
 func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
-	cfg := wrote(t, `{"naming":{"sync_title_and_filename":true}}`)
+	cfg := writeSettings(t, `{"naming":{"sync_title_and_filename":true}}`)
 	asking := cfg.SyncSetting()
 	if !asking.Kept() {
 		t.Fatal("a title and a filename are told apart")
@@ -50,7 +50,7 @@ func TestWhatIsReadWhereTheFileSaysNothing(t *testing.T) {
 		"a file that does not parse": `{"naming":`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			if !wrote(t, body).SyncSetting().Kept() {
+			if !writeSettings(t, body).SyncSetting().Kept() {
 				t.Error("a title and a filename are told apart")
 			}
 		})

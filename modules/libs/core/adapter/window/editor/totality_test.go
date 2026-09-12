@@ -89,7 +89,7 @@ func TestEveryNamingIsWrittenFromOne(t *testing.T) {
 	testsupport.Produced(t, map[v1.NamedBy]note.NameSource{
 		v1.NamedBy_NAMED_BY_FRONTMATTER: note.ByFrontmatter,
 		v1.NamedBy_NAMED_BY_FILENAME:    note.ByFilename,
-	}, namedByOf)
+	}, newNamedBy)
 }
 
 func TestEveryPresenceIsWrittenFromOne(t *testing.T) {
@@ -122,13 +122,13 @@ func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {
 // writes it.
 func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
 	testsupport.Produced(t, map[v1.State]func() v1.State{
-		v1.State_STATE_NONE:    standingAt(reached{stands: untouched}),
-		v1.State_STATE_DONE:    standingAt(reached{stands: done}),
-		v1.State_STATE_RUNNING: standingAt(reached{stands: under}),
-		v1.State_STATE_STOPPED: standingAt(reached{stands: stopped}),
-		v1.State_STATE_EMPTY:   standingAt(reached{stands: silent}),
-		v1.State_STATE_FAILED:  standingAt(reached{stands: unopened}),
-		v1.State_STATE_QUEUED:  func() v1.State { return beginning(port.Queued) },
+		v1.State_STATE_NONE:    getStateAt(reached{stands: untouched}),
+		v1.State_STATE_DONE:    getStateAt(reached{stands: done}),
+		v1.State_STATE_RUNNING: getStateAt(reached{stands: under}),
+		v1.State_STATE_STOPPED: getStateAt(reached{stands: stopped}),
+		v1.State_STATE_EMPTY:   getStateAt(reached{stands: silent}),
+		v1.State_STATE_FAILED:  getStateAt(reached{stands: unopened}),
+		v1.State_STATE_QUEUED:  func() v1.State { return getStartState(port.Queued) },
 	}, func(writes func() v1.State) v1.State { return writes() })
 }
 
@@ -136,23 +136,23 @@ func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
 // carried by a file of some kind.
 func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
-		id, named := standing(of)
+		id, named := getArtifactID(of)
 		return named && id != ""
 	})
 	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
 		// A url carries what was fetched from the address it holds, and which
 		// of the two texts that is follows from what fetched it.
-		return slices.Contains(carried(domain.KindBook, ""), of) ||
-			slices.Contains(carried(domain.KindRecording, ""), of) ||
-			slices.Contains(carried(domain.KindURL, derived.Captions), of) ||
-			slices.Contains(carried(domain.KindURL, derived.Article), of)
+		return slices.Contains(getArtifactKinds(domain.KindBook, ""), of) ||
+			slices.Contains(getArtifactKinds(domain.KindRecording, ""), of) ||
+			slices.Contains(getArtifactKinds(domain.KindURL, derived.Captions), of) ||
+			slices.Contains(getArtifactKinds(domain.KindURL, derived.Article), of)
 	})
 }
 
-// standingAt is what an artifact over a source standing here is answered with.
-func standingAt(got reached) func() v1.State {
+// getStateAt is what an artifact over a source standing here is answered with.
+func getStateAt(got reached) func() v1.State {
 	return func() v1.State {
-		return stood(v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
+		return newArtifact(v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
 	}
 }
 

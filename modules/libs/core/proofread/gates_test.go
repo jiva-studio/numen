@@ -207,8 +207,8 @@ func TestARowWhoseNumberIsTheLinesOwnDigitsRefusesTheBatch(t *testing.T) {
 	}
 }
 
-// heard is one stretch of speech as the machine heard it.
-func heard(at int) proofread.Line {
+// makeLine is one stretch of speech as the machine heard it.
+func makeLine(at int) proofread.Line {
 	return proofread.Line{Number: at, Text: []string{
 		"",
 		"the ferry left at noone",
@@ -223,12 +223,12 @@ func heard(at int) proofread.Line {
 // further from the end.
 func wide() proofread.Batch {
 	return proofread.Batch{Number: 0, Lines: []proofread.Line{
-		heard(1), heard(2), heard(3), heard(4), heard(5),
+		makeLine(1), makeLine(2), makeLine(3), makeLine(4), makeLine(5),
 	}}
 }
 
 func narrow() proofread.Batch {
-	return proofread.Batch{Number: 1, Lines: []proofread.Line{heard(3), heard(4)}}
+	return proofread.Batch{Number: 1, Lines: []proofread.Line{makeLine(3), makeLine(4)}}
 }
 
 func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
@@ -252,8 +252,8 @@ func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 }
 
 func TestBatchesSeeingAsMuchAsEachOtherAreSettledByTheLaterOne(t *testing.T) {
-	early := proofread.Batch{Number: 0, Lines: []proofread.Line{heard(1), heard(2), heard(3)}}
-	late := proofread.Batch{Number: 1, Lines: []proofread.Line{heard(2), heard(3)}}
+	early := proofread.Batch{Number: 0, Lines: []proofread.Line{makeLine(1), makeLine(2), makeLine(3)}}
+	late := proofread.Batch{Number: 1, Lines: []proofread.Line{makeLine(2), makeLine(3)}}
 	replies := map[int]string{
 		0: "3|we spoke of the harbour lights",
 		1: "3|we spoke of the harbor lite",

@@ -200,7 +200,7 @@ export interface Pane {
  * and then what that markup comes to. Two parts to a row stand the front above
  * the back; one to a row stands each preview under the half it is of.
  */
-export function panes(face: FaceRow, words: StencilWords = STENCIL_WORDS): readonly Pane[] {
+export function getPanes(face: FaceRow, words: StencilWords = STENCIL_WORDS): readonly Pane[] {
   return HALVES.flatMap((half): readonly Pane[] => {
     const said = half === 'front' ? words.front : words.back
     const written = half === 'front' ? face.front : face.back

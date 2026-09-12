@@ -55,11 +55,11 @@ func (a *API) GetBook(
 
 	reader, print, err := a.stat(ctx, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(refusedDrawing(err), err)
+		return nil, connect.NewError(getDrawCode(err), err)
 	}
 	read, err := a.book(ctx, reader, print)
 	if err != nil {
-		return nil, connect.NewError(refusedDrawing(err), err)
+		return nil, connect.NewError(getDrawCode(err), err)
 	}
 
 	out := &v1.GetBookResponse{
@@ -103,18 +103,18 @@ func (a *API) ReadBookMarkup(
 
 	reader, print, err := a.stat(ctx, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(refusedDrawing(err), err)
+		return nil, connect.NewError(getDrawCode(err), err)
 	}
 	if seen := r.Msg.GetSeen(); seen != nil && (seen.GetSize() != print.size || seen.GetMtime() != print.mtime) {
 		return nil, connect.NewError(connect.CodeNotFound, errChanged)
 	}
 	read, err := a.book(ctx, reader, print)
 	if err != nil {
-		return nil, connect.NewError(refusedDrawing(err), err)
+		return nil, connect.NewError(getDrawCode(err), err)
 	}
 	drawn, err := read.Markup(r.Msg.GetDocument())
 	if err != nil {
-		return nil, connect.NewError(refusedDrawing(err), err)
+		return nil, connect.NewError(getDrawCode(err), err)
 	}
 	return connect.NewResponse(&v1.ReadBookMarkupResponse{Markup: drawn.HTML()}), nil
 }
@@ -127,7 +127,7 @@ func (a *API) ReadBookMarkup(
 // the type is settled by reading the bytes, and an entry that is not one of the
 // pictures a book is drawn from is not served at all.
 func (a *API) Entry(w http.ResponseWriter, r *http.Request, path, entry string) {
-	named, err := printed(r.URL.Query())
+	named, err := parseFingerprint(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -186,10 +186,10 @@ func (a *API) book(
 	})
 }
 
-// misnamed is whether the bytes are not what they are called: a file that is no
+// isMisnamed is whether the bytes are not what they are called: a file that is no
 // book, and an entry of one that is no picture. It is the one thing a person can
 // act on.
-func misnamed(err error) bool {
+func isMisnamed(err error) bool {
 	return errors.Is(err, epub.ErrNotArchive) ||
 		errors.Is(err, epub.ErrNoContainer) ||
 		errors.Is(err, epub.ErrNoPackage) ||

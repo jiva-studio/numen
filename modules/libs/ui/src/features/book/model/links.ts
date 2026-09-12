@@ -12,9 +12,9 @@ import type { SettledBookProps } from '../lib/props'
 /** What the reader says when a link is followed. */
 export interface BookLinkSaid {
   /** The offset now in front, in bytes of the book's text. */
-  readonly moved: (at: number) => void
+  readonly reportMove: (at: number) => void
   /** A link led to another document of the book, named as the archive names it. */
-  readonly followed: (path: string) => void
+  readonly reportFollow: (path: string) => void
 }
 
 export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid) {
@@ -39,10 +39,10 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
     const place = placeIn(href)
     if (place.path !== '' && place.path !== props.path) {
       led = place
-      listeners.followed(place.path)
+      listeners.reportFollow(place.path)
       return
     }
-    listeners.moved(placeAt(place.fragment) ?? props.span.from)
+    listeners.reportMove(placeAt(place.fragment) ?? props.span.from)
   }
 
   return { takeLed, follow }

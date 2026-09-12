@@ -21,7 +21,7 @@ func linksCommand(ctx context.Context, out io.Writer, deps Deps, args []string) 
 	if err != nil {
 		return err
 	}
-	defer closing(open.Close)
+	defer closeIfOpen(open.Close)
 
 	links, err := open.Show.Execute(ctx, v, args[1])
 	if err != nil {

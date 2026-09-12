@@ -83,7 +83,7 @@ func (x *extractor) node(n *html.Node) {
 		x.breakLine()
 		// The line it ended is behind it, so the break stands at the line it
 		// begins.
-		if x.markup.opened(n, len(x.out)) {
+		if x.markup.openElement(n, len(x.out)) {
 			x.markup.close()
 		}
 		return
@@ -101,7 +101,7 @@ func (x *extractor) node(n *html.Node) {
 	if n.DataAtom == atom.Pre {
 		x.preformattedDepth++
 	}
-	element := x.markup.opened(n, start)
+	element := x.markup.openElement(n, start)
 	if n.DataAtom == atom.Td || n.DataAtom == atom.Th {
 		// A cell is set off from the one before it by a space, and the space
 		// stands inside the cell it opens.
@@ -117,7 +117,7 @@ func (x *extractor) node(n *html.Node) {
 			x.headings = append(x.headings, Part{Title: title, Offset: start, Level: level})
 		}
 	}
-	if label, ok := printedPage(n); ok {
+	if label, ok := getPrintedPage(n); ok {
 		if label == "" {
 			label = tidy(string(x.out[start:]))
 		}
@@ -181,9 +181,9 @@ func (x *extractor) last() (byte, bool) {
 	return x.out[len(x.out)-1], true
 }
 
-// named turns navigation entries into parts. An entry whose document is not in
+// getParts turns navigation entries into parts. An entry whose document is not in
 // the book, or which carries no name, is not one.
-func (x *extractor) named(entries []entry) []Part {
+func (x *extractor) getParts(entries []entry) []Part {
 	var out []Part
 	for _, e := range entries {
 		title := tidy(e.title)
@@ -248,9 +248,9 @@ func attribute(n *html.Node, name string) string {
 	return ""
 }
 
-// printedPage reports whether an element marks a page of the printed book, and
+// getPrintedPage reports whether an element marks a page of the printed book, and
 // the number it gives.
-func printedPage(n *html.Node) (label string, marks bool) {
+func getPrintedPage(n *html.Node) (label string, marks bool) {
 	marks = hasToken(attribute(n, "epub:type"), "pagebreak") ||
 		hasToken(attribute(n, "role"), "doc-pagebreak")
 	if !marks {

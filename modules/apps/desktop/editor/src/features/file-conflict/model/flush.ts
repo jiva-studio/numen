@@ -13,8 +13,8 @@ export type FlushResult = 'written' | 'asking'
 
 /** What the flush needs of the core. */
 export interface FlushDeps {
-  quitting(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
-  flushed(token: string, result?: FlushResult): Promise<unknown>
+  watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
+  reportFlush(token: string, result?: FlushResult): Promise<unknown>
 }
 
 /** Somewhere unwritten work is held, which the flush calls and waits for. */
@@ -117,7 +117,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     const result: FlushResult = all.length > 0 ? 'asking' : 'written'
     if (result === told) return
     told = result
-    await core.flushed(token, result)
+    await core.reportFlush(token, result)
   }
 
   /** One conflict with the three ways out of it. */
@@ -132,8 +132,8 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
   })
 
   const follows = createFollower({
-    open: () => open,
-    lost: () => {},
+    isOpen: () => open,
+    setLost: () => {},
     wait,
     // The stream went with whatever was standing still standing, and under a
     // token nothing answers to any more. It is asked for again.
@@ -147,7 +147,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
   /** Listen for the quit, for as long as the window is drawn. */
   const start = () =>
     follows(
-      () => core.quitting(listening.signal),
+      () => core.watchQuit(listening.signal),
       async (said) => {
         if (said.flush) await answer(said.token)
       },

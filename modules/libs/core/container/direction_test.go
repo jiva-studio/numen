@@ -28,8 +28,8 @@ var wireBaseline = map[string][]string{
 	"internal/wire": {wire},
 }
 
-// baselined says whether a package is allowed the edge it has.
-func baselined(from, dep string) bool {
+// isBaselined says whether a package is allowed the edge it has.
+func isBaselined(from, dep string) bool {
 	for _, held := range wireBaseline[from] {
 		if strings.HasPrefix(dep, held) {
 			return true
@@ -38,14 +38,14 @@ func baselined(from, dep string) bool {
 	return false
 }
 
-// answering is what a package of this module may not be compiled from, and
-// whether it answers for what it names itself.
+// getRefusedImports is what a package of this module may not be compiled from,
+// and whether it answers for what it names itself.
 //
 // The core answers for the whole of what it is built from. The composition root
 // binds the adapters and is built from them, so it answers for what it names,
 // and the schema is the one thing it may not name. An adapter and what only a
 // test builds answer for nothing.
-func answering(path string) (refuses []string, named bool) {
+func getRefusedImports(path string) (refuses []string, named bool) {
 	held := strings.TrimPrefix(path, module)
 	switch {
 	case held == "container":
@@ -58,11 +58,11 @@ func answering(path string) (refuses []string, named bool) {
 	return outward, false
 }
 
-// reaching says whether a package would be failed for the edge it has, which is
-// what inward does with what answering and baselined say.
-func reaching(pkg, dep string) bool {
-	refuses, _ := answering(module + pkg)
-	if baselined(pkg, dep) {
+// isEdgeRefused says whether a package would be failed for the edge it has,
+// which is what inward does with what getRefusedImports and isBaselined say.
+func isEdgeRefused(pkg, dep string) bool {
+	refuses, _ := getRefusedImports(module + pkg)
+	if isBaselined(pkg, dep) {
 		return false
 	}
 	for _, refused := range refuses {
@@ -107,7 +107,7 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		{"internal/adapter/theme", wire + "/gen/numen/v1", false},
 		{"internal/testsupport", module + "adapter/index", false},
 	} {
-		if got := reaching(one.pkg, one.dep); got != one.refuses {
+		if got := isEdgeRefused(one.pkg, one.dep); got != one.refuses {
 			if one.refuses {
 				t.Errorf("%s reaches %s and is not refused", one.pkg, one.dep)
 			} else {
@@ -118,10 +118,10 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 
 	// The composition root is the one package answering for what it names, and
 	// everything else is held to the whole of what it is compiled from.
-	if _, named := answering(module + "container"); !named {
+	if _, named := getRefusedImports(module + "container"); !named {
 		t.Error("the composition root answers for everything it is built from")
 	}
-	if _, named := answering(module + "usecase/note"); named {
+	if _, named := getRefusedImports(module + "usecase/note"); named {
 		t.Error("a scenario answers only for what it names")
 	}
 }
@@ -183,7 +183,7 @@ func inward(t *testing.T, goos, goarch string) {
 		if err != nil {
 			t.Fatalf("go list: %v", err)
 		}
-		refuses, named := answering(pkg.ImportPath)
+		refuses, named := getRefusedImports(pkg.ImportPath)
 		if refuses == nil {
 			continue
 		}
@@ -194,7 +194,7 @@ func inward(t *testing.T, goos, goarch string) {
 		}
 		held := strings.TrimPrefix(pkg.ImportPath, module)
 		for _, dep := range reaching {
-			if baselined(held, dep) {
+			if isBaselined(held, dep) {
 				continue
 			}
 			for _, refused := range refuses {

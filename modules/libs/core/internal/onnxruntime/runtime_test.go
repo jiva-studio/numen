@@ -10,14 +10,14 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// asked is what a reading or a transcription looks for its runtime by, with
-// nothing fetched.
-func asked() Settings { return Settings{Section: "indexing.recognition"} }
+// getSettings is what a reading or a transcription looks for its runtime by,
+// with nothing fetched.
+func getSettings() Settings { return Settings{Section: "indexing.recognition"} }
 
 // A file that is there is not a library that loads, and every way of getting one
 // ends in the same question: does it open.
 func TestTheRuntimeThisMachineHoldsOpens(t *testing.T) {
-	engine, at, refused := load(candidates(asked()))
+	engine, at, refused := load(candidates(getSettings()))
 	if engine == nil {
 		t.Skip("this machine holds none:", refused)
 	}
@@ -26,11 +26,11 @@ func TestTheRuntimeThisMachineHoldsOpens(t *testing.T) {
 }
 
 func TestTheRuntimeFetchedForThisPlatformOpens(t *testing.T) {
-	found, err := findRelease(asked())
+	found, err := findRelease(getSettings())
 	if err != nil {
 		t.Skip(err)
 	}
-	archive, err := Fetched(t.Context(), asked(), found.address())
+	archive, err := Fetched(t.Context(), getSettings(), found.address())
 	if err != nil {
 		t.Skip("nothing fetched on this machine:", err)
 	}
@@ -50,11 +50,11 @@ func TestTheRuntimeFetchedForThisPlatformOpens(t *testing.T) {
 // The runtime is opened once for the life of the process: every tensor is made
 // through the memory it holds, whichever reading or transcription made it.
 func TestTheRuntimeIsOpenedOnceForTheProcess(t *testing.T) {
-	first, at, err := Open(t.Context(), asked())
+	first, at, err := Open(t.Context(), getSettings())
 	if err != nil {
 		t.Skipf("no onnx runtime on this machine: %v", err)
 	}
-	second, again, err := Open(t.Context(), asked())
+	second, again, err := Open(t.Context(), getSettings())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestACallerGivesUpWhileAnotherOpensTheRuntime(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	gave := make(chan error, 1)
 	go func() {
-		_, _, err := Open(ctx, asked())
+		_, _, err := Open(ctx, getSettings())
 		gave <- err
 	}()
 	stop()
@@ -115,7 +115,7 @@ func TestHereAnswersWhileTheRuntimeIsBeingOpened(t *testing.T) {
 	defer halfOpen(t)()
 
 	said := make(chan bool, 1)
-	go func() { said <- Here(asked()) }()
+	go func() { said <- Here(getSettings()) }()
 
 	select {
 	case <-said:

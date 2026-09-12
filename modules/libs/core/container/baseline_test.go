@@ -23,37 +23,38 @@ import (
 func TestNothingIsBaselinedThatIsNoLongerReached(t *testing.T) {
 	for from, entries := range baseline {
 		for _, to := range entries {
-			if !admitting(t, from, to) {
+			if !isAdmitting(t, from, to) {
 				t.Errorf("the baseline holds %s → %s and nothing it reaches is refused", from, to)
 			}
 		}
 	}
 }
 
-// admitting says whether one entry of the baseline still lets an edge through:
-// the entry is taken off the list, the package's own imports are read, and the
-// rule is asked again. An entry that changes no answer is admitting nothing.
-func admitting(t *testing.T, from, to string) bool {
+// isAdmitting says whether one entry of the baseline still lets an edge
+// through: the entry is taken off the list, the package's own imports are read,
+// and the rule is asked again. An entry that changes no answer is admitting
+// nothing.
+func isAdmitting(t *testing.T, from, to string) bool {
 	t.Helper()
 
 	kept := baseline[from]
 	baseline[from] = slices.DeleteFunc(slices.Clone(kept), func(one string) bool { return one == to })
 	defer func() { baseline[from] = kept }()
 
-	for _, dep := range namedBy(t, from) {
+	for _, dep := range getImports(t, from) {
 		if dep != to && !strings.HasPrefix(dep, to+"/") {
 			continue
 		}
-		if refused(from, dep) != "" {
+		if getRefusal(from, dep) != "" {
 			return true
 		}
 	}
 	return false
 }
 
-// namedBy are the packages of this module one package's own files import. A
+// getImports are the packages of this module one package's own files import. A
 // test file is left out for the reason the rules leave it out.
-func namedBy(t *testing.T, pkg string) []string {
+func getImports(t *testing.T, pkg string) []string {
 	t.Helper()
 
 	at := filepath.Join("..", filepath.FromSlash(pkg))
@@ -96,7 +97,7 @@ func TestWhatTheBaselineShrinkRuleRefuses(t *testing.T) {
 		{"adapter/cli", "internal/adapter/trash", false},
 		{"adapter/settings", "port", false},
 	} {
-		if got := admitting(t, one.from, one.to); got != one.admits {
+		if got := isAdmitting(t, one.from, one.to); got != one.admits {
 			if one.admits {
 				t.Errorf("the baseline entry %s → %s admits nothing", one.from, one.to)
 			} else {
@@ -109,7 +110,7 @@ func TestWhatTheBaselineShrinkRuleRefuses(t *testing.T) {
 // The edges to the generated schema are the same list under another rule, and
 // the same holds of them: an entry no package answers to is taken off.
 func TestNothingIsBaselinedForTheSchemaThatIsNoLongerNamed(t *testing.T) {
-	for _, one := range stale(wireBaseline, builtFrom(t)) {
+	for _, one := range stale(wireBaseline, getAllImports(t)) {
 		t.Error(one + ": nothing it is compiled from is the schema")
 	}
 }
@@ -131,9 +132,9 @@ func stale(listed, built map[string][]string) []string {
 	return idle
 }
 
-// builtFrom is everything each package of the core is compiled from, at
+// getAllImports is everything each package of the core is compiled from, at
 // whatever remove, as this machine's build resolves it.
-func builtFrom(t *testing.T) map[string][]string {
+func getAllImports(t *testing.T) map[string][]string {
 	t.Helper()
 
 	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./...")

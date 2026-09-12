@@ -15,10 +15,10 @@ func TestAFolderTheWalkCouldNotEnterIsTheWholeVault(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root enters every folder")
 	}
-	root, shape := shaped(t)
+	root, shape := makeVaultAndShape(t)
 
 	// The folder arrives whole, with one subfolder nothing may enter.
-	at := filled(t, root, "library", 1)
+	at := writeFolderOfNotes(t, root, "library", 1)
 	shut := filepath.Join(at, "shut")
 	if err := os.MkdirAll(filepath.Join(shut, "deep"), 0o755); err != nil {
 		t.Fatal(err)

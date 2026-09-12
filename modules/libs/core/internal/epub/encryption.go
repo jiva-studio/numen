@@ -6,12 +6,12 @@ import (
 
 const encryptionPath = "META-INF/encryption.xml"
 
-// encrypted are the archive entries META-INF/encryption.xml names. A book
+// readEncryptedPaths are the archive entries META-INF/encryption.xml names. A book
 // carrying none has no such file.
 //
 // What was done to an entry is not read: which entries the file names is what
 // separates a book that reads from one that does not.
-func encrypted(files map[string]*zip.File) map[string]bool {
+func readEncryptedPaths(files map[string]*zip.File) map[string]bool {
 	raw, ok := contents(files[encryptionPath])
 	if !ok {
 		return nil

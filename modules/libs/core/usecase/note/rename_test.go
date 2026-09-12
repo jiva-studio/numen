@@ -567,7 +567,7 @@ func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 			if got := v.title(t, "Old.md"); got != c.title {
 				t.Errorf("the vault shows it as %q", got)
 			}
-			if !gone(t, v, "Entropy.md") {
+			if !isGone(t, v, "Entropy.md") {
 				t.Error("the file is at Entropy.md")
 			}
 		})
@@ -605,8 +605,8 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 	}
 }
 
-// gone says whether the vault holds nothing at a path.
-func gone(t *testing.T, c changing, path string) bool {
+// isGone says whether the vault holds nothing at a path.
+func isGone(t *testing.T, c changing, path string) bool {
 	t.Helper()
 	_, err := os.Stat(filepath.Join(c.vault.Path, filepath.FromSlash(path)))
 	return errors.Is(err, fs.ErrNotExist)

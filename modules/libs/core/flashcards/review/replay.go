@@ -48,7 +48,7 @@ func By(s Scheduler) Assignment {
 type History []Answer
 
 // Give puts a vault's answers in the order they were given.
-func Give(answers []Answer) History { return given(answers) }
+func Give(answers []Answer) History { return getGivenAnswers(answers) }
 
 // Replay works out where this history leaves every card face, each under the
 // scheduler its own preset asks for and on the day its own preset puts it.
@@ -92,11 +92,11 @@ func Retained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
 // Retained is the same over a history already in order.
 func (h History) Retained(by Scheduler, d Day) map[string]RecallTally {
 	out := make(map[string]RecallTally)
-	h.replayed(by, func(before Schedule, a Answer) {
+	h.walkAnswers(by, func(before Schedule, a Answer) {
 		if !by.Spaced(before) {
 			return
 		}
-		day := d.Names(a.At)
+		day := d.GetName(a.At)
 		one := out[day]
 		one.Asked++
 		if a.Rating != Again {
@@ -107,15 +107,15 @@ func (h History) Retained(by Scheduler, d Day) map[string]RecallTally {
 	return out
 }
 
-// replayed walks the answers in the order they were given, telling each one to
-// the caller with the schedule the card face stood at before it.
-func replayed(
+// walkAnswers walks the answers in the order they were given, telling each one
+// to the caller with the schedule the card face stood at before it.
+func walkAnswers(
 	by Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[CardFaceID]Schedule {
-	return Give(answers).replayed(by, each)
+	return Give(answers).walkAnswers(by, each)
 }
 
-func (h History) replayed(
+func (h History) walkAnswers(
 	by Scheduler, each func(before Schedule, a Answer),
 ) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
@@ -129,13 +129,13 @@ func (h History) replayed(
 	return out
 }
 
-// given is the answers that count, in the order they were given.
+// getGivenAnswers is the answers that count, in the order they were given.
 //
 // An answer some line takes back is left out, and one identifier is one answer
 // however many lines carry it. The files arrive in whatever order they were
 // synchronised, and what a card face has been through is the order of the
 // answers themselves.
-func given(answers []Answer) []Answer {
+func getGivenAnswers(answers []Answer) []Answer {
 	taken := make(map[string]bool)
 	for _, a := range answers {
 		if a.TakesBack() {

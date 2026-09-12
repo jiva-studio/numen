@@ -1,7 +1,7 @@
 /**
  * Window registration for flashcard deck tabs.
  */
-import { markOf } from '@/entities/note'
+import { getMarkOf } from '@/entities/note'
 import type { TabKind } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
 import DeckTab from './ui/DeckTab.vue'
@@ -46,7 +46,7 @@ export function deckKind({
       return createDeckTabState(id)
     },
     getTitle: (one) => vaultAnswers.getTitle(store.getPath(one.id)),
-    getMark: (one) => markOf(one.note.value.state),
+    getMark: (one) => getMarkOf(one.note.value.state),
     pane: DeckTab,
     identity: (id) => id,
     onShow: () => {

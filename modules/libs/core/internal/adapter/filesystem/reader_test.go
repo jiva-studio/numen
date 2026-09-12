@@ -62,8 +62,8 @@ func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
 	}
 }
 
-// walkedKinds is what a walk found, as the kind of source each path is.
-func walkedKinds(t *testing.T, root string, opts filesystem.Options) map[string]domain.SourceKind {
+// walkKinds is what a walk found, as the kind of source each path is.
+func walkKinds(t *testing.T, root string, opts filesystem.Options) map[string]domain.SourceKind {
 	t.Helper()
 	src, err := filesystem.Open(root, opts)
 	if err != nil {
@@ -85,7 +85,7 @@ func TestWalkSaysWhichKindEachSourceIs(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, "library/A Book.epub")
 
-	kinds := walkedKinds(t, root, filesystem.Options{})
+	kinds := walkKinds(t, root, filesystem.Options{})
 
 	if got := kinds["library/A Book.epub"]; got != domain.KindBook {
 		t.Errorf("the book walked as %q", got)
@@ -115,7 +115,7 @@ func TestAFormatNothingReadsIsNotASource(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if kind, found := walkedKinds(t, root, filesystem.Options{})[scanned]; found {
+	if kind, found := walkKinds(t, root, filesystem.Options{})[scanned]; found {
 		t.Errorf("walk reported the image as %q", kind)
 	}
 
@@ -159,7 +159,7 @@ func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, ".obsidian/A Book.epub")
 
-	kinds := walkedKinds(t, root, filesystem.Options{})
+	kinds := walkKinds(t, root, filesystem.Options{})
 	if kind, found := kinds[".obsidian/A Book.epub"]; found {
 		t.Errorf("walk reported a book from a hidden folder as %q", kind)
 	}
@@ -214,8 +214,8 @@ func TestWalkReportsSizeAndTime(t *testing.T) {
 	}
 }
 
-// listing is the names of what one folder holds, in the order they came back.
-func listing(t *testing.T, src *filesystem.VaultReader, folder string) []string {
+// listNames is the names of what one folder holds, in the order they came back.
+func listNames(t *testing.T, src *filesystem.VaultReader, folder string) []string {
 	t.Helper()
 	entries, err := src.List(t.Context(), folder)
 	if err != nil {
@@ -239,14 +239,14 @@ func TestAListingIsOrderedAndLeavesTheHiddenOut(t *testing.T) {
 		".secret.md":             "# Secret\n",
 		".obsidian/workspace.md": "{}\n",
 	})
-	laid(t, v.Path, "apple.txt")
+	placeFile(t, v.Path, "apple.txt")
 
 	src, err := filesystem.Open(v.Path, filesystem.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []string{"alpha", "Zulu", "apple.txt", "Banana.md"}
-	if got := listing(t, src, ""); !slices.Equal(got, want) {
+	if got := listNames(t, src, ""); !slices.Equal(got, want) {
 		t.Errorf("the root listed as\n  %v\nwant\n  %v", got, want)
 	}
 }
@@ -259,8 +259,8 @@ func TestAListingSaysWhatEachEntryIs(t *testing.T) {
 		"library/Notes.md":      "# Notes\n",
 		"library/deeper/Old.md": "# Old\n",
 	})
-	laid(t, v.Path, "library/A Book.epub")
-	laid(t, v.Path, "library/scan.png")
+	placeFile(t, v.Path, "library/A Book.epub")
+	placeFile(t, v.Path, "library/scan.png")
 
 	src, err := filesystem.Open(v.Path, filesystem.Options{})
 	if err != nil {
@@ -286,14 +286,14 @@ func TestAListingSaysWhatEachEntryIs(t *testing.T) {
 // the name begins with a dot or not.
 func TestAListingLeavesTheServiceFolderOut(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	laid(t, v.Path, "store/state.json")
+	placeFile(t, v.Path, "store/state.json")
 
 	src, err := filesystem.Open(v.Path, filesystem.Options{ServiceDir: "store"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []string{"Entropy.md"}
-	if got := listing(t, src, ""); !slices.Equal(got, want) {
+	if got := listNames(t, src, ""); !slices.Equal(got, want) {
 		t.Errorf("the root listed as\n  %v\nwant\n  %v", got, want)
 	}
 }
@@ -481,7 +481,7 @@ func TestANoteIsAMarkdownFile(t *testing.T) {
 		}
 	}
 
-	if got := walked(t, dir, filesystem.Options{}); !slices.Equal(got, []string{"a.md"}) {
+	if got := walkWithOptions(t, dir, filesystem.Options{}); !slices.Equal(got, []string{"a.md"}) {
 		t.Errorf("the walk found %v, want [a.md]", got)
 	}
 }
@@ -500,12 +500,12 @@ func TestWhichExtensionsAreBooksIsASetting(t *testing.T) {
 		"b.epub": domain.KindBook,
 		"c.pdf":  domain.KindBook,
 	}
-	if got := walkedKinds(t, dir, filesystem.Options{}); !maps.Equal(got, want) {
+	if got := walkKinds(t, dir, filesystem.Options{}); !maps.Equal(got, want) {
 		t.Errorf("default found %v, want %v", got, want)
 	}
 
 	want = map[string]domain.SourceKind{"a.md": domain.KindNote, "c.pdf": domain.KindBook}
-	got := walkedKinds(t, dir, filesystem.Options{BookExtensions: []string{".pdf"}})
+	got := walkKinds(t, dir, filesystem.Options{BookExtensions: []string{".pdf"}})
 	if !maps.Equal(got, want) {
 		t.Errorf("configured found %v, want %v", got, want)
 	}
@@ -525,7 +525,7 @@ func TestTheConfiguredServiceFolderIsSkippedEvenWithoutALeadingDot(t *testing.T)
 		t.Fatal(err)
 	}
 
-	got := walked(t, dir, filesystem.Options{ServiceDir: "_numen"})
+	got := walkWithOptions(t, dir, filesystem.Options{ServiceDir: "_numen"})
 	if !slices.Equal(got, []string{"real.md"}) {
 		t.Errorf("walk found %v, want [real.md]", got)
 	}
@@ -547,7 +547,7 @@ func TestTheServiceFolderIsSkippedInWhateverCaseItIsSpelled(t *testing.T) {
 	}
 
 	opts := filesystem.Options{ServiceDir: "_numen"}
-	if got := walked(t, dir, opts); !slices.Equal(got, []string{"real.md"}) {
+	if got := walkWithOptions(t, dir, opts); !slices.Equal(got, []string{"real.md"}) {
 		t.Errorf("walk found %v, want [real.md]", got)
 	}
 	src, err := filesystem.Open(dir, opts)
@@ -559,7 +559,7 @@ func TestTheServiceFolderIsSkippedInWhateverCaseItIsSpelled(t *testing.T) {
 	}
 }
 
-func walked(t *testing.T, root string, opts filesystem.Options) []string {
+func walkWithOptions(t *testing.T, root string, opts filesystem.Options) []string {
 	t.Helper()
 	src, err := filesystem.Open(root, opts)
 	if err != nil {

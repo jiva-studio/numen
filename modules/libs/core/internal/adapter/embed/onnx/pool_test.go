@@ -55,7 +55,7 @@ func TestAllPaddingIsAZeroVector(t *testing.T) {
 // A batch carries what its texts hold and no more: a short batch is not laid out
 // at the length of a long one.
 func TestABatchIsAsLongAsItsLongestText(t *testing.T) {
-	rows, seq, ids, mask, types := padded([][]int{{7, 8, 9}, {4}}, 1)
+	rows, seq, ids, mask, types := padBatch([][]int{{7, 8, 9}, {4}}, 1)
 	if rows != 2 || seq != 3 {
 		t.Fatalf("two texts of three and one tokens were laid out %dx%d", rows, seq)
 	}
@@ -75,7 +75,7 @@ func TestABatchIsAsLongAsItsLongestText(t *testing.T) {
 // A text the tokenizer gave nothing for is still a text, and what pools its row
 // divides by something.
 func TestAnEmptyTextIsMarkedAtOneToken(t *testing.T) {
-	rows, seq, _, mask, _ := padded([][]int{{}}, 1)
+	rows, seq, _, mask, _ := padBatch([][]int{{}}, 1)
 	if rows != 1 || seq != 1 {
 		t.Fatalf("one empty text was laid out %dx%d", rows, seq)
 	}

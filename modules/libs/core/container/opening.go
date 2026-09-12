@@ -67,13 +67,13 @@ func (c Config) VaultOpenerWith(
 		watcher: watcher,
 		scan:    scan,
 		held:    held,
-		refresh: refreshing(c, db, held),
+		refresh: makeRefresh(c, db, held),
 	}
 }
 
-// refreshing brings named notes up to date, cut at this installation's sizes
+// makeRefresh brings named notes up to date, cut at this installation's sizes
 // and carrying what was fetched for a link note.
-func refreshing(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
+func makeRefresh(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
 	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources())
 	refresh.Derived = c.DerivedStores()
 	return refresh
@@ -151,7 +151,7 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 	}
 	res, err := walk.Execute(ctx, o.vault)
 
-	under := o.opening.held.taken()
+	under := o.opening.held.takePaths()
 	if err != nil {
 		return res.Notes, err
 	}
@@ -238,9 +238,9 @@ func (w *writes) hold(path string) {
 	w.paths = append(w.paths, path)
 }
 
-// taken is every path held, and the end of the holding: the walk is over, so a
-// write that lands from now on is already the last one.
-func (w *writes) taken() []string {
+// takePaths is every path held, and the end of the holding: the walk is over,
+// so a write that lands from now on is already the last one.
+func (w *writes) takePaths() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 

@@ -32,16 +32,16 @@ type ytDLP struct {
 }
 
 func newYtDLP(ctx context.Context, c Config) *ytDLP {
-	command := resolved(c.Video, "yt-dlp")
+	command := resolveProgram(c.Video, "yt-dlp")
 	return &ytDLP{
 		command: command,
-		sound:   resolved(c.Sound, "ffmpeg"),
+		sound:   resolveProgram(c.Sound, "ffmpeg"),
 		version: version(ctx, command),
 	}
 }
 
 // Supports is a video, on a machine holding the tool that gets at one.
-func (v *ytDLP) Supports(at domain.URL) bool { return carries(at) && v.command.held() }
+func (v *ytDLP) Supports(at domain.URL) bool { return carries(at) && v.command.isPresent() }
 
 func (v *ytDLP) Downloading(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
@@ -50,7 +50,7 @@ func (v *ytDLP) Downloading(domain.URL) port.DownloadModel {
 // version is what the tool answers when asked which it is. A tool that will not
 // say is still a tool, and what it produced is claimed by its name alone.
 func version(ctx context.Context, tool program) string {
-	if !tool.held() {
+	if !tool.isPresent() {
 		return ""
 	}
 	said, err := run(ctx, tool, nil, "--version")
@@ -153,7 +153,7 @@ func (v *ytDLP) subtitles(
 	if err != nil {
 		return nil, err
 	}
-	cues, err := cued(raw)
+	cues, err := parseCues(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func (v *ytDLP) Download(
 	if where := v.sound.at(); where != "" {
 		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
 	}
-	taking := v.command.started(ctx, arguments...)
+	taking := v.command.buildCommand(ctx, arguments...)
 	var said bytes.Buffer
 	taking.Stdout, taking.Stderr = &said, &said
 	if err := taking.Run(); err != nil {

@@ -43,7 +43,7 @@ const naming = useNaming<HeadingObjection>({
 })
 
 /** Why what is in the name box cannot be used, and nothing while it can. */
-const objections = computed(() => naming.objection(props.face.id))
+const objections = computed(() => naming.getObjection(props.face.id))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => {

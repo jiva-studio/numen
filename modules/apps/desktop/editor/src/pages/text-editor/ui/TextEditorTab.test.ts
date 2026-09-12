@@ -24,7 +24,7 @@ const mountTextEditor = async (answers: Partial<TextEditorTabDeps> = {}) => {
     ...answers,
   }
   const state = useTextEditor(core, () => {})
-  await state.again()
+  await state.reload()
   return { wrote, state, tab: mount(TextEditorTab, { props: { state } }) }
 }
 

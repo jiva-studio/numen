@@ -35,8 +35,8 @@ export const byHolding = (after: number = HOLD): ReachStrategy => ({
   listeners: (site) => {
     const held = useHold(site.ready, site.reach, () => after)
     return {
-      pointerdown: held.down,
-      pointermove: held.move,
+      pointerdown: held.onPointerDown,
+      pointermove: held.onPointerMove,
       pointerup: held.letGo,
       pointercancel: held.letGo,
     }

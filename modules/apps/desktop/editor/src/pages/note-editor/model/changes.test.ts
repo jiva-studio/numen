@@ -81,7 +81,7 @@ describe('a note the window is no longer showing', () => {
     const changes = noteChanges(limits)
     changes.reportChange(createEdit())
 
-    changes.shut('Entropy.md')
+    changes.closeNote('Entropy.md')
 
     expect(changes.getChange('Entropy.md')).toBeNull()
     expect(vi.getTimerCount()).toBe(0)
