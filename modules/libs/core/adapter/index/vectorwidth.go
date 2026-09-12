@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
-	"github.com/jiva-studio/numen/modules/libs/core/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 )
 
 // declaredWidth reads the width out of the statement the table was created by,

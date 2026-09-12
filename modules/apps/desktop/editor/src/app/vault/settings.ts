@@ -12,7 +12,7 @@ import { formatErrorMessage } from '@numen/wire'
 import type { Configuration } from '@/entities/settings'
 import type { HangingSettings } from '@/entities/settings'
 import type { ReviewSettings } from '@/entities/settings'
-import type { Core } from '@/app/ports/core'
+import type { SettingsPort } from '@/app/ports/settings'
 
 const SYNCS = ['naming', 'sync_title_and_filename']
 const HANGS = ['appearance', 'hang_parts_under_a_node']
@@ -44,19 +44,7 @@ const puts = async (
   return null
 }
 
-export type SettingsCore = Pick<
-  Core,
-  | 'getSyncEnabled'
-  | 'setSyncEnabled'
-  | 'getHangingSettings'
-  | 'setHangingSettings'
-  | 'getSettings'
-  | 'updateSettings'
-  | 'getSettingsFile'
-  | 'saveSettingsFile'
-  | 'getReviewSettings'
-  | 'setReviewSettings'
->
+export type SettingsCore = SettingsPort
 
 export const settingsCore: SettingsCore = {
   getSyncEnabled: async () => getSettingAt(await configured(), SYNCS) !== false,

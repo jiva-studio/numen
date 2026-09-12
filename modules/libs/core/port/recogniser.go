@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"image"
 
-	"github.com/jiva-studio/numen/modules/libs/core/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
 // RecognitionModel names what read a page. It is recorded beside what it produced,

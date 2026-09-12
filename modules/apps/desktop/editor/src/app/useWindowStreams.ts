@@ -3,14 +3,15 @@
  */
 import type { Ref, ShallowRef } from 'vue'
 import { following } from '@numen/ui'
-import type { Core } from '@/app/ports/core'
+import type { NotePort } from '@/app/ports/notes'
+import type { VaultPort } from '@/app/ports/vault'
 import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
 import type { Span } from '@/shared/span'
 
 export interface WindowStreamsDeps {
-  readonly core: Core
+  readonly core: Pick<VaultPort, 'changes' | 'focus' | 'tasks'> & Pick<NotePort, 'editing'>
   readonly listening: AbortController
   readonly isOpen: () => boolean
   readonly setLost: (said: string) => void

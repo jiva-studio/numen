@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 // published is the format a site hands its captions over in: one event to a

@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import { holdsTheWindow } from '@numen/ui'
-import App from './App.vue'
-import './app.css'
+import App from './app/App.vue'
+import './app/app.css'
 
 // The menu the webview draws carries a browser's idea of what is here —
 // inspect, reload, view source — and none of it belongs in an application. Over

@@ -6,8 +6,8 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // A source carrying no text a person typed is put through a run: a scan is

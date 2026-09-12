@@ -15,9 +15,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
-	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 )
 
 //go:embed sql/*.sql

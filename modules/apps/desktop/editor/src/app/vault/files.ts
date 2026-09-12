@@ -4,12 +4,14 @@
 import { files } from '@/shared/clients'
 import { bookFormat, mapEntry, mapMoveResult, noteType, sourceKind } from './words'
 import { errorIn } from '@/shared/answers'
-import type { Core } from '@/app/ports/core'
+import type { FilePort } from '@/app/ports/files'
+import type { NotePort } from '@/app/ports/notes'
 
 export type FilesCore = Pick<
-  Core,
-  'remove' | 'list' | 'move' | 'createFolder' | 'createUrl' | 'fileKinds'
-> & {
+  FilePort,
+  'list' | 'move' | 'createFolder' | 'createUrl' | 'fileKinds'
+> &
+  Pick<NotePort, 'remove'> & {
   makeFolder?: (path: string) => Promise<unknown>
   makeURL?: (url: string, folder: string) => Promise<unknown>
 }

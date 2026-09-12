@@ -9,7 +9,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 

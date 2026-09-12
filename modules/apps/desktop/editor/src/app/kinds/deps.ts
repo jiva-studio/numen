@@ -3,14 +3,15 @@ import type { CommandDeps, CommandTarget, runSupport } from '@/features/command-
 import type { FileOpeners, useWindowTabs } from '@/entities/tab'
 import type { createMediaTypeProbe } from '@/entities/media'
 import type { MessageLog } from '@/shared/notices/messages'
-import type { Core } from '@/app/ports/core'
+import type { NotePort } from '@/app/ports/notes'
+import type { FilePort } from '@/app/ports/files'
 import type { useNoteEditors } from '../useNoteEditors'
 import type { useSettings } from '../useSettings'
 import type { useVaults } from '../useVaults'
 import type { useWindowDisplay } from '../useWindowDisplay'
 
 export interface WindowKindsDeps {
-  core: Core
+  core: NotePort & FilePort
   log: MessageLog
   puts: FileOpeners
   held: ReturnType<typeof useWindowTabs>

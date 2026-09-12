@@ -1,0 +1,224 @@
+// Package text answers one question for every kind of source: what does this
+// file say, and where in it is any offset.
+//
+// Three callers ask it — an extractor cutting a source, a search showing a
+// passage, an embedder re-slicing a chunk — and they have to agree. A chunk
+// keeps an offset into the text a reader produced; a second reader producing
+// other text at other offsets reads the wrong place and says so with
+// confidence.
+//
+// Reading one file's bytes is pure: no filesystem, no clock, no database, and
+// the same bytes give the same text at the same offsets. Reader is the part
+// that fetches those bytes, and it is the only part that touches anything.
+package text
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"path"
+	"sort"
+	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// ErrUnreadable is a file that is there and says nothing this can use. It is
+// not a failure of whatever asked: one file is one file, and a library goes on.
+var ErrUnreadable = errors.New("nothing could be read from the source")
+
+// A Document is a source, read.
+type Document struct {
+	// Text is what the source says, as one stream. Every offset below is a byte
+	// offset into it.
+	Text string
+
+	// Parts are where the source names something, and are what chunks are cut
+	// inside so that one never runs across a part into the next.
+	Parts []chunking.PartStart
+
+	// named and paged are what the source calls the place an offset falls in,
+	// in the vocabulary of its own format. Both ascend by offset, and either may
+	// be empty: half the books read name neither.
+	named []namedPlace
+	paged []namedPlace
+}
+
+// A namedPlace is somewhere the source gives a name to.
+type namedPlace struct {
+	Offset int
+	Name   string
+}
+
+// Locate is where an offset is: the part the source's own navigation, outline
+// or headings name, and the page it falls on. Empty where the source has
+// neither.
+func (d *Document) Locate(offset int) string {
+	named := make([]string, 0, 2)
+	if i := preceding(d.named, offset); i >= 0 {
+		named = append(named, d.named[i].Name)
+	}
+	if i := preceding(d.paged, offset); i >= 0 {
+		named = append(named, d.paged[i].Name)
+	}
+	return strings.Join(named, ", ")
+}
+
+// Opens are the parts that begin exactly at an offset: what a section starting
+// here is called.
+//
+// A part and the first subsection inside it can begin at one place, and both
+// name it. What is answered is every name, outermost first, so a question about
+// either reaches the same place.
+func (d *Document) Opens(offset int) []string {
+	var names []string
+	for _, m := range d.named {
+		if m.Offset == offset {
+			names = append(names, m.Name)
+		}
+		if m.Offset > offset {
+			break
+		}
+	}
+	return names
+}
+
+// page is what a page of a file is called: where it stands in it.
+//
+// A person is told the number a viewer opens at, so there is one number and it
+// is the one on the screen. What the paper printed is a second number for the
+// same page, and a person shown both has to work out which is being talked
+// about.
+func page(at int) string {
+	return fmt.Sprintf("page %d of the file", at+1)
+}
+
+func preceding(namedPlaces []namedPlace, offset int) int {
+	return sort.Search(len(namedPlaces), func(i int) bool { return namedPlaces[i].Offset > offset }) - 1
+}
+
+// The names of what takes text out of a file. A name is part of a source's
+// recipe and changes when the text or the offsets it produces do.
+const (
+	ReaderNote      = "note-1"
+	ReaderEPUB      = "epub-1"
+	ReaderPDF       = "pdf-1"
+	ReaderRecording = "recording-1"
+	ReaderURL       = "url-1"
+)
+
+// Readers is every one of them, and is what a list of the recipes in use is
+// read from. A reader left out of such a list is a reader whose sources owe
+// their text on every run.
+func Readers() []string {
+	return []string{ReaderNote, ReaderEPUB, ReaderPDF, ReaderRecording, ReaderURL}
+}
+
+// ReaderName names what would read this file. A file nothing reads has no name,
+// and nothing asks for its text.
+func ReaderName(ref domain.Fingerprint) (string, bool) {
+	if ref.Kind == domain.KindNote {
+		return ReaderNote, true
+	}
+	if ref.Kind == domain.KindRecording {
+		return ReaderRecording, true
+	}
+	if ref.Kind == domain.KindURL {
+		return ReaderURL, true
+	}
+	if domain.MediaType(ref.Path) != "" {
+		return ReaderRecording, true
+	}
+	switch strings.ToLower(path.Ext(ref.Path)) {
+	case ".epub":
+		return ReaderEPUB, true
+	case ".pdf":
+		return ReaderPDF, true
+	}
+	return "", false
+}
+
+// Read is what one file says.
+//
+// A note is its own bytes. A book is what taking the text out of it produces,
+// and a chunk's offsets belong to that and not to the bytes on disk: slicing an
+// archive at a text offset returns compressed noise.
+//
+// One format is read by a library, which is given rather than reached for.
+//
+// The bytes are somebody else's: a book in a synced vault was put there by
+// whoever synced it, and a library taking text out of it is a library being
+// fed. A panic inside one is answered here as an unreadable file, so that one
+// crafted book costs one file and not the process the window runs in.
+func Read(ctx context.Context, docs port.TextExtractor, ref domain.Fingerprint, raw []byte) (doc *Document, err error) {
+	defer func() {
+		if raised := recover(); raised != nil {
+			doc, err = nil, fmt.Errorf("%w: reading %s raised %v", ErrUnreadable, ref.Path, raised)
+		}
+	}()
+	reader, ok := ReaderName(ref)
+	if !ok {
+		return nil, ErrUnreadable
+	}
+	switch reader {
+	case ReaderNote:
+		return &Document{Text: string(raw)}, nil
+	case ReaderEPUB:
+		return fromEPUB(raw)
+	case ReaderPDF:
+		if docs == nil {
+			return nil, ErrUnreadable
+		}
+		return fromPages(ctx, docs, raw)
+	case ReaderRecording:
+		// A recording says nothing until a model has listened to it. What it
+		// then says is an artifact, and this is never asked for it.
+		return nil, ErrUnreadable
+	}
+	return nil, ErrUnreadable
+}
+
+func fromEPUB(raw []byte) (*Document, error) {
+	book, err := epub.Read(raw)
+	if err != nil {
+		return nil, ErrUnreadable
+	}
+	doc := &Document{Text: book.Text}
+	for _, p := range book.Parts {
+		doc.Parts = append(doc.Parts, chunking.PartStart{Title: p.Title, Offset: p.Offset})
+		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
+	}
+	// A book made for a screen has no pages of its own, and those it names are
+	// the printed edition it was set from. That is the only name they have.
+	for _, p := range book.Pages {
+		if p.Label == "" {
+			continue
+		}
+		doc.paged = append(doc.paged, namedPlace{Offset: p.Offset, Name: p.Label})
+	}
+	return doc, nil
+}
+
+// fromPages is a document whose text is laid out on printed pages, and whose
+// pages are named by where they stand.
+func fromPages(ctx context.Context, docs port.TextExtractor, raw []byte) (*Document, error) {
+	book, err := docs.Read(ctx, raw)
+	if err != nil {
+		if ctx.Err() != nil {
+			return nil, err
+		}
+		return nil, ErrUnreadable
+	}
+	doc := &Document{Text: book.Text}
+	for _, p := range book.Parts {
+		doc.Parts = append(doc.Parts, p)
+		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
+	}
+	for i, at := range book.Pages {
+		doc.paged = append(doc.paged, namedPlace{Offset: at, Name: page(i)})
+	}
+	return doc, nil
+}

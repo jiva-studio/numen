@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	derived "github.com/jiva-studio/numen/modules/libs/core/text"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
 // What a file of the vault is made of is bytes, and bytes are what this route

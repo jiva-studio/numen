@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/epub"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 )
 
 // books are the books the window has open. An archive is read and parsed once,

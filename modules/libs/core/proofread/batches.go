@@ -1,8 +1,8 @@
 package proofread
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 // Scanned is the printed lines of a reading, gathered by the page they were

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
 )
 
 // Appearance is how the window is drawn.

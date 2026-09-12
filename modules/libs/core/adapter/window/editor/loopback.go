@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	derived "github.com/jiva-studio/numen/modules/libs/core/text"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 

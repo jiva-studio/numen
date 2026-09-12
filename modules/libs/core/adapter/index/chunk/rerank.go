@@ -7,7 +7,7 @@ import (
 	"sort"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 )
 
 // coarseCandidates is how many chunks the coarse pass keeps for each answer

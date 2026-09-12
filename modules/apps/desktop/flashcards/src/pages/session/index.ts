@@ -1,0 +1,13 @@
+/** The session screen: the card in front of a person, and the two panels beside it. */
+export { core } from './api/agent'
+export { around } from './api/notes'
+export { WORDS } from './lib/agentWords'
+export { useNotesPanel } from './model/notes'
+export { useAgentPanel } from './model/panel'
+export { useReviewSession } from './model/session'
+export type { Report } from './model/session'
+export { default as AgentPanel } from './ui/AgentPanel.vue'
+export { default as NotesPanel } from './ui/NotesPanel.vue'
+export type { PanelPlace } from './ui/PanelCarousel.vue'
+export { default as Session } from './ui/Session.vue'
+export { default as SessionSummary } from './ui/SessionSummary.vue'

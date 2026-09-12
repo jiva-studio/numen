@@ -5,11 +5,11 @@ import { computed, watch } from 'vue'
 import { iconOfKind } from '@/entities/tab'
 import { AGENT } from '@/entities/tab'
 import type { Attention } from '@/entities/tab'
-import type { Core } from '@/app/ports/core'
+import type { VaultPort } from '@/app/ports/vault'
 import type { OpenTab, useWindowTabs } from '@/entities/tab'
 
 export interface AttentionDeps {
-  core: Core
+  core: Pick<VaultPort, 'setFocus'>
   /** The window tabs manager. */
   tabs?: ReturnType<typeof useWindowTabs>
   held?: ReturnType<typeof useWindowTabs>

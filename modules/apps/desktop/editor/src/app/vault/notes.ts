@@ -4,12 +4,12 @@
 import { notes } from '@/shared/clients'
 import { mapBaseline, mapLink, mapMoveResult, mapNeighbourhood, mapNoteResult, run, writes } from './words'
 import { errorIn, staleIn } from '@/shared/answers'
-import type { Core } from '@/app/ports/core'
+import type { NotePort } from '@/app/ports/notes'
+import type { VaultPort } from '@/app/ports/vault'
 
 export type NoteOperations = Pick<
-  Core,
+  NotePort,
   | 'neighbourhood'
-  | 'getInitialOpenPath'
   | 'editing'
   | 'read'
   | 'write'
@@ -18,7 +18,8 @@ export type NoteOperations = Pick<
   | 'rename'
   | 'headings'
   | 'resolve'
->
+> &
+  Pick<VaultPort, 'getInitialOpenPath'>
 
 export const notesCore: NoteOperations = {
   neighbourhood: async (path) => mapNeighbourhood(await notes.getNeighbourhood({ path })),

@@ -23,7 +23,7 @@ import { settingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
 import { createTextEditorTabKind } from '@/pages/text-editor'
 import type { PaletteLists } from '@/features/command-palette'
-import type { Core } from '@/app/ports/core'
+import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab'
@@ -31,7 +31,7 @@ import type { useWindowTabs } from '@/entities/tab'
 type Words = typeof WORDS
 
 export interface SettingsDeps {
-  core: Core
+  core: SettingsPort
   words: Words
   log: MessageLog
   held: ReturnType<typeof useWindowTabs>

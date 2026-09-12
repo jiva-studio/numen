@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 // ErrNothingDownloaded is an address that answered, and carries nothing of what

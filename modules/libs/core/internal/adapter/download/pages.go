@@ -13,8 +13,8 @@ import (
 	readability "github.com/go-shiori/go-readability"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // mostBytes is the most of a page that is read. A page is an article somebody

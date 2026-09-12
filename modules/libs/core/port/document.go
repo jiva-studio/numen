@@ -5,8 +5,8 @@ import (
 	"errors"
 	"image"
 
-	"github.com/jiva-studio/numen/modules/libs/core/chunking"
-	"github.com/jiva-studio/numen/modules/libs/core/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 )
 
 // TextExtractor takes the text out of a file whose text is laid out on printed

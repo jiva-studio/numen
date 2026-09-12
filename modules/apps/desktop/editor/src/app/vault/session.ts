@@ -4,10 +4,10 @@
 import { WINDOW } from './clients'
 import { agentService, vault, windowService, workspace } from '@/shared/clients'
 import { counted, owing } from './words'
-import type { Core } from '@/app/ports/core'
+import type { VaultPort } from '@/app/ports/vault'
 
 export type SessionCore = Pick<
-  Core,
+  VaultPort,
   'state' | 'agentUnreachable' | 'changes' | 'focus' | 'setFocus' | 'tasks' | 'quitting' | 'flushed'
 >
 

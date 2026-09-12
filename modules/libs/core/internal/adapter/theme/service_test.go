@@ -9,8 +9,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/theme"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
 )
 
 // dressing is a service over a themes folder, and the settings behind it, held

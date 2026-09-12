@@ -35,7 +35,7 @@ var baseline = map[string][]string{
 	},
 	// The queues and the schedule are assembled here, so the words for a piece
 	// of work, a schedule and a cut are read in place.
-	"container": {"chunking", "flashcards/review", "task"},
+	"container": {"internal/chunking", "flashcards/review", "task"},
 }
 
 // driving are the adapters something outside comes in through. They call the
@@ -1376,13 +1376,13 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		// What is true of a note is worked out from what is true of a note.
 		{"domain", "task", true},
 		{"flashcards/review", "port", true},
-		{"flashcards/review", "chunking", true},
+		{"flashcards/review", "internal/chunking", true},
 		{"domain", "markdown", false},
 		{"flashcards/format", "domain", false},
 
 		// The composition root does none of the core's work.
 		{"container", "internal/wire", true},
-		{"container", "text", true},
+		{"container", "internal/text", true},
 		{"container", "adapter/index", false},
 		{"container", "task", false},
 	} {

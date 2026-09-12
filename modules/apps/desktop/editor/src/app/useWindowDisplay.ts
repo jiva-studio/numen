@@ -2,7 +2,8 @@
  * What the window is showing, and the rules for changing it.
  */
 import { ref, shallowRef } from 'vue'
-import type { Core } from '@/app/ports/core'
+import type { NotePort } from '@/app/ports/notes'
+import type { VaultPort } from '@/app/ports/vault'
 import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
@@ -40,7 +41,10 @@ export interface DisplayOptions {
   reloads?(): void
 }
 
-export function useWindowDisplay(core: Core, how: DisplayOptions = {}) {
+export function useWindowDisplay(
+  core: VaultPort & Pick<NotePort, 'editing'>,
+  how: DisplayOptions = {},
+) {
   const wait = how.wait ?? sleep
   const told = how.told ?? (() => {})
   const drawing = how.drawing ?? (() => {})

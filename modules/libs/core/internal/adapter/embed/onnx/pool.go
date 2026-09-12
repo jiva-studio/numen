@@ -1,6 +1,6 @@
 package onnx
 
-import "github.com/jiva-studio/numen/modules/libs/core/embedding"
+import "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 
 // meanPool turns a model's per-token output into one vector per text: the
 // average of the tokens the mask keeps, at unit length.
