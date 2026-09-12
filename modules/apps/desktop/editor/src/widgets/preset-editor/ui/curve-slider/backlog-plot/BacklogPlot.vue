@@ -22,7 +22,7 @@ import {
   WIDE,
   type Extent,
 } from '../../../plot'
-import type { Curve } from '../../../api/core'
+import type { Curve } from '../../../types'
 import { WORDS as words } from '../../../words'
 import '../curve-slider.css'
 

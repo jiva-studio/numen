@@ -21,7 +21,7 @@ import {
   type ReadResult,
   type Settings,
   type WriteResult,
-} from './api/core'
+} from './types'
 import { BOUNDS } from './drawn'
 import type { ErrorCode } from '@/shared/errors'
 import type { WindowHandle } from '@/entities/tab/windowTabs'

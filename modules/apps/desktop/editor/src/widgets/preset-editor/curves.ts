@@ -10,7 +10,7 @@ import {
   type Presets,
   type Settings,
   type SettingsBounds,
-} from './api/core'
+} from './types'
 import { approximate, goalValue, nearest, shapeOf } from './curve'
 import { WORDS as words } from './words'
 

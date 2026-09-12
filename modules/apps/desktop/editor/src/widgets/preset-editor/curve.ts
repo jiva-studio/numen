@@ -7,7 +7,7 @@
  * is arithmetic over the settings alone, and is shown as an approximation.
  */
 import { dayAfter, daysBetween } from '@numen/ui'
-import { DEFAULTS, NOWHERE } from './api/core'
+import { DEFAULTS, NOWHERE } from './types'
 import type {
   Bounds,
   Curve,
@@ -17,7 +17,7 @@ import type {
   Rule,
   Settings,
   SettingsBounds,
-} from './api/core'
+} from './types'
 
 /** How many places the line drawn in the answer's place is worked out at. */
 const PLACES = 25

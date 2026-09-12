@@ -11,7 +11,7 @@ import { StopReason } from '@numen/protocol'
 import { dayAfter } from '@numen/ui'
 
 import { usePresetTab } from './kind'
-import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from './api/core'
+import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from './types'
 import { BOUNDS } from './drawn'
 import type { WindowHandle } from '@/entities/tab/windowTabs'
 import type { FileOpeners } from '@/entities/tab/openers'

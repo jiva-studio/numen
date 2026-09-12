@@ -2,7 +2,7 @@
 import { StopReason } from '@numen/protocol'
 import { many, percent, plural } from '@numen/ui'
 import type { ErrorCode } from '@/shared/errors'
-import type { BudgetUnit, Goal, Rule } from './api/core'
+import type { BudgetUnit, Goal, Rule } from './types'
 import type { Field } from './curve'
 
 /** What each of the three goals is offered as: the value it steers. */

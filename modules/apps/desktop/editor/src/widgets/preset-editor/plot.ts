@@ -8,7 +8,7 @@
 import type { CSSProperties } from 'vue'
 import type { Position } from '@numen/ui'
 import { costOf } from './curve'
-import type { Curve } from './api/core'
+import type { Curve } from './types'
 
 /** The picture's own units. It is scaled whole, so a circle stays one. */
 export const WIDE = 560

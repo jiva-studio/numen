@@ -23,7 +23,7 @@ import {
   type PresetCounts,
   type Settings as Scheduling,
   type SettingsBounds,
-} from '@/widgets/preset-editor/api/core'
+} from '@/widgets/preset-editor/types'
 import type { PresetTabState } from '@/widgets/preset-editor/types'
 import DeckTab from '@/widgets/deck-editor/ui/DeckTab.vue'
 import type { DeckTabState } from '@/widgets/deck-editor/model/useDeckTabs'

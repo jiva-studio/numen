@@ -1,5 +1,5 @@
 import { computed, shallowRef, watch, ref } from 'vue'
-import type { Curve, PresetCounts } from '../../api/core'
+import type { Curve, PresetCounts } from '../../types'
 import { clearBacklog, valueAt } from '../../curve'
 import {
   calloutOf,

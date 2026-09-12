@@ -16,7 +16,7 @@ import {
   type PresetCounts,
   type Settings,
   type SettingsBounds,
-} from '../api/core'
+} from '../types'
 import { BACKLOG_HIGH, HIGH, WIDE } from '../plot'
 import type { PresetTabState } from '../types'
 import { WORDS as words } from '../words'

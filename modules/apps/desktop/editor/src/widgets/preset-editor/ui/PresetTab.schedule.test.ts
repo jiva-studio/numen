@@ -9,7 +9,7 @@ import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { StopReason } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
-import { NOWHERE, type Curve } from '../api/core'
+import { NOWHERE, type Curve } from '../types'
 import { drawn, point, rows, tabAt } from '../drawn'
 import { WORDS as words } from '../words'
 

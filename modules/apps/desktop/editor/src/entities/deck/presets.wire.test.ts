@@ -26,7 +26,7 @@ const answers = (said: unknown) => {
   )
 }
 
-const { DEFAULTS, NOWHERE, presets } = await import('./core')
+const { DEFAULTS, NOWHERE, presets } = await import('./presets')
 
 describe('the settings of a preset', () => {
   it('are the defaults where the file names none of them', async () => {

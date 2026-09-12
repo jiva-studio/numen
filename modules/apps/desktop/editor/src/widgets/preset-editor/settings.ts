@@ -2,7 +2,7 @@
  * Settings calculation, bound clamping, and reconciliation for preset tabs.
  */
 import { dayAfter, daysBetween, isDay } from '@numen/ui'
-import type { Bounds, Goal, Load, Settings, SettingsBounds } from './api/core'
+import type { Bounds, Goal, Load, Settings, SettingsBounds } from './types'
 import { clamp, nearest, type Field } from './curve'
 import type { SettingValue } from './types'
 

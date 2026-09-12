@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import { NOWHERE, type Curve, type Point } from '../api/core'
+import { NOWHERE, type Curve, type Point } from '../types'
 import { clearBacklog } from '../curve'
 import { FOOT } from '../plot'
 import { drawn, heights, point, tabAt } from '../drawn'

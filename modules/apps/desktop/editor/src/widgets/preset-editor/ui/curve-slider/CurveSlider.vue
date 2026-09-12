@@ -4,7 +4,7 @@
  * drags the knob along.
  */
 import { Spinner } from '@numen/ui'
-import type { Curve, PresetCounts } from '../../api/core'
+import type { Curve, PresetCounts } from '../../types'
 import BacklogPlot from './backlog-plot/BacklogPlot.vue'
 import CurveTiles from './CurveTiles.vue'
 import { FOOT, GRIDLINES, HIGH, LEFT, RIGHT, TOP, WIDE, yOfGridline } from '../../plot'

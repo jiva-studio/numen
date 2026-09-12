@@ -17,7 +17,7 @@ import {
   type PresetCounts,
   type Settings,
   type SettingsBounds,
-} from './api/core'
+} from './types'
 import type { PresetTabState } from './types'
 
 /**
