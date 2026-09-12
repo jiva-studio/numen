@@ -11,7 +11,7 @@ import (
 // paths is the table the settings page draws its rows from, which it holds in a
 // file of its own so that this can be read against the same table the window
 // reads.
-const paths = "../../editor/src/widgets/settings/paths.json"
+const paths = "../../editor/src/pages/settings/paths.json"
 
 // Every path the settings page reads is a path through the file this build
 // writes. A row reading a key nothing writes draws nothing, whatever the file

@@ -11,12 +11,12 @@ import {
   documents,
   useDocumentReader,
   useDocumentTab,
-} from '@/widgets/document-viewer'
-import { bookKind, books, useBookReader, useBookTab, WORDS as bookWords } from '@/widgets/book-reader'
+} from '@/pages/document-viewer'
+import { bookKind, books, useBookReader, useBookTab, WORDS as bookWords } from '@/pages/book-reader'
 import { recordings } from '@/entities/media'
 import { running } from '@/shared/artifacts'
-import { plexKind, usePlexView } from '@/widgets/plex-graph'
-import { CREATABLE } from '@/widgets/note-editor'
+import { plexKind, usePlexView } from '@/pages/plex-graph'
+import { CREATABLE } from '@/pages/note-editor'
 import {
   does,
   invocationOf,
@@ -35,13 +35,13 @@ import {
   core as agent,
   useAgentConversation,
   WORDS as talk,
-} from '@/widgets/agent-chat'
+} from '@/pages/agent-chat'
 import { recordingKind, type MediaTabDeps } from '@/entities/media'
-import { RECORDINGS } from '@/widgets/media-recording'
-import { URLS } from '@/widgets/media-url'
+import { RECORDINGS } from '@/pages/media-recording'
+import { URLS } from '@/pages/media-url'
 import { useTranscript } from '@/entities/media'
 import type { createMediaTypeProbe } from '@/entities/media'
-import { filesKind, useFileTree } from '@/widgets/file-manager'
+import { filesKind, useFileTree } from '@/pages/file-manager'
 import { WORDS as cardWords } from '@/entities/deck'
 import { WORDS as words } from '@/shared/words'
 import { CONVERSATION, minted } from '@/entities/tab'

@@ -31,7 +31,7 @@ export const depcruise = installed('.bin/depcruise')
  */
 export const layered = new Map([
   ['@numen/ui', 'src/features/cards/deck.ts'],
-  ['@numen/editor', 'src/widgets/deck-editor/model/useDeckTabs.ts'],
+  ['@numen/editor', 'src/pages/deck-editor/model/useDeckTabs.ts'],
   ['@numen/flashcards', 'src/decks/presets.ts'],
 ])
 

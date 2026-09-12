@@ -309,10 +309,10 @@ const documentsSaid = {
   },
 }
 
-vi.mock('@/widgets/document-viewer/api/wire', () => documentsSaid)
+vi.mock('@/pages/document-viewer/api/wire', () => documentsSaid)
 
-vi.mock('@/widgets/document-viewer', async (original) => ({
-  ...(await original<typeof import('@/widgets/document-viewer')>()),
+vi.mock('@/pages/document-viewer', async (original) => ({
+  ...(await original<typeof import('@/pages/document-viewer')>()),
   ...documentsSaid,
 }))
 
@@ -333,10 +333,10 @@ const booksSaid = {
   },
 }
 
-vi.mock('@/widgets/book-reader/api/wire', () => booksSaid)
+vi.mock('@/pages/book-reader/api/wire', () => booksSaid)
 
-vi.mock('@/widgets/book-reader', async (original) => ({
-  ...(await original<typeof import('@/widgets/book-reader')>()),
+vi.mock('@/pages/book-reader', async (original) => ({
+  ...(await original<typeof import('@/pages/book-reader')>()),
   ...booksSaid,
 }))
 
@@ -470,10 +470,10 @@ vi.mock('@/entities/deck', async (original) => ({
 
 const agentSaid = { core: { ask: held, finish: async () => {} } }
 
-vi.mock('@/widgets/agent-chat/api/core', () => agentSaid)
+vi.mock('@/pages/agent-chat/api/core', () => agentSaid)
 
-vi.mock('@/widgets/agent-chat', async (original) => ({
-  ...(await original<typeof import('@/widgets/agent-chat')>()),
+vi.mock('@/pages/agent-chat', async (original) => ({
+  ...(await original<typeof import('@/pages/agent-chat')>()),
   ...agentSaid,
 }))
 

@@ -38,7 +38,7 @@ test('a catch that discards the error says why', () => {
     `${read.length} files holding a catch read: the walk is not reading them`,
   )
   assert.ok(
-    read.some((at) => at.endsWith('desktop/editor/src/widgets/note-editor/titles.ts')),
+    read.some((at) => at.endsWith('desktop/editor/src/pages/note-editor/titles.ts')),
     'the walk did not read titles.ts, whose bare catch is what this rule was written for',
   )
   assert.ok(

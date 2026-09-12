@@ -13,7 +13,7 @@ import { WorkspaceLayout, branch, pane } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
-import { SettingsTab, type Installation } from '@/widgets/settings'
+import { SettingsTab, type Installation } from '@/pages/settings'
 import {
   DEFAULTS,
   PresetTab,
@@ -23,11 +23,11 @@ import {
   type PresetTabState,
   type Settings as Scheduling,
   type SettingsBounds,
-} from '@/widgets/preset-editor'
-import { DeckTab, type DeckTabState } from '@/widgets/deck-editor'
-import { StencilTab, type StencilTabState } from '@/widgets/stencil-editor'
+} from '@/pages/preset-editor'
+import { DeckTab, type DeckTabState } from '@/pages/deck-editor'
+import { StencilTab, type StencilTabState } from '@/pages/stencil-editor'
 import type { Marks } from '@/entities/deck'
-import { RecordingTab } from '@/widgets/media-recording'
+import { RecordingTab } from '@/pages/media-recording'
 import { useTranscript, type Recordings } from '@/entities/media'
 import type { Cue } from '@/entities/media'
 import type { Player } from '@/entities/media'
@@ -37,8 +37,8 @@ import {
   useDocumentReader,
   useDocumentTab,
   type Documents,
-} from '@/widgets/document-viewer'
-import { FilesTab, ROOT, useFilesTab, useFileTree } from '@/widgets/file-manager'
+} from '@/pages/document-viewer'
+import { FilesTab, ROOT, useFilesTab, useFileTree } from '@/pages/file-manager'
 import type { Entry } from '@/shared/file'
 import { iconOfKind } from '@/entities/tab'
 import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '@/entities/tab'

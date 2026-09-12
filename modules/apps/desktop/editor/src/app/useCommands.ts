@@ -22,7 +22,7 @@ import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { createFileCreators } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 import { WORDS } from '@/shared/words'
-import type { NoteCreator } from '@/widgets/note-editor'
+import type { NoteCreator } from '@/pages/note-editor'
 import type { VaultCore } from './vault'
 
 type Words = typeof WORDS

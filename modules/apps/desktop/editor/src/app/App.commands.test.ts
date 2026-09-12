@@ -15,11 +15,11 @@ import {
   WorkspaceLayout,
   type PaletteGroup,
 } from '@numen/ui'
-import { AgentTab } from '@/widgets/agent-chat'
-import { DeckTab } from '@/widgets/deck-editor'
-import { FilesTab, NEW_DECK, NEW_STENCIL } from '@/widgets/file-manager'
-import { NoteTab } from '@/widgets/note-editor'
-import { PlexTab, WORDS as plexWords } from '@/widgets/plex-graph'
+import { AgentTab } from '@/pages/agent-chat'
+import { DeckTab } from '@/pages/deck-editor'
+import { FilesTab, NEW_DECK, NEW_STENCIL } from '@/pages/file-manager'
+import { NoteTab } from '@/pages/note-editor'
+import { PlexTab, WORDS as plexWords } from '@/pages/plex-graph'
 import {
   asked,
   cards,

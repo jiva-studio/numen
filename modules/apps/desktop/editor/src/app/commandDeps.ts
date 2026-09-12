@@ -9,7 +9,7 @@ import type { CommandDeps, Notes, RunSupport, VaultRef } from "@/features/comman
 import type { MessageWriter } from "@/shared/notices/messages"
 import type { createFileCreators } from "@/entities/tab"
 import type { useWindowTabs } from "@/entities/tab"
-import type { NoteCreator } from "@/widgets/note-editor"
+import type { NoteCreator } from "@/pages/note-editor"
 
 export interface CommandDepsOptions {
   core: VaultCore

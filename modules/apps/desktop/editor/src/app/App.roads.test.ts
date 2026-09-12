@@ -21,9 +21,9 @@ import {
   WorkspaceLayout,
   type Workspace,
 } from '@numen/ui'
-import { DocumentTab } from '@/widgets/document-viewer'
-import { NoteTab } from '@/widgets/note-editor'
-import { RecordingTab } from '@/widgets/media-recording'
+import { DocumentTab } from '@/pages/document-viewer'
+import { NoteTab } from '@/pages/note-editor'
+import { RecordingTab } from '@/pages/media-recording'
 import {
   asked,
   cards,
