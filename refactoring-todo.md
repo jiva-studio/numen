@@ -350,3 +350,32 @@ go test ./internal/layers/...                    ok
 
 - [ ] **`eslint` не гоняется ни в одном workflow и ни в Makefile.** На `src/` окна он выдаёт 20 ошибок — 18 `no-unused-vars`, одна `require-yield`, одна `no-misused-promises`, — и все они доФСД. Проверка, которую никто не запускает, — это проверка, которой нет: либо её ставят в `boundaries.yml` рядом с остальными и чистят эти двадцать, либо конфиг убирают. Решение не техническое.
 - [x] Три записи в `ignores` у `eslint.config.js` называли пути доФСД (`src/shared/testing/**`, `src/shared/settings/review.ts`, `src/widgets/note-editor/notes.ts`) и потому не действовали. Исправлены; две из двадцати двух ошибок были следствием именно этого.
+
+---
+
+## Итог захода
+
+Сделано 122 пункта из 130. Не сделаны восемь, и каждый по названной причине, а не потому что не дошли руки:
+
+- три пункта раздела 14 (`libs/ui`, `flashcards`) и `PlexShowing`, который объявлен в `libs/ui`, — по решению из шапки идут отдельной веткой;
+- перенос одиннадцати публичных пакетов ядра под `internal/` — решение о публичной поверхности библиотеки, а не уборка;
+- `eslint` не гоняется ни в одном workflow, и его двадцать ошибок — тоже решение: ставить его в CI и чистить, или убирать конфиг;
+- глаголы 3-го лица (`carries`, `holds`, `puts`) машиной не отличить от множественного числа, и они остаются роли `naming-reviewer`.
+
+Зелено на последнем коммите:
+
+```
+node --test modules/tools/lint/*.test.mjs        45/45
+node modules/tools/depgraph/check.mjs            0 нарушений вне baseline
+npx vue-tsc --noEmit                             0 ошибок
+npx vitest run --project unit        (editor)    2029/2029
+npx vitest run --project 'stories (chromium)'    40/40
+npm run test:unit                    (libs/ui)   2301/2301
+npm test                             (flashcards) 271/271
+npm test                             (mobile)     27/27
+npm run build            (libs/ui, editor)       обе проходят
+go test ./container/...                          ok
+go test ./internal/layers/...                    ok
+```
+
+В `baseline` границ — 7 записей: три теста окна, монтирующих соседа, и четыре в библиотеке компонентов. В `baseline` правила имён функций — 167, и это ровно `libs/ui` и `flashcards`. В `baseline` правила имён файлов — ноль. В `baseline` правила кавычек — одна строка, где маска не разбирает регулярное выражение.
