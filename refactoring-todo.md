@@ -121,8 +121,9 @@ node --test modules/tools/lint/*.test.mjs
 - [x] Тест «что правило отвергает» на синтетических именах, плюс тест «что считается функцией».
 - [x] Занести сегодняшний список в `baseline` — 234 имени. Правило уже поймало новый герундий (`NoteMaking`), написанный агентом по ходу работы.
 - [x] Уточнение по ходу: правило судит **первое** слово имени, а не последнее. Первая версия судила последнее и браковала `getSettings` и `useCommands`. И третье лицо (`carries`) машиной не проверяется вовсе: `carries` и `cells` кончаются одинаково, а фабрика с именем-существительным здесь разрешена — это остаётся человеку и роли `naming-reviewer`.
-- [ ] Переименовать глаголы 3-го лица: `carries` (5 файлов), `holds` (4), `puts` (5), `shows` (9), `stands` (3), `does`, `mends`, `begins`, `lands`, `ends`, `reaches`, `refuses`, `takes`.
-- [ ] Переименовать герундии и причастия: `dressing`/`dressed`, `minting`/`minted` (должно быть `generateId`), `offered` (8 файлов), `owed`, `spined`, `shelved`, `talked`, `styling`, `sizing`, `ranging`, `keeping`, `holding`, `asking`, `answering`, `pointing`, `pressing`, `dragging`, `naming`, `making`, `closing`, `calling`.
+- [x] Герундии и причастия в окне переименованы все: **135 имён**, тремя агентами по слоям. `minted` → `generateId`, `holding` → `findCueAt`, `typed` → `setBody`, `spined` → `readSpineDocument`, десять обработчиков машины состояний заметки — `applyRead`, `applyEdit`, `applyWrite` и так далее. `baseline` правила упал с 234 до 167, и остаток — это `libs/ui` и `flashcards`, то есть раздел 14.
+- [x] Правило по ходу поймало собственную слепоту: обход останавливал список параметров на первой скобке, поэтому сигнатура с вызовом внутри — `(runs = support())` — читалась как не-объявление, и `asking` в палитре не видел никто. Теперь идёт на одну скобку вглубь, и это покрыто тестом.
+- [ ] Глаголы 3-го лица (`carries`, `holds`, `puts`, `shows`) машиной не проверяются и остаются человеку — см. роль `naming-reviewer`.
 - [ ] Поправить имена в самих линтерах: `carries` и `echoes` в `filenames.mjs`.
 - [ ] Выровнять кавычки в импортах на одинарные (`entities/note/notes.ts`, `entities/deck/presets.ts` — двенадцать строк).
 - [ ] Правило на кавычки в `modules/tools/lint/`.
