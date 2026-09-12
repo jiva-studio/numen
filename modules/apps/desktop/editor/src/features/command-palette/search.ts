@@ -15,8 +15,8 @@ import {
   type SearchDestination,
   type SearchHit,
   type SearchRow,
-  type Span,
 } from './lookup'
+import type { Span } from '@/shared/span'
 import {
   evaluateSilence,
   EACH,

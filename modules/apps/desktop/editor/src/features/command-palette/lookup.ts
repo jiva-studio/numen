@@ -3,13 +3,8 @@
  */
 import type { PaletteItem } from '@numen/ui'
 import type { NoteType, Source } from '@/shared/file'
+import type { Span } from '@/shared/span'
 import type { Words } from './search'
-
-/** A run of a name or a passage, counted the way this window counts text. */
-export interface Span {
-  from: number
-  to: number
-}
 
 /**
  * One name that matched: a note title or an internal heading.
