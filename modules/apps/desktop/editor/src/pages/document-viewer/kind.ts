@@ -13,7 +13,7 @@ import type { DocumentTabState } from './model/useDocumentTab'
  * The document tabs of a window. A document is its own tab, so the same one
  * opened again is the tab it is already read in.
  */
-export function documentKind(handle: WindowHandle, opens: (path: string) => DocumentTabState, puts: FileOpeners) {
+export function documentKind(handle: WindowHandle, opens: (path: string) => DocumentTabState, tabOpeners: FileOpeners) {
   const kind: TabKind<DocumentTabState, typeof DOCUMENT> = {
     kind: DOCUMENT,
     opens,
@@ -40,7 +40,7 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
     const id = await handle.opens(DOCUMENT, path)
     void handle.holds<DocumentTabState>(DOCUMENT, id)?.focusSpans(...spans)
   }
-  puts.reads({ kind: 'book' }, (path, spans) => void reads(path, spans))
+  tabOpeners.registerReader({ kind: 'book' }, (path, spans) => void reads(path, spans))
 
   return { kind }
 }

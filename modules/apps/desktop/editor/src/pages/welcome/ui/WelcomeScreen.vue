@@ -11,7 +11,7 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { opensVault, WelcomePage } from '@numen/ui'
 import type { Tab } from '@numen/ui'
 import {
-  does,
+  runInvocation,
   invocationOf,
   keysOf,
   type CommandDeps,
@@ -37,7 +37,7 @@ const props = defineProps<{
   doing: CommandDeps
   where: () => CommandTarget
   /** A command asked for, which is what every way in but the commands comes to. */
-  carries: (id: string, at: CommandTarget) => void
+  runCommand: (id: string, at: CommandTarget) => void
 }>()
 
 // --- State ---
@@ -68,16 +68,16 @@ const welcoming = computed(
 
 // --- Handlers ---
 function onRuns(id: string) {
-  if (id !== COMMANDS) return props.carries(id, props.where())
-  ;(props.search.setOpen ?? props.search.shows)(false)
-  ;(props.commands.setOpen ?? props.commands.shows)(true)
+  if (id !== COMMANDS) return props.runCommand(id, props.where())
+  ;props.search.setOpen(false)
+  ;props.commands.setOpen(true)
 }
 
 function onOpens(id: string) {
   const one = props.listed.vaults.find((vault) => vault.id === id)
   if (!one) return
   const vault: VaultRef = { id: one.id, name: one.name }
-  void does(invocationOf('openVault', { ...props.where(), vault }), props.doing, words)
+  void runInvocation(invocationOf('openVault', { ...props.where(), vault }), props.doing, words)
 }
 
 function onKeyDown(event: KeyboardEvent) {
@@ -102,6 +102,6 @@ onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
     :version="VERSION"
     @runs="onRuns"
     @opens="onOpens"
-    @offers="carries('newVault', where())"
+    @offers="runCommand('newVault', where())"
   />
 </template>

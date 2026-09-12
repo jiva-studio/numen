@@ -10,8 +10,8 @@
 import { FolderRoot } from '@lucide/vue'
 import { KeyCap } from '@/shared/ui/key-cap'
 import { Glyph } from './glyph'
-import { vaultLetter } from './letters'
-import type { Offer, VaultRow, WelcomeAction } from './welcome'
+import { vaultLetter } from '../lib/letters'
+import type { Offer, VaultRow, WelcomeAction } from '../lib/welcome'
 
 withDefaults(
   defineProps<{

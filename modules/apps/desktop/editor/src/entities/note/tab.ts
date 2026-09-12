@@ -49,7 +49,7 @@ const still = (tab: Tab): Transition => ({ tab, effects: [] })
 /**
  * A body equal to what is shown replaces nothing.
  */
-const shows = (tab: Tab, body: string, filePath: FilePath | null): Transition => ({
+const applyBody = (tab: Tab, body: string, filePath: FilePath | null): Transition => ({
   tab: { ...tab, written: body, filePath, shown: body, since: null },
   effects: body === tab.shown ? [] : [{ kind: 'replace', body }],
 })
@@ -59,7 +59,7 @@ const seenOf = (tab: Tab): NoteBaseline | null =>
   tab.written === null || tab.filePath === null ? null : { prose: tab.written, at: tab.filePath }
 
 /** A write of what is on screen now, presenting what it is given. */
-const begins = (tab: Tab, seen: NoteBaseline | null): Transition => ({
+const beginWrite = (tab: Tab, seen: NoteBaseline | null): Transition => ({
   tab: { ...tab, pendingWrite: tab.shown, hasPendingWrite: false, isStale: false },
   effects: [{ kind: 'write', path: tab.path, body: tab.shown, seen }],
 })
@@ -76,14 +76,14 @@ const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition
   }
   if (answer.kind === 'missing') {
     if (stale) return still(tab)
-    return loading ? shows(tab, '', null) : still({ ...tab, isDeleted: true })
+    return loading ? applyBody(tab, '', null) : still({ ...tab, isDeleted: true })
   }
-  if (loading) return shows(tab, answer.body, answer.at)
-  if (state === 'gone') return shows({ ...tab, isDeleted: false }, answer.body, answer.at)
+  if (loading) return applyBody(tab, answer.body, answer.at)
+  if (state === 'gone') return applyBody({ ...tab, isDeleted: false }, answer.body, answer.at)
   if (stale) return still(tab)
-  if (state === 'stale') return shows({ ...tab, isStale: false }, answer.body, answer.at)
+  if (state === 'stale') return applyBody({ ...tab, isStale: false }, answer.body, answer.at)
   if (dirty(tab)) return still(tab)
-  return shows(tab, answer.body, answer.at)
+  return applyBody(tab, answer.body, answer.at)
 }
 
 /**
@@ -95,13 +95,13 @@ const armFor = (since: number, at: number, limits: WriteLimits): number =>
 /**
  * An error about the body is cleared by typing when there is a written baseline.
  */
-const mends = (tab: Tab): boolean =>
+const isMendable = (tab: Tab): boolean =>
   tab.written !== null && tab.error !== null && MENDABLE_ERRORS.includes(tab.error)
 
 const applyEdit = (tab: Tab, body: string, at: number, limits: WriteLimits): Transition => {
   const state = stateOf(tab)
   if (state === 'loading') return still(tab)
-  const error = mends(tab) ? null : tab.error
+  const error = isMendable(tab) ? null : tab.error
   const since = tab.since ?? at
   const next: Tab = { ...tab, shown: body, since, error }
   if (state === 'stale') return still(next)
@@ -111,7 +111,7 @@ const applyEdit = (tab: Tab, body: string, at: number, limits: WriteLimits): Tra
 const applyTimer = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'loading') return still(tab)
-  if (state === 'unsaved') return begins(tab, seenOf(tab))
+  if (state === 'unsaved') return beginWrite(tab, seenOf(tab))
   if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
   return still(tab)
 }
@@ -138,7 +138,7 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
     since: null,
     isDeleted: false,
   }
-  return tab.hasPendingWrite ? begins(written, seenOf(written)) : still(written)
+  return tab.hasPendingWrite ? beginWrite(written, seenOf(written)) : still(written)
 }
 
 const applyChange = (tab: Tab, paths: readonly string[], renamed: readonly Move[]): Transition => {
@@ -159,7 +159,7 @@ const applyChange = (tab: Tab, paths: readonly string[], renamed: readonly Move[
  */
 const applySave = (tab: Tab): Transition => {
   const state = stateOf(tab)
-  if (state === 'unsaved') return begins(tab, seenOf(tab))
+  if (state === 'unsaved') return beginWrite(tab, seenOf(tab))
   if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
   return still(tab)
 }
@@ -170,7 +170,7 @@ const applySave = (tab: Tab): Transition => {
 const applySettle = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'unsaved') {
-    const going = begins(tab, seenOf(tab))
+    const going = beginWrite(tab, seenOf(tab))
     return { tab: going.tab, effects: [{ kind: 'disarm' }, ...going.effects] }
   }
   if (state === 'saving') {
@@ -183,7 +183,7 @@ const applySettle = (tab: Tab): Transition => {
 const applyKeep = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state !== 'stale' && state !== 'gone') return still(tab)
-  return begins(tab, null)
+  return beginWrite(tab, null)
 }
 
 /** Take: the file is read again, replacing the buffer. */
@@ -211,7 +211,7 @@ const applyClose = (tab: Tab): Transition => {
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
   if (state === 'stale') return { tab, effects: [{ kind: 'hold' }] }
   if (state === 'unsaved') {
-    const going = begins(tab, seenOf(tab))
+    const going = beginWrite(tab, seenOf(tab))
     return { tab: going.tab, effects: [...going.effects, { kind: 'hold' }] }
   }
   if (state === 'saving') {

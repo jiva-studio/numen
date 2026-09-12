@@ -10,7 +10,7 @@ import { commandsOf } from '../lib/commands'
 import { runSupport } from '../runs'
 import { invocationOf, type CommandInvocation, type CommandTarget } from '../target'
 import { createNotes, type CommandDeps, type Store } from '../deps'
-import { does } from './handlers'
+import { runInvocation } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/shared/artifacts'
 import type { Movement } from '@/shared/file'
 import type { RemoveResult, RenameResult } from '@/entities/note'
@@ -241,7 +241,7 @@ const window = (
 }
 
 /** One command carried out over the note in front. */
-const carry = async (invocation: CommandInvocation, on: CommandDeps) => does(invocation, on, words)
+const carry = async (invocation: CommandInvocation, on: CommandDeps) => runInvocation(invocation, on, words)
 
 describe('every command that is offered', () => {
   it('is carried out by something', async () => {
@@ -902,7 +902,7 @@ describe('a command over the vault', () => {
     const one = window()
     const empty: CommandDeps = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
 
-    await does(invocationOf('first', front()), empty, words)
+    await runInvocation(invocationOf('first', front()), empty, words)
 
     expect(one.said).toStrictEqual([words.nowhere])
   })
@@ -1060,7 +1060,7 @@ describe('nothing to carry out', () => {
   it('does nothing at all', async () => {
     const one = window()
 
-    await does(null, one.on, words)
+    await runInvocation(null, one.on, words)
     await carry(invocationOf('constructor', front()), one.on)
     await carry(invocationOf('', front()), one.on)
 
@@ -1074,7 +1074,7 @@ describe('nothing to carry out', () => {
       files: { ...one.on.files, removes: async () => Promise.reject(new Error('gone')) },
     }
 
-    await does(invocationOf('remove', front()), broken, words)
+    await runInvocation(invocationOf('remove', front()), broken, words)
 
     expect(one.said).toStrictEqual([
       'numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',

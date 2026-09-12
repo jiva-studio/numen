@@ -8,7 +8,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tree from './Tree.vue'
-import type { Row } from './row'
+import type { Row } from '../lib/row'
 import { stubClock } from '@/shared/fixtures/clock'
 import type { Clock } from '@/shared/lib/clock'
 

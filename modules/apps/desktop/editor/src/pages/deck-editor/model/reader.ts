@@ -71,7 +71,7 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
    * A deck the tab itself turned, which is what it now holds. It is put here
    * as it goes into the store, so the string coming back is not read again.
    */
-  const holds = (id: string, body: string, deck: BufferDeck): void => {
+  const setParsed = (id: string, body: string, deck: BufferDeck): void => {
     parsed.set(id, { body, deck })
   }
 
@@ -81,5 +81,5 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
     marked.delete(id)
   }
 
-  return { deckAt, marksAt, holds, closes }
+  return { deckAt, marksAt, setParsed, closes }
 }

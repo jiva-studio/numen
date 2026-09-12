@@ -121,7 +121,7 @@ describe('a page asked to write what it owes', () => {
     const at = fake(said.read)
     const notes = openNotes(at.core)
     const going = useFileFlush(at.core)
-    going.holds(notes.flush)
+    going.addHandler(notes.flush)
     void going.start()
 
     notes.open('Note.md')
@@ -143,7 +143,7 @@ describe('a page asked to write what it owes', () => {
     const at = fake(said.read)
     const notes = openNotes(at.core)
     const going = useFileFlush(at.core)
-    going.holds(notes.flush)
+    going.addHandler(notes.flush)
     void going.start()
 
     notes.open('Note.md')
@@ -168,7 +168,7 @@ describe('a page asked to write what it owes', () => {
     const at = fake(said.read)
     const notes = openNotes(at.core)
     const going = useFileFlush(at.core)
-    going.holds(notes.flush)
+    going.addHandler(notes.flush)
     void going.start()
 
     notes.open('Note.md')
@@ -187,7 +187,7 @@ describe('a page asked to write what it owes', () => {
     const said = stream()
     const at = fake(said.read)
     const going = useFileFlush(at.core)
-    going.holds(openNotes(at.core).flush)
+    going.addHandler(openNotes(at.core).flush)
     void going.start()
 
     said.say({ token: '0', flush: true })
@@ -218,7 +218,7 @@ describe('a page holding text the file changed under', () => {
     const at = fake(said.read)
     const notes = openNotes(at.core)
     const going = useFileFlush(at.core)
-    going.holds(notes.flush)
+    going.addHandler(notes.flush)
     const note = createConflict('Held.md')
     note.raise(going.raise)
 

@@ -33,10 +33,10 @@ describe('the settings under the control', () => {
     const { tab, done } = drawn({ goal: 'retention' }, { goal: 'retention' })
     expect(tab.text()).toContain(words.fieldName('counts'))
 
-    const shows = tab
+    const unit = tab
       .findAll('button')
       .find((one) => one.text() === words.budgetUnitName('shows'))
-    await shows?.trigger('click')
+    await unit?.trigger('click')
     expect(done).toStrictEqual(['types counts shows', 'settles'])
   })
 

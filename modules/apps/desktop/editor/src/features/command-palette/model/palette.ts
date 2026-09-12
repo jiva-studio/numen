@@ -79,7 +79,7 @@ export function useCommandPalette(
 
   const lights = (item: string) => {
     const step = steps.here.value
-    if (step?.step === 'choosing') holds.shows(step.command.id, item)
+    if (step?.step === 'choosing') holds.previewItem(step.command.id, item)
   }
 
   const lists = async () => {
@@ -169,7 +169,7 @@ export function useCommandPalette(
       steps.reset()
       open.value = true
     }
-    steps.puts({ step: command.needs, command, on: over })
+    steps.pushStep({ step: command.needs, command, on: over })
     return null
   }
 
@@ -196,7 +196,6 @@ export function useCommandPalette(
     setTyped,
     lights,
     setOpen,
-    shows: setOpen,
     asks,
     getRefusal,
     follows: steps.follows,

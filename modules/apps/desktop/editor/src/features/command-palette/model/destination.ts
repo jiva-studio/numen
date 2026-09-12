@@ -25,7 +25,7 @@ export interface DestinationDeps {
 }
 
 /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
-export async function lands(
+export async function openDestination(
   going: SearchDestination | null,
   places: DestinationDeps,
 ): Promise<void> {

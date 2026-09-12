@@ -9,8 +9,8 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { KeyCap } from '@/shared/ui/key-cap'
 import WelcomePage from './WelcomePage.vue'
-import { VAULT_LETTERS } from './letters'
-import type { Offer, VaultRow, WelcomeAction } from './welcome'
+import { VAULT_LETTERS } from '../lib/letters'
+import type { Offer, VaultRow, WelcomeAction } from '../lib/welcome'
 
 const vault = (id: string): VaultRow => ({ id, name: id, path: `/vaults/${id}` })
 

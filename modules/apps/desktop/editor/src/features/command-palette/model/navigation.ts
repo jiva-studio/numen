@@ -74,15 +74,15 @@ export function createPaletteSteps(
     return rows.find((one) => one.inForce)?.id ?? ''
   })
 
-  const begins = (step: PendingStep | null) => {
+  const startStep = (step: PendingStep | null) => {
     if (step?.step === 'vaults') void onLists()
   }
 
-  const puts = (step: PendingStep) => {
+  const pushStep = (step: PendingStep) => {
     onDrop()
     typed.value = step.command.filled?.(step.on) ?? ''
     steps.value = [...steps.value, step]
-    begins(step)
+    startStep(step)
   }
 
   const pops = () => {
@@ -90,7 +90,7 @@ export function createPaletteSteps(
     onDrop()
     typed.value = ''
     steps.value = steps.value.slice(0, -1)
-    begins(here.value)
+    startStep(here.value)
   }
 
   const follows = (renamed: readonly PathRename[] = []) => {
@@ -138,7 +138,7 @@ export function createPaletteSteps(
       if (!one || isAside(one)) return null
       const on = { ...step.on, vault: { id: one.id, name: one.name } }
       if (!step.command.next) return invocation(step.command.id, on)
-      puts({ step: step.command.next, command: step.command, on })
+      pushStep({ step: step.command.next, command: step.command, on })
       return null
     }
     if (step.step === 'naming') {
@@ -176,7 +176,7 @@ export function createPaletteSteps(
     placeholder,
     step,
     opensOn,
-    puts,
+    pushStep,
     pops,
     reset,
     follows,

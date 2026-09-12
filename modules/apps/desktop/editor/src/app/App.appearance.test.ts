@@ -64,7 +64,7 @@ describe('the four commands over how the window is drawn', () => {
 
   /** The keyboard still walking, and the keyboard stood still on a row. */
   const waitUnderHold = () => new Promise((done) => setTimeout(done, 60))
-  const stands = () => new Promise((done) => setTimeout(done, 200))
+  const wait = () => new Promise((done) => setTimeout(done, 200))
 
   /** Every tenth the interface goes between, as a person reads them. */
   const TENTHS = [
@@ -274,7 +274,7 @@ describe('the four commands over how the window is drawn', () => {
       const was = serves(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
 
       await over('interface')
-      await stands()
+      await wait()
 
       expect(getStandingRow()).toBe('150%')
       expect(getHeadStyles()).toStrictEqual(was)
@@ -285,7 +285,7 @@ describe('the four commands over how the window is drawn', () => {
       const was = serves(PAIR, ':root { --numen-interface-scale: 1; --numen-text-scale: 1.17; }')
 
       await over('reading')
-      await stands()
+      await wait()
 
       expect(getStandingRow()).toBe('117%')
       expect(getHeadStyles()).toStrictEqual(was)
@@ -361,7 +361,7 @@ describe('the four commands over how the window is drawn', () => {
       await waitUnderHold()
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
 
-      await stands()
+      await wait()
       expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
       expect(asked.worn).toStrictEqual([])
     })
@@ -369,7 +369,7 @@ describe('the four commands over how the window is drawn', () => {
     it('puts back the size the settings name when the step is left', async () => {
       await over('interface')
       await press('End')
-      await stands()
+      await wait()
 
       await press('Escape')
 
@@ -418,7 +418,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       await press('End')
-      await stands()
+      await wait()
 
       expect(asked.measured).toBe(1)
     })

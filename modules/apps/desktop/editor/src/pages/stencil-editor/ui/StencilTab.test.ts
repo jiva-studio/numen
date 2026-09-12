@@ -17,7 +17,7 @@ import { useStencilTabs, type StencilTabState } from '../kind'
 import { WORDS as words } from '@/entities/deck'
 
 /** The one place a file is opened from. Nothing here opens one. */
-const puts = () => fileOpeners({ fileKinds: async () => new Map() })
+const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
@@ -63,7 +63,7 @@ const drawn = async (problems: readonly DeckProblem[] = []) => {
   }
 
   const held = useWindowTabs()
-  const stencils = useStencilTabs(core, held.handle, puts())
+  const stencils = useStencilTabs(core, held.handle, tabOpeners())
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, 'Animal.md')
   await settles()

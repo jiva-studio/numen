@@ -33,8 +33,8 @@ const VAULT = {
   reading: false,
 }
 
-vi.mock('./core', async (original) => ({
-  ...(await original<typeof import('./core')>()),
+vi.mock('@/shared/clients', async (original) => ({
+  ...(await original<typeof import('@/shared/clients')>()),
   cards: {
     watchCardsDue: async function* () {
       yield { day: '2026-04-02', vaults: [VAULT] }

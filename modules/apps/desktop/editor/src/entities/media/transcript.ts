@@ -176,7 +176,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     const mine = asks.ask()
     try {
       const said = await recordings.getSummary(path)
-      if (!mine.lands()) return
+      if (!mine.claim()) return
       duration.value = said.duration
       address.value = said.mediaUrl
       type.value = said.mediaType
@@ -197,18 +197,18 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
       // What the file carries says which text to read. A url publishing words
       // against a clock carries a transcript; every other page carries prose.
       const carried = await recordings.getTaskStates(path)
-      if (!mine.lands()) return
+      if (!mine.claim()) return
       const spoke = await (carried.transcript
         ? recordings.readTranscript(path)
         : recordings.readArticle(path))
-      if (!mine.lands()) return
+      if (!mine.claim()) return
       cues.value = spoke.cues
       editable.value = spoke.editable
       // Words the person has typed and not yet had written stay on screen.
       if (!owed) prose.value = spoke.cues.length ? getText(spoke.cues) : spoke.prose
       error.value = ''
     } catch (thrown) {
-      if (!mine.lands()) return
+      if (!mine.claim()) return
       error.value = formatErrorMessage(thrown)
     }
   }

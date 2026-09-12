@@ -85,7 +85,7 @@ export interface Medium<K extends string = string> {
   readonly tab: K
   readonly source: Source
   readonly draws: Component
-  hands(puts: FileOpeners, opens: SourceReader): void
+  hands(tabOpeners: FileOpeners, opens: SourceReader): void
 }
 
 /**
@@ -96,7 +96,7 @@ export function recordingKind<K extends string>(
   handle: WindowHandle,
   opens: (path: string) => TranscriptState,
   asks: MediaTabDeps,
-  puts: FileOpeners,
+  tabOpeners: FileOpeners,
   as: Medium<K>,
 ) {
   const kind: TabKind<MediaTabState, K> = {
@@ -134,7 +134,7 @@ export function recordingKind<K extends string>(
     const id = await handle.opens(as.tab, path)
     void handle.holds<MediaTabState>(as.tab, id)?.reach(...spans)
   }
-  as.hands(puts, (path, spans) => void hears(path, spans))
+  as.hands(tabOpeners, (path, spans) => void hears(path, spans))
 
   /**
    * What the application is doing, as it last said. A tab whose recording is

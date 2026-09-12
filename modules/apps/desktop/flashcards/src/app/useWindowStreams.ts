@@ -22,8 +22,8 @@ export interface WindowStreamsDeps {
   readonly count: () => Promise<void>
   /** The counting ended where it stands. */
   readonly stop: () => void
-  /** A deck written or a card changed underneath the window. */
-  readonly reloaded: () => Promise<void>
+  /** Read again, a deck having been written or a card changed underneath. */
+  readonly refresh: () => Promise<void>
   /** Why nothing can be asked here, empty while something can. */
   readonly unreachable: Ref<string>
 }
@@ -59,7 +59,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
       async (said) => {
         // A message carrying no reload keeps the stream open and moves nothing.
         if (!said.reload) return
-        await deps.reloaded()
+        await deps.refresh()
       },
     )
     // What is being done behind the window, which is a vault read into the index.

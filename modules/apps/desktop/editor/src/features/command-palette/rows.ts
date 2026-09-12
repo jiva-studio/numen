@@ -41,7 +41,7 @@ export interface PaletteLists {
    */
   offers(command: string, typed: string): readonly StepGroup[]
   /** The one the keyboard is standing on, and nothing where it stands on none. */
-  shows(command: string, item: string): void
+  previewItem(command: string, item: string): void
 }
 
 /**

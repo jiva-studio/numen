@@ -90,8 +90,8 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     curve: async () => answer ?? new Promise<Curve>(() => {}),
   }
   const handle = { closes: () => {} } as unknown as WindowHandle
-  const puts = { holds: () => {} } as unknown as FileOpeners
-  const kind = usePresetTab(core, handle, puts, () => {}, () => DAY)
+  const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
+  const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => DAY)
   const state = await kind.kind.opens('Sanskrit.md')
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
   return { state, written }

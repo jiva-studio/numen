@@ -72,7 +72,7 @@ describe('the settings tab', () => {
 
   it('is put in front when the window is asked to show it', () => {
     const { handle, opened } = window_()
-    useSettingsTab(handle, installation()).shows()
+    useSettingsTab(handle, installation()).openSettings()
     expect(opened).toEqual([SETTINGS])
   })
 })

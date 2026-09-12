@@ -21,7 +21,7 @@ export type { StencilTabState, VaultAnswer }
 export function useStencilTabs(
   cards: Cards,
   handle: WindowHandle,
-  puts: FileOpeners,
+  tabOpeners: FileOpeners,
   says: MessageWriter = () => {},
 ) {
   const wire = createStencilWire(cards, says)
@@ -123,13 +123,13 @@ export function useStencilTabs(
     gone: () => {},
   }
 
-  const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
+  const openStencil = (path: string, title = '', showing: PlexShowing = 'here'): void => {
     const id = mints(path)
     if (title) wire.setTitle(path, title)
     void (showing === 'beside' ? handle.beside(STENCIL, id) : handle.opens(STENCIL, id))
   }
 
-  puts.holds('stencil', shows)
+  tabOpeners.registerEditor('stencil', openStencil)
 
   const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     wire.movePaths(renamed)

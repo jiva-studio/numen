@@ -148,7 +148,7 @@ const getMenuGroups = (): readonly string[] =>
   )
 
 /** One choice taken off the open list, by what is written on it. */
-const takes = async (words: string) => {
+const chooseItem = async (words: string) => {
   const rows = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
   rows.find((one) => one.querySelector('.menu__text')?.textContent?.trim() === words)?.click()
   await nextTick()
@@ -180,7 +180,7 @@ describe('the settings tab', () => {
   it('writes a theme the way the command of that name writes it', async () => {
     const { tab, done } = createTab()
     await opens(tab, 'settings-theme')
-    await takes('sea')
+    await chooseItem('sea')
     expect(done).toStrictEqual(['chooses mine:sea'])
   })
 
@@ -253,7 +253,7 @@ describe('the settings tab', () => {
       indexing: { proofreading: { profiles: { careful: {} } } },
     })
     await opens(tab, 'settings-transcript-proofread')
-    await takes('careful')
+    await chooseItem('careful')
     expect(written).toStrictEqual([
       { at: ['indexing', 'transcription', 'proofread', 'with'], value: '"careful"' },
     ])
@@ -328,7 +328,7 @@ describe('the settings tab', () => {
   it('writes everything a model decides, not its name alone', async () => {
     const { tab, written } = createTab()
     await opens(tab, 'settings-agent-model')
-    await takes('opus')
+    await chooseItem('opus')
     expect(written).toStrictEqual([{ at: ['agent', 'claude', 'model'], value: '"opus"' }])
   })
 

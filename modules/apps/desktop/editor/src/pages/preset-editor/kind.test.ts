@@ -118,8 +118,8 @@ const openPresetTab = async (
     },
   }
   const handle = { closes: (tab: string) => void closed.push(tab) } as unknown as WindowHandle
-  const puts = { holds: () => {} } as unknown as FileOpeners
-  const kind = usePresetTab(core, handle, puts, () => {}, () => NOW)
+  const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
+  const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => NOW)
   const state = await kind.kind.opens('Steady.md')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
@@ -130,7 +130,7 @@ const openPresetTab = async (
     written,
     asked,
     closed,
-    holds: kind.holds,
+    getState: kind.getState,
     changed: kind.changed,
     flush: kind.flush,
   }
@@ -179,8 +179,8 @@ const opening = async (file: Partial<Settings>) => {
     curve: async () => curve,
   }
   const handle = { closes: () => {} } as unknown as WindowHandle
-  const puts = { holds: () => {} } as unknown as FileOpeners
-  const kind = usePresetTab(core, handle, puts, () => {}, () => NOW)
+  const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
+  const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => NOW)
   return { tab: await kind.kind.opens('Steady.md'), written, lands }
 }
 
@@ -408,24 +408,24 @@ describe('the goal chosen', () => {
 // control let go of.
 describe('a preset no tab has open', () => {
   it('is held by nothing, where no tab ever opened it', async () => {
-    const { holds } = await openPresetTab()
-    expect(holds('Nowhere.md')).toBeUndefined()
+    const { getState } = await openPresetTab()
+    expect(getState('Nowhere.md')).toBeUndefined()
   })
 
   it('is what a preset becomes once its tab is shut', async () => {
-    const { state, holds } = await openPresetTab()
+    const { state, getState } = await openPresetTab()
     state.shuts('Steady.md')
     await after()
-    expect(holds('Steady.md')).toBeUndefined()
+    expect(getState('Steady.md')).toBeUndefined()
   })
 
   it('is what a renamed preset becomes once its tab is shut', async () => {
-    const { state, holds, changed } = await openPresetTab()
+    const { state, getState, changed } = await openPresetTab()
     changed([], [{ from: 'Steady.md', to: 'Slow.md' }])
     state.shuts('Slow.md')
     await after()
-    expect(holds('Slow.md')).toBeUndefined()
-    expect(holds('Steady.md')).toBeUndefined()
+    expect(getState('Slow.md')).toBeUndefined()
+    expect(getState('Steady.md')).toBeUndefined()
   })
 })
 

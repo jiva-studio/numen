@@ -19,39 +19,39 @@ import type { useWindowTabs } from '@/entities/tab'
 export interface NoteEditorsDeps {
   core: NotePort & Pick<VaultPort, 'quitting' | 'flushed'>
   log: MessageLog
-  puts: FileOpeners
+  tabOpeners: FileOpeners
   held: ReturnType<typeof useWindowTabs>
   day: () => string
 }
 
-export function useNoteEditors({ core, log, puts, held, day }: NoteEditorsDeps) {
+export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditorsDeps) {
   const changes = noteChanges()
   const notes = openNotes(core, { replaced: changes.arrived })
   const making = noteCreator(core, log.under('made'))
 
-  const noted = useNoteTab(core, notes, changes, held.handle, puts)
-  const decks = useDeckTabs(cards, presets, held.handle, puts)
-  const stencils = useStencilTabs(cards, held.handle, puts, log.under('stencil'))
+  const noted = useNoteTab(core, notes, changes, held.handle, tabOpeners)
+  const decks = useDeckTabs(cards, presets, held.handle, tabOpeners)
+  const stencils = useStencilTabs(cards, held.handle, tabOpeners, log.under('stencil'))
   const schedules = usePresetTab(
     presets,
     held.handle,
-    puts,
+    tabOpeners,
     log.under('preset'),
     day,
   )
 
   const going = useFileFlush(core)
-  going.holds(notes.flush)
-  going.holds(decks.flush)
-  going.holds(stencils.flush)
-  going.holds(schedules.flush)
+  going.addHandler(notes.flush)
+  going.addHandler(decks.flush)
+  going.addHandler(stencils.flush)
+  going.addHandler(schedules.flush)
 
   raiseConflicts(notes, going)
   raiseConflicts(decks, going)
   raiseConflicts(stencils, going)
 
   const stores: readonly Store[] = [noted.kept, decks.kept, stencils.kept]
-  const reached = createNotes(stores, puts)
+  const reached = createNotes(stores, tabOpeners)
   const getTitle = (id: string): string => stores.find((one) => one.has(id))?.called(id) ?? ''
 
   const kinds = [noted.kind, decks.kind, stencils.kind, schedules.kind]

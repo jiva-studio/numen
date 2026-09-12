@@ -30,14 +30,14 @@ export const useWindow = () => {
   const told = log.under('command')
   const held = useWindowTabs()
   const { layout } = held
-  const puts = fileOpeners(core)
+  const tabOpeners = fileOpeners(core)
   const runs = runSupport()
   const plays = createMediaTypeProbe()
 
   const editing = useNoteEditors({
     core,
     log,
-    puts,
+    tabOpeners,
     held,
     day: () => settings.dayBegins.day.value,
   })
@@ -54,7 +54,7 @@ export const useWindow = () => {
     },
     drawing: editing.changes.told,
     wanted: (path) => kinds.plexes.travel(path),
-    reads: (path, spans) => void puts.opensAt(path, spans),
+    reads: (path, spans) => void tabOpeners.opensAt(path, spans),
     reloads: () => vaultsModule.reloads(),
   })
 
@@ -108,12 +108,12 @@ export const useWindow = () => {
     { immediate: true },
   )
 
-  const carries = (id: string, target: CommandTarget) => commandsModule.carries(id, target)
+  const runCommand = (id: string, target: CommandTarget) => commandsModule.runCommand(id, target)
 
   const kinds = useWindowKinds({
     core,
     log,
-    puts,
+    tabOpeners,
     held,
     runs,
     plays,
@@ -122,7 +122,7 @@ export const useWindow = () => {
     vaults: vaultsModule,
     window,
     where,
-    carries,
+    runCommand,
     doing: () => commandsModule.doing,
   })
 
@@ -137,12 +137,12 @@ export const useWindow = () => {
   const attention = useAttention({ core, held })
 
   const opensPreset = async (path: string): Promise<void> => {
-    const stands = (await core.fileKinds([path])).get(path)
-    if (stands?.type !== 'deck') return editing.schedules.shows(path)
+    const kind = (await core.fileKinds([path])).get(path)
+    if (kind?.type !== 'deck') return editing.schedules.openPreset(path)
     const answer = await presets.scheduling(path)
     if (answer.error) return told(words.errors[answer.error], 'error')
     if (!answer.preset?.path) return told(words.noPreset, 'caution')
-    editing.schedules.shows(answer.preset.path, answer.preset.title)
+    editing.schedules.openPreset(answer.preset.path, answer.preset.title)
   }
 
   const commandsModule = useCommands({
@@ -201,7 +201,7 @@ export const useWindow = () => {
   })
 
   return {
-    carries,
+    runCommand,
     commands: commandsModule.commands,
     doing: commandsModule.doing,
     failure: window.failure,

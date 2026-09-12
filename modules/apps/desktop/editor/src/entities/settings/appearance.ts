@@ -31,7 +31,7 @@ export const SCHEMES: Record<Mode, string> = {
 export const NOWHERE: Bounds = { least: 0, most: 0 }
 
 /** Whether a range reaches a size. A range holding nothing reaches none. */
-export const reaches = (range: Bounds, size: number): boolean =>
+export const isInBounds = (range: Bounds, size: number): boolean =>
   range.most > range.least && range.least > 0 && size >= range.least && size <= range.most
 
 /**
@@ -39,7 +39,7 @@ export const reaches = (range: Bounds, size: number): boolean =>
  * each end itself, so the end is offered wherever it falls.
  */
 export const ladder = (range: Bounds): readonly number[] => {
-  if (!reaches(range, range.least)) return []
+  if (!isInBounds(range, range.least)) return []
   const rungs = [range.least]
   const first = Math.ceil(range.least * STEPS)
   const last = Math.floor(range.most * STEPS)

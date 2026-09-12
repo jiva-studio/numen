@@ -17,7 +17,7 @@ const played: Medium = {
   tab: RECORDING,
   source: 'recording',
   draws: {},
-  hands: (puts, opens) => puts.reads({ kind: played.source }, opens),
+  hands: (puts, opens) => puts.registerReader({ kind: played.source }, opens),
 }
 
 /** A recording open in a tab, as far as the window reads one. */

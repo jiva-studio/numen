@@ -8,7 +8,7 @@ import type { WindowKindsDeps } from './deps'
 export interface PlexKindDeps
   extends Pick<
     WindowKindsDeps,
-    'core' | 'puts' | 'held' | 'editing' | 'settings' | 'window' | 'where' | 'carries'
+    'core' | 'tabOpeners' | 'held' | 'editing' | 'settings' | 'window' | 'where' | 'runCommand'
   > {
   dragged: ShallowRef<readonly string[]>
   told: MessageWriter
@@ -17,13 +17,13 @@ export interface PlexKindDeps
 
 export function createPlexKind({
   core,
-  puts,
+  tabOpeners,
   held,
   editing,
   settings,
   window,
   where,
-  carries,
+  runCommand,
   dragged,
   told,
   asks,
@@ -33,10 +33,10 @@ export function createPlexKind({
     ready: computed(() => !window.failure.value),
     hangs: settings.hungParts.hangs,
     parts: settings.hungParts.parts,
-    opens: (path, title, showing, line) => void puts.opens(path, title, showing, line),
+    opens: (path, title, showing, line) => void tabOpeners.opens(path, title, showing, line),
     inside: (paths) => core.headings(paths),
     asks,
-    runs: (id, path, title) => carries(id, { ...where(), path, title }),
+    runs: (id, path, title) => runCommand(id, { ...where(), path, title }),
     opening: window.opening,
     first: () => window.first(),
     dragged,

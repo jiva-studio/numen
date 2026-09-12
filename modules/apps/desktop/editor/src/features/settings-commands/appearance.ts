@@ -19,7 +19,7 @@ import {
   SCHEMES,
   ladder,
   parseSize,
-  reaches,
+  isInBounds,
 } from '@/entities/settings'
 import type {
   Appearance,
@@ -220,7 +220,7 @@ export function windowAppearance(
   }
 
   /** What the window wears now, written into the two elements it was served with. */
-  const puts = async () => {
+  const applyAppearance = async () => {
     // The page arrived dressed, and nothing is written over that until the
     // window has been told what it is dressed in.
     if (!applied.value) return
@@ -287,7 +287,7 @@ export function windowAppearance(
         if (!names.length) return
         for (const name of names) files.delete(name)
         await lists()
-        if (names.includes(worn.value)) await puts()
+        if (names.includes(worn.value)) await applyAppearance()
       },
     )
 
@@ -386,7 +386,7 @@ export function windowAppearance(
       ...(size === now ? { detail: words.current, inForce: true } : {}),
     })
     const held = [...ladder(range), now, ...(said === null ? [] : [said])]
-      .filter((size) => reaches(range, size))
+      .filter((size) => isInBounds(range, size))
       .sort((first, second) => first - second)
     const title = which === INTERFACE_SCALE ? words.drawing : words.setting
     return [{ id: which, title, items: once(held.map(row)) }]
@@ -397,16 +397,16 @@ export function windowAppearance(
    * drawn only once the keyboard has stood on it for HELD. Nothing standing
    * puts back what the settings name.
    */
-  const shows = (item: string) => {
+  const previewItem = (item: string) => {
     stood.value = item
     clearTimeout(holds)
     const size = sizeOf(item)
-    if (size && reaches(its(bounds.value, size.which), size.size)) {
+    if (size && isInBounds(its(bounds.value, size.which), size.size)) {
       holds = setTimeout(() => (holding.value = size), HELD)
       return
     }
     holding.value = null
-    void puts()
+    void applyAppearance()
   }
 
   /**
@@ -424,14 +424,14 @@ export function windowAppearance(
     applied.value = chosen ? was.applied : item
     mode.value = chosen ?? was.mode
     stood.value = ''
-    await puts()
+    await applyAppearance()
 
     const failed = await core.chooses(applied.value, mode.value, settings.value)
     if (!failed) return
     said(failed, 'error')
     applied.value = was.applied
     mode.value = was.mode
-    await puts()
+    await applyAppearance()
   }
 
   /**
@@ -440,7 +440,7 @@ export function windowAppearance(
    * the settings refuse is said, and the window goes back to the size they hold.
    */
   const picks = async (chosen: ScaleChoice) => {
-    if (!reaches(its(bounds.value, chosen.which), chosen.size)) return
+    if (!isInBounds(its(bounds.value, chosen.which), chosen.size)) return
     const was = settings.value
     said('')
     clearTimeout(holds)
@@ -466,7 +466,7 @@ export function windowAppearance(
     offers,
     modes,
     sizes,
-    shows,
+    previewItem,
     chooses,
     start,
     close,

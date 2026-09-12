@@ -27,8 +27,8 @@ export const resolveRenamePath = (path: string, name: string, folder = false): s
   const typed = name.trim()
   if (!typed || typed.includes('/')) return ''
 
-  const carries = findExtensionStart(typed) >= 0
-  const called = folder || carries ? typed : `${typed}${getExtension(fileOf(path))}`
+  const hasExtension = findExtensionStart(typed) >= 0
+  const called = folder || hasExtension ? typed : `${typed}${getExtension(fileOf(path))}`
   if (called === fileOf(path)) return ''
 
   const under = getFolderPath(path)

@@ -9,7 +9,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Tree from './Tree.vue'
-import type { RowLanding, Row, RowId } from './row'
+import type { Row, RowId } from '../lib/row'
+import type { RowLanding } from '../lib/drop'
 
 /** A row taken out of wherever it stands. */
 const without = (rows: readonly Row[], id: RowId): readonly Row[] =>

@@ -42,7 +42,7 @@ test('every file named by a verb form says that word in its own code', () => {
     'modules/apps/desktop/cmd/numen/main.go',
     'modules/apps/mobile/bind/mobile.go',
     'modules/libs/ui/src/shared/lib/digits.ts',
-    'modules/libs/ui/src/features/welcome/letters.ts',
+    'modules/libs/ui/src/features/welcome/lib/letters.ts',
     'modules/libs/ui/src/features/notices/live-regions/LiveRegions.vue',
     'modules/apps/mobile/src/core.ts',
   ]) {

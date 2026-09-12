@@ -39,7 +39,7 @@ export function agentKind(handle: WindowHandle, opens: () => AgentTabState, abou
   const askQuestion = async (text: string) => {
     const id = handle.last<AgentTabState>(AGENT)?.id ?? (await handle.opens(AGENT))
     handle.holds<AgentTabState>(AGENT, id)?.setQuestion(text)
-    handle.shows(id)
+    handle.show(id)
   }
 
   return { kind, askQuestion }

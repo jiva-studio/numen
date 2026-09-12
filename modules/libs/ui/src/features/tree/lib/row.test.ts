@@ -5,25 +5,11 @@
  * last row.
  */
 import { describe, expect, it } from 'vitest'
-import {
-  between,
-  dragged,
-  dragLabel,
-  everyRow,
-  flatten,
-  holderOf,
-  isTreeKey,
-  landing,
-  refuses,
-  sameRows,
-  selects,
-  stepTo,
-  PLAIN,
-  TREE_KEYS,
-  type Press,
-  type Row,
-  type RowId,
-} from './row'
+import { flatten, type Row, type RowId } from './row'
+import { between, everyRow, sameRows, selects, PLAIN, type Press } from './select'
+import { isTreeKey, stepTo, TREE_KEYS } from './step'
+import { dragged, dragLabel } from './drag'
+import { holderOf, landing, refuses } from './drop'
 
 const ROWS: readonly Row[] = [
   {

@@ -12,12 +12,12 @@ import { asksCommands, type CommandTarget } from '../target'
 import { appendCreateOffer, creates, MAKING } from '../lib/offers'
 import type { Commands } from '../model/palette'
 import type { CommandDeps } from '../deps'
-import { does } from '../model/handlers'
+import { runInvocation } from '../model/handlers'
 import type { SearchState } from '../model/search'
 import { iconFor, iconOfSource } from '@/shared/icons'
 import { iconOfNote } from '@/entities/note'
 import { isChord } from '../lib/chords'
-import { lands, type DestinationDeps } from '../model/destination'
+import { openDestination, type DestinationDeps } from '../model/destination'
 import { WORDS as words } from '@/shared/words'
 
 // --- Props & Emits ---
@@ -70,49 +70,49 @@ const field = computed(() =>
 function onTyping(text: string) {
   if (props.commands.open.value) return void props.commands.setTyped(text)
   if (!asksCommands(props.search.typed.value, text)) return void props.search.setTyped(text)
-  const setSearchOpen = props.search.setOpen ?? props.search.shows
-  const setCommandsOpen = props.commands.setOpen ?? props.commands.shows
+  const setSearchOpen = props.search.setOpen
+  const setCommandsOpen = props.commands.setOpen
   setSearchOpen(false)
   setCommandsOpen(true)
 }
 
 async function onChoose(item: string, action: string) {
-  const setSearchOpen = props.search.setOpen ?? props.search.shows
-  const setCommandsOpen = props.commands.setOpen ?? props.commands.shows
+  const setSearchOpen = props.search.setOpen
+  const setCommandsOpen = props.commands.setOpen
   if (props.commands.open.value) {
     const invocation = props.commands.chose(item, action)
     if (!invocation) return
     setCommandsOpen(false)
-    await does(invocation, props.doing, words)
+    await runInvocation(invocation, props.doing, words)
     return
   }
   if (item === MAKING) {
     const name = props.search.typed.value.trim()
     setSearchOpen(false)
-    await does(creates(action, name, props.where()), props.doing, words)
+    await runInvocation(creates(action, name, props.where()), props.doing, words)
     return
   }
   const landing = props.search.chose(item, action)
   setSearchOpen(false)
-  await lands(landing, props.places)
+  await openDestination(landing, props.places)
 }
 
 function onDismiss() {
   if (props.commands.open.value) props.commands.leaves()
-  else (props.search.setOpen ?? props.search.shows)(false)
+  else props.search.setOpen(false)
 }
 
 function onBack() {
   if (props.commands.open.value && props.commands.backs()) {
-    ;(props.search.setOpen ?? props.search.shows)(true)
+    ;props.search.setOpen(true)
   }
 }
 
 function onKeyDown(event: KeyboardEvent) {
   if (event.defaultPrevented || !isChord(event) || event.shiftKey) return
   const key = event.key.toLowerCase()
-  const setSearchOpen = props.search.setOpen ?? props.search.shows
-  const setCommandsOpen = props.commands.setOpen ?? props.commands.shows
+  const setSearchOpen = props.search.setOpen
+  const setCommandsOpen = props.commands.setOpen
   if (key === 'k') {
     event.preventDefault()
     setCommandsOpen(false)

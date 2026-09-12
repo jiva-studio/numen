@@ -32,7 +32,7 @@ export const depcruise = installed('.bin/depcruise')
 export const layered = new Map([
   ['@numen/ui', 'src/features/cards/deck.ts'],
   ['@numen/editor', 'src/pages/deck-editor/model/useDeckTabs.ts'],
-  ['@numen/flashcards', 'src/decks/presets.ts'],
+  ['@numen/flashcards', 'src/pages/decks/model/presets.ts'],
 ])
 
 /**
@@ -71,8 +71,7 @@ export const baseline = new Map([
       // from and come back to measures its text again. That is the contract
       // between the two features, and the story is where it is held. The
       // editor itself reaches nothing of the workspace.
-      'no-features-slice-reaches-a-slice: src/features/editor/Editor.stories.ts → src/features/workspace/node.ts',
-      'no-features-slice-reaches-a-slice: src/features/editor/Editor.stories.ts → src/features/workspace/pane/index.ts',
+      'no-features-slice-reaches-a-slice: src/features/editor/Editor.stories.ts → src/features/workspace/index.ts',
       // The plex's fixtures are read by its arranging tests, and one file of
       // them — `fixtures/ring.ts` — takes the `Placement` type back. That one
       // type import is the whole of the second half of the ring.

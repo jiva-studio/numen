@@ -8,10 +8,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { dayAfter, dayNamed, type HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'
-import Decks from './decks/Decks.vue'
-import Session from './session/Session.vue'
-import type { BudgetKeys, Preset, Settings } from './decks/presets'
-import type { CardFace, DeckCardsDue, VaultCardsDue } from './core'
+import { Decks } from '@/pages/decks'
+import { Session } from '@/pages/session'
+import type { Preset, Settings } from '@/pages/decks'
+import type { CardFace } from '@/entities/card'
+import type { BudgetKeys, DeckCardsDue, VaultCardsDue } from '@/entities/vault'
 
 const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
 

@@ -7,12 +7,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Goal, StopReason } from '@numen/protocol'
 
-import { useReviewCounter } from './counting'
-import type { CardsDueClient } from './counting'
+import { useReviewCounter } from '@/entities/vault'
+import type { CardsDueClient, VaultCardsDue } from '@/entities/vault'
 import { dayNamed } from '@numen/ui'
-import { useVaultPresets } from './decks/presets'
-import type { PresetsClient, SettingsMessage } from './decks/presets'
-import type { VaultCardsDue } from './core'
+import { useVaultPresets } from '@/pages/decks'
+import type { PresetsClient, SettingsMessage } from '@/pages/decks'
 
 const dated = (day: string): SettingsMessage => ({
   goal: Goal.BY_DATE,

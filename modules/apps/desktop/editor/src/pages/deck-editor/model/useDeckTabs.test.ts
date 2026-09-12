@@ -17,7 +17,7 @@ import { WORDS as words } from '@/entities/deck'
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
 
 /** The one place a file is opened from. Nothing here opens one. */
-const puts = () => fileOpeners({ fileKinds: async () => new Map() })
+const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
@@ -222,7 +222,7 @@ const open = async (
 ) => {
   const one = vault(answers)
   const held = useWindowTabs()
-  const road = puts()
+  const road = tabOpeners()
   const decks = useDeckTabs(one.core, one.presets, held.handle, road)
   held.declares([decks.kind])
   const id = await held.opens(DECK, path)
@@ -557,7 +557,7 @@ describe('the vault changing under the window', () => {
   it('asks for no stencil while the window holds no deck', async () => {
     const one = vault()
     const held = useWindowTabs()
-    const decks = useDeckTabs(one.core, one.presets, held.handle, puts())
+    const decks = useDeckTabs(one.core, one.presets, held.handle, tabOpeners())
     held.declares([decks.kind])
 
     decks.changed(['Notes.md'])

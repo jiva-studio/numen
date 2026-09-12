@@ -58,7 +58,7 @@ test('there are stories for the keyboard walk to run after', () => {
         'modules/apps/desktop/editor/src/pages/settings/ui/setting-row/SettingRow.stories.ts',
       ],
     ],
-    '@numen/flashcards': [1, ['modules/apps/desktop/flashcards/src/screens.stories.ts']],
+    '@numen/flashcards': [1, ['modules/apps/desktop/flashcards/src/app/screens.stories.ts']],
   }
   assert.deepEqual(unstaged(corpora(), wanted), [])
 })

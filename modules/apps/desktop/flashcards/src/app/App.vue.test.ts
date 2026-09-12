@@ -54,8 +54,8 @@ const { counted, started, waits } = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('./core', async (original) => ({
-  ...(await original<typeof import('./core')>()),
+vi.mock('@/shared/clients', async (original) => ({
+  ...(await original<typeof import('@/shared/clients')>()),
   cards: {
     // The vaults, then each of their counts, the way the front door answers.
     watchCardsDue: async function* () {
@@ -75,7 +75,7 @@ vi.mock('./core', async (original) => ({
 }))
 
 const { default: App } = await import('./App.vue')
-const Decks = (await import('./decks/Decks.vue')).default
+const { Decks } = await import('@/pages/decks')
 
 /** The window drawn, with the vaults counted and on the screen. */
 const drawn = async () => {

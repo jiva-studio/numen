@@ -5,7 +5,7 @@ import type { Ref } from 'vue'
 import {
   isChord,
   commandFor,
-  does,
+  runInvocation,
   useCommandPalette,
   useSearch,
   type CommandDeps,
@@ -75,15 +75,15 @@ export function useCommands(options: CommandsDepsOptions) {
   const doing: CommandDeps = createCommandDeps({
     ...options,
     searches: () => {
-      ;(commands.setOpen ?? commands.shows)(false)
-      ;(palette.setOpen ?? palette.shows)(true)
+      ;commands.setOpen(false)
+      ;palette.setOpen(true)
     },
   })
 
-  const carries = (id: string, at: CommandTarget) => {
+  const runCommand = (id: string, at: CommandTarget) => {
     const invocation = commands.asks(id, at)
-    if (invocation) return void does(invocation, doing, words)
-    if (commands.open.value) return void (palette.setOpen ?? palette.shows)(false)
+    if (invocation) return void runInvocation(invocation, doing, words)
+    if (commands.open.value) return void palette.setOpen(false)
     told(commands.getRefusal(id, at), 'error')
   }
 
@@ -94,7 +94,7 @@ export function useCommands(options: CommandsDepsOptions) {
     const command = commandFor(event.key.toLowerCase(), event.shiftKey)
     if (!command) return
     event.preventDefault()
-    carries(command, where())
+    runCommand(command, where())
   }
   const asked = onKeyDown
 
@@ -102,7 +102,7 @@ export function useCommands(options: CommandsDepsOptions) {
     palette,
     commands,
     doing,
-    carries,
+    runCommand,
     asked,
     onKeyDown,
   }

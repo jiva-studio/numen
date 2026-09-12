@@ -143,7 +143,6 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     typed.value = ''
     drop()
   }
-  const shows = setOpen
 
   const nameItem = (one: NameMatch): SearchRow => createNameItem(one, words)
   const passageItem = (group: SearchGroup, one: Passage): SearchRow => createPassageItem(group, one, words)
@@ -193,7 +192,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     return resolveDestination(built.value.held.get(item), action)
   }
 
-  return { open, typed, groups, setTyped, setOpen, shows, chose, typeOf, kindOf }
+  return { open, typed, groups, setTyped, setOpen, chose, typeOf, kindOf }
 }
 
 export type SearchState = ReturnType<typeof useSearch>

@@ -29,13 +29,13 @@ const createMockDocumentWindow = (held: DocumentTabState | null = null) => {
 
 const openers = () => {
   let reader: SourceReader | null = null
-  const puts = {
-    reads: (key: { format?: string }, opens: SourceReader) => {
+  const tabOpeners = {
+    registerReader: (key: { format?: string }, opens: SourceReader) => {
       if (key.format) return
       reader = opens
     },
   } as unknown as FileOpeners
-  return { puts, opens: () => reader }
+  return { tabOpeners, opens: () => reader }
 }
 
 const settles = () => new Promise((done) => setTimeout(done, 0))
@@ -43,7 +43,7 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 const createDocumentTabAt = (path: string, page: number, pageCount: number) =>
   ({ path, pageNumber: ref(page), pages: ref(Array.from({ length: pageCount })) }) as unknown as DocumentTabState
 
-const kindOver = (held: DocumentTabState) => documentKind(createMockDocumentWindow(held).handle, () => held, openers().puts).kind
+const kindOver = (held: DocumentTabState) => documentKind(createMockDocumentWindow(held).handle, () => held, openers().tabOpeners).kind
 
 describe('what a document tab holds', () => {
   it('measures the page again once there is a page to measure', () => {
@@ -76,8 +76,8 @@ describe('what a document tab holds', () => {
 describe('a document tab', () => {
   const kindOf = () => {
     const { handle } = createMockDocumentWindow()
-    const { puts } = openers()
-    return documentKind(handle, (path) => useDocumentTab(read(path)), puts)
+    const { tabOpeners } = openers()
+    return documentKind(handle, (path) => useDocumentTab(read(path)), tabOpeners)
   }
 
   it('is called by the file and not by the folders above it', () => {
@@ -119,8 +119,8 @@ describe('a search that landed in a document', () => {
     const focused = vi.fn()
     const held = { focusSpans: focused } as unknown as DocumentTabState
     const { handle, opened } = createMockDocumentWindow(held)
-    const { puts, opens } = openers()
-    documentKind(handle, (path) => useDocumentTab(read(path)), puts)
+    const { tabOpeners, opens } = openers()
+    documentKind(handle, (path) => useDocumentTab(read(path)), tabOpeners)
 
     const spans: readonly Span[] = [
       { from: 0, to: 12 },

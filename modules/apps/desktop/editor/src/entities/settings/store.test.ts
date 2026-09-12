@@ -91,7 +91,7 @@ describe('the models a setting offers', () => {
 describe('a setting written', () => {
   it('is asked of the vault as it was given', async () => {
     const { kept, asked } = createStore('{}')
-    await kept.puts(['agent', 'use'], 'claude')
+    await kept.writeSetting(['agent', 'use'], 'claude')
     expect(asked).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
   })
 
@@ -103,7 +103,7 @@ describe('a setting written', () => {
 
   it('is said where it was refused', async () => {
     const { kept, said } = createStore('{}', 'the file could not be written')
-    await kept.puts(['agent', 'use'], 'claude')
+    await kept.writeSetting(['agent', 'use'], 'claude')
     expect(said).toHaveBeenLastCalledWith(
       'That setting could not be written: numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
       'error',

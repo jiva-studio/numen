@@ -13,7 +13,7 @@ import type { useWindowDisplay } from '../useWindowDisplay'
 export interface WindowKindsDeps {
   core: NotePort & FilePort
   log: MessageLog
-  puts: FileOpeners
+  tabOpeners: FileOpeners
   held: ReturnType<typeof useWindowTabs>
   runs: ReturnType<typeof runSupport>
   plays: ReturnType<typeof createMediaTypeProbe>
@@ -22,6 +22,6 @@ export interface WindowKindsDeps {
   vaults: ReturnType<typeof useVaults>
   window: ReturnType<typeof useWindowDisplay>
   where: () => CommandTarget
-  carries: (id: string, target: CommandTarget) => void
+  runCommand: (id: string, target: CommandTarget) => void
   doing: () => CommandDeps
 }

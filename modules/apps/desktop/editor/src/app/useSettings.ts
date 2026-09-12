@@ -73,7 +73,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     models: (at) => rest.offers(at),
     writes: (written) => void rest.chooses(written),
     file: rest.path,
-    opensFile: () => file.shows(),
+    opensFile: () => file.openSettingsFile(),
   })
 
   watch(dressed.sized, () => onSizeChanged())
@@ -89,8 +89,8 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
       if (command === PARTS) return hungParts.counts()
       return []
     },
-    shows: (command, item) => {
-      if (DRESSING.includes(command)) dressed.shows(item)
+    previewItem: (command, item) => {
+      if (DRESSING.includes(command)) dressed.previewItem(item)
     },
   }
 

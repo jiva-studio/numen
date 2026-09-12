@@ -72,7 +72,7 @@ const soThat = (
  * it. That is how a reason arrives from the core: `doing this: what went
  * wrong`.
  */
-const carries = (outer: string, inner: string): boolean =>
+const isSameReason = (outer: string, inner: string): boolean =>
   outer === inner || outer.endsWith(`: ${inner}`)
 
 /**
@@ -92,7 +92,7 @@ const alone = (tasks: readonly Task[]): readonly Task[] =>
         return (
           otherFailed !== '' &&
           other !== at &&
-          carries(atFailed, otherFailed) &&
+          isSameReason(atFailed, otherFailed) &&
           (otherFailed.length < atFailed.length || was < index)
         )
       },

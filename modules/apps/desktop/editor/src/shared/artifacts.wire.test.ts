@@ -27,7 +27,7 @@ const answers = (said: unknown) => {
 }
 
 /** A build that does not carry the run at all refuses it by name. */
-const refuses = (code: string) =>
+const stubRefusal = (code: string) =>
   vi.stubGlobal(
     'fetch',
     vi.fn(
@@ -94,13 +94,13 @@ describe('beginning a run', () => {
   })
 
   it('is refused by a build that cannot do it at all', async () => {
-    refuses('unimplemented')
+    stubRefusal('unimplemented')
 
     expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({ able: false })
   })
 
   it('throws where the run failed for any other reason', async () => {
-    refuses('internal')
+    stubRefusal('internal')
 
     await expect(running.createArtifact('Scan.pdf', 'ocr')).rejects.toThrow()
   })
@@ -156,13 +156,13 @@ describe('taking one away', () => {
   })
 
   it('is refused by a build that cannot do it at all', async () => {
-    refuses('unimplemented')
+    stubRefusal('unimplemented')
 
     expect(await running.deleteCopy('Talk.url')).toBe(false)
   })
 
   it('throws where it failed for any other reason', async () => {
-    refuses('internal')
+    stubRefusal('internal')
 
     await expect(running.deleteCopy('Talk.url')).rejects.toThrow()
   })

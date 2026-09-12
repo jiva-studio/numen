@@ -68,7 +68,7 @@ const tabs = (about = { path: '', title: '' }) => {
   held.declares([agents.kind])
 
   /** An agent tab of this window, and what it holds. */
-  const holds = async () => {
+  const openTab = async () => {
     const id = await held.opens(AGENT)
     return { id, state: held.holdsIn<AgentTabState>(id, AGENT)! }
   }
@@ -77,7 +77,7 @@ const tabs = (about = { path: '', title: '' }) => {
   const shuts = (id: string) => held.shut(id)
   /** Every agent tab on screen, the one in front last. */
   const open = () => held.tabs.value.map((one) => one.id)
-  return { ...agents, holds, enters, shuts, open, talks }
+  return { ...agents, openTab, enters, shuts, open, talks }
 }
 
 /** A line of an answer, as the panel hands one back. */
@@ -205,8 +205,8 @@ describe('something to ask about a note', () => {
 
   it('goes to the agent the person was last in, and puts it in front', async () => {
     const window = tabs()
-    const first = await window.holds()
-    const second = await window.holds()
+    const first = await window.openTab()
+    const second = await window.openTab()
     window.enters(first.id)
     window.enters(second.id)
 
@@ -219,7 +219,7 @@ describe('something to ask about a note', () => {
 
   it('opens another once the one the person was last in has closed', async () => {
     const window = tabs()
-    const one = await window.holds()
+    const one = await window.openTab()
     window.enters(one.id)
     window.shuts(one.id)
 
@@ -233,7 +233,7 @@ describe('something to ask about a note', () => {
 describe('an agent tab that closes', () => {
   it('tells the talk it is over, so the agent lets go of what it kept', async () => {
     const window = tabs()
-    const one = await window.holds()
+    const one = await window.openTab()
 
     window.shuts(one.id)
 
@@ -244,7 +244,7 @@ describe('an agent tab that closes', () => {
 describe('what an agent tab is called', () => {
   it('is the first thing asked of it, shortened', async () => {
     const window = tabs()
-    const one = await window.holds()
+    const one = await window.openTab()
     window.talks[0]!.said.value = [
       { id: 'a', voice: 'asked', text: 'what is this whole vault about', state: 'done' },
     ] as unknown as Turn[]
@@ -254,7 +254,7 @@ describe('what an agent tab is called', () => {
 
   it('is the word for an agent while nothing has been asked of it', async () => {
     const window = tabs()
-    const one = await window.holds()
+    const one = await window.openTab()
 
     expect(window.kind.called?.(one.state)).toBe('Agent')
   })
@@ -291,7 +291,7 @@ describe('what a tab is called by a question', () => {
 describe('what a command asked over an agent tab is over', () => {
   it('is the note the talk is about, which is no note of the tab itself', async () => {
     const window = tabs({ path: 'physics/Ontology.md', title: 'Ontology' })
-    const one = await window.holds()
+    const one = await window.openTab()
 
     expect(window.kind.over!(one.state)).toStrictEqual({
       path: 'physics/Ontology.md',

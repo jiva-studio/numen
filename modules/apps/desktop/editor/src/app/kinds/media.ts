@@ -8,22 +8,22 @@ import type { WindowKindsDeps } from './deps'
 
 export type MediaKindsDeps = Pick<
   WindowKindsDeps,
-  'puts' | 'held' | 'runs' | 'plays' | 'vaults' | 'window' | 'where' | 'carries'
+  'tabOpeners' | 'held' | 'runs' | 'plays' | 'vaults' | 'window' | 'where' | 'runCommand'
 >
 
 export function createMediaKinds({
-  puts,
+  tabOpeners,
   held,
   runs,
   plays,
   vaults,
   window,
   where,
-  carries,
+  runCommand,
 }: MediaKindsDeps) {
   const over = (source: Source): MediaTabDeps => ({
     runs: (id, path, called) =>
-      carries(id, {
+      runCommand(id, {
         ...where(),
         path: '',
         title: called,
@@ -38,7 +38,7 @@ export function createMediaKinds({
     held.handle,
     (path) => useTranscript(recordings, path, { plays }),
     over('recording'),
-    puts,
+    tabOpeners,
     RECORDINGS,
   )
 
@@ -46,7 +46,7 @@ export function createMediaKinds({
     held.handle,
     (path) => useTranscript(recordings, path, { plays }),
     over('url'),
-    puts,
+    tabOpeners,
     URLS,
   )
 

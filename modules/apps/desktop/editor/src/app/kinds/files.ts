@@ -4,7 +4,7 @@ import { formatErrorMessage } from '@numen/wire'
 import { cards, presets, WORDS as cardWords } from '@/entities/deck'
 import { running } from '@/shared/artifacts'
 import { createFileCreators } from '@/entities/tab'
-import { does, invocationOf, lands, type DestinationDeps } from '@/features/command-palette'
+import { invocationOf, openDestination, runInvocation, type DestinationDeps } from '@/features/command-palette'
 import { filesKind, useFileTree } from '@/pages/file-manager'
 import { WORDS as words } from '@/shared/words'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -13,7 +13,7 @@ import type { WindowKindsDeps } from './deps'
 export interface FilesKindDeps
   extends Pick<
     WindowKindsDeps,
-    'core' | 'puts' | 'held' | 'runs' | 'editing' | 'vaults' | 'where' | 'carries' | 'doing'
+    'core' | 'tabOpeners' | 'held' | 'runs' | 'editing' | 'vaults' | 'where' | 'runCommand' | 'doing'
   > {
   dragged: ShallowRef<readonly string[]>
   told: MessageWriter
@@ -22,13 +22,13 @@ export interface FilesKindDeps
 
 export function createFilesKind({
   core,
-  puts,
+  tabOpeners,
   held,
   runs,
   editing,
   vaults,
   where,
-  carries,
+  runCommand,
   doing,
   dragged,
   told,
@@ -55,16 +55,16 @@ export function createFilesKind({
         return made
       },
     },
-    puts,
+    tabOpeners,
     { errors: words.errors },
     told,
   )
 
   const files = filesKind(held.handle, () => useFileTree(core), {
-    openDestination: (landing) => void lands(landing, places),
+    openDestination: (landing) => void openDestination(landing, places),
     runCommand: (id, paths, name, source) => {
       const path = paths[0] ?? ''
-      carries(id, {
+      runCommand(id, {
         ...where(),
         path,
         title: name,
@@ -74,11 +74,12 @@ export function createFilesKind({
         others: paths.slice(1),
       })
     },
-    movePath: (from, to) => does(invocationOf('move', { ...where(), path: from }, to), doing(), words),
+    movePath: (from, to) =>
+      runInvocation(invocationOf('move', { ...where(), path: from }, to), doing(), words),
     setDraggedPaths: (paths) => {
       dragged.value = paths
     },
-    createFolder: (path) => does(invocationOf('makeFolder', where(), path), doing(), words),
+    createFolder: (path) => runInvocation(invocationOf('makeFolder', where(), path), doing(), words),
     createNote: async (folder) => (await editing.making.createUntitled(folder, []))?.path ?? '',
     createDeck: (folder, name) => made.makes('deck', folder, name),
     createStencil: (folder, name) => made.makes('stencil', folder, name, [cardWords.newField]),

@@ -239,10 +239,10 @@ describe('answers arriving', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })
 
-    palette.shows(true)
+    palette.setOpen(true)
     void palette.setTyped('ent')
     await flushPromises()
-    palette.shows(false)
+    palette.setOpen(false)
 
     vault.names[0]?.answers([createNameMatch()])
     await flushPromises()

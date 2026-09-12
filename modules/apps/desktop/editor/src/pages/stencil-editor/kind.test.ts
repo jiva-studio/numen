@@ -13,7 +13,7 @@ import { useStencilTabs, type StencilTabState } from './kind'
 import { WORDS as words } from '@/entities/deck'
 
 /** The one place a file is opened from. Nothing here opens one. */
-const puts = () => fileOpeners({ fileKinds: async () => new Map() })
+const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
@@ -108,7 +108,7 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   const held = useWindowTabs()
   /** Everything the window was given to say about this stencil. */
   const said: string[] = []
-  const road = puts()
+  const road = tabOpeners()
   const stencils = useStencilTabs(one.core, held.handle, road, (text) => void said.push(text))
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, path)

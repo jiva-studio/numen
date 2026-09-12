@@ -30,14 +30,14 @@ export interface NoteMaker {
  * carry the same word; a seat there is no role of that name for is written
  * nowhere, and a sibling is one.
  */
-const carries: Partial<Record<PlexRelatedSeat, Role>> = {
+const seatRoles: Partial<Record<PlexRelatedSeat, Role>> = {
   parent: 'parent',
   child: 'child',
   jump: 'jump',
 }
 
 /** Seats a person may make a note in: exactly those a link can write. */
-export const CREATABLE = Object.keys(carries) as readonly PlexRelatedSeat[]
+export const CREATABLE = Object.keys(seatRoles) as readonly PlexRelatedSeat[]
 
 /**
  * What a new note writes about the note it was made from. The new one takes the
@@ -57,7 +57,7 @@ const facing: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
 const resolveSeatLinks = (from: string, seat: PlexRelatedSeat | null): readonly Link[] | null => {
   if (!seat) return []
   const opposite = facing[seat]
-  const role = opposite && carries[opposite]
+  const role = opposite && seatRoles[opposite]
   return role ? [{ to: from, role }] : null
 }
 
@@ -159,7 +159,7 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
    * gesture came from, and says where the other sits.
    */
   async function join(from: string, to: string, seat: PlexRelatedSeat): Promise<boolean> {
-    const role = carries[seat]
+    const role = seatRoles[seat]
     if (!role) return false
     try {
       const joinError = await core.join(from, { to, role })

@@ -28,7 +28,7 @@ const unsaved = {
 }
 
 const {
-  carries,
+  runCommand,
   commands,
   doing,
   failure,
@@ -95,7 +95,7 @@ function onForgetNotice(id: string) {
           :search="palette"
           :doing="doing"
           :where="where"
-          :carries="carries"
+          :run-command="runCommand"
         />
       </template>
     </WorkspaceLayout>

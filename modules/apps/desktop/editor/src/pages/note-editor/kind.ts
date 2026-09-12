@@ -27,7 +27,7 @@ export function useNoteTab(
   notes: Notes,
   changes: NoteChanges,
   handle: WindowHandle,
-  puts: FileOpeners,
+  tabOpeners: FileOpeners,
 ) {
   const names = noteTitles(vault, notes)
   const keyboard = noteKeyboard()
@@ -78,7 +78,7 @@ export function useNoteTab(
    * A note put in front of the person, under the name it is called by and in a
    * tab of its own. It takes the keyboard, opened now or already open.
    */
-  const shows = (path: string, title = '', showing: PlexShowing = 'here') => {
+  const openNote = (path: string, title = '', showing: PlexShowing = 'here') => {
     const id = mints(path)
     if (title) names.calls(id, title)
     void (showing === 'beside' ? handle.beside(NOTE, id) : handle.opens(NOTE, id))
@@ -93,8 +93,8 @@ export function useNoteTab(
   // note is a note: what it points at is drawn above the prose, in the tab the
   // prose is in.
   for (const kind of ['note'] as const) {
-    puts.holds(kind, (path, title, showing, line) => {
-      shows(path, title, showing)
+    tabOpeners.registerEditor(kind, (path, title, showing, line) => {
+      openNote(path, title, showing)
       if (line !== undefined) entersAt(path, line)
     })
   }
@@ -110,7 +110,7 @@ export function useNoteTab(
    * the file it is being drawn on, which is where the note stands now.
    */
   const held = (id: string): NoteTabState =>
-    createNoteTab(id, notes, changes, keyboard, vault, names, handle, puts)
+    createNoteTab(id, notes, changes, keyboard, vault, names, handle, tabOpeners)
 
   /**
    * A note tab as the window keeps it. A note is its own tab, filed under the

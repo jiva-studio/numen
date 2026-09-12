@@ -69,7 +69,7 @@ export interface Store {
  */
 export const createNotes = (
   stores: readonly Store[],
-  puts: Pick<Notes, 'opens' | 'made'>,
+  noteOpeners: Pick<Notes, 'opens' | 'made'>,
 ): Notes => {
   const holder = (id: string): Store | undefined => stores.find((one) => one.has(id))
   return {
@@ -86,8 +86,8 @@ export const createNotes = (
       await holder(id)?.settles(id)
     },
     shuts: (id) => holder(id)?.shuts(id),
-    opens: puts.opens,
-    made: puts.made,
+    opens: noteOpeners.opens,
+    made: noteOpeners.made,
   }
 }
 

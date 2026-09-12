@@ -58,7 +58,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const readers = new Map<string, SourceReader>()
 
   /** A kind of tab hands over the way it puts a file in front of the person. */
-  const holds = (type: EditorKind, opens: FileOpener) => {
+  const registerEditor = (type: EditorKind, opens: FileOpener) => {
     editors.set(type, opens)
   }
 
@@ -70,7 +70,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * A kind of tab hands over the reader its sources open in. Where one format
    * of a source is read its own way, the kind that reads it that way says so.
    */
-  const reads = (key: ReaderKey, opens: SourceReader) => {
+  const registerReader = (key: ReaderKey, opens: SourceReader) => {
     readers.set(keyOf(key.kind, key.format), opens)
   }
 
@@ -94,8 +94,8 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * book that reflows is turned a spread at a time, and every other book is
    * the row of pages it is drawn as.
    */
-  const readerOf = (stands: FileKind): SourceReader | undefined =>
-    readers.get(keyOf(stands.kind, stands.format)) ?? readers.get(keyOf(stands.kind))
+  const readerOf = (kind: FileKind): SourceReader | undefined =>
+    readers.get(keyOf(kind.kind, kind.format)) ?? readers.get(keyOf(kind.kind))
 
   /**
    * A file just made here, put in front of the person as what it was made as.
@@ -122,10 +122,10 @@ export function fileOpeners(vault: FileOpenerDeps) {
     showing: PlexShowing = 'here',
     line?: number,
   ): Promise<void> => {
-    const stands = await fileKindAt(path)
-    if (!stands) return
-    if (stands.kind === 'note') return void made(path, title, stands.type, showing, line)
-    readerOf(stands)?.(path, [])
+    const kind = await fileKindAt(path)
+    if (!kind) return
+    if (kind.kind === 'note') return void made(path, title, kind.type, showing, line)
+    readerOf(kind)?.(path, [])
   }
 
   /**
@@ -135,13 +135,13 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * opens whole.
    */
   const opensAt = async (path: string, spans: readonly Span[]): Promise<void> => {
-    const stands = await fileKindAt(path)
-    if (!stands) return
-    if (stands.kind === 'note') return void made(path, '', stands.type)
-    readerOf(stands)?.(path, spans)
+    const kind = await fileKindAt(path)
+    if (!kind) return
+    if (kind.kind === 'note') return void made(path, '', kind.type)
+    readerOf(kind)?.(path, spans)
   }
 
-  return { holds, reads, opens, opensAt, made }
+  return { registerEditor, registerReader, opens, opensAt, made }
 }
 
 /** What the window puts files in front of the person with. */

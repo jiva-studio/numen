@@ -81,15 +81,15 @@ export const applyName = (held: BufferDeck, read: BufferDeck): BufferDeck => {
   const alongside = held.cards.length === read.cards.length
 
   const cards = read.cards.map((card, at) => {
-    const stands = { ...card, section: under(card.section) }
+    const withSection = { ...card, section: under(card.section) }
     const was = held.cards[at]
-    if (!alongside || !was || was.mark !== '' || card.mark === '') return stands
+    if (!alongside || !was || was.mark !== '' || card.mark === '') return withSection
     const same =
       was.stencilLink === card.stencilLink &&
       was.preamble === card.preamble &&
       seat(held, was.section) === seat(read, card.section) &&
       JSON.stringify(was.values) === JSON.stringify(card.values)
-    return same ? { ...stands, id: was.id } : stands
+    return same ? { ...withSection, id: was.id } : withSection
   })
 
   return { ...read, sections, cards }

@@ -23,7 +23,7 @@ export type { PresetTabState, SettingValue }
 export function usePresetTab(
   core: Presets,
   handle: WindowHandle,
-  puts: FileOpeners,
+  tabOpeners: FileOpeners,
   said: MessageWriter,
   today: () => string,
 ) {
@@ -35,7 +35,7 @@ export function usePresetTab(
     open.delete(path)
   }
 
-  const holds = (id: string): PresetTabState | undefined => {
+  const getState = (id: string): PresetTabState | undefined => {
     const one = open.get(id)
     return one && createPresetState(one, id, handle, closePreset, core, bounds, said, today, titles)
   }
@@ -61,12 +61,12 @@ export function usePresetTab(
     gone: () => {},
   }
 
-  const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
+  const openPreset = (path: string, title = '', showing: PlexShowing = 'here'): void => {
     if (title) titles.set(path, title)
     void (showing === 'beside' ? handle.beside(PRESET, path) : handle.opens(PRESET, path))
   }
 
-  puts.holds('preset', shows)
+  tabOpeners.registerEditor('preset', openPreset)
 
   const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     for (const went of renamed) {
@@ -93,5 +93,5 @@ export function usePresetTab(
     )
   }
 
-  return { kind, holds, changed: applyPathChanges, called: getTitle, shows, flush }
+  return { kind, getState, changed: applyPathChanges, called: getTitle, openPreset, flush }
 }

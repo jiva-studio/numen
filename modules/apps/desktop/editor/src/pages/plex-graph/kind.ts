@@ -57,7 +57,7 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
       await handle.opens(PLEX, path)
       return
     }
-    handle.shows(one.id)
+    handle.show(one.id)
     await one.state.view.go(path)
   }
 

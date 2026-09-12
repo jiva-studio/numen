@@ -15,7 +15,7 @@ const OTHER = 'http://127.0.0.1:1/files/w/v/other.mp3'
  * An element as far as the player uses one. It records what was asked of it
  * and fires the events a real one fires, when a test says to.
  */
-function stands() {
+function createElement() {
   const listeners = new Map<string, (() => void)[]>()
 
   const element = {
@@ -97,7 +97,7 @@ function stands() {
 
 /** A player standing on one element, and the element it stands on. */
 const player = () => {
-  const stood = stands()
+  const stood = createElement()
   const makes: AudioFactory = () => stood.element as unknown as HTMLAudioElement
   return { plays: audio(makes), ...stood }
 }
@@ -300,7 +300,7 @@ describe('a recording the player could not read', () => {
 describe('the element a window plays through', () => {
   it('is made once, and listened to once, however many recordings are opened', () => {
     let made = 0
-    const stood = stands()
+    const stood = createElement()
     const plays = audio(() => {
       made++
       return stood.element as unknown as HTMLAudioElement

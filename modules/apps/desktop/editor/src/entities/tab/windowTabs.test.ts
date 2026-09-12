@@ -124,7 +124,7 @@ describe('what a kind is given', () => {
 
     const opened = await handle!.opens('other', 'Note.md')
     const mine = await window.opens('thing')
-    handle!.shows(opened)
+    handle!.show(opened)
 
     expect(other.opened).toEqual(['Note.md'])
     expect(onScreen(window.layout.value)).toContain(mine)
@@ -237,7 +237,7 @@ describe('the tab the person is looking at', () => {
     const window = told([thing.declared])
     const one = await window.opens('thing', 'One.md')
     const two = await window.handle.beside('thing', 'Two.md')
-    window.shows(one)
+    window.show(one)
     // Every pane says what it is showing when it is drawn.
     window.shown(two)
 
@@ -286,7 +286,7 @@ describe('a key struck on the window', () => {
     const window = told([read.one.declared])
     const one = await window.opens('thing', 'One.epub')
     await window.handle.beside('thing', 'Two.epub')
-    window.shows(one)
+    window.show(one)
 
     expect(window.presses(struck('ArrowRight'))).toBe(true)
 
@@ -298,7 +298,7 @@ describe('a key struck on the window', () => {
     const window = told([read.one.declared])
     await window.opens('thing', 'One.epub')
     const two = await window.handle.beside('thing', 'Two.epub')
-    window.shows(two)
+    window.show(two)
 
     window.presses(struck('ArrowLeft'))
 

@@ -85,11 +85,11 @@ const held = () => {
 const createLists = (offers: Record<string, readonly StepGroup[]>) => {
   const lists = ref(offers)
   const shown: string[] = []
-  const holds: PaletteLists = {
+  const paletteLists: PaletteLists = {
     offers: (command) => lists.value[command] ?? [],
-    shows: (command, item) => void shown.push(`${command} ${item}`),
+    previewItem: (command, item) => void shown.push(`${command} ${item}`),
   }
-  return { holds, lists, shown }
+  return { paletteLists, lists, shown }
 }
 
 /** The commands over what a test says is in front, asked without a hold. */
@@ -116,11 +116,11 @@ const createPalette = (
     words,
     () => at.value,
     window.knows,
-    kept.holds,
+    kept.paletteLists,
     runs,
     async () => {},
   )
-  commands.shows(true)
+  commands.setOpen(true)
   return { commands, at, asked, ...window, ...kept }
 }
 
@@ -783,11 +783,11 @@ describe('a command that asks for a note', () => {
       words,
       () => at.value,
       { called: () => '', holding: () => null },
-      { offers: () => [], shows: () => {} },
+      { offers: () => [], previewItem: () => {} },
       runSupport(),
       async () => {},
     )
-    commands.shows(true)
+    commands.setOpen(true)
     commands.asks('goto', front())
 
     await commands.setTyped('en')
@@ -969,7 +969,7 @@ describe('leaving a step', () => {
 describe('a command asked for from outside the palette', () => {
   it('opens the palette where it asks for what it needs', () => {
     const { commands } = createPalette()
-    commands.shows(false)
+    commands.setOpen(false)
 
     expect(commands.asks('title', front())).toBeNull()
     expect(commands.open.value).toBe(true)
@@ -978,7 +978,7 @@ describe('a command asked for from outside the palette', () => {
 
   it('leaves the palette shut where it needs nothing', () => {
     const { commands } = createPalette()
-    commands.shows(false)
+    commands.setOpen(false)
 
     expect(commands.asks('copy', front())?.id).toBe('copy')
     expect(commands.open.value).toBe(false)
@@ -1080,11 +1080,11 @@ describe('a command that asks for a vault', () => {
       words,
       () => at.value,
       { called: () => '', holding: () => null },
-      { offers: () => [], shows: () => {} },
+      { offers: () => [], previewItem: () => {} },
       runSupport(),
       async () => {},
     )
-    commands.shows(true)
+    commands.setOpen(true)
 
     commands.asks('openVault', front())
     await settles()

@@ -25,7 +25,7 @@ export function createNoteTab(
   vault: NoteTabDeps,
   names: NoteTitles,
   handle: WindowHandle,
-  puts: FileOpeners,
+  tabOpeners: FileOpeners,
 ): NoteTabState {
   const closeTab = (tab: string) => {
     keyboard.drops(id)
@@ -42,7 +42,7 @@ export function createNoteTab(
     const from = notes.where(id)
     void vault.resolve(from, [url]).then((landed) => {
       const path = landed.get(url)
-      if (path) void puts.opens(path, '', 'beside')
+      if (path) void tabOpeners.opens(path, '', 'beside')
     })
   }
 

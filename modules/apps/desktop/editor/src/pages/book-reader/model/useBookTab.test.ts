@@ -30,13 +30,13 @@ const createMockWindow = (held?: BookTabState) => {
 
 const openers = () => {
   let reader: SourceReader | null = null
-  const puts = {
-    reads: (key: { format?: string }, opens: SourceReader) => {
+  const tabOpeners = {
+    registerReader: (key: { format?: string }, opens: SourceReader) => {
       if (!key.format) return
       reader = opens
     },
   } as unknown as FileOpeners
-  return { puts, opens: () => reader }
+  return { tabOpeners, opens: () => reader }
 }
 
 const settles = () => new Promise((done) => setTimeout(done, 0))
@@ -51,7 +51,7 @@ const createBookTabAt = (path: string, offsetVal: number, page: number, pages: n
     pages: computed(() => pages),
   }) as unknown as BookTabState
 
-const kindOver = (held: BookTabState) => bookKind(createMockWindow(held).handle, () => held, openers().puts).kind
+const kindOver = (held: BookTabState) => bookKind(createMockWindow(held).handle, () => held, openers().tabOpeners).kind
 
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {
@@ -141,8 +141,8 @@ describe('a passage of a book reached', () => {
     const focusSpans = vi.fn()
     const held = { focusSpans } as unknown as BookTabState
     const { handle, opened } = createMockWindow(held)
-    const { puts, opens } = openers()
-    bookKind(handle, () => held, puts)
+    const { tabOpeners, opens } = openers()
+    bookKind(handle, () => held, tabOpeners)
 
     const spans: readonly Span[] = [{ from: 3_600, to: 3_642 }]
     opens()?.('library/Mahabharata.epub', spans)

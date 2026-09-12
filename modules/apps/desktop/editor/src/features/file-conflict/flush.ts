@@ -77,7 +77,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
   const conflicts = shallowRef([]) as Ref<readonly ConflictPrompt[]>
 
   /** Something the flush waits for, until what this answers with is called. */
-  const holds = (one: FlushHandler) => {
+  const addHandler = (one: FlushHandler) => {
     handlers.add(one)
     return () => handlers.delete(one)
   }
@@ -165,7 +165,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     )
 
   return {
-    holds,
+    addHandler,
     raise,
     conflicts,
     start,

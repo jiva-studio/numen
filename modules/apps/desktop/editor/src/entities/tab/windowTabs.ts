@@ -23,7 +23,7 @@ export function useWindowTabs() {
   const handle: WindowHandle = {
     opens: (kind, at) => opens(kind, at),
     beside: (kind, at) => beside(kind, at),
-    shows: (id) => shows(id),
+    show: (id) => show(id),
     closes: (id) => closes(id),
     each: <TabState,>(kind: string) => each<TabState>(kind),
     last: <TabState,>(kind: string) => each<TabState>(kind).at(-1) ?? null,
@@ -128,7 +128,7 @@ export function useWindowTabs() {
   /** A tab opened where the person is, and put in front. */
   const opens = async (kind: string, at = ''): Promise<string> => {
     const id = await createTab(kind, at)
-    if (id) shows(id)
+    if (id) show(id)
     return id
   }
 
@@ -140,7 +140,7 @@ export function useWindowTabs() {
   }
 
   /** A tab the window already holds, put in front. */
-  const shows = (id: string) => {
+  const show = (id: string) => {
     layout.value = openTab(layout.value, id)
   }
 
@@ -228,7 +228,7 @@ export function useWindowTabs() {
     makes,
     opens,
     beside,
-    shows,
+    show,
     closes,
     shown,
     presses,

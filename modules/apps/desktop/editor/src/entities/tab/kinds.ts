@@ -107,7 +107,7 @@ export interface WindowHandle {
   /** The same, drawn beside the pane the person is in. */
   beside(kind: string, at?: string): Promise<string>
   /** A tab the window already holds, put in front. */
-  shows(id: string): void
+  show(id: string): void
   /** A tab that took its own close, going now. */
   closes(id: string): void
   /**

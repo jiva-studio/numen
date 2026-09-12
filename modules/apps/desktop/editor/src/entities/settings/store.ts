@@ -98,8 +98,8 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
   }
 
   /** One setting written, by what is to stand there. */
-  const puts = (setting: readonly string[], value: unknown): Promise<void> =>
+  const writeSetting = (setting: readonly string[], value: unknown): Promise<void> =>
     chooses([{ at: setting, value: write(value) }])
 
-  return { held, path, models, start, at, offers, chooses, puts }
+  return { held, path, models, start, at, offers, chooses, writeSetting }
 }

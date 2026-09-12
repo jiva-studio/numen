@@ -66,12 +66,12 @@ describe('a deck, a stencil or a preset made', () => {
   })
 
   it('is put in front of the person as what it was made as', async () => {
-    const puts = fileOpeners({ fileKinds: async () => new Map() })
+    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const opened: string[] = []
     for (const what of ['deck', 'stencil', 'preset'] as const) {
-      puts.holds(what, (path) => opened.push(`${what} ${path}`))
+      tabOpeners.registerEditor(what, (path) => opened.push(`${what} ${path}`))
     }
-    const made = createFileCreators(maker(), puts, MAKING, () => {})
+    const made = createFileCreators(maker(), tabOpeners, MAKING, () => {})
 
     await made.decks('zoology', 'Animals')
     await made.stencils('zoology', 'Words', ['Front'])
@@ -85,9 +85,9 @@ describe('a deck, a stencil or a preset made', () => {
   })
 
   it('says what the vault refused, and nothing opens', async () => {
-    const puts = fileOpeners({ fileKinds: async () => new Map() })
+    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const told = writer()
-    const made = createFileCreators(maker('occupied'), puts, MAKING, told.says)
+    const made = createFileCreators(maker('occupied'), tabOpeners, MAKING, told.says)
 
     expect(await made.decks('zoology', 'Animals')).toBe('')
     expect(told.said).toStrictEqual([ERRORS.occupied])

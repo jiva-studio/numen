@@ -34,7 +34,7 @@ export function useDeckTabs(
   cards: Cards,
   presets: Presets,
   handle: WindowHandle,
-  puts: FileOpeners,
+  tabOpeners: FileOpeners,
 ) {
   const said = answers()
 
@@ -84,7 +84,7 @@ export function useDeckTabs(
 
   const updateDeckState = (id: string, deck: BufferDeck): void => {
     const body = serializeBufferDeckToString(deck)
-    read.holds(id, body, deck)
+    read.setParsed(id, body, deck)
     store.setBody(id, body)
   }
 
@@ -178,7 +178,7 @@ export function useDeckTabs(
     void (showing === 'beside' ? handle.beside(DECK, id) : handle.opens(DECK, id))
   }
 
-  puts.holds('deck', openDeckTab)
+  tabOpeners.registerEditor('deck', openDeckTab)
 
   const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     for (const went of renamed) {

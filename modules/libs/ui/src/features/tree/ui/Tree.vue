@@ -7,33 +7,29 @@
  * and which are selected are the caller's to hold: the tree works out what a
  * press with a modifier means and says the selection it came to.
  */
-import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, shallowRef, useTemplateRef } from 'vue'
 import {
-  dragged,
-  dragLabel,
-  everyRow,
   flatten,
-  holderOf,
-  isTreeKey,
-  landing,
-  refuses,
-  sameRows,
-  selects,
-  stepTo,
-  PLAIN,
-  type DragLabel,
-  type RowLanding,
-  type Press,
   type Row,
   type RowMarker,
-  type RowSelection,
   type RowId,
   type ShownRow,
-} from './row'
+} from '../lib/row'
+import {
+  everyRow,
+  sameRows,
+  selects,
+  PLAIN,
+  type Press,
+  type RowSelection,
+} from '../lib/select'
+import { isTreeKey, stepTo } from '../lib/step'
+import { dragged, dragLabel, type DragLabel } from '../lib/drag'
+import { holderOf, landing, refuses, type RowLanding } from '../lib/drop'
 import type { Position } from '@/shared/lib/geometry'
 import { browserClock, type Clock } from '@/shared/lib/clock'
 import { DragPreview, usePressDrag } from '@/shared/ui/drag-preview'
-import { TreeField } from './tree-field'
+import TreeRow from './TreeRow.vue'
 
 // --- Props & Emits ---
 const props = withDefaults(
@@ -111,9 +107,6 @@ const list = useTemplateRef<HTMLElement>('list')
 /** What the tree takes up on screen: a drop lands only over it. */
 const box = useTemplateRef<HTMLElement>('box')
 
-/** The field a name is typed in. One row is renamed at a time. */
-const field = useTemplateRef<InstanceType<typeof TreeField>[]>('field')
-
 const shown = computed(() => flatten(props.rows, new Set(props.open)))
 
 /** The rows selected, for asking one row at a time. */
@@ -165,12 +158,6 @@ const label = computed<DragLabel | null>(() => {
 
 /** The rows as they are drawn, each under the row it stands for. */
 const drawnRows = new Map<RowId, HTMLElement>()
-
-/** The keyboard into the field once it is drawn. */
-watch(renaming, (row) => {
-  if (row === null) return
-  void nextTick(() => field.value?.[0]?.focus())
-})
 
 // --- Handlers ---
 function onContextMenu(event: MouseEvent): void {
@@ -286,7 +273,8 @@ function getMarkOf(row: RowId | null): Record<string, string> {
 }
 
 function setRowElement(row: RowId, element: unknown): void {
-  if (element) drawnRows.set(row, element as HTMLElement)
+  const drawn = (element as { $el?: unknown } | null)?.$el
+  if (drawn) drawnRows.set(row, drawn as HTMLElement)
   else drawnRows.delete(row)
 }
 
@@ -366,46 +354,30 @@ function getLandingAt(rows: readonly RowId[], at: Position): RowLanding | null {
       :aria-label="name"
       @keydown="onKeyDown"
     >
-      <div
+      <TreeRow
         v-for="row in shown"
         :ref="(element) => setRowElement(row.id, element)"
         :key="row.id"
-        class="tree__row flex min-w-0 items-center"
-        role="treeitem"
-        :aria-level="row.level"
-        :aria-expanded="row.holds ? row.open : undefined"
-        :aria-selected="picked.has(row.id)"
-        :tabindex="row.id === tabbed ? 0 : -1"
-        :data-tree-row="row.id"
-        :data-selected="picked.has(row.id) || undefined"
-        :data-dragged="lifted.has(row.id) || undefined"
-        :data-last="row.last || undefined"
-        :data-into="row.id === into || undefined"
-        :data-before="row.id === before || undefined"
-        v-bind="getMarkOf(row.id)"
-        :style="{ '--level': row.level }"
+        :row="row"
+        :name="name"
+        :selected="picked.has(row.id)"
+        :lifted="lifted.has(row.id)"
+        :into="row.id === into"
+        :before="row.id === before"
+        :tabbed="row.id === tabbed"
+        :renaming="renaming === row.id"
+        :mark="getMarkOf(row.id)"
         @focus="onRowFocus(row.id)"
         @pointerdown="onRowPointerDown(row.id, $event)"
         @click="onRowClick(row)"
         @dblclick="onRowDoubleClick(row)"
         @contextmenu.prevent.stop="onRowContextMenu(row, $event)"
+        @rename="onRename(row.id, $event)"
+        @abandon="onAbandon(row.id)"
+        @blur="onFieldBlur"
       >
-        <span class="tree__icon flex shrink-0 items-center">
-          <slot name="icon" :id="row.id" :holds="row.holds" :open="row.open" />
-        </span>
-
-        <TreeField
-          v-if="renaming === row.id"
-          ref="field"
-          :value="row.name"
-          :name="name"
-          @rename="onRename(row.id, $event)"
-          @abandon="onAbandon(row.id)"
-          @blur="onFieldBlur"
-        />
-        <!-- The whole name is on the element, for one too long to be drawn. -->
-        <span v-else class="tree__name min-w-0 truncate" :title="row.name">{{ row.name }}</span>
-      </div>
+        <slot name="icon" :id="row.id" :holds="row.holds" :open="row.open" />
+      </TreeRow>
     </div>
 
     <p v-if="!shown.length" class="tree__silence p-inset text-hushed">
@@ -442,56 +414,9 @@ function getLandingAt(rows: readonly RowId[], at: Position): RowLanding | null {
   flex: 0 0 auto;
 }
 
-.tree__row {
-  position: relative;
-  block-size: var(--row);
-  padding-inline: calc(var(--pad) + var(--indent) * (var(--level) - 1)) var(--pad);
-  cursor: default;
-  user-select: none;
-  touch-action: none;
-}
-
-.tree__row:hover {
-  background: var(--numen-bubble-bg);
-}
-
-.tree__row[data-selected] {
-  background: var(--numen-accent);
-  color: var(--numen-accent-ink);
-}
-
-/* A row on its way somewhere, drawn plainly where it stands. */
-.tree__row[data-dragged] {
-  opacity: var(--dragged-fade);
-}
-
-/* Where the keyboard stands. */
-.tree__row:focus-visible {
-  outline: none;
-}
-
-/* A row the selection already marks is marked once. */
-.tree__row[data-selected]:focus-visible {
-  outline: none;
-}
-
 /* What a drop would land inside: the row, or the whole tree for the top level. */
 .tree__row[data-into],
 .tree[data-into] {
-}
-
-.tree__row[data-before]::before {
-  content: '';
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline: calc(var(--pad) + var(--indent) * (var(--level) - 1)) 0;
-  block-size: var(--numen-caret);
-  background: var(--numen-ring);
-}
-
-/* A name stands clear of the mark beside it. */
-.tree__icon {
-  margin-inline-end: var(--gap);
 }
 
 /* What is said in place of the rows stands in the middle of the tree. */

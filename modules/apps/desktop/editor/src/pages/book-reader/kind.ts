@@ -15,7 +15,7 @@ import type { BookTabState } from './model/useBookTab'
 export function bookKind(
   handle: WindowHandle,
   opens: (path: string) => BookTabState,
-  puts: FileOpeners,
+  tabOpeners: FileOpeners,
 ) {
   const kind: TabKind<BookTabState, typeof BOOK> = {
     kind: BOOK,
@@ -55,7 +55,7 @@ export function bookKind(
     const id = await handle.opens(BOOK, path)
     void handle.holds<BookTabState>(BOOK, id)?.focusSpans(...spans)
   }
-  puts.reads({ kind: 'book', format: 'epub' }, (path, spans) => void turns(path, spans))
+  tabOpeners.registerReader({ kind: 'book', format: 'epub' }, (path, spans) => void turns(path, spans))
 
   return { kind }
 }

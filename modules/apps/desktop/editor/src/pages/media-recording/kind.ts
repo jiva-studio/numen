@@ -8,5 +8,5 @@ export const RECORDINGS: Medium<typeof RECORDING> = {
   tab: RECORDING,
   source: 'recording',
   draws: RecordingTab,
-  hands: (puts, opens) => puts.reads({ kind: RECORDINGS.source }, opens),
+  hands: (puts, opens) => puts.registerReader({ kind: RECORDINGS.source }, opens),
 }

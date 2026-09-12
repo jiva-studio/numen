@@ -48,7 +48,7 @@ const asks: Record<
  * answers where it stands. A vault that answers nothing at all is said here,
  * because the roads that ask for one carry no word of their own.
  */
-export function createFileCreators(vault: VaultCreator, puts: FileOpeners, words: CreateWords, said: MessageWriter) {
+export function createFileCreators(vault: VaultCreator, tabOpeners: FileOpeners, words: CreateWords, said: MessageWriter) {
   const createFile = async (
     what: CreateKind,
     folder: string,
@@ -78,7 +78,7 @@ export function createFileCreators(vault: VaultCreator, puts: FileOpeners, words
   ): Promise<string> => {
     const path = await createFile(what, folder, name, fields)
     if (!path) return ''
-    puts.made(path, '', what)
+    tabOpeners.made(path, '', what)
     return path
   }
 

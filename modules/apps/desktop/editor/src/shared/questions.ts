@@ -14,7 +14,7 @@ export interface Question {
    * Whether this answer may be drawn over what is drawn already. An answer
    * older than one that has landed is let go of.
    */
-  lands(): boolean
+  claim(): boolean
 }
 
 export type AnswerGuard = ReturnType<typeof answerGuard>
@@ -31,7 +31,7 @@ export function answerGuard() {
       get current() {
         return listening && mine === asked
       },
-      lands() {
+      claim() {
         if (!listening || mine < landed) return false
         landed = mine
         return true

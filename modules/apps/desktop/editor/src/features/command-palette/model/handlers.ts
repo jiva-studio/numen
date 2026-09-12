@@ -105,7 +105,7 @@ const carried: Record<string, CommandHandler> = {
 }
 
 /** A command carried out. Nothing chosen does nothing at all. */
-export async function does(invocation: CommandInvocation | null, on: CommandDeps, words: Words): Promise<void> {
+export async function runInvocation(invocation: CommandInvocation | null, on: CommandDeps, words: Words): Promise<void> {
   if (!invocation) return
   const carry = carried[invocation.id]
   if (!carry) return

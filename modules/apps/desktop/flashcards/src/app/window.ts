@@ -216,7 +216,7 @@ export const useWindow = () => {
    * alone: its cards were laid out when it opened, and what a deck says now is
    * read at the next one.
    */
-  const reloaded = async () => {
+  const refresh = async () => {
     if (on.value === 'session') return
     await count()
     if (!vault.value) return
@@ -224,7 +224,7 @@ export const useWindow = () => {
     await schedules.read(chosen.value, today.value)
   }
 
-  useWindowStreams({ failed, doing, keyed, count, stop, reloaded, unreachable })
+  useWindowStreams({ failed, doing, keyed, count, stop, refresh, unreachable })
 
   return {
     /** The window's own: which screen is on, and what it has to say. */

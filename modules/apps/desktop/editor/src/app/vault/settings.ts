@@ -31,7 +31,7 @@ const partsIn = (value: unknown): number =>
  * Settings written into the file, together or not at all. What could not be
  * written, and nothing where it was.
  */
-const puts = async (
+const writeSettings = async (
   written: readonly { at: readonly string[]; value: unknown }[],
 ): Promise<string | null> => {
   try {
@@ -48,7 +48,7 @@ export type SettingsCore = SettingsPort
 
 export const settingsCore: SettingsCore = {
   getSyncEnabled: async () => getSettingAt(await configured(), SYNCS) !== false,
-  setSyncEnabled: (kept) => puts([{ at: SYNCS, value: kept }]),
+  setSyncEnabled: (kept) => writeSettings([{ at: SYNCS, value: kept }]),
   getHangingSettings: async () => {
     const answer = await settingsService.getSettings({})
     const written = JSON.parse(answer.written)
@@ -61,7 +61,7 @@ export const settingsCore: SettingsCore = {
     } satisfies HangingSettings
   },
   setHangingSettings: (hangs, parts) =>
-    puts([
+    writeSettings([
       { at: HANGS, value: hangs },
       ...(parts === undefined ? [] : [{ at: PARTS, value: parts }]),
     ]),
@@ -106,5 +106,5 @@ export const settingsCore: SettingsCore = {
       day: answer.day,
     } satisfies ReviewSettings
   },
-  setReviewSettings: (starts) => puts([{ at: STARTS, value: starts }]),
+  setReviewSettings: (starts) => writeSettings([{ at: STARTS, value: starts }]),
 }
