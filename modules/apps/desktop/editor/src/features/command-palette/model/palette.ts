@@ -139,7 +139,7 @@ export function useCommandPalette(
     }
   }
 
-  const typing = async (text: string) => {
+  const setTyped = async (text: string) => {
     typed.value = text
     if (steps.here.value?.step === 'picking') await looks(text.trim())
   }
@@ -155,8 +155,8 @@ export function useCommandPalette(
     showing,
     working: isWorking,
     said,
-    calling: steps.calling,
-    named: steps.named,
+    getStepTitle: steps.getStepTitle,
+    getStepLabel: steps.getStepLabel,
   })
 
   const groups = computed(() => draws.groupsOf(steps.here.value, on.value, typed.value))
@@ -173,7 +173,7 @@ export function useCommandPalette(
     return null
   }
 
-  const refused = (id: string, over: CommandTarget): string => {
+  const getRefusal = (id: string, over: CommandTarget): string => {
     const command = byId.get(id)
     if (!command || command.where(over, runs)) return ''
     return over.ready ? words.noNote : words.noVault
@@ -193,12 +193,12 @@ export function useCommandPalette(
     step: steps.step,
     opensOn: steps.opensOn,
     placeholder: steps.placeholder,
-    typing,
+    setTyped,
     lights,
     setOpen,
     shows: setOpen,
     asks,
-    refused,
+    getRefusal,
     follows: steps.follows,
     chose,
     leaves: steps.leaves,

@@ -80,12 +80,12 @@ export function useDeckTabs(
 
   const wiring = useDeckScheduleSync(cards, presets, store)
   const { offers, stencils, lists, listsAgain, scheduled } = wiring
-  const { choices, listsPresets, listsPresetsAgain, asks, schedules, scheduledAt } = scheduled
+  const { choices, listsPresets, listsPresetsAgain, asks, schedules, getDeckPreset } = scheduled
 
   const updateDeckState = (id: string, deck: BufferDeck): void => {
     const body = serializeBufferDeckToString(deck)
     read.holds(id, body, deck)
-    store.typed(id, body)
+    store.setBody(id, body)
   }
 
   const createDeckTabState = (id: string): DeckTabState => {
@@ -103,7 +103,7 @@ export function useDeckTabs(
       errorMessage: computed(() =>
         said.getErrorMessage(store.where(id), store.shown(id).error !== null),
       ),
-      scheduled: computed(() => scheduledAt(id)),
+      scheduled: computed(() => getDeckPreset(id)),
       choices,
       setSchedule: (preset) => void schedules(id, preset),
       ...actions,
@@ -136,7 +136,7 @@ export function useDeckTabs(
   const kept: Store = {
     has: (id) => store.all().includes(id),
     where: (id) => store.where(id),
-    called: (id) => said.called(store.where(id)),
+    called: (id) => said.getTitle(store.where(id)),
     asking: (id) => store.stale(id) !== null,
     settles: (id) => store.settles(id),
     shuts: closeTabById,
@@ -180,20 +180,20 @@ export function useDeckTabs(
 
   puts.holds('deck', openDeckTab)
 
-  const changed = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
+  const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     for (const went of renamed) {
-      said.moved(went.from, went.to)
+      said.moveFile(went.from, went.to)
     }
     store.changed(paths, renamed)
-    wiring.changed(paths, renamed)
+    wiring.applyPathChanges(paths, renamed)
   }
 
   return {
     kind,
     held: createDeckTabState,
-    changed,
+    changed: applyPathChanges,
     lists,
-    called: said.called,
+    called: said.getTitle,
     kept,
     all: store.all,
     shown: store.shown,

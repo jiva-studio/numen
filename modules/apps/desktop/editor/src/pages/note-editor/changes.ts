@@ -29,7 +29,7 @@ export function noteChanges(limits: HoldLimits = holding) {
       arm.path,
       setTimeout(() => {
         timers.delete(arm.path)
-        decided.fired(arm.path)
+        decided.handleTimeout(arm.path)
         carry(arm.path, null)
       }, arm.after),
     )
@@ -39,7 +39,7 @@ export function noteChanges(limits: HoldLimits = holding) {
   const told = (said: NoteEdit): void => carry(said.path, decided.told(said))
 
   /** The note changed under whatever is drawn over it. */
-  const arrived = (path: string): void => carry(path, decided.arrived(path))
+  const handleNoteChange = (path: string): void => carry(path, decided.handleNoteChange(path))
 
   /** A note the window is no longer showing. */
   const shut = (path: string): void => {
@@ -58,5 +58,5 @@ export function noteChanges(limits: HoldLimits = holding) {
     timers.clear()
   }
 
-  return { told, arrived, shut, shown, close }
+  return { told, arrived: handleNoteChange, shut, shown, close }
 }

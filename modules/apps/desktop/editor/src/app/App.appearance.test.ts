@@ -26,7 +26,7 @@ describe('the four commands over how the window is drawn', () => {
   /** What the page was served drawn at, which is as it is designed. */
   const SIZED = ':root { --numen-interface-scale: 1; --numen-text-scale: 1; }'
 
-  const styled = (is: string, css: string) => {
+  const createStyle = (is: string, css: string) => {
     const one = document.createElement('style')
     one.setAttribute(MARKER, is)
     one.textContent = css
@@ -34,7 +34,7 @@ describe('the four commands over how the window is drawn', () => {
   }
 
   /** What the head is wearing, in the order the elements stand in it. */
-  const dressed = () =>
+  const getHeadStyles = () =>
     [...document.head.querySelectorAll('style')].map((one) => one.textContent)
 
   const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
@@ -56,14 +56,14 @@ describe('the four commands over how the window is drawn', () => {
   beforeEach(() => {
     for (const one of document.head.querySelectorAll('style')) one.remove()
     document.head.append(
-      styled(IS_MODE, PAIR),
-      styled(IS_THEME, SERVED),
-      styled(IS_SIZES, SIZED),
+      createStyle(IS_MODE, PAIR),
+      createStyle(IS_THEME, SERVED),
+      createStyle(IS_SIZES, SIZED),
     )
   })
 
   /** The keyboard still walking, and the keyboard stood still on a row. */
-  const walking = () => new Promise((done) => setTimeout(done, 60))
+  const waitUnderHold = () => new Promise((done) => setTimeout(done, 60))
   const stands = () => new Promise((done) => setTimeout(done, 200))
 
   /** Every tenth the interface goes between, as a person reads them. */
@@ -157,7 +157,7 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(groups()).toStrictEqual(['Ships with numen', 'Your own themes'])
       expect(document.body.querySelector('[data-here]')?.textContent).toContain('numen')
-      expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
     it('wears the theme the keyboard walks onto', async () => {
@@ -165,7 +165,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('ArrowDown')
 
-      expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
+      expect(getHeadStyles()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
       expect(asked.worn).toStrictEqual([])
     })
 
@@ -175,7 +175,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Escape')
 
-      expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
       expect(asked.worn).toStrictEqual([])
     })
 
@@ -186,7 +186,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(asked.worn).toStrictEqual(['mine:sea system 1/1'])
-      expect(dressed()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
+      expect(getHeadStyles()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
     })
   })
 
@@ -196,7 +196,7 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(groups()).toStrictEqual(['Light and dark'])
       expect(left()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
-      expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
     it('reads the tokens as the half the keyboard walks onto', async () => {
@@ -204,7 +204,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('ArrowDown')
 
-      expect(dressed()).toStrictEqual([':root { color-scheme: light; }', SERVED, SIZED])
+      expect(getHeadStyles()).toStrictEqual([':root { color-scheme: light; }', SERVED, SIZED])
       expect(asked.worn).toStrictEqual([])
     })
 
@@ -214,7 +214,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Escape')
 
-      expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
       expect(asked.worn).toStrictEqual([])
     })
 
@@ -225,7 +225,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(asked.worn).toStrictEqual(['preset:numen dark 1/1'])
-      expect(dressed()).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
+      expect(getHeadStyles()).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
     })
   })
 
@@ -233,7 +233,7 @@ describe('the four commands over how the window is drawn', () => {
    * The row the keyboard is standing on, read off the document rather than out
    * of the list the window handed the palette.
    */
-  const standingOn = () =>
+  const getStandingRow = () =>
     document.body.querySelector('[data-here] [data-palette="name"]')?.textContent?.trim()
 
   describe('a step opened over a setting', () => {
@@ -241,9 +241,9 @@ describe('the four commands over how the window is drawn', () => {
     const serves = (mode = PAIR, sizes = SIZED) => {
       for (const one of document.head.querySelectorAll('style')) one.remove()
       document.head.append(
-        styled(IS_MODE, mode),
-        styled(IS_THEME, SERVED),
-        styled(IS_SIZES, sizes),
+        createStyle(IS_MODE, mode),
+        createStyle(IS_THEME, SERVED),
+        createStyle(IS_SIZES, sizes),
       )
       return [mode, SERVED, sizes]
     }
@@ -254,8 +254,8 @@ describe('the four commands over how the window is drawn', () => {
 
       await over('theme')
 
-      expect(standingOn()).toBe('sea')
-      expect(dressed()).toStrictEqual(was)
+      expect(getStandingRow()).toBe('sea')
+      expect(getHeadStyles()).toStrictEqual(was)
       expect(asked.worn).toStrictEqual([])
     })
 
@@ -265,8 +265,8 @@ describe('the four commands over how the window is drawn', () => {
 
       await over('light')
 
-      expect(standingOn()).toBe('Dark')
-      expect(dressed()).toStrictEqual(was)
+      expect(getStandingRow()).toBe('Dark')
+      expect(getHeadStyles()).toStrictEqual(was)
     })
 
     it('stands on the size the interface is drawn at, and leaves it there', async () => {
@@ -276,8 +276,8 @@ describe('the four commands over how the window is drawn', () => {
       await over('interface')
       await stands()
 
-      expect(standingOn()).toBe('150%')
-      expect(dressed()).toStrictEqual(was)
+      expect(getStandingRow()).toBe('150%')
+      expect(getHeadStyles()).toStrictEqual(was)
     })
 
     it('stands on a size between two steps, which is the row put in for it', async () => {
@@ -287,8 +287,8 @@ describe('the four commands over how the window is drawn', () => {
       await over('reading')
       await stands()
 
-      expect(standingOn()).toBe('117%')
-      expect(dressed()).toStrictEqual(was)
+      expect(getStandingRow()).toBe('117%')
+      expect(getHeadStyles()).toStrictEqual(was)
     })
 
     it('leaves the keyboard where typing puts it, and does not walk it back', async () => {
@@ -298,7 +298,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('137')
 
-      expect(standingOn()).toBe('137%')
+      expect(getStandingRow()).toBe('137%')
     })
   })
 
@@ -308,7 +308,7 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(groups()).toStrictEqual(['How large the interface is drawn'])
       expect(left()).toStrictEqual(TENTHS)
-      expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
     it('draws a second line on the one row the window is drawn at, and no other', async () => {
@@ -334,7 +334,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(asked.worn).toStrictEqual(['preset:numen system 1.37/1'])
-      expect(dressed().at(-1)).toBe(':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }')
+      expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }')
     })
 
     it('offers no row for a number the range does not reach, and says nothing', async () => {
@@ -358,11 +358,11 @@ describe('the four commands over how the window is drawn', () => {
       await over('interface')
       await press('End')
 
-      await walking()
-      expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+      await waitUnderHold()
+      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
 
       await stands()
-      expect(dressed().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
+      expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
       expect(asked.worn).toStrictEqual([])
     })
 
@@ -373,7 +373,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Escape')
 
-      expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
       expect(asked.worn).toStrictEqual([])
     })
 
@@ -384,7 +384,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(asked.worn).toStrictEqual(['preset:numen system 2/1'])
-      expect(dressed().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
+      expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
     })
 
     it('says what the settings refused, where the window says what it could not do', async () => {
@@ -396,13 +396,13 @@ describe('the four commands over how the window is drawn', () => {
       await settles()
 
       expect(cards(window).join(' ')).toContain('outside 0.8 to 1.5')
-      expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
+      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
   })
 
   describe('the editor of an open note', () => {
     /** A note in a tab of its own, with the editor's measurements taken. */
-    const opened = async () => {
+    const openNote = async () => {
       const window = await drawnWithPalette()
       window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
       await settles()
@@ -413,7 +413,7 @@ describe('the four commands over how the window is drawn', () => {
     }
 
     it('takes its measurements again at the size the keyboard is held on', async () => {
-      await opened()
+      await openNote()
       await type('interface')
       await press('Enter')
 
@@ -424,7 +424,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('takes them again at the size that was chosen', async () => {
-      await opened()
+      await openNote()
       await type('reading')
       await press('Enter')
 
@@ -436,12 +436,12 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('is left alone while the keyboard is walking rows, and by a theme', async () => {
-      await opened()
+      await openNote()
       await type('theme')
       await press('Enter')
 
       await press('ArrowDown')
-      await walking()
+      await waitUnderHold()
 
       expect(asked.measured).toBe(0)
     })
@@ -463,7 +463,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(asked.worn).toStrictEqual(['preset:numen system 1/1.75'])
-      expect(dressed().at(-1)).toBe(':root { --numen-interface-scale: 1; --numen-text-scale: 1.75; }')
+      expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 1; --numen-text-scale: 1.75; }')
     })
   })
 })

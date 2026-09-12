@@ -36,9 +36,9 @@ export function useDeckScheduleSync(
 
   const scheduled = useDeckSchedule(presets, store)
 
-  const changed = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
+  const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     for (const went of renamed) {
-      scheduled.moved(went.from, went.to)
+      scheduled.moveFile(went.from, went.to)
     }
     if (store.all().length === 0) return
     void lists()
@@ -52,6 +52,6 @@ export function useDeckScheduleSync(
     lists,
     listsAgain,
     scheduled,
-    changed,
+    applyPathChanges,
   }
 }

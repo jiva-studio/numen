@@ -41,36 +41,28 @@ export const nouns = {
  * nothing is called any more.
  */
 export const baseline = [
-  'activated', 'adding', 'addressed', 'aiming', 'allowed', 'answered', 'answeredOn',
-  'answering', 'anything', 'applied', 'arranged', 'arrived', 'arriving', 'asked', 'askedFor',
-  'asking', 'attached', 'blocking', 'bounded', 'braced', 'bring', 'bringNodes', 'called',
-  'calledBy', 'calling', 'carried', 'carrying', 'changed', 'choosing', 'chorded', 'clamped',
-  'cleaned', 'climbing', 'clocked', 'closing', 'coded', 'configured', 'conflicted', 'counted',
-  'crowded', 'crowdingFor', 'curved', 'cutting', 'dated', 'declared', 'deleted', 'divided',
-  'doing', 'dragged', 'draggedIn', 'dragging', 'dressed', 'dressing', 'dropped', 'edited',
-  'emptied', 'ended', 'endingAt', 'endingOf', 'escaped', 'failed', 'feeding', 'fetching',
-  'filed', 'filled', 'filledPercent', 'filling', 'finished', 'fired', 'folded', 'followed',
-  'following', 'framed', 'framedIn', 'grouped', 'guessed', 'handed', 'handedOn', 'handling',
-  'highlightedOn', 'holding', 'hovered', 'hundred', 'hurried', 'joined', 'keeping', 'keyed',
-  'knobbed', 'landed', 'learned', 'learning', 'listed', 'listening', 'listing', 'loaded',
-  'looking', 'making', 'marked', 'marking', 'matching', 'measured', 'measuring',
-  'measuringContext', 'merged', 'minted', 'minting', 'moved', 'named', 'naming', 'namingBox',
-  'nested', 'noted', 'nothing', 'noticed', 'numbered', 'offered', 'offering', 'opened',
-  'openedAt', 'openedTo', 'ordered', 'owed', 'pacing', 'packed', 'painted', 'painting',
-  'paired', 'parsed', 'picking', 'placed', 'played', 'playing', 'pointing', 'pressed',
-  'pressing', 'previewed', 'pulled', 'ranged', 'ranging', 'reached', 'reaching', 'refused',
-  'refusedFor', 'refusing', 'reloading', 'remainingWord', 'removed', 'renamed', 'renamedIn',
-  'renamedTo', 'rendered', 'reordered', 'replaced', 'reported', 'resized', 'resizing',
-  'resolved', 'rested', 'resting', 'rounded', 'routed', 'ruled', 'sampled', 'saving', 'saying',
-  'scheduledAt', 'scheduledOf', 'scrolled', 'scrolling', 'sealed', 'searched', 'seated',
-  'seatedOn', 'sectioned', 'selected', 'selectedIn', 'selecting', 'separated', 'settingAt',
-  'settled', 'settling', 'shelved', 'showing', 'showingOf', 'sized', 'sizing', 'spanning',
-  'spined', 'stacked', 'staged', 'standing', 'standingIn', 'standingOn', 'stated', 'stepped',
-  'stopped', 'stoppedWords', 'streamed', 'styled', 'styling', 'swapped', 'swapping',
-  'switched', 'taking', 'talked', 'talking', 'themed', 'thinking', 'ticked', 'tightened',
-  'titled', 'travelled', 'turned', 'turnedDown', 'typed', 'typedIn', 'typedSize', 'typing',
-  'uncommented', 'uncounted', 'used', 'vanished', 'waiting', 'walked', 'walking', 'watching',
-  'wearing', 'wheeled', 'widenedFor', 'worked', 'working', 'workspacing', 'writing', 'zooming',
+  'adding', 'aiming', 'allowed', 'answered', 'answeredOn', 'answering', 'applied', 'arranged',
+  'arrived', 'arriving', 'asked', 'asking', 'attached', 'blocking', 'bounded', 'braced',
+  'bring', 'carried', 'changed', 'choosing', 'chorded', 'clamped', 'cleaned', 'clocked',
+  'coded', 'counted', 'crowded', 'crowdingFor', 'cutting', 'dated', 'declared', 'divided',
+  'doing', 'dragged', 'draggedIn', 'dropped', 'edited', 'emptied', 'ended', 'escaped',
+  'failed', 'feeding', 'fetching', 'filled', 'filledPercent', 'filling', 'finished', 'folded',
+  'followed', 'following', 'framed', 'framedIn', 'grouped', 'handed', 'handedOn', 'handling',
+  'holding', 'hovered', 'hurried', 'joined', 'keeping', 'keyed', 'knobbed', 'learned',
+  'listed', 'listing', 'making', 'marked', 'marking', 'matching', 'measured', 'measuring',
+  'measuringContext', 'merged', 'moved', 'named', 'naming', 'nested', 'nothing', 'noticed',
+  'numbered', 'offered', 'offering', 'opened', 'openedTo', 'ordered', 'pacing', 'packed',
+  'painted', 'painting', 'paired', 'parsed', 'picking', 'placed', 'pointing', 'pressed',
+  'pressing', 'previewed', 'pulled', 'reaching', 'refusedFor', 'remainingWord', 'removed',
+  'renamed', 'renamedIn', 'rendered', 'reordered', 'replaced', 'reported', 'resized',
+  'resizing', 'resolved', 'rested', 'resting', 'rounded', 'routed', 'ruled', 'sampled',
+  'saying', 'scrolled', 'scrolling', 'sealed', 'seated', 'selected', 'selectedIn', 'selecting',
+  'separated', 'settled', 'showing', 'showingOf', 'sized', 'spanning', 'stacked', 'staged',
+  'standing', 'standingIn', 'stated', 'stepped', 'stopped', 'stoppedWords', 'streamed',
+  'styled', 'switched', 'talking', 'themed', 'thinking', 'tightened', 'titled', 'travelled',
+  'turned', 'typed', 'typing', 'uncommented', 'uncounted', 'used', 'waiting', 'walked',
+  'walking', 'watching', 'wearing', 'wheeled', 'widenedFor', 'worked', 'working',
+  'workspacing', 'writing', 'zooming',
 ]
 
 /** The words of one name, as a reader says them. */
@@ -109,9 +101,12 @@ export function refused(name) {
  * Every function one file declares: a `function`, and a `const` or `let` whose
  * value is an arrow or a function. A method is outside this — it is read as
  * part of the object it stands in.
+ *
+ * A parameter list is followed one bracket deep, which is as far as a default
+ * value goes: `(deps = support())` is a signature and `(a) => (b) =>` is two.
  */
 const DECLARED =
-  /(?:^|\n)[ \t]*(?:export\s+)?(?:async\s+)?function\s+([a-z][\w$]*)|(?:^|\n)[ \t]*(?:export\s+)?(?:const|let)\s+([a-z][\w$]*)(?::[^=\n]*)?\s*=\s*(?:async\s+)?(?:\([^)]*\)|[a-z][\w$]*)\s*(?::[^=>\n]*)?=>/g
+  /(?:^|\n)[ \t]*(?:export\s+)?(?:async\s+)?function\s+([a-z][\w$]*)|(?:^|\n)[ \t]*(?:export\s+)?(?:const|let)\s+([a-z][\w$]*)(?::[^=\n]*)?\s*=\s*(?:async\s+)?(?:\((?:[^()]|\([^()]*\))*\)|[a-z][\w$]*)\s*(?::[^=>\n]*)?=>/g
 
 export function declares(source) {
   const found = []

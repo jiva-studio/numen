@@ -72,7 +72,7 @@ function stands() {
   }
 
   /** How many are listening for an event. */
-  const listening = (name: string) => (listeners.get(name) ?? []).length
+  const countListeners = (name: string) => (listeners.get(name) ?? []).length
 
   /** The recording says how long it runs. */
   const runs = (seconds: number) => {
@@ -92,7 +92,7 @@ function stands() {
     fires('error')
   }
 
-  return { element, fires, listening, runs, moves, breaks }
+  return { element, fires, countListeners, runs, moves, breaks }
 }
 
 /** A player standing on one element, and the element it stands on. */
@@ -309,8 +309,8 @@ describe('the element a window plays through', () => {
     for (let at = 0; at < 100; at++) plays.load(`http://127.0.0.1:1/files/w/v/${at}.mp3`)
 
     expect(made).toBe(1)
-    expect(stood.listening('timeupdate')).toBe(1)
-    expect(stood.listening('error')).toBe(1)
+    expect(stood.countListeners('timeupdate')).toBe(1)
+    expect(stood.countListeners('error')).toBe(1)
   })
 
   it('plays nothing and says so where the window has no element to give', () => {

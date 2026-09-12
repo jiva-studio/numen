@@ -51,7 +51,7 @@ export function createNoteTab(
     shown: computed(() => notes.shown(id)),
     errorMessage: computed(() => notes.getErrorMessage(id)),
     change: computed(() => changes.shown(notes.where(id))),
-    updateBody: (body: string) => notes.typed(id, body),
+    updateBody: (body: string) => notes.setBody(id, body),
     save: () => notes.save(id),
     keepMine: () => notes.keep(id),
     takeFile: () => notes.take(id),

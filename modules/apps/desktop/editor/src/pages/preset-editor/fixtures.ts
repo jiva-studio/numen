@@ -101,7 +101,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
 })
 
 /** What an answer counted the material at, and nothing where none has landed. */
-const counted = (one: Curve): PresetCounts | null =>
+const getCounts = (one: Curve): PresetCounts | null =>
   one.honest ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun } : null
 
 /** A tab standing at those settings, and everything it was asked to do. */
@@ -117,7 +117,7 @@ const tabAt = (
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, ...settings }),
     curve: shallowRef(curve(over)),
-    material: shallowRef(told === undefined ? counted(curve(over)) : told),
+    material: shallowRef(told === undefined ? getCounts(curve(over)) : told),
     place,
     waiting: ref(waiting),
     bounds: shallowRef(BOUNDS),
@@ -149,4 +149,4 @@ const drawn = (
 }
 
 
-export { counted, curve, drawn, heights, point, rows, tabAt }
+export { getCounts, curve, drawn, heights, point, rows, tabAt }

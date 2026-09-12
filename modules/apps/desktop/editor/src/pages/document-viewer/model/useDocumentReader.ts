@@ -95,7 +95,7 @@ export function useDocumentReader(documents: Documents, path: string) {
     picture: viewport.picture,
     getPageImageUrl: viewport.getPageImageUrl,
     highlighted: highlights.highlighted,
-    highlightedOn: highlights.highlightedOn,
+    getHighlightsOn: highlights.getHighlightsOn,
     also: highlights.also,
     alsoOn: highlights.alsoOn,
     error,

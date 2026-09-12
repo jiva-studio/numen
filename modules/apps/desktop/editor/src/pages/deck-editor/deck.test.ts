@@ -23,7 +23,7 @@ import {
 } from './deck'
 
 /** Identities counted out, so a test names the card it means. */
-const minting = () => {
+const createIds = () => {
   let at = 0
   return () => `c${(at += 1)}`
 }
@@ -66,7 +66,7 @@ const read = (over: Partial<VaultDeck> = {}): VaultDeck => ({
 const LLAMA = 'k7m2xq9fzp'
 const ALPACA = '3n8vr4tqch'
 
-const deck = (over: Partial<VaultDeck> = {}): BufferDeck => deserializeVaultDeck(read(over), minting())
+const deck = (over: Partial<VaultDeck> = {}): BufferDeck => deserializeVaultDeck(read(over), createIds())
 
 describe('a deck as the window holds it', () => {
   it('knows every card by the mark the file carries for it', () => {
@@ -331,7 +331,7 @@ describe('a card taken out and dragged', () => {
 
 describe('a card dragged among the sections', () => {
   /** Two sections, the first card in the first of them and the second in neither. */
-  const sectioned = (): BufferDeck => {
+  const createSectionedDeck = (): BufferDeck => {
     const bare = read()
     return deck({
       sections: [{ name: 'Roots', preamble: '' }, { name: 'Leaves', preamble: '' }],
@@ -340,7 +340,7 @@ describe('a card dragged among the sections', () => {
   }
 
   it('takes the section of the card it was let go before', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     const moved = dropCard(held, LLAMA, ALPACA)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, held.sections[0]?.id],
@@ -349,7 +349,7 @@ describe('a card dragged among the sections', () => {
   })
 
   it('stands under the last section where it was let go on nothing', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     expect(dropCard(held, LLAMA, null).cards.map((card) => card.section)).toStrictEqual([
       held.sections[0]?.id,
       held.sections[1]?.id,
@@ -357,7 +357,7 @@ describe('a card dragged among the sections', () => {
   })
 
   it('lands at the head of a section it was let go on', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     const roots = held.sections[0]?.id ?? ''
     const moved = dropCard(held, LLAMA, roots)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
@@ -367,7 +367,7 @@ describe('a card dragged among the sections', () => {
   })
 
   it('lands at the head of a section holding no card', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     const leaves = held.sections[1]?.id ?? ''
     const moved = dropCard(held, LLAMA, leaves)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
@@ -377,12 +377,12 @@ describe('a card dragged among the sections', () => {
   })
 
   it('moves nothing where it was let go on nothing the deck holds', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     expect(dropCard(held, LLAMA, 'nowhere')).toStrictEqual(held)
   })
 
   it('stands last under the section it was let go past the end of', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     const roots = held.sections[0]?.id ?? ''
     const moved = dropCard(held, LLAMA, cardEndOf(roots))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
@@ -392,7 +392,7 @@ describe('a card dragged among the sections', () => {
   })
 
   it('stands last under no section where it was let go past those before the first', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     const moved = dropCard(held, ALPACA, cardEndOf(CARD_HEAD))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, null],
@@ -403,7 +403,7 @@ describe('a card dragged among the sections', () => {
   // A card naming a section the deck does not hold is drawn before the first
   // heading, so that is where it counts from when another lands past it.
   it('stands past a card whose section the deck has lost, which stands under none', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     const lost = {
       ...held.cards[0]!,
       section: 'gone',
@@ -419,12 +419,12 @@ describe('a card dragged among the sections', () => {
   })
 
   it('leaves the deck as it was where the card already stands last under that heading', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     expect(dropCard(held, ALPACA, cardEndOf(held.sections[0]?.id ?? ''))).toStrictEqual(held)
   })
 
   it('stands first and under no section where it was let go at the head of the deck', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     const moved = dropCard(held, ALPACA, CARD_HEAD)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [ALPACA, null],
@@ -434,17 +434,17 @@ describe('a card dragged among the sections', () => {
 })
 
 describe('a section of a deck', () => {
-  const sectioned = (): BufferDeck =>
+  const createSectionedDeck = (): BufferDeck =>
     deck({ sections: [{ name: 'Roots', preamble: '' }, { name: 'Leaves', preamble: '' }] })
 
   it('is made at the end of the deck, holding no card', () => {
-    const held = addSection(sectioned(), 'Shoots', () => 'c9')
+    const held = addSection(createSectionedDeck(), 'Shoots', () => 'c9')
     expect(held.sections[2]).toStrictEqual({ id: 'c9', name: 'Shoots', preamble: '' })
     expect(held.cards.map((card) => card.section)).toStrictEqual([null, null])
   })
 
   it('takes the name it was given, and no other section takes it', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     const named = renameSection(held, held.sections[0]?.id ?? '', 'Roots and shoots')
     expect(named.sections.map((section) => section.name)).toStrictEqual([
       'Roots and shoots',
@@ -453,7 +453,7 @@ describe('a section of a deck', () => {
   })
 
   it('takes a name the section beside it carries, two being free to share one', () => {
-    const held = sectioned()
+    const held = createSectionedDeck()
     const named = renameSection(held, held.sections[0]?.id ?? '', 'Leaves')
     expect(named.sections.map((section) => section.name)).toStrictEqual(['Leaves', 'Leaves'])
   })
@@ -585,7 +585,7 @@ describe('whether two readings of a file read the same', () => {
       cards: [{ ...other.cards[0]!, values: [{ field: 'Height', text: 'about 6ft' }] }],
     }
 
-    expect(sameDeck(deck(), deserializeVaultDeck(wrote, minting()))).toBe(false)
+    expect(sameDeck(deck(), deserializeVaultDeck(wrote, createIds()))).toBe(false)
   })
 
   // The heading is read back from the first field wherever the deck is written,
@@ -599,7 +599,7 @@ describe('whether two readings of a file read the same', () => {
       cards: [{ ...other.cards[0]!, heading: 'about 45"' }, ...other.cards.slice(1)],
     }
 
-    expect(sameDeck(deck(), deserializeVaultDeck(wrote, minting()))).toBe(true)
+    expect(sameDeck(deck(), deserializeVaultDeck(wrote, createIds()))).toBe(true)
   })
 
   it('is not so for prose around the cards written elsewhere', () => {

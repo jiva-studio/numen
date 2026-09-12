@@ -19,7 +19,7 @@ import { closeTab, openTab, openTabBeside, pane, paneById, panesOf } from '@nume
 import type { Tab, Workspace } from '@numen/ui'
 import type { Source } from '@/shared/file'
 import type { ProgressOf } from './tab'
-import { minted } from './workspace'
+import { generateId } from './workspace'
 
 /**
  * What a command asked over one tab is over: the note the tab means, and the
@@ -145,7 +145,7 @@ export interface WindowHandle {
 }
 
 /** The identity a pane made by a split is filed under. */
-const naming = () => crypto.randomUUID()
+const generatePaneId = () => crypto.randomUUID()
 
 export function useWindowTabs() {
   /**
@@ -247,7 +247,7 @@ export function useWindowTabs() {
   const createTab = async (kind: string, at = ''): Promise<string> => {
     const one = byKind.get(kind)
     if (!one) return ''
-    const id = one.identity ? `${kind}:${one.identity(at)}` : minted(kind)
+    const id = one.identity ? `${kind}:${one.identity(at)}` : generateId(kind)
     if (open.value.has(id)) return id
     const scope = effectScope(true)
     const state = scope.run(() => one.opens(at))
@@ -267,7 +267,7 @@ export function useWindowTabs() {
   /** A tab opened beside the pane the person is in. */
   const beside = async (kind: string, at = ''): Promise<string> => {
     const id = await createTab(kind, at)
-    if (id) layout.value = openTabBeside(layout.value, id, 'right', naming)
+    if (id) layout.value = openTabBeside(layout.value, id, 'right', generatePaneId)
     return id
   }
 

@@ -43,14 +43,14 @@ export interface ViewState {
   readonly working: Readonly<Ref<boolean>>
   readonly said: Readonly<Ref<string>>
   /** What a step is over, in the words a person reads it as. */
-  readonly calling: (step: PendingStep) => string
-  readonly named: (step: PendingStep) => string
+  readonly getStepTitle: (step: PendingStep) => string
+  readonly getStepLabel: (step: PendingStep) => string
 }
 
 /** The view one palette draws, over the state that palette holds. */
 export function view(state: ViewState) {
   const { words, commands, byId, runs, holds, found, known, showing, working, said } = state
-  const { calling, named } = state
+  const { getStepTitle, getStepLabel } = state
 
   /** One command as it is drawn, and nothing where the words typed leave it out. */
   const drawn = (one: Command, over: CommandTarget, word: string): PaletteItem | null => {
@@ -74,7 +74,7 @@ export function view(state: ViewState) {
     !over.ready ? words.noVault : over.path ? words.noneFound : words.noNote
 
   /** Every command offered over what is in front, in the groups it holds. */
-  const listed = (over: CommandTarget, text: string): readonly PaletteGroup[] => {
+  const getCommandGroups = (over: CommandTarget, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
     const items = (group: CommandGroup): readonly PaletteItem[] =>
       inGroup(commands, group)
@@ -95,7 +95,7 @@ export function view(state: ViewState) {
   }
 
   /** A name to give, as the one thing the words typed can be. */
-  const naming = (text: string): PaletteGroup => {
+  const getNamingGroup = (text: string): PaletteGroup => {
     const name = text.trim()
     return {
       id: 'naming',
@@ -144,7 +144,7 @@ export function view(state: ViewState) {
   const typeOf = (id: string): NoteType | null =>
     found.value.find((one) => one.path === id)?.type ?? null
 
-  const picking = (text: string): PaletteGroup => {
+  const getPickingGroup = (text: string): PaletteGroup => {
     const seen = new Set<string>()
     const items: PaletteItem[] = []
     for (const one of found.value) {
@@ -171,18 +171,18 @@ export function view(state: ViewState) {
    * They are read again on every keystroke, and a row drawn as not to be chosen
    * is not chosen.
    */
-  const choosing = (step: PendingStep, text: string): readonly PaletteGroup[] => {
+  const getChoosingGroups = (step: PendingStep, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
     return holds.offers(step.command.id, text).map((group) => ({
       id: group.id,
       title: group.title,
-      items: group.items.map((one) => offered(one, word)).filter((item) => item !== null),
+      items: group.items.map((one) => getRowItem(one, word)).filter((item) => item !== null),
       silence: group.silence ?? words.noneFound,
     }))
   }
 
   /** One such row, and nothing where the words typed leave it out. */
-  const offered = (one: StepRow, word: string): PaletteItem | null => {
+  const getRowItem = (one: StepRow, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.title.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
     return {
@@ -208,7 +208,7 @@ export function view(state: ViewState) {
    * ahead of their folder, and cannot be chosen. The folder is what tells one
    * vault from another, so it keeps the room.
    */
-  const listing = (text: string, step: PendingStep): PaletteGroup => {
+  const getVaultsGroup = (text: string, step: PendingStep): PaletteGroup => {
     const word = text.trim().toLowerCase()
     const items: PaletteItem[] = known.value
       .filter((one) => word === '' || one.name.toLowerCase().includes(word))
@@ -236,7 +236,7 @@ export function view(state: ViewState) {
    * nothing is drawn first, and it is the one the keyboard opens on. Each is
    * reached by the name it is offered under, as an item of any other step is.
    */
-  const asking = (step: PendingStep, text: string): PaletteGroup => {
+  const getConfirmGroup = (step: PendingStep, text: string): PaletteGroup => {
     const word = text.trim().toLowerCase()
     const { keeps = '', kept = '', does = '', then = '' }: Partial<ConfirmWords> =
       step.command.answers ?? {}
@@ -249,7 +249,7 @@ export function view(state: ViewState) {
       },
       {
         id: YES,
-        title: `${does} ${named(step)}`,
+        title: `${does} ${getStepLabel(step)}`,
         detail: then,
         actions: [{ id: YES, text: does }],
       },
@@ -266,7 +266,7 @@ export function view(state: ViewState) {
 
   /** The name typed back, which is the one thing that reaches destroying. */
   const exactly = (step: PendingStep, text: string): PaletteGroup => {
-    const title = calling(step)
+    const title = getStepTitle(step)
     const { does = '', then = '' }: Partial<RetypeWords> = step.command.warns ?? {}
     return {
       id: 'exactly',
@@ -285,13 +285,13 @@ export function view(state: ViewState) {
 
   /** What the palette draws where it stands, over the words typed into it. */
   const groupsOf = (step: PendingStep | null, over: CommandTarget, typed: string) => {
-    if (!step) return listed(over, typed)
-    if (step.step === 'naming') return [naming(typed)]
+    if (!step) return getCommandGroups(over, typed)
+    if (step.step === 'naming') return [getNamingGroup(typed)]
     if (step.step === 'address') return [address(typed)]
-    if (step.step === 'picking') return [picking(typed)]
-    if (step.step === 'choosing') return choosing(step, typed)
-    if (step.step === 'vaults') return [listing(typed, step)]
-    if (step.step === 'asking') return [asking(step, typed)]
+    if (step.step === 'picking') return [getPickingGroup(typed)]
+    if (step.step === 'choosing') return getChoosingGroups(step, typed)
+    if (step.step === 'vaults') return [getVaultsGroup(typed, step)]
+    if (step.step === 'asking') return [getConfirmGroup(step, typed)]
     return [exactly(step, typed)]
   }
 

@@ -79,7 +79,7 @@ export interface PlexNodeActions {
   made(from: string, seat: PlexRelatedSeat): Promise<void>
   joinNodes(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
   joined(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
-  bringNodes(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
+  dropNodes(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
   brought(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
   openNode(node: string, showing?: PlexShowing): void
   opens(node: string, showing?: PlexShowing): void

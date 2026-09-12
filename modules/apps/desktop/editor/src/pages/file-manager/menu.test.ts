@@ -19,15 +19,15 @@ import {
 } from './menu'
 
 /** A window that has been told nothing, which can do every run. */
-const anything: RunGuard = () => true
+const canRunAnything: RunGuard = () => true
 
 /** What a row of that kind offers, by the identity of each item. */
-const on = (source: Source, folder = false, canRun: RunGuard = anything): readonly string[] =>
+const on = (source: Source, folder = false, canRun: RunGuard = canRunAnything): readonly string[] =>
   itemsFor({ source, folder }, false, canRun).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
 const drawn = (source: Source): readonly string[] =>
-  grouped(itemsFor({ source, folder: false }, false, anything)).map(
+  grouped(itemsFor({ source, folder: false }, false, canRunAnything)).map(
     (one) => `${one.rule ? '— ' : ''}${one.id}`,
   )
 
@@ -69,7 +69,7 @@ describe('the menu on a row standing for anything else', () => {
   })
 
   it('offers neither off every row, where there is nothing to run it over', () => {
-    const made = itemsFor(null, false, anything).map((one) => one.id)
+    const made = itemsFor(null, false, canRunAnything).map((one) => one.id)
     expect(made).not.toContain('transcribe')
     expect(made).not.toContain('recognise')
   })
@@ -115,7 +115,7 @@ describe('the menu where this build cannot do a run at all', () => {
 
 describe('the four files the menu makes', () => {
   it('offers a preset off every row, beside the note, the deck and the stencil', () => {
-    expect(itemsFor(null, false, anything).map((one) => one.id)).toStrictEqual([
+    expect(itemsFor(null, false, canRunAnything).map((one) => one.id)).toStrictEqual([
       NEW_NOTE,
       NEW_DECK,
       NEW_STENCIL,

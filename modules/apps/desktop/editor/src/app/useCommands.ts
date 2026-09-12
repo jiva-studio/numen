@@ -3,7 +3,7 @@
  */
 import type { Ref } from 'vue'
 import {
-  chorded,
+  isChord,
   commandFor,
   does,
   useCommandPalette,
@@ -41,14 +41,14 @@ export interface CommandsDepsOptions {
   made: ReturnType<typeof createFileCreators>
   shown: Ref<VaultRef>
   reloads: () => void
-  carrying: (path: string) => Promise<void>
+  loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
   opensPreset: (path: string) => Promise<void>
   dressed: { chooses: (item: string) => Promise<void> | void }
   oneName: { chooses: (item: string) => Promise<void> | void }
   hungParts: { chooses: (item: string) => Promise<void> | void; choosesCount: (item: string) => Promise<void> | void }
-  recorded: { deleted?: (path: string) => void; onDelete?: (path: string) => void }
-  pointed: { deleted?: (path: string) => void; onDelete?: (path: string) => void }
+  recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
+  pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
   plexes: () => { travel: (path: string) => Promise<void> | void; leaves: (from: string, to: string) => Promise<void> | void }
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
@@ -70,7 +70,7 @@ export function useCommands(options: CommandsDepsOptions) {
     made,
     shown,
     reloads,
-    carrying,
+    loadArtifactStates,
     reached,
     opensPreset,
     dressed,
@@ -100,13 +100,13 @@ export function useCommands(options: CommandsDepsOptions) {
     const invocation = commands.asks(id, at)
     if (invocation) return void does(invocation, doing, words)
     if (commands.open.value) return void (palette.setOpen ?? palette.shows)(false)
-    told(commands.refused(id, at), 'error')
+    told(commands.getRefusal(id, at), 'error')
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (held.presses(event)) return event.preventDefault()
-    if (!chorded(event)) return
+    if (!isChord(event)) return
     const command = commandFor(event.key.toLowerCase(), event.shiftKey)
     if (!command) return
     event.preventDefault()

@@ -40,7 +40,7 @@ const openers = () => {
 
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
-const openedAt = (path: string, page: number, pageCount: number) =>
+const createDocumentTabAt = (path: string, page: number, pageCount: number) =>
   ({ path, pageNumber: ref(page), pages: ref(Array.from({ length: pageCount })) }) as unknown as DocumentTabState
 
 const kindOver = (held: DocumentTabState) => documentKind(createMockDocumentWindow(held).handle, () => held, openers().puts).kind
@@ -136,7 +136,7 @@ describe('a search that landed in a document', () => {
 
 describe('what a command asked over a document tab is over', () => {
   it('is the file it reads, which is what a run is asked over', () => {
-    const held = openedAt('Ants.epub', 3, 40)
+    const held = createDocumentTabAt('Ants.epub', 3, 40)
 
     expect(kindOver(held).over!(held)).toStrictEqual({ file: 'Ants.epub', source: 'book' })
   })
@@ -144,7 +144,7 @@ describe('what a command asked over a document tab is over', () => {
 
 describe('what a document tab holds, as whoever answers for the person is told it', () => {
   it('is the file, the page in front of them, and how many pages there are', () => {
-    const held = openedAt('Ants.epub', 3, 40)
+    const held = createDocumentTabAt('Ants.epub', 3, 40)
 
     expect(kindOver(held).attends!(held)).toStrictEqual({
       path: 'Ants.epub',

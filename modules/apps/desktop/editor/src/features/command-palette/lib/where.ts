@@ -38,7 +38,7 @@ export const onEvidence =
 const isEmpty = (carries: ArtifactStates): boolean => Object.keys(carries).length === 0
 
 /** An artifact a run over the file would begin. */
-export const owed = (made: ArtifactState | undefined): boolean =>
+export const isUnmade = (made: ArtifactState | undefined): boolean =>
   made === undefined || made === 'none' || made === 'stopped'
 
 export const always = (): boolean => true

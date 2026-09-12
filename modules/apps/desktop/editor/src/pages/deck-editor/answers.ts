@@ -97,7 +97,7 @@ export function answers() {
   }
 
   /** What a deck tab is called: the title the file carries, or the file itself. */
-  const called = (path: string): string => titles.get(path) || fileOf(path)
+  const getTitle = (path: string): string => titles.get(path) || fileOf(path)
 
   /** A file the window was told the title of before any read of it answered. */
   const names = (path: string, title: string): void => {
@@ -111,7 +111,7 @@ export function answers() {
   }
 
   /** The same, carried to where the file was filed instead. */
-  const moved = (from: string, to: string): void => {
+  const moveFile = (from: string, to: string): void => {
     const said = told.get(from)
     if (said) told.set(to, said)
     told.delete(from)
@@ -120,5 +120,5 @@ export function answers() {
     titles.delete(from)
   }
 
-  return { reads, writes, problemsAt, getErrorMessage, called, names, forgets, moved }
+  return { reads, writes, problemsAt, getErrorMessage, getTitle, names, forgets, moveFile }
 }

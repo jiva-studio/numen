@@ -22,7 +22,7 @@ const asked = {
 const { themes } = await import('./theme')
 
 /** What the application answers about a window drawn as designed. */
-const answering = (over: Record<string, unknown> = {}) => ({
+const createAnswer = (over: Record<string, unknown> = {}) => ({
   themes: [],
   applied: 'preset/Numen.css',
   mode: Modes.SYSTEM,
@@ -36,7 +36,7 @@ const answering = (over: Record<string, unknown> = {}) => ({
 describe('every theme there is', () => {
   it('says which ship inside the application and which are the person’s own', async () => {
     asked.listThemes.mockResolvedValue(
-      answering({
+      createAnswer({
         themes: [
           { name: 'preset/Numen.css', title: 'Numen', shelf: Shelf.PRESET, pinned: false },
           { name: 'own/Dusk.css', title: 'Dusk', shelf: Shelf.MINE, pinned: true },
@@ -59,7 +59,7 @@ describe('which half of a colour pair is read', () => {
       [Modes.DARK, 'dark'],
       [Modes.SYSTEM, 'system'],
     ] as const) {
-      asked.listThemes.mockResolvedValue(answering({ mode: said }))
+      asked.listThemes.mockResolvedValue(createAnswer({ mode: said }))
       expect((await themes.appearance()).mode).toBe(word)
     }
   })
@@ -67,7 +67,7 @@ describe('which half of a colour pair is read', () => {
   // A mode the window has no word for is one the machine decides, which is what
   // a window that was never told anything is drawn as.
   it('is the system’s where the window has no word for what was said', async () => {
-    asked.listThemes.mockResolvedValue(answering({ mode: 99 }))
+    asked.listThemes.mockResolvedValue(createAnswer({ mode: 99 }))
     expect((await themes.appearance()).mode).toBe('system')
   })
 
@@ -86,7 +86,7 @@ describe('which half of a colour pair is read', () => {
 
 describe('how far a size goes', () => {
   it('is the two ends the application named', async () => {
-    asked.listThemes.mockResolvedValue(answering())
+    asked.listThemes.mockResolvedValue(createAnswer())
     const { sizes, bounds } = await themes.appearance()
 
     expect(sizes).toEqual({ interfaceScale: 1, textScale: 1 })
@@ -100,7 +100,7 @@ describe('how far a size goes', () => {
   // some number the window made up.
   it('is nothing at either end where the application named neither', async () => {
     asked.listThemes.mockResolvedValue(
-      answering({ interfaceScaleBounds: undefined, textScaleBounds: undefined }),
+      createAnswer({ interfaceScaleBounds: undefined, textScaleBounds: undefined }),
     )
 
     expect((await themes.appearance()).bounds).toEqual({

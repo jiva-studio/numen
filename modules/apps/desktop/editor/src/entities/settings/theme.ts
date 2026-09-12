@@ -87,8 +87,8 @@ export const themes: Themes = {
       mode: WORDED[answer.mode] ?? 'system',
       sizes: { interfaceScale: answer.interfaceScale, textScale: answer.textScale },
       bounds: {
-        interfaceScale: ranged(answer.interfaceScaleBounds),
-        textScale: ranged(answer.textScaleBounds),
+        interfaceScale: parseBounds(answer.interfaceScaleBounds),
+        textScale: parseBounds(answer.textScaleBounds),
       },
     }
   },
@@ -108,7 +108,7 @@ export const themes: Themes = {
 }
 
 /** How far a size goes. A bound the application left out is no bound at all. */
-const ranged = (said: { least: number; most: number } | undefined): Bounds => ({
+const parseBounds = (said: { least: number; most: number } | undefined): Bounds => ({
   least: said?.least ?? 0,
   most: said?.most ?? 0,
 })

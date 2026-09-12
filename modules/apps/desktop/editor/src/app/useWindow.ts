@@ -104,7 +104,7 @@ export const useWindow = () => {
   // asked for as it arrives.
   watch(
     () => where().file,
-    (file) => void vaultsModule.carrying(file),
+    (file) => void vaultsModule.loadArtifactStates(file),
     { immediate: true },
   )
 
@@ -129,7 +129,7 @@ export const useWindow = () => {
   const knows: NoteLookup = {
     called: (path) => {
       const heldId = editing.reached.holding(path)
-      return heldId === null ? kinds.plexes.names(path) : editing.titled(heldId)
+      return heldId === null ? kinds.plexes.names(path) : editing.getTitle(heldId)
     },
     holding: (path) => editing.reached.holding(path),
   }
@@ -159,7 +159,7 @@ export const useWindow = () => {
     made: kinds.made,
     shown: vaultsModule.shown,
     reloads: vaultsModule.reloads,
-    carrying: vaultsModule.carrying,
+    loadArtifactStates: vaultsModule.loadArtifactStates,
     reached: editing.reached,
     opensPreset,
     dressed: settings.dressed,
@@ -189,7 +189,7 @@ export const useWindow = () => {
   useAppHotkeys(commandsModule.asked)
 
   useAppBootstrap({
-    listing: () => vaultsModule.listing(),
+    loadVaults: () => vaultsModule.loadVaults(),
     startSettings: () => settings.start(),
     startLayout: starts,
     startWindow: () => window.start(),
@@ -215,7 +215,7 @@ export const useWindow = () => {
     places: kinds.places,
     shut,
     tabIcon: attention.tabIcon,
-    titled: editing.titled,
+    getTitle: editing.getTitle,
     where,
   }
 }

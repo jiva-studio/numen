@@ -82,7 +82,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     return near?.title || fileOf(path).replace(/\.md$/, '')
   }
 
-  const bringNodes = async (draggedNodes: readonly string[], seat: PlexRelatedSeat) => {
+  const dropNodes = async (draggedNodes: readonly string[], seat: PlexRelatedSeat) => {
     const here = view.here.value
     if (!here) return
 
@@ -160,8 +160,8 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     createNode,
     joined: joinNodes,
     joinNodes,
-    brought: bringNodes,
-    bringNodes,
+    brought: dropNodes,
+    dropNodes,
     opens: openNode,
     openNode,
     writes: createNote,

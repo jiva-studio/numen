@@ -18,8 +18,8 @@ import {
   NOWHERE,
   SCHEMES,
   ladder,
+  parseSize,
   reaches,
-  typedSize,
 } from '@/entities/settings'
 import type {
   Appearance,
@@ -30,7 +30,7 @@ import type {
   Theme,
   Themes,
 } from '@/entities/settings'
-import { IS_SIZES, after, declared, dressing } from './lib/head'
+import { IS_SIZES, after, getSizesCss, getStyleElements } from './lib/head'
 
 /** Everything the appearance says in the window's voice. */
 export interface Words {
@@ -88,18 +88,18 @@ const HELD = 150
  * theme is named by its shelf, and there are two shelves, so no theme is ever
  * named this.
  */
-const named = (one: Mode): string => `${MODE}:${one}`
+const getModeId = (one: Mode): string => `${MODE}:${one}`
 
 /** The mode a row names, and nothing for a row naming a theme. */
 const modeOf = (item: string): Mode | null =>
-  MODES.find((one) => named(one) === item) ?? null
+  MODES.find((one) => getModeId(one) === item) ?? null
 
 /**
  * What a size is offered under: the command it belongs to, and the multiplier.
  * A theme is named by its shelf, and there are two shelves, so no theme is
  * ever named this.
  */
-const sizing = (which: ScaleKind, size: number): string => `${which}:${size}`
+const getSizeId = (which: ScaleKind, size: number): string => `${which}:${size}`
 
 /** The size a row names, and nothing for a row naming anything else. */
 const sizeOf = (item: string): ScaleChoice | null => {
@@ -137,7 +137,7 @@ export function windowAppearance(
   sheet: Document = document,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
-  const dressed = dressing(sheet)
+  const dressed = getStyleElements(sheet)
   /** What the page was served wearing, which is the applied theme's file. */
   const served = dressed.theme.textContent ?? ''
   /** What the sizes' element holds, once the window knows what it was served at. */
@@ -177,10 +177,10 @@ export function windowAppearance(
   let holds: ReturnType<typeof setTimeout> | undefined
 
   /** Whether a row names a theme, which the rows of the other lists do not. */
-  const themed = (item: string): boolean => item !== '' && !modeOf(item) && !sizeOf(item)
+  const isTheme = (item: string): boolean => item !== '' && !modeOf(item) && !sizeOf(item)
 
   /** The theme worn now: the one the keyboard is on, else the one applied. */
-  const worn = computed(() => (themed(stood.value) ? stood.value : applied.value))
+  const worn = computed(() => (isTheme(stood.value) ? stood.value : applied.value))
 
   /** The mode read now, the same way. */
   const half = computed<Mode>(() => modeOf(stood.value) ?? mode.value)
@@ -242,7 +242,7 @@ export function windowAppearance(
    * was served carrying them, so what already stands there is left alone.
    */
   const draws = () => {
-    const css = declared(sized.value)
+    const css = getSizesCss(sized.value)
     if (css === written) return
     written = css
     dressed.sizes ??= after(dressed.theme, IS_SIZES, sheet)
@@ -271,7 +271,7 @@ export function windowAppearance(
       // The page was served wearing this theme, so its file has been read
       // already, and drawn at these sizes, so they already stand in the head.
       files.set(answer.applied, served)
-      written = dressed.sizes?.textContent ?? declared(answer.sizes)
+      written = dressed.sizes?.textContent ?? getSizesCss(answer.sizes)
     }
     arrived = false
   }
@@ -314,14 +314,14 @@ export function windowAppearance(
    */
   const shelf = (shipping: boolean): readonly StepRow[] => {
     const off = list.value.filter((one) => one.isBuiltIn === shipping)
-    const named = (one: Theme): StepRow => ({
+    const getThemeRow = (one: Theme): StepRow => ({
       id: one.name,
       title: one.title,
       ...(one.name === applied.value ? { detail: words.current, inForce: true } : {}),
     })
     return [
-      ...off.filter((one) => one.name === applied.value).map(named),
-      ...off.filter((one) => one.name !== applied.value).map(named),
+      ...off.filter((one) => one.name === applied.value).map(getThemeRow),
+      ...off.filter((one) => one.name !== applied.value).map(getThemeRow),
     ]
   }
 
@@ -356,7 +356,7 @@ export function windowAppearance(
     const row = (one: Mode): StepRow => {
       const detail = beside(one)
       return {
-        id: named(one),
+        id: getModeId(one),
         title: words[one],
         ...(detail ? { detail } : {}),
         ...(one === mode.value ? { inForce: true } : {}),
@@ -379,9 +379,9 @@ export function windowAppearance(
     const which: ScaleKind = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
     const range = its(bounds.value, which)
     const now = its(settings.value, which)
-    const said = typedSize(typed)
+    const said = parseSize(typed)
     const row = (size: number): StepRow => ({
-      id: sizing(which, size),
+      id: getSizeId(which, size),
       title: percent(size),
       ...(size === now ? { detail: words.current, inForce: true } : {}),
     })

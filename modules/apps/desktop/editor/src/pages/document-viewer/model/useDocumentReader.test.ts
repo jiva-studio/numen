@@ -187,7 +187,7 @@ describe('a document opened at a place in its text', () => {
     expect(read.highlighted.value).toStrictEqual([here])
     expect(read.also.value).toStrictEqual([there])
     expect(read.alsoOn(2)).toStrictEqual([alsoThere])
-    expect(read.highlightedOn(2)).toStrictEqual([])
+    expect(read.getHighlightsOn(2)).toStrictEqual([])
   })
 
   it('stands on the first page with nothing highlighted where nothing stands there', async () => {

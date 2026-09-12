@@ -12,7 +12,7 @@ import { computed, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import type { Model, SettingEdit } from '@/entities/settings'
-import { settingAt as at } from '@/entities/settings'
+import { getSettingAt as at } from '@/entities/settings'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../model/useSettingsTab'
 import { WORDS as words } from '../words'
@@ -65,7 +65,7 @@ const MODELS: readonly Model[] = [
 ]
 
 /** An installation configured that way, and everything it was asked to change. */
-const configured = (pinned = false, file: Record<string, unknown> = {}) => {
+const createTab = (pinned = false, file: Record<string, unknown> = {}) => {
   const done: string[] = []
   const written: SettingEdit[] = []
   const syncing = ref(true)
@@ -125,7 +125,7 @@ afterEach(() => {
   while (drawn.length) drawn.pop()?.unmount()
 })
 
-type Tab = ReturnType<typeof configured>['tab']
+type Tab = ReturnType<typeof createTab>['tab']
 
 /** The control on a row, which the name of that row announces. */
 const control = (id: string) => `[aria-labelledby="${id}"]`
@@ -137,12 +137,12 @@ const opens = async (tab: Tab, id: string) => {
   await nextTick()
 }
 
-const offered = (): readonly string[] =>
+const getMenuItems = (): readonly string[] =>
   Array.from(document.body.querySelectorAll('.menu__item .menu__text')).map(
     (one) => one.textContent?.trim() ?? '',
   )
 
-const shelved = (): readonly string[] =>
+const getMenuGroups = (): readonly string[] =>
   Array.from(document.body.querySelectorAll('.menu__group-name')).map(
     (one) => one.textContent?.trim() ?? '',
   )
@@ -156,7 +156,7 @@ const takes = async (words: string) => {
 
 describe('the settings tab', () => {
   it('draws every group, by the part of the application it governs', () => {
-    const { tab } = configured()
+    const { tab } = createTab()
     const headings = tab.findAll('.settings__heading').map((one) => one.text())
     expect(headings).toStrictEqual([
       words.window,
@@ -170,34 +170,34 @@ describe('the settings tab', () => {
   })
 
   it('opens on the theme the settings name, off both shelves', async () => {
-    const { tab } = configured()
+    const { tab } = createTab()
     expect(tab.get(control('settings-theme')).text()).toContain('numen')
 
     await opens(tab, 'settings-theme')
-    expect(shelved()).toStrictEqual([words.shipped, words.owned])
+    expect(getMenuGroups()).toStrictEqual([words.shipped, words.owned])
   })
 
   it('writes a theme the way the command of that name writes it', async () => {
-    const { tab, done } = configured()
+    const { tab, done } = createTab()
     await opens(tab, 'settings-theme')
     await takes('sea')
     expect(done).toStrictEqual(['chooses mine:sea'])
   })
 
   it('says why the mode cannot be chosen while the theme worn pins it', () => {
-    expect(configured(true).tab.text()).toContain(words.pinned)
-    expect(configured().tab.text()).not.toContain(words.pinned)
+    expect(createTab(true).tab.text()).toContain(words.pinned)
+    expect(createTab().tab.text()).not.toContain(words.pinned)
   })
 
   it('turns the two switches the window keeps', async () => {
-    const { tab, done } = configured()
+    const { tab, done } = createTab()
     await tab.get(control('settings-hanging')).trigger('click')
     await tab.get(control('settings-syncing')).trigger('click')
     expect(done).toStrictEqual(['hanging false', 'syncing false'])
   })
 
   it('names the file the settings stand in, and opens it whole', async () => {
-    const { tab, done } = configured()
+    const { tab, done } = createTab()
     expect(tab.get('.settings__file').text()).toBe('/numen.json')
 
     await tab.get('.settings__where button').trigger('click')
@@ -205,13 +205,13 @@ describe('the settings tab', () => {
   })
 
   it('carries no pencil, and no editor spliced under a row', () => {
-    const { tab } = configured()
+    const { tab } = createTab()
     expect(tab.findAll('.cm-editor')).toHaveLength(0)
     expect(tab.text()).not.toContain('JSON5')
   })
 
   it('draws the settings it reads out of the file, each under the group it is in', () => {
-    const { tab } = configured()
+    const { tab } = createTab()
     expect(tab.text()).toContain(words.indexingModel)
     expect(tab.text()).toContain(words.ocrModel)
     expect(tab.text()).toContain(words.transcribing)
@@ -219,7 +219,7 @@ describe('the settings tab', () => {
   })
 
   it('holds the number of parts inside what the vault says it takes', () => {
-    const { tab } = configured()
+    const { tab } = createTab()
     const parts = tab.get(control('settings-parts'))
 
     expect(parts.attributes('aria-valuemin')).toBe('2')
@@ -227,7 +227,7 @@ describe('the settings tab', () => {
   })
 
   it('draws each of the two proofreadings beside the thing it puts right', () => {
-    const { tab } = configured()
+    const { tab } = createTab()
     const ocr = tab.get('section[aria-label="' + words.ocr + '"]')
     const heard = tab.get('section[aria-label="' + words.transcription + '"]')
 
@@ -238,7 +238,7 @@ describe('the settings tab', () => {
   })
 
   it('reads each of the two proofreadings out of its own path', () => {
-    const { tab } = configured(false, {
+    const { tab } = createTab(false, {
       indexing: {
         recognition: { proofread: { with: 'careful' } },
         transcription: { proofread: { with: 'quick' } },
@@ -249,7 +249,7 @@ describe('the settings tab', () => {
   })
 
   it('writes each of the two proofreadings into its own path', async () => {
-    const { tab, written } = configured(false, {
+    const { tab, written } = createTab(false, {
       indexing: { proofreading: { profiles: { careful: {} } } },
     })
     await opens(tab, 'settings-transcript-proofread')
@@ -260,7 +260,7 @@ describe('the settings tab', () => {
   })
 
   it('turns whether each of the two is put right unasked', async () => {
-    const { tab, written } = configured()
+    const { tab, written } = createTab()
     await tab.get(control('settings-ocr-always')).trigger('click')
     await tab.get(control('settings-transcript-always')).trigger('click')
     expect(written).toStrictEqual([
@@ -270,17 +270,17 @@ describe('the settings tab', () => {
   })
 
   it('opens a model on what the file names, and says which one is the default', async () => {
-    const { tab } = configured(false, { agent: { claude: { model: 'opus' } } })
+    const { tab } = createTab(false, { agent: { claude: { model: 'opus' } } })
     expect(tab.get(control('settings-agent-model')).text()).toContain('opus')
 
     await opens(tab, 'settings-agent-model')
-    expect(offered()).toContain(`Whatever this machine answers with — ${words.byDefault}`)
+    expect(getMenuItems()).toContain(`Whatever this machine answers with — ${words.byDefault}`)
   })
 
   it('names a model by its own words, and addresses it underneath', async () => {
-    const { tab } = configured()
+    const { tab } = createTab()
     await opens(tab, 'settings-ocr')
-    expect(offered()).toStrictEqual([
+    expect(getMenuItems()).toStrictEqual([
       `Tiny, small — ${words.byDefault}`,
       'eslav_rec_mobile.onnx',
     ])
@@ -290,7 +290,7 @@ describe('the settings tab', () => {
   })
 
   it('writes the readable name on the line, never the address it is fetched from', () => {
-    const { tab } = configured(false, {
+    const { tab } = createTab(false, {
       indexing: { recognition: { recognise: { name: OWN } } },
     })
     const line = tab.get(control('settings-ocr'))
@@ -301,20 +301,20 @@ describe('the settings tab', () => {
 
   it('draws a value the presets do not name as the person’s own, and says nothing else', async () => {
     const own = 'https://models.example/mine/Other_rec.onnx'
-    const { tab } = configured(false, {
+    const { tab } = createTab(false, {
       indexing: { recognition: { recognise: { name: own } } },
     })
     expect(tab.get(control('settings-ocr')).text()).toContain('Other_rec.onnx')
     expect(tab.text()).not.toMatch(/not found/i)
 
     await opens(tab, 'settings-ocr')
-    expect(offered()[0]).toBe('Other_rec.onnx')
-    expect(shelved()[0]).toBe(words.owned)
+    expect(getMenuItems()[0]).toBe('Other_rec.onnx')
+    expect(getMenuGroups()[0]).toBe(words.owned)
   })
 
   it('leaves a value the presets do not name alone while nothing is chosen', async () => {
     const own = 'https://models.example/mine/Other_rec.onnx'
-    const { tab, written } = configured(false, {
+    const { tab, written } = createTab(false, {
       indexing: { recognition: { recognise: { name: own } } },
     })
     await opens(tab, 'settings-ocr')
@@ -326,41 +326,41 @@ describe('the settings tab', () => {
   })
 
   it('writes everything a model decides, not its name alone', async () => {
-    const { tab, written } = configured()
+    const { tab, written } = createTab()
     await opens(tab, 'settings-agent-model')
     await takes('opus')
     expect(written).toStrictEqual([{ at: ['agent', 'claude', 'model'], value: '"opus"' }])
   })
 
   it('writes a setting it read out of the file back where it stands', async () => {
-    const { tab, written } = configured(false, { agent: { serve_tools: false } })
+    const { tab, written } = createTab(false, { agent: { serve_tools: false } })
     await tab.get(control('settings-agent-tools')).trigger('click')
     expect(written).toStrictEqual([{ at: ['agent', 'serve_tools'], value: 'true' }])
   })
 
   it('offers the profiles the file holds, and naming none', async () => {
-    const { tab } = configured(false, {
+    const { tab } = createTab(false, {
       indexing: { proofreading: { profiles: { careful: {}, quick: {} } } },
     })
     await opens(tab, 'settings-ocr-proofread')
-    expect(offered()).toStrictEqual([words.proofreadingNone, 'careful', 'quick'])
+    expect(getMenuItems()).toStrictEqual([words.proofreadingNone, 'careful', 'quick'])
   })
 
   it('opens on the hour the settings begin a day of review at', () => {
-    const { tab } = configured()
+    const { tab } = createTab()
     const hour = tab.get('[data-slot="time-field"]').element as HTMLInputElement
     expect(hour.value).toBe('04:00')
     expect(tab.text()).toContain(words.dayStarts)
   })
 
   it('writes the hour a day of review begins at', async () => {
-    const { tab, done } = configured()
+    const { tab, done } = createTab()
     await tab.get('[data-slot="time-field"]').setValue('06:30')
     expect(done).toStrictEqual(['day starts 06:30'])
   })
 
   it('names every row by what it is, without leaning on the row above', () => {
-    const { tab } = configured()
+    const { tab } = createTab()
     const names = tab.findAll('.settings__name').map((one) => one.text())
     expect(names).toContain(words.transcribeUnder)
     expect(names).not.toContain('Only under')

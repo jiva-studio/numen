@@ -48,7 +48,7 @@ const talk = (cues: readonly Cue[]): Recordings => ({
 })
 
 /** The one player the window has, faked: nothing here makes a sound. */
-const played = (): Player => {
+const createPlayer = (): Player => {
   const address = ref('')
   return {
     url: address,
@@ -63,8 +63,8 @@ const played = (): Player => {
   }
 }
 
-const holding = (cues: readonly Cue[], plays: MediaTypeProbe = () => true) =>
-  useTranscriptTab(useTranscript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }), {
+const createTranscriptTab = (cues: readonly Cue[], plays: MediaTypeProbe = () => true) =>
+  useTranscriptTab(useTranscript(talk(cues), 'talks/Ants.mp3', { through: createPlayer(), plays }), {
     runs: () => {},
   })
 
@@ -77,7 +77,7 @@ interface Knobs {
 
 const room = (args: Knobs) => ({
   components: { RecordingTab },
-  setup: () => ({ args, state: holding(args.cues) }),
+  setup: () => ({ args, state: createTranscriptTab(args.cues) }),
   template: `
     <div class="numen" :style="{ height: '100vh', width: args.width, background: 'var(--numen-surface)' }">
       <RecordingTab :state="state" />

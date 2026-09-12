@@ -41,7 +41,7 @@ function talk(cues: readonly Cue[] = CUES): Recordings {
 }
 
 /** The one player the window has, faked: nothing here makes a sound. */
-function played(): Player {
+function createPlayer(): Player {
   const address = ref('')
   return {
     url: address,
@@ -68,17 +68,17 @@ function tab(
 ) {
   const asked: string[] = []
   const state = useTranscriptTab(
-    useTranscript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }),
+    useTranscript(talk(cues), 'talks/Ants.mp3', { through: createPlayer(), plays }),
     { runs: (id, path, called) => void asked.push(`${id} ${path} ${called}`), canRun },
   )
   return { state, asked }
 }
 
 /** A window this build has told it can do no run at all. */
-const nothing = () => false
+const canRunNothing = () => false
 
 /** Everything asked for has been answered and everything drawn has settled. */
-const settled = async () => {
+const settle = async () => {
   await new Promise((done) => setTimeout(done, 0))
   await new Promise((done) => setTimeout(done, 0))
 }
@@ -88,9 +88,9 @@ describe('a recording tab', () => {
     const { state } = tab()
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     const times = drawn.findAll('.cm-times .cm-gutterElement').map((one) => one.text())
     expect(times).toContain('0:00')
@@ -106,9 +106,9 @@ describe('a recording with no transcript', () => {
     const { state } = tab([])
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     expect(drawn.find('.transcript__text').exists()).toBe(false)
     expect(drawn.find('.transcript__ask').text()).toBe(WORDS.transcribe)
@@ -119,12 +119,12 @@ describe('a recording with no transcript', () => {
 
   // Where the run cannot be asked for, what there is to say is said.
   it('says there is no transcript where the run cannot be asked for', async () => {
-    const { state } = tab([], undefined, nothing)
+    const { state } = tab([], undefined, canRunNothing)
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     expect(drawn.find('.transcript__ask').exists()).toBe(false)
     expect(drawn.find('.transcript__note').text()).toBe(WORDS.silence)
@@ -136,9 +136,9 @@ describe('a recording with no transcript', () => {
     const { state } = tab([])
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     expect(drawn.find('.transcript__ask').text()).toBe(WORDS.transcribe)
 
@@ -148,9 +148,9 @@ describe('a recording with no transcript', () => {
   it('asks the window for that run when it is pressed', async () => {
     const { state, asked } = tab([])
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     await drawn.find('.transcript__ask').trigger('click')
 
@@ -160,12 +160,12 @@ describe('a recording with no transcript', () => {
   })
 
   it('offers nothing where this build cannot do the run at all', async () => {
-    const { state } = tab([], undefined, nothing)
+    const { state } = tab([], undefined, canRunNothing)
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     expect(drawn.find('.transcript__ask').exists()).toBe(false)
     expect(drawn.find('.transcript__note').text()).toBe(WORDS.silence)
@@ -176,10 +176,10 @@ describe('a recording with no transcript', () => {
   it('says a run is going while one is, and offers none beside it', async () => {
     const { state } = tab([])
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
-    await settled()
+    await settle()
 
     state.ticks(true)
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
 
     expect(drawn.find('.transcript__text').exists()).toBe(false)
@@ -193,14 +193,14 @@ describe('a recording with no transcript', () => {
   it('draws the player the same while a run goes as before it began', async () => {
     const { state } = tab([])
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     const head = drawn.find('.media__head').html()
 
     state.ticks(true)
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
 
     expect(drawn.find('.media__head').html()).toBe(head)
@@ -215,9 +215,9 @@ describe('a recording with no transcript', () => {
     const { state } = tab([], () => false)
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     expect(drawn.text()).toContain(WORDS.unplayable)
     expect(drawn.find('.transcript__ask').text()).toBe(WORDS.transcribe)
@@ -230,12 +230,12 @@ describe('a transcript still growing', () => {
   it('draws the words and says nothing under them', async () => {
     const { state } = tab()
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     state.ticks(true)
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
 
     expect(drawn.find('.transcript__text').exists()).toBe(true)
@@ -247,7 +247,7 @@ describe('a transcript still growing', () => {
 
 describe('the menu at the end of the player strip', () => {
   /** What the menu offers, as it is drawn. */
-  const offered = () =>
+  const getMenuItems = () =>
     [...document.body.querySelectorAll('.menu__item')].map((one) => one.textContent?.trim() ?? '')
 
   // The two controls over the words stand together, at their own spacing.
@@ -255,9 +255,9 @@ describe('the menu at the end of the player strip', () => {
     const { state } = tab()
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     const actions = drawn.get('.media__actions')
     expect(actions.find('.media__follow').exists()).toBe(true)
@@ -272,17 +272,17 @@ describe('the menu at the end of the player strip', () => {
     const { state } = tab()
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     const more = drawn.get('.media__more')
     expect(more.attributes('aria-haspopup')).toBe('menu')
-    expect(offered()).toStrictEqual([])
+    expect(getMenuItems()).toStrictEqual([])
 
     await more.trigger('click')
 
-    expect(offered()).toStrictEqual([WORDS.proofread, WORDS.deleteText])
+    expect(getMenuItems()).toStrictEqual([WORDS.proofread, WORDS.deleteText])
 
     drawn.unmount()
   })
@@ -290,9 +290,9 @@ describe('the menu at the end of the player strip', () => {
   it('asks the window for the run behind whichever item is chosen', async () => {
     const { state, asked } = tab()
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     const chooses = async (text: string) => {
       await drawn.get('.media__more').trigger('click')
@@ -310,7 +310,7 @@ describe('the menu at the end of the player strip', () => {
       'proofread talks/Ants.mp3 Ants.mp3',
       'deleteText talks/Ants.mp3 Ants.mp3',
     ])
-    expect(offered()).toStrictEqual([])
+    expect(getMenuItems()).toStrictEqual([])
 
     drawn.unmount()
   })
@@ -320,12 +320,12 @@ describe('the menu at the end of the player strip', () => {
   it('is not drawn while a run is writing the words down', async () => {
     const { state } = tab()
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     state.ticks(true)
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
 
     expect(drawn.find('.media__more').exists()).toBe(false)
@@ -341,12 +341,12 @@ describe('the menu at the end of the player strip', () => {
     const { state } = tab(CUES, undefined, (run) => runs.canRun(run))
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     await drawn.get('.media__more').trigger('click')
-    expect(offered()).toStrictEqual([WORDS.proofread])
+    expect(getMenuItems()).toStrictEqual([WORDS.proofread])
 
     runs.cannotRun('proofread')
     await drawn.vm.$nextTick()
@@ -361,9 +361,9 @@ describe('the menu at the end of the player strip', () => {
     const { state } = tab([])
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     expect(drawn.find('.media__more').exists()).toBe(false)
 
@@ -376,9 +376,9 @@ describe('a recording with a transcript', () => {
     const { state } = tab()
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
-    await settled()
+    await settle()
     await drawn.vm.$nextTick()
-    await settled()
+    await settle()
 
     expect(drawn.find('.transcript__ask').exists()).toBe(false)
 
@@ -390,18 +390,18 @@ describe('a recording tab drawn again', () => {
   it('still stands the times in its gutter', async () => {
     const { state } = tab()
     const first = mount(RecordingTab, { props: { state }, attachTo: document.body })
-    await settled()
+    await settle()
     await first.vm.$nextTick()
-    await settled()
+    await settle()
     expect(first.findAll('.cm-times .cm-gutterElement').length).toBeGreaterThan(0)
 
     // A tab moved between panes is unmounted and drawn again, holding the
     // same recording. Nothing about the words changes as it moves.
     first.unmount()
     const again = mount(RecordingTab, { props: { state }, attachTo: document.body })
-    await settled()
+    await settle()
     await again.vm.$nextTick()
-    await settled()
+    await settle()
 
     const times = again.findAll('.cm-times .cm-gutterElement').map((one) => one.text())
     expect(times).toContain('0:00')

@@ -6,7 +6,7 @@ import { computed } from 'vue'
 import { NumberField, SegmentedControl, Select, Slider, Switch, WeekdayChips, WEEK } from '@numen/ui'
 import type { Day } from '@numen/ui'
 import type { PresetTabState, SettingValue } from '../../types'
-import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from '../../types'
+import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, loadOn, setLoadOn } from '../../types'
 import type { Bounds, BudgetUnit } from '../../types'
 import { round, type Field } from '../../curve'
 import { WORDS as words } from '../../words'
@@ -30,11 +30,11 @@ const week = computed<readonly Day[]>(() =>
 const levels = LOADS.map((one) => one / WHOLE_LOAD)
 
 const fieldBounds = computed(() => boundsOf(props.field, bounds.value))
-const fieldCount = computed(() => counted(props.field))
+const fieldCount = computed(() => getFieldCount(props.field))
 
 // --- Handlers ---
 function onSelectLoad(day: string, level: number) {
-  onChooseSetting('load', loaded(settings.value.load, day, Math.round(level * WHOLE_LOAD)))
+  onChooseSetting('load', setLoadOn(settings.value.load, day, Math.round(level * WHOLE_LOAD)))
 }
 
 function onSelectRule(said: string) {
@@ -88,7 +88,7 @@ function boundsOf(field: Field, within: typeof bounds.value): ControlBounds {
   return {}
 }
 
-function counted(field: Field): number | null {
+function getFieldCount(field: Field): number | null {
   if (field === 'newADay') return settings.value.newADay
   if (field === 'reviewsADay') return settings.value.reviewsADay
   if (field === 'retention') return Math.round(settings.value.retention * 100)

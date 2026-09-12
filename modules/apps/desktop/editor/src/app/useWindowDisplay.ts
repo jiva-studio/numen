@@ -116,7 +116,7 @@ export function useWindowDisplay(core: Core, how: DisplayOptions = {}) {
   }
 
   /** Whether the vault under this window stands at another folder than the page. */
-  async function swapped() {
+  async function isVaultSwapped() {
     const was = at.value
     try {
       const state = await ask()
@@ -137,7 +137,7 @@ export function useWindowDisplay(core: Core, how: DisplayOptions = {}) {
     wait,
     opening,
     tasks,
-    swapped,
+    isVaultSwapped,
     reloads,
     told,
     first,

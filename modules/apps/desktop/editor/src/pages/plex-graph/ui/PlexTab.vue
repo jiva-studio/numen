@@ -65,7 +65,7 @@ function onLinkNodes(from: string, to: string, seat: PlexRelatedSeat) {
 }
 
 function onBringNodes(dragged: readonly string[], seat: PlexRelatedSeat) {
-  void props.state.bringNodes(dragged, seat)
+  void props.state.dropNodes(dragged, seat)
 }
 
 function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuOpening) {

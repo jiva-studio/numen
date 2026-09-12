@@ -51,8 +51,8 @@ export function createMediaKinds({
   )
 
   watch(window.tasks, () => {
-    recorded.ticked(window.tasks.value)
-    pointed.ticked(window.tasks.value)
+    recorded.updateTasks(window.tasks.value)
+    pointed.updateTasks(window.tasks.value)
   })
 
   return { recorded, pointed }

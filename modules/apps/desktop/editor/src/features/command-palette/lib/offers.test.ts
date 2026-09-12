@@ -3,7 +3,7 @@
  * the note it offers is made as.
  */
 import { describe, expect, it } from 'vitest'
-import { creates, MAKING, offering } from './offers'
+import { appendCreateOffer, creates, MAKING } from './offers'
 import type { CommandTarget } from '../target'
 import { WORDS as words } from '@/shared/words'
 
@@ -27,22 +27,22 @@ describe('a search that turned up nothing', () => {
   ]
 
   it('offers to make the note that was looked for', () => {
-    const offered = offering(groups(0), 'Entropy', words, front())
+    const offered = appendCreateOffer(groups(0), 'Entropy', words, front())
 
     expect(offered.at(-1)?.id).toBe(MAKING)
     expect(offered.at(-1)?.items[0]?.title).toBe('Create a note called “Entropy”')
   })
 
   it('offers nothing while a group is still waiting on the vault', () => {
-    expect(offering(groups(0, true), 'Entropy', words, front())).toHaveLength(1)
+    expect(appendCreateOffer(groups(0, true), 'Entropy', words, front())).toHaveLength(1)
   })
 
   it('offers nothing where a group turned something up', () => {
-    expect(offering(groups(1), 'Entropy', words, front())).toHaveLength(1)
+    expect(appendCreateOffer(groups(1), 'Entropy', words, front())).toHaveLength(1)
   })
 
   it('offers nothing where nothing was looked for', () => {
-    expect(offering(groups(0), '   ', words, front())).toHaveLength(1)
+    expect(appendCreateOffer(groups(0), '   ', words, front())).toHaveLength(1)
   })
 
   it('makes the note where the person is standing, under the words looked for', () => {
@@ -61,7 +61,7 @@ describe('a search that turned up nothing', () => {
   })
 
   it('offers the seats of the note in front, and says which note that is', () => {
-    const item = offering(groups(0), 'Entropy', words, front()).at(-1)?.items[0]
+    const item = appendCreateOffer(groups(0), 'Entropy', words, front()).at(-1)?.items[0]
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([
       MAKING,
@@ -73,8 +73,9 @@ describe('a search that turned up nothing', () => {
   })
 
   it('offers no seat where nothing in front is a note', () => {
-    const item = offering(groups(0), 'Entropy', words, front({ path: '', title: '' })).at(-1)
-      ?.items[0]
+    const item = appendCreateOffer(groups(0), 'Entropy', words, front({ path: '', title: '' })).at(
+      -1,
+    )?.items[0]
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([MAKING])
     expect(item?.detail).toBeUndefined()

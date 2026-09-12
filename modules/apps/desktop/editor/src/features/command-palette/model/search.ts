@@ -123,7 +123,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     ])
   }
 
-  const typing = async (text: string) => {
+  const setTyped = async (text: string) => {
     typed.value = text
     const mine = asks.ask()
     const query = text.trim()
@@ -193,7 +193,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     return resolveDestination(built.value.held.get(item), action)
   }
 
-  return { open, typed, groups, typing, setOpen, shows, chose, typeOf, kindOf }
+  return { open, typed, groups, setTyped, setOpen, shows, chose, typeOf, kindOf }
 }
 
 export type SearchState = ReturnType<typeof useSearch>

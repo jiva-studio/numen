@@ -3,7 +3,7 @@
  */
 import { WINDOW } from './clients'
 import { vaultsService, windowService } from '@/shared/clients'
-import { mapVault, mapVaultResult, turnedDown } from './words'
+import { getVaultError, mapVault, mapVaultResult } from './words'
 import type { CommandsDeps } from '@/features/command-palette'
 import type { Vaults } from '@/shared/vaults'
 
@@ -22,8 +22,8 @@ export const vaults: Vaults = {
   },
   add: async (path, called) => mapVaultResult(await vaultsService.addVault({ path, name: called })),
   rename: async (id, called) => mapVaultResult(await vaultsService.renameVault({ id, name: called })),
-  remove: async (id, trash) => turnedDown(await vaultsService.removeVault({ id, trash })),
-  open: async (id) => turnedDown(await vaultsService.openVault({ id })),
+  remove: async (id, trash) => getVaultError(await vaultsService.removeVault({ id, trash })),
+  open: async (id) => getVaultError(await vaultsService.openVault({ id })),
 }
 
 export type VaultsCore = Pick<CommandsDeps, 'vaults'>

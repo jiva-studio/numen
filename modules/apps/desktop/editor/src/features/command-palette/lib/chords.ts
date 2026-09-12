@@ -40,7 +40,7 @@ export const CHORDS: readonly Chord[] = [
 ]
 
 /** Whether this keystroke is one the window answers at all. */
-export const chorded = (event: {
+export const isChord = (event: {
   readonly altKey: boolean
   readonly ctrlKey: boolean
   readonly metaKey: boolean

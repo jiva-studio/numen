@@ -33,7 +33,7 @@ export interface SettingsStoreDeps {
 }
 
 /** What stands at a path through a tree of settings, and nothing where none does. */
-export const settingAt = (held: unknown, at: readonly string[]): unknown => {
+export const getSettingAt = (held: unknown, at: readonly string[]): unknown => {
   let value = held
   for (const step of at) {
     if (typeof value !== 'object' || value === null) return undefined
@@ -74,7 +74,7 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
   }
 
   /** What stands at a setting, and nothing where the file names none. */
-  const at = (setting: readonly string[]): unknown => settingAt(held.value, setting)
+  const at = (setting: readonly string[]): unknown => getSettingAt(held.value, setting)
 
   /** The models one setting can be set to, in the order they are offered. */
   const offers = (setting: readonly string[]): readonly Model[] =>

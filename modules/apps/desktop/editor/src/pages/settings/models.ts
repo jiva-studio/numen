@@ -30,7 +30,7 @@ export const nameOf = (value: string): string => {
 }
 
 /** Whether a value is an address to somewhere, and not a word on its own. */
-const addressed = (value: string): boolean => value.includes('/')
+const isAddress = (value: string): boolean => value.includes('/')
 
 /**
  * What a model's files are on this machine, in a word. A model reached over
@@ -49,17 +49,17 @@ const under = (parts: readonly string[]): string => parts.filter(Boolean).join('
  * that; one carrying an address where its name would be is called by the last
  * segment of it, which is the part that says which model it is.
  */
-const calledBy = (model: Model): string =>
-  model.title && !addressed(model.title) ? model.title : nameOf(model.name)
+const getModelName = (model: Model): string =>
+  model.title && !isAddress(model.title) ? model.title : nameOf(model.name)
 
 /** One preset, as the list offers it. */
-const offered = (model: Model, words: Words): SelectChoice => {
-  const name = calledBy(model)
+const getModelChoice = (model: Model, words: Words): SelectChoice => {
+  const name = getModelName(model)
   // A model addressed by a path, a repository or an address is named by its
   // own words and addressed under them.
   const detail = under([
     presenceIn(model.presence, words),
-    addressed(model.name) ? model.name : '',
+    isAddress(model.name) ? model.name : '',
   ])
   return {
     id: model.name,
@@ -79,12 +79,12 @@ export const choicesFor = (
   now: string,
   words: Words,
 ): readonly SelectChoice[] => {
-  const presets = models.map((one) => offered(one, words))
+  const presets = models.map((one) => getModelChoice(one, words))
   if (!now || presets.some((one) => one.id === now)) return presets
   const own: SelectChoice = {
     id: now,
     text: nameOf(now),
-    ...(addressed(now) ? { detail: now } : {}),
+    ...(isAddress(now) ? { detail: now } : {}),
     group: words.owned,
   }
   return [own, ...presets]

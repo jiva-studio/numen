@@ -25,21 +25,21 @@ export const IS_THEME = 'theme'
 export const IS_SIZES = 'sizes'
 
 /** The element the page was served marked as one of the three, and nothing where it carries none. */
-const marked = (sheet: Document, is: string): HTMLStyleElement | null =>
+const findStyle = (sheet: Document, is: string): HTMLStyleElement | null =>
   sheet.head.querySelector<HTMLStyleElement>(`style[${MARKER}="${is}"]`)
 
 /**
  * The elements the head ends with. A page served by something that dresses it
  * in nothing is given a mode's and a theme's of its own, in that order.
  */
-export const dressing = (sheet: Document): StyleElements => {
-  const mode = marked(sheet, IS_MODE) ?? sheet.head.appendChild(styling(IS_MODE, sheet))
-  const theme = marked(sheet, IS_THEME) ?? after(mode, IS_THEME, sheet)
-  return { mode, theme, sizes: marked(sheet, IS_SIZES) ?? undefined }
+export const getStyleElements = (sheet: Document): StyleElements => {
+  const mode = findStyle(sheet, IS_MODE) ?? sheet.head.appendChild(createStyle(IS_MODE, sheet))
+  const theme = findStyle(sheet, IS_THEME) ?? after(mode, IS_THEME, sheet)
+  return { mode, theme, sizes: findStyle(sheet, IS_SIZES) ?? undefined }
 }
 
 /** One of the three, marked as which of them it is. */
-const styling = (is: string, sheet: Document): HTMLStyleElement => {
+const createStyle = (is: string, sheet: Document): HTMLStyleElement => {
   const one = sheet.createElement('style')
   one.setAttribute(MARKER, is)
   return one
@@ -51,11 +51,11 @@ export const after = (
   is: string,
   sheet: Document,
 ): HTMLStyleElement => {
-  const next = styling(is, sheet)
+  const next = createStyle(is, sheet)
   before.after(next)
   return next
 }
 
 /** The two multipliers as the page carries them. */
-export const declared = (sizes: Sizes): string =>
+export const getSizesCss = (sizes: Sizes): string =>
   `:root { --numen-interface-scale: ${sizes.interfaceScale}; --numen-text-scale: ${sizes.textScale}; }`

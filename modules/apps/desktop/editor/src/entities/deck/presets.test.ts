@@ -6,7 +6,7 @@
  * it, and nothing that draws a week knows of it.
  */
 import { describe, expect, it } from 'vitest'
-import { DEFAULTS, loadOn, loaded, LOADS, WHOLE_LOAD } from './presets'
+import { DEFAULTS, loadOn, setLoadOn, LOADS, WHOLE_LOAD } from './presets'
 import type { BudgetUnit, Goal, Rule } from './presets'
 
 /**
@@ -55,14 +55,14 @@ describe('what one day carries', () => {
 
 describe('a day put at a share', () => {
   it('names a day standing under the whole, and drops one put back to it', () => {
-    expect(loaded({}, 'sat', 50)).toEqual({ sat: 50 })
-    expect(loaded({ sat: 50 }, 'sat', 0)).toEqual({ sat: 0 })
-    expect(loaded({ sat: 50, sun: 0 }, 'sat', WHOLE_LOAD)).toEqual({ sun: 0 })
-    expect(loaded({}, 'sat', WHOLE_LOAD)).toEqual({})
+    expect(setLoadOn({}, 'sat', 50)).toEqual({ sat: 50 })
+    expect(setLoadOn({ sat: 50 }, 'sat', 0)).toEqual({ sat: 0 })
+    expect(setLoadOn({ sat: 50, sun: 0 }, 'sat', WHOLE_LOAD)).toEqual({ sun: 0 })
+    expect(setLoadOn({}, 'sat', WHOLE_LOAD)).toEqual({})
   })
 
   it('leaves every other day where it stood', () => {
-    expect(loaded({ sat: 50, sun: 0 }, 'mon', 25)).toEqual({ sat: 50, sun: 0, mon: 25 })
+    expect(setLoadOn({ sat: 50, sun: 0 }, 'mon', 25)).toEqual({ sat: 50, sun: 0, mon: 25 })
   })
 })
 

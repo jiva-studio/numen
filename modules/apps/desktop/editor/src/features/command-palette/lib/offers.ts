@@ -32,7 +32,7 @@ const SEATED: readonly string[] = ['child', 'parent', 'jump']
  * The groups of a search, and the offer to make a note where every one of them
  * answered with nothing. A group still waiting has not answered.
  */
-export const offering = (
+export const appendCreateOffer = (
   groups: readonly PaletteGroup[],
   typed: string,
   words: Words,

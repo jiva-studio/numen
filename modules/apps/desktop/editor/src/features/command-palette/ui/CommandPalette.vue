@@ -9,14 +9,14 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Palette, type ActionWords } from '@numen/ui'
 import { asksCommands, type CommandTarget } from '../target'
-import { creates, MAKING, offering } from '../lib/offers'
+import { appendCreateOffer, creates, MAKING } from '../lib/offers'
 import type { Commands } from '../model/palette'
 import type { CommandDeps } from '../deps'
 import { does } from '../model/handlers'
 import type { SearchState } from '../model/search'
 import { iconFor, iconOfSource } from '@/shared/icons'
 import { iconOfNote } from '@/entities/note'
-import { chorded } from '../lib/chords'
+import { isChord } from '../lib/chords'
 import { lands, type DestinationDeps } from '../model/destination'
 import { WORDS as words } from '@/shared/words'
 
@@ -53,7 +53,12 @@ const field = computed(() =>
     : {
         open: props.search.open.value,
         typed: props.search.typed.value,
-        groups: offering(props.search.groups.value, props.search.typed.value, words, props.where()),
+        groups: appendCreateOffer(
+          props.search.groups.value,
+          props.search.typed.value,
+          words,
+          props.where(),
+        ),
         crumb: '',
         step: '',
         opensOn: '',
@@ -63,8 +68,8 @@ const field = computed(() =>
 
 // --- Handlers ---
 function onTyping(text: string) {
-  if (props.commands.open.value) return void props.commands.typing(text)
-  if (!asksCommands(props.search.typed.value, text)) return void props.search.typing(text)
+  if (props.commands.open.value) return void props.commands.setTyped(text)
+  if (!asksCommands(props.search.typed.value, text)) return void props.search.setTyped(text)
   const setSearchOpen = props.search.setOpen ?? props.search.shows
   const setCommandsOpen = props.commands.setOpen ?? props.commands.shows
   setSearchOpen(false)
@@ -104,7 +109,7 @@ function onBack() {
 }
 
 function onKeyDown(event: KeyboardEvent) {
-  if (event.defaultPrevented || !chorded(event) || event.shiftKey) return
+  if (event.defaultPrevented || !isChord(event) || event.shiftKey) return
   const key = event.key.toLowerCase()
   const setSearchOpen = props.search.setOpen ?? props.search.shows
   const setCommandsOpen = props.commands.setOpen ?? props.commands.shows

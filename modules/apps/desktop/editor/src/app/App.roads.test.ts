@@ -77,15 +77,15 @@ describe('every road to a file', () => {
       window.findComponent(Tree).vm.$emit('activate', path)
     },
     'the palette': async (window, path) => {
-      await typedIn(window, 'ani')
+      await typeInSearch(window, 'ani')
       window.findComponent(Palette).vm.$emit('choose', path, 'note')
     },
     'the search': async (window, path) => {
-      await typedIn(window, 'ani')
+      await typeInSearch(window, 'ani')
       window.findComponent(Palette).vm.$emit('choose', `text:${path}:0`, 'note')
     },
     'a command': async (window) => {
-      pressing('p')
+      pressKey('p')
       await settles()
       window.findComponent(Palette).vm.$emit('choose', 'read', 'read')
     },
@@ -105,14 +105,14 @@ describe('every road to a file', () => {
   }
 
   /** A keystroke the window answers, which the palette and the commands are. */
-  const pressing = (key: string) =>
+  const pressKey = (key: string) =>
     globalThis.dispatchEvent(
       new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true }),
     )
 
   /** The search open, with words typed into it and the answers back. */
-  const typedIn = async (window: VueWrapper, typed: string) => {
-    pressing('k')
+  const typeInSearch = async (window: VueWrapper, typed: string) => {
+    pressKey('k')
     await settles()
     window.findComponent(Palette).vm.$emit('update:modelValue', typed)
     await new Promise((done) => setTimeout(done, DEBOUNCE))
@@ -197,18 +197,18 @@ describe('every road to a file', () => {
 
 describe('what the person has open, as whoever answers for them is told it', () => {
   /** The last the window said about it, and nothing where it has said nothing. */
-  const reported = () => asked.attending.at(-1) ?? null
+  const getLastReport = () => asked.attending.at(-1) ?? null
 
   /** The tab the window said is in front, of the last it said. */
   const front = () => {
-    const open = reported()
+    const open = getLastReport()
     return open?.tabs.find((one) => one.id === open.front) ?? null
   }
 
   it('lists every tab the window holds, the plex it opens on in front', async () => {
     await drawn()
 
-    expect([...(reported()?.tabs ?? [])].map((one) => one.kind).sort()).toEqual([
+    expect([...(getLastReport()?.tabs ?? [])].map((one) => one.kind).sort()).toEqual([
       'agent',
       'files',
       'plex',
@@ -241,7 +241,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
 
     expect(front()?.kind).toBe('book')
     expect(front()?.path).toBe('Ants.epub')
-    expect(reported()?.tabs.some((one) => one.kind === 'plex' && one.path === 'Root.md')).toBe(true)
+    expect(getLastReport()?.tabs.some((one) => one.kind === 'plex' && one.path === 'Root.md')).toBe(true)
   })
 })
 
@@ -292,7 +292,7 @@ describe('a recording put in front', () => {
   const RECORDING = '730709BG.LON.mp3'
 
   /** The window with that recording open, asked for from outside it. */
-  const playing = async () => {
+  const openRecording = async () => {
     const window = await drawn()
     outside.asks({ path: RECORDING, start: 0, length: 4 })
     await settles()
@@ -301,7 +301,7 @@ describe('a recording put in front', () => {
   }
 
   it('is played from where the application answers, on the words written down', async () => {
-    const window = await playing()
+    const window = await openRecording()
 
     const state = window.findComponent(RecordingTab).props('state') as {
       address: { value: string }
@@ -329,7 +329,7 @@ describe('a recording put in front', () => {
   it('is offered being written down while it carries no transcript', async () => {
     said.carries = { [RECORDING]: { transcript: 'none' } }
 
-    const window = await playing()
+    const window = await openRecording()
 
     expect(asked.carried).toStrictEqual([RECORDING])
     expect(await runsOffered(window)).toStrictEqual(['transcribe'])
@@ -338,7 +338,7 @@ describe('a recording put in front', () => {
   it('is offered putting the words right once a run has written them', async () => {
     said.carries = { [RECORDING]: { transcript: 'done' } }
 
-    const window = await playing()
+    const window = await openRecording()
 
     expect(asked.carried).toStrictEqual([RECORDING])
     expect(await runsOffered(window)).toStrictEqual(['proofread', 'deleteText'])

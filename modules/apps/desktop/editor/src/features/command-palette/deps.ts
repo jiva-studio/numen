@@ -67,7 +67,7 @@ export interface Store {
  * An identity is answered by the store holding it, and one nobody holds by
  * nothing at all.
  */
-export const reaching = (
+export const createNotes = (
   stores: readonly Store[],
   puts: Pick<Notes, 'opens' | 'made'>,
 ): Notes => {
@@ -240,7 +240,7 @@ export type CommandHandler = (
 ) => Promise<void> | void
 
 /** What a command did to other notes, named once each under what it did. */
-export const naming = (says: string, notes: readonly string[]): string => {
+export const formatNames = (says: string, notes: readonly string[]): string => {
   const named = [...new Set(notes)]
   return named.length === 0 ? '' : `${says} ${named.join(', ')}`
 }

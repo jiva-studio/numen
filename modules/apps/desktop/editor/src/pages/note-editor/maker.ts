@@ -54,7 +54,7 @@ const facing: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
  * What a new note writes to sit in that seat of another one. A note in no seat
  * writes nothing, and a seat nothing faces is not a seat to make one in.
  */
-const seatedOn = (from: string, seat: PlexRelatedSeat | null): readonly Link[] | null => {
+const resolveSeatLinks = (from: string, seat: PlexRelatedSeat | null): readonly Link[] | null => {
   if (!seat) return []
   const opposite = facing[seat]
   const role = opposite && carries[opposite]
@@ -116,7 +116,7 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
     for (let taken = 1; taken <= names; taken++) {
       const made = await creates(nameAt(taken), folder, links)
       if (made === 'occupied') continue
-      return answered(made)
+      return reportNoteResult(made)
     }
     said(exhausted, 'error')
     return null
@@ -131,20 +131,20 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
     from: string,
     seat: PlexRelatedSeat | null,
   ): Promise<NoteRef | null> {
-    const links = seatedOn(from, seat)
+    const links = resolveSeatLinks(from, seat)
     if (!links) return null
-    return answered(await creates(title, from ? folderOf(from) : '', links))
+    return reportNoteResult(await creates(title, from ? folderOf(from) : '', links))
   }
 
   /** Create a note in a seat of another one, filed in the folder that one is in. */
   async function createInSeat(from: string, seat: PlexRelatedSeat): Promise<NoteRef | null> {
-    const links = seatedOn(from, seat)
+    const links = resolveSeatLinks(from, seat)
     if (!links) return null
     return createUntitled(folderOf(from), links)
   }
 
   /** What a note that was asked for came to, said to the person where it failed. */
-  const answered = (made: NoteRef | ErrorCode | null): NoteRef | null => {
+  const reportNoteResult = (made: NoteRef | ErrorCode | null): NoteRef | null => {
     if (made === null) return null
     if (typeof made === 'string') {
       said(words[made], 'error')

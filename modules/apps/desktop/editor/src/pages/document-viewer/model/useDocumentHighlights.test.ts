@@ -24,7 +24,7 @@ describe('useDocumentHighlights', () => {
     await hl.applyHighlights([pageHighlights])
     expect(onGoToPage).toHaveBeenCalledWith(1)
     expect(pageNumber.value).toBe(1)
-    expect(hl.highlightedOn(1)).toEqual([rect])
+    expect(hl.getHighlightsOn(1)).toEqual([rect])
     expect(hl.highlighted.value).toEqual([rect])
   })
 })

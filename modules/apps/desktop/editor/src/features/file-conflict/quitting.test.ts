@@ -85,7 +85,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
  * each way out would do is not this file's subject; what it records is which
  * way the person took.
  */
-function conflicted(note: string) {
+function createConflict(note: string) {
   const took: string[] = []
   let drop = () => {}
   const conflict: Conflict = {
@@ -126,7 +126,7 @@ describe('a page asked to write what it owes', () => {
 
     notes.open('Note.md')
     await settle()
-    notes.typed('Note.md', 'what the person was in the middle of')
+    notes.setBody('Note.md', 'what the person was in the middle of')
 
     // No interval has fired, so what was typed is in the page and nowhere else.
     expect(at.wrote).toEqual([])
@@ -148,7 +148,7 @@ describe('a page asked to write what it owes', () => {
 
     notes.open('Note.md')
     await settle()
-    notes.typed('Note.md', 'held')
+    notes.setBody('Note.md', 'held')
     at.hold()
 
     said.say({ token: '1', flush: true })
@@ -173,7 +173,7 @@ describe('a page asked to write what it owes', () => {
 
     notes.open('Note.md')
     await settle()
-    notes.typed('Note.md', 'still being written')
+    notes.setBody('Note.md', 'still being written')
 
     // The stream opens by handing over the token, which asks for nothing.
     said.say({ token: '3', flush: false })
@@ -202,7 +202,7 @@ describe('a page holding text the file changed under', () => {
     const said = stream()
     const at = fake(said.read)
     const going = useFileFlush(at.core)
-    const note = conflicted('Note.md')
+    const note = createConflict('Note.md')
     note.raise(going.raise)
     void going.start()
 
@@ -219,13 +219,13 @@ describe('a page holding text the file changed under', () => {
     const notes = openNotes(at.core)
     const going = useFileFlush(at.core)
     going.holds(notes.flush)
-    const note = conflicted('Held.md')
+    const note = createConflict('Held.md')
     note.raise(going.raise)
 
     void going.start()
     notes.open('Other.md')
     await settle()
-    notes.typed('Other.md', 'on its way')
+    notes.setBody('Other.md', 'on its way')
     at.hold()
 
     said.say({ token: '5', flush: true })
@@ -246,8 +246,8 @@ describe('a page holding text the file changed under', () => {
     const said = stream()
     const at = fake(said.read)
     const going = useFileFlush(at.core)
-    const first = conflicted('One.md')
-    const second = conflicted('Two.md')
+    const first = createConflict('One.md')
+    const second = createConflict('Two.md')
     first.raise(going.raise)
     second.raise(going.raise)
     void going.start()
@@ -277,7 +277,7 @@ describe('a page holding text the file changed under', () => {
     const said = stream()
     const at = fake(said.read)
     const going = useFileFlush(at.core, async () => {})
-    conflicted('Later.md').raise(going.raise)
+    createConflict('Later.md').raise(going.raise)
     void going.start()
 
     said.say({ token: '8', flush: true })
@@ -303,7 +303,7 @@ describe('a page holding text the file changed under', () => {
     const said = stream()
     const at = fake(said.read)
     const going = useFileFlush(at.core, async () => {})
-    const note = conflicted('Note.md')
+    const note = createConflict('Note.md')
     note.raise(going.raise)
     void going.start()
 
@@ -330,7 +330,7 @@ describe('a page holding text the file changed under', () => {
     const said = stream()
     const at = fake(said.read)
     const going = useFileFlush(at.core, async () => {})
-    conflicted('Note.md').raise(going.raise)
+    createConflict('Note.md').raise(going.raise)
     void going.start()
 
     said.say({ token: '9', flush: true })

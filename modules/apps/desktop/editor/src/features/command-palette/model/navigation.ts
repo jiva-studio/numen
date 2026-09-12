@@ -29,14 +29,14 @@ export function createPaletteSteps(
   /** The step being asked, and nothing at the list of commands. */
   const here = computed<PendingStep | null>(() => steps.value.at(-1) ?? null)
 
-  const calling = (step: PendingStep): string =>
+  const getStepTitle = (step: PendingStep): string =>
     step.command.group === 'vault'
       ? step.on.vault.name
       : knows.called(step.on.path) || step.on.title
 
-  const named = (step: PendingStep): string => {
+  const getStepLabel = (step: PendingStep): string => {
     const others = step.on.others?.length ?? 0
-    return others > 0 ? words.several(others + 1) : `“${calling(step)}”`
+    return others > 0 ? words.several(others + 1) : `“${getStepTitle(step)}”`
   }
 
   const crumb = computed(() => here.value?.command.text ?? words.command)
@@ -163,15 +163,15 @@ export function createPaletteSteps(
       if (action !== YES) return null
       return invocation(step.command.id, step.on)
     }
-    if (action !== EXACT || name !== calling(step)) return null
+    if (action !== EXACT || name !== getStepTitle(step)) return null
     return invocation(step.command.id, step.on, name)
   }
 
   return {
     steps,
     here,
-    calling,
-    named,
+    getStepTitle,
+    getStepLabel,
     crumb,
     placeholder,
     step,

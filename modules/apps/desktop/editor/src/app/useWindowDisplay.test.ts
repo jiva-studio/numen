@@ -234,7 +234,7 @@ describe('the stream of changes', () => {
  */
 describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */
-  const swapping = (core: Core) => {
+  const createWindow = (core: Core) => {
     const drawn: string[] = []
     const window = useWindowDisplay(core, {
       wait: async () => {},
@@ -248,7 +248,7 @@ describe('another vault under this window', () => {
    * A vault that reloads, with every other stream of the window left open. The
    * notes named are changes the stream carries ahead of the reload.
    */
-  const reloading = (state: Core['state'], ahead: readonly string[] = []) =>
+  const createReloadingCore = (state: Core['state'], ahead: readonly string[] = []) =>
     fake({
       state,
       changes: async function* () {
@@ -267,7 +267,9 @@ describe('another vault under this window', () => {
   it('draws the page again where the reload stands at another folder', async () => {
     /** The folder the vault stands at, which the swap moves between reads. */
     const folders = ['/vaults/Physics', '/vaults/Heat']
-    const one = swapping(reloading(async () => ({ ...settled, path: folders.shift() ?? '' })))
+    const one = createWindow(
+      createReloadingCore(async () => ({ ...settled, path: folders.shift() ?? '' })),
+    )
 
     await one.window.start()
     await nap()
@@ -286,8 +288,10 @@ describe('another vault under this window', () => {
   it('draws the page again where the vault that arrived was read first', async () => {
     /** The folder the vault stands at: the first read is the page's own. */
     const folders = ['/vaults/Physics']
-    const one = swapping(
-      reloading(async () => ({ ...settled, path: folders.shift() ?? '/vaults/Heat' }), ['Heat.md']),
+    const one = createWindow(
+      createReloadingCore(async () => ({ ...settled, path: folders.shift() ?? '/vaults/Heat' }), [
+        'Heat.md',
+      ]),
     )
 
     await one.window.start()
@@ -302,7 +306,7 @@ describe('another vault under this window', () => {
   })
 
   it('reads the vault again where the reload stands where it stood', async () => {
-    const one = swapping(reloading(async () => settled))
+    const one = createWindow(createReloadingCore(async () => settled))
 
     await one.window.start()
     await nap()
@@ -332,7 +336,7 @@ describe('a note asked for from outside the window', () => {
 
 describe('a place inside a source asked for from outside the window', () => {
   /** A window that records the documents it was asked to open, and where. */
-  const watching = (core: Core) => {
+  const createRecordingWindow = (core: Core) => {
     const opened: string[] = []
     const one = heard(core, (path, spans) =>
       opened.push(`${path} ${spans.map((one) => `${one.from} ${one.to}`).join(' ')}`),
@@ -346,7 +350,7 @@ describe('a place inside a source asked for from outside the window', () => {
         yield { path: 'library/mahabharata.epub', spans: [{ from: 40_512, to: 40_543 }] }
       },
     })
-    const { window, opened, wanted } = watching(core)
+    const { window, opened, wanted } = createRecordingWindow(core)
 
     await window.watch()
 
@@ -368,7 +372,7 @@ describe('a place inside a source asked for from outside the window', () => {
         }
       },
     })
-    const { window, opened } = watching(core)
+    const { window, opened } = createRecordingWindow(core)
 
     await window.watch()
 
@@ -381,7 +385,7 @@ describe('a place inside a source asked for from outside the window', () => {
         yield { path: 'Wanted.md', spans: [{ from: 0, to: 0 }] }
       },
     })
-    const { window, opened, wanted } = watching(core)
+    const { window, opened, wanted } = createRecordingWindow(core)
 
     await window.watch()
 

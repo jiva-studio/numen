@@ -63,7 +63,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   /** The preset a deck names, as the line at the top of it draws it. */
-  const scheduledOf = (read: ReadResult): DeckPreset => {
+  const readDeckPreset = (read: ReadResult): DeckPreset => {
     if (read.preset === null) return BY_DEFAULT
     const errorMessage = read.preset.problems[0] ?? ''
     if (read.preset.path === '') return { ...BY_DEFAULT, errorMessage }
@@ -83,7 +83,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
       // Reading preset scheduling failed.
       return
     }
-    scheduled.value.set(path, scheduledOf(read))
+    scheduled.value.set(path, readDeckPreset(read))
   }
 
   /** What one tab was told about the preset it last chose. */
@@ -123,7 +123,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   /**
    * The preset one tab is scheduled by.
    */
-  const scheduledAt = (id: string): DeckPreset => {
+  const getDeckPreset = (id: string): DeckPreset => {
     const held = scheduled.value.get(store.where(id)) ?? BY_DEFAULT
     const said = chose.value.get(id) ?? ''
     return said === '' ? held : { ...held, errorMessage: said }
@@ -135,7 +135,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   /** The same, carried to where the file was filed instead. */
-  const moved = (from: string, to: string): void => {
+  const moveFile = (from: string, to: string): void => {
     const by = scheduled.value.get(from)
     if (by) scheduled.value.set(to, by)
     scheduled.value.delete(from)
@@ -152,10 +152,10 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
     listsPresetsAgain,
     asks,
     schedules,
-    scheduledAt,
+    getDeckPreset,
     says,
     forgets,
-    moved,
+    moveFile,
     closes,
   }
 }

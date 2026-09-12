@@ -17,13 +17,13 @@ export function useDocumentHighlights(
   const highlights = shallowRef<readonly PageHighlight[]>([])
   const others = shallowRef<readonly (readonly PageHighlight[])[]>([])
 
-  const highlightedOn = (page: number): readonly Rect[] =>
+  const getHighlightsOn = (page: number): readonly Rect[] =>
     highlights.value.find((one) => one.page === page)?.rects ?? []
 
   const alsoOn = (page: number): readonly Rect[] =>
     others.value.flatMap((where) => where.find((one) => one.page === page)?.rects ?? [])
 
-  const highlighted = computed<readonly Rect[]>(() => highlightedOn(pageNumber.value))
+  const highlighted = computed<readonly Rect[]>(() => getHighlightsOn(pageNumber.value))
   const also = computed<readonly Rect[]>(() => alsoOn(pageNumber.value))
 
   const applyHighlights = async (where: readonly (readonly PageHighlight[])[]) => {
@@ -49,7 +49,7 @@ export function useDocumentHighlights(
   return {
     highlights,
     others,
-    highlightedOn,
+    getHighlightsOn,
     alsoOn,
     highlighted,
     also,

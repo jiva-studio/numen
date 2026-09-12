@@ -233,18 +233,18 @@ describe('the one slider', () => {
       /translate:[^;]*\s([^\s;]+);?/.exec(
         tab.get('[data-control="callout"]').attributes('style') ?? '',
       )?.[1]
-    const turned = () => tab.get('[data-control="tail"]').attributes('data-under')
+    const getTailUnder = () => tab.get('[data-control="tail"]').attributes('data-under')
     const slider = tab.get('[data-control="picture"][role="slider"]')
 
     // At the foot of this curve there is room above the knob.
     await slider.trigger('keydown', { key: 'Home' })
     expect(lift()).toBe('-100%')
-    expect(turned()).toBeUndefined()
+    expect(getTailUnder()).toBeUndefined()
 
     // At its top there is none, and the bubble and its tail turn over together.
     await slider.trigger('keydown', { key: 'End' })
     expect(lift()).toBe('0')
-    expect(turned()).toBeDefined()
+    expect(getTailUnder()).toBeDefined()
   })
 
   // The picture is what the keyboard comes to and what it moves. What focus is
@@ -296,7 +296,7 @@ describe('what a day cannot reach', () => {
   const bought = (tab: ReturnType<typeof mount>) =>
     tab.findAll('[data-control="bought"]').map((one) => one.text())
 
-  const dated = (over: Partial<Point> = {}) =>
+  const createDatedTab = (over: Partial<Point> = {}) =>
     drawn(
       {
         goal: 'date',
@@ -315,7 +315,7 @@ describe('what a day cannot reach', () => {
     )
 
   it('says how many no pace reaches, beside what the day costs', async () => {
-    const { tab } = dated()
+    const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
     expect(bought(tab)).toStrictEqual([
       '14 days off',
@@ -325,7 +325,7 @@ describe('what a day cannot reach', () => {
   })
 
   it('says nothing of it where the day leaves every card time enough', async () => {
-    const { tab } = dated()
+    const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
     const said = bought(tab)
     expect(said).toStrictEqual(['180 days off', '15 minutes a day'])
@@ -334,7 +334,7 @@ describe('what a day cannot reach', () => {
   })
 
   it('follows the day, since each day leaves its own cards short', async () => {
-    const { tab } = dated()
+    const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'ArrowRight' })
     expect(bought(tab)).toContain('11 of 79 cannot get there')
@@ -374,7 +374,7 @@ describe('a row of the receipt', () => {
 })
 
 describe('when the material is learned', () => {
-  const learning = (tab: ReturnType<typeof mount>) =>
+  const getLearnedTiles = (tab: ReturnType<typeof mount>) =>
     tab
       .findAll('[data-control="learned"] [data-control="tile"]')
       .map((one) => [one.get('[data-control="figure"]').text(), one.get('[data-control="word"]').text()])
@@ -384,7 +384,7 @@ describe('when the material is learned', () => {
       cards: 79,
       at: [point(), point(), point({ learns: 41, learned: 0 }), point()],
     })
-    expect(learning(tab)).toStrictEqual([
+    expect(getLearnedTiles(tab)).toStrictEqual([
       ['41', 'days to learn it'],
       ['0 of 79', 'learned today'],
     ])
@@ -400,9 +400,9 @@ describe('when the material is learned', () => {
         point({ learns: 0, learned: 79 }),
       ],
     })
-    expect(learning(tab)[0]).toStrictEqual(['3', 'days to learn it'])
+    expect(getLearnedTiles(tab)[0]).toStrictEqual(['3', 'days to learn it'])
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
-    expect(learning(tab)[0]).toStrictEqual(['70', 'days to learn it'])
+    expect(getLearnedTiles(tab)[0]).toStrictEqual(['70', 'days to learn it'])
   })
 
   // A pace that does not get there has no day to name, so it says so.
@@ -411,7 +411,7 @@ describe('when the material is learned', () => {
       cards: 79,
       at: [point(), point(), point({ learns: -1, learned: 4 }), point()],
     })
-    expect(learning(tab)).toStrictEqual([
+    expect(getLearnedTiles(tab)).toStrictEqual([
       ['not yet', 'in the days ahead'],
       ['4 of 79', 'learned today'],
     ])
@@ -422,7 +422,7 @@ describe('when the material is learned', () => {
       cards: 79,
       at: [point(), point(), point({ learns: 0, learned: 79 }), point()],
     })
-    expect(learning(tab)[0]).toStrictEqual(['today', 'all of it learned'])
+    expect(getLearnedTiles(tab)[0]).toStrictEqual(['today', 'all of it learned'])
   })
 
   it('says nothing at all until the answer lands', () => {
@@ -437,7 +437,7 @@ describe('when the material is learned', () => {
       cards: 79,
       at: [point(), point(), point({ learned: 77 }), point()],
     })
-    expect(learning(tab)).toStrictEqual([['77 of 79', 'learned today']])
+    expect(getLearnedTiles(tab)).toStrictEqual([['77 of 79', 'learned today']])
     expect(tab.text()).not.toContain('not yet')
     expect(tab.text()).not.toContain('days to learn it')
   })
@@ -455,7 +455,7 @@ describe('when the material is learned', () => {
       },
       { goal: 'date', byDate: '2026-11-29' },
     )
-    expect(learning(tab)).toStrictEqual([['41 of 79', 'learned today']])
+    expect(getLearnedTiles(tab)).toStrictEqual([['41 of 79', 'learned today']])
   })
 })
 
@@ -464,7 +464,7 @@ describe('when the material is learned', () => {
 describe('what a goal of a date draws', () => {
   const climbing = [0, 0, 0, 4, 9, 16, 27, 42, 57, 69, 80, 91, 100]
 
-  const dated = () =>
+  const createDatedTab = () =>
     drawn(
       {
         goal: 'date',
@@ -486,7 +486,7 @@ describe('what a goal of a date draws', () => {
     (tab.get('[data-backlog="line"]').attributes('d') ?? '').split(/[ML]/).length - 1
 
   it('stops the backlog at the day the place stands for', async () => {
-    const { tab } = dated()
+    const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
     expect(days(tab)).toBe(4)
 
@@ -497,7 +497,7 @@ describe('what a goal of a date draws', () => {
   // A shorter run must not make the picture jump, so every place is drawn
   // against the one extent: the most any of them ever stands at.
   it('keeps one height for the backlog, whatever place the knob stands on', async () => {
-    const { tab } = dated()
+    const { tab } = createDatedTab()
     const control = tab.get('[data-control="picture"][role="slider"]')
     await control.trigger('keydown', { key: 'End' })
     const tallest = heights(tab.get('[data-backlog="line"]').attributes('d') ?? '')
@@ -516,13 +516,13 @@ describe('what a goal of a date draws', () => {
 
 describe('the plot of what stands overdue', () => {
   /** A curve whose place the knob stands at carries a backlog that climbs. */
-  const climbing = (backlog: readonly number[] = [16, 21, 55, 66, 65, 78]) =>
+  const createClimbingTab = (backlog: readonly number[] = [16, 21, 55, 66, 65, 78]) =>
     drawn({
       at: [point(), point(), point({ reviews: 80, backlog }), point()],
     })
 
   it('is a plot of its own under the picture, drawn over the days ahead', () => {
-    const { tab } = climbing()
+    const { tab } = createClimbingTab()
     expect(tab.findAll('[data-backlog="line"]')).toHaveLength(1)
     expect(tab.get('[data-backlog="line"]').attributes('d')?.startsWith('M')).toBe(true)
   })
@@ -531,7 +531,7 @@ describe('the plot of what stands overdue', () => {
   // what the picture is for. The extent is scaled to this one place's own run.
   it('draws a backlog that climbs as climbing, and not flat', () => {
     const heights = (d: string) => d.split(/[ML]/).slice(1).map((one) => Number(one.split(' ')[1]))
-    const drawnAt = heights(climbing().tab.get('[data-backlog="line"]').attributes('d') ?? '')
+    const drawnAt = heights(createClimbingTab().tab.get('[data-backlog="line"]').attributes('d') ?? '')
     expect(drawnAt[0]).toBeGreaterThan(drawnAt[5] ?? 0)
     expect(drawnAt[2]).toBeLessThan(drawnAt[1] ?? 0)
     expect(new Set(drawnAt).size).toBeGreaterThan(4)
@@ -540,27 +540,27 @@ describe('the plot of what stands overdue', () => {
   // Nothing overdue is the foot, so the height is read against a floor that
   // means something.
   it('reads from nothing overdue to the most this pace ever stands at', () => {
-    const said = climbing()
+    const said = createClimbingTab()
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
     expect(said).toContain(words.backlogHeightAt(78))
     // A number the line stands on gives way to it, so the foot is read off a
     // run that leaves the left edge of the backlog clear.
-    const falling = climbing([78, 60, 40, 20, 5, 0])
+    const falling = createClimbingTab([78, 60, 40, 20, 5, 0])
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
     expect(falling).toContain(words.backlogHeightAt(0))
   })
 
   it('names both its axes, in the same voice as the picture over it', () => {
-    const { tab } = climbing()
+    const { tab } = createClimbingTab()
     const names = tab.findAll('[data-control="name"][data-axis="y"]').map((one) => one.text())
     expect(names).toStrictEqual([words.axisY('minutes'), words.backlogY])
     expect(tab.findAll('[data-control="name"][data-axis="x"]').map((one) => one.text())).toContain(words.backlogX)
   })
 
   it('carries the days at either end, which the goal’s grid says nothing about', () => {
-    const { tab } = climbing()
+    const { tab } = createClimbingTab()
     const ends = tab.findAll('[data-control="ends"]').map((one) => one.text())
     expect(ends[1]).toContain(words.backlogWidthAt(6))
   })
@@ -568,7 +568,7 @@ describe('the plot of what stands overdue', () => {
   // The backlog is read and never dragged, so it is no stop on the way round the
   // screen and offers nothing to the keyboard.
   it('is read and not dragged, so the one control stays the one control', () => {
-    const { tab } = climbing()
+    const { tab } = createClimbingTab()
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(1)
     expect(tab.findAll('[data-control="picture"], [data-backlog="picture"]')).toHaveLength(2)
   })
@@ -601,10 +601,10 @@ describe('the plot of what stands overdue', () => {
         .slice(1)
         .map((one) => Number(one.split(' ')[1]))
     const flat = heights(
-      climbing([0, 0, 0, 0, 0, 0]).tab.get('[data-backlog="line"]').attributes('d') ?? '',
+      createClimbingTab([0, 0, 0, 0, 0, 0]).tab.get('[data-backlog="line"]').attributes('d') ?? '',
     )
     const floor = heights(
-      climbing([12, 8, 4, 0, 0, 0]).tab.get('[data-backlog="line"]').attributes('d') ?? '',
+      createClimbingTab([12, 8, 4, 0, 0, 0]).tab.get('[data-backlog="line"]').attributes('d') ?? '',
     )
     // Every place of the empty run stands where the run that clears comes to
     // rest, which is the foot the axis is drawn along.
@@ -614,7 +614,7 @@ describe('the plot of what stands overdue', () => {
   })
 
   it('says nothing overdue once, on the floor, where the run holds nothing', () => {
-    const said = climbing([0, 0, 0, 0, 0, 0])
+    const said = createClimbingTab([0, 0, 0, 0, 0, 0])
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
     expect(said).toContain(words.backlogHeightAt(0))

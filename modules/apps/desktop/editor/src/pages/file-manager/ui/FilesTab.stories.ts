@@ -35,7 +35,7 @@ const VAULT: Record<string, readonly Entry[]> = {
 }
 
 /** A tab of that vault, reading the folders named as it is drawn. */
-const opened = (open: readonly string[]): FilesTabState => {
+const createFilesTab = (open: readonly string[]): FilesTabState => {
   const list = useFileTree({ list: async (at: string) => VAULT[at] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
     openDestination: () => {},
@@ -70,20 +70,20 @@ type Story = StoryObj
 /** The tab, drawn in the column a window gives it. */
 const room = (open: readonly string[] = []) => () => ({
   components: { FilesTab },
-  setup: () => ({ state: opened(open) }),
+  setup: () => ({ state: createFilesTab(open) }),
   template: `<div class="numen h-screen w-80 bg-surface"><FilesTab :state="state" /></div>`,
 })
 
 const rows = (canvas: HTMLElement) => [...canvas.querySelectorAll<HTMLElement>('[role="treeitem"]')]
 
-const named = (canvas: HTMLElement) => rows(canvas).map((row) => row.textContent?.trim())
+const getRowNames = (canvas: HTMLElement) => rows(canvas).map((row) => row.textContent?.trim())
 
 /** Every folder of the vault closed. */
 export const TheVault: Story = {
   render: room(),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(4))
-    await expect(named(canvasElement)).toEqual([
+    await expect(getRowNames(canvasElement)).toEqual([
       'physics',
       'Entropy.md',
       'Boltzmann 1877.pdf',
@@ -104,7 +104,7 @@ export const AFolderOpened: Story = {
   render: room(['physics']),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(5))
-    await expect(named(canvasElement)[1]).toBe('Kelvin.md')
+    await expect(getRowNames(canvasElement)[1]).toBe('Kelvin.md')
 
     // What a folder holds is drawn inside it, and reads as inside it.
     const canvas = within(canvasElement)
@@ -125,9 +125,9 @@ export const TheMenuOnARow: Story = {
     await userEvent.click(note)
     await fireEvent.contextMenu(note, { clientX: at.left + 8, clientY: at.top + 8 })
 
-    const offered = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
-    await waitFor(() => expect(offered().length).toBeGreaterThan(0))
-    const said = offered().map((one) => one.textContent?.trim())
+    const getMenuItems = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+    await waitFor(() => expect(getMenuItems().length).toBeGreaterThan(0))
+    const said = getMenuItems().map((one) => one.textContent?.trim())
     await expect(said).toContain('Rename')
     await expect(said).toContain('Remove note')
 

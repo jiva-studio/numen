@@ -17,7 +17,7 @@ export interface WindowStreamsDeps {
   readonly wait: (ms: number) => Promise<unknown>
   readonly opening: Ref<string>
   readonly tasks: ShallowRef<readonly Task[]>
-  readonly swapped: () => Promise<boolean>
+  readonly isVaultSwapped: () => Promise<boolean>
   readonly reloads: () => void
   readonly told: (paths: readonly string[], renamed: readonly PathRename[]) => Promise<void> | void
   readonly first: () => Promise<string>
@@ -36,7 +36,7 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
     wait,
     opening,
     tasks,
-    swapped,
+    isVaultSwapped,
     reloads,
     told,
     first,
@@ -68,7 +68,7 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
         if (change.paths.length === 0 && !change.shouldReload && change.renamed.length === 0) return
         // A reload standing at another folder is another vault under this
         // window, and the page is drawn again on it.
-        if (change.shouldReload && (await swapped())) return void reloads()
+        if (change.shouldReload && (await isVaultSwapped())) return void reloads()
         await told(change.shouldReload ? [] : change.paths, change.renamed)
         // The note the vault opens with is asked for again when it moves.
         if (change.renamed.some((went) => went.from === opening.value)) {

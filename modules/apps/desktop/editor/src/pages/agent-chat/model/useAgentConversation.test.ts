@@ -14,7 +14,7 @@ import { useWindowTabs } from '@/entities/tab'
 import { AGENT } from '@/entities/tab'
 
 /** A talk that records what it was asked, and the places its lines name. */
-const talked = (places: Record<string, { path: string; span: Span }> = {}) => {
+const createTalk = (places: Record<string, { path: string; span: Span }> = {}) => {
   const asked: [string, string][] = []
   const stopped: string[] = []
   const said = ref<Turn[]>([])
@@ -39,7 +39,7 @@ const tab = (
   places: Record<string, { path: string; span: Span }> = {},
   notes: Record<string, string> = {},
 ) => {
-  const talk = talked(places)
+  const talk = createTalk(places)
   const opened: [string, readonly Span[]][] = []
   const beside: string[] = []
   const state = useAgentConversation(talk.talk, {
@@ -122,7 +122,7 @@ describe('a line about work pressed', () => {
 })
 
 describe('a link inside an answer', () => {
-  const pressed = () => {
+  const createPress = () => {
     let prevented = false
     const press = { preventDefault: () => (prevented = true) } as unknown as MouseEvent
     return { press, was: () => prevented }
@@ -132,7 +132,7 @@ describe('a link inside an answer', () => {
     const one = tab()
     const text =
       'see [here](numen:Source.pdf?start=10&length=4) and [there](numen:Source.pdf?start=90&length=2)'
-    const press = pressed()
+    const press = createPress()
 
     one.state.followLink(turn('said', text), 'numen:Source.pdf?start=10&length=4', press.press)
 
@@ -150,7 +150,7 @@ describe('a link inside an answer', () => {
 
   it('is left alone when it names nowhere in the vault', () => {
     const one = tab()
-    const press = pressed()
+    const press = createPress()
 
     one.state.followLink(turn('said', 'read https://example.com'), 'https://example.com', press.press)
 
@@ -162,7 +162,7 @@ describe('a link inside an answer', () => {
     const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
     one.said.value = [turn('said', 'It sits under [[Thermodynamics]].')]
     await nextTick()
-    const press = pressed()
+    const press = createPress()
 
     one.state.followLink(one.said.value[0]!, 'name://Thermodynamics', press.press)
 
@@ -173,7 +173,7 @@ describe('a link inside an answer', () => {
     const one = tab()
     one.said.value = [turn('said', 'It sits under [[Nowhere]].')]
     await nextTick()
-    const press = pressed()
+    const press = createPress()
 
     one.state.followLink(one.said.value[0]!, 'name://Nowhere', press.press)
 

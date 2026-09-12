@@ -51,7 +51,7 @@ function onTranscribe() {
 }
 
 function onUpdateModelValue(said: string) {
-  props.state.typed(said)
+  props.state.setProse(said)
 }
 
 function onSave() {

@@ -840,7 +840,7 @@ describe('a note that moved', () => {
 })
 
 describe('a note that is no longer there', () => {
-  const vanished = (over: Partial<Tab> = {}) =>
+  const applyMissingRead = (over: Partial<Tab> = {}) =>
     tabAfter(tab({ reading: 2, ...over }), {
       kind: 'read',
       generation: 2,
@@ -848,33 +848,33 @@ describe('a note that is no longer there', () => {
     }).tab
 
   it('leaves what the person has on the screen', () => {
-    expect(vanished({ shown: 'mine', since: 10 }).shown).toBe('mine')
+    expect(applyMissingRead({ shown: 'mine', since: 10 }).shown).toBe('mine')
   })
 
   it('is a state of its own, so the tab can say so', () => {
-    expect(stateOf(vanished())).toBe('gone')
+    expect(stateOf(applyMissingRead())).toBe('gone')
   })
 
   it('stops the unasked save, so nothing is written back without being asked', () => {
-    const next = tabAfter(vanished({ shown: 'mine', since: 10 }), { kind: 'fired' })
+    const next = tabAfter(applyMissingRead({ shown: 'mine', since: 10 }), { kind: 'fired' })
     expect(kinds(next.effects)).toEqual([])
   })
 
   it('is not written by typing either', () => {
-    const typed = tabAfter(vanished(), { kind: 'typed', body: 'more', at: 20 })
+    const typed = tabAfter(applyMissingRead(), { kind: 'typed', body: 'more', at: 20 })
     expect(stateOf(typed.tab)).toBe('gone')
     expect(kinds(tabAfter(typed.tab, { kind: 'fired' }).effects)).toEqual([])
   })
 
   it('is made again at the name it had when the person says to keep it', () => {
-    const next = tabAfter(vanished({ shown: 'mine', since: 10 }), { kind: 'keeping' })
+    const next = tabAfter(applyMissingRead({ shown: 'mine', since: 10 }), { kind: 'keeping' })
     expect(next.effects).toEqual([
       { kind: 'write', path: 'Note.md', body: 'mine', seen: null },
     ])
   })
 
   it('is itself again once the note comes back', () => {
-    const back = tabAfter(vanished(), {
+    const back = tabAfter(applyMissingRead(), {
       kind: 'changed',
       paths: ['Note.md'],
       renamed: [],

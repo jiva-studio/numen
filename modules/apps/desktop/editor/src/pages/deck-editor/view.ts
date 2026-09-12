@@ -53,9 +53,9 @@ export const sameDeck = (one: BufferDeck, other: BufferDeck): boolean =>
  * The deck on screen under the headings the file now carries.
  */
 export const applyHead = (held: BufferDeck, read: BufferDeck): BufferDeck => {
-  const carried = (at: number): string => read.cards[at]?.heading ?? ''
-  if (held.cards.every((card, at) => card.heading === carried(at))) return held
-  return { ...held, cards: held.cards.map((card, at) => ({ ...card, heading: carried(at) })) }
+  const getHeading = (at: number): string => read.cards[at]?.heading ?? ''
+  if (held.cards.every((card, at) => card.heading === getHeading(at))) return held
+  return { ...held, cards: held.cards.map((card, at) => ({ ...card, heading: getHeading(at) })) }
 }
 
 /**

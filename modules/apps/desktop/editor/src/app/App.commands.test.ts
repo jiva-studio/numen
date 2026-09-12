@@ -39,7 +39,7 @@ import { ERRORS, WORDS } from '@/shared/words'
 
 describe('the palette', () => {
   /** A keystroke taken on the window, and whether the window took it. */
-  const pressed = (key: string) => {
+  const pressKey = (key: string) => {
     const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true })
     globalThis.dispatchEvent(event)
     return event
@@ -51,7 +51,7 @@ describe('the palette', () => {
   it('opens on the commands for what is in front, and prints nothing', async () => {
     const window = await drawn()
 
-    const event = pressed('p')
+    const event = pressKey('p')
     await settles()
 
     expect(event.defaultPrevented).toBe(true)
@@ -62,7 +62,7 @@ describe('the palette', () => {
   it('opens on the search under its own keystroke', async () => {
     const window = await drawn()
 
-    pressed('k')
+    pressKey('k')
     await settles()
 
     expect(window.findComponent(Palette).props('open')).toBe(true)
@@ -71,7 +71,7 @@ describe('the palette', () => {
 
   /** A name the search turned up, chosen to be read. */
   const reads = async (window: Awaited<ReturnType<typeof drawn>>, path: string) => {
-    pressed('k')
+    pressKey('k')
     await settles()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
     await new Promise((done) => setTimeout(done, DEBOUNCE))
@@ -81,8 +81,8 @@ describe('the palette', () => {
   }
 
   /** The words typed into the search, with the answers back. */
-  const searched = async (window: Awaited<ReturnType<typeof drawnWithPalette>>) => {
-    pressed('k')
+  const runSearch = async (window: Awaited<ReturnType<typeof drawnWithPalette>>) => {
+    pressKey('k')
     await settles()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
     await new Promise((done) => setTimeout(done, DEBOUNCE))
@@ -105,7 +105,7 @@ describe('the palette', () => {
     ]
     const window = await drawnWithPalette()
 
-    await searched(window)
+    await runSearch(window)
 
     expect(marks()).toStrictEqual(['file-text', 'layers', 'layout-template'])
   })
@@ -115,7 +115,7 @@ describe('the palette', () => {
     said.passages = [passageSaid('Animals.md', 'Animals', 'deck'), passageSaid('Ants.md', 'Ants')]
     const window = await drawnWithPalette()
 
-    await searched(window)
+    await runSearch(window)
 
     // Both halves of the search answer with the same two passages here.
     expect(marks()).toStrictEqual(['layers', 'file-text', 'layers', 'file-text'])
@@ -126,7 +126,7 @@ describe('the palette', () => {
     said.passages = [sourceSaid('Ants.epub', 'book'), sourceSaid('730709BG.LON.mp3', 'recording')]
     const window = await drawnWithPalette()
 
-    await searched(window)
+    await runSearch(window)
 
     expect(marks()).toStrictEqual(['book-open', 'audio-lines', 'book-open', 'audio-lines'])
     // Every row of the list carries a mark, and none of them keeps empty room.
@@ -141,7 +141,7 @@ describe('the palette', () => {
     said.embedded = 4
     const window = await drawnWithPalette()
 
-    await searched(window)
+    await runSearch(window)
 
     expect(groupTitles()).toStrictEqual([WORDS.creating])
     expect(document.body.querySelector('[data-palette="silence"]')).toBeNull()
@@ -151,7 +151,7 @@ describe('the palette', () => {
     said.embedded = 0
     const window = await drawnWithPalette()
 
-    await searched(window)
+    await runSearch(window)
 
     expect(groupTitles()).toStrictEqual([WORDS.creating, WORDS.meaning])
     expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
@@ -193,7 +193,7 @@ describe('the palette', () => {
 
   it('turns from the search to the commands on the character that means them', async () => {
     const window = await drawn()
-    pressed('k')
+    pressKey('k')
     await settles()
 
     window.findComponent(Palette).vm.$emit('update:modelValue', '>')
@@ -220,11 +220,11 @@ describe('the palette', () => {
     const window = await drawn()
 
     // A second plex, standing on a note of its own, put in front last.
-    pressed('p')
+    pressKey('p')
     await settles()
     window.findComponent(Palette).vm.$emit('choose', 'plex', 'plex')
     await settles()
-    pressed('k')
+    pressKey('k')
     await settles()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'en')
     await new Promise((done) => setTimeout(done, DEBOUNCE))
@@ -247,7 +247,7 @@ describe('the palette', () => {
     })
     await settles()
 
-    pressed('p')
+    pressKey('p')
     await settles()
 
     expect(await overNote(window)).toBe('Root')
@@ -262,7 +262,7 @@ describe('a command reached by its own keystroke', () => {
   const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 
   /** A keystroke taken on the window, and whether the window took it. */
-  const pressed = (key: string, over: Partial<KeyboardEventInit> = {}) => {
+  const pressKey = (key: string, over: Partial<KeyboardEventInit> = {}) => {
     const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true, ...over })
     globalThis.dispatchEvent(event)
     return event
@@ -290,7 +290,7 @@ describe('a command reached by its own keystroke', () => {
   it('draws the keystroke on its row, written for the keyboard in hand', async () => {
     const window = await drawn()
 
-    pressed('p')
+    pressKey('p')
     await settles()
 
     expect(rowOf(window, 'note')?.keys).toEqual({ icons: ['control'], letter: 'N' })
@@ -300,7 +300,7 @@ describe('a command reached by its own keystroke', () => {
   it('draws no keystroke on the rows no keystroke reaches', async () => {
     const window = await drawn()
 
-    pressed('p')
+    pressKey('p')
     await settles()
 
     expect(rowOf(window, 'destroy')?.keys).toBeUndefined()
@@ -310,7 +310,7 @@ describe('a command reached by its own keystroke', () => {
   it('makes a note under the name typed, on the keystroke the new note draws', async () => {
     await drawnWithPalette()
 
-    const event = pressed('n')
+    const event = pressKey('n')
     await settles()
     await type('Entropy')
     await press('Enter')
@@ -405,7 +405,7 @@ describe('a command reached by its own keystroke', () => {
     said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
     const window = await drawnWithPalette()
 
-    const event = pressed('g')
+    const event = pressKey('g')
     await settles()
 
     expect(event.defaultPrevented).toBe(true)
@@ -416,7 +416,7 @@ describe('a command reached by its own keystroke', () => {
     said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
     const window = await drawnWithPalette()
 
-    pressed('g')
+    pressKey('g')
     await settles()
     await type('en')
     await new Promise((done) => setTimeout(done, DEBOUNCE))
@@ -432,7 +432,7 @@ describe('a command reached by its own keystroke', () => {
   it('leaves a keystroke alone while Alt is held with it', async () => {
     const window = await drawn()
 
-    const event = pressed('n', { altKey: true })
+    const event = pressKey('n', { altKey: true })
     await settles()
 
     expect(event.defaultPrevented).toBe(false)
@@ -458,7 +458,7 @@ describe('a command reached by its own keystroke', () => {
  */
 describe('a command reached by a keystroke holding Shift', () => {
   /** A keystroke taken on the window, and whether the window took it. */
-  const pressed = (key: string, over: Partial<KeyboardEventInit> = {}) => {
+  const pressKey = (key: string, over: Partial<KeyboardEventInit> = {}) => {
     const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true, ...over })
     globalThis.dispatchEvent(event)
     return event
@@ -470,7 +470,7 @@ describe('a command reached by a keystroke holding Shift', () => {
   it('no longer puts the palette up on the letter that puts it up alone', async () => {
     const window = await drawn()
 
-    const event = pressed('K', { shiftKey: true })
+    const event = pressKey('K', { shiftKey: true })
     await settles()
 
     expect(event.defaultPrevented).toBe(false)
@@ -480,7 +480,7 @@ describe('a command reached by a keystroke holding Shift', () => {
   it('no longer puts the commands up on the letter that puts them up alone', async () => {
     const window = await drawn()
 
-    pressed('P', { shiftKey: true })
+    pressKey('P', { shiftKey: true })
     await settles()
 
     // The plex the window opened with is the one it is standing on, which is
@@ -492,7 +492,7 @@ describe('a command reached by a keystroke holding Shift', () => {
     const window = await drawn()
     const before = window.findAllComponents(AgentTab).length
 
-    const event = pressed('A', { shiftKey: true })
+    const event = pressKey('A', { shiftKey: true })
     await settles()
 
     expect(event.defaultPrevented).toBe(true)
@@ -503,7 +503,7 @@ describe('a command reached by a keystroke holding Shift', () => {
     const window = await drawn()
     const before = tabs(window).length
 
-    const event = pressed('W', { shiftKey: true })
+    const event = pressKey('W', { shiftKey: true })
     await settles()
 
     expect(event.defaultPrevented).toBe(true)
@@ -513,7 +513,7 @@ describe('a command reached by a keystroke holding Shift', () => {
   it('makes a child note of the note in front, under the name typed', async () => {
     const window = await drawnWithPalette()
 
-    const event = pressed('C', { shiftKey: true })
+    const event = pressKey('C', { shiftKey: true })
     await settles()
     expect(window.findComponent(Palette).props('crumb')).toBe('New child note')
 
@@ -533,7 +533,7 @@ describe('a command reached by a keystroke holding Shift', () => {
   it('shows the note in front in the plex', async () => {
     const window = await drawn()
 
-    const event = pressed('P', { shiftKey: true })
+    const event = pressKey('P', { shiftKey: true })
     await settles()
 
     expect(event.defaultPrevented).toBe(true)
@@ -546,7 +546,7 @@ describe('a command reached by a keystroke holding Shift', () => {
   it('draws every keystroke that holds Shift on the row that names it', async () => {
     const window = await drawn()
 
-    pressed('p')
+    pressKey('p')
     await settles()
 
     const groups = window.findComponent(Palette).props('groups') as readonly PaletteGroup[]
@@ -615,7 +615,7 @@ describe('a command asked for while the vault is being read', () => {
   }
 
   /** The keystroke for a new note, which is a command over the window. */
-  const askedFor = async () => {
+  const pressNewNote = async () => {
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', ctrlKey: true }))
     await settles()
   }
@@ -625,7 +625,7 @@ describe('a command asked for while the vault is being read', () => {
     said.opening = null
     const window = await drawnWithPalette()
 
-    await askedFor()
+    await pressNewNote()
     await type('Entropy')
     await press('Enter')
 
@@ -694,7 +694,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
   }
 
   /** The window with one deck or one stencil made and put in front. */
-  const holding = async (command: string, name: string) => {
+  const makeFile = async (command: string, name: string) => {
     const window = await drawnWithPalette()
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
     await settles()
@@ -714,7 +714,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
   }
 
   it('lets go of the tab holding a deck', async () => {
-    const window = await holding('New deck', 'Animals')
+    const window = await makeFile('New deck', 'Animals')
     expect(paneKinds(window).flat()).toContain('deck')
 
     await removes(window, 'Animals.note')
@@ -724,7 +724,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
   })
 
   it('lets go of the tab holding a stencil', async () => {
-    const window = await holding('New stencil', 'Animal')
+    const window = await makeFile('New stencil', 'Animal')
     expect(paneKinds(window).flat()).toContain('stencil')
 
     await removes(window, 'Animal.note')
@@ -734,7 +734,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
   })
 
   it('writes the card nobody had saved before the file goes', async () => {
-    const window = await holding('New deck', 'Animals')
+    const window = await makeFile('New deck', 'Animals')
     const state = window.findComponent(DeckTab).props('state') as {
       addCard(
         stencil: string,

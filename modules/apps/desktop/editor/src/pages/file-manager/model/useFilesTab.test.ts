@@ -399,7 +399,7 @@ describe('a name given to a row', () => {
 })
 
 describe('an item chosen in the menu on a row', () => {
-  const asked = async (path: string | null = 'Entropy.md', refuses = false) => {
+  const openRowMenu = async (path: string | null = 'Entropy.md', refuses = false) => {
     const heldState = tab(refuses)
     await heldState.list.openFolder(ROOT)
     heldState.one.openMenu({ path, at: { x: 0, y: 0 } })
@@ -407,7 +407,7 @@ describe('an item chosen in the menu on a row', () => {
   }
 
   it('puts the name of the row in a field, and asks the window for nothing', async () => {
-    const { done, one } = await asked()
+    const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(RENAME)
 
@@ -416,7 +416,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a folder beside the row, under a name nothing there carries', async () => {
-    const { done, one } = await asked()
+    const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_FOLDER)
     await settles()
@@ -425,7 +425,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a folder inside the row where the row is a folder', async () => {
-    const { done, one } = await asked('physics')
+    const { done, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_FOLDER)
     await settles()
@@ -434,7 +434,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('puts the name of a folder it made in a field', async () => {
-    const { one } = await asked()
+    const { one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_FOLDER)
     await settles()
@@ -443,7 +443,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('puts no name in a field where the folder was refused', async () => {
-    const { one } = await asked('Entropy.md', true)
+    const { one } = await openRowMenu('Entropy.md', true)
 
     one.chooseMenuItem(NEW_FOLDER)
     await settles()
@@ -452,7 +452,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a note beside the row, and puts its name in a field', async () => {
-    const { done, one } = await asked()
+    const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_NOTE)
     await settles()
@@ -462,7 +462,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a deck beside the row, and puts its name in a field', async () => {
-    const { done, one } = await asked()
+    const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_DECK)
     await settles()
@@ -472,7 +472,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('asks under the name alone, putting no ending on it', async () => {
-    const { done, one } = await asked()
+    const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_DECK)
     await settles()
@@ -481,7 +481,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a stencil the same way, under a name of its own', async () => {
-    const { done, one } = await asked()
+    const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_STENCIL)
     await settles()
@@ -490,7 +490,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a preset the same way, under a name of its own', async () => {
-    const { done, one } = await asked()
+    const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_PRESET)
     await settles()
@@ -500,7 +500,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('stands the preset in the tree as a preset', async () => {
-    const { one } = await asked()
+    const { one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_PRESET)
     await settles()
@@ -509,7 +509,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a preset inside the row where the row is a folder', async () => {
-    const { done, one } = await asked('physics')
+    const { done, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_PRESET)
     await settles()
@@ -518,7 +518,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('names nothing where the vault made no preset', async () => {
-    const { one } = await asked(undefined, true)
+    const { one } = await openRowMenu(undefined, true)
 
     one.chooseMenuItem(NEW_PRESET)
     await settles()
@@ -527,7 +527,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a deck inside the row where the row is a folder', async () => {
-    const { done, one } = await asked('physics')
+    const { done, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_DECK)
     await settles()
@@ -536,7 +536,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('names nothing where the vault made no deck', async () => {
-    const { one } = await asked(undefined, true)
+    const { one } = await openRowMenu(undefined, true)
 
     one.chooseMenuItem(NEW_DECK)
     await settles()
@@ -545,7 +545,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a note inside the row where the row is a folder', async () => {
-    const { done, one } = await asked('physics')
+    const { done, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_NOTE)
     await settles()
@@ -554,7 +554,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('makes a note and a folder at the root, asked off every row', async () => {
-    const { done, one } = await asked(null)
+    const { done, one } = await openRowMenu(null)
 
     one.chooseMenuItem(NEW_NOTE)
     await settles()
@@ -566,7 +566,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('renames nothing where the menu was asked off every row', async () => {
-    const { one } = await asked(null)
+    const { one } = await openRowMenu(null)
 
     one.chooseMenuItem(RENAME)
 
@@ -574,7 +574,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('hands a command over the file to the window', async () => {
-    const { done, one } = await asked()
+    const { done, one } = await openRowMenu()
 
     one.chooseMenuItem('remove')
 
@@ -582,7 +582,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('hands the whole selection to the window, on a row standing in it', async () => {
-    const heldState = await asked()
+    const heldState = await openRowMenu()
     heldState.list.selectPaths(['Entropy.md', 'Cover.png'])
 
     heldState.one.chooseMenuItem('remove')
@@ -591,7 +591,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('hands the one row to the window, on a row standing outside the selection', async () => {
-    const heldState = await asked()
+    const heldState = await openRowMenu()
     heldState.list.selectPaths(['Cover.png'])
 
     heldState.one.chooseMenuItem('remove')
@@ -600,7 +600,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('does nothing at all for a choice the menu does not offer', async () => {
-    const { done, one } = await asked()
+    const { done, one } = await openRowMenu()
 
     one.chooseMenuItem('destroyEverything')
 
@@ -608,7 +608,7 @@ describe('an item chosen in the menu on a row', () => {
   })
 
   it('puts the menu away whatever was chosen', async () => {
-    const { one } = await asked()
+    const { one } = await openRowMenu()
 
     one.chooseMenuItem('remove')
 

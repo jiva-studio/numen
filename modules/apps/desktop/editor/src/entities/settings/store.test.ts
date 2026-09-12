@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { Model } from './configuration'
-import { settingsStore, settingAt, type SettingsStoreDeps } from './store'
+import { settingsStore, getSettingAt, type SettingsStoreDeps } from './store'
 
 const words = {
   unturned: 'That setting could not be written:',
@@ -27,7 +27,7 @@ const MODELS: readonly Model[] = [
 ]
 
 /** A vault holding those settings, and refusing what it is told to refuse. */
-const holding = (written: string, refuses: string | null = null) => {
+const createStore = (written: string, refuses: string | null = null) => {
   const asked: unknown[] = []
   const core: SettingsStoreDeps = {
     getSettings: () => Promise.resolve({ written, path: '/numen.json', models: MODELS }),
@@ -42,14 +42,14 @@ const holding = (written: string, refuses: string | null = null) => {
 
 describe('what stands at a setting', () => {
   it('is what the file holds, once the vault has answered', async () => {
-    const { kept } = holding('{"agent": {"claude": {"model": "opus"}}}')
+    const { kept } = createStore('{"agent": {"claude": {"model": "opus"}}}')
     await kept.start()
     expect(kept.at(['agent', 'claude', 'model'])).toBe('opus')
     expect(kept.path.value).toBe('/numen.json')
   })
 
   it('is nothing where the file names it nowhere', async () => {
-    const { kept } = holding('{}')
+    const { kept } = createStore('{}')
     await kept.start()
     expect(kept.at(['agent', 'claude', 'model'])).toBeUndefined()
   })
@@ -72,7 +72,7 @@ describe('what stands at a setting', () => {
   })
 
   it('is nothing where the vault answers with what is not JSON, and is said', async () => {
-    const { kept, said } = holding('not JSON at all')
+    const { kept, said } = createStore('not JSON at all')
     await kept.start()
     expect(kept.at(['agent'])).toBeUndefined()
     expect(said).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
@@ -81,7 +81,7 @@ describe('what stands at a setting', () => {
 
 describe('the models a setting offers', () => {
   it('are the ones read from that setting, and no others', async () => {
-    const { kept } = holding('{}')
+    const { kept } = createStore('{}')
     await kept.start()
     expect(kept.offers(['agent', 'claude', 'model']).map((one) => one.name)).toStrictEqual(['opus'])
     expect(kept.offers(['agent', 'use'])).toStrictEqual([])
@@ -90,19 +90,19 @@ describe('the models a setting offers', () => {
 
 describe('a setting written', () => {
   it('is asked of the vault as it was given', async () => {
-    const { kept, asked } = holding('{}')
+    const { kept, asked } = createStore('{}')
     await kept.puts(['agent', 'use'], 'claude')
     expect(asked).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
   })
 
   it('asks nothing of the vault where there is nothing to write', async () => {
-    const { kept, asked } = holding('{}')
+    const { kept, asked } = createStore('{}')
     await kept.chooses([])
     expect(asked).toStrictEqual([])
   })
 
   it('is said where it was refused', async () => {
-    const { kept, said } = holding('{}', 'the file could not be written')
+    const { kept, said } = createStore('{}', 'the file could not be written')
     await kept.puts(['agent', 'use'], 'claude')
     expect(said).toHaveBeenLastCalledWith(
       'That setting could not be written: numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
@@ -113,15 +113,15 @@ describe('a setting written', () => {
 
 describe('what stands at a path through a tree', () => {
   it('is the value the path leads to', () => {
-    expect(settingAt({ a: { b: [1, 2] } }, ['a', 'b'])).toStrictEqual([1, 2])
+    expect(getSettingAt({ a: { b: [1, 2] } }, ['a', 'b'])).toStrictEqual([1, 2])
   })
 
   it('is the tree itself for a path of no steps', () => {
-    expect(settingAt({ a: 1 }, [])).toStrictEqual({ a: 1 })
+    expect(getSettingAt({ a: 1 }, [])).toStrictEqual({ a: 1 })
   })
 
   it('is nothing where the path runs off the tree', () => {
-    expect(settingAt({ a: 1 }, ['a', 'b'])).toBeUndefined()
-    expect(settingAt(null, ['a'])).toBeUndefined()
+    expect(getSettingAt({ a: 1 }, ['a', 'b'])).toBeUndefined()
+    expect(getSettingAt(null, ['a'])).toBeUndefined()
   })
 })

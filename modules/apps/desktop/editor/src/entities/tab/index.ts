@@ -14,7 +14,7 @@ export {
   DECK,
   DOCUMENT,
   FILES,
-  minted,
+  generateId,
   NOTE,
   PLEX,
   PRESET,

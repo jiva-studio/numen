@@ -2,7 +2,7 @@
  * Wire adapter for DocumentService and OcrService.
  */
 import type { Run as RunMessage } from '@numen/protocol'
-import { asset, named, stamp, waiting } from '@/shared/answers'
+import { asset, getBytesQuery, stamp, waiting } from '@/shared/answers'
 import * as clients from '@/shared/clients'
 import type { Documents, PageHighlight, Rect } from '../types'
 
@@ -39,7 +39,7 @@ export const documents: Documents = {
     }
   },
   getPageUrl: (path, at, wide, seen = '') =>
-    `${asset(path)}/pages/${at}?wide=${wide}&${named(seen)}`,
+    `${asset(path)}/pages/${at}?wide=${wide}&${getBytesQuery(seen)}`,
   getHighlights: async (path, spans) => {
     const answer = await waiting(() => served.ocr.readOcr({ path, spans: [...spans] }))
     return spans.map((_, at) => {

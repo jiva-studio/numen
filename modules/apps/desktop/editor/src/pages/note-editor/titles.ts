@@ -55,7 +55,7 @@ export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
   }
 
   /** Every note that has settled, each with the file it settled at. */
-  const settled = (): readonly SettledNote[] =>
+  const getSettledNotes = (): readonly SettledNote[] =>
     notes
       .all()
       .filter((id) => notes.shown(id).state === 'clean')
@@ -65,14 +65,14 @@ export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
    * A note is asked what it is called once what was typed into it has landed,
    * and again once it settles at another file.
    */
-  watch(settled, (now, before) => {
+  watch(getSettledNotes, (now, before) => {
     for (const one of now) {
       if (!before?.some((was) => was.id === one.id && was.at === one.at)) void asks(one.id)
     }
   })
 
   /** What one note is called, and the file it stands at while nothing has named it. */
-  const called = (id: string): string => titles.value.get(id) ?? notes.where(id)
+  const getTitle = (id: string): string => titles.value.get(id) ?? notes.where(id)
 
-  return { titles, calls, forgets, called }
+  return { titles, calls, forgets, getTitle }
 }

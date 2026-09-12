@@ -18,16 +18,16 @@ import { WORDS as words } from '@/shared/words'
 import type { NoteType, Source } from '@/shared/file'
 
 /** A window that has been told nothing, which can do every run. */
-const anything = () => true
+const canRunAnything = () => true
 
 /** Every menu the tree draws: off every row, and on a row of each kind. */
 const inTheTree = [
-  itemsFor(null, false, anything),
+  itemsFor(null, false, canRunAnything),
   ...(['note', 'book', 'recording', 'other'] as Source[]).flatMap((source) => [
-    itemsFor({ source, folder: false }, false, anything),
-    itemsFor({ source, folder: true }, false, anything),
+    itemsFor({ source, folder: false }, false, canRunAnything),
+    itemsFor({ source, folder: true }, false, canRunAnything),
   ]),
-  itemsFor({ source: 'note', folder: false }, true, anything),
+  itemsFor({ source: 'note', folder: false }, true, canRunAnything),
 ].flat()
 
 describe('the icon a command is drawn with', () => {

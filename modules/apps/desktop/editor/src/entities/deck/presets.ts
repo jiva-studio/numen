@@ -53,7 +53,7 @@ export const loadOn = (load: Load, day: string): number => load[day] ?? WHOLE_LO
 /**
  * The load with one day put at a share.
  */
-export const loaded = (load: Load, day: string, share: number): Load => {
+export const setLoadOn = (load: Load, day: string, share: number): Load => {
   const out: Record<string, number> = { ...load }
   if (share === WHOLE_LOAD) delete out[day]
   else out[day] = share
@@ -241,7 +241,7 @@ export const presets: Presets = {
   },
   curve: async (path, settings) => {
     const answer = await asking.computeCurve({ path, settings: sent(settings) })
-    return curved(answer.curve)
+    return parseCurve(answer.curve)
   },
 }
 
@@ -255,25 +255,25 @@ const took = (answer: {
   preset: answer.preset ? held(answer.preset) : null,
   error: errorIn(answer),
   at: stamp(answer.at) ?? "",
-  bounds: bounded(answer.bounds),
+  bounds: parseSettingsBounds(answer.bounds),
 })
 
 /** How far each setting goes, as the read answered it. */
-const bounded = (said: SettingsBoundsMessage | undefined): SettingsBounds => {
+const parseSettingsBounds = (said: SettingsBoundsMessage | undefined): SettingsBounds => {
   const out: { -readonly [field in keyof SettingsBounds]: Bounds } = {}
   if (said === undefined) return out
-  if (said.minutesADay) out.minutesADay = ranged(said.minutesADay)
-  if (said.newADay) out.newADay = ranged(said.newADay)
-  if (said.reviewsADay) out.reviewsADay = ranged(said.reviewsADay)
-  if (said.retention) out.retention = ranged(said.retention)
-  if (said.backlog) out.backlog = ranged(said.backlog)
-  if (said.interval) out.interval = ranged(said.interval)
-  if (said.load) out.load = ranged(said.load)
+  if (said.minutesADay) out.minutesADay = parseBounds(said.minutesADay)
+  if (said.newADay) out.newADay = parseBounds(said.newADay)
+  if (said.reviewsADay) out.reviewsADay = parseBounds(said.reviewsADay)
+  if (said.retention) out.retention = parseBounds(said.retention)
+  if (said.backlog) out.backlog = parseBounds(said.backlog)
+  if (said.interval) out.interval = parseBounds(said.interval)
+  if (said.load) out.load = parseBounds(said.load)
   return out
 }
 
 /** One pair of ends, in the window's own words. */
-const ranged = (said: BoundsMessage): Bounds => ({ least: said.least, most: said.most })
+const parseBounds = (said: BoundsMessage): Bounds => ({ least: said.least, most: said.most })
 
 /** One preset as the window carries it. */
 const held = (one: PresetMessage): Preset => ({
@@ -321,7 +321,7 @@ const sent = (settings: Settings) => ({
 })
 
 /** A curve as the window carries it. An answer holding none is an empty one. */
-const curved = (said: CurveMessage | undefined): Curve => ({
+const parseCurve = (said: CurveMessage | undefined): Curve => ({
   goal: (said && goalOf[said.goal]) ?? DEFAULTS.goal,
   grid: said?.grid ?? [],
   days: said?.days ?? [],
@@ -339,8 +339,8 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     short: one.short,
     backlog: one.backlog,
   })),
-  now: placed(said?.now),
-  suggested: placed(said?.suggested),
+  now: parsePlace(said?.now),
+  suggested: parsePlace(said?.suggested),
   decks: said?.decks ?? 0,
   cards: said?.cards ?? 0,
   overdue: said?.overdue ?? 0,
@@ -349,7 +349,7 @@ const curved = (said: CurveMessage | undefined): Curve => ({
   honest: true,
 })
 
-const placed = (said: PlaceMessage | undefined): Place =>
+const parsePlace = (said: PlaceMessage | undefined): Place =>
   said === undefined ? NOWHERE : { at: said.at, value: said.value, day: said.day }
 
 /**

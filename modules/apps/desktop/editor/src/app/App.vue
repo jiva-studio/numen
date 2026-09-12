@@ -42,7 +42,7 @@ const {
   places,
   shut,
   tabIcon,
-  titled,
+  getTitle,
   where,
 } = useWindow()
 
@@ -110,7 +110,7 @@ function onForgetNotice(id: string) {
 
     <UnsavedChangesPrompt
       :conflicts="going.conflicts.value"
-      :called="titled"
+      :called="getTitle"
       :words="unsaved"
     />
 

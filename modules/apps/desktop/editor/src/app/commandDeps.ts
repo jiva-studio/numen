@@ -18,14 +18,14 @@ export interface CommandDepsOptions {
   made: ReturnType<typeof createFileCreators>
   shown: Ref<VaultRef>
   reloads: () => void
-  carrying: (path: string) => Promise<void>
+  loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
   opensPreset: (path: string) => Promise<void>
   dressed: { chooses: (item: string) => Promise<void> | void }
   oneName: { chooses: (item: string) => Promise<void> | void }
   hungParts: { chooses: (item: string) => Promise<void> | void; choosesCount: (item: string) => Promise<void> | void }
-  recorded: { deleted?: (path: string) => void; onDelete?: (path: string) => void }
-  pointed: { deleted?: (path: string) => void; onDelete?: (path: string) => void }
+  recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
+  pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
   plexes: () => { travel: (path: string) => Promise<void> | void; leaves: (from: string, to: string) => Promise<void> | void }
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
@@ -43,7 +43,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     made,
     shown,
     reloads,
-    carrying,
+    loadArtifactStates,
     reached,
     opensPreset,
     dressed,
@@ -71,32 +71,32 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
       getArtifactStates: (path) => running.getArtifactStates(path),
       createArtifact: async (path, of) => {
         const outcome = await running.createArtifact(path, of)
-        void carrying(path)
+        void loadArtifactStates(path)
         return outcome
       },
       fetchArtifact: async (path) => {
         const outcome = await running.fetchArtifact(path)
-        void carrying(path)
+        void loadArtifactStates(path)
         return outcome
       },
       correctArtifact: async (path) => {
         const outcome = await running.correctArtifact(path)
-        void carrying(path)
+        void loadArtifactStates(path)
         return outcome
       },
       deleteTranscript: async (path) => {
         const able = await running.deleteTranscript(path)
         if (able) {
-          ;(recorded.onDelete ?? recorded.deleted)?.(path)
-          ;(pointed.onDelete ?? pointed.deleted)?.(path)
+          ;(recorded.onDelete ?? recorded.reloadTranscript)?.(path)
+          ;(pointed.onDelete ?? pointed.reloadTranscript)?.(path)
         }
-        void carrying(path)
+        void loadArtifactStates(path)
         return able
       },
       deleteCopy: async (path) => {
         const able = await running.deleteCopy(path)
         if (able) {
-          void carrying(path)
+          void loadArtifactStates(path)
         }
         return able
       },

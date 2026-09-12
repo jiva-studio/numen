@@ -32,24 +32,24 @@ const NOTED: ReadonlyMap<string, string> = new Map(
 )
 
 /** One command over a note, in the group it stands in. */
-const noted = (id: string, group: string): readonly MenuItem[] => {
+const getNoteCommand = (id: string, group: string): readonly MenuItem[] => {
   const text = NOTED.get(id)
   return text === undefined ? [] : [{ id, text, group }]
 }
 
 /** What is offered on a node, in the order it is drawn. */
 export const ITEMS: readonly MenuItem[] = [
-  ...noted('read', BAND.open),
-  ...noted('travel', BAND.open),
-  ...noted('preset', BAND.open),
-  ...noted('copy', BAND.file),
-  ...noted('reveal', BAND.file),
-  ...noted('child', BAND.plex),
-  ...noted('parent', BAND.plex),
-  ...noted('jump', BAND.plex),
-  ...noted('title', BAND.plex),
-  ...noted('ask', BAND.agent),
-  ...noted('remove', BAND.remove),
+  ...getNoteCommand('read', BAND.open),
+  ...getNoteCommand('travel', BAND.open),
+  ...getNoteCommand('preset', BAND.open),
+  ...getNoteCommand('copy', BAND.file),
+  ...getNoteCommand('reveal', BAND.file),
+  ...getNoteCommand('child', BAND.plex),
+  ...getNoteCommand('parent', BAND.plex),
+  ...getNoteCommand('jump', BAND.plex),
+  ...getNoteCommand('title', BAND.plex),
+  ...getNoteCommand('ask', BAND.agent),
+  ...getNoteCommand('remove', BAND.remove),
 ]
 
 /** What is offered off every node. */

@@ -72,7 +72,7 @@ export interface Recordings {
  * The cue being said at a millisecond, and the last one said where a silence
  * stands there. Nothing until the first cue begins.
  */
-const holding = (cues: readonly Cue[], ms: number): number => {
+const findCueAt = (cues: readonly Cue[], ms: number): number => {
   for (let at = cues.length - 1; at >= 0; at--) {
     if (cues[at]!.from <= ms) return at
   }
@@ -154,7 +154,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     frame.value = player
     framed.value = -1
   }
-  const reached = (ms: number) => {
+  const setFrameTime = (ms: number) => {
     framed.value = ms
   }
 
@@ -189,7 +189,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
 
   /** Which line is being said now, and nothing where none has begun. */
   const current = computed(() =>
-    frame.value && framed.value < 0 ? -1 : holding(spans.value, now.value),
+    frame.value && framed.value < 0 ? -1 : findCueAt(spans.value, now.value),
   )
 
   /** Whether the tab this recording stands in is still open. */
@@ -298,7 +298,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   }
 
   /** The person typed. The words are written once they have been still. */
-  const typed = (body: string) => {
+  const setProse = (body: string) => {
     if (!open || body === prose.value) return
     prose.value = body
     owed = true
@@ -451,14 +451,14 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     timed,
     written,
     playsIn,
-    reached,
+    setFrameTime,
     working,
     error,
     broken,
     go,
     goes,
     follows,
-    typed,
+    setProse,
     keep,
     again,
     playing,

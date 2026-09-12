@@ -25,7 +25,7 @@ export function createConflictCoordinator(
 ) {
   const keep = (id: string): void => turn(id, { kind: 'keeping' })
   const take = (id: string): void => turn(id, { kind: 'taking' })
-  const changed = (
+  const notifyChanged = (
     allIds: () => readonly string[],
     paths: readonly string[],
     renamed: readonly PathRename[] = [],
@@ -36,7 +36,7 @@ export function createConflictCoordinator(
   return {
     keep,
     take,
-    changed,
+    notifyChanged,
     stale: (id: string) => staleOf(getTab(id)),
     getErrorMessage: (id: string) => getErrorMessage(getTab(id)),
   }

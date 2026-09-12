@@ -51,7 +51,7 @@ export const ladder = (range: Bounds): readonly number[] => {
 }
 
 /** The size those digits name, and nothing where what was typed is not digits. */
-export const typedSize = (typed: string): number | null => {
+export const parseSize = (typed: string): number | null => {
   const said = TYPED.exec(typed.trim())
   return said ? Number(said[1]) / 100 : null
 }

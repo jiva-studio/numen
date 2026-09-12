@@ -22,25 +22,25 @@ export * from './tabState'
 export const tabAfter = (tab: Tab, event: Event, limits: WriteLimits = waiting): Transition => {
   switch (event.kind) {
     case 'read':
-      return answered(tab, event.generation, event.answer)
+      return applyRead(tab, event.generation, event.answer)
     case 'typed':
-      return typed(tab, event.body, event.at, limits)
+      return applyEdit(tab, event.body, event.at, limits)
     case 'fired':
-      return fired(tab)
+      return applyTimer(tab)
     case 'written':
-      return landed(tab, event.answer)
+      return applyWrite(tab, event.answer)
     case 'changed':
-      return changed(tab, event.paths, event.renamed)
+      return applyChange(tab, event.paths, event.renamed)
     case 'saving':
-      return saving(tab)
+      return applySave(tab)
     case 'settling':
-      return settling(tab)
+      return applySettle(tab)
     case 'keeping':
-      return keeping(tab)
+      return applyKeep(tab)
     case 'taking':
-      return taking(tab)
+      return applyTake(tab)
     case 'closing':
-      return closing(tab)
+      return applyClose(tab)
   }
 }
 
@@ -67,7 +67,7 @@ const begins = (tab: Tab, seen: NoteBaseline | null): Transition => ({
 /**
  * A read is applied to a tab with nothing unsaved and only for the generation asked for last.
  */
-const answered = (tab: Tab, generation: number, answer: ReadResult): Transition => {
+const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition => {
   const state = stateOf(tab)
   const loading = state === 'loading'
   const stale = generation !== tab.reading
@@ -98,7 +98,7 @@ const armFor = (since: number, at: number, limits: WriteLimits): number =>
 const mends = (tab: Tab): boolean =>
   tab.written !== null && tab.error !== null && MENDABLE_ERRORS.includes(tab.error)
 
-const typed = (tab: Tab, body: string, at: number, limits: WriteLimits): Transition => {
+const applyEdit = (tab: Tab, body: string, at: number, limits: WriteLimits): Transition => {
   const state = stateOf(tab)
   if (state === 'loading') return still(tab)
   const error = mends(tab) ? null : tab.error
@@ -108,7 +108,7 @@ const typed = (tab: Tab, body: string, at: number, limits: WriteLimits): Transit
   return { tab: next, effects: [{ kind: 'arm', after: armFor(since, at, limits) }] }
 }
 
-const fired = (tab: Tab): Transition => {
+const applyTimer = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'loading') return still(tab)
   if (state === 'unsaved') return begins(tab, seenOf(tab))
@@ -116,7 +116,7 @@ const fired = (tab: Tab): Transition => {
   return still(tab)
 }
 
-const landed = (tab: Tab, answer: WriteResult): Transition => {
+const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
   if (tab.pendingWrite === null) return still(tab)
   if (answer.kind === 'error') {
     return {
@@ -141,7 +141,7 @@ const landed = (tab: Tab, answer: WriteResult): Transition => {
   return tab.hasPendingWrite ? begins(written, seenOf(written)) : still(written)
 }
 
-const changed = (tab: Tab, paths: readonly string[], renamed: readonly Move[]): Transition => {
+const applyChange = (tab: Tab, paths: readonly string[], renamed: readonly Move[]): Transition => {
   const went = renamed.find((one) => one.from === tab.path)
   const next = went ? { ...tab, path: went.to, isDeleted: false } : tab
 
@@ -157,7 +157,7 @@ const changed = (tab: Tab, paths: readonly string[], renamed: readonly Move[]): 
 /**
  * A save asked for now writes what is unsaved and owes one to a write in the air.
  */
-const saving = (tab: Tab): Transition => {
+const applySave = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'unsaved') return begins(tab, seenOf(tab))
   if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
@@ -167,7 +167,7 @@ const saving = (tab: Tab): Transition => {
 /**
  * Settling disarms the timer and writes unsaved text immediately.
  */
-const settling = (tab: Tab): Transition => {
+const applySettle = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'unsaved') {
     const going = begins(tab, seenOf(tab))
@@ -180,14 +180,14 @@ const settling = (tab: Tab): Transition => {
 }
 
 /** Keep: what is on screen goes to the file. */
-const keeping = (tab: Tab): Transition => {
+const applyKeep = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state !== 'stale' && state !== 'gone') return still(tab)
   return begins(tab, null)
 }
 
 /** Take: the file is read again, replacing the buffer. */
-const taking = (tab: Tab): Transition => {
+const applyTake = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state !== 'stale') return still(tab)
   const reading = tab.reading + 1
@@ -200,7 +200,7 @@ const taking = (tab: Tab): Transition => {
 /**
  * Closes the tab, saving unsaved changes or holding if writes or conflicts are pending.
  */
-const closing = (tab: Tab): Transition => {
+const applyClose = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (tab.error && state === 'stuck') {
     if (tab.written !== null && dirty(tab) && MENDABLE_ERRORS.includes(tab.error)) {

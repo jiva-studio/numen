@@ -8,7 +8,7 @@
  * draws anything.
  */
 import { formatErrorMessage } from '@numen/wire'
-import { all, naming, type CommandDeps, type CommandHandler, type Words } from '../deps'
+import { all, formatNames, type CommandDeps, type CommandHandler, type Words } from '../deps'
 export type { CommandDeps }
 import type { CommandInvocation } from '../target'
 import {
@@ -174,7 +174,7 @@ const removes = async (invocation: CommandInvocation, destroy: boolean, on: Comm
 
   if (refused.length > 0) return on.says(all(...refused), 'error')
   if (waiting) return on.says(words.unanswered, 'caution')
-  on.says(naming(words.dangling, dangling))
+  on.says(formatNames(words.dangling, dangling))
 }
 
 export * from './noteHandlers'

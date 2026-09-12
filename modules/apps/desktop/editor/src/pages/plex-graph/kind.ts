@@ -24,7 +24,7 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
     kind: PLEX,
     opens: (at) => {
       const state = usePlexTab(makes(), deps)
-      const from = at || looking() || deps.opening.value
+      const from = at || getCurrentPath() || deps.opening.value
       if (from) void state.view.go(from)
       return state
     },
@@ -47,7 +47,7 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
     getAttention: (state) => ({ path: state.view.here.value }),
   }
 
-  const looking = (): string => front()?.view.here.value ?? ''
+  const getCurrentPath = (): string => front()?.view.here.value ?? ''
 
   const names = (path: string): string => (path ? (front()?.getName(path) ?? '') : '')
 
@@ -87,5 +87,5 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
     )
   }
 
-  return { kind, looking, names, travel, leaves, again }
+  return { kind, looking: getCurrentPath, names, travel, leaves, again }
 }

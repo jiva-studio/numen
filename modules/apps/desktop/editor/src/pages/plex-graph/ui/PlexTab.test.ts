@@ -36,7 +36,7 @@ const held = () =>
     made: async () => {},
     joinNodes: async () => {},
     joined: async () => {},
-    bringNodes: async () => {},
+    dropNodes: async () => {},
     brought: async () => {},
     openNode: () => {},
     opens: () => {},
@@ -154,33 +154,33 @@ describe('a menu asked for over a tab drawing no picture', () => {
 
 describe('what a node is drawn before its title', () => {
   /** A tab whose nodes are of the kinds a test names. */
-  const typed = (types: Record<string, NoteType>) =>
+  const createTypedTab = (types: Record<string, NoteType>) =>
     ({ ...held(), typeOf: (node: string) => types[node] ?? 'note' }) as unknown as PlexTabState
 
   it('is the icon the tree draws a deck under', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { state: typed({ 'Root.md': 'deck' }) } })
+    const view = mount(PlexTab, { props: { state: createTypedTab({ 'Root.md': 'deck' }) } })
 
     expect(view.findComponent(iconFor('deck')!).exists()).toBe(true)
   })
 
   it('is the icon the tree draws a stencil under', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { state: typed({ 'Root.md': 'stencil' }) } })
+    const view = mount(PlexTab, { props: { state: createTypedTab({ 'Root.md': 'stencil' }) } })
 
     expect(view.findComponent(iconFor('stencil')!).exists()).toBe(true)
   })
 
   it('is nothing at all for an ordinary note, which keeps no room for one', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { state: typed({}) } })
+    const view = mount(PlexTab, { props: { state: createTypedTab({})} })
 
     expect(view.find('.plex__icon').exists()).toBe(false)
   })
 
   it('stands on the node it is about, and on no other', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { state: typed({ 'Child.md': 'deck' }) } })
+    const view = mount(PlexTab, { props: { state: createTypedTab({ 'Child.md': 'deck' }) } })
 
     expect(view.get('[aria-label^="Child"]').find('.plex__icon').exists()).toBe(true)
     expect(view.get('[aria-label^="Root"]').find('.plex__icon').exists()).toBe(false)

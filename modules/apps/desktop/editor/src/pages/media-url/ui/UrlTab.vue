@@ -35,7 +35,7 @@ function onChoose(id: string) {
 }
 
 function onTimeUpdate(ms: number) {
-  props.state.reached(ms)
+  props.state.setFrameTime(ms)
 }
 
 // --- Helpers ---

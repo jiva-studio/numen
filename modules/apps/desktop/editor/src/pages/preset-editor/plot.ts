@@ -225,7 +225,7 @@ export const positionLabel = (at: Position): CSSProperties => {
 }
 
 /** The room that name takes, which the knob's own figures stand clear of. */
-export const namingBox = (at: Position): Box => {
+export const getNameBox = (at: Position): Box => {
   const back = at.x < LEFT + LABEL ? 0 : at.x > RIGHT - LABEL ? LABEL * 2 : LABEL
   return {
     x: at.x - back,
@@ -314,7 +314,7 @@ export const labelsOf = (marks: readonly Mark[], over: Box | null): readonly Lab
   const out: Label[] = []
   for (const mark of marks) {
     if (!mark.text) continue
-    const box = namingBox(mark.at)
+    const box = getNameBox(mark.at)
     if (!placed.every((one) => apart(box, one))) continue
     placed.push(box)
     out.push({ key: mark.key, text: mark.text, at: positionLabel(mark.at), box })

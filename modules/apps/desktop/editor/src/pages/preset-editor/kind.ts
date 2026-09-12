@@ -40,7 +40,7 @@ export function usePresetTab(
     return one && createPresetState(one, id, handle, closePreset, core, bounds, said, today, titles)
   }
 
-  const called = (path: string): string =>
+  const getTitle = (path: string): string =>
     titles.get(path) || fileOf(path) || words.newPreset
 
   const kind: TabKind<PresetTabState, typeof PRESET> = {
@@ -51,7 +51,7 @@ export function usePresetTab(
       void readPreset(one, core, bounds, titles, today())
       return createPresetState(one, path, handle, closePreset, core, bounds, said, today, titles)
     },
-    called: (one) => called(one.id),
+    called: (one) => getTitle(one.id),
     draws: PresetTab,
     identity: (path) => path,
     shuts: (one, id) => {
@@ -68,7 +68,7 @@ export function usePresetTab(
 
   puts.holds('preset', shows)
 
-  const changed = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
+  const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     for (const went of renamed) {
       const title = titles.get(went.from)
       if (title !== undefined) titles.set(went.to, title)
@@ -93,5 +93,5 @@ export function usePresetTab(
     )
   }
 
-  return { kind, holds, changed, called, shows, flush }
+  return { kind, holds, changed: applyPathChanges, called: getTitle, shows, flush }
 }

@@ -25,7 +25,7 @@ describe('a preset that schedules nothing', () => {
   )
 
   /** The tab drawn for a preset stopped for that reason. */
-  const stopped = (why: StopReason) => {
+  const mountStoppedTab = (why: StopReason) => {
     const { state } = tabAt()
     return mount(PresetTab, { props: { state: { ...state, stopped: ref(why) } } })
   }
@@ -38,21 +38,21 @@ describe('a preset that schedules nothing', () => {
 
   it('says why, in the words that verdict has', () => {
     for (const why of STOPPING) {
-      expect(stopped(why).get('[data-preset="stopped"]').text(), `${why}`).toBe(words.stopped(why))
+      expect(mountStoppedTab(why).get('[data-preset="stopped"]').text(), `${why}`).toBe(words.stopped(why))
     }
   })
 
   it('says nothing at all of a preset that schedules', () => {
-    expect(stopped(StopReason.NOTHING).findAll('[data-preset="stopped"]')).toHaveLength(0)
-    expect(stopped(StopReason.UNSPECIFIED).findAll('[data-preset="stopped"]')).toHaveLength(0)
+    expect(mountStoppedTab(StopReason.NOTHING).findAll('[data-preset="stopped"]')).toHaveLength(0)
+    expect(mountStoppedTab(StopReason.UNSPECIFIED).findAll('[data-preset="stopped"]')).toHaveLength(0)
   })
 
   // A goal of a date reading no day, and a day of the week carrying none of the
   // load: neither is a reason the tab could reach on its own.
   it('says the reasons only the vault knows', () => {
-    expect(stopped(StopReason.NO_DAY).text()).toContain(words.stopped(StopReason.NO_DAY))
-    expect(stopped(StopReason.NO_LOAD).text()).toContain(words.stopped(StopReason.NO_LOAD))
-    expect(stopped(StopReason.NO_WEEK).text()).toContain(words.stopped(StopReason.NO_WEEK))
+    expect(mountStoppedTab(StopReason.NO_DAY).text()).toContain(words.stopped(StopReason.NO_DAY))
+    expect(mountStoppedTab(StopReason.NO_LOAD).text()).toContain(words.stopped(StopReason.NO_LOAD))
+    expect(mountStoppedTab(StopReason.NO_WEEK).text()).toContain(words.stopped(StopReason.NO_WEEK))
   })
 
   // One quiet day promises a next day that carries some load, and a week at

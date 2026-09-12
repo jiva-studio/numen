@@ -84,7 +84,7 @@ const BOUNDS: SettingsBounds = {
 }
 
 /** A tab standing at those settings, holding the place the knob was moved to. */
-const holding = (args: Knobs): PresetTabState => {
+const createPresetTab = (args: Knobs): PresetTabState => {
   const place = ref(args.place)
   const drawn = curve({ goal: args.goal, honest: args.honest })
   return {
@@ -117,8 +117,8 @@ const holding = (args: Knobs): PresetTabState => {
 const bothWays = (args: Knobs) => ({
   components: { PresetTab },
   setup: () => ({
-    answered: holding({ ...args, honest: true, waiting: false }),
-    waiting: holding({ ...args, honest: false, waiting: true }),
+    answered: createPresetTab({ ...args, honest: true, waiting: false }),
+    waiting: createPresetTab({ ...args, honest: false, waiting: true }),
   }),
   template: `
     <div class="numen" style="height:100vh;overflow:auto;background:var(--numen-surface)">
@@ -139,7 +139,7 @@ const roomsIn = (tab: HTMLElement): readonly HTMLElement[] =>
 /** The tab in the room a window gives it. */
 const room = (args: Knobs) => ({
   components: { PresetTab },
-  setup: () => ({ state: holding(args) }),
+  setup: () => ({ state: createPresetTab(args) }),
   template: `
     <div class="numen" style="height:100vh;overflow:auto;background:var(--numen-surface)">
       <PresetTab :state="state" />

@@ -36,7 +36,7 @@ const NOTED: ReadonlyMap<string, string> = new Map(
 )
 
 /** One command over a note, in the group it stands in. */
-const noted = (id: string, group: string): readonly MenuItem[] => {
+const getNoteCommand = (id: string, group: string): readonly MenuItem[] => {
   const text = NOTED.get(id)
   return text === undefined ? [] : [{ id, text, group }]
 }
@@ -55,30 +55,30 @@ const OWN: readonly MenuItem[] = [...MADE, { id: RENAME, text: own.rename, group
 
 /** What a row standing for a note offers. */
 const NOTE: readonly MenuItem[] = [
-  ...noted('read', GROUP.open),
-  ...noted('travel', GROUP.open),
+  ...getNoteCommand('read', GROUP.open),
+  ...getNoteCommand('travel', GROUP.open),
   ...OWN,
-  ...noted('copy', GROUP.file),
-  ...noted('child', GROUP.plex),
-  ...noted('parent', GROUP.plex),
-  ...noted('jump', GROUP.plex),
-  ...noted('title', GROUP.plex),
-  ...noted('ask', GROUP.agent),
-  ...noted('remove', GROUP.remove),
+  ...getNoteCommand('copy', GROUP.file),
+  ...getNoteCommand('child', GROUP.plex),
+  ...getNoteCommand('parent', GROUP.plex),
+  ...getNoteCommand('jump', GROUP.plex),
+  ...getNoteCommand('title', GROUP.plex),
+  ...getNoteCommand('ask', GROUP.agent),
+  ...getNoteCommand('remove', GROUP.remove),
 ]
 
 /**
  * What a row standing for anything but a note offers, with the runs its kind
  * can be put through.
  */
-const filed = (...runs: readonly MenuItem[]): readonly MenuItem[] => [
+const getFileMenu = (...runs: readonly MenuItem[]): readonly MenuItem[] => [
   ...OWN,
-  ...noted('copy', GROUP.file),
+  ...getNoteCommand('copy', GROUP.file),
   ...runs,
   { id: 'remove', text: own.remove, group: GROUP.remove },
 ]
 
-const FILED = filed()
+const FILED = getFileMenu()
 
 /** The run a recording can be put through, and the one a scan can. */
 const TRANSCRIBE: MenuItem = { id: 'transcribe', text: own.transcribe, group: GROUP.run }
@@ -96,7 +96,7 @@ const DELETE_COPY: MenuItem = { id: 'deleteCopy', text: own.deleteCopy, group: G
 
 /** The run offered where this build can do it, and the file's own items alone where it cannot. */
 const runnable = (run: MenuItem, canRun: RunGuard): readonly MenuItem[] =>
-  canRun(run.id) ? filed(run) : FILED
+  canRun(run.id) ? getFileMenu(run) : FILED
 
 /**
  * What a url offers: everything a file offers, and the runs over what is at the
@@ -104,7 +104,7 @@ const runnable = (run: MenuItem, canRun: RunGuard): readonly MenuItem[] =>
  * person is told this build does not do it.
  */
 const urls = (canRun: RunGuard): readonly MenuItem[] =>
-  filed(
+  getFileMenu(
     ...(canRun(DOWNLOAD_TEXT.id) ? [DOWNLOAD_TEXT] : []),
     ...(canRun(DOWNLOAD_COPY.id) ? [DOWNLOAD_COPY] : []),
     ...(canRun(DELETE_TEXT.id) ? [DELETE_TEXT] : []),
@@ -144,7 +144,7 @@ export const itemsFor = (
 
 /** What the menu offers anywhere. A choice outside this is not the menu's. */
 export const OFFERED: ReadonlySet<string> = new Set(
-  [...NOTE, ...filed(TRANSCRIBE, RECOGNISE), ...MADE, DOWNLOAD_TEXT, DOWNLOAD_COPY, DELETE_TEXT, DELETE_COPY].map(
+  [...NOTE, ...getFileMenu(TRANSCRIBE, RECOGNISE), ...MADE, DOWNLOAD_TEXT, DOWNLOAD_COPY, DELETE_TEXT, DELETE_COPY].map(
     (one) => one.id,
   ),
 )

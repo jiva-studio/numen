@@ -1,11 +1,11 @@
 /** What the settings file holds, and how the window is drawn from it. */
-export { DESIGNED, ladder, MODES, NOWHERE, reaches, SCHEMES, typedSize } from './appearance'
+export { DESIGNED, ladder, MODES, NOWHERE, parseSize, reaches, SCHEMES } from './appearance'
 export type { Configuration, Model, Presence, SettingEdit } from './configuration'
 export { DEFAULT_PARTS, ladder as hangingLadder } from './hanging'
 export type { HangingSettings } from './hanging'
 export { DEFAULT_STARTS, reviewSetting } from './review'
 export type { ReviewSettings } from './review'
-export { settingAt, settingsStore } from './store'
+export { getSettingAt, settingsStore } from './store'
 export { themes } from './theme'
 export type { Appearance, Bounds, Mode, Ranges, Scales, Sizes, Theme, Themes } from './theme'
 export { write } from './write'

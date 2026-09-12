@@ -21,12 +21,12 @@ export {
   DEFAULTS,
   GOALS,
   LOADS,
-  loaded,
   loadOn,
   NO_BOUNDS,
   NOWHERE,
   presets,
   RULES,
+  setLoadOn,
   WHOLE_LOAD,
 } from './presets'
 export type {

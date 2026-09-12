@@ -9,7 +9,7 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import { commandsOf } from '../lib/commands'
 import { runSupport } from '../runs'
 import { invocationOf, type CommandInvocation, type CommandTarget } from '../target'
-import { reaching, type CommandDeps, type Store } from '../deps'
+import { createNotes, type CommandDeps, type Store } from '../deps'
 import { does } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/shared/artifacts'
 import type { Movement } from '@/shared/file'
@@ -40,7 +40,7 @@ const known = (id: string, name: string): Vault => ({
   missing: false,
 })
 
-const renamed = (over: Partial<RenameResult> = {}): RenameResult => ({
+const createRenameResult = (over: Partial<RenameResult> = {}): RenameResult => ({
   path: 'physics/Entropy.md',
   title: 'Entropy',
   hasFrontmatter: false,
@@ -58,7 +58,7 @@ const outcome = (of: Artifact, made: ArtifactState, error = ''): Outcome => ({
   error,
 })
 
-const removed = (over: Partial<RemoveResult> = {}): RemoveResult => ({
+const createRemoveResult = (over: Partial<RemoveResult> = {}): RemoveResult => ({
   trashed: '.trash/Ontology.md',
   dangling: [],
   error: null,
@@ -116,11 +116,11 @@ const window = (
       },
       renames: async (path, title) => {
         done.push(`renames ${path} ${title}`)
-        return answers.renamed ?? renamed()
+        return answers.renamed ?? createRenameResult()
       },
       removes: async (path, destroy) => {
         done.push(`removes ${path} ${destroy}`)
-        return answers.removed ?? removed()
+        return answers.removed ?? createRemoveResult()
       },
       moves: async (from, to) => {
         done.push(`moves ${from} ${to}`)
@@ -388,14 +388,14 @@ const REACHED: readonly ArtifactState[] = [
 ]
 
 /** An artifact of the recording in front asked for, as it came out. */
-const asked = (made: ArtifactState, error = '') => {
+const createArtifactRun = (made: ArtifactState, error = '') => {
   const one = window({ outcome: outcome('transcript', made, error) })
   return { one, invocation: invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })) }
 }
 
 describe('an artifact asked for over a file', () => {
   it('asks the application over that file', async () => {
-    const { one, invocation } = asked('running')
+    const { one, invocation } = createArtifactRun('running')
 
     await carry(invocation, one.on)
 
@@ -406,7 +406,7 @@ describe('an artifact asked for over a file', () => {
   // happened.
   it('says what it now stands at, in the window’s own words', async () => {
     for (const made of REACHED) {
-      const { one, invocation } = asked(made)
+      const { one, invocation } = createArtifactRun(made)
 
       await carry(invocation, one.on)
 
@@ -418,7 +418,7 @@ describe('an artifact asked for over a file', () => {
   // asked for work, and none is being done.
   it('says a run under way as a report and the rest as errors', async () => {
     for (const made of REACHED) {
-      const { one, invocation } = asked(made)
+      const { one, invocation } = createArtifactRun(made)
 
       await carry(invocation, one.on)
 
@@ -429,7 +429,7 @@ describe('an artifact asked for over a file', () => {
   // The person asked for this one by name, and a recording already transcribed
   // would otherwise look like a command that did nothing.
   it('says a recording already transcribed has been transcribed', async () => {
-    const { one, invocation } = asked('done')
+    const { one, invocation } = createArtifactRun('done')
 
     await carry(invocation, one.on)
 
@@ -440,7 +440,7 @@ describe('an artifact asked for over a file', () => {
   // gets the same until that record is taken away.
   it('says what a run said about a recording it could not open', async () => {
     const said = 'mp3: MPEG version 2.5 is not supported'
-    const { one, invocation } = asked('failed', said)
+    const { one, invocation } = createArtifactRun('failed', said)
 
     await carry(invocation, one.on)
 
@@ -534,7 +534,7 @@ describe('a note renamed', () => {
   })
 
   it('says the note was written elsewhere while this was asked', async () => {
-    const one = window({ renamed: renamed({ hasChanged: true }) })
+    const one = window({ renamed: createRenameResult({ hasChanged: true }) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -559,7 +559,7 @@ describe('a note renamed', () => {
 
   it('says nothing of the notes whose links it wrote again', async () => {
     const one = window({
-      renamed: renamed({
+      renamed: createRenameResult({
         moved: {
           from: 'physics/Ontology.md',
           to: 'physics/Entropy.md',
@@ -574,7 +574,7 @@ describe('a note renamed', () => {
   })
 
   it('says nothing of the title it wrote into the frontmatter', async () => {
-    const one = window({ renamed: renamed({ hasFrontmatter: true }) })
+    const one = window({ renamed: createRenameResult({ hasFrontmatter: true }) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -582,7 +582,7 @@ describe('a note renamed', () => {
   })
 
   it('says the name was taken, and that the note carries the new one', async () => {
-    const one = window({ renamed: renamed({ error: 'occupied' }) })
+    const one = window({ renamed: createRenameResult({ error: 'occupied' }) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -590,7 +590,7 @@ describe('a note renamed', () => {
   })
 
   it('says a note whose frontmatter cannot be read cannot be renamed', async () => {
-    const one = window({ renamed: renamed({ error: 'unreadable' }) })
+    const one = window({ renamed: createRenameResult({ error: 'unreadable' }) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -598,7 +598,7 @@ describe('a note renamed', () => {
   })
 
   it('says a name no file can be named', async () => {
-    const one = window({ renamed: renamed({ error: 'unnameable' }) })
+    const one = window({ renamed: createRenameResult({ error: 'unnameable' }) })
 
     await carry(invocationOf('title', front(), '...'), one.on)
 
@@ -633,7 +633,7 @@ describe('a note removed', () => {
   })
 
   it('says the notes that link to nothing now', async () => {
-    const one = window({ removed: removed({ dangling: ['Order.md', 'Notes.md'] }) })
+    const one = window({ removed: createRemoveResult({ dangling: ['Order.md', 'Notes.md'] }) })
 
     await carry(invocationOf('remove', front()), one.on)
 
@@ -666,7 +666,7 @@ describe('a note removed', () => {
   })
 
   it('keeps the tab of a note the vault would not remove', async () => {
-    const one = window({ removed: removed({ error: 'missing' }) })
+    const one = window({ removed: createRemoveResult({ error: 'missing' }) })
 
     await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
@@ -674,7 +674,7 @@ describe('a note removed', () => {
   })
 
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
-    const one = window({ removed: removed({ error: 'missing' }) })
+    const one = window({ removed: createRemoveResult({ error: 'missing' }) })
 
     await carry(invocationOf('remove', front()), one.on)
 
@@ -718,7 +718,7 @@ describe('several files removed at once', () => {
   })
 
   it('says the notes that link to nothing now, each of them once', async () => {
-    const one = window({ removed: removed({ trashed: '', dangling: ['Order.md'] }) })
+    const one = window({ removed: createRemoveResult({ trashed: '', dangling: ['Order.md'] }) })
 
     await carry(invocationOf('remove', both), one.on)
 
@@ -733,7 +733,7 @@ describe('several files removed at once', () => {
         ...one.on.files,
         removes: async (path, destroy) => {
           one.done.push(`removes ${path} ${destroy}`)
-          return removed(path === 'physics/Ontology.md' ? { error: 'missing' } : {})
+          return createRemoveResult(path === 'physics/Ontology.md' ? { error: 'missing' } : {})
         },
       },
     }
@@ -750,12 +750,12 @@ describe('several files removed at once', () => {
 
 describe('a file filed somewhere else', () => {
   /** The destination is the whole path, so a name changed in one folder is a move. */
-  const moved = (to: string) => invocationOf('move', front(), to)
+  const createMoveInvocation = (to: string) => invocationOf('move', front(), to)
 
   it('is asked of the vault under the path it is filed at from now on', async () => {
     const one = window()
 
-    await carry(moved('notes/Ontology.md'), one.on)
+    await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
     expect(one.done).toStrictEqual(['settles held', 'moves physics/Ontology.md notes/Ontology.md'])
   })
@@ -763,7 +763,7 @@ describe('a file filed somewhere else', () => {
   it('settles the tab holding it before its file goes anywhere', async () => {
     const one = window()
 
-    await carry(moved('notes/Ontology.md'), one.on)
+    await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
     expect(one.done.indexOf('settles held')).toBeLessThan(
       one.done.indexOf('moves physics/Ontology.md notes/Ontology.md'),
@@ -773,7 +773,7 @@ describe('a file filed somewhere else', () => {
   it('stays where it is while its tab is waiting on the person', async () => {
     const one = window({ asking: true })
 
-    await carry(moved('notes/Ontology.md'), one.on)
+    await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
     expect(one.done).toStrictEqual([])
     expect(one.said).toStrictEqual([words.unanswered])
@@ -782,7 +782,7 @@ describe('a file filed somewhere else', () => {
   it('stays where it is where something of that name is filed there', async () => {
     const one = window({ movement: { moved: null, error: 'occupied' } })
 
-    await carry(moved('notes/Ontology.md'), one.on)
+    await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
     expect(one.said).toStrictEqual([words.occupied])
   })
@@ -790,7 +790,7 @@ describe('a file filed somewhere else', () => {
   it('says nothing of a note renamed, which is what a move is not', async () => {
     const one = window({ movement: { moved: null, error: 'occupied' } })
 
-    await carry(moved('notes/Ontology.md'), one.on)
+    await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
     expect(one.said).not.toContain(words.errors.occupied)
   })
@@ -798,7 +798,7 @@ describe('a file filed somewhere else', () => {
   it('asks the vault for nothing where it landed where it already was', async () => {
     const one = window()
 
-    await carry(moved('physics/Ontology.md'), one.on)
+    await carry(createMoveInvocation('physics/Ontology.md'), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -1097,7 +1097,7 @@ describe('the open files a command reaches', () => {
   const over = () => {
     const done: string[] = []
     const stores = [store('note', 'Ontology.md', done), store('Animals.md', 'Animals.md', done)]
-    return { done, notes: reaching(stores, { opens: () => {}, made: () => {} }) }
+    return { done, notes: createNotes(stores, { opens: () => {}, made: () => {} }) }
   }
 
   it('is the tab of whichever store stands at the file', () => {

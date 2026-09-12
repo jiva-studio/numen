@@ -41,7 +41,7 @@ export const CONVERSATION = 'conversation'
  * keeps a conversation under each name it hears, and a name stands for one of
  * them.
  */
-export const minted = (kind: string): string => `${kind}:${crypto.randomUUID()}`
+export const generateId = (kind: string): string => `${kind}:${crypto.randomUUID()}`
 
 /**
  * The plex with the room, and one pane along the trailing edge holding the

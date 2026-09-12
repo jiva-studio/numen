@@ -187,7 +187,7 @@ describe('the vault offered below the list', () => {
 })
 
 describe('a row activated in the files', () => {
-  const activated = async (path: string) => {
+  const activateRow = async (path: string) => {
     const window = await drawn()
     window.findComponent(Tree).vm.$emit('activate', path)
     await settles()
@@ -196,20 +196,20 @@ describe('a row activated in the files', () => {
   }
 
   it('opens a note in a tab of its own', async () => {
-    const window = await activated('Root.md')
+    const window = await activateRow('Root.md')
 
     expect(window.findComponent(NoteTab).exists()).toBe(true)
   })
 
   it('opens nothing at all for a file the vault holds no source for', async () => {
-    const window = await activated('Cover.png')
+    const window = await activateRow('Cover.png')
 
     expect(window.findComponent(NoteTab).exists()).toBe(false)
     expect(window.findComponent(DocumentTab).exists()).toBe(false)
   })
 
   it('opens nothing for a folder, which turns where it stands', async () => {
-    const window = await activated('physics')
+    const window = await activateRow('physics')
 
     expect(window.findComponent(NoteTab).exists()).toBe(false)
   })
@@ -217,7 +217,7 @@ describe('a row activated in the files', () => {
 
 describe('a file dragged out of the tree', () => {
   /** The window with the physics folder open, and a row dragged out of it. */
-  const dragging = async (rows: readonly string[]) => {
+  const dragRows = async (rows: readonly string[]) => {
     const window = await drawn()
     const tree = window.findComponent(Tree)
     tree.vm.$emit('open', 'physics')
@@ -227,43 +227,43 @@ describe('a file dragged out of the tree', () => {
     return window
   }
 
-  const dragged = (window: VueWrapper) => window.findComponent(Plex).props('dragged')
+  const getDragged = (window: VueWrapper) => window.findComponent(Plex).props('dragged')
 
   it('is what the plex draws a line to, though neither knows the other is there', async () => {
-    expect(dragged(await dragging(['physics/Entropy.md']))).toStrictEqual([
+    expect(getDragged(await dragRows(['physics/Entropy.md']))).toStrictEqual([
       'physics/Entropy.md',
     ])
   })
 
   it('is every note of the selection, all of them at once', async () => {
-    const window = await dragging(['physics/Entropy.md', 'physics/Kelvin.md'])
+    const window = await dragRows(['physics/Entropy.md', 'physics/Kelvin.md'])
 
-    expect(dragged(window)).toStrictEqual(['physics/Entropy.md', 'physics/Kelvin.md'])
+    expect(getDragged(window)).toStrictEqual(['physics/Entropy.md', 'physics/Kelvin.md'])
   })
 
   it('leaves out the note the plex is standing on, and keeps the rest', async () => {
-    const window = await dragging(['Root.md', 'physics/Entropy.md'])
+    const window = await dragRows(['Root.md', 'physics/Entropy.md'])
 
-    expect(dragged(window)).toStrictEqual(['physics/Entropy.md'])
+    expect(getDragged(window)).toStrictEqual(['physics/Entropy.md'])
   })
 
   it('is nothing once it has been let go of, wherever that was', async () => {
-    const window = await dragging(['physics/Entropy.md'])
+    const window = await dragRows(['physics/Entropy.md'])
 
     window.findComponent(Tree).vm.$emit('drop')
     await settles()
 
-    expect(dragged(window)).toStrictEqual([])
+    expect(getDragged(window)).toStrictEqual([])
   })
 
   it('leaves out a file the vault holds no note for, and a folder', async () => {
-    const window = await dragging(['physics', 'physics/Entropy.md', 'Cover.png'])
+    const window = await dragRows(['physics', 'physics/Entropy.md', 'Cover.png'])
 
-    expect(dragged(window)).toStrictEqual(['physics/Entropy.md'])
+    expect(getDragged(window)).toStrictEqual(['physics/Entropy.md'])
   })
 
   it('is nothing where the rows hold no note at all', async () => {
-    expect(dragged(await dragging(['Cover.png', 'physics']))).toStrictEqual([])
+    expect(getDragged(await dragRows(['Cover.png', 'physics']))).toStrictEqual([])
   })
 })
 

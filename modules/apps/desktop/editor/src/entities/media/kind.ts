@@ -140,7 +140,7 @@ export function recordingKind<K extends string>(
    * What the application is doing, as it last said. A tab whose recording is
    * named there is being transcribed, and asks for the words again.
    */
-  const ticked = (tasks: readonly Task[]) => {
+  const updateTasks = (tasks: readonly Task[]) => {
     for (const one of handle.each<MediaTabState>(as.tab)) {
       one.state.ticks(tasks.some((task) => task.about === one.state.path))
     }
@@ -150,11 +150,11 @@ export function recordingKind<K extends string>(
    * The transcript of a recording went. Every tab standing on it reads the
    * words again, and finds there are none.
    */
-  const deleted = (path: string) => {
+  const reloadTranscript = (path: string) => {
     for (const one of handle.each<MediaTabState>(as.tab)) {
       if (one.state.path === path) one.state.again()
     }
   }
 
-  return { kind, ticked, deleted }
+  return { kind, updateTasks, reloadTranscript }
 }

@@ -383,10 +383,10 @@ describe('the word a note tab carries', () => {
     one.noted.opens('Note.md')
     one.noted.opens('Other.md')
 
-    const marked = (path: string) => one.noted.kind.marked?.(one.noted.held(path))
+    const getMark = (path: string) => one.noted.kind.marked?.(one.noted.held(path))
 
-    expect(marked('Note.md')).toBe('unsaved')
-    expect(marked('Other.md')).toBeUndefined()
+    expect(getMark('Note.md')).toBe('unsaved')
+    expect(getMark('Other.md')).toBeUndefined()
   })
 })
 

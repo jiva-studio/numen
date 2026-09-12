@@ -28,7 +28,7 @@ export function useVaults({ core, words, log, chunks, embedded, embedding }: Vau
   const listed = ref<VaultList>({ vaults: [], showing: '' })
   const unlisted = log.under('listed')
 
-  const listing = async () => {
+  const loadVaults = async () => {
     try {
       const answer = await core.vaults()
       listed.value = answer
@@ -48,7 +48,7 @@ export function useVaults({ core, words, log, chunks, embedded, embedding }: Vau
 
   const makes = shallowRef<ReadonlyMap<string, ArtifactStates>>(new Map())
 
-  const carrying = async (path: string) => {
+  const loadArtifactStates = async (path: string) => {
     if (!path) return
     try {
       const held = await running.getArtifactStates(path)
@@ -64,9 +64,9 @@ export function useVaults({ core, words, log, chunks, embedded, embedding }: Vau
     reloads,
     shown,
     listed,
-    listing,
+    loadVaults,
     coverage,
     makes,
-    carrying,
+    loadArtifactStates,
   }
 }

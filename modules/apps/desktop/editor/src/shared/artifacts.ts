@@ -22,7 +22,7 @@ export const running: ArtifactRunner = {
     const held: Record<string, ArtifactState> = {}
     for (const one of answer.artifacts) {
       const of = drawn[one.kind]
-      if (of) held[of] = reached(one.state)
+      if (of) held[of] = parseState(one.state)
     }
     return held
   },
@@ -32,7 +32,7 @@ export const running: ArtifactRunner = {
       return {
         able: true,
         of,
-        made: reached(answer.artifact?.state),
+        made: parseState(answer.artifact?.state),
         error: answer.artifact?.error ?? '',
       }
     } catch (error) {
@@ -102,7 +102,7 @@ const become: Record<States, ArtifactState> = {
 }
 
 /** A state this window has no word for is an artifact nothing has made. */
-const reached = (state: States | undefined): ArtifactState =>
+const parseState = (state: States | undefined): ArtifactState =>
   (state === undefined ? undefined : become[state]) ?? 'none'
 
 /**

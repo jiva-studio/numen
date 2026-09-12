@@ -41,7 +41,7 @@ const openers = () => {
 
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
-const openedAt = (path: string, offsetVal: number, page: number, pages: number, length = 5_120_000) =>
+const createBookTabAt = (path: string, offsetVal: number, page: number, pages: number, length = 5_120_000) =>
   ({
     path,
     title: ref(''),
@@ -106,7 +106,7 @@ describe('what a book tab is called', () => {
 
 describe('what a book tab tells whoever answers for the person', () => {
   it('is the offset in front, and the page it falls on', () => {
-    const held = openedAt('library/Mahabharata.epub', 1_200_000, 1_201, 5_000)
+    const held = createBookTabAt('library/Mahabharata.epub', 1_200_000, 1_201, 5_000)
 
     expect(kindOver(held).attends?.(held)).toStrictEqual({
       path: 'library/Mahabharata.epub',
@@ -117,7 +117,7 @@ describe('what a book tab tells whoever answers for the person', () => {
 
 describe('what a command over a book tab is asked over', () => {
   it('is the file the book stands in, as a source', () => {
-    const held = openedAt('library/Mahabharata.epub', 0, 1, 5_000)
+    const held = createBookTabAt('library/Mahabharata.epub', 0, 1, 5_000)
 
     expect(kindOver(held).over?.(held)).toStrictEqual({
       file: 'library/Mahabharata.epub',

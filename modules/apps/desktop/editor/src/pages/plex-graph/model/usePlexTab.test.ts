@@ -66,7 +66,7 @@ const viewOn = (at: string, related: readonly string[] = [], types: Types = {}) 
 }
 
 /** A vault that takes every note it is asked to make, and records the asking. */
-const making = (takes = true) => {
+const createVault = (takes = true) => {
   const made: [string, string][] = []
   const joined: [string, string, string][] = []
   /** The notes this vault will write no link to, which a test names. */
@@ -87,7 +87,7 @@ const making = (takes = true) => {
 /** A plex tab with the window it is drawn in written down. */
 const tab = (at: string, related: readonly string[] = [], takes = true, types: Types = {}) => {
   const plex = viewOn(at, related, types)
-  const vault = making(takes)
+  const vault = createVault(takes)
   const opened: [string, string, string][] = []
   const asked: string[] = []
   const ran: [string, string, string][] = []
@@ -206,7 +206,7 @@ describe('two notes a line was drawn between', () => {
 })
 
 describe('the menu on a node', () => {
-  const asked = (node: string) => ({
+  const createMenuRequest = (node: string) => ({
     node,
     at: { x: 1, y: 2 },
     opening: 'pointer' as const,
@@ -214,7 +214,7 @@ describe('the menu on a node', () => {
 
   it('hands the command the note it was asked for on, called what the picture calls it', () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.asks(asked(one.node('Child.md')))
+    one.state.asks(createMenuRequest(one.node('Child.md')))
 
     one.state.chose('read')
 
@@ -225,12 +225,12 @@ describe('the menu on a node', () => {
   it('hands over every command it offers, and nothing it does not', () => {
     const one = tab('Root.md', ['Child.md'])
     for (const item of ITEMS) {
-      one.state.asks(asked(one.node('Child.md')))
+      one.state.asks(createMenuRequest(one.node('Child.md')))
       one.state.chose(item.id)
     }
-    one.state.asks(asked(one.node('Child.md')))
+    one.state.asks(createMenuRequest(one.node('Child.md')))
     one.state.chose('constructor')
-    one.state.asks(asked(one.node('Child.md')))
+    one.state.asks(createMenuRequest(one.node('Child.md')))
     one.state.chose('destroy')
 
     expect(one.ran.map(([id]) => id)).toStrictEqual(ITEMS.map((item) => item.id))
@@ -246,7 +246,7 @@ describe('the menu on a node', () => {
 
   it('goes when the picture under it does', () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.asks(asked(one.node('Child.md')))
+    one.state.asks(createMenuRequest(one.node('Child.md')))
 
     one.state.dismiss()
 
@@ -269,7 +269,7 @@ describe('a plex drawing nothing', () => {
       close: () => {},
     }
     return usePlexTab(view as unknown as PlexView, {
-      makes: making().makes,
+      makes: createVault().makes,
       ready: ref(true),
       hangs: ref(true),
       parts: ref(6),
@@ -360,7 +360,7 @@ describe('the picture', () => {
   it('is nothing while the window has nothing true to draw', () => {
     const plex = viewOn('Root.md')
     const state = usePlexTab(plex.view, {
-      makes: making().makes,
+      makes: createVault().makes,
       ready: ref(false),
       hangs: ref(true),
       parts: ref(6),
@@ -535,7 +535,7 @@ describe('the parts a node hangs', () => {
     const answers: ((held: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
     const one = tab('Root.md')
     const plex = usePlexTab(one.state.view, {
-      makes: making().makes,
+      makes: createVault().makes,
       ready: ref(true),
       hangs: ref(true),
       parts: ref(6),
@@ -706,7 +706,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   let release = () => {}
   /** Every note the vault was asked about, in the order it was asked. */
   const asked: string[] = []
-  const vault = making()
+  const vault = createVault()
   const opened: [string, string, string][] = []
   const ran: [string, string, string][] = []
 
@@ -1050,7 +1050,7 @@ const window = (opening = 'Opening.md') => {
   }
   const held = useWindowTabs()
   const plexes = plexKind(held.handle, makes, {
-    makes: making().makes,
+    makes: createVault().makes,
     ready: ref(true),
     hangs,
     parts: ref(6),

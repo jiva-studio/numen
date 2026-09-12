@@ -38,7 +38,7 @@ export function createNoteQueue(
     timers.delete(id)
   }
 
-  const settled = (id: string): void => {
+  const resolveSettling = (id: string): void => {
     settling.get(id)?.()
     settling.delete(id)
   }
@@ -101,13 +101,13 @@ export function createNoteQueue(
 
   const forget = (id: string): void => {
     disarm(id)
-    settled(id)
+    resolveSettling(id)
   }
 
   return {
     arm,
     disarm,
-    settled,
+    resolveSettling,
     settles,
     read,
     write,

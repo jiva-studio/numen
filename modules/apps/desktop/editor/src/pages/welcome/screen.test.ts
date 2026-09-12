@@ -45,10 +45,10 @@ const vault = (id: string, name: string, missing = false): Vault => ({
   missing,
 })
 
-const listed = (vaults: readonly Vault[], showing: string): VaultList => ({ vaults, showing })
+const createVaultList = (vaults: readonly Vault[], showing: string): VaultList => ({ vaults, showing })
 
 /** Two vaults, the first of them the one the window is showing. */
-const two = listed([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
+const two = createVaultList([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
 
 describe('the ways into the vault', () => {
   it('are the settings alone where the window is showing no vault', () => {
@@ -135,7 +135,7 @@ describe('the vaults the screen lists', () => {
   })
 
   it('marks one whose folder is not there', () => {
-    const held = vaultsOn(listed([vault('b', 'Heat', true)], 'a'), words)
+    const held = vaultsOn(createVaultList([vault('b', 'Heat', true)], 'a'), words)
     expect(held[0]).toStrictEqual({
       id: 'b',
       name: 'Heat',
@@ -145,7 +145,7 @@ describe('the vaults the screen lists', () => {
   })
 
   it('says the folder is gone of the vault it is showing, which is the worse news', () => {
-    const held = vaultsOn(listed([vault('a', 'Physics', true)], 'a'), words)
+    const held = vaultsOn(createVaultList([vault('a', 'Physics', true)], 'a'), words)
     expect(held[0]).toStrictEqual({
       id: 'a',
       name: 'Physics',
@@ -163,6 +163,6 @@ describe('the vaults the screen lists', () => {
   })
 
   it('is empty where the installation holds no vault', () => {
-    expect(vaultsOn(listed([], ''), words)).toStrictEqual([])
+    expect(vaultsOn(createVaultList([], ''), words)).toStrictEqual([])
   })
 })

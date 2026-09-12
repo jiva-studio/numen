@@ -63,7 +63,7 @@ const unvaulted: Record<VaultsRefusal, VaultErrorCode> = {
   [VaultsRefusal.ASKING]: 'asking',
 }
 
-export const turnedDown = (from: { error?: VaultsRefusal | undefined; refusal?: VaultsRefusal | undefined }): VaultErrorCode | null => {
+export const getVaultError = (from: { error?: VaultsRefusal | undefined; refusal?: VaultsRefusal | undefined }): VaultErrorCode | null => {
   const code = from.error ?? from.refusal
   return code === undefined ? null : unvaulted[code]
 }
@@ -93,7 +93,7 @@ export const mapVaultResult = (from: {
   error?: VaultsRefusal | undefined
   refusal?: VaultsRefusal | undefined
 }): VaultResult => {
-  const error = turnedDown(from)
+  const error = getVaultError(from)
   return {
     vault: from.vault ? mapVault(from.vault) : null,
     error,

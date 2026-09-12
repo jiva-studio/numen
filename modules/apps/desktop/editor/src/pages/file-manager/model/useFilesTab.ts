@@ -16,7 +16,7 @@ import {
   RENAME,
   type RunGuard,
 } from '../menu'
-import { renamedTo } from '../rename'
+import { resolveRenamePath } from '../rename'
 import { WORDS as words } from '../words'
 import type {
   DropPosition,
@@ -53,7 +53,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   const select = (paths: readonly string[]) => list.selectPaths(paths)
 
   const rename = async (path: string, name: string) => {
-    const to = renamedTo(path, name, list.getEntryAt(path)?.folder ?? false)
+    const to = resolveRenamePath(path, name, list.getEntryAt(path)?.folder ?? false)
     if (!to) return
     await deps.movePath(path, to)
     await list.refresh()

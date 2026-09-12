@@ -139,14 +139,14 @@ describe('the settings under the control', () => {
 // A tab showing a failure is a tab with a way back: the file is read again,
 // which is what a fixed permission bit or a restored folder wants.
 describe('what the tab says went wrong', () => {
-  const saying = (words: string) => {
+  const mountWithError = (words: string) => {
     const one = tabAt()
     const state: PresetTabState = { ...one.state, errorMessage: ref(words) }
     return { tab: mount(PresetTab, { props: { state } }), done: one.done }
   }
 
   it('offers reading the file again beside what it says', async () => {
-    const { tab, done } = saying(words.notRead('missing'))
+    const { tab, done } = mountWithError(words.notRead('missing'))
     const alert = tab.get('[role="alert"]')
     expect(alert.text()).toContain(words.notRead('missing'))
     await alert.get('button').trigger('click')
@@ -154,7 +154,7 @@ describe('what the tab says went wrong', () => {
   })
 
   it('offers it for a refused write as well as a refused read', async () => {
-    const { tab, done } = saying(words.notSaved('unreadable'))
+    const { tab, done } = mountWithError(words.notSaved('unreadable'))
     await tab.get('[role="alert"] button').trigger('click')
     expect(done).toStrictEqual(['again'])
   })
@@ -191,7 +191,7 @@ describe('a file that changed under the tab', () => {
 // are the file's own way of writing the week and belong to this tab.
 describe('the load of the week', () => {
   /** A tab whose row of days is watched for what it puts into the settings. */
-  const watching = (load: Record<string, number>) => {
+  const mountWithLoad = (load: Record<string, number>) => {
     const one = tabAt({}, { load })
     const put: [Field, SettingValue][] = []
     const state: PresetTabState = {
@@ -207,12 +207,12 @@ describe('the load of the week', () => {
   /** The chips of the row that draws the week. */
   const chips = (tab: ReturnType<typeof mount>) => tab.findAll('[data-slot="weekday-chips"] button')
 
-  const offered = (): readonly HTMLElement[] => [
+  const getMenuItems = (): readonly HTMLElement[] => [
     ...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]'),
   ]
 
   it('draws a day not named at the whole of a day, and the rest where they stand', () => {
-    const { tab } = watching({ sat: 50, sun: 0 })
+    const { tab } = mountWithLoad({ sat: 50, sun: 0 })
     expect(chips(tab).map((chip) => chip.attributes('aria-label'))).toStrictEqual([
       'Monday, 100%',
       'Tuesday, 100%',
@@ -225,9 +225,9 @@ describe('the load of the week', () => {
   })
 
   it('offers the shares of a day, from nothing to the whole of it', async () => {
-    const { tab } = watching({})
+    const { tab } = mountWithLoad({})
     await chips(tab)[0]?.trigger('click')
-    expect(offered().map((one) => one.textContent?.trim())).toStrictEqual([
+    expect(getMenuItems().map((one) => one.textContent?.trim())).toStrictEqual([
       '0%',
       '10%',
       '25%',
@@ -239,9 +239,9 @@ describe('the load of the week', () => {
   })
 
   it('writes the day it was handed at the share chosen, leaving the others', async () => {
-    const { tab, put, done } = watching({ sat: 50, sun: 0 })
+    const { tab, put, done } = mountWithLoad({ sat: 50, sun: 0 })
     await chips(tab)[0]?.trigger('click')
-    offered()[2]?.click()
+    getMenuItems()[2]?.click()
     await tab.vm.$nextTick()
 
     expect(put).toStrictEqual([['load', { sat: 50, sun: 0, mon: 25 }]])
@@ -249,9 +249,9 @@ describe('the load of the week', () => {
   })
 
   it('stops naming a day put back to the whole of a day', async () => {
-    const { tab, put } = watching({ sat: 50, sun: 0 })
+    const { tab, put } = mountWithLoad({ sat: 50, sun: 0 })
     await chips(tab)[5]?.trigger('click')
-    offered()[6]?.click()
+    getMenuItems()[6]?.click()
     await tab.vm.$nextTick()
 
     expect(put).toStrictEqual([['load', { sun: 0 }]])

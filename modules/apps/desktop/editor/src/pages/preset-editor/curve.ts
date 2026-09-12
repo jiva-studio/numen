@@ -243,7 +243,7 @@ const asksNothing = (curve: Curve): boolean =>
  */
 export const approximate = (settings: Settings, today: string, within: SettingsBounds): Curve => {
   const grid = gridFor(settings, today, within)
-  const at = grid.map((value) => guessed(settings, value, grid))
+  const at = grid.map((value) => estimatePoint(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = goalValue(settings, today)
   const place = nearest(grid, value)
@@ -298,7 +298,7 @@ const ladder = (least: number, most: number, rounds: (one: number) => number): r
  * review brings back more of the material the longer it runs, and asking for
  * more of it back costs more of the day.
  */
-const guessed = (settings: Settings, value: number, grid: readonly number[]): Point => {
+const estimatePoint = (settings: Settings, value: number, grid: readonly number[]): Point => {
   const flat = {
     retained: 0,
     owed: 0,

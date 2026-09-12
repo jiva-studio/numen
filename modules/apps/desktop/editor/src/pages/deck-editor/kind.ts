@@ -12,7 +12,7 @@ export interface DeckTabsInside {
   readonly cardTabPathMap: Map<string, string>
   readonly pendingTabIds: Map<string, string>
   readonly store: { open(id: string, path?: string): void; where(id: string): string }
-  readonly said: { called(path: string): string }
+  readonly said: { getTitle(path: string): string }
   lists(): Promise<void>
   listsPresets(): Promise<void>
   listsAgain(): void
@@ -45,7 +45,7 @@ export function deckKind({
       void asks(path)
       return createDeckTabState(id)
     },
-    called: (one) => said.called(store.where(one.id)),
+    called: (one) => said.getTitle(store.where(one.id)),
     marked: (one) => markOf(one.shown.value.state),
     draws: DeckTab,
     identity: (id) => id,

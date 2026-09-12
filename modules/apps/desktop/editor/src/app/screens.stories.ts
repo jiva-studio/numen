@@ -663,7 +663,7 @@ const LINES: readonly (readonly string[])[] = [
   ],
 ]
 
-const escaped = (line: string) =>
+const escapeXml = (line: string) =>
   line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 const pageAt = (page: number): string => {
@@ -672,7 +672,7 @@ const pageAt = (page: number): string => {
     .map((line, at) => {
       const y = FIRST + at * LEADING
       const weight = at === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
-      return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="${SET}"${weight} fill="#1b1b1b">${escaped(line)}</text>`
+      return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="${SET}"${weight} fill="#1b1b1b">${escapeXml(line)}</text>`
     })
     .join('')
   const number = `<text x="${PAGE.width / 2}" y="${PAGE.height - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#5a5a5a">${page + 1}</text>`
@@ -709,7 +709,7 @@ const BOOK: Documents = {
  * it. Where the row is drawn is measured, so the menu stands under the name it
  * was asked for on however the tree happens to be laid out.
  */
-const asking = (
+const createMenuStory = (
   path: string,
   open: readonly string[],
   file: { tab: string; draws: Component; state: unknown; opens?: () => Promise<void> },
@@ -762,7 +762,7 @@ const asking = (
 export const Transcribed: Story = {
   parameters: WRITING,
   render: () =>
-    asking('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
+    createMenuStory('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
       draws: RecordingTab,
       state: useTranscriptTab(useTranscript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
@@ -775,7 +775,7 @@ export const Transcribed: Story = {
 export const Recognised: Story = {
   render: () => {
     const state = useDocumentTab(useDocumentReader(BOOK, 'Reading/Boltzmann 1877.pdf'))
-    return asking(
+    return createMenuStory(
       'Reading/Boltzmann 1877.pdf',
       ['Lectures', 'Physics', 'Reading', 'Sanskrit'],
       {

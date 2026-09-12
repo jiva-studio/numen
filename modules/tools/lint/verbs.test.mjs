@@ -92,7 +92,8 @@ test('what counts as a function', () => {
     'const gamma = () => 1',
     'export const delta = async (one: string) => one',
     'const epsilon: Holder = (one) => one',
-    'const zeta = 3',
+    'const zeta = (one = held()) => one',
+    'const eta = 3',
     'class Eta { theta() {} }',
     'export interface Iota { kappa(): void }',
     ' * function lambda is named only in a comment',
@@ -100,5 +101,5 @@ test('what counts as a function', () => {
     'function nu() {}',
     '`',
   ].join('\n')
-  assert.deepEqual(declares(source), ['alpha', 'beta', 'gamma', 'delta', 'epsilon'])
+  assert.deepEqual(declares(source), ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta'])
 })

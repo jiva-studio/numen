@@ -2,7 +2,7 @@
  * Construction of the full list of commands offered by the application.
  */
 import { keysOf } from './chords'
-import { always, onEvidence, onNote, onVault, owed } from './where'
+import { always, isUnmade, onEvidence, onNote, onVault } from './where'
 import type { Command, Words } from '../target'
 
 /**
@@ -56,7 +56,7 @@ export const commandsOf = (
     id: 'transcribe',
     text: words.transcribe,
     group: 'file',
-    where: onEvidence('transcribe', 'recording', (made) => owed(made.transcript)),
+    where: onEvidence('transcribe', 'recording', (made) => isUnmade(made.transcript)),
   },
   {
     id: 'downloadText',
@@ -76,7 +76,10 @@ export const commandsOf = (
     // there is what says this file is one. An hour of video on somebody's disk
     // is asked for by hand, and one already here is not asked for again.
     where: (at, runs) =>
-      at.ready && runs.canRun('downloadCopy') && at.made.copy !== undefined && owed(at.made.copy),
+      at.ready &&
+      runs.canRun('downloadCopy') &&
+      at.made.copy !== undefined &&
+      isUnmade(at.made.copy),
   },
   {
     id: 'proofread',
@@ -87,7 +90,7 @@ export const commandsOf = (
     where: onEvidence(
       'proofread',
       'recording',
-      (made) => made.transcript === 'done' && owed(made['transcript.corrected']),
+      (made) => made.transcript === 'done' && isUnmade(made['transcript.corrected']),
     ),
   },
   {
@@ -126,7 +129,7 @@ export const commandsOf = (
     id: 'recognise',
     text: words.recognise,
     group: 'file',
-    where: onEvidence('recognise', 'book', (made) => owed(made.ocr)),
+    where: onEvidence('recognise', 'book', (made) => isUnmade(made.ocr)),
   },
   {
     id: 'note',

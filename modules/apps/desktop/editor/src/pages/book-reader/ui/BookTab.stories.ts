@@ -338,7 +338,7 @@ export const DrawnOutOfSight: Story = {
 }
 
 /** The book whose text points about inside itself and once out of itself. */
-const pointing = () => ({
+const renderCrossedBook = () => ({
   components: { BookTab },
   setup: () => ({ state: useBookTab(useBookReader(crossed, 'library/mbh.epub', words, () => {})) }),
   template: `
@@ -349,16 +349,16 @@ const pointing = () => ({
 })
 
 /** The press the window would have followed, once the page has had it. */
-const pressing = async (link: HTMLElement) => {
+const clickLink = async (link: HTMLElement) => {
   let taken: MouseEvent | undefined
-  const watching = (event: Event) => {
+  const onClick = (event: Event) => {
     taken = event as MouseEvent
   }
-  window.addEventListener('click', watching)
+  window.addEventListener('click', onClick)
   try {
     await userEvent.click(link)
   } finally {
-    window.removeEventListener('click', watching)
+    window.removeEventListener('click', onClick)
   }
   return taken
 }
@@ -380,12 +380,12 @@ const inFront = (canvasElement: HTMLElement, run: HTMLElement) => {
  * navigates to is the application gone.
  */
 export const ALinkIntoTheSameDocument: Story = {
-  render: pointing,
+  render: renderCrossedBook,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await laid(canvasElement)
 
-    const press = await pressing(canvas.getByText(BACK))
+    const press = await clickLink(canvas.getByText(BACK))
     await expect(press?.defaultPrevented).toBe(true)
 
     const note = FIRST.offsets[FIRST.offsets.length - 1]!
@@ -400,12 +400,12 @@ export const ALinkIntoTheSameDocument: Story = {
  * place it names.
  */
 export const ALinkIntoAnotherDocument: Story = {
-  render: pointing,
+  render: renderCrossedBook,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await laid(canvasElement)
 
-    const press = await pressing(canvas.getByText(ONWARD))
+    const press = await clickLink(canvas.getByText(ONWARD))
     await expect(press?.defaultPrevented).toBe(true)
 
     const alpha = SECOND.offsets[1]!
@@ -425,12 +425,12 @@ export const ALinkIntoAnotherDocument: Story = {
  * address goes is the window's own to settle, and the page is not navigated.
  */
 export const ALinkOutOfTheBook: Story = {
-  render: pointing,
+  render: renderCrossedBook,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await laid(canvasElement)
 
-    const press = await pressing(canvas.getByText(ELSEWHERE))
+    const press = await clickLink(canvas.getByText(ELSEWHERE))
 
     await expect(press?.defaultPrevented).toBe(true)
   },

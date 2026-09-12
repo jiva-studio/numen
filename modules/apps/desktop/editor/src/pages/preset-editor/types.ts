@@ -39,7 +39,7 @@ export {
   WHOLE_LOAD,
   LOADS,
   loadOn,
-  loaded,
+  setLoadOn,
   DEFAULTS,
   NO_BOUNDS,
   NOWHERE,

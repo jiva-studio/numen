@@ -12,7 +12,7 @@ import {
   ERROR_CODE,
   errorIn,
   fingerprint,
-  named,
+  getBytesQuery,
   staleIn,
   stamp,
   waiting,
@@ -77,7 +77,7 @@ describe('the address a file is asked about at', () => {
 
 describe('how an address names the bytes of a file', () => {
   it('encodes the size and modification time', () => {
-    expect(named('1024 1700000000000000000 notes/Doc.pdf')).toBe(
+    expect(getBytesQuery('1024 1700000000000000000 notes/Doc.pdf')).toBe(
       'size=1024&mtime=1700000000000000000',
     )
   })

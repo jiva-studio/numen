@@ -2,7 +2,7 @@
  * Wire adapter for BookService.
  */
 import type { SpineDocument as SpineDocumentMessage } from '@numen/protocol'
-import { asset, fingerprint, named, stamp, waiting } from '@/shared/answers'
+import { asset, fingerprint, getBytesQuery, stamp, waiting } from '@/shared/answers'
 import * as clients from '@/shared/clients'
 import type { Book, Books, SpineDocument } from '../types'
 
@@ -11,7 +11,7 @@ const served = {
 }
 
 /** One document of the spine, as the window carries it. */
-const spined = (one: SpineDocumentMessage): SpineDocument => ({
+const readSpineDocument = (one: SpineDocumentMessage): SpineDocument => ({
   path: one.path,
   span: { begins: one.offset, ends: one.offset + one.length },
 })
@@ -22,7 +22,7 @@ export const books: Books = {
     return {
       title: answer.title,
       span: { begins: 0, ends: answer.textBytes },
-      documents: answer.documents.map(spined),
+      documents: answer.documents.map(readSpineDocument),
       parts: answer.parts.map((one) => ({
         title: one.title,
         offset: one.offset,
@@ -48,6 +48,6 @@ export const books: Books = {
     return answer.markup
   },
   getEntryUrl: (path, name, seen) =>
-    `${asset(path)}/${name.split('/').map(encodeURIComponent).join('/')}?${named(seen)}`,
+    `${asset(path)}/${name.split('/').map(encodeURIComponent).join('/')}?${getBytesQuery(seen)}`,
 }
 

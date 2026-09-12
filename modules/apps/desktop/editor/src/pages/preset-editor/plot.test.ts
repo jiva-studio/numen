@@ -23,7 +23,7 @@ import {
   LIFT,
   lineOf,
   positionLabel,
-  namingBox,
+  getNameBox,
   calloutOf,
   CALLOUT_GAP,
   CALLOUT_HIGH,
@@ -208,7 +208,7 @@ describe('where a name over a mark is set', () => {
 
 describe('the room a name over a mark takes', () => {
   it('stands where the name does, and is as wide as a label either side', () => {
-    const box = namingBox({ x: WIDE / 2, y: 100 })
+    const box = getNameBox({ x: WIDE / 2, y: 100 })
 
     expect(box).toStrictEqual({
       x: WIDE / 2 - LABEL,
@@ -219,8 +219,8 @@ describe('the room a name over a mark takes', () => {
   })
 
   it('is drawn from the mark at the near end, and back from it at the far one', () => {
-    expect(namingBox({ x: LEFT, y: 100 }).x).toBe(LEFT)
-    expect(namingBox({ x: RIGHT, y: 100 }).x).toBe(RIGHT - LABEL * 2)
+    expect(getNameBox({ x: LEFT, y: 100 }).x).toBe(LEFT)
+    expect(getNameBox({ x: RIGHT, y: 100 }).x).toBe(RIGHT - LABEL * 2)
   })
 })
 
@@ -346,7 +346,7 @@ describe('the names of the marks that fit', () => {
         key: 'suggested',
         text: 'suggested',
         at: positionLabel({ x: WIDE / 2, y: 100 }),
-        box: namingBox({ x: WIDE / 2, y: 100 }),
+        box: getNameBox({ x: WIDE / 2, y: 100 }),
       },
     ])
   })

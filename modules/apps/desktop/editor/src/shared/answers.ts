@@ -67,7 +67,7 @@ export const asset = (path: string): string => `/assets/${encodeURIComponent(pat
  * part of the address already, so what is written here is the rest of what says
  * which file it is.
  */
-export const named = (seen: string): string => {
+export const getBytesQuery = (seen: string): string => {
   const at = fingerprint(seen)
   return `size=${at.size}&mtime=${at.mtime}`
 }

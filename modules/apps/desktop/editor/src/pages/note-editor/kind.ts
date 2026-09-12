@@ -59,7 +59,7 @@ export function useNoteTab(
   }
 
   /** The identity of the tab standing at a file, and the name itself where none does. */
-  const opened = (path: string): string => tabbed.value.get(path) ?? minting.get(path) ?? path
+  const getTabId = (path: string): string => tabbed.value.get(path) ?? minting.get(path) ?? path
 
   /**
    * A note opened under the identity it was minted. It is owed its keyboard
@@ -86,7 +86,7 @@ export function useNoteTab(
   }
 
   /** A note given the keyboard on a line, in whichever tab holds it. */
-  const entersAt = (path: string, line?: number) => keyboard.owes(opened(path), line)
+  const entersAt = (path: string, line?: number) => keyboard.owes(getTabId(path), line)
 
   // The editor of a note, which is where its prose is read and written. A line
   // is one of the lines of that prose, and the keyboard stands on it. A link
@@ -123,8 +123,8 @@ export function useNoteTab(
   const kind: TabKind<NoteTabState, typeof NOTE> = {
     kind: NOTE,
     opens: (id) => opens(id),
-    called: (state) => names.called(state.id),
-    getTitle: (state) => names.called(state.id),
+    called: (state) => names.getTitle(state.id),
+    getTitle: (state) => names.getTitle(state.id),
     marked: (state) => markOf(state.shown.value.state),
     draws: NoteTab,
     identity: (id) => id,
@@ -132,7 +132,7 @@ export function useNoteTab(
     onShow: (state) => state.measure(),
     over: (state) => {
       const path = standsAt(state)
-      return { path, title: path ? names.called(state.id) : '' }
+      return { path, title: path ? names.getTitle(state.id) : '' }
     },
     attends: (state) => ({ path: standsAt(state) }),
     getAttention: (state) => ({ path: standsAt(state) }),
@@ -154,7 +154,7 @@ export function useNoteTab(
   const kept: Store = {
     has: (id) => notes.has(id),
     where: (id) => notes.where(id),
-    called: (id) => names.called(id),
+    called: (id) => names.getTitle(id),
     asking: (id) => notes.stale(id) !== null,
     settles: (id) => notes.settles(id),
     shuts,
@@ -170,7 +170,7 @@ export function useNoteTab(
     /** Every open note's editor takes its measurements again. */
     measures: keyboard.measures,
     calls: (path: string, title: string) => names.calls(mints(path), title),
-    called: (path: string) => names.called(opened(path)),
+    called: (path: string) => names.getTitle(getTabId(path)),
     entersAt,
     shuts,
     /**

@@ -18,7 +18,7 @@ import {
 } from './stencil'
 
 /** Identities counted out, so a test names the face it means. */
-const minting = () => {
+const createIds = () => {
   let at = 0
   return () => `c${(at += 1)}`
 }
@@ -37,7 +37,7 @@ const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
   ...over,
 })
 
-const stencil = (over: Partial<VaultStencil> = {}): BufferStencil => stencilOf(cut(over), minting())
+const stencil = (over: Partial<VaultStencil> = {}): BufferStencil => stencilOf(cut(over), createIds())
 
 describe('a stencil as the window holds it', () => {
   it('gives every face an identity of its own', () => {

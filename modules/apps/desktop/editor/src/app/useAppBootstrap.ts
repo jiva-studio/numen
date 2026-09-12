@@ -4,7 +4,7 @@
 import { onMounted, onUnmounted } from 'vue'
 
 export interface BootstrapDeps {
-  listing(): Promise<void>
+  loadVaults(): Promise<void>
   startSettings(): Promise<void>
   startWindow(): Promise<void>
   startEditing(): void
@@ -17,7 +17,7 @@ export interface BootstrapDeps {
 
 export function useAppBootstrap(deps: BootstrapDeps) {
   onMounted(async () => {
-    await deps.listing()
+    await deps.loadVaults()
     await deps.startSettings()
     await deps.startLayout()
     void deps.startWindow()

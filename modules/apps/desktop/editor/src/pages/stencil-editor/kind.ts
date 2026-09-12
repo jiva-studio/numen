@@ -33,7 +33,7 @@ export function useStencilTabs(
 
   const fields = createStencilFields(
     (id) => store.shown(id).body,
-    (id, body) => store.typed(id, body),
+    (id, body) => store.setBody(id, body),
     (id) => wire.getProblems(store.where(id)),
     (id, field, name) => void wire.renameField(store.where(id), field, name, store.changed),
   )
@@ -63,7 +63,7 @@ export function useStencilTabs(
   }
 
   /** What a stencil tab is called: the title the file carries, or the file itself. */
-  const called = (path: string): string => wire.getTitle(path) || fileOf(path)
+  const getTitle = (path: string): string => wire.getTitle(path) || fileOf(path)
 
   /** The tab holding a stencil lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
@@ -75,7 +75,7 @@ export function useStencilTabs(
   const kept: Store = {
     has: (id) => store.all().includes(id),
     where: (id) => store.where(id),
-    called: (id) => called(store.where(id)),
+    called: (id) => getTitle(store.where(id)),
     asking: (id) => store.stale(id) !== null,
     settles: (id) => store.settles(id),
     shuts,
@@ -108,7 +108,7 @@ export function useStencilTabs(
       pendingTabPaths.delete(id)
       return held(id)
     },
-    called: (one) => called(store.where(one.id)),
+    called: (one) => getTitle(store.where(one.id)),
     marked: (one) => markOf(one.shown.value.state),
     draws: StencilTab,
     identity: (id) => id,
@@ -131,7 +131,7 @@ export function useStencilTabs(
 
   puts.holds('stencil', shows)
 
-  const changed = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
+  const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
     wire.movePaths(renamed)
     store.changed(paths, renamed)
   }
@@ -139,8 +139,8 @@ export function useStencilTabs(
   return {
     kind,
     held,
-    changed,
-    called,
+    changed: applyPathChanges,
+    called: getTitle,
     kept,
     all: store.all,
     shown: store.shown,

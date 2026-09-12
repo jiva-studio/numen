@@ -44,7 +44,7 @@ describe('what a note is called', () => {
   it('is the path it is filed at while nothing has named it', () => {
     const names = noteTitles(vault(), notes().store)
 
-    expect(names.called('Deep/Note.md')).toBe('Deep/Note.md')
+    expect(names.getTitle('Deep/Note.md')).toBe('Deep/Note.md')
   })
 
   it('is what the window called it', () => {
@@ -52,7 +52,7 @@ describe('what a note is called', () => {
 
     names.calls('Deep/Note.md', 'A note')
 
-    expect(names.called('Deep/Note.md')).toBe('A note')
+    expect(names.getTitle('Deep/Note.md')).toBe('A note')
   })
 
   it('is the heading the vault reads out of it once what was typed has landed', async () => {
@@ -63,7 +63,7 @@ describe('what a note is called', () => {
     store.stands('Note.md', 'clean')
     await nextTick()
 
-    await vi.waitFor(() => expect(names.called('Note.md')).toBe('What it is about'))
+    await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('What it is about'))
   })
 
   it('is not asked for again while the note is still being written', async () => {
@@ -75,7 +75,7 @@ describe('what a note is called', () => {
     await nextTick()
     await nextTick()
 
-    expect(names.called('Note.md')).toBe('Untitled note')
+    expect(names.getTitle('Note.md')).toBe('Untitled note')
   })
 
   it('is the name it had when the vault cannot answer', async () => {
@@ -87,7 +87,7 @@ describe('what a note is called', () => {
     await nextTick()
     await nextTick()
 
-    expect(names.called('Note.md')).toBe('Untitled note')
+    expect(names.getTitle('Note.md')).toBe('Untitled note')
   })
 
   it('is asked for again at the file a note moved to, and follows the rename', async () => {
@@ -96,12 +96,12 @@ describe('what a note is called', () => {
     const names = noteTitles(said, store.store)
     store.stands('Note.md', 'clean')
     await nextTick()
-    await vi.waitFor(() => expect(names.called('Note.md')).toBe('What it is about'))
+    await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('What it is about'))
 
     store.moves('Note.md', 'Renamed.md')
     await nextTick()
 
-    await vi.waitFor(() => expect(names.called('Note.md')).toBe('Renamed'))
+    await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('Renamed'))
   })
 
   it('is asked for at the file a note moved to once it settles there', async () => {
@@ -111,12 +111,12 @@ describe('what a note is called', () => {
     store.stands('Note.md', 'unsaved')
     store.moves('Note.md', 'Renamed.md')
     await nextTick()
-    expect(names.called('Note.md')).toBe('Untitled note')
+    expect(names.getTitle('Note.md')).toBe('Untitled note')
 
     store.stands('Note.md', 'clean')
     await nextTick()
 
-    await vi.waitFor(() => expect(names.called('Note.md')).toBe('Renamed'))
+    await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('Renamed'))
   })
 
   it('is forgotten with the note, so a name is not left behind it', () => {
@@ -125,6 +125,6 @@ describe('what a note is called', () => {
 
     names.forgets('Note.md')
 
-    expect(names.called('Note.md')).toBe('Note.md')
+    expect(names.getTitle('Note.md')).toBe('Note.md')
   })
 })

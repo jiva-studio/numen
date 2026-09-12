@@ -6,11 +6,11 @@
  * command the window does not have would draw a cap over silence.
  */
 import { describe, expect, it } from 'vitest'
-import { chorded, commandFor, keyOf, keysOf, CHORDS } from './chords'
+import { isChord, commandFor, keyOf, keysOf, CHORDS } from './chords'
 import { commandsOf } from './commands'
 import { WORDS as words } from '@/shared/words'
 
-const pressing = (over: Partial<KeyboardEventInit> = {}) => ({
+const createKeyEvent = (over: Partial<KeyboardEventInit> = {}) => ({
   altKey: false,
   ctrlKey: false,
   metaKey: false,
@@ -19,17 +19,17 @@ const pressing = (over: Partial<KeyboardEventInit> = {}) => ({
 
 describe('a keystroke the window answers', () => {
   it('is one letter held with Control, or with Command', () => {
-    expect(chorded(pressing({ ctrlKey: true }))).toBe(true)
-    expect(chorded(pressing({ metaKey: true }))).toBe(true)
+    expect(isChord(createKeyEvent({ ctrlKey: true }))).toBe(true)
+    expect(isChord(createKeyEvent({ metaKey: true }))).toBe(true)
   })
 
   it('belongs to nobody while Alt is held with it', () => {
-    expect(chorded(pressing({ ctrlKey: true, altKey: true }))).toBe(false)
-    expect(chorded(pressing({ metaKey: true, altKey: true }))).toBe(false)
+    expect(isChord(createKeyEvent({ ctrlKey: true, altKey: true }))).toBe(false)
+    expect(isChord(createKeyEvent({ metaKey: true, altKey: true }))).toBe(false)
   })
 
   it('belongs to nobody with neither of the two held', () => {
-    expect(chorded(pressing())).toBe(false)
+    expect(isChord(createKeyEvent())).toBe(false)
   })
 })
 

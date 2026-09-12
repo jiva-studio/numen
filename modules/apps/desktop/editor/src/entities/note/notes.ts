@@ -77,7 +77,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const has = (id: string): boolean => tabs.value.has(id)
   const at = (id: string): string => tabs.value.get(id)?.filePath ?? ""
 
-  const typed = (id: string, body: string): void => {
+  const setBody = (id: string, body: string): void => {
     bodies.value.set(id, body)
     turn(id, { kind: "typed", body, at: now() })
   }
@@ -105,7 +105,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     const writing = next.effects.some((effect) => effect.kind === "write")
     if (held && !writing) closing.get(id)?.(false)
 
-    if (next.tab.pendingWrite === null) queue.settled(id)
+    if (next.tab.pendingWrite === null) queue.resolveSettling(id)
   }
 
   function act(id: string, effect: Effect): void {
@@ -158,9 +158,9 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     where,
     has,
     at,
-    typed,
+    setBody,
     changed: (paths: readonly string[], renamed: readonly Move[] = []) =>
-      conflicts.changed(all, paths, renamed),
+      conflicts.notifyChanged(all, paths, renamed),
     save,
     keep: conflicts.keep,
     take: conflicts.take,

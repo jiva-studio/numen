@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { openNotes, type Notes } from './notes'
 
 /** A file's fingerprint, which follows what the file holds. */
-const marked = (body: string): string => `at:${body}`
+const getFingerprint = (body: string): string => `at:${body}`
 
 /** A core that answers reads and writes from what a test puts in it. */
 function fake(over: Partial<Notes> = {}) {
@@ -12,18 +12,18 @@ function fake(over: Partial<Notes> = {}) {
   const core: Notes = {
     read: async (path) =>
       files.has(path)
-        ? { body: files.get(path) ?? '', error: null, at: marked(files.get(path) ?? '') }
+        ? { body: files.get(path) ?? '', error: null, at: getFingerprint(files.get(path) ?? '') }
         : { body: '', error: 'missing' },
     write: async (path, body, seen) => {
       wrote.push({ path, body })
       const held = files.get(path)
       // A note still holding either the prose or the file that prose came out of
       // is the note this caller read.
-      if (seen && held !== undefined && held !== seen.prose && marked(held) !== seen.at) {
+      if (seen && held !== undefined && held !== seen.prose && getFingerprint(held) !== seen.at) {
         return { body: '', error: null, changed: true }
       }
       files.set(path, body)
-      return { body: '', error: null, at: marked(body) }
+      return { body: '', error: null, at: getFingerprint(body) }
     },
     ...over,
   }
@@ -57,7 +57,7 @@ describe('opening a note', () => {
 
     notes.open('Heat.md')
     await settle()
-    notes.typed('Heat.md', 'mine')
+    notes.setBody('Heat.md', 'mine')
     files.set('Heat.md', 'second')
     notes.open('Heat.md')
     await settle()
@@ -73,7 +73,7 @@ describe('opening a note', () => {
     await settle()
     expect(notes.shown('New.md').body).toBe('')
 
-    notes.typed('New.md', 'a first line')
+    notes.setBody('New.md', 'a first line')
     await vi.waitFor(() => expect(wrote).toHaveLength(1))
     expect(wrote[0]).toEqual({ path: 'New.md', body: 'a first line' })
   })
@@ -98,7 +98,7 @@ describe('typing', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one two')
+    notes.setBody('Heat.md', 'one two')
     expect(wrote).toHaveLength(0)
 
     await vi.waitFor(() => expect(wrote).toHaveLength(1))
@@ -112,7 +112,7 @@ describe('typing', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one')
+    notes.setBody('Heat.md', 'one')
     await new Promise((wake) => setTimeout(wake, 20))
 
     expect(wrote).toHaveLength(0)
@@ -145,7 +145,7 @@ describe('a change in the vault', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'mine')
+    notes.setBody('Heat.md', 'mine')
     files.set('Heat.md', 'somebody else')
     notes.changed(['Heat.md'])
     await settle()
@@ -193,7 +193,7 @@ describe('closing', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one two')
+    notes.setBody('Heat.md', 'one two')
     await notes.shut('Heat.md')
 
     expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
@@ -222,8 +222,8 @@ describe('closing', () => {
     notes.open('b.md')
     await settle()
 
-    notes.typed('a.md', 'a changed')
-    notes.typed('b.md', 'b changed')
+    notes.setBody('a.md', 'a changed')
+    notes.setBody('b.md', 'b changed')
     await notes.flush()
 
     expect(wrote.map((w) => w.path).sort()).toEqual(['a.md', 'b.md'])
@@ -239,7 +239,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one two')
+    notes.setBody('Heat.md', 'one two')
     await notes.settles('Heat.md')
 
     expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
@@ -253,9 +253,9 @@ describe('a note whose file is about to be renamed or removed', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one two')
+    notes.setBody('Heat.md', 'one two')
     notes.save('Heat.md')
-    notes.typed('Heat.md', 'one two three')
+    notes.setBody('Heat.md', 'one two three')
     await notes.settles('Heat.md')
 
     expect(wrote.map((one) => one.body)).toEqual(['one two', 'one two three'])
@@ -277,7 +277,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one two')
+    notes.setBody('Heat.md', 'one two')
     await notes.settles('Heat.md')
     await new Promise((wake) => setTimeout(wake, 20))
 
@@ -370,7 +370,7 @@ describe('a save asked for now', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one two')
+    notes.setBody('Heat.md', 'one two')
     notes.save('Heat.md')
     await settle()
 
@@ -400,7 +400,7 @@ describe('a note that changed on disk under a save', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'mine')
+    notes.setBody('Heat.md', 'mine')
     files.set('Heat.md', 'theirs')
     notes.save('Heat.md')
     await settle()
@@ -414,7 +414,7 @@ describe('a note that changed on disk under a save', () => {
     expect(notes.stale('Heat.md')?.says).toBe('this note changed on disk, and saving stopped')
     expect(notes.shown('Heat.md').body).toBe('mine')
 
-    notes.typed('Heat.md', 'mine and more')
+    notes.setBody('Heat.md', 'mine and more')
     await new Promise((wake) => setTimeout(wake, 20))
 
     expect(wrote).toHaveLength(1)
@@ -450,9 +450,9 @@ describe('a note that changed on disk under a save', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one two')
+    notes.setBody('Heat.md', 'one two')
     await vi.waitFor(() => expect(wrote).toHaveLength(1))
-    notes.typed('Heat.md', 'one two three')
+    notes.setBody('Heat.md', 'one two three')
     await vi.waitFor(() => expect(wrote).toHaveLength(2))
 
     expect(files.get('Heat.md')).toBe('one two three')
@@ -486,7 +486,7 @@ describe('a save that was refused', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', '---\nnot a body\n---\n')
+    notes.setBody('Heat.md', '---\nnot a body\n---\n')
     await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
 
     expect(notes.getErrorMessage('Heat.md')).toBe(
@@ -505,7 +505,7 @@ describe('a save that was refused', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one two')
+    notes.setBody('Heat.md', 'one two')
     await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
 
     expect(notes.getErrorMessage('Heat.md')).toBe(
@@ -526,7 +526,7 @@ describe('closing a note that could not be written', () => {
     notes.open('Heat.md')
     await settle()
 
-    notes.typed('Heat.md', 'one two')
+    notes.setBody('Heat.md', 'one two')
     await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
 
     await notes.shut('Heat.md')
@@ -555,7 +555,7 @@ describe('a note that points somewhere', () => {
   const linked = {
     body: 'What I made of it.',
     error: null,
-    at: marked('What I made of it.'),
+    at: getFingerprint('What I made of it.'),
     link: {
       url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       embed: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1',
@@ -579,7 +579,7 @@ describe('a note that points somewhere', () => {
       read: async () => ({
         body: '',
         error: null,
-        at: marked(''),
+        at: getFingerprint(''),
         ...(link ? { link } : {}),
       }),
     })

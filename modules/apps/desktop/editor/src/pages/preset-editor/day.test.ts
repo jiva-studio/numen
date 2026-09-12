@@ -61,7 +61,7 @@ const honest = (): Curve => {
 }
 
 /** A tab over one preset, answered with the curve given, or with none at all. */
-const opened = async (settings: Partial<Settings>, answer?: Curve) => {
+const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
   const written: Settings[] = []
   const core: Presets = {
     read: async (path) => ({
@@ -102,14 +102,14 @@ const opened = async (settings: Partial<Settings>, answer?: Curve) => {
 // eight days to the twelfth from that day, and the calendar would count seven.
 describe('a goal of a date', () => {
   it('counts the days to it from the review day', async () => {
-    const { state } = await opened({ goal: 'date', byDate: BY })
+    const { state } = await openPresetTab({ goal: 'date', byDate: BY })
 
     expect(state.curve.value.now.value).toBe(8)
   })
 
   it('leaves the knob where it stands when the day it already aims at is typed', async () => {
     const answered = honest()
-    const { state } = await opened({ goal: 'date', byDate: BY }, answered)
+    const { state } = await openPresetTab({ goal: 'date', byDate: BY }, answered)
     expect(state.place.value).toBe(answered.now.at)
 
     state.types('byDate', BY)
@@ -118,7 +118,7 @@ describe('a goal of a date', () => {
   })
 
   it('opens on a day counted from the review day where the file names none', async () => {
-    const { state, written } = await opened({ goal: 'minutes', byDate: '' })
+    const { state, written } = await openPresetTab({ goal: 'minutes', byDate: '' })
 
     state.chooses('date')
     for (let i = 0; i < 10; i += 1) await Promise.resolve()

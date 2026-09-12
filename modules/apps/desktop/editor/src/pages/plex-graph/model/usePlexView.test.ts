@@ -15,7 +15,7 @@ const answer = (path: string): Neighbourhood => ({
 })
 
 /** A neighbourhood of a note the index does not hold: a focus with no path. */
-const nothing = (): Neighbourhood => ({
+const createEmptyNeighbourhood = (): Neighbourhood => ({
   focus: { path: '', title: '' },
   focusType: 'note',
   related: [],
@@ -88,7 +88,7 @@ describe('a note that moved while a question was in flight', () => {
 describe('the note in focus goes away', () => {
   it('says so, keeps what it is showing, and can come back to it', async () => {
     let holds = true
-    const plex = usePlexView(fake(async (path) => (holds ? answer(path) : nothing())))
+    const plex = usePlexView(fake(async (path) => (holds ? answer(path) : createEmptyNeighbourhood())))
 
     await plex.go('Note.md')
     expect(plex.here.value).toBe('Note.md')
@@ -111,7 +111,7 @@ describe('a plex whose tab has closed', () => {
     const plex = usePlexView(
       fake(async () => {
         await new Promise((wake) => setTimeout(wake, 0))
-        return nothing()
+        return createEmptyNeighbourhood()
       }),
     )
 

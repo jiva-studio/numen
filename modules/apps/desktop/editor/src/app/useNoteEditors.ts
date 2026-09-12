@@ -9,7 +9,7 @@ import { usePresetTab } from '@/pages/preset-editor'
 import { noteChanges, noteCreator, useNoteTab } from '@/pages/note-editor'
 import { openNotes } from '@/entities/note'
 import { raiseConflicts, useFileFlush } from '@/features/file-conflict'
-import { reaching, type Store } from '@/features/command-palette'
+import { createNotes, type Store } from '@/features/command-palette'
 import type { Core } from '@/app/ports/core'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { FileOpeners } from '@/entities/tab'
@@ -50,8 +50,8 @@ export function useNoteEditors({ core, log, puts, held, day }: NoteEditorsDeps) 
   raiseConflicts(stencils, going)
 
   const stores: readonly Store[] = [noted.kept, decks.kept, stencils.kept]
-  const reached = reaching(stores, puts)
-  const titled = (id: string): string => stores.find((one) => one.has(id))?.called(id) ?? ''
+  const reached = createNotes(stores, puts)
+  const getTitle = (id: string): string => stores.find((one) => one.has(id))?.called(id) ?? ''
 
   const kinds = [noted.kind, decks.kind, stencils.kind, schedules.kind]
 
@@ -71,7 +71,7 @@ export function useNoteEditors({ core, log, puts, held, day }: NoteEditorsDeps) 
     going,
     stores,
     reached,
-    titled,
+    getTitle,
     kinds,
     close,
   }

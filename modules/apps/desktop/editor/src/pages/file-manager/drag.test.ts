@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { addressDropped, addressIn, carriesAddress } from './drag'
 
 /** A drag holding what a browser offers, and nothing under any other type. */
-const dragging = (written: Record<string, string>): DataTransfer =>
+const createDrag = (written: Record<string, string>): DataTransfer =>
   ({ getData: (type: string) => written[type] ?? '' }) as DataTransfer
 
 describe('a drag carrying an address', () => {
@@ -40,13 +40,13 @@ describe('the address a list holds', () => {
 
 describe('the address let go over the tree', () => {
   it('is read out of what the drag holds', () => {
-    expect(addressDropped(dragging({ 'text/uri-list': 'https://numen.md/' }))).toBe(
+    expect(addressDropped(createDrag({ 'text/uri-list': 'https://numen.md/' }))).toBe(
       'https://numen.md/',
     )
   })
 
   it('is nothing where the drag holds no list, and nothing where there is no drag', () => {
-    expect(addressDropped(dragging({ 'text/plain': 'https://numen.md/' }))).toBe('')
+    expect(addressDropped(createDrag({ 'text/plain': 'https://numen.md/' }))).toBe('')
     expect(addressDropped(null)).toBe('')
   })
 })

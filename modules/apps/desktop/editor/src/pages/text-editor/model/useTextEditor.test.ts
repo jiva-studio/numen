@@ -111,7 +111,7 @@ describe('what is typed over it', () => {
 })
 
 describe('a file the settings cannot be read out of', () => {
-  const refusing = () =>
+  const createRefusingVault = () =>
     vault({
       saveSettingsFile: () =>
         Promise.reject(
@@ -120,7 +120,7 @@ describe('a file the settings cannot be read out of', () => {
     })
 
   it('is refused, with what is wrong said', async () => {
-    const { held } = refusing()
+    const { held } = createRefusingVault()
     await held.again()
     held.types('{ "agent": ')
     await held.keeps()
@@ -130,7 +130,7 @@ describe('a file the settings cannot be read out of', () => {
   })
 
   it('is left in the editor, as it was typed', async () => {
-    const { held } = refusing()
+    const { held } = createRefusingVault()
     await held.again()
     held.types('{ "agent": ')
     await held.keeps()
@@ -140,7 +140,7 @@ describe('a file the settings cannot be read out of', () => {
   })
 
   it('has nothing read again', async () => {
-    const { held, reads } = refusing()
+    const { held, reads } = createRefusingVault()
     await held.again()
     held.types('{ "agent": ')
     await held.keeps()

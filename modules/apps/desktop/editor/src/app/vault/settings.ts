@@ -6,7 +6,7 @@ import { fetched } from './words'
 import { staleIn } from '@/shared/answers'
 import { DEFAULT_PARTS } from '@/entities/settings'
 import { DEFAULT_STARTS } from '@/entities/settings'
-import { settingAt } from '@/entities/settings'
+import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
 import { formatErrorMessage } from '@numen/wire'
 import type { Configuration } from '@/entities/settings'
@@ -59,15 +59,15 @@ export type SettingsCore = Pick<
 >
 
 export const settingsCore: SettingsCore = {
-  getSyncEnabled: async () => settingAt(await configured(), SYNCS) !== false,
+  getSyncEnabled: async () => getSettingAt(await configured(), SYNCS) !== false,
   setSyncEnabled: (kept) => puts([{ at: SYNCS, value: kept }]),
   getHangingSettings: async () => {
     const answer = await settingsService.getSettings({})
     const written = JSON.parse(answer.written)
     const held = answer.partsUnderANodeBounds
     return {
-      hangs: settingAt(written, HANGS) !== false,
-      parts: partsIn(settingAt(written, PARTS)),
+      hangs: getSettingAt(written, HANGS) !== false,
+      parts: partsIn(getSettingAt(written, PARTS)),
       least: held?.least ?? DEFAULT_PARTS,
       most: held?.most ?? DEFAULT_PARTS,
     } satisfies HangingSettings
@@ -111,7 +111,7 @@ export const settingsCore: SettingsCore = {
   },
   getReviewSettings: async () => {
     const answer = await settingsService.getSettings({})
-    const hour = settingAt(JSON.parse(answer.written), STARTS)
+    const hour = getSettingAt(JSON.parse(answer.written), STARTS)
     return {
       starts: typeof hour === 'string' ? hour : DEFAULT_STARTS,
       latest: answer.latestDayStarts,

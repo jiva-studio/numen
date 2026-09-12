@@ -7,27 +7,27 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { panesOf } from '@numen/ui'
-import { AGENT, CONVERSATION, PLEX, begun, minted } from './workspace'
+import { AGENT, CONVERSATION, PLEX, begun, generateId } from './workspace'
 
 describe('the identity a tab is filed under', () => {
   it('is a new one every time, so a second of a kind is a second tab', () => {
-    const names = [minted(PLEX), minted(PLEX), minted(PLEX)]
+    const names = [generateId(PLEX), generateId(PLEX), generateId(PLEX)]
 
     expect(new Set(names).size).toBe(3)
   })
 
   it('is never the name of a tab of another kind', () => {
-    expect(minted(PLEX)).not.toBe(minted(AGENT))
+    expect(generateId(PLEX)).not.toBe(generateId(AGENT))
   })
 
   it('says what kind of thing the tab holds', () => {
-    expect(minted(AGENT).startsWith(`${AGENT}:`)).toBe(true)
+    expect(generateId(AGENT).startsWith(`${AGENT}:`)).toBe(true)
   })
 })
 
 describe('the name a conversation is answered under', () => {
   it('is a new one for every conversation opened', () => {
-    const names = [minted(CONVERSATION), minted(CONVERSATION), minted(CONVERSATION)]
+    const names = [generateId(CONVERSATION), generateId(CONVERSATION), generateId(CONVERSATION)]
 
     expect(new Set(names).size).toBe(3)
   })
@@ -37,12 +37,12 @@ describe('the name a conversation is answered under', () => {
    * the conversation each of them stands for. The next name is new to both.
    */
   it('is not one the page gave out before it was reloaded', async () => {
-    const before = [minted(CONVERSATION), minted(CONVERSATION)]
+    const before = [generateId(CONVERSATION), generateId(CONVERSATION)]
 
     // The page again, with everything it held forgotten.
     vi.resetModules()
     const reloaded = await import('./workspace')
-    const after = [reloaded.minted(CONVERSATION), reloaded.minted(CONVERSATION)]
+    const after = [reloaded.generateId(CONVERSATION), reloaded.generateId(CONVERSATION)]
 
     expect(new Set([...before, ...after]).size).toBe(4)
   })

@@ -64,22 +64,22 @@ export function holdChanges(limits: HoldLimits = holding) {
   }
 
   /** The note changed under whatever is drawn over it. */
-  const arrived = (path: string): TimerRequest | null => {
+  const handleNoteChange = (path: string): TimerRequest | null => {
     if (!ending.has(path)) return null
     return { path, after: limits.settle }
   }
 
   /** The interval for one note fired. */
-  const fired = (path: string): void => {
+  const handleTimeout = (path: string): void => {
     changes.delete(path)
     ending.delete(path)
   }
 
   /** A note the window is no longer showing. */
-  const shut = (path: string): void => fired(path)
+  const shut = (path: string): void => handleTimeout(path)
 
   /** What one note is drawn with, or nothing. */
   const shown = (path: string): Change | null => changes.get(path) ?? null
 
-  return { told, arrived, fired, shut, shown }
+  return { told, handleNoteChange, handleTimeout, shut, shown }
 }
