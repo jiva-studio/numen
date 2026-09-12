@@ -1,7 +1,7 @@
 /**
  * A step of a command: what it asks for, and the answers it is reached by.
  *
- * The palette stands on a step, and what is drawn there is `drawing.ts`. The
+ * The palette stands on a step, and what is drawn there is `view.ts`. The
  * names below are what an item of a step is chosen under, so the two agree on
  * one word for one answer.
  */

@@ -2,7 +2,7 @@
  * Carrying out a command over a note, a file or a tab.
  *
  * Every command is one entry in the table below, under the identity
- * `commands.ts` gives it, so a command that is offered and a command that
+ * `table.ts` gives it, so a command that is offered and a command that
  * happens are the same list. What the window offers to do it with is
  * `deps.ts`; what a command does to the vaults is `vaults.ts`. Nothing here
  * draws anything.

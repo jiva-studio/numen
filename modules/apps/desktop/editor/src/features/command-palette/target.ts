@@ -1,8 +1,8 @@
 /**
  * What a command is, what it is asked over, and the words it is offered in.
  *
- * Nothing here decides anything: the table of commands is `commands.ts` and
- * when each is offered is `offered.ts`. This is what both of them speak.
+ * Nothing here decides anything: the table of commands is `table.ts` and
+ * when each is offered is `where.ts`. This is what both of them speak.
  */
 import type { PaletteKeys } from '@numen/ui'
 import type { ArtifactStates } from '@/shared/artifacts'

@@ -3,7 +3,7 @@
  *
  * A command is offered over what is in front of the person: a note, a vault, a
  * file of a kind, a file nothing has been made from yet. Each answer here is
- * one such question, and the table in `commands.ts` names which it asks.
+ * one such question, and the table in `table.ts` names which it asks.
  */
 import type { ArtifactState, ArtifactStates } from '@/shared/artifacts'
 import type { Source } from '@/shared/file'

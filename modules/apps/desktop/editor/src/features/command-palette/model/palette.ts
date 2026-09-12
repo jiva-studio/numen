@@ -20,9 +20,9 @@ import {
   type CommandInvocation,
   type Words,
 } from './target'
-import type { NoteLookup, PaletteLists } from './lists'
+import type { NoteLookup, PaletteLists } from './rows'
 import type { NameMatch } from './search'
-import { createPaletteSteps } from './steps'
+import { createPaletteSteps } from './navigation'
 
 /** How many notes the step that picks one asks for. */
 const EACH = 8
