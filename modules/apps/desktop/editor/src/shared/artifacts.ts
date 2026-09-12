@@ -5,17 +5,11 @@
  * A build that cannot do a run at all says so where it is asked, and the window
  * offers it nowhere afterwards.
  */
-import { Code, createClient } from '@connectrpc/connect'
+import { Code } from '@connectrpc/connect'
 import type { ConnectError } from '@connectrpc/connect'
-import {
-  ArtifactKind as Kinds,
-  ArtifactService,
-  State as States,
-} from '@numen/protocol'
-import { namesOf, transport } from '@numen/wire'
-
-/** What a model has made from the files of the vault. */
-const artifacts = createClient(ArtifactService, transport)
+import { ArtifactKind as Kinds, State as States } from '@numen/protocol'
+import { namesOf } from '@numen/wire'
+import { artifacts } from '@/shared/clients'
 
 /**
  * What a model makes from one file of the vault, asked for by name. Which model

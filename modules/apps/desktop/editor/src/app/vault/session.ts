@@ -1,7 +1,8 @@
 /**
  * Session, lifecycle, and workspace domain methods for the window core.
  */
-import { agentService, vault, windowService, workspace, WINDOW } from './clients'
+import { WINDOW } from './clients'
+import { agentService, vault, windowService, workspace } from '@/shared/clients'
 import { counted, owing } from './words'
 import type { Core } from '@/app/ports/core'
 

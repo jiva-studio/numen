@@ -11,11 +11,16 @@ import type { Role as WindowRole } from '@/entities/note'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
-// Only the client is stood in for. The rest of the module is what `@numen/wire`
-// reads its codes off, and a mock naming one export hides the others from it.
-vi.mock('@connectrpc/connect', async (actual) => ({
-  ...(await actual<typeof import('@connectrpc/connect')>()),
-  createClient: () => asked,
+vi.mock('@/shared/clients', () => ({
+  vault: asked,
+  agentService: asked,
+  workspace: asked,
+  files: asked,
+  notes: asked,
+  search: asked,
+  vaultsService: asked,
+  settingsService: asked,
+  windowService: asked,
 }))
 
 const asked = {

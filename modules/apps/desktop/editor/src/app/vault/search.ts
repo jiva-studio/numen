@@ -1,7 +1,7 @@
 /**
  * Search and lookup domain methods for the window core.
  */
-import { search } from './clients'
+import { search } from '@/shared/clients'
 import { modes, noteType, run, sourceKind } from './words'
 import type { SearchDeps } from '@/features/command-palette'
 

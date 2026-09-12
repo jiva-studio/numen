@@ -3,9 +3,10 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@connectrpc/connect', async (actual) => ({
-  ...(await actual<typeof import('@connectrpc/connect')>()),
-  createClient: () => asked,
+vi.mock('@/shared/clients', () => ({
+  recordings: asked,
+  transcripts: asked,
+  articles: asked,
 }))
 
 vi.mock('@/shared/artifacts', () => ({

@@ -6,11 +6,9 @@
  * its name, the text of its file, and which of them is chosen. A size is one
  * multiplier, and how far it goes is the application's to say.
  */
-import { createClient } from '@connectrpc/connect'
-import { Mode as Modes, Shelf, ThemeService } from '@numen/protocol'
-import { namesOf, transport } from '@numen/wire'
-
-const theme = createClient(ThemeService, transport)
+import { Mode as Modes, Shelf } from '@numen/protocol'
+import { namesOf } from '@numen/wire'
+import { theme } from '@/shared/clients'
 
 /** Which half of a `light-dark()` pair every token is read as. */
 export type Mode = 'system' | 'light' | 'dark'

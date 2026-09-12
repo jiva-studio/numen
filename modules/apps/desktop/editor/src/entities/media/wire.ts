@@ -2,19 +2,17 @@
  * What a recording of the vault is, for whatever opens it: its player address,
  * duration, transcript cues, and article prose.
  */
-import { createClient } from '@connectrpc/connect'
-import { ArticleService, RecordingService, TranscriptService } from '@numen/protocol'
 import type { Cue as CueMessage } from '@numen/protocol'
-import { transport } from '@numen/wire'
 import { waiting } from '@/shared/answers'
 import { running } from '@/shared/artifacts'
+import * as clients from '@/shared/clients'
 import type { Cue } from './cues'
 import type { Recordings } from './transcript'
 
 const served = {
-  recordings: createClient(RecordingService, transport),
-  transcripts: createClient(TranscriptService, transport),
-  articles: createClient(ArticleService, transport),
+  recordings: clients.recordings,
+  transcripts: clients.transcripts,
+  articles: clients.articles,
 }
 
 /** Maps a protobuf Cue message to internal Cue type. */

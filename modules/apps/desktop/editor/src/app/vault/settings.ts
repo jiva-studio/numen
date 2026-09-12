@@ -1,7 +1,7 @@
 /**
  * Settings domain methods for the window core.
  */
-import { settingsService } from './clients'
+import { settingsService } from '@/shared/clients'
 import { fetched } from './words'
 import { staleIn } from '@/shared/answers'
 import { DEFAULT_PARTS } from '@/entities/settings'

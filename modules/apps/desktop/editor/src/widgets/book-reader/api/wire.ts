@@ -1,15 +1,13 @@
 /**
  * Wire adapter for BookService.
  */
-import { createClient } from '@connectrpc/connect'
-import { BookService } from '@numen/protocol'
 import type { SpineDocument as SpineDocumentMessage } from '@numen/protocol'
-import { transport } from '@numen/wire'
 import { asset, fingerprint, named, stamp, waiting } from '@/shared/answers'
+import * as clients from '@/shared/clients'
 import type { Book, Books, SpineDocument } from '../types'
 
 const served = {
-  books: createClient(BookService, transport),
+  books: clients.books,
 }
 
 /** One document of the spine, as the window carries it. */

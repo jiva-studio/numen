@@ -1,16 +1,14 @@
 /**
  * Wire adapter for DocumentService and OcrService.
  */
-import { createClient } from '@connectrpc/connect'
-import { DocumentService, OcrService } from '@numen/protocol'
 import type { Run as RunMessage } from '@numen/protocol'
-import { transport } from '@numen/wire'
 import { asset, named, stamp, waiting } from '@/shared/answers'
+import * as clients from '@/shared/clients'
 import type { Documents, PageHighlight, Rect } from '../types'
 
 const served = {
-  documents: createClient(DocumentService, transport),
-  ocr: createClient(OcrService, transport),
+  documents: clients.documents,
+  ocr: clients.ocr,
 }
 
 /**

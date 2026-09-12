@@ -10,12 +10,7 @@ import { Mode as Modes, Shelf } from '@numen/protocol'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
-// Only the client is stood in for. The rest of the module is what `@numen/wire`
-// reads its codes off, and a mock naming one export hides the others from it.
-vi.mock('@connectrpc/connect', async (actual) => ({
-  ...(await actual<typeof import('@connectrpc/connect')>()),
-  createClient: () => asked,
-}))
+vi.mock('@/shared/clients', () => ({ theme: asked }))
 
 const asked = {
   listThemes: vi.fn(),

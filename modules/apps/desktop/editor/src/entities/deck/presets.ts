@@ -1,11 +1,9 @@
 /**
  * ConnectRPC client and domain models for flashcard preset services.
  */
-import { createClient } from "@connectrpc/connect"
 import {
   BudgetUnit as BudgetUnits,
   Rule as Rules,
-  PresetsService,
   type BudgetName,
   type Bounds as BoundsMessage,
   type Curve as CurveMessage,
@@ -15,8 +13,9 @@ import {
   type SettingsBounds as SettingsBoundsMessage,
   type StopReason,
 } from "@numen/protocol"
-import { goalNames, goalOf, namesOf, transport, type Goal } from "@numen/wire"
+import { goalNames, goalOf, namesOf, type Goal } from "@numen/wire"
 import { fingerprint, errorIn, staleIn, stamp } from "@/shared/answers"
+import { asking } from "@/shared/clients"
 import type { ErrorCode } from '@/shared/errors'
 
 export type { Goal }
@@ -213,8 +212,6 @@ export interface Presets {
   write(path: string, settings: Settings, seen: string): Promise<WriteResult>
   curve(path: string, settings: Settings): Promise<Curve>
 }
-
-const asking = createClient(PresetsService, transport)
 
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {

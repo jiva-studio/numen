@@ -1,7 +1,8 @@
 /**
  * Vault management domain methods for the window core and vaults interface.
  */
-import { vaultsService, windowService, WINDOW } from './clients'
+import { WINDOW } from './clients'
+import { vaultsService, windowService } from '@/shared/clients'
 import { mapVault, mapVaultResult, turnedDown } from './words'
 import type { CommandsDeps } from '@/features/command-palette'
 import type { Vaults } from '@/shared/vaults'

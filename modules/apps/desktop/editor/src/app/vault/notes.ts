@@ -1,7 +1,7 @@
 /**
  * Note domain methods for the window core.
  */
-import { notes } from './clients'
+import { notes } from '@/shared/clients'
 import { mapBaseline, mapLink, mapMoveResult, mapNeighbourhood, mapNoteResult, run, writes } from './words'
 import { errorIn, staleIn } from '@/shared/answers'
 import type { Core } from '@/app/ports/core'

@@ -2,10 +2,8 @@
  * The decks and the stencils a vault holds, as the window asks for them and as
  * they come back.
  */
-import { createClient } from '@connectrpc/connect'
-import { CardsService } from '@numen/protocol'
-import { transport } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
+import { cardsService } from '@/shared/clients'
 import type { Cards, DeckService, StencilService } from './types'
 import {
   deserializeCard,
@@ -17,8 +15,6 @@ import {
 
 export * from './types'
 export * from './serialize'
-
-const cardsService = createClient(CardsService, transport)
 
 /** Deck persistence and lifecycle service. */
 export const deckService: DeckService = {

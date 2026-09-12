@@ -1,7 +1,7 @@
 /**
  * File tree and filesystem domain methods for the window core.
  */
-import { files } from './clients'
+import { files } from '@/shared/clients'
 import { bookFormat, mapEntry, mapMoveResult, noteType, sourceKind } from './words'
 import { errorIn } from '@/shared/answers'
 import type { Core } from '@/app/ports/core'
