@@ -12,32 +12,32 @@ import {
   type Settings as SettingsMessage,
   type SettingsBounds as SettingsBoundsMessage,
   type StopReason,
-} from "@numen/protocol"
-import { goalNames, goalOf, namesOf, type Goal } from "@numen/wire"
-import { fingerprint, errorIn, staleIn, stamp } from "@/shared/answers"
-import { asking } from "@/shared/clients"
+} from '@numen/protocol'
+import { goalNames, goalOf, namesOf, type Goal } from '@numen/wire'
+import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
+import { asking } from '@/shared/clients'
 import type { ErrorCode } from '@/shared/errors'
 
 export type { Goal }
 
 /** The three, in the order they are offered. */
-export const GOALS: readonly Goal[] = ["minutes", "retention", "date"]
+export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
 
 /**
  * The unit a day's budget is spent in.
  */
-export type BudgetUnit = "cards" | "shows"
+export type BudgetUnit = 'cards' | 'shows'
 
 /** The two, in the order they are offered. */
-export const BUDGET_UNITS: readonly BudgetUnit[] = ["cards", "shows"]
+export const BUDGET_UNITS: readonly BudgetUnit[] = ['cards', 'shows']
 
 /**
  * What a preset counts as learned.
  */
-export type Rule = "interval" | "retention"
+export type Rule = 'interval' | 'retention'
 
 /** The two, in the order they are offered. */
-export const RULES: readonly Rule[] = ["interval", "retention"]
+export const RULES: readonly Rule[] = ['interval', 'retention']
 
 /** A share of a day's load for each day of the week that is not at the whole. */
 export type Load = Readonly<Record<string, number>>
@@ -82,17 +82,17 @@ export interface Settings {
 
 /** A preset naming nothing, and how a deck pointing at none is scheduled. */
 export const DEFAULTS: Settings = {
-  goal: "minutes",
-  byDate: "",
+  goal: 'minutes',
+  byDate: '',
   minutesADay: 20,
   newADay: 10,
   reviewsADay: 200,
   retention: 0.9,
-  counts: "cards",
+  counts: 'cards',
   backlog: 100,
   load: {},
   evenLoad: true,
-  learned: "interval",
+  learned: 'interval',
   interval: 21,
 }
 
@@ -173,7 +173,7 @@ export interface Place {
 }
 
 /** A place that falls outside the grid. */
-export const NOWHERE: Place = { at: -1, value: 0, day: "" }
+export const NOWHERE: Place = { at: -1, value: 0, day: '' }
 
 /**
  * What a preset schedules, as the figures over the picture count it.
@@ -227,17 +227,17 @@ export const presets: Presets = {
     const answer = await asking.scheduleDeck({
       deck,
       preset,
-      ...(seen === "" ? {} : { seen: fingerprint(seen) }),
+      ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? "" }
+    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   write: async (path, settings, seen) => {
     const answer = await asking.writePreset({
       path,
       settings: sent(settings),
-      ...(seen === "" ? {} : { seen: fingerprint(seen) }),
+      ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? "" }
+    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   curve: async (path, settings) => {
     const answer = await asking.computeCurve({ path, settings: sent(settings) })
@@ -254,7 +254,7 @@ const took = (answer: {
 }): ReadResult => ({
   preset: answer.preset ? held(answer.preset) : null,
   error: errorIn(answer),
-  at: stamp(answer.at) ?? "",
+  at: stamp(answer.at) ?? '',
   bounds: parseSettingsBounds(answer.bounds),
 })
 
@@ -357,8 +357,8 @@ const parsePlace = (said: PlaceMessage | undefined): Place =>
  */
 const LEARNED: Record<Rules, Rule | null> = {
   [Rules.UNSPECIFIED]: null,
-  [Rules.INTERVAL]: "interval",
-  [Rules.RETENTION]: "retention",
+  [Rules.INTERVAL]: 'interval',
+  [Rules.RETENTION]: 'retention',
 }
 
 const RULING = namesOf<Rule, Rules>(LEARNED)
@@ -368,8 +368,8 @@ const RULING = namesOf<Rule, Rules>(LEARNED)
  */
 const COUNTED: Record<BudgetUnits, BudgetUnit | null> = {
   [BudgetUnits.UNSPECIFIED]: null,
-  [BudgetUnits.CARDS]: "cards",
-  [BudgetUnits.SHOWS]: "shows",
+  [BudgetUnits.CARDS]: 'cards',
+  [BudgetUnits.SHOWS]: 'shows',
 }
 
 const COUNTING = namesOf<BudgetUnit, BudgetUnits>(COUNTED)

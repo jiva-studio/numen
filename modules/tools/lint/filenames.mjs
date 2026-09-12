@@ -97,7 +97,7 @@ function nounStem(word) {
 }
 
 /** Whether a word of a file's name is carried by a word a declaration says. */
-export const carries = (said, declared) =>
+export const isCarriedBy = (said, declared) =>
   said === declared || verbStem(said) === nounStem(declared)
 
 /** The shapes a type takes its suffix from, each named after what it belongs to. */
@@ -112,7 +112,7 @@ const ROLES = new Set(['deps', 'props', 'options', 'state', 'ref', 'handle', 'ev
  * A name saying anything of its own is not this: `commandsOf` says commands
  * whatever the file is called.
  */
-export function echoes(stem, name) {
+export function isEchoOf(stem, name) {
   const own = new Set(words(stem))
   const said = words(name)
   return said.every(
@@ -218,9 +218,9 @@ export function given({ at, text }) {
 export function refused(stem, names, given = []) {
   const verbs = words(stem).filter(verbal)
   if (verbs.length === 0) return []
-  const chosen = names.filter((one) => !echoes(stem, one))
+  const chosen = names.filter((one) => !isEchoOf(stem, one))
   const said = new Set([...chosen, ...given].flatMap(words))
-  return verbs.filter((verb) => ![...said].some((one) => carries(verb, one)))
+  return verbs.filter((verb) => ![...said].some((one) => isCarriedBy(verb, one)))
 }
 
 /** Every file the rule reads: the Go of the modules, and the interfaces'. */

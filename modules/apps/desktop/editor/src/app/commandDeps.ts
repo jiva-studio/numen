@@ -1,15 +1,15 @@
 /**
  * Command execution dependencies assembly for palette and shortcut actions.
  */
-import type { Ref } from "vue"
-import { vaults, type VaultCore } from "./vault"
-import { running } from "@/shared/artifacts"
-import { WORDS as cardWords } from "@/entities/deck"
-import type { CommandDeps, Notes, RunSupport, VaultRef } from "@/features/command-palette"
-import type { MessageWriter } from "@/shared/notices/messages"
-import type { createFileCreators } from "@/entities/tab"
-import type { useWindowTabs } from "@/entities/tab"
-import type { NoteCreator } from "@/pages/note-editor"
+import type { Ref } from 'vue'
+import { vaults, type VaultCore } from './vault'
+import { running } from '@/shared/artifacts'
+import { WORDS as cardWords } from '@/entities/deck'
+import type { CommandDeps, Notes, RunSupport, VaultRef } from '@/features/command-palette'
+import type { MessageWriter } from '@/shared/notices/messages'
+import type { createFileCreators } from '@/entities/tab'
+import type { useWindowTabs } from '@/entities/tab'
+import type { NoteCreator } from '@/pages/note-editor'
 
 export interface CommandDepsOptions {
   core: VaultCore

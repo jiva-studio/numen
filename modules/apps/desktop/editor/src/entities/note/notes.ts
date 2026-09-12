@@ -3,7 +3,7 @@
  *
  * Coordinates open note tabs, executing reads, writes, timers, and holding note state.
  */
-import { ref, type Ref } from "vue"
+import { ref, type Ref } from 'vue'
 import {
   opening,
   stateOf,
@@ -13,13 +13,13 @@ import {
   type Event,
   type Move,
   type Tab,
-} from "./tab"
-import type { LinkAddress } from "./note"
-import type { OpenNote, Notes, OpenNotesOptions } from "./noteTypes"
-import { createNoteQueue } from "./queue"
-import { createConflictCoordinator } from "./conflict"
+} from './tab'
+import type { LinkAddress } from './note'
+import type { OpenNote, Notes, OpenNotesOptions } from './noteTypes'
+import { createNoteQueue } from './queue'
+import { createConflictCoordinator } from './conflict'
 
-export * from "./noteTypes"
+export * from './noteTypes'
 
 export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const limits = how.limits ?? waiting
@@ -48,7 +48,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
       else addresses.value.delete(id)
     },
     (id) => {
-      if (closing.has(id)) turn(id, { kind: "closing" })
+      if (closing.has(id)) turn(id, { kind: 'closing' })
     },
   )
 
@@ -70,27 +70,27 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
         return done(true)
       }
       closing.set(id, done)
-      turn(id, { kind: "closing" })
+      turn(id, { kind: 'closing' })
     })
 
   const where = (id: string): string => tabs.value.get(id)?.path ?? id
   const has = (id: string): boolean => tabs.value.has(id)
-  const at = (id: string): string => tabs.value.get(id)?.filePath ?? ""
+  const at = (id: string): string => tabs.value.get(id)?.filePath ?? ''
 
   const setBody = (id: string, body: string): void => {
     bodies.value.set(id, body)
-    turn(id, { kind: "typed", body, at: now() })
+    turn(id, { kind: 'typed', body, at: now() })
   }
 
-  const save = (id: string): void => turn(id, { kind: "saving" })
+  const save = (id: string): void => turn(id, { kind: 'saving' })
 
   const shown = (id: string): OpenNote => {
     const tab = tabs.value.get(id)
     const err = tab?.error ?? null
     return {
       path: tab?.path ?? id,
-      body: bodies.value.get(id) ?? "",
-      state: tab ? stateOf(tab) : "loading",
+      body: bodies.value.get(id) ?? '',
+      state: tab ? stateOf(tab) : 'loading',
       error: err,
     }
   }
@@ -101,8 +101,8 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     tabs.value = new Map(tabs.value).set(id, next.tab)
     for (const effect of next.effects) act(id, effect)
 
-    const held = next.effects.some((effect) => effect.kind === "hold")
-    const writing = next.effects.some((effect) => effect.kind === "write")
+    const held = next.effects.some((effect) => effect.kind === 'hold')
+    const writing = next.effects.some((effect) => effect.kind === 'write')
     if (held && !writing) closing.get(id)?.(false)
 
     if (next.tab.pendingWrite === null) queue.resolveSettling(id)
@@ -110,28 +110,28 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
 
   function act(id: string, effect: Effect): void {
     switch (effect.kind) {
-      case "read":
+      case 'read':
         void queue.read(id, effect.path, effect.generation)
         return
-      case "write":
+      case 'write':
         void queue.write(id, effect.path, effect.body, effect.seen)
         return
-      case "arm":
+      case 'arm':
         queue.arm(id, effect.after)
         return
-      case "disarm":
+      case 'disarm':
         queue.disarm(id)
         return
-      case "replace":
+      case 'replace':
         bodies.value.set(id, effect.body)
         replaced(where(id))
         return
-      case "hold":
+      case 'hold':
         return
-      case "say":
+      case 'say':
         told.add(id)
         return
-      case "close":
+      case 'close':
         forget(id)
         return
     }

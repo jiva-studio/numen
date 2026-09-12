@@ -104,11 +104,11 @@ node --test modules/tools/lint/*.test.mjs
 - [x] `shared/icons.ts` → `entities/tab/workspace`: файл был кучей из четырёх таблиц разных доменов. Разнесён: команды остались в `shared/icons.ts`, вкладки в `entities/tab/icons.ts`, заметки в `entities/note/icons.ts`, запись дерева в `widgets/file-manager/icons.ts`.
 - [x] `shared/note.ts` → `entities/note`: шим удалён.
 - [x] `shared/file.ts` → `entities/note`: словарь файлов хранилища (`NoteType`, `CreateResult`, `MoveResult`) сведён в `shared/file.ts`, плюс убраны четыре его собственных шима.
-- [ ] Разрезать `entities/settings/appearance.ts` (562 строки) по четырём швам: значения домена, DOM-адаптер, представление для палитры, сценарий выбора.
-- [ ] То же для `entities/settings/hanging.ts`.
-- [ ] То же для `entities/settings/sync.ts`.
-- [ ] Завести срез `features/settings-commands/` и перенести туда палитровую часть и сценарий.
-- [ ] `entities/note/notes.quitting.test.ts` → `features/file-conflict/flushing`: решается политикой для тестов из шага 0.
+- [x] Разрезать `entities/settings/appearance.ts` по швам — сделано: значения остались в сущности, DOM-адаптер стал `features/settings-commands/lib/head.ts`, строки палитры и сценарий уехали в тот же срез.
+- [x] То же для `entities/settings/hanging.ts`.
+- [x] `entities/settings/sync.ts` уехал целиком: в нём не было ни значения, ни границы — только порт и две строки палитры, то есть сценарий.
+- [x] Срез `features/settings-commands/` заведён, и кросс-импорт к палитре открыт через `@x`, а не через `shared`.
+- [x] `entities/note/notes.quitting.test.ts` → `features/file-conflict/quitting.test.ts`.
 - [x] Нарушений направления вне тестов и историй не осталось: было 23, стало 6, и все шесть — тесты и истории, записанные в `baseline` с причиной.
 
 **Критерий:** пересчёт даёт ноль импортов вверх по слоям; строки вычеркнуты из `baseline`.
@@ -124,9 +124,9 @@ node --test modules/tools/lint/*.test.mjs
 - [x] Герундии и причастия в окне переименованы все: **135 имён**, тремя агентами по слоям. `minted` → `generateId`, `holding` → `findCueAt`, `typed` → `setBody`, `spined` → `readSpineDocument`, десять обработчиков машины состояний заметки — `applyRead`, `applyEdit`, `applyWrite` и так далее. `baseline` правила упал с 234 до 167, и остаток — это `libs/ui` и `flashcards`, то есть раздел 14.
 - [x] Правило по ходу поймало собственную слепоту: обход останавливал список параметров на первой скобке, поэтому сигнатура с вызовом внутри — `(runs = support())` — читалась как не-объявление, и `asking` в палитре не видел никто. Теперь идёт на одну скобку вглубь, и это покрыто тестом.
 - [ ] Глаголы 3-го лица (`carries`, `holds`, `puts`, `shows`) машиной не проверяются и остаются человеку — см. роль `naming-reviewer`.
-- [ ] Поправить имена в самих линтерах: `carries` и `echoes` в `filenames.mjs`.
-- [ ] Выровнять кавычки в импортах на одинарные (`entities/note/notes.ts`, `entities/deck/presets.ts` — двенадцать строк).
-- [ ] Правило на кавычки в `modules/tools/lint/`.
+- [x] Поправить имена в самих линтерах: `carries` → `isCarriedBy`, `echoes` → `isEchoOf`.
+- [x] Кавычки выровнены — не двенадцать строк, а 67 в пяти файлах: `presets.ts` (29), `notes.ts` (24), `commandDeps.ts` (9), `BookTab.stories.ts` (4) и один во `flashcards`.
+- [x] Правило `quotes.mjs` написано, с четырьмя тестами. Оно читает только блоки скрипта у `.vue` — в шаблоне двойные кавычки это HTML — и пропускает строку, которая держит одинарную внутри. Одна запись в `baseline`: маска не разбирает регулярные выражения, поэтому шаблон, ищущий HTML-атрибут, читается как две строки.
 
 **Критерий правила:** `node --test modules/tools/lint/*.test.mjs` зелёный. **Критерий прохода:** `baseline` пуст.
 
@@ -177,7 +177,7 @@ node --test modules/tools/lint/*.test.mjs
 - [x] `useCommands.ts` — 125 строк, разбивать нечего.
 - [ ] `CommandsDeps` в `deps.ts` (249 строк) по-прежнему длинный список полей.
 - [x] Разбить `app/useWindowKinds.ts` на фабрики в `app/kinds/` — было 250 строк, стало 74.
-- [ ] `entities/settings/appearance.ts` (562) — снимается шагом 6.
+- [x] `entities/settings/appearance.ts` — снят шагом 6.
 - [ ] `entities/media/transcript.ts` (471).
 - [ ] `widgets/preset-editor/plot.ts` (394), `curve.ts` (353).
 - [ ] `entities/tab/windowTabs.ts` (378), `entities/deck/presets.ts` (378).
