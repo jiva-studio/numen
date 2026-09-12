@@ -7,17 +7,10 @@
  * drawn only once the keyboard has stood on its row.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { StepGroup } from '@/shared/lists'
-import type { Appearance, Themes } from './theme'
-import {
-  INTERFACE_SCALE,
-  IS_MODE,
-  IS_SIZES,
-  IS_THEME,
-  MARKER,
-  TEXT_SCALE,
-  windowAppearance,
-} from './appearance'
+import type { StepGroup } from '@/features/command-palette/@x/settings-commands'
+import type { Appearance, Themes } from '@/entities/settings/theme'
+import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from './lib/head'
+import { INTERFACE_SCALE, TEXT_SCALE, windowAppearance } from './appearance'
 import { WORDS as words } from '@/shared/words'
 
 /** What the page was served wearing. */

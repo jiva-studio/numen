@@ -8,7 +8,7 @@ import type { SelectChoice } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../composables/useSettingsTab'
 import type { Mode } from '@/entities/settings/theme'
-import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '@/entities/settings/appearance'
+import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '@/features/settings-commands/appearance'
 import { WORDS as words } from '../words'
 
 // --- Props & Emits ---

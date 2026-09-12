@@ -177,23 +177,20 @@ NewServer(), NewReading(), make(map[string]string)
 
 ---
 
-## 8. Result pattern for fallible operations (frontend)
+## 8. One word for a failure (frontend)
 
-Functions that can fail return a **discriminated result**, never a bare value,
-implicit `null`, or custom `refusal`:
+What comes back from something that can fail carries its failure under
+`error`, and never under `refusal`, `reason` or `refusalReason`:
 
 ```ts
-type Result<T, E = ErrorCode> = { ok: true; value: T } | { ok: false; error: E }
-
 // ✅
-function openVault(id: string): Result<Vault, ErrorCode>
+interface CreateResult { path: string; error?: ErrorCode | null }
 
-// ❌ caller cannot tell success from failure, or uses custom discriminant
-function openVault(id: string): Vault | ErrorCode | undefined
-function openVault(id: string): { ok: boolean; refusal?: RefusalReason }
+// ❌ a second word for the same thing
+interface CreateResult { path: string; refusal?: RefusalReason }
 ```
 
-Pick **one** word for the failure discriminant: **`error`** (never `refusal`, `reason`, or `refusalReason`).
+A caller can always tell that it failed from that one field.
 
 ---
 

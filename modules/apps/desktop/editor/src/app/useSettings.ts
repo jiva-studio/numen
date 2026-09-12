@@ -10,10 +10,10 @@ import {
   MODE,
   TEXT_SCALE,
   windowAppearance,
-} from '@/entities/settings/appearance'
+} from '@/features/settings-commands/appearance'
 import { reviewSetting } from '@/entities/settings/review'
-import { OFF, ON, SYNCING, syncSetting } from '@/entities/settings/sync'
-import { HANGING, PARTS, useHangingSetting } from '@/entities/settings/hanging'
+import { OFF, ON, SYNCING, syncSetting } from '@/features/settings-commands/sync'
+import { HANGING, PARTS, useHangingSetting } from '@/features/settings-commands/hanging'
 import { settingsStore } from '@/entities/settings/store'
 import { useSettingsTab } from '@/widgets/settings/composables/useSettingsTab'
 import { createTextEditorTabKind } from '@/widgets/text-editor/composables/useTextEditor'
