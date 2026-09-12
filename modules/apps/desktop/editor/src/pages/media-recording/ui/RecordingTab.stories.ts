@@ -55,7 +55,7 @@ const createPlayer = (): Player => {
     at: ref(0),
     duration: ref(85_000),
     playing: ref(false),
-    failed: ref(''),
+    error: ref(''),
     load: (wanted) => void (address.value = wanted),
     play: (wanted) => void (address.value = wanted),
     pause: () => {},

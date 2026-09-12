@@ -32,7 +32,7 @@ export interface CommandDepsOptions {
   opening: () => string
   runs: RunSupport
   told: MessageWriter
-  searches?: () => void
+  search?: () => void
 }
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
@@ -61,11 +61,11 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
 
   return {
     files: {
-      makes: (title, from, seat) => making.createWithTitle(title, from, seat),
-      renames: (path, title) => core.rename(path, title),
-      removes: (path, destroy) => core.remove(path, destroy),
-      moves: (from, to) => core.move(from, to),
-      makesFolder: (path) => core.createFolder(path),
+      createNote: (title, from, seat) => making.createWithTitle(title, from, seat),
+      rename: (path, title) => core.rename(path, title),
+      remove: (path, destroy) => core.remove(path, destroy),
+      move: (from, to) => core.move(from, to),
+      createFolder: (path) => core.createFolder(path),
     },
     runs: {
       getArtifactStates: (path) => running.getArtifactStates(path),
@@ -111,7 +111,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
       reload: reloads,
     },
     goes: {
-      reveals: (path) => void files().revealPath(path),
+      revealPath: (path) => void files().revealPath(path),
       travel: async (path) => {
         await plexes().travel(path)
       },
@@ -119,11 +119,11 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
         await plexes().leavePath(from, to)
       },
       opening,
-      opens: (kind) => void held.opens(kind),
+      openTab: (kind) => void held.openTabOfKind(kind),
       preset: (path) => opensPreset(path),
-      closes: (tab) => held.requestClose(tab),
+      closeTab: (tab) => held.requestClose(tab),
       ask: (text) => void agents().askQuestion(text),
-      searches: options.searches ?? (() => {}),
+      search: options.search ?? (() => {}),
     },
     settings: {
       appearance: async (chosen) => {

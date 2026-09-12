@@ -168,7 +168,7 @@ func TestAReadingThatFailedStaysInTheList(t *testing.T) {
 	if !held {
 		t.Fatal("the failure was not said")
 	}
-	if at.Failed == "" || at.About != "a.pdf" {
+	if at.Error == "" || at.About != "a.pdf" {
 		t.Errorf("got %+v", at)
 	}
 }
@@ -342,7 +342,7 @@ func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 	if !held {
 		t.Fatal("a queue that failed to build was not said")
 	}
-	if at.Failed == "" || at.About != "a.pdf" {
+	if at.Error == "" || at.About != "a.pdf" {
 		t.Errorf("got %+v", at)
 	}
 }

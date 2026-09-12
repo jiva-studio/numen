@@ -42,8 +42,8 @@ export const mapEntry = (one: EntryMessage): Entry => ({
 })
 
 /** What the file did, in the shape the window carries it. */
-export const mapMoveResult = (moved: MoveResultMessage): MoveResult => ({
-  from: moved.from,
-  to: moved.to,
-  repaired: moved.repaired,
+export const mapMoveResult = (answer: MoveResultMessage): MoveResult => ({
+  from: answer.from,
+  to: answer.to,
+  repaired: answer.repaired,
 })

@@ -86,8 +86,8 @@ const roleOf = (node: PlacedNode): GestureRole => {
 /** The node the attention has settled on, as that node reports it. */
 const restedOn = ref<string | null>(null)
 
-const rest = (id: string, settled: boolean) => {
-  if (settled) restedOn.value = id
+const rest = (id: string, isResting: boolean) => {
+  if (isResting) restedOn.value = id
   else if (restedOn.value === id) restedOn.value = null
 }
 

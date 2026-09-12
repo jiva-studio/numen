@@ -85,7 +85,7 @@ export interface NoteRef {
   readonly title: string
 }
 
-export function noteCreator(core: NoteMaker, said: MessageWriter) {
+export function noteCreator(core: NoteMaker, writeMessage: MessageWriter) {
   /**
    * One note asked for. A name the vault has already filed is handed back as
    * `occupied` for the caller to answer for.
@@ -100,7 +100,7 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
       if (made.error) return made.error
       return { path: made.path, title }
     } catch (error) {
-      said(formatErrorMessage(error), 'error')
+      writeMessage(formatErrorMessage(error), 'error')
       return null
     }
   }
@@ -118,7 +118,7 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
       if (made === 'occupied') continue
       return reportNoteResult(made)
     }
-    said(exhausted, 'error')
+    writeMessage(exhausted, 'error')
     return null
   }
 
@@ -144,14 +144,14 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
   }
 
   /** What a note that was asked for came to, said to the person where it failed. */
-  const reportNoteResult = (made: NoteRef | ErrorCode | null): NoteRef | null => {
-    if (made === null) return null
-    if (typeof made === 'string') {
-      said(words[made], 'error')
+  const reportNoteResult = (result: NoteRef | ErrorCode | null): NoteRef | null => {
+    if (result === null) return null
+    if (typeof result === 'string') {
+      writeMessage(words[result], 'error')
       return null
     }
-    said('')
-    return made
+    writeMessage('')
+    return result
   }
 
   /**
@@ -164,25 +164,21 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
     try {
       const joinError = await core.join(from, { to, role })
       if (joinError !== null) {
-        said(words[joinError], 'error')
+        writeMessage(words[joinError], 'error')
         return false
       }
-      said('')
+      writeMessage('')
       return true
     } catch (error) {
-      said(formatErrorMessage(error), 'error')
+      writeMessage(formatErrorMessage(error), 'error')
       return false
     }
   }
 
   return {
-    createNote: createWithTitle,
     createInSeat,
     createUntitled,
     createWithTitle,
-    make: createInSeat,
-    named: createUntitled,
-    calls: createWithTitle,
     join,
   }
 }
@@ -190,7 +186,7 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
 export type NoteCreator = ReturnType<typeof noteCreator>
 
 /** The name the note asked for after that many taken ones is filed under. */
-const nameAt = (taken: number): string => (taken === 1 ? UNTITLED : `${UNTITLED} ${taken}`)
+const nameAt = (count: number): string => (count === 1 ? UNTITLED : `${UNTITLED} ${count}`)
 
 /** The folder a note is in, so one made from it is filed beside it. */
 const folderOf = (path: string): string => {

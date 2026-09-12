@@ -72,7 +72,7 @@ describe('which half of a colour pair is read', () => {
   })
 
   it('is carried back to the application as the schema names it', async () => {
-    asked.writeAppearance.mockResolvedValue({ failed: '' })
+    asked.writeAppearance.mockResolvedValue({ error: '' })
     await themes.chooses('own/Dusk.css', 'dark', { interfaceScale: 1.25, textScale: 1.5 })
 
     expect(asked.writeAppearance.mock.calls[0]?.[0]).toEqual({
@@ -118,12 +118,12 @@ describe('the rest of what is asked', () => {
   })
 
   it('says why a choice was refused, and says nothing where it was not', async () => {
-    asked.writeAppearance.mockResolvedValue({ failed: 'that size is outside its bounds' })
+    asked.writeAppearance.mockResolvedValue({ error: 'that size is outside its bounds' })
     expect(await themes.chooses('preset/Numen.css', 'light', { interfaceScale: 9, textScale: 1 })).toBe(
       'that size is outside its bounds',
     )
 
-    asked.writeAppearance.mockResolvedValue({ failed: '' })
+    asked.writeAppearance.mockResolvedValue({ error: '' })
     expect(await themes.chooses('preset/Numen.css', 'light', { interfaceScale: 1, textScale: 1 })).toBe(
       '',
     )

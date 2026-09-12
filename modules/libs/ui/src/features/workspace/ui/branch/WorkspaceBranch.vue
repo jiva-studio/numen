@@ -96,8 +96,8 @@ let reached: readonly number[] | null = null
  * A splitter reports the shares it settled on, including the ones it worked
  * out for itself when a panel arrived or left. Only a difference is passed on.
  */
-function onLayout(reported: number[]): void {
-  const shares = reported.map((size) => size / 100)
+function onLayout(percents: number[]): void {
+  const shares = percents.map((size) => size / 100)
   const held = sizes.value
   const same =
     shares.length === held.length &&

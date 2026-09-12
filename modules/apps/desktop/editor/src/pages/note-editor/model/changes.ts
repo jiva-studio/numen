@@ -36,7 +36,7 @@ export function noteChanges(limits: HoldLimits = holding) {
   }
 
   /** A change was reported. */
-  const reportChange = (said: NoteEdit): void => carry(said.path, decided.reportChange(said))
+  const reportChange = (edit: NoteEdit): void => carry(edit.path, decided.reportChange(edit))
 
   /** The note changed under whatever is drawn over it. */
   const handleNoteChange = (path: string): void => carry(path, decided.handleNoteChange(path))
@@ -58,5 +58,5 @@ export function noteChanges(limits: HoldLimits = holding) {
     timers.clear()
   }
 
-  return { reportChange, arrived: handleNoteChange, shut, getChange, close }
+  return { reportChange, handleNoteChange, shut, getChange, close }
 }

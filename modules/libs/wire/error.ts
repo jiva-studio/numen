@@ -1,11 +1,11 @@
 /**
  * What went wrong, in words a person reads. Both are clauses, read after
- * something that says which thing went wrong — a note's title, the row a
- * refusal is set beside — and a window that wants a sentence of one makes it
+ * something that says which thing went wrong — a note's title, the row an
+ * error is set beside — and a window that wants a sentence of one makes it
  * one.
  */
 import { Code, ConnectError } from '@connectrpc/connect'
-import { Refusal as ProtoErrorCode } from '@numen/protocol'
+import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 
 /** What is said when nothing more precise can honestly be said. */
 const UNEXPECTED = 'something inside numen went wrong'
@@ -53,8 +53,8 @@ const CARRIES = new Set<Code>([
 /**
  * What a caught fault says to the person who was waiting for the answer.
  */
-export const formatErrorMessage = (thrown: unknown): string => {
-  const fault = ConnectError.from(thrown)
+export const formatErrorMessage = (error: unknown): string => {
+  const fault = ConnectError.from(error)
   const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
   return carried || TROUBLE[fault.code]
 }
@@ -68,7 +68,7 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.NOT_A_NOTE]: 'that file is not a note',
   [ProtoErrorCode.NOT_TEXT]: 'that file is not text',
   [ProtoErrorCode.TOO_LARGE]: 'that note is longer than this reads',
-  [ProtoErrorCode.BODY_REFUSED]: 'a note begins below its frontmatter, and that text begins with one',
+  [ProtoErrorCode.BODY_UNWRITABLE]: 'a note begins below its frontmatter, and that text begins with one',
   [ProtoErrorCode.UNREADABLE]: 'the frontmatter of that note cannot be read',
   [ProtoErrorCode.OCCUPIED]: 'something of that name is filed there already, so nothing was written',
   [ProtoErrorCode.UNNAMEABLE]: 'a note cannot be called that',

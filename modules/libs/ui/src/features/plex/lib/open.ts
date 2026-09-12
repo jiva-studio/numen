@@ -67,9 +67,9 @@ export interface Arrow {
 export function woundBy(
   hung: HungParts,
   wheel: { readonly delta: number; readonly mode: number },
-  carried: number,
+  leftover: number,
 ): { by: number; left: number } {
-  const pixels = carried + wheel.delta * stride(hung, wheel.mode)
+  const pixels = leftover + wheel.delta * stride(hung, wheel.mode)
   const by = Math.trunc(pixels / hung.partHeight)
   return { by, left: pixels - by * hung.partHeight }
 }
@@ -144,15 +144,15 @@ export function getOpenParts(hung: HungParts, open: number, wound = 0): OpenPart
  * An arrow at one edge of the ground, pointing the way there is more to wind
  * to. It is drawn about the middle of what is hung, which is where the eye is.
  */
-function arrowAt(hung: HungParts, down: number, facing: 1 | -1): Arrow {
+function arrowAt(hung: HungParts, down: number, direction: 1 | -1): Arrow {
   const middle = hung.offset
   const y = hung.top + down
   return {
-    at: facing > 0 ? 'below' : 'above',
+    at: direction > 0 ? 'below' : 'above',
     points: [
-      { x: middle - ARROW.wide, y: y - facing * ARROW.deep },
-      { x: middle, y: y + facing * ARROW.deep },
-      { x: middle + ARROW.wide, y: y - facing * ARROW.deep },
+      { x: middle - ARROW.wide, y: y - direction * ARROW.deep },
+      { x: middle, y: y + direction * ARROW.deep },
+      { x: middle + ARROW.wide, y: y - direction * ARROW.deep },
     ],
   }
 }

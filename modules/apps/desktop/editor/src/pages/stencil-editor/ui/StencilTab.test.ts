@@ -65,9 +65,9 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
   const held = useWindowTabs()
   const stencils = useStencilTabs(core, held.handle, tabOpeners())
   held.registerKinds([stencils.kind])
-  const id = await held.opens(STENCIL, 'Animal.md')
+  const id = await held.openTabOfKind(STENCIL, 'Animal.md')
   await settle()
-  const tab = held.handle.holds<StencilTabState>(STENCIL, id) as StencilTabState
+  const tab = held.handle.getTabState<StencilTabState>(STENCIL, id) as StencilTabState
   // A mark is teleported into the face or the row it is about, so the editor
   // has to stand in the document for those to be found.
   const window = mount(StencilTab, { props: { state: tab }, attachTo: document.body })

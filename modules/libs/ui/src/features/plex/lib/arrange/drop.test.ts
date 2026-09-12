@@ -13,8 +13,8 @@ const frame = arrangePlex(build('A node', { parent: 2, child: 4, jump: 2, siblin
 const focus = frame.nodes.find((n) => n.seat === 'focus')!
 const child = frame.nodes.find((n) => n.seat === 'child')!
 
-const drop = (from: string, at: { x: number; y: number }, allowed = ALLOWED) =>
-  resolveDrop({ frame, options: DEFAULT_OPTIONS, from, at, allowed })
+const drop = (from: string, at: { x: number; y: number }, seats = ALLOWED) =>
+  resolveDrop({ frame, options: DEFAULT_OPTIONS, from, at, seats })
 
 describe('the seat a direction stands for', () => {
   it('reads the arrangement rather than assuming which way is up', () => {
@@ -180,7 +180,7 @@ describe('the seat something dragged in comes to', () => {
       options: DEFAULT_OPTIONS,
       viewport: VIEWPORT,
       at,
-      allowed: ALLOWED,
+      seats: ALLOWED,
       threshold: THRESHOLD,
       ...over,
     })
@@ -216,7 +216,7 @@ describe('the seat something dragged in comes to', () => {
   it('is nothing towards a seat the caller did not allow', () => {
     const beside = { x: focus.x + 500, y: focus.y }
     expect(dropAt(beside)).toBeNull()
-    expect(dropAt(beside, { allowed: [...ALLOWED, 'sibling'] })).toBe('sibling')
+    expect(dropAt(beside, { seats: [...ALLOWED, 'sibling'] })).toBe('sibling')
   })
 
   it('is measured from the focus, wherever the focus is drawn', () => {

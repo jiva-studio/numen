@@ -5,9 +5,9 @@ import { nextTick } from 'vue'
 
 import Card from './Card.vue'
 
-const mountCard = (front: string, said: { back?: string; shown?: boolean } = {}) =>
+const mountCard = (front: string, over: { back?: string; shown?: boolean } = {}) =>
   mount(Card, {
-    props: { front, back: said.back ?? '<p>the back</p>', shown: said.shown ?? false },
+    props: { front, back: over.back ?? '<p>the back</p>', shown: over.shown ?? false },
   })
 
 /** A hand going down on the card, across by so much, and up again. */

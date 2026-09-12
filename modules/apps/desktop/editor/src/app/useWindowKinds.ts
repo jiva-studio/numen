@@ -24,7 +24,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     ...deps,
     dragged,
     told,
-    asks: (text) => void agents.askQuestion(text),
+    askAgent: (text) => void agents.askQuestion(text),
   })
 
   const agents = createAgentKind({
@@ -41,8 +41,8 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   const places: DestinationDeps = {
     travel: (path) => plexes.travel(path),
-    opensAt: (path, run) => tabOpeners.opensAt(path, [run]),
-    opens: (path, title, line) => void tabOpeners.opens(path, title, 'here', line),
+    openFileAt: (path, run) => tabOpeners.openFileAt(path, [run]),
+    openFile: (path, title, line) => void tabOpeners.openFile(path, title, 'here', line),
   }
 
   const { files, made } = createFilesKind({ ...deps, dragged, told, places })

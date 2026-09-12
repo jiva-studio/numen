@@ -146,18 +146,18 @@ const LABELS: Readonly<Record<string, string>> = {
 }
 
 /** A sibling hangs off the parent it shares; everything else meets the focus. */
-const edgeFor = (related: PlexNode): PlexEdge => {
-  const label = LABELS[related.id]
-  if (related.seat === 'sibling') return { from: 'thermodynamics', to: related.id }
-  if (related.seat === 'parent' || related.seat === 'jump') {
-    return { from: related.id, to: 'focus', ...(label ? { label } : {}) }
+const edgeFor = (neighbour: PlexNode): PlexEdge => {
+  const label = LABELS[neighbour.id]
+  if (neighbour.seat === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
+  if (neighbour.seat === 'parent' || neighbour.seat === 'jump') {
+    return { from: neighbour.id, to: 'focus', ...(label ? { label } : {}) }
   }
-  return { from: 'focus', to: related.id, ...(label ? { label } : {}) }
+  return { from: 'focus', to: neighbour.id, ...(label ? { label } : {}) }
 }
 
-const around = (related: readonly PlexNode[]): PlexNeighbourhood => ({
-  nodes: [node('focus', 'Entropy', 'focus'), ...related],
-  edges: related.map(edgeFor),
+const around = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
+  nodes: [node('focus', 'Entropy', 'focus'), ...neighbours],
+  edges: neighbours.map(edgeFor),
 })
 
 /** What a pane of a divided window has the width for. */

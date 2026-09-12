@@ -77,8 +77,8 @@ const panelName = (at: number): string => `${props.pane.id}-panel-${at}`
 /** The tabs as they are drawn, each under the tab it stands for. */
 const drawnTabs = new Map<TabId, { focus: () => void }>()
 
-const holdTab = (tab: TabId, drawn: unknown): void => {
-  if (drawn) drawnTabs.set(tab, drawn as { focus: () => void })
+const holdTab = (tab: TabId, element: unknown): void => {
+  if (element) drawnTabs.set(tab, element as { focus: () => void })
   else drawnTabs.delete(tab)
 }
 
@@ -132,7 +132,7 @@ function out(event: KeyboardEvent): void {
       <WorkspaceTab
         v-for="(tab, at) in pane.tabs"
         :id="tabName(at)"
-        :ref="(drawn) => holdTab(tab, drawn)"
+        :ref="(element) => holdTab(tab, element)"
         :key="tab"
         :aria-controls="panelName(at)"
         :tab="tab"

@@ -6,7 +6,7 @@
  * in — a path with spaces in it included.
  */
 import { describe, expect, it } from 'vitest'
-import { Refusal as ProtoErrorCode } from '@numen/protocol'
+import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import {
   asset,
   ERROR_CODE,
@@ -49,23 +49,23 @@ describe('what an error is called', () => {
   })
 
   it('reads a file that moved past the caller off the answer that says so', () => {
-    expect(staleIn({ refusal: ProtoErrorCode.STALE })).toBe(true)
-    expect(staleIn({ refusal: ProtoErrorCode.MISSING })).toBe(false)
+    expect(staleIn({ error: ProtoErrorCode.STALE })).toBe(true)
+    expect(staleIn({ error: ProtoErrorCode.MISSING })).toBe(false)
     expect(staleIn({})).toBe(false)
   })
 
   it('reads an error off an answer that carries one', () => {
-    expect(errorIn({ refusal: ProtoErrorCode.MISSING })).toBe('missing')
-    expect(errorIn({ refusal: ProtoErrorCode.TOO_LARGE })).toBe('tooLarge')
+    expect(errorIn({ error: ProtoErrorCode.MISSING })).toBe('missing')
+    expect(errorIn({ error: ProtoErrorCode.TOO_LARGE })).toBe('tooLarge')
   })
 
   it('says nothing about an answer with no error', () => {
     expect(errorIn({})).toBeNull()
-    expect(errorIn({ refusal: undefined })).toBeNull()
+    expect(errorIn({ error: undefined })).toBeNull()
   })
 
   it('calls an error it has no word of its own for unreadable', () => {
-    expect(errorIn({ refusal: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
+    expect(errorIn({ error: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
   })
 })
 

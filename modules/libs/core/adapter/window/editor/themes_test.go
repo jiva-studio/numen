@@ -79,8 +79,8 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failed := chosen.Msg.GetFailed(); failed != "" {
-		t.Fatalf("refused: %s", failed)
+	if reason := chosen.Msg.GetError(); reason != "" {
+		t.Fatalf("refused: %s", reason)
 	}
 
 	said, err := settings.At(file)
@@ -124,8 +124,8 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failed := chosen.Msg.GetFailed(); failed != "" {
-		t.Fatalf("refused: %s", failed)
+	if reason := chosen.Msg.GetError(); reason != "" {
+		t.Fatalf("refused: %s", reason)
 	}
 
 	said, err := settings.At(file)
@@ -164,8 +164,8 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failed := chosen.Msg.GetFailed(); !strings.Contains(failed, "appearance.text_scale") {
-		t.Errorf("refused with %q", failed)
+	if reason := chosen.Msg.GetError(); !strings.Contains(reason, "appearance.text_scale") {
+		t.Errorf("refused with %q", reason)
 	}
 
 	held, err := os.ReadFile(file)

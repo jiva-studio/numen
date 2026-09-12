@@ -49,7 +49,7 @@ async function createRelatedNote(from: string, seat: PlexRelatedSeat) {
   if (!title?.trim()) return
   const created = await core.value.notes.createNote({ title: title.trim(), path: '' })
   if (!created.path) {
-    trouble.value = formatErrorCodeMessage(created.refusal)
+    trouble.value = formatErrorCodeMessage(created.error)
     return
   }
   await linkNotes(from, created.path, seat)
@@ -61,8 +61,8 @@ async function linkNotes(from: string, to: string, seat: PlexRelatedSeat) {
   // sibling: no link writes one.
   if (!isCreatable(seat)) return
   const said = await core.value.notes.writeLink({ path: from, link: { to, role: ROLES[seat] } })
-  if (said.refusal) {
-    trouble.value = formatErrorCodeMessage(said.refusal)
+  if (said.error) {
+    trouble.value = formatErrorCodeMessage(said.error)
     return
   }
   await draw(at.value)

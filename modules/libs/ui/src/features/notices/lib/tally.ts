@@ -134,11 +134,11 @@ export const SMOOTHING = 10
  */
 export const rateOf = (
   previous: { readonly done: number; readonly rate: number },
-  done: number,
+  count: number,
   seconds: number,
 ): number => {
   if (seconds <= 0) return previous.rate
-  const moved = done - previous.done
+  const moved = count - previous.done
   if (moved < 0) return 0
   if (moved === 0) return previous.rate
   const now = moved / seconds

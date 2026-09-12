@@ -17,19 +17,19 @@ const reader = async (wide: number, high: number) => {
   return held
 }
 
-const room = async (held: ReturnType<typeof mount>, wide: number, high: number) => {
-  const area = held.find('.reader__viewport').element as HTMLElement
+const room = async (wrapper: ReturnType<typeof mount>, wide: number, high: number) => {
+  const area = wrapper.find('.reader__viewport').element as HTMLElement
   // jsdom lays nothing out and scrolls nothing.
   area.scrollTo = () => {}
   Object.defineProperty(area, 'clientWidth', { value: wide, configurable: true })
   Object.defineProperty(area, 'clientHeight', { value: high, configurable: true })
-  ;(held.vm as unknown as { measure: () => void }).measure()
-  await held.vm.$nextTick()
+  ;(wrapper.vm as unknown as { measure: () => void }).measure()
+  await wrapper.vm.$nextTick()
 }
 
 /** The widths the reader has asked for, in the order it asked. */
-const getWidths = (held: ReturnType<typeof mount>) =>
-  (held.emitted('wide') ?? []).map((one) => (one as [number])[0])
+const getWidths = (wrapper: ReturnType<typeof mount>) =>
+  (wrapper.emitted('wide') ?? []).map((one) => (one as [number])[0])
 
 describe('the room a document is read in', () => {
   it('asks for a width once it knows how big the room is', async () => {
@@ -99,15 +99,15 @@ describe('the pages drawn', () => {
 
 describe('the page it says it stands on', () => {
   /** The row scrolled by hand, and the reader told about it. */
-  const scrollTo = async (held: ReturnType<typeof mount>, to: number) => {
-    const area = held.find('.reader__viewport').element as HTMLElement
+  const scrollTo = async (wrapper: ReturnType<typeof mount>, to: number) => {
+    const area = wrapper.find('.reader__viewport').element as HTMLElement
     area.scrollLeft = to
-    await held.find('.reader__viewport').trigger('scroll')
+    await wrapper.find('.reader__viewport').trigger('scroll')
   }
 
   /** Which pages the reader has asked to be turned to, in the order it asked. */
-  const getTurns = (held: ReturnType<typeof mount>) =>
-    (held.emitted('go') ?? []).map((one) => (one as [number])[0])
+  const getTurns = (wrapper: ReturnType<typeof mount>) =>
+    (wrapper.emitted('go') ?? []).map((one) => (one as [number])[0])
 
   it('says nothing while the row travels to the page it was turned to', async () => {
     // A turn is a scroll the browser animates, and the pages the row passes

@@ -13,13 +13,13 @@ vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 let asked: Record<string, unknown>[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
-const replyWith = (said: unknown) => {
+const replyWith = (answer: unknown) => {
   asked = []
   vi.stubGlobal(
     'fetch',
     vi.fn(async (_url: string, init: { body: Uint8Array }) => {
       asked.push(JSON.parse(new TextDecoder().decode(init.body)))
-      return new Response(JSON.stringify(said), {
+      return new Response(JSON.stringify(answer), {
         headers: { 'content-type': 'application/json' },
       })
     }),
@@ -73,7 +73,7 @@ describe('the settings of a preset', () => {
   })
 
   it('are no preset at all where the read was refused', async () => {
-    replyWith({ refusal: 'REFUSAL_NOT_A_PRESET' })
+    replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
 
     const answer = await presets.read('Notes.md')
 
@@ -140,7 +140,7 @@ describe('putting a deck on a preset', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    replyWith({ refusal: 'REFUSAL_STALE' })
+    replyWith({ error: 'ERROR_CODE_STALE' })
 
     expect(await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual({
       error: null,

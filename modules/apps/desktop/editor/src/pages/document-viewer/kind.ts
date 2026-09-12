@@ -33,8 +33,8 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
   }
 
   const openDocument = async (path: string, spans: readonly Span[]) => {
-    const id = await handle.opens(DOCUMENT, path)
-    void handle.holds<DocumentTabState>(DOCUMENT, id)?.focusSpans(...spans)
+    const id = await handle.openTab(DOCUMENT, path)
+    void handle.getTabState<DocumentTabState>(DOCUMENT, id)?.focusSpans(...spans)
   }
   tabOpeners.registerReader({ kind: 'book' }, (path, spans) => void openDocument(path, spans))
 

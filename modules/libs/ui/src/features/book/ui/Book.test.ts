@@ -28,15 +28,15 @@ const reader = async (book = BOOK) => {
 }
 
 /** The offsets the reader has asked to be sent to, in the order it asked. */
-const getMoves = (held: Awaited<ReturnType<typeof reader>>) =>
-  (held.emitted('moved') ?? []).map((one) => (one as [number])[0])
+const getMoves = (wrapper: Awaited<ReturnType<typeof reader>>) =>
+  (wrapper.emitted('moved') ?? []).map((one) => (one as [number])[0])
 
 /**
  * A key the tab caught and handed down, answered with whether it turned the
  * page. The tab listens; the reader is asked.
  */
-const pressKey = (held: Awaited<ReturnType<typeof reader>>, key: string): boolean =>
-  (held.vm as unknown as { handleKey(event: KeyboardEvent): boolean }).handleKey(
+const pressKey = (wrapper: Awaited<ReturnType<typeof reader>>, key: string): boolean =>
+  (wrapper.vm as unknown as { handleKey(event: KeyboardEvent): boolean }).handleKey(
     new KeyboardEvent('keydown', { key }),
   )
 
@@ -150,11 +150,11 @@ const mountPointing = async () => {
 }
 
 /** One link of the document pressed, and the press as the page left it. */
-const press = async (held: Awaited<ReturnType<typeof mountPointing>>, says: string) => {
-  const link = held.findAll('a').find((one) => one.text() === says)!
+const press = async (wrapper: Awaited<ReturnType<typeof mountPointing>>, says: string) => {
+  const link = wrapper.findAll('a').find((one) => one.text() === says)!
   const event = new MouseEvent('click', { bubbles: true, cancelable: true })
   link.element.dispatchEvent(event)
-  await held.vm.$nextTick()
+  await wrapper.vm.$nextTick()
   return event
 }
 
@@ -251,8 +251,8 @@ const mountBook = async () => {
 }
 
 /** How far the text is carried sideways, as the reader set it last. */
-const getTranslate = (held: Awaited<ReturnType<typeof mountBook>>): string =>
-  (held.find('.book__paper').element as HTMLElement).style.translate
+const getTranslate = (wrapper: Awaited<ReturnType<typeof mountBook>>): string =>
+  (wrapper.find('.book__paper').element as HTMLElement).style.translate
 
 describe('a document the browser has laid out', () => {
   it('is drawn, and says how many spreads it is read in', async () => {

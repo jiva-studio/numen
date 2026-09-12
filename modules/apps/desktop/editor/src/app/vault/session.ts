@@ -20,17 +20,13 @@ export const sessionCore: SessionCore = {
       path: said.path,
       scan: {
         isReady: said.scan?.ready ?? false,
-        ready: said.scan?.ready ?? false,
-        failureReason: said.scan?.failed ?? '',
-        failed: said.scan?.failed ?? '',
+        error: said.scan?.error ?? '',
         unwatchedPath: said.scan?.unwatched ?? '',
-        unwatched: said.scan?.unwatched ?? '',
       },
       coverage: {
         chunkCount: said.coverage?.chunkCount ?? 0n,
         embeddedCount: said.coverage?.embeddedCount ?? 0n,
         isEmbedding: said.coverage?.embedding ?? false,
-        embedding: said.coverage?.embedding ?? false,
       },
     }
   },
@@ -40,7 +36,6 @@ export const sessionCore: SessionCore = {
       yield {
         paths: change.paths,
         shouldReload: change.reload,
-        reload: change.reload,
         renamed: change.renamed.map((went) => ({ from: went.from, to: went.to })),
       }
     }
@@ -58,8 +53,8 @@ export const sessionCore: SessionCore = {
         done: Number(at.done),
         total: Number(at.total),
         counting: counted[at.unit] ?? 'things',
-        failed: at.failed,
-        asked: at.asked,
+        error: at.error,
+        isAsked: at.asked,
       }))
     }
   },

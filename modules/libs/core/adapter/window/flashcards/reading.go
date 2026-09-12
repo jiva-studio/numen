@@ -47,7 +47,7 @@ func (r *readings) forget(id domain.VaultID) {
 // window reads nothing.
 func (r *readings) begins(
 	v domain.Vault,
-) (read ReadVault, under context.Context, underway bool, failed string) {
+) (read ReadVault, under context.Context, underway bool, reason string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.done[v.ID] {
@@ -100,10 +100,10 @@ func (a *API) Reading(ctx context.Context, read ReadVault) {
 // A vault is read once for the life of the window, and the watcher carries it
 // from there. One vault is read once at a time however many counts ask for it,
 // and a reading that failed is not begun again until the vault moves.
-func (a *API) reading(ctx context.Context, v domain.Vault) (underway bool, failed string) {
-	read, behind, running, failed := a.readings.begins(v)
+func (a *API) reading(ctx context.Context, v domain.Vault) (underway bool, reason string) {
+	read, behind, running, reason := a.readings.begins(v)
 	if read == nil {
-		return running, failed
+		return running, reason
 	}
 	//nolint:contextcheck // a vault is read for the life of the window, under behind, not under the count that asked
 	go a.walk(behind, read, v, a.carries(ctx, v))
@@ -141,7 +141,7 @@ func (a *API) walk(ctx context.Context, read ReadVault, v domain.Vault, held boo
 	a.readings.ended(v, err)
 
 	if err != nil {
-		at.Failed = err.Error()
+		at.Error = err.Error()
 		a.say(at)
 		return
 	}

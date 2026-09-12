@@ -8,7 +8,7 @@ import { ErrorMessage } from '../../error-message'
 import { NameBox } from '../../name-box'
 import { useNaming } from '../../../model/naming'
 import { Button } from '@/shared/ui/button'
-import { heading, type Refusal } from '../../../lib/order'
+import { heading, type HeadingObjection } from '../../../lib/order'
 import { STENCIL_WORDS, type FaceRow, type StencilWords } from '../../../lib/stencil'
 
 const props = withDefaults(
@@ -35,7 +35,7 @@ const uid = useId()
 const objectsId = `${uid}-objects`
 
 /** A name typed over the one this face carries, until it is committed. */
-const naming = useNaming<Refusal>({
+const naming = useNaming<HeadingObjection>({
   carries: () => props.face.name,
   taken: () => props.face.taken,
   amiss: heading,
@@ -47,8 +47,8 @@ const objects = computed(() => naming.objection(props.face.id))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => {
-  const why = objects.value
-  return why === null ? null : props.words.faceObjection(why)
+  const objection = objects.value
+  return objection === null ? null : props.words.faceObjection(objection)
 })
 </script>
 

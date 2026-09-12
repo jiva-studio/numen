@@ -108,8 +108,8 @@ const getCounts = (one: Curve): PresetCounts | null =>
 const tabAt = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
-  waiting = true,
-  told?: PresetCounts | null,
+  isWaiting = true,
+  counts?: PresetCounts | null,
 ) => {
   const done: string[] = []
   const place = ref(2)
@@ -117,9 +117,9 @@ const tabAt = (
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, ...settings }),
     curve: shallowRef(curve(over)),
-    material: shallowRef(told === undefined ? getCounts(curve(over)) : told),
+    material: shallowRef(counts === undefined ? getCounts(curve(over)) : counts),
     place,
-    waiting: ref(waiting),
+    waiting: ref(isWaiting),
     bounds: shallowRef(BOUNDS),
     problems: shallowRef([]),
     stopped: ref(StopReason.NOTHING),
@@ -141,10 +141,10 @@ const tabAt = (
 const mountPresetTab = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
-  waiting = true,
-  told?: PresetCounts | null,
+  isWaiting = true,
+  counts?: PresetCounts | null,
 ) => {
-  const one = tabAt(over, settings, waiting, told)
+  const one = tabAt(over, settings, isWaiting, counts)
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 

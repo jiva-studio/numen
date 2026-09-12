@@ -135,8 +135,8 @@ const window = (
    * A note put in front of the person. It reaches the tab the only way anything
    * does, which is through the one place a file is opened from.
    */
-  const openNote = (path: string, title = '', showing: PlexDestination = 'here') =>
-    tabOpeners.made(path, title, 'note', showing)
+  const openNote = (path: string, title = '', how: PlexDestination = 'here') =>
+    tabOpeners.openNewFile(path, title, 'note', how)
   return { noted, held, open, openNote, ...store, drawings: drawing }
 }
 
@@ -497,7 +497,7 @@ describe('what a note is called under the identity it opened under', () => {
 
 /** What the one note tab of a window holds. */
 const stateOf = (one: ReturnType<typeof window>): NoteTabState =>
-  one.held.holdsIn<NoteTabState>(one.held.tabs.value[0]?.id ?? '', NOTE)!
+  one.held.getTabStateIn<NoteTabState>(one.held.tabs.value[0]?.id ?? '', NOTE)!
 
 describe('what a command asked over a note tab is over', () => {
   it('is the note it holds, at the file it stands at and under the name it carries', async () => {

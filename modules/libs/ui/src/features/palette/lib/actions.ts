@@ -41,9 +41,9 @@ export interface PlacedAction {
  */
 export const placeActions = (
   actions: readonly PaletteAction[] = [],
-  typed = '',
+  text = '',
 ): readonly PlacedAction[] => {
-  const word = typed.trim().toLowerCase()
+  const word = text.trim().toLowerCase()
   const out: PlacedAction[] = []
   for (const [offered, action] of actions.entries()) {
     const found = word === '' ? -1 : action.text.toLowerCase().indexOf(word)

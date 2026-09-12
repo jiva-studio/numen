@@ -27,8 +27,8 @@ const mountWorkspace = (
     slots,
   })
 
-const closeOf = (held: ReturnType<typeof mountWorkspace>, tab: string) =>
-  held.find(`[data-workspace-tab="${tab}"] button`)
+const closeOf = (wrapper: ReturnType<typeof mountWorkspace>, tab: string) =>
+  wrapper.find(`[data-workspace-tab="${tab}"] button`)
 
 describe('a close', () => {
   it('is told to the caller before anything is applied', async () => {

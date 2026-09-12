@@ -29,7 +29,7 @@ export interface ReviewDeps {
   setReviewSettings(starts: string): Promise<string | null>
 }
 
-export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWriter) {
+export function reviewSetting(core: ReviewDeps, words: Words, write: MessageWriter) {
   /** The hour in force. It opens where an installation nobody has configured begins. */
   const starts = ref(DEFAULT_STARTS)
 
@@ -75,21 +75,21 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
   const chooses = async (hour: string): Promise<void> => {
     const was = starts.value
     if (hour === was) return
-    said('')
+    write('')
     starts.value = hour
 
-    let failed: string | null
+    let error: string | null
     try {
-      failed = await core.setReviewSettings(hour)
+      error = await core.setReviewSettings(hour)
     } catch (thrown) {
-      failed = formatErrorMessage(thrown)
+      error = formatErrorMessage(thrown)
     }
-    if (!failed) {
+    if (!error) {
       // The hour moved the boundary, and the day standing is the vault's to say.
       await readDay()
       return
     }
-    said(`${words.unturned} ${failed}`, 'error')
+    write(`${words.unturned} ${error}`, 'error')
     starts.value = was
   }
 

@@ -68,9 +68,9 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   const { dragging, at: landing, position, lift } = usePressDrag<Drag, TabLanding>({
     threshold: options.threshold,
     clock: options.clock,
-    landingAt: (_held, at) => landingAt(at.x, at.y),
-    settle: (held, at) => {
-      if (at) land(held, at)
+    landingAt: (_item, at) => landingAt(at.x, at.y),
+    settle: (item, at) => {
+      if (at) land(item, at)
     },
   })
 
@@ -81,7 +81,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   const label = computed(() => {
     const held = dragging.value
     if (!held?.moved) return null
-    return options.tabOf(held.held.tab)?.title ?? held.held.tab
+    return options.tabOf(held.item.tab)?.title ?? held.item.tab
   })
 
   function press(tab: TabId, at: PointerEvent): void {
@@ -93,25 +93,25 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     lift({ tab, from }, at)
   }
 
-  function land(held: Drag, at: TabLanding): void {
+  function land(drag: Drag, at: TabLanding): void {
     const ids = options.naming()
     const workspace = options.workspace
 
     if (at.kind === 'edge') {
-      workspace.value = dropOnEdge(workspace.value, held.tab, at.side, ids)
+      workspace.value = dropOnEdge(workspace.value, drag.tab, at.side, ids)
       return
     }
 
     if (at.kind === 'pane') {
-      workspace.value = dropTab(workspace.value, { tab: held.tab, onto: at.pane, side: at.side }, ids)
+      workspace.value = dropTab(workspace.value, { tab: drag.tab, onto: at.pane, side: at.side }, ids)
       return
     }
 
     const joined =
-      at.pane === held.from
+      at.pane === drag.from
         ? workspace.value
-        : dropTab(workspace.value, { tab: held.tab, onto: at.pane, side: 'center' }, ids)
-    workspace.value = moveTabWithin(joined, held.tab, at.slot)
+        : dropTab(workspace.value, { tab: drag.tab, onto: at.pane, side: 'center' }, ids)
+    workspace.value = moveTabWithin(joined, drag.tab, at.slot)
   }
 
   /**

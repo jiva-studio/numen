@@ -36,16 +36,16 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
 const now = (draw: () => void) => draw()
 
 const createSaidStep = (text: string): AgentStep => ({ kind: 'said', text })
-const createToolStep = (tool: string, about = '', written = 0, place?: Place): AgentStep => ({
+const createToolStep = (tool: string, about = '', count = 0, place?: Place): AgentStep => ({
   kind: 'toolCall',
   tool,
   about,
-  written,
+  written: count,
   ...(place ? { place } : {}),
 })
 const createAnswered = (): AgentStep => ({ kind: 'answered' })
 const createThinking = (): AgentStep => ({ kind: 'thinking' })
-const createStopped = (failed = ''): AgentStep => ({ kind: 'stopped', failed })
+const createStopped = (error = ''): AgentStep => ({ kind: 'stopped', error })
 
 describe('an answer', () => {
   it('grows as its pieces arrive and settles when they stop', async () => {

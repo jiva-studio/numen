@@ -97,13 +97,13 @@ export interface ActiveTab {
 /** What a kind may ask of the window its tabs are drawn in. */
 export interface WindowHandle {
   /** A tab of a kind, opened on something and put in front. */
-  opens(kind: string, at?: string): Promise<string>
+  openTab(kind: string, at?: string): Promise<string>
   /** The same, drawn beside the pane the person is in. */
   beside(kind: string, at?: string): Promise<string>
   /** A tab the window already holds, put in front. */
   show(id: string): void
   /** A tab that took its own close, going now. */
-  closes(id: string): void
+  closeTab(id: string): void
   /**
    * Every tab of a kind, in the order the person was last in them. The last of
    * them is the one in front.
@@ -117,5 +117,5 @@ export interface WindowHandle {
    */
   front(): ActiveTab | null
   /** What one tab of a kind holds, and nothing where the tab is another kind. */
-  holds<TabState>(kind: string, id: string): TabState | null
+  getTabState<TabState>(kind: string, id: string): TabState | null
 }

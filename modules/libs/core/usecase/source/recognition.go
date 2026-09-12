@@ -229,7 +229,7 @@ func (r *RecognitionWorker) one(ctx context.Context, v domain.Vault, path string
 		// A failure nobody was shown is a failure nobody can act on, so it
 		// stays in the list until it is dismissed or the next recognition
 		// begins.
-		r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Failed: err.Error()})
+		r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Error: err.Error()})
 	}
 }
 
@@ -332,7 +332,7 @@ func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path 
 
 	right, held, err := said.Reading(r.with.Readers, r.with.Derived)
 	if err != nil {
-		r.say(task.Task{ID: proofreadingID(path), Doing: "Proofreading a reading", About: path, Failed: err.Error()})
+		r.say(task.Task{ID: proofreadingID(path), Doing: "Proofreading a reading", About: path, Error: err.Error()})
 		return
 	}
 	if !held {
@@ -358,7 +358,7 @@ func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path 
 	case err == nil, errors.Is(err, context.Canceled):
 		r.done(id)
 	default:
-		r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path, Failed: err.Error()})
+		r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path, Error: err.Error()})
 	}
 }
 
@@ -498,7 +498,7 @@ func (r *RecognitionWorker) collect(
 		case err != nil:
 			r.says(task.Task{
 				ID: id, Doing: "Proofreading a reading",
-				About: one.Path, Failed: err.Error(),
+				About: one.Path, Error: err.Error(),
 			}, false)
 		case res.Busy:
 			// The reading is held by another run, and that run is the one

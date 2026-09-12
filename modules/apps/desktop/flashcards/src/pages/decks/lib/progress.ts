@@ -40,7 +40,7 @@ export const through = (one: Preset): number => {
 }
 
 /** What a count comes to against a budget. A budget of nothing is no share. */
-const share = (spent: number, budget: number): number => (budget > 0 ? spent / budget : 0)
+const share = (count: number, budget: number): number => (budget > 0 ? count / budget : 0)
 
 /**
  * Whether a preset's day is spent, which is what leaves every deck under it

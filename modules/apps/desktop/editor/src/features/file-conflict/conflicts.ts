@@ -21,7 +21,7 @@ export interface ConflictRaiser {
   raise(one: Conflict): () => void
 }
 
-export function raiseConflicts(notes: Notes, going: ConflictRaiser) {
+export function raiseConflicts(notes: Notes, raiser: ConflictRaiser) {
   const raised = new Map<string, () => void>()
 
   watch(
@@ -35,7 +35,7 @@ export function raiseConflicts(notes: Notes, going: ConflictRaiser) {
         if (raised.has(id)) continue
         raised.set(
           id,
-          going.raise({
+          raiser.raise({
             note: id,
             keep: async () => notes.keep(id),
             take: async () => notes.take(id),

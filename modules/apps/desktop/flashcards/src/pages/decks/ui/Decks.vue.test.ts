@@ -8,7 +8,7 @@ import Presets from './Presets.vue'
 import type { BudgetKeys, VaultCardsDue } from '@/entities/vault'
 import type { Preset, Settings } from '../types'
 
-const settings = (said: Partial<Settings> = {}): Settings => ({
+const settings = (fields: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',
   byDate: '',
   minutesADay: 20,
@@ -17,13 +17,13 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
   retention: 0.9,
   load: {},
   evenLoad: true,
-  ...said,
+  ...fields,
 })
 
 /** What closes the day of the fixture, which is steered by its minutes. */
 const closes: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
 
-const preset = (said: Partial<Preset> = {}): Preset => ({
+const preset = (fields: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',
   name: 'Sanskrit',
   settings: settings(),
@@ -39,7 +39,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   took: 0,
   paused: '',
   wrong: '',
-  ...said,
+  ...fields,
 })
 
 const vault: VaultCardsDue = {

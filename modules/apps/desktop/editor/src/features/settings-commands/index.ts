@@ -1,7 +1,7 @@
 /** The settings the window offers as commands: appearance, syncing, and hanging punctuation. */
 export {
   APPEARANCE,
-  DRESSING,
+  APPEARANCE_COMMANDS,
   INTERFACE_SCALE,
   MODE,
   TEXT_SCALE,

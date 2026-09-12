@@ -36,11 +36,11 @@ export interface DrawnIcon {
   readonly said: string
 }
 
-const createIcon = (icon: LucideIcon, said: string, fills = 1): DrawnIcon => ({
+const createIcon = (icon: LucideIcon, label: string, fills = 1): DrawnIcon => ({
   icon,
   fills,
   stroke: STROKE / fills,
-  said,
+  said: label,
 })
 
 /**

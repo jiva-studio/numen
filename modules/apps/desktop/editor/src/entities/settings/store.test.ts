@@ -27,10 +27,10 @@ const MODELS: readonly Model[] = [
 ]
 
 /** A vault holding those settings, and refusing what it is told to refuse. */
-const createStore = (written: string, refuses: string | null = null) => {
+const createStore = (text: string, refuses: string | null = null) => {
   const asked: unknown[] = []
   const core: SettingsStoreDeps = {
-    getSettings: () => Promise.resolve({ written, path: '/numen.json', models: MODELS }),
+    getSettings: () => Promise.resolve({ written: text, path: '/numen.json', models: MODELS }),
     updateSettings: (said) => {
       asked.push(said)
       return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()

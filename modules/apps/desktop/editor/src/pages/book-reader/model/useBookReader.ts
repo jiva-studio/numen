@@ -40,7 +40,7 @@ export function useBookReader(
   books: Books,
   path: string,
   words: BookWords,
-  said: MessageWriter = () => {},
+  writeMessage: MessageWriter = () => {},
 ) {
   const title = ref('')
   const span = ref<BookSpan>({ begins: 0, ends: 0 })
@@ -81,26 +81,26 @@ export function useBookReader(
       markup.value = resolveImageUrls(markupContent, (name) => books.getEntryUrl(path, name, fingerprint.value))
     } catch (error) {
       if (!open || asked !== wanted) return
-      said(formatErrorMessage(error), 'error')
+      writeMessage(formatErrorMessage(error), 'error')
     }
   }
 
   const loadBook = async () => {
     try {
-      const saidBook = await books.getBook(path)
+      const book = await books.getBook(path)
       if (!open) return
-      title.value = saidBook.title
-      span.value = saidBook.span
-      documents.value = saidBook.documents
-      pages.value = saidBook.pages
-      pageBytes.value = saidBook.pageBytes
-      contents.value = getContents(saidBook, words)
-      fingerprint.value = saidBook.fingerprint
-      offset.value = saidBook.span.begins
-      await draw(getDocumentAtOffset(saidBook.documents, saidBook.span.begins))
+      title.value = book.title
+      span.value = book.span
+      documents.value = book.documents
+      pages.value = book.pages
+      pageBytes.value = book.pageBytes
+      contents.value = getContents(book, words)
+      fingerprint.value = book.fingerprint
+      offset.value = book.span.begins
+      await draw(getDocumentAtOffset(book.documents, book.span.begins))
     } catch (error) {
       if (!open) return
-      said(formatErrorMessage(error), 'error')
+      writeMessage(formatErrorMessage(error), 'error')
     }
   }
 

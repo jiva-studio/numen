@@ -39,7 +39,7 @@ export interface PaletteLists {
    * What this command offers now, in the groups it is drawn in. The words typed
    * come too: a list may hold a row made out of them.
    */
-  offers(command: string, typed: string): readonly StepGroup[]
+  getStepGroups(command: string, typed: string): readonly StepGroup[]
   /** The one the keyboard is standing on, and nothing where it stands on none. */
   previewItem(command: string, item: string): void
 }
@@ -51,7 +51,7 @@ export interface PaletteLists {
  */
 export interface NoteLookup {
   /** What it is called now, and nothing where the window names it nothing. */
-  called(path: string): string
+  getTitle(path: string): string
   /** The identity of the tab holding it, and nothing where none holds it. */
   holding(path: string): string | null
 }

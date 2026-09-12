@@ -8,19 +8,17 @@
  * belongs to.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { getVaultForKey } from '@numen/ui'
 
 import { cards } from '@/shared/clients'
 import { useScreens } from '@/shared/screens'
 import { deckName, useReviewCounter } from '@/entities/vault'
-import { getPickerKeyIntent, getSessionKeyIntent, isSwallowed } from '@/features/keyboard'
-import { canStart, useReviewedDays, useVaultPresets } from '@/pages/decks'
+import { useReviewedDays, useVaultPresets } from '@/pages/decks'
 import { useReviewSession } from '@/pages/session'
 import { useNotices } from './notices'
 import { usePanels } from './usePanels'
+import { createWindowKeys } from './windowKeys'
 import { useWindowStreams } from './useWindowStreams'
 import type { Grade } from '@/entities/card'
-import type { VaultCardsDue } from '@/entities/vault'
 import type { NotesPanel, Report } from '@/pages/session'
 
 /** Everything the window is made of, made once and handed to what draws it. */
@@ -41,7 +39,7 @@ export const useWindow = () => {
     card: () => state.card.value,
     unreachable: () => unreachable.value,
     vault: () => vault.value,
-    showNotice: (said) => showNotice(said, 'caution'),
+    showNotice: (text) => showNotice(text, 'caution'),
   })
 
   /**
@@ -82,31 +80,31 @@ export const useWindow = () => {
    * the vault's answers that could not be read is a card standing where the rest
    * of its history left it.
    */
-  const reportSession = (said: Report) => {
-    if (said.unwritten.length) {
+  const reportSession = (report: Report) => {
+    if (report.unwritten.length) {
       showNotice(
-        `Not asked from ${said.unwritten.map(deckName).join(', ')}: the deck could not be written.`,
+        `Not asked from ${report.unwritten.map(deckName).join(', ')}: the deck could not be written.`,
         'caution',
       )
     }
-    if (said.skipped > 0) {
-      showNotice(`${said.skipped} answers in this vault could not be read.`, 'caution')
+    if (report.skipped > 0) {
+      showNotice(`${report.skipped} answers in this vault could not be read.`, 'caution')
     }
   }
 
   const start = async (deck: string) => {
-    const said = await state.start(vault.value, deck)
-    if (!said) return
+    const report = await state.start(vault.value, deck)
+    if (!report) return
     goTo('session')
-    reportSession(said)
+    reportSession(report)
   }
 
   /** Sit down to every deck one preset schedules, held to the budget it keeps. */
   const startPreset = async (preset: string) => {
-    const said = await state.start(vault.value, '', preset)
-    if (!said) return
+    const report = await state.start(vault.value, '', preset)
+    if (!report) return
     goTo('session')
-    reportSession(said)
+    reportSession(report)
   }
 
   /**
@@ -135,81 +133,26 @@ export const useWindow = () => {
     await state.answer(how)
   }
 
-  const handleKey = (press: KeyboardEvent) => {
-    if (on.value === 'vaults') return handleVaultKey(press)
-    if (on.value === 'decks') return chosen.value ? handleDeckKey(press, chosen.value) : undefined
-    if (on.value !== 'session') return
-
-    const asked = getSessionKeyIntent(press, {
-      shown: state.shown.value,
-      asking: showing.value === 'asking',
-      reading: showing.value === 'reading',
-    })
-    if (!asked) return
-    if (isSwallowed(asked)) press.preventDefault()
-
-    switch (asked.does) {
-      case 'show':
-        state.show()
-        break
-      case 'answer':
-        void answerCard(asked.how)
-        break
-      case 'takeBack':
-        void state.takeBack()
-        break
-      case 'leave':
-        void leave()
-        break
-      case 'ask':
-        toggleAgent()
-        break
-      case 'read':
-        toggleNotes()
-        break
-      case 'scroll':
-        page.value?.scrollPage(asked.back)
-        break
-      case 'shut':
-        if (showing.value === 'asking') agentPanel.closePanel()
-        else notesPanel.closePanel()
-        break
-    }
-  }
-
-  /**
-   * The keys a person picks a vault with: a letter opens the vault standing at
-   * it, which is the letter drawn on that row. A vault whose count has not
-   * arrived carries no letter, and the letter standing at it opens nothing.
-   */
-  const handleVaultKey = (press: KeyboardEvent) => {
-    const at = getVaultForKey(press, vaults.value.length)
-    const one = at === null ? undefined : vaults.value[at]
-    if (!one || !one.counted) return
-    press.preventDefault()
-    choose(one.vault)
-  }
-
-  /** The keys a person picks what to sit down to with. */
-  const handleDeckKey = (press: KeyboardEvent, vault: VaultCardsDue) => {
-    const asked = getPickerKeyIntent(press, vault.decks.length)
-    if (!asked) return
-    press.preventDefault()
-
-    switch (asked.does) {
-      case 'all':
-        if (vault.due + vault.new > 0) void start('')
-        break
-      case 'deck': {
-        const deck = vault.decks[asked.at]
-        if (deck && canStart(deck, schedules.byDeck.value)) void start(deck.deck)
-        break
-      }
-      case 'back':
-        void goToVaults()
-        break
-    }
-  }
+  const { handleKey } = createWindowKeys({
+    screen: () => on.value,
+    vaults: () => vaults.value,
+    chosen: () => chosen.value,
+    byDeck: () => schedules.byDeck.value,
+    shown: () => state.shown.value,
+    showing: () => showing.value,
+    choose,
+    start: (deck) => void start(deck),
+    show: state.show,
+    answer: (how) => void answerCard(how),
+    takeBack: () => void state.takeBack(),
+    leave: () => void leave(),
+    goToVaults: () => void goToVaults(),
+    toggleAgent,
+    toggleNotes,
+    scrollPage: (back) => page.value?.scrollPage(back),
+    closeAgent: agentPanel.closePanel,
+    closeNotes: notesPanel.closePanel,
+  })
 
   /**
    * A deck written or a card changed underneath the window. A session is left

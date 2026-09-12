@@ -3,7 +3,8 @@
  */
 import { dayAfter, daysBetween, isDay } from '@numen/ui'
 import type { Bounds, Goal, Load, Settings, SettingsBounds } from '../types'
-import { clamp, nearest, type Field } from './curve'
+import { clamp, nearest } from './curve'
+import type { Field } from './fields'
 import type { SettingValue } from '../types'
 
 /** How far off the day a goal of a date opens on, where the file names none. */

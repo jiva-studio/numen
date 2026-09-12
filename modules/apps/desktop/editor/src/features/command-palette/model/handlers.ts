@@ -8,15 +8,8 @@
  * draws anything.
  */
 import { formatErrorMessage } from '@numen/wire'
-import {
-  all,
-  formatNames,
-  type CommandDeps,
-  type CommandHandler,
-  type RunContext,
-  type Voice,
-  type Words,
-} from '../deps'
+import type { CommandDeps, CommandHandler, RunContext } from '../deps'
+import { all, formatNames, type Voice, type Words } from '../voice'
 export type { CommandDeps }
 import type { CommandInvocation } from '../target'
 import {
@@ -34,8 +27,8 @@ import { AGENT, FILES, PLEX, SETTINGS } from '@/entities/tab'
 
 /** What each command comes to. A command with no entry here does nothing. */
 const carried: Record<string, CommandHandler> = {
-  read: (invocation, on) => on.notes.opens(invocation.path, invocation.title, 'here'),
-  beside: (invocation, on) => on.notes.opens(invocation.path, invocation.title, 'beside'),
+  read: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'here'),
+  beside: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'beside'),
   travel: (invocation, on) => on.goes.travel(invocation.path),
   child: (invocation, on, words) => createNoteCommand(invocation, 'child', on, words),
   parent: (invocation, on, words) => createNoteCommand(invocation, 'parent', on, words),
@@ -78,16 +71,16 @@ const carried: Record<string, CommandHandler> = {
   },
   ask: (invocation, on) => on.goes.ask(`${invocation.path} — `),
   copy: (invocation, on) => on.copies(invocation.path),
-  reveal: (invocation, on) => on.goes.reveals(invocation.path),
+  reveal: (invocation, on) => on.goes.revealPath(invocation.path),
   preset: (invocation, on) => on.goes.preset(invocation.path),
-  settings: (_, on) => on.goes.opens(SETTINGS),
+  settings: (_, on) => on.goes.openTab(SETTINGS),
   move: (invocation, on, words) => moveFileCommand(invocation, on, words),
   makeFolder: (invocation, on, words) => createFolderCommand(invocation, on, words),
-  plex: (_, on) => on.goes.opens(PLEX),
-  files: (_, on) => on.goes.opens(FILES),
-  agent: (_, on) => on.goes.opens(AGENT),
-  close: (invocation, on) => on.goes.closes(invocation.tab),
-  find: (_, on) => on.goes.searches(),
+  plex: (_, on) => on.goes.openTab(PLEX),
+  files: (_, on) => on.goes.openTab(FILES),
+  agent: (_, on) => on.goes.openTab(AGENT),
+  close: (invocation, on) => on.goes.closeTab(invocation.tab),
+  find: (_, on) => on.goes.search(),
   appearance: (invocation, on) => on.settings.appearance(invocation.name),
   mode: (invocation, on) => on.settings.appearance(invocation.name),
   interfaceScale: (invocation, on) => on.settings.appearance(invocation.name),
@@ -159,7 +152,7 @@ const over = (invocation: CommandInvocation): readonly string[] => [invocation.p
  */
 const removes = async (invocation: CommandInvocation, destroy: boolean, on: CommandDeps, words: Words): Promise<void> => {
   const dangling: string[] = []
-  const refused: string[] = []
+  const errors: string[] = []
   let waiting = false
   const opening = on.goes.opening()
 
@@ -169,10 +162,10 @@ const removes = async (invocation: CommandInvocation, destroy: boolean, on: Comm
       waiting = true
       continue
     }
-    const answer = await on.files.removes(path, destroy)
+    const answer = await on.files.remove(path, destroy)
     const error = answer.error
     if (error) {
-      refused.push(words.errors[error])
+      errors.push(words.errors[error])
       continue
     }
     if (tab.held) on.notes.close(tab.held)
@@ -180,7 +173,7 @@ const removes = async (invocation: CommandInvocation, destroy: boolean, on: Comm
     if (opening) await on.goes.leave(path, opening)
   }
 
-  if (refused.length > 0) return on.says(all(...refused), 'error')
+  if (errors.length > 0) return on.says(all(...errors), 'error')
   if (waiting) return on.says(words.unanswered, 'caution')
   on.says(formatNames(words.dangling, dangling))
 }

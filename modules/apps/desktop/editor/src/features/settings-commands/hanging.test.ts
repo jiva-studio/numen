@@ -5,17 +5,17 @@ import { writer } from '@/testing/writer'
 import { WORDS as words } from '@/shared/words'
 
 /** The vault, answering what the settings hold and keeping what was written. */
-const vault = (held: boolean, parts = 6, refuses: string | null = null, most = 12) => {
+const vault = (isOn: boolean, parts = 6, error: string | null = null, most = 12) => {
   const wrote: boolean[] = []
   const counted: (number | undefined)[] = []
   return {
     wrote,
     counted,
-    getHangingSettings: async () => ({ hangs: held, parts, least: 1, most }),
+    getHangingSettings: async () => ({ hangs: isOn, parts, least: 1, most }),
     setHangingSettings: async (hangs: boolean, count?: number) => {
       wrote.push(hangs)
       counted.push(count)
-      return refuses
+      return error
     },
   }
 }

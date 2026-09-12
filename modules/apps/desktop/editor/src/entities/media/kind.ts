@@ -123,8 +123,8 @@ export function recordingKind<K extends string>(
   // The person is taken to the moment the first of the spans asked for was
   // spoken at.
   const openAt = async (path: string, spans: readonly Span[]) => {
-    const id = await handle.opens(as.tab, path)
-    void handle.holds<MediaTabState>(as.tab, id)?.reach(...spans)
+    const id = await handle.openTab(as.tab, path)
+    void handle.getTabState<MediaTabState>(as.tab, id)?.reach(...spans)
   }
   as.register(tabOpeners, (path, spans) => void openAt(path, spans))
 

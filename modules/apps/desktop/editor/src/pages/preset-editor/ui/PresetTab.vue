@@ -121,7 +121,7 @@ function onSettleSlider() {
               :value-text="reading"
               :waiting="waiting"
               @moves="onMoveSlider"
-              @settles="onSettleSlider"
+              @settle="onSettleSlider"
             />
           </template>
 

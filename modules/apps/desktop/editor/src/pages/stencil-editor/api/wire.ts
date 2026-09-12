@@ -46,13 +46,13 @@ export function createStencilWire(
     return { body: stencil ? stencilBodyOf(stencil) : '', error: null, at: answer.at }
   }
 
-  const write = async (path: string, body: string, seen: NoteBaseline | null = null) => {
+  const write = async (path: string, body: string, baseline: NoteBaseline | null = null) => {
     const stencil = stencilIn(body)
     const answer = await cards.writeStencil(
       path,
       stencil.fields,
       { preamble: stencil.preamble, faces: facesOf(stencil), tail: stencil.tail },
-      seen?.at ?? null,
+      baseline?.at ?? null,
     )
     const said = told.get(path) ?? NOTHING
     told.set(path, {
@@ -88,7 +88,7 @@ export function createStencilWire(
     if (error === null) return ''
     const said = told.get(path) ?? NOTHING
     if (said.reading !== null) {
-      return said.reading === 'notAStencil' ? words.notAStencil : words.refused
+      return said.reading === 'notAStencil' ? words.notAStencil : words.notRead
     }
     if (said.writing !== null) {
       return said.writing === 'notAStencil' ? words.notAStencil : words.notSaved
@@ -114,8 +114,8 @@ export function createStencilWire(
     titles.delete(path)
   }
 
-  const movePaths = (renamed: readonly PathRename[]): void => {
-    for (const went of renamed) {
+  const movePaths = (renames: readonly PathRename[]): void => {
+    for (const went of renames) {
       const said = told.get(went.from)
       if (said) told.set(went.to, said)
       told.delete(went.from)

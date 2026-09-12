@@ -32,11 +32,11 @@ const partsIn = (value: unknown): number =>
  * written, and nothing where it was.
  */
 const writeSettings = async (
-  written: readonly { at: readonly string[]; value: unknown }[],
+  edits: readonly { at: readonly string[]; value: unknown }[],
 ): Promise<string | null> => {
   try {
     await settingsService.writeSettings({
-      settings: written.map((one) => ({ at: [...one.at], value: write(one.value) })),
+      settings: edits.map((one) => ({ at: [...one.at], value: write(one.value) })),
     })
   } catch (thrown) {
     return formatErrorMessage(thrown)
@@ -81,18 +81,18 @@ export const settingsCore: SettingsCore = {
       })),
     } satisfies Configuration
   },
-  updateSettings: async (written) => {
+  updateSettings: async (edits) => {
     await settingsService.writeSettings({
-      settings: written.map((one) => ({ at: [...one.at], value: one.value })),
+      settings: edits.map((one) => ({ at: [...one.at], value: one.value })),
     })
   },
   getSettingsFile: async () => {
     const answer = await settingsService.readSettingsFile({})
     return { written: answer.written, path: answer.path }
   },
-  saveSettingsFile: async (written, seen) => {
+  saveSettingsFile: async (text, seen) => {
     const answer = await settingsService.writeSettingsFile({
-      written,
+      written: text,
       ...(seen === null ? {} : { seen }),
     })
     return { changed: staleIn(answer) }

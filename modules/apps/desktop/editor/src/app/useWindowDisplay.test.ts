@@ -24,7 +24,7 @@ const settled = {
   id: '01JQVAULTPHYSICS0000000000',
   name: 'Vault',
   path: '/vaults/Physics',
-  scan: { isReady: true, failureReason: '', unwatchedPath: '' },
+  scan: { isReady: true, error: '', unwatchedPath: '' },
   coverage: { chunkCount: 0n, embeddedCount: 0n, isEmbedding: false },
   agentUnreachable: '',
 }
@@ -400,7 +400,7 @@ describe('a vault that could not be read', () => {
       getInitialOpenPath: async () => null,
       state: async () => ({
         ...settled,
-        scan: { isReady: false, failureReason: 'permission denied', unwatchedPath: '' },
+        scan: { isReady: false, error: 'permission denied', unwatchedPath: '' },
       }),
     })
     const window = useWindowDisplay(core, { wait: async () => window.close() })
@@ -463,15 +463,15 @@ describe('chunks with nothing to embed them', () => {
 })
 
 describe('what the application is doing', () => {
-  const reading = (done: number): Task => ({
+  const reading = (count: number): Task => ({
     id: 'reading:library/scan.pdf',
     doing: 'Reading a scan',
     about: 'library/scan.pdf',
-    done,
+    done: count,
     total: 400,
     counting: 'things',
-    failed: '',
-    asked: true,
+    error: '',
+    isAsked: true,
   })
 
   it('is what the stream last said, whole', async () => {

@@ -20,12 +20,12 @@ export interface RowSelectionState {
 }
 
 export function useRowSelection(
-  shown: () => readonly ShownRow[],
-  selected: () => readonly RowId[],
+  getVisibleRows: () => readonly ShownRow[],
+  getSelection: () => readonly RowId[],
   /** The rows the selection now stands on, said only where they have changed. */
   select: (rows: readonly RowId[]) => void,
 ): RowSelectionState {
-  const picked = computed(() => new Set(selected()))
+  const picked = computed(() => new Set(getSelection()))
 
   /** The row a reach is measured from, where a plain or joining press last landed. */
   const anchor = shallowRef<RowId | null>(null)
@@ -33,16 +33,16 @@ export function useRowSelection(
   const said = shallowRef(false)
 
   /** A selection a press came to, said, and the anchor put where it names. */
-  const apply = (pressed: RowSelection): readonly RowId[] => {
-    anchor.value = pressed.anchor
-    if (!sameRows(pressed.rows, selected())) select(pressed.rows)
-    return pressed.rows
+  const apply = (selection: RowSelection): readonly RowId[] => {
+    anchor.value = selection.anchor
+    if (!sameRows(selection.rows, getSelection())) select(selection.rows)
+    return selection.rows
   }
 
   const selectRow = (row: RowId, how: Press): readonly RowId[] =>
-    apply(resolveSelection(shown(), selected(), anchor.value, row, how))
+    apply(resolveSelection(getVisibleRows(), getSelection(), anchor.value, row, how))
 
-  const selectEveryRow = (): readonly RowId[] => apply(everyRow(shown(), anchor.value))
+  const selectEveryRow = (): readonly RowId[] => apply(everyRow(getVisibleRows(), anchor.value))
 
   return { picked, said, selectRow, selectEveryRow }
 }

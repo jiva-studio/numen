@@ -93,7 +93,7 @@ describe('grid', () => {
   ]
 
   /** Every tile of the grid, over all its runs, in the order they stand. */
-  const tilesOf = (shown: ReturnType<typeof grid>) => shown.runs.flatMap((run) => run.tiles)
+  const tilesOf = (deck: ReturnType<typeof grid>) => deck.runs.flatMap((run) => run.tiles)
 
   it('stands the plus last, and counts it among the tiles', () => {
     const shown = grid(CARDS, [], CUTS, null)

@@ -27,7 +27,7 @@ export interface NoticeStackState {
 export function useNoticeStack(
   stack: Readonly<ShallowRef<HTMLElement | null>>,
   clock: () => number,
-  hidden: () => boolean,
+  isHidden: () => boolean,
 ): NoticeStackState {
   const now = ref(clock())
 
@@ -35,7 +35,7 @@ export function useNoticeStack(
   const pointed = ref(false)
   const focused = ref(false)
   /** Whether the corner is being held. */
-  const isHolding = (): boolean => pointed.value || focused.value || hidden()
+  const isHolding = (): boolean => pointed.value || focused.value || isHidden()
   /** How long it has been held for. */
   const heldFor = ref(0)
 

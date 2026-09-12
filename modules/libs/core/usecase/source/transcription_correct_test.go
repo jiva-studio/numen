@@ -22,7 +22,7 @@ import (
 func shown(held *TranscriptionWorker, path string) (doing, failed string) {
 	for _, at := range held.with.Tasks.List() {
 		if at.ID == proofreadingID(path) {
-			return at.Doing, at.Failed
+			return at.Doing, at.Error
 		}
 	}
 	return "", ""

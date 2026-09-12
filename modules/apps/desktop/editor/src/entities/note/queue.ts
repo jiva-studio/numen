@@ -78,11 +78,11 @@ export function createNoteQueue(
     id: string,
     path: string,
     body: string,
-    seen: NoteBaseline | null,
+    baseline: NoteBaseline | null,
   ): Promise<void> => {
     let answered: NoteResult & { at?: string; changed?: boolean }
     try {
-      answered = await core.write(path, body, seen)
+      answered = await core.write(path, body, baseline)
     } catch {
       // Core write failed.
       turn(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })

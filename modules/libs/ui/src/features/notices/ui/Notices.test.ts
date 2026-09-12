@@ -20,8 +20,8 @@ function wound(at = 0) {
 const draw = (notices: readonly Notice[], clock: () => number) =>
   mount(Notices, { props: { notices, wait: 0, clock, hidden: () => false } })
 
-const report: Notice = { id: 'renamed', says: 'Renamed', stay: 'read', asked: true }
-const refusal: Notice = { id: 'occupied', says: 'Filed there', stay: 'kept', asked: true }
+const report: Notice = { id: 'renamed', says: 'Renamed', stay: 'read', isAsked: true }
+const error: Notice = { id: 'occupied', says: 'Filed there', stay: 'kept', isAsked: true }
 const work: Notice = { id: 'embedding', says: 'Indexing', working: true }
 
 describe('a card the person is finished with', () => {
@@ -39,7 +39,7 @@ describe('a card the person is finished with', () => {
 
   it('is named once when it is put away', async () => {
     const { clock } = wound()
-    const corner = draw([report, refusal], clock)
+    const corner = draw([report, error], clock)
 
     await corner.findAll('.notice__away')[1]!.trigger('click')
 
@@ -69,10 +69,10 @@ describe('a card the person is finished with', () => {
 
   it('is never named for trouble, which waits for the person', async () => {
     const { clock, wind } = wound()
-    const corner = draw([refusal], clock)
+    const corner = draw([error], clock)
 
     wind(SETTLE * 100)
-    await corner.setProps({ notices: [refusal] })
+    await corner.setProps({ notices: [error] })
 
     expect(corner.emitted('gone')).toBeUndefined()
     expect(corner.findAll('article.notice')).toHaveLength(1)
@@ -101,8 +101,8 @@ describe('the keyboard on a card that goes', () => {
   it('is left on the card that takes its place', async () => {
     const { clock } = wound()
     const kept: readonly Notice[] = [
-      { id: 'first', says: 'Filed there', stay: 'kept', asked: true },
-      { id: 'second', says: 'Filed here', stay: 'kept', asked: true },
+      { id: 'first', says: 'Filed there', stay: 'kept', isAsked: true },
+      { id: 'second', says: 'Filed here', stay: 'kept', isAsked: true },
     ]
     const corner = mount(Notices, {
       attachTo: document.body,
@@ -136,7 +136,7 @@ describe('the corner as a place', () => {
       id: `said-${at}`,
       says: `Renamed ${at}`,
       stay: 'read' as const,
-      asked: true,
+      isAsked: true,
     }))
     const corner = mount(Notices, {
       props: { notices: many, wait: 0, room: 2, clock, hidden: () => false },

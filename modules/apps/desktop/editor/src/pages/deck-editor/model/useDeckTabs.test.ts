@@ -225,9 +225,9 @@ const open = async (
   const road = tabOpeners()
   const decks = useDeckTabs(one.core, one.presets, held.handle, road)
   held.registerKinds([decks.kind])
-  const id = await held.opens(DECK, path)
+  const id = await held.openTabOfKind(DECK, path)
   await settle()
-  const tab = held.handle.holds<DeckTabState>(DECK, id) as DeckTabState
+  const tab = held.handle.getTabState<DeckTabState>(DECK, id) as DeckTabState
   return { ...one, held, road, decks, id, tab }
 }
 
@@ -255,7 +255,7 @@ describe('a deck opened', () => {
   it('is called what the file is called', async () => {
     const { decks, id, held } = await open()
 
-    expect(decks.kind.getTitle?.(held.handle.holds<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
+    expect(decks.kind.getTitle?.(held.handle.getTabState<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
   })
 
   it('offers every stencil the vault holds as a cut', async () => {
@@ -273,7 +273,7 @@ describe('a deck opened', () => {
   it('is one tab per file, so the same deck asked for twice is the tab it has', async () => {
     const { held, id } = await open()
 
-    const again = await held.opens(DECK, 'Animals.md')
+    const again = await held.openTabOfKind(DECK, 'Animals.md')
 
     expect(again).toBe(id)
   })
@@ -785,7 +785,7 @@ describe('a deck renamed under the window', () => {
 
     renameDeck(one)
     await settle()
-    one.road.made('Beasts.md', '', 'deck')
+    one.road.openNewFile('Beasts.md', '', 'deck')
     await settle()
 
     expect(one.decks.all()).toHaveLength(1)

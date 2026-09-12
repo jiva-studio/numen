@@ -14,11 +14,11 @@ const mountHeading = (props: Record<string, unknown> = {}) =>
 
 type Held = ReturnType<typeof mountHeading>
 
-const boxIn = (held: Held) => held.get<HTMLInputElement>('input')
+const boxIn = (wrapper: Held) => wrapper.get<HTMLInputElement>('input')
 
 /** A name typed into the box and not yet committed. */
-const type = async (held: Held, name: string): Promise<void> => {
-  const box = boxIn(held)
+const type = async (wrapper: Held, name: string): Promise<void> => {
+  const box = boxIn(wrapper)
   box.element.value = name
   await box.trigger('input')
 }

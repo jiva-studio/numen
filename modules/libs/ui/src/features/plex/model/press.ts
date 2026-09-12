@@ -33,7 +33,7 @@ export interface NodePressProps {
 export function useNodePress(
   props: NodePressProps,
   middleOf: () => Position | null,
-  said: NodePressSaid,
+  listeners: NodePressSaid,
 ) {
   /** Not a node yet, so nothing may be done to it and nothing is told about it. */
   const isGhost = computed(() => props.gestureRole === 'ghost')
@@ -50,22 +50,22 @@ export function useNodePress(
   )
 
   const activateNode = (): void => {
-    if (canReach.value) said.activate()
+    if (canReach.value) listeners.activate()
   }
 
-  const showNode = (modified: boolean): void => {
-    if (canStop.value) said.show(getDestination(modified))
+  const showNode = (hasModifier: boolean): void => {
+    if (canStop.value) listeners.show(getDestination(hasModifier))
   }
 
   /** What this node listens for beyond the handle. */
   const listening = mergeListeners(
     props.reaching.listeners({
       ready: () => !isGhost.value && props.gestureRole === 'open',
-      reach: (event: PointerEvent) => said.reach(event),
+      reach: (event: PointerEvent) => listeners.reach(event),
     }),
     props.showing.listeners({
       ready: () => canStop.value,
-      show: (modified: boolean) => showNode(modified),
+      show: (hasModifier: boolean) => showNode(hasModifier),
     }),
   )
 
@@ -87,7 +87,7 @@ export function useNodePress(
     onContextMenu: (event: MouseEvent): void => {
       if (isGhost.value) return
       event.preventDefault()
-      said.menu({ x: event.clientX, y: event.clientY }, 'pointer')
+      listeners.menu({ x: event.clientX, y: event.clientY }, 'pointer')
     },
 
     onKeyDown: (event: KeyboardEvent): void => {
@@ -95,7 +95,7 @@ export function useNodePress(
         if (isGhost.value) return
         event.preventDefault()
         const middle = middleOf()
-        if (middle) said.menu(middle, 'keyboard')
+        if (middle) listeners.menu(middle, 'keyboard')
         return
       }
       if (isShowKey(event)) {

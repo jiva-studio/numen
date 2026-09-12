@@ -116,7 +116,7 @@ export function useDeckTabs(
           read.forgetTab(id)
           scheduled.forgetTab(id)
           forgetPath(path)
-          handle.closes(tab)
+          handle.closeTab(tab)
         })
       },
     }
@@ -172,20 +172,20 @@ export function useDeckTabs(
     createDeckTabState,
   })
 
-  const openDeckTab = (path: string, title = '', showing: PlexDestination = 'here'): void => {
+  const openDeckTab = (path: string, title = '', how: PlexDestination = 'here'): void => {
     const id = getOrCreateTabId(path)
     if (title) said.setTitle(path, title)
-    void (showing === 'beside' ? handle.beside(DECK, id) : handle.opens(DECK, id))
+    void (how === 'beside' ? handle.beside(DECK, id) : handle.openTab(DECK, id))
   }
 
   tabOpeners.registerEditor('deck', openDeckTab)
 
-  const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
-    for (const went of renamed) {
+  const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[] = []): void => {
+    for (const went of renames) {
       said.moveFile(went.from, went.to)
     }
-    store.changed(paths, renamed)
-    wiring.applyPathChanges(paths, renamed)
+    store.changed(paths, renames)
+    wiring.applyPathChanges(paths, renames)
   }
 
   return {

@@ -45,30 +45,30 @@ export const arrivals = (
 /** Whether a notice has stood long enough to have been read. */
 const over = (
   notice: Notice,
-  arrived: ReadonlyMap<string, number>,
+  firstSeen: ReadonlyMap<string, number>,
   at: number,
-): boolean => at - (arrived.get(notice.id) ?? at) >= dwellOf(notice.says, notice.about)
+): boolean => at - (firstSeen.get(notice.id) ?? at) >= dwellOf(notice.says, notice.about)
 
 /** The notices drawn: the ones that have lasted, less the ones put away. */
 export const getShownNotices = (
   notices: readonly Notice[],
-  arrived: ReadonlyMap<string, number>,
+  firstSeen: ReadonlyMap<string, number>,
   away: ReadonlySet<string>,
   at: number,
   wait: number = WAIT,
 ): readonly Notice[] =>
   readable(notices).filter((notice) => {
     if (away.has(notice.id)) return false
-    if (notice.stay === 'read') return !over(notice, arrived, at)
-    return notice.asked || at - (arrived.get(notice.id) ?? at) >= wait
+    if (notice.stay === 'read') return !over(notice, firstSeen, at)
+    return notice.isAsked || at - (firstSeen.get(notice.id) ?? at) >= wait
   })
 
 /** The notices that have been read, and whose caller may forget them. */
 export const getFinishedNotices = (
   notices: readonly Notice[],
-  arrived: ReadonlyMap<string, number>,
+  firstSeen: ReadonlyMap<string, number>,
   at: number,
 ): readonly string[] =>
   readable(notices)
-    .filter((notice) => notice.stay === 'read' && over(notice, arrived, at))
+    .filter((notice) => notice.stay === 'read' && over(notice, firstSeen, at))
     .map((notice) => notice.id)

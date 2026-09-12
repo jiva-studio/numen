@@ -19,7 +19,7 @@ export interface ActionPanelState {
 }
 
 export function useActionPanel(
-  offered: () => readonly PaletteAction[],
+  getActions: () => readonly PaletteAction[],
   /** The item the panel is about, by its identity. */
   lit: () => string | undefined,
   /** An item was chosen, and what was asked of it. */
@@ -29,7 +29,7 @@ export function useActionPanel(
 ): ActionPanelState {
   const open = ref(false)
 
-  watch(offered, (now) => {
+  watch(getActions, (now) => {
     if (!now.length) open.value = false
   })
 

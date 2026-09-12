@@ -16,8 +16,8 @@ const window = () => {
   const shown: string[] = []
   const places: DestinationDeps = {
     travel: async (path) => void travelled.push(path),
-    opensAt: async (path, run) => void opened.push(`${path} ${run.from} ${run.to}`),
-    opens: (path, title, line) =>
+    openFileAt: async (path, run) => void opened.push(`${path} ${run.from} ${run.to}`),
+    openFile: (path, title, line) =>
       void shown.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`),
   }
   return { places, travelled, opened, shown }

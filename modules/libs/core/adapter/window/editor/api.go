@@ -130,11 +130,9 @@ type API struct {
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
 
-	// Ready is set when the scan finished, and Failed says why it could not —
-	// a vault that could not be read is not an empty one, and the interface has
-	// to be able to tell them apart.
-	Ready  atomic.Bool
-	Failed wire.Reason
+	// Ready is set when the scan finished, and Error says why it could not.
+	Ready atomic.Bool
+	Error wire.Reason
 	// Unwatched is why the vault is not being followed, when it is not.
 	Unwatched wire.Reason
 	// Unreachable is why an agent cannot be reached, when one cannot.
@@ -356,7 +354,7 @@ func (a *API) unlevelled(err error) bool {
 	if !errors.Is(err, note.ErrUnlevelled) {
 		return false
 	}
-	a.say(task.Task{ID: levellingTheIndex, Doing: "Bringing the index level", Failed: err.Error()})
+	a.say(task.Task{ID: levellingTheIndex, Doing: "Bringing the index level", Error: err.Error()})
 	return true
 }
 
@@ -414,7 +412,7 @@ func (a *API) GetVaultState(
 		Path: showing.Path,
 		Scan: &v1.Scan{
 			Ready:     a.Ready.Load(),
-			Failed:    a.Failed.Why(),
+			Error:     a.Error.Why(),
 			Unwatched: a.Unwatched.Why(),
 		},
 		Coverage: &v1.IndexCoverage{Embedding: text(&a.Indexing.Model) != ""},

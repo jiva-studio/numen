@@ -44,10 +44,10 @@ watch(model, (now) => {
   handed = now
 })
 
-const setValue = (said: number) => {
-  if (said === handed) return
-  handed = said
-  model.value = said
+const setValue = (value: number) => {
+  if (value === handed) return
+  handed = value
+  model.value = value
 }
 
 const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: props.step }))

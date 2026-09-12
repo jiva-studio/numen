@@ -106,10 +106,10 @@ func begin(
 ) func() {
 	trouble := func(err error) {
 		if err == nil {
-			api.Failed.Store("")
+			api.Error.Store("")
 			return
 		}
-		api.Failed.Store(err.Error())
+		api.Error.Store(err.Error())
 	}
 	opening.Trouble = trouble
 	opening.Told = func(m container.VaultChanges) {
@@ -168,7 +168,7 @@ func begin(
 			// there is nothing to report.
 			return false
 		default:
-			api.Failed.Store(err.Error())
+			api.Error.Store(err.Error())
 			return false
 		}
 
@@ -254,7 +254,7 @@ func readSources(
 ) {
 	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
 	if err != nil {
-		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: err.Error()})
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Error: err.Error()})
 		return
 	}
 	making.Books.OnProgress = func(res source.ExtractResult) {
@@ -281,7 +281,7 @@ func readSources(
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it
 		// out.
-		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: read.Error()})
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Error: read.Error()})
 	}
 
 	embedSources(ctx, cfg, db, api, v, readers, embedder, nudge)
@@ -302,7 +302,7 @@ func cutSource(
 	path string,
 ) {
 	cut := func(err error) {
-		api.say(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Failed: err.Error()})
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Error: err.Error()})
 	}
 
 	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
@@ -389,7 +389,7 @@ func embedSources(
 	}
 
 	indexing := func(err error) {
-		api.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: err.Error()})
+		api.say(task.Task{ID: makingVectors, Doing: "Indexing", Error: err.Error()})
 	}
 
 	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)

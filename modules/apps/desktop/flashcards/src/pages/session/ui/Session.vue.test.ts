@@ -4,7 +4,7 @@ import type { VueWrapper } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import Session from './Session.vue'
-import type { PanelPlace } from './PanelCarousel.vue'
+import type { PanelPlace } from '../model/carousel'
 import { grades } from '@/entities/card'
 import type { CardFace } from '@/entities/card'
 

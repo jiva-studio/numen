@@ -60,9 +60,9 @@ const openLevels = (day: Day, event: Event) => {
   }
 }
 
-const onChoose = (said: string) => {
+const onChoose = (id: string) => {
   const day = asking.value?.day
-  const level = Number(said)
+  const level = Number(id)
   if (day === undefined || Number.isNaN(level)) return
   raises('chooses', day, level)
 }

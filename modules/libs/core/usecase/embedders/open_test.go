@@ -252,7 +252,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 
 	// The model never turns up, and the line stays in the list under the reason.
 	close(stop)
-	if held := failing(t, tasks, 1); held[0].Failed == "" {
+	if held := failing(t, tasks, 1); held[0].Error == "" {
 		t.Error("a model that never arrived left no reason")
 	}
 }
@@ -335,7 +335,7 @@ func failing(t *testing.T, tasks *task.Tasks, want int) []task.Task {
 		held = tasks.List()
 		got := 0
 		for _, at := range held {
-			if at.Failed != "" {
+			if at.Error != "" {
 				got++
 			}
 		}

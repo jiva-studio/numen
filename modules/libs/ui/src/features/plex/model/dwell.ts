@@ -36,11 +36,11 @@ export interface WideBox {
  */
 export function getWideBox(
   node: PlacedNode,
-  wanted: number,
+  room: number,
   viewport: Size,
   margin: number,
 ): WideBox | null {
-  const width = Math.min(wanted, viewport.width - 2 * margin)
+  const width = Math.min(room, viewport.width - 2 * margin)
   if (width <= node.width) return null
 
   const furthest = viewport.width / 2 - margin - width / 2

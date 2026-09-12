@@ -205,10 +205,10 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
      * identifiers address is the story's to know, and the plex handed them
      * back untouched.
      */
-    const dropOnto = (dragged: readonly string[], seat: PlexRelatedSeat) => {
+    const dropOnto = (ids: readonly string[], seat: PlexRelatedSeat) => {
       const here = neighbourhood.value.nodes.find((node) => node.seat === 'focus')
       if (!here) return
-      for (const one of dragged) createSeated(here.id, one, seat)
+      for (const one of ids) createSeated(here.id, one, seat)
     }
 
     const link = (from: string, to: string, seat: PlexRelatedSeat) => {

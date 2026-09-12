@@ -3,7 +3,7 @@ import { StopReason } from '@numen/protocol'
 import { many, percent, plural } from '@numen/ui'
 import type { ErrorCode } from '@/shared/errors'
 import type { BudgetUnit, Goal, Rule } from './types'
-import type { Field } from './lib/curve'
+import type { Field } from './lib/fields'
 
 /** What each of the three goals is offered as: the value it steers. */
 const GOALS: Record<Goal, string> = {
@@ -76,7 +76,7 @@ const READING: Record<ErrorCode, string | null> = {
   tooLarge: 'This note is longer than the window reads, so none of its settings were read.',
   unreadable: 'The frontmatter of this note cannot be read, so none of its settings were read.',
   notAPreset: 'That note is not a preset, and the defaults stand.',
-  bodyRefused: null,
+  bodyUnwritable: null,
   occupied: null,
   unnameable: null,
   notAStencil: null,
@@ -106,7 +106,7 @@ const WRITING: Record<ErrorCode, string | null> = {
   unreadable:
     'The frontmatter of this note cannot be read, so nothing was written. ' +
     'These settings are still here.',
-  bodyRefused:
+  bodyUnwritable:
     'This note begins where its frontmatter should, so nothing was written. ' +
     'These settings are still here.',
   occupied:

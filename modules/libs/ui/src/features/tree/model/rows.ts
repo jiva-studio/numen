@@ -23,8 +23,8 @@ export interface DrawnRowsState {
 }
 
 export function useDrawnRows(
-  shown: () => readonly ShownRow[],
-  selected: () => readonly RowId[],
+  getVisibleRows: () => readonly ShownRow[],
+  getSelection: () => readonly RowId[],
 ): DrawnRowsState {
   /** The rows as they are drawn, each under the row it stands for. */
   const drawn = new Map<RowId, HTMLElement>()
@@ -33,8 +33,10 @@ export function useDrawnRows(
 
   const tabbed = computed<RowId | null>(() => {
     const getDrawnRow = (row: RowId | null | undefined) =>
-      row != null && shown().some((each) => each.id === row) ? row : null
-    return getDrawnRow(here.value) ?? getDrawnRow(selected()[0]) ?? shown()[0]?.id ?? null
+      row != null && getVisibleRows().some((each) => each.id === row) ? row : null
+    return (
+      getDrawnRow(here.value) ?? getDrawnRow(getSelection()[0]) ?? getVisibleRows()[0]?.id ?? null
+    )
   })
 
   const setRowElement = (row: RowId, element: unknown): void => {

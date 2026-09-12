@@ -29,12 +29,12 @@ export interface SettingsStoreDeps {
     readonly models: readonly Model[]
   }>
   /** Settings written. A value the settings cannot hold is refused. */
-  updateSettings(written: readonly SettingEdit[]): Promise<void>
+  updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
 
 /** What stands at a path through a tree of settings, and nothing where none does. */
-export const getSettingAt = (held: unknown, at: readonly string[]): unknown => {
-  let value = held
+export const getSettingAt = (settings: unknown, at: readonly string[]): unknown => {
+  let value = settings
   for (const step of at) {
     if (typeof value !== 'object' || value === null) return undefined
     value = (value as Record<string, unknown>)[step]
@@ -42,7 +42,7 @@ export const getSettingAt = (held: unknown, at: readonly string[]): unknown => {
   return value
 }
 
-export function settingsStore(core: SettingsStoreDeps, words: Words, said: MessageWriter) {
+export function settingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
   /** Every setting as it stands. It holds nothing until the vault has answered. */
   const held = shallowRef<unknown>({})
 
@@ -66,7 +66,7 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
       // The vault answered with something no settings can be read out of. It is
       // not a vault that has gone away, and a write followed by this leaves the
       // person watching their setting go back with no word for it.
-      said(words.unreadSettings, 'error')
+      say(words.unreadSettings, 'error')
       return
     }
     path.value = answer.path
@@ -74,32 +74,32 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
   }
 
   /** What stands at a setting, and nothing where the file names none. */
-  const at = (setting: readonly string[]): unknown => getSettingAt(held.value, setting)
+  const at = (path: readonly string[]): unknown => getSettingAt(held.value, path)
 
   /** The models one setting can be set to, in the order they are offered. */
-  const getModelsAt = (setting: readonly string[]): readonly Model[] =>
-    models.value.filter((one) => one.namedAt.join('.') === setting.join('.'))
+  const getModelsAt = (path: readonly string[]): readonly Model[] =>
+    models.value.filter((one) => one.namedAt.join('.') === path.join('.'))
 
   /**
    * Settings written into the file, together or not at all. A write that was
    * refused is said, and the window reads the file again either way, so what is
    * drawn is what the settings hold.
    */
-  const writeSettings = async (written: readonly SettingEdit[]): Promise<void> => {
-    if (written.length === 0) return
-    said('')
+  const writeSettings = async (edits: readonly SettingEdit[]): Promise<void> => {
+    if (edits.length === 0) return
+    say('')
 
     try {
-      await core.updateSettings(written)
+      await core.updateSettings(edits)
     } catch (thrown) {
-      said(`${words.unturned} ${formatErrorMessage(thrown)}`, 'error')
+      say(`${words.unturned} ${formatErrorMessage(thrown)}`, 'error')
     }
     await start()
   }
 
   /** One setting written, by what is to stand there. */
-  const writeSetting = (setting: readonly string[], value: unknown): Promise<void> =>
-    writeSettings([{ at: setting, value: write(value) }])
+  const writeSetting = (path: readonly string[], value: unknown): Promise<void> =>
+    writeSettings([{ at: path, value: write(value) }])
 
   return { held, path, models, start, at, getModelsAt, writeSettings, writeSetting }
 }

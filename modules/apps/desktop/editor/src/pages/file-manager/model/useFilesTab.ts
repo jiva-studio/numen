@@ -122,8 +122,8 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     renamingPath.value = path
   }
 
-  const openMenu = (asked: MenuRequest) => {
-    menu.value = asked
+  const openMenu = (request: MenuRequest) => {
+    menu.value = request
   }
 
   const dismissMenu = () => {

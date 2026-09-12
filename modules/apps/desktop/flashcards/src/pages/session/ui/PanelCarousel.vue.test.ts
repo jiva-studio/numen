@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
 import PanelCarousel from './PanelCarousel.vue'
-import type { PanelPlace } from './PanelCarousel.vue'
+import type { PanelPlace } from '../model/carousel'
 
 /**
  * The three on the screen. jsdom lays nothing out, so the strip is given the

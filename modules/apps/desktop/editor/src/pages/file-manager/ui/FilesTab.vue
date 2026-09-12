@@ -68,8 +68,8 @@ function onCloseEntry(row: string) {
   props.state.close(row)
 }
 
-function onSelectEntries(selectedRows: readonly string[]) {
-  props.state.select(selectedRows)
+function onSelectEntries(rows: readonly string[]) {
+  props.state.select(rows)
 }
 
 function onActivateEntry(row: string) {
@@ -84,16 +84,16 @@ function onMoveEntries(targetRows: readonly string[], at: DropPosition) {
   void props.state.move(targetRows, at)
 }
 
-function onDragEntries(draggedRows: readonly string[]) {
-  props.state.drag(draggedRows)
+function onDragEntries(rows: readonly string[]) {
+  props.state.drag(rows)
 }
 
 function onDropEntries() {
   props.state.drop()
 }
 
-function onRemoveEntries(removedRows: readonly string[]) {
-  props.state.remove(removedRows)
+function onRemoveEntries(rows: readonly string[]) {
+  props.state.remove(rows)
 }
 
 function onOpenMenu(row: string | null, at: Position) {
@@ -109,8 +109,8 @@ function onDismissMenu() {
 }
 
 // --- Helpers ---
-function rowsOf(listingRows: readonly ListingRow[]): Row[] {
-  return listingRows.map((one) => ({
+function rowsOf(entries: readonly ListingRow[]): Row[] {
+  return entries.map((one) => ({
     id: one.entry.path,
     name: one.entry.name,
     holds: one.entry.folder,

@@ -4,7 +4,7 @@ export type ErrorCode =
   | 'notANote'
   | 'notText'
   | 'tooLarge'
-  | 'bodyRefused'
+  | 'bodyUnwritable'
   | 'unreadable'
   | 'occupied'
   | 'unnameable'

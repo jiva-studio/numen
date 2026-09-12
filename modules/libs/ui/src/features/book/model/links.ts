@@ -17,7 +17,7 @@ export interface BookLinkSaid {
   readonly followed: (path: string) => void
 }
 
-export function createBookLinks(props: SettledBookProps, said: BookLinkSaid) {
+export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid) {
   /** Where a link led, held until the document holding that place is drawn. */
   let led: BookLink | undefined
 
@@ -39,10 +39,10 @@ export function createBookLinks(props: SettledBookProps, said: BookLinkSaid) {
     const place = placeIn(href)
     if (place.path !== '' && place.path !== props.path) {
       led = place
-      said.followed(place.path)
+      listeners.followed(place.path)
       return
     }
-    said.moved(placeAt(place.fragment) ?? props.span.begins)
+    listeners.moved(placeAt(place.fragment) ?? props.span.begins)
   }
 
   return { takeLed, follow }

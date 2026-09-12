@@ -56,7 +56,7 @@ export function positionIn(svg: SVGSVGElement, event: PointerEvent): Position | 
 export function usePlexGesture(
   frame: () => PlexFrame,
   options: () => PlexOptions,
-  allowed: () => readonly PlexRelatedSeat[],
+  getSeats: () => readonly PlexRelatedSeat[],
   threshold: () => number,
   settle: (drop: Drop) => void,
 ): Gesture & GestureHandlers {
@@ -82,7 +82,7 @@ export function usePlexGesture(
     // A gesture that has not travelled is a press, and a press has a rule
     // rather than a direction.
     if (!hasTravelled(now)) {
-      const seat = seatWithoutDirection(allowed())
+      const seat = seatWithoutDirection(getSeats())
       return seat ? { kind: 'create', from: source, seat } : null
     }
 
@@ -91,7 +91,7 @@ export function usePlexGesture(
       options: options(),
       from: source,
       at: now,
-      allowed: allowed(),
+      seats: getSeats(),
     })
   })
 
@@ -132,7 +132,7 @@ export function usePlexGesture(
   const cancel = () => stop(svg())
 
   const ask = (source: string) => {
-    const seat = seatWithoutDirection(allowed())
+    const seat = seatWithoutDirection(getSeats())
     if (seat) settle({ kind: 'create', from: source, seat })
   }
 
@@ -168,10 +168,10 @@ export function usePlexGesture(
     //
     // One pointer at a time: a second finger arriving is not this gesture, and
     // its release is not this gesture's release.
-    const mine = (moved: PointerEvent) => moved.pointerId === pointer.value
+    const mine = (event: PointerEvent) => event.pointerId === pointer.value
 
-    const onMove = (moved: PointerEvent) => {
-      if (mine(moved)) move(moved)
+    const onMove = (event: PointerEvent) => {
+      if (mine(event)) move(event)
     }
     const onUp = (up: PointerEvent) => {
       if (mine(up)) finish()
@@ -179,8 +179,8 @@ export function usePlexGesture(
     // The browser takes the pointer away — a drag the system turned into a
     // scroll, a pen lifted out of range. No `pointerup` follows, so without
     // this the thread stays drawn and the next release anywhere makes a node.
-    const onLost = (lost: PointerEvent) => {
-      if (mine(lost)) cancel()
+    const onLost = (event: PointerEvent) => {
+      if (mine(event)) cancel()
     }
     const onKey = (key: KeyboardEvent) => {
       if (key.key === 'Escape') cancel()

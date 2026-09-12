@@ -68,13 +68,13 @@ describe('what the window has to say', () => {
       says: 'Reading the vault',
       about: 'Sanskrit',
       working: true,
-      asked: true,
+      isAsked: true,
     })
   })
 
   it('says why work stopped, and stands until it is put away', () => {
     const one = useNotices()
-    one.setTasks([reads({ failed: 'no such folder' })])
+    one.setTasks([reads({ error: 'no such folder' })])
 
     expect(one.notices.value[0]).toMatchObject({
       says: 'no such folder',
@@ -97,11 +97,11 @@ describe('what the window has to say', () => {
 })
 
 /** One vault being read, as the answer holds it. */
-const reads = (said: Partial<Task> = {}): Task => ({
+const reads = (fields: Partial<Task> = {}): Task => ({
   id: 'reading\t01A',
   doing: 'Reading the vault',
   about: 'Sanskrit',
-  failed: '',
-  asked: true,
-  ...said,
+  error: '',
+  isAsked: true,
+  ...fields,
 })

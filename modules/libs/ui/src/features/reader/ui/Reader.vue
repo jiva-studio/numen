@@ -85,13 +85,13 @@ const shown = computed(() => within(laid.value, viewport.value, along.value))
 const middle = computed(() => inFront(laid.value, viewport.value, along.value))
 
 /** What each page is asked for at. */
-const { drawnAt } = usePageWidth(
+const { drawnWidth } = usePageWidth(
   () => laid.value,
   (pixels) => emit('wide', pixels),
 )
 
 /** Where one page is drawn, once a width has been settled on. */
-const drawing = (page: number) => (drawnAt.value > 0 ? props.picture(page) : '')
+const drawing = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
 
 /**
  * The row moved, so the page in front is whichever is under the viewport now. A

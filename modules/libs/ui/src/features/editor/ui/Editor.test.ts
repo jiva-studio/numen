@@ -53,14 +53,14 @@ const caretAt = (view: EditorView, line: number, column: number) => {
 }
 
 /** A key pressed wherever the caret is, and the event as the page left it. */
-const chord = (on: EventTarget, held: KeyboardEventInit = { ctrlKey: true }) => {
+const chord = (on: EventTarget, modifiers: KeyboardEventInit = { ctrlKey: true }) => {
   const key = new KeyboardEvent('keydown', {
     key: 's',
     code: 'KeyS',
     keyCode: 83,
     bubbles: true,
     cancelable: true,
-    ...held,
+    ...modifiers,
   })
   on.dispatchEvent(key)
   return key

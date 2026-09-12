@@ -114,10 +114,60 @@ export function refused(name) {
  * declaration.
  */
 const DECLARED =
-  /(?:^|\n)[ \t]*(?:export\s+)?(?:async\s+)?function\s+([a-z][\w$]*)|(?:^|\n)[ \t]*(?:export\s+)?(?:const|let)\s+([a-z][\w$]*)(?::[^=\n]*)?\s*=\s*(?:async\s+)?(?:\((?:[^()]|\([^()]*\))*\)|[a-z][\w$]*)\s*(?::(?:[^=\n]|=(?!>))*)?=>/g
+  /(?:^|\n)[ \t]*(?:export\s+)?(?:async\s+)?function\s+(?<named>[a-z][\w$]*)(?:<[^>(]*>)?\s*(?<list>\((?:[^()]|\([^()]*\))*\))|(?:^|\n)[ \t]*(?:export\s+)?(?:const|let)\s+(?<held>[a-z][\w$]*)(?::[^=\n]*)?\s*=\s*(?:async\s+)?(?<takes>\((?:[^()]|\([^()]*\))*\)|[a-z][\w$]*)\s*(?::(?:[^=\n]|=(?!>))*)?=>/g
 
 export function declares(source) {
   const found = []
-  for (const one of code(source).matchAll(DECLARED)) found.push(one[1] ?? one[2])
+  for (const one of code(source).matchAll(DECLARED)) {
+    found.push(one.groups.named ?? one.groups.held)
+  }
+  return found
+}
+
+/**
+ * What a parameter is called, read off the front of one entry of a list: the
+ * name, and then a type, a default, or the end of it.
+ */
+const PARAMETER = /^\s*(?:readonly\s+)?(?<takes>[a-z][\w$]*)\s*\??\s*(?::|=(?!>)|$)/
+
+/**
+ * One list of parameters cut at its own commas. A comma inside a type or a
+ * destructuring belongs to that, so the depth is counted — and `=>` is an
+ * arrow and not a bracket closing.
+ */
+function apart(list) {
+  const out = []
+  let depth = 0
+  let from = 0
+  for (let at = 0; at < list.length; at += 1) {
+    const one = list[at]
+    if ('([{<'.includes(one)) depth += 1
+    else if (')]}'.includes(one)) depth -= 1
+    else if (one === '>' && list[at - 1] !== '=') depth -= 1
+    else if (one === ',' && depth === 0) {
+      out.push(list.slice(from, at))
+      from = at + 1
+    }
+  }
+  out.push(list.slice(from))
+  return out
+}
+
+/**
+ * Every parameter the declared functions of one file take. A caller reads a
+ * parameter the way it reads the function, so the same rule holds for both. A
+ * destructured list is skipped: those are the members of a contract declared
+ * elsewhere, and they are read there.
+ */
+export function takes(source) {
+  const found = []
+  for (const one of code(source).matchAll(DECLARED)) {
+    const list = one.groups.list ?? one.groups.takes
+    if (!list?.startsWith('(')) continue
+    for (const part of apart(list.slice(1, -1))) {
+      const name = PARAMETER.exec(part)?.groups.takes
+      if (name) found.push(name)
+    }
+  }
   return found
 }

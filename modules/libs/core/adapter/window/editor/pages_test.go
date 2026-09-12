@@ -69,8 +69,8 @@ func chose(t *testing.T, themes numenv1connect.ThemeServiceHandler, asked *v1.Wr
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failed := out.Msg.GetFailed(); failed != "" {
-		t.Fatalf("refused: %s", failed)
+	if reason := out.Msg.GetError(); reason != "" {
+		t.Fatalf("refused: %s", reason)
 	}
 }
 

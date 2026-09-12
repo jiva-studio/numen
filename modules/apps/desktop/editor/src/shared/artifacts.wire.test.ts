@@ -13,13 +13,13 @@ vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 let asked: unknown[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
-const answerWith = (said: unknown) => {
+const answerWith = (answer: unknown) => {
   asked = []
   vi.stubGlobal(
     'fetch',
     vi.fn(async (_url: string, init: { body: Uint8Array }) => {
       asked.push(JSON.parse(new TextDecoder().decode(init.body)))
-      return new Response(JSON.stringify(said), {
+      return new Response(JSON.stringify(answer), {
         headers: { 'content-type': 'application/json' },
       })
     }),
@@ -27,7 +27,7 @@ const answerWith = (said: unknown) => {
 }
 
 /** A build that does not carry the run at all refuses it by name. */
-const stubRefusal = (code: string) =>
+const stubError = (code: string) =>
   vi.stubGlobal(
     'fetch',
     vi.fn(
@@ -94,13 +94,13 @@ describe('beginning a run', () => {
   })
 
   it('is refused by a build that cannot do it at all', async () => {
-    stubRefusal('unimplemented')
+    stubError('unimplemented')
 
     expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({ able: false })
   })
 
   it('throws where the run failed for any other reason', async () => {
-    stubRefusal('internal')
+    stubError('internal')
 
     await expect(running.createArtifact('Scan.pdf', 'ocr')).rejects.toThrow()
   })
@@ -156,13 +156,13 @@ describe('taking one away', () => {
   })
 
   it('is refused by a build that cannot do it at all', async () => {
-    stubRefusal('unimplemented')
+    stubError('unimplemented')
 
     expect(await running.deleteCopy('Talk.url')).toBe(false)
   })
 
   it('throws where it failed for any other reason', async () => {
-    stubRefusal('internal')
+    stubError('internal')
 
     await expect(running.deleteCopy('Talk.url')).rejects.toThrow()
   })

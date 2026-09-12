@@ -103,12 +103,12 @@ export function days(
   now: Date,
   did: ReadonlyMap<string, Tally>,
   due: ReadonlyMap<string, number> = new Map(),
-  named: (at: Date) => string = dayNamed,
+  getDayName: (at: Date) => string = dayNamed,
 ): Day[] {
   const out: Day[] = []
   if (columns < 1) return out
 
-  const today = named(now)
+  const today = getDayName(now)
 
   // The last day the grid would draw if it ran back from now: the Sunday ending
   // the last week kept for what is still to come.
@@ -130,7 +130,7 @@ export function days(
   for (let at = 0; at < columns * ROWS; at += 1) {
     const on = new Date(first)
     on.setDate(on.getDate() + at)
-    const day = named(on)
+    const day = getDayName(on)
     const ahead = day > today
     const tally = did.get(day) ?? NOTHING
     const count = ahead ? (due.get(day) ?? 0) : tally.answered

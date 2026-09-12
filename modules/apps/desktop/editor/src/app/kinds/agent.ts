@@ -13,8 +13,8 @@ export function createAgentKind({ core, tabOpeners, held, window, about }: Agent
     held.handle,
     () =>
       useAgentConversation(useConversation(agent, talk, generateId(CONVERSATION)), {
-        opens: (path, ...runs) => void tabOpeners.opensAt(path, runs),
-        beside: (path) => void tabOpeners.opens(path, '', 'beside'),
+        openFileAt: (path, ...runs) => void tabOpeners.openFileAt(path, runs),
+        beside: (path) => void tabOpeners.openFile(path, '', 'beside'),
         resolve: (written) => core.resolve('', written),
         unreachable: () => window.unreachable.value,
       }),

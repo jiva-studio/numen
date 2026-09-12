@@ -7,10 +7,10 @@ import { createNodeIdMap } from './nodeIdMap'
  *  whether the other note names the relationship too. */
 type NeighbourRow = [string, Seat, string, string, boolean?]
 
-const around = (focus: string, related: NeighbourRow[]): Neighbourhood => ({
+const around = (focus: string, rows: NeighbourRow[]): Neighbourhood => ({
   focus: { path: focus, title: focus },
   focusType: 'note',
-  related: related.map(([path, seat, label, through, mutual]) => ({
+  related: rows.map(([path, seat, label, through, mutual]) => ({
     path,
     title: path,
     type: 'note',

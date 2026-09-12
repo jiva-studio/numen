@@ -10,7 +10,7 @@ export const ERRORS: Record<ErrorCode, string> = {
   notANote: 'that file is not a note',
   notText: 'that file is not text',
   tooLarge: 'that note is longer than this writes',
-  bodyRefused: 'that text cannot be written into a note',
+  bodyUnwritable: 'that text cannot be written into a note',
   unreadable: 'the frontmatter of that note cannot be read',
   occupied: 'a note of that name is filed there, so the note was renamed and its file was not',
   unnameable: 'a note cannot be called that',

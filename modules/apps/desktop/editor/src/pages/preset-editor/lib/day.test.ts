@@ -89,7 +89,7 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     // arithmetic here is read off.
     curve: async () => answer ?? new Promise<Curve>(() => {}),
   }
-  const handle = { closes: () => {} } as unknown as WindowHandle
+  const handle = { closeTab: () => {} } as unknown as WindowHandle
   const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
   const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => DAY)
   const state = await kind.kind.open('Sanskrit.md')

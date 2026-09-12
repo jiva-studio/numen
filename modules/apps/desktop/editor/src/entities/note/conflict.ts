@@ -28,9 +28,9 @@ export function createConflictCoordinator(
   const notifyChanged = (
     allIds: () => readonly string[],
     paths: readonly string[],
-    renamed: readonly PathRename[] = [],
+    renames: readonly PathRename[] = [],
   ): void => {
-    for (const id of allIds()) turn(id, { kind: 'changed', paths, renamed })
+    for (const id of allIds()) turn(id, { kind: 'changed', paths, renamed: renames })
   }
 
   return {

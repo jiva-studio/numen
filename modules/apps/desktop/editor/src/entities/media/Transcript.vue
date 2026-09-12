@@ -50,8 +50,8 @@ function onTranscribe() {
   props.state.transcribe()
 }
 
-function onUpdateModelValue(said: string) {
-  props.state.setProse(said)
+function onUpdateModelValue(text: string) {
+  props.state.setProse(text)
 }
 
 function onSave() {

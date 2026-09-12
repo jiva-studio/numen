@@ -17,8 +17,8 @@ const LEVELS: readonly number[] = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
 /** The week, every day at the whole of it but for the ones named. */
 const week = (
   levelOf: Readonly<Record<string, number>> = {},
-  named: readonly { id: string; short: string; long: string }[] = WEEK,
-): readonly Day[] => named.map((one) => ({ ...one, level: levelOf[one.id] ?? 1 }))
+  days: readonly { id: string; short: string; long: string }[] = WEEK,
+): readonly Day[] => days.map((one) => ({ ...one, level: levelOf[one.id] ?? 1 }))
 
 type ChipsProps = InstanceType<typeof WeekdayChips>['$props']
 

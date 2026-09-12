@@ -31,8 +31,8 @@ export const getParentFolders = (path: string): readonly string[] => {
 /**
  * Generates a name not taken in the folder.
  */
-export const generateUniqueName = (taken: readonly string[], word: string): string => {
-  const held = new Set(taken)
+export const generateUniqueName = (names: readonly string[], word: string): string => {
+  const held = new Set(names)
   if (!held.has(word)) return word
   for (let count = 2; ; count++) {
     const name = `${word} ${count}`
@@ -118,12 +118,12 @@ export function useFileTree(core: Folders): FileTree {
 
   const refreshChanged = async (
     paths: readonly string[] = [],
-    renamed: readonly PathRename[] = [],
+    renames: readonly PathRename[] = [],
   ) => {
-    if (renamed.length > 0) {
-      selectedPaths.value = selectedPaths.value.map((one) => getRenamedPath(renamed, one) || one)
+    if (renames.length > 0) {
+      selectedPaths.value = selectedPaths.value.map((one) => getRenamedPath(renames, one) || one)
     }
-    const named = [...paths, ...renamed.flatMap((one) => [one.from, one.to])]
+    const named = [...paths, ...renames.flatMap((one) => [one.from, one.to])]
     if (named.length === 0) return void (await refresh())
     const folders = new Set(named.map(getDrawnInFolder).filter((one): one is string => one !== null))
     await Promise.all([...folders].map(loadFolder))

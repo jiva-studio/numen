@@ -30,21 +30,21 @@ export interface WorkLine {
 }
 
 /**
- * The two lines of one exchange. `doing` and `wait` name them, and `places`
+ * The two lines of one exchange. `workId` and `wait` name them, and `places`
  * holds the source a line that says it opens one leads to.
  */
 export function createWorkLine(
   put: (turn: Turn) => void,
   drop: (id: string) => void,
   places: Map<string, Place>,
-  thinking: string,
-  doing: string,
+  waitWords: string,
+  workId: string,
   wait: string,
 ): WorkLine {
   // What the agent has in hand, as far as anything has said. A call carrying
   // the text of a source is reported again every time more of it is written, so
   // the count is what moves while it is being written.
-  let says = thinking
+  let says = waitWords
   let about = ''
 
   // Whether the line is up. It comes down when the answer begins, and a tool
@@ -52,27 +52,27 @@ export function createWorkLine(
   // led to, and a line raised here stands under that answer for good.
   let up = false
 
-  const show = (state: 'arriving' | 'settled', written = 0) => {
+  const show = (state: 'arriving' | 'settled', count = 0) => {
     put({
-      id: doing,
+      id: workId,
       voice: 'doing',
       text: says,
       about,
-      aside: charsWord(written),
+      aside: charsWord(count),
       state,
-      ...(places.has(doing) ? { opens: true } : {}),
+      ...(places.has(workId) ? { opens: true } : {}),
     })
     up = true
   }
 
   const takeDown = () => {
-    drop(doing)
-    places.delete(doing)
+    drop(workId)
+    places.delete(workId)
     up = false
   }
 
   const setWaiting = (on: boolean) => {
-    if (on) put({ id: wait, voice: 'doing', text: thinking, about: '', state: 'arriving' })
+    if (on) put({ id: wait, voice: 'doing', text: waitWords, about: '', state: 'arriving' })
     else drop(wait)
   }
 
@@ -82,8 +82,8 @@ export function createWorkLine(
       about = named
       // A call naming a run of a source's text names somewhere the line can be
       // pressed to open.
-      if (place && place.span.to > place.span.from) places.set(doing, place)
-      else places.delete(doing)
+      if (place && place.span.to > place.span.from) places.set(workId, place)
+      else places.delete(workId)
       show('arriving', written)
     },
     settle: () => {

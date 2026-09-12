@@ -8,12 +8,11 @@
  * above, and `data-backlog` for the two of its own: `picture` and `line`.
  */
 import { computed } from 'vue'
+import { against, clearAt } from '../../../lib/label'
 import {
-  against,
   BACKLOG_HIGH,
   BACKLOG_PLOT,
   backlogPositionsOf,
-  clearAt,
   extentOfBacklog,
   LEFT,
   lineOf,

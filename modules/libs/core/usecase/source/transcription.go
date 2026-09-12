@@ -351,7 +351,7 @@ func (t *TranscriptionWorker) one(ctx context.Context, v domain.Vault, path stri
 		// The recording is left where the next round finds it. A store that
 		// would not write and an index that would not answer are the machine,
 		// and the recording has said nothing about itself.
-		t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path, Failed: err.Error()}, asked)
+		t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path, Error: err.Error()}, asked)
 	case res.Busy:
 		t.done(id)
 	default:
@@ -437,7 +437,7 @@ func (t *TranscriptionWorker) proofreadTranscript(
 	id := proofreadingID(path)
 	fail := func(err error) {
 		t.say(task.Task{
-			ID: id, Doing: "Proofreading a transcript", About: path, Failed: err.Error(),
+			ID: id, Doing: "Proofreading a transcript", About: path, Error: err.Error(),
 		}, asked)
 	}
 	if asked {

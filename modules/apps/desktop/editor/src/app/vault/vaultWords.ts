@@ -6,7 +6,7 @@ import {
   Presence as Presences,
   SearchMode as Modes,
   Unit as Units,
-  VaultsRefusal,
+  VaultsErrorCode,
 } from '@numen/protocol'
 import type {
   Vault as VaultMessage,
@@ -50,23 +50,23 @@ export const fetched: Record<Presences, Presence> = {
   [Presences.NOTHING_TO_FETCH]: 'nothing to fetch',
 }
 
-const unvaulted: Record<VaultsRefusal, VaultErrorCode> = {
-  [VaultsRefusal.UNSPECIFIED]: 'unreadable',
-  [VaultsRefusal.UNREADABLE]: 'unreadable',
-  [VaultsRefusal.COPY]: 'copy',
-  [VaultsRefusal.OVERLAPS]: 'overlaps',
-  [VaultsRefusal.NAME_TAKEN]: 'nameTaken',
-  [VaultsRefusal.LAST_VAULT]: 'lastVault',
-  [VaultsRefusal.SHOWING]: 'showing',
-  [VaultsRefusal.UNKNOWN]: 'unknown',
-  [VaultsRefusal.NO_TRASH]: 'noTrash',
-  [VaultsRefusal.ASKING]: 'asking',
+const unvaulted: Record<VaultsErrorCode, VaultErrorCode> = {
+  [VaultsErrorCode.UNSPECIFIED]: 'unreadable',
+  [VaultsErrorCode.UNREADABLE]: 'unreadable',
+  [VaultsErrorCode.COPY]: 'copy',
+  [VaultsErrorCode.OVERLAPS]: 'overlaps',
+  [VaultsErrorCode.NAME_TAKEN]: 'nameTaken',
+  [VaultsErrorCode.LAST_VAULT]: 'lastVault',
+  [VaultsErrorCode.SHOWING]: 'showing',
+  [VaultsErrorCode.UNKNOWN]: 'unknown',
+  [VaultsErrorCode.NO_TRASH]: 'noTrash',
+  [VaultsErrorCode.ASKING]: 'asking',
 }
 
-export const getVaultError = (from: { error?: VaultsRefusal | undefined; refusal?: VaultsRefusal | undefined }): VaultErrorCode | null => {
-  const code = from.error ?? from.refusal
-  return code === undefined ? null : unvaulted[code]
-}
+export const getVaultError = (from: {
+  error?: VaultsErrorCode | undefined
+}): VaultErrorCode | null =>
+  from.error === undefined ? null : (unvaulted[from.error] ?? null)
 
 /**
  * What a client has left, in the words the window uses.
@@ -90,8 +90,7 @@ export const mapVault = (one: VaultMessage): Vault => ({
 
 export const mapVaultResult = (from: {
   vault?: VaultMessage | undefined
-  error?: VaultsRefusal | undefined
-  refusal?: VaultsRefusal | undefined
+  error?: VaultsErrorCode | undefined
 }): VaultResult => {
   const error = getVaultError(from)
   return {

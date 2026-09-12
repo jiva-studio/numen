@@ -44,7 +44,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	if at == nil {
 		t.Fatal("the pass that could not embed took itself out of the list")
 	}
-	if at.Failed == "" {
+	if at.Error == "" {
 		t.Errorf("the pass is shown as running: %+v", *at)
 	}
 }
@@ -226,7 +226,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	if at == nil {
 		t.Fatal("the pass that could not read the books took itself out of the list")
 	}
-	if at.Failed == "" {
+	if at.Error == "" {
 		t.Errorf("the pass is shown as running: %+v", *at)
 	}
 }
@@ -303,7 +303,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 
 	for _, list := range over.lists() {
 		for _, at := range list {
-			if at.ID != makingVectors || at.Failed != "" {
+			if at.ID != makingVectors || at.Error != "" {
 				continue
 			}
 			if at.About == "" {
@@ -389,8 +389,8 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 		t.Error("the nudge a recognition raised was taken and not put back")
 	}
 
-	if at := listed(t, api, makingVectors); at != nil && at.Failed != "" {
-		t.Errorf("standing aside is shown as a failure: %q", at.Failed)
+	if at := listed(t, api, makingVectors); at != nil && at.Error != "" {
+		t.Errorf("standing aside is shown as a failure: %q", at.Error)
 	}
 
 	// Taken up again, the pass asks the index what still owes a vector.

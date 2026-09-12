@@ -7,8 +7,8 @@ import type { RowId, ShownRow } from './row'
  * The rows a press on a row drags: the selection, where the row stands in it,
  * and the row alone where it stands outside.
  */
-export const getDraggedRows = (selected: readonly RowId[], row: RowId): readonly RowId[] =>
-  selected.includes(row) ? selected : [row]
+export const getDraggedRows = (selection: readonly RowId[], row: RowId): readonly RowId[] =>
+  selection.includes(row) ? selection : [row]
 
 /** What is drawn at the pointer while rows are dragged. */
 export interface DragLabel {
@@ -23,15 +23,17 @@ export interface DragLabel {
  * One row is said by its name; several are said by how many.
  */
 export function dragLabel(
-  shown: readonly ShownRow[],
+  visibleRows: readonly ShownRow[],
   rows: readonly RowId[],
   at: Position,
-  counted: (rows: number) => string,
+  getCountWords: (rows: number) => string,
 ): DragLabel | null {
   const first = rows[0]
   if (first === undefined) return null
 
   const says =
-    rows.length === 1 ? (shown.find((row) => row.id === first)?.name ?? first) : counted(rows.length)
+    rows.length === 1
+      ? (visibleRows.find((row) => row.id === first)?.name ?? first)
+      : getCountWords(rows.length)
   return { says, at }
 }

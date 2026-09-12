@@ -86,7 +86,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 			// The window is standing on nothing: it says so, and the door on
 			// writes stays shut.
 			o.API.show(domain.Vault{})
-			o.API.Failed.Store(back.Error())
+			o.API.Error.Store(back.Error())
 			return errors.Join(err, back)
 		}
 	}
@@ -237,14 +237,14 @@ func (o *Installation) leave() {
 // for as long as the window is open.
 func (o *Installation) forget() {
 	o.API.Ready.Store(false)
-	o.API.Failed.Store("")
+	o.API.Error.Store("")
 	o.API.Unwatched.Store("")
 
 	for _, pass := range []string{walkingNotes, readingBooks, makingVectors, wordsAlone} {
 		o.API.finished(pass)
 	}
 	if o.why != nil {
-		o.API.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: o.why.Error()})
+		o.API.say(task.Task{ID: makingVectors, Doing: "Indexing", Error: o.why.Error()})
 	}
 }
 

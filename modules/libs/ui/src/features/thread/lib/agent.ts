@@ -33,7 +33,7 @@ export type AgentStep =
   | { readonly kind: 'answered' }
   /** A request to the model has begun: this is where a wait starts. */
   | { readonly kind: 'thinking' }
-  | { readonly kind: 'stopped'; readonly failed: string }
+  | { readonly kind: 'stopped'; readonly error: string }
 
 export interface AgentPort {
   /**

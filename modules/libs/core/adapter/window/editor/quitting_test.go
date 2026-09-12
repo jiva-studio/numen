@@ -172,7 +172,7 @@ func (f *going) read(t *testing.T) {
 		if f.opened.API.Ready.Load() {
 			return
 		}
-		if why := f.opened.API.Failed.Why(); why != "" {
+		if why := f.opened.API.Error.Why(); why != "" {
 			t.Fatalf("the vault could not be read: %v", why)
 		}
 		time.Sleep(10 * time.Millisecond)

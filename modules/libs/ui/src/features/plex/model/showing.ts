@@ -37,7 +37,8 @@ const BY_MODIFIER = Object.fromEntries(
  * Which one was asked for, given the modifier held at the time. It is read
  * once, where the gesture arrives, and what travels on is the answer.
  */
-export const getDestination = (modified: boolean): PlexDestination => BY_MODIFIER[`${modified}`]
+export const getDestination = (hasModifier: boolean): PlexDestination =>
+  BY_MODIFIER[`${hasModifier}`]
 
 /** How long the second tap has to arrive in, in milliseconds. */
 export const TAP = 300

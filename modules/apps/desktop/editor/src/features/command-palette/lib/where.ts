@@ -31,15 +31,15 @@ export const onSource =
  * file nothing has been asked about carries nothing, and is offered.
  */
 export const onEvidence =
-  (run: string, source: Source, made: (states: ArtifactStates) => boolean) =>
+  (run: string, source: Source, isOffered: (states: ArtifactStates) => boolean) =>
   (at: CommandTarget, runs: RunSupport): boolean =>
-    onSource(run, source)(at, runs) && (isEmpty(at.made) || made(at.made))
+    onSource(run, source)(at, runs) && (isEmpty(at.made) || isOffered(at.made))
 
 const isEmpty = (states: ArtifactStates): boolean => Object.keys(states).length === 0
 
 /** An artifact a run over the file would begin. */
-export const isUnmade = (made: ArtifactState | undefined): boolean =>
-  made === undefined || made === 'none' || made === 'stopped'
+export const isUnmade = (state: ArtifactState | undefined): boolean =>
+  state === undefined || state === 'none' || state === 'stopped'
 
 export const onAnything = (): boolean => true
 

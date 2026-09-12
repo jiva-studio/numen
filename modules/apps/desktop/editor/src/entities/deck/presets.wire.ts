@@ -4,6 +4,7 @@ import {
   Rule as Rules,
   type Bounds as BoundsMessage,
   type Curve as CurveMessage,
+  type ErrorCode as ProtoErrorCode,
   type Place as PlaceMessage,
   type Preset as PresetMessage,
   type Settings as SettingsMessage,
@@ -61,7 +62,7 @@ export const presets: Presets = {
 /** What a read answered, whichever of the two asked it. */
 const parseRead = (answer: {
   preset?: PresetMessage | undefined
-  refusal?: number | undefined
+  error?: ProtoErrorCode | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   bounds?: SettingsBoundsMessage | undefined
 }): ReadResult => ({
@@ -72,21 +73,24 @@ const parseRead = (answer: {
 })
 
 /** How far each setting goes, as the read answered it. */
-const parseSettingsBounds = (said: SettingsBoundsMessage | undefined): SettingsBounds => {
+const parseSettingsBounds = (all: SettingsBoundsMessage | undefined): SettingsBounds => {
   const out: { -readonly [field in keyof SettingsBounds]: Bounds } = {}
-  if (said === undefined) return out
-  if (said.minutesADay) out.minutesADay = parseBounds(said.minutesADay)
-  if (said.newADay) out.newADay = parseBounds(said.newADay)
-  if (said.reviewsADay) out.reviewsADay = parseBounds(said.reviewsADay)
-  if (said.retention) out.retention = parseBounds(said.retention)
-  if (said.backlog) out.backlog = parseBounds(said.backlog)
-  if (said.interval) out.interval = parseBounds(said.interval)
-  if (said.load) out.load = parseBounds(said.load)
+  if (all === undefined) return out
+  if (all.minutesADay) out.minutesADay = parseBounds(all.minutesADay)
+  if (all.newADay) out.newADay = parseBounds(all.newADay)
+  if (all.reviewsADay) out.reviewsADay = parseBounds(all.reviewsADay)
+  if (all.retention) out.retention = parseBounds(all.retention)
+  if (all.backlog) out.backlog = parseBounds(all.backlog)
+  if (all.interval) out.interval = parseBounds(all.interval)
+  if (all.load) out.load = parseBounds(all.load)
   return out
 }
 
 /** One pair of ends, in the window's own words. */
-const parseBounds = (said: BoundsMessage): Bounds => ({ least: said.least, most: said.most })
+const parseBounds = (bounds: BoundsMessage): Bounds => ({
+  least: bounds.least,
+  most: bounds.most,
+})
 
 /** One preset as the window carries it. */
 const parsePreset = (one: PresetMessage): Preset => ({
@@ -99,22 +103,22 @@ const parsePreset = (one: PresetMessage): Preset => ({
 })
 
 /** The settings in the window's own words. A preset carrying none is the defaults. */
-const settingsOf = (said: SettingsMessage | undefined): Settings =>
-  said === undefined
+const settingsOf = (settings: SettingsMessage | undefined): Settings =>
+  settings === undefined
     ? DEFAULTS
     : {
-        goal: goalOf[said.goal] ?? DEFAULTS.goal,
-        byDate: said.byDate,
-        minutesADay: said.minutesADay,
-        newADay: said.newADay,
-        reviewsADay: said.reviewsADay,
-        retention: said.retention,
-        counts: COUNTED[said.counts] ?? DEFAULTS.counts,
-        backlog: said.backlog,
-        load: said.load,
-        evenLoad: said.evenLoad,
-        learned: LEARNED[said.learned] ?? DEFAULTS.learned,
-        interval: said.interval,
+        goal: goalOf[settings.goal] ?? DEFAULTS.goal,
+        byDate: settings.byDate,
+        minutesADay: settings.minutesADay,
+        newADay: settings.newADay,
+        reviewsADay: settings.reviewsADay,
+        retention: settings.retention,
+        counts: COUNTED[settings.counts] ?? DEFAULTS.counts,
+        backlog: settings.backlog,
+        load: settings.load,
+        evenLoad: settings.evenLoad,
+        learned: LEARNED[settings.learned] ?? DEFAULTS.learned,
+        interval: settings.interval,
       }
 
 /** The settings in the shape the schema carries them. */
@@ -134,11 +138,11 @@ const toSettingsMessage = (settings: Settings) => ({
 })
 
 /** A curve as the window carries it. An answer holding none is an empty one. */
-const parseCurve = (said: CurveMessage | undefined): Curve => ({
-  goal: (said && goalOf[said.goal]) ?? DEFAULTS.goal,
-  grid: said?.grid ?? [],
-  days: said?.days ?? [],
-  at: (said?.at ?? []).map((one) => ({
+const parseCurve = (curve: CurveMessage | undefined): Curve => ({
+  goal: (curve && goalOf[curve.goal]) ?? DEFAULTS.goal,
+  grid: curve?.grid ?? [],
+  days: curve?.days ?? [],
+  at: (curve?.at ?? []).map((one) => ({
     reviews: one.reviews,
     minutes: one.minutes,
     retained: one.retained,
@@ -152,18 +156,18 @@ const parseCurve = (said: CurveMessage | undefined): Curve => ({
     short: one.short,
     backlog: one.backlog,
   })),
-  now: parsePlace(said?.now),
-  suggested: parsePlace(said?.suggested),
-  decks: said?.decks ?? 0,
-  cards: said?.cards ?? 0,
-  overdue: said?.overdue ?? 0,
-  unbegun: said?.unbegun ?? 0,
+  now: parsePlace(curve?.now),
+  suggested: parsePlace(curve?.suggested),
+  decks: curve?.decks ?? 0,
+  cards: curve?.cards ?? 0,
+  overdue: curve?.overdue ?? 0,
+  unbegun: curve?.unbegun ?? 0,
   isValid: true,
   honest: true,
 })
 
-const parsePlace = (said: PlaceMessage | undefined): Place =>
-  said === undefined ? NOWHERE : { at: said.at, value: said.value, day: said.day }
+const parsePlace = (place: PlaceMessage | undefined): Place =>
+  place === undefined ? NOWHERE : { at: place.at, value: place.value, day: place.day }
 
 /**
  * What counts as learned, in the window's own words.

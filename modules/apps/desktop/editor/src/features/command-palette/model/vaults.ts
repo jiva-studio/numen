@@ -5,7 +5,8 @@
  * A vault is not a note. What it holds is the person's folder, and every one
  * of these leaves the window standing somewhere else than it stood.
  */
-import type { VaultContext, Voice, Words } from '../deps'
+import type { VaultContext } from '../deps'
+import type { Voice, Words } from '../voice'
 import type { CommandInvocation } from '../target'
 
 /**

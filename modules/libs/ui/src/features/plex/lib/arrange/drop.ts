@@ -29,9 +29,8 @@ export type Drop =
  * down, or from the keyboard, where there is no direction to read at all.
  */
 export const seatWithoutDirection = (
-  allowed: readonly PlexRelatedSeat[],
-): PlexRelatedSeat | null =>
-  allowed.includes('child') ? 'child' : (allowed[0] ?? null)
+  seats: readonly PlexRelatedSeat[],
+): PlexRelatedSeat | null => (seats.includes('child') ? 'child' : (seats[0] ?? null))
 
 /**
  * Which way a point lies from another.
@@ -99,7 +98,7 @@ export interface DropInput {
   /** Where it was let go, in the plex's own coordinates. */
   readonly at: Position
   /** Seats a gesture is allowed to produce. */
-  readonly allowed: readonly PlexRelatedSeat[]
+  readonly seats: readonly PlexRelatedSeat[]
 }
 
 /**
@@ -113,7 +112,7 @@ export function resolveDrop({
   options,
   from,
   at,
-  allowed,
+  seats,
 }: DropInput): Drop | null {
   const source = frame.nodes.find((node) => node.id === from)
   if (!source) return null
@@ -123,7 +122,7 @@ export function resolveDrop({
 
   const target = landedOn ? { x: landedOn.x, y: landedOn.y } : at
   const seat = seatTowards(source, target, options)
-  if (!seat || !allowed.includes(seat)) return null
+  if (!seat || !seats.includes(seat)) return null
 
   return landedOn
     ? { kind: 'link', from, to: landedOn.id, seat }
@@ -138,7 +137,7 @@ export interface DroppedInput {
   /** Where the pointer is, in the plex's own coordinates. */
   readonly at: Position
   /** Seats a gesture is allowed to produce. */
-  readonly allowed: readonly PlexRelatedSeat[]
+  readonly seats: readonly PlexRelatedSeat[]
   /** How far from the focus the pointer stands before it names a direction. */
   readonly threshold: number
 }
@@ -155,7 +154,7 @@ export function seatDropped({
   options,
   viewport,
   at,
-  allowed,
+  seats,
   threshold,
 }: DroppedInput): PlexRelatedSeat | null {
   const focus = frame.nodes.find((node) => node.seat === 'focus')
@@ -168,5 +167,5 @@ export function seatDropped({
   if (Math.hypot(at.x - focus.x, at.y - focus.y) < threshold) return null
 
   const seat = seatTowards(focus, at, options)
-  return seat && allowed.includes(seat) ? seat : null
+  return seat && seats.includes(seat) ? seat : null
 }

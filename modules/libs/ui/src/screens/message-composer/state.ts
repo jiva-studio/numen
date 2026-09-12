@@ -30,8 +30,8 @@ export type ComposerState = keyof typeof COMPOSER_STATES
  * Writing outranks the text: the end of the field belongs to the answer on
  * its way until it arrives.
  */
-export const composerState = (text: string, working: boolean): ComposerState => {
-  if (working) return 'writing'
+export const composerState = (text: string, isWriting: boolean): ComposerState => {
+  if (isWriting) return 'writing'
   return getMessage(text) ? 'ready' : 'empty'
 }
 

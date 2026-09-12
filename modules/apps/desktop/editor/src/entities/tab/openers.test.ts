@@ -75,7 +75,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Animals.md', 'Animals')
+    await tabOpeners.openFile('Animals.md', 'Animals')
 
     expect(opened).toStrictEqual(['deck Animals.md Animals here —'])
   })
@@ -85,7 +85,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Animal.md', 'Animal')
+    await tabOpeners.openFile('Animal.md', 'Animal')
 
     expect(opened).toStrictEqual(['stencil Animal.md Animal here —'])
   })
@@ -95,7 +95,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Entropy.md', 'Entropy')
+    await tabOpeners.openFile('Entropy.md', 'Entropy')
 
     expect(opened).toStrictEqual(['note Entropy.md Entropy here —'])
   })
@@ -105,7 +105,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Physics.pdf', 'Physics')
+    await tabOpeners.openFile('Physics.pdf', 'Physics')
 
     expect(opened).toStrictEqual(['document Physics.pdf []'])
   })
@@ -115,7 +115,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('talks/Ants.mp3', 'Ants')
+    await tabOpeners.openFile('talks/Ants.mp3', 'Ants')
 
     expect(opened).toStrictEqual(['recording talks/Ants.mp3 []'])
   })
@@ -125,7 +125,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Cover.png', 'Cover')
+    await tabOpeners.openFile('Cover.png', 'Cover')
 
     expect(opened).toStrictEqual([])
   })
@@ -135,7 +135,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Gone.md')
+    await tabOpeners.openFile('Gone.md')
 
     expect(opened).toStrictEqual([])
   })
@@ -144,7 +144,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(unreachable)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Entropy.md', 'Entropy')
+    await tabOpeners.openFile('Entropy.md', 'Entropy')
 
     expect(opened).toStrictEqual(['note Entropy.md Entropy here —'])
   })
@@ -154,7 +154,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     editors(tabOpeners)
 
-    await tabOpeners.opens('Animals.md')
+    await tabOpeners.openFile('Animals.md')
 
     expect(one.asked).toStrictEqual([['Animals.md']])
   })
@@ -164,7 +164,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Animals.md', 'Animals', 'beside')
+    await tabOpeners.openFile('Animals.md', 'Animals', 'beside')
 
     expect(opened).toStrictEqual(['deck Animals.md Animals beside —'])
   })
@@ -174,8 +174,8 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Entropy.md', 'Entropy', 'here', 12)
-    await tabOpeners.opens('Animals.md', 'Animals', 'here', 12)
+    await tabOpeners.openFile('Entropy.md', 'Entropy', 'here', 12)
+    await tabOpeners.openFile('Animals.md', 'Animals', 'here', 12)
 
     expect(opened).toStrictEqual([
       'note Entropy.md Entropy here 12',
@@ -190,7 +190,7 @@ describe('a source opened at a span of its own text', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opensAt('Physics.pdf', [
+    await tabOpeners.openFileAt('Physics.pdf', [
       { from: 10, to: 14 },
       { from: 30, to: 32 },
     ])
@@ -203,7 +203,7 @@ describe('a source opened at a span of its own text', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opensAt('talks/Ants.mp3', [{ from: 22, to: 28 }])
+    await tabOpeners.openFileAt('talks/Ants.mp3', [{ from: 22, to: 28 }])
 
     expect(opened).toStrictEqual(['recording talks/Ants.mp3 [22+28]'])
   })
@@ -213,8 +213,8 @@ describe('a source opened at a span of its own text', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opensAt('Animals.md', [{ from: 10, to: 14 }])
-    await tabOpeners.opensAt('Entropy.md', [{ from: 10, to: 14 }])
+    await tabOpeners.openFileAt('Animals.md', [{ from: 10, to: 14 }])
+    await tabOpeners.openFileAt('Entropy.md', [{ from: 10, to: 14 }])
 
     expect(opened).toStrictEqual(['deck Animals.md — here —', 'note Entropy.md — here —'])
   })
@@ -224,7 +224,7 @@ describe('a source opened at a span of its own text', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opensAt('Gone.epub', [{ from: 10, to: 14 }])
+    await tabOpeners.openFileAt('Gone.epub', [{ from: 10, to: 14 }])
 
     expect(opened).toStrictEqual([])
   })
@@ -236,7 +236,7 @@ describe('which reader a book opens in', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opensAt('Gita.epub', [{ from: 10, to: 14 }])
+    await tabOpeners.openFileAt('Gita.epub', [{ from: 10, to: 14 }])
 
     expect(opened).toStrictEqual(['book Gita.epub [10+14]'])
   })
@@ -246,7 +246,7 @@ describe('which reader a book opens in', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    await tabOpeners.opens('Physics.pdf')
+    await tabOpeners.openFile('Physics.pdf')
 
     expect(opened).toStrictEqual(['document Physics.pdf []'])
   })
@@ -258,7 +258,7 @@ describe('which reader a book opens in', () => {
     const opened: string[] = []
     tabOpeners.registerReader({ kind: 'book' }, (path) => opened.push(`document ${path}`))
 
-    await tabOpeners.opens('Gita.epub')
+    await tabOpeners.openFile('Gita.epub')
 
     expect(opened).toStrictEqual(['document Gita.epub'])
   })
@@ -270,7 +270,7 @@ describe('a file just made here', () => {
     const tabOpeners = fileOpeners(one.core)
     const opened = editors(tabOpeners)
 
-    tabOpeners.made('Animals.md', 'Animals', 'deck')
+    tabOpeners.openNewFile('Animals.md', 'Animals', 'deck')
 
     expect(opened).toStrictEqual(['deck Animals.md Animals here —'])
     expect(one.asked).toStrictEqual([])

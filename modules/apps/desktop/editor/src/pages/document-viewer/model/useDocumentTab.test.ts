@@ -15,14 +15,14 @@ import type { WindowHandle } from '@/entities/tab'
 
 const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as DocumentReaderState
 
-const createMockDocumentWindow = (held: DocumentTabState | null = null) => {
+const createMockDocumentWindow = (tab: DocumentTabState | null = null) => {
   const opened: string[] = []
   const handle = {
-    opens: async (kind: string, at?: string) => {
+    openTab: async (kind: string, at?: string) => {
       opened.push(`${kind} ${at ?? ''}`.trim())
       return `id of ${at}`
     },
-    holds: () => held,
+    getTabState: () => tab,
   } as unknown as WindowHandle
   return { handle, opened }
 }
@@ -43,7 +43,7 @@ const settle = () => new Promise((done) => setTimeout(done, 0))
 const createDocumentTabAt = (path: string, page: number, pageCount: number) =>
   ({ path, pageNumber: ref(page), pages: ref(Array.from({ length: pageCount })) }) as unknown as DocumentTabState
 
-const kindOver = (held: DocumentTabState) => documentKind(createMockDocumentWindow(held).handle, () => held, openers().tabOpeners).kind
+const kindOver = (tab: DocumentTabState) => documentKind(createMockDocumentWindow(tab).handle, () => tab, openers().tabOpeners).kind
 
 describe('what a document tab holds', () => {
   it('measures the page again once there is a page to measure', () => {

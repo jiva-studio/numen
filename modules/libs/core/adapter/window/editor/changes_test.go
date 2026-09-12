@@ -100,7 +100,7 @@ func serving(t *testing.T, notes map[string]string) (
 		if state.Msg.GetScan().GetReady() {
 			return client, watching, root, opened
 		}
-		if reason := state.Msg.GetScan().GetFailed(); reason != "" {
+		if reason := state.Msg.GetScan().GetError(); reason != "" {
 			t.Fatalf("the first scan failed: %s", reason)
 		}
 		time.Sleep(10 * time.Millisecond)

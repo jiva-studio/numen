@@ -37,7 +37,7 @@ export interface SyncDeps {
   setSyncEnabled(kept: boolean): Promise<string | null>
 }
 
-export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
+export function syncSetting(core: SyncDeps, words: Words, write: MessageWriter) {
   /**
    * Whether the two are one name. It opens on what an installation nobody has
    * configured does, and is asked of the vault as the window opens.
@@ -78,12 +78,12 @@ export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
     const was = kept.value
     const now = item === ON
     if (now === was) return
-    said('')
+    write('')
     kept.value = now
 
     const failed = await core.setSyncEnabled(now)
     if (!failed) return
-    said(`${words.unturned} ${failed}`, 'error')
+    write(`${words.unturned} ${failed}`, 'error')
     kept.value = was
   }
 

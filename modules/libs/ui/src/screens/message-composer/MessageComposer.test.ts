@@ -90,8 +90,8 @@ describe('while an answer is being written', () => {
   })
 
   it('stands one disc either way, and changes the glyph on it', () => {
-    const glyph = (working: boolean) => {
-      const wrapper = composer({ modelValue: 'hello', working })
+    const glyph = (isWriting: boolean) => {
+      const wrapper = composer({ modelValue: 'hello', working: isWriting })
       expect(wrapper.findAll('button')).toHaveLength(1)
       return wrapper.get('button svg').html()
     }

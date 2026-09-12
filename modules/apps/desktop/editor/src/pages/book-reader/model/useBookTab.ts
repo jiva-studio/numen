@@ -14,12 +14,12 @@ export function useBookTab(read: BookReaderState) {
   const reader = shallowRef<BookHandle | null>(null)
   const tab = shallowRef<HTMLElement | null>(null)
 
-  const setBookHandle = (held: BookHandle | null) => {
-    reader.value = held
+  const setBookHandle = (handle: BookHandle | null) => {
+    reader.value = handle
   }
 
-  const setTabElement = (held: HTMLElement | null) => {
-    tab.value = held
+  const setTabElement = (element: HTMLElement | null) => {
+    tab.value = element
   }
 
   const measure = () => reader.value?.measure()

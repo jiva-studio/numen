@@ -38,14 +38,14 @@ const at = (over: Partial<ShownVault> = {}): ShownVault => ({
   ...over,
 })
 
-const vault = (id: string, name: string, missing = false): Vault => ({
+const vault = (id: string, name: string, isMissing = false): Vault => ({
   id,
   name,
   path: `/vaults/${name}`,
-  missing,
+  missing: isMissing,
 })
 
-const createVaultList = (vaults: readonly Vault[], showing: string): VaultList => ({ vaults, showing })
+const createVaultList = (vaults: readonly Vault[], current: string): VaultList => ({ vaults, showing: current })
 
 /** Two vaults, the first of them the one the window is showing. */
 const two = createVaultList([vault('a', 'Physics'), vault('b', 'Heat')], 'a')

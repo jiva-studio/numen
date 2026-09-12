@@ -48,7 +48,7 @@ export const agentPort = (agent: AgentClient): AgentPort => ({
           yield { kind: 'thinking' }
           break
         case 'stopped':
-          yield { kind: 'stopped', failed: step.step.value }
+          yield { kind: 'stopped', error: step.step.value }
           break
       }
     }

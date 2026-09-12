@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { Refusal as ProtoErrorCode, RefusalSchema as ErrorCodeSchema } from '@numen/protocol'
+import { ErrorCode as ProtoErrorCode, ErrorCodeSchema } from '@numen/protocol'
 
 import { formatErrorCodeMessage, formatErrorMessage } from './error'
 

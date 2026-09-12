@@ -1,6 +1,6 @@
 /** What the application answers about the preset one deck is scheduled by. */
 import { StopReason } from '@numen/protocol'
-import type { Refusal } from '@numen/protocol'
+import type { ErrorCode } from '@numen/protocol'
 import { goalOf, formatErrorCodeMessage } from '@numen/wire'
 
 import type { Settings, SettingsMessage } from '../types'
@@ -22,7 +22,7 @@ export interface PresetsClient {
           stopsOn: StopReason
         }
       | undefined
-    refusal?: Refusal | undefined
+    error?: ErrorCode | undefined
   }>
 }
 
@@ -38,7 +38,7 @@ export interface DeckPresetResult {
     stopsOn: StopReason
   } | null
   /** Why it was not read, in the words to show, and empty where it was. */
-  readonly refused: string
+  readonly error: string
 }
 
 /** What is shown of a preset the window has no other reason to give for. */
@@ -54,7 +54,7 @@ export const readDeckPreset = async (
     const answer = await presets.getVaultDeckPreset({ vault, deck })
     const settings = answer.preset?.settings
     if (!answer.preset || !settings) {
-      return { deck, held: null, refused: formatErrorCodeMessage(answer.refusal) || UNREAD }
+      return { deck, held: null, error: formatErrorCodeMessage(answer.error) || UNREAD }
     }
     return {
       deck,
@@ -65,11 +65,11 @@ export const readDeckPreset = async (
         problems: answer.preset.problems,
         stopsOn: answer.preset.stopsOn,
       },
-      refused: '',
+      error: '',
     }
   } catch {
     // A preset that could not be asked for is refused in the same words as one
-    // whose settings would not read, and the refusal is what is drawn.
-    return { deck, held: null, refused: UNREAD }
+    // whose settings would not read, and that is what is drawn.
+    return { deck, held: null, error: UNREAD }
   }
 }

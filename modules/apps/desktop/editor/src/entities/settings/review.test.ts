@@ -27,9 +27,9 @@ const DAYS: Record<string, string> = {
  * A vault holding that hour and counting from the day it names, and refusing
  * what it is told to refuse. An hour it takes is the hour it holds from then on.
  */
-const vault = (held: string, refuses: string | null = null, latest = '12:00') => {
+const vault = (starts: string, refuses: string | null = null, latest = '12:00') => {
   const written: string[] = []
-  let hour = held
+  let hour = starts
   const core: ReviewDeps = {
     getReviewSettings: () => Promise.resolve({ starts: hour, latest, day: DAYS[hour] ?? '' }),
     setReviewSettings: (starts) => {

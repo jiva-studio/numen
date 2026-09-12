@@ -102,7 +102,7 @@ describe('agentPort', () => {
 
   it('reads why the agent stopped', async () => {
     const stopped = create(AskAgentResponseSchema, { step: { case: 'stopped', value: 'no key' } })
-    expect(await steps([stopped])).toEqual([{ kind: 'stopped', failed: 'no key' }])
+    expect(await steps([stopped])).toEqual([{ kind: 'stopped', error: 'no key' }])
   })
 
   it('says nothing for a step it does not know', async () => {

@@ -70,13 +70,13 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
       if (found) options.tell('move', rows, found)
       options.tell('drop')
     },
-    began: (rows) => options.tell('drag', rows),
+    begin: (rows) => options.tell('drag', rows),
   })
 
   const into = computed(() => (at.value && 'into' in at.value ? at.value.into : null))
   const before = computed(() => (at.value && 'before' in at.value ? at.value.before : null))
 
-  const lifted = computed(() => new Set(position.value ? (dragging.value?.held ?? []) : []))
+  const lifted = computed(() => new Set(position.value ? (dragging.value?.item ?? []) : []))
 
   const moved = computed(() => dragging.value?.moved === true)
 
@@ -84,7 +84,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     const held = dragging.value
     const where = position.value
     if (!held?.moved || !where) return null
-    return dragLabel(options.shown(), held.held, where, options.counted())
+    return dragLabel(options.shown(), held.item, where, options.counted())
   })
 
   /** Where the pointer is, read off the drawing: the rows are one height each. */

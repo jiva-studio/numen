@@ -111,7 +111,7 @@ export function useWindowDisplay(
     name.value = state.name
     // Read once: this is the folder the page was drawn on.
     if (at.value === '') at.value = state.path
-    error.value = state.scan.failureReason
+    error.value = state.scan.error
     unwatched.value = state.scan.unwatchedPath
     chunks.value = Number(state.coverage.chunkCount)
     embedded.value = Number(state.coverage.embeddedCount)
@@ -170,7 +170,7 @@ export function useWindowDisplay(
         }
         // A vault that could not be read is not an empty one, and neither is
         // one still being read. Both end the waiting; only one is empty.
-        if (state.scan.failureReason || state.scan.isReady) {
+        if (state.scan.error || state.scan.isReady) {
           isIndexing.value = false
           void follow()
           void watch()

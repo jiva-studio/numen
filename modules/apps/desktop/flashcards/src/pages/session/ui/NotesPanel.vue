@@ -88,7 +88,7 @@ watch(
 
         <p v-if="!one.path" class="reading__quiet">{{ words.dangling }}</p>
         <p v-else-if="one.ambiguous" class="reading__quiet">{{ words.ambiguous }}</p>
-        <p v-if="one.refusal" class="reading__quiet">{{ one.refusal }}</p>
+        <p v-if="one.error" class="reading__quiet">{{ one.error }}</p>
 
         <!-- A link in what is read leads nowhere: this window has one page. -->
         <Prose v-if="one.body" :text="one.body" />

@@ -126,7 +126,7 @@ export interface Timing {
   /** The extension, put in the editor these are shown in. */
   readonly extension: Extension
   /** What the editor shows now. */
-  show(timed: TimingState): void
+  show(state: TimingState): void
 }
 
 /** Whether two of these say the same thing. */
@@ -164,21 +164,21 @@ export function timing(goes: (line: number) => void): Timing {
   // put shows what is given. It moves the view only where it may: the line to
   // keep in sight has to be one the document has, following has to be on, and
   // one of the two has to have changed.
-  const put = (timed: TimingState, may: boolean) => {
-    last = timed
+  const put = (state: TimingState, may: boolean) => {
+    last = state
     if (!view) return
     const was = view.state.field(held)
-    if (same(was, timed)) return
-    const effects: StateEffect<unknown>[] = [told.of(timed)]
-    const moved = timed.current !== was.current || timed.following !== was.following
-    if (may && timed.following && moved && timed.current >= 0 && timed.current < view.state.doc.lines) {
-      const { from } = view.state.doc.line(timed.current + 1)
+    if (same(was, state)) return
+    const effects: StateEffect<unknown>[] = [told.of(state)]
+    const moved = state.current !== was.current || state.following !== was.following
+    if (may && state.following && moved && state.current >= 0 && state.current < view.state.doc.lines) {
+      const { from } = view.state.doc.line(state.current + 1)
       effects.push(EditorView.scrollIntoView(from, { y: 'nearest' }))
     }
     view.dispatch({ effects })
   }
 
-  const show = (timed: TimingState) => put(timed, true)
+  const show = (state: TimingState) => put(state, true)
 
   return { extension: [held, marked, times(goes), painted, holding], show }
 }

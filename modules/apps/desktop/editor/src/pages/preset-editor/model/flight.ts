@@ -37,9 +37,9 @@ export const sendWrite = async (
   path: string,
   settings: Settings,
   core: Presets,
-  said: MessageWriter,
+  writeMessage: MessageWriter,
 ): Promise<void> => {
-  said('')
+  writeMessage('')
   let answer
   try {
     answer = await core.write(path, settings, flight.at)
@@ -55,7 +55,7 @@ export const sendWrite = async (
   const writeError = answer.error
   if (writeError) {
     flight.errorMessage.value = words.notSaved(writeError)
-    said(flight.errorMessage.value, 'error')
+    writeMessage(flight.errorMessage.value, 'error')
     return
   }
   flight.errorMessage.value = ''
@@ -69,14 +69,14 @@ const executeFlight = async (
   path: string,
   settings: Settings,
   core: Presets,
-  said: MessageWriter,
+  writeMessage: MessageWriter,
 ): Promise<void> => {
-  await sendWrite(flight, path, settings, core, said)
+  await sendWrite(flight, path, settings, core, writeMessage)
   flight.writing = false
   const again = flight.wanted && !flight.changed.value
   flight.wanted = false
   if (again) {
-    await requestWrite(flight, path, settings, core, said)
+    await requestWrite(flight, path, settings, core, writeMessage)
     return
   }
   flight.flight = null
@@ -88,14 +88,14 @@ export const requestWrite = (
   path: string,
   settings: Settings,
   core: Presets,
-  said: MessageWriter,
+  writeMessage: MessageWriter,
 ): Promise<void> => {
   if (flight.writing) {
     flight.wanted = true
     return flight.flight ?? Promise.resolve()
   }
   flight.writing = true
-  const inFlight = executeFlight(flight, path, settings, core, said)
+  const inFlight = executeFlight(flight, path, settings, core, writeMessage)
   flight.flight = inFlight
   return inFlight
 }
@@ -106,10 +106,10 @@ export const flushWrites = async (
   path: string,
   settings: Settings,
   core: Presets,
-  said: MessageWriter,
+  writeMessage: MessageWriter,
 ): Promise<void> => {
   if (flight.theirs.size > 0 && !flight.changed.value) {
-    await requestWrite(flight, path, settings, core, said)
+    await requestWrite(flight, path, settings, core, writeMessage)
   } else if (flight.flight) {
     await flight.flight
   }
@@ -121,9 +121,9 @@ export const canCloseTab = async (
   path: string,
   settings: Settings,
   core: Presets,
-  said: MessageWriter,
+  writeMessage: MessageWriter,
 ): Promise<boolean> => {
-  await flushWrites(flight, path, settings, core, said)
+  await flushWrites(flight, path, settings, core, writeMessage)
   if (flight.theirs.size === 0 && !flight.changed.value) return true
   if (flight.told) return true
   flight.told = true

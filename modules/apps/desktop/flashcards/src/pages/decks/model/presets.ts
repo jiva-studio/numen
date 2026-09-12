@@ -99,12 +99,12 @@ const budgetOf = (settings: Settings): Budget => ({
  * Every preset the vault holds gets a row. The ones whose decks hold cards are
  * gathered from what each deck answered, and the rest stand on the count alone.
  */
-const gather = (vault: VaultCardsDue, answered: readonly DeckPresetResult[], today: string): Preset[] => {
+const gather = (vault: VaultCardsDue, results: readonly DeckPresetResult[], today: string): Preset[] => {
   const owed = new Map(vault.decks.map((one) => [one.deck, one]))
   const came = new Map(vault.presets.map((one) => [one.preset, one]))
   const at = new Map<string, PresetTally>()
 
-  for (const one of answered) {
+  for (const one of results) {
     if (!one.held) continue
     let into = at.get(one.held.path)
     if (!into) {
@@ -154,7 +154,7 @@ const gather = (vault: VaultCardsDue, answered: readonly DeckPresetResult[], tod
   // A preset every one of whose decks is empty is answered for no deck, and so
   // is one whose settings could not be read, so both stand here on the count
   // alone, beside the presets nothing points at.
-  const why = getRefusedReason(answered)
+  const why = getCommonError(results)
   for (const one of vault.presets) {
     if (at.has(one.preset)) continue
     out.push({
@@ -182,12 +182,12 @@ const gather = (vault: VaultCardsDue, answered: readonly DeckPresetResult[], tod
 }
 
 /**
- * Why the presets no deck answered for could not be read. Every deck of one
- * preset is refused for the same reason, so a reason every refused deck gave is
- * the reason of each preset none of them could read.
+ * What stopped the presets no deck answered for. Every deck of one preset fails
+ * alike, so an error all of them gave is the error of each preset none could
+ * read; where they gave several, none of them is that preset's.
  */
-const getRefusedReason = (answered: readonly DeckPresetResult[]): string => {
-  const why = new Set(answered.filter((one) => one.refused).map((one) => one.refused))
-  if (why.size === 0) return ''
-  return why.size === 1 ? ([...why][0] ?? '') : UNREAD
+const getCommonError = (results: readonly DeckPresetResult[]): string => {
+  const errors = new Set(results.filter((one) => one.error).map((one) => one.error))
+  if (errors.size === 0) return ''
+  return errors.size === 1 ? ([...errors][0] ?? '') : UNREAD
 }

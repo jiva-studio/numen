@@ -22,8 +22,8 @@ const ON_ITS_WAY = /^[+-]?(\d+([.,]\d*)?|[.,]\d*)?$/
 const GROUPED = /^[+-]?[1-9]\d{0,2},\d{3}$/
 
 /** Whether more typing could still make a number of the text. */
-export const onItsWay = (typed: string): boolean => {
-  const said = typed.trim()
+export const onItsWay = (text: string): boolean => {
+  const said = text.trim()
   return ON_ITS_WAY.test(said) && !GROUPED.test(said)
 }
 
@@ -31,8 +31,8 @@ export const onItsWay = (typed: string): boolean => {
  * The number the text stands for; nothing where it stands for none. The shape
  * is what a person types: no exponent, no hexadecimal, no word for infinity.
  */
-export const numberOf = (typed: string): number | null => {
-  const said = typed.trim()
+export const numberOf = (text: string): number | null => {
+  const said = text.trim()
   if (said === '' || !onItsWay(said)) return null
   const value = Number(said.replace(',', '.'))
   return Number.isFinite(value) ? value : null
@@ -62,8 +62,8 @@ export const snapToBounds = (value: number, bounds: Bounds): number =>
   clamp(onStep(value, bounds), bounds)
 
 /** Whether the text is a number the bounds allow. An empty field is neither. */
-export const isAllowed = (typed: string, bounds: Bounds): boolean => {
-  const value = numberOf(typed)
+export const isAllowed = (text: string, bounds: Bounds): boolean => {
+  const value = numberOf(text)
   return value !== null && value === snapToBounds(value, bounds)
 }
 
@@ -90,5 +90,5 @@ export const formatNumber = (value: number | null): string =>
   value === null ? '' : String(value)
 
 /** Whether what is typed stands for the number in force. An empty field holds none. */
-export const isTextForValue = (typed: string, value: number | null): boolean =>
-  value === null ? typed.trim() === '' : numberOf(typed) === value
+export const isTextForValue = (text: string, value: number | null): boolean =>
+  value === null ? text.trim() === '' : numberOf(text) === value

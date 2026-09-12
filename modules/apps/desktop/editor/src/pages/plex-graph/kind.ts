@@ -48,7 +48,7 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
   const travel = async (path: string) => {
     const one = handle.last<PlexTabState>(PLEX)
     if (!one) {
-      await handle.opens(PLEX, path)
+      await handle.openTab(PLEX, path)
       return
     }
     handle.show(one.id)
@@ -63,8 +63,8 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
     )
   }
 
-  const again = async (renamed: readonly PathRename[] = []) => {
-    if (renamed.length) for (const { state } of all()) state.followMoves(renamed)
+  const again = async (renames: readonly PathRename[] = []) => {
+    if (renames.length) for (const { state } of all()) state.followMoves(renames)
     if (all().some(({ state }) => !state.view.here.value)) {
       try {
         await deps.first()

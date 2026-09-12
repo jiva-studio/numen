@@ -67,7 +67,7 @@ const SECTIONS = [{ name: 'Roots', preamble: '' }]
 /** A window with one deck open, drawn. */
 const mountDeck = async (
   problems: readonly DeckProblem[] = [],
-  scheduling: {
+  schedule: {
     /** The presets the vault holds. */
     presets?: readonly PresetChoice[]
     /** The preset the deck names, and nothing for a deck naming none. */
@@ -113,7 +113,7 @@ const mountDeck = async (
   }
 
   /** Which preset the deck names, as the vault answers it. */
-  let by = scheduling.by ?? ''
+  let by = schedule.by ?? ''
   /** Every deck put on a preset, as the tab asked for it. */
   const put: string[] = []
 
@@ -125,7 +125,7 @@ const mountDeck = async (
       bounds: NO_BOUNDS,
     }),
     list: async () =>
-      scheduling.presets ?? [
+      schedule.presets ?? [
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
@@ -135,7 +135,7 @@ const mountDeck = async (
         path: by,
         title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
         settings: DEFAULTS,
-        problems: scheduling.saying ? [scheduling.saying] : [],
+        problems: schedule.saying ? [schedule.saying] : [],
         ...SCHEDULING,
       },
       error: null,
@@ -144,8 +144,8 @@ const mountDeck = async (
     }),
     scheduleDeck: async (_deck, preset) => {
       put.push(preset)
-      if (scheduling.notScheduled) {
-        return { error: scheduling.notScheduled, changed: false, at: '' }
+      if (schedule.notScheduled) {
+        return { error: schedule.notScheduled, changed: false, at: '' }
       }
       by = preset
       return { error: null, changed: false, at: 'scheduled' }
@@ -169,9 +169,9 @@ const mountDeck = async (
   const held = useWindowTabs()
   const decks = useDeckTabs(core, presets, held.handle, tabOpeners())
   held.registerKinds([decks.kind])
-  const id = await held.opens(DECK, 'Animals.md')
+  const id = await held.openTabOfKind(DECK, 'Animals.md')
   await settle()
-  const tab = held.handle.holds<DeckTabState>(DECK, id) as DeckTabState
+  const tab = held.handle.getTabState<DeckTabState>(DECK, id) as DeckTabState
   // A mark is teleported into the tile it is about, so the grid has to stand in
   // the document for the tile to be found.
   const window = mount(DeckTab, { props: { state: tab }, attachTo: document.body })

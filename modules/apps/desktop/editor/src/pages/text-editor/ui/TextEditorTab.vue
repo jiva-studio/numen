@@ -28,8 +28,8 @@ function onTake() {
   void props.state.take()
 }
 
-function onUpdateModelValue(said: string) {
-  props.state.type(said)
+function onUpdateModelValue(text: string) {
+  props.state.type(text)
 }
 
 function onSave() {

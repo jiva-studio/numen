@@ -34,7 +34,7 @@ export interface Player {
   readonly duration: Readonly<Ref<number>>
   readonly playing: Readonly<Ref<boolean>>
   /** What it could not do, in words a person reads. */
-  readonly failed: Readonly<Ref<string>>
+  readonly error: Readonly<Ref<string>>
 
   /** Load a recording, leaving whatever was loaded before it. */
   load(url: string): void
@@ -58,7 +58,7 @@ export function audio(makes: AudioFactory = createAudioElement): Player {
   const at = ref(0)
   const duration = ref(0)
   const playing = ref(false)
-  const failed = ref('')
+  const error = ref('')
 
   let element: HTMLAudioElement | null = null
 
@@ -68,7 +68,7 @@ export function audio(makes: AudioFactory = createAudioElement): Player {
       element = makes()
     } catch {
       // A window that cannot make the element plays nothing, and says so.
-      failed.value = WORDS.unreadable
+      error.value = WORDS.unreadable
       return null
     }
     element.preload = 'metadata'
@@ -86,22 +86,22 @@ export function audio(makes: AudioFactory = createAudioElement): Player {
     element.addEventListener('pause', () => void (playing.value = false))
     element.addEventListener('ended', () => void (playing.value = false))
     element.addEventListener('error', () => {
-      failed.value = FAILED[element?.error?.code ?? 0] ?? WORDS.unreadable
+      error.value = FAILED[element?.error?.code ?? 0] ?? WORDS.unreadable
     })
     return element
   }
 
   /** Put a recording in the player, and say whether it is there. */
-  const load = (wanted: string): boolean => {
+  const load = (url: string): boolean => {
     const element = getElement()
-    if (!element || !wanted) return false
-    if (address.value === wanted) return true
-    element.src = wanted
-    address.value = wanted
+    if (!element || !url) return false
+    if (address.value === url) return true
+    element.src = url
+    address.value = url
     at.value = 0
     duration.value = 0
     playing.value = false
-    failed.value = ''
+    error.value = ''
     return true
   }
 
@@ -110,26 +110,26 @@ export function audio(makes: AudioFactory = createAudioElement): Player {
     at: readonly(at),
     duration: readonly(duration),
     playing: readonly(playing),
-    failed: readonly(failed),
+    error: readonly(error),
 
-    load: (wanted) => void load(wanted),
+    load: (url) => void load(url),
 
-    play: (wanted) => {
-      if (!load(wanted)) return
-      void element?.play().catch((why: unknown) => {
+    play: (url) => {
+      if (!load(url)) return
+      void element?.play().catch((thrown: unknown) => {
         playing.value = false
         // A play the window itself cut short is not a failure. Anything else is
         // a press that did nothing, and no `error` event fires on it, so this
         // is the only place it can be said.
-        if ((why as { name?: string } | null)?.name === 'AbortError') return
-        if (failed.value === '') failed.value = WORDS.unreadable
+        if ((thrown as { name?: string } | null)?.name === 'AbortError') return
+        if (error.value === '') error.value = WORDS.unreadable
       })
     },
 
     pause: () => element?.pause(),
 
-    seek: (wanted, ms) => {
-      if (!load(wanted)) return
+    seek: (url, ms) => {
+      if (!load(url)) return
       const to = Math.max(0, Math.round(ms))
       at.value = to
       if (element) element.currentTime = to / 1000

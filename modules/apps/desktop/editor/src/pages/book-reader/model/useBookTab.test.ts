@@ -16,14 +16,14 @@ import type { WindowHandle } from '@/entities/tab'
 const read = (path: string, title = '', close = vi.fn()) =>
   ({ path, title: ref(title), close }) as unknown as BookReaderState
 
-const createMockWindow = (held?: BookTabState) => {
+const createMockWindow = (tab?: BookTabState) => {
   const opened: string[] = []
   const handle = {
-    opens: async (kind: string, at?: string) => {
+    openTab: async (kind: string, at?: string) => {
       opened.push(`${kind} ${at ?? ''}`.trim())
       return `id of ${at}`
     },
-    holds: () => held ?? null,
+    getTabState: () => tab ?? null,
   } as unknown as WindowHandle
   return { handle, opened }
 }
@@ -51,7 +51,7 @@ const createBookTabAt = (path: string, offsetVal: number, page: number, pages: n
     pages: computed(() => pages),
   }) as unknown as BookTabState
 
-const kindOver = (held: BookTabState) => bookKind(createMockWindow(held).handle, () => held, openers().tabOpeners).kind
+const kindOver = (tab: BookTabState) => bookKind(createMockWindow(tab).handle, () => tab, openers().tabOpeners).kind
 
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {

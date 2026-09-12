@@ -20,8 +20,8 @@ const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
   }) as KeyboardEvent
 
 /** into is a keystroke that landed in something being written in. */
-const into = (tag: string, written = false): Partial<KeyboardEvent> => ({
-  target: { tagName: tag, isContentEditable: written } as unknown as EventTarget,
+const into = (tag: string, isEditable = false): Partial<KeyboardEvent> => ({
+  target: { tagName: tag, isContentEditable: isEditable } as unknown as EventTarget,
 })
 
 describe('the letter a vault is drawn with', () => {

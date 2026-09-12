@@ -34,8 +34,8 @@ const editor = useTemplateRef<InstanceType<typeof Editor>>('editor')
 onMounted(async () => {
   try {
     const said = await props.core.notes.readNote({ path: props.path })
-    if (said.refusal) {
-      emit('trouble', formatErrorCodeMessage(said.refusal))
+    if (said.error) {
+      emit('trouble', formatErrorCodeMessage(said.error))
       emit('close')
       return
     }
@@ -53,8 +53,8 @@ async function keep() {
     body: prose.value,
     seen: seen.value ?? undefined,
   })
-  if (said.refusal) {
-    emit('trouble', formatErrorCodeMessage(said.refusal))
+  if (said.error) {
+    emit('trouble', formatErrorCodeMessage(said.error))
     return
   }
   emit('close')

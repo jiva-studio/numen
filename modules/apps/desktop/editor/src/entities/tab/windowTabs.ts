@@ -21,14 +21,14 @@ export function useWindowTabs() {
    * made with it and declared to the window it already has.
    */
   const handle: WindowHandle = {
-    opens: (kind, at) => opens(kind, at),
+    openTab: (kind, at) => openTabOfKind(kind, at),
     beside: (kind, at) => beside(kind, at),
     show: (id) => show(id),
-    closes: (id) => finishClose(id),
+    closeTab: (id) => finishClose(id),
     each: <TabState,>(kind: string) => each<TabState>(kind),
     last: <TabState,>(kind: string) => each<TabState>(kind).at(-1) ?? null,
     front: () => front(),
-    holds: <TabState,>(kind: string, id: string) => holdsIn<TabState>(id, kind),
+    getTabState: <TabState,>(kind: string, id: string) => getTabStateIn<TabState>(id, kind),
   }
 
   /** The kinds of tab this window draws, each under the word it is asked for by. */
@@ -38,8 +38,8 @@ export function useWindowTabs() {
    * The kinds this window draws. It is told once, before a tab of any of them
    * is opened.
    */
-  const registerKinds = (told: readonly AnyTabKind[]) => {
-    for (const one of told) byKind.set(one.kind, one)
+  const registerKinds = (kinds: readonly AnyTabKind[]) => {
+    for (const one of kinds) byKind.set(one.kind, one)
   }
 
   /**
@@ -82,7 +82,7 @@ export function useWindowTabs() {
    * What one tab of a kind holds, for a caller that knows the kind and what
    * its tabs hold. A tab of another kind is nothing to it.
    */
-  const holdsIn = <T,>(id: string, kind: string): T | null => {
+  const getTabStateIn = <T,>(id: string, kind: string): T | null => {
     const one = open.value.get(id)
     return one && one.kind.kind === kind ? (one.state as T) : null
   }
@@ -125,7 +125,7 @@ export function useWindowTabs() {
   }
 
   /** A tab opened where the person is, and put in front. */
-  const opens = async (kind: string, at = ''): Promise<string> => {
+  const openTabOfKind = async (kind: string, at = ''): Promise<string> => {
     const id = await createTab(kind, at)
     if (id) show(id)
     return id
@@ -219,9 +219,9 @@ export function useWindowTabs() {
     handle,
     registerKinds,
     getTab,
-    holdsIn,
+    getTabStateIn,
     createTab,
-    opens,
+    openTabOfKind,
     beside,
     show,
     finishClose,

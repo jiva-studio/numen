@@ -27,23 +27,23 @@ export interface RowSelection {
  * not drawn is the row it reaches, alone.
  */
 export function between(
-  shown: readonly ShownRow[],
+  visibleRows: readonly ShownRow[],
   from: RowId,
   to: RowId,
 ): readonly RowId[] {
-  const last = shown.findIndex((row) => row.id === to)
+  const last = visibleRows.findIndex((row) => row.id === to)
   if (last === -1) return []
 
-  const first = shown.findIndex((row) => row.id === from)
+  const first = visibleRows.findIndex((row) => row.id === from)
   if (first === -1) return [to]
 
   const [start, end] = first <= last ? [first, last] : [last, first]
-  return shown.slice(start, end + 1).map((row) => row.id)
+  return visibleRows.slice(start, end + 1).map((row) => row.id)
 }
 
 /** The rows of a set, in the order they are drawn. */
-const inOrder = (shown: readonly ShownRow[], held: ReadonlySet<RowId>): readonly RowId[] =>
-  shown.filter((row) => held.has(row.id)).map((row) => row.id)
+const inOrder = (visibleRows: readonly ShownRow[], ids: ReadonlySet<RowId>): readonly RowId[] =>
+  visibleRows.filter((row) => ids.has(row.id)).map((row) => row.id)
 
 /**
  * What a press on a row makes the selection.
@@ -54,28 +54,30 @@ const inOrder = (shown: readonly ShownRow[], held: ReadonlySet<RowId>): readonly
  * is among none of them.
  */
 export function resolveSelection(
-  shown: readonly ShownRow[],
-  selected: readonly RowId[],
+  visibleRows: readonly ShownRow[],
+  selection: readonly RowId[],
   anchor: RowId | null,
   row: RowId,
   press: Press,
 ): RowSelection {
-  if (press.reaching) return { rows: between(shown, anchor ?? row, row), anchor: anchor ?? row }
+  if (press.reaching) {
+    return { rows: between(visibleRows, anchor ?? row, row), anchor: anchor ?? row }
+  }
 
   if (press.joining) {
-    const held = new Set(selected)
+    const held = new Set(selection)
     if (held.has(row)) held.delete(row)
     else held.add(row)
-    return { rows: inOrder(shown, held), anchor: row }
+    return { rows: inOrder(visibleRows, held), anchor: row }
   }
 
   return { rows: [row], anchor: row }
 }
 
 /** Every row that is drawn, with the anchor left where it stands. */
-export const everyRow = (shown: readonly ShownRow[], anchor: RowId | null): RowSelection => ({
-  rows: shown.map((row) => row.id),
-  anchor: anchor ?? shown[0]?.id ?? null,
+export const everyRow = (visibleRows: readonly ShownRow[], anchor: RowId | null): RowSelection => ({
+  rows: visibleRows.map((row) => row.id),
+  anchor: anchor ?? visibleRows[0]?.id ?? null,
 })
 
 /** Whether two selections hold the same rows in the same order. */

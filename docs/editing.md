@@ -51,18 +51,18 @@ The predicates are read in order, so a tab is in exactly one state. The mark is 
 | `unsaved` | what is shown differs from what was written | `unsaved` |
 | `clean` | the file holds what is shown | — |
 
-A tab is `stuck` on one of six refusals:
+A tab is `stuck` on one of six errors:
 
-| Refusal | What the person is told |
+| Error | What the person is told |
 | --- | --- |
 | `tooLarge` | this note is longer than the editor holds |
-| `bodyRefused` | a note begins below its frontmatter, and this text begins with one |
+| `bodyUnwritable` | a note begins below its frontmatter, and this text begins with one |
 | `notANote` | this file is not a note |
 | `notText` | this file is not text |
 | `unreadable` | the frontmatter of this note cannot be read |
 | `unreachable` | the vault could not be reached, so this note was not written |
 
-A keystroke is worth trying again after three of them — `tooLarge`, `bodyRefused` and `unreachable` — and typing clears the refusal. The other three are conditions of the file. A tab held on a mendable refusal is told once when it is asked to close, and goes the second time it is asked.
+A keystroke is worth trying again after three of them — `tooLarge`, `bodyUnwritable` and `unreachable` — and typing clears the error. The other three are conditions of the file. A tab held on a mendable error is told once when it is asked to close, and goes the second time it is asked.
 
 ## What a save writes
 

@@ -6,9 +6,9 @@
  * person is offered the import at all.
  */
 
-export const isWebUrl = (typed: string): boolean => {
+export const isWebUrl = (text: string): boolean => {
   try {
-    const address = new URL(typed.trim())
+    const address = new URL(text.trim())
     return (address.protocol === 'http:' || address.protocol === 'https:') && address.hostname !== ''
   } catch {
     // A string a URL cannot be constructed from is not a web url.

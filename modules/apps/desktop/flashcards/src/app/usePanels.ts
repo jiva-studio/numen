@@ -20,7 +20,7 @@ export interface PanelsDeps {
   /** The vault the session is on. */
   readonly vault: () => string
   /** Where the window says what a person has to know. */
-  readonly showNotice: (said: string) => void
+  readonly showNotice: (text: string) => void
 }
 
 export const usePanels = (deps: PanelsDeps) => {
@@ -80,9 +80,9 @@ export const usePanels = (deps: PanelsDeps) => {
    * A link pressed in the card names the note to open on and brings the reading
    * in: the press was about that note.
    */
-  const toggleNotes = (named = '') => {
-    if (named === '' && showing.value === 'reading') notesPanel.closePanel()
-    else void notesPanel.openPanel(named)
+  const toggleNotes = (note = '') => {
+    if (note === '' && showing.value === 'reading') notesPanel.closePanel()
+    else void notesPanel.openPanel(note)
   }
 
   const toggleAgent = () => {

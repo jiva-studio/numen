@@ -199,7 +199,7 @@ type Artifact struct {
 	Kind ArtifactKind `protobuf:"varint,1,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	// State is what has become of it.
 	State State `protobuf:"varint,2,opt,name=state,proto3,enum=numen.v1.State" json:"state,omitempty"`
-	// Error is what stopped it, and is set when it failed.
+	// Error is why it stopped.
 	Error string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
 	// How many bytes stand under it. A caller reading a long text in windows
 	// knows from this where the end is.

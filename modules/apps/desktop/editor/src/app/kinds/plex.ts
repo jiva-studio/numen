@@ -12,7 +12,7 @@ export interface PlexKindDeps
   > {
   dragged: ShallowRef<readonly string[]>
   told: MessageWriter
-  asks: (text: string) => void
+  askAgent: (text: string) => void
 }
 
 export function createPlexKind({
@@ -26,22 +26,22 @@ export function createPlexKind({
   runCommand,
   dragged,
   told,
-  asks,
+  askAgent,
 }: PlexKindDeps) {
   return plexKind(held.handle, () => usePlexView(core), {
     editor: editing.making,
     ready: computed(() => !window.failure.value),
     hangs: settings.hungParts.hangs,
     parts: settings.hungParts.parts,
-    opens: (path, title, showing, line) => void tabOpeners.opens(path, title, showing, line),
+    openNote: (path, title, showing, line) => void tabOpeners.openFile(path, title, showing, line),
     inside: (paths) => core.headings(paths),
-    asks,
-    runs: (id, path, title) => runCommand(id, { ...where(), path, title }),
+    askAgent,
+    runCommand: (id, path, title) => runCommand(id, { ...where(), path, title }),
     opening: window.opening,
     first: () => window.first(),
     dragged,
-    says: (text) => told(text, 'error'),
-    writes: async () => (await editing.making.createUntitled('', []))?.path ?? '',
+    showMessage: (text) => told(text, 'error'),
+    createUntitledNote: async () => (await editing.making.createUntitled('', []))?.path ?? '',
     creatable: CREATABLE,
   })
 }

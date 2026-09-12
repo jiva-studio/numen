@@ -8,8 +8,8 @@
 import { Button, KeyCap, keyChord } from '@numen/ui'
 
 import PanelCarousel from './PanelCarousel.vue'
-import type { PanelPlace } from './PanelCarousel.vue'
 import Card from './Card.vue'
+import type { PanelPlace } from '../model/carousel'
 import { ahead, called, grades } from '@/entities/card'
 import { deckName } from '@/entities/vault'
 import { ASKS, READS } from '@/features/keyboard'
@@ -37,7 +37,7 @@ defineEmits<{
   (event: 'takeBack'): void
   (event: 'leave'): void
   (event: 'ask'): void
-  (event: 'read', named: string): void
+  (event: 'read', note: string): void
 }>()
 </script>
 
@@ -83,7 +83,7 @@ defineEmits<{
           :back="card.back"
           :shown="shown"
           @show="$emit('show')"
-          @read="(named: string) => $emit('read', named)"
+          @read="(note: string) => $emit('read', note)"
         />
       </div>
       <template #after><slot name="panel" /></template>

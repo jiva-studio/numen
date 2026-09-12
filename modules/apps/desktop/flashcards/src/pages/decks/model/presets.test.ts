@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Refusal, StopReason } from '@numen/protocol'
+import { ErrorCode, StopReason } from '@numen/protocol'
 import { goalNames } from '@numen/wire'
 
 import { useVaultPresets } from './presets'
@@ -10,7 +10,7 @@ import type { Budget, Preset, Settings, SettingsMessage } from '../types'
 import { getStoppedWords, goalWords, leftWords, STOPPED } from '../words'
 import type { BudgetKeys, PresetCardsDue, VaultCardsDue } from '@/entities/vault'
 
-const settings = (said: Partial<Settings> = {}): Settings => ({
+const settings = (fields: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',
   byDate: '',
   minutesADay: 20,
@@ -19,20 +19,20 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
   retention: 0.9,
   load: {},
   evenLoad: true,
-  ...said,
+  ...fields,
 })
 
 /** The same settings, as the schema carries them. */
-const createSettingsMessage = (held: Settings): SettingsMessage => ({
-  ...held,
-  goal: goalNames[held.goal],
+const createSettingsMessage = (one: Settings): SettingsMessage => ({
+  ...one,
+  goal: goalNames[one.goal],
 })
 
-const budget = (said: Partial<Budget> = {}): Budget => ({
+const budget = (fields: Partial<Budget> = {}): Budget => ({
   new: 10,
   reviews: 200,
   minutes: 20,
-  ...said,
+  ...fields,
 })
 
 /** A preset steered by how long its day runs, which is the ordinary one. */
@@ -41,7 +41,7 @@ const byMinutes: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
 /** One steered by what it asks of memory, where the counts are what close it. */
 const byCounts: BudgetKeys = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
 
-const preset = (said: Partial<Preset> = {}): Preset => ({
+const preset = (fields: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',
   name: 'Sanskrit',
   settings: settings(),
@@ -57,11 +57,11 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   took: 0,
   paused: '',
   wrong: '',
-  ...said,
+  ...fields,
 })
 
 /** One preset of a vault as the count hands it over. */
-const presetDue = (said: Partial<PresetCardsDue> = {}): PresetCardsDue => ({
+const presetDue = (fields: Partial<PresetCardsDue> = {}): PresetCardsDue => ({
   preset: 'Sanskrit.md',
   title: 'Sanskrit',
   decks: 1,
@@ -76,7 +76,7 @@ const presetDue = (said: Partial<PresetCardsDue> = {}): PresetCardsDue => ({
   minutes: 20,
   closes: byMinutes,
   stopsOn: StopReason.NOTHING,
-  ...said,
+  ...fields,
 })
 
 const vault = (
@@ -593,7 +593,7 @@ describe('which preset schedules each deck', () => {
   // at nothing beside them is a day drawn as unbegun.
   it('draws a preset it could not read from the figures the count gave', async () => {
     const one = useVaultPresets({
-      presets: { getVaultDeckPreset: async () => ({ refusal: Refusal.MISSING }) },
+      presets: { getVaultDeckPreset: async () => ({ error: ErrorCode.MISSING }) },
     })
 
     await one.read(
@@ -615,7 +615,7 @@ describe('which preset schedules each deck', () => {
 
   it('says why a preset it could not read has no settings', async () => {
     const one = useVaultPresets({
-      presets: { getVaultDeckPreset: async () => ({ refusal: Refusal.MISSING }) },
+      presets: { getVaultDeckPreset: async () => ({ error: ErrorCode.MISSING }) },
     })
 
     await one.read(vault([{ deck: 'decks/Words.md', due: 20, new: 2 }], [presetDue()]), '2026-09-05')

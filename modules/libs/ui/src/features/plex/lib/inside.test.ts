@@ -40,7 +40,7 @@ const parts = (count: number, level = 1): PlexPart[] =>
     level,
   }))
 
-const hung = (held: readonly PlexPart[], deps = DEPS) => hangParts(NODE, held, SIZES, deps)
+const hung = (items: readonly PlexPart[], deps = DEPS) => hangParts(NODE, items, SIZES, deps)
 
 describe('what a node hangs', () => {
   it('is nothing at all for a node with no parts', () => {
@@ -227,7 +227,7 @@ describe('the opening', () => {
 })
 
 describe('how wide the parts are drawn', () => {
-  const wide = (held: readonly PlexPart[], deps = DEPS) => hung(held, deps)!
+  const wide = (items: readonly PlexPart[], deps = DEPS) => hung(items, deps)!
 
   it('is the room the longest of them asks for, and the ground beside it', () => {
     const longest = 'A good deal longer than that'
@@ -282,8 +282,8 @@ describe('a node with little room under it', () => {
     y: DEPS.viewport.height / 2 - DEPS.margin - NODE.height / 2 - left,
   })
 
-  const under = (left: number, held = parts(MOST + 3)) =>
-    hangParts(low(left), held, SIZES, DEPS)
+  const under = (left: number, items = parts(MOST + 3)) =>
+    hangParts(low(left), items, SIZES, DEPS)
 
   it('hangs nothing where there is depth for not one part', () => {
     expect(under(SIZES.partHeight)).toBeNull()
@@ -360,8 +360,8 @@ describe('what a wheel winds', () => {
 
 describe('however many parts stand at once', () => {
   /** A node with depth under it for as many parts as the ceiling allows. */
-  const under = (ceiling: number) =>
-    hangParts(NODE, parts(ceiling + 4), { ...SIZES, maxParts: ceiling }, DEPS)!
+  const under = (most: number) =>
+    hangParts(NODE, parts(most + 4), { ...SIZES, maxParts: most }, DEPS)!
 
   it('every one of them is up by the time it is all the way open', () => {
     // A lead that outran the opening left the last of them at nothing at all,

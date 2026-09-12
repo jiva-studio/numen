@@ -54,8 +54,8 @@ const objects = computed(() => props.naming.objection(props.row.field))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => {
-  const why = objects.value
-  return why === null ? null : props.words.objection(why)
+  const objection = objects.value
+  return objection === null ? null : props.words.objection(objection)
 })
 
 /** A field asked by the keyboard to go one place along the order. */

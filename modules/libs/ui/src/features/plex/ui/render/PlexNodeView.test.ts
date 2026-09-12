@@ -343,12 +343,12 @@ describe('a box with more of its title to show', () => {
   }
 
   /** The hand arrives, stays, and the opening is drawn to its end. */
-  const rest = async (mounted: ReturnType<typeof mountWide>) => {
-    await mounted.node.trigger('pointerenter')
+  const rest = async (view: ReturnType<typeof mountWide>) => {
+    await view.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
-    mounted.world.run()
-    await mounted.node.vm.$nextTick()
-    return mounted.node
+    view.world.run()
+    await view.node.vm.$nextTick()
+    return view.node
   }
 
   it('is drawn as it was placed until the hand has been on it a while', async () => {
@@ -487,14 +487,14 @@ describe('the parts a node hangs', () => {
       level: 1,
     }))
 
-  const mountInside = (held: readonly PlexPart[], wide: WideBox | null = null) => {
+  const mountInside = (items: readonly PlexPart[], wide: WideBox | null = null) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
         node: nodeAt(),
         wide,
-        hung: hangParts(nodeAt(), held, SIZES, {
+        hung: hangParts(nodeAt(), items, SIZES, {
           viewport: { width: 1000, height: 600 },
           margin: 20,
         }),
@@ -506,12 +506,12 @@ describe('the parts a node hangs', () => {
   }
 
   /** The hand arrives, stays, and the opening is drawn to its end. */
-  const rest = async (mounted: ReturnType<typeof mountInside>) => {
-    await mounted.node.trigger('pointerenter')
+  const rest = async (view: ReturnType<typeof mountInside>) => {
+    await view.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
-    mounted.world.run()
-    await mounted.node.vm.$nextTick()
-    return mounted.node
+    view.world.run()
+    await view.node.vm.$nextTick()
+    return view.node
   }
 
   it('hangs nothing for a node with none, however long the hand stays', async () => {

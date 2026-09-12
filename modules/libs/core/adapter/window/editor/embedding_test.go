@@ -287,7 +287,7 @@ func TestANoteWrittenAfterTheScanFailedIsEmbedded(t *testing.T) {
 	}, watcher, unwalkable{VaultReaders: filesystem.VaultReaders{}}, model, 20*time.Millisecond)
 
 	eventually(t, "the scan was not reported as failed", func() bool {
-		return f.api.Failed.Why() != ""
+		return f.api.Error.Why() != ""
 	})
 
 	write(t, f.vault, "Note.md", noteWith(after, 200))

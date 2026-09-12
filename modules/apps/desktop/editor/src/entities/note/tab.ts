@@ -59,9 +59,9 @@ const getBaseline = (tab: Tab): NoteBaseline | null =>
   tab.written === null || tab.filePath === null ? null : { prose: tab.written, at: tab.filePath }
 
 /** A write of what is on screen now, presenting what it is given. */
-const beginWrite = (tab: Tab, seen: NoteBaseline | null): Transition => ({
+const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
   tab: { ...tab, pendingWrite: tab.shown, hasPendingWrite: false, isStale: false },
-  effects: [{ kind: 'write', path: tab.path, body: tab.shown, seen }],
+  effects: [{ kind: 'write', path: tab.path, body: tab.shown, seen: baseline }],
 })
 
 /**
@@ -141,8 +141,8 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
   return tab.hasPendingWrite ? beginWrite(written, getBaseline(written)) : still(written)
 }
 
-const applyChange = (tab: Tab, paths: readonly string[], renamed: readonly Move[]): Transition => {
-  const went = renamed.find((one) => one.from === tab.path)
+const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[]): Transition => {
+  const went = renames.find((one) => one.from === tab.path)
   const next = went ? { ...tab, path: went.to, isDeleted: false } : tab
 
   const mine = paths.length === 0 || paths.includes(next.path) || went !== undefined

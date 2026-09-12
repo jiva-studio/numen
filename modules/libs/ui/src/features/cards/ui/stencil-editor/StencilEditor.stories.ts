@@ -234,11 +234,11 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
   return held
 }
 
-const buttonSaying = (canvas: HTMLElement, said: string) => {
+const buttonSaying = (canvas: HTMLElement, text: string) => {
   const held = [...canvas.querySelectorAll<HTMLElement>('button')].find(
-    (each) => each.textContent?.trim() === said,
+    (each) => each.textContent?.trim() === text,
   )
-  if (!held) throw new Error(`no button saying ${said}`)
+  if (!held) throw new Error(`no button saying ${text}`)
   return held
 }
 

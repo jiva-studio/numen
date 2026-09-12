@@ -64,8 +64,8 @@ function onLinkNodes(from: string, to: string, seat: PlexRelatedSeat) {
   void props.state.joinNodes(from, to, seat)
 }
 
-function onBringNodes(dragged: readonly string[], seat: PlexRelatedSeat) {
-  void props.state.dropNodes(dragged, seat)
+function onBringNodes(nodes: readonly string[], seat: PlexRelatedSeat) {
+  void props.state.dropNodes(nodes, seat)
 }
 
 function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuOpening) {
@@ -103,10 +103,10 @@ function getNodeIcon(node: string): LucideIcon | null {
 }
 
 /** A menu put away, and the keyboard back on the node it was asked from. */
-function closeMenu(chose?: string) {
+function closeMenu(id?: string) {
   const node = menu.value?.node ?? null
-  if (chose === undefined) props.state.dismiss()
-  else props.state.chooseMenuItem(chose)
+  if (id === undefined) props.state.dismiss()
+  else props.state.chooseMenuItem(id)
   if (node !== null) picture.value?.focusNode(node)
 }
 </script>

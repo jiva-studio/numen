@@ -43,7 +43,7 @@ const tab = (
   const opened: [string, readonly Span[]][] = []
   const beside: string[] = []
   const state = useAgentConversation(talk.talk, {
-    opens: (path, ...spans) => opened.push([path, spans]),
+    openFileAt: (path, ...spans) => opened.push([path, spans]),
     beside: (path) => beside.push(path),
     resolve: async (written) =>
       new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
@@ -69,8 +69,8 @@ const tabs = (about = { path: '', title: '' }) => {
 
   /** An agent tab of this window, and what it holds. */
   const openTab = async () => {
-    const id = await held.opens(AGENT)
-    return { id, state: held.holdsIn<AgentTabState>(id, AGENT)! }
+    const id = await held.openTabOfKind(AGENT)
+    return { id, state: held.getTabStateIn<AgentTabState>(id, AGENT)! }
   }
   /** The person is in this tab now. */
   const showTab = (id: string) => held.onTabShown(id)

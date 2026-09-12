@@ -44,7 +44,7 @@ export const READS = 'r'
  */
 export function getSessionKeyIntent(
   press: KeyboardEvent,
-  showing: ScreenState,
+  screen: ScreenState,
 ): SessionKeyIntent | null {
   // A field takes the overlay key too: control and A is how a person selects
   // what they have written.
@@ -59,13 +59,13 @@ export function getSessionKeyIntent(
   }
   if (hasModifierOrRepeat(press)) return null
   if (press.key === 'Escape') {
-    return showing.asking || showing.reading ? { does: 'shut' } : { does: 'leave' }
+    return screen.asking || screen.reading ? { does: 'shut' } : { does: 'leave' }
   }
   if (press.key === 'u' || press.key === 'U') return { does: 'takeBack' }
   // The reading is read down, and space is the key the hand is already on. The
   // answer is still shown by the control standing under both panes.
-  if (press.key === ' ' && showing.reading) return { does: 'scroll', back: press.shiftKey }
-  if (press.key === ' ' && !showing.shown) return { does: 'show' }
+  if (press.key === ' ' && screen.reading) return { does: 'scroll', back: press.shiftKey }
+  if (press.key === ' ' && !screen.shown) return { does: 'show' }
 
   const which = Number(press.key)
   if (Number.isInteger(which) && which >= 1 && which <= grades.length) {
@@ -81,11 +81,11 @@ export function getSessionKeyIntent(
  * keyboard, and the letter would be the first thing typed into it. So is space
  * over the reading, which the page would otherwise scroll instead.
  */
-export const isSwallowed = (asked: SessionKeyIntent | null): boolean =>
-  asked?.does === 'show' ||
-  asked?.does === 'ask' ||
-  asked?.does === 'read' ||
-  asked?.does === 'scroll'
+export const isSwallowed = (intent: SessionKeyIntent | null): boolean =>
+  intent?.does === 'show' ||
+  intent?.does === 'ask' ||
+  intent?.does === 'read' ||
+  intent?.does === 'scroll'
 
 /** What a keystroke asks for while a person is choosing what to sit down to. */
 export type PickerKeyIntent = { does: 'all' } | { does: 'deck'; at: number } | { does: 'back' }

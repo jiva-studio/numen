@@ -31,20 +31,20 @@ const limits = (each: RoleLimits): Limits =>
 const evenly: Widths = () => nodeSize.width
 
 const place = (
-  seating: Seating,
+  seats: Seating,
   perLine = DEFAULT_OPTIONS.maxPerLine,
   options: PlexOptions = DEFAULT_OPTIONS,
 ): PlacedNode[] =>
   rowsAndColumns.place(
-    seating,
+    seats,
     FOCUS,
     options,
     limits({ perLine, lines: DEFAULT_OPTIONS.maxLines }),
     evenly,
   )
 
-const of = (placed: readonly PlacedNode[], seat: PlexRelatedSeat) =>
-  placed.filter((node) => node.seat === seat)
+const of = (nodes: readonly PlacedNode[], seat: PlexRelatedSeat) =>
+  nodes.filter((node) => node.seat === seat)
 
 describe('what comes back', () => {
   it('is every node it was given, and never the focus', () => {

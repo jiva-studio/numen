@@ -107,7 +107,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		// A provider that made no model is an installation with no vectors for
 		// as long as the window is open. It stands in the list under what
 		// stopped it.
-		tasks.Set(task.Task{ID: makingVectors, Doing: "Indexing", Failed: why.Error()})
+		tasks.Set(task.Task{ID: makingVectors, Doing: "Indexing", Error: why.Error()})
 	}
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
@@ -151,7 +151,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	// leaves the ones this binary ships. A theme the settings name that the
 	// catalogue has not is said where the person is.
 	themes, wrong := cfg.Themes(func(said string) {
-		api.say(task.Task{ID: wearingATheme, Doing: "Wearing a theme", Failed: said})
+		api.say(task.Task{ID: wearingATheme, Doing: "Wearing a theme", Error: said})
 	})
 	if wrong != nil {
 		fmt.Fprintf(out, "themes: %v\n", wrong)
@@ -164,7 +164,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	// A search short of a half is said where the person is. A window opened
 	// from a desktop entry has no terminal to write to.
 	finds := cfg.Searching(db, asking, func(err error) {
-		api.say(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Failed: err.Error()})
+		api.say(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Error: err.Error()})
 	})
 	api.Finds = &finds
 
@@ -383,9 +383,9 @@ const (
 func (o *Installation) Says(said []string) {
 	for at, one := range said {
 		o.API.say(task.Task{
-			ID:     fmt.Sprintf("%s %d", readingTheSettings, at),
-			Doing:  "Reading the settings",
-			Failed: one,
+			ID:    fmt.Sprintf("%s %d", readingTheSettings, at),
+			Doing: "Reading the settings",
+			Error: one,
 		})
 	}
 }

@@ -38,20 +38,20 @@ function stubCanvas() {
 /** The tokens as a theme writes them, which is in whatever unit it likes. */
 let theme: Record<string, string> = {}
 
-function setTheme(written: Record<string, string> = {}): void {
+function setTheme(tokens: Record<string, string> = {}): void {
   theme = {
     '--numen-font-size': '13px',
     '--numen-font-sans': 'Test Sans, sans-serif',
     '--numen-node-padding': '10px',
     '--numen-node-gap': '6px',
     '--numen-edge-label-size': '10px',
-    ...written,
+    ...tokens,
   }
 }
 
 /** A root of 16px, which is what a browser resolves a rem against. */
-const inPixels = (written: string): string =>
-  written.endsWith('rem') ? `${Number.parseFloat(written) * 16}px` : written
+const inPixels = (value: string): string =>
+  value.endsWith('rem') ? `${Number.parseFloat(value) * 16}px` : value
 
 const resolveValue = (declaration: string): string => {
   const token = /^var\((--[a-z-]+)\)$/.exec(declaration)?.[1]

@@ -33,9 +33,9 @@ const SUMMARY: RecordingSummary = {
  */
 function talk(
   cues: readonly Cue[] | Error = CUES,
-  said: RecordingSummary | Error = SUMMARY,
+  summary: RecordingSummary | Error = SUMMARY,
   at: number | null = null,
-  carried: ArtifactStates = { transcript: 'done' },
+  states: ArtifactStates = { transcript: 'done' },
 ) {
   /** Every address asked of it, in the order they were asked. */
   const asked: string[] = []
@@ -46,12 +46,12 @@ function talk(
   const recordings: Recordings = {
     getSummary: async (path) => {
       asked.push(`about ${path}`)
-      if (said instanceof Error) throw said
-      return said
+      if (summary instanceof Error) throw summary
+      return summary
     },
     getTaskStates: async (path) => {
       asked.push(`carries ${path}`)
-      return carried
+      return states
     },
     readTranscript: async (path) => {
       asked.push(`cues ${path}`)
@@ -84,7 +84,7 @@ function createPlayer() {
   const at = ref(0)
   const duration = ref(0)
   const playing = ref(false)
-  const failed = ref('')
+  const error = ref('')
   const sought: number[] = []
 
   const player: Player = {
@@ -92,7 +92,7 @@ function createPlayer() {
     at,
     duration,
     playing,
-    failed,
+    error,
     load: (wanted) => void (address.value = wanted),
     play: (wanted) => {
       address.value = wanted
@@ -112,7 +112,7 @@ function createPlayer() {
     at.value = ms
   }
 
-  return { player, sought, setCurrentTime, failed, address, duration, playing, at }
+  return { player, sought, setCurrentTime, error, address, duration, playing, at }
 }
 
 /** Everything asked for has been answered and everything waiting has run. */
@@ -602,24 +602,24 @@ describe('a transcript asked for twice at once', () => {
 describe('a player that could not load the recording', () => {
   it('says so under the recording it could not load', async () => {
     const { recordings } = talk()
-    const { player, failed, address } = createPlayer()
+    const { player, error, address } = createPlayer()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
 
     address.value = SUMMARY.mediaUrl
-    failed.value = 'the recording could not be read from the vault'
+    error.value = 'the recording could not be read from the vault'
 
     expect(heard.broken.value).toContain('read from the vault')
   })
 
   it('says nothing where the failure was another recording', async () => {
     const { recordings } = talk()
-    const { player, failed, address } = createPlayer()
+    const { player, error, address } = createPlayer()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
 
     address.value = 'http://127.0.0.1:1/files/w/v/another.mp3'
-    failed.value = 'the recording could not be read from the vault'
+    error.value = 'the recording could not be read from the vault'
 
     expect(heard.broken.value).toBe('')
   })

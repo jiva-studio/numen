@@ -27,7 +27,7 @@ export function useSettingsTab(handle: WindowHandle, installation: Installation)
   /** The settings put in front of the person. */
   const openSettings = (): void => {
     isOpen.value = true
-    void handle.opens(SETTINGS)
+    void handle.openTab(SETTINGS)
   }
 
   return { kind, state, openSettings, isOpen }

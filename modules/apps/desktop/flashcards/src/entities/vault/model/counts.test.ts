@@ -4,7 +4,7 @@ import { StopReason } from '@numen/protocol'
 import { useReviewCounter } from './counts'
 import type { CardsDueClient, DueCounts, VaultCounts } from './counts'
 
-const vault = (id: string, said: Partial<VaultCounts> = {}): VaultCounts => ({
+const vault = (id: string, fields: Partial<VaultCounts> = {}): VaultCounts => ({
   id,
   name: id,
   path: `/vaults/${id}`,
@@ -35,7 +35,7 @@ const vault = (id: string, said: Partial<VaultCounts> = {}): VaultCounts => ({
   ],
   unread: '',
   reading: false,
-  ...said,
+  ...fields,
 })
 
 /** The vaults as they stand before any of them is counted. */

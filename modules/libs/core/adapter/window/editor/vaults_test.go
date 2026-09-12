@@ -542,10 +542,10 @@ func TestAPageHoldingAnUnansweredQuestionKeepsTheVaultItWasTypedIn(t *testing.T)
 	}
 }
 
-// TestAWindowThatIsGoingIsNotARefusalAboutTheVault. What stopped the swap is
-// the window, so it is said as an error and not as something about the vault
-// asked for.
-func TestAWindowThatIsGoingIsNotARefusalAboutTheVault(t *testing.T) {
+// TestAWindowThatIsGoingIsNotACodeAboutTheVault. What stopped the swap is the
+// window, so it is said as a status and not as a code about the vault asked
+// for.
+func TestAWindowThatIsGoingIsNotACodeAboutTheVault(t *testing.T) {
 	for _, one := range []struct {
 		name string
 		why  error

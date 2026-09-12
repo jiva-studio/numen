@@ -106,7 +106,7 @@ describe('how long work runs before it is worth a card', () => {
 })
 
 describe('a notice somebody asked for', () => {
-  const asked: Notice = { id: 'reading', says: 'Reading a scan', asked: true }
+  const asked: Notice = { id: 'reading', says: 'Reading a scan', isAsked: true }
   const behind: Notice = { id: 'indexing', says: 'Indexing' }
 
   it('is drawn the moment it arrives', () => {
@@ -218,10 +218,10 @@ describe('how many cards stand at once', () => {
 })
 
 describe('measuring how fast a count moves', () => {
-  const createFetching = (done: number): Notice => ({
+  const createFetching = (count: number): Notice => ({
     id: 'model',
     says: 'Preparing the model',
-    done,
+    done: count,
     total: 470_268_510,
     counting: 'bytes',
     working: true,

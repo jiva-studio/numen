@@ -13,7 +13,7 @@ import {
   type Problems,
   type Half,
   type Objection,
-  type Refusal,
+  type HeadingObjection,
 } from './order'
 
 /** One way a stencil shows a card. */
@@ -45,9 +45,9 @@ export interface StencilWords {
   /** What is said of the slots a face names that the fields do not. */
   readonly stray: (fields: readonly string[]) => string
   /** What is said of a field's name that cannot be used. */
-  readonly objection: (why: Objection) => string
+  readonly objection: (objection: Objection) => string
   /** What is said of a face's name that cannot be used. */
-  readonly faceObjection: (why: Refusal) => string
+  readonly faceObjection: (objection: HeadingObjection) => string
   /** What a list of things wrong is called to a reader. */
   readonly wrong: string
 }
@@ -69,13 +69,14 @@ export const STENCIL_WORDS: StencilWords = {
   faceStem: 'Face',
   pinned: 'The first field names every card, and stays first',
   stray: (fields) => `Not a field: ${fields.join(', ')}`,
-  objection: (why) =>
-    why === 'blank'
+  objection: (objection) =>
+    objection === 'blank'
       ? 'A field needs a name'
-      : why === 'taken'
+      : objection === 'taken'
         ? 'That name is taken'
         : 'A name cannot hold a brace',
-  faceObjection: (why) => (why === 'blank' ? 'A face needs a name' : 'That name is taken'),
+  faceObjection: (objection) =>
+    objection === 'blank' ? 'A face needs a name' : 'That name is taken',
   wrong: 'What is wrong',
 }
 
@@ -112,7 +113,7 @@ export interface FieldRow {
 /** The rows a stencil's fields are drawn as, one to a field. */
 export function fieldRows(
   fields: readonly string[],
-  dragged: string | null,
+  dragField: string | null,
 ): readonly FieldRow[] {
   const stood = getDeclaredFields(fields)
   return stood.map((field, index) => ({
@@ -120,7 +121,7 @@ export function fieldRows(
     at: index + 1,
     of: stood.length,
     names: index === 0,
-    dragged: field === dragged,
+    dragged: field === dragField,
   }))
 }
 
@@ -152,17 +153,17 @@ export interface FaceRow {
  * what is wrong in each half of it.
  */
 export function faceRows(
-  shown: readonly StencilFace[],
+  faces: readonly StencilFace[],
   fields: readonly string[],
   sample: readonly FieldValue[],
 ): readonly FaceRow[] {
-  const names = shown.map((each) => each.name)
-  return shown.map((face, index) => {
+  const names = faces.map((each) => each.name)
+  return faces.map((face, index) => {
     return {
       id: face.id,
       name: face.name,
       at: index + 1,
-      of: shown.length,
+      of: faces.length,
       fields,
       taken: names.filter((_, at) => at !== index),
       front: face.front,

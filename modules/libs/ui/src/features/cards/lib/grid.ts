@@ -95,7 +95,7 @@ export function grid(
   cards: readonly DeckCard[],
   sections: readonly DeckSection[],
   stencils: readonly Stencil[],
-  dragged: string | null,
+  dragCard: string | null,
 ): Grid {
   const sectioned = new Set(sections.map((section) => section.id))
   const tiles = cards.map((card) => {
@@ -134,7 +134,7 @@ export function grid(
       at: 0,
       of: 0,
       known: cut !== undefined,
-      dragged: card.id === dragged,
+      dragged: card.id === dragCard,
     }
   })
 
@@ -174,11 +174,11 @@ export function grid(
  * stands moves nothing: the head of the deck is where the first card standing
  * under no section already is, and the end of a run is where its last card is.
  */
-export const doesMove = (runs: readonly Run[], dragged: string, at: InsertionPoint): boolean => {
-  if (at === dragged) return false
-  if (at === HEAD) return runs[0]?.tiles[0]?.id !== dragged
+export const doesMove = (runs: readonly Run[], dragCard: string, at: InsertionPoint): boolean => {
+  if (at === dragCard) return false
+  if (at === HEAD) return runs[0]?.tiles[0]?.id !== dragCard
 
   const run = getRunEnd(at)
-  if (run !== null) return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== dragged
+  if (run !== null) return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== dragCard
   return true
 }

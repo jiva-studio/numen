@@ -32,7 +32,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
   /** A line about work pressed: the place that call was on is put in front. */
   const openTurnSource = (turn: Turn) => {
     const at = conversation.place(turn.id)
-    if (at) deps.opens(at.path, at.span)
+    if (at) deps.openFileAt(at.path, at.span)
   }
 
   /**
@@ -86,7 +86,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
       const named = extractLinkTargets(turn.text).filter(
         (target) => target.path === here.path && !areLinkTargetsEqual(target, here),
       )
-      deps.opens(
+      deps.openFileAt(
         here.path,
         ...[here, ...named].map(({ start, length }) => ({ from: start, to: start + length })),
       )

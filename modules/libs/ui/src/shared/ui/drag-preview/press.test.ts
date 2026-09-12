@@ -13,8 +13,8 @@ const pointer = (type: string, x: number, y: number) =>
 
 /** A press under way, with the frame held until the test lets it come. */
 function createPress(threshold = 4) {
-  const settle = vi.fn<(held: string, at: Position | null) => void>()
-  const began = vi.fn<(held: string) => void>()
+  const settle = vi.fn<(item: string, at: Position | null) => void>()
+  const begin = vi.fn<(item: string) => void>()
   let next: ((now: number) => void) | null = null
 
   /** A clock whose next frame comes when the test says so. */
@@ -34,16 +34,16 @@ function createPress(threshold = 4) {
     usePressDrag<string, Position>({
       threshold: () => threshold,
       clock: () => clock,
-      landingAt: (_held, at) => (at.x < 500 ? at : null),
+      landingAt: (_item, at) => (at.x < 500 ? at : null),
       settle,
-      began,
+      begin,
     }),
   )!
 
   return {
     ...press,
     settle,
-    began,
+    begin,
     scope,
     frame: () => {
       const run = next
@@ -58,9 +58,9 @@ describe('usePressDrag', () => {
     const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
 
-    expect(press.dragging.value).toEqual({ held: 'a row', moved: false })
+    expect(press.dragging.value).toEqual({ item: 'a row', moved: false })
     expect(press.position.value).toBeNull()
-    expect(press.began).not.toHaveBeenCalled()
+    expect(press.begin).not.toHaveBeenCalled()
     press.scope.stop()
   })
 
@@ -86,7 +86,7 @@ describe('usePressDrag', () => {
     window.dispatchEvent(pointer('pointermove', 40, 10))
     window.dispatchEvent(pointer('pointermove', 80, 10))
 
-    expect(press.began).toHaveBeenCalledExactlyOnceWith('a row')
+    expect(press.begin).toHaveBeenCalledExactlyOnceWith('a row')
     press.scope.stop()
   })
 
@@ -153,6 +153,6 @@ describe('usePressDrag', () => {
 
     window.dispatchEvent(pointer('pointermove', 40, 60))
     expect(press.dragging.value).toBeNull()
-    expect(press.began).not.toHaveBeenCalled()
+    expect(press.begin).not.toHaveBeenCalled()
   })
 })

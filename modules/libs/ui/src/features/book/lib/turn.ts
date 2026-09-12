@@ -54,9 +54,9 @@ export function handTurn(
   from: number,
   to: number,
   wide: number,
-  taken: boolean,
+  hasSelection: boolean,
 ): PageTurn | undefined {
-  if (taken) return undefined
+  if (hasSelection) return undefined
   return swipeTurn(to - from) ?? pressTurn(to, wide)
 }
 
@@ -86,7 +86,7 @@ export interface Destination {
  */
 export function turnTo(
   way: PageTurn,
-  standing: number,
+  spread: number,
   count: number,
   span: { begins: number; ends: number },
   book: { begins: number; ends: number },
@@ -94,7 +94,7 @@ export function turnTo(
   if (way === 'first') return { spread: 0 }
   if (way === 'last') return { spread: count - 1 }
 
-  const to = standing + (way === 'next' ? 1 : -1)
+  const to = spread + (way === 'next' ? 1 : -1)
   if (to >= 0 && to < count) return { spread: to }
 
   const offset = way === 'next' ? span.ends : span.begins - 1

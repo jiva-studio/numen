@@ -16,8 +16,8 @@ export const WORDS = {
   makeAgain: 'make it again',
   keep: 'Keep mine',
   take: "Take the file's",
-  /** What the whole file is refused for, said above what was read. */
-  refused: 'This file could not be read.',
+  /** What stopped the whole file being read, said above what was read. */
+  notRead: 'This file could not be read.',
   /** What a write of the whole file is refused for, said the same way. */
   notSaved: 'This file could not be written.',
   /** The vault answered nothing at all, and what is on screen is still here. */

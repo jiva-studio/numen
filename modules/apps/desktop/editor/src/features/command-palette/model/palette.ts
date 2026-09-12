@@ -18,8 +18,8 @@ import {
   type CommandsDeps,
   type CommandTarget,
   type CommandInvocation,
-  type Words,
 } from '../target'
+import type { Words } from '../words'
 import type { NoteLookup, PaletteLists } from '../rows'
 import type { NameMatch } from './search'
 import { createPaletteSteps } from './navigation'
@@ -173,7 +173,7 @@ export function useCommandPalette(
     return null
   }
 
-  const getRefusal = (id: string, over: CommandTarget): string => {
+  const getObjection = (id: string, over: CommandTarget): string => {
     const command = byId.get(id)
     if (!command || command.where(over, runs)) return ''
     return over.ready ? words.noNote : words.noVault
@@ -197,7 +197,7 @@ export function useCommandPalette(
     previewItem,
     setOpen,
     startCommand,
-    getRefusal,
+    getObjection,
     applyRenames: steps.applyRenames,
     chooseItem,
     leaveStep: steps.leaveStep,

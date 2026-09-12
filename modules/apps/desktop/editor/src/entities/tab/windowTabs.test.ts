@@ -53,7 +53,7 @@ describe('a tab of a kind', () => {
     const thing = kind()
     const window = told([thing.declared])
 
-    const id = await window.opens('thing', 'Note.md')
+    const id = await window.openTabOfKind('thing', 'Note.md')
 
     expect(thing.opened).toEqual(['Note.md'])
     expect(onScreen(window.layout.value)).toContain(id)
@@ -65,8 +65,8 @@ describe('a tab of a kind', () => {
     const marked = kind({ getMark: (state: { at: string }) => (state.at ? 'unsaved' : undefined) })
     const window = told([marked.declared])
 
-    const one = await window.opens('thing', 'Note.md')
-    const other = await window.opens('thing')
+    const one = await window.openTabOfKind('thing', 'Note.md')
+    const other = await window.openTabOfKind('thing')
 
     expect(window.tabs.value.find((tab) => tab.id === one)?.mark).toBe('unsaved')
     expect(window.tabs.value.find((tab) => tab.id === other)).not.toHaveProperty('mark')
@@ -76,8 +76,8 @@ describe('a tab of a kind', () => {
     const thing = kind()
     const window = told([thing.declared])
 
-    const one = await window.opens('thing')
-    const other = await window.opens('thing')
+    const one = await window.openTabOfKind('thing')
+    const other = await window.openTabOfKind('thing')
 
     expect(one).not.toBe(other)
     expect(thing.opened).toHaveLength(2)
@@ -87,8 +87,8 @@ describe('a tab of a kind', () => {
     const thing = kind({ identity: (at: string) => at })
     const window = told([thing.declared])
 
-    const one = await window.opens('thing', 'Note.md')
-    const again = await window.opens('thing', 'Note.md')
+    const one = await window.openTabOfKind('thing', 'Note.md')
+    const again = await window.openTabOfKind('thing', 'Note.md')
 
     expect(again).toBe(one)
     expect(thing.opened).toEqual(['Note.md'])
@@ -99,8 +99,8 @@ describe('a tab of a kind', () => {
     const other = kind({ kind: 'other', identity: (at: string) => at })
     const window = told([thing.declared, other.declared])
 
-    const one = await window.opens('thing', 'Note.md')
-    const another = await window.opens('other', 'Note.md')
+    const one = await window.openTabOfKind('thing', 'Note.md')
+    const another = await window.openTabOfKind('other', 'Note.md')
 
     expect(another).not.toBe(one)
     expect(window.getTab(one)?.kind.kind).toBe('thing')
@@ -110,7 +110,7 @@ describe('a tab of a kind', () => {
   it('is nothing for a kind the window was never told about', async () => {
     const window = told([kind().declared])
 
-    expect(await window.opens('nothing')).toBe('')
+    expect(await window.openTabOfKind('nothing')).toBe('')
     expect(onScreen(window.layout.value)).toEqual([])
   })
 })
@@ -122,8 +122,8 @@ describe('what a kind is given', () => {
     const thing = kind()
     const window = told([(given: WindowHandle) => ((handle = given), thing.one), other.declared])
 
-    const opened = await handle!.opens('other', 'Note.md')
-    const mine = await window.opens('thing')
+    const opened = await handle!.openTab('other', 'Note.md')
+    const mine = await window.openTabOfKind('thing')
     handle!.show(opened)
 
     expect(other.opened).toEqual(['Note.md'])
@@ -136,7 +136,7 @@ describe('a tab that closes', () => {
   it('lets go of what it held', async () => {
     const thing = kind()
     const window = told([thing.declared])
-    const id = await window.opens('thing', 'Note.md')
+    const id = await window.openTabOfKind('thing', 'Note.md')
 
     expect(window.shut(id)).toBe(true)
     expect(thing.shut).toEqual(['Note.md'])
@@ -152,7 +152,7 @@ describe('a tab that closes', () => {
   it('stays where it is while its kind has something to finish', async () => {
     const holding = kind({ keeps: true })
     const window = told([holding.declared])
-    const id = await window.opens('thing', 'Note.md')
+    const id = await window.openTabOfKind('thing', 'Note.md')
 
     expect(window.shut(id)).toBe(false)
     expect(window.getTab(id)?.state).toBeTruthy()
@@ -162,10 +162,10 @@ describe('a tab that closes', () => {
   it('goes when the kind that took it says it is done', async () => {
     const holding = kind({ keeps: true })
     const window = told([holding.declared])
-    const id = await window.opens('thing', 'Note.md')
+    const id = await window.openTabOfKind('thing', 'Note.md')
     window.shut(id)
 
-    window.handle.closes(id)
+    window.handle.closeTab(id)
 
     expect(window.getTab(id)).toBeNull()
     expect(onScreen(window.layout.value)).not.toContain(id)
@@ -176,7 +176,7 @@ describe('a tab let go of from outside', () => {
   it('lets go of what it held and comes off the screen', async () => {
     const thing = kind()
     const window = told([thing.declared])
-    const id = await window.opens('thing', 'Note.md')
+    const id = await window.openTabOfKind('thing', 'Note.md')
 
     window.requestClose(id)
 
@@ -188,7 +188,7 @@ describe('a tab let go of from outside', () => {
   it('stays on the screen while its kind has something to finish', async () => {
     const holding = kind({ keeps: true })
     const window = told([holding.declared])
-    const id = await window.opens('thing', 'Note.md')
+    const id = await window.openTabOfKind('thing', 'Note.md')
 
     window.requestClose(id)
 
@@ -201,7 +201,7 @@ describe('the tab now on screen', () => {
   it('is told, so what it holds has room to measure', async () => {
     const thing = kind()
     const window = told([thing.declared])
-    const id = await window.opens('thing', 'Note.md')
+    const id = await window.openTabOfKind('thing', 'Note.md')
 
     window.onTabShown(id)
 
@@ -222,8 +222,8 @@ describe('the tab the person is looking at', () => {
   it('is the one showing in the pane in front, with its kind and what it holds', async () => {
     const thing = kind()
     const window = told([thing.declared])
-    await window.opens('thing', 'One.md')
-    const two = await window.opens('thing', 'Two.md')
+    await window.openTabOfKind('thing', 'One.md')
+    const two = await window.openTabOfKind('thing', 'Two.md')
 
     expect(window.handle.front()).toEqual({
       id: two,
@@ -235,7 +235,7 @@ describe('the tab the person is looking at', () => {
   it('is the tab of the pane in front, whichever pane reported itself last', async () => {
     const thing = kind()
     const window = told([thing.declared])
-    const one = await window.opens('thing', 'One.md')
+    const one = await window.openTabOfKind('thing', 'One.md')
     const two = await window.handle.beside('thing', 'Two.md')
     window.show(one)
     // Every pane says what it is showing when it is drawn.
@@ -248,7 +248,7 @@ describe('the tab the person is looking at', () => {
   it('answers under no kind for a tab the window has let go of', async () => {
     const thing = kind()
     const window = told([thing.declared])
-    const id = await window.opens('thing', 'Note.md')
+    const id = await window.openTabOfKind('thing', 'Note.md')
     window.shut(id)
 
     expect(window.handle.front()).toEqual({ id, kind: null, state: null })
@@ -284,7 +284,7 @@ describe('a key struck on the window', () => {
     // both of them answering the one key.
     const read = reading()
     const window = told([read.one.declared])
-    const one = await window.opens('thing', 'One.epub')
+    const one = await window.openTabOfKind('thing', 'One.epub')
     await window.handle.beside('thing', 'Two.epub')
     window.show(one)
 
@@ -296,7 +296,7 @@ describe('a key struck on the window', () => {
   it('goes to the other pane once the person is in it', async () => {
     const read = reading()
     const window = told([read.one.declared])
-    await window.opens('thing', 'One.epub')
+    await window.openTabOfKind('thing', 'One.epub')
     const two = await window.handle.beside('thing', 'Two.epub')
     window.show(two)
 
@@ -308,7 +308,7 @@ describe('a key struck on the window', () => {
   it('is left alone where the tab in front does not read it', async () => {
     const read = reading()
     const window = told([read.one.declared])
-    await window.opens('thing', 'One.epub')
+    await window.openTabOfKind('thing', 'One.epub')
 
     expect(window.onKeyPress(createKeyEvent('k'))).toBe(false)
     expect(read.took).toStrictEqual([])
@@ -316,7 +316,7 @@ describe('a key struck on the window', () => {
 
   it('is left alone where the kind in front reads no key at all', async () => {
     const window = told([kind().declared])
-    await window.opens('thing', 'One.md')
+    await window.openTabOfKind('thing', 'One.md')
 
     expect(window.onKeyPress(createKeyEvent('ArrowRight'))).toBe(false)
   })
@@ -332,8 +332,8 @@ describe('the window going', () => {
   it('says so to every tab, and waits for none of them', async () => {
     const thing = kind({ keeps: true })
     const window = told([thing.declared])
-    await window.opens('thing', 'One.md')
-    await window.opens('thing', 'Two.md')
+    await window.openTabOfKind('thing', 'One.md')
+    await window.openTabOfKind('thing', 'Two.md')
 
     window.close()
 
@@ -344,7 +344,7 @@ describe('the window going', () => {
     const going: string[] = []
     const thing = kind({ onDestroy: (state: { at: string }) => going.push(state.at) })
     const window = told([thing.declared])
-    await window.opens('thing', 'One.md')
+    await window.openTabOfKind('thing', 'One.md')
 
     window.close()
 

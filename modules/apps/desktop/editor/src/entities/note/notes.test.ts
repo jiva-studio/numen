@@ -479,7 +479,7 @@ describe('a core that cannot be reached', () => {
 describe('a save that was refused', () => {
   it('says why in the tab it was refused on, for as long as that tab is open', async () => {
     const { core, files } = fake({
-      write: async () => ({ body: '', error: 'bodyRefused' }),
+      write: async () => ({ body: '', error: 'bodyUnwritable' }),
     })
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })

@@ -22,8 +22,8 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
 })
 
 describe('a search that turned up nothing', () => {
-  const createGroups = (items: number, working = false) => [
-    { id: 'names', title: 'Names', items: Array.from({ length: items }, (_, at) => ({ id: `${at}`, title: 'One' })), working },
+  const createGroups = (items: number, isWorking = false) => [
+    { id: 'names', title: 'Names', items: Array.from({ length: items }, (_, at) => ({ id: `${at}`, title: 'One' })), working: isWorking },
   ]
 
   it('offers to make the note that was looked for', () => {

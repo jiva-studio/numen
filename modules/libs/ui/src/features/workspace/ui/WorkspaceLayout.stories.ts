@@ -237,8 +237,8 @@ async function measureAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<rea
 const getReach = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <= 6 ? cursor : null])
 
 /** The furthest out along that line the splitter still had the pointer. */
-function furthest(caught: readonly Caught[]): Position {
-  const held = caught.filter((place) => place.cursor)
+function furthest(places: readonly Caught[]): Position {
+  const held = places.filter((place) => place.cursor)
   const edge = held[held.length - 1]?.at
   if (!edge) throw new Error('the handle caught nothing')
   return edge

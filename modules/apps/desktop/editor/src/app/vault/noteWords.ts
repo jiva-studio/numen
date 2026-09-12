@@ -8,8 +8,8 @@ import {
   Seat as Seats,
 } from '@numen/protocol'
 import type {
+  ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
-  Refusal,
 } from '@numen/protocol'
 import { namesOf } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
@@ -74,15 +74,14 @@ export const mapLink = (link: Link) => ({
   label: link.label ?? '',
 })
 
-export const mapBaseline = (seen: { prose: string; at: string }) => ({
-  prose: seen.prose,
-  at: fingerprint(seen.at),
+export const mapBaseline = (baseline: { prose: string; at: string }) => ({
+  prose: baseline.prose,
+  at: fingerprint(baseline.at),
 })
 
 export const mapNoteResult = (from: {
   body?: string | undefined
-  error?: Refusal | undefined
-  refusal?: Refusal | undefined
+  error?: ProtoErrorCode | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   url?: string | undefined
   embed?: string | undefined
@@ -102,10 +101,10 @@ export const mapNoteResult = (from: {
 /**
  * A neighbourhood in the words the window uses.
  */
-export const mapNeighbourhood = (said: NeighbourhoodMessage): Neighbourhood => ({
-  focus: { path: said.focus?.path ?? '', title: said.focus?.title ?? '' },
-  focusType: noteType(said.focusType),
-  related: said.related.flatMap((one) => {
+export const mapNeighbourhood = (answer: NeighbourhoodMessage): Neighbourhood => ({
+  focus: { path: answer.focus?.path ?? '', title: answer.focus?.title ?? '' },
+  focusType: noteType(answer.focusType),
+  related: answer.related.flatMap((one) => {
     const seat = seated[one.seat] ?? null
     if (seat === null || one.note === undefined) return []
     return [
@@ -117,7 +116,6 @@ export const mapNeighbourhood = (said: NeighbourhoodMessage): Neighbourhood => (
         label: one.label,
         through: one.through,
         isMutual: one.mutual,
-        mutual: one.mutual,
       },
     ]
   }),

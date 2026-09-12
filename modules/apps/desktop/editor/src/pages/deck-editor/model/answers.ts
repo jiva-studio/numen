@@ -91,7 +91,7 @@ export function answers() {
   const getErrorMessage = (path: string, hasError: boolean): string => {
     if (!hasError) return ''
     const said = at(path)
-    if (said.reading !== null) return whyOf(said.reading, said.bound) ?? words.refused
+    if (said.reading !== null) return whyOf(said.reading, said.bound) ?? words.notRead
     if (said.writing !== null) return whyOf(said.writing, said.bound) ?? words.notSaved
     return words.unreachable
   }

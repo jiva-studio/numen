@@ -14,6 +14,17 @@ export interface Cue {
   readonly to: number
 }
 
+/**
+ * The cue being said at a millisecond, and the last one said where a silence
+ * stands there. Nothing until the first cue begins.
+ */
+export const findCueAt = (cues: readonly Cue[], ms: number): number => {
+  for (let at = cues.length - 1; at >= 0; at--) {
+    if (cues[at]!.from <= ms) return at
+  }
+  return -1
+}
+
 /** The prose of a transcript: one cue to a line. */
 export const getText = (cues: readonly Cue[]): string => cues.map((cue) => cue.text).join('\n')
 

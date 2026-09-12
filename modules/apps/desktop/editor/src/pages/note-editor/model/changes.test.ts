@@ -58,7 +58,7 @@ describe('a change that has ended', () => {
     changes.reportChange(createEdit())
     changes.reportChange(createEdit({ isComplete: true }))
 
-    changes.arrived('Entropy.md')
+    changes.handleNoteChange('Entropy.md')
     expect(changes.getChange('Entropy.md')).not.toBeNull()
 
     vi.advanceTimersByTime(limits.settle)

@@ -30,29 +30,29 @@ const mountStencil = (props: Record<string, unknown> = {}) =>
 
 type Editor = ReturnType<typeof mountStencil>
 
-const rowFor = (held: Editor, field: string) => held.get(`[data-field="${field}"]`)
-const boxIn = (held: Editor, field: string) => rowFor(held, field).get('input')
+const rowFor = (wrapper: Editor, field: string) => wrapper.get(`[data-field="${field}"]`)
+const boxIn = (wrapper: Editor, field: string) => rowFor(wrapper, field).get('input')
 
-const getDrawnFields = (held: Editor) =>
-  held.findAll('[data-field]').map((row) => row.attributes('data-field'))
+const getDrawnFields = (wrapper: Editor) =>
+  wrapper.findAll('[data-field]').map((row) => row.attributes('data-field'))
 
 /** A name typed into a box and not yet committed. */
-const type = async (held: Editor, field: string, name: string): Promise<void> => {
-  const box = boxIn(held, field)
+const type = async (wrapper: Editor, field: string, name: string): Promise<void> => {
+  const box = boxIn(wrapper, field)
   box.element.value = name
   await box.trigger('input')
 }
 
 /** A field picked up by its grip and let go over another, or over the tail. */
-const dragTo = async (held: Editor, field: string, onto: string | null): Promise<void> => {
-  await rowFor(held, field).get('[data-grip]').trigger('dragstart')
+const dragTo = async (wrapper: Editor, field: string, onto: string | null): Promise<void> => {
+  await rowFor(wrapper, field).get('[data-grip]').trigger('dragstart')
   if (onto === null) {
-    await held.get('.stencil__fields').trigger('dragover')
-    await held.get('.stencil__fields').trigger('drop')
+    await wrapper.get('.stencil__fields').trigger('dragover')
+    await wrapper.get('.stencil__fields').trigger('drop')
     return
   }
-  await rowFor(held, onto).trigger('dragover')
-  await rowFor(held, onto).trigger('drop')
+  await rowFor(wrapper, onto).trigger('dragover')
+  await rowFor(wrapper, onto).trigger('drop')
 }
 
 /** A key pressed on something, as the event it was pressed with. */
@@ -63,10 +63,10 @@ const pressKey = (on: Element, key: string): KeyboardEvent => {
 }
 
 /** A field picked up and the drag ended without it being let go anywhere. */
-const dragOff = async (held: Editor, field: string, over: string | null): Promise<void> => {
-  const grip = rowFor(held, field).get('[data-grip]')
+const dragOff = async (wrapper: Editor, field: string, over: string | null): Promise<void> => {
+  const grip = rowFor(wrapper, field).get('[data-grip]')
   await grip.trigger('dragstart')
-  if (over !== null) await rowFor(held, over).trigger('dragover')
+  if (over !== null) await rowFor(wrapper, over).trigger('dragover')
   await grip.trigger('dragend')
 }
 
@@ -297,7 +297,7 @@ describe('Stencil, the fields', () => {
   })
 
   describe('dragging a field by the keyboard', () => {
-    const gripFor = (held: Editor, field: string) => rowFor(held, field).get('[data-grip]')
+    const gripFor = (wrapper: Editor, field: string) => rowFor(wrapper, field).get('[data-grip]')
 
     it('names the handle, and gives it a place in the order', () => {
       const held = mountStencil()
@@ -463,8 +463,8 @@ describe('Stencil, the faces', () => {
       { id: 'three', name: 'Three', front: '', back: '' },
     ]
 
-    const stripOf = (held: Editor, id: string) =>
-      held.get(`[data-face="${id}"] .card-header__grip`)
+    const stripOf = (wrapper: Editor, id: string) =>
+      wrapper.get(`[data-face="${id}"] .card-header__grip`)
 
     it('names the handle a face is dragged by, and gives it a place in the order', () => {
       const strip = stripOf(mountStencil({ faces: THREE }), 'two')

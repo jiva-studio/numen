@@ -74,7 +74,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const doing: CommandDeps = createCommandDeps({
     ...options,
-    searches: () => {
+    search: () => {
       ;commands.setOpen(false)
       ;palette.setOpen(true)
     },
@@ -84,7 +84,7 @@ export function useCommands(options: CommandsDepsOptions) {
     const invocation = commands.startCommand(id, at)
     if (invocation) return void runInvocation(invocation, doing, words)
     if (commands.open.value) return void palette.setOpen(false)
-    told(commands.getRefusal(id, at), 'error')
+    told(commands.getObjection(id, at), 'error')
   }
 
   const onKeyDown = (event: KeyboardEvent) => {

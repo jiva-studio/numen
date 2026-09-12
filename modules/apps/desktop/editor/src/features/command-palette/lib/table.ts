@@ -3,7 +3,8 @@
  */
 import { keysOf } from './chords'
 import { isUnmade, onAnything, onEvidence, onNote, onVault } from './where'
-import type { Command, Words } from '../target'
+import type { Command } from '../target'
+import type { Words } from '../words'
 
 /**
  * Every command, in the order it is drawn. The keyboard it is being read on

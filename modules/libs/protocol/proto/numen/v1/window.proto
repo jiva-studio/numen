@@ -74,8 +74,8 @@ message Task {
   int64 done = 4;
   int64 total = 5;
 
-  // Failed is why the work stopped, when it stopped badly.
-  string failed = 6;
+  // Error is why the work stopped, when it stopped badly.
+  string error = 6;
 
   // Asked is set for work a person started and is waiting to be told about.
   // Work nobody asked for is drawn once it has lasted, and most of it is over

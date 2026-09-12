@@ -22,8 +22,8 @@ export type BrokenAddresses = ReadonlySet<string>
 
 const NONE: BrokenAddresses = new Set()
 
-export const render = (text: string, unresolved: BrokenAddresses = NONE): VNode[] =>
-  nodes(marks.parse(text, {}), unresolved)
+export const render = (text: string, deadAddresses: BrokenAddresses = NONE): VNode[] =>
+  nodes(marks.parse(text, {}), deadAddresses)
 
 /**
  * Tokens arrive flat, with the nesting written on them. A frame is one element
@@ -35,7 +35,7 @@ interface Frame {
   children: (VNode | string)[]
 }
 
-const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] => {
+const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[] => {
   const root: Frame = { tag: '', attrs: {}, children: [] }
   const stack: Frame[] = [root]
   const top = () => stack[stack.length - 1]!
@@ -47,7 +47,7 @@ const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] =
     if (token.hidden) continue
 
     if (token.nesting === 1) {
-      stack.push({ tag: token.tag, attrs: attrs(token, unresolved), children: [] })
+      stack.push({ tag: token.tag, attrs: attrs(token, deadAddresses), children: [] })
       continue
     }
     if (token.nesting === -1) {
@@ -59,7 +59,7 @@ const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] =
 
     switch (token.type) {
       case 'inline':
-        top().children.push(...inline(token.children ?? [], unresolved, () => placed++))
+        top().children.push(...inline(token.children ?? [], deadAddresses, () => placed++))
         break
       case 'fence':
       case 'code_block':
@@ -92,7 +92,7 @@ const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] =
  */
 const inline = (
   tokens: readonly Token[],
-  unresolved: BrokenAddresses,
+  deadAddresses: BrokenAddresses,
   next: () => number,
 ): (VNode | string)[] => {
   const root: Frame = { tag: '', attrs: {}, children: [] }
@@ -101,7 +101,7 @@ const inline = (
 
   for (const token of tokens) {
     if (token.nesting === 1) {
-      stack.push({ tag: token.tag, attrs: attrs(token, unresolved), children: [] })
+      stack.push({ tag: token.tag, attrs: attrs(token, deadAddresses), children: [] })
       continue
     }
     if (token.nesting === -1) {
@@ -151,11 +151,11 @@ const words = (text: string, next: () => number): (VNode | string)[] =>
       /^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece),
     )
 
-const attrs = (token: Token, unresolved: BrokenAddresses = NONE): Record<string, string> => {
+const attrs = (token: Token, deadAddresses: BrokenAddresses = NONE): Record<string, string> => {
   const written: Record<string, string> = Object.fromEntries(
     (token.attrs ?? []).map(([name, value]) => [name, String(value)]),
   )
   const href = written.href
-  if (href !== undefined && unresolved.has(href)) written[REACHES] = 'nothing'
+  if (href !== undefined && deadAddresses.has(href)) written[REACHES] = 'nothing'
   return written
 }

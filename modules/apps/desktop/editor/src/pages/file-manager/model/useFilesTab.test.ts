@@ -38,7 +38,7 @@ const held: Record<string, readonly Entry[]> = {
 const settle = () => new Promise((done) => setTimeout(done, 0))
 
 /** A tab of that vault, writing down everything it asked of the window. */
-const tab = (refuses = false) => {
+const tab = (fails = false) => {
   const done: string[] = []
   const vault: Record<string, readonly Entry[]> = { ...held }
   const list = useFileTree({ list: async (at: string) => vault[at] ?? [] })
@@ -50,7 +50,7 @@ const tab = (refuses = false) => {
     setDraggedPaths: (paths) => void done.push(`drags ${paths.join(' ') || '—'}`),
     createFolder: async (path) => {
       done.push(`makes ${path}`)
-      if (refuses) return
+      if (fails) return
       const into = getFolderPath(path)
       vault[into] = [...(vault[into] ?? []), folder(path)]
       vault[path] = []
@@ -62,28 +62,28 @@ const tab = (refuses = false) => {
     },
     createDeck: async (folderPath, name) => {
       done.push(`decks ${folderPath === ROOT ? '/' : folderPath} ${name}`)
-      if (refuses) return ''
+      if (fails) return ''
       const made = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
       vault[folderPath] = [...(vault[folderPath] ?? []), file(made, { type: 'deck' })]
       return made
     },
     createStencil: async (folderPath, name) => {
       done.push(`stencils ${folderPath === ROOT ? '/' : folderPath} ${name}`)
-      if (refuses) return ''
+      if (fails) return ''
       const made = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
       vault[folderPath] = [...(vault[folderPath] ?? []), file(made, { type: 'stencil' })]
       return made
     },
     createPreset: async (folderPath, name) => {
       done.push(`presets ${folderPath === ROOT ? '/' : folderPath} ${name}`)
-      if (refuses) return ''
+      if (fails) return ''
       const made = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
       vault[folderPath] = [...(vault[folderPath] ?? []), file(made, { type: 'preset' })]
       return made
     },
     importAddress: async (folderPath, address) => {
       done.push(`imports ${folderPath === ROOT ? '/' : folderPath} ${address}`)
-      return refuses ? '' : 'made.url'
+      return fails ? '' : 'made.url'
     },
     showError: (text) => void done.push(`says ${text}`),
   })
@@ -399,8 +399,8 @@ describe('a name given to a row', () => {
 })
 
 describe('an item chosen in the menu on a row', () => {
-  const openRowMenu = async (path: string | null = 'Entropy.md', refuses = false) => {
-    const heldState = tab(refuses)
+  const openRowMenu = async (path: string | null = 'Entropy.md', fails = false) => {
+    const heldState = tab(fails)
     await heldState.list.openFolder(ROOT)
     heldState.one.openMenu({ path, at: { x: 0, y: 0 } })
     return heldState

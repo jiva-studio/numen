@@ -12,8 +12,8 @@ import { reach } from '../core'
 vi.mock('../core', () => ({ reach: vi.fn() }))
 
 /** The toast the page puts its trouble on, after the core has answered. */
-async function toastAfter(thrown: unknown) {
-  vi.mocked(reach).mockRejectedValueOnce(thrown)
+async function toastAfter(why: unknown) {
+  vi.mocked(reach).mockRejectedValueOnce(why)
   const page = mount(PlexPage)
   await flushPromises()
   const toast = page.getComponent(IonToast)

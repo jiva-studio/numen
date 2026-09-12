@@ -28,26 +28,26 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
 }
 
 /** Rows put where a landing says, in the order they were dragged. */
-const put = (rows: readonly Row[], at: RowLanding, held: readonly Row[]): readonly Row[] =>
+const put = (rows: readonly Row[], at: RowLanding, dragRows: readonly Row[]): readonly Row[] =>
   rows.flatMap((row) => {
-    const below = row.rows ? { ...row, rows: put(row.rows, at, held) } : row
-    if ('before' in at && row.id === at.before) return [...held, below]
+    const below = row.rows ? { ...row, rows: put(row.rows, at, dragRows) } : row
+    if ('before' in at && row.id === at.before) return [...dragRows, below]
     if ('into' in at && row.id === at.into) {
-      return [{ ...below, rows: [...(below.rows ?? []), ...held] }]
+      return [{ ...below, rows: [...(below.rows ?? []), ...dragRows] }]
     }
     return [below]
   })
 
 /** The application's part: what a move comes to, in the rows it holds. */
-const moveRows = (rows: readonly Row[], dragged: readonly RowId[], at: RowLanding): readonly Row[] => {
-  const held = dragged.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
-  const left = dragged.reduce((rest, row) => without(rest, row), rows)
+const moveRows = (rows: readonly Row[], dragIds: readonly RowId[], at: RowLanding): readonly Row[] => {
+  const held = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
+  const left = dragIds.reduce((rest, row) => without(rest, row), rows)
   return held.length ? put(left, at, held) : rows
 }
 
 /** The application's part again: rows taken out of the tree. */
-const removeRows = (rows: readonly Row[], dragged: readonly RowId[]): readonly Row[] =>
-  dragged.reduce((rest, row) => without(rest, row), rows)
+const removeRows = (rows: readonly Row[], dragIds: readonly RowId[]): readonly Row[] =>
+  dragIds.reduce((rest, row) => without(rest, row), rows)
 
 /** The application's part again: a row under a new name. */
 const renameRow = (rows: readonly Row[], row: RowId, name: string): readonly Row[] =>

@@ -5,7 +5,7 @@ import { computed, watch } from 'vue'
 import { themes } from '@/entities/settings'
 import {
   APPEARANCE,
-  DRESSING,
+  APPEARANCE_COMMANDS,
   HANGING,
   INTERFACE_SCALE,
   MODE,
@@ -79,7 +79,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
   watch(dressed.sized, () => onSizeChanged())
 
   const kept: PaletteLists = {
-    offers: (command, typed) => {
+    getStepGroups: (command, typed) => {
       if (command === APPEARANCE) return dressed.getThemeGroups()
       if (command === MODE) return dressed.modes()
       if (command === INTERFACE_SCALE || command === TEXT_SCALE)
@@ -90,7 +90,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
       return []
     },
     previewItem: (command, item) => {
-      if (DRESSING.includes(command)) dressed.previewItem(item)
+      if (APPEARANCE_COMMANDS.includes(command)) dressed.previewItem(item)
     },
   }
 

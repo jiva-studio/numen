@@ -21,19 +21,19 @@ const played: Medium = {
 }
 
 /** A recording open in a tab, as far as the window reads one. */
-const recording = (path: string, transcribedDuration: number, duration: number) =>
+const recording = (path: string, transcript: number, duration: number) =>
   ({
     path,
-    transcribedDuration: ref(transcribedDuration),
+    transcribedDuration: ref(transcript),
     duration: ref(duration),
   }) as unknown as MediaTabState
 
 /** The kind, made with a window that opens recordings this test hands it. */
-const kind = (held: MediaTabState) => {
+const kind = (state: MediaTabState) => {
   const window = useWindowTabs()
   return recordingKind(
     window.handle,
-    () => held as unknown as TranscriptState,
+    () => state as unknown as TranscriptState,
     { runs: () => {} },
     fileOpeners({ fileKinds: async () => new Map() }),
     played,

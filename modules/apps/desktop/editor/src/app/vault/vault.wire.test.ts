@@ -11,12 +11,12 @@ import { describe, expect, it, vi } from 'vitest'
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
 /** What the application answers with, in the words the schema writes it in. */
-const answerWith = (said: unknown) =>
+const answerWith = (answer: unknown) =>
   vi.stubGlobal(
     'fetch',
     vi.fn(
       async () =>
-        new Response(JSON.stringify(said), { headers: { 'content-type': 'application/json' } }),
+        new Response(JSON.stringify(answer), { headers: { 'content-type': 'application/json' } }),
     ),
   )
 
@@ -134,7 +134,6 @@ describe('a neighbourhood the vault answers with', () => {
         label: 'part of',
         through: '',
         isMutual: true,
-        mutual: true,
       },
     ])
   })

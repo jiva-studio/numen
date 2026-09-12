@@ -7,7 +7,7 @@
  * the parts stay here and the string goes everywhere else.
  */
 import { Code, type ConnectError } from '@connectrpc/connect'
-import { Refusal as ProtoErrorCode } from '@numen/protocol'
+import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import type { ErrorCode } from '@/shared/errors'
 
 /** The file an answer came out of, as the one string the window carries. */
@@ -34,7 +34,7 @@ export const ERROR_CODE: Record<ProtoErrorCode, ErrorCode | null> = {
   [ProtoErrorCode.NOT_A_NOTE]: 'notANote',
   [ProtoErrorCode.NOT_TEXT]: 'notText',
   [ProtoErrorCode.TOO_LARGE]: 'tooLarge',
-  [ProtoErrorCode.BODY_REFUSED]: 'bodyRefused',
+  [ProtoErrorCode.BODY_UNWRITABLE]: 'bodyUnwritable',
   [ProtoErrorCode.UNREADABLE]: 'unreadable',
   [ProtoErrorCode.OCCUPIED]: 'occupied',
   [ProtoErrorCode.UNNAMEABLE]: 'unnameable',
@@ -46,14 +46,12 @@ export const ERROR_CODE: Record<ProtoErrorCode, ErrorCode | null> = {
 }
 
 /** What one answer encountered as an error, and nothing where it succeeded. */
-export const errorIn = (from: { refusal?: ProtoErrorCode | undefined; error?: ProtoErrorCode | undefined }): ErrorCode | null => {
-  const err = from.error ?? from.refusal
-  return err === undefined ? null : (ERROR_CODE[err] ?? null)
-}
+export const errorIn = (from: { error?: ProtoErrorCode | undefined }): ErrorCode | null =>
+  from.error === undefined ? null : (ERROR_CODE[from.error] ?? null)
 
 /** Whether the file an answer is about had moved past what the caller read. */
-export const staleIn = (from: { refusal?: ProtoErrorCode | undefined; error?: ProtoErrorCode | undefined }): boolean =>
-  (from.error ?? from.refusal) === ProtoErrorCode.STALE
+export const staleIn = (from: { error?: ProtoErrorCode | undefined }): boolean =>
+  from.error === ProtoErrorCode.STALE
 
 /**
  * Where a file of the vault is asked about. The path is written out whole, so a
@@ -67,8 +65,8 @@ export const asset = (path: string): string => `/assets/${encodeURIComponent(pat
  * part of the address already, so what is written here is the rest of what says
  * which file it is.
  */
-export const getBytesQuery = (seen: string): string => {
-  const at = fingerprint(seen)
+export const getBytesQuery = (file: string): string => {
+  const at = fingerprint(file)
   return `size=${at.size}&mtime=${at.mtime}`
 }
 

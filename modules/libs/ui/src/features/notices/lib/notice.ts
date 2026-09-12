@@ -44,31 +44,20 @@ export interface Notice {
    * Whether a person asked for this and is waiting to be told it began. One of
    * these is drawn the moment it arrives.
    */
-  readonly asked?: boolean
+  readonly isAsked?: boolean
 }
 
 /** One piece of work a window is doing behind itself, as it is answered for. */
 export interface Task {
   readonly id: string
-  /** The action or operation being performed (e.g. "Transcribing"). */
-  readonly action?: string
   readonly doing: string
-  /** The subject/target of the task (e.g. filename). */
-  readonly target?: string
   readonly about: string
-  /** Explanation if the task failed. */
-  readonly failureReason?: string
-  readonly failed: string
-  /** Whether the task was initiated by user request. */
-  readonly isUserRequested?: boolean
-  readonly asked: boolean
+  readonly error: string
+  readonly isAsked: boolean
   /** How far it has got, where there is a total to count against. */
-  readonly completedCount?: number
   readonly done?: number
-  readonly totalCount?: number
   readonly total?: number
-  /** Unit of measurement for the count. */
-  readonly unit?: TallyUnit
+  /** What that count counts. */
   readonly counting?: TallyUnit
 }
 
@@ -79,23 +68,19 @@ export interface Task {
  * person acts on, and the room on a card is the words at the front of it.
  */
 export const createNotice = (task: Task): Notice => {
-  const failure = task.failureReason ?? task.failed
-  const action = task.action ?? task.doing
-  const subject = task.target ?? task.about
-  const isUserReq = task.isUserRequested ?? task.asked
-  const completed = task.completedCount ?? task.done
-  const total = task.totalCount ?? task.total
-  const unit = task.unit ?? task.counting
+  const error = task.error
+  const completed = task.done
+  const total = task.total
 
   return {
     id: task.id,
-    says: failure || action,
-    about: subject,
-    working: failure === '',
-    asked: isUserReq || failure !== '',
-    ...(failure ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
+    says: error || task.doing,
+    about: task.about,
+    working: error === '',
+    isAsked: task.isAsked || error !== '',
+    ...(error ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
     ...(completed !== undefined && total !== undefined && total > 0
-      ? { done: completed, total: total, ...(unit ? { counting: unit } : {}) }
+      ? { done: completed, total: total, ...(task.counting ? { counting: task.counting } : {}) }
       : {}),
   }
 }

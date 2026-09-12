@@ -13,7 +13,7 @@ import type { WindowHandle } from '@/entities/tab'
 const window_ = () => {
   const opened: string[] = []
   const handle = {
-    opens: async (kind: string) => {
+    openTab: async (kind: string) => {
       opened.push(kind)
       return kind
     },

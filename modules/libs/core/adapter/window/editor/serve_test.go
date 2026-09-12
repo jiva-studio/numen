@@ -402,7 +402,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	}, watcher, unreadable{VaultReaders: filesystem.VaultReaders{}})
 
 	eventually(t, "the scan was not reported as failed", func() bool {
-		return f.api.Failed.Why() != ""
+		return f.api.Error.Why() != ""
 	})
 
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")

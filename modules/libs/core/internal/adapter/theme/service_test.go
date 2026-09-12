@@ -64,7 +64,7 @@ func (d *dressing) choose(t *testing.T, name string, mode v1.Mode) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return answer.Msg.GetFailed()
+	return answer.Msg.GetError()
 }
 
 func TestTheListSaysWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
@@ -191,8 +191,8 @@ func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failed := answer.Msg.GetFailed(); failed != "" {
-		t.Fatalf("refused: %s", failed)
+	if reason := answer.Msg.GetError(); reason != "" {
+		t.Fatalf("refused: %s", reason)
 	}
 	if len(worn.written) != 1 || worn.written[0].InterfaceScale != 1.75 || worn.written[0].TextScale != 0 {
 		t.Fatalf("written: %+v", worn.written)
@@ -264,7 +264,7 @@ func TestAServiceGivenNoSettingsWearsThisProductsPalette(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if chosen.Msg.GetFailed() == "" {
+	if chosen.Msg.GetError() == "" {
 		t.Error("a build that writes no settings said it had written them")
 	}
 }

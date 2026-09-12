@@ -19,15 +19,15 @@ import type { PlexSeat } from '../lib/seat'
  */
 function neighbourhood(
   focus: string,
-  related: readonly PlexNode[],
+  neighbours: readonly PlexNode[],
   extra: readonly PlexEdge[] = [],
 ): PlexNeighbourhood {
   const nodes: PlexNode[] = [
     { id: 'focus', title: focus, seat: 'focus' },
-    ...related,
+    ...neighbours,
   ]
-  const parent = related.find((node) => node.seat === 'parent')
-  const edges: PlexEdge[] = related.flatMap((node) => {
+  const parent = neighbours.find((node) => node.seat === 'parent')
+  const edges: PlexEdge[] = neighbours.flatMap((node) => {
     if (node.seat === 'parent' || node.seat === 'jump') {
       return [{ from: node.id, to: 'focus' }]
     }

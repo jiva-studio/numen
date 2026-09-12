@@ -571,8 +571,8 @@ func (x *WriteAppearanceRequest) GetTextScale() float64 {
 
 type WriteAppearanceResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Why the settings were not written, when they were not.
-	Failed        string `protobuf:"bytes,1,opt,name=failed,proto3" json:"failed,omitempty"`
+	// Error is why the settings were not written, when they were not.
+	Error         string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -607,9 +607,9 @@ func (*WriteAppearanceResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *WriteAppearanceResponse) GetFailed() string {
+func (x *WriteAppearanceResponse) GetError() string {
 	if x != nil {
-		return x.Failed
+		return x.Error
 	}
 	return ""
 }
@@ -730,9 +730,9 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\n" +
 	"text_scale\x18\x04 \x01(\x01H\x01R\ttextScale\x88\x01\x01B\x12\n" +
 	"\x10_interface_scaleB\r\n" +
-	"\v_text_scale\"1\n" +
-	"\x17WriteAppearanceResponse\x12\x16\n" +
-	"\x06failed\x18\x01 \x01(\tR\x06failed\"\x14\n" +
+	"\v_text_scale\"/\n" +
+	"\x17WriteAppearanceResponse\x12\x14\n" +
+	"\x05error\x18\x01 \x01(\tR\x05error\"\x14\n" +
 	"\x12WatchThemesRequest\"+\n" +
 	"\x13WatchThemesResponse\x12\x14\n" +
 	"\x05names\x18\x01 \x03(\tR\x05names*@\n" +

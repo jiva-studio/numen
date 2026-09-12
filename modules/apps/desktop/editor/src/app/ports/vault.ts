@@ -15,7 +15,7 @@ export interface VaultPort {
     /** How far reading the vault has got. */
     scan: {
       isReady: boolean
-      failureReason: string
+      error: string
       unwatchedPath: string
     }
     /** How far searching it by meaning has got. */

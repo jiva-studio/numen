@@ -19,14 +19,14 @@ export const carriesAddress = (types: readonly string[] | undefined): boolean =>
  * The format is one address a line, and a line opening with `#` is a comment.
  * A drag of several is the first of them: one drop makes one file.
  */
-export const addressIn = (written: string): string =>
-  written
+export const addressIn = (text: string): string =>
+  text
     .split('\n')
     .map((line) => line.trim())
     .find((line) => line !== '' && !line.startsWith('#')) ?? ''
 
 /** The address a drag let go over the tree carries, read out of what it holds. */
-export const addressDropped = (held: DataTransfer | null | undefined): string =>
-  addressIn(held?.getData(URI_LIST) ?? '')
+export const addressDropped = (transfer: DataTransfer | null | undefined): string =>
+  addressIn(transfer?.getData(URI_LIST) ?? '')
 
 

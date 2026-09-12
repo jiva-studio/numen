@@ -73,9 +73,9 @@ export const waysIn = (at: ShownVault, words: Words, agent: string): readonly We
  * The vaults the installation holds. The one in front of the person says so,
  * and so does one whose folder is not there; the rest carry nothing.
  */
-export const vaultsOn = (listed: VaultList, words: Words): readonly VaultRow[] =>
-  listed.vaults.map((one) => {
-    const aside = one.missing ? words.gone : one.id === listed.showing ? words.current : ''
+export const vaultsOn = (list: VaultList, words: Words): readonly VaultRow[] =>
+  list.vaults.map((one) => {
+    const aside = one.missing ? words.gone : one.id === list.showing ? words.current : ''
     return {
       id: one.id,
       name: one.name,

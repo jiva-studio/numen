@@ -64,9 +64,9 @@ const boxOf = (half: Half): HTMLTextAreaElement | null =>
   (half === 'front' ? front.value : back.value)?.box ?? null
 
 /** A part was drawn, or taken away. The part a half is written in holds its box. */
-const setBox = (pane: Pane, drawn: Element | ComponentPublicInstance | null): void => {
+const setBox = (pane: Pane, element: Element | ComponentPublicInstance | null): void => {
   if (pane.shows !== 'written') return
-  const box = drawn as InstanceType<typeof FacePane> | null
+  const box = element as InstanceType<typeof FacePane> | null
   if (pane.half === 'front') front.value = box
   else back.value = box
 }

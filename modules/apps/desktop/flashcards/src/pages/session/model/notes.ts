@@ -84,13 +84,13 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   }
 
   /**
-   * The panel asked for, on whichever deck is up. Named is the note it is
-   * opened on, where a link in the card named one.
+   * The panel asked for, on whichever deck is up. The note it opens on is the
+   * one a link in the card named.
    */
-  const openPanel = async (named = '') => {
+  const openPanel = async (note = '') => {
     const deck = deps.deck()
     if (!deck) return
-    at.value = named
+    at.value = note
     deps.showPanel(true)
     await fetchNotes(deps.vault(), deck)
   }

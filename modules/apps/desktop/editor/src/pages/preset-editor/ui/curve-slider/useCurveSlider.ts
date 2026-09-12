@@ -1,20 +1,16 @@
 import { computed, shallowRef, watch, ref } from 'vue'
 import type { Curve, PresetCounts } from '../../types'
 import { clearBacklog, valueAt } from '../../lib/curve'
+import { calloutOf, heightsOf, labelsOf, readingAt, type Mark } from '../../lib/label'
 import {
-  calloutOf,
   extentOf,
-  heightsOf,
-  labelsOf,
   lineOf,
   placeUnder,
   positionsOf,
-  readingAt,
   runAt,
   shortOf,
   walkGrid,
   type Extent,
-  type Mark,
 } from '../../lib/plot'
 import { WORDS as words } from '../../words'
 
@@ -30,7 +26,7 @@ export function useCurveSlider(
   props: CurveSliderProps,
   emit: {
     (event: 'moves', place: number): void
-    (event: 'settles'): void
+    (event: 'settle'): void
   },
 ) {
   const picture = ref<SVGSVGElement | null>(null)
@@ -147,7 +143,7 @@ export function useCurveSlider(
   function onPointerUp(event: PointerEvent): void {
     if (!picture.value?.hasPointerCapture(event.pointerId)) return
     picture.value.releasePointerCapture(event.pointerId)
-    emit('settles')
+    emit('settle')
   }
 
   function onKeyDown(event: KeyboardEvent): void {
@@ -159,7 +155,7 @@ export function useCurveSlider(
 
   function onKeyUp(event: KeyboardEvent): void {
     if (walkGrid(event.key, props.place, places.value) === null) return
-    emit('settles')
+    emit('settle')
   }
 
   return {

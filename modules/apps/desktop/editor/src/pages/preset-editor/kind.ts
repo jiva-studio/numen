@@ -24,7 +24,7 @@ export function usePresetTab(
   core: Presets,
   handle: WindowHandle,
   tabOpeners: FileOpeners,
-  said: MessageWriter,
+  writeMessage: MessageWriter,
   today: () => string,
 ) {
   const titles = new Map<string, string>()
@@ -37,7 +37,7 @@ export function usePresetTab(
 
   const getState = (id: string): PresetTabState | undefined => {
     const one = open.get(id)
-    return one && createPresetState(one, id, handle, closePreset, core, bounds, said, today, titles)
+    return one && createPresetState(one, id, handle, closePreset, core, bounds, writeMessage, today, titles)
   }
 
   const getTitle = (path: string): string =>
@@ -49,7 +49,7 @@ export function usePresetTab(
       const one = createOpenPreset(path, today(), bounds.value)
       open.set(path, one)
       void readPreset(one, core, bounds, titles, today())
-      return createPresetState(one, path, handle, closePreset, core, bounds, said, today, titles)
+      return createPresetState(one, path, handle, closePreset, core, bounds, writeMessage, today, titles)
     },
     getTitle: (one) => getTitle(one.id),
     pane: PresetTab,
@@ -61,15 +61,15 @@ export function usePresetTab(
     onDestroy: () => {},
   }
 
-  const openPreset = (path: string, title = '', showing: PlexDestination = 'here'): void => {
+  const openPreset = (path: string, title = '', how: PlexDestination = 'here'): void => {
     if (title) titles.set(path, title)
-    void (showing === 'beside' ? handle.beside(PRESET, path) : handle.opens(PRESET, path))
+    void (how === 'beside' ? handle.beside(PRESET, path) : handle.openTab(PRESET, path))
   }
 
   tabOpeners.registerEditor('preset', openPreset)
 
-  const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
-    for (const went of renamed) {
+  const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[] = []): void => {
+    for (const went of renames) {
       const title = titles.get(went.from)
       if (title !== undefined) titles.set(went.to, title)
       titles.delete(went.from)
@@ -88,7 +88,7 @@ export function usePresetTab(
   const flush = async (): Promise<void> => {
     await Promise.all(
       [...open.values()].map((one) =>
-        flushWrites(one.flight, one.path.value, one.settings.value, core, said),
+        flushWrites(one.flight, one.path.value, one.settings.value, core, writeMessage),
       ),
     )
   }

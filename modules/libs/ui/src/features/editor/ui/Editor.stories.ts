@@ -341,9 +341,9 @@ const FENCED = [
 ].join('\n')
 
 /** The line of a fenced block holding a run of text. */
-const codeLine = (canvas: HTMLElement, holding: string) =>
+const codeLine = (canvas: HTMLElement, text: string) =>
   [...canvas.querySelectorAll<HTMLElement>('.cm-line')].find((line) =>
-    line.textContent?.includes(holding),
+    line.textContent?.includes(text),
   )
 
 /** Everything on that line painted in something other than the line's own ink. */
@@ -360,9 +360,9 @@ const getColouredSpans = (line: HTMLElement) => {
 export const FencedInEveryLanguage: Story = {
   render: renderWithSource(FENCED),
   play: async ({ canvasElement }) => {
-    const found = (holding: string) => {
-      const line = codeLine(canvasElement, holding)
-      expect(line, holding).toBeDefined()
+    const found = (text: string) => {
+      const line = codeLine(canvasElement, text)
+      expect(line, text).toBeDefined()
       return line as HTMLElement
     }
 

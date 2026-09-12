@@ -8,14 +8,14 @@
  */
 import { afterEach, describe, expect, it } from 'vitest'
 import { useNaming, type NamingState } from './naming'
-import { heading, objection, type Objection, type Refusal } from '../lib/order'
+import { heading, objection, type Objection, type HeadingObjection } from '../lib/order'
 
 /** A naming of the fields a stencil declares, with what it renamed. */
-const overFields = (declared: readonly string[]) => {
+const overFields = (fields: readonly string[]) => {
   const renamed: (readonly [string, string])[] = []
   const naming = useNaming<Objection>({
     carries: (field) => field,
-    taken: (field) => declared.filter((each) => each !== field),
+    taken: (field) => fields.filter((each) => each !== field),
     amiss: objection,
     renamed: (field, name) => {
       renamed.push([field, name])
@@ -27,7 +27,7 @@ const overFields = (declared: readonly string[]) => {
 /** A naming of the faces a stencil shows, each under the name it carries. */
 const overFaces = (faces: ReadonlyMap<string, string>) => {
   const renamed: (readonly [string, string])[] = []
-  const naming = useNaming<Refusal>({
+  const naming = useNaming<HeadingObjection>({
     carries: (id) => faces.get(id) ?? '',
     taken: (id) => [...faces].filter(([each]) => each !== id).map(([, name]) => name),
     amiss: heading,

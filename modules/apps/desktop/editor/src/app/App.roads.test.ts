@@ -43,7 +43,7 @@ import {
 describe('the window with no note to show', () => {
   it('says the vault could not be read, and that nothing was read from it', async () => {
     said.opening = null
-    said.failed = 'the vault folder is not there'
+    said.error = 'the vault folder is not there'
 
     const window = await mountWindow()
 
@@ -54,7 +54,7 @@ describe('the window with no note to show', () => {
 
   it('says nothing when the vault was read and holds none', async () => {
     said.opening = null
-    said.failed = ''
+    said.error = ''
 
     const window = await mountWindow()
 
@@ -111,10 +111,10 @@ describe('every road to a file', () => {
     )
 
   /** The search open, with words typed into it and the answers back. */
-  const typeInSearch = async (window: VueWrapper, typed: string) => {
+  const typeInSearch = async (window: VueWrapper, words: string) => {
     pressKey('k')
     await settle()
-    window.findComponent(Palette).vm.$emit('update:modelValue', typed)
+    window.findComponent(Palette).vm.$emit('update:modelValue', words)
     await new Promise((done) => setTimeout(done, DEBOUNCE))
   }
 

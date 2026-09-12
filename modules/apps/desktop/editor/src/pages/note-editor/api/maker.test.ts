@@ -49,14 +49,14 @@ describe('making a note in a seat of another', () => {
 
   it('makes a parent the new note is the child of', async () => {
     const { core, asked, write } = fake()
-    await noteCreator(core, write).make('Ontology.md', 'parent')
+    await noteCreator(core, write).createInSeat('Ontology.md', 'parent')
 
     expect(asked[0]?.links).toStrictEqual([{ to: 'Ontology.md', role: 'child' }])
   })
 
   it('files it in the folder the note it was made from is in', async () => {
     const { core, asked, write } = fake()
-    const made = await noteCreator(core, write).make('physics/Ontology.md', 'child')
+    const made = await noteCreator(core, write).createInSeat('physics/Ontology.md', 'child')
 
     expect(asked[0]?.folder).toBe('physics')
     expect(made?.path).toBe(`physics/${UNTITLED}.md`)
@@ -65,7 +65,7 @@ describe('making a note in a seat of another', () => {
   it('can make a note in every seat it offers', async () => {
     for (const seat of CREATABLE) {
       const { core, asked, write } = fake()
-      expect(await noteCreator(core, write).make('Ontology.md', seat)).not.toBeNull()
+      expect(await noteCreator(core, write).createInSeat('Ontology.md', seat)).not.toBeNull()
       expect(asked[0]?.links).toHaveLength(1)
     }
   })
@@ -73,7 +73,7 @@ describe('making a note in a seat of another', () => {
   it('makes nothing in a seat no link writes', async () => {
     const { core, asked, write } = fake()
 
-    expect(await noteCreator(core, write).make('Ontology.md', 'sibling')).toBeNull()
+    expect(await noteCreator(core, write).createInSeat('Ontology.md', 'sibling')).toBeNull()
     expect(asked).toStrictEqual([])
   })
 
@@ -83,7 +83,7 @@ describe('making a note in a seat of another', () => {
       { path: '', error: 'occupied' },
     ])
     const making = noteCreator(core, write)
-    const made = await making.make('Ontology.md', 'child')
+    const made = await making.createInSeat('Ontology.md', 'child')
 
     expect(asked.map((note) => note.title)).toStrictEqual([
       UNTITLED,
@@ -108,7 +108,7 @@ describe('making a note in a seat of another', () => {
     const { core, asked, write, told } = fake([{ path: '', error: 'notANote' }])
     const making = noteCreator(core, write)
 
-    expect(await making.make('Ontology.md', 'child')).toBeNull()
+    expect(await making.createInSeat('Ontology.md', 'child')).toBeNull()
     expect(asked).toHaveLength(1)
     expect(told.at(-1)?.text).not.toBe('')
     expect(told.at(-1)?.kind).toBe('error')
@@ -123,7 +123,7 @@ describe('making a note in a seat of another', () => {
     const { write, last } = writer()
     const making = noteCreator(core, write)
 
-    expect(await making.make('Ontology.md', 'child')).toBeNull()
+    expect(await making.createInSeat('Ontology.md', 'child')).toBeNull()
     expect(last()).toContain('numen did not answer')
     expect(last()).not.toContain('out of reach')
   })

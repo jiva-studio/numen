@@ -127,9 +127,9 @@ export interface Pages {
  * one number here that is measured rather than carried over: the document is
  * laid out, so what is left of it is known exactly.
  */
-export function leftInDocument(flow: Flow, standing: number, marks: readonly Mark[]): number {
+export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[]): number {
   const here = columnsFilled(marks, flow)
-  return Math.max(here - (standing + 1) * flow.columns, 0)
+  return Math.max(here - (spread + 1) * flow.columns, 0)
 }
 
 /**
@@ -145,11 +145,11 @@ export function pagesOf(
   book: Span,
   document: Span,
   flow: Flow,
-  standing: number,
+  spread: number,
   marks: readonly Mark[],
 ): Pages {
   const here = columnsFilled(marks, flow)
-  const first = standing * flow.columns + 1
+  const first = spread * flow.columns + 1
   const bytes = document.ends - document.begins
   if (here <= 0 || bytes <= 0) return { page: Math.max(first, 1), pages: Math.max(here, 1) }
 

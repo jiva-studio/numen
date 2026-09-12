@@ -153,12 +153,12 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     const held = new Map<string, SearchHit>()
     if (!typed.value.trim()) return { groups: [] as readonly PaletteGroup[], held }
 
-    const group = (id: SearchGroup, title: string, drawn: readonly SearchRow[]): PaletteGroup => {
-      for (const one of drawn) held.set(one.item.id, one.hit)
+    const group = (id: SearchGroup, title: string, rows: readonly SearchRow[]): PaletteGroup => {
+      for (const one of rows) held.set(one.item.id, one.hit)
       return {
         id,
         title,
-        items: drawn.map((one) => one.item),
+        items: rows.map((one) => one.item),
         working: working.value[id],
         silence: silenceOf(id),
       }

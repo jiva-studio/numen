@@ -193,16 +193,16 @@ describe('the menu on a row', () => {
     expect(window.findComponent(Menu).exists()).toBe(false)
   })
 
-  const menuOn = async (path: string | null, chosen: readonly string[] = []) => {
+  const menuOn = async (path: string | null, selection: readonly string[] = []) => {
     const { list, window } = await mountFiles()
-    if (chosen.length) list.selectPaths(chosen)
+    if (selection.length) list.selectPaths(selection)
     window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
     await settle()
     return window.findComponent(Menu).props('items') as readonly { id: string; group?: string }[]
   }
 
-  const itemsOn = async (path: string | null, chosen: readonly string[] = []) =>
-    (await menuOn(path, chosen)).map((one) => one.id)
+  const itemsOn = async (path: string | null, selection: readonly string[] = []) =>
+    (await menuOn(path, selection)).map((one) => one.id)
 
   it('offers everything that can be done to a note it was asked for on', async () => {
     expect(await itemsOn('Entropy.md')).toStrictEqual([

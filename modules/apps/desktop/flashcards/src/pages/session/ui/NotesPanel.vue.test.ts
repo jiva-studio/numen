@@ -18,7 +18,7 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   label: '',
   points: true,
   ambiguous: false,
-  refusal: '',
+  error: '',
   ...more,
 })
 
@@ -86,7 +86,7 @@ describe('the panel the deck is read in', () => {
 
   it('says why a note it could reach has no text', async () => {
     const one = await mountPanel({
-      notes: [createNeighbour({ body: '', refusal: 'that note is not in the vault' })],
+      notes: [createNeighbour({ body: '', error: 'that note is not in the vault' })],
       unread: 0,
     })
     expect(one.text()).toContain('that note is not in the vault')

@@ -41,11 +41,11 @@ const name = (path: string, title: string, heading = ''): NameMatch => ({
 })
 
 /** One vault as the list answers one. */
-const vault = (id: string, name: string, missing = false): Vault => ({
+const vault = (id: string, name: string, isMissing = false): Vault => ({
   id,
   name,
   path: `/vaults/${name}`,
-  missing,
+  missing: isMissing,
 })
 
 /** The vaults the installation holds, with the one in front named. */
@@ -62,7 +62,7 @@ const createLookup = () => {
   const titles = ref<Record<string, string>>({ 'physics/Ontology.md': 'Ontology' })
   const tabs = ref<Record<string, string>>({})
   const knows: NoteLookup = {
-    called: (path) => titles.value[path] ?? '',
+    getTitle: (path) => titles.value[path] ?? '',
     holding: (path) => tabs.value[path] ?? null,
   }
   return {
@@ -86,7 +86,7 @@ const createLists = (offers: Record<string, readonly StepGroup[]>) => {
   const lists = ref(offers)
   const shown: string[] = []
   const paletteLists: PaletteLists = {
-    offers: (command) => lists.value[command] ?? [],
+    getStepGroups: (command) => lists.value[command] ?? [],
     previewItem: (command, item) => void shown.push(`${command} ${item}`),
   }
   return { paletteLists, lists, shown }
@@ -716,13 +716,13 @@ describe('a command that was not offered over what it was asked over', () => {
   it('says the vault could not be opened', () => {
     const { commands } = createPalette({ ready: false })
 
-    expect(commands.getRefusal('remove', front({ ready: false }))).toBe(words.noVault)
+    expect(commands.getObjection('remove', front({ ready: false }))).toBe(words.noVault)
   })
 
   it('says nothing in front is a note', () => {
     const { commands } = createPalette()
 
-    expect(commands.getRefusal('remove', front({ kind: 'document', path: '', title: '' }))).toBe(
+    expect(commands.getObjection('remove', front({ kind: 'document', path: '', title: '' }))).toBe(
       words.noNote,
     )
   })
@@ -730,8 +730,8 @@ describe('a command that was not offered over what it was asked over', () => {
   it('says nothing at all about one that was taken up', () => {
     const { commands } = createPalette()
 
-    expect(commands.getRefusal('remove', front())).toBe('')
-    expect(commands.getRefusal('nothing of the sort', front())).toBe('')
+    expect(commands.getObjection('remove', front())).toBe('')
+    expect(commands.getObjection('nothing of the sort', front())).toBe('')
   })
 })
 
@@ -782,8 +782,8 @@ describe('a command that asks for a note', () => {
       },
       words,
       () => at.value,
-      { called: () => '', holding: () => null },
-      { offers: () => [], previewItem: () => {} },
+      { getTitle: () => '', holding: () => null },
+      { getStepGroups: () => [], previewItem: () => {} },
       runSupport(),
       async () => {},
     )
@@ -1079,8 +1079,8 @@ describe('a command that asks for a vault', () => {
       },
       words,
       () => at.value,
-      { called: () => '', holding: () => null },
-      { offers: () => [], previewItem: () => {} },
+      { getTitle: () => '', holding: () => null },
+      { getStepGroups: () => [], previewItem: () => {} },
       runSupport(),
       async () => {},
     )

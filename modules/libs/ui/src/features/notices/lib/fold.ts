@@ -12,14 +12,14 @@ export const ROOM = 4
  * anything that stopped badly stand however many of them there are.
  */
 export const foldNotices = (
-  drawn: readonly Notice[],
+  notices: readonly Notice[],
   room: number = ROOM,
 ): { shown: readonly Notice[]; over: number } => {
-  if (drawn.length <= room) return { shown: drawn, over: 0 }
-  const spare = drawn.filter(
+  if (notices.length <= room) return { shown: notices, over: 0 }
+  const spare = notices.filter(
     (notice) =>
       notice.stay !== undefined && notice.stay !== 'holds' && notice.tone !== 'alarm',
   )
-  const away = new Set(spare.slice(0, drawn.length - room).map((notice) => notice.id))
-  return { shown: drawn.filter((notice) => !away.has(notice.id)), over: away.size }
+  const away = new Set(spare.slice(0, notices.length - room).map((notice) => notice.id))
+  return { shown: notices.filter((notice) => !away.has(notice.id)), over: away.size }
 }

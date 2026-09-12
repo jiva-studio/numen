@@ -13,7 +13,7 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   label: '',
   points: true,
   ambiguous: false,
-  refusal: '',
+  error: '',
   ...more,
 })
 

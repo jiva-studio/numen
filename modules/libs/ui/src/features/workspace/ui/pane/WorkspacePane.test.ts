@@ -36,9 +36,9 @@ const mountPane = (props: Record<string, unknown> = {}, slots: Record<string, st
   })
 }
 
-const strip = (held: ReturnType<typeof mountPane>) => held.findAll('[data-workspace-tab]')
+const strip = (wrapper: ReturnType<typeof mountPane>) => wrapper.findAll('[data-workspace-tab]')
 
-const panels = (held: ReturnType<typeof mountPane>) => held.findAll('[role="tabpanel"]')
+const panels = (wrapper: ReturnType<typeof mountPane>) => wrapper.findAll('[role="tabpanel"]')
 
 const getFocusedTab = () => document.activeElement?.getAttribute('data-workspace-tab')
 

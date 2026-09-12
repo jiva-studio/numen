@@ -48,7 +48,7 @@ const asks: Record<
  * answers where it stands. A vault that answers nothing at all is said here,
  * because the roads that ask for one carry no word of their own.
  */
-export function createFileCreators(vault: VaultCreator, tabOpeners: FileOpeners, words: CreateWords, said: MessageWriter) {
+export function createFileCreators(vault: VaultCreator, tabOpeners: FileOpeners, words: CreateWords, write: MessageWriter) {
   const createFile = async (
     what: CreateKind,
     folder: string,
@@ -59,18 +59,18 @@ export function createFileCreators(vault: VaultCreator, tabOpeners: FileOpeners,
       const answer = await asks[what](vault, folder, name, fields)
       const error = answer.error
       if (error) {
-        said(words.errors[error], 'error')
+        write(words.errors[error], 'error')
         return ''
       }
       return answer.path
     } catch (error) {
-      said(formatErrorMessage(error), 'error')
+      write(formatErrorMessage(error), 'error')
       return ''
     }
   }
 
   /** The same, put in front of the person in a tab of its own. */
-  const opens = async (
+  const createAndOpenFile = async (
     what: MakeKind,
     folder: string,
     name: string,
@@ -78,16 +78,16 @@ export function createFileCreators(vault: VaultCreator, tabOpeners: FileOpeners,
   ): Promise<string> => {
     const path = await createFile(what, folder, name, fields)
     if (!path) return ''
-    tabOpeners.made(path, '', what)
+    tabOpeners.openNewFile(path, '', what)
     return path
   }
 
   return {
     createFile,
-    decks: (folder: string, name: string) => opens('deck', folder, name),
+    decks: (folder: string, name: string) => createAndOpenFile('deck', folder, name),
     stencils: (folder: string, name: string, fields: readonly string[]) =>
-      opens('stencil', folder, name, fields),
-    presets: (folder: string, name: string) => opens('preset', folder, name),
-    imports: (folder: string, address: string) => opens('url', folder, address),
+      createAndOpenFile('stencil', folder, name, fields),
+    presets: (folder: string, name: string) => createAndOpenFile('preset', folder, name),
+    imports: (folder: string, address: string) => createAndOpenFile('url', folder, address),
   }
 }

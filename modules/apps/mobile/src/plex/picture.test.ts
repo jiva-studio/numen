@@ -11,10 +11,10 @@ import { asPlex } from './picture'
  *  whether the other note names the relationship too. */
 type Neighbour = [string, Seat, string, string, boolean?]
 
-const around = (focus: string, related: Neighbour[]) =>
+const around = (focus: string, neighbours: Neighbour[]) =>
   create(GetNeighbourhoodResponseSchema, {
     focus: { path: focus, title: focus, identifier: '' },
-    related: related.map(([path, seat, label, through, mutual]) => ({
+    related: neighbours.map(([path, seat, label, through, mutual]) => ({
       note: { path, title: path, identifier: '' },
       seat,
       label,

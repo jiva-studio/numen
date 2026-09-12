@@ -141,15 +141,15 @@ export interface CardFieldValue extends FieldValue {
  * is drawn of them is the caller's.
  */
 export function getCardFieldValues(
-  filled: readonly FieldValue[],
+  values: readonly FieldValue[],
   fields: readonly string[],
 ): readonly CardFieldValue[] {
   const stood = getDeclaredFields(fields).flatMap((field) => {
-    const written = filled.filter((each) => each.field === field)
+    const written = values.filter((each) => each.field === field)
     if (!written.length) return [{ field, text: '', declared: true }]
     return written.map((each) => ({ field, text: each.text, declared: true }))
   })
-  const stray = filled
+  const stray = values
     .filter((each) => !fields.includes(each.field))
     .map((each) => ({ field: each.field, text: each.text, declared: false }))
   return [...stood, ...stray]

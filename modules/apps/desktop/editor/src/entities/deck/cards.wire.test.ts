@@ -14,13 +14,13 @@ vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 let asked: Record<string, unknown>[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
-const replyWith = (said: unknown) => {
+const replyWith = (answer: unknown) => {
   asked = []
   vi.stubGlobal(
     'fetch',
     vi.fn(async (_url: string, init: { body: Uint8Array }) => {
       asked.push(JSON.parse(new TextDecoder().decode(init.body)))
-      return new Response(JSON.stringify(said), {
+      return new Response(JSON.stringify(answer), {
         headers: { 'content-type': 'application/json' },
       })
     }),
@@ -65,7 +65,7 @@ describe('making a deck', () => {
   })
 
   it('carries the error in the words the window uses', async () => {
-    replyWith({ path: '', refusal: 'REFUSAL_OCCUPIED' })
+    replyWith({ path: '', error: 'ERROR_CODE_OCCUPIED' })
 
     expect((await cards.createDeck('Words', 'Decks')).error).toBe('occupied')
   })
@@ -119,7 +119,7 @@ describe('reading a deck', () => {
   })
 
   it('is no deck where the answer carries none', async () => {
-    replyWith({ refusal: 'REFUSAL_NOT_A_DECK' })
+    replyWith({ error: 'ERROR_CODE_NOT_A_DECK' })
 
     const answer = await cards.readDeck('Notes.md')
 
@@ -189,7 +189,7 @@ describe('writing a deck', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    replyWith({ refusal: 'REFUSAL_STALE' })
+    replyWith({ error: 'ERROR_CODE_STALE' })
 
     const answer = await cards.writeDeck(
       'Deck.md',
@@ -223,7 +223,7 @@ describe('a stencil', () => {
   })
 
   it('is no stencil where the answer carries none', async () => {
-    replyWith({ refusal: 'REFUSAL_NOT_A_STENCIL' })
+    replyWith({ error: 'ERROR_CODE_NOT_A_STENCIL' })
 
     expect((await cards.readStencil('Notes.md')).stencil).toBeNull()
   })

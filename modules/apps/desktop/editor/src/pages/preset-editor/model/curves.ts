@@ -11,7 +11,9 @@ import {
   type Settings,
   type SettingsBounds,
 } from '../types'
-import { approximate, goalValue, nearest, shapeOf } from '../lib/curve'
+import { goalValue, nearest } from '../lib/curve'
+import { shapeOf } from '../lib/fields'
+import { approximate } from '../lib/sketch'
 import { WORDS as words } from '../words'
 
 /** Reactive state for preset curve calculations. */

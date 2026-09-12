@@ -28,12 +28,12 @@ type Types = Record<string, NoteType>
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
 const around = (
   focus: string,
-  related: readonly string[] = [],
+  neighbours: readonly string[] = [],
   types: Types = {},
 ): Neighbourhood => ({
   focus: { path: focus, title: focus.replace(/\.md$/, '') },
   focusType: types[focus] ?? 'note',
-  related: related.map((path) => ({
+  related: neighbours.map((path) => ({
     seat: 'child',
     through: '',
     label: '',
@@ -45,10 +45,10 @@ const around = (
 })
 
 /** A plex standing on a note, which records every note it was sent to. */
-const viewOn = (at: string, related: readonly string[] = [], types: Types = {}) => {
+const viewOn = (at: string, neighbours: readonly string[] = [], types: Types = {}) => {
   const went: string[] = []
   const view = {
-    neighbourhood: ref(around(at, related, types)),
+    neighbourhood: ref(around(at, neighbours, types)),
     here: ref(at),
     error: ref(''),
     go: async (path: string) => {
@@ -70,23 +70,23 @@ const createVault = (takes = true) => {
   const made: [string, string][] = []
   const joined: [string, string, string][] = []
   /** The notes this vault will write no link to, which a test names. */
-  const refusedPaths = new Set<string>()
+  const notJoinedPaths = new Set<string>()
   const editor: PlexEditor = {
-    make: async (from, seat) => {
+    createInSeat: async (from, seat) => {
       made.push([from, seat])
       return takes ? { path: 'Made.md', title: 'Made' } : null
     },
     join: async (from, to, seat) => {
       joined.push([from, to, seat])
-      return takes && !refusedPaths.has(to)
+      return takes && !notJoinedPaths.has(to)
     },
   }
-  return { editor, made, joined, refusedPaths }
+  return { editor, made, joined, notJoinedPaths }
 }
 
 /** A plex tab with the window it is drawn in written down. */
-const tab = (at: string, related: readonly string[] = [], takes = true, types: Types = {}) => {
-  const plex = viewOn(at, related, types)
+const tab = (at: string, neighbours: readonly string[] = [], takes = true, types: Types = {}) => {
+  const plex = viewOn(at, neighbours, types)
   const vault = createVault(takes)
   const opened: [string, string, string][] = []
   const asked: string[] = []
@@ -111,7 +111,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
     ready: ref(true),
     hangs,
     parts: ref(6),
-    opens: (path, title, showing, line) => {
+    openNote: (path, title, showing, line) => {
       opened.push([path, title, showing])
       if (line !== undefined) entered.push([path, line])
     },
@@ -120,13 +120,13 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
       insides.push(paths)
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
-    asks: (text) => asked.push(text),
-    runs: (id, path, title) => ran.push([id, path, title]),
+    askAgent: (text) => asked.push(text),
+    runCommand: (id, path, title) => ran.push([id, path, title]),
     opening: ref('Opening.md'),
     first: async () => 'Opening.md',
     dragged: dragging,
-    says: (text) => said.push(text),
-    writes: async () => {
+    showMessage: (text) => said.push(text),
+    createUntitledNote: async () => {
       wrote.push(writes.value)
       return writes.value
     },
@@ -273,15 +273,15 @@ describe('a plex drawing nothing', () => {
       ready: ref(true),
       hangs: ref(true),
       parts: ref(6),
-      opens: () => {},
+      openNote: () => {},
       inside: async () => new Map(),
-      asks: () => {},
-      runs: () => {},
+      askAgent: () => {},
+      runCommand: () => {},
       opening: ref(''),
       first: async () => '',
       dragged: ref([]),
-      says: () => {},
-      writes: async () => '',
+      showMessage: () => {},
+      createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
       ...over,
     })
@@ -364,15 +364,15 @@ describe('the picture', () => {
       ready: ref(false),
       hangs: ref(true),
       parts: ref(6),
-      opens: () => {},
+      openNote: () => {},
       inside: async () => new Map(),
-      asks: () => {},
-      runs: () => {},
+      askAgent: () => {},
+      runCommand: () => {},
       opening: ref(''),
       first: async () => '',
       dragged: ref(['Entropy.md']),
-      says: () => {},
-      writes: async () => '',
+      showMessage: () => {},
+      createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
     })
 
@@ -419,7 +419,7 @@ describe('notes dragged in and let go over the picture', () => {
 
   it('writes the rest where one of them was refused, and says which stayed', async () => {
     const one = tab('Root.md')
-    one.refusedPaths.add('Kelvin.md')
+    one.notJoinedPaths.add('Kelvin.md')
 
     await one.state.dropNodes(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
 
@@ -428,7 +428,7 @@ describe('notes dragged in and let go over the picture', () => {
       ['Root.md', 'Kelvin.md', 'child'],
       ['Root.md', 'Heat.md', 'child'],
     ])
-    expect(one.said).toEqual([`${words.refused} Kelvin`])
+    expect(one.said).toEqual([`${words.notJoined} Kelvin`])
     expect(one.went).toEqual(['Root.md'])
   })
 
@@ -437,7 +437,7 @@ describe('notes dragged in and let go over the picture', () => {
 
     await one.state.dropNodes(['Entropy.md', 'Heat.md'], 'child')
 
-    expect(one.said).toEqual([`${words.refused} Entropy, Heat`])
+    expect(one.said).toEqual([`${words.notJoined} Entropy, Heat`])
     expect(one.went).toEqual([])
   })
 
@@ -539,15 +539,15 @@ describe('the parts a node hangs', () => {
       ready: ref(true),
       hangs: ref(true),
       parts: ref(6),
-      opens: () => {},
+      openNote: () => {},
       inside: () => new Promise((done) => answers.push(done)),
-      asks: () => {},
-      runs: () => {},
+      askAgent: () => {},
+      runCommand: () => {},
       opening: ref('Root.md'),
       first: async () => 'Root.md',
       dragged: ref([]),
-      says: () => {},
-      writes: async () => '',
+      showMessage: () => {},
+      createUntitledNote: async () => '',
       creatable: ['parent', 'child', 'jump'],
     })
     const node = () => nodeFor(plex, 'Root')
@@ -734,15 +734,15 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     ready: ref(true),
     hangs: ref(true),
     parts: ref(6),
-    opens: (path, title, showing) => opened.push([path, title, showing]),
+    openNote: (path, title, showing) => opened.push([path, title, showing]),
     inside: async () => new Map(),
-    asks: () => {},
-    runs: (id, path, title) => ran.push([id, path, title]),
+    askAgent: () => {},
+    runCommand: (id, path, title) => ran.push([id, path, title]),
     opening: ref(''),
     first: async () => '',
     dragged: ref([]),
-    says: () => {},
-    writes: async () => '',
+    showMessage: () => {},
+    createUntitledNote: async () => '',
     creatable: ['parent', 'child', 'jump'],
   })
   await view.go(focus)
@@ -1054,29 +1054,29 @@ const window = (opening = 'Opening.md') => {
     ready: ref(true),
     hangs,
     parts: ref(6),
-    opens: () => {},
+    openNote: () => {},
     inside: async (paths) => {
       insides.push(paths)
       return new Map()
     },
-    asks: () => {},
-    runs: () => {},
+    askAgent: () => {},
+    runCommand: () => {},
     opening: first,
     first: async () => {
       asked.push(first.value)
       return first.value
     },
     dragged: ref([]),
-    says: () => {},
-    writes: async () => '',
+    showMessage: () => {},
+    createUntitledNote: async () => '',
     creatable: ['parent', 'child', 'jump'],
   })
   held.registerKinds([plexes.kind, other])
 
   /** A plex tab of this window, opened on what it was given. */
   const openTab = async (at = '') => {
-    const id = await held.opens(PLEX, at)
-    return { id, state: held.holdsIn<PlexTabState>(id, PLEX)! }
+    const id = await held.openTabOfKind(PLEX, at)
+    return { id, state: held.getTabStateIn<PlexTabState>(id, PLEX)! }
   }
   /** The person is in this tab now. */
   const showTab = (id: string) => held.onTabShown(id)
@@ -1091,7 +1091,7 @@ const window = (opening = 'Opening.md') => {
   const active = () =>
     paneById(held.layout.value.root, held.layout.value.focus)?.active ?? ''
   /** A tab holding no plex, opened in front of the person. */
-  const elsewhere = () => held.opens(other.kind)
+  const elsewhere = () => held.openTabOfKind(other.kind)
   return {
     ...plexes,
     openTab,

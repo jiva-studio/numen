@@ -26,10 +26,14 @@ export interface Step {
  * holder. Home and End go to the ends, and from no row at all every key lands
  * on the first.
  */
-export function stepTo(shown: readonly ShownRow[], from: RowId | null, key: TreeKey): Step {
-  const first = shown[0]?.id ?? null
-  const at = from === null ? -1 : shown.findIndex((row) => row.id === from)
-  const here = at === -1 ? undefined : shown[at]
+export function stepTo(
+  visibleRows: readonly ShownRow[],
+  from: RowId | null,
+  key: TreeKey,
+): Step {
+  const first = visibleRows[0]?.id ?? null
+  const at = from === null ? -1 : visibleRows.findIndex((row) => row.id === from)
+  const here = at === -1 ? undefined : visibleRows[at]
   if (!here) return { at: first, turn: null }
 
   const stays: Step = { at: here.id, turn: null }
@@ -38,14 +42,14 @@ export function stepTo(shown: readonly ShownRow[], from: RowId | null, key: Tree
     case 'Home':
       return { at: first, turn: null }
     case 'End':
-      return { at: shown[shown.length - 1]?.id ?? null, turn: null }
+      return { at: visibleRows[visibleRows.length - 1]?.id ?? null, turn: null }
     case 'ArrowDown':
-      return { at: shown[at + 1]?.id ?? here.id, turn: null }
+      return { at: visibleRows[at + 1]?.id ?? here.id, turn: null }
     case 'ArrowUp':
-      return { at: shown[at - 1]?.id ?? here.id, turn: null }
+      return { at: visibleRows[at - 1]?.id ?? here.id, turn: null }
     case 'ArrowRight':
       if (here.holds && !here.open) return { at: here.id, turn: { row: here.id, open: true } }
-      if (here.open && here.holding) return { at: shown[at + 1]?.id ?? here.id, turn: null }
+      if (here.open && here.holding) return { at: visibleRows[at + 1]?.id ?? here.id, turn: null }
       return stays
     case 'ArrowLeft':
       if (here.open) return { at: here.id, turn: { row: here.id, open: false } }

@@ -30,7 +30,7 @@ const folder = (path: string): Entry => file(path, { folder: true, kind: 'other'
  * of what every folder was asked.
  */
 const vault = (
-  held: Record<string, readonly Entry[]> = {
+  folders: Record<string, readonly Entry[]> = {
     [ROOT]: [folder('physics'), folder('notes'), file('Cover.png', { kind: 'other' })],
     physics: [folder('physics/heat'), file('physics/Entropy.md')],
     'physics/heat': [file('physics/heat/Kelvin.md')],
@@ -43,11 +43,11 @@ const vault = (
     core: {
       list: async (at: string) => {
         asked.push(at)
-        return held[at] ?? []
+        return folders[at] ?? []
       },
     },
     puts: (at: string, entry: Entry) => {
-      held[at] = [...(held[at] ?? []), entry]
+      folders[at] = [...(folders[at] ?? []), entry]
     },
   }
 }

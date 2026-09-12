@@ -125,7 +125,7 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if !state.Msg.GetScan().GetReady() {
 		t.Error("the window says it is still being read, and nothing is reading")
 	}
-	if reason := state.Msg.GetScan().GetFailed(); reason != "" {
+	if reason := state.Msg.GetScan().GetError(); reason != "" {
 		t.Errorf("the window says it could not be read: %s", reason)
 	}
 	if state.Msg.GetCoverage().GetChunkCount() != 0 || state.Msg.GetCoverage().GetEmbeddedCount() != 0 {
@@ -425,7 +425,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if reason := state.Msg.GetScan().GetFailed(); reason != "" {
+		if reason := state.Msg.GetScan().GetError(); reason != "" {
 			t.Fatalf("the vault could not be read: %s", reason)
 		}
 		if state.Msg.GetScan().GetReady() {

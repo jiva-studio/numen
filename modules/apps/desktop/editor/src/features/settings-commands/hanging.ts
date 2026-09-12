@@ -44,7 +44,7 @@ export interface HangingDeps {
   setHangingSettings(hangs: boolean, parts?: number): Promise<string | null>
 }
 
-export function useHangingSetting(core: HangingDeps, words: Words, said: MessageWriter) {
+export function useHangingSetting(core: HangingDeps, words: Words, write: MessageWriter) {
   /**
    * The two settings. They open on what an installation nobody has configured
    * does, and are asked of the vault as the window opens.
@@ -108,12 +108,12 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
     const was = hangs.value
     const now = item === ON
     if (now === was) return
-    said('')
+    write('')
     hangs.value = now
 
     const failed = await core.setHangingSettings(now)
     if (!failed) return
-    said(`${words.unturned} ${failed}`, 'error')
+    write(`${words.unturned} ${failed}`, 'error')
     hangs.value = was
   }
 
@@ -127,12 +127,12 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
     const was = parts.value
     const { least, most } = ends.value
     if (!Number.isInteger(now) || now < least || now > most || now === was) return
-    said('')
+    write('')
     parts.value = now
 
     const failed = await core.setHangingSettings(hangs.value, now)
     if (!failed) return
-    said(`${words.unturned} ${failed}`, 'error')
+    write(`${words.unturned} ${failed}`, 'error')
     parts.value = was
   }
 

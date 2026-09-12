@@ -183,7 +183,7 @@ func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
 
 	save()
 	at := levelling(t, f)
-	if at == nil || at.GetFailed() == "" {
+	if at == nil || at.GetError() == "" {
 		t.Fatalf("what a person is shown after a save search cannot see is %+v", at)
 	}
 

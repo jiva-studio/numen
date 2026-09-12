@@ -236,7 +236,7 @@ describe('session domain', () => {
       id: 'v1',
       name: 'V1',
       path: '/vault',
-      scan: { ready: true, failed: '', unwatched: '' },
+      scan: { ready: true, error: '', unwatched: '' },
       coverage: { chunkCount: 10n, embeddedCount: 10n, embedding: false },
     })
     const st = await core.state()

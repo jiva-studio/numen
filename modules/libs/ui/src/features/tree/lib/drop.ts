@@ -21,24 +21,24 @@ const getLandingRow = (at: RowLanding): RowId | null => ('into' in at ? at.into 
  * dragged moves nothing and answers nothing.
  */
 export function landing(
-  shown: readonly ShownRow[],
-  dragging: readonly RowId[],
+  visibleRows: readonly ShownRow[],
+  dragIds: readonly RowId[],
   y: number,
   height: number,
 ): RowLanding | null {
-  const found = bandAt(shown, y, height)
+  const found = bandAt(visibleRows, y, height)
   if (!found) return null
 
   const on = getLandingRow(found)
-  return on !== null && dragging.includes(on) ? null : found
+  return on !== null && dragIds.includes(on) ? null : found
 }
 
 /** The band a height falls in, as a landing. */
-function bandAt(shown: readonly ShownRow[], y: number, height: number): RowLanding | null {
+function bandAt(visibleRows: readonly ShownRow[], y: number, height: number): RowLanding | null {
   if (height <= 0 || y < 0) return null
 
   const at = Math.floor(y / height)
-  const row = shown[at]
+  const row = visibleRows[at]
   if (!row) return { into: null }
 
   const band = y - at * height
@@ -47,13 +47,13 @@ function bandAt(shown: readonly ShownRow[], y: number, height: number): RowLandi
   if (band < edge) return { before: row.id }
   if (band < height - edge) return { into: row.id }
 
-  const next = shown[at + 1]
+  const next = visibleRows[at + 1]
   return next ? { before: next.id } : { into: null }
 }
 
 /** The row a landing puts what is held inside. Null at the top level. */
-export const holderOf = (shown: readonly ShownRow[], at: RowLanding): RowId | null =>
-  'into' in at ? at.into : (shown.find((row) => row.id === at.before)?.parent ?? null)
+export const holderOf = (visibleRows: readonly ShownRow[], at: RowLanding): RowId | null =>
+  'into' in at ? at.into : (visibleRows.find((row) => row.id === at.before)?.parent ?? null)
 
 /**
  * Rows cannot land in one of themselves, nor in anything one of them holds.
@@ -61,16 +61,16 @@ export const holderOf = (shown: readonly ShownRow[], at: RowLanding): RowId | nu
  */
 export function isRefused(
   rows: readonly Row[],
-  dragging: readonly RowId[],
+  dragIds: readonly RowId[],
   into: RowId | null,
 ): boolean {
   if (into === null) return false
 
-  const lifted = new Set(dragging)
+  const lifted = new Set(dragIds)
   if (lifted.has(into)) return true
 
-  const below = (held: readonly Row[], within: boolean): boolean =>
-    held.some(
+  const below = (children: readonly Row[], within: boolean): boolean =>
+    children.some(
       (row) => (within && row.id === into) || below(row.rows ?? [], within || lifted.has(row.id)),
     )
 

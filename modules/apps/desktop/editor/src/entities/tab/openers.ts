@@ -22,7 +22,7 @@ export type EditorKind = NoteType | 'preset' | 'url'
 export type FileOpener = (
   path: string,
   title: string,
-  showing: PlexDestination,
+  where: PlexDestination,
   line?: number,
 ) => void
 
@@ -105,10 +105,10 @@ export function fileOpeners(vault: FileOpenerDeps) {
     path: string,
     title: string,
     type: EditorKind,
-    showing: PlexDestination = 'here',
+    where: PlexDestination = 'here',
     line?: number,
   ): void => {
-    editors.get(type)?.(path, title, showing, line)
+    editors.get(type)?.(path, title, where, line)
   }
 
   /**
@@ -116,15 +116,15 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * reader where a document stands there, or in the player where a recording
    * does. A path holding no source at all opens nothing.
    */
-  const opens = async (
+  const openFile = async (
     path: string,
     title = '',
-    showing: PlexDestination = 'here',
+    where: PlexDestination = 'here',
     line?: number,
   ): Promise<void> => {
     const kind = await fileKindAt(path)
     if (!kind) return
-    if (kind.kind === 'note') return void openNewFile(path, title, kind.type, showing, line)
+    if (kind.kind === 'note') return void openNewFile(path, title, kind.type, where, line)
     readerOf(kind)?.(path, [])
   }
 
@@ -134,14 +134,14 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * of a note's bytes names no line for the keyboard to stand on, so a note
    * opens whole.
    */
-  const opensAt = async (path: string, spans: readonly Span[]): Promise<void> => {
+  const openFileAt = async (path: string, spans: readonly Span[]): Promise<void> => {
     const kind = await fileKindAt(path)
     if (!kind) return
     if (kind.kind === 'note') return void openNewFile(path, '', kind.type)
     readerOf(kind)?.(path, spans)
   }
 
-  return { registerEditor, registerReader, opens, opensAt, made: openNewFile }
+  return { registerEditor, registerReader, openFile, openFileAt, openNewFile }
 }
 
 /** What the window puts files in front of the person with. */

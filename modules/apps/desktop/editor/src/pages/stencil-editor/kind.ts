@@ -45,7 +45,7 @@ export function useStencilTabs(
         if (!gone) return
         fields.forget(id)
         wire.forget(path, store.all().some((one) => store.where(one) === path))
-        handle.closes(tab)
+        handle.closeTab(tab)
       })
     }
 
@@ -118,17 +118,17 @@ export function useStencilTabs(
     onDestroy: () => {},
   }
 
-  const openStencil = (path: string, title = '', showing: PlexDestination = 'here'): void => {
+  const openStencil = (path: string, title = '', how: PlexDestination = 'here'): void => {
     const id = getOrCreateTabId(path)
     if (title) wire.setTitle(path, title)
-    void (showing === 'beside' ? handle.beside(STENCIL, id) : handle.opens(STENCIL, id))
+    void (how === 'beside' ? handle.beside(STENCIL, id) : handle.openTab(STENCIL, id))
   }
 
   tabOpeners.registerEditor('stencil', openStencil)
 
-  const applyPathChanges = (paths: readonly string[], renamed: readonly PathRename[] = []): void => {
-    wire.movePaths(renamed)
-    store.changed(paths, renamed)
+  const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[] = []): void => {
+    wire.movePaths(renames)
+    store.changed(paths, renames)
   }
 
   return {

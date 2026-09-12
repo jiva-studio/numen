@@ -111,9 +111,9 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   const road = tabOpeners()
   const stencils = useStencilTabs(one.core, held.handle, road, (text) => void said.push(text))
   held.registerKinds([stencils.kind])
-  const id = await held.opens(STENCIL, path)
+  const id = await held.openTabOfKind(STENCIL, path)
   await settle()
-  const tab = held.handle.holds<StencilTabState>(STENCIL, id) as StencilTabState
+  const tab = held.handle.getTabState<StencilTabState>(STENCIL, id) as StencilTabState
   return { ...one, held, road, stencils, id, tab, said }
 }
 
@@ -431,7 +431,7 @@ describe('a stencil renamed under the window', () => {
 
     one.stencils.changed(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
     await settle()
-    one.road.made('Beast.md', '', 'stencil')
+    one.road.openNewFile('Beast.md', '', 'stencil')
     await settle()
 
     expect(one.stencils.all()).toHaveLength(1)

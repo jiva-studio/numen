@@ -43,24 +43,24 @@ export function holdChanges(limits: HoldLimits = holding) {
   const ending = new Set<string>()
 
   /** A change was reported. */
-  const reportChange = (said: NoteEdit): TimerRequest | null => {
-    if (!said.isComplete) {
-      changes.set(said.path, {
-        id: said.change,
-        from: said.span.from,
-        to: said.span.to,
-        text: said.text,
+  const reportChange = (edit: NoteEdit): TimerRequest | null => {
+    if (!edit.isComplete) {
+      changes.set(edit.path, {
+        id: edit.change,
+        from: edit.span.from,
+        to: edit.span.to,
+        text: edit.text,
       })
-      ending.delete(said.path)
+      ending.delete(edit.path)
       // A change is drawn on the word of whoever is making it, and that word
       // stops arriving when an agent is stopped mid-call. The bound is what a
       // drawing nobody ends costs.
-      return { path: said.path, after: limits.abandoned }
+      return { path: edit.path, after: limits.abandoned }
     }
     // A change nobody is drawing ends nothing.
-    if (!changes.has(said.path)) return null
-    ending.add(said.path)
-    return { path: said.path, after: limits.bound }
+    if (!changes.has(edit.path)) return null
+    ending.add(edit.path)
+    return { path: edit.path, after: limits.bound }
   }
 
   /** The note changed under whatever is drawn over it. */

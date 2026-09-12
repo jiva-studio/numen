@@ -24,12 +24,12 @@ export interface HoldState {
 /**
  * Watch for a rest on a node.
  *
- * `ready` says whether the node will take one now; `reached` is called with the
+ * `ready` says whether the node will take one now; `onReach` is called with the
  * press that started it, which is the press the gesture then follows.
  */
 export function useHold(
   ready: () => boolean,
-  reached: (event: PointerEvent) => void,
+  onReach: (event: PointerEvent) => void,
   after: () => number = () => HOLD,
 ): HoldState {
   const held = ref<{ timer: number; x: number; y: number } | null>(null)
@@ -48,7 +48,7 @@ export function useHold(
       y: event.clientY,
       timer: window.setTimeout(() => {
         held.value = null
-        reached(event)
+        onReach(event)
       }, after()),
     }
   }

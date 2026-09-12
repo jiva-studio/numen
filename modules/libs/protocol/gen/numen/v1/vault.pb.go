@@ -153,9 +153,8 @@ type Scan struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Ready is set when the scan has finished.
 	Ready bool `protobuf:"varint,1,opt,name=ready,proto3" json:"ready,omitempty"`
-	// Why the scan stopped, when it stopped for a reason. A vault that could not
-	// be read is not an empty one.
-	Failed string `protobuf:"bytes,2,opt,name=failed,proto3" json:"failed,omitempty"`
+	// Error is why the scan stopped, when it stopped for a reason.
+	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	// Why the vault is not being followed, when it is not. Changes will only
 	// appear when something asks for them again.
 	Unwatched     string `protobuf:"bytes,3,opt,name=unwatched,proto3" json:"unwatched,omitempty"`
@@ -200,9 +199,9 @@ func (x *Scan) GetReady() bool {
 	return false
 }
 
-func (x *Scan) GetFailed() string {
+func (x *Scan) GetError() string {
 	if x != nil {
-		return x.Failed
+		return x.Error
 	}
 	return ""
 }
@@ -455,10 +454,10 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\"\n" +
 	"\x04scan\x18\x04 \x01(\v2\x0e.numen.v1.ScanR\x04scan\x123\n" +
-	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\"R\n" +
+	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\"P\n" +
 	"\x04Scan\x12\x14\n" +
-	"\x05ready\x18\x01 \x01(\bR\x05ready\x12\x16\n" +
-	"\x06failed\x18\x02 \x01(\tR\x06failed\x12\x1c\n" +
+	"\x05ready\x18\x01 \x01(\bR\x05ready\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1c\n" +
 	"\tunwatched\x18\x03 \x01(\tR\tunwatched\"u\n" +
 	"\rIndexCoverage\x12\x1f\n" +
 	"\vchunk_count\x18\x01 \x01(\x03R\n" +

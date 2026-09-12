@@ -250,8 +250,8 @@ const card = (
   id: string,
   section: string,
   stencilLink: string,
-  filled: readonly { field: string; text: string }[],
-) => ({ id, section, stencil: stencilLink, filled })
+  values: readonly { field: string; text: string }[],
+) => ({ id, section, stencil: stencilLink, filled: values })
 
 const CARDS = [
   card('gam', 'going', 'Root', [
@@ -472,7 +472,7 @@ const PLAYER: Player = {
   at: ref(47_200),
   duration: ref(RUNS),
   playing: ref(true),
-  failed: ref(''),
+  error: ref(''),
   load: () => {},
   play: () => {},
   pause: () => {},

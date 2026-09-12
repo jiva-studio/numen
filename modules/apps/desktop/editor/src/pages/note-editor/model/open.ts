@@ -33,7 +33,7 @@ export function createNoteTab(
     void notes.shut(id).then((gone) => {
       if (!gone) return
       names.forgetTab(id)
-      handle.closes(tab)
+      handle.closeTab(tab)
     })
   }
 
@@ -42,7 +42,7 @@ export function createNoteTab(
     const from = notes.where(id)
     void vault.resolve(from, [url]).then((landed) => {
       const path = landed.get(url)
-      if (path) void tabOpeners.opens(path, '', 'beside')
+      if (path) void tabOpeners.openFile(path, '', 'beside')
     })
   }
 

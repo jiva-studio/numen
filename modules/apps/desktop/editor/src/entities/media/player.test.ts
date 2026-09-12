@@ -200,7 +200,7 @@ describe('a recording played', () => {
     await Promise.resolve()
 
     expect(plays.playing.value).toBe(false)
-    expect(plays.failed.value).toBe(WORDS.unreadable)
+    expect(plays.error.value).toBe(WORDS.unreadable)
   })
 
   it('says nothing of a play the window itself cut short', async () => {
@@ -214,7 +214,7 @@ describe('a recording played', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(plays.failed.value).toBe('')
+    expect(plays.error.value).toBe('')
   })
 
   it('stops where the person stops it, and stands where it stopped', () => {
@@ -274,7 +274,7 @@ describe('a recording the player could not read', () => {
 
     setError(2)
 
-    expect(plays.failed.value).toBe(WORDS.unreached)
+    expect(plays.error.value).toBe(WORDS.unreached)
   })
 
   it('says the recording could not be played where it named no code', () => {
@@ -283,7 +283,7 @@ describe('a recording the player could not read', () => {
 
     setError(9)
 
-    expect(plays.failed.value).toBe(WORDS.unreadable)
+    expect(plays.error.value).toBe(WORDS.unreadable)
   })
 
   it('says nothing again once another recording takes the player', () => {
@@ -293,7 +293,7 @@ describe('a recording the player could not read', () => {
 
     plays.load(OTHER)
 
-    expect(plays.failed.value).toBe('')
+    expect(plays.error.value).toBe('')
   })
 })
 
@@ -325,6 +325,6 @@ describe('the element a window plays through', () => {
 
     expect(plays.url.value).toBe('')
     expect(plays.playing.value).toBe(false)
-    expect(plays.failed.value).toBe(WORDS.unreadable)
+    expect(plays.error.value).toBe(WORDS.unreadable)
   })
 })

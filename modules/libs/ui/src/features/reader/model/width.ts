@@ -20,17 +20,17 @@ export interface PageWidthState {
   /** What the row asks for its pages at, in device pixels. */
   readonly needed: ComputedRef<number>
   /** What each page is asked for at, which follows that once it has settled. */
-  readonly drawnAt: Ref<number>
+  readonly drawnWidth: Ref<number>
 }
 
-export function usePageWidth(laid: () => Row, atWidth: (pixels: number) => void): PageWidthState {
+export function usePageWidth(getRow: () => Row, atWidth: (pixels: number) => void): PageWidthState {
   /** The widest page there is, staged, in device pixels. */
   const needed = computed(() => {
-    const widest = laid().widths.reduce((most, each) => Math.max(most, each), 0)
+    const widest = getRow().widths.reduce((most, each) => Math.max(most, each), 0)
     return widest > 0 ? stageWidth(widest * pixelRatio()) : 0
   })
 
-  const drawnAt = ref(0)
+  const drawnWidth = ref(0)
   let settling: ReturnType<typeof setTimeout> | undefined
 
   // The first width is asked for at once: a document opening has nothing drawn
@@ -38,13 +38,13 @@ export function usePageWidth(laid: () => Row, atWidth: (pixels: number) => void)
   watch(needed, (pixels, before) => {
     if (!pixels) return
     if (!before) {
-      drawnAt.value = pixels
+      drawnWidth.value = pixels
       atWidth(pixels)
       return
     }
     clearTimeout(settling)
     settling = setTimeout(() => {
-      drawnAt.value = pixels
+      drawnWidth.value = pixels
       atWidth(pixels)
     }, SETTLED)
   })
@@ -53,5 +53,5 @@ export function usePageWidth(laid: () => Row, atWidth: (pixels: number) => void)
     clearTimeout(settling)
   })
 
-  return { needed, drawnAt }
+  return { needed, drawnWidth }
 }

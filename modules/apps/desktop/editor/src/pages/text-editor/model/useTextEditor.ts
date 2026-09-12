@@ -68,11 +68,11 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
    * the settings cannot be read out of is refused, and every row of the settings
    * page is read again once one has been written.
    */
-  const writes = async (seen: string | null): Promise<void> => {
+  const writes = async (baseline: string | null): Promise<void> => {
     if (!read.value) return
     let answer: Awaited<ReturnType<TextEditorTabDeps['saveSettingsFile']>>
     try {
-      answer = await core.saveSettingsFile(typed.value, seen)
+      answer = await core.saveSettingsFile(typed.value, baseline)
     } catch (thrown) {
       wrong.value = `${words.unwritten} ${formatErrorMessage(thrown)}`
       return

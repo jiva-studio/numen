@@ -5,14 +5,14 @@ import { writer } from '@/testing/writer'
 import { WORDS as words } from '@/shared/words'
 
 /** The vault, answering what the settings hold and keeping what was written. */
-const vault = (held: boolean, refuses: string | null = null) => {
+const vault = (isOn: boolean, error: string | null = null) => {
   const wrote: boolean[] = []
   return {
     wrote,
-    getSyncEnabled: async () => held,
+    getSyncEnabled: async () => isOn,
     setSyncEnabled: async (kept: boolean) => {
       wrote.push(kept)
-      return refuses
+      return error
     },
   }
 }

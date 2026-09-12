@@ -30,12 +30,12 @@ export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: Fil
   const getFrontState = (): FilesTabState | null => handle.last<FilesTabState>(FILES)?.state ?? null
 
   const revealPath = async (path: string) => {
-    const id = await handle.opens(FILES)
-    await handle.holds<FilesTabState>(FILES, id)?.list.revealPath(path)
+    const id = await handle.openTab(FILES)
+    await handle.getTabState<FilesTabState>(FILES, id)?.list.revealPath(path)
   }
 
-  const refreshChangedPaths = (paths: readonly string[], renamed: readonly PathRename[] = []) =>
-    getFrontState()?.list.refreshChanged(paths, renamed) ?? Promise.resolve()
+  const refreshChangedPaths = (paths: readonly string[], renames: readonly PathRename[] = []) =>
+    getFrontState()?.list.refreshChanged(paths, renames) ?? Promise.resolve()
 
   return { kind, revealPath, refreshChangedPaths }
 }

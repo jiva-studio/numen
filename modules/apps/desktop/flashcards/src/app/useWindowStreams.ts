@@ -72,8 +72,8 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
             id: at.id,
             doing: at.doing,
             about: at.about,
-            failed: at.failed,
-            asked: at.asked,
+            error: at.error,
+            isAsked: at.asked,
           })),
         )
       },

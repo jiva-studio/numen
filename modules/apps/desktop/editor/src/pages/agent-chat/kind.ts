@@ -37,8 +37,8 @@ export function agentKind(handle: WindowHandle, opens: () => AgentTabState, abou
 
   /** Something to ask, put in the agent the person was last in and put in front. */
   const askQuestion = async (text: string) => {
-    const id = handle.last<AgentTabState>(AGENT)?.id ?? (await handle.opens(AGENT))
-    handle.holds<AgentTabState>(AGENT, id)?.setQuestion(text)
+    const id = handle.last<AgentTabState>(AGENT)?.id ?? (await handle.openTab(AGENT))
+    handle.getTabState<AgentTabState>(AGENT, id)?.setQuestion(text)
     handle.show(id)
   }
 

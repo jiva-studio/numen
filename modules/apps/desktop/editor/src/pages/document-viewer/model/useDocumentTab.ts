@@ -14,8 +14,8 @@ export function useDocumentTab(read: DocumentReaderState) {
   /** The page of this document, for as long as its tab is drawn. */
   const page = shallowRef<PageHandle | null>(null)
 
-  const setPageHandle = (drawn: unknown) => {
-    page.value = (drawn as PageHandle | null) ?? null
+  const setPageHandle = (handle: unknown) => {
+    page.value = (handle as PageHandle | null) ?? null
   }
 
   const measure = () => page.value?.measure()

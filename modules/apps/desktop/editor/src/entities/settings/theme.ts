@@ -101,16 +101,16 @@ export const themes: Themes = {
         interfaceScale: sizes.interfaceScale,
         textScale: sizes.textScale,
       })
-    ).failed,
+    ).error,
   changed: async function* (signal) {
     for await (const said of theme.watchThemes({}, { signal })) yield said.names
   },
 }
 
 /** How far a size goes. A bound the application left out is no bound at all. */
-const parseBounds = (said: { least: number; most: number } | undefined): Bounds => ({
-  least: said?.least ?? 0,
-  most: said?.most ?? 0,
+const parseBounds = (bounds: { least: number; most: number } | undefined): Bounds => ({
+  least: bounds?.least ?? 0,
+  most: bounds?.most ?? 0,
 })
 
 /**

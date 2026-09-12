@@ -73,15 +73,15 @@ const meta: Meta<Knobs> = {
       }
 
       /** An answer that arrives a few characters at a time. */
-      const onSubmit = (asked: string) => {
-        turns.value.push(createAsked(`${++next}`, asked))
+      const onSubmit = (message: string) => {
+        turns.value.push(createAsked(`${++next}`, message))
         text.value = ''
         working.value = true
 
         const id = `${++next}`
         turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
 
-        const reply = `About “${asked}”. ${LONG}`
+        const reply = `About “${message}”. ${LONG}`
         let at = 0
         tick = setInterval(() => {
           at = Math.min(reply.length, at + 3)

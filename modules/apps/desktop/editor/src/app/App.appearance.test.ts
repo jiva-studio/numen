@@ -84,11 +84,11 @@ describe('the four commands over how the window is drawn', () => {
   ]
 
   /** The commands open, and the one the words typed name taken up. */
-  const over = async (typed: string) => {
+  const over = async (words: string) => {
     const window = await mountWindowWithPalette()
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
     await settle()
-    await type(typed)
+    await type(words)
     await press('Enter')
     return window
   }
@@ -394,7 +394,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('says what the settings refused, where the window says what it could not do', async () => {
-      said.refused = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
+      said.writeError = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
       const window = await over('interface')
       await press('End')
 

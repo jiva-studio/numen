@@ -16,25 +16,25 @@ export interface DestinationDeps {
    * A source put in front of the person at a span of its own text, in the
    * editor made for what it is.
    */
-  opensAt(path: string, run: { from: number; to: number }): Promise<void>
+  openFileAt(path: string, run: { from: number; to: number }): Promise<void>
   /**
    * A file put in front of the person, in the editor made for what it is, at
    * the line it was chosen at.
    */
-  opens(path: string, title: string, line?: number): void
+  openFile(path: string, title: string, line?: number): void
 }
 
 /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
 export async function openDestination(
-  going: SearchDestination | null,
+  destination: SearchDestination | null,
   places: DestinationDeps,
 ): Promise<void> {
-  if (!going) return
-  if (going.at === 'plex') return void places.travel(going.path)
-  if (going.at === 'document') {
-    const from = going.start ?? 0
-    await places.opensAt(going.path, { from, to: from + (going.length ?? 0) })
+  if (!destination) return
+  if (destination.at === 'plex') return void places.travel(destination.path)
+  if (destination.at === 'document') {
+    const from = destination.start ?? 0
+    await places.openFileAt(destination.path, { from, to: from + (destination.length ?? 0) })
     return
   }
-  places.opens(going.path, going.title || going.path, going.line)
+  places.openFile(destination.path, destination.title || destination.path, destination.line)
 }

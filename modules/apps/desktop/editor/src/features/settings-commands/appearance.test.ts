@@ -30,12 +30,12 @@ const createStyle = (sheet: Document, is: string, css: string): HTMLStyleElement
 }
 
 /** A page as the window's handler serves one: the link, then the three elements. */
-const page = (served = SERVED): Document => {
+const page = (css = SERVED): Document => {
   const sheet = document.implementation.createHTMLDocument('numen')
   sheet.head.append(
     sheet.createElement('link'),
     createStyle(sheet, IS_MODE, PAIR),
-    createStyle(sheet, IS_THEME, served),
+    createStyle(sheet, IS_THEME, css),
     createStyle(sheet, IS_SIZES, SIZED),
   )
   return sheet
@@ -105,15 +105,15 @@ const folder = () => {
 }
 
 /** The window wearing a theme, over a page a test can read the head of. */
-const window = (over: Partial<Appearance> = {}, served = SERVED) => {
-  const sheet = page(served)
+const window = (over: Partial<Appearance> = {}, css = SERVED) => {
+  const sheet = page(css)
   const said = folder()
   const asked: string[] = []
   const chosen: string[] = []
   let appearance: Appearance = { ...APPEARANCE, ...over }
   let listed = 0
   let failed = ''
-  let refused = ''
+  let textError = ''
   const texts: Record<string, string> = {}
   const core: Themes = {
     appearance: async () => {
@@ -122,7 +122,7 @@ const window = (over: Partial<Appearance> = {}, served = SERVED) => {
     },
     text: async (name) => {
       asked.push(name)
-      if (refused) throw new Error(refused)
+      if (textError) throw new Error(textError)
       return texts[name] ?? `:root { --numen-surface: ${name} }`
     },
     chooses: async (name, mode, sizes) => {
@@ -147,15 +147,15 @@ const window = (over: Partial<Appearance> = {}, served = SERVED) => {
     says: said.says,
     listed: () => listed,
     writes: (name: string, css: string) => (texts[name] = css),
-    fails: (why: string) => (failed = why),
-    refuses: (why: string) => (refused = why),
+    fails: (error: string) => (failed = error),
+    failsText: (error: string) => (textError = error),
     holds: (next: Partial<Appearance>) => (appearance = { ...appearance, ...next }),
   }
 }
 
 /** The window listing what it can wear, over a page it was served dressed. */
-const startWindow = async (over: Partial<Appearance> = {}, served = SERVED) => {
-  const one = window(over, served)
+const startWindow = async (over: Partial<Appearance> = {}, css = SERVED) => {
+  const one = window(over, css)
   await one.worn.start()
   await settle()
   return one
@@ -264,7 +264,7 @@ describe('the theme the keyboard is standing on', () => {
   it('is said to be unreadable where its file is, and the window keeps what it wears', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const one = await startWindow()
-    one.refuses('the file is gone')
+    one.failsText('the file is gone')
 
     one.worn.previewItem('mine:sea')
     await settle()
@@ -460,8 +460,8 @@ describe('the sizes the two steps offer', () => {
 })
 
 describe('the number a person types at a size', () => {
-  const rows = (one: Awaited<ReturnType<typeof startWindow>>, command: string, typed: string) =>
-    one.worn.sizes(command, typed).flatMap((group) => group.items)
+  const rows = (one: Awaited<ReturnType<typeof startWindow>>, command: string, text: string) =>
+    one.worn.sizes(command, text).flatMap((group) => group.items)
 
   it('stands as a row of its own, in its place between the steps', async () => {
     const one = await startWindow()
@@ -479,7 +479,7 @@ describe('the number a person types at a size', () => {
   it('is taken with the sign a person reads on the rows, and with none', async () => {
     const one = await startWindow()
 
-    const getTitles = (typed: string) => rows(one, INTERFACE_SCALE, typed).map((row) => row.title)
+    const getTitles = (text: string) => rows(one, INTERFACE_SCALE, text).map((row) => row.title)
     expect(getTitles('137%')).toStrictEqual(getTitles('137'))
     expect(getTitles(' 137 ')).toStrictEqual(getTitles('137'))
   })

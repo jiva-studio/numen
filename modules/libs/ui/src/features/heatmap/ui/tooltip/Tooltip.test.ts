@@ -28,12 +28,12 @@ afterEach(() => {
 
 const ROOM = { width: 1000, height: 800 }
 
-const about = (held: Partial<Box> = {}): Box => ({
+const about = (overrides: Partial<Box> = {}): Box => ({
   x: 100,
   y: 200,
   width: 20,
   height: 20,
-  ...held,
+  ...overrides,
 })
 
 /** Drawn, and placed: the size it turned out to be reaches the style on the

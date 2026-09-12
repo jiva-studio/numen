@@ -51,10 +51,10 @@ const createRenameResult = (over: Partial<RenameResult> = {}): RenameResult => (
 })
 
 /** What an artifact now stands at, as the application answers it. */
-const outcome = (of: Artifact, made: ArtifactState, error = ''): Outcome => ({
+const outcome = (of: Artifact, state: ArtifactState, error = ''): Outcome => ({
   able: true,
   of,
-  made,
+  made: state,
   error,
 })
 
@@ -88,14 +88,14 @@ const window = (
     turnedDown?: VaultErrorCode
     /** What moving a file came back with. */
     movement?: Movement
-    /** What making a folder was refused with. */
-    folderRefused?: ErrorCode
+    /** What making a folder came back with. */
+    folderError?: ErrorCode
     /** What the file in front carries. */
     carries?: ArtifactStates
     /** How asking for an artifact of a file came out. */
     outcome?: Outcome
-    /** What deleting the text was refused with. */
-    deleteRefused?: string
+    /** What deleting the text came back with. */
+    deleteError?: string
     /** Whether this build cannot delete the text at all. */
     undeletable?: boolean
   } = {},
@@ -110,25 +110,25 @@ const window = (
   const runs = runSupport()
   const on: CommandDeps = {
     files: {
-      makes: async (title, from, seat) => {
-        done.push(`makes ${title} ${from || '—'} ${seat ?? '—'}`)
+      createNote: async (title, from, seat) => {
+        done.push(`createNote ${title} ${from || '—'} ${seat ?? '—'}`)
         return answers.made === false ? null : { path: `${title}.md`, title }
       },
-      renames: async (path, title) => {
-        done.push(`renames ${path} ${title}`)
+      rename: async (path, title) => {
+        done.push(`rename ${path} ${title}`)
         return answers.renamed ?? createRenameResult()
       },
-      removes: async (path, destroy) => {
-        done.push(`removes ${path} ${destroy}`)
+      remove: async (path, destroy) => {
+        done.push(`remove ${path} ${destroy}`)
         return answers.removed ?? createRemoveResult()
       },
-      moves: async (from, to) => {
-        done.push(`moves ${from} ${to}`)
+      move: async (from, to) => {
+        done.push(`move ${from} ${to}`)
         return answers.movement ?? { moved: null, error: null }
       },
-      makesFolder: async (path) => {
-        done.push(`makes folder ${path}`)
-        return answers.folderRefused ?? null
+      createFolder: async (path) => {
+        done.push(`createFolder ${path}`)
+        return answers.folderError ?? null
       },
     },
     runs: {
@@ -150,8 +150,8 @@ const window = (
       },
       deleteTranscript: async (path: string) => {
         done.push(`deletes the text of ${path}`)
-        if (answers.deleteRefused)
-          throw new ConnectError(answers.deleteRefused, Code.FailedPrecondition)
+        if (answers.deleteError)
+          throw new ConnectError(answers.deleteError, Code.FailedPrecondition)
         return answers.undeletable !== true
       },
       deleteCopy: async (path: string) => {
@@ -183,9 +183,9 @@ const window = (
       asking: () => answers.asking === true,
       settle: async (id) => void done.push(`settle ${id}`),
       close: (id) => void done.push(`close ${id}`),
-      opens: (path, title, showing) => void done.push(`opens ${path} ${title} ${showing}`),
-      made: (path, title, type, showing) =>
-        void done.push(`made ${type} ${path} ${title} ${showing}`),
+      openFile: (path, title, showing) => void done.push(`openFile ${path} ${title} ${showing}`),
+      openNewFile: (path, title, type, showing) =>
+        void done.push(`openNewFile ${type} ${path} ${title} ${showing}`),
     },
     vaults: {
       list: async () => ({ vaults: [createVault('physics', 'Physics')], showing: 'physics' }),
@@ -213,15 +213,15 @@ const window = (
       reload: () => void done.push('reloads'),
     },
     goes: {
-      reveals: (path) => void done.push(`reveals ${path}`),
+      revealPath: (path) => void done.push(`revealPath ${path}`),
       travel: async (path) => void done.push(`travel ${path}`),
       leave: async (from, to) => void done.push(`leave ${from} ${to}`),
       opening: () => 'Root.md',
-      opens: (kind) => void done.push(`opens ${kind}`),
+      openTab: (kind) => void done.push(`openTab ${kind}`),
       preset: async (path) => void done.push(`preset ${path}`),
-      closes: (tab) => void done.push(`closes ${tab}`),
+      closeTab: (tab) => void done.push(`closeTab ${tab}`),
       ask: (text) => void done.push(`ask ${text}`),
-      searches: () => void done.push('searches'),
+      search: () => void done.push('search'),
     },
     settings: {
       appearance: async (chosen) => void done.push(`appearance ${chosen}`),
@@ -262,8 +262,8 @@ describe('a note put in front of the person', () => {
     await carry(invocationOf('beside', front()), one.on)
 
     expect(one.done).toStrictEqual([
-      'opens physics/Ontology.md Ontology here',
-      'opens physics/Ontology.md Ontology beside',
+      'openFile physics/Ontology.md Ontology here',
+      'openFile physics/Ontology.md Ontology beside',
     ])
   })
 
@@ -326,7 +326,7 @@ describe('a note made', () => {
 
     await carry(invocationOf('child', front(), 'Entropy'), one.on)
 
-    expect(one.done[0]).toBe('makes Entropy physics/Ontology.md child')
+    expect(one.done[0]).toBe('createNote Entropy physics/Ontology.md child')
   })
 
   it('stands on its own where no seat was asked for', async () => {
@@ -334,7 +334,7 @@ describe('a note made', () => {
 
     await carry(invocationOf('note', front(), 'Entropy'), one.on)
 
-    expect(one.done[0]).toBe('makes Entropy — —')
+    expect(one.done[0]).toBe('createNote Entropy — —')
   })
 
   it('is travelled to in the plex the person is looking at', async () => {
@@ -350,7 +350,7 @@ describe('a note made', () => {
 
     await carry(invocationOf('child', front({ kind: 'note' }), 'Entropy'), one.on)
 
-    expect(one.done.at(-1)).toBe('made note Entropy.md Entropy beside')
+    expect(one.done.at(-1)).toBe('openNewFile note Entropy.md Entropy beside')
   })
 
   it('takes the person nowhere where the vault would not make it', async () => {
@@ -358,7 +358,7 @@ describe('a note made', () => {
 
     await carry(invocationOf('child', front(), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual(['makes Entropy physics/Ontology.md child'])
+    expect(one.done).toStrictEqual(['createNote Entropy physics/Ontology.md child'])
   })
 
   it('is nothing at all where nothing was typed', async () => {
@@ -388,8 +388,8 @@ const REACHED: readonly ArtifactState[] = [
 ]
 
 /** An artifact of the recording in front asked for, as it came out. */
-const createArtifactRun = (made: ArtifactState, error = '') => {
-  const one = window({ outcome: outcome('transcript', made, error) })
+const createArtifactRun = (state: ArtifactState, error = '') => {
+  const one = window({ outcome: outcome('transcript', state, error) })
   return { one, invocation: invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })) }
 }
 
@@ -497,7 +497,7 @@ describe('the transcript of a recording deleted', () => {
 
   it('says what the application refused, in the words it sent', async () => {
     const why = 'this recording is being listened to'
-    const one = window({ deleteRefused: why })
+    const one = window({ deleteError: why })
 
     await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
@@ -521,7 +521,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual(['settle held', 'renames physics/Ontology.md Entropy'])
+    expect(one.done).toStrictEqual(['settle held', 'rename physics/Ontology.md Entropy'])
   })
 
   it('is refused while the note is waiting on the person', async () => {
@@ -546,7 +546,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front({ path: 'Elsewhere.md' }), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual(['renames Elsewhere.md Entropy'])
+    expect(one.done).toStrictEqual(['rename Elsewhere.md Entropy'])
   })
 
   it('is left alone where the name it was given is the name it has', async () => {
@@ -612,7 +612,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front()), one.on)
 
-    expect(one.done.slice(0, 2)).toStrictEqual(['settle held', 'removes physics/Ontology.md false'])
+    expect(one.done.slice(0, 2)).toStrictEqual(['settle held', 'remove physics/Ontology.md false'])
   })
 
   it('goes off the disk where destroying was what was asked', async () => {
@@ -620,7 +620,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('destroy', front(), 'Ontology'), one.on)
 
-    expect(one.done[1]).toBe('removes physics/Ontology.md true')
+    expect(one.done[1]).toBe('remove physics/Ontology.md true')
   })
 
   /** The row has gone from the tree, which is the whole of what a person needs. */
@@ -679,7 +679,7 @@ describe('a note removed', () => {
     await carry(invocationOf('remove', front()), one.on)
 
     expect(one.said).toStrictEqual([words.errors.missing])
-    expect(one.done.at(-1)).toBe('removes physics/Ontology.md false')
+    expect(one.done.at(-1)).toBe('remove physics/Ontology.md false')
   })
 
   it('is refused while the note is waiting on the person', async () => {
@@ -700,9 +700,9 @@ describe('several files removed at once', () => {
 
     await carry(invocationOf('remove', both), one.on)
 
-    expect(one.done.filter((step) => step.startsWith('removes'))).toStrictEqual([
-      'removes physics/Ontology.md false',
-      'removes physics/Heat.pdf false',
+    expect(one.done.filter((step) => step.startsWith('remove'))).toStrictEqual([
+      'remove physics/Ontology.md false',
+      'remove physics/Heat.pdf false',
     ])
   })
 
@@ -731,8 +731,8 @@ describe('several files removed at once', () => {
       ...one.on,
       files: {
         ...one.on.files,
-        removes: async (path, destroy) => {
-          one.done.push(`removes ${path} ${destroy}`)
+        remove: async (path, destroy) => {
+          one.done.push(`remove ${path} ${destroy}`)
           return createRemoveResult(path === 'physics/Ontology.md' ? { error: 'missing' } : {})
         },
       },
@@ -740,9 +740,9 @@ describe('several files removed at once', () => {
 
     await carry(invocationOf('remove', both), picky)
 
-    expect(one.done.filter((step) => step.startsWith('removes'))).toStrictEqual([
-      'removes physics/Ontology.md false',
-      'removes physics/Heat.pdf false',
+    expect(one.done.filter((step) => step.startsWith('remove'))).toStrictEqual([
+      'remove physics/Ontology.md false',
+      'remove physics/Heat.pdf false',
     ])
     expect(one.said).toStrictEqual([words.errors.missing])
   })
@@ -757,7 +757,7 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.done).toStrictEqual(['settle held', 'moves physics/Ontology.md notes/Ontology.md'])
+    expect(one.done).toStrictEqual(['settle held', 'move physics/Ontology.md notes/Ontology.md'])
   })
 
   it('settles the tab holding it before its file goes anywhere', async () => {
@@ -766,7 +766,7 @@ describe('a file filed somewhere else', () => {
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
     expect(one.done.indexOf('settle held')).toBeLessThan(
-      one.done.indexOf('moves physics/Ontology.md notes/Ontology.md'),
+      one.done.indexOf('move physics/Ontology.md notes/Ontology.md'),
     )
   })
 
@@ -810,11 +810,11 @@ describe('a folder made', () => {
 
     await carry(invocationOf('makeFolder', front(), 'physics/heat'), one.on)
 
-    expect(one.done).toStrictEqual(['makes folder physics/heat'])
+    expect(one.done).toStrictEqual(['createFolder physics/heat'])
   })
 
   it('is not made where something of that name is filed there', async () => {
-    const one = window({ folderRefused: 'occupied' })
+    const one = window({ folderError: 'occupied' })
 
     await carry(invocationOf('makeFolder', front(), 'physics/heat'), one.on)
 
@@ -840,7 +840,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(invocationOf('title', front(), 'Substance', 'held'), one.on)
 
-    expect(one.done).toStrictEqual(['settle held', 'renames physics/Being.md Substance'])
+    expect(one.done).toStrictEqual(['settle held', 'rename physics/Being.md Substance'])
   })
 
   it('is removed where it stands now', async () => {
@@ -848,7 +848,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
-    expect(one.done.slice(0, 2)).toStrictEqual(['settle held', 'removes physics/Being.md false'])
+    expect(one.done.slice(0, 2)).toStrictEqual(['settle held', 'remove physics/Being.md false'])
   })
 
   it('is left at the name it was made over where no tab holds it', async () => {
@@ -856,7 +856,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(invocationOf('remove', front()), one.on)
 
-    expect(one.done[0]).toBe('removes physics/Ontology.md false')
+    expect(one.done[0]).toBe('remove physics/Ontology.md false')
   })
 })
 
@@ -868,7 +868,7 @@ describe('a command over the window', () => {
     await carry(invocationOf('agent', front()), one.on)
     await carry(invocationOf('close', front()), one.on)
 
-    expect(one.done).toStrictEqual(['opens plex', 'opens agent', 'closes tab'])
+    expect(one.done).toStrictEqual(['openTab plex', 'openTab agent', 'closeTab tab'])
   })
 
   it('hands the field back to the search', async () => {
@@ -876,7 +876,7 @@ describe('a command over the window', () => {
 
     await carry(invocationOf('find', front()), one.on)
 
-    expect(one.done).toStrictEqual(['searches'])
+    expect(one.done).toStrictEqual(['search'])
   })
 
   it('hands over the row that was chosen, and nothing about the note in front', async () => {
@@ -1071,7 +1071,7 @@ describe('nothing to carry out', () => {
     const one = window()
     const broken: CommandDeps = {
       ...one.on,
-      files: { ...one.on.files, removes: async () => Promise.reject(new Error('gone')) },
+      files: { ...one.on.files, remove: async () => Promise.reject(new Error('gone')) },
     }
 
     await runInvocation(invocationOf('remove', front()), broken, words)
@@ -1084,20 +1084,20 @@ describe('nothing to carry out', () => {
 
 describe('the open files a command reaches', () => {
   /** One store, holding one file open at one path under one identity. */
-  const store = (id: string, path: string, done: string[]): Store => ({
+  const store = (id: string, path: string, steps: string[]): Store => ({
     has: (one) => one === id,
     where: (one) => (one === id ? path : one),
     getTitle: (one) => (one === id ? `${id} called` : ''),
     asking: () => false,
-    settle: async (one) => void done.push(`settle ${one}`),
-    close: (one) => void done.push(`close ${one}`),
+    settle: async (one) => void steps.push(`settle ${one}`),
+    close: (one) => void steps.push(`close ${one}`),
     holding: (one) => (one === path ? id : null),
   })
 
   const over = () => {
     const done: string[] = []
     const stores = [store('note', 'Ontology.md', done), store('Animals.md', 'Animals.md', done)]
-    return { done, notes: createNotes(stores, { opens: () => {}, made: () => {} }) }
+    return { done, notes: createNotes(stores, { openFile: () => {}, openNewFile: () => {} }) }
   }
 
   it('is the tab of whichever store stands at the file', () => {

@@ -24,7 +24,7 @@ export interface MenuRequest {
 
 /** Making a note from the picture, and joining two that are already on it. */
 export interface PlexEditor {
-  make(from: string, seat: PlexRelatedSeat): Promise<unknown>
+  createInSeat(from: string, seat: PlexRelatedSeat): Promise<unknown>
   join(from: string, to: string, seat: PlexRelatedSeat): Promise<boolean>
 }
 
@@ -34,14 +34,14 @@ export interface PlexTabDeps {
   readonly ready: Readonly<Ref<boolean>>
   readonly hangs: Readonly<Ref<boolean>>
   readonly parts: Readonly<Ref<number>>
-  opens(path: string, title: string, showing: PlexDestination, line?: number): void
+  openNote(path: string, title: string, showing: PlexDestination, line?: number): void
   inside(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
-  asks(text: string): void
-  runs(id: string, path: string, title: string): void
+  askAgent(text: string): void
+  runCommand(id: string, path: string, title: string): void
   readonly opening: Readonly<Ref<string>>
   readonly dragged: Readonly<Ref<readonly string[]>>
-  says(text: string): void
-  writes(): Promise<string>
+  showMessage(text: string): void
+  createUntitledNote(): Promise<string>
   first(): Promise<string>
   readonly creatable: readonly PlexRelatedSeat[]
 }

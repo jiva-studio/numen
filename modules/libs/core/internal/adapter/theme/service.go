@@ -133,19 +133,19 @@ func (s *Service) WriteAppearance(
 	_ context.Context,
 	req *connect.Request[v1.WriteAppearanceRequest],
 ) (*connect.Response[v1.WriteAppearanceResponse], error) {
-	failed := func(why string) (*connect.Response[v1.WriteAppearanceResponse], error) {
-		return connect.NewResponse(&v1.WriteAppearanceResponse{Failed: why}), nil
+	refuse := func(reason string) (*connect.Response[v1.WriteAppearanceResponse], error) {
+		return connect.NewResponse(&v1.WriteAppearanceResponse{Error: reason}), nil
 	}
 
 	name := req.Msg.GetName()
 	if _, err := s.Catalogue.Text(name); err != nil {
-		return failed(err.Error())
+		return refuse(err.Error())
 	}
 	if req.Msg.GetMode() == v1.Mode_MODE_UNSPECIFIED {
-		return failed(fmt.Sprintf("%s: which half of a pair to read was not said", name))
+		return refuse(fmt.Sprintf("%s: which half of a pair to read was not said", name))
 	}
 	if s.Settings == nil {
-		return failed("this build writes no settings")
+		return refuse("this build writes no settings")
 	}
 	chosen := Appearance{
 		ThemeName:      name,
@@ -154,7 +154,7 @@ func (s *Service) WriteAppearance(
 		TextScale:      req.Msg.GetTextScale(),
 	}
 	if err := s.Settings.Write(chosen); err != nil {
-		return failed(err.Error())
+		return refuse(err.Error())
 	}
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }

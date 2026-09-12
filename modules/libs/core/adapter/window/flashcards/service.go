@@ -142,8 +142,8 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
 	// The vault is brought up to date before it is counted. Nothing is counted
 	// from a walk half done, and the numbers arrive with the count that the
 	// finished walk wakes.
-	if underway, failed := a.reading(ctx, v); underway || failed != "" {
-		one.Reading, one.Unread = underway, failed
+	if underway, reason := a.reading(ctx, v); underway || reason != "" {
+		one.Reading, one.Unread = underway, reason
 		return one
 	}
 

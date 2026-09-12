@@ -51,7 +51,7 @@ const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
 const soThat = (
   id: string,
   says: string,
-  how: { about?: string; tone?: Tone; asked?: boolean } = {},
+  how: { about?: string; tone?: Tone; isAsked?: boolean } = {},
 ): readonly Notice[] =>
   says === ''
     ? []
@@ -62,7 +62,7 @@ const soThat = (
           about: how.about ?? '',
           tone: how.tone ?? 'plain',
           working: false,
-          asked: how.asked ?? true,
+          isAsked: how.isAsked ?? true,
           stay: 'holds',
         },
       ]
@@ -84,18 +84,13 @@ const isSameReason = (outer: string, inner: string): boolean =>
  */
 const alone = (tasks: readonly Task[]): readonly Task[] =>
   tasks.filter((at, index) => {
-    const atFailed = at.failureReason ?? at.failed
-    if (atFailed === '') return true
+    if (at.error === '') return true
     return !tasks.some(
-      (other, was) => {
-        const otherFailed = other.failureReason ?? other.failed
-        return (
-          otherFailed !== '' &&
-          other !== at &&
-          isSameReason(atFailed, otherFailed) &&
-          (otherFailed.length < atFailed.length || was < index)
-        )
-      },
+      (other, was) =>
+        other.error !== '' &&
+        other !== at &&
+        isSameReason(at.error, other.error) &&
+        (other.error.length < at.error.length || was < index),
     )
   })
 
@@ -108,7 +103,7 @@ const alone = (tasks: readonly Task[]): readonly Task[] =>
  */
 export const cornerOf = (
   tasks: readonly Task[],
-  told: readonly WindowMessage[],
+  messages: readonly WindowMessage[],
   state: State,
   vault: IndexCoverage,
   words: Words,
@@ -132,14 +127,14 @@ export const cornerOf = (
       !state.reading && !state.holds && state.unread ? words.nothingRead : '',
     ),
     // Said once and quietly, and it is so whether or not anything is running.
-    ...soThat('wordsOnly', wordsOnly(vault) ? words.wordsOnly : '', { asked: false }),
+    ...soThat('wordsOnly', wordsOnly(vault) ? words.wordsOnly : '', { isAsked: false }),
   ]
 
-  const said: Notice[] = told.map((one) => ({
+  const said: Notice[] = messages.map((one) => ({
     id: one.id,
     says: one.text,
     working: false,
-    asked: true,
+    isAsked: true,
     ...manner[one.kind],
   }))
 

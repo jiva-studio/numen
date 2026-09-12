@@ -29,7 +29,7 @@ const opening = (...cards: string[]): SessionStart => ({
  * what it answers. An answer that never settles is what a slow disk looks like
  * from here, so a second press arrives while the first is still being written.
  */
-function createSession(said?: { answering?: Promise<{ answer: string }>; refuses?: unknown }) {
+function createSession(how?: { answering?: Promise<{ answer: string }>; refuses?: unknown }) {
   const asks: { what: string; said: unknown }[] = []
   let written = 0
   const cards: SessionClient = {
@@ -39,14 +39,14 @@ function createSession(said?: { answering?: Promise<{ answer: string }>; refuses
     },
     async answerCard(one) {
       asks.push({ what: 'answer', said: one })
-      if (said?.refuses) throw said.refuses
-      if (said?.answering) return said.answering
+      if (how?.refuses) throw how.refuses
+      if (how?.answering) return how.answering
       written += 1
       return { answer: `01${written}` }
     },
     async takeBackAnswer(one) {
       asks.push({ what: 'takeBack', said: one })
-      if (said?.refuses) throw said.refuses
+      if (how?.refuses) throw how.refuses
       return {}
     },
   }

@@ -112,8 +112,8 @@ const QUOTES = [
  * A number generator a run can be repeated from: the same seed gives the same
  * corpus, so a failure names an arrangement that can be looked at again.
  */
-const numbers = (seed: number): (() => number) => {
-  let held = seed >>> 0
+const numbers = (from: number): (() => number) => {
+  let held = from >>> 0
   return () => {
     held = (held + 0x6d2b79f5) >>> 0
     let x = held

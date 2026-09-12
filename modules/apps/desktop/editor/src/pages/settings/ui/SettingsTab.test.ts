@@ -65,7 +65,7 @@ const MODELS: readonly Model[] = [
 ]
 
 /** An installation configured that way, and everything it was asked to change. */
-const createTab = (pinned = false, file: Record<string, unknown> = {}) => {
+const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
   const done: string[] = []
   const written: SettingEdit[] = []
   const syncing = ref(true)
@@ -82,7 +82,7 @@ const createTab = (pinned = false, file: Record<string, unknown> = {}) => {
     ]),
     applied: ref('preset:numen'),
     mode: ref('system'),
-    pinned: ref(pinned),
+    pinned: ref(isPinned),
     sizes: ref({ interfaceScale: 1, textScale: 1 }),
     bounds: ref({
       interfaceScale: { least: 0.8, most: 2 },

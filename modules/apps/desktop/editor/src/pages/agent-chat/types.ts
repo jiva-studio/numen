@@ -5,7 +5,7 @@ import type { Span } from '@/shared/span'
 
 /** External dependencies required by an agent tab. */
 export interface AgentTabDeps {
-  opens(path: string, ...spans: readonly Span[]): void
+  openFileAt(path: string, ...spans: readonly Span[]): void
   beside(path: string): void
   resolve(written: readonly string[]): Promise<ReadonlyMap<string, string>>
   unreachable(): string

@@ -48,12 +48,12 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 		api.Listeners.tell(change{paths: landed})
 	}
 	if err != nil {
-		at.Failed = err.Error()
+		at.Error = err.Error()
 		api.say(at)
 		return
 	}
 	if said := refusedIn(brought.Refused); said != "" {
-		at.Failed = said
+		at.Error = said
 		api.say(at)
 		return
 	}

@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest'
 import { addressDropped, addressIn, carriesAddress } from './drag'
 
 /** A drag holding what a browser offers, and nothing under any other type. */
-const createDrag = (written: Record<string, string>): DataTransfer =>
-  ({ getData: (type: string) => written[type] ?? '' }) as DataTransfer
+const createDrag = (data: Record<string, string>): DataTransfer =>
+  ({ getData: (type: string) => data[type] ?? '' }) as DataTransfer
 
 describe('a drag carrying an address', () => {
   it('is one the tree takes', () => {

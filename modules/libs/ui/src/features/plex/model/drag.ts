@@ -55,7 +55,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
       options: drag.options(),
       viewport: drag.viewport(),
       at: now,
-      allowed: drag.allowed(),
+      seats: drag.allowed(),
       threshold: drag.threshold(),
     })
   })
@@ -93,7 +93,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
     if (detach) return
     holding = drag.dragged()
 
-    const onMove = (moved: PointerEvent) => move(moved)
+    const onMove = (event: PointerEvent) => move(event)
     const onUp = (up: PointerEvent) => finish(up)
     // The browser takes the pointer away, and no `pointerup` follows.
     const onLost = () => stop()

@@ -42,14 +42,14 @@ const mountFace = (face: FaceRow = faceOf(FACE), props: Record<string, unknown> 
 
 type Drawn = ReturnType<typeof mountFace>
 
-const boxIn = (held: Drawn, half: string) =>
-  held.get<HTMLTextAreaElement>(`[data-half="${half}"]`)
+const boxIn = (wrapper: Drawn, half: string) =>
+  wrapper.get<HTMLTextAreaElement>(`[data-half="${half}"]`)
 
-const nameOf = (held: Drawn) => held.get<HTMLInputElement>('header input')
+const nameOf = (wrapper: Drawn) => wrapper.get<HTMLInputElement>('header input')
 
 /** A name typed into the name box and not yet committed. */
-const type = async (held: Drawn, name: string): Promise<void> => {
-  const box = nameOf(held)
+const type = async (wrapper: Drawn, name: string): Promise<void> => {
+  const box = nameOf(wrapper)
   box.element.value = name
   await box.trigger('input')
 }

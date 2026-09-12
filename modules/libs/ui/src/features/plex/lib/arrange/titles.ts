@@ -149,7 +149,7 @@ function settle(
  */
 function clearSpans(
   boxAt: (from: number, to: number) => Box,
-  placed: readonly Box[],
+  boxes: readonly Box[],
   ends: number,
   step: number,
 ): Span[] {
@@ -161,7 +161,7 @@ function clearSpans(
 
   for (let at = ends; at < last; at += step) {
     const box = boxAt(at, Math.min(at + step, last))
-    if (placed.some((other) => isOverlapping(other, box))) {
+    if (boxes.some((other) => isOverlapping(other, box))) {
       if (open !== null) spans.push({ from: open, to: at })
       open = null
     } else if (open === null) {

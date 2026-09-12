@@ -106,11 +106,11 @@ export function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
 }
 
 /** The canonical tree, with the focus on a pane that survived it. */
-export function settle(workspace: Workspace, preferred: NodeId): Workspace {
+export function settle(workspace: Workspace, focus: NodeId): Workspace {
   const settled = normalize(workspace)
   const panes = panesOf(settled.root)
   const kept =
-    panes.find((each) => each.id === preferred) ??
+    panes.find((each) => each.id === focus) ??
     panes.find((each) => each.id === workspace.focus) ??
     panes[0]
 

@@ -115,17 +115,17 @@ export function useReviewSession(deps: SessionDeps) {
    * that schedules the decks naming none. Naming none at all sits to the deck.
    */
   const start = async (
-    named: string,
+    id: string,
     deck: string,
     preset?: string,
   ): Promise<Report | null> => {
     try {
       const opened = await deps.cards.startSession(
         preset === undefined
-          ? { vault: named, deck }
-          : { vault: named, deck, preset },
+          ? { vault: id, deck }
+          : { vault: id, deck, preset },
       )
-      vault.value = named
+      vault.value = id
       run.value = opened.run
       asked.value = opened.asked.map(createCardFace)
       at.value = 0

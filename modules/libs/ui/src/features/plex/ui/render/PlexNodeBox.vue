@@ -33,10 +33,10 @@ const hasIcon = computed(() => hasAnything(slots.icon?.({ node: props.node })))
 const startsAt = computed(() => props.box.offset - props.box.width / 2)
 
 /** Whether anything was drawn at all, which a placeholder and a blank are not. */
-function hasAnything(drawn: readonly VNode[] | undefined): boolean {
+function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   return (
-    !!drawn &&
-    drawn.some((one) => {
+    !!vnodes &&
+    vnodes.some((one) => {
       if (one.type === Comment) return false
       if (one.type === Fragment) return hasAnything(one.children as VNode[])
       if (one.type === Text) return String(one.children).trim() !== ''

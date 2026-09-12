@@ -20,14 +20,14 @@ import type { SettledBookProps } from '../lib/props'
 
 /**
  * The room one document of a book is read in, and everything measured from it.
- * `moved` is what the reader says when the offset in front changes, and
+ * `onMove` is what the reader says when the offset in front changes, and
  * `takeLed` hands over the place a link led to, once.
  */
 export function useBookLayout(
   area: Readonly<ShallowRef<HTMLElement | null>>,
   paper: Readonly<ShallowRef<HTMLElement | null>>,
   props: SettledBookProps,
-  moved: (at: number) => void,
+  onMove: (at: number) => void,
   takeLed: () => BookLink | undefined,
   edgeOf: (of: HTMLElement) => number,
 ) {
@@ -122,7 +122,7 @@ export function useBookLayout(
   /** What stands in front now, said once, and nothing while nothing does. */
   const announce = () => {
     const now = inFront(marks.value, flow.value, standing.value)
-    if (now !== undefined && now !== props.at) moved(now)
+    if (now !== undefined && now !== props.at) onMove(now)
   }
 
   const goTo = (spread: number) => {
@@ -156,7 +156,7 @@ export function useBookLayout(
       const landed =
         led && (led.path === '' || led.path === props.path) ? placeAt(led.fragment) : undefined
       stand(findSpreadAt(marks.value, flow.value, landed ?? keep), 'auto')
-      if (landed !== undefined) moved(landed)
+      if (landed !== undefined) onMove(landed)
       markRuns()
     })
   }
@@ -165,7 +165,7 @@ export function useBookLayout(
   const turn = (way: PageTurn) => {
     const to = turnTo(way, standing.value, spreadCount.value, props.span, props.book)
     if (to.spread !== undefined) return goTo(to.spread)
-    if (to.offset !== undefined) moved(to.offset)
+    if (to.offset !== undefined) onMove(to.offset)
   }
 
   // A reading area of another size, or a text of another size, is another set of

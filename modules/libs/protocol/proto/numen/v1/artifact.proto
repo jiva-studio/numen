@@ -47,7 +47,7 @@ message Artifact {
   // State is what has become of it.
   State state = 2;
 
-  // Error is what stopped it, and is set when it failed.
+  // Error is why it stopped.
   string error = 3;
 
   // How many bytes stand under it. A caller reading a long text in windows

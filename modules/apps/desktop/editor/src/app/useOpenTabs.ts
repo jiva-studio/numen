@@ -48,8 +48,8 @@ export function useOpenTabs({ core, held }: OpenTabsDeps) {
   watch(
     open,
     (now) => {
-      void core.writeOpenTabs(now).catch((why) => {
-        console.error('what the window has open was not told:', why)
+      void core.writeOpenTabs(now).catch((error) => {
+        console.error('what the window has open was not told:', error)
       })
     },
     { immediate: true },

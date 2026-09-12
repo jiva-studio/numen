@@ -23,7 +23,7 @@ export interface Neighbour {
   /** Several notes answer to the name, and this is the nearest. */
   readonly ambiguous: boolean
   /** Why there is no text, empty where the text is here. */
-  readonly refusal: string
+  readonly error: string
 }
 
 /** What one deck stands among. */
@@ -45,7 +45,7 @@ export const around = async (vault: string, deck: string): Promise<DeckNeighbour
       label: one.label,
       points: one.points,
       ambiguous: one.ambiguous,
-      refusal: formatErrorCodeMessage(one.refusal),
+      error: formatErrorCodeMessage(one.error),
     })),
     unread: answer.unread,
   }

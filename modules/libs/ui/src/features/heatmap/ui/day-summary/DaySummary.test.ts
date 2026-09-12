@@ -20,7 +20,7 @@ const WORDS: Words = {
   recalled: 'came back',
 }
 
-const day = (held: Partial<Day> = {}): Day => ({
+const day = (overrides: Partial<Day> = {}): Day => ({
   day: '2026-03-11',
   did: 0,
   weight: 0,
@@ -33,15 +33,15 @@ const day = (held: Partial<Day> = {}): Day => ({
   easy: 0,
   asked: 0,
   recalled: 0,
-  ...held,
+  ...overrides,
 })
 
-const account = (held: Partial<Day> = {}) =>
-  mount(DaySummary, { props: { day: day(held), words: WORDS } })
+const account = (overrides: Partial<Day> = {}) =>
+  mount(DaySummary, { props: { day: day(overrides), words: WORDS } })
 
 /** Each of the four that was said, and how many of it. */
-const four = (drawn: ReturnType<typeof account>) =>
-  drawn.findAll('[data-day-summary="four"] li').map((one) => [
+const four = (wrapper: ReturnType<typeof account>) =>
+  wrapper.findAll('[data-day-summary="four"] li').map((one) => [
     one.attributes('data-tone'),
     one.get('[data-day-summary="said"]').text(),
     one.get('[data-day-summary="how-many"]').text(),

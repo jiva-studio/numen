@@ -6,12 +6,8 @@
  * front is what the note can be hung off as it is made.
  */
 import type { PaletteGroup } from '@numen/ui'
-import {
-  invocationOf,
-  type CommandInvocation,
-  type CommandTarget,
-  type Words,
-} from '../target'
+import { invocationOf, type CommandInvocation, type CommandTarget } from '../target'
+import type { Words } from '../words'
 
 /** The group and the item that offer to make the note a search did not find. */
 export const MAKING = 'creating'
@@ -38,11 +34,11 @@ const SEATED: readonly string[] = ['child', 'parent', 'jump']
  */
 export const appendCreateOffer = (
   groups: readonly PaletteGroup[],
-  typed: string,
+  text: string,
   words: Words,
   at: CommandTarget,
 ): readonly PaletteGroup[] => {
-  const name = typed.trim()
+  const name = text.trim()
   const empty = groups.length > 0 && groups.every((one) => one.items.length === 0 && !one.working)
   if (!name || !empty) return groups
   // A note made from a search stands on its own, and the note in front is what

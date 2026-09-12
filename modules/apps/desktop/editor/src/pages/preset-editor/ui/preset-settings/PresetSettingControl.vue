@@ -8,7 +8,8 @@ import type { Day } from '@numen/ui'
 import type { PresetTabState, SettingValue } from '../../types'
 import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, loadOn, setLoadOn } from '../../types'
 import type { Bounds, BudgetUnit } from '../../types'
-import { round, type Field } from '../../lib/curve'
+import { round } from '../../lib/curve'
+import type { Field } from '../../lib/fields'
 import { WORDS as words } from '../../words'
 
 // --- Props & Emits ---
@@ -37,13 +38,13 @@ function onSelectLoad(day: string, level: number) {
   onChooseSetting('load', setLoadOn(settings.value.load, day, Math.round(level * WHOLE_LOAD)))
 }
 
-function onSelectRule(said: string) {
-  if (said === 'interval' || said === 'retention') onChooseSetting('learned', said)
+function onSelectRule(rule: string) {
+  if (rule === 'interval' || rule === 'retention') onChooseSetting('learned', rule)
 }
 
-function onFieldType(field: Field, said: number | null) {
-  if (said === null) return
-  props.state.updateSetting(field, field === 'retention' ? round(said / 100, 2) : said)
+function onFieldType(field: Field, value: number | null) {
+  if (value === null) return
+  props.state.updateSetting(field, field === 'retention' ? round(value / 100, 2) : value)
 }
 
 function onFieldSettle() {
@@ -160,7 +161,7 @@ function getFieldCount(field: Field): number | null {
       :step="1"
       :aria-labelledby="`preset-${field}`"
       class="preset-settings__number"
-      @update:model-value="(said: number | null) => onFieldType(field, said)"
+      @update:model-value="(value: number | null) => onFieldType(field, value)"
       @settles="onFieldSettle"
     />
   </span>

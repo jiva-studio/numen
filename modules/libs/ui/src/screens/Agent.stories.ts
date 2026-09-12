@@ -56,10 +56,10 @@ const conversation = (start: readonly Turn[]): Render => () => ({
     let tick: ReturnType<typeof setInterval> | undefined
 
     /** What has arrived so far, put back in place of what was there. */
-    const putTurn = (id: string, soFar: string, done: boolean) => {
+    const putTurn = (id: string, soFar: string, isDone: boolean) => {
       const index = turns.value.findIndex((turn) => turn.id === id)
       if (index < 0) return
-      turns.value[index] = done
+      turns.value[index] = isDone
         ? { id, voice: 'answered', text: soFar }
         : { id, voice: 'answered', text: soFar, state: 'arriving' }
     }
@@ -70,15 +70,15 @@ const conversation = (start: readonly Turn[]): Render => () => ({
       working.value = false
     }
 
-    const onSubmit = (asked: string) => {
-      turns.value.push(createAsked(`${next++}`, asked))
+    const onSubmit = (message: string) => {
+      turns.value.push(createAsked(`${next++}`, message))
       text.value = ''
       working.value = true
 
       const id = `${next++}`
       turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
 
-      const reply = `You asked about “${asked}”. ${LONG}`
+      const reply = `You asked about “${message}”. ${LONG}`
       let at = 0
       tick = setInterval(() => {
         at = Math.min(reply.length, at + 3)

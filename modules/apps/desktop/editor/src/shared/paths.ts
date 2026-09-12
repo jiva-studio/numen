@@ -25,5 +25,5 @@ export interface PathRename {
 }
 
 /** Where a file went, and nothing where none of these moved it. */
-export const getRenamedPath = (renamed: readonly PathRename[], path: string): string =>
-  renamed.find((one) => one.from === path)?.to ?? ''
+export const getRenamedPath = (renames: readonly PathRename[], path: string): string =>
+  renames.find((one) => one.from === path)?.to ?? ''

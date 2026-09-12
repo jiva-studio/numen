@@ -6,7 +6,8 @@ import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/shared/vaults'
 import type { PaletteLists, NoteLookup } from '../rows'
 import { EXACT, NO, YES, type PendingStep } from '../step'
-import type { CommandInvocation, CommandTarget, Words } from '../target'
+import type { CommandInvocation, CommandTarget } from '../target'
+import type { Words } from '../words'
 import type { NameMatch } from './search'
 import { isWebUrl } from '../lib/address'
 
@@ -14,7 +15,7 @@ export function createPaletteSteps(
   words: Words,
   holds: PaletteLists,
   knows: NoteLookup,
-  typed: Ref<string>,
+  text: Ref<string>,
   onDrop: () => void,
   onLights: (item: string) => void,
   onLists: () => void,
@@ -32,7 +33,7 @@ export function createPaletteSteps(
   const getStepTitle = (step: PendingStep): string =>
     step.command.group === 'vault'
       ? step.on.vault.name
-      : knows.called(step.on.path) || step.on.title
+      : knows.getTitle(step.on.path) || step.on.title
 
   const getStepLabel = (step: PendingStep): string => {
     const others = step.on.others?.length ?? 0
@@ -70,7 +71,7 @@ export function createPaletteSteps(
   const opensOn = computed(() => {
     const step = here.value
     if (step?.step !== 'choosing') return ''
-    const rows = holds.offers(step.command.id, typed.value).flatMap((group) => group.items)
+    const rows = holds.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
     return rows.find((one) => one.inForce)?.id ?? ''
   })
 
@@ -80,7 +81,7 @@ export function createPaletteSteps(
 
   const pushStep = (step: PendingStep) => {
     onDrop()
-    typed.value = step.command.filled?.(step.on) ?? ''
+    text.value = step.command.filled?.(step.on) ?? ''
     steps.value = [...steps.value, step]
     startStep(step)
   }
@@ -88,15 +89,15 @@ export function createPaletteSteps(
   const popStep = () => {
     onLights('')
     onDrop()
-    typed.value = ''
+    text.value = ''
     steps.value = steps.value.slice(0, -1)
     startStep(here.value)
   }
 
-  const applyRenames = (renamed: readonly PathRename[] = []) => {
-    if (!renamed.length) return
+  const applyRenames = (renames: readonly PathRename[] = []) => {
+    if (!renames.length) return
     steps.value = steps.value.map((step) => {
-      const to = getRenamedPath(renamed, step.on.path)
+      const to = getRenamedPath(renames, step.on.path)
       return to ? { ...step, on: { ...step.on, path: to } } : step
     })
   }
@@ -124,17 +125,17 @@ export function createPaletteSteps(
     item: string,
     action: string,
     found: readonly NameMatch[],
-    known: readonly Vault[],
+    vaults: readonly Vault[],
     isAside: (vault: Vault) => boolean,
   ): CommandInvocation | null => {
-    const name = typed.value.trim()
+    const name = text.value.trim()
     if (step.step === 'picking') {
       const one = found.find((match) => match.path === item)
       if (!one) return null
       return invocation(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
     }
     if (step.step === 'vaults') {
-      const one = known.find((vault) => vault.id === item)
+      const one = vaults.find((vault) => vault.id === item)
       if (!one || isAside(one)) return null
       const on = { ...step.on, vault: { id: one.id, name: one.name } }
       if (!step.command.next) return invocation(step.command.id, on)
@@ -150,7 +151,7 @@ export function createPaletteSteps(
       return invocation(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {
-      const rows = holds.offers(step.command.id, typed.value).flatMap((group) => group.items)
+      const rows = holds.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
       const one = rows.find((row) => row.id === item)
       if (!one || one.disabled) return null
       return invocation(step.command.id, step.on, one.id)

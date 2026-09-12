@@ -48,7 +48,7 @@ function createPlayer(): Player {
     at: ref(0),
     duration: ref(0),
     playing: ref(false),
-    failed: ref(''),
+    error: ref(''),
     load: (wanted) => void (address.value = wanted),
     play: (wanted) => void (address.value = wanted),
     pause: () => {},

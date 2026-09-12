@@ -38,23 +38,23 @@ const mountDeck = (props: Record<string, unknown> = {}) =>
 
 type Grid = ReturnType<typeof mountDeck>
 
-const tileFor = (held: Grid, id: string) => held.get(`[data-card="${id}"]`)
+const tileFor = (wrapper: Grid, id: string) => wrapper.get(`[data-card="${id}"]`)
 
-const getDrawnCards = (held: Grid) =>
-  held.findAll('[data-card]').map((tile) => tile.attributes('data-card'))
+const getDrawnCards = (wrapper: Grid) =>
+  wrapper.findAll('[data-card]').map((tile) => tile.attributes('data-card'))
 
 /** The fields a tile puts in boxes, in the order it draws them. */
-const fieldsOf = (held: Grid, id: string): readonly (string | undefined)[] =>
-  tileFor(held, id)
+const fieldsOf = (wrapper: Grid, id: string): readonly (string | undefined)[] =>
+  tileFor(wrapper, id)
     .findAll('textarea')
     .map((box) => box.attributes('data-value'))
 
-const boxFor = (held: Grid, id: string, field: string) =>
-  tileFor(held, id).get<HTMLTextAreaElement>(`[data-value="${field}"]`)
+const boxFor = (wrapper: Grid, id: string, field: string) =>
+  tileFor(wrapper, id).get<HTMLTextAreaElement>(`[data-value="${field}"]`)
 
 /** Every box standing under one field of one card, in the order they are drawn. */
-const boxesFor = (held: Grid, id: string, field: string): readonly HTMLTextAreaElement[] =>
-  tileFor(held, id)
+const boxesFor = (wrapper: Grid, id: string, field: string): readonly HTMLTextAreaElement[] =>
+  tileFor(wrapper, id)
     .findAll<HTMLTextAreaElement>(`[data-value="${field}"]`)
     .map((box) => box.element)
 
@@ -62,16 +62,16 @@ const boxesFor = (held: Grid, id: string, field: string): readonly HTMLTextAreaE
  * A card picked up by its grip and let go over another card, the head of the
  * deck, a section, or the grid.
  */
-const dragTo = async (held: Grid, id: string, onto: string | null): Promise<void> => {
-  await tileFor(held, id).get('[data-grip]').trigger('dragstart')
+const dragTo = async (wrapper: Grid, id: string, onto: string | null): Promise<void> => {
+  await tileFor(wrapper, id).get('[data-grip]').trigger('dragstart')
   const over =
     onto === null
-      ? held.findAll('[data-plus]').at(-1)!
+      ? wrapper.findAll('[data-plus]').at(-1)!
       : onto === HEAD
-        ? held.get('[data-head]')
-        : held.find(`[data-card="${onto}"]`).exists()
-          ? tileFor(held, onto)
-          : held.get(`[data-section-head="${onto}"]`)
+        ? wrapper.get('[data-head]')
+        : wrapper.find(`[data-card="${onto}"]`).exists()
+          ? tileFor(wrapper, onto)
+          : wrapper.get(`[data-section-head="${onto}"]`)
   await over.trigger('dragover')
   await over.trigger('drop')
 }
@@ -91,10 +91,10 @@ const pressKey = (on: Element, key: string): KeyboardEvent => {
 }
 
 /** A card picked up and the drag ended without it being let go anywhere. */
-const dragOff = async (held: Grid, id: string, over: string | null): Promise<void> => {
-  const grip = tileFor(held, id).get('[data-grip]')
+const dragOff = async (wrapper: Grid, id: string, over: string | null): Promise<void> => {
+  const grip = tileFor(wrapper, id).get('[data-grip]')
   await grip.trigger('dragstart')
-  if (over !== null) await tileFor(held, over).trigger('dragover')
+  if (over !== null) await tileFor(wrapper, over).trigger('dragover')
   await grip.trigger('dragend')
 }
 
@@ -225,7 +225,7 @@ describe('DeckEditor', () => {
   })
 
   describe('a press landing on something the strip holds', () => {
-    const stripOf = (held: Grid, id: string) => tileFor(held, id).get('[data-grip]')
+    const stripOf = (wrapper: Grid, id: string) => tileFor(wrapper, id).get('[data-grip]')
 
     it('lets that thing have the press, so the strip is not dragged by it', async () => {
       const held = mountDeck()
@@ -280,7 +280,7 @@ describe('DeckEditor', () => {
   })
 
   describe('dragging a tile by the keyboard', () => {
-    const stripOf = (held: Grid, id: string) => tileFor(held, id).get('.card-header__grip')
+    const stripOf = (wrapper: Grid, id: string) => tileFor(wrapper, id).get('.card-header__grip')
 
     it('names the handle a tile is dragged by, and gives it a place in the order', () => {
       const strip = stripOf(mountDeck(), 'llama')

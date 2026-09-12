@@ -83,10 +83,10 @@ afterEach(() => {
 
 type Tree = ReturnType<typeof mountTree>
 
-const rowIn = (held: Tree, row: string) => held.get(`[data-tree-row="${row}"]`)
+const rowIn = (wrapper: Tree, row: string) => wrapper.get(`[data-tree-row="${row}"]`)
 
-const getDrawnRows = (held: Tree) =>
-  held.findAll('[data-tree-row]').map((row) => row.attributes('data-tree-row'))
+const getDrawnRows = (wrapper: Tree) =>
+  wrapper.findAll('[data-tree-row]').map((row) => row.attributes('data-tree-row'))
 
 /** A pointer event of its own making: the button and the point are read-only. */
 const pointer = (
@@ -101,15 +101,15 @@ const pointer = (
 }
 
 /** The middle of a row, down the page. */
-const middleOf = (held: Tree, row: string): number => {
-  const box = rowIn(held, row).element.getBoundingClientRect()
+const middleOf = (wrapper: Tree, row: string): number => {
+  const box = rowIn(wrapper, row).element.getBoundingClientRect()
   return box.top + box.height / 2
 }
 
 /** A row pressed and let go, with whatever was held down as it was. */
-const press = async (held: Tree, row: string, over: MouseEventInit = {}): Promise<void> => {
-  const on = rowIn(held, row)
-  const at = middleOf(held, row)
+const press = async (wrapper: Tree, row: string, over: MouseEventInit = {}): Promise<void> => {
+  const on = rowIn(wrapper, row)
+  const at = middleOf(wrapper, row)
 
   pointer('pointerdown', at, on.element, over)
   pointer('pointerup', at)
@@ -117,18 +117,18 @@ const press = async (held: Tree, row: string, over: MouseEventInit = {}): Promis
 }
 
 /** A row picked up and let go at a height, in as many steps as a hand takes. */
-const dragTo = async (held: Tree, row: string, y: number): Promise<void> => {
-  const from = rowIn(held, row).element
-  const at = middleOf(held, row)
+const dragTo = async (wrapper: Tree, row: string, y: number): Promise<void> => {
+  const from = rowIn(wrapper, row).element
+  const at = middleOf(wrapper, row)
 
   pointer('pointerdown', at, from)
   pointer('pointermove', (at + y) / 2)
   pointer('pointermove', y)
   pointer('pointerup', y)
-  await held.vm.$nextTick()
+  await wrapper.vm.$nextTick()
 }
 
-const findDragged = (held: Tree) => held.find('.tree__dragged')
+const findDragged = (wrapper: Tree) => wrapper.find('.tree__dragged')
 
 describe('what is drawn', () => {
   it('is the rows an open row holds, in their place', () => {
@@ -239,8 +239,8 @@ describe('a press', () => {
 })
 
 describe('the keyboard', () => {
-  const types = (held: Tree, row: string, key: string, over: Record<string, unknown> = {}) =>
-    rowIn(held, row).trigger('keydown', { key, ...over })
+  const types = (wrapper: Tree, row: string, key: string, over: Record<string, unknown> = {}) =>
+    rowIn(wrapper, row).trigger('keydown', { key, ...over })
 
   it('moves the selection a row at a time', async () => {
     const held = mountTree({ selected: ['work'] })
@@ -583,7 +583,7 @@ describe('what follows the pointer', () => {
 })
 
 describe('a name being typed', () => {
-  const fieldIn = (held: Tree) => held.get('.tree__field')
+  const fieldIn = (wrapper: Tree) => wrapper.get('.tree__field')
 
   it('stands over the row it belongs to and over no other', () => {
     const held = mountTree({ renaming: 'notes' })
@@ -628,7 +628,7 @@ describe('a name being typed', () => {
 describe('the attribute rows are marked with', () => {
   const ATTRIBUTE = 'data-somewhere'
 
-  const markIn = (held: Tree, row: string) => rowIn(held, row).attributes(ATTRIBUTE)
+  const markIn = (wrapper: Tree, row: string) => rowIn(wrapper, row).attributes(ATTRIBUTE)
 
   /** The place a row stands for, or the place it sits in. */
   const valueFor = (row: string | null): string => {

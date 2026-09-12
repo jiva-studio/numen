@@ -41,7 +41,7 @@ function stream() {
 }
 
 /** A core whose reads and writes a test drives, and whose quit it speaks for. */
-function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) {
+function fake(getQuits: () => AsyncIterable<{ token: string; flush: boolean }>) {
   const files = new Map<string, string>()
   const wrote: { path: string; body: string }[] = []
   const answered: { token: string; result: FlushResult }[] = []
@@ -49,7 +49,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
   let held: (() => void) | null = null
 
   const core: Notes & FlushDeps = {
-    quitting,
+    quitting: getQuits,
     flushed: async (token: string, result: FlushResult = 'written') => {
       answered.push({ token, result })
     },

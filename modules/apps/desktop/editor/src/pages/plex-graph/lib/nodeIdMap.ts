@@ -22,17 +22,17 @@ export function createNodeIdMap() {
     return ''
   }
 
-  const retainNodeIds = (drawn: readonly string[]): void => {
-    const drawing = new Set(drawn)
+  const retainNodeIds = (ids: readonly string[]): void => {
+    const drawing = new Set(ids)
     for (const [path, id] of held) {
       if (!drawing.has(id)) held.delete(path)
     }
   }
 
-  const updateRenamedNodes = (renamed: readonly PathRename[]): void => {
+  const updateRenamedNodes = (renames: readonly PathRename[]): void => {
     const went = new Map<string, string>()
     for (const [path, id] of held) {
-      went.set(getRenamedPath(renamed, path) || path, id)
+      went.set(getRenamedPath(renames, path) || path, id)
     }
     held = went
   }

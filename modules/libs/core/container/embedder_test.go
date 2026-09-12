@@ -290,7 +290,7 @@ func failing(t *testing.T, tasks *task.Tasks, want int) []task.Task {
 	return waited(t, tasks, func(held []task.Task) bool {
 		got := 0
 		for _, at := range held {
-			if at.Failed != "" {
+			if at.Error != "" {
 				got++
 			}
 		}

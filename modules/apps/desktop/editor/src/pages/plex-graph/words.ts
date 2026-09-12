@@ -9,5 +9,5 @@ export const WORDS = {
   /** What the shape under the pointer says while notes are dragged over the picture. */
   dropName: (seat: PlexRelatedSeat) => `as ${seatWord(seat)}`,
   /** The notes that stayed unjoined, because the vault would not write the link. */
-  refused: 'These were not joined:',
+  notJoined: 'These were not joined:',
 }

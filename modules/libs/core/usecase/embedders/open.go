@@ -74,7 +74,7 @@ func Open(
 	go func() {
 		if err := agreeing(ctx, first, second); err != nil {
 			_ = second.Disown(err)
-			failed(tasks, at, err)
+			reportError(tasks, at, err)
 		}
 	}()
 	return first.Filling(), second.Asking(), both(first.Close, second.Close)
@@ -107,7 +107,7 @@ func open(ctx context.Context, tasks *task.Tasks, at arrival) *embedding.Embedde
 		model, err := at.from.fetch(ctx, tell)
 		if err != nil {
 			held.Landed(nil, err)
-			failed(tasks, at, err)
+			reportError(tasks, at, err)
 			return
 		}
 		held.Landed(model, nil)
@@ -193,12 +193,12 @@ func ready(tasks *task.Tasks, at arrival) {
 	}
 }
 
-// failed leaves the model in the list under what stopped it.
-func failed(tasks *task.Tasks, at arrival, why error) {
+// reportError leaves the model in the list under what stopped it.
+func reportError(tasks *task.Tasks, at arrival, why error) {
 	if tasks != nil {
 		tasks.Set(task.Task{
 			ID: at.id, Doing: "Preparing the model", About: at.name,
-			Failed: why.Error(),
+			Error: why.Error(),
 		})
 	}
 }

@@ -18,7 +18,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'show'): void
-  (event: 'read', named: string): void
+  (event: 'read', note: string): void
 }>()
 
 /** A hand that moved less than this across was pressing and not dragging. */
@@ -35,13 +35,13 @@ const handlePointerDown = (press: PointerEvent) => {
  * A name written into an href is escaped, and a card comes from whoever wrote
  * it: one escaped wrongly is taken as the characters it already is.
  */
-const plain = (named: string) => {
+const plain = (href: string) => {
   try {
-    return decodeURIComponent(named)
+    return decodeURIComponent(href)
   } catch {
     // Nothing is wrong with the card; only with an escape in it, and the
     // characters as written are the closest thing to what was meant.
-    return named
+    return href
   }
 }
 

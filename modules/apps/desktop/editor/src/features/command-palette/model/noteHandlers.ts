@@ -2,7 +2,8 @@
  * Note and file creation and mutation helpers for command execution.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { CommandDeps, TabContext, VaultContext, Voice, Words } from '../deps'
+import type { CommandDeps, TabContext, VaultContext } from '../deps'
+import type { Voice, Words } from '../voice'
 import type { CommandInvocation } from '../target'
 import { NOTE } from '@/entities/tab'
 
@@ -48,9 +49,9 @@ export const createNoteCommand = async (
   words: Words,
 ): Promise<void> => {
   if (!invocation.name) return
-  const made = await on.files.makes(invocation.name, seat ? invocation.path : '', seat)
+  const made = await on.files.createNote(invocation.name, seat ? invocation.path : '', seat)
   if (!made) return
-  if (invocation.kind === NOTE) return on.notes.made(made.path, made.title, 'note', 'beside')
+  if (invocation.kind === NOTE) return on.notes.openNewFile(made.path, made.title, 'note', 'beside')
   await navigateToPath(made.path, on, words)
 }
 
@@ -62,7 +63,7 @@ export const renameNoteCommand = async (invocation: CommandInvocation, on: Comma
   if (!invocation.name || invocation.name === invocation.title) return
   const tab = await settleTab(invocation.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
-  const answer = await on.files.renames(invocation.path, invocation.name)
+  const answer = await on.files.rename(invocation.path, invocation.name)
   if (answer.hasChanged) return on.says(words.stale, 'caution')
   const error = answer.error
   if (error) on.says(words.errors[error], 'error')
@@ -76,7 +77,7 @@ export const moveFileCommand = async (invocation: CommandInvocation, on: Command
   if (!invocation.name || invocation.name === invocation.path) return
   const tab = await settleTab(invocation.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
-  const answer = await on.files.moves(invocation.path, invocation.name)
+  const answer = await on.files.move(invocation.path, invocation.name)
   const error = answer.error
   if (error === 'occupied') return on.says(words.occupied, 'error')
   if (error) on.says(words.errors[error], 'error')
@@ -85,7 +86,7 @@ export const moveFileCommand = async (invocation: CommandInvocation, on: Command
 /** An empty folder, made under the path that was typed. */
 export const createFolderCommand = async (invocation: CommandInvocation, on: VaultContext & Voice, words: Words): Promise<void> => {
   if (!invocation.name) return
-  const error = await on.files.makesFolder(invocation.name)
+  const error = await on.files.createFolder(invocation.name)
   if (error === 'occupied') return on.says(words.occupied, 'error')
   if (error) on.says(words.errors[error], 'error')
 }

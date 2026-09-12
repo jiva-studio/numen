@@ -54,7 +54,7 @@ export const useWindow = () => {
     },
     drawing: editing.changes.reportChange,
     wanted: (path) => kinds.plexes.travel(path),
-    reads: (path, spans) => void tabOpeners.opensAt(path, spans),
+    reads: (path, spans) => void tabOpeners.openFileAt(path, spans),
     reloads: () => vaultsModule.reload(),
   })
 
@@ -127,7 +127,7 @@ export const useWindow = () => {
   })
 
   const knows: NoteLookup = {
-    called: (path) => {
+    getTitle: (path) => {
       const heldId = editing.reached.holding(path)
       return heldId === null ? kinds.plexes.getName(path) : editing.getTitle(heldId)
     },
@@ -180,9 +180,9 @@ export const useWindow = () => {
 
   const startLayout = async () => {
     if (!vaultsModule.shown.value.id) return
-    const plex = await held.opens(PLEX)
-    const talk = await held.opens(AGENT)
-    const tree = await held.opens(FILES)
+    const plex = await held.openTabOfKind(PLEX)
+    const talk = await held.openTabOfKind(AGENT)
+    const tree = await held.openTabOfKind(FILES)
     layout.value = createWorkspace(plex, talk, tree)
   }
 

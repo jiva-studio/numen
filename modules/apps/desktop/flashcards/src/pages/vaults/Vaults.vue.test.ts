@@ -9,7 +9,7 @@ import { Skeleton, Spinner } from '@numen/ui'
 import Vaults from './Vaults.vue'
 import type { VaultCardsDue } from '@/entities/vault'
 
-const vault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
+const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
@@ -21,15 +21,15 @@ const vault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   presets: [],
   unread: '',
   reading: false,
-  ...said,
+  ...fields,
 })
 
 /** A vault on the list whose count has not arrived. */
-const createUncountedVault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue =>
-  vault({ counted: false, faces: 0, due: 0, new: 0, ...said })
+const createUncountedVault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue =>
+  vault({ counted: false, faces: 0, due: 0, new: 0, ...fields })
 
-const mountVaults = (counting: boolean, vaults: readonly VaultCardsDue[] = []) =>
-  mount(Vaults, { props: { vaults, counting, version: '0.1.0' } })
+const mountVaults = (isCounting: boolean, vaults: readonly VaultCardsDue[] = []) =>
+  mount(Vaults, { props: { vaults, counting: isCounting, version: '0.1.0' } })
 
 describe('the front door before it knows which vaults there are', () => {
   it('says what it is doing, with the mark that says it is working', () => {

@@ -13,7 +13,7 @@ export const ERROR_MESSAGES: Record<NoteErrorCode, string> = {
   notANote: 'this file is not a note',
   notText: 'this file is not text',
   tooLarge: 'this note is longer than the editor holds',
-  bodyRefused: 'a note begins below its frontmatter, and this text begins with one',
+  bodyUnwritable: 'a note begins below its frontmatter, and this text begins with one',
   unreadable: 'the frontmatter of this note cannot be read',
   unreachable: 'the vault could not be reached, so this note was not written',
 }

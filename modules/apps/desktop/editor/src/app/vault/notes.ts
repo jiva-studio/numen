@@ -32,7 +32,6 @@ export const notesCore: NoteOperations = {
         span: run(said.span ?? { from: 0, to: 0 }),
         text: said.text,
         isComplete: said.done,
-        done: said.done,
       }
     }
   },

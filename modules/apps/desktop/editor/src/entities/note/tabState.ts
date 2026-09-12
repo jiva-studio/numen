@@ -7,7 +7,7 @@ export type NoteErrorCode =
   /** The file, or the body handed over, is past the ceiling. */
   | 'tooLarge'
   /** The core would not take the body it was given. */
-  | 'bodyRefused'
+  | 'bodyUnwritable'
   /** The vault does not hold this path as a note. */
   | 'notANote'
   /** The file is not valid UTF-8. */
@@ -20,7 +20,7 @@ export type NoteErrorCode =
 /**
  * The errors a keystroke is worth trying again after.
  */
-export const MENDABLE_ERRORS: readonly NoteErrorCode[] = ['tooLarge', 'bodyRefused', 'unreachable']
+export const MENDABLE_ERRORS: readonly NoteErrorCode[] = ['tooLarge', 'bodyUnwritable', 'unreachable']
 
 /** A note that moved to a new path. */
 export interface Move {

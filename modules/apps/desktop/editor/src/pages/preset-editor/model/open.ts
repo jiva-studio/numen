@@ -6,7 +6,8 @@ import { StopReason } from '@numen/protocol'
 import type { WindowHandle } from '@/entities/tab'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { DEFAULTS } from '../types'
-import { produceSchedule, shapeOf, steer } from '../lib/curve'
+import { produceSchedule } from '../lib/curve'
+import { shapeOf, steer } from '../lib/fields'
 import { WORDS as words } from '../words'
 import type { Field, Goal, Presets, PresetTabState, Settings, SettingsBounds, SettingValue } from '../types'
 import { aimGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
@@ -96,7 +97,7 @@ export const createPresetState = (
   onClosed: (path: string) => void,
   core: Presets,
   bounds: Ref<SettingsBounds>,
-  said: MessageWriter,
+  writeMessage: MessageWriter,
   today: () => string,
   titles: Map<string, string>,
 ): PresetTabState => {
@@ -106,7 +107,7 @@ export const createPresetState = (
     one.settings.value = aimGoal(was, goal, today())
     one.flight.theirs.add('goal')
     if (one.settings.value.byDate !== was.byDate) one.flight.theirs.add('byDate')
-    void requestWrite(one.flight, one.path.value, one.settings.value, core, said)
+    void requestWrite(one.flight, one.path.value, one.settings.value, core, writeMessage)
     void updateCurves(
       one.curves,
       one.path.value,
@@ -152,10 +153,10 @@ export const createPresetState = (
   }
 
   const closeTab = (tab: string) => {
-    void canCloseTab(one.flight, one.path.value, one.settings.value, core, said).then((gone) => {
+    void canCloseTab(one.flight, one.path.value, one.settings.value, core, writeMessage).then((gone) => {
       if (!gone) return
       onClosed(one.path.value)
-      handle.closes(tab)
+      handle.closeTab(tab)
     })
   }
 
@@ -174,7 +175,7 @@ export const createPresetState = (
     again: () => void readPreset(one, core, bounds, titles, today()),
     chooseGoal,
     moveSlider,
-    settle: () => void requestWrite(one.flight, one.path.value, one.settings.value, core, said),
+    settle: () => void requestWrite(one.flight, one.path.value, one.settings.value, core, writeMessage),
     updateSetting,
     close: closeTab,
   }

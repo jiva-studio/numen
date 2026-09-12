@@ -14,17 +14,17 @@ export type InsertionPoint = string | null
  */
 export function orderNames(
   names: readonly string[],
-  dragged: string,
+  dragEntry: string,
   at: InsertionPoint,
 ): readonly string[] {
-  if (!names.includes(dragged)) return names
+  if (!names.includes(dragEntry)) return names
 
-  const left = names.filter((name) => name !== dragged)
-  if (at === null) return [...left, dragged]
+  const left = names.filter((name) => name !== dragEntry)
+  if (at === null) return [...left, dragEntry]
 
   const before = left.indexOf(at)
   if (before === -1) return names
-  return [...left.slice(0, before), dragged, ...left.slice(before)]
+  return [...left.slice(0, before), dragEntry, ...left.slice(before)]
 }
 
 /**
@@ -34,13 +34,13 @@ export function orderNames(
  */
 export function landing(
   fields: readonly string[],
-  dragged: string,
+  dragEntry: string,
   at: InsertionPoint,
 ): boolean {
   const first = fields[0]
   if (first === undefined) return false
-  if (dragged === first || at === first) return false
-  return dragged !== at
+  if (dragEntry === first || at === first) return false
+  return dragEntry !== at
 }
 
 /** Which way along the order something is dragged by the keyboard. */
@@ -60,10 +60,10 @@ export const STEP_KEYS = 'ArrowUp ArrowDown'
  */
 export function getStepLanding(
   names: readonly string[],
-  dragged: string,
+  dragEntry: string,
   direction: StepDirection,
 ): InsertionPoint | undefined {
-  const at = names.indexOf(dragged)
+  const at = names.indexOf(dragEntry)
   if (at === -1) return undefined
   if (direction === 'up') return at === 0 ? undefined : (names[at - 1] ?? undefined)
   if (at === names.length - 1) return undefined
@@ -73,9 +73,10 @@ export function getStepLanding(
 /** The order a dragged field lands in, with the first field left where it is. */
 export const reorderFields = (
   fields: readonly string[],
-  dragged: string,
+  dragEntry: string,
   at: InsertionPoint,
-): readonly string[] => (landing(fields, dragged, at) ? orderNames(fields, dragged, at) : fields)
+): readonly string[] =>
+  landing(fields, dragEntry, at) ? orderNames(fields, dragEntry, at) : fields
 
 /** Why a name cannot be used, and nothing where it can. */
 export type Objection = 'blank' | 'taken' | 'braced'
@@ -84,23 +85,23 @@ export type Objection = 'blank' | 'taken' | 'braced'
  * What is wrong with a name. A name is what a slot is written by, so a name
  * carrying a brace cannot be written, and one already taken names two slots.
  */
-export function objection(name: string, taken: readonly string[]): Objection | null {
+export function objection(name: string, names: readonly string[]): Objection | null {
   const said = name.trim()
   if (said.includes('{') || said.includes('}')) return 'braced'
-  return heading(name, taken)
+  return heading(name, names)
 }
 
 /** Why a name written as a heading and in no slot is refused. */
-export type Refusal = 'blank' | 'taken'
+export type HeadingObjection = 'blank' | 'taken'
 
 /**
  * What is wrong with a name that stands as a heading. It is written nowhere a
  * brace is read, so a brace in it is a character like any other.
  */
-export function heading(name: string, taken: readonly string[]): Refusal | null {
+export function heading(name: string, names: readonly string[]): HeadingObjection | null {
   const said = name.trim()
   if (said === '') return 'blank'
-  if (taken.some((each) => each.trim() === said)) return 'taken'
+  if (names.some((each) => each.trim() === said)) return 'taken'
   return null
 }
 
@@ -108,8 +109,8 @@ export function heading(name: string, taken: readonly string[]): Refusal | null 
  * The first free name numbered from a stem: `Field 1`, `Field 2`, … The stem
  * alone is not one of them, so every name made this way carries a number.
  */
-export function getFreeName(taken: readonly string[], stem: string): string {
-  const held = new Set(taken.map((name) => name.trim()))
+export function getFreeName(names: readonly string[], stem: string): string {
+  const held = new Set(names.map((name) => name.trim()))
   for (let at = 1; ; at += 1) {
     const tried = `${stem} ${at}`
     if (!held.has(tried)) return tried

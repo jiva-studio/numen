@@ -75,7 +75,7 @@ export function openTabBeside(
   workspace: Workspace,
   tab: TabId,
   side: Side,
-  naming: NodeIdFactory,
+  createId: NodeIdFactory,
   onto: NodeId = workspace.focus,
 ): Workspace {
   const target = paneById(workspace.root, onto) ?? panesOf(workspace.root)[0]
@@ -87,7 +87,7 @@ export function openTabBeside(
   }
 
   const root = detach(workspace.root, tab)
-  const landed = beside(root, target.id, tab, side, workspace.axis, naming)
+  const landed = beside(root, target.id, tab, side, workspace.axis, createId)
   return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 
@@ -123,7 +123,7 @@ export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): W
  *
  * A tab let go where it started, with nowhere else to go, is only shown.
  */
-export function dropTab(workspace: Workspace, drop: TabDrop, naming: NodeIdFactory): Workspace {
+export function dropTab(workspace: Workspace, drop: TabDrop, createId: NodeIdFactory): Workspace {
   const target = paneById(workspace.root, drop.onto)
   const source = paneWithTab(workspace.root, drop.tab)
   if (!target || !source) return workspace
@@ -143,7 +143,7 @@ export function dropTab(workspace: Workspace, drop: TabDrop, naming: NodeIdFacto
     return settle({ ...workspace, root: joined }, target.id)
   }
 
-  const landed = beside(root, target.id, drop.tab, drop.side, workspace.axis, naming)
+  const landed = beside(root, target.id, drop.tab, drop.side, workspace.axis, createId)
   return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 
@@ -152,12 +152,12 @@ export function dropOnEdge(
   workspace: Workspace,
   tab: TabId,
   side: Side,
-  naming: NodeIdFactory,
+  createId: NodeIdFactory,
 ): Workspace {
   if (!paneWithTab(workspace.root, tab) || side === 'center') return workspace
 
   const root = detach(workspace.root, tab)
-  const landed = beside(root, root.id, tab, side, workspace.axis, naming)
+  const landed = beside(root, root.id, tab, side, workspace.axis, createId)
   return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 

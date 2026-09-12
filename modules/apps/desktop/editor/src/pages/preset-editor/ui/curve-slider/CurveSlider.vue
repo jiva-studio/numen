@@ -23,7 +23,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'moves', place: number): void
-  (event: 'settles'): void
+  (event: 'settle'): void
 }>()
 
 // --- State ---

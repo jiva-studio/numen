@@ -21,7 +21,7 @@ const settings: Settings = {
 /** What closes the day of the fixture, which is steered by its minutes. */
 const closes: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
 
-const preset = (said: Partial<Preset> = {}): Preset => ({
+const preset = (fields: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',
   name: 'Sanskrit',
   settings,
@@ -37,20 +37,20 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   took: 0,
   paused: '',
   wrong: '',
-  ...said,
+  ...fields,
 })
 
-const deck = (said: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
+const deck = (fields: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
   deck: 'decks/Words.md',
   faces: 20,
   due: 8,
   new: 2,
   learned: 5,
   unbegun: 0,
-  ...said,
+  ...fields,
 })
 
-const vault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
+const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
@@ -62,11 +62,11 @@ const vault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   presets: [],
   unread: '',
   reading: false,
-  ...said,
+  ...fields,
 })
 
 /** The screen over a vault, and over the presets its decks were read to hold. */
-const mountDecks = (over: VaultCardsDue, presets: readonly Preset[], scheduled = true) =>
+const mountDecks = (over: VaultCardsDue, presets: readonly Preset[], isScheduled = true) =>
   mount(Decks, {
     props: {
       vault: over,
@@ -74,7 +74,7 @@ const mountDecks = (over: VaultCardsDue, presets: readonly Preset[], scheduled =
       due: new Map(),
       presets,
       byDeck: new Map(presets.flatMap((one) => one.decks.map((at) => [at, one] as const))),
-      scheduled,
+      scheduled: isScheduled,
       today: '2026-09-05',
     },
   })

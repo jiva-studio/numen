@@ -23,19 +23,19 @@ export function useNotices() {
   /** How many have been raised, which is what names the next one. */
   let raised = 0
 
-  const showNotice = (said: string, tone: Tone) => {
+  const showNotice = (text: string, tone: Tone) => {
     raised += 1
     told.value = [
       ...told.value,
       {
         id: String(raised),
-        says: said,
+        says: text,
         tone,
         stay: 'kept',
         // A person pressed something and is waiting to hear. A card that waits
         // for the work to be worth drawing is a card they read ten seconds
         // late.
-        asked: true,
+        isAsked: true,
       },
     ]
   }
@@ -45,16 +45,16 @@ export function useNotices() {
    * nothing to say, and nothing is raised for it.
    */
   const reportError = (why: unknown) => {
-    const said = sentence(formatErrorMessage(why))
-    if (said) showNotice(said, 'alarm')
+    const text = sentence(formatErrorMessage(why))
+    if (text) showNotice(text, 'alarm')
   }
 
   /**
    * What is being done behind the window, as cards to draw. The whole list
    * arrives at once, so the whole list is what stands.
    */
-  const setTasks = (said: readonly Task[]) => {
-    tasks.value = said.map(createNotice)
+  const setTasks = (work: readonly Task[]) => {
+    tasks.value = work.map(createNotice)
   }
 
   /** One card let go of. Work put away is the corner's own to keep away. */
@@ -66,8 +66,8 @@ export function useNotices() {
 }
 
 /** One thing said, as a sentence: it opens with a capital and it ends. */
-const sentence = (said: string): string => {
-  const words = said.trim()
+const sentence = (text: string): string => {
+  const words = text.trim()
   if (!words) return ''
   const ended = /[.!?]$/.test(words) ? words : `${words}.`
   return (ended[0]?.toUpperCase() ?? '') + ended.slice(1)

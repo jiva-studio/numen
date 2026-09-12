@@ -15,7 +15,7 @@ import { Divider } from '../../divider'
 import { useNaming } from '../../../model/naming'
 import { DECK_WORDS, type DeckWords } from '../../../lib/deck'
 import type { PlacedSection } from '../../../lib/grid'
-import { heading, type Refusal } from '../../../lib/order'
+import { heading, type HeadingObjection } from '../../../lib/order'
 
 const props = withDefaults(
   defineProps<{
@@ -38,7 +38,7 @@ const uid = useId()
 const objectsId = `${uid}-objects`
 
 /** A name typed over the one this section carries, until it is committed. */
-const naming = useNaming<Refusal>({
+const naming = useNaming<HeadingObjection>({
   carries: () => props.section.name,
   taken: () => [],
   amiss: heading,

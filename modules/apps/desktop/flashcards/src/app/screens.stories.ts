@@ -23,14 +23,14 @@ const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
 const TODAY = dayNamed(new Date())
 
 /** One day's answers, as the grid above the decks counts them. */
-const tally = (answered: number, recalled: number): HeatmapTally => ({
-  answered,
-  again: Math.round(answered * 0.12),
-  hard: Math.round(answered * 0.18),
-  good: Math.round(answered * 0.52),
-  easy: answered - Math.round(answered * 0.12) - Math.round(answered * 0.18) - Math.round(answered * 0.52),
-  asked: Math.round(answered * 0.8),
-  recalled,
+const tally = (answers: number, recalls: number): HeatmapTally => ({
+  answered: answers,
+  again: Math.round(answers * 0.12),
+  hard: Math.round(answers * 0.18),
+  good: Math.round(answers * 0.52),
+  easy: answers - Math.round(answers * 0.12) - Math.round(answers * 0.18) - Math.round(answers * 0.52),
+  asked: Math.round(answers * 0.8),
+  recalled: recalls,
 })
 
 /**

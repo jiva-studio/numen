@@ -42,10 +42,10 @@ export const createMarks = (
   const fields = new Map<string, string[]>()
   const whole: string[] = []
 
-  const addProblemMark = (held: Map<string, string[]>, key: string, text: string): void => {
-    const said = held.get(key)
+  const addProblemMark = (marks: Map<string, string[]>, key: string, text: string): void => {
+    const said = marks.get(key)
     if (said) said.push(text)
-    else held.set(key, [text])
+    else marks.set(key, [text])
   }
 
   for (const problem of problems) {

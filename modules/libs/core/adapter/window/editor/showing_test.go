@@ -133,7 +133,7 @@ func (f *showing) read(t *testing.T) {
 	for range 400 {
 		if state := f.state(t); state.GetScan().GetReady() {
 			return
-		} else if reason := state.GetScan().GetFailed(); reason != "" {
+		} else if reason := state.GetScan().GetError(); reason != "" {
 			t.Fatalf("the vault could not be read: %s", reason)
 		}
 		time.Sleep(10 * time.Millisecond)

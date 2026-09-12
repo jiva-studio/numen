@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { sources } from './source.mjs'
-import { baseline, declares, nouns, refused, words } from './verbs.mjs'
+import { baseline, declares, nouns, refused, takes, words } from './verbs.mjs'
 
 const declared = () => {
   const found = []
@@ -31,6 +31,32 @@ test('no function of the interface modules is named by a gerund or a participle'
     found.some(({ at }) => at.endsWith('apps/mobile/src/core.ts')),
     "the walk did not read the phone's core.ts, so the rule stops at the mobile border",
   )
+})
+
+/**
+ * A caller reads a parameter the way it reads the function it is handed to, so
+ * the same rule holds for both. `usePageWidth(laid)` says nothing a reader can
+ * act on; `usePageWidth(getRow)` says what to hand it.
+ */
+test('no parameter of the interface modules is named by a gerund or a participle', () => {
+  const wrong = []
+  for (const { at, text } of sources(['.ts', '.vue'])) {
+    for (const name of takes(text)) {
+      if (refused(name)) wrong.push(`${at} takes ${name}`)
+    }
+  }
+  assert.deepEqual(wrong, [])
+})
+
+/** The parameters the walk has to find, and what it must not read as one. */
+test('what counts as a parameter', () => {
+  const source = [
+    'const alpha = (laid: () => Row, edgeOf: (of: HTMLElement) => number) => 1',
+    'function beta(one: Record<string, number>, drawn?: () => void, { a, b }: Deps) {}',
+    'const gamma = async (two: string): Promise<Answer> => two',
+    'const delta = (three = held()) => three',
+  ].join('\n')
+  assert.deepEqual(takes(source), ['laid', 'edgeOf', 'one', 'drawn', 'two', 'three'])
 })
 
 /**

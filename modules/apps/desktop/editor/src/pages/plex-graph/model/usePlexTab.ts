@@ -66,7 +66,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const createNode = async (from: string, seat: PlexRelatedSeat) => {
     const path = map.getNodePath(from)
-    if (path && (await deps.editor.make(path, seat))) await view.go(path)
+    if (path && (await deps.editor.createInSeat(path, seat))) await view.go(path)
   }
 
   const joinNodes = async (from: string, to: string, seat: PlexRelatedSeat) => {
@@ -82,41 +82,41 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     return near?.title || fileOf(path).replace(/\.md$/, '')
   }
 
-  const dropNodes = async (draggedNodes: readonly string[], seat: PlexRelatedSeat) => {
+  const dropNodes = async (nodes: readonly string[], seat: PlexRelatedSeat) => {
     const here = view.here.value
     if (!here) return
 
-    const refused: string[] = []
+    const notJoined: string[] = []
     let written = false
 
-    for (const path of draggedNodes) {
+    for (const path of nodes) {
       if (path === here) continue
       if (await deps.editor.join(here, path, seat)) written = true
-      else refused.push(getName(path))
+      else notJoined.push(getName(path))
     }
 
-    if (refused.length > 0) deps.says(`${words.refused} ${refused.join(', ')}`)
+    if (notJoined.length > 0) deps.showMessage(`${words.notJoined} ${notJoined.join(', ')}`)
     if (written) await view.go(here)
   }
 
-  const openNode = (node: string, showing: PlexDestination = 'here') => {
+  const openNode = (node: string, how: PlexDestination = 'here') => {
     const path = map.getNodePath(node)
-    if (path) deps.opens(path, getName(path), showing)
+    if (path) deps.openNote(path, getName(path), how)
   }
 
   const openPart = (node: string, part: string) => {
     const path = map.getNodePath(node)
     if (!path || !/^\d+$/.test(part)) return
-    deps.opens(path, getName(path), 'here', Number(part))
+    deps.openNote(path, getName(path), 'here', Number(part))
   }
 
   const createNote = async () => {
-    const path = await deps.writes()
+    const path = await deps.createUntitledNote()
     if (path) await view.go(path)
   }
 
-  const openMenu = (asked: MenuRequest) => {
-    menu.value = asked
+  const openMenu = (request: MenuRequest) => {
+    menu.value = request
   }
 
   const dismiss = () => {
@@ -133,12 +133,12 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     }
     if (!OFFERED.has(id)) return
     const path = map.getNodePath(on.node)
-    if (path) deps.runs(id, path, getName(path))
+    if (path) deps.runCommand(id, path, getName(path))
   }
 
-  const followMoves = (renamed: readonly PathRename[]) => {
-    view.followMoves(renamed)
-    map.updateRenamedNodes(renamed)
+  const followMoves = (renames: readonly PathRename[]) => {
+    view.followMoves(renames)
+    map.updateRenamedNodes(renames)
   }
 
   return {

@@ -6,7 +6,7 @@
  * the times it works out.
  */
 import { describe, expect, it } from 'vitest'
-import { applyCues, same, spanCues, getText, type Cue } from './cues'
+import { applyCues, findCueAt, same, spanCues, getText, type Cue } from './cues'
 
 const CUES: readonly Cue[] = [
   { text: 'A bell over the door.', from: 1_000, to: 3_000 },
@@ -300,5 +300,22 @@ describe('every line on screen', () => {
 
   it('is answered for where the transcript was emptied', () => {
     expect(spanCues(CUES, '').length).toBe(1)
+  })
+})
+
+describe('the cue being said at a millisecond', () => {
+  it('is the one whose span holds it', () => {
+    expect(findCueAt(CUES, 1_000)).toBe(0)
+    expect(findCueAt(CUES, 4_500)).toBe(1)
+    expect(findCueAt(CUES, 6_000)).toBe(2)
+  })
+
+  it('is the last one said where a silence stands there', () => {
+    expect(findCueAt(CUES, 10_500)).toBe(2)
+  })
+
+  it('is nothing before the first cue begins', () => {
+    expect(findCueAt(CUES, 0)).toBe(-1)
+    expect(findCueAt([], 4_000)).toBe(-1)
   })
 })

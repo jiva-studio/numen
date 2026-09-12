@@ -10,7 +10,8 @@ import { StopReason } from '@numen/protocol'
 
 import { usePresetTab } from './kind'
 import type { SettingValue } from './types'
-import { fieldsUnder, goalValue, nearest, steer, type Field } from './lib/curve'
+import { goalValue, nearest } from './lib/curve'
+import { fieldsUnder, steer, type Field } from './lib/fields'
 import {
   DEFAULTS,
   NO_BOUNDS,
@@ -117,7 +118,7 @@ const openPresetTab = async (
       return typeof answers === 'function' ? answers(put) : answers
     },
   }
-  const handle = { closes: (tab: string) => void closed.push(tab) } as unknown as WindowHandle
+  const handle = { closeTab: (tab: string) => void closed.push(tab) } as unknown as WindowHandle
   const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
   const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => NOW)
   const state = await kind.kind.open('Steady.md')
@@ -178,7 +179,7 @@ const opening = async (file: Partial<Settings>) => {
     },
     curve: async () => curve,
   }
-  const handle = { closes: () => {} } as unknown as WindowHandle
+  const handle = { closeTab: () => {} } as unknown as WindowHandle
   const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
   const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => NOW)
   return { tab: await kind.kind.open('Steady.md'), written, resolveRead }
@@ -346,11 +347,11 @@ describe('the curve behind the knob', () => {
   // The range the line is drawn over runs to the value the knob rides, so a
   // value typed past the end of it is a curve nobody has been answered.
   it('is asked for again where a value past the end of the range is typed', async () => {
-    const createReachingCurve = (asked: Settings): Curve => ({
+    const createReachingCurve = (settings: Settings): Curve => ({
       ...curve,
-      grid: [0, asked.minutesADay / 2, asked.minutesADay],
+      grid: [0, settings.minutesADay / 2, settings.minutesADay],
       at: [point(), point(), point()],
-      now: { at: 2, value: asked.minutesADay, day: '' },
+      now: { at: 2, value: settings.minutesADay, day: '' },
     })
     const { state, asked } = await openPresetTab({}, createReachingCurve)
     expect(state.curve.value.grid.at(-1)).toBe(20)
@@ -700,13 +701,13 @@ describe('a setting the goal on screen does not name', () => {
  * application works one out: its range runs to what carrying the load costs,
  * which the share of the day going to the debt moves.
  */
-const createRangedCurve = (asked: Settings): Curve => {
-  const top = 60 + asked.backlog
+const createRangedCurve = (settings: Settings): Curve => {
+  const top = 60 + settings.backlog
   const grid = Array.from({ length: 7 }, (_, at) => Math.round((top * (at + 1)) / 7))
-  const value = goalValue(asked, NOW)
+  const value = goalValue(settings, NOW)
   return {
     ...curve,
-    goal: asked.goal,
+    goal: settings.goal,
     grid,
     at: grid.map((minutes) => point({ minutes, reviews: minutes * 4 })),
     now: { at: nearest(grid, value), value, day: '' },
