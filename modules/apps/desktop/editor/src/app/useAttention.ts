@@ -50,7 +50,7 @@ export function useAttention({ core, tabs, held }: AttentionDeps) {
   watch(
     attention,
     (open) => {
-      void core.attending(open).catch((why) => {
+      void core.setFocus(open).catch((why) => {
         console.error('what the window has open was not told:', why)
       })
     },

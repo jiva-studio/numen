@@ -9,8 +9,8 @@ const vault = (held: boolean, refuses: string | null = null) => {
   const wrote: boolean[] = []
   return {
     wrote,
-    syncing: async () => held,
-    choosesSyncing: async (kept: boolean) => {
+    getSyncEnabled: async () => held,
+    setSyncEnabled: async (kept: boolean) => {
       wrote.push(kept)
       return refuses
     },
@@ -32,7 +32,10 @@ describe('whether a title and a filename are one name', () => {
 
   it('keeps the two one name where the vault cannot be asked', async () => {
     const held = syncSetting(
-      { syncing: async () => Promise.reject(new Error('no')), choosesSyncing: async () => null },
+      {
+        getSyncEnabled: async () => Promise.reject(new Error('no')),
+        setSyncEnabled: async () => null,
+      },
       words,
       writer().says,
     )

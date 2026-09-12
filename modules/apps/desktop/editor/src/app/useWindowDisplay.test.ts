@@ -40,12 +40,12 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     headings: async () => new Map(),
     fileKinds: async () => new Map(),
     resolve: async () => new Map(),
-    opening: async () => ({ path: 'Opening.md' }),
+    getInitialOpenPath: async () => ({ path: 'Opening.md' }),
     state: async () => settled,
     agentUnreachable: async () => '',
     changes: async function* () {},
     focus: async function* () {},
-    attending: async () => {},
+    setFocus: async () => {},
     editing: async function* () {},
     tasks: async function* () {
       await held()
@@ -67,16 +67,16 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     move: async () => ({ moved: null, error: null }),
     createFolder: async () => null,
     createUrl: async () => ({ path: '', error: null }),
-    syncing: async () => true,
-    hanging: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
-    choosesSyncing: async () => null,
-    choosesHanging: async () => null,
-    reviewing: async () => ({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),
-    choosesReviewing: async () => null,
-    settings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
-    choosesSetting: async () => {},
-    settingsFile: async () => ({ written: '{}', path: '/numen.json' }),
-    writesSettingsFile: async () => ({ changed: false }),
+    getSyncEnabled: async () => true,
+    getHangingSettings: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
+    setSyncEnabled: async () => null,
+    setHangingSettings: async () => null,
+    getReviewSettings: async () => ({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),
+    setReviewSettings: async () => null,
+    getSettings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
+    updateSettings: async () => {},
+    getSettingsFile: async () => ({ written: '{}', path: '/numen.json' }),
+    saveSettingsFile: async () => ({ changed: false }),
     quitting: async function* () {},
     flushed: async () => {},
     ...over,
@@ -191,7 +191,7 @@ describe('the stream of changes', () => {
   it('asks where the vault opens again when that is the note that moved', async () => {
     let opens = 'Opening.md'
     const core = fake({
-      opening: async () => ({ path: opens }),
+      getInitialOpenPath: async () => ({ path: opens }),
       changes: async function* () {
         opens = 'Renamed.md'
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Opening.md', to: 'Renamed.md' }] }
@@ -208,7 +208,7 @@ describe('the stream of changes', () => {
   it('leaves where the vault opens alone when another note moved', async () => {
     let asked = 0
     const core = fake({
-      opening: async () => {
+      getInitialOpenPath: async () => {
         asked++
         return { path: 'Opening.md' }
       },
@@ -392,7 +392,7 @@ describe('a place inside a source asked for from outside the window', () => {
 describe('a vault that could not be read', () => {
   it('stops the waiting and is not called empty', async () => {
     const core = fake({
-      opening: async () => null,
+      getInitialOpenPath: async () => null,
       state: async () => ({
         ...settled,
         scan: { isReady: false, failureReason: 'permission denied', unwatchedPath: '' },

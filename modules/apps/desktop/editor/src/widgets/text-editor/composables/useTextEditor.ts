@@ -15,13 +15,13 @@ import { WORDS as words } from '../words'
 /** What this asks of the vault. */
 export interface SettingsFileTabDeps {
   /** The settings file as its person wrote it, and where it stands. */
-  settingsFile(): Promise<{ readonly written: string; readonly path: string }>
+  getSettingsFile(): Promise<{ readonly written: string; readonly path: string }>
   /**
    * The settings file written whole, presenting the file it was last read as. A
    * file it cannot read is refused, and a file standing at anything else is
    * answered `changed` with nothing written.
    */
-  writesSettingsFile(
+  saveSettingsFile(
     written: string,
     seen: string | null,
   ): Promise<{ readonly changed: boolean }>
@@ -52,9 +52,9 @@ export function useTextEditor(core: SettingsFileTabDeps, reads: () => void) {
   const isStale = ref(false)
 
   const again = async (): Promise<void> => {
-    let answer: Awaited<ReturnType<SettingsFileTabDeps['settingsFile']>>
+    let answer: Awaited<ReturnType<SettingsFileTabDeps['getSettingsFile']>>
     try {
-      answer = await core.settingsFile()
+      answer = await core.getSettingsFile()
     } catch (thrown) {
       wrong.value = `${words.unread} ${formatErrorMessage(thrown)}`
       return
@@ -73,9 +73,9 @@ export function useTextEditor(core: SettingsFileTabDeps, reads: () => void) {
    */
   const writes = async (seen: string | null): Promise<void> => {
     if (!read.value) return
-    let answer: Awaited<ReturnType<SettingsFileTabDeps['writesSettingsFile']>>
+    let answer: Awaited<ReturnType<SettingsFileTabDeps['saveSettingsFile']>>
     try {
-      answer = await core.writesSettingsFile(typed.value, seen)
+      answer = await core.saveSettingsFile(typed.value, seen)
     } catch (thrown) {
       wrong.value = `${words.unwritten} ${formatErrorMessage(thrown)}`
       return

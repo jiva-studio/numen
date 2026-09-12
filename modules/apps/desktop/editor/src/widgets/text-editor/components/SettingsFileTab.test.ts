@@ -16,8 +16,8 @@ const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
 const drawn = async (answers: Partial<SettingsFileTabDeps> = {}) => {
   const wrote: string[] = []
   const core: SettingsFileTabDeps = {
-    settingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
-    writesSettingsFile: (written) => {
+    getSettingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
+    saveSettingsFile: (written) => {
       wrote.push(written)
       return Promise.resolve({ changed: false })
     },
@@ -58,7 +58,7 @@ describe('the file drawn', () => {
 
   it('says what is wrong where the settings could not be read out of it', async () => {
     const { tab, state } = await drawn({
-      writesSettingsFile: () =>
+      saveSettingsFile: () =>
         Promise.reject(
           new ConnectError('not a setting: it does not read as JSON, at byte 12', Code.InvalidArgument),
         ),
@@ -75,7 +75,7 @@ describe('the file drawn', () => {
   it('puts the two answers where the file moved past what was read', async () => {
     const wrote: string[] = []
     const { tab, state } = await drawn({
-      writesSettingsFile: (written, seen) => {
+      saveSettingsFile: (written, seen) => {
         if (seen !== null) return Promise.resolve({ changed: true })
         wrote.push(written)
         return Promise.resolve({ changed: false })

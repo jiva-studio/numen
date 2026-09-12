@@ -88,7 +88,7 @@ export function useWindowDisplay(core: Core, how: DisplayOptions = {}) {
 
   /** The note the vault opens with, and whether it holds one at all. */
   async function first() {
-    const note = await core.opening()
+    const note = await core.getInitialOpenPath()
     hasNote.value = note !== null
     opening.value = note?.path ?? ''
     return opening.value

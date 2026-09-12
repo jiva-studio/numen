@@ -46,12 +46,12 @@ export interface HangingSettings {
 /** What this asks of the vault. */
 export interface HangingDeps {
   /** The two settings, as the settings file holds them. */
-  hanging(): Promise<HangingSettings>
+  getHangingSettings(): Promise<HangingSettings>
   /**
    * The settings written. What could not be written, and nothing where it was.
    * A count left out stands as it is.
    */
-  choosesHanging(hangs: boolean, parts?: number): Promise<string | null>
+  setHangingSettings(hangs: boolean, parts?: number): Promise<string | null>
 }
 
 /** The counts offered, from one end of what the setting takes to the other. */
@@ -76,7 +76,7 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
   const start = async (): Promise<void> => {
     let held: HangingSettings
     try {
-      held = await core.hanging()
+      held = await core.getHangingSettings()
     } catch {
       // A vault that cannot be asked leaves both settings where they stand.
       return
@@ -125,7 +125,7 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
     said('')
     hangs.value = now
 
-    const failed = await core.choosesHanging(now)
+    const failed = await core.setHangingSettings(now)
     if (!failed) return
     said(`${words.unturned} ${failed}`, 'error')
     hangs.value = was
@@ -144,7 +144,7 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
     said('')
     parts.value = now
 
-    const failed = await core.choosesHanging(hangs.value, now)
+    const failed = await core.setHangingSettings(hangs.value, now)
     if (!failed) return
     said(`${words.unturned} ${failed}`, 'error')
     parts.value = was

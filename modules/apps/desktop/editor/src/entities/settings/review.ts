@@ -24,9 +24,9 @@ export interface ReviewDeps {
    * The hour as the settings file holds it, the latest the vault takes, and the
    * review day now standing.
    */
-  reviewing(): Promise<ReviewSettings>
+  getReviewSettings(): Promise<ReviewSettings>
   /** The hour written. What could not be written, and nothing where it was. */
-  choosesReviewing(starts: string): Promise<string | null>
+  setReviewSettings(starts: string): Promise<string | null>
 }
 
 export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWriter) {
@@ -50,7 +50,7 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
     try {
-      const held = await core.reviewing()
+      const held = await core.getReviewSettings()
       starts.value = held.starts
       latest.value = held.latest
       day.value = held.day
@@ -62,7 +62,7 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
   /** The day the vault now counts from, asked again once an hour is written. */
   const counted = async (): Promise<void> => {
     try {
-      day.value = (await core.reviewing()).day
+      day.value = (await core.getReviewSettings()).day
     } catch {
       // A vault that cannot be asked leaves the day where it stands.
     }
@@ -80,7 +80,7 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
 
     let failed: string | null
     try {
-      failed = await core.choosesReviewing(hour)
+      failed = await core.setReviewSettings(hour)
     } catch (thrown) {
       failed = formatErrorMessage(thrown)
     }

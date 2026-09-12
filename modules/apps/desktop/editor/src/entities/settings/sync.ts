@@ -32,9 +32,9 @@ export interface Words {
 /** What this asks of the vault. */
 export interface SyncDeps {
   /** Whether the two are one name, as the settings hold it. */
-  syncing(): Promise<boolean>
+  getSyncEnabled(): Promise<boolean>
   /** The setting written. What could not be written, and nothing where it was. */
-  choosesSyncing(kept: boolean): Promise<string | null>
+  setSyncEnabled(kept: boolean): Promise<string | null>
 }
 
 export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
@@ -47,7 +47,7 @@ export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
     try {
-      kept.value = await core.syncing()
+      kept.value = await core.getSyncEnabled()
     } catch {
       // A vault that cannot be asked leaves the setting where it stands.
     }
@@ -81,7 +81,7 @@ export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
     said('')
     kept.value = now
 
-    const failed = await core.choosesSyncing(now)
+    const failed = await core.setSyncEnabled(now)
     if (!failed) return
     said(`${words.unturned} ${failed}`, 'error')
     kept.value = was

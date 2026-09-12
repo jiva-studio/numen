@@ -17,8 +17,8 @@ const vault = (answers: Partial<SettingsFileTabDeps> = {}) => {
   /** What each write presented as the file it last read. */
   const presented: (string | null)[] = []
   const core: SettingsFileTabDeps = {
-    settingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
-    writesSettingsFile: (written, seen) => {
+    getSettingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
+    saveSettingsFile: (written, seen) => {
       wrote.push(written)
       presented.push(seen)
       return Promise.resolve({ changed: false })
@@ -47,7 +47,7 @@ describe('the file as it stands', () => {
 
   it('says so where it could not be read', async () => {
     const { held } = vault({
-      settingsFile: () => Promise.reject(new Error('the folder is not there')),
+      getSettingsFile: () => Promise.reject(new Error('the folder is not there')),
     })
     await held.again()
 
@@ -113,7 +113,7 @@ describe('what is typed over it', () => {
 describe('a file the settings cannot be read out of', () => {
   const refusing = () =>
     vault({
-      writesSettingsFile: () =>
+      saveSettingsFile: () =>
         Promise.reject(
           new ConnectError('not a setting: it does not read as JSON, at byte 12', Code.InvalidArgument),
         ),
@@ -163,8 +163,8 @@ describe('a file that moved past what the tab read', () => {
     const wrote: string[] = []
     const reads = vi.fn()
     const core: SettingsFileTabDeps = {
-      settingsFile: () => Promise.resolve({ written: stands, path: '/numen.json' }),
-      writesSettingsFile: (written, seen) => {
+      getSettingsFile: () => Promise.resolve({ written: stands, path: '/numen.json' }),
+      saveSettingsFile: (written, seen) => {
         if (seen !== null && seen !== stands) return Promise.resolve({ changed: true })
         stands = written
         wrote.push(written)

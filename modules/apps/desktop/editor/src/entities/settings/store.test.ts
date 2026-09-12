@@ -30,8 +30,8 @@ const MODELS: readonly Model[] = [
 const holding = (written: string, refuses: string | null = null) => {
   const asked: unknown[] = []
   const core: SettingsStoreDeps = {
-    settings: () => Promise.resolve({ written, path: '/numen.json', models: MODELS }),
-    choosesSetting: (said) => {
+    getSettings: () => Promise.resolve({ written, path: '/numen.json', models: MODELS }),
+    updateSettings: (said) => {
       asked.push(said)
       return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()
     },
@@ -57,7 +57,10 @@ describe('what stands at a setting', () => {
   it('is nothing where the vault cannot be asked', async () => {
     const said = vi.fn()
     const kept = settingsStore(
-      { settings: () => Promise.reject(new Error('gone')), choosesSetting: () => Promise.resolve() },
+      {
+        getSettings: () => Promise.reject(new Error('gone')),
+        updateSettings: () => Promise.resolve(),
+      },
       words,
       said,
     )

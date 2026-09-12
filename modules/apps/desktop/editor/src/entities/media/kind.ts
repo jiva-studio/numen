@@ -10,8 +10,13 @@ import type { TranscriptState } from './transcript'
 import type { Source } from '@/shared/file'
 import type { Span } from '@/shared/span'
 import type { Task } from '@/shared/notices/task'
-import type { FileOpeners, SourceReader } from '@/entities/tab/openers'
-import type { OpenTab, TabKind, WindowHandle } from '@/entities/tab/windowTabs'
+import type {
+  FileOpeners,
+  OpenTab,
+  SourceReader,
+  TabKind,
+  WindowHandle,
+} from '@/entities/tab/@x/media'
 import { DELETE_TEXT, PROOFREAD, TRANSCRIBE } from './words'
 import { fileOf } from '@/shared/paths'
 

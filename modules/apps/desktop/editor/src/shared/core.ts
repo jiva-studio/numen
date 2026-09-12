@@ -43,8 +43,7 @@ export interface Core {
    * `from`; an address that reaches nothing is absent.
    */
   resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
-  opening(): Promise<{ path: string } | null>
-  getInitialOpenPath?(): Promise<{ path: string } | null>
+  getInitialOpenPath(): Promise<{ path: string } | null>
   state(): Promise<{
     /** The identity the folder carries, which is how the vault is asked for again. */
     id: string
@@ -102,8 +101,7 @@ export interface Core {
    * other direction to `focus`: a place is put in front of the person there,
    * and here the window says what is in front of them now.
    */
-  attending(open: Attention): Promise<void>
-  setFocus?(open: Attention): Promise<void>
+  setFocus(open: Attention): Promise<void>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
   read(path: string): Promise<NoteResult & { at?: string }>
   /**
@@ -152,52 +150,43 @@ export interface Core {
    * Whether renaming either a note's title or the name of its file brings the
    * other into line, as the settings hold it.
    */
-  syncing(): Promise<boolean>
-  getSyncEnabled?(): Promise<boolean>
+  getSyncEnabled(): Promise<boolean>
   /**
    * That setting written into the settings file. What could not be written, and
    * nothing where it was: the rename after this reads what was written.
    */
-  choosesSyncing(kept: boolean): Promise<string | null>
-  setSyncEnabled?(kept: boolean): Promise<string | null>
+  setSyncEnabled(kept: boolean): Promise<string | null>
   /**
    * Whether a node in the plex hangs the parts of its note under the box, and
    * how many of them stand there at once, as the settings hold them.
    */
-  hanging(): Promise<HangingSettings>
-  getHangingSettings?(): Promise<HangingSettings>
+  getHangingSettings(): Promise<HangingSettings>
   /**
    * Those settings written into the settings file. What could not be written,
    * and nothing where it was. A count left out stands as it is.
    */
-  choosesHanging(hangs: boolean, parts?: number): Promise<string | null>
-  setHangingSettings?(hangs: boolean, parts?: number): Promise<string | null>
+  setHangingSettings(hangs: boolean, parts?: number): Promise<string | null>
   /**
    * The hour a day of review begins at, on the clock on the wall, written as
    * `04:00`, and how late in the day the vault takes one. An hour past that is
    * refused.
    */
-  reviewing(): Promise<ReviewSettings>
-  getReviewSettings?(): Promise<ReviewSettings>
+  getReviewSettings(): Promise<ReviewSettings>
   /**
    * That hour written into the settings file. What could not be written, and
    * nothing where it was.
    */
-  choosesReviewing(starts: string): Promise<string | null>
-  setReviewSettings?(starts: string): Promise<string | null>
+  setReviewSettings(starts: string): Promise<string | null>
   /** Every setting as it stands, and the models the settings offer. */
-  settings(): Promise<Configuration>
-  getSettings?(): Promise<Configuration>
+  getSettings(): Promise<Configuration>
   /**
    * Settings written into the settings file, together or not at all. A value
    * the settings could not be read out of again is refused, and what the file
    * holds is unchanged.
    */
-  choosesSetting(written: readonly SettingEdit[]): Promise<void>
-  updateSettings?(written: readonly SettingEdit[]): Promise<void>
+  updateSettings(written: readonly SettingEdit[]): Promise<void>
   /** The settings file as its person wrote it, and where it stands. */
-  settingsFile(): Promise<{ readonly written: string; readonly path: string }>
-  getSettingsFile?(): Promise<{ readonly written: string; readonly path: string }>
+  getSettingsFile(): Promise<{ readonly written: string; readonly path: string }>
   /**
    * The settings file replaced whole, with the bytes as they were typed. A file
    * the settings could not be read out of is refused, and what the file holds
@@ -207,11 +196,7 @@ export interface Core {
    * is answered `changed` with nothing written. Nothing seen writes over
    * whatever the file holds.
    */
-  writesSettingsFile(
-    written: string,
-    seen: string | null,
-  ): Promise<{ readonly changed: boolean }>
-  saveSettingsFile?(
+  saveSettingsFile(
     written: string,
     seen: string | null,
   ): Promise<{ readonly changed: boolean }>

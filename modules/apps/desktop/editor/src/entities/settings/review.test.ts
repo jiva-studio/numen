@@ -31,8 +31,8 @@ const vault = (held: string, refuses: string | null = null, latest = '12:00') =>
   const written: string[] = []
   let hour = held
   const core: ReviewDeps = {
-    reviewing: () => Promise.resolve({ starts: hour, latest, day: DAYS[hour] ?? '' }),
-    choosesReviewing: (starts) => {
+    getReviewSettings: () => Promise.resolve({ starts: hour, latest, day: DAYS[hour] ?? '' }),
+    setReviewSettings: (starts) => {
       written.push(starts)
       if (!refuses) hour = starts
       return Promise.resolve(refuses)
@@ -57,8 +57,8 @@ describe('the hour the window stands at', () => {
     const said = vi.fn()
     const hours = reviewSetting(
       {
-        reviewing: () => Promise.reject(new Error('gone')),
-        choosesReviewing: () => Promise.resolve(null),
+        getReviewSettings: () => Promise.reject(new Error('gone')),
+        setReviewSettings: () => Promise.resolve(null),
       },
       words,
       said,
@@ -134,8 +134,9 @@ describe('an hour chosen', () => {
     const said = vi.fn()
     const hours = reviewSetting(
       {
-        reviewing: () => Promise.resolve({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),
-        choosesReviewing: () => Promise.reject(new Error('not an hour of the day')),
+        getReviewSettings: () =>
+          Promise.resolve({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),
+        setReviewSettings: () => Promise.reject(new Error('not an hour of the day')),
       },
       words,
       said,

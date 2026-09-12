@@ -11,8 +11,8 @@ const vault = (held: boolean, parts = 6, refuses: string | null = null, most = 1
   return {
     wrote,
     counted,
-    hanging: async () => ({ hangs: held, parts, least: 1, most }),
-    choosesHanging: async (hangs: boolean, count?: number) => {
+    getHangingSettings: async () => ({ hangs: held, parts, least: 1, most }),
+    setHangingSettings: async (hangs: boolean, count?: number) => {
       wrote.push(hangs)
       counted.push(count)
       return refuses
@@ -35,7 +35,10 @@ describe('whether a node hangs the parts of its note', () => {
 
   it('hangs the parts where the vault cannot be asked', async () => {
     const held = useHangingSetting(
-      { hanging: async () => Promise.reject(new Error('no')), choosesHanging: async () => null },
+      {
+        getHangingSettings: async () => Promise.reject(new Error('no')),
+        setHangingSettings: async () => null,
+      },
       words,
       writer().says,
     )

@@ -165,28 +165,28 @@ describe('settings domain', () => {
     })
     asked.writeSettings.mockResolvedValue({})
 
-    expect(await core.syncing()).toBe(true)
-    expect(await core.choosesSyncing(false)).toBeNull()
+    expect(await core.getSyncEnabled()).toBe(true)
+    expect(await core.setSyncEnabled(false)).toBeNull()
 
-    const hung = await core.hanging()
+    const hung = await core.getHangingSettings()
     expect(hung.hangs).toBe(true)
     expect(hung.parts).toBe(3)
-    expect(await core.choosesHanging(false, 2)).toBeNull()
+    expect(await core.setHangingSettings(false, 2)).toBeNull()
 
-    const config = await core.settings()
+    const config = await core.getSettings()
     expect(config.path).toBe('settings.json')
-    await core.choosesSetting([])
+    await core.updateSettings([])
 
     asked.readSettingsFile.mockResolvedValue({ written: 'raw', path: 'settings.json' })
     asked.writeSettingsFile.mockResolvedValue({})
-    const file = await core.settingsFile()
+    const file = await core.getSettingsFile()
     expect(file.written).toBe('raw')
-    const saved = await core.writesSettingsFile('raw2', null)
+    const saved = await core.saveSettingsFile('raw2', null)
     expect(saved.changed).toBe(false)
 
-    const rev = await core.reviewing()
+    const rev = await core.getReviewSettings()
     expect(rev.starts).toBe('04:00')
-    expect(await core.choosesReviewing('05:00')).toBeNull()
+    expect(await core.setReviewSettings('05:00')).toBeNull()
   })
 })
 
@@ -200,7 +200,7 @@ describe('notes domain', () => {
     expect(neigh.focus.path).toBe('a.md')
 
     asked.getOpeningNote.mockResolvedValue({ note: { path: 'opening.md' } })
-    expect((await core.opening())?.path).toBe('opening.md')
+    expect((await core.getInitialOpenPath())?.path).toBe('opening.md')
 
     asked.renameNote.mockResolvedValue({
       path: 'b.md',
@@ -241,7 +241,7 @@ describe('session domain', () => {
     expect(await core.agentUnreachable()).toBe('offline')
 
     asked.writeOpenTabs.mockResolvedValue({})
-    await core.attending({ tabs: [], front: '' })
+    await core.setFocus({ tabs: [], front: '' })
     expect(asked.writeOpenTabs).toHaveBeenCalled()
 
     asked.reportFlush.mockResolvedValue({})

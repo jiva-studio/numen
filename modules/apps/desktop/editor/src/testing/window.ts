@@ -247,7 +247,7 @@ vi.mock('@/app/vault', () => ({
       },
     }),
     agentUnreachable: async () => '',
-    opening: async () => (said.opening ? { path: said.opening } : null),
+    getInitialOpenPath: async () => (said.opening ? { path: said.opening } : null),
     neighbourhood: async (path: string) => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       related: [],
@@ -283,7 +283,7 @@ vi.mock('@/app/vault', () => ({
     editing: held,
     tasks: held,
     focus: outside.stream,
-    attending: async (open: { tabs: readonly Tab[]; front: string }) => {
+    setFocus: async (open: { tabs: readonly Tab[]; front: string }) => {
       asked.attending.push(open)
     },
     quitting: held,

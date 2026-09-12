@@ -23,13 +23,13 @@ export interface Words {
 /** What this asks of the vault. */
 export interface SettingsStoreDeps {
   /** Every setting as it stands, and the models the settings offer. */
-  settings(): Promise<{
+  getSettings(): Promise<{
     readonly written: string
     readonly path: string
     readonly models: readonly Model[]
   }>
   /** Settings written. A value the settings cannot hold is refused. */
-  choosesSetting(written: readonly SettingEdit[]): Promise<void>
+  updateSettings(written: readonly SettingEdit[]): Promise<void>
 }
 
 /** What stands at a path through a tree of settings, and nothing where none does. */
@@ -52,9 +52,9 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
-    let answer: Awaited<ReturnType<SettingsStoreDeps['settings']>>
+    let answer: Awaited<ReturnType<SettingsStoreDeps['getSettings']>>
     try {
-      answer = await core.settings()
+      answer = await core.getSettings()
     } catch {
       // A vault that cannot be asked leaves the settings where they stand, and
       // the window already says it lost touch with the vault.
@@ -90,7 +90,7 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
     said('')
 
     try {
-      await core.choosesSetting(written)
+      await core.updateSettings(written)
     } catch (thrown) {
       said(`${words.unturned} ${formatErrorMessage(thrown)}`, 'error')
     }
