@@ -15,20 +15,15 @@ import {
   layers,
   modules,
   root,
-  screened,
-  screens,
-  unscreened,
+  unlayered,
 } from './modules.mjs'
 
 /**
  * The rules a module's own folders answer to, and one file under them the
  * cruise has to have reached. A module answering to none reads as null.
  */
-const boundary = (name) => {
-  if (screened.has(name)) return { rules: screens, reads: screened.get(name) }
-  if (layered.has(name)) return { rules: layers, reads: layered.get(name) }
-  return null
-}
+const boundary = (name) =>
+  layered.has(name) ? { rules: layers, reads: layered.get(name) } : null
 
 let broke = false
 
@@ -42,13 +37,13 @@ const wrong = (said) => {
 // one level down. Silence is the failure; a stated reason is not.
 for (const { name } of modules) {
   const read = boundary(name) !== null
-  const excused = Object.hasOwn(unscreened, name)
+  const excused = Object.hasOwn(unlayered, name)
   if (read === excused) {
     console.log(name)
     wrong(
       read
-        ? 'a boundary rule reads its folders and `unscreened` says why none does'
-        : 'no boundary rule reads its folders and `unscreened` gives no reason',
+        ? 'a boundary rule reads its folders and `unlayered` says why none does'
+        : 'no boundary rule reads its folders and `unlayered` gives no reason',
     )
   }
 }
@@ -71,7 +66,7 @@ for (const { name, at, sources, reads } of modules) {
 
   const cruised = JSON.parse(run.stdout)
   const { violations, totalCruised, totalDependenciesCruised } = cruised.summary
-  const aside = unscreened[name] ? `, no screens: ${unscreened[name]}` : ''
+  const aside = unlayered[name] ? `, no layers: ${unlayered[name]}` : ''
   console.log(
     `${name} (${at}): ${totalCruised} modules, ${totalDependenciesCruised} dependencies${aside}`,
   )
