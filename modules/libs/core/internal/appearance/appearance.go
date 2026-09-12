@@ -69,9 +69,9 @@ func (s Settings) Styles() string {
 	return out + buildSizeElement(s.InterfaceScale, s.TextScale)
 }
 
-// Into is the page carrying those elements, put where the head ends. A page
-// with no head is handed back as it was built.
-func Into(text []byte, styles string) []byte {
+// AddStyles is the page carrying those elements, put where the head ends. A
+// page with no head is handed back as it was built.
+func AddStyles(text []byte, styles string) []byte {
 	at := bytes.LastIndex(text, []byte(HeadEnd))
 	if styles == "" || at < 0 {
 		return text

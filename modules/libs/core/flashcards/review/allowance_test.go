@@ -26,7 +26,7 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 	} {
 		p := review.Defaults()
 		p.Goal, p.By, p.Backlog = one.goal, time.Now().AddDate(0, 0, 30), 40
-		admits := p.Admits(day, time.Now(), review.Spent{}, 0, 0)
+		admits := p.GetAllowance(day, time.Now(), review.Spent{}, 0, 0)
 
 		if got := admits.Limits.Backlog != ""; got != one.reads {
 			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.reads)
@@ -50,8 +50,8 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1
 	p.NewADay, p.ReviewsADay = 20, 20
 
-	fresh := p.Admits(day, time.Now(), review.Spent{}, 0, 0)
-	after := p.Admits(day, time.Now(), review.Spent{
+	fresh := p.GetAllowance(day, time.Now(), review.Spent{}, 0, 0)
+	after := p.GetAllowance(day, time.Now(), review.Spent{
 		Answered: 3, New: 3, Reviews: 3, Took: 18 * time.Second,
 	}, 0, 0)
 
@@ -71,7 +71,7 @@ func keeps(p review.Preset, day time.Weekday) review.Budget {
 	for at.Weekday() != day {
 		at = at.AddDate(0, 0, 1)
 	}
-	return p.Admits(review.Day{Starts: review.DayStarts}, at, review.Spent{}, 0, 0).Keeps
+	return p.GetAllowance(review.Day{Starts: review.DayStarts}, at, review.Spent{}, 0, 0).Keeps
 }
 
 // The budget a preset keeps on one day is that day of the week's share of it,
@@ -106,10 +106,10 @@ func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
 	if at.Weekday() != time.Sunday {
 		t.Fatalf("%v is a %v", at, at.Weekday())
 	}
-	if !p.Admits(ahead, at, review.Spent{}, 0, 0).IsPaused() {
+	if !p.GetAllowance(ahead, at, review.Spent{}, 0, 0).IsPaused() {
 		t.Error("a day at none of the load is not a pause")
 	}
-	if p.Admits(ahead, at.AddDate(0, 0, 1), review.Spent{}, 0, 0).IsPaused() {
+	if p.GetAllowance(ahead, at.AddDate(0, 0, 1), review.Spent{}, 0, 0).IsPaused() {
 		t.Error("the day after it is a pause")
 	}
 }

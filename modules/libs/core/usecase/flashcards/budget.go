@@ -120,7 +120,7 @@ func getBudgets(
 			learn = review.Ripens(at(p.Retention), day, p, now)
 		}
 		out.left[path] = &allowance{
-			admits: p.Admits(day, now, spent[path], unseen[path], learn),
+			admits: p.GetAllowance(day, now, spent[path], unseen[path], learn),
 			cost:   cost,
 			counts: p.Counts,
 			spent:  spent[path],

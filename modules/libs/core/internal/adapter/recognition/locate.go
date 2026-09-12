@@ -74,7 +74,7 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 	if name == "" {
 		return "", fmt.Errorf("no %s model: name one, or say where it is", kind)
 	}
-	for _, at := range onnxruntime.Beside(cfg.Dir, filepath.Base(name)) {
+	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(name)) {
 		if _, err := os.Stat(at); err == nil {
 			return at, nil
 		}

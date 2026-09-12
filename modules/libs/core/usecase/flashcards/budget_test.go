@@ -1075,7 +1075,7 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 // all is answered with the day it was asked about.
 func admession(p review.Preset, day review.Day, now time.Time) time.Time {
 	for range 8 {
-		if !p.Admits(day, now, review.Spent{}, 0, 0).IsPaused() {
+		if !p.GetAllowance(day, now, review.Spent{}, 0, 0).IsPaused() {
 			return now
 		}
 		now = day.GetEnd(now)

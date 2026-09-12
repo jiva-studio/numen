@@ -120,7 +120,7 @@ func writeProjection(out *strings.Builder, p review.Projection) {
 	fmt.Fprintf(out, "days %d faces %d seen %d owed %d clears %d learned %d learns %d short %d\n",
 		p.Days, p.Faces, p.Seen, p.Owed, p.Clears, p.Learned, p.Learns, p.Short)
 	fmt.Fprintf(out, "answered %d reviews %.6f minutes %.6f admits %d\n",
-		p.Answered, p.ReviewsADay, p.MinutesADay, p.Admits())
+		p.Answered, p.ReviewsADay, p.MinutesADay, p.CountAdmitted())
 	fmt.Fprintf(out, "load %s\n", numbers(p.Load))
 	fmt.Fprintf(out, "backlog %s\n", numbers(p.Backlog))
 	fmt.Fprintf(out, "spent %s\n", formatSpent(p.Spent))
@@ -136,7 +136,7 @@ func getRetainedShares(one review.RetentionByDay) []float64 {
 	days := one.Days()
 	out := make([]float64, 0, len(days))
 	for _, day := range days {
-		share, _ := one.On(day)
+		share, _ := one.GetShare(day)
 		out = append(out, share)
 	}
 	return out

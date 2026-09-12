@@ -42,23 +42,23 @@ type Endpoint struct {
 	close func() error
 }
 
-// Around runs one swap with the tools taken away, and serves them again on the
+// RunSwap runs one swap with the tools taken away, and serves them again on the
 // vault the window then has.
 //
 // One swap holds this at a time, so the endpoint is started again by the swap
 // that stopped it and on the vault that swap ended on.
-func (s *Endpoint) Around(swap func() error) error {
+func (s *Endpoint) RunSwap(swap func() error) error {
 	s.turn.Lock()
 	defer s.turn.Unlock()
 
-	s.Off()
-	defer s.On()
+	s.Stop()
+	defer s.Start()
 	return swap()
 }
 
-// On serves the tools against the vault in the window. A window standing on no
-// vault serves none.
-func (s *Endpoint) On() {
+// Start serves the tools against the vault in the window. A window standing on
+// no vault serves none.
+func (s *Endpoint) Start() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -75,8 +75,8 @@ func (s *Endpoint) On() {
 	s.close = shut
 }
 
-// Off stops the endpoint and the agents this window started.
-func (s *Endpoint) Off() {
+// Stop stops the endpoint and the agents this window started.
+func (s *Endpoint) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

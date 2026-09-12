@@ -48,7 +48,7 @@ func (r *reaching) SetSessionVault(_ context.Context, v domain.Vault) {
 	if again {
 		return
 	}
-	_ = r.swapping.Around(func() error { return nil })
+	_ = r.swapping.RunSwap(func() error { return nil })
 }
 
 func (r *reaching) getVault() domain.Vault {
@@ -121,7 +121,7 @@ func serveAgents(
 
 	api.Opened = held.SetSessionVault
 	return func() error {
-		held.swapping.Off()
+		held.swapping.Stop()
 		return nil
 	}
 }

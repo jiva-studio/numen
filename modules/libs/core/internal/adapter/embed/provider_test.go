@@ -14,7 +14,7 @@ func TestAModelRunHereAndOneServedAreTwoAddresses(t *testing.T) {
 	name := "intfloat/multilingual-e5-small"
 	here := embed.Provider{}.SetLocal(embed.LocalModel{Name: name})
 	served := embed.Provider{}.SetService(embed.ServiceModel{BaseURL: "http://127.0.0.1:1/v1", Name: name})
-	if a, b := here.From(), served.From(); a == b {
+	if a, b := here.GetAddress(), served.GetAddress(); a == b {
 		t.Errorf("both are %q", a)
 	}
 }
@@ -23,7 +23,7 @@ func TestAModelRunHereAndOneServedAreTwoAddresses(t *testing.T) {
 // for two models is two more.
 func TestAServiceIsAddressedByWhereItIsAndWhatIsAskedOfIt(t *testing.T) {
 	at := func(baseURL, name string) string {
-		return embed.ServiceModel{BaseURL: baseURL, Name: name}.From()
+		return embed.ServiceModel{BaseURL: baseURL, Name: name}.GetAddress()
 	}
 	if a, b := at("https://api.openai.com/v1", "e5"), at("http://127.0.0.1:1/v1", "e5"); a == b {
 		t.Errorf("two services are both %q", a)
@@ -41,18 +41,18 @@ func TestAServiceIsAddressedByWhereItIsAndWhatIsAskedOfIt(t *testing.T) {
 // configurations that name one file are one address.
 func TestOneBuildOnThisMachineIsOneAddress(t *testing.T) {
 	repository := "intfloat/multilingual-e5-small"
-	named := embed.LocalModel{Name: repository, File: embed.ModelFile}.From()
-	if got := (embed.LocalModel{Name: repository}).From(); got != named {
+	named := embed.LocalModel{Name: repository, File: embed.ModelFile}.GetAddress()
+	if got := (embed.LocalModel{Name: repository}).GetAddress(); got != named {
 		t.Errorf("%q and %q", got, named)
 	}
 	// Another build of one repository is another set of vectors.
-	if got := (embed.LocalModel{Name: repository, File: "model_int8.onnx"}).From(); got == named {
+	if got := (embed.LocalModel{Name: repository, File: "model_int8.onnx"}).GetAddress(); got == named {
 		t.Errorf("two builds are both %q", got)
 	}
 	// A folder is what the weights are read from, and is written how it is
 	// written.
-	held := embed.LocalModel{Dir: "/models/e5"}.From()
-	if got := (embed.LocalModel{Dir: "/models/e5/"}).From(); got != held {
+	held := embed.LocalModel{Dir: "/models/e5"}.GetAddress()
+	if got := (embed.LocalModel{Dir: "/models/e5/"}).GetAddress(); got != held {
 		t.Errorf("%q and %q", got, held)
 	}
 	if held == named {
@@ -63,7 +63,7 @@ func TestOneBuildOnThisMachineIsOneAddress(t *testing.T) {
 // A provider naming neither is an installation with no model, and has no
 // address at all.
 func TestAProviderThatNamesNeitherIsNowhere(t *testing.T) {
-	if got := (embed.Provider{}).From(); got != "" {
+	if got := (embed.Provider{}).GetAddress(); got != "" {
 		t.Errorf("got %q", got)
 	}
 }

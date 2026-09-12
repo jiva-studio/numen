@@ -25,7 +25,7 @@ func newAdd(t *testing.T) (vaults.Add, *appstate.VaultRegistry) {
 
 func registryAt(t *testing.T) *appstate.VaultRegistry {
 	t.Helper()
-	return appstate.At(filepath.Join(t.TempDir(), "state", "vaults.json"))
+	return appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
 }
 
 // folder makes a directory named name, under a parent of its own.

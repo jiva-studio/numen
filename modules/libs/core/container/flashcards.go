@@ -52,7 +52,7 @@ func (c Config) DayStarts() time.Duration {
 	if err != nil {
 		return settings.DefaultStarts()
 	}
-	held, err := settings.At(path)
+	held, err := settings.OpenAt(path)
 	if err != nil {
 		return settings.DefaultStarts()
 	}

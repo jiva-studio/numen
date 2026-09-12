@@ -63,7 +63,7 @@ func TestAThemeFolderReachedThroughALinkIsWatched(t *testing.T) {
 		t.Skipf("this machine does not make links: %v", err)
 	}
 
-	catalogue, err := theme.At(link)
+	catalogue, err := theme.OpenAt(link)
 	if err != nil {
 		t.Fatal(err)
 	}

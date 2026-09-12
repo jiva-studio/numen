@@ -13,7 +13,7 @@ import (
 // with the process's runtime, so which of a reading and a transcription opens
 // first settles nothing.
 func init() {
-	onnxruntime.Alongside(func(at string) {
+	onnxruntime.Register(func(at string) {
 		// A reader asked for with no models is refused, and the engine it was
 		// to read through is made first.
 		_, _ = paddle.NewEngine(paddle.Config{OnnxRuntimeLibPath: at})

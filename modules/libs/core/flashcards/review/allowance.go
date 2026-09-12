@@ -18,12 +18,13 @@ type Budget struct {
 	Minutes float64
 }
 
-// on is the budget a preset keeps on this day of the week: its share of the
+// getBudget is what a preset keeps for this day of the week: its share of the
 // load, whether or not the days are evened out.
 //
-// What a day of it admits is Admits, which is the one place a limit is read.
-func (p Preset) on(day time.Weekday) Budget {
-	share := p.Share(day)
+// What a day of it admits is GetAllowance, which is the one place a limit is
+// read.
+func (p Preset) getBudget(day time.Weekday) Budget {
+	share := p.GetShare(day)
 	return Budget{
 		New:     int(math.Round(share * float64(p.NewADay))),
 		Reviews: int(math.Round(share * float64(p.ReviewsADay))),
@@ -63,27 +64,27 @@ type BudgetNames []BudgetName
 // them.
 var closers = []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews, ClosedDate}
 
-// Holds reports whether this budget is one of those that closed the day.
-func (c BudgetNames) Holds(one BudgetName) bool { return slices.Contains(c, one) }
+// Has reports whether this budget is one of those that closed the day.
+func (c BudgetNames) Has(one BudgetName) bool { return slices.Contains(c, one) }
 
-// with is this closing and one budget more, named once and in the order closers
+// add is this closing and one budget more, named once and in the order closers
 // stands in.
-func (c BudgetNames) with(one BudgetName) BudgetNames {
-	if !slices.Contains(closers, one) || c.Holds(one) {
+func (c BudgetNames) add(one BudgetName) BudgetNames {
+	if !slices.Contains(closers, one) || c.Has(one) {
 		return c
 	}
 	out := make(BudgetNames, 0, len(c)+1)
 	for _, each := range closers {
-		if each == one || c.Holds(each) {
+		if each == one || c.Has(each) {
 			out = append(out, each)
 		}
 	}
 	return out
 }
 
-// Name is the key one budget is written under, and empty where the day was
+// GetName is the key one budget is written under, and empty where the day was
 // closed by none or by more than one.
-func (c BudgetNames) Name() string {
+func (c BudgetNames) GetName() string {
 	if len(c) != 1 {
 		return ""
 	}
@@ -137,26 +138,26 @@ type Allowance struct {
 // IsPaused reports whether this day schedules nothing.
 func (a Allowance) IsPaused() bool { return a.Stops != StoppedNothing }
 
-// Admits is what this preset's day admits.
+// GetAllowance is what this preset's day admits.
 //
 // Now is any instant of the review day, spent is what that day has already gone
 // through under the preset, unbegunCards is the material it has still to begin,
 // and daysToLearn is how many days of review a card face begun now needs before
 // the preset counts it learned, which a date paces the day against.
-func (p Preset) Admits(
+func (p Preset) GetAllowance(
 	d Day, now time.Time, spent Spent, unbegunCards, daysToLearn int,
 ) Allowance {
 	opened := d.GetDate(now)
 	out := Allowance{
-		Keeps:  p.on(opened.Weekday()),
-		Limits: p.limits(),
-		Stops:  p.StopsOn(d, now),
+		Keeps:  p.getBudget(opened.Weekday()),
+		Limits: p.getLimits(),
+		Stops:  p.GetStopReason(d, now),
 	}
 	if p.Goal == GoalDate {
 		// The pace is a whole day's share of the material, and this day carries
 		// as much of it as its day of the week carries of the load.
 		out.Keeps.New = int(math.Round(
-			p.Share(opened.Weekday()) * float64(p.paces(d, now, unbegunCards, daysToLearn))))
+			p.GetShare(opened.Weekday()) * float64(p.getPace(d, now, unbegunCards, daysToLearn))))
 	}
 	// A split that takes no part leaves the day spending on the debt first,
 	// which is what a preset naming no share does.
@@ -170,8 +171,8 @@ func (p Preset) Admits(
 	return out
 }
 
-// Paying reports whether the next card of this day comes from the debt before
-// it. False is a card from the material the preset has not begun.
+// IsPayingDebt reports whether the next card of this day comes from the debt
+// before it. False is a card from the material the preset has not begun.
 //
 // Debt and begun are how many of each the day has taken so far, and owed and
 // fresh whether either side has a card left to give. The day is spent between
@@ -189,7 +190,7 @@ func (a Allowance) IsPayingDebt(debt, begun int, owed, fresh bool) bool {
 	return debt*AllBacklog < a.Backlog*(debt+begun+1)
 }
 
-// limits is which budget closes this preset's day.
+// getLimits is which budget closes this preset's day.
 //
 // A goal of a date closes the day on a count of new cards, which is the share
 // of the material a day has to begin to be through it by then. The date is what
@@ -198,7 +199,7 @@ func (a Allowance) IsPayingDebt(debt, begun int, owed, fresh bool) bool {
 // The share of the day that goes to the debt is read where one pot is spent
 // between the two. A goal of retention keeps a count for each side, so each is
 // held to its own and the share decides nothing.
-func (p Preset) limits() Limits {
+func (p Preset) getLimits() Limits {
 	switch p.Goal {
 	case GoalRetention:
 		return Limits{New: ClosedNew, Reviews: ClosedReviews}

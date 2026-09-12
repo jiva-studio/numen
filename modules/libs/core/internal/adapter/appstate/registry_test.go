@@ -16,7 +16,7 @@ import (
 
 func newRegistry(t *testing.T) *appstate.VaultRegistry {
 	t.Helper()
-	return appstate.At(filepath.Join(t.TempDir(), "state", "vaults.json"))
+	return appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
 }
 
 func TestMissingFileIsAnEmptyList(t *testing.T) {
@@ -156,7 +156,7 @@ func TestRemovingAVaultThatIsNotOnTheListIsNotAnError(t *testing.T) {
 func TestTheVaultOpenedLastSurvivesARoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "vaults.json")
 	v := domain.Vault{ID: "01BBB", Name: "work", Path: "/work"}
-	first := appstate.At(path)
+	first := appstate.OpenAt(path)
 	if err := first.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
 		t.Fatal(err)
 	}
@@ -168,7 +168,7 @@ func TestTheVaultOpenedLastSurvivesARoundTrip(t *testing.T) {
 	}
 
 	// A second registry over the same file is the next run of the application.
-	got, found, err := appstate.At(path).Last()
+	got, found, err := appstate.OpenAt(path).Last()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +189,7 @@ func TestNothingWasOpenedUntilAVaultIs(t *testing.T) {
 
 func TestRemovingTheVaultOpenedLastForgetsThatItWas(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "vaults.json")
-	r := appstate.At(path)
+	r := appstate.OpenAt(path)
 	for _, v := range []domain.Vault{
 		{ID: "01AAA", Name: "personal", Path: "/notes"},
 		{ID: "01BBB", Name: "work", Path: "/work"},
@@ -236,7 +236,7 @@ func TestFileIsReadableByAHuman(t *testing.T) {
 	// The registry is JSON precisely so that it can be opened and fixed when the
 	// application will not start, so its shape is part of the contract.
 	path := filepath.Join(t.TempDir(), "vaults.json")
-	r := appstate.At(path)
+	r := appstate.OpenAt(path)
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +263,7 @@ func TestTheFileNamesTheVaultOpenedLast(t *testing.T) {
 	// Part of the same contract: a person reading the file sees which vault the
 	// application will open, and the key is absent until one has been opened.
 	path := filepath.Join(t.TempDir(), "vaults.json")
-	r := appstate.At(path)
+	r := appstate.OpenAt(path)
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
 		t.Fatal(err)
 	}
@@ -345,7 +345,7 @@ func TestConcurrentWritesLoseNothing(t *testing.T) {
 
 func TestWriteDoesNotLeaveATemporaryFileBehind(t *testing.T) {
 	dir := t.TempDir()
-	r := appstate.At(filepath.Join(dir, "vaults.json"))
+	r := appstate.OpenAt(filepath.Join(dir, "vaults.json"))
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "x", Path: "/x"}); err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +368,7 @@ func TestTheRegistryTakesATemporaryNameOfItsOwn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r := appstate.At(path)
+	r := appstate.OpenAt(path)
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
 		t.Fatal(err)
 	}
@@ -388,7 +388,7 @@ func TestAFailedSaveLeavesTheOldRegistryIntact(t *testing.T) {
 	// fail and checks that what was already there survived.
 	dir := t.TempDir()
 	path := filepath.Join(dir, "vaults.json")
-	r := appstate.At(path)
+	r := appstate.OpenAt(path)
 
 	original := domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}
 	if err := r.Save(original); err != nil {

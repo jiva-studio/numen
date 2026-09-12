@@ -140,7 +140,7 @@ func TestASizeIsWrittenBesideTheZoomAFileStillNames(t *testing.T) {
 	}
 
 	// Both names in one file: the window is drawn at the one this build reads.
-	cfg, err := settings.At(path)
+	cfg, err := settings.OpenAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,7 +238,7 @@ func TestAKeyAPersonTypedIsStillThereAfterAThemeIsSaved(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg, err := settings.At(path)
+	cfg, err := settings.OpenAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,7 +325,7 @@ func TestSavingIntoAFileThatIsNotThereWritesTheSettingAlone(t *testing.T) {
 		t.Errorf("the file holds more than the setting:\n%s", raw)
 	}
 
-	cfg, err := settings.At(path)
+	cfg, err := settings.OpenAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,7 +420,7 @@ func TestAnUntouchedInstallationIsWrittenThroughTheLink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := settings.At(link); err != nil {
+	if _, err := settings.OpenAt(link); err != nil {
 		t.Fatal(err)
 	}
 

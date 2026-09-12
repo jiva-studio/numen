@@ -67,7 +67,7 @@ func deleteTranscript(api *API) error {
 func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 	held := whole(newCues())
 	held[derived.Corrections(asr, hashed)] = held[derived.Artifact(asr, hashed)]
-	held[derived.Beside(asr, hashed)] = []byte(`{"model":"parakeet"}`)
+	held[derived.GetProducerFile(asr, hashed)] = []byte(`{"model":"parakeet"}`)
 	api, index, _ := dropper(t, held, newTranscriptIndex())
 
 	if err := deleteTranscript(api); err != nil {

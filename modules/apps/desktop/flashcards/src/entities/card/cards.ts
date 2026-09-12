@@ -31,7 +31,7 @@ export type Intervals = Readonly<Record<Grade, number>>
  * same answer to the person choosing, and the shorter the word the faster the
  * four are read.
  */
-export const ahead = (seconds: number): string => {
+export const getTimeAhead = (seconds: number): string => {
   const minutes = Math.max(1, Math.round(seconds / 60))
   if (minutes < 60) return `${minutes}m`
   const hours = Math.round(minutes / 60)

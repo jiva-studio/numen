@@ -5,10 +5,10 @@ import {
   GAP,
   NEARER,
   clampZoom,
+  getPagesWithin,
   inFront,
   row,
   standAt,
-  within,
   type Page,
 } from './strip'
 import type { Size } from '@/shared/lib/geometry'
@@ -82,7 +82,7 @@ describe('which pages are drawn', () => {
   it('draws the pages in the viewport and a little either side', () => {
     const laid = row(book(500), VIEWPORT, 1)
 
-    const shown = within(laid, VIEWPORT, 0)
+    const shown = getPagesWithin(laid, VIEWPORT, 0)
 
     expect(shown[0]).toBe(0)
     expect(shown.length).toBeLessThan(500)
@@ -95,7 +95,7 @@ describe('which pages are drawn', () => {
     const laid = row(book(500), VIEWPORT, 1)
     const at = 300
 
-    const shown = within(laid, VIEWPORT, laid.starts[at]!)
+    const shown = getPagesWithin(laid, VIEWPORT, laid.starts[at]!)
 
     expect(shown).toContain(at)
     expect(shown).not.toContain(0)
@@ -106,13 +106,13 @@ describe('which pages are drawn', () => {
     const laid = row(book(500), VIEWPORT, 1)
     const at = 300
 
-    const shown = within(laid, VIEWPORT, laid.starts[at]!)
+    const shown = getPagesWithin(laid, VIEWPORT, laid.starts[at]!)
 
     expect(shown).toContain(at - 1)
   })
 
   it('draws nothing for a document with no pages', () => {
-    expect(within(row([], VIEWPORT, 1), VIEWPORT, 0)).toEqual([])
+    expect(getPagesWithin(row([], VIEWPORT, 1), VIEWPORT, 0)).toEqual([])
   })
 })
 
@@ -176,7 +176,7 @@ describe('a viewport nothing has been measured in', () => {
     expect(laid.height).toBe(0)
     expect(laid.widths).toEqual([])
     expect(laid.length).toBe(0)
-    expect(within(laid, { width: 0, height: 0 }, 0)).toEqual([])
+    expect(getPagesWithin(laid, { width: 0, height: 0 }, 0)).toEqual([])
   })
 
   it('makes no row in a viewport too short to stand a page in', () => {

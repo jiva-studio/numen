@@ -70,7 +70,7 @@ func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
 		t.Errorf("the file came back as %s", after)
 	}
 
-	held, err := settings.At(path)
+	held, err := settings.OpenAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := settings.At(path)
+	held, err := settings.OpenAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}

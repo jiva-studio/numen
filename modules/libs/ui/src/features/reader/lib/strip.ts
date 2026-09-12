@@ -120,7 +120,7 @@ function sizeOf(pages: readonly Page[], page: number): Page {
  * A book is five hundred pages and a page is half a megabyte. A row that drew
  * all of them would ask for a book's worth of pixels to show one page.
  */
-export function within(row: Row, viewport: Size, along: number): number[] {
+export function getPagesWithin(row: Row, viewport: Size, along: number): number[] {
   const from = along - viewport.width * BEYOND
   const to = along + viewport.width * (1 + BEYOND)
   const out: number[] = []

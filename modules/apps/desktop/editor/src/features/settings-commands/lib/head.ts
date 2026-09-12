@@ -34,7 +34,7 @@ const findStyle = (sheet: Document, is: string): HTMLStyleElement | null =>
  */
 export const getStyleElements = (sheet: Document): StyleElements => {
   const mode = findStyle(sheet, IS_MODE) ?? sheet.head.appendChild(createStyle(IS_MODE, sheet))
-  const theme = findStyle(sheet, IS_THEME) ?? after(mode, IS_THEME, sheet)
+  const theme = findStyle(sheet, IS_THEME) ?? addAfter(mode, IS_THEME, sheet)
   return { mode, theme, sizes: findStyle(sheet, IS_SIZES) ?? undefined }
 }
 
@@ -46,7 +46,7 @@ const createStyle = (is: string, sheet: Document): HTMLStyleElement => {
 }
 
 /** An element straight after another, which is where the next of the three goes. */
-export const after = (
+export const addAfter = (
   before: HTMLStyleElement,
   is: string,
   sheet: Document,

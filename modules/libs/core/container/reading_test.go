@@ -88,7 +88,7 @@ func TestASearchWithNoModelIsAnsweredByTheWords(t *testing.T) {
 func TestASecondOpeningOfTheIndexKnowsItsSources(t *testing.T) {
 	cfg, vault := makeScannedVault(t)
 
-	held, err := read(t, cfg).SourcesKnown().Under(t.Context(), vault.ID, "Entropy.md")
+	held, err := read(t, cfg).SourcesKnown().GetSourcesUnder(t.Context(), vault.ID, "Entropy.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +115,7 @@ func TestAnIndexNobodyHasBuiltAnswersEmpty(t *testing.T) {
 	if len(found) != 0 {
 		t.Errorf("the search answered with %d passages", len(found))
 	}
-	if held, err := db.SourcesKnown().Under(t.Context(), vault.ID, ""); err != nil || len(held) != 0 {
+	if held, err := db.SourcesKnown().GetSourcesUnder(t.Context(), vault.ID, ""); err != nil || len(held) != 0 {
 		t.Errorf("the vault holds %d sources: %v", len(held), err)
 	}
 }

@@ -20,7 +20,7 @@ func IsFetched(cfg Config, held RecogniserModel) bool {
 	if held.Name == "" {
 		return false
 	}
-	for _, at := range onnxruntime.Beside(cfg.Dir, filepath.Base(held.Name)) {
+	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(held.Name)) {
 		if stands(at) {
 			return true
 		}

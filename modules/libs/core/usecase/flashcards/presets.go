@@ -93,7 +93,7 @@ func NewPresets(
 // stops is why a preset schedules nothing, and why it schedules nothing today.
 func (u Presets) stops(p review.Preset) (review.StopReason, review.StopReason) {
 	at := u.Now()
-	return p.Stops(u.Day, at), p.StopsOn(u.Day, at)
+	return p.Stops(u.Day, at), p.GetStopReason(u.Day, at)
 }
 
 // PresetSummary is one preset as a person choosing between them sees it: where

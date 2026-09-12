@@ -164,7 +164,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	// The transcript is asked about batch by batch, and then once more around
 	// the cuts a sentence was answered for past the end of. What the whole
 	// recording holds stands on every batch of it.
-	about := proofread.About(cues)
+	about := proofread.Describe(cues)
 	spoken := setContext(proofread.GetSpeechBatches(cues, u.batchSize(), u.overlap()), about)
 	batches := spoken
 	// The seams are cut from the transcript as this run found it, so the batch

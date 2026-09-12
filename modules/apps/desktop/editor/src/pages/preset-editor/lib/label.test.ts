@@ -8,14 +8,14 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  against,
-  againstBox,
   AXIS_HIGH,
   AXIS_WIDE,
   calloutOf,
   CALLOUT_GAP,
   CALLOUT_HIGH,
   CALLOUT_WIDE,
+  getAxisNumber,
+  getAxisNumberBox,
   getNameBox,
   heightsOf,
   LABEL,
@@ -80,7 +80,7 @@ describe('the room a name over a mark takes', () => {
 
 describe('where a number against a line is set', () => {
   it('stands at the left of the picture, at the height it is read off', () => {
-    const at = against(FOOT, '0')
+    const at = getAxisNumber(FOOT, '0')
 
     expect(at.insetInlineStart).toBe(`${(LEFT / WIDE) * 100}%`)
     expect(at.insetBlockStart).toBe(`${(FOOT / HIGH) * 100}%`)
@@ -88,7 +88,7 @@ describe('where a number against a line is set', () => {
   })
 
   it('is read against the room it is given, which the extent under the picture has its own of', () => {
-    expect(against(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high).insetBlockStart).toBe(
+    expect(getAxisNumber(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high).insetBlockStart).toBe(
       `${(BACKLOG_PLOT.foot / BACKLOG_PLOT.high) * 100}%`,
     )
   })
@@ -96,7 +96,7 @@ describe('where a number against a line is set', () => {
 
 describe('the room a number against a line takes', () => {
   it('hangs below the height where it is set on it', () => {
-    expect(againstBox(FOOT, '0')).toStrictEqual({
+    expect(getAxisNumberBox(FOOT, '0')).toStrictEqual({
       x: LEFT,
       y: FOOT,
       wide: AXIS_WIDE,
@@ -105,7 +105,7 @@ describe('the room a number against a line takes', () => {
   })
 
   it('stands above the height where it is lifted off it', () => {
-    expect(againstBox(TOP, '-100%').y).toBe(TOP - AXIS_HIGH)
+    expect(getAxisNumberBox(TOP, '-100%').y).toBe(TOP - AXIS_HIGH)
   })
 })
 
@@ -225,8 +225,8 @@ describe('the numbers read off the picture’s edges', () => {
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['10', '0'])
     expect(numbers.map((one) => one.box)).toStrictEqual([
-      againstBox(TOP, '-100%'),
-      againstBox(FOOT, '0'),
+      getAxisNumberBox(TOP, '-100%'),
+      getAxisNumberBox(FOOT, '0'),
     ])
   })
 
@@ -235,7 +235,7 @@ describe('the numbers read off the picture’s edges', () => {
     const numbers = heightsOf({ least: 4, most: 4 }, clear, [], null, formatValue)
 
     expect(numbers).toStrictEqual([
-      { at: against(FOOT, '0'), box: againstBox(FOOT, '0'), text: '4' },
+      { at: getAxisNumber(FOOT, '0'), box: getAxisNumberBox(FOOT, '0'), text: '4' },
     ])
   })
 

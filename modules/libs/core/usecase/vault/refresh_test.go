@@ -198,7 +198,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	if found := passages(t, db, v, "reversible"); len(found) != 0 {
 		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
 	}
-	held, err := db.SourcesKnown().Under(t.Context(), v.ID, "library")
+	held, err := db.SourcesKnown().GetSourcesUnder(t.Context(), v.ID, "library")
 	if err != nil {
 		t.Fatal(err)
 	}

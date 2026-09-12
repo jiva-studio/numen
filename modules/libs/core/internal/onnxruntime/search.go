@@ -22,7 +22,7 @@ func candidates(s Settings) []string {
 		dir = ""
 	}
 	var out []string
-	for _, at := range Beside(s.Dir, runtimeNames...) {
+	for _, at := range GetPaths(s.Dir, runtimeNames...) {
 		if stands(dir, at) {
 			out = append(out, at)
 		}
@@ -67,9 +67,9 @@ func load(candidates []string) (*ort.Engine, string, []string) {
 	return nil, "", refused
 }
 
-// Beside is where a file may be: in the folder the settings name, and in the
+// GetPaths is where a file may be: in the folder the settings name, and in the
 // folder the application was installed into.
-func Beside(dir string, names ...string) []string {
+func GetPaths(dir string, names ...string) []string {
 	var out []string
 	for _, name := range names {
 		if dir != "" {

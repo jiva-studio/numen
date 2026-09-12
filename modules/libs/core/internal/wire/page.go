@@ -69,7 +69,7 @@ func Page(
 		return
 	}
 	if said, is := readAppearanceSettings(r.Context(), themes); is {
-		text = appearance.Into(text, said.Styles())
+		text = appearance.AddStyles(text, said.Styles())
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

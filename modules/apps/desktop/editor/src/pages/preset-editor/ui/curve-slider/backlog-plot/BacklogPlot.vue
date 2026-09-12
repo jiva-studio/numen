@@ -8,7 +8,7 @@
  * above, and `data-backlog` for the two of its own: `picture` and `line`.
  */
 import { computed } from 'vue'
-import { against, clearAt } from '../../../lib/label'
+import { clearAt, getAxisNumber } from '../../../lib/label'
 import {
   BACKLOG_HIGH,
   BACKLOG_PLOT,
@@ -64,10 +64,12 @@ const heights = computed(() => {
   const formatValue = (value: number) => words.backlogHeightAt(value)
   const heightsAt = (y: number, lift: string, value: number) =>
     clearAt(y, positions.value, [])
-      ? [{ at: against(y, lift, BACKLOG_PLOT.high), text: formatValue(value) }]
+      ? [{ at: getAxisNumber(y, lift, BACKLOG_PLOT.high), text: formatValue(value) }]
       : []
   if (most === least) {
-    return [{ at: against(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high), text: formatValue(least) }]
+    return [
+      { at: getAxisNumber(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high), text: formatValue(least) },
+    ]
   }
   return [
     ...heightsAt(BACKLOG_PLOT.top, '-100%', most),

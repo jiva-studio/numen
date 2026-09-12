@@ -433,11 +433,11 @@ func ReadAnswer(raw []byte) (gave, said string) {
 	return "", ""
 }
 
-// Beside is the name of what says which models produced an artifact. Nothing on
-// any hot path reads it; it is there so a person can ask what read a text they
-// are looking at, and so a sweep can find everything a recogniser now known to
-// be bad produced.
-func Beside(from, hash string) string { return under(from, hash, ".json") }
+// GetProducerFile is the name of what says which models produced an artifact.
+// Nothing on any hot path reads it; it is there so a person can ask what read a
+// text they are looking at, and so a sweep can find everything a recogniser now
+// known to be bad produced.
+func GetProducerFile(from, hash string) string { return under(from, hash, ".json") }
 
 // Names is every file one recognition of these bytes is kept under. One run
 // made them and none of them means anything without the others.
@@ -452,7 +452,7 @@ func Names(from, hash string) []string {
 			Corrections(from, hash),
 			Proofread(from, hash),
 			Answer(from, hash),
-			Beside(from, hash),
+			GetProducerFile(from, hash),
 		}
 	}
 	return []string{
@@ -462,7 +462,7 @@ func Names(from, hash string) []string {
 		Parts(from, hash),
 		Corrections(from, hash),
 		Proofread(from, hash),
-		Beside(from, hash),
+		GetProducerFile(from, hash),
 	}
 }
 

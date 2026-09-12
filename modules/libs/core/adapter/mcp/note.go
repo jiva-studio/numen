@@ -370,7 +370,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			if err := ctx.Err(); err != nil {
 				return nil, out{}, err
 			}
-			moved, err := core.Notes.Move.Execute(ctx, core.getShownVault().Vault, path, note.Into(in.Folder, path))
+			moved, err := core.Notes.Move.Execute(ctx, core.getShownVault().Vault, path, note.GetPathUnder(in.Folder, path))
 			outcome := MoveOutcome{MoveResult: moved}
 			if err != nil {
 				outcome.MoveResult = note.MoveResult{From: path}

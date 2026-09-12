@@ -15,7 +15,7 @@ import { DWELL } from '../model/dwell'
 import { type PlexPart } from '../lib/inside'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 import { neighbourhoodOf, walkStart } from '../fixtures/walk'
-import { around, build, type TitledNode } from '../fixtures/build'
+import { build, buildAround, type TitledNode } from '../fixtures/build'
 import { nameNow } from '../fixtures/names'
 import { ring } from '../lib/arrange/ring'
 import type { PlexEdge } from '../lib/edge'
@@ -154,7 +154,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
 
     const neighbourhood = computed<PlexNeighbourhood>(() => {
       const base = focus.value
-        ? around(focus.value, cameFrom.value, countsFrom(args))
+        ? buildAround(focus.value, cameFrom.value, countsFrom(args))
         : start(args)
       const here = focus.value?.id ?? base.nodes.find((n) => n.seat === 'focus')?.id
       const mine = made.value.filter((node) =>

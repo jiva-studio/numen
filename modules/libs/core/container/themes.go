@@ -83,10 +83,10 @@ func (l *scales) clearSizes(chosen theme.Appearance) {
 
 func (c Config) catalogue() (theme.Catalogue, error) {
 	if c.ThemesPath != "" {
-		return theme.At(c.ThemesPath)
+		return theme.OpenAt(c.ThemesPath)
 	}
 	if folder, chosen := c.beside("themes"); chosen {
-		return theme.At(folder)
+		return theme.OpenAt(folder)
 	}
 	return theme.Open()
 }
@@ -98,7 +98,7 @@ func (c Config) readAppearance(said *scales) (theme.Appearance, error) {
 	if err != nil {
 		return theme.Appearance{}, err
 	}
-	held, err := settings.At(path)
+	held, err := settings.OpenAt(path)
 	if err != nil {
 		return theme.Appearance{}, err
 	}

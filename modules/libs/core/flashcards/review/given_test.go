@@ -47,7 +47,7 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 	}
 
 	for face, want := range review.Replay(day, by, answers) {
-		if got := given.Replay(day, review.By(by))[face]; got != want {
+		if got := given.Replay(day, review.ScheduleBy(by))[face]; got != want {
 			t.Errorf("%+v stands at %+v, want %+v", face, got, want)
 		}
 	}

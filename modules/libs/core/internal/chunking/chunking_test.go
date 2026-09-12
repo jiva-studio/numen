@@ -397,17 +397,17 @@ func flatten(out []Chunk) []Chunk {
 // several tokens a word, and a chunk the model silently truncates is a chunk
 // indexed for text it does not contain.
 func TestAChunkIsBoundedUnderTheModelsLimit(t *testing.T) {
-	if got := Under(0); got != DefaultLimit {
+	if got := GetCharacterBound(0); got != DefaultLimit {
 		t.Errorf("a model that said nothing gives %d", got)
 	}
-	if got := Under(256); got >= 256*4 {
+	if got := GetCharacterBound(256); got >= 256*4 {
 		t.Errorf("256 tokens allow %d characters, which is not a floor", got)
 	}
-	if Under(256) <= 0 {
+	if GetCharacterBound(256) <= 0 {
 		t.Error("a model with a limit allows nothing")
 	}
 	// More tokens allow more characters, and the two move together.
-	if Under(512) <= Under(256) {
+	if GetCharacterBound(512) <= GetCharacterBound(256) {
 		t.Error("twice the tokens do not allow more characters")
 	}
 }

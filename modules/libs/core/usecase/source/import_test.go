@@ -124,7 +124,7 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 	if got := getWords(t, raw); len(got) != 2 || got[0] != "what was said" {
 		t.Errorf("the words read %v", got)
 	}
-	if _, err := kept.Read(t.Context(), text.Beside(text.Captions, hash)); err != nil {
+	if _, err := kept.Read(t.Context(), text.GetProducerFile(text.Captions, hash)); err != nil {
 		t.Errorf("what downloaded the words is not recorded: %v", err)
 	}
 }

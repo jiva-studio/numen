@@ -353,7 +353,7 @@ func TestWhatReadItIsKeptBesideWhatItRead(t *testing.T) {
 	src := index.sources[v.ID][documentPath]
 	hash := src.Hash
 
-	raw, err := shelf.Read(t.Context(), text.Beside("ocr", hash))
+	raw, err := shelf.Read(t.Context(), text.GetProducerFile("ocr", hash))
 	if err != nil {
 		t.Fatalf("nothing says what read the document: %v", err)
 	}

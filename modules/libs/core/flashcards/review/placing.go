@@ -27,15 +27,15 @@ type DueByDay struct {
 // them.
 func NewDueByDay(d Day) *DueByDay { return &DueByDay{day: d, on: make(map[int]int)} }
 
-// Holds counts one card face against the day its schedule falls in.
-func (s *DueByDay) Holds(due time.Time) {
+// Add counts one card face against the day its schedule falls in.
+func (s *DueByDay) Add(due time.Time) {
 	if s != nil {
 		s.on[s.number(due)]++
 	}
 }
 
-// On is how many card faces fall on the day of review holding this instant.
-func (s *DueByDay) On(at time.Time) int {
+// CountOn is how many card faces fall on the day of review holding this instant.
+func (s *DueByDay) CountOn(at time.Time) int {
 	if s == nil {
 		return 0
 	}
@@ -75,7 +75,7 @@ func weekday(number int) time.Weekday {
 // come here.
 func (p Preset) Places(s *DueByDay, at, due time.Time) time.Time {
 	out := p.lands(s, at, due)
-	s.Holds(out)
+	s.Add(out)
 	return out
 }
 
@@ -123,7 +123,7 @@ func (p Preset) lands(s *DueByDay, at, due time.Time) time.Time {
 // weighs is how much a numbered day of review wants another card: the share of
 // the load its day of the week keeps, over what already falls on it.
 func (p Preset) weighs(s *DueByDay, day int) float64 {
-	return p.Share(weekday(day)) / float64(1+s.on[day])
+	return p.GetShare(weekday(day)) / float64(1+s.on[day])
 }
 
 // slacks is how far either side of an interval a card may be put, by how long

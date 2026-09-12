@@ -18,7 +18,7 @@ import (
 // met a conflict leaves a second copy of a run beside the first, and a person
 // restoring a backup puts one there by hand.
 func Replay(d Day, by Scheduler, answers []Answer) map[CardFaceID]Schedule {
-	return Give(answers).Replay(d, By(by))
+	return Give(answers).Replay(d, ScheduleBy(by))
 }
 
 // SchedulingPolicy is what one card face is worked out under: the scheduler
@@ -33,9 +33,9 @@ type SchedulingPolicy struct {
 // cards send the same card away for different lengths of time.
 type Assignment func(CardFaceID) SchedulingPolicy
 
-// By is one scheduler for every card face, on the preset a deck naming none is
-// scheduled by.
-func By(s Scheduler) Assignment {
+// ScheduleBy is one scheduler for every card face, on the preset a deck naming
+// none is scheduled by.
+func ScheduleBy(s Scheduler) Assignment {
 	return func(CardFaceID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
 }
 

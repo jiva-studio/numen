@@ -109,7 +109,7 @@ func (c Config) GetQueryProvider() Provider {
 // under: the model, made where the index is filled. A question is embedded
 // wherever the settings place it and claims the rows already there.
 func (c Config) GetStoredModel() port.EmbeddingModel {
-	return c.Model.GetStoredModel(c.Indexing.From())
+	return c.Model.GetStoredModel(c.Indexing.GetAddress())
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.

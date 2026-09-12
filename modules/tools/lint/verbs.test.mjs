@@ -1,12 +1,24 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { goSources, sources } from './source.mjs'
-import { baseline, declares, goBaseline, goDeclares, nouns, refused, takes, words } from './verbs.mjs'
+import {
+  baseline,
+  declares,
+  declaresAbroad,
+  goBaseline,
+  goDeclares,
+  goTravels,
+  nouns,
+  refused,
+  takes,
+  words,
+} from './verbs.mjs'
 
 const declared = () => {
   const found = []
   for (const { at, text } of sources(['.ts', '.vue'])) {
-    for (const name of declares(text)) found.push({ at, name })
+    const abroad = new Set(declaresAbroad(text))
+    for (const name of declares(text)) found.push({ at, name, travels: abroad.has(name) })
   }
   return found
 }
@@ -14,7 +26,7 @@ const declared = () => {
 const goDeclared = () => {
   const found = []
   for (const { at, text } of goSources()) {
-    for (const name of goDeclares(text)) found.push({ at, name })
+    for (const name of goDeclares(text)) found.push({ at, name, travels: goTravels(name) })
   }
   return found
 }
@@ -22,12 +34,13 @@ const goDeclared = () => {
 /**
  * A gerund or a participle names the doing of a thing; a function is named for
  * what it does when it is called. A word let through is a word written into the
- * dictionary with what it means.
+ * dictionary with what it means. A name that travels says it in a verb, so a
+ * preposition alone is refused there too.
  */
-test('no function of the interface modules is named by a gerund or a participle', () => {
+test('no function of the interface modules is named by a gerund, a participle or a preposition', () => {
   const found = declared()
   const wrong = found
-    .filter(({ name }) => refused(name) && !baseline.includes(name))
+    .filter(({ name, travels }) => refused(name, travels) && !baseline.includes(name))
     .map(({ at, name }) => `${at} declares ${name}`)
   assert.deepEqual(wrong, [])
 
@@ -45,10 +58,10 @@ test('no function of the interface modules is named by a gerund or a participle'
  * The same rule over the Go. A caller reads `day.GetName()` the way it reads
  * `getName()`, and the core is where most of what the windows draw is decided.
  */
-test('no function of the Go modules is named by a gerund or a participle', () => {
+test('no function of the Go modules is named by a gerund, a participle or a preposition', () => {
   const found = goDeclared()
   const wrong = found
-    .filter(({ name }) => refused(name) && !goBaseline.includes(name))
+    .filter(({ name, travels }) => refused(name, travels) && !goBaseline.includes(name))
     .map(({ at, name }) => `${at} declares ${name}`)
   assert.deepEqual(wrong, [])
 
@@ -70,12 +83,15 @@ test('no function of the Go modules is named by a gerund or a participle', () =>
  * A caller reads a parameter the way it reads the function it is handed to, so
  * the same rule holds for both. `usePageWidth(laid)` says nothing a reader can
  * act on; `usePageWidth(getRow)` says what to hand it.
+ *
+ * A parameter never travels: it is read in the signature that declares it, and
+ * `place(at, box)` says where each of the two stands.
  */
 test('no parameter of the interface modules is named by a gerund or a participle', () => {
   const wrong = []
   for (const { at, text } of sources(['.ts', '.vue'])) {
     for (const name of takes(text)) {
-      if (refused(name)) wrong.push(`${at} takes ${name}`)
+      if (refused(name, false)) wrong.push(`${at} takes ${name}`)
     }
   }
   assert.deepEqual(wrong, [])
@@ -149,11 +165,21 @@ test('what the verb rule refuses', () => {
     // A third person verb reads exactly as a plural noun, and a factory here
     // may take a plain noun. A person reads those.
     { says: 'a third-person verb, which no machine can see', allowed: true, name: 'carries' },
+    // A preposition alone says where a thing is and not what a caller asks for.
+    { says: 'a preposition alone', allowed: false, name: 'beside' },
+    { says: 'a preposition with a word behind it', allowed: true, name: 'inOrder' },
+    { says: 'a handler', allowed: true, name: 'onKeyDown' },
+    { says: 'the verb a number is rounded by', allowed: true, name: 'round' },
   ]
 
   const wrong = cases.filter((one) => refused(one.name)).map((one) => one.says)
   const wanted = cases.filter((one) => !one.allowed).map((one) => one.says)
   assert.deepEqual(wrong, wanted)
+
+  // A name read nowhere but beside its declaration stands in the sentence that
+  // explains it, and the preposition rule leaves it alone. Nothing else does.
+  assert.equal(refused('beside', false), false)
+  assert.equal(refused('dressing', false), true)
 })
 
 /** The declarations the walk has to find, and what it must not read as one. */

@@ -45,7 +45,7 @@ func (i indexed) GetRecognisedSources(context.Context, domain.VaultID, domain.So
 	return nil, nil
 }
 
-func (i indexed) Under(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
+func (i indexed) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
 	return nil, nil
 }
 

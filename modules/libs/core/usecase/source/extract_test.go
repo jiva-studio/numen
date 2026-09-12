@@ -638,7 +638,7 @@ func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
 	if err := made.Write(ctx, text.Artifact(text.ASR, hash), newTranscript()); err != nil {
 		t.Fatal(err)
 	}
-	if err := made.Write(ctx, text.Beside(text.ASR, hash), []byte(`{"model":"parakeet"}`)); err != nil {
+	if err := made.Write(ctx, text.GetProducerFile(text.ASR, hash), []byte(`{"model":"parakeet"}`)); err != nil {
 		t.Fatal(err)
 	}
 

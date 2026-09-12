@@ -37,7 +37,7 @@ func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
 			end = at + next
 		}
 		line := strings.TrimRight(body[at:end], "\r")
-		if f.Crosses(line) || f.Inside() {
+		if f.Crosses(line) || f.IsInside() {
 			at = end + 1
 			continue
 		}

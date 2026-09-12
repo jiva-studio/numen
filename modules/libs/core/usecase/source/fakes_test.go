@@ -244,7 +244,7 @@ func (s *store) MoveSources(_ context.Context, vaultID domain.VaultID, from, to 
 }
 
 // Under is every source the store holds at a path and beneath it.
-func (s *store) Under(_ context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
+func (s *store) GetSourcesUnder(_ context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
 	var out []domain.Fingerprint
 	for held, src := range s.sources[vaultID] {
 		if held == path || strings.HasPrefix(held, path+"/") {

@@ -14,7 +14,7 @@ func makeDueByDay(d review.Day, at time.Time, on map[int]int) *review.DueByDay {
 	out := review.NewDueByDay(d)
 	for day, cards := range on {
 		for range cards {
-			out.Holds(at.AddDate(0, 0, day))
+			out.Add(at.AddDate(0, 0, day))
 		}
 	}
 	return out
@@ -47,7 +47,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 			got.Format(time.RFC3339), want.Format(time.RFC3339))
 	}
 	// And the day it landed on is counted against that day.
-	if got := on.On(at.AddDate(0, 0, 9)); got != 1 {
+	if got := on.CountOn(at.AddDate(0, 0, 9)); got != 1 {
 		t.Errorf("the day the card landed on carries %d card faces, want 1", got)
 	}
 
@@ -67,15 +67,15 @@ func TestHowLoadedADayOfReviewIs(t *testing.T) {
 	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
 	on := makeDueByDay(day, at, map[int]int{0: 2, 1: 1})
 
-	if got := on.On(at.Add(6 * time.Hour)); got != 2 {
+	if got := on.CountOn(at.Add(6 * time.Hour)); got != 2 {
 		t.Errorf("the day holding the two card faces carries %d, want 2", got)
 	}
 	// A day of review runs to the hour it opens at, so an instant before that
 	// hour belongs to the day before it.
-	if got := on.On(at.AddDate(0, 0, 1).Add(-8 * time.Hour)); got != 2 {
+	if got := on.CountOn(at.AddDate(0, 0, 1).Add(-8 * time.Hour)); got != 2 {
 		t.Errorf("the small hours carry %d card faces, want the 2 of the day before", got)
 	}
-	if got := on.On(at.AddDate(0, 0, 2)); got != 0 {
+	if got := on.CountOn(at.AddDate(0, 0, 2)); got != 0 {
 		t.Errorf("a day nothing falls on carries %d card faces", got)
 	}
 }
@@ -133,7 +133,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	stood := review.Give([]review.Answer{
 		makeAnswer("01A", face.Card, face.Face, "2026-10-10T08:00:00Z", review.Good),
 		makeAnswer("01B", face.Card, face.Face, "2026-10-13T08:00:00Z", review.Good),
-	}).Replay(day, review.By(by))[face]
+	}).Replay(day, review.ScheduleBy(by))[face]
 
 	// The answer is given ten days before the night the clock goes back, so the
 	// day the scheduler names falls the far side of it and the window the card
@@ -159,7 +159,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	loaded := func(on time.Time) *review.DueByDay {
 		s := review.NewDueByDay(day)
 		for range 9 {
-			s.Holds(on)
+			s.Add(on)
 		}
 		return s
 	}

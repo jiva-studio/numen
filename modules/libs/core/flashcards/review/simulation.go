@@ -102,7 +102,7 @@ func (s Simulation) ripens(p Preset, open time.Time) int {
 	days := 0
 	for range LongestRipening {
 		ends := s.Day.GetEnd(open)
-		if p.Share(open.Weekday()) == 0 {
+		if p.GetShare(open.Weekday()) == 0 {
 			open = ends
 			continue
 		}
@@ -159,7 +159,7 @@ func (s Simulation) reaches(p Preset, c Schedule, open, by time.Time) bool {
 		ends := s.Day.GetEnd(open)
 		// A day of the week at none of the load asks it nothing, and the next
 		// day of review picks it up.
-		if p.Share(open.Weekday()) != 0 {
+		if p.GetShare(open.Weekday()) != 0 {
 			c = s.settles(c, open, ends, p)
 		}
 		open = ends

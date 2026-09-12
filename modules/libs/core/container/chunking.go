@@ -21,7 +21,7 @@ func (c Config) GetChunkSizes() chunking.Sizes {
 	if c.Embedding.Indexing.Use == "" {
 		return chunking.Sizes{}
 	}
-	return chunking.Sizes{Limit: chunking.Under(c.Embedding.Model.MaxTokens)}
+	return chunking.Sizes{Limit: chunking.GetCharacterBound(c.Embedding.Model.MaxTokens)}
 }
 
 // Legibility is what a chunk has to read like to be indexed. It comes from here

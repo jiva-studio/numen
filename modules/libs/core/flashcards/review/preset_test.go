@@ -28,7 +28,7 @@ func TestADateIsABudget(t *testing.T) {
 		{time.Date(2026, 10, 1, 2, 0, 0, 0, time.UTC), false},
 		{time.Date(2026, 10, 1, 10, 0, 0, 0, time.UTC), true},
 	} {
-		if got := p.Past(day, one.hour); got != one.past {
+		if got := p.IsPast(day, one.hour); got != one.past {
 			t.Errorf("at %v the day it aims at is past = %v, want %v", one.hour, got, one.past)
 		}
 		if got := p.IsPaused(day, one.hour); got != one.past {
@@ -303,7 +303,7 @@ func TestWhatAPresetSchedules(t *testing.T) {
 			t.Errorf("%s is paused %v, want %v", one.what, got, want)
 		}
 		// A day of the week at the whole of the load stops nothing of its own.
-		if got := one.p.StopsOn(day, now); got != one.want {
+		if got := one.p.GetStopReason(day, now); got != one.want {
 			t.Errorf("%s stops today on %q, want %q", one.what, got, one.want)
 		}
 	}
@@ -326,17 +326,17 @@ func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
 	if got := p.Stops(day, thursday); got != review.StoppedNothing {
 		t.Errorf("a preset with a light Thursday stops on %q", got)
 	}
-	if got := p.StopsOn(day, thursday); got != review.StoppedNoLoad {
+	if got := p.GetStopReason(day, thursday); got != review.StoppedNoLoad {
 		t.Errorf("its Thursday stops on %q, want %q", got, review.StoppedNoLoad)
 	}
-	if got := p.StopsOn(day, thursday.AddDate(0, 0, 1)); got != review.StoppedNothing {
+	if got := p.GetStopReason(day, thursday.AddDate(0, 0, 1)); got != review.StoppedNothing {
 		t.Errorf("its Friday stops on %q", got)
 	}
 
 	// A preset that schedules nothing at all says so on a light day too, and the
 	// day of the week is not what to fix.
 	p.MinutesADay = 0
-	if got := p.StopsOn(day, thursday); got != review.StoppedNoMinutes {
+	if got := p.GetStopReason(day, thursday); got != review.StoppedNoMinutes {
 		t.Errorf("a paused preset stops today on %q, want %q", got, review.StoppedNoMinutes)
 	}
 }
@@ -366,12 +366,12 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 			if got := p.Stops(day, at); got != review.StoppedNoWeek {
 				t.Errorf("a dead week stops on %q, want %q", got, review.StoppedNoWeek)
 			}
-			if got := p.StopsOn(day, at); got != review.StoppedNoWeek {
+			if got := p.GetStopReason(day, at); got != review.StoppedNoWeek {
 				t.Errorf("its day stops on %q, want %q", got, review.StoppedNoWeek)
 			}
 			for i := range 7 {
 				on := at.AddDate(0, 0, i)
-				if got := p.StopsOn(day, on); got == review.StoppedNoLoad {
+				if got := p.GetStopReason(day, on); got == review.StoppedNoLoad {
 					t.Errorf("its %v promises a next day that carries some load", on.Weekday())
 				}
 			}
@@ -385,7 +385,7 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 	if got := p.Stops(day, at); got != review.StoppedNothing {
 		t.Errorf("a week with one loud day stops on %q", got)
 	}
-	if got := p.StopsOn(day, at); got != review.StoppedNoLoad {
+	if got := p.GetStopReason(day, at); got != review.StoppedNoLoad {
 		t.Errorf("its Thursday stops on %q, want %q", got, review.StoppedNoLoad)
 	}
 }

@@ -16,7 +16,7 @@ import {
   replaceAt,
   withChildren,
 } from './tree'
-import { beside, detach, mapPane, settle, type NodeIdFactory } from './splice'
+import { detach, mapPane, putBeside, settle, type NodeIdFactory } from './splice'
 
 export type { NodeIdFactory }
 
@@ -87,7 +87,7 @@ export function openTabBeside(
   }
 
   const root = detach(workspace.root, tab)
-  const landed = beside(root, target.id, tab, side, workspace.axis, createId)
+  const landed = putBeside(root, target.id, tab, side, workspace.axis, createId)
   return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 
@@ -143,7 +143,7 @@ export function dropTab(workspace: Workspace, drop: TabDrop, createId: NodeIdFac
     return settle({ ...workspace, root: joined }, target.id)
   }
 
-  const landed = beside(root, target.id, drop.tab, drop.side, workspace.axis, createId)
+  const landed = putBeside(root, target.id, drop.tab, drop.side, workspace.axis, createId)
   return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 
@@ -157,7 +157,7 @@ export function dropOnEdge(
   if (!paneWithTab(workspace.root, tab) || side === 'center') return workspace
 
   const root = detach(workspace.root, tab)
-  const landed = beside(root, root.id, tab, side, workspace.axis, createId)
+  const landed = putBeside(root, root.id, tab, side, workspace.axis, createId)
   return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 

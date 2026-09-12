@@ -83,7 +83,7 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 		t.Fatalf("refused: %s", reason)
 	}
 
-	said, err := settings.At(file)
+	said, err := settings.OpenAt(file)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 		t.Fatalf("refused: %s", reason)
 	}
 
-	said, err := settings.At(file)
+	said, err := settings.OpenAt(file)
 	if err != nil {
 		t.Fatal(err)
 	}

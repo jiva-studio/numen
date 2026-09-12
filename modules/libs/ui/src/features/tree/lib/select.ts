@@ -26,7 +26,7 @@ export interface RowSelection {
  * them, whichever way round the two stand. A range measured from a row that is
  * not drawn is the row it reaches, alone.
  */
-export function between(
+export function getRowsBetween(
   visibleRows: readonly ShownRow[],
   from: RowId,
   to: RowId,
@@ -61,7 +61,7 @@ export function resolveSelection(
   press: Press,
 ): RowSelection {
   if (press.reaching) {
-    return { rows: between(visibleRows, anchor ?? row, row), anchor: anchor ?? row }
+    return { rows: getRowsBetween(visibleRows, anchor ?? row, row), anchor: anchor ?? row }
   }
 
   if (press.joining) {

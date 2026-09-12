@@ -147,7 +147,7 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 			got.Suggested, want)
 	}
 	// And the place before it is one the minutes closed.
-	if before := got.Points[want.Index-1]; !before.Closed.Holds(review.ClosedMinutes) {
+	if before := got.Points[want.Index-1]; !before.Closed.Has(review.ClosedMinutes) {
 		t.Errorf("the place under the one suggested was closed by %v", before.Closed)
 	}
 }
@@ -967,7 +967,7 @@ func TestADateNamingNoDaySchedulesNothing(t *testing.T) {
 	if !p.IsPaused(today, noon) {
 		t.Error("a preset aiming at a day and naming none schedules something")
 	}
-	admits := p.Admits(today, noon, review.Spent{}, 30, 0)
+	admits := p.GetAllowance(today, noon, review.Spent{}, 30, 0)
 	if !admits.IsPaused() {
 		t.Errorf("the day of a preset aiming at no day admits %+v", admits)
 	}

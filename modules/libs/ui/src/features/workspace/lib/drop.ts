@@ -6,7 +6,7 @@
  * thing here that measures anything.
  */
 import type { NodeId, Side } from './node'
-import { within, type Position, type Rect } from './rect'
+import { getPlaceInBox, type Position, type Rect } from './rect'
 
 /**
  * Where a tab would go if it were let go now, and the part of the screen that
@@ -40,7 +40,7 @@ export function sideAt(
   options: Partial<DropOptions> = {},
 ): Side {
   const { share, limit } = { ...DEFAULT_DROP, ...options }
-  const { x, y } = within(at, box)
+  const { x, y } = getPlaceInBox(at, box)
 
   const acrossZone = Math.min(box.width * share, limit)
   const downZone = Math.min(box.height * share, limit)

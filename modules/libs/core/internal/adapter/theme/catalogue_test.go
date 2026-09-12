@@ -13,7 +13,7 @@ import (
 // folder is a themes folder of a person's, made the way the first run makes it.
 func folder(t *testing.T) theme.Catalogue {
 	t.Helper()
-	catalogue, err := theme.At(filepath.Join(t.TempDir(), "numen", "themes"))
+	catalogue, err := theme.OpenAt(filepath.Join(t.TempDir(), "numen", "themes"))
 	if err != nil {
 		t.Fatal(err)
 	}

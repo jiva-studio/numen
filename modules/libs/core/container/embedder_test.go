@@ -357,10 +357,10 @@ func TestAnInstallationSilentAboutQuestionsPreparesNoModelHere(t *testing.T) {
 	}
 	// Both halves are the provider the settings named, and neither is this
 	// machine's own model.
-	if from := indexing.Model().From; from != cfg.Indexing.From() {
+	if from := indexing.Model().From; from != cfg.Indexing.GetAddress() {
 		t.Errorf("the index is filled from %q", from)
 	}
-	if from := asking.Model().From; from != cfg.Indexing.From() {
+	if from := asking.Model().From; from != cfg.Indexing.GetAddress() {
 		t.Errorf("a question is embedded from %q", from)
 	}
 	if held := tasks.List(); len(held) != 0 {

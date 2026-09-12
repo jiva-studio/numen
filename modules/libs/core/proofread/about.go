@@ -16,11 +16,11 @@ const (
 	recurs = 2
 )
 
-// About is what a recording holds, in the words of its own transcript: how the
-// speech opens, and the words that recur through it.
+// Describe is what a recording holds, in the words of its own transcript: how
+// the speech opens, and the words that recur through it.
 //
 // A transcript saying nothing is described as nothing.
-func About(cues []transcript.Cue) string {
+func Describe(cues []transcript.Cue) string {
 	var said []string
 	for _, cue := range cues {
 		said = append(said, strings.Fields(cue.Text)...)

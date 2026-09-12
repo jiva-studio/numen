@@ -95,8 +95,8 @@ func (c Config) Hangs() bool { return c.Appearance.Hangs() }
 // Parts is how many of those headings stand under a node at once.
 func (c Config) Parts() int { return c.Appearance.PartsUnderANode }
 
-// on is a setting turned on.
-func on() *bool {
+// turnOn is a setting turned on.
+func turnOn() *bool {
 	set := true
 	return &set
 }
@@ -110,7 +110,7 @@ func Defaults() Config {
 			TextScale:           AsDesigned,
 			Mode:                ModeSystem,
 			Theme:               DefaultTheme,
-			HangPartsUnderANode: on(),
+			HangPartsUnderANode: turnOn(),
 			PartsUnderANode:     DefaultParts,
 		},
 		Indexing: Indexing{
@@ -118,11 +118,11 @@ func Defaults() Config {
 			Recognition:          Recognition{Config: recognition.Defaults()},
 			Proofreading:         proofreading.Defaults(),
 			Transcription:        Transcription{Config: transcription.Defaults()},
-			TranscribeRecordings: on(),
+			TranscribeRecordings: turnOn(),
 		},
 		Agent:     agent.Defaults(),
 		Importing: download.Defaults(),
-		Titles:    Titles{SyncTitleAndFilename: on()},
+		Titles:    Titles{SyncTitleAndFilename: turnOn()},
 		Review:    Review{DayStarts: review.Clock(DefaultStarts())},
 	}
 }
@@ -142,11 +142,11 @@ func Open() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	return At(path)
+	return OpenAt(path)
 }
 
-// At is Open with an explicit path.
-func At(path string) (Config, error) {
+// OpenAt is Open with an explicit path.
+func OpenAt(path string) (Config, error) {
 	cfg := Defaults()
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {

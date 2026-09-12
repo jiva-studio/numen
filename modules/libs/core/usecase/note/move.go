@@ -265,7 +265,8 @@ func (u Move) index(ctx context.Context, v domain.Vault, paths ...string) error 
 	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
 }
 
-// Into is where a note lands when it is filed under a folder, keeping its name.
-func Into(folder, path string) string {
+// GetPathUnder is where a note lands when it is filed under a folder, keeping
+// its name.
+func GetPathUnder(folder, path string) string {
 	return pathpkg.Join(folder, pathpkg.Base(path))
 }

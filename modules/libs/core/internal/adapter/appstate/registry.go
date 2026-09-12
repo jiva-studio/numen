@@ -27,12 +27,12 @@ func Open() (*VaultRegistry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return At(filepath.Join(dir, "numen", "vaults.json")), nil
+	return OpenAt(filepath.Join(dir, "numen", "vaults.json")), nil
 }
 
-// At is Open with an explicit path, so that a test does not touch the machine's
-// real configuration.
-func At(path string) *VaultRegistry { return &VaultRegistry{path: path} }
+// OpenAt is Open with an explicit path, so that a test does not touch the
+// machine's real configuration.
+func OpenAt(path string) *VaultRegistry { return &VaultRegistry{path: path} }
 
 func (r *VaultRegistry) Path() string { return r.path }
 

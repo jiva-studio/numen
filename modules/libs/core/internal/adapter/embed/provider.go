@@ -74,15 +74,15 @@ func (p Provider) SetService(m ServiceModel) Provider {
 	return p
 }
 
-// From is this provider as the address its vectors are kept under. It leads
-// with the word that says which of the two it is, because one name is both a
-// repository and something a service answers to.
-func (p Provider) From() string {
+// GetAddress is this provider as the address its vectors are kept under. It
+// leads with the word that says which of the two it is, because one name is
+// both a repository and something a service answers to.
+func (p Provider) GetAddress() string {
 	if local, ok := p.Local(); ok {
-		return local.From()
+		return local.GetAddress()
 	}
 	if service, ok := p.Service(); ok {
-		return service.From()
+		return service.GetAddress()
 	}
 	return ""
 }
@@ -121,13 +121,13 @@ func (m LocalModel) GetThreads() int {
 // defaultThreads is what a forward pass takes where the settings say nothing.
 const defaultThreads = 4
 
-// From is where this machine reads the weights: the directory when one is
+// GetAddress is where this machine reads the weights: the directory when one is
 // named, and the repository otherwise, with the file that is run inside it. A
 // quantised build is a file of its own and answers with numbers of its own.
 //
 // The file and the directory are settled to one form, so one set of weights has
 // one address whichever way the configuration writes it.
-func (m LocalModel) From() string {
+func (m LocalModel) GetAddress() string {
 	at := m.Name
 	if m.Dir != "" {
 		at = filepath.ToSlash(filepath.Clean(m.Dir))
@@ -156,9 +156,9 @@ type ServiceModel struct {
 	key string
 }
 
-// From is the service and the name it is asked for there. Two services
+// GetAddress is the service and the name it is asked for there. Two services
 // answering to one name are two models, and the key is no part of this.
-func (s ServiceModel) From() string {
+func (s ServiceModel) GetAddress() string {
 	return UseService + ":" + strings.TrimSuffix(s.BaseURL, "/") + "/" + s.Name
 }
 

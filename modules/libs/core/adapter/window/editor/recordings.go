@@ -323,7 +323,7 @@ func within(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 		if span.Empty() {
 			return nil, fmt.Errorf("to: %d is not the end of a run of words", span.To)
 		}
-		return transcript.At(cues, span.From, span.Len()), nil
+		return transcript.GetCuesAt(cues, span.From, span.Len()), nil
 	}
 }
 

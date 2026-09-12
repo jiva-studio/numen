@@ -58,7 +58,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		return res, nil
 	}
 
-	travelling, err := u.Queries.Under(ctx, v.ID, from)
+	travelling, err := u.Queries.GetSourcesUnder(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}

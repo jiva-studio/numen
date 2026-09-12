@@ -29,12 +29,12 @@ type Rect struct {
 	MinX, MinY, MaxX, MaxY float32
 }
 
-// Over is the boxes covering a run of the prose, in the order they were read. A
-// run standing nowhere is covered by none.
+// GetBoxesOver is the boxes covering a run of the prose, in the order they were
+// read. A run standing nowhere is covered by none.
 //
 // The boxes are in the order they were read, so the run is found by halving and
 // then walked to its end. A run crossing a page carries boxes from both of them.
-func Over(boxes []Box, span domain.Span) []Box {
+func GetBoxesOver(boxes []Box, span domain.Span) []Box {
 	if span.Empty() || len(boxes) == 0 {
 		return nil
 	}

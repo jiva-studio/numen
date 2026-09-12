@@ -15,7 +15,7 @@
 import { computed } from 'vue'
 import { Button, percent } from '@numen/ui'
 
-import { through } from '../lib/progress'
+import { getSpentShare } from '../lib/progress'
 import { getGoalWords, getLeftWords } from '../words'
 import type { Preset } from '../types'
 
@@ -62,7 +62,7 @@ const isScheduling = (one: Preset): boolean => one.named > 0 && one.faces > 0
 
 const tiles = computed<Tile[]>(() =>
   props.presets.filter(isScheduling).map((one) => {
-    const done = through(one)
+    const done = getSpentShare(one)
     const over = done > 1
     return {
       one,

@@ -59,7 +59,7 @@ func FuzzAt(f *testing.F) {
 			return
 		}
 
-		held, err := settings.At(writeFile(t, path, string(raw)))
+		held, err := settings.OpenAt(writeFile(t, path, string(raw)))
 		if err != nil {
 			// The file is well formed and every value in it is of the kind its
 			// setting takes, so the one thing left to refuse it for is a number
@@ -160,7 +160,7 @@ func FuzzWrite(f *testing.F) {
 			if got := reading(t, path); got != raw {
 				t.Fatalf("%q was saved and %q stands in the file", raw, got)
 			}
-			if _, err := settings.At(path); err != nil {
+			if _, err := settings.OpenAt(path); err != nil {
 				t.Fatalf("%q was saved and reads back as %v", raw, err)
 			}
 		default:

@@ -44,7 +44,8 @@ even_load: true
 	if p.Retention != 0.87 {
 		t.Errorf("retention = %g", p.Retention)
 	}
-	if p.Share(time.Saturday) != 0.5 || p.Share(time.Sunday) != 0 || p.Share(time.Monday) != 1 {
+	if p.GetShare(time.Saturday) != 0.5 || p.GetShare(time.Sunday) != 0 ||
+		p.GetShare(time.Monday) != 1 {
 		t.Errorf("load = %v", p.Load)
 	}
 	if !p.EvenLoad {

@@ -128,7 +128,7 @@ type onTheList struct {
 func onAList(t *testing.T) *onTheList {
 	t.Helper()
 
-	registry := appstate.At(filepath.Join(t.TempDir(), "state", "vaults.json"))
+	registry := appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
 	identity := filesystem.VaultIdentity{}
 	adding := vaults.Add{Identity: identity, Registry: registry, Now: time.Now}
 

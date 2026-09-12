@@ -87,9 +87,9 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind
 	return out, rows.Err()
 }
 
-// Under is every source the vault holds at a path and beneath it, by path: the
-// one file, or everything a folder holds.
-func (q *Queries) Under(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
+// GetSourcesUnder is every source the vault holds at a path and beneath it, by
+// path: the one file, or everything a folder holds.
+func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil

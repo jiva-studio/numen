@@ -143,10 +143,10 @@ func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
 					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
 						"ends at %v", name, at, hour, next)
 				}
-				on.Holds(at)
+				on.Add(at)
 			}
 			for _, at := range days {
-				if got := on.On(at); got != 1 {
+				if got := on.CountOn(at); got != 1 {
 					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
 						"carries %d of the 800 cards, want 1", name, at, hour, got)
 				}

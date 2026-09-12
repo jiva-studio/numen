@@ -27,7 +27,7 @@ export const hasNothingToBegin = (deck: DeckCardsDue, by: Preset | undefined): b
  *
  * A day answered past what its budget holds stands above one.
  */
-export const through = (one: Preset): number => {
+export const getSpentShare = (one: Preset): number => {
   // Only a budget that closes the day is weighed against, and each is weighed
   // against what was answered of its own kind. A preset steered by its minutes
   // keeps its card counts as the person left them.
@@ -46,7 +46,7 @@ const share = (count: number, budget: number): number => (budget > 0 ? count / b
  * Whether a preset's day is spent, which is what leaves every deck under it
  * nothing more to ask however much those decks still hold.
  */
-export const isSpent = (one: Preset): boolean => through(one) >= 1
+export const isSpent = (one: Preset): boolean => getSpentShare(one) >= 1
 
 /**
  * How much of a deck stands learned, as a share of its card faces, and null for

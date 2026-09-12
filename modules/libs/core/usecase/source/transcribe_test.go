@@ -362,7 +362,7 @@ func TestWhatListenedIsKeptBesideWhatItHeard(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	raw, err := shelf.Read(t.Context(), text.Beside("asr", hash))
+	raw, err := shelf.Read(t.Context(), text.GetProducerFile("asr", hash))
 	if err != nil {
 		t.Fatalf("nothing says what listened: %v", err)
 	}

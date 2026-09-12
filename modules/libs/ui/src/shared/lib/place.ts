@@ -35,7 +35,14 @@ export interface AxisPlacement {
  * way it is brought inside the edges it may touch. Larger than the area it is
  * placed in, it sits at the near edge.
  */
-export const beside = ({ from, to, size, room, margin, gap }: AxisPlacement): number => {
+export const getPlaceBeside = ({
+  from,
+  to,
+  size,
+  room,
+  margin,
+  gap,
+}: AxisPlacement): number => {
   const on = to + gap
   const back = from - gap - size
   const start = on + size + margin <= room || back < margin ? on : back

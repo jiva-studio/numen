@@ -101,13 +101,13 @@ func TestARunIsInTheCuesItCrosses(t *testing.T) {
 	}))
 
 	// "second" begins after "first\n".
-	if got := transcript.At(cues, 6, 6); len(got) != 1 || got[0].From != 1000 {
+	if got := transcript.GetCuesAt(cues, 6, 6); len(got) != 1 || got[0].From != 1000 {
 		t.Errorf("the run is in %d cues, the first from %v", len(got), got)
 	}
-	if got := transcript.At(cues, 6, 8); len(got) != 2 {
+	if got := transcript.GetCuesAt(cues, 6, 8); len(got) != 2 {
 		t.Errorf("a run crossing into the third cue is in %d cues, want 2", len(got))
 	}
-	if got := transcript.At(cues, 900, 5); len(got) != 0 {
+	if got := transcript.GetCuesAt(cues, 900, 5); len(got) != 0 {
 		t.Errorf("a run past the words is in %d cues, want none", len(got))
 	}
 }

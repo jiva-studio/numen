@@ -150,7 +150,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// agents are let go of, then the scan and the follower stop and the database
 	// closes, then what they ran under ends.
 	behind := shutdown.InOrder(
-		reachable.Off,
+		reachable.Stop,
 		func() {
 			if err := opened.Close(); err != nil {
 				fmt.Fprintln(os.Stderr, "numen:", err)
@@ -234,7 +234,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// vault they are working when their session opens, so the endpoint they
 	// reach it through is stopped and started again around the swap.
 	opened.API.Opens = func(ctx context.Context, v domain.Vault) error {
-		err := reachable.Around(func() error { return opened.Show(ctx, v) })
+		err := reachable.RunSwap(func() error { return opened.Show(ctx, v) })
 		naming(opened.API.GetOpenTabs())
 		return err
 	}
@@ -245,7 +245,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// An agent nobody can reach is a panel that says so, not a window that does
 	// not open. Everything else the window does is the vault, and the vault is
 	// here.
-	reachable.On()
+	reachable.Start()
 
 	// A hook runs before the window is destroyed and on a thread of its own, so
 	// the page is still drawn and still answered while what it owes is written.

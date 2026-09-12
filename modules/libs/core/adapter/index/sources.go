@@ -51,9 +51,9 @@ func (s sources) MoveSources(ctx context.Context, vaultID domain.VaultID, from, 
 	return s.write.MoveSources(ctx, vaultID, from, to)
 }
 
-// Under is every source the vault holds at a path and beneath it.
-func (s queries) Under(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
-	return s.read.Under(ctx, vaultID, path)
+// GetSourcesUnder is every source the vault holds at a path and beneath it.
+func (s queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
+	return s.read.GetSourcesUnder(ctx, vaultID, path)
 }
 
 func (s queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {

@@ -40,20 +40,20 @@ func TestAProjectionAnswersTheReturningShareForTheDaysItIsAskedFor(t *testing.T)
 			t.Errorf("under %s a run asked for days 2 and 7 answers for %v", name, days)
 		}
 		for day := range 10 {
-			share, answers := some.Retained.On(day)
+			share, answers := some.Retained.GetShare(day)
 			if answers != (day == 2 || day == 7) {
 				t.Errorf("under %s day %d answers %v with %v", name, day, answers, share)
 			}
 			if !answers {
 				continue
 			}
-			if want, _ := all.Retained.On(day); share != want {
+			if want, _ := all.Retained.GetShare(day); share != want {
 				t.Errorf("under %s day %d leaves %v of the material in the head, and a run "+
 					"asked for every day leaves %v", name, day, share, want)
 			}
 		}
 		// A day outside the run is a day it never covered.
-		if share, answers := some.Retained.On(10); answers {
+		if share, answers := some.Retained.GetShare(10); answers {
 			t.Errorf("under %s a run of ten days answers for day 10 with %v", name, share)
 		}
 	}
@@ -83,12 +83,12 @@ func TestAProjectionAnswersNothingUnderAPresetThatSchedulesNothing(t *testing.T)
 		if got.Admitted[day] {
 			t.Errorf("day %d was admitted", day)
 		}
-		if !got.Closed[day].Holds(review.ClosedPaused) {
+		if !got.Closed[day].Has(review.ClosedPaused) {
 			t.Errorf("day %d was closed by %v, want the pause", day, got.Closed[day])
 		}
 	}
-	if got.Admits() != 0 {
-		t.Errorf("%d days of the run were admitted", got.Admits())
+	if got.CountAdmitted() != 0 {
+		t.Errorf("%d days of the run were admitted", got.CountAdmitted())
 	}
 }
 
@@ -107,8 +107,8 @@ func TestTheLoadOfARunIsOverTheDaysAdmitted(t *testing.T) {
 	got := runProjection(t, run, now, p, at, 0)
 	// A fortnight from this day holds two Sundays, so twelve of its days are
 	// days of review.
-	if got.Admits() != 12 {
-		t.Fatalf("a fortnight with the Sundays at nothing admitted %d days", got.Admits())
+	if got.CountAdmitted() != 12 {
+		t.Fatalf("a fortnight with the Sundays at nothing admitted %d days", got.CountAdmitted())
 	}
 	answered := 0
 	var spent time.Duration
@@ -214,8 +214,8 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 		t.Fatalf("the day owed the two oldest answered %d and left %d standing",
 			want.Load[0], want.Backlog[0])
 	}
-	one, _ := got.Retained.On(0)
-	other, _ := want.Retained.On(0)
+	one, _ := got.Retained.GetShare(0)
+	other, _ := want.Retained.GetShare(0)
 	if one != other {
 		t.Errorf("the day left %v of the material in the head, and answering the two oldest leaves %v",
 			one, other)
@@ -1105,7 +1105,7 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 	got := runProjection(t, run, now, p, at, 40)
 
 	for _, day := range got.Retained.Days() {
-		one, _ := got.Retained.On(day)
+		one, _ := got.Retained.GetShare(day)
 		if math.IsNaN(one) || one < 0 || one > 1 {
 			t.Fatalf("day %d leaves %v of the material in the head", day, one)
 		}
@@ -1137,9 +1137,9 @@ func TestThePaceOfADateCarriesTheDaysShareOfTheLoad(t *testing.T) {
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 9)
 	p.Rule, p.Retention = review.RuleRetention, 0.9
 
-	whole := p.Admits(ahead, now, review.Spent{}, 40, 0)
+	whole := p.GetAllowance(ahead, now, review.Spent{}, 40, 0)
 	p.Load = map[time.Weekday]int{time.Saturday: 50}
-	half := p.Admits(ahead, now, review.Spent{}, 40, 0)
+	half := p.GetAllowance(ahead, now, review.Spent{}, 40, 0)
 
 	if half.Keeps.New >= whole.Keeps.New {
 		t.Errorf("a Saturday at half the load is paced %d card faces and a whole Saturday %d",
@@ -1175,8 +1175,8 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	if modelled.Answered != nothing.Answered || modelled.Answered == 0 {
 		t.Fatalf("the two runs answered %d and %d", modelled.Answered, nothing.Answered)
 	}
-	forgot, _ := nothing.Retained.On(0)
-	middle, _ := modelled.Retained.On(0)
+	forgot, _ := nothing.Retained.GetShare(0)
+	middle, _ := modelled.Retained.GetShare(0)
 	if forgot <= middle {
 		t.Errorf("assuming nothing is forgotten leaves %v of the material in the head, "+
 			"and following the middle of what a card may do leaves %v", forgot, middle)
@@ -1185,7 +1185,7 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	// A run told what the model says is the run told nothing.
 	said := run
 	said.Recalls = review.AsModelled
-	if got, _ := runProjection(t, said, now, p, at, 0).Retained.On(0); got != middle {
+	if got, _ := runProjection(t, said, now, p, at, 0).Retained.GetShare(0); got != middle {
 		t.Errorf("told what the model says the run retained %v, and told nothing %v",
 			got, middle)
 	}
@@ -1275,8 +1275,8 @@ func TestAPaceUnderALightWeekDividesByTheRoomThatIsLeft(t *testing.T) {
 		light := review.Ripens(by, ahead, p, now)
 		whole := review.Ripens(by, ahead, full, now)
 
-		at := p.Admits(ahead, now, review.Spent{}, 500, light).Keeps.New
-		was := full.Admits(ahead, now, review.Spent{}, 500, whole).Keeps.New
+		at := p.GetAllowance(ahead, now, review.Spent{}, 500, light).Keeps.New
+		was := full.GetAllowance(ahead, now, review.Spent{}, 500, whole).Keeps.New
 		if at > was {
 			t.Errorf("%d days out, a week at half the load begins %d card faces "+
 				"a day and a whole week begins %d", out, at, was)

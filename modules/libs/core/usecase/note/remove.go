@@ -55,7 +55,7 @@ type RemoveResult struct {
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
-	went, err := u.Queries.Under(ctx, v.ID, path)
+	went, err := u.Queries.GetSourcesUnder(ctx, v.ID, path)
 	if err != nil {
 		return res, err
 	}

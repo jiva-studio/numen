@@ -353,7 +353,7 @@ func (u Recognise) record(ctx context.Context, store port.DerivedStore, area, ha
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, text.Beside(area, hash), append(raw, '\n'))
+	return store.Write(ctx, text.GetProducerFile(area, hash), append(raw, '\n'))
 }
 
 // appendCount is a run of pages and, after them, how many of the document have

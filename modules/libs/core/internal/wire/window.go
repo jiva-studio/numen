@@ -248,9 +248,9 @@ func (w *Window) WaitForAnswers(ctx context.Context) bool {
 	}
 }
 
-// Over ends the round that was running, and lets go of whoever was waiting on
-// it. What the pages hold from here belongs to the vault in front of them.
-func (w *Window) Over() { w.clients.over() }
+// EndRound ends the round that was running, and lets go of whoever was waiting
+// on it. What the pages hold from here belongs to the vault in front of them.
+func (w *Window) EndRound() { w.clients.endRound() }
 
 // describeTasks is the work as the schema says it.
 func describeTasks(list []task.Task) []*v1.Task {
@@ -443,9 +443,9 @@ func (l *leaving) ask() *round {
 	return l.round
 }
 
-// over ends the round that was running, and lets go of whoever was waiting on
-// it.
-func (l *leaving) over() {
+// endRound ends the round that was running, and lets go of whoever was waiting
+// on it.
+func (l *leaving) endRound() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 

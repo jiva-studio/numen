@@ -13,7 +13,7 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import { DESIGNED, NOWHERE, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'
 import type { AppearanceWords } from '../words'
-import { IS_SIZES, after, getSizesCss, getStyleElements } from '../lib/head'
+import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
 import { getModeGroups, getSizeGroups, getThemeGroups } from '../lib/offers'
 import { useAppearanceChoice } from './choice'
 
@@ -106,7 +106,7 @@ export function windowAppearance(
     const css = getSizesCss(choice.sized.value)
     if (css === written) return
     written = css
-    dressed.sizes ??= after(dressed.theme, IS_SIZES, sheet)
+    dressed.sizes ??= addAfter(dressed.theme, IS_SIZES, sheet)
     dressed.sizes.textContent = css
   }
 

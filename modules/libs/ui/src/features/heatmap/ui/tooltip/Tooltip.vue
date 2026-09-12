@@ -8,7 +8,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
-import { beside, type Box } from '@/shared/lib/place'
+import { getPlaceBeside, type Box } from '@/shared/lib/place'
 import type { Size } from '@/shared/lib/geometry'
 
 const props = withDefaults(
@@ -41,7 +41,7 @@ const room = computed<Size>(() => props.viewport ?? window_.value)
  * thing begins, and folds up from there at the foot of the window.
  */
 const placed = computed(() => ({
-  x: beside({
+  x: getPlaceBeside({
     from: props.at.x,
     to: props.at.x + props.at.width,
     size: size.value.width,
@@ -49,7 +49,7 @@ const placed = computed(() => ({
     margin: props.margin,
     gap: props.gap,
   }),
-  y: beside({
+  y: getPlaceBeside({
     from: props.at.y,
     to: props.at.y,
     size: size.value.height,

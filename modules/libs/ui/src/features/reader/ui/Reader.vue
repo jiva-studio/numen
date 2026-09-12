@@ -15,10 +15,10 @@ import { useHandScroll } from '../model/scroll'
 import {
   GAP,
   READER_WORDS,
+  getPagesWithin,
   inFront,
   row,
   standAt,
-  within,
   type Rect,
   type ReaderWords,
   type Page,
@@ -81,7 +81,7 @@ const {
 } = useHandScroll(area)
 
 const laid = computed(() => row(props.pages, viewport.value, zoom.value))
-const shown = computed(() => within(laid.value, viewport.value, along.value))
+const shown = computed(() => getPagesWithin(laid.value, viewport.value, along.value))
 const middle = computed(() => inFront(laid.value, viewport.value, along.value))
 
 /** What each page is asked for at. */

@@ -144,7 +144,7 @@ func TestAFolderMovesWithTheNotesUnderIt(t *testing.T) {
 // sources is what the index holds at a path and beneath it, by path.
 func (f filing) sources(t *testing.T, path string) []string {
 	t.Helper()
-	found, err := f.db.SourcesKnown().Under(t.Context(), f.vault.ID, path)
+	found, err := f.db.SourcesKnown().GetSourcesUnder(t.Context(), f.vault.ID, path)
 	if err != nil {
 		t.Fatal(err)
 	}

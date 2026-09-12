@@ -193,7 +193,7 @@ func (h recognised) GetRecognisedSources(
 	}}, nil
 }
 
-func (h recognised) Under(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
+func (h recognised) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
 	return nil, nil
 }
 

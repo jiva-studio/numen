@@ -10,7 +10,7 @@ import { Button, KeyCap, keyChord } from '@numen/ui'
 import PanelCarousel from './PanelCarousel.vue'
 import Card from './Card.vue'
 import type { PanelPlace } from '../model/carousel'
-import { ahead, called, grades } from '@/entities/card'
+import { called, getTimeAhead, grades } from '@/entities/card'
 import { deckName } from '@/entities/vault'
 import { ASKS, READS } from '@/features/keyboard'
 import type { CardFace, Grade } from '@/entities/card'
@@ -108,7 +108,7 @@ defineEmits<{
                these. It is read off the screen and not out of the button's own
                name, which is the word a person means to press. -->
           <span v-if="card.ahead" class="session__ahead" aria-hidden="true">{{
-            ahead(card.ahead[how])
+            getTimeAhead(card.ahead[how])
           }}</span>
         </Button>
       </template>

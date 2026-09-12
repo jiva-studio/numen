@@ -262,7 +262,7 @@ func (u ImportURL) record(
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, text.Beside(producer, hash), written)
+	return store.Write(ctx, text.GetProducerFile(producer, hash), written)
 }
 
 // cut brings the url level in the index, so the words are searched with it.

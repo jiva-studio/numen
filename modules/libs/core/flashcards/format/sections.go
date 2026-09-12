@@ -37,7 +37,7 @@ func sections(body []byte, first, last int) []section {
 			end, next = at+i, at+i+1
 		}
 		line := strings.TrimRight(string(body[at:end]), "\r")
-		if !f.Crosses(line) && !f.Inside() {
+		if !f.Crosses(line) && !f.IsInside() {
 			if level, name, ok := heading(line, first, last); ok {
 				if n := len(out); n > 0 {
 					out[n-1].to = at

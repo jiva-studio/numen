@@ -106,7 +106,7 @@ type assignment struct {
 // none is scheduled by.
 func (u Schedules) plain() assignment {
 	return assignment{
-		under: review.By(u.By),
+		under: review.ScheduleBy(u.By),
 		mark:  getMark([]string{u.By.Name(), u.opening(), review.Defaults().GetPlacing()}),
 	}
 }
@@ -233,9 +233,9 @@ func (u Schedules) Execute(
 	return u.replayAndRemember(ctx, v, held, asks), nil
 }
 
-// From is where a log that has already been read leaves every card face. A
-// caller holding the answers does not read them again to be told this.
-func (u Schedules) From(
+// GetFromLog is where a log that has already been read leaves every card face.
+// A caller holding the answers does not read them again to be told this.
+func (u Schedules) GetFromLog(
 	ctx context.Context, v domain.Vault, held ReviewLog,
 ) (map[review.CardFaceID]review.Schedule, error) {
 	asks, err := u.getAssignment(ctx, v)

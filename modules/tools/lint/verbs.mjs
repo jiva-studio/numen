@@ -8,6 +8,12 @@
  * than the doing of it. A predicate is the other shape a function takes, and
  * reads `is`, `has` or `can`.
  *
+ * A preposition standing alone is refused where the name travels: `At`, `Under`
+ * and `Beside` say where a thing is, and a caller in another package has to
+ * read the declaration before the name means anything. A name read beside its
+ * one use stands in the sentence that explains it, and the type rule in
+ * `container/nouns_test.go` draws the same line.
+ *
  * A machine reading a name can only see how it ends, and no suffix tells a
  * third-person verb from a plural noun, or a gerund from a word that merely
  * finishes those letters. So the words that are not verb forms are written
@@ -106,6 +112,28 @@ const past = new Set([
 ])
 
 /**
+ * The prepositions. A name that is one of these and nothing else says where a
+ * thing stands: `At(list, 2)`, `Under(path)` and `Beside(a, b)` each need the
+ * declaration read before the name means anything.
+ *
+ * A preposition with a word behind it is a phrase and is not read here.
+ * `InOrder`, `withColumn` and `onKeyDown` are names; telling those from
+ * `atFoot` needs a person.
+ *
+ * `round` is not here. It is the verb a number is rounded by, and every name
+ * this repository gives it is that one.
+ */
+const prepositions = new Set([
+  'about', 'above', 'across', 'after', 'against', 'ahead', 'along', 'alongside',
+  'among', 'apart', 'around', 'aside', 'at', 'away', 'before', 'behind',
+  'below', 'beneath', 'beside', 'besides', 'between', 'beyond', 'by', 'down',
+  'during', 'except', 'for', 'from', 'in', 'inside', 'into', 'near', 'off',
+  'on', 'onto', 'out', 'outside', 'over', 'past', 'since', 'through',
+  'throughout', 'till', 'to', 'toward', 'towards', 'under', 'underneath',
+  'until', 'up', 'upon', 'via', 'with', 'within', 'without',
+])
+
+/**
  * Whether a name is refused. The first word is what is read: it is the verb,
  * and the rest says what the verb acts on. `getSettings` asks for settings and
  * `onDropEntries` answers a drop; both end in a plural noun and neither is a
@@ -116,12 +144,23 @@ const past = new Set([
  * participle used as an adjective and is right; `faceAdded` is a narrator and
  * is wrong, and telling them apart needs a list of every English verb. The
  * `naming-reviewer` role is what stands there.
+ *
+ * travels says whether the name is read anywhere but beside its declaration,
+ * and only such a name is held to the preposition rule.
  */
-export function refused(name) {
-  const first = words(name)[0] ?? ''
+export function refused(name, travels = true) {
+  const said = words(name)
+  const first = said[0] ?? ''
+  if (travels && said.length === 1 && prepositions.has(first)) return true
   if (!verbal(first)) return false
   return !Object.hasOwn(nouns, first)
 }
+
+/**
+ * Whether a Go name travels. Go says it in the name: a declaration beginning
+ * with a capital is served to every package that imports this one.
+ */
+export const goTravels = (name) => /^[A-Z]/.test(name)
 
 /**
  * Every function one file declares: a `function`, and a `const` or `let` whose
@@ -136,12 +175,25 @@ export function refused(name) {
  * declaration.
  */
 const DECLARED =
-  /(?:^|\n)[ \t]*(?:export\s+)?(?:async\s+)?function\s+(?<named>[a-z][\w$]*)(?:<[^>(]*>)?\s*(?<list>\((?:[^()]|\([^()]*\))*\))|(?:^|\n)[ \t]*(?:export\s+)?(?:const|let)\s+(?<held>[a-z][\w$]*)(?::[^=\n]*)?\s*=\s*(?:async\s+)?(?<takes>\((?:[^()]|\([^()]*\))*\)|[a-z][\w$]*)\s*(?::(?:[^=\n]|=(?!>))*)?=>/g
+  /(?:^|\n)[ \t]*(?<served>export\s+)?(?:async\s+)?function\s+(?<named>[a-z][\w$]*)(?:<[^>(]*>)?\s*(?<list>\((?:[^()]|\([^()]*\))*\))|(?:^|\n)[ \t]*(?<sent>export\s+)?(?:const|let)\s+(?<held>[a-z][\w$]*)(?::[^=\n]*)?\s*=\s*(?:async\s+)?(?<takes>\((?:[^()]|\([^()]*\))*\)|[a-z][\w$]*)\s*(?::(?:[^=\n]|=(?!>))*)?=>/g
 
 export function declares(source) {
   const found = []
   for (const one of code(source).matchAll(DECLARED)) {
     found.push(one.groups.named ?? one.groups.held)
+  }
+  return found
+}
+
+/**
+ * The functions of one file that travel. A module says it in a word: a
+ * declaration carrying `export` is read by whoever imports the file, and one
+ * without it is read nowhere but here.
+ */
+export function declaresAbroad(source) {
+  const found = []
+  for (const one of code(source).matchAll(DECLARED)) {
+    if (one.groups.served ?? one.groups.sent) found.push(one.groups.named ?? one.groups.held)
   }
   return found
 }

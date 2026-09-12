@@ -40,7 +40,7 @@ func TestARunIsLitWhereItWasRead(t *testing.T) {
 	boxes := read(3, 4)
 
 	// The second and third words of the first page: "6..17".
-	over := highlight.Over(boxes, run(6, 12))
+	over := highlight.GetBoxesOver(boxes, run(6, 12))
 	if len(over) != 2 {
 		t.Fatalf("%d boxes, want the two words the run covers", len(over))
 	}
@@ -54,7 +54,7 @@ func TestARunCrossingAPageIsOnBothOfThem(t *testing.T) {
 	// two are one run.
 	boxes := read(3, 4)
 
-	over := highlight.Over(boxes, run(18, 12))
+	over := highlight.GetBoxesOver(boxes, run(18, 12))
 	if len(over) != 2 {
 		t.Fatalf("%d boxes, want the two words the run crosses", len(over))
 	}
@@ -67,7 +67,7 @@ func TestAWordTheRunOnlyTouchesIsLit(t *testing.T) {
 	boxes := read(1, 3)
 
 	// One byte into the second word and one byte out of it.
-	over := highlight.Over(boxes, run(7, 2))
+	over := highlight.GetBoxesOver(boxes, run(7, 2))
 	if len(over) != 1 {
 		t.Fatalf("%v", over)
 	}
@@ -77,7 +77,7 @@ func TestARunBetweenTwoWordsLightsNeither(t *testing.T) {
 	// The space between the first and second word: no box holds it.
 	boxes := read(1, 3)
 
-	if over := highlight.Over(boxes, run(5, 1)); over != nil {
+	if over := highlight.GetBoxesOver(boxes, run(5, 1)); over != nil {
 		t.Errorf("the gap lit %v", over)
 	}
 }
@@ -85,13 +85,13 @@ func TestARunBetweenTwoWordsLightsNeither(t *testing.T) {
 func TestNothingIsAskedForAndNothingIsLit(t *testing.T) {
 	boxes := read(2, 2)
 
-	if over := highlight.Over(boxes, run(0, 0)); over != nil {
+	if over := highlight.GetBoxesOver(boxes, run(0, 0)); over != nil {
 		t.Errorf("a run of nothing lit %v", over)
 	}
-	if over := highlight.Over(nil, run(0, 10)); over != nil {
+	if over := highlight.GetBoxesOver(nil, run(0, 10)); over != nil {
 		t.Errorf("a document nobody lit lit %v", over)
 	}
-	if over := highlight.Over(boxes, run(9000, 10)); over != nil {
+	if over := highlight.GetBoxesOver(boxes, run(9000, 10)); over != nil {
 		t.Errorf("a run past the end lit %v", over)
 	}
 }
@@ -100,7 +100,7 @@ func TestTheBoxesComeBackInTheOrderTheyAreRead(t *testing.T) {
 	boxes := read(4, 2)
 
 	var at []int
-	for _, one := range highlight.Over(boxes, run(0, 48)) {
+	for _, one := range highlight.GetBoxesOver(boxes, run(0, 48)) {
 		at = append(at, one.Page)
 	}
 	if want := []int{0, 0, 1, 1, 2, 2, 3, 3}; !reflect.DeepEqual(at, want) {

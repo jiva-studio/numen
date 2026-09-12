@@ -4,7 +4,7 @@ import { goalNames } from '@numen/wire'
 
 import { useVaultPresets } from './presets'
 import type { PresetsClient } from '../api/presets'
-import { canStart, isSpent, through } from '../lib/progress'
+import { canStart, getSpentShare, isSpent } from '../lib/progress'
 import { CLOSES_NOTHING } from '../types'
 import type { Budget, Preset, Settings, SettingsMessage } from '../types'
 import { getGoalWords, getLeftWords, getStoppedWords, STOPPED } from '../words'
@@ -199,7 +199,7 @@ describe('how far through its day a preset stands', () => {
       took: 5,
     })
 
-    expect(through(one)).toBeCloseTo(0.25)
+    expect(getSpentShare(one)).toBeCloseTo(0.25)
     expect(isSpent(one)).toBe(false)
   })
 
@@ -213,7 +213,7 @@ describe('how far through its day a preset stands', () => {
       took: 40,
     })
 
-    expect(through(one)).toBeCloseTo(0.2)
+    expect(getSpentShare(one)).toBeCloseTo(0.2)
   })
 
   // Two budgets closing one day are two walls, and a day stands as far along as
@@ -229,7 +229,7 @@ describe('how far through its day a preset stands', () => {
       took: 4,
     })
 
-    expect(through(one)).toBeCloseTo(1)
+    expect(getSpentShare(one)).toBeCloseTo(1)
     expect(isSpent(one)).toBe(true)
   })
 
@@ -245,7 +245,7 @@ describe('how far through its day a preset stands', () => {
       took: 30,
     })
 
-    expect(through(one)).toBeCloseTo(1)
+    expect(getSpentShare(one)).toBeCloseTo(1)
   })
 
   it('keeps the fuller of them where both close the day', () => {
@@ -256,11 +256,11 @@ describe('how far through its day a preset stands', () => {
       took: 15,
     })
 
-    expect(through(one)).toBeCloseTo(0.75)
+    expect(getSpentShare(one)).toBeCloseTo(0.75)
   })
 
   it('stands at nothing where no budget closes the day at all', () => {
-    expect(through(preset({ closes: CLOSES_NOTHING, answered: 30, took: 40 }))).toBe(0)
+    expect(getSpentShare(preset({ closes: CLOSES_NOTHING, answered: 30, took: 40 }))).toBe(0)
   })
 })
 

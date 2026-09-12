@@ -75,11 +75,11 @@ func Open() (Catalogue, error) {
 	if err != nil {
 		return Catalogue{}, err
 	}
-	return At(filepath.Join(dir, "numen", "themes"))
+	return OpenAt(filepath.Join(dir, "numen", "themes"))
 }
 
-// At is Open with an explicit path.
-func At(dir string) (Catalogue, error) {
+// OpenAt is Open with an explicit path.
+func OpenAt(dir string) (Catalogue, error) {
 	made := os.MkdirAll(dir, 0o755)
 	// The folder is where the links lead. The paths the operating system
 	// reports changes at are resolved, and they are named against this.

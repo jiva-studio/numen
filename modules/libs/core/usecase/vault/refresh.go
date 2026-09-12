@@ -164,7 +164,7 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 	// A path names one file, and a folder names everything under it.
 	held := make(map[domain.SourceKind][]string)
 	for _, path := range paths {
-		under, err := u.Queries.Under(ctx, v.ID, path)
+		under, err := u.Queries.GetSourcesUnder(ctx, v.ID, path)
 		if err != nil {
 			return err
 		}

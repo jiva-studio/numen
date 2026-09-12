@@ -40,7 +40,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 	return cli.Deps{
 		Vaults: func() (cli.Vaults, error) {
 			return cli.Vaults{
-				Registry: appstate.At(where.Registry),
+				Registry: appstate.OpenAt(where.Registry),
 				Readers:  filesystem.VaultReaders{Options: options},
 				Identity: filesystem.VaultIdentity{Options: options},
 				Trash:    s.bin,

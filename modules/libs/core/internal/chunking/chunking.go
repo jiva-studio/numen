@@ -50,9 +50,9 @@ const (
 // than the model could hold.
 const CharactersPerToken = 2
 
-// Under is the character bound that keeps a chunk inside a model's token limit.
-// Zero tokens is a model that did not say, and takes the default bound.
-func Under(tokens int) int {
+// GetCharacterBound is what keeps a chunk inside a model's token limit. Zero
+// tokens is a model that did not say, and takes the default bound.
+func GetCharacterBound(tokens int) int {
 	if tokens <= 0 {
 		return DefaultLimit
 	}

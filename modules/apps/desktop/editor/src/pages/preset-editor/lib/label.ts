@@ -38,7 +38,7 @@ export interface Box {
 }
 
 /** Whether two words stand clear of each other. */
-export const apart = (one: Box, two: Box): boolean =>
+export const isApart = (one: Box, two: Box): boolean =>
   one.x + one.wide <= two.x ||
   two.x + two.wide <= one.x ||
   one.y + one.high <= two.y ||
@@ -84,14 +84,14 @@ export const getNameBox = (at: Position): Box => {
 }
 
 /** Where a number against one of a plot's own lines is set, in the plot's room. */
-export const against = (y: number, lift: string, high = HIGH): CSSProperties => ({
+export const getAxisNumber = (y: number, lift: string, high = HIGH): CSSProperties => ({
   insetInlineStart: `${(LEFT / WIDE) * 100}%`,
   insetBlockStart: `${(y / high) * 100}%`,
   translate: `0 ${lift}`,
 })
 
 /** The room that number takes, which the knob's own figures stand clear of. */
-export const againstBox = (y: number, lift: string): Box => ({
+export const getAxisNumberBox = (y: number, lift: string): Box => ({
   x: LEFT,
   y: lift === '0' ? y : y - AXIS_HIGH,
   wide: AXIS_WIDE,
@@ -163,7 +163,7 @@ export const labelsOf = (marks: readonly Mark[], over: Box | null): readonly Lab
   for (const mark of marks) {
     if (!mark.text) continue
     const box = getNameBox(mark.at)
-    if (!placed.every((one) => apart(box, one))) continue
+    if (!placed.every((one) => isApart(box, one))) continue
     placed.push(box)
     out.push({ key: mark.key, text: mark.text, at: positionLabel(mark.at), box })
   }
@@ -193,16 +193,18 @@ export const heightsOf = (
 ): readonly Height[] => {
   const { least, most } = extent
   const measureHeightAt = (y: number, lift: string, value: number): readonly Height[] => {
-    const box = againstBox(y, lift)
+    const box = getAxisNumberBox(y, lift)
     if (!clearAt(y, places, marks)) return []
-    if (over && !apart(box, over)) return []
-    return [{ at: against(y, lift), box, text: getText(value) }]
+    if (over && !isApart(box, over)) return []
+    return [{ at: getAxisNumber(y, lift), box, text: getText(value) }]
   }
   // An extent of no width has one number and nothing else to read, and it is set
   // over the line it names. That line is the foot, which is where a run with no
   // height is drawn.
   if (most === least) {
-    return [{ at: against(FOOT, '0'), box: againstBox(FOOT, '0'), text: getText(most) }]
+    return [
+      { at: getAxisNumber(FOOT, '0'), box: getAxisNumberBox(FOOT, '0'), text: getText(most) },
+    ]
   }
   return [...measureHeightAt(TOP, '-100%', most), ...measureHeightAt(FOOT, '0', least)]
 }

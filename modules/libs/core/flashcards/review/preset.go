@@ -63,9 +63,9 @@ type Preset struct {
 // carries.
 const FullLoad = 100
 
-// Share is how much of a day's load this day of the week carries, as a share of
-// one.
-func (p Preset) Share(day time.Weekday) float64 {
+// GetShare is how much of a day's load this day of the week carries, as a share
+// of one.
+func (p Preset) GetShare(day time.Weekday) float64 {
 	per, named := p.Load[day]
 	if !named {
 		return 1
@@ -87,7 +87,7 @@ func (p Preset) GetPlacing() string {
 	var out strings.Builder
 	fmt.Fprintf(&out, "even=%t", p.Evens())
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		fmt.Fprintf(&out, " %s=%d", DayName(day), int(math.Round(p.Share(day)*FullLoad)))
+		fmt.Fprintf(&out, " %s=%d", DayName(day), int(math.Round(p.GetShare(day)*FullLoad)))
 	}
 	return out.String()
 }
@@ -276,7 +276,7 @@ func (p Preset) Stops(d Day, now time.Time) StopReason {
 		if p.By.IsZero() {
 			return StoppedNoDay
 		}
-		if p.Past(d, now) {
+		if p.IsPast(d, now) {
 			return StoppedPastDay
 		}
 	default:
@@ -295,20 +295,20 @@ func (p Preset) Stops(d Day, now time.Time) StopReason {
 func (p Preset) Week() float64 {
 	out := 0.0
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		out += p.Share(day)
+		out += p.GetShare(day)
 	}
 	return out
 }
 
-// StopsOn is why this preset schedules nothing on the day holding now: whatever
-// stops the preset at all, and a day of the week carrying none of the load. A
-// week with no day carrying any stops the preset itself, so this day is one of
-// the quiet days of a week that has loud ones.
-func (p Preset) StopsOn(d Day, now time.Time) StopReason {
+// GetStopReason is why this preset schedules nothing on the day holding now:
+// whatever stops the preset at all, and a day of the week carrying none of the
+// load. A week with no day carrying any stops the preset itself, so this day is
+// one of the quiet days of a week that has loud ones.
+func (p Preset) GetStopReason(d Day, now time.Time) StopReason {
 	if why := p.Stops(d, now); why != StoppedNothing {
 		return why
 	}
-	if p.Share(d.GetDate(now).Weekday()) == 0 {
+	if p.GetShare(d.GetDate(now).Weekday()) == 0 {
 		return StoppedNoLoad
 	}
 	return StoppedNothing
@@ -317,7 +317,7 @@ func (p Preset) StopsOn(d Day, now time.Time) StopReason {
 // IsPaused reports whether the preset schedules nothing.
 func (p Preset) IsPaused(d Day, now time.Time) bool { return p.Stops(d, now) != StoppedNothing }
 
-// paces is how much of the material a day holds when a date sets the pace: what
+// getPace is how much of the material a day holds when a date sets the pace: what
 // is left to begin, over the days on which beginning a card still leaves it time
 // to be learned by the day the preset aims at. A day past the one it aims at
 // holds none of it.
@@ -325,7 +325,7 @@ func (p Preset) IsPaused(d Day, now time.Time) bool { return p.Stops(d, now) != 
 // Where no day leaves that much time, the pace is everything left. It is the
 // pace that gets there every card face that can, and how many cannot is
 // Projection.Short.
-func (p Preset) paces(d Day, now time.Time, unbegunCards, daysToLearn int) int {
+func (p Preset) getPace(d Day, now time.Time, unbegunCards, daysToLearn int) int {
 	days := p.days(d, now)
 	if days <= 0 {
 		return 0
@@ -360,7 +360,7 @@ func (p Preset) getRoomToBegin(d Day, now time.Time, ripens int) float64 {
 	span := int(to.Sub(from).Hours()/24) + 1
 	for span > 0 && ripens > 0 {
 		span--
-		if p.Share(from.AddDate(0, 0, span).Weekday()) > 0 {
+		if p.GetShare(from.AddDate(0, 0, span).Weekday()) > 0 {
 			ripens--
 		}
 	}
@@ -395,14 +395,14 @@ func (p Preset) admits(from time.Time, days int) float64 {
 	whole := days / 7
 	out := p.Week() * float64(whole)
 	for i := range days % 7 {
-		out += p.Share(from.AddDate(0, 0, whole*7+i).Weekday())
+		out += p.GetShare(from.AddDate(0, 0, whole*7+i).Weekday())
 	}
 	return out
 }
 
-// Past reports whether the review day the goal names is behind us. The day it
+// IsPast reports whether the review day the goal names is behind us. The day it
 // names is a whole day of review, and a preset aiming at no day is never past.
-func (p Preset) Past(d Day, now time.Time) bool {
+func (p Preset) IsPast(d Day, now time.Time) bool {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return false
 	}

@@ -94,7 +94,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	o.API.Writing.open()
 	// The round the settling was is over, and what a page holds from here is
 	// this vault's.
-	o.API.Window.Over()
+	o.API.Window.EndRound()
 	// Everything a page is holding was read in a vault that is no longer in
 	// front of it.
 	o.API.Listeners.tell(change{reload: true})

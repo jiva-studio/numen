@@ -300,7 +300,7 @@ func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, h
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, text.Beside(area, hash), append(raw, '\n'))
+	return store.Write(ctx, text.GetProducerFile(area, hash), append(raw, '\n'))
 }
 
 // describeFailure is a failure as one line, which is what a file holding one

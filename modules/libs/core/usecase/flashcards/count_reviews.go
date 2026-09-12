@@ -228,7 +228,7 @@ func (u CountReviews) ahead(
 		return falls, nil, nil
 	}
 
-	schedules, err := u.Schedules.From(ctx, v, held)
+	schedules, err := u.Schedules.GetFromLog(ctx, v, held)
 	if err != nil {
 		return nil, nil, err
 	}

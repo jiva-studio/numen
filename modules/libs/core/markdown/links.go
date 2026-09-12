@@ -19,7 +19,7 @@ func bodyLinks(body []byte) []domain.Link {
 	var f Fence
 	for sc.Scan() {
 		line := strings.TrimRight(sc.Text(), "\r")
-		if f.Crosses(line) || f.Inside() {
+		if f.Crosses(line) || f.IsInside() {
 			// A link inside a code fence is an example of a link, not one.
 			continue
 		}

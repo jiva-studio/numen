@@ -176,9 +176,9 @@ func parseStamp(raw string) (int, bool) {
 	return ms + s*1000 + t, true
 }
 
-// At is where a run of the words sits: the cues it falls in, in the order they
-// were spoken. A run crossing a silence is in both of them.
-func At(cues []Cue, start, length int) []Cue {
+// GetCuesAt is where a run of the words sits: the cues it falls in, in the
+// order they were spoken. A run crossing a silence is in both of them.
+func GetCuesAt(cues []Cue, start, length int) []Cue {
 	if length <= 0 || len(cues) == 0 {
 		return nil
 	}

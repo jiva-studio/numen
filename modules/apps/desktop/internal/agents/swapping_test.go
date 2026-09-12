@@ -32,7 +32,7 @@ func newEndpoint() *Endpoint {
 // in front of the agents on the vault that is going.
 func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	s := newEndpoint()
-	s.On()
+	s.Start()
 	if !s.isServing() {
 		t.Fatal("the tools were never served")
 	}
@@ -44,7 +44,7 @@ func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	swaps.Add(1)
 	go func() {
 		defer swaps.Done()
-		_ = s.Around(func() error {
+		_ = s.RunSwap(func() error {
 			close(running)
 			<-release
 			return nil
@@ -57,7 +57,7 @@ func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	go func() {
 		defer swaps.Done()
 		defer close(second)
-		_ = s.Around(func() error { return nil })
+		_ = s.RunSwap(func() error { return nil })
 	}()
 	// The second swap has this long to reach the endpoint the first is holding.
 	select {

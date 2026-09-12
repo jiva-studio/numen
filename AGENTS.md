@@ -40,10 +40,17 @@ Forbidden patterns:
 | Third-person singular | `carries`, `attends`, `reads` | `carry`, `attend`, `read` |
 | Past participle | `listened`, `spoken`, `cued` | `getTranscript`, `transcribe` |
 | Bare noun / adjective | `highlight`, `book` | `getHighlight`, `createBook` |
+| Bare preposition | `At`, `Under`, `Beside` | `OpenAt`, `GetSourcesUnder`, `GetPlaceBeside` |
 | Literary metaphor | `minting`, `held`, `cold` | `getTitle`, `getActiveTab`, `getTitle` |
 
 A method states **what operation is performed** using standard engineering
 terms, never literary third-person narrative.
+
+`node modules/tools/lint/refused.mjs` lists what the rule refuses right now, and
+`node --test modules/tools/lint/verbs.test.mjs` holds the repository to it. The
+preposition line is read only where a name travels — an exported Go declaration,
+or a TypeScript one carrying `export` — because a name read beside its one use
+stands in the sentence that explains it.
 
 ---
 

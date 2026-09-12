@@ -82,13 +82,13 @@ type Projection struct {
 
 // RetentionByDay is the share of the material that comes back at the end of a
 // day, on the days a run was asked to answer for. A day it was not asked for
-// holds no share, and On says so.
+// holds no share, and GetShare says so.
 type RetentionByDay struct{ on map[int]float64 }
 
-// On is the share of the material that came back at the end of this day of the
-// run, counting the day the run opens as none, and whether the run answers for
-// that day.
-func (r RetentionByDay) On(day int) (float64, bool) {
+// GetShare is the share of the material that came back at the end of this day
+// of the run, counting the day the run opens as none, and whether the run
+// answers for that day.
+func (r RetentionByDay) GetShare(day int) (float64, bool) {
 	share, answers := r.on[day]
 	return share, answers
 }
@@ -117,8 +117,8 @@ const NeverLearns = -1
 // milestone, and one aiming at a date, which is that day.
 const LearnsUnasked = -2
 
-// Admits is how many of the days projected the preset admitted.
-func (p Projection) Admits() int {
+// CountAdmitted is how many of the days projected the preset admitted.
+func (p Projection) CountAdmitted() int {
 	out := 0
 	for _, one := range p.Admitted {
 		if one {
@@ -247,7 +247,7 @@ func (s Simulation) Run(
 	base := on.number(open)
 	falls := make([][]int, days)
 	for i, c := range cards {
-		on.Holds(c.Due)
+		on.Add(c.Due)
 		if day := max(0, on.number(c.Due)-base); day < days {
 			falls[day] = append(falls[day], i)
 		}
@@ -290,7 +290,7 @@ func (s Simulation) Run(
 		if today == 0 {
 			gone = s.Spent
 		}
-		admits := p.Admits(s.Day, open, gone, left, ripens)
+		admits := p.GetAllowance(s.Day, open, gone, left, ripens)
 
 		// What has fallen due by the close of the day, the oldest debt first, so
 		// a day that cannot pay all of it leaves the cards least overdue
@@ -308,7 +308,7 @@ func (s Simulation) Run(
 		// that asked for every card there was is closed by nothing.
 		var closed BudgetNames
 		if admits.IsPaused() {
-			closed = closed.with(ClosedPaused)
+			closed = closed.add(ClosedPaused)
 		}
 
 		// The day is spent between the debt and the material it has not begun,
@@ -343,7 +343,7 @@ func (s Simulation) Run(
 				}
 				counted := p.Counts.Charges(shown[at] > 0)
 				if counted && admits.Limits.Reviews != ClosedNothing && charged >= admits.Reviews {
-					closed = closed.with(admits.Limits.Reviews)
+					closed = closed.add(admits.Limits.Reviews)
 					if repeat {
 						settled = true
 					} else {
@@ -352,7 +352,7 @@ func (s Simulation) Run(
 					continue
 				}
 				if admits.Limits.Minutes != ClosedNothing && used+s.Cost.Review > admits.Minutes {
-					closed = closed.with(admits.Limits.Minutes)
+					closed = closed.add(admits.Limits.Minutes)
 					if repeat {
 						settled = true
 					} else {
@@ -388,11 +388,11 @@ func (s Simulation) Run(
 			}
 
 			if admits.Limits.New != ClosedNothing && begun >= admits.New {
-				closed, all = closed.with(admits.Limits.New), true
+				closed, all = closed.add(admits.Limits.New), true
 				continue
 			}
 			if admits.Limits.Minutes != ClosedNothing && used+s.Cost.New > admits.Minutes {
-				closed, all = closed.with(admits.Limits.Minutes), true
+				closed, all = closed.add(admits.Limits.Minutes), true
 				continue
 			}
 			used += s.Cost.New
@@ -451,7 +451,7 @@ func (s Simulation) Run(
 		open = ends
 	}
 
-	if admitted := out.Admits(); admitted > 0 {
+	if admitted := out.CountAdmitted(); admitted > 0 {
 		asked := 0
 		for _, one := range out.Faced {
 			asked += one

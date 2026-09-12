@@ -155,7 +155,7 @@ func (u Session) Execute(
 	// of them is weighed against.
 	on := review.NewDueByDay(u.Day)
 	for _, s := range schedules {
-		on.Holds(s.Due)
+		on.Add(s.Due)
 	}
 
 	out := SessionResult{Unwritten: marked.Unwritten, Skipped: held.Skipped}

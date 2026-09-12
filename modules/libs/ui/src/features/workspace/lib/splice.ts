@@ -43,7 +43,7 @@ export interface Landing {
  * lands one level deeper and divides the other way. A node with no parent is
  * the root, and the workspace turns its axis to suit.
  */
-export function beside(
+export function putBeside(
   root: WorkspaceNode,
   onto: NodeId,
   tab: TabId,

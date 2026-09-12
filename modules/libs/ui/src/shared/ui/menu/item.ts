@@ -1,7 +1,7 @@
 /**
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
-import { beside } from '@/shared/lib/place'
+import { getPlaceBeside } from '@/shared/lib/place'
 import type { Position, Size } from '@/shared/lib/geometry'
 
 /**
@@ -58,7 +58,7 @@ export interface MenuPlacement {
  * sits at the near edge and scrolls.
  */
 export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Position => ({
-  x: beside({
+  x: getPlaceBeside({
     from: at.x,
     to: at.x,
     size: size.width,
@@ -66,7 +66,7 @@ export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Positi
     margin,
     gap: 0,
   }),
-  y: beside({
+  y: getPlaceBeside({
     from: at.y,
     to: at.y,
     size: size.height,

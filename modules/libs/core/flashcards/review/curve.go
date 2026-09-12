@@ -332,7 +332,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 		if err != nil {
 			return err
 		}
-		back, _ := ran.Retained.On(day)
+		back, _ := ran.Retained.GetShare(day)
 		// A day at none of the load is no session at all, so what a day of
 		// review holds is read off the first day this run admits.
 		opening, session := ran.Session()
@@ -426,7 +426,7 @@ func learns(one Point) bool { return one.Short == 0 && one.Enough }
 func point(p Projection) Point {
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
-	back, _ := p.Retained.On(p.Days - 1)
+	back, _ := p.Retained.GetShare(p.Days - 1)
 	return Point{
 		Reviews: p.ReviewsADay,
 		Minutes: p.MinutesADay,

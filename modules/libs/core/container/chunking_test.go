@@ -45,8 +45,8 @@ func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 func TestTheModelSaidIsWhatAChunkIsCutUnder(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.MaxTokens = 512
-	if got := (container.Config{Embedding: cfg}).GetChunkSizes().Limit; got != chunking.Under(512) {
-		t.Errorf("cut at %d, under %d", got, chunking.Under(512))
+	if got := (container.Config{Embedding: cfg}).GetChunkSizes().Limit; got != chunking.GetCharacterBound(512) {
+		t.Errorf("cut at %d, under %d", got, chunking.GetCharacterBound(512))
 	}
 }
 
@@ -90,7 +90,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 	if len(owing) == 0 {
 		t.Fatal("a note of a hundred lines owes no vector")
 	}
-	limit := chunking.Under(cfg.Model.MaxTokens)
+	limit := chunking.GetCharacterBound(cfg.Model.MaxTokens)
 	for _, p := range owing {
 		if p.Length > limit {
 			t.Errorf("a chunk of %d characters is embedded by a model that reads %d", p.Length, limit)

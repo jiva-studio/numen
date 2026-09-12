@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { flatten, type Row, type RowId } from './row'
-import { between, everyRow, resolveSelection, sameRows, PLAIN, type Press } from './select'
+import { everyRow, getRowsBetween, resolveSelection, sameRows, PLAIN, type Press } from './select'
 import { isTreeKey, stepTo, TREE_KEYS } from './step'
 import { getDraggedRows, dragLabel } from './drag'
 import { holderOf, isRefused, landing } from './drop'
@@ -273,27 +273,27 @@ describe('the rows between two rows', () => {
   const shown = getShownRows('work')
 
   it('are the ones drawn from the first to the second, both among them', () => {
-    expect(between(shown, 'work', 'notes')).toStrictEqual(['work', 'plans', 'notes'])
+    expect(getRowsBetween(shown,'work', 'notes')).toStrictEqual(['work', 'plans', 'notes'])
   })
 
   it('are the same rows in the same order the other way round', () => {
-    expect(between(shown, 'notes', 'work')).toStrictEqual(['work', 'plans', 'notes'])
+    expect(getRowsBetween(shown,'notes', 'work')).toStrictEqual(['work', 'plans', 'notes'])
   })
 
   it('are the one row where both ends are it', () => {
-    expect(between(shown, 'plans', 'plans')).toStrictEqual(['plans'])
+    expect(getRowsBetween(shown,'plans', 'plans')).toStrictEqual(['plans'])
   })
 
   it('span whatever a folder boundary puts between them', () => {
-    expect(between(shown, 'plans', 'loose')).toStrictEqual(['plans', 'notes', 'empty', 'loose'])
+    expect(getRowsBetween(shown,'plans', 'loose')).toStrictEqual(['plans', 'notes', 'empty', 'loose'])
   })
 
   it('are the row reached alone, measured from a row that is not drawn', () => {
-    expect(between(shown, 'friday', 'notes')).toStrictEqual(['notes'])
+    expect(getRowsBetween(shown,'friday', 'notes')).toStrictEqual(['notes'])
   })
 
   it('are none at all where the row reached is not drawn', () => {
-    expect(between(shown, 'work', 'friday')).toStrictEqual([])
+    expect(getRowsBetween(shown,'work', 'friday')).toStrictEqual([])
   })
 })
 

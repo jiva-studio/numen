@@ -158,7 +158,7 @@ func (c Config) SyncSetting() note.SyncSetting {
 		if err != nil {
 			return true
 		}
-		held, err := settings.At(path)
+		held, err := settings.OpenAt(path)
 		if err != nil {
 			return true
 		}
@@ -174,7 +174,7 @@ func (c Config) ReadSettings() func() (string, string, error) {
 		if err != nil {
 			return "", "", err
 		}
-		held, err := settings.At(path)
+		held, err := settings.OpenAt(path)
 		if err != nil {
 			return "", path, err
 		}
@@ -226,7 +226,7 @@ func (c Config) Models() func() []port.Model {
 	return func() []port.Model {
 		held := settings.Defaults()
 		if path, err := c.settingsFile(); err == nil {
-			if read, err := settings.At(path); err == nil {
+			if read, err := settings.OpenAt(path); err == nil {
 				held = read
 			}
 		}
@@ -279,7 +279,7 @@ func (c Config) Settings() (settings.Config, error) {
 	if err != nil {
 		return settings.Config{}, err
 	}
-	return settings.At(path)
+	return settings.OpenAt(path)
 }
 
 // settingsFile is the file a person configures this installation in.
@@ -307,7 +307,7 @@ func (c Config) beside(name string) (string, bool) {
 // kept with the application.
 func (c Config) Registry() (port.VaultRegistry, error) {
 	if c.RegistryPath != "" {
-		return appstate.At(c.RegistryPath), nil
+		return appstate.OpenAt(c.RegistryPath), nil
 	}
 	return appstate.Open()
 }

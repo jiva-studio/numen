@@ -99,6 +99,16 @@ FSD держит в `shared/` то, что не знает о предметно
 - **Глагольная форма не первым словом.** `faceAdded` — нарратив, `getRenamedPath` — прилагательное; отличить можно только списком всех английских глаголов.
 - **Члены интерфейсов и объектных литералов.** Правило читает объявления, а не члены.
 
+### Предлог в одно слово машина теперь видит
+
+`At`, `Under`, `Beside` — имя, которое говорит, где вещь стоит, а не о чём просит вызывающий. Правило читает его там, где имя уезжает: заглавная буква в Go, `export` в TypeScript. Имя, которое читают только рядом с объявлением, стоит внутри объясняющего его предложения, и ту же границу уже держит правило типов в `container/nouns_test.go`.
+
+**Осталось:** ~150 таких имён внутри пакетов (`at`, `inside`, `within`, `beside` и прочие). Критерий: `refused.mjs` пуст при снятом различении `travels`.
+
+### Третье лицо в `flashcards/review`
+
+Закрыто целиком: `Admits` → `GetAllowance`, `Share` → `GetShare`, `StopsOn` → `GetStopReason`, `paces` → `getPace`, `Holds` → `Has`/`Add`, `Past` → `IsPast`, `Projection.Admits` → `CountAdmitted`. Осталось в других пакетах: `Bounds.Holds`, `Files.Holds`, `Notes.Holds`, `Preset.Stops`, `Scheduler.Name`.
+
 ## Что этот файл заменяет
 
 `review.md`, `review3.md`, `refactor.md`, `refactor2.md`, `vue3-refactoring-review.md`, `architecture-improvement-plan.md`, `refactoring-plan.md`, `refactoring-remaining.md`, `refactoring-debt-checklist.md`, `fsd-architecture-plan.md`, `refactoring-todo.md`.
