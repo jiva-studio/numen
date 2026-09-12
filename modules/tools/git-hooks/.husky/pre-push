@@ -1,0 +1,13 @@
+# The boundary and house rules, before the branch leaves the machine.
+#
+# Both walk every module and take a couple of seconds together. What they
+# refuse is what CI refuses, so a push that passes here is one the workflow
+# has nothing new to say about.
+#
+# Set NUMEN_SKIP_CHECKS=1 to push without them.
+[ -n "$NUMEN_SKIP_CHECKS" ] && exit 0
+
+root=$(git rev-parse --show-toplevel)
+
+node --test "$root"/modules/tools/lint/*.test.mjs || exit 1
+node "$root/modules/tools/depgraph/check.mjs" || exit 1

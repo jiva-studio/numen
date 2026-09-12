@@ -52,7 +52,7 @@ test('nothing but a test draws this export', () => {
   const held = fixturesOf(files)
   for (const one of [
     'modules/libs/ui/src/shared/fixtures/clock.ts',
-    'modules/apps/desktop/editor/src/shared/testing/window.ts',
+    'modules/apps/desktop/editor/src/testing/window.ts',
   ]) {
     assert.ok(held.includes(one), `${one} is drawn by tests alone and the walk did not see it`)
   }
