@@ -16,8 +16,10 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 // and a package name is a link `npm ci` makes.
 import { faults, proves, stories } from '../../../tools/stories/stories.mjs'
 
-// The window's shared layer, which is where the commands and the words stand.
+// The window's shared layer, which is where the words stand.
 const UI = new URL('../../desktop/editor/src/shared/', import.meta.url)
+// The slice the commands and their keystrokes stand in.
+const PALETTE = new URL('../../desktop/editor/src/features/command-palette/', import.meta.url)
 const GO = new URL('../../../libs/core/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
@@ -151,12 +153,12 @@ const said = async (whole, name, at = UI, seen = new Set()) => {
 }
 
 const keyboard = async () => {
-  const keys = await read(UI, 'command/chords.ts')
+  const keys = await read(PALETTE, 'lib/chords.ts')
   const words = await read(UI, 'words.ts')
 
   // The two the window keeps for itself are not in that table: they put the
   // palette up, and the palette answers them.
-  const palette = await read(UI, 'command/CommandPalette.vue')
+  const palette = await read(PALETTE, 'ui/CommandPalette.vue')
   for (const letter of ['k', 'p']) {
     if (!palette.includes(`key === '${letter}'`)) {
       die(`the palette no longer answers '${letter}' itself`)
@@ -168,7 +170,7 @@ const keyboard = async () => {
     `| ${chordOf({ letter: 'p' })} | Commands |`,
   ]
   for (const chord of chords(keys)) {
-    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(await read(UI, 'command/commands.ts'), chord.command))} |`)
+    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(await read(PALETTE, 'lib/table.ts'), chord.command))} |`)
   }
   return ['| | |', '| --- | --- |', ...rows].join('\n')
 }
@@ -177,7 +179,7 @@ const keyboard = async () => {
 
 /** The one list of commands, from where it opens to where it closes. */
 const listing = (source) =>
-  declaring(source, 'commandsOf', 'commands.ts no longer lists its commands')
+  declaring(source, 'commandsOf', 'table.ts no longer lists its commands')
 
 /**
  * Where each row of the list begins, so that what one row says is read out of
@@ -190,7 +192,7 @@ const listing = (source) =>
 const rowsOf = ({ text, entries }) => {
   const found = [...text.matchAll(/\bid:\s*'([A-Za-z]+)'/g)]
   if (found.length !== entries) {
-    die(`commands.ts lists ${entries} commands and this reads ${found.length}`)
+    die(`table.ts lists ${entries} commands and this reads ${found.length}`)
   }
   return found.map((one, i) => ({
     id: one[1],
@@ -202,19 +204,19 @@ const rowsOf = ({ text, entries }) => {
 const spoken = (source, command) => {
   const row = rowsOf(listing(source)).find((one) => one.id === command)
   const found = row?.said.match(/text:\s*words\.([A-Za-z]+)/)
-  if (!found) die(`no row in commands.ts draws the command '${command}'`)
+  if (!found) die(`no row in table.ts draws the command '${command}'`)
   return found[1]
 }
 
 /** Every command the palette offers, in the order it draws them. */
 const commands = async () => {
-  const source = await read(UI, 'command/commands.ts')
+  const source = await read(PALETTE, 'lib/table.ts')
   const words = await read(UI, 'words.ts')
-  const keys = await read(UI, 'command/chords.ts')
+  const keys = await read(PALETTE, 'lib/chords.ts')
   const table = chords(keys)
 
   const declared = rowsOf(listing(source))
-  if (declared.length === 0) die('no commands are declared in commands.ts')
+  if (declared.length === 0) die('no commands are declared in table.ts')
 
   // Every command declared is a command the page carries. One the words or the
   // groups say nothing about stops the build.
