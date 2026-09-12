@@ -16,7 +16,7 @@ export interface NoteTabDeps extends NoteTitlesDeps {
 /** State and operations for an open note tab. */
 export interface NoteTabState {
   readonly id: string
-  readonly shown: ComputedRef<OpenNote>
+  readonly note: ComputedRef<OpenNote>
   readonly errorMessage: ComputedRef<string>
   readonly change: ComputedRef<Change | null>
   updateBody(body: string): void

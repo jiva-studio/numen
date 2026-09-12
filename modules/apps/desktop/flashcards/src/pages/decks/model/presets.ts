@@ -11,7 +11,7 @@ import type { StopReason } from '@numen/protocol'
 import { deckName } from '@/entities/vault'
 import type { VaultCardsDue } from '@/entities/vault'
 
-import { scheduled, UNREAD } from '../api/presets'
+import { readDeckPreset, UNREAD } from '../api/presets'
 import type { DeckPresetResult, PresetsClient } from '../api/presets'
 import { CLOSES_NOTHING } from '../types'
 import type { Budget, Preset, Settings } from '../types'
@@ -62,7 +62,7 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
     of.value = due.vault
 
     const held = await Promise.all(
-      due.decks.map((deck) => scheduled(deps.presets, due.vault, deck.deck)),
+      due.decks.map((deck) => readDeckPreset(deps.presets, due.vault, deck.deck)),
     )
     if (of.value !== due.vault) return
 

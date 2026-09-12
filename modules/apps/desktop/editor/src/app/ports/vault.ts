@@ -1,7 +1,7 @@
 /** What the window asks of the vault about itself, and the streams it speaks on. */
 import type { PathRename } from '@/shared/paths'
 import type { Task } from '@/shared/notices/task'
-import type { Attention } from '@/entities/tab'
+import type { OpenTabs } from '@/entities/tab'
 
 export interface VaultPort {
   getInitialOpenPath(): Promise<{ path: string } | null>
@@ -55,12 +55,8 @@ export interface VaultPort {
     path: string
     spans: readonly { from: number; to: number }[]
   }>
-  /**
-   * What the person has open, said again whenever any of it changes. It is the
-   * other direction to `focus`: a place is put in front of the person there,
-   * and here the window says what is in front of them now.
-   */
-  setFocus(open: Attention): Promise<void>
+  /** What the person has open, said again whenever any of it changes. */
+  writeOpenTabs(open: OpenTabs): Promise<void>
   /**
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.

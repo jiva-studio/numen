@@ -30,7 +30,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
 // --- Handlers ---
 function onModelChange(at: readonly string[], name: string) {
   const model = installation.value.models(at).find((one) => one.name === name)
-  if (model) installation.value.writes(model.writes)
+  if (model) installation.value.write(model.writes)
   else setSetting(at, name)
 }
 
@@ -62,7 +62,7 @@ function getModels(at: readonly string[]): readonly SelectChoice[] {
 const models = getModels
 
 function setSetting(at: readonly string[], value: unknown): void {
-  installation.value.writes([{ at, value: write(value) }])
+  installation.value.write([{ at, value: write(value) }])
 }
 </script>
 

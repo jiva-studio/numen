@@ -8,24 +8,14 @@
  */
 import { computed, provide, useTemplateRef } from 'vue'
 import { browserClock, type Clock } from '@/shared/lib/clock'
-import { DragPreview, usePressDrag } from '@/shared/ui/drag-preview'
+import { DragPreview } from '@/shared/ui/drag-preview'
 import { WorkspaceBranch } from './branch'
 import { WorkspacePane } from './pane'
 import WorkspaceOverlay from './WorkspaceOverlay.vue'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../model/context'
-import {
-  activateTab,
-  closeTab,
-  dropOnEdge,
-  dropTab,
-  focusPane,
-  moveTabWithin,
-  resizeBranch,
-  type NodeIdFactory,
-} from '../lib/edit'
-import { rectOf, caretAt, edgeOf, overlayFor, sideAt, slotAt, type TabLanding } from '../lib/drop'
+import { useTabDrag } from '../model/drag'
+import { activateTab, closeTab, focusPane, resizeBranch, type NodeIdFactory } from '../lib/edit'
 import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
-import type { Rect } from '../lib/rect'
 
 const props = withDefaults(
   defineProps<{
@@ -87,40 +77,20 @@ let made = 0
 const mint = (): NodeId =>
   typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `node-${++made}-${Date.now()}`
 
-const naming = computed<NodeIdFactory>(() => props.naming ?? mint)
-
 const frame = useTemplateRef<HTMLElement>('frame')
 
-/** A tab under the pointer, and the pane its strip belongs to. */
-interface Drag {
-  readonly tab: TabId
-  readonly from: NodeId
-}
-
-const {
-  dragging,
-  at: landing,
-  position,
-  lift,
-} = usePressDrag<Drag, TabLanding>({
+const { moved, overlay, label, position, landing, press } = useTabDrag({
+  workspace,
+  frame,
+  tabOf,
+  naming: () => props.naming ?? mint,
+  edge: () => props.edge,
   threshold: () => props.threshold,
   clock: () => props.clock,
-  landingAt: (_held, at) => landingAt(at.x, at.y),
-  settle: (held, at) => {
-    if (at) land(held, at)
-  },
-})
-
-const overlay = computed(() => (dragging.value?.moved ? (landing.value?.box ?? null) : null))
-
-const label = computed(() => {
-  const held = dragging.value
-  if (!held?.moved) return null
-  return tabOf(held.held.tab)?.title ?? held.held.tab
 })
 
 function choose(tab: TabId): void {
-  if (dragging.value?.moved) return
+  if (moved.value) return
   workspace.value = activateTab(workspace.value, tab)
   emit('activate', tab)
 }
@@ -157,73 +127,6 @@ provide(
     show: (tab: TabId) => emit('show', tab),
   })),
 )
-
-function press(tab: TabId, at: PointerEvent): void {
-  if (at.button !== 0) return
-
-  const holder = document.elementFromPoint(at.clientX, at.clientY)?.closest('[data-workspace-pane]')
-  const from = holder?.getAttribute('data-workspace-pane') ?? workspace.value.focus
-
-  lift({ tab, from }, at)
-}
-
-function land(held: Drag, at: TabLanding): void {
-  const ids = naming.value
-
-  if (at.kind === 'edge') {
-    workspace.value = dropOnEdge(workspace.value, held.tab, at.side, ids)
-    return
-  }
-
-  if (at.kind === 'pane') {
-    workspace.value = dropTab(workspace.value, { tab: held.tab, onto: at.pane, side: at.side }, ids)
-    return
-  }
-
-  const joined =
-    at.pane === held.from
-      ? workspace.value
-      : dropTab(workspace.value, { tab: held.tab, onto: at.pane, side: 'center' }, ids)
-  workspace.value = moveTabWithin(joined, held.tab, at.slot)
-}
-
-/**
- * What the pointer is over, asked of the document.
- *
- * A strip is read first, so that a tab can be put in order among its
- * neighbours; then the outer edge, which divides the whole workspace; then the
- * pane, which divides itself.
- */
-function landingAt(x: number, y: number): TabLanding | null {
-  const held = frame.value
-  if (!held) return null
-
-  const outer = held.getBoundingClientRect()
-  if (x < outer.left || x > outer.right || y < outer.top || y > outer.bottom) return null
-
-  const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.left, y: box.y - outer.top })
-  const under = document.elementFromPoint(x, y)
-
-  const strip = under?.closest('[data-workspace-strip]')
-  const pane = under?.closest('[data-workspace-pane]')
-  const id = pane?.getAttribute('data-workspace-pane')
-
-  if (strip && id) {
-    // A strip holds tabs and nothing else, in the order they are drawn.
-    const tabs = [...strip.children].map((tab) => rectOf(tab))
-    const slot = slotAt(x, tabs)
-    return { kind: 'strip', pane: id, slot, box: local(caretAt(slot, tabs, rectOf(strip))) }
-  }
-
-  const side = edgeOf({ x, y }, rectOf(held), props.edge)
-  if (side) return { kind: 'edge', side, box: local(overlayFor(side, rectOf(held))) }
-
-  if (!pane || !id) return null
-
-  const box = rectOf(pane)
-  const asked = sideAt({ x, y }, box)
-  return { kind: 'pane', pane: id, side: asked, box: local(overlayFor(asked, box)) }
-}
 
 </script>
 

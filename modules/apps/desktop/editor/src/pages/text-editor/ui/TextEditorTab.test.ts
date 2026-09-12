@@ -63,7 +63,7 @@ describe('the file drawn', () => {
           new ConnectError('not a setting: it does not read as JSON, at byte 12', Code.InvalidArgument),
         ),
     })
-    state.types('{ "agent": ')
+    state.type('{ "agent": ')
     await state.keeps()
     await tab.vm.$nextTick()
 
@@ -81,7 +81,7 @@ describe('the file drawn', () => {
         return Promise.resolve({ changed: false })
       },
     })
-    state.types('{}\n')
+    state.type('{}\n')
     await state.keeps()
     await tab.vm.$nextTick()
 

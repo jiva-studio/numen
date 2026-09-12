@@ -19,7 +19,7 @@ const installation = computed(() => props.state.installation)
 
 // --- Handlers ---
 function onOpenFile() {
-  installation.value.opensFile()
+  installation.value.openFile()
 }
 
 // --- Helpers ---

@@ -98,7 +98,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
     const path = store.where(id)
     await store.settles(id)
     try {
-      const answer = await presets.schedules(path, preset, store.at(id))
+      const answer = await presets.scheduleDeck(path, preset, store.at(id))
       if (answer.changed) setChoiceMessage(id, words.notScheduledChanged)
       else if (answer.error !== null) setChoiceMessage(id, words.notScheduled)
       else setChoiceMessage(id, '')

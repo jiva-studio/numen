@@ -35,7 +35,7 @@ export function deckKind({
 }: DeckTabsInside) {
   const kind: TabKind<DeckTabState, typeof DECK> = {
     kind: DECK,
-    opens: (id) => {
+    open: (id) => {
       const path = cardTabPathMap.get(id) ?? id
       store.open(id, path)
       pendingTabIds.delete(path)
@@ -45,19 +45,19 @@ export function deckKind({
       void refreshDeckPreset(path)
       return createDeckTabState(id)
     },
-    called: (one) => said.getTitle(store.where(one.id)),
-    marked: (one) => markOf(one.shown.value.state),
-    draws: DeckTab,
+    getTitle: (one) => said.getTitle(store.where(one.id)),
+    getMark: (one) => markOf(one.note.value.state),
+    pane: DeckTab,
     identity: (id) => id,
-    shown: () => {
+    onShow: () => {
       listStencilsAgain()
       listPresetsAgain()
     },
-    shuts: (one, id) => {
+    onClose: (one, id) => {
       one.close(id)
       return false
     },
-    gone: () => {},
+    onDestroy: () => {},
   }
 
   return kind

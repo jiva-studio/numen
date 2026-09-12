@@ -58,7 +58,7 @@ export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
   const getSettledNotes = (): readonly SettledNote[] =>
     notes
       .all()
-      .filter((id) => notes.shown(id).state === 'clean')
+      .filter((id) => notes.getOpenNote(id).state === 'clean')
       .map((id) => ({ id, at: notes.where(id) }))
 
   /**

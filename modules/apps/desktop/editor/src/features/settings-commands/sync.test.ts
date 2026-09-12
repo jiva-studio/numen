@@ -58,7 +58,7 @@ describe('whether a title and a filename are one name', () => {
     const held = syncSetting(core, words, writer().write)
     await held.start()
 
-    await held.chooses(OFF)
+    await held.choose(OFF)
 
     expect(core.wrote).toStrictEqual([false])
     expect(held.kept.value).toBe(false)
@@ -69,7 +69,7 @@ describe('whether a title and a filename are one name', () => {
     const held = syncSetting(core, words, writer().write)
     await held.start()
 
-    await held.chooses(ON)
+    await held.choose(ON)
 
     expect(core.wrote).toStrictEqual([])
   })
@@ -79,7 +79,7 @@ describe('whether a title and a filename are one name', () => {
     const held = syncSetting(core, words, writer().write)
     await held.start()
 
-    await held.chooses('interfaceScale:1.5')
+    await held.choose('interfaceScale:1.5')
 
     expect(core.wrote).toStrictEqual([])
     expect(held.kept.value).toBe(true)
@@ -91,7 +91,7 @@ describe('whether a title and a filename are one name', () => {
     const held = syncSetting(core, words, told.write)
     await held.start()
 
-    await held.chooses(OFF)
+    await held.choose(OFF)
 
     expect(held.kept.value).toBe(true)
     expect(told.said.at(-1)).toContain(words.unturned)

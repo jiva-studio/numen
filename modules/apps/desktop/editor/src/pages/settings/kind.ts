@@ -15,13 +15,12 @@ export function useSettingsTab(handle: WindowHandle, installation: Installation)
   /** One settings tab to a window: the settings are the installation's, not a file's. */
   const kind: TabKind<SettingsTabState, typeof SETTINGS> = {
     kind: SETTINGS,
-    opens: () => {
+    open: () => {
       isOpen.value = true
       return state
     },
-    called: () => words.settings,
     getTitle: () => words.settings,
-    draws: SettingsTab,
+    pane: SettingsTab,
     identity: () => SETTINGS,
   }
 

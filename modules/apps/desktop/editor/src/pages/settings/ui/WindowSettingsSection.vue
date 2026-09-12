@@ -42,33 +42,33 @@ const STEP = 0.1
 
 // --- Handlers ---
 function onThemeChange(name: string) {
-  installation.value.chooses(name)
+  installation.value.choose(name)
 }
 
 function onModeChange(modeChoice: string) {
-  installation.value.chooses(`${MODE}:${modeChoice as Mode}`)
+  installation.value.choose(`${MODE}:${modeChoice as Mode}`)
 }
 
 function onInterfaceScaleChange(size: number | null) {
   if (size !== null) {
-    installation.value.chooses(`${INTERFACE_SCALE}:${size}`)
+    installation.value.choose(`${INTERFACE_SCALE}:${size}`)
   }
 }
 
 function onTextScaleChange(size: number | null) {
   if (size !== null) {
-    installation.value.chooses(`${TEXT_SCALE}:${size}`)
+    installation.value.choose(`${TEXT_SCALE}:${size}`)
   }
 }
 
 function onPartsChange(count: number | null) {
   if (count !== null) {
-    installation.value.choosesParts(count)
+    installation.value.chooseParts(count)
   }
 }
 
 function onDayStartsChange(hour: string) {
-  installation.value.choosesDayStarts(hour)
+  installation.value.chooseDayStarts(hour)
 }
 
 // --- Helpers ---

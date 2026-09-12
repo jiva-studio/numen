@@ -29,14 +29,13 @@ export interface TabKind<TabState, K extends string = string> {
    * It is made at once, so whatever it watches is caught by the tab's scope
    * and let go of with the tab.
    */
-  opens(at: string): TabState
+  open(at: string): TabState
   /** What the tab is called, as what it holds now stands. */
-  called?(state: TabState): string
   getTitle?(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
-  marked?(state: TabState): string | undefined
+  getMark?(state: TabState): string | undefined
   /** What is drawn in the pane, given what the tab holds. */
-  readonly draws: Component
+  readonly pane: Component
   /**
    * The identity a tab of this kind takes from what it opens on. A kind that
    * declares one has a tab per thing, so the same thing opened twice is the
@@ -44,7 +43,6 @@ export interface TabKind<TabState, K extends string = string> {
    */
   identity?(at: string): string
   /** The tab came on screen, where what it holds has room to measure. */
-  shown?(state: TabState, id: string): void
   onShow?(state: TabState, id: string): void
   /**
    * A key struck while one of its tabs is the one the person is in, answered
@@ -52,24 +50,20 @@ export interface TabKind<TabState, K extends string = string> {
    * offered it is the one showing in the pane the layout is focused on, and
    * then whatever else is on screen.
    */
-  presses?(state: TabState, event: KeyboardEvent): boolean
   onKeyPress?(state: TabState, event: KeyboardEvent): boolean
   /** What a command asked over one of its tabs is over. */
   over?(state: TabState): TabTarget
   /** What one of its tabs holds, as whoever answers for the person is told it. */
-  attends?(state: TabState): OpenTab<K>
-  getAttention?(state: TabState): OpenTab<K>
+  getOpenTab?(state: TabState): OpenTab<K>
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
    * has something to finish, and closes the tab itself once it has.
    */
-  shuts?(state: TabState, id: string): boolean
   onClose?(state: TabState, id: string): boolean
   /**
    * The window is going, and nothing this tab holds outlives it. A kind that
    * says nothing here lets go the way a tab of it closes.
    */
-  gone?(state: TabState, id: string): void
   onDestroy?(state: TabState, id: string): void
 }
 

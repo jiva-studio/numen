@@ -181,8 +181,8 @@ const window = (
       holding: (path) => (path === at ? 'held' : null),
       where: (id) => (id === 'held' ? at : id),
       asking: () => answers.asking === true,
-      settles: async (id) => void done.push(`settles ${id}`),
-      shuts: (id) => void done.push(`shuts ${id}`),
+      settle: async (id) => void done.push(`settle ${id}`),
+      close: (id) => void done.push(`close ${id}`),
       opens: (path, title, showing) => void done.push(`opens ${path} ${title} ${showing}`),
       made: (path, title, type, showing) =>
         void done.push(`made ${type} ${path} ${title} ${showing}`),
@@ -215,12 +215,12 @@ const window = (
     goes: {
       reveals: (path) => void done.push(`reveals ${path}`),
       travel: async (path) => void done.push(`travel ${path}`),
-      leaves: async (from, to) => void done.push(`leaves ${from} ${to}`),
+      leave: async (from, to) => void done.push(`leave ${from} ${to}`),
       opening: () => 'Root.md',
       opens: (kind) => void done.push(`opens ${kind}`),
       preset: async (path) => void done.push(`preset ${path}`),
       closes: (tab) => void done.push(`closes ${tab}`),
-      asks: (text) => void done.push(`asks ${text}`),
+      ask: (text) => void done.push(`ask ${text}`),
       searches: () => void done.push('searches'),
     },
     settings: {
@@ -521,7 +521,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual(['settles held', 'renames physics/Ontology.md Entropy'])
+    expect(one.done).toStrictEqual(['settle held', 'renames physics/Ontology.md Entropy'])
   })
 
   it('is refused while the note is waiting on the person', async () => {
@@ -612,7 +612,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front()), one.on)
 
-    expect(one.done.slice(0, 2)).toStrictEqual(['settles held', 'removes physics/Ontology.md false'])
+    expect(one.done.slice(0, 2)).toStrictEqual(['settle held', 'removes physics/Ontology.md false'])
   })
 
   it('goes off the disk where destroying was what was asked', async () => {
@@ -645,7 +645,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front()), one.on)
 
-    expect(one.done.at(-1)).toBe('leaves physics/Ontology.md Root.md')
+    expect(one.done.at(-1)).toBe('leave physics/Ontology.md Root.md')
   })
 
   it('leaves the plexes alone where the vault opens with no note at all', async () => {
@@ -654,7 +654,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front()), nowhere)
 
-    expect(one.done.some((step) => step.startsWith('leaves'))).toBe(false)
+    expect(one.done.some((step) => step.startsWith('leave'))).toBe(false)
   })
 
   it('lets go of the tab that was reading it', async () => {
@@ -662,7 +662,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
-    expect(one.done).toContain('shuts held')
+    expect(one.done).toContain('close held')
   })
 
   it('keeps the tab of a note the vault would not remove', async () => {
@@ -670,7 +670,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
-    expect(one.done).not.toContain('shuts held')
+    expect(one.done).not.toContain('close held')
   })
 
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
@@ -711,9 +711,9 @@ describe('several files removed at once', () => {
 
     await carry(invocationOf('remove', both), one.on)
 
-    expect(one.done.filter((step) => step.startsWith('leaves'))).toStrictEqual([
-      'leaves physics/Ontology.md Root.md',
-      'leaves physics/Heat.pdf Root.md',
+    expect(one.done.filter((step) => step.startsWith('leave'))).toStrictEqual([
+      'leave physics/Ontology.md Root.md',
+      'leave physics/Heat.pdf Root.md',
     ])
   })
 
@@ -757,7 +757,7 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.done).toStrictEqual(['settles held', 'moves physics/Ontology.md notes/Ontology.md'])
+    expect(one.done).toStrictEqual(['settle held', 'moves physics/Ontology.md notes/Ontology.md'])
   })
 
   it('settles the tab holding it before its file goes anywhere', async () => {
@@ -765,7 +765,7 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.done.indexOf('settles held')).toBeLessThan(
+    expect(one.done.indexOf('settle held')).toBeLessThan(
       one.done.indexOf('moves physics/Ontology.md notes/Ontology.md'),
     )
   })
@@ -840,7 +840,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(invocationOf('title', front(), 'Substance', 'held'), one.on)
 
-    expect(one.done).toStrictEqual(['settles held', 'renames physics/Being.md Substance'])
+    expect(one.done).toStrictEqual(['settle held', 'renames physics/Being.md Substance'])
   })
 
   it('is removed where it stands now', async () => {
@@ -848,7 +848,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
-    expect(one.done.slice(0, 2)).toStrictEqual(['settles held', 'removes physics/Being.md false'])
+    expect(one.done.slice(0, 2)).toStrictEqual(['settle held', 'removes physics/Being.md false'])
   })
 
   it('is left at the name it was made over where no tab holds it', async () => {
@@ -915,7 +915,7 @@ describe('what the window is asked about a note', () => {
     await carry(invocationOf('ask', front()), one.on)
     await carry(invocationOf('copy', front()), one.on)
 
-    expect(one.done).toStrictEqual(['asks physics/Ontology.md — ', 'copies physics/Ontology.md'])
+    expect(one.done).toStrictEqual(['ask physics/Ontology.md — ', 'copies physics/Ontology.md'])
   })
 })
 
@@ -1087,10 +1087,10 @@ describe('the open files a command reaches', () => {
   const store = (id: string, path: string, done: string[]): Store => ({
     has: (one) => one === id,
     where: (one) => (one === id ? path : one),
-    called: (one) => (one === id ? `${id} called` : ''),
+    getTitle: (one) => (one === id ? `${id} called` : ''),
     asking: () => false,
-    settles: async (one) => void done.push(`settles ${one}`),
-    shuts: (one) => void done.push(`shuts ${one}`),
+    settle: async (one) => void done.push(`settle ${one}`),
+    close: (one) => void done.push(`close ${one}`),
     holding: (one) => (one === path ? id : null),
   })
 
@@ -1111,17 +1111,17 @@ describe('the open files a command reaches', () => {
   it('settles and shuts the store holding the identity, and no other', async () => {
     const one = over()
 
-    await one.notes.settles('Animals.md')
-    one.notes.shuts('Animals.md')
+    await one.notes.settle('Animals.md')
+    one.notes.close('Animals.md')
 
-    expect(one.done).toStrictEqual(['settles Animals.md', 'shuts Animals.md'])
+    expect(one.done).toStrictEqual(['settle Animals.md', 'close Animals.md'])
   })
 
   it('leaves an identity no store holds where it was, and does nothing to it', async () => {
     const one = over()
 
-    await one.notes.settles('Gone.md')
-    one.notes.shuts('Gone.md')
+    await one.notes.settle('Gone.md')
+    one.notes.close('Gone.md')
 
     expect(one.notes.where('Gone.md')).toBe('Gone.md')
     expect(one.notes.asking('Gone.md')).toBe(false)

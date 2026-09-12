@@ -12,13 +12,13 @@ import { panesOf, WorkspaceLayout, type Workspace } from '@numen/ui'
 import type { Tab } from '@/entities/tab'
 
 
-const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoisted(() => ({
+const { said, held, asked, listed, folders, maker, getFileKind, outside } = vi.hoisted(() => ({
   /**
    * What the vault holds at a path. A book and a note are told apart by the
    * name the file carries, the way the vault itself tells them apart, and which
    * of three a note is is what a test said.
    */
-  stands: (path: string) => {
+  getFileKind: (path: string) => {
     if (/\.epub$/u.test(path)) {
       return { kind: 'book' as const, type: 'note' as const, format: 'epub' as const }
     }
@@ -37,7 +37,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
     const queue: { path: string; spans: { from: number; to: number }[] }[] = []
     let wake: (() => void) | null = null
     return {
-      asks: (at: { path: string; start: number; length: number }) => {
+      ask: (at: { path: string; start: number; length: number }) => {
         queue.push({ path: at.path, spans: [{ from: at.start, to: at.start + at.length }] })
         wake?.()
         wake = null
@@ -68,10 +68,10 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
         reached = true
       },
       /** The vault is out of reach, so asking it for one reaches nothing. */
-      breaks: () => {
+      fail: () => {
         reached = false
       },
-      makes: (title: string, folder: string) => {
+      createFile: (title: string, folder: string) => {
         if (!reached) throw new Error('the vault could not be reached')
         const path = `${folder ? `${folder}/` : ''}${title}.note`
         if (filed.has(path)) return { path: '', error: 'occupied' as const }
@@ -187,7 +187,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
     /** How often a folder was asked for, which is a vault being added. */
     chose: 0,
     /** What the window said the person has open, the last of it last. */
-    attending: [] as { tabs: readonly Tab[]; front: string }[],
+    openTabs: [] as { tabs: readonly Tab[]; front: string }[],
   },
   /** The vaults this installation holds, and the one the window is showing. */
   listed: {
@@ -283,15 +283,15 @@ vi.mock('@/app/vault', () => ({
     editing: held,
     tasks: held,
     focus: outside.stream,
-    setFocus: async (open: { tabs: readonly Tab[]; front: string }) => {
-      asked.attending.push(open)
+    writeOpenTabs: async (open: { tabs: readonly Tab[]; front: string }) => {
+      asked.openTabs.push(open)
     },
     quitting: held,
     flushed: async () => {},
     names: async () => said.names,
     search: async () => said.passages,
     fileKinds: async (paths: readonly string[]) =>
-      new Map(paths.map((path) => [path, stands(path)])),
+      new Map(paths.map((path) => [path, getFileKind(path)])),
     headings: async () => new Map(),
   },
 }))
@@ -409,19 +409,19 @@ const cardsSaid = {
     }),
     createDeck: async (title: string, folder: string) => {
       asked.cards.push(`deck ${folder || '/'} ${title}`)
-      return maker.makes(title, folder)
+      return maker.createFile(title, folder)
     },
     makeDeck: async (title: string, folder: string) => {
       asked.cards.push(`deck ${folder || '/'} ${title}`)
-      return maker.makes(title, folder)
+      return maker.createFile(title, folder)
     },
     createStencil: async (title: string, folder: string, fields: readonly string[]) => {
       asked.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
-      return maker.makes(title, folder)
+      return maker.createFile(title, folder)
     },
     makeStencil: async (title: string, folder: string, fields: readonly string[]) => {
       asked.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
-      return maker.makes(title, folder)
+      return maker.createFile(title, folder)
     },
     renameField: async (path: string, from: string, to: string) => {
       asked.renamedField.push(`${path} ${from} ${to}`)
@@ -630,7 +630,7 @@ afterEach(() => {
   asked.carried = []
   asked.ran = []
   asked.chose = 0
-  asked.attending = []
+  asked.openTabs = []
   listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]
   listed.showing = 'physics'
 })

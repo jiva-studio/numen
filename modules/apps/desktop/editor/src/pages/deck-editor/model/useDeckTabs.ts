@@ -94,14 +94,14 @@ export function useDeckTabs(
 
     return {
       id,
-      shown: computed(() => store.shown(id)),
+      note: computed(() => store.getOpenNote(id)),
       deck,
       drawn: computed(() => cardsOf(deck.value, offers.value)),
       sections: computed(() => sectionsOf(deck.value)),
       stencils,
       marks: computed(() => marksAt(id)),
       errorMessage: computed(() =>
-        said.getErrorMessage(store.where(id), store.shown(id).error !== null),
+        said.getErrorMessage(store.where(id), store.getOpenNote(id).error !== null),
       ),
       scheduled: computed(() => getDeckPreset(id)),
       choices,
@@ -136,10 +136,10 @@ export function useDeckTabs(
   const kept: Store = {
     has: (id) => store.all().includes(id),
     where: (id) => store.where(id),
-    called: (id) => said.getTitle(store.where(id)),
+    getTitle: (id) => said.getTitle(store.where(id)),
     asking: (id) => store.stale(id) !== null,
-    settles: (id) => store.settles(id),
-    shuts: closeTabById,
+    settle: (id) => store.settles(id),
+    close: closeTabById,
     holding: (path) => store.all().find((id) => store.where(id) === path) ?? null,
   }
 
@@ -193,10 +193,10 @@ export function useDeckTabs(
     held: createDeckTabState,
     changed: applyPathChanges,
     listStencils,
-    called: said.getTitle,
+    getTitle: said.getTitle,
     kept,
     all: store.all,
-    shown: store.shown,
+    getOpenNote: store.getOpenNote,
     keep: store.keep,
     take: store.take,
     flush: store.flush,

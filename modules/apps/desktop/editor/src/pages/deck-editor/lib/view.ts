@@ -37,7 +37,7 @@ export const stencilsOf = (offers: readonly StencilSummary[]): readonly Stencil[
 }
 
 /** The cards as somebody wrote them, without the heading a write reads back. */
-const written = (deck: BufferDeck): readonly Omit<VaultCard, 'heading'>[] =>
+const getWrittenCards = (deck: BufferDeck): readonly Omit<VaultCard, 'heading'>[] =>
   serializeBufferCardsToVaultCards(deck).map(({ heading: _heading, ...card }) => card)
 
 /**
@@ -47,7 +47,7 @@ export const sameDeck = (one: BufferDeck, other: BufferDeck): boolean =>
   one.preamble === other.preamble &&
   one.tail === other.tail &&
   JSON.stringify(serializeBufferSectionsToVaultSections(one)) === JSON.stringify(serializeBufferSectionsToVaultSections(other)) &&
-  JSON.stringify(written(one)) === JSON.stringify(written(other))
+  JSON.stringify(getWrittenCards(one)) === JSON.stringify(getWrittenCards(other))
 
 /**
  * The deck on screen under the headings the file now carries.

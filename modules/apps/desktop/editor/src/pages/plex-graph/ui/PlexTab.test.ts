@@ -33,22 +33,14 @@ const createTabState = () =>
     typeOf: () => 'note',
     activate: () => {},
     createNode: async () => {},
-    made: async () => {},
     joinNodes: async () => {},
-    joined: async () => {},
     dropNodes: async () => {},
-    brought: async () => {},
     openNode: () => {},
-    opens: () => {},
     openPart: () => {},
-    entered: () => {},
     openMenu: () => {},
-    asks: () => {},
     dismiss: () => {},
     chooseMenuItem: () => {},
-    chose: () => {},
     getName: () => '',
-    nameOf: () => '',
   }) as unknown as PlexTabState
 
 /** The probe the size is measured off is a box one em on a side. */
@@ -111,7 +103,6 @@ describe('a menu asked for over a tab drawing no picture', () => {
       picture: ref(null),
       empty: ref(true),
       openMenu: (one: MenuRequest) => void asked.push(one),
-      asks: (one: MenuRequest) => void asked.push(one),
     } as unknown as PlexTabState
     return { tab, asked }
   }
@@ -143,7 +134,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
   it('leaves a tab drawing a picture to answer for itself', async () => {
     drawing(13)
     const asked: MenuRequest[] = []
-    const tab = { ...createTabState(), asks: (one: MenuRequest) => void asked.push(one) } as PlexTabState
+    const tab = { ...createTabState(), openMenu: (one: MenuRequest) => void asked.push(one) } as PlexTabState
     const view = mount(PlexTab, { props: { state: tab } })
 
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })

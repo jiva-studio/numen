@@ -66,13 +66,13 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const createNode = async (from: string, seat: PlexRelatedSeat) => {
     const path = map.getNodePath(from)
-    if (path && (await deps.makes.make(path, seat))) await view.go(path)
+    if (path && (await deps.editor.make(path, seat))) await view.go(path)
   }
 
   const joinNodes = async (from: string, to: string, seat: PlexRelatedSeat) => {
     const one = map.getNodePath(from)
     const other = map.getNodePath(to)
-    if (one && other && (await deps.makes.join(one, other, seat))) await view.go(one)
+    if (one && other && (await deps.editor.join(one, other, seat))) await view.go(one)
   }
 
   const getName = (path: string): string => {
@@ -91,7 +91,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
     for (const path of draggedNodes) {
       if (path === here) continue
-      if (await deps.makes.join(here, path, seat)) written = true
+      if (await deps.editor.join(here, path, seat)) written = true
       else refused.push(getName(path))
     }
 
@@ -151,29 +151,18 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     typeOf,
     partsOf: getParts,
     mostParts: deps.parts,
-    reads: readParts,
     readParts,
-    entered: openPart,
     openPart,
     activate,
-    made: createNode,
     createNode,
-    joined: joinNodes,
     joinNodes,
-    brought: dropNodes,
     dropNodes,
-    opens: openNode,
     openNode,
-    writes: createNote,
     createNote,
-    asks: openMenu,
     openMenu,
     dismiss,
-    chose: chooseMenuItem,
     chooseMenuItem,
-    follows: followMoves,
     followMoves,
-    nameOf: getName,
     getName,
   }
 }

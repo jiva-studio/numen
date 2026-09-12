@@ -69,8 +69,8 @@ export function useWindowTabs() {
   /** What each tab of the window is called, and the word it carries. */
   const tabs = computed<readonly Tab[]>(() =>
     [...open.value].map(([id, one]): Tab => {
-      const mark = one.kind.marked?.(one.state)
-      const title = (one.kind.getTitle ?? one.kind.called)?.(one.state) ?? ''
+      const mark = one.kind.getMark?.(one.state)
+      const title = one.kind.getTitle?.(one.state) ?? ''
       return { id, title, ...(mark ? { mark } : {}) }
     }),
   )
@@ -118,12 +118,11 @@ export function useWindowTabs() {
     const id = one.identity ? `${kind}:${one.identity(at)}` : generateId(kind)
     if (open.value.has(id)) return id
     const scope = effectScope(true)
-    const state = scope.run(() => one.opens(at))
+    const state = scope.run(() => one.open(at))
     scopes.set(id, scope)
     open.value = new Map(open.value).set(id, { kind: one, state })
     return id
   }
-  const makes = createTab
 
   /** A tab opened where the person is, and put in front. */
   const opens = async (kind: string, at = ''): Promise<string> => {
@@ -159,7 +158,7 @@ export function useWindowTabs() {
     const one = open.value.get(id)
     if (!one) return
     open.value = new Map([...without(open.value, id), [id, one]])
-    ;(one.kind.onShow ?? one.kind.shown)?.(one.state, id)
+    one.kind.onShow?.(one.state, id)
   }
 
   /**
@@ -179,8 +178,7 @@ export function useWindowTabs() {
       if (!id || offered.has(id) || !drawn.includes(id)) continue
       offered.add(id)
       const one = open.value.get(id)
-      const handler = one?.kind.onKeyPress ?? one?.kind.presses
-      if (handler?.(one!.state, event)) return true
+      if (one?.kind.onKeyPress?.(one.state, event)) return true
     }
     return false
   }
@@ -192,8 +190,7 @@ export function useWindowTabs() {
   const shut = (id: string): boolean => {
     const one = open.value.get(id)
     if (!one) return true
-    const canClose = one.kind.onClose ?? one.kind.shuts
-    if (canClose && !canClose(one.state, id)) return false
+    if (one.kind.onClose && !one.kind.onClose(one.state, id)) return false
     open.value = without(open.value, id)
     drop(id)
     return true
@@ -210,9 +207,8 @@ export function useWindowTabs() {
   /** The window is going, and nothing a tab holds outlives it. */
   const close = () => {
     for (const [id, one] of open.value) {
-      const onDestroy = one.kind.onDestroy ?? one.kind.gone
-      if (onDestroy) onDestroy(one.state, id)
-      else (one.kind.onClose ?? one.kind.shuts)?.(one.state, id)
+      if (one.kind.onDestroy) one.kind.onDestroy(one.state, id)
+      else one.kind.onClose?.(one.state, id)
       drop(id)
     }
   }
@@ -225,7 +221,6 @@ export function useWindowTabs() {
     getTab,
     holdsIn,
     createTab,
-    makes,
     opens,
     beside,
     show,

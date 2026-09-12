@@ -25,7 +25,7 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
   const said: string[] = []
   const held = useNotesPanel({
     open: () => open.value,
-    shows: (up) => {
+    showPanel: (up) => {
       open.value = up
     },
     vault: () => 'one',
@@ -103,7 +103,7 @@ describe('what is read belongs to the deck', () => {
     const deck = ref('decks/Words.md')
     const held = useNotesPanel({
       open: () => open.value,
-      shows: (up) => {
+      showPanel: (up) => {
         open.value = up
       },
       vault: () => 'one',
@@ -135,7 +135,7 @@ describe('what is read belongs to the deck', () => {
     const deck = ref('decks/Words.md')
     const held = useNotesPanel({
       open: () => open.value,
-      shows: (up) => {
+      showPanel: (up) => {
         open.value = up
       },
       vault: () => 'one',

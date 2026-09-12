@@ -16,8 +16,8 @@ import { RECORDING } from '@/entities/tab/workspace'
 const played: Medium = {
   tab: RECORDING,
   source: 'recording',
-  draws: {},
-  hands: (puts, opens) => puts.registerReader({ kind: played.source }, opens),
+  pane: {},
+  register: (puts, opens) => puts.registerReader({ kind: played.source }, opens),
 }
 
 /** A recording open in a tab, as far as the window reads one. */
@@ -55,7 +55,7 @@ describe('what a recording tab holds, as whoever answers for the person is told 
   it('is the file, how far it is written down, and how long it runs', () => {
     const held = recording('talks/Ants.mp3', 4000, 9000)
 
-    expect(kind(held).attends!(held)).toStrictEqual({
+    expect(kind(held).getOpenTab!(held)).toStrictEqual({
       path: 'talks/Ants.mp3',
       recording: { transcribedDurationMs: 4000, durationMs: 9000 },
     })

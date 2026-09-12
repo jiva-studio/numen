@@ -134,7 +134,7 @@ describe('a stencil opened', () => {
   it('is called what the file is called', async () => {
     const { stencils, tab } = await open()
 
-    expect(stencils.kind.called?.(tab)).toBe('Animal')
+    expect(stencils.kind.getTitle?.(tab)).toBe('Animal')
   })
 })
 
@@ -294,7 +294,7 @@ describe('a stencil whose file moved past what was read', () => {
     tab.addField('Weight')
     await stencils.flush()
 
-    expect(tab.shown.value.state).toBe('stale')
+    expect(tab.note.value.state).toBe('stale')
   })
 
   it('keeps what the person wrote when they say so', async () => {
@@ -333,7 +333,7 @@ describe('a stencil the vault refused', () => {
     const { stencils, tab } = await open({ wrote: 'unreadable' })
 
     tab.addField('Weight')
-    await stencils.kept.settles(stencils.all()[0] ?? '')
+    await stencils.kept.settle(stencils.all()[0] ?? '')
 
     expect(tab.errorMessage.value).toBe(words.notSaved)
   })
@@ -443,18 +443,18 @@ describe('a stencil renamed under the window', () => {
 
     one.stencils.changed(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
 
-    expect(one.stencils.called('Beast.md')).toBe('Animal')
+    expect(one.stencils.getTitle('Beast.md')).toBe('Animal')
   })
 })
 
 describe('a stencil whose tab has gone', () => {
   it('is nothing the window still says a word about', async () => {
     const one = await open()
-    expect(one.stencils.called('Animal.md')).toBe('Animal')
+    expect(one.stencils.getTitle('Animal.md')).toBe('Animal')
 
     one.held.shut(one.id)
     await settle()
 
-    expect(one.stencils.called('Animal.md')).toBe('Animal.md')
+    expect(one.stencils.getTitle('Animal.md')).toBe('Animal.md')
   })
 })

@@ -33,7 +33,7 @@ export type TextEditorTabState = ReturnType<typeof useTextEditor>
  * last read, and a file that moved past it stands stale until the person
  * keeps theirs or takes the file's.
  */
-export function useTextEditor(core: TextEditorTabDeps, reads: () => void) {
+export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void) {
   /** The bytes the file held when it was last read. */
   const held = ref('')
   const typed = ref('')
@@ -86,7 +86,7 @@ export function useTextEditor(core: TextEditorTabDeps, reads: () => void) {
     held.value = typed.value
     wrong.value = ''
     isStale.value = false
-    reads()
+    readSettings()
   }
 
   /** What was typed written into the file the tab read. */
@@ -99,9 +99,9 @@ export function useTextEditor(core: TextEditorTabDeps, reads: () => void) {
   }
 
   return {
-    /** What stands in the editor. It is moved by `types` and nothing else. */
+    /** What stands in the editor. It is moved by `type` and nothing else. */
     text: readonly(typed),
-    types: (said: string) => void (typed.value = said),
+    type: (said: string) => void (typed.value = said),
     /** What is wrong, and empty where nothing is. */
     errorMessage: readonly(wrong),
     changed,

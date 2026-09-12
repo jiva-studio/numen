@@ -19,7 +19,7 @@ const notes = () => {
   const said: string[] = []
   const store: Notes = {
     all: () => Object.keys(states.value),
-    shown: (id) => ({ state: states.value[id] ?? 'clean' }),
+    getOpenNote: (id) => ({ state: states.value[id] ?? 'clean' }),
     keep: (id) => said.push(`keep ${id}`),
     take: (id) => said.push(`take ${id}`),
   }

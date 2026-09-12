@@ -179,7 +179,7 @@ const mapToFrame = (at: Position): { window: Position; story: Position } => {
  * A drag the browser makes itself, from one place to another. The splitter
  * catches the pointer by where it is, which is something only a browser says.
  */
-const swept = async (from: Position, to: Position): Promise<void> => {
+const sweep = async (from: Position, to: Position): Promise<void> => {
   const context = await import('vitest/browser')
   await context.commands.sweep(mapToFrame(from).window, mapToFrame(to).window)
   await new Promise((done) => setTimeout(done, 16))
@@ -227,7 +227,7 @@ async function measureAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<rea
         ? { x: box.x + box.width / 2 + away, y: box.y + box.height / 4 }
         : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
 
-    await swept(at, at)
+    await sweep(at, at)
     found.push({ away, at, cursor: getCursor() })
   }
   return found
@@ -551,7 +551,7 @@ export const DragsFromItsWholeReach: Story = {
     const edge = furthest(caught)
     const before = paneBox(canvasElement, 'main').width
 
-    await swept(edge, { x: edge.x + 40, y: edge.y })
+    await sweep(edge, { x: edge.x + 40, y: edge.y })
 
     // The pointer goes to whole pixels of the window, which the story counts in
     // its own.
@@ -578,7 +578,7 @@ export const DragsFromItsWholeReachDownwards: Story = {
     const edge = furthest(caught)
     const before = paneBox(canvasElement, 'b').height
 
-    await swept(edge, { x: edge.x, y: edge.y + 30 })
+    await sweep(edge, { x: edge.x, y: edge.y + 30 })
 
     const moved = paneBox(canvasElement, 'b').height - before
     await expect(Math.abs(moved - 30)).toBeLessThan(2)

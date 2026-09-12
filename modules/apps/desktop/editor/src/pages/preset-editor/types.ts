@@ -69,11 +69,11 @@ export interface PresetCurveData {
 
 export interface PresetTabActions {
   again(): void
-  chooses(goal: Goal): void
-  moves(place: number): void
-  settles(): void
-  types(field: Field, value: SettingValue): void
-  shuts(id: string): void
+  chooseGoal(goal: Goal): void
+  moveSlider(place: number): void
+  settle(): void
+  updateSetting(field: Field, value: SettingValue): void
+  close(id: string): void
 }
 
 /** What one preset tab holds. */

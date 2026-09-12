@@ -29,9 +29,9 @@ export interface Notes {
   /** Whether the note owes the person an answer about what its file now holds. */
   asking(id: string): boolean
   /** Answers once nothing of that note is on its way to the file. */
-  settles(id: string): Promise<void>
+  settle(id: string): Promise<void>
   /** The tab holding a note lets go of it. */
-  shuts(id: string): void
+  close(id: string): void
   /**
    * A file put in front of the person, in the editor made for what it is, in a
    * tab of its own or one beside it.
@@ -51,13 +51,13 @@ export interface Store {
   /** The file one of them stands at now, under the identity it opened under. */
   where(id: string): string
   /** What it is called, under the identity it opened under. */
-  called(id: string): string
+  getTitle(id: string): string
   /** Whether it owes the person an answer about what its file now holds. */
   asking(id: string): boolean
   /** Answers once nothing of it is on its way to the file. */
-  settles(id: string): Promise<void>
+  settle(id: string): Promise<void>
   /** The tab holding it lets go of it. */
-  shuts(id: string): void
+  close(id: string): void
   /** The identity of the tab standing at a file, and nothing where none does. */
   holding(path: string): string | null
 }
@@ -82,10 +82,10 @@ export const createNotes = (
     },
     where: (id) => holder(id)?.where(id) ?? id,
     asking: (id) => holder(id)?.asking(id) ?? false,
-    settles: async (id) => {
-      await holder(id)?.settles(id)
+    settle: async (id) => {
+      await holder(id)?.settle(id)
     },
-    shuts: (id) => holder(id)?.shuts(id),
+    close: (id) => holder(id)?.close(id),
     opens: noteOpeners.opens,
     made: noteOpeners.made,
   }
@@ -151,7 +151,7 @@ export interface WindowNavigator {
   /** A note put in front of the person, in the plex they are looking at. */
   travel(path: string): Promise<void>
   /** Every plex standing on a note travels to another one. */
-  leaves(from: string, to: string): Promise<void>
+  leave(from: string, to: string): Promise<void>
   /** The note the vault opens with. */
   opening(): string
   /** A tab of a kind, opened and put in front. */
@@ -164,7 +164,7 @@ export interface WindowNavigator {
   /** A tab let go of. */
   closes(tab: string): void
   /** Something to ask, put in the agent the person was last in. */
-  asks(text: string): void
+  ask(text: string): void
   /** The search, in place of the commands. */
   searches(): void
 }

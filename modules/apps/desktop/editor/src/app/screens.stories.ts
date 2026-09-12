@@ -58,7 +58,7 @@ const TABS: readonly Tab[] = [
 const iconOfTab = (id: string) => iconOfKind(id.split(':')[0] ?? id)
 
 /** One tab filling the window, drawn in the chrome the window draws it in. */
-const window = (tab: string, draws: Component, state: unknown) => ({
+const window = (tab: string, tabPane: Component, state: unknown) => ({
   components: { WorkspaceLayout },
   setup() {
     const layout = ref<Workspace>({
@@ -66,7 +66,7 @@ const window = (tab: string, draws: Component, state: unknown) => ({
       axis: 'horizontal',
       focus: 'main',
     })
-    return { layout, TABS, tab, draws, state, iconOfTab }
+    return { layout, TABS, tab, tabPane, state, iconOfTab }
   },
   template: `
     <div style="height: 100vh">
@@ -81,7 +81,7 @@ const window = (tab: string, draws: Component, state: unknown) => ({
         </template>
 
         <template #tab="{ id }">
-          <component :is="draws" v-if="id === tab" :state="state" />
+          <component :is="tabPane" v-if="id === tab" :state="state" />
           <div v-else />
         </template>
       </WorkspaceLayout>
@@ -117,20 +117,20 @@ const INSTALLATION: Installation = {
     interfaceScale: { least: 0.8, most: 2 },
     textScale: { least: 0.8, most: 1.75 },
   }),
-  chooses: () => {},
+  choose: () => {},
   syncing: ref(true),
   hangs: ref(true),
   parts: ref(6),
   partsBounds: ref({ least: 1, most: 12 }),
-  choosesParts: () => {},
+  chooseParts: () => {},
   dayStarts: ref('04:00'),
   latestDayStarts: ref('12:00'),
-  choosesDayStarts: () => {},
+  chooseDayStarts: () => {},
   setting: () => undefined,
   models: () => [],
-  writes: () => {},
+  write: () => {},
   file: ref('/numen.json'),
-  opensFile: () => {},
+  openFile: () => {},
 }
 
 /** Everything in numen.json a person can change, in the groups the file keeps. */
@@ -222,11 +222,11 @@ const PRESET_STATE: PresetTabState = {
   errorMessage: ref(''),
   changed: ref(false),
   again: () => {},
-  chooses: () => {},
-  moves: () => {},
-  settles: () => {},
-  types: () => {},
-  shuts: () => {},
+  chooseGoal: () => {},
+  moveSlider: () => {},
+  settle: () => {},
+  updateSetting: () => {},
+  close: () => {},
 }
 
 /** The one control a preset is steered by, and the settings under it. */
@@ -312,7 +312,7 @@ const SECTIONS = [
 
 const DECK_STATE: DeckTabState = {
   id: 'Sanskrit/Roots.md',
-  shown: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', error: null })),
+  note: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', error: null })),
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
   drawn: computed(() => CARDS),
   sections: computed(() => SECTIONS),
@@ -345,7 +345,7 @@ export const Deck: Story = {
 
 const STENCIL_STATE: StencilTabState = {
   id: 'Sanskrit/Word.md',
-  shown: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', error: null })),
+  note: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', error: null })),
   stencil: computed(() => ({
     fields: WORD.fields,
     preamble: '',
@@ -712,7 +712,7 @@ const BOOK: Documents = {
 const createMenuStory = (
   path: string,
   open: readonly string[],
-  file: { tab: string; draws: Component; state: unknown; opens?: () => Promise<void> },
+  file: { tab: string; pane: Component; state: unknown; opens?: () => Promise<void> },
 ) => ({
   components: { WorkspaceLayout, FilesTab },
   setup() {
@@ -751,7 +751,7 @@ const createMenuStory = (
 
         <template #tab="{ id }">
           <FilesTab v-if="id === FILES" :state="state" />
-          <component :is="file.draws" v-else :state="file.state" />
+          <component :is="file.pane" v-else :state="file.state" />
         </template>
       </WorkspaceLayout>
     </div>
@@ -764,7 +764,7 @@ export const Transcribed: Story = {
   render: () =>
     createMenuStory('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
-      draws: RecordingTab,
+      pane: RecordingTab,
       state: useTranscriptTab(useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
         runs: () => {},
       }),
@@ -780,7 +780,7 @@ export const Recognised: Story = {
       ['Lectures', 'Physics', 'Reading', 'Sanskrit'],
       {
         tab: `${DOCUMENT}:boltzmann`,
-        draws: DocumentTab,
+        pane: DocumentTab,
         state,
         // The reading a search sent a person into: the book turns to the page
         // the passage stands on, and the passage is highlighted where it stands.

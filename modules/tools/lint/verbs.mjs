@@ -108,9 +108,13 @@ export function refused(name) {
  *
  * A parameter list is followed one bracket deep, which is as far as a default
  * value goes: `(deps = support())` is a signature and `(a) => (b) =>` is two.
+ *
+ * A return type is read up to the arrow and not to the first `>`, so a generic
+ * one — `Promise<DeckPresetResult>` — is a return type and not the end of the
+ * declaration.
  */
 const DECLARED =
-  /(?:^|\n)[ \t]*(?:export\s+)?(?:async\s+)?function\s+([a-z][\w$]*)|(?:^|\n)[ \t]*(?:export\s+)?(?:const|let)\s+([a-z][\w$]*)(?::[^=\n]*)?\s*=\s*(?:async\s+)?(?:\((?:[^()]|\([^()]*\))*\)|[a-z][\w$]*)\s*(?::[^=>\n]*)?=>/g
+  /(?:^|\n)[ \t]*(?:export\s+)?(?:async\s+)?function\s+([a-z][\w$]*)|(?:^|\n)[ \t]*(?:export\s+)?(?:const|let)\s+([a-z][\w$]*)(?::[^=\n]*)?\s*=\s*(?:async\s+)?(?:\((?:[^()]|\([^()]*\))*\)|[a-z][\w$]*)\s*(?::(?:[^=\n]|=(?!>))*)?=>/g
 
 export function declares(source) {
   const found = []

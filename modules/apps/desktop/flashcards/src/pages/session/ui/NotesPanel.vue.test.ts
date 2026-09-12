@@ -27,7 +27,7 @@ const createPanel = (around: DeckNeighbourhood): NotesPanelState => {
   const open = ref(false)
   return useNotesPanel({
     open: () => open.value,
-    shows: (up) => {
+    showPanel: (up) => {
       open.value = up
     },
     vault: () => 'one',

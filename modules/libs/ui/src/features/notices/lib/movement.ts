@@ -19,7 +19,7 @@ export interface Movement {
  * A count that has gone is forgotten, and one that has just arrived is read once
  * before it has a rate.
  */
-export const measured = (
+export const measureMovement = (
   was: ReadonlyMap<string, Movement>,
   notices: readonly Notice[],
   at: number,

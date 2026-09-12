@@ -26,7 +26,7 @@ const notes = () => {
   const at = ref<Record<string, string>>({})
   const store = {
     all: () => Object.keys(states.value),
-    shown: (path: string) => ({ state: states.value[path] ?? 'loading' }),
+    getOpenNote: (path: string) => ({ state: states.value[path] ?? 'loading' }),
     where: (path: string) => at.value[path] ?? path,
   }
   return {

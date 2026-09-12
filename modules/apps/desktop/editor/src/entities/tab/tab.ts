@@ -63,7 +63,7 @@ export interface RecordingProgress {
 }
 
 /** What the person has open: every tab, and which of them is in front. */
-export interface Attention {
+export interface OpenTabs {
   readonly tabs: readonly Tab[]
   readonly front: string
 }

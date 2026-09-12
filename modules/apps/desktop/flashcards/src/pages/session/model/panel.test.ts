@@ -57,7 +57,7 @@ const panel = (
     card: () => on.value,
     unreachable: () => more.unreachable ?? '',
     open: () => showing.value === 'asking',
-    shows: (open) => {
+    showPanel: (open) => {
       if (open) showing.value = 'asking'
       else if (showing.value === 'asking') showing.value = 'here'
     },

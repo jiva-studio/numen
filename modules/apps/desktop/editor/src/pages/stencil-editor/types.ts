@@ -9,7 +9,7 @@ import type { BufferStencil } from './lib/stencil'
 
 export interface StencilDataState {
   readonly id: string
-  readonly shown: ComputedRef<OpenNote>
+  readonly note: ComputedRef<OpenNote>
   readonly stencil: ComputedRef<BufferStencil>
   readonly marks: ComputedRef<Marks>
   readonly errorMessage: ComputedRef<string>

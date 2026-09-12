@@ -34,7 +34,7 @@ export interface AgentPanelDeps {
    * The panel asked for, or put away. The window can only be showing one thing,
    * so it is the window that holds which, and every panel moves that one thing.
    */
-  readonly shows: (open: boolean) => void
+  readonly showPanel: (open: boolean) => void
   /** Where the window says what a person has to know. */
   readonly showNotice: (said: string) => void
   /** When the words that have arrived are put on the screen. */
@@ -80,12 +80,12 @@ export function useAgentPanel(deps: AgentPanelDeps) {
       return
     }
     startTalk(card)
-    deps.shows(true)
+    deps.showPanel(true)
   }
 
   /** The panel put away, with what was said in it kept. */
   const closePanel = () => {
-    deps.shows(false)
+    deps.showPanel(false)
   }
 
   const setWritten = (text: string) => {
@@ -115,7 +115,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     talk.value = null
     about.value = null
     written.value = ''
-    deps.shows(false)
+    deps.showPanel(false)
   }
 
   return {

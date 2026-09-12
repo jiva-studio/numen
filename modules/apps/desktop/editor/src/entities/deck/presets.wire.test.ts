@@ -114,7 +114,7 @@ describe('making a preset', () => {
   it('answers where it was filed', async () => {
     replyWith({ path: 'Presets/Daily.md' })
 
-    expect(await presets.makes('Daily', 'Presets')).toEqual({
+    expect(await presets.createPreset('Daily', 'Presets')).toEqual({
       path: 'Presets/Daily.md',
       error: null,
     })
@@ -125,7 +125,7 @@ describe('putting a deck on a preset', () => {
   it('names the file the window read', async () => {
     replyWith({ at: { path: 'Deck.md', size: '12', mtime: '34' } })
 
-    const answer = await presets.schedules('Deck.md', 'Daily.md', '12 34 Deck.md')
+    const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
 
     expect(asked[0]?.seen).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
     expect(answer.at).toBe('12 34 Deck.md')
@@ -134,7 +134,7 @@ describe('putting a deck on a preset', () => {
   it('names no file where the window read none', async () => {
     replyWith({})
 
-    await presets.schedules('Deck.md', '', '')
+    await presets.scheduleDeck('Deck.md', '', '')
 
     expect(asked[0]?.seen).toBeUndefined()
   })
@@ -142,7 +142,7 @@ describe('putting a deck on a preset', () => {
   it('says the file moved past what the window read', async () => {
     replyWith({ refusal: 'REFUSAL_STALE' })
 
-    expect(await presets.schedules('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual({
+    expect(await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual({
       error: null,
       changed: true,
       at: '',

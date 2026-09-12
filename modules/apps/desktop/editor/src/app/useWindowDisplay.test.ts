@@ -46,7 +46,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     agentUnreachable: async () => '',
     changes: async function* () {},
     focus: async function* () {},
-    setFocus: async () => {},
+    writeOpenTabs: async () => {},
     editing: async function* () {},
     tasks: async function* () {
       await waitForever()

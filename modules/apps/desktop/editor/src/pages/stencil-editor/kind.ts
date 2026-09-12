@@ -32,7 +32,7 @@ export function useStencilTabs(
   })
 
   const fields = createStencilFields(
-    (id) => store.shown(id).body,
+    (id) => store.getOpenNote(id).body,
     (id, body) => store.setBody(id, body),
     (id) => wire.getProblems(store.where(id)),
     (id, field, name) => void wire.renameField(store.where(id), field, name, store.changed),
@@ -51,10 +51,10 @@ export function useStencilTabs(
 
     return {
       id,
-      shown: computed(() => store.shown(id)),
+      note: computed(() => store.getOpenNote(id)),
       stencil: computed(() => fields.getStencil(id)),
       marks: computed(() => fields.getMarks(id)),
-      errorMessage: computed(() => wire.getErrorMessage(store.where(id), store.shown(id).error)),
+      errorMessage: computed(() => wire.getErrorMessage(store.where(id), store.getOpenNote(id).error)),
       ...fields.actionsFor(id),
       keepMine: () => store.keep(id),
       takeFile: () => store.take(id),
@@ -75,10 +75,10 @@ export function useStencilTabs(
   const kept: Store = {
     has: (id) => store.all().includes(id),
     where: (id) => store.where(id),
-    called: (id) => getTitle(store.where(id)),
+    getTitle: (id) => getTitle(store.where(id)),
     asking: (id) => store.stale(id) !== null,
-    settles: (id) => store.settles(id),
-    shuts: closeTab,
+    settle: (id) => store.settles(id),
+    close: closeTab,
     holding: (path) => store.all().find((id) => store.where(id) === path) ?? null,
   }
 
@@ -100,26 +100,22 @@ export function useStencilTabs(
 
   const kind: TabKind<StencilTabState, typeof STENCIL> = {
     kind: STENCIL,
-    opens: (id) => {
+    open: (id) => {
       const path = pendingTabPaths.get(id) ?? id
       store.open(id, path)
       pendingTabIds.delete(path)
       pendingTabPaths.delete(id)
       return createStencilTabState(id)
     },
-    called: (one) => getTitle(store.where(one.id)),
-    marked: (one) => markOf(one.shown.value.state),
-    draws: StencilTab,
+    getTitle: (one) => getTitle(store.where(one.id)),
+    getMark: (one) => markOf(one.note.value.state),
+    pane: StencilTab,
     identity: (id) => id,
-    shuts: (one, id) => {
-      one.close(id)
-      return false
-    },
     onClose: (one, id) => {
       one.close(id)
       return false
     },
-    gone: () => {},
+    onDestroy: () => {},
   }
 
   const openStencil = (path: string, title = '', showing: PlexDestination = 'here'): void => {
@@ -139,10 +135,10 @@ export function useStencilTabs(
     kind,
     createStencilTabState,
     changed: applyPathChanges,
-    called: getTitle,
+    getTitle,
     kept,
     all: store.all,
-    shown: store.shown,
+    getOpenNote: store.getOpenNote,
     keep: store.keep,
     take: store.take,
     flush: store.flush,

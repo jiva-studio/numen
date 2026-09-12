@@ -40,7 +40,7 @@ const createPanel = (unreachable = ''): AgentPanelState => {
     card: () => card,
     unreachable: () => unreachable,
     open: () => open.value,
-    shows: (it) => {
+    showPanel: (it) => {
       open.value = it
     },
     showNotice: () => {},

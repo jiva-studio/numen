@@ -7,8 +7,8 @@ import UrlTab from './ui/UrlTab.vue'
 export const URLS: Medium<typeof URL> = {
   tab: URL,
   source: 'url',
-  draws: UrlTab,
-  hands: (tabOpeners, opens) => {
+  pane: UrlTab,
+  register: (tabOpeners, opens) => {
     // A url is reached both ways: by what the vault says stands at a path,
     // and by having just been made here.
     tabOpeners.registerReader({ kind: URLS.source }, opens)

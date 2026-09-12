@@ -100,7 +100,7 @@ describe('every road to a file', () => {
         .vm.$emit('follow', turn, link, new MouseEvent('click', { cancelable: true }))
     },
     'a place asked for from outside': async (_, path) => {
-      outside.asks({ path, start: 0, length: 4 })
+      outside.ask({ path, start: 0, length: 4 })
     },
   }
 
@@ -132,8 +132,8 @@ describe('every road to a file', () => {
     folders[''] = root ?? []
   })
 
-  /** What the window drew, having been taken to one file by one road. */
-  const taken = async (
+  /** One file opened by one road, answered with what the window drew. */
+  const openBy = async (
     road: (window: VueWrapper, path: string) => Promise<void>,
     path: string,
     type: 'note' | 'deck' | 'stencil',
@@ -152,15 +152,15 @@ describe('every road to a file', () => {
 
   for (const [name, road] of Object.entries(ROADS)) {
     it(`opens a deck in the editor of its cards, reached by ${name}`, async () => {
-      expect(await taken(road, 'Animals.md', 'deck')).toContain('deck')
+      expect(await openBy(road,'Animals.md', 'deck')).toContain('deck')
     })
 
     it(`opens a stencil in the editor of its fields and faces, reached by ${name}`, async () => {
-      expect(await taken(road, 'Animal.md', 'stencil')).toContain('stencil')
+      expect(await openBy(road,'Animal.md', 'stencil')).toContain('stencil')
     })
 
     it(`opens an ordinary note in the editor of its prose, reached by ${name}`, async () => {
-      const drew = await taken(road, 'Ants.md', 'note')
+      const drew = await openBy(road,'Ants.md', 'note')
 
       expect(drew).toContain('note')
       expect(drew).not.toContain('deck')
@@ -170,7 +170,7 @@ describe('every road to a file', () => {
     // The vault is never asked about the book by anything but the window, and
     // the palette is told it turned up a note: the path alone has to be enough.
     it(`opens a book in the reader, reached by ${name}`, async () => {
-      const drew = await taken(road, 'Ants.epub', 'note')
+      const drew = await openBy(road,'Ants.epub', 'note')
 
       expect(drew).toContain('book')
       expect(drew).not.toContain('note')
@@ -180,13 +180,13 @@ describe('every road to a file', () => {
     // one and leaves the keyboard behind is a book nobody can read: whatever
     // holds it reads the arrows for itself, and the tree walks its rows by them.
     it(`hands the book the keyboard, reached by ${name}`, async () => {
-      await taken(road, 'Ants.epub', 'note')
+      await openBy(road,'Ants.epub', 'note')
 
       expect(document.activeElement?.className).toContain('book-tab')
     })
 
     it(`turns the book by the arrows, reached by ${name}`, async () => {
-      await taken(road, 'Ants.epub', 'note')
+      await openBy(road,'Ants.epub', 'note')
 
       globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
 
@@ -197,7 +197,7 @@ describe('every road to a file', () => {
 
 describe('what the person has open, as whoever answers for them is told it', () => {
   /** The last the window said about it, and nothing where it has said nothing. */
-  const getLastReport = () => asked.attending.at(-1) ?? null
+  const getLastReport = () => asked.openTabs.at(-1) ?? null
 
   /** The tab the window said is in front, of the last it said. */
   const front = () => {
@@ -234,7 +234,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
   it('names the book in front, and the note the plex stands on beside it', async () => {
     const window = await mountWindow()
 
-    outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
+    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
     await settle()
     await settle()
     window.unmount()
@@ -294,7 +294,7 @@ describe('a recording put in front', () => {
   /** The window with that recording open, asked for from outside it. */
   const openRecording = async () => {
     const window = await mountWindow()
-    outside.asks({ path: RECORDING, start: 0, length: 4 })
+    outside.ask({ path: RECORDING, start: 0, length: 4 })
     await settle()
     await settle()
     return window
@@ -314,7 +314,7 @@ describe('a recording put in front', () => {
     expect(state.editable.value).toBe(true)
     // How long it runs and how far the words reach are the application's
     // answer, and what the window says the person has open carries them.
-    expect(asked.attending.at(-1)?.tabs.at(-1)).toMatchObject({
+    expect(asked.openTabs.at(-1)?.tabs.at(-1)).toMatchObject({
       path: RECORDING,
       recording: {
         transcribedDurationMs: said.transcribed.cues[0]?.to,
@@ -364,7 +364,7 @@ describe('a key struck while a book is in front', () => {
     said.opening = 'Root.md'
     const window = await mountWindow()
 
-    outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
+    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
     await settle()
     await settle()
 
@@ -391,7 +391,7 @@ describe('a book carried into another group of tabs', () => {
     // book drawn again without the keyboard is one the arrows never reach.
     said.opening = 'Root.md'
     const window = await mountWindow()
-    outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
+    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
     await settle()
     await settle()
     asked.pressed = []
@@ -419,7 +419,7 @@ describe('a book beside the pane the person is in', () => {
     // the book they are looking at.
     said.opening = 'Root.md'
     const window = await mountWindow()
-    outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
+    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
     await settle()
     await settle()
     asked.pressed = []

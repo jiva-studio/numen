@@ -7,217 +7,45 @@
  * who is related to whom. Answer `activate` with the next neighbourhood and it
  * travels there by itself.
  */
-import {
-  computed,
-  onMounted,
-  onScopeDispose,
-  ref,
-  toRef,
-  useSlots,
-  useTemplateRef,
-  watch,
-} from 'vue'
+import { computed, toRef, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
-import { useTitleWidths } from '../model/measure'
-import { DWELL, getWideBox } from '../model/dwell'
-import { byHandle, type ReachStrategy } from '../model/reaching'
-import { byDoubleClick, type ShowStrategy } from '../model/showing'
-import { hangParts, type PlexPart } from '../lib/inside'
-import { usePlexTransition, browserClock, type Clock } from '../model/transition'
-import { browserViewport, type Viewport } from '@/shared/lib/viewport'
-import type { Placement, PlexOptionsInput, Size } from '../lib/arrange'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
-import type { PlacedNode, Position } from '../lib/node'
+import type { PlexEvents, PlexProps, PlexSlots } from './props'
+import { DWELL } from '../model/dwell'
+import { byHandle } from '../model/reaching'
+import { byDoubleClick } from '../model/showing'
+import { useRoom } from '../model/room'
+import { usePlexTransition, browserClock } from '../model/transition'
+import { browserViewport } from '@/shared/lib/viewport'
 import { countOf, seatWord, type PlexRelatedSeat } from '../lib/seat'
-import type { PlexDestination } from '../model/showing'
-import { resolveOptions } from '../lib/arrange'
 import { usePlexDrag } from '../model/drag'
 import { usePlexGesture } from '../model/gesture'
-import type { MenuOpening } from '@/shared/ui/menu'
 
-const props = withDefaults(
-  defineProps<{
-    neighbourhood: PlexNeighbourhood
-    options?: PlexOptionsInput
-    /** Rows and columns unless another arrangement is handed in. */
-    placement?: Placement
-    showEdgeLabels?: boolean
-    /** Milliseconds. Zero arrives instantly. */
-    duration?: number
-    /** The clock. Browser by default; a test hands in its own. */
-    clock?: Clock
-    /**
-     * How much room the plex has, and what it becomes. Browser by default; a
-     * test hands in its own and every coordinate is then a value it can name.
-     */
-    viewport?: Viewport
-    /**
-     * Seats a gesture may produce. A sibling is another of the parent's
-     * children, so it is left out; which relationships exist is the caller's
-     * to say.
-     */
-    creatable?: readonly PlexRelatedSeat[]
-    /** How far a gesture travels before it is a drag and not a click. */
-    dragThreshold?: number
-    /**
-     * How long the attention rests on a box before it widens to the whole of
-     * its title. Milliseconds; nothing at all never widens.
-     */
-    dwell?: number
-    /** How a node offers to be reached out of. The handle by default. */
-    reaching?: ReachStrategy
-    /** How a node is asked for on its own. The second click by default. */
-    showing?: ShowStrategy
-    /**
-     * The parts of a node, asked for by the node's own identifier. They come
-     * out from under its box while the attention rests on it, and a node named
-     * none for hangs nothing.
-     */
-    parts?: (id: string) => readonly PlexPart[]
-    /**
-     * What to call a seat, for the outline a gesture draws and for the
-     * overflow line. English by default.
-     */
-    seatName?: (seat: PlexRelatedSeat) => string
-    /**
-     * What is being dragged over the picture from somewhere else. Each
-     * identifier is opaque and all of them are handed back untouched; an empty
-     * list is nothing dragged, and the picture then draws none of it.
-     */
-    dragged?: readonly string[]
-    /**
-     * What to call what letting go with something dragged in would do. English
-     * by default.
-     */
-    dropName?: (seat: PlexRelatedSeat) => string
-  }>(),
-  {
-    showEdgeLabels: true,
-    duration: 420,
-    clock: () => browserClock,
-    viewport: () => browserViewport,
-    creatable: () => ['parent', 'child', 'jump'],
-    dragThreshold: 8,
-    dwell: DWELL,
-    reaching: () => byHandle,
-    showing: () => byDoubleClick,
-    seatName: seatWord,
-    dragged: () => [],
-    dropName: seatWord,
-  },
-)
+const props = withDefaults(defineProps<PlexProps>(), {
+  showEdgeLabels: true,
+  duration: 420,
+  clock: () => browserClock,
+  viewport: () => browserViewport,
+  creatable: () => ['parent', 'child', 'jump'],
+  dragThreshold: 8,
+  dwell: DWELL,
+  reaching: () => byHandle,
+  showing: () => byDoubleClick,
+  seatName: seatWord,
+  dragged: () => [],
+  dropName: seatWord,
+})
 
-const emit = defineEmits<{
-  /** A node other than the focus was chosen, by click or by keyboard. */
-  (event: 'activate', id: string): void
-  /**
-   * A node asked for on its own: a double click, or a press with Shift held.
-   * Where it is to be drawn is the second word, and the focus answers this as
-   * every other node does.
-   */
-  (event: 'show', id: string, showing: PlexDestination): void
-  /** Reached out into empty space: make a node in this seat of that one. */
-  (event: 'create', from: string, seat: PlexRelatedSeat): void
-  /** Reached out onto another node: relate the two in this seat. */
-  (event: 'link', from: string, to: string, seat: PlexRelatedSeat): void
-  /**
-   * What was dragged in from outside was let go over the picture: relate each
-   * of them to the focus in this seat. The identifiers are the ones they were
-   * handed in as.
-   */
-  (event: 'bring', dragged: readonly string[], seat: PlexRelatedSeat): void
-  /**
-   * A menu was asked for on a node: which node, where on the screen, and what
-   * asked for it. A keypress carries no point, so the middle of the box is
-   * where it is asked.
-   *
-   * Every node answers this, the focus included. What the menu holds and what
-   * choosing an item does are the caller's.
-   */
-  (event: 'menu', id: string, at: Position, opening: MenuOpening): void
-  /** A menu asked for on a node has nothing left to stand on. */
-  (event: 'dismiss'): void
-  /**
-   * A part of a node was chosen. Both identifiers are the caller's, handed
-   * back as given.
-   */
-  (event: 'enter', id: string, part: string): void
-}>()
+const emit = defineEmits<PlexEvents>()
 
-defineSlots<{
-  /** What is drawn beside a node's title. A node with none is drawn narrower. */
-  icon?(props: { node: PlacedNode }): unknown
-  /** What is said about the neighbours that did not fit, in the caller's words. */
-  overflow?(props: { overflow: readonly [PlexRelatedSeat, number][] }): unknown
-}>()
-
-/** What the room is taken to be until it has been measured. */
-const FALLBACK = { width: 1200, height: 800 }
+defineSlots<PlexSlots>()
 
 const frameElement = useTemplateRef<HTMLElement>('frame')
 /** The drawing, which a drag crossing the plex is measured against. */
 const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
-/** How much room the plex has, as it was last measured. */
-const room = ref<Size>(FALLBACK)
-
-onMounted(() => {
-  const element = frameElement.value
-  if (!element) return
-
-  onScopeDispose(
-    props.viewport.watch(element, (size) => {
-      room.value = size
-    }),
-  )
-})
-
-/** Settled once and read by the measuring, the gesture and the drawing. */
-const options = computed(() => resolveOptions({ ...props.options, viewport: room.value }))
 
 const slots = useSlots()
 
-/**
- * Room for the icon a caller draws beside a title, and none where the slot is
- * not filled.
- */
-const iconRoom = computed(() => (slots.icon ? options.value.iconWidth : 0))
-
-/**
- * How wide each title needs its box to be, and each label its line, measured
- * against the type the theme is written in. Taken before the first arrangement,
- * so a box is drawn at the size it keeps, and taken again when a theme changes
- * that type.
- */
-const measures = useTitleWidths(() => iconRoom.value)
-
-/**
- * How wide a box is drawn while the attention rests on it: the room its whole
- * title asks for, held inside the window.
- *
- * A title measured at no more than the box it is already in widens nothing,
- * and where there was nothing to measure the text with, nothing widens at all.
- */
-const widen = computed(() => {
-  const measure = measures.value?.node
-  if (!measure) return undefined
-
-  const { margin } = options.value
-  const within = room.value
-  return (node: PlacedNode) => getWideBox(node, measure(node), within, margin)
-})
-
-/**
- * The parts each node hangs under its box. The sizes are the ones the whole
- * picture is drawn to, so a plex set larger hangs them larger.
- */
-const hung = computed(() => {
-  const held = props.parts
-  if (!held) return undefined
-
-  const { margin } = options.value
-  const deps = { measure: measures.value?.part, viewport: room.value, margin }
-  return (node: PlacedNode) => hangParts(node, held(node.id), options.value, deps)
-})
+const { room, options, measures, widen, hung } = useRoom(frameElement, props, () => !!slots.icon)
 
 const { frame, moving } = usePlexTransition(
   () => props.neighbourhood,

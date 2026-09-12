@@ -6,16 +6,16 @@
  */
 export interface Deferred<T> {
   promise: Promise<T>
-  answers: (value: T) => void
-  fails: (why: string) => void
+  answer: (value: T) => void
+  fail: (why: string) => void
 }
 
 export function later<T>(): Deferred<T> {
-  let answers!: (value: T) => void
-  let fails!: (why: unknown) => void
+  let answer!: (value: T) => void
+  let fail!: (why: unknown) => void
   const promise = new Promise<T>((resolve, reject) => {
-    answers = resolve
-    fails = reject
+    answer = resolve
+    fail = reject
   })
-  return { promise, answers, fails: (why: string) => fails(new Error(why)) }
+  return { promise, answer, fail: (why: string) => fail(new Error(why)) }
 }

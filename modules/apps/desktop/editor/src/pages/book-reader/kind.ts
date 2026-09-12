@@ -19,29 +19,21 @@ export function bookKind(
 ) {
   const kind: TabKind<BookTabState, typeof BOOK> = {
     kind: BOOK,
-    opens,
-    called: (state) => state.title.value || (state.path.split('/').pop() ?? state.path),
-    draws: BookTab,
+    open: opens,
+    getTitle: (state) => state.title.value || (state.path.split('/').pop() ?? state.path),
+    pane: BookTab,
     identity: (path) => path,
-    shown: (state) => {
+    onShow: (state) => {
       state.measure()
       state.focusTab()
     },
-    presses: (state, event) => state.handleKeyPress(event),
-    shuts: (state) => {
+    onKeyPress: (state, event) => state.handleKeyPress(event),
+    onClose: (state) => {
       state.close()
       return true
     },
     over: (state) => ({ file: state.path, source: 'book' }),
-    attends: (state) => ({
-      path: state.path,
-      book: {
-        offset: state.offset.value,
-        page: state.page.value,
-        pageCount: state.pages.value,
-      },
-    }),
-    getAttention: (state) => ({
+    getOpenTab: (state) => ({
       path: state.path,
       book: {
         offset: state.offset.value,

@@ -14,7 +14,7 @@ import { WORDS as words } from '@/entities/deck'
 const props = defineProps<{ state: DeckTabState }>()
 
 // --- State ---
-const { choices, drawn, marks, errorMessage, scheduled, sections, shown, stencils } = props.state
+const { choices, drawn, marks, errorMessage, note, scheduled, sections, stencils } = props.state
 
 /** Validation errors against cards as reported by deck marks. */
 const validationErrors = computed(() => ({ at: marks.value.at, under: marks.value.under }))
@@ -73,7 +73,7 @@ function empty(stencil: string) {
   <div class="deck-tab">
     <FileConflictPrompt
       :errorMessage="errorMessage"
-      :conflict="conflictIn(shown.state)"
+      :conflict="conflictIn(note.state)"
       :words="words"
       @keep="onKeep"
       @take="onTake"

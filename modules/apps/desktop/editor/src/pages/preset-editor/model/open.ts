@@ -172,10 +172,10 @@ export const createPresetState = (
     errorMessage: one.flight.errorMessage,
     changed: one.flight.changed,
     again: () => void readPreset(one, core, bounds, titles, today()),
-    chooses: chooseGoal,
-    moves: moveSlider,
-    settles: () => void requestWrite(one.flight, one.path.value, one.settings.value, core, said),
-    types: updateSetting,
-    shuts: closeTab,
+    chooseGoal,
+    moveSlider,
+    settle: () => void requestWrite(one.flight, one.path.value, one.settings.value, core, said),
+    updateSetting,
+    close: closeTab,
   }
 }

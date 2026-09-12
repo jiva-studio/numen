@@ -22,19 +22,14 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
 
   const kind: TabKind<PlexTabState, typeof PLEX> = {
     kind: PLEX,
-    opens: (at) => {
+    open: (at) => {
       const state = usePlexTab(makes(), deps)
       const from = at || getCurrentPath() || deps.opening.value
       if (from) void state.view.go(from)
       return state
     },
-    called: (state) => titleOf(state.view.neighbourhood.value?.focus.title ?? ''),
     getTitle: (state) => titleOf(state.view.neighbourhood.value?.focus.title ?? ''),
-    draws: PlexTab,
-    shuts: (state) => {
-      state.view.close()
-      return true
-    },
+    pane: PlexTab,
     onClose: (state) => {
       state.view.close()
       return true
@@ -43,8 +38,7 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
       const path = state.view.here.value
       return { path, title: (path && state.getName(path)) || path }
     },
-    attends: (state) => ({ path: state.view.here.value }),
-    getAttention: (state) => ({ path: state.view.here.value }),
+    getOpenTab: (state) => ({ path: state.view.here.value }),
   }
 
   const getCurrentPath = (): string => front()?.view.here.value ?? ''

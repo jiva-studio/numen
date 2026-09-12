@@ -45,8 +45,8 @@ export interface CommandsDepsOptions {
   reached: Notes
   opensPreset: (path: string) => Promise<void>
   dressed: { chooseItem: (item: string) => Promise<void> | void }
-  oneName: { chooses: (item: string) => Promise<void> | void }
-  hungParts: { chooses: (item: string) => Promise<void> | void; choosesCount: (item: string) => Promise<void> | void }
+  oneName: { choose: (item: string) => Promise<void> | void }
+  hungParts: { choose: (item: string) => Promise<void> | void; chooseCount: (item: string) => Promise<void> | void }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }

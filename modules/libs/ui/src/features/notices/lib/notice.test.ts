@@ -11,8 +11,8 @@ import {
   getShownNotices,
 } from './dwell'
 import { foldNotices } from './fold'
-import { measured, type Movement } from './movement'
-import { readable, remembered, tallyOf, type Notice } from './notice'
+import { measureMovement, type Movement } from './movement'
+import { getStillAway, readable, tallyOf, type Notice } from './notice'
 
 const one = (over: Partial<Notice> = {}): Notice => ({
   id: 'embedding',
@@ -67,11 +67,11 @@ describe('a notice put away', () => {
 
   it('stays away while the work it was about is still running', () => {
     const notices = [one({ id: 'embedding' })]
-    expect([...remembered(new Set(['embedding']), notices)]).toEqual(['embedding'])
+    expect([...getStillAway(new Set(['embedding']), notices)]).toEqual(['embedding'])
   })
 
   it('is forgotten once that work has ended, so the next one is news', () => {
-    expect([...remembered(new Set(['embedding']), [])]).toEqual([])
+    expect([...getStillAway(new Set(['embedding']), [])]).toEqual([])
   })
 })
 
@@ -217,7 +217,7 @@ describe('how many cards stand at once', () => {
   })
 })
 
-describe('measured', () => {
+describe('measuring how fast a count moves', () => {
   const createFetching = (done: number): Notice => ({
     id: 'model',
     says: 'Preparing the model',
@@ -228,14 +228,14 @@ describe('measured', () => {
   })
 
   it('reads a count once before it has a rate', () => {
-    const moving = measured(new Map(), [createFetching(0)], 1000)
+    const moving = measureMovement(new Map(), [createFetching(0)], 1000)
 
     expect(moving.get('model')).toEqual({ done: 0, rate: 0, at: 1000 })
   })
 
   it('measures how fast the count is moving between two readings', () => {
-    const first = measured(new Map(), [createFetching(0)], 1000)
-    const second = measured(first, [createFetching(4_000_000)], 3000)
+    const first = measureMovement(new Map(), [createFetching(0)], 1000)
+    const second = measureMovement(first, [createFetching(4_000_000)], 3000)
 
     expect(second.get('model')?.rate).toBe(2_000_000)
   })
@@ -243,9 +243,11 @@ describe('measured', () => {
   it('measures a group over the stretch it took, not the moment it landed in', () => {
     // Ten seconds of readings, four million arriving at the end of them. The
     // work did four hundred thousand a second, whatever the last reading saw.
-    let moving = measured(new Map(), [createFetching(0)], 1000)
-    for (let at = 1250; at < 11_000; at += 250) moving = measured(moving, [createFetching(0)], at)
-    moving = measured(moving, [createFetching(4_000_000)], 11_000)
+    let moving = measureMovement(new Map(), [createFetching(0)], 1000)
+    for (let at = 1250; at < 11_000; at += 250) {
+      moving = measureMovement(moving, [createFetching(0)], at)
+    }
+    moving = measureMovement(moving, [createFetching(4_000_000)], 11_000)
 
     expect(moving.get('model')?.rate).toBe(400_000)
   })
@@ -253,12 +255,12 @@ describe('measured', () => {
   it('forgets work that is no longer standing', () => {
     const was: ReadonlyMap<string, Movement> = new Map([['gone', { done: 5, rate: 1, at: 0 }]])
 
-    expect(measured(was, [createFetching(0)], 1000).has('gone')).toBe(false)
+    expect(measureMovement(was, [createFetching(0)], 1000).has('gone')).toBe(false)
   })
 
   it('measures nothing for work with no total to count against', () => {
     const nothing: Notice = { id: 'scan', says: 'Reading a scan', working: true }
 
-    expect(measured(new Map(), [nothing], 1000).size).toBe(0)
+    expect(measureMovement(new Map(), [nothing], 1000).size).toBe(0)
   })
 })

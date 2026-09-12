@@ -7,6 +7,6 @@ import RecordingTab from './ui/RecordingTab.vue'
 export const RECORDINGS: Medium<typeof RECORDING> = {
   tab: RECORDING,
   source: 'recording',
-  draws: RecordingTab,
-  hands: (puts, opens) => puts.registerReader({ kind: RECORDINGS.source }, opens),
+  pane: RecordingTab,
+  register: (puts, opens) => puts.registerReader({ kind: RECORDINGS.source }, opens),
 }

@@ -20,7 +20,7 @@ const PARTS = ['appearance', 'parts_under_a_node']
 const STARTS = ['review', 'day_starts']
 
 /** Every setting as it stands, with the defaults under what the file leaves out. */
-const configured = async (): Promise<unknown> =>
+const readSettings = async (): Promise<unknown> =>
   JSON.parse((await settingsService.getSettings({})).written)
 
 /** How many parts a node hangs, and the default where the settings name none. */
@@ -47,7 +47,7 @@ const writeSettings = async (
 export type SettingsCore = SettingsPort
 
 export const settingsCore: SettingsCore = {
-  getSyncEnabled: async () => getSettingAt(await configured(), SYNCS) !== false,
+  getSyncEnabled: async () => getSettingAt(await readSettings(), SYNCS) !== false,
   setSyncEnabled: (kept) => writeSettings([{ at: SYNCS, value: kept }]),
   getHangingSettings: async () => {
     const answer = await settingsService.getSettings({})

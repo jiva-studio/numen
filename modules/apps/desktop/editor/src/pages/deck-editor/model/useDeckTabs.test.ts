@@ -161,7 +161,7 @@ const vault = (
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
-    makes: async () => ({ path: '', error: null }),
+    createPreset: async () => ({ path: '', error: null }),
     scheduling: async () => ({
       preset: {
         path: by,
@@ -174,7 +174,7 @@ const vault = (
       at: '',
       bounds: NO_BOUNDS,
     }),
-    schedules: async (deck, preset, seen) => {
+    scheduleDeck: async (deck, preset, seen) => {
       put.push({ deck, preset, seen })
       if (answers.notScheduled) {
         return { error: answers.notScheduled, changed: false, at: '' }
@@ -255,7 +255,7 @@ describe('a deck opened', () => {
   it('is called what the file is called', async () => {
     const { decks, id, held } = await open()
 
-    expect(decks.kind.called?.(held.handle.holds<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
+    expect(decks.kind.getTitle?.(held.handle.holds<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
   })
 
   it('offers every stencil the vault holds as a cut', async () => {
@@ -281,7 +281,7 @@ describe('a deck opened', () => {
   it('carries no mark while nothing is unwritten', async () => {
     const { decks, tab } = await open()
 
-    expect(decks.kind.marked?.(tab)).toBeUndefined()
+    expect(decks.kind.getMark?.(tab)).toBeUndefined()
   })
 })
 
@@ -315,8 +315,8 @@ describe('a card written in a deck', () => {
 
     tab.addCard('Animal', [], null)
 
-    expect(tab.shown.value.state).toBe('unsaved')
-    expect(decks.kind.marked?.(tab)).toBe('unsaved')
+    expect(tab.note.value.state).toBe('unsaved')
+    expect(decks.kind.getMark?.(tab)).toBe('unsaved')
   })
 
   it('reaches the vault as the cards of that file, with the file it was read from', async () => {
@@ -355,7 +355,7 @@ describe('a deck whose file moved past what was read', () => {
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
 
-    expect(tab.shown.value.state).toBe('stale')
+    expect(tab.note.value.state).toBe('stale')
   })
 
   it('keeps what the person wrote when they say so, over whatever the file holds', async () => {
@@ -379,7 +379,7 @@ describe('a deck whose file moved past what was read', () => {
     await settle()
 
     expect(reads()).toBe(2)
-    expect(tab.shown.value.state).toBe('clean')
+    expect(tab.note.value.state).toBe('clean')
     expect(tab.deck.value.cards.map(getCardName)).toStrictEqual(['Llama', 'Alpaca'])
   })
 })
@@ -629,7 +629,7 @@ describe('a deck read again under the window', () => {
     const one = await open()
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     const made = one.tab.deck.value.cards.at(-1)?.id ?? ''
-    await one.decks.kept.settles(one.tab.id)
+    await one.decks.kept.settle(one.tab.id)
 
     // The deck was made whole where it was written: the card carries the mark
     // the core minted and the heading it read from the first field.
@@ -660,7 +660,7 @@ describe('a deck read again under the window', () => {
     const one = await open({ sections: [{ name: 'Roots', preamble: '' }] })
     const stood = one.tab.deck.value.sections[0]?.id ?? ''
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
-    await one.decks.kept.settles(one.tab.id)
+    await one.decks.kept.settle(one.tab.id)
 
     one.holds([
       ...CARDS,
@@ -730,7 +730,7 @@ describe('a deck read again under the window', () => {
     const one = await open()
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vic' }], null)
     const made = one.tab.deck.value.cards.at(-1)?.id ?? ''
-    await one.decks.kept.settles(one.tab.id)
+    await one.decks.kept.settle(one.tab.id)
 
     one.tab.writeCardField(made, 'Name', 1, 'Vicuña')
 
@@ -816,19 +816,19 @@ describe('a deck renamed under the window', () => {
 
     renameDeck(one)
 
-    expect(one.decks.called('Beasts.md')).toBe('Animals')
+    expect(one.decks.getTitle('Beasts.md')).toBe('Animals')
   })
 })
 
 describe('a deck whose tab has gone', () => {
   it('is nothing the window still says a word about', async () => {
     const one = await open()
-    expect(one.decks.called('Animals.md')).toBe('Animals')
+    expect(one.decks.getTitle('Animals.md')).toBe('Animals')
 
     one.held.shut(one.id)
     await settle()
 
-    expect(one.decks.called('Animals.md')).toBe('Animals.md')
+    expect(one.decks.getTitle('Animals.md')).toBe('Animals.md')
   })
 })
 
@@ -843,7 +843,7 @@ describe('a deck the vault could not be reached for', () => {
     const { decks, tab } = await open({ wrote: 'unreadable' })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
-    await decks.kept.settles(decks.all()[0] ?? '')
+    await decks.kept.settle(decks.all()[0] ?? '')
 
     expect(tab.errorMessage.value).toBe(words.notSaved)
   })
@@ -854,7 +854,7 @@ describe('the stencils a listing did not answer with', () => {
     const one = await open({ unlisted: 1 })
     expect(one.tab.stencils.value).toStrictEqual([])
 
-    one.decks.kind.shown?.(one.tab, one.id)
+    one.decks.kind.onShow?.(one.tab, one.id)
     await settle()
 
     expect(one.tab.stencils.value).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])

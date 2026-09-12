@@ -123,7 +123,7 @@ describe('a goal with nothing to work on', () => {
       .findAll('[data-preset-row]')
       .find((one) => one.get('[data-preset="name"]').text() === words.fieldName('minutesADay'))
     minutes?.get('input').setValue('7')
-    expect(done).toStrictEqual(['types minutesADay 7'])
+    expect(done).toStrictEqual(['type minutesADay 7'])
   })
 })
 
@@ -181,7 +181,7 @@ describe('the settings the chosen goal schedules by', () => {
     expect((day.element as HTMLInputElement).value).toBe('2026-09-29')
     // A day is chosen in one gesture, so choosing it is being done with it.
     await day.setValue('2026-10-09')
-    expect(done).toStrictEqual(['types byDate 2026-10-09', 'settles'])
+    expect(done).toStrictEqual(['type byDate 2026-10-09', 'settle'])
   })
 })
 

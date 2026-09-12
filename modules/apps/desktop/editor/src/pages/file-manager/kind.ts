@@ -13,15 +13,15 @@ import type { FilesTabDeps, FilesTabState, FileTree } from './types'
 export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: FilesTabDeps) {
   const kind: TabKind<FilesTabState, typeof FILES> = {
     kind: FILES,
-    opens: () => {
+    open: () => {
       const state = useFilesTab(makes(), deps)
       void state.list.openFolder(ROOT)
       return state
     },
-    called: () => words.files,
-    draws: FilesTab,
+    getTitle: () => words.files,
+    pane: FilesTab,
     identity: () => FILES,
-    shuts: (state) => {
+    onClose: (state) => {
       state.list.close()
       return true
     },

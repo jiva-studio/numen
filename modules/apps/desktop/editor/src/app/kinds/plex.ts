@@ -29,7 +29,7 @@ export function createPlexKind({
   asks,
 }: PlexKindDeps) {
   return plexKind(held.handle, () => usePlexView(core), {
-    makes: editing.making,
+    editor: editing.making,
     ready: computed(() => !window.failure.value),
     hangs: settings.hungParts.hangs,
     parts: settings.hungParts.parts,

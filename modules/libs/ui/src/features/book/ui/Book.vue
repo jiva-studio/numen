@@ -10,12 +10,14 @@
  */
 import { useTemplateRef } from 'vue'
 
-import { isOutwardHref, placeIn, type BookLink } from '../lib/link'
-import { handTurn, keyTurn } from '../lib/turn'
+import { keyTurn } from '../lib/turn'
+import { useBookHand } from '../model/hand'
 import { useBookLayout } from '../model/layout'
+import { createBookLinks } from '../model/links'
 import { BOOK_WORDS } from '../lib/words'
 import type { BookProps } from '../lib/props'
 import BookFoot from './BookFoot.vue'
+import BookHead from './BookHead.vue'
 
 const props = withDefaults(defineProps<BookProps>(), {
   markup: '',
@@ -43,18 +45,20 @@ const emit = defineEmits<{
 const area = useTemplateRef<HTMLElement>('area')
 const paper = useTemplateRef<HTMLElement>('paper')
 
-/** Where a link led, held until the document holding that place is drawn. */
-let led: BookLink | undefined
-const takeLed = (): BookLink | undefined => {
-  const place = led
-  led = undefined
-  return place
-}
+/** The near edge of a box, which every place across the columns is read from. */
+const edgeOf = (of: HTMLElement) => of.getBoundingClientRect().left
 
-const layout = useBookLayout(area, paper, props, (at) => emit('moved', at), takeLed, (of) =>
-  of.getBoundingClientRect().left,
-)
+const links = createBookLinks(props, {
+  moved: (at) => emit('moved', at),
+  followed: (path) => emit('followed', path),
+})
+
+const layout = useBookLayout(area, paper, props, (at) => emit('moved', at), links.takeLed, edgeOf)
 const { measured, setting, spreadCount, front, leftInChapter } = layout
+
+const hand = useBookHand(area, paper, layout.turn, edgeOf)
+
+const follow = (press: MouseEvent) => links.follow(press, layout.placeAt)
 
 /**
  * A key the tab caught. Turning belongs to whatever holds the book, so the
@@ -65,59 +69,6 @@ const handleKey = (event: KeyboardEvent): boolean => {
   if (!way) return false
   layout.turn(way)
   return true
-}
-
-/** Where the hand went down, while it is down. */
-let hand: number | undefined
-
-const onPointerDown = (event: PointerEvent) => {
-  hand = event.button === 0 ? event.clientX : undefined
-}
-
-/** Whether words of the text stand taken up. */
-const isSelecting = (): boolean => {
-  const taken = window.getSelection()
-  if (!taken || taken.isCollapsed || taken.toString().trim() === '') return false
-  const text = paper.value
-  return !!text && !!taken.anchorNode && text.contains(taken.anchorNode)
-}
-
-/**
- * The hand lifted: the page follows a swipe, and a press near either edge turns
- * it that way. A link is followed and turns nothing.
- */
-const letGo = (event: PointerEvent) => {
-  const from = hand
-  hand = undefined
-  const box = area.value
-  if (from === undefined || !box) return
-  if ((event.target as HTMLElement | null)?.closest?.('a')) return
-
-  const edge = box.getBoundingClientRect().left
-  const way = handTurn(from - edge, event.clientX - edge, box.clientWidth, isSelecting())
-  if (way) layout.turn(way)
-}
-
-/**
- * A link pressed in the text. Nothing a book contains navigates the window: a
- * link inside the book is a move within the book, and one leading out of it is
- * the window's own to hand on.
- */
-const follow = (press: MouseEvent) => {
-  const link = (press.target as Element | null)?.closest?.('a[href]')
-  const href = link?.getAttribute('href')
-  if (href === null || href === undefined) return
-
-  press.preventDefault()
-  if (isOutwardHref(href)) return
-
-  const place = placeIn(href)
-  if (place.path !== '' && place.path !== props.path) {
-    led = place
-    emit('followed', place.path)
-    return
-  }
-  emit('moved', layout.placeAt(place.fragment) ?? props.span.begins)
 }
 
 defineExpose({
@@ -133,9 +84,7 @@ defineExpose({
 
 <template>
   <div class="book numen relative h-full min-h-0 font-sans text-base text-ink">
-    <!-- The line over the text: the way into what the book divides into, and
-         what it calls the place in front. -->
-    <header class="book__head text-small text-hushed">{{ chapter }}</header>
+    <BookHead :chapter="chapter" />
 
     <div class="book__margin h-full">
       <div
@@ -143,8 +92,8 @@ defineExpose({
         class="book__area h-full overflow-hidden"
         role="region"
         :aria-label="words.pages"
-        @pointerdown="onPointerDown"
-        @pointerup="letGo"
+        @pointerdown="hand.takeDown"
+        @pointerup="hand.letGo"
       >
         <!-- The markup reaches this component already measured against what may
              be drawn. -->
@@ -190,22 +139,6 @@ defineExpose({
      rather than being cut where the text begins. */
   padding-block-start: var(--book-head);
   padding-block-end: 3rem;
-}
-
-/* What the book calls the place in front, standing in the margin over the text
-   it names, midway between the top of the window and the top of that text. */
-.book__head {
-  position: absolute;
-  inset-block-start: 0;
-  block-size: var(--book-head);
-  inset-inline: clamp(1rem, 3%, 2.5rem);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: center;
-  text-overflow: ellipsis;
-  pointer-events: none;
 }
 
 /* The page a person is reading carries nothing drawn around it. */

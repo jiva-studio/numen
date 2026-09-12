@@ -37,7 +37,7 @@ describe('the settings under the control', () => {
       .findAll('button')
       .find((one) => one.text() === words.budgetUnitName('shows'))
     await unit?.trigger('click')
-    expect(done).toStrictEqual(['types counts shows', 'settles'])
+    expect(done).toStrictEqual(['type counts shows', 'settle'])
   })
 
   // The share of a day the debt takes is moved along its whole range, so any
@@ -61,9 +61,9 @@ describe('the settings under the control', () => {
     // The value is handed on as the handle moves, and the row is written once
     // the key is let go of.
     await track.trigger('keydown', { key: 'ArrowLeft' })
-    expect(done).toStrictEqual(['types backlog 69'])
+    expect(done).toStrictEqual(['type backlog 69'])
     await track.trigger('keyup', { key: 'ArrowLeft' })
-    expect(done).toStrictEqual(['types backlog 69', 'settles'])
+    expect(done).toStrictEqual(['type backlog 69', 'settle'])
   })
 
   // The rule stands over the one value it reads, and the value the other rule
@@ -109,7 +109,7 @@ describe('the settings under the control', () => {
     )
     chosen?.click()
     await tab.vm.$nextTick()
-    expect(done).toStrictEqual(['types learned retention', 'settles'])
+    expect(done).toStrictEqual(['type learned retention', 'settle'])
   })
 
   it('holds the days a card is put off inside what a preset may hold', async () => {
@@ -120,7 +120,7 @@ describe('the settings under the control', () => {
     expect(field.attributes('aria-valuemin')).toBe(`${BOUNDS.interval.least}`)
     expect(field.attributes('aria-valuemax')).toBe(`${BOUNDS.interval.most}`)
     await field.setValue('30')
-    expect(done).toStrictEqual(['types interval 30'])
+    expect(done).toStrictEqual(['type interval 30'])
   })
 
   // A tab draws its rows before the first read lands. Until the application
@@ -196,9 +196,9 @@ describe('the load of the week', () => {
     const put: [Field, SettingValue][] = []
     const state: PresetTabState = {
       ...one.state,
-      types: (field, value) => {
+      updateSetting: (field, value) => {
         put.push([field, value])
-        one.done.push('types')
+        one.done.push('type')
       },
     }
     return { tab: mount(PresetTab, { props: { state } }), put, done: one.done }
@@ -245,7 +245,7 @@ describe('the load of the week', () => {
     await tab.vm.$nextTick()
 
     expect(put).toStrictEqual([['load', { sat: 50, sun: 0, mon: 25 }]])
-    expect(done).toStrictEqual(['types', 'settles'])
+    expect(done).toStrictEqual(['type', 'settle'])
   })
 
   it('stops naming a day put back to the whole of a day', async () => {
@@ -323,7 +323,7 @@ describe('the row a chance of recall is typed into', () => {
       .find((one) => one.attributes('aria-valuemax') === '99')
 
     await field?.setValue('90')
-    expect(done).toStrictEqual(['types retention 0.9'])
+    expect(done).toStrictEqual(['type retention 0.9'])
   })
 })
 

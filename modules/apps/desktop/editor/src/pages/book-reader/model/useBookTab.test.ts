@@ -94,13 +94,13 @@ describe('what a book tab is called', () => {
   it('is what the book calls itself', () => {
     const held = useBookTab(read('library/mbh-04.epub', 'Virāṭa Parva'))
 
-    expect(kindOver(held).called?.(held)).toBe('Virāṭa Parva')
+    expect(kindOver(held).getTitle?.(held)).toBe('Virāṭa Parva')
   })
 
   it('is the name of the file, for a book that calls itself nothing', () => {
     const held = useBookTab(read('library/sub/mbh-04.epub'))
 
-    expect(kindOver(held).called?.(held)).toBe('mbh-04.epub')
+    expect(kindOver(held).getTitle?.(held)).toBe('mbh-04.epub')
   })
 })
 
@@ -108,7 +108,7 @@ describe('what a book tab tells whoever answers for the person', () => {
   it('is the offset in front, and the page it falls on', () => {
     const held = createBookTabAt('library/Mahabharata.epub', 1_200_000, 1_201, 5_000)
 
-    expect(kindOver(held).attends?.(held)).toStrictEqual({
+    expect(kindOver(held).getOpenTab?.(held)).toStrictEqual({
       path: 'library/Mahabharata.epub',
       book: { offset: 1_200_000, page: 1_201, pageCount: 5_000 },
     })
@@ -131,7 +131,7 @@ describe('a book let go of', () => {
     const close = vi.fn()
     const held = useBookTab(read('library/Mahabharata.epub', '', close))
 
-    expect(kindOver(held).shuts?.(held, 'a tab')).toBe(true)
+    expect(kindOver(held).onClose?.(held, 'a tab')).toBe(true)
     expect(close).toHaveBeenCalledTimes(1)
   })
 })

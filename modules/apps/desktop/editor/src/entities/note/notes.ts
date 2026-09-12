@@ -164,7 +164,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     save,
     keep: conflicts.keep,
     take: conflicts.take,
-    shown: getOpenNote,
+    getOpenNote,
     link: (id: string): LinkAddress | null => addresses.value.get(id) ?? null,
     all,
     getErrorMessage: conflicts.getErrorMessage,

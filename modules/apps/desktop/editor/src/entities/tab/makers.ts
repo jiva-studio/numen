@@ -84,7 +84,6 @@ export function createFileCreators(vault: VaultCreator, tabOpeners: FileOpeners,
 
   return {
     createFile,
-    makes: createFile,
     decks: (folder: string, name: string) => opens('deck', folder, name),
     stencils: (folder: string, name: string, fields: readonly string[]) =>
       opens('stencil', folder, name, fields),

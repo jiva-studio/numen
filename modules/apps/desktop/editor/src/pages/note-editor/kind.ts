@@ -122,31 +122,23 @@ export function useNoteTab(
 
   const kind: TabKind<NoteTabState, typeof NOTE> = {
     kind: NOTE,
-    opens: (id) => openTab(id),
-    called: (state) => names.getTitle(state.id),
+    open: (id) => openTab(id),
     getTitle: (state) => names.getTitle(state.id),
-    marked: (state) => markOf(state.shown.value.state),
-    draws: NoteTab,
+    getMark: (state) => markOf(state.note.value.state),
+    pane: NoteTab,
     identity: (id) => id,
-    shown: (state) => state.measure(),
     onShow: (state) => state.measure(),
     over: (state) => {
       const path = getPath(state)
       return { path, title: path ? names.getTitle(state.id) : '' }
     },
-    attends: (state) => ({ path: getPath(state) }),
-    getAttention: (state) => ({ path: getPath(state) }),
-    shuts: (state, id) => {
-      state.close(id)
-      return false
-    },
+    getOpenTab: (state) => ({ path: getPath(state) }),
     onClose: (state, id) => {
       state.close(id)
       return false
     },
     // What an open note owes at the quit is written by the quit, which the
     // window waits for.
-    gone: () => {},
     onDestroy: () => {},
   }
 
@@ -154,10 +146,10 @@ export function useNoteTab(
   const kept: Store = {
     has: (id) => notes.has(id),
     where: (id) => notes.where(id),
-    called: (id) => names.getTitle(id),
+    getTitle: (id) => names.getTitle(id),
     asking: (id) => notes.stale(id) !== null,
-    settles: (id) => notes.settles(id),
-    shuts: closeTab,
+    settle: (id) => notes.settles(id),
+    close: closeTab,
     holding: (path) => tabbed.value.get(path) ?? null,
   }
 

@@ -4,123 +4,56 @@
  * it draws with is already on the node it was handed, but for what it is to a
  * gesture, which arrives as its role in one.
  */
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, useTemplateRef, watch } from 'vue'
 import PlexNodeBox from './PlexNodeBox.vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeParts from './PlexNodeParts.vue'
-import { isMenuKey, isPress, isShowKey } from './keys'
-import { boxOf, DWELL, useDwell, type WideBox } from '../../model/dwell'
-import { byHandle, type ReachStrategy } from '../../model/reaching'
-import {
-  byDoubleClick,
-  mergeListeners,
-  getDestination,
-  type PlexDestination,
-  type ShowStrategy,
-} from '../../model/showing'
-import type { HungParts } from '../../lib/inside'
-import { browserClock, type Clock } from '../../model/transition'
-import type { MenuOpening } from '@/shared/ui/menu'
-import {
-  handleIn,
-  isReachable,
-  isStop,
-  nameOf,
-  type GestureRole,
-  type PlacedNode,
-  type Position,
-} from '../../lib/node'
+import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
+import { useHoverFocus } from '../../model/hoverFocus'
+import { DWELL, useOpenBox } from '../../model/dwell'
+import { useNodePress } from '../../model/press'
+import { byHandle } from '../../model/reaching'
+import { byDoubleClick } from '../../model/showing'
+import { browserClock } from '../../model/transition'
+import { nameOf, type Position } from '../../lib/node'
 
-// --- Props & Emits ---
-const props = withDefaults(
-  defineProps<{
-    node: PlacedNode
-    /** What this node is to the gesture. The one thing it cannot work out. */
-    gestureRole?: GestureRole
-    /**
-     * The box it widens to while the attention rests on it, and nothing where
-     * it has no more of its title to show.
-     */
-    wide?: WideBox | null
-    /**
-     * The parts it hangs under its box while the attention rests, and nothing
-     * for a node with none.
-     */
-    hung?: HungParts | null
-    /** How long the attention rests before it widens. Milliseconds. */
-    dwell?: number
-    /** How this node offers to be reached out of. The handle by default. */
-    reaching?: ReachStrategy
-    /** How this node is asked for on its own. The second click by default. */
-    showing?: ShowStrategy
-    /** The clock the opening is drawn on. Browser by default. */
-    clock?: Clock
-  }>(),
-  {
-    gestureRole: 'open',
-    wide: null,
-    hung: null,
-    dwell: DWELL,
-    reaching: () => byHandle,
-    showing: () => byDoubleClick,
-    clock: () => browserClock,
-  },
-)
+const props = withDefaults(defineProps<PlexNodeProps>(), {
+  gestureRole: 'open',
+  wide: null,
+  hung: null,
+  dwell: DWELL,
+  reaching: () => byHandle,
+  showing: () => byDoubleClick,
+  clock: () => browserClock,
+})
 
-const emit = defineEmits<{
-  /** Chosen, by click or by keyboard. Which node it was is the caller's to say. */
-  (event: 'activate'): void
-  /**
-   * Asked to be drawn out on its own, and where it is to go. The modifier is
-   * read here, so what travels on is the meaning.
-   */
-  (event: 'show', showing: PlexDestination): void
-  /** A gesture began at the handle, and a pointer is dragging it somewhere. */
-  (event: 'reach', pointer: PointerEvent): void
-  /** The handle was pressed from the keyboard, where there is nowhere to drag. */
-  (event: 'ask'): void
-  /**
-   * A menu was asked for on this node: where it was asked, and what asked for
-   * it. A keypress carries no point of its own, so the middle of the box is
-   * where it is asked.
-   */
-  (event: 'menu', at: Position, opening: MenuOpening): void
-  /**
-   * The attention has settled on this node, or has left it. A widened box is
-   * drawn last of all, and which box that is only the whole picture knows.
-   */
-  (event: 'rest', resting: boolean): void
-  /** A part of this node was chosen. The identifier is the caller's. */
-  (event: 'enter', part: string): void
-}>()
+const emit = defineEmits<PlexNodeEvents>()
 
-defineSlots<{
-  /** What is drawn beside this node's title. */
-  icon?(props: { node: PlacedNode }): unknown
-}>()
+defineSlots<PlexDrawnSlots>()
 
 const group = useTemplateRef<SVGGElement>('group')
 
 /** The keyboard put back on this node by whoever took it away. */
 defineExpose({ focus: () => group.value?.focus() })
 
-// --- State ---
-const isOver = ref(false)
-const isAttended = ref(false)
+const hoverFocus = useHoverFocus()
 
-/** Not a node yet, so nothing may be done to it and nothing is told about it. */
-const isGhost = computed(() => props.gestureRole === 'ghost')
+/** The middle of the node, for a press, which carries no point of its own. */
+const getMiddle = (): Position | null => {
+  const element = group.value
+  if (!element) return null
+  const box = element.getBoundingClientRect()
+  return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+}
 
-/** One predicate: the same rule decides the click and the name. */
-const canReach = computed(() => !isGhost.value && isReachable(props.node))
+const press = useNodePress(props, getMiddle, {
+  activate: () => emit('activate'),
+  show: (showing) => emit('show', showing),
+  reach: (pointer) => emit('reach', pointer),
+  menu: (at, opening) => emit('menu', at, opening),
+})
 
-/** Where the keyboard stops: the focus too, and nothing on its way in or out. */
-const canStop = computed(() => !isGhost.value && isStop(props.node))
-
-/** The focus is announced although it cannot be chosen: it is where you are. */
-const isAnnounced = computed(
-  () => canReach.value || (!isGhost.value && props.node.seat === 'focus'),
-)
+const { isGhost, canStop, isAnnounced, listening } = press
 
 /**
  * When there is a handle to press. Under the hand, or under the keyboard while
@@ -131,27 +64,31 @@ const isOffering = computed(
     props.reaching.handle &&
     props.node.opacity >= 1 &&
     (props.gestureRole === 'source' ||
-      (props.gestureRole === 'open' && (isOver.value || isAttended.value))),
+      (props.gestureRole === 'open' && hoverFocus.isOn.value)),
 )
 
 /** Whether there is anything to open: more of the title, or parts to hang. */
 const canOpen = computed(() => !!props.wide || !!props.hung)
 
 /**
- * What the attention is on, and where that stands.
+ * What is hovered or focused, and where that stands.
  */
 const under = computed(() =>
   canOpen.value &&
   props.node.opacity >= 1 &&
   props.gestureRole === 'open' &&
-  (isOver.value || isAttended.value)
+  hoverFocus.isOn.value
     ? `${props.node.x} ${props.node.y}`
     : null,
 )
 
-const open = useDwell(() => under.value, () => props.dwell, props.clock)
-
-const box = computed(() => boxOf(props.node, props.wide, open.value))
+const { open, box, handle } = useOpenBox(
+  () => props.node,
+  () => props.wide,
+  () => under.value,
+  () => props.dwell,
+  props.clock,
+)
 
 // A box that has begun to open is already over its neighbours.
 watch(
@@ -159,129 +96,12 @@ watch(
   (now) => emit('rest', now),
 )
 
-/** Where the handle sits. What it is made of is all sizes, and so all tokens. */
-const handle = computed(() => {
-  const at = handleIn({ ...props.node, width: box.value.width })
-  return { x: at.x + box.value.offset, y: at.y }
-})
-
 /**
  * One hue per seat, from a token named after it.
  */
 const hue = computed(() => ({
   '--numen-seat-hue': `var(--numen-seat-${props.node.seat})`,
 }))
-
-/**
- * What this node listens for beyond the handle, and whether it draws one.
- */
-const listening = mergeListeners(
-  props.reaching.listeners({
-    ready: () => !isGhost.value && props.gestureRole === 'open',
-    reach: (event: PointerEvent) => emit('reach', event),
-  }),
-  props.showing.listeners({
-    ready: () => canStop.value,
-    show: (modified: boolean) => showNode(modified),
-  }),
-)
-
-// --- Handlers ---
-function onClick(): void {
-  activateNode()
-}
-
-function onDoubleClick(event: MouseEvent): void {
-  if (props.showing.doubleClick) {
-    showNode(event.altKey)
-  }
-}
-
-function onContextMenu(event: MouseEvent): void {
-  if (isGhost.value) return
-  event.preventDefault()
-  emit('menu', { x: event.clientX, y: event.clientY }, 'pointer')
-}
-
-function onKeyDown(event: KeyboardEvent): void {
-  if (isMenuKey(event)) {
-    if (isGhost.value) return
-    event.preventDefault()
-    const element = group.value
-    if (element) emit('menu', getMiddleOf(element), 'keyboard')
-    return
-  }
-  if (isShowKey(event)) {
-    event.preventDefault()
-    showNode(event.altKey)
-    return
-  }
-  if (!isPress(event)) return
-  event.preventDefault()
-  activateNode()
-}
-
-function onPointerEnter(): void {
-  isOver.value = true
-}
-
-function onPointerLeave(): void {
-  isOver.value = false
-}
-
-function onFocusIn(event: FocusEvent): void {
-  updateAttendance(event)
-}
-
-function onFocusOut(event: FocusEvent): void {
-  updateAttendance(event)
-}
-
-function onPartEnter(part: string): void {
-  emit('enter', part)
-}
-
-function onHandleReach(event: PointerEvent): void {
-  emit('reach', event)
-}
-
-function onHandleAsk(): void {
-  emit('ask')
-}
-
-// --- Helpers ---
-function activateNode(): void {
-  if (canReach.value) emit('activate')
-}
-
-function showNode(modified: boolean): void {
-  if (canStop.value) emit('show', getDestination(modified))
-}
-
-/** The middle of the node, for a press, which carries no point of its own. */
-function getMiddleOf(element: SVGGElement): Position {
-  const box = element.getBoundingClientRect()
-  return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
-}
-
-function isKeyboardOn(element: Element): boolean {
-  try {
-    return element.matches(':focus-visible')
-  } catch {
-    // Unsupported selectors mean no visible keyboard focus is reported.
-    return false
-  }
-}
-
-function updateAttendance(event: FocusEvent): void {
-  const within = event.currentTarget as Element
-  if (event.type === 'focusout') {
-    const next = event.relatedTarget as Node | null
-    isAttended.value = !!(next && within.contains(next))
-    return
-  }
-  isAttended.value = isKeyboardOn(event.target as Element)
-}
 </script>
 
 <template>
@@ -296,15 +116,15 @@ function updateAttendance(event: FocusEvent): void {
     :role="isGhost ? undefined : node.seat === 'focus' ? 'img' : 'button'"
     :class="[`plex__node--${node.seat}`, `plex__node--${gestureRole}`]"
     :aria-label="isGhost ? undefined : nameOf(node)"
-    @click="onClick"
-    @dblclick="onDoubleClick"
-    @contextmenu="onContextMenu"
-    @keydown="onKeyDown"
+    @click="press.onClick"
+    @dblclick="press.onDoubleClick"
+    @contextmenu="press.onContextMenu"
+    @keydown="press.onKeyDown"
     v-on="listening"
-    @pointerenter="onPointerEnter"
-    @pointerleave="onPointerLeave"
-    @focusin="onFocusIn"
-    @focusout="onFocusOut"
+    @pointerenter="hoverFocus.onPointerEnter"
+    @pointerleave="hoverFocus.onPointerLeave"
+    @focusin="hoverFocus.onFocusIn"
+    @focusout="hoverFocus.onFocusOut"
   >
     <PlexNodeBox :node="node" :box="box" :ghost="isGhost">
       <template v-if="$slots.icon" #icon="{ node: drawn }">
@@ -316,7 +136,7 @@ function updateAttendance(event: FocusEvent): void {
       v-if="hung"
       :hung="hung"
       :open="open"
-      @enter="onPartEnter"
+      @enter="(part) => emit('enter', part)"
     />
 
     <!-- Reach out from here to make something. Under the hand or under the
@@ -324,8 +144,8 @@ function updateAttendance(event: FocusEvent): void {
     <PlexNodeHandle
       v-if="isOffering"
       :at="handle"
-      @reach="onHandleReach"
-      @ask="onHandleAsk"
+      @reach="(pointer) => emit('reach', pointer)"
+      @ask="emit('ask')"
     />
   </g>
 </template>

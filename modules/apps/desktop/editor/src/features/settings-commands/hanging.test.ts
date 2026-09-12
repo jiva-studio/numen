@@ -62,7 +62,7 @@ describe('whether a node hangs the parts of its note', () => {
     const held = useHangingSetting(core, words, writer().write)
     await held.start()
 
-    await held.chooses(OFF)
+    await held.choose(OFF)
 
     expect(core.wrote).toStrictEqual([false])
     expect(held.hangs.value).toBe(false)
@@ -73,7 +73,7 @@ describe('whether a node hangs the parts of its note', () => {
     const held = useHangingSetting(core, words, writer().write)
     await held.start()
 
-    await held.chooses(ON)
+    await held.choose(ON)
 
     expect(core.wrote).toStrictEqual([])
   })
@@ -83,7 +83,7 @@ describe('whether a node hangs the parts of its note', () => {
     const held = useHangingSetting(core, words, writer().write)
     await held.start()
 
-    await held.chooses('interfaceScale:1.5')
+    await held.choose('interfaceScale:1.5')
 
     expect(core.wrote).toStrictEqual([])
     expect(held.hangs.value).toBe(true)
@@ -95,7 +95,7 @@ describe('whether a node hangs the parts of its note', () => {
     const held = useHangingSetting(core, words, told.write)
     await held.start()
 
-    await held.chooses(OFF)
+    await held.choose(OFF)
 
     expect(held.hangs.value).toBe(true)
     expect(told.said.at(-1)).toContain(words.unturned)
@@ -130,7 +130,7 @@ describe('how many parts stand under a node', () => {
     const held = useHangingSetting(core, words, writer().write)
     await held.start()
 
-    await held.choosesCount('3')
+    await held.chooseCount('3')
 
     expect(core.wrote).toStrictEqual([false])
     expect(core.counted).toStrictEqual([3])
@@ -142,9 +142,9 @@ describe('how many parts stand under a node', () => {
     const held = useHangingSetting(core, words, writer().write)
     await held.start()
 
-    await held.choosesCount('6')
-    await held.choosesCount('13')
-    await held.choosesCount('on')
+    await held.chooseCount('6')
+    await held.chooseCount('13')
+    await held.chooseCount('on')
 
     expect(core.counted).toStrictEqual([])
     expect(held.parts.value).toBe(6)
@@ -156,7 +156,7 @@ describe('how many parts stand under a node', () => {
     const held = useHangingSetting(core, words, told.write)
     await held.start()
 
-    await held.choosesCount('3')
+    await held.chooseCount('3')
 
     expect(held.parts.value).toBe(6)
     expect(told.said.at(-1)).toContain(words.unturned)
@@ -167,7 +167,7 @@ describe('how many parts stand under a node', () => {
     const held = useHangingSetting(core, words, writer().write)
     await held.start()
 
-    await held.chooses(OFF)
+    await held.choose(OFF)
 
     expect(core.counted).toStrictEqual([undefined])
     expect(held.parts.value).toBe(4)

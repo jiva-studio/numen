@@ -7,7 +7,8 @@
  * only place they are kept.
  */
 import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch, type Ref } from 'vue'
-import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
+import { SplitterGroup, SplitterPanel } from 'reka-ui'
+import { BranchHandle } from './handle'
 import { WorkspacePane } from '../pane'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { orientationAt, type Branch, type Orientation, type TabId } from '../../lib/node'
@@ -84,12 +85,6 @@ onBeforeUnmount(() => {
 const shape = computed(() => props.node.children.map((child) => child.id).join(' '))
 
 /**
- * How far from the line a pointer is caught, in pixels, by a mouse and by a
- * finger. The splitter is told this reach and the handle draws it.
- */
-const reach = { fine: 7, coarse: 15 }
-
-/**
  * Whether a handle is under the pointer, and where it has reached. The splitter
  * moves the panels itself while it is held, and the model is told where it came
  * to rest.
@@ -154,14 +149,7 @@ function setHolding(now: boolean): void {
     @layout="onLayout"
   >
     <template v-for="(child, index) in node.children" :key="child.id">
-      <SplitterResizeHandle
-        v-if="index > 0"
-        class="branch__handle"
-        aria-label="Resize panes"
-        :data-direction="direction"
-        :hit-area-margins="reach"
-        @dragging="setHolding"
-      />
+      <BranchHandle v-if="index > 0" :direction="direction" @hold="setHolding" />
 
       <SplitterPanel
         :id="child.id"
@@ -203,63 +191,6 @@ function setHolding(now: boolean): void {
 <style scoped>
 .branch {
   block-size: 100%;
-}
-
-/* The line between two panels, and the reach around it a pointer is caught by.
-   The reach hangs over both panels and stands above them, so a press on either
-   side of the line is a press on the handle. */
-.branch__handle {
-  --line: var(--numen-stroke);
-  --reach: v-bind('`${reach.fine}px`');
-
-  position: relative;
-  z-index: 1;
-  flex: none;
-  background: var(--numen-rule);
-}
-
-/* The splitter draws the pointer as a double arrow everywhere its reach is
-   caught, and the line under it carries that same arrow. */
-.branch__handle[data-direction='horizontal'] {
-  inline-size: var(--line);
-  cursor: ew-resize;
-}
-
-.branch__handle[data-direction='vertical'] {
-  block-size: var(--line);
-  cursor: ns-resize;
-}
-
-/* A line one pixel thick has no room for a ring around it, so it becomes the
-   ring: the line itself is drawn in the keyboard's colour, and a pixel either
-   side of it carries the same. */
-.branch__handle:focus-visible {
-  outline: none;
-  background: var(--numen-ring);
-  box-shadow: 0 0 0 var(--numen-stroke) var(--numen-ring);
-}
-
-.branch__handle::after {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  inset-inline: calc(var(--reach) * -1);
-}
-
-.branch__handle[data-direction='vertical']::after {
-  inset-inline: 0;
-  inset-block: calc(var(--reach) * -1);
-}
-
-.branch__handle[data-state='drag'] {
-  background: var(--numen-ring);
-}
-
-/* A finger is caught from further out than a pointer. */
-@media (pointer: coarse) {
-  .branch__handle {
-    --reach: v-bind('`${reach.coarse}px`');
-  }
 }
 
 /* While a handle is held, the drag moves the handle and the text under the

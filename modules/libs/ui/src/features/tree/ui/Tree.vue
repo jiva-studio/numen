@@ -7,28 +7,16 @@
  * and which are selected are the caller's to hold: the tree works out what a
  * press with a modifier means and says the selection it came to.
  */
-import { computed, nextTick, shallowRef, useTemplateRef } from 'vue'
-import {
-  flatten,
-  type Row,
-  type RowMarker,
-  type RowId,
-  type ShownRow,
-} from '../lib/row'
-import {
-  everyRow,
-  sameRows,
-  resolveSelection,
-  PLAIN,
-  type Press,
-  type RowSelection,
-} from '../lib/select'
-import { isTreeKey, stepTo } from '../lib/step'
-import { getDraggedRows, dragLabel, type DragLabel } from '../lib/drag'
-import { holderOf, isRefused, landing, type RowLanding } from '../lib/drop'
+import { computed, useTemplateRef } from 'vue'
+import { flatten, markOf, type Row, type RowMarker, type RowId } from '../lib/row'
+import type { RowLanding } from '../lib/drop'
+import { useRowDrag } from '../model/drag'
+import { useTreeGestures } from '../model/gestures'
+import { useDrawnRows } from '../model/rows'
+import { useRowSelection } from '../model/selection'
 import type { Position } from '@/shared/lib/geometry'
 import { browserClock, type Clock } from '@/shared/lib/clock'
-import { DragPreview, usePressDrag } from '@/shared/ui/drag-preview'
+import { DragPreview } from '@/shared/ui/drag-preview'
 import TreeRow from './TreeRow.vue'
 
 // --- Props & Emits ---
@@ -109,233 +97,58 @@ const box = useTemplateRef<HTMLElement>('box')
 
 const shown = computed(() => flatten(props.rows, new Set(props.open)))
 
-/** The rows selected, for asking one row at a time. */
-const picked = computed(() => new Set(props.selected))
+const rows = useDrawnRows(() => shown.value, () => props.selected)
+const { tabbed, setRowElement } = rows
 
-/** The row the keyboard was last on. */
-const here = shallowRef<RowId | null>(null)
+const selection = useRowSelection(
+  () => shown.value,
+  () => props.selected,
+  (chosen) => emit('select', chosen),
+)
+const { picked } = selection
 
-/** The row a reach is measured from, where a plain or joining press last landed. */
-const anchor = shallowRef<RowId | null>(null)
-
-/**
- * The one row the tab key reaches: where the keyboard was left, else the first
- * row of the selection, else the first row of all.
- */
-const tabbed = computed<RowId | null>(() => {
-  const getDrawnRow = (row: RowId | null | undefined) =>
-    row != null && shown.value.some((each) => each.id === row) ? row : null
-  return getDrawnRow(here.value) ?? getDrawnRow(props.selected[0]) ?? shown.value[0]?.id ?? null
-})
-
-/** Whether the press being made has said what the selection is already. */
-const said = shallowRef(false)
-
-const { dragging, at, position, lift } = usePressDrag<readonly RowId[], RowLanding>({
+const drag = useRowDrag({
+  rows: () => props.rows,
+  shown: () => shown.value,
+  measure: () => {
+    const drawn = list.value
+    const over = box.value?.getBoundingClientRect()
+    if (!drawn || !over) return null
+    const first = shown.value[0]
+    const row = first && rows.getRowElement(first.id)?.getBoundingClientRect()
+    return { over, top: drawn.getBoundingClientRect().top, height: row ? row.height : 0 }
+  },
   threshold: () => props.threshold,
   clock: () => props.clock,
-  landingAt: getLandingAt,
-  settle: (rows, found) => {
-    if (found) emit('move', rows, found)
-    emit('drop')
+  counted: () => props.counted,
+  tell: emit,
+})
+const { into, before, lifted, label, at } = drag
+
+const {
+  onContextMenu,
+  onRowContextMenu,
+  onRowFocus,
+  onRowPointerDown,
+  onRowClick,
+  onRowDoubleClick,
+  onRename,
+  onAbandon,
+  onFieldBlur,
+  onKeyDown,
+} = useTreeGestures({
+  shown: () => shown.value,
+  selected: () => props.selected,
+  renaming,
+  rows,
+  selection,
+  drag,
+  menuAt: (row) => {
+    const box = rows.getRowElement(row)?.getBoundingClientRect()
+    return box ? { x: box.left, y: box.bottom } : null
   },
-  began: (rows) => emit('drag', rows),
+  tell: emit,
 })
-
-const into = computed(() => (at.value && 'into' in at.value ? at.value.into : null))
-const before = computed(() => (at.value && 'before' in at.value ? at.value.before : null))
-
-/** The rows a live drag holds, for asking one row at a time. */
-const lifted = computed(() => new Set(position.value ? (dragging.value?.held ?? []) : []))
-
-/** What follows the pointer, and nothing until a press has become a drag. */
-const label = computed<DragLabel | null>(() => {
-  const held = dragging.value
-  const where = position.value
-  if (!held?.moved || !where) return null
-  return dragLabel(shown.value, held.held, where, props.counted)
-})
-
-/** The rows as they are drawn, each under the row it stands for. */
-const drawnRows = new Map<RowId, HTMLElement>()
-
-// --- Handlers ---
-function onContextMenu(event: MouseEvent): void {
-  requestMenu(null, { x: event.clientX, y: event.clientY })
-}
-
-function onRowContextMenu(row: ShownRow, event: MouseEvent): void {
-  requestMenu(row, { x: event.clientX, y: event.clientY })
-}
-
-function onRowFocus(rowId: RowId): void {
-  here.value = rowId
-}
-
-function onRowPointerDown(rowId: RowId, event: PointerEvent): void {
-  if (event.button !== 0) return
-  event.preventDefault()
-  ;(event.currentTarget as HTMLElement).focus()
-
-  const how: Press = { joining: event.ctrlKey || event.metaKey, reaching: event.shiftKey }
-  said.value = how.joining || how.reaching || !picked.value.has(rowId)
-  const taken = said.value
-    ? applySelection(resolveSelection(shown.value, props.selected, anchor.value, rowId, how))
-    : props.selected
-
-  lift(getDraggedRows(taken, rowId), event)
-}
-
-function onRowClick(row: ShownRow): void {
-  const spoken = said.value
-  said.value = false
-  if (dragging.value?.moved || spoken) return
-  applySelection(resolveSelection(shown.value, props.selected, anchor.value, row.id, PLAIN))
-}
-
-function onRowDoubleClick(row: ShownRow): void {
-  activateRow(row)
-}
-
-function onRename(rowId: RowId, name: string): void {
-  renaming.value = null
-  emit('rename', rowId, name)
-  void focusRow(rowId)
-}
-
-function onAbandon(rowId: RowId): void {
-  renaming.value = null
-  void focusRow(rowId)
-}
-
-function onFieldBlur(): void {
-  renaming.value = null
-}
-
-function onKeyDown(event: KeyboardEvent): void {
-  const chorded = event.ctrlKey || event.metaKey
-
-  if (chorded && event.key.toLowerCase() === 'a') {
-    event.preventDefault()
-    applySelection(everyRow(shown.value, anchor.value))
-    return
-  }
-
-  if (event.key === 'Delete' || event.key === 'Backspace') {
-    event.preventDefault()
-    if (props.selected.length > 0) emit('remove', props.selected)
-    return
-  }
-
-  const on = shown.value.find((row) => row.id === tabbed.value)
-  if (!on) return
-
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    activateRow(on)
-    return
-  }
-
-  // The row the keyboard stands on joins the selection, or leaves it.
-  if (event.key === ' ') {
-    event.preventDefault()
-    const press: Press = { joining: true, reaching: false }
-    applySelection(resolveSelection(shown.value, props.selected, anchor.value, on.id, press))
-    return
-  }
-
-  if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
-    event.preventDefault()
-    const elementBox = getRowElement(on.id)?.getBoundingClientRect()
-    if (elementBox) requestMenu(on, { x: elementBox.left, y: elementBox.bottom })
-    return
-  }
-
-  if (!isTreeKey(event.key)) return
-  event.preventDefault()
-
-  const step = stepTo(shown.value, tabbed.value, event.key)
-  if (step.turn?.open) emit('open', step.turn.row)
-  else if (step.turn) emit('close', step.turn.row)
-  if (step.at !== null) {
-    const press: Press = { joining: false, reaching: event.shiftKey }
-    applySelection(resolveSelection(shown.value, props.selected, anchor.value, step.at, press))
-  }
-  void focusRow(step.at)
-}
-
-// --- Helpers ---
-/** What a row is marked with, and nothing where it is marked with nothing. */
-function getMarkOf(row: RowId | null): Record<string, string> {
-  const mark = props.marking
-  const value = mark?.valueFor(row)
-  return mark && value !== null && value !== undefined ? { [mark.attribute]: value } : {}
-}
-
-function setRowElement(row: RowId, element: unknown): void {
-  const drawn = (element as { $el?: unknown } | null)?.$el
-  if (drawn) drawnRows.set(row, drawn as HTMLElement)
-  else drawnRows.delete(row)
-}
-
-function getRowElement(row: RowId): HTMLElement | null {
-  return drawnRows.get(row) ?? null
-}
-
-/** The keyboard onto a row, once the rows it moved among are drawn. */
-async function focusRow(row: RowId | null): Promise<void> {
-  if (row === null) return
-  here.value = row
-  await nextTick()
-  getRowElement(row)?.focus()
-}
-
-function toggleRow(row: ShownRow): void {
-  if (row.open) emit('close', row.id)
-  else emit('open', row.id)
-}
-
-/** A selection a press came to, said, and the anchor put where it names. */
-function applySelection(pressed: RowSelection): readonly RowId[] {
-  anchor.value = pressed.anchor
-  if (!sameRows(pressed.rows, props.selected)) emit('select', pressed.rows)
-  return pressed.rows
-}
-
-function activateRow(row: ShownRow): void {
-  if (row.holds) toggleRow(row)
-  emit('activate', row.id)
-}
-
-/** A menu asked for on a row, which the selection takes in first, or off every row. */
-function requestMenu(row: ShownRow | null, at: Position): void {
-  if (row && !picked.value.has(row.id)) {
-    applySelection(resolveSelection(shown.value, props.selected, anchor.value, row.id, PLAIN))
-  }
-  emit('menu', row?.id ?? null, at)
-}
-
-/**
- * Where the pointer is, asked of the drawing: the rows are one height each.
- */
-function getLandingAt(rows: readonly RowId[], at: Position): RowLanding | null {
-  const drawn = list.value
-  const over = box.value?.getBoundingClientRect()
-  if (!drawn || !over) return null
-
-  // A pointer that has left the tree is taking what it holds somewhere else.
-  const inside =
-    at.x >= over.left && at.x <= over.right && at.y >= over.top && at.y <= over.bottom
-  if (!inside) return null
-
-  const first = shown.value[0]
-  const height =
-    (first && getRowElement(first.id)?.getBoundingClientRect().height) ?? 0
-  const found = landing(shown.value, rows, at.y - drawn.getBoundingClientRect().top, height)
-  if (!found) return null
-
-  return isRefused(props.rows, rows, holderOf(shown.value, found)) ? null : found
-}
 </script>
 
 <template>
@@ -343,7 +156,7 @@ function getLandingAt(rows: readonly RowId[], at: Position): RowLanding | null {
     ref="box"
     class="tree numen min-h-0 bg-surface font-sans text-base text-ink"
     :data-into="at && 'into' in at && at.into === null ? '' : undefined"
-    v-bind="getMarkOf(null)"
+    v-bind="markOf(marking, null)"
     @contextmenu.prevent="onContextMenu"
   >
     <div
@@ -366,7 +179,7 @@ function getLandingAt(rows: readonly RowId[], at: Position): RowLanding | null {
         :before="row.id === before"
         :tabbed="row.id === tabbed"
         :renaming="renaming === row.id"
-        :mark="getMarkOf(row.id)"
+        :mark="markOf(marking, row.id)"
         @focus="onRowFocus(row.id)"
         @pointerdown="onRowPointerDown(row.id, $event)"
         @click="onRowClick(row)"

@@ -48,7 +48,7 @@ export function createNoteTab(
 
   return {
     id,
-    shown: computed(() => notes.shown(id)),
+    note: computed(() => notes.getOpenNote(id)),
     errorMessage: computed(() => notes.getErrorMessage(id)),
     change: computed(() => changes.getChange(notes.where(id))),
     updateBody: (body: string) => notes.setBody(id, body),

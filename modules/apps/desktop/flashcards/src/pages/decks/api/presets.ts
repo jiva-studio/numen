@@ -45,7 +45,7 @@ export interface DeckPresetResult {
 export const UNREAD = 'the settings of this preset could not be read'
 
 /** The preset one deck is scheduled by, or why it could not be read. */
-export const scheduled = async (
+export const readDeckPreset = async (
   presets: PresetsClient,
   vault: string,
   deck: string,

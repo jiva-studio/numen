@@ -103,7 +103,7 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
    * The row chosen, written into the settings. A setting that could not be
    * written is said, and the window goes back to what the settings hold.
    */
-  const chooses = async (item: string): Promise<void> => {
+  const choose = async (item: string): Promise<void> => {
     if (item !== ON && item !== OFF) return
     const was = hangs.value
     const now = item === ON
@@ -122,7 +122,7 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
    * already knows. A setting that could not be written is said, and the window
    * goes back to what the settings hold.
    */
-  const choosesCount = async (item: string): Promise<void> => {
+  const chooseCount = async (item: string): Promise<void> => {
     const now = Number(item)
     const was = parts.value
     const { least, most } = ends.value
@@ -136,5 +136,5 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
     parts.value = was
   }
 
-  return { hangs, parts, ends, start, getHangingGroups, getPartsGroups, chooses, choosesCount }
+  return { hangs, parts, ends, start, getHangingGroups, getPartsGroups, choose, chooseCount }
 }

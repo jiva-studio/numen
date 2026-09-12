@@ -23,7 +23,7 @@ export interface NotesPanelDeps {
    * The panel asked for, or put away. The window can only be showing one thing,
    * so it is the window that holds which, and every panel moves that one thing.
    */
-  readonly shows: (open: boolean) => void
+  readonly showPanel: (open: boolean) => void
   /** The vault the session is on. */
   readonly vault: () => string
   /** The deck the card in front of the person stands in, empty between cards. */
@@ -91,13 +91,13 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     const deck = deps.deck()
     if (!deck) return
     at.value = named
-    deps.shows(true)
+    deps.showPanel(true)
     await fetchNotes(deps.vault(), deck)
   }
 
   /** The panel put away, with what was read in it kept. */
   const closePanel = () => {
-    deps.shows(false)
+    deps.showPanel(false)
   }
 
   /** The note the panel was opened on has been read to, and is not sought again. */
@@ -116,7 +116,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   const endSession = () => {
     clearNotes()
     at.value = ''
-    deps.shows(false)
+    deps.showPanel(false)
   }
 
   return {

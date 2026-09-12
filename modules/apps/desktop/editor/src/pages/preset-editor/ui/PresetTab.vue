@@ -60,15 +60,15 @@ function onRefresh() {
 }
 
 function onSelectGoal(one: string) {
-  props.state.chooses(one as Goal)
+  props.state.chooseGoal(one as Goal)
 }
 
 function onMoveSlider(at: number) {
-  props.state.moves(at)
+  props.state.moveSlider(at)
 }
 
 function onSettleSlider() {
-  props.state.settles()
+  props.state.settle()
 }
 
 // --- Helpers ---

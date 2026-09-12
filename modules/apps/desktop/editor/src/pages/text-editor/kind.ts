@@ -20,19 +20,18 @@ const mark = (state: TextEditorTabState): string | undefined => {
 export function createTextEditorTabKind(
   handle: WindowHandle,
   core: TextEditorTabDeps,
-  reads: () => void,
+  readSettings: () => void,
 ) {
   const kind: TabKind<TextEditorTabState, typeof SETTINGS_FILE> = {
     kind: SETTINGS_FILE,
-    opens: () => {
-      const state = useTextEditor(core, reads)
+    open: () => {
+      const state = useTextEditor(core, readSettings)
       void state.again()
       return state
     },
-    called: () => words.called,
     getTitle: () => words.called,
-    marked: mark,
-    draws: TextEditorTab,
+    getMark: mark,
+    pane: TextEditorTab,
     identity: () => SETTINGS_FILE,
   }
 

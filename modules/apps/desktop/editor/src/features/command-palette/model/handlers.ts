@@ -76,7 +76,7 @@ const carried: Record<string, CommandHandler> = {
     on.runSupport.cannotRun(invocation.id)
     on.says(words.unrunnable, 'error')
   },
-  ask: (invocation, on) => on.goes.asks(`${invocation.path} — `),
+  ask: (invocation, on) => on.goes.ask(`${invocation.path} — `),
   copy: (invocation, on) => on.copies(invocation.path),
   reveal: (invocation, on) => on.goes.reveals(invocation.path),
   preset: (invocation, on) => on.goes.preset(invocation.path),
@@ -175,9 +175,9 @@ const removes = async (invocation: CommandInvocation, destroy: boolean, on: Comm
       refused.push(words.errors[error])
       continue
     }
-    if (tab.held) on.notes.shuts(tab.held)
+    if (tab.held) on.notes.close(tab.held)
     dangling.push(...answer.dangling)
-    if (opening) await on.goes.leaves(path, opening)
+    if (opening) await on.goes.leave(path, opening)
   }
 
   if (refused.length > 0) return on.says(all(...refused), 'error')

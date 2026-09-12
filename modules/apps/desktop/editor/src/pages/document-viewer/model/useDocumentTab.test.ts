@@ -82,10 +82,10 @@ describe('a document tab', () => {
 
   it('is called by the file and not by the folders above it', () => {
     const { kind } = kindOf()
-    expect(kind.called?.(useDocumentTab(read('physics/heat/Boltzmann 1877.pdf')))).toBe(
+    expect(kind.getTitle?.(useDocumentTab(read('physics/heat/Boltzmann 1877.pdf')))).toBe(
       'Boltzmann 1877.pdf',
     )
-    expect(kind.called?.(useDocumentTab(read('Boltzmann.pdf')))).toBe('Boltzmann.pdf')
+    expect(kind.getTitle?.(useDocumentTab(read('Boltzmann.pdf')))).toBe('Boltzmann.pdf')
   })
 
   it('is one tab per document', () => {
@@ -100,7 +100,7 @@ describe('a document tab', () => {
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
     held.setPageHandle(page)
 
-    kind.shown?.(held, 'a tab')
+    kind.onShow?.(held, 'a tab')
     expect(page.measure).toHaveBeenCalledTimes(1)
   })
 
@@ -109,7 +109,7 @@ describe('a document tab', () => {
     const close = vi.fn()
     const held = useDocumentTab(read('physics/Boltzmann.pdf', close))
 
-    expect(kind.shuts?.(held, 'a tab')).toBe(true)
+    expect(kind.onClose?.(held, 'a tab')).toBe(true)
     expect(close).toHaveBeenCalledTimes(1)
   })
 })
@@ -146,7 +146,7 @@ describe('what a document tab holds, as whoever answers for the person is told i
   it('is the file, the page in front of them, and how many pages there are', () => {
     const held = createDocumentTabAt('Ants.epub', 3, 40)
 
-    expect(kindOver(held).attends!(held)).toStrictEqual({
+    expect(kindOver(held).getOpenTab!(held)).toStrictEqual({
       path: 'Ants.epub',
       document: { page: 4, pageCount: 40 },
     })

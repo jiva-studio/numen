@@ -84,8 +84,8 @@ export function useTranscriptTab(read: TranscriptState, asks: MediaTabDeps) {
 export interface Medium<K extends string = string> {
   readonly tab: K
   readonly source: Source
-  readonly draws: Component
-  hands(tabOpeners: FileOpeners, opens: SourceReader): void
+  readonly pane: Component
+  register(tabOpeners: FileOpeners, opens: SourceReader): void
 }
 
 /**
@@ -101,24 +101,16 @@ export function recordingKind<K extends string>(
 ) {
   const kind: TabKind<MediaTabState, K> = {
     kind: as.tab,
-    opens: (path) => useTranscriptTab(opens(path), asks),
-    called: (state) => state.called,
-    draws: as.draws,
+    open: (path) => useTranscriptTab(opens(path), asks),
+    getTitle: (state) => state.called,
+    pane: as.pane,
     identity: (path) => path,
-    shuts: (state) => {
+    onClose: (state) => {
       state.close()
       return true
     },
     over: (state) => ({ file: state.path, source: as.source }),
-    attends: (state) =>
-      ({
-        path: state.path,
-        recording: {
-          transcribedDurationMs: state.transcribedDuration.value,
-          durationMs: state.duration.value,
-        },
-      }) as OpenTab<K>,
-    getAttention: (state) =>
+    getOpenTab: (state) =>
       ({
         path: state.path,
         recording: {
@@ -134,7 +126,7 @@ export function recordingKind<K extends string>(
     const id = await handle.opens(as.tab, path)
     void handle.holds<MediaTabState>(as.tab, id)?.reach(...spans)
   }
-  as.hands(tabOpeners, (path, spans) => void openAt(path, spans))
+  as.register(tabOpeners, (path, spans) => void openAt(path, spans))
 
   /**
    * What the application is doing, as it last said. A tab whose recording is

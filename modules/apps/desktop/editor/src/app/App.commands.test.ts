@@ -347,10 +347,10 @@ describe('a command reached by its own keystroke', () => {
     await settle()
 
     const deck = window.findComponent(DeckTab).props('state') as {
-      shown: { value: { path: string } }
+      note: { value: { path: string } }
     }
-    expect(deck.shown.value.path).toBe('Animals.note')
-    expect(deck.shown.value.path).not.toBe('Animals.md')
+    expect(deck.note.value.path).toBe('Animals.note')
+    expect(deck.note.value.path).not.toBe('Animals.md')
   })
 
   it('says the error and opens nothing where the name is taken already', async () => {
@@ -564,11 +564,11 @@ describe('a command asked for on a node of the plex', () => {
   /** The menu on a node, and an item of it chosen. */
   const chooseOnNode = async (window: Awaited<ReturnType<typeof mountWindow>>, id: string) => {
     const plex = window.findComponent(PlexTab).props('state') as {
-      asks: (one: unknown) => void
-      chose: (id: string) => void
+      openMenu: (one: unknown) => void
+      chooseMenuItem: (id: string) => void
     }
-    plex.asks({ node: nodeInPlex(window), at: { x: 0, y: 0 }, from: null, opening: 'below' })
-    plex.chose(id)
+    plex.openMenu({ node: nodeInPlex(window), at: { x: 0, y: 0 }, from: null, opening: 'below' })
+    plex.chooseMenuItem(id)
     await settle()
   }
 
@@ -760,7 +760,7 @@ describe('a deck or a stencil the file tree asked the vault for', () => {
       openMenu(asked: { path: string | null; at: { x: number; y: number } }): void
       chooseMenuItem(id: string): void
     }
-    maker.breaks()
+    maker.fail()
     tree.openMenu({ path: null, at: { x: 0, y: 0 } })
     tree.chooseMenuItem(stencil ? NEW_STENCIL : NEW_DECK)
     await settle()

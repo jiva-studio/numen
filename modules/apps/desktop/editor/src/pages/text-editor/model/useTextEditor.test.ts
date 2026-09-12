@@ -63,10 +63,10 @@ describe('what is typed over it', () => {
     const { held } = vault()
     await held.again()
 
-    held.types('{}\n')
+    held.type('{}\n')
     expect(held.changed.value).toBe(true)
 
-    held.types(HELD)
+    held.type(HELD)
     expect(held.changed.value).toBe(false)
   })
 
@@ -74,7 +74,7 @@ describe('what is typed over it', () => {
     const { held, wrote } = vault()
     await held.again()
 
-    held.types('{\n  "agent": { "use": "" }\n}\n')
+    held.type('{\n  "agent": { "use": "" }\n}\n')
     await held.keeps()
 
     expect(wrote).toStrictEqual(['{\n  "agent": { "use": "" }\n}\n'])
@@ -86,7 +86,7 @@ describe('what is typed over it', () => {
     const { held, presented } = vault()
     await held.again()
 
-    held.types('{}\n')
+    held.type('{}\n')
     await held.keeps()
 
     expect(presented).toStrictEqual([HELD])
@@ -94,7 +94,7 @@ describe('what is typed over it', () => {
 
   it('is written nowhere before the file has been read', async () => {
     const { held, wrote } = vault()
-    held.types('{}\n')
+    held.type('{}\n')
     await held.keeps()
 
     expect(wrote).toStrictEqual([])
@@ -103,7 +103,7 @@ describe('what is typed over it', () => {
   it('has every setting read again once it is written', async () => {
     const { held, reads } = vault()
     await held.again()
-    held.types('{}\n')
+    held.type('{}\n')
     await held.keeps()
 
     expect(reads).toHaveBeenCalledTimes(1)
@@ -122,7 +122,7 @@ describe('a file the settings cannot be read out of', () => {
   it('is refused, with what is wrong said', async () => {
     const { held } = createRefusingVault()
     await held.again()
-    held.types('{ "agent": ')
+    held.type('{ "agent": ')
     await held.keeps()
 
     expect(held.errorMessage.value).toContain(words.unwritten)
@@ -132,7 +132,7 @@ describe('a file the settings cannot be read out of', () => {
   it('is left in the editor, as it was typed', async () => {
     const { held } = createRefusingVault()
     await held.again()
-    held.types('{ "agent": ')
+    held.type('{ "agent": ')
     await held.keeps()
 
     expect(held.text.value).toBe('{ "agent": ')
@@ -142,7 +142,7 @@ describe('a file the settings cannot be read out of', () => {
   it('has nothing read again', async () => {
     const { held, reads } = createRefusingVault()
     await held.again()
-    held.types('{ "agent": ')
+    held.type('{ "agent": ')
     await held.keeps()
 
     expect(reads).not.toHaveBeenCalled()
@@ -174,7 +174,7 @@ describe('a file that moved past what the tab read', () => {
     const held = useTextEditor(core, reads)
     await held.again()
     stands = MOVED
-    held.types(TYPED)
+    held.type(TYPED)
     await held.keeps()
     return { held, wrote, reads }
   }

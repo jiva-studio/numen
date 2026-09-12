@@ -79,7 +79,7 @@ function onForgetNotice(id: string) {
 
       <template #tab="{ id }">
         <component
-          :is="held.getTab(id)!.kind.draws"
+          :is="held.getTab(id)!.kind.pane"
           v-if="held.getTab(id)"
           :state="held.getTab(id)!.state"
         />

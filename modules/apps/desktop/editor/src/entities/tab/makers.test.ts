@@ -48,9 +48,9 @@ describe('a deck, a stencil or a preset made', () => {
     const vault = maker()
     const made = createFileCreators(vault, fileOpeners({ fileKinds: async () => new Map() }), MAKING, () => {})
 
-    await made.makes('deck', 'zoology', 'Animals')
-    await made.makes('stencil', 'zoology', 'Words', ['Front'])
-    await made.makes('preset', '', 'Slow')
+    await made.createFile('deck', 'zoology', 'Animals')
+    await made.createFile('stencil', 'zoology', 'Words', ['Front'])
+    await made.createFile('preset', '', 'Slow')
 
     expect(vault.asked).toStrictEqual([
       'deck zoology Animals',
@@ -62,7 +62,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('answers where the vault filed it', async () => {
     const made = createFileCreators(maker(), fileOpeners({ fileKinds: async () => new Map() }), MAKING, () => {})
 
-    expect(await made.makes('deck', 'zoology', 'Animals')).toBe('zoology/Animals.md')
+    expect(await made.createFile('deck', 'zoology', 'Animals')).toBe('zoology/Animals.md')
   })
 
   it('is put in front of the person as what it was made as', async () => {

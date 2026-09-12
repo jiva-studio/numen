@@ -126,14 +126,14 @@ const tabAt = (
     errorMessage: ref(''),
     changed: ref(false),
     again: () => void done.push('again'),
-    chooses: (goal) => void done.push(`chooses ${goal}`),
-    moves: (at) => {
+    chooseGoal: (goal) => void done.push(`choose ${goal}`),
+    moveSlider: (at) => {
       place.value = at
-      done.push(`moves ${at}`)
+      done.push(`move ${at}`)
     },
-    settles: () => void done.push('settles'),
-    types: (field, value) => void done.push(`types ${field} ${value}`),
-    shuts: () => {},
+    settle: () => void done.push('settle'),
+    updateSetting: (field, value) => void done.push(`type ${field} ${value}`),
+    close: () => {},
   }
   return { state, done }
 }

@@ -48,7 +48,7 @@ export function createFilesKind({
     {
       createDeck: (title, folder) => cards.createDeck(title, folder),
       createStencil: (title, folder, fields) => cards.createStencil(title, folder, fields),
-      createPreset: (title, folder) => presets.makes(title, folder),
+      createPreset: (title, folder) => presets.createPreset(title, folder),
       createUrl: async (address, folder) => {
         const made = await core.createUrl(address, folder)
         if (made.path) void fetches(made.path)
@@ -81,9 +81,9 @@ export function createFilesKind({
     },
     createFolder: (path) => runInvocation(invocationOf('makeFolder', where(), path), doing(), words),
     createNote: async (folder) => (await editing.making.createUntitled(folder, []))?.path ?? '',
-    createDeck: (folder, name) => made.makes('deck', folder, name),
-    createStencil: (folder, name) => made.makes('stencil', folder, name, [cardWords.newField]),
-    createPreset: (folder, name) => made.makes('preset', folder, name),
+    createDeck: (folder, name) => made.createFile('deck', folder, name),
+    createStencil: (folder, name) => made.createFile('stencil', folder, name, [cardWords.newField]),
+    createPreset: (folder, name) => made.createFile('preset', folder, name),
     importAddress: (folder, address) => made.imports(folder, address),
     showError: (text) => told(text, 'error'),
     canRun: (run) => runs.canRun(run),

@@ -8,7 +8,7 @@
  * pressing it must never reach that.
  */
 import type { Position } from '../../lib/node'
-import { isPress } from './keys'
+import { isPress } from '../../lib/keys'
 
 defineProps<{
   /** Where it sits, in the coordinates of whatever draws it. */

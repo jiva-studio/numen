@@ -32,11 +32,11 @@ export const presets: Presets = {
   scheduling: async (deck) => parseRead(await asking.getDeckPreset({ deck })),
   list: async () =>
     (await asking.listPresets({})).presets.map((one) => ({ path: one.path, title: one.title })),
-  makes: async (title, folder) => {
+  createPreset: async (title, folder) => {
     const answer = await asking.createPreset({ title, path: folder })
     return { path: answer.path, error: errorIn(answer) }
   },
-  schedules: async (deck, preset, seen) => {
+  scheduleDeck: async (deck, preset, seen) => {
     const answer = await asking.scheduleDeck({
       deck,
       preset,

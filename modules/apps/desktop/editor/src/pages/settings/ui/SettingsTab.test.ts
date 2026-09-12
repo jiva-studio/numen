@@ -73,9 +73,9 @@ const createTab = (pinned = false, file: Record<string, unknown> = {}) => {
   const installation: Installation = {
     setting: (path) => at(file, path),
     models: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
-    writes: (said) => void written.push(...said),
+    write: (said) => void written.push(...said),
     file: ref('/numen.json'),
-    opensFile: () => void done.push('opens the file'),
+    openFile: () => void done.push('opens the file'),
     themes: ref([
       { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
       { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
@@ -88,7 +88,7 @@ const createTab = (pinned = false, file: Record<string, unknown> = {}) => {
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
-    chooses: (item) => void done.push(`chooses ${item}`),
+    choose: (item) => void done.push(`choose ${item}`),
     syncing: computed({
       get: () => syncing.value,
       set: (on) => {
@@ -105,10 +105,10 @@ const createTab = (pinned = false, file: Record<string, unknown> = {}) => {
     }),
     parts: ref(6),
     partsBounds: ref({ least: 2, most: 9 }),
-    choosesParts: (count) => void done.push(`parts ${count}`),
+    chooseParts: (count) => void done.push(`parts ${count}`),
     dayStarts: ref('04:00'),
     latestDayStarts: ref('12:00'),
-    choosesDayStarts: (hour) => void done.push(`day starts ${hour}`),
+    chooseDayStarts: (hour) => void done.push(`day starts ${hour}`),
   }
   const tab = mount(SettingsTab, {
     props: { state: { installation } },
@@ -181,7 +181,7 @@ describe('the settings tab', () => {
     const { tab, done } = createTab()
     await openMenu(tab,'settings-theme')
     await chooseItem('sea')
-    expect(done).toStrictEqual(['chooses mine:sea'])
+    expect(done).toStrictEqual(['choose mine:sea'])
   })
 
   it('says why the mode cannot be chosen while the theme worn pins it', () => {

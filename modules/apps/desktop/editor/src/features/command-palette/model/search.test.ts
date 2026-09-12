@@ -147,7 +147,7 @@ describe('answers arriving', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.names[0]?.answers([createNameMatch()])
+    vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
     expect(groupOf(palette.groups.value, 'names')?.items).toHaveLength(1)
@@ -166,11 +166,11 @@ describe('answers arriving', () => {
     await flushPromises()
 
     // The first question answers late, and with something else entirely.
-    vault.names[0]?.answers([createNameMatch({ path: 'notes/stale.md', title: 'Stale' })])
+    vault.names[0]?.answer([createNameMatch({ path: 'notes/stale.md', title: 'Stale' })])
     await flushPromises()
     expect(groupOf(palette.groups.value, 'names')?.items).toHaveLength(0)
 
-    vault.names[1]?.answers([createNameMatch()])
+    vault.names[1]?.answer([createNameMatch()])
     await flushPromises()
     expect(groupOf(palette.groups.value, 'names')?.items?.[0]?.title).toBe('Entropy')
   })
@@ -182,8 +182,8 @@ describe('answers arriving', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.mode('meaning')?.fails('no model is set')
-    vault.names[0]?.answers([createNameMatch()])
+    vault.mode('meaning')?.fail('no model is set')
+    vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
     expect(groupOf(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notAsked)
@@ -197,7 +197,7 @@ describe('answers arriving', () => {
 
     void palette.setTyped('ent')
     await flushPromises()
-    vault.names[0]?.answers([])
+    vault.names[0]?.answer([])
     await flushPromises()
 
     const group = groupOf(palette.groups.value, 'names')
@@ -212,8 +212,8 @@ describe('answers arriving', () => {
 
     void palette.setTyped('ent')
     await flushPromises()
-    vault.mode('meaning')?.answers([])
-    vault.names[0]?.answers([])
+    vault.mode('meaning')?.answer([])
+    vault.names[0]?.answer([])
     await flushPromises()
 
     expect(groupOf(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
@@ -229,7 +229,7 @@ describe('answers arriving', () => {
 
     void palette.setTyped('ent')
     await flushPromises()
-    vault.mode('meaning')?.answers([])
+    vault.mode('meaning')?.answer([])
     await flushPromises()
 
     expect(groupOf(palette.groups.value, 'meaning')?.silence).toBe(WORDS.wordsOnly)
@@ -244,7 +244,7 @@ describe('answers arriving', () => {
     await flushPromises()
     palette.setOpen(false)
 
-    vault.names[0]?.answers([createNameMatch()])
+    vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
     expect(palette.open.value).toBe(false)
@@ -260,11 +260,11 @@ describe('where a thing found takes the person', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.names[0]?.answers([
+    vault.names[0]?.answer([
       createNameMatch(),
       createNameMatch({ path: 'notes/carnot.md', title: 'The Carnot cycle', heading: 'Entropy here', line: 12 }),
     ])
-    vault.mode('words')?.answers([passage()])
+    vault.mode('words')?.answer([passage()])
     await flushPromises()
     return palette
   }
@@ -309,8 +309,8 @@ describe('where a thing found takes the person', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.names[0]?.answers([createNameMatch()])
-    vault.mode('words')?.answers([passage({ line: 12 })])
+    vault.names[0]?.answer([createNameMatch()])
+    vault.mode('words')?.answer([passage({ line: 12 })])
     await flushPromises()
     const item = groupOf(palette.groups.value, 'text')!.items[0]!
 
@@ -335,8 +335,8 @@ describe('what a key reaches, per kind of thing found', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.names[0]?.answers([createNameMatch(), createNameMatch({ heading: 'Entropy here', line: 12 })])
-    vault.mode('words')?.answers([passage()])
+    vault.names[0]?.answer([createNameMatch(), createNameMatch({ heading: 'Entropy here', line: 12 })])
+    vault.mode('words')?.answer([passage()])
     await flushPromises()
 
     const getActions = (group: string, at: number) =>
@@ -357,7 +357,7 @@ describe('a passage from something that is not a note', () => {
     void palette.setTyped('war')
     await flushPromises()
 
-    vault.mode('words')?.answers([
+    vault.mode('words')?.answer([
       passage({
         path: 'library/mahabharata.epub',
         title: '',
@@ -398,7 +398,7 @@ describe('what a row is drawn as', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.names[0]?.answers([
+    vault.names[0]?.answer([
       createNameMatch(),
       createNameMatch({ path: 'decks/words.md', title: 'Words to learn', type: 'deck' }),
       createNameMatch({ path: 'stencils/animal.md', title: 'Animal', type: 'stencil' }),
@@ -421,7 +421,7 @@ describe('what a row is drawn as', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.names[0]?.answers([
+    vault.names[0]?.answer([
       createNameMatch({ path: 'decks/words.md', title: 'Words to learn', heading: 'Entropy', line: 12, type: 'deck' }),
     ])
     await flushPromises()
@@ -436,7 +436,7 @@ describe('what a row is drawn as', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.mode('words')?.answers([
+    vault.mode('words')?.answer([
       passage({ path: 'presets/daily.md', type: 'preset' }),
       passage({
         path: 'library/mahabharata.epub',
@@ -458,7 +458,7 @@ describe('what a row is drawn as', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.mode('words')?.answers([
+    vault.mode('words')?.answer([
       passage({ path: 'notes/heat.md' }),
       passage({ path: 'library/mahabharata.epub', isNote: false, kind: 'book', start: 40_512 }),
       passage({ path: 'talks/730709BG.LON.mp3', isNote: false, kind: 'recording', start: 12 }),
@@ -475,7 +475,7 @@ describe('what a row is drawn as', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.names[0]?.answers([createNameMatch(), createNameMatch({ path: 'decks/words.md', type: 'deck' })])
+    vault.names[0]?.answer([createNameMatch(), createNameMatch({ path: 'decks/words.md', type: 'deck' })])
     await flushPromises()
 
     const items = groupOf(palette.groups.value, 'names')!.items
@@ -497,7 +497,7 @@ describe('a group landing under the keyboard', () => {
     void palette.setTyped('war')
     await flushPromises()
 
-    vault.mode('words')?.answers([passage({ path: 'notes/heat.md' })])
+    vault.mode('words')?.answer([passage({ path: 'notes/heat.md' })])
     await flushPromises()
     const before = groupOf(palette.groups.value, 'text')!.items[0]!.id
 
@@ -507,7 +507,7 @@ describe('a group landing under the keyboard', () => {
     vault.searched
       .filter((one) => one.mode === 'words')
       .at(-1)
-      ?.answer.answers([
+      ?.answer.answer([
         passage({ path: 'notes/fire.md', title: 'Fire' }),
         passage({ path: 'notes/heat.md' }),
       ])

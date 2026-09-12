@@ -67,7 +67,7 @@ export const NO_DECK: BufferDeck = { preamble: '', cards: [], sections: [], tail
 /** Reactive data state of an open deck tab. */
 export interface DeckDataState {
   readonly id: string
-  readonly shown: ComputedRef<OpenNote>
+  readonly note: ComputedRef<OpenNote>
   readonly deck: ComputedRef<BufferDeck>
   readonly drawn: ComputedRef<readonly DeckCard[]>
   readonly sections: ComputedRef<readonly DeckSection[]>

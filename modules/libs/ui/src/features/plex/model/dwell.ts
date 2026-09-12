@@ -4,10 +4,10 @@
  *
  * The opening is drawn frame by frame, off the same clock the plex moves on.
  */
-import { onScopeDispose, ref, watch, type Ref } from 'vue'
+import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { easeOut, lerp, type Size } from '../lib/arrange'
 import { browserClock, type Clock } from './transition'
-import type { PlacedNode } from '../lib/node'
+import { handleIn, type PlacedNode } from '../lib/node'
 
 /** How long a hand stays on a box before it opens, in milliseconds. */
 export const DWELL = 500
@@ -127,4 +127,28 @@ export function useDwell(
   })
 
   return open
+}
+
+/**
+ * One node's box as it is drawn, and where its handle sits in it. What the
+ * handle is made of is all sizes, and so all tokens.
+ *
+ * `on` names what the attention is on, and nothing when it is on none.
+ */
+export function useOpenBox(
+  node: () => PlacedNode,
+  wide: () => WideBox | null,
+  on: () => string | null,
+  delay: () => number,
+  clock: Clock = browserClock,
+) {
+  const open = useDwell(on, delay, clock)
+  const box = computed(() => boxOf(node(), wide(), open.value))
+
+  const handle = computed(() => {
+    const at = handleIn({ ...node(), width: box.value.width })
+    return { x: at.x + box.value.offset, y: at.y }
+  })
+
+  return { open, box, handle }
 }

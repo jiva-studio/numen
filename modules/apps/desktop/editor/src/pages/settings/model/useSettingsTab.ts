@@ -24,7 +24,7 @@ export interface Installation {
    * palette offers it under. The theme, the half of the pair and the two sizes
    * are each named a different way, so none of the four is written by hand.
    */
-  chooses(item: string): void
+  choose(item: string): void
   /** The two switches, which are read and written as the one value. */
   readonly syncing: Ref<boolean>
   readonly hangs: Ref<boolean>
@@ -32,24 +32,24 @@ export interface Installation {
   readonly parts: Readonly<Ref<number>>
   /** How many the vault takes, which it says when it is asked what it holds. */
   readonly partsBounds: Readonly<Ref<Bounds>>
-  choosesParts(count: number): void
+  chooseParts(count: number): void
   /** The hour a day of review begins at, written as `04:00`. */
   readonly dayStarts: Readonly<Ref<string>>
   /** The latest hour the vault takes. One past it is refused. */
   readonly latestDayStarts: Readonly<Ref<string>>
   /** Written once the field settles, not on every hour typed through. */
-  choosesDayStarts(hour: string): void
+  chooseDayStarts(hour: string): void
   /**
    * The rest of the file: what stands at a setting, the models a setting that
    * names one can be set to, and settings written where they stand.
    */
   setting(at: readonly string[]): unknown
   models(at: readonly string[]): readonly Model[]
-  writes(written: readonly SettingEdit[]): void
+  write(written: readonly SettingEdit[]): void
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
   /** That file opened whole, in a tab of its own. */
-  opensFile(): void
+  openFile(): void
 }
 
 /** What the settings tab holds. */

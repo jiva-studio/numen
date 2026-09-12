@@ -73,7 +73,7 @@ export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
    * The row chosen, written into the settings. A setting that could not be
    * written is said, and the window goes back to what the settings hold.
    */
-  const chooses = async (item: string): Promise<void> => {
+  const choose = async (item: string): Promise<void> => {
     if (item !== ON && item !== OFF) return
     const was = kept.value
     const now = item === ON
@@ -87,5 +87,5 @@ export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
     kept.value = was
   }
 
-  return { kept, start, getSyncingGroups, chooses }
+  return { kept, start, getSyncingGroups, choose }
 }

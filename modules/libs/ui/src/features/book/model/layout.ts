@@ -7,15 +7,14 @@
  * two elements, what it was told, and the one measurement this makes of the
  * browser, and answers for nothing here.
  */
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
 import { useViewport } from '@/shared/lib/viewport'
 import { onNextFrame } from '@/shared/lib/clock'
-import { ELSEWHERE, HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
-import { marksIn, offsetAt, rangesOver, runsIn, type Run } from '../lib/runs'
+import { useBookMarks } from './marks'
 import type { BookLink } from '../lib/link'
-import { GAP, LARGEST, SMALLEST, columnHeight, clamp, columnWidth, columnsIn, findSpreadAt, getSpreadStart, inFront, leftInDocument, pagesOf, spreads, type Flow, type Mark } from '../lib/spread'
+import { GAP, LARGEST, SMALLEST, columnHeight, clamp, columnWidth, columnsIn, findSpreadAt, getSpreadStart, inFront, leftInDocument, pagesOf, spreads, type Flow } from '../lib/spread'
 import { turnTo, type PageTurn } from '../lib/turn'
 import type { SettledBookProps } from '../lib/props'
 
@@ -44,11 +43,7 @@ export function useBookLayout(
   /** Which spread is in front, counted from the first. */
   const standing = ref(0)
 
-  /** Where each run of the text stands. */
-  const marks = shallowRef<readonly Mark[]>([])
-
-  /** Each run of the text, in the order the document sets them. */
-  let runs: readonly Run[] = []
+  const { marks, gather, placeAt, markRuns } = useBookMarks(paper, props, edgeOf)
 
   /**
    * Whether the reading area has been measured. A book is turned and never
@@ -99,18 +94,6 @@ export function useBookLayout(
     return Number.isFinite(said) ? said : 0
   }
 
-  /** The runs of the drawn document, and where the columns put each of them. */
-  const gather = () => {
-    const text = paper.value
-    if (!text) return
-
-    // Where a run stands is read against the columns it stands in and not against
-    // the area they are carried across: a turn under way carries both, and the
-    // one measured against the other is where the run will come to rest.
-    runs = runsIn(text)
-    marks.value = marksIn(runs, edgeOf(text))
-  }
-
   /**
    * The spread put against the near edge of the reading area. The columns are
    * carried there rather than scrolled to: a scroll stops at the end of what it
@@ -150,12 +133,6 @@ export function useBookLayout(
   /** What the person is reading now, to be kept in front while the text is set again. */
   const getKeptOffset = () => inFront(marks.value, flow.value, standing.value) ?? props.at
 
-  /** The offset a place named inside the drawn document stands at. */
-  const placeAt = (fragment: string): number | undefined => {
-    const text = paper.value
-    return text ? offsetAt(text, runs, fragment) : undefined
-  }
-
   /**
    * The text set in columns again, with one offset kept in front. The columns are
    * measured after the browser has laid them out, and only an area that overflows
@@ -191,12 +168,6 @@ export function useBookLayout(
     if (to.offset !== undefined) moved(to.offset)
   }
 
-  /** The runs asked about marked where they stand, and the rest more faintly. */
-  const markRuns = () => {
-    highlight(HIGHLIGHT, props, rangesOver(runs, props.highlights))
-    highlight(ELSEWHERE, props, rangesOver(runs, props.elsewhere))
-  }
-
   // A reading area of another size, or a text of another size, is another set of
   // columns.
   watch([() => viewport.value.width, () => viewport.value.height, textSize], () => {
@@ -214,8 +185,6 @@ export function useBookLayout(
     },
   )
 
-  watch([() => props.highlights, () => props.elsewhere], markRuns)
-
   // An offset asked for from outside is turned to. One reached by the hand is
   // already in front.
   watch(
@@ -232,10 +201,6 @@ export function useBookLayout(
     // The columns are counted over the type the book is set in, which arrives
     // after the markup does.
     void document.fonts?.ready.then(() => settle(getKeptOffset()))
-  })
-
-  onBeforeUnmount(() => {
-    unhighlight(props)
   })
 
   return {

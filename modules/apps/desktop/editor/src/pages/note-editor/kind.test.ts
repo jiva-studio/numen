@@ -57,7 +57,7 @@ const notes = (states: Record<string, State> = {}) => {
     },
     all: () => open.value,
     has: (id: string) => open.value.includes(id),
-    shown: (id: string) => ({
+    getOpenNote: (id: string) => ({
       path: where(id),
       body: '',
       state: states[where(id)] ?? 'clean',
@@ -282,7 +282,7 @@ describe('a note that was renamed', () => {
     one.noted.setTitle('Renamed.md', 'Renamed')
 
     expect(one.noted.getTitle('Renamed.md')).toBe('Renamed')
-    expect(one.noted.kind.called?.(one.noted.createNoteTabState(one.idOf('Renamed.md')))).toBe('Renamed')
+    expect(one.noted.kind.getTitle?.(one.noted.createNoteTabState(one.idOf('Renamed.md')))).toBe('Renamed')
   })
 
   it('leaves the name it had free, so a note made under it opens a tab of its own', async () => {
@@ -315,7 +315,7 @@ describe('a note that was renamed', () => {
 
     expect(one.noted.kept.holding('Renamed.md')).toBe(id)
     expect(one.noted.kept.holding('Note.md')).toBeNull()
-    expect(one.noted.createNoteTabState(id ?? '').shown.value.path).toBe('Renamed.md')
+    expect(one.noted.createNoteTabState(id ?? '').note.value.path).toBe('Renamed.md')
   })
 
   it('is called by the file it now stands at while nothing has named it', async () => {
@@ -383,7 +383,7 @@ describe('the word a note tab carries', () => {
     one.noted.openTab('Note.md')
     one.noted.openTab('Other.md')
 
-    const getMark = (path: string) => one.noted.kind.marked?.(one.noted.createNoteTabState(path))
+    const getMark = (path: string) => one.noted.kind.getMark?.(one.noted.createNoteTabState(path))
 
     expect(getMark('Note.md')).toBe('unsaved')
     expect(getMark('Other.md')).toBeUndefined()
@@ -395,7 +395,7 @@ describe('the window going', () => {
     const one = window()
     const state = one.noted.openTab('Note.md')
 
-    one.noted.kind.gone?.(state, 'Note.md')
+    one.noted.kind.onDestroy?.(state, 'Note.md')
 
     expect(one.shut).toEqual([])
     expect(one.drawings.shut).toEqual([])
@@ -483,7 +483,7 @@ describe('what a note is called under the identity it opened under', () => {
     one.moves('Note.md', 'Moved.md')
     await nextTick()
 
-    expect(one.noted.kept.called(id)).toBe('A note')
+    expect(one.noted.kept.getTitle(id)).toBe('A note')
   })
 
   it('is the file it stands at while nothing has named it', async () => {
@@ -491,7 +491,7 @@ describe('what a note is called under the identity it opened under', () => {
     one.openNote('Note.md')
     await nextTick()
 
-    expect(one.noted.kept.called(one.idOf('Note.md'))).toBe('Note.md')
+    expect(one.noted.kept.getTitle(one.idOf('Note.md'))).toBe('Note.md')
   })
 })
 
@@ -528,7 +528,6 @@ describe('what a note tab holds, as whoever answers for the person is told it', 
     one.openNote('Note.md', 'A note')
     await nextTick()
 
-    expect(one.noted.kind.attends!(stateOf(one))).toStrictEqual({ path: 'Note.md' })
-    expect(one.noted.kind.getAttention!(stateOf(one))).toStrictEqual({ path: 'Note.md' })
+    expect(one.noted.kind.getOpenTab!(stateOf(one))).toStrictEqual({ path: 'Note.md' })
   })
 })

@@ -13,7 +13,7 @@ const props = defineProps<{ state: NoteTabState }>()
 
 // --- State ---
 watch(
-  () => props.state.shown.value.body,
+  () => props.state.note.value.body,
   (body, was) => {
     if (!was && body) props.state.measure()
   },
@@ -51,7 +51,7 @@ function onOpen(url: string) {
   <div class="note">
     <FileConflictPrompt
       :errorMessage="props.state.errorMessage.value"
-      :conflict="conflictIn(props.state.shown.value.state)"
+      :conflict="conflictIn(props.state.note.value.state)"
       :words="words"
       @keep="onKeep"
       @take="onTake"
@@ -59,7 +59,7 @@ function onOpen(url: string) {
 
     <Editor
       :ref="onSetEditor"
-      :model-value="props.state.shown.value.body"
+      :model-value="props.state.note.value.body"
       :change="props.state.change.value"
       class="note__text"
       @update:model-value="onUpdateModelValue"

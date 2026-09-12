@@ -79,8 +79,8 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     }),
     scheduling: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
-    makes: async () => ({ path: '', error: null }),
-    schedules: async () => ({ error: null, changed: false, at: '' }),
+    createPreset: async () => ({ path: '', error: null }),
+    scheduleDeck: async () => ({ error: null, changed: false, at: '' }),
     write: async (_path, put) => {
       written.push(put)
       return { error: null, changed: false, at: 'two' }
@@ -92,7 +92,7 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
   const handle = { closes: () => {} } as unknown as WindowHandle
   const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
   const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => DAY)
-  const state = await kind.kind.opens('Sanskrit.md')
+  const state = await kind.kind.open('Sanskrit.md')
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
   return { state, written }
 }
@@ -112,7 +112,7 @@ describe('a goal of a date', () => {
     const { state } = await openPresetTab({ goal: 'date', byDate: BY }, answered)
     expect(state.place.value).toBe(answered.now.at)
 
-    state.types('byDate', BY)
+    state.updateSetting('byDate', BY)
 
     expect(state.place.value).toBe(answered.now.at)
   })
@@ -120,7 +120,7 @@ describe('a goal of a date', () => {
   it('opens on a day counted from the review day where the file names none', async () => {
     const { state, written } = await openPresetTab({ goal: 'minutes', byDate: '' })
 
-    state.chooses('date')
+    state.chooseGoal('date')
     for (let i = 0; i < 10; i += 1) await Promise.resolve()
 
     expect(state.settings.value.byDate).toBe('2026-10-04')

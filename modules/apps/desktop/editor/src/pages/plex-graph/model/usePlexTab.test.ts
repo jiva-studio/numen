@@ -107,7 +107,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
   /** Every question the vault was asked about what the notes hold. */
   const insides: (readonly string[])[] = []
   const deps: PlexTabDeps = {
-    makes: vault.editor,
+    editor: vault.editor,
     ready: ref(true),
     hangs,
     parts: ref(6),
@@ -162,7 +162,7 @@ describe('a note made from a node', () => {
   it('stands the plex on the node it was made from', async () => {
     const one = tab('Root.md', ['Child.md'])
 
-    await one.state.made(one.node('Child.md'), 'child')
+    await one.state.createNode(one.node('Child.md'), 'child')
 
     expect(one.made).toEqual([['Child.md', 'child']])
     expect(one.went).toEqual(['Child.md'])
@@ -171,7 +171,7 @@ describe('a note made from a node', () => {
   it('leaves the plex where it is when that node is the focus', async () => {
     const one = tab('Root.md')
 
-    await one.state.made(one.node('Root.md'), 'child')
+    await one.state.createNode(one.node('Root.md'), 'child')
 
     expect(one.went).toEqual(['Root.md'])
     expect(one.state.view.here.value).toBe('Root.md')
@@ -180,7 +180,7 @@ describe('a note made from a node', () => {
   it('travels nowhere when the vault made nothing', async () => {
     const one = tab('Root.md', ['Child.md'], false)
 
-    await one.state.made(one.node('Child.md'), 'parent')
+    await one.state.createNode(one.node('Child.md'), 'parent')
 
     expect(one.went).toEqual([])
   })
@@ -190,7 +190,7 @@ describe('two notes a line was drawn between', () => {
   it('stands the plex on the note the line was drawn from', async () => {
     const one = tab('Root.md', ['Child.md', 'Other.md'])
 
-    await one.state.joined(one.node('Child.md'), one.node('Other.md'), 'jump')
+    await one.state.joinNodes(one.node('Child.md'), one.node('Other.md'), 'jump')
 
     expect(one.joined).toEqual([['Child.md', 'Other.md', 'jump']])
     expect(one.went).toEqual(['Child.md'])
@@ -199,7 +199,7 @@ describe('two notes a line was drawn between', () => {
   it('travels nowhere when nothing was written', async () => {
     const one = tab('Root.md', ['Child.md'], false)
 
-    await one.state.joined(one.node('Child.md'), one.node('Root.md'), 'jump')
+    await one.state.joinNodes(one.node('Child.md'), one.node('Root.md'), 'jump')
 
     expect(one.went).toEqual([])
   })
@@ -214,9 +214,9 @@ describe('the menu on a node', () => {
 
   it('hands the command the note it was asked for on, called what the picture calls it', () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.asks(createMenuRequest(one.node('Child.md')))
+    one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
-    one.state.chose('read')
+    one.state.chooseMenuItem('read')
 
     expect(one.ran).toEqual([['read', 'Child.md', 'Child']])
     expect(one.state.menu.value).toBeNull()
@@ -225,13 +225,13 @@ describe('the menu on a node', () => {
   it('hands over every command it offers, and nothing it does not', () => {
     const one = tab('Root.md', ['Child.md'])
     for (const item of ITEMS) {
-      one.state.asks(createMenuRequest(one.node('Child.md')))
-      one.state.chose(item.id)
+      one.state.openMenu(createMenuRequest(one.node('Child.md')))
+      one.state.chooseMenuItem(item.id)
     }
-    one.state.asks(createMenuRequest(one.node('Child.md')))
-    one.state.chose('constructor')
-    one.state.asks(createMenuRequest(one.node('Child.md')))
-    one.state.chose('destroy')
+    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+    one.state.chooseMenuItem('constructor')
+    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+    one.state.chooseMenuItem('destroy')
 
     expect(one.ran.map(([id]) => id)).toStrictEqual(ITEMS.map((item) => item.id))
   })
@@ -239,14 +239,14 @@ describe('the menu on a node', () => {
   it('does nothing when it stands on nothing', () => {
     const one = tab('Root.md')
 
-    one.state.chose('read')
+    one.state.chooseMenuItem('read')
 
     expect(one.ran).toEqual([])
   })
 
   it('goes when the picture under it does', () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.asks(createMenuRequest(one.node('Child.md')))
+    one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
     one.state.dismiss()
 
@@ -269,7 +269,7 @@ describe('a plex drawing nothing', () => {
       close: () => {},
     }
     return usePlexTab(view as unknown as PlexView, {
-      makes: createVault().editor,
+      editor: createVault().editor,
       ready: ref(true),
       hangs: ref(true),
       parts: ref(6),
@@ -309,9 +309,9 @@ describe('the menu off every node', () => {
 
   it('makes a note, and the plex stands on it', async () => {
     const one = tab('Root.md')
-    one.state.asks(asked)
+    one.state.openMenu(asked)
 
-    one.state.chose(NEW_NOTE)
+    one.state.chooseMenuItem(NEW_NOTE)
     await settle()
 
     expect(one.wrote).toStrictEqual(['Untitled note.md'])
@@ -322,9 +322,9 @@ describe('the menu off every node', () => {
   it('stands where it stood where the vault made none', async () => {
     const one = tab('Root.md')
     one.writes.value = ''
-    one.state.asks(asked)
+    one.state.openMenu(asked)
 
-    one.state.chose(NEW_NOTE)
+    one.state.chooseMenuItem(NEW_NOTE)
     await settle()
 
     expect(one.went).toStrictEqual([])
@@ -332,9 +332,9 @@ describe('the menu off every node', () => {
 
   it('makes nothing of a command over a note, there being no note it is over', async () => {
     const one = tab('Root.md')
-    one.state.asks(asked)
+    one.state.openMenu(asked)
 
-    one.state.chose('read')
+    one.state.chooseMenuItem('read')
     await settle()
 
     expect(one.wrote).toStrictEqual([])
@@ -344,15 +344,15 @@ describe('the menu off every node', () => {
 
 describe('what a note in the picture is called', () => {
   it('is the title the vault gave the focus', () => {
-    expect(tab('Root.md').state.nameOf('Root.md')).toBe('Root')
+    expect(tab('Root.md').state.getName('Root.md')).toBe('Root')
   })
 
   it('is the title of a note around it', () => {
-    expect(tab('Root.md', ['Deep/Child.md']).state.nameOf('Deep/Child.md')).toBe('Deep/Child')
+    expect(tab('Root.md', ['Deep/Child.md']).state.getName('Deep/Child.md')).toBe('Deep/Child')
   })
 
   it('is the file it is filed under, for a note the picture does not name', () => {
-    expect(tab('Root.md').state.nameOf('Deep/Elsewhere.md')).toBe('Elsewhere')
+    expect(tab('Root.md').state.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
   })
 })
 
@@ -360,7 +360,7 @@ describe('the picture', () => {
   it('is nothing while the window has nothing true to draw', () => {
     const plex = viewOn('Root.md')
     const state = usePlexTab(plex.view, {
-      makes: createVault().editor,
+      editor: createVault().editor,
       ready: ref(false),
       hangs: ref(true),
       parts: ref(6),
@@ -386,7 +386,7 @@ describe('notes dragged in and let go over the picture', () => {
   it('writes the link into the note the plex stands on, naming the dragged one second', async () => {
     const one = tab('Root.md', ['Child.md'])
 
-    await one.state.brought(['physics/Entropy.md'], 'child')
+    await one.state.dropNodes(['physics/Entropy.md'], 'child')
 
     expect(one.joined).toEqual([['Root.md', 'physics/Entropy.md', 'child']])
     expect(one.went).toEqual(['Root.md'])
@@ -395,7 +395,7 @@ describe('notes dragged in and let go over the picture', () => {
   it('writes one for each of them, to the one note in the one seat', async () => {
     const one = tab('Root.md')
 
-    await one.state.brought(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
+    await one.state.dropNodes(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
 
     expect(one.joined).toEqual([
       ['Root.md', 'Entropy.md', 'child'],
@@ -408,8 +408,8 @@ describe('notes dragged in and let go over the picture', () => {
   it('takes the seat the drag named, whichever it was', async () => {
     const one = tab('Root.md')
 
-    await one.state.brought(['Entropy.md'], 'parent')
-    await one.state.brought(['Heat.md'], 'jump')
+    await one.state.dropNodes(['Entropy.md'], 'parent')
+    await one.state.dropNodes(['Heat.md'], 'jump')
 
     expect(one.joined).toEqual([
       ['Root.md', 'Entropy.md', 'parent'],
@@ -421,7 +421,7 @@ describe('notes dragged in and let go over the picture', () => {
     const one = tab('Root.md')
     one.refusedPaths.add('Kelvin.md')
 
-    await one.state.brought(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
+    await one.state.dropNodes(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
 
     expect(one.joined).toEqual([
       ['Root.md', 'Entropy.md', 'child'],
@@ -435,7 +435,7 @@ describe('notes dragged in and let go over the picture', () => {
   it('says every one of them where the vault would write none, and travels nowhere', async () => {
     const one = tab('Root.md', [], false)
 
-    await one.state.brought(['Entropy.md', 'Heat.md'], 'child')
+    await one.state.dropNodes(['Entropy.md', 'Heat.md'], 'child')
 
     expect(one.said).toEqual([`${words.refused} Entropy, Heat`])
     expect(one.went).toEqual([])
@@ -444,7 +444,7 @@ describe('notes dragged in and let go over the picture', () => {
   it('joins nothing where the plex has nowhere to stand', async () => {
     const one = tab('')
 
-    await one.state.brought(['Entropy.md'], 'child')
+    await one.state.dropNodes(['Entropy.md'], 'child')
 
     expect(one.joined).toEqual([])
     expect(one.said).toEqual([])
@@ -453,7 +453,7 @@ describe('notes dragged in and let go over the picture', () => {
   it('leaves the note the plex stands on out, and joins the rest', async () => {
     const one = tab('Root.md')
 
-    await one.state.brought(['Root.md', 'Entropy.md'], 'child')
+    await one.state.dropNodes(['Root.md', 'Entropy.md'], 'child')
 
     expect(one.joined).toEqual([['Root.md', 'Entropy.md', 'child']])
     expect(one.said).toEqual([])
@@ -491,7 +491,7 @@ describe('the parts a node hangs', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4), heading('Cold', 9, 2)]]])
 
-    await one.state.reads()
+    await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
@@ -503,7 +503,7 @@ describe('the parts a node hangs', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
-    await one.state.reads()
+    await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Root.md'))).toStrictEqual([])
   })
@@ -512,7 +512,7 @@ describe('the parts a node hangs', () => {
     const one = tab('Root.md')
     one.divides.value = new Map([['Root.md', [heading('Heat', 12)]]])
 
-    await one.state.reads()
+    await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Root.md')).map((part) => part.id)).toStrictEqual(['12'])
   })
@@ -535,7 +535,7 @@ describe('the parts a node hangs', () => {
     const answers: ((held: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
     const one = tab('Root.md')
     const plex = usePlexTab(one.state.view, {
-      makes: createVault().editor,
+      editor: createVault().editor,
       ready: ref(true),
       hangs: ref(true),
       parts: ref(6),
@@ -554,8 +554,8 @@ describe('the parts a node hangs', () => {
 
     // The picture asks once as it is built, and that answer is left pending.
     const asked = answers.length
-    void plex.reads()
-    void plex.reads()
+    void plex.readParts()
+    void plex.readParts()
     answers[asked + 1]?.(new Map([['Root.md', [heading('Fresh', 2)]]]))
     answers[asked]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
     await settle()
@@ -566,7 +566,7 @@ describe('the parts a node hangs', () => {
   it('are none for every node while the setting is off', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
-    await one.state.reads()
+    await one.state.readParts()
     one.hangs.value = false
 
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([])
@@ -578,7 +578,7 @@ describe('the parts a node hangs', () => {
     one.hangs.value = false
     one.insides.length = 0
 
-    await one.state.reads()
+    await one.state.readParts()
 
     expect(one.insides).toStrictEqual([])
   })
@@ -588,7 +588,7 @@ describe('the parts a node hangs', () => {
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.insides.length = 0
 
-    await one.state.reads()
+    await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Animals.md'))).toStrictEqual([])
     expect(one.insides).toStrictEqual([['Root.md']])
@@ -599,7 +599,7 @@ describe('the parts a node hangs', () => {
     one.divides.value = new Map([['Animal.md', [heading('Front', 4)]]])
     one.insides.length = 0
 
-    await one.state.reads()
+    await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Animal.md'))).toStrictEqual([])
     expect(one.insides).toStrictEqual([['Root.md']])
@@ -611,7 +611,7 @@ describe('the parts a node hangs', () => {
     })
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
-    await one.state.reads()
+    await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
@@ -623,7 +623,7 @@ describe('the parts a node hangs', () => {
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.insides.length = 0
 
-    await one.state.reads()
+    await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Animals.md'))).toStrictEqual([])
     expect(one.insides).toStrictEqual([])
@@ -651,7 +651,7 @@ describe('a part of a node chosen', () => {
   it('opens the note it stands in, and puts the keyboard on its line', () => {
     const one = tab('Root.md')
 
-    one.state.entered(one.node('Root.md'), '12')
+    one.state.openPart(one.node('Root.md'), '12')
 
     expect(one.opened).toStrictEqual([['Root.md', 'Root', 'here']])
     expect(one.entered).toStrictEqual([['Root.md', 12]])
@@ -660,7 +660,7 @@ describe('a part of a node chosen', () => {
   it('opens the note the node stands for, the focus being another one', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.entered(one.node('Child.md'), '7')
+    one.state.openPart(one.node('Child.md'), '7')
 
     expect(one.opened).toStrictEqual([['Child.md', 'Child', 'here']])
     expect(one.entered).toStrictEqual([['Child.md', 7]])
@@ -669,7 +669,7 @@ describe('a part of a node chosen', () => {
   it('stands the plex where it stood', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.entered(one.node('Child.md'), '7')
+    one.state.openPart(one.node('Child.md'), '7')
 
     expect(one.went).toStrictEqual([])
     expect(one.state.view.here.value).toBe('Root.md')
@@ -678,7 +678,7 @@ describe('a part of a node chosen', () => {
   it('opens nothing for a part naming no line, which is the one standing for the rest', () => {
     const one = tab('Root.md')
 
-    one.state.entered(one.node('Root.md'), '')
+    one.state.openPart(one.node('Root.md'), '')
 
     expect(one.opened).toStrictEqual([])
     expect(one.entered).toStrictEqual([])
@@ -730,7 +730,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     },
   })
   const state = usePlexTab(view, {
-    makes: vault.editor,
+    editor: vault.editor,
     ready: ref(true),
     hangs: ref(true),
     parts: ref(6),
@@ -915,7 +915,7 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    one.state.opens(one.node('Heat'), 'beside')
+    one.state.openNode(one.node('Heat'), 'beside')
 
     expect(one.opened).toStrictEqual([['physics/Heat.md', 'Heat', 'beside']])
   })
@@ -924,8 +924,8 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    one.state.asks({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
-    one.state.chose('read')
+    one.state.openMenu({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
+    one.state.chooseMenuItem('read')
 
     expect(one.ran).toStrictEqual([['read', 'physics/Heat.md', 'Heat']])
   })
@@ -934,7 +934,7 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    await one.state.made(one.node('Heat'), 'child')
+    await one.state.createNode(one.node('Heat'), 'child')
 
     expect(one.made).toStrictEqual([['physics/Heat.md', 'child']])
   })
@@ -943,7 +943,7 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    await one.state.joined(one.node('Heat'), one.node('Root'), 'jump')
+    await one.state.joinNodes(one.node('Heat'), one.node('Root'), 'jump')
 
     expect(one.joined).toStrictEqual([['physics/Heat.md', 'Root.md', 'jump']])
   })
@@ -955,11 +955,11 @@ describe('a gesture the plex reports', () => {
 
     for (const node of ['Heat.md', 'Root.md', 'nothing']) {
       one.state.activate(node)
-      one.state.opens(node, 'here')
-      one.state.asks({ node, at: { x: 1, y: 2 }, opening: 'pointer' })
-      one.state.chose('read')
-      await one.state.made(node, 'child')
-      await one.state.joined(node, one.node('Root'), 'jump')
+      one.state.openNode(node, 'here')
+      one.state.openMenu({ node, at: { x: 1, y: 2 }, opening: 'pointer' })
+      one.state.chooseMenuItem('read')
+      await one.state.createNode(node, 'child')
+      await one.state.joinNodes(node, one.node('Root'), 'jump')
     }
 
     expect(one.asked).toHaveLength(asked)
@@ -1022,9 +1022,9 @@ describe('a plex that travelled', () => {
 /** A kind that is not a plex, for the person to be in a tab of. */
 const other: AnyTabKind = {
   kind: 'other',
-  opens: () => ({}),
-  called: () => 'Other',
-  draws: {},
+  open: () => ({}),
+  getTitle: () => 'Other',
+  pane: {},
 }
 
 /**
@@ -1050,7 +1050,7 @@ const window = (opening = 'Opening.md') => {
   }
   const held = useWindowTabs()
   const plexes = plexKind(held.handle, createView, {
-    makes: createVault().editor,
+    editor: createVault().editor,
     ready: ref(true),
     hangs,
     parts: ref(6),
@@ -1383,7 +1383,7 @@ describe('what a plex tab holds, as whoever answers for the person is told it', 
     const one = window()
     const { state } = await one.openTab('Root.md')
 
-    expect(one.kind.attends!(state)).toStrictEqual({ path: 'Root.md' })
+    expect(one.kind.getOpenTab!(state)).toStrictEqual({ path: 'Root.md' })
   })
 })
 
@@ -1392,14 +1392,14 @@ describe('what a plex tab is called', () => {
     const one = window()
     const { state } = await one.openTab('Root.md')
 
-    expect(one.kind.called?.(state)).toBe('Root')
+    expect(one.kind.getTitle?.(state)).toBe('Root')
   })
 
   it('is the word for a plex while it stands nowhere', async () => {
     const one = window('')
     const { state } = await one.openTab()
 
-    expect(one.kind.called?.(state)).toBe('Plex')
+    expect(one.kind.getTitle?.(state)).toBe('Plex')
   })
 })
 

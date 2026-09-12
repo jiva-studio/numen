@@ -174,7 +174,7 @@ const mapToFrame = (at: Position): Position => {
  * own. The places are told to the window the story is framed in, which is where
  * the pointer is driven.
  */
-const dragged = async (from: Position, to: Position): Promise<string | null> => {
+const dragAcross = async (from: Position, to: Position): Promise<string | null> => {
   const context = await import('vitest/browser').catch(() => null)
   if (!context) return null
 
@@ -202,7 +202,7 @@ export const Selecting: Story = {
   ]),
   play: async ({ canvasElement }) => {
     const turns = canvasElement.querySelectorAll('.thread__turn')
-    const taken = await dragged(wordAt(turns[1]!, 'damped'), wordAt(turns[3]!, 'vault'))
+    const taken = await dragAcross(wordAt(turns[1]!, 'damped'), wordAt(turns[3]!, 'vault'))
     if (taken === null) return
 
     await expect(taken).toContain('the driven one')

@@ -30,7 +30,7 @@ export interface PlexEditor {
 
 /** Dependencies for plex tab state. */
 export interface PlexTabDeps {
-  readonly makes: PlexEditor
+  readonly editor: PlexEditor
   readonly ready: Readonly<Ref<boolean>>
   readonly hangs: Readonly<Ref<boolean>>
   readonly parts: Readonly<Ref<number>>
@@ -59,36 +59,25 @@ export interface PlexMenuState {
   openMenu(asked: MenuRequest): void
   dismiss(): void
   chooseMenuItem(id: string): void
-  asks(asked: MenuRequest): void
-  chose(id: string): void
 }
 
 export interface PlexPartsState {
   readonly mostParts: Readonly<Ref<number>>
   typeOf(node: string): NoteType
   partsOf(node: string): readonly PlexPart[]
-  reads(): Promise<void>
   readParts(): Promise<void>
   openPart(node: string, part: string): void
-  entered(node: string, part: string): void
 }
 
 export interface PlexNodeActions {
   activate(node: string): void
   createNode(from: string, seat: PlexRelatedSeat): Promise<void>
-  made(from: string, seat: PlexRelatedSeat): Promise<void>
   joinNodes(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
-  joined(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
   dropNodes(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
-  brought(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
   openNode(node: string, showing?: PlexDestination): void
-  opens(node: string, showing?: PlexDestination): void
   createNote(): Promise<void>
-  writes(): Promise<void>
   followMoves(renamed: readonly PathRename[]): void
-  follows(renamed: readonly PathRename[]): void
   getName(path: string): string
-  nameOf(path: string): string
 }
 
 /** What one plex tab holds. */

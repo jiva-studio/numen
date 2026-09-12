@@ -100,13 +100,13 @@ const createPresetTab = (args: Knobs): PresetTabState => {
     errorMessage: ref(''),
     changed: ref(false),
     again: fn(),
-    chooses: fn(),
-    moves: (at: number) => {
+    chooseGoal: fn(),
+    moveSlider: (at: number) => {
       place.value = at
     },
-    settles: fn(),
-    types: fn(),
-    shuts: fn(),
+    settle: fn(),
+    updateSetting: fn(),
+    close: fn(),
   }
 }
 

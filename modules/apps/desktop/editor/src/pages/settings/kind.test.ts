@@ -32,20 +32,20 @@ const installation = (): Installation =>
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
-    chooses: vi.fn(),
+    choose: vi.fn(),
     syncing: ref(false),
     hangs: ref(false),
     parts: ref(0),
     partsBounds: ref({ least: 1, most: 12 }),
-    choosesParts: vi.fn(),
+    chooseParts: vi.fn(),
     dayStarts: ref('04:00'),
     latestDayStarts: ref('12:00'),
-    choosesDayStarts: vi.fn(),
+    chooseDayStarts: vi.fn(),
     setting: () => undefined,
     models: () => [],
-    writes: vi.fn(),
+    write: vi.fn(),
     file: ref('/vaults/Physics/.numen/settings.json'),
-    opensFile: vi.fn(),
+    openFile: vi.fn(),
   }) satisfies Installation
 
 describe('the settings tab', () => {
@@ -53,12 +53,12 @@ describe('the settings tab', () => {
     const held = installation()
     const settings = useSettingsTab(window_().handle, held)
     expect(settings.state.installation).toBe(held)
-    expect(settings.kind.opens('')).toBe(settings.state)
+    expect(settings.kind.open('')).toBe(settings.state)
   })
 
   it('is called what the settings are called', () => {
     const settings = useSettingsTab(window_().handle, installation())
-    expect(settings.kind.called?.(settings.state)).toBe(words.settings)
+    expect(settings.kind.getTitle?.(settings.state)).toBe(words.settings)
   })
 
   // The settings are the installation's and not a file's, so every way to them

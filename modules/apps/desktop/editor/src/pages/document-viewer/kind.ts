@@ -16,21 +16,17 @@ import type { DocumentTabState } from './model/useDocumentTab'
 export function documentKind(handle: WindowHandle, opens: (path: string) => DocumentTabState, tabOpeners: FileOpeners) {
   const kind: TabKind<DocumentTabState, typeof DOCUMENT> = {
     kind: DOCUMENT,
-    opens,
-    called: (state) => fileOf(state.path),
-    draws: DocumentTab,
+    open: opens,
+    getTitle: (state) => fileOf(state.path),
+    pane: DocumentTab,
     identity: (path) => path,
-    shown: (state) => state.measure(),
-    shuts: (state) => {
+    onShow: (state) => state.measure(),
+    onClose: (state) => {
       state.close()
       return true
     },
     over: (state) => ({ file: state.path, source: 'book' }),
-    attends: (state) => ({
-      path: state.path,
-      document: { page: state.pageNumber.value + 1, pageCount: state.pages.value.length },
-    }),
-    getAttention: (state) => ({
+    getOpenTab: (state) => ({
       path: state.path,
       document: { page: state.pageNumber.value + 1, pageCount: state.pages.value.length },
     }),

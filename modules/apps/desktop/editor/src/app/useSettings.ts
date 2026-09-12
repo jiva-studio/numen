@@ -54,26 +54,26 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     pinned: dressed.pinned,
     sizes: dressed.sized,
     bounds: dressed.bounds,
-    chooses: (item) => void dressed.chooseItem(item),
+    choose: (item) => void dressed.chooseItem(item),
     syncing: computed({
       get: () => oneName.kept.value,
-      set: (on) => void oneName.chooses(on ? ON : OFF),
+      set: (on) => void oneName.choose(on ? ON : OFF),
     }),
     hangs: computed({
       get: () => hungParts.hangs.value,
-      set: (on) => void hungParts.chooses(on ? ON : OFF),
+      set: (on) => void hungParts.choose(on ? ON : OFF),
     }),
     parts: hungParts.parts,
     partsBounds: hungParts.ends,
-    choosesParts: (count) => void hungParts.choosesCount(`${count}`),
+    chooseParts: (count) => void hungParts.chooseCount(`${count}`),
     dayStarts: dayBegins.starts,
     latestDayStarts: dayBegins.latest,
-    choosesDayStarts: (hour) => void dayBegins.chooses(hour),
+    chooseDayStarts: (hour) => void dayBegins.chooses(hour),
     setting: (at) => rest.at(at),
     models: (at) => rest.getModelsAt(at),
-    writes: (written) => void rest.writeSettings(written),
+    write: (written) => void rest.writeSettings(written),
     file: rest.path,
-    opensFile: () => file.openSettingsFile(),
+    openFile: () => file.openSettingsFile(),
   })
 
   watch(dressed.sized, () => onSizeChanged())

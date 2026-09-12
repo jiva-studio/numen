@@ -11,7 +11,7 @@ import { conflictIn, type Conflict } from './flush'
 export interface Notes {
   all(): readonly string[]
   /** The word the screen holding that note tells its state by. */
-  shown(id: string): { state: string }
+  getOpenNote(id: string): { state: string }
   keep(id: string): void
   take(id: string): void
 }
@@ -27,7 +27,7 @@ export function raiseConflicts(notes: Notes, going: ConflictRaiser) {
   watch(
     () =>
       notes.all().filter((id) => {
-        const c = conflictIn(notes.shown(id).state)
+        const c = conflictIn(notes.getOpenNote(id).state)
         return c === 'stale'
       }),
     (stale) => {

@@ -8,7 +8,7 @@ import type { VaultPort } from '@/app/ports/vault'
 
 export type SessionCore = Pick<
   VaultPort,
-  'state' | 'agentUnreachable' | 'changes' | 'focus' | 'setFocus' | 'tasks' | 'quitting' | 'flushed'
+  'state' | 'agentUnreachable' | 'changes' | 'focus' | 'writeOpenTabs' | 'tasks' | 'quitting' | 'flushed'
 >
 
 export const sessionCore: SessionCore = {
@@ -46,7 +46,7 @@ export const sessionCore: SessionCore = {
     }
   },
   focus: (signal) => workspace.watchFocus({}, { signal }),
-  setFocus: async (open) => {
+  writeOpenTabs: async (open) => {
     await workspace.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
   },
   async *tasks(signal) {

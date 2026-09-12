@@ -27,7 +27,7 @@ export const settleTab = async (path: string, on: TabContext): Promise<SettleRes
   const held = on.notes.holding(path)
   if (held === null) return { held, waiting: false }
   if (on.notes.asking(held)) return { held, waiting: true }
-  await on.notes.settles(held)
+  await on.notes.settle(held)
   return { held, waiting: false }
 }
 

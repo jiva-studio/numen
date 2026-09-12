@@ -16,7 +16,7 @@ import { AGENT, FILES, PLEX, createWorkspace } from '@/entities/tab'
 import { useNoteEditors } from './useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
-import { useAttention } from './useAttention'
+import { useOpenTabs } from './useOpenTabs'
 import { useCommands } from './useCommands'
 import { useWindowDisplay } from './useWindowDisplay'
 import { useWindowNotices } from './useWindowNotices'
@@ -134,7 +134,7 @@ export const useWindow = () => {
     holding: (path) => editing.reached.holding(path),
   }
 
-  const attention = useAttention({ core, held })
+  const openTabs = useOpenTabs({ core, held })
 
   const opensPreset = async (path: string): Promise<void> => {
     const kind = (await core.fileKinds([path])).get(path)
@@ -214,7 +214,7 @@ export const useWindow = () => {
     palette: commandsModule.palette,
     places: kinds.places,
     shut,
-    tabIcon: attention.tabIcon,
+    tabIcon: openTabs.tabIcon,
     getTitle: editing.getTitle,
     where,
   }

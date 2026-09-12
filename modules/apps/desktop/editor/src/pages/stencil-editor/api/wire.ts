@@ -27,7 +27,7 @@ export const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null
 
 export function createStencilWire(
   cards: Cards,
-  says: MessageWriter = () => {},
+  say: MessageWriter = () => {},
 ) {
   const told = new Map<string, VaultAnswer>()
   const titles = new Map<string, string>()
@@ -72,14 +72,14 @@ export function createStencilWire(
   ): Promise<void> => {
     if (!name || name === field) return
     const answer = await cards.renameField(path, field, name, (told.get(path) ?? NOTHING).at || null)
-    if (answer.error !== null) return says(ERRORS[answer.error], 'error')
+    if (answer.error !== null) return say(ERRORS[answer.error], 'error')
     if (answer.changed) {
-      says(words.notRenamed, 'error')
+      say(words.notRenamed, 'error')
       return onChanged([path])
     }
-    if (answer.cards > 0) says(words.renamed(answer.cards, answer.decks.length))
+    if (answer.cards > 0) say(words.renamed(answer.cards, answer.decks.length))
     if (answer.notWritten.length > 0) {
-      says(words.notWritten(answer.notWritten.map((one) => one.path)), 'error')
+      say(words.notWritten(answer.notWritten.map((one) => one.path)), 'error')
     }
     onChanged([path])
   }

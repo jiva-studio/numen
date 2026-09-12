@@ -1,0 +1,126 @@
+/**
+ * The keyboard, while the palette stands: what each key does, where the
+ * keyboard goes as a step opens, and where it goes back to when the palette
+ * closes.
+ *
+ * Everything the keys do not answer reaches the field, which is where a person
+ * is typing.
+ */
+import { nextTick, onBeforeUnmount, onMounted, watch, type Ref, type ShallowRef } from 'vue'
+import { findKeptPlace, stepTo, type PaletteAction } from '../lib/item'
+import { isActionsChord } from '../lib/keys'
+import type { PalettePlacesState } from './places'
+
+/** The field, which takes the keyboard and holds it. */
+export interface PaletteFieldHandle {
+  readonly focus: () => void
+  readonly select: () => void
+}
+
+export interface PaletteKeysOptions {
+  readonly field: Readonly<ShallowRef<PaletteFieldHandle | null>>
+  /** What is lit brought into sight. Only a key does this. */
+  readonly reveal: () => void
+  readonly places: PalettePlacesState
+  /** Whether the action panel stands over the palette. */
+  readonly panel: Ref<boolean>
+  readonly offered: () => readonly PaletteAction[]
+  readonly typed: Ref<string>
+  /** Whether the palette is drawn at all, and which step it is on. */
+  readonly open: () => boolean
+  readonly step: () => string
+  /** The item the keyboard stands on as a step opens. */
+  readonly opensOn: () => string
+  /** Where the keyboard goes back to once the palette closes. */
+  readonly from: () => HTMLElement | null
+  /** Backspace in an empty field, and Escape. */
+  readonly back: () => void
+  readonly dismiss: () => void
+}
+
+export interface PaletteKeysState {
+  readonly onKey: (event: KeyboardEvent) => void
+}
+
+export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
+  const { field, places, panel, typed } = options
+
+  // The keyboard comes back to the field when the panel over it goes, and a
+  // palette that is going takes it somewhere else itself.
+  watch(panel, async (now) => {
+    if (now || !options.open()) return
+    await nextTick()
+    field.value?.focus()
+  })
+
+  const onKey = (event: KeyboardEvent): void => {
+    const step = (by: number, from = places.here.value): void => {
+      event.preventDefault()
+      places.goTo(stepTo(places.places.value, from, by))
+      options.reveal()
+    }
+    // A chord that opens nothing is left to whoever else answers it.
+    if (isActionsChord(event)) {
+      if (!options.offered().length) return
+      event.preventDefault()
+      panel.value = true
+    } else if (event.key === 'ArrowDown') step(1)
+    else if (event.key === 'ArrowUp') step(-1)
+    else if (event.key === 'Home') step(1, -1)
+    else if (event.key === 'End') step(-1, 0)
+    else if (event.key === 'Enter') {
+      event.preventDefault()
+      places.chooseAt(places.here.value, event.shiftKey)
+    } else if (event.key === 'Backspace' && typed.value === '') {
+      event.preventDefault()
+      options.back()
+    } else if (event.key === 'Escape') {
+      event.preventDefault()
+      options.dismiss()
+    }
+    // The keyboard stays in the field for as long as the palette stands.
+    else if (event.key === 'Tab') event.preventDefault()
+  }
+
+  /**
+   * The keyboard put where the step wants it: on the value in force, else on
+   * whatever it was standing on. Opening a step this way moves nothing, so a
+   * caller that acts on what is lit acts on what is already so.
+   */
+  const enter = async (): Promise<void> => {
+    panel.value = false
+    places.goTo(findKeptPlace(places.places.value, options.opensOn() || places.held.value))
+    await nextTick()
+    field.value?.focus()
+    field.value?.select()
+    options.reveal()
+  }
+
+  const leave = (): void => {
+    panel.value = false
+    places.held.value = ''
+    const back = options.from()
+    if (back?.isConnected) back.focus()
+  }
+
+  watch(options.open, (now) => {
+    if (now) void enter()
+    else leave()
+  })
+
+  /** A step of its own: its own question, and what stands in the field selected. */
+  watch(options.step, () => {
+    if (options.open()) void enter()
+  })
+
+  onMounted(() => {
+    if (options.open()) void enter()
+  })
+
+  // A palette can go while it is still open, and the keyboard goes back with it.
+  onBeforeUnmount(() => {
+    if (options.open()) leave()
+  })
+
+  return { onKey }
+}

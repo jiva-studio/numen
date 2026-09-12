@@ -46,8 +46,8 @@ describe('opening a note', () => {
     notes.open('Heat.md')
     await settle()
 
-    expect(notes.shown('Heat.md').body).toBe('entropy grows')
-    expect(notes.shown('Heat.md').state).toBe('clean')
+    expect(notes.getOpenNote('Heat.md').body).toBe('entropy grows')
+    expect(notes.getOpenNote('Heat.md').state).toBe('clean')
   })
 
   it('is done once for a note already open', async () => {
@@ -62,7 +62,7 @@ describe('opening a note', () => {
     notes.open('Heat.md')
     await settle()
 
-    expect(notes.shown('Heat.md').body).toBe('mine')
+    expect(notes.getOpenNote('Heat.md').body).toBe('mine')
   })
 
   it('leaves a note that is not there empty, and the next write makes it', async () => {
@@ -71,7 +71,7 @@ describe('opening a note', () => {
 
     notes.open('New.md')
     await settle()
-    expect(notes.shown('New.md').body).toBe('')
+    expect(notes.getOpenNote('New.md').body).toBe('')
 
     notes.setBody('New.md', 'a first line')
     await vi.waitFor(() => expect(wrote).toHaveLength(1))
@@ -85,7 +85,7 @@ describe('opening a note', () => {
     notes.open('photo.md')
     await settle()
 
-    expect(notes.shown('photo.md').state).toBe('stuck')
+    expect(notes.getOpenNote('photo.md').state).toBe('stuck')
     expect(notes.getErrorMessage('photo.md')).toBe('this file is not text')
   })
 })
@@ -135,7 +135,7 @@ describe('a change in the vault', () => {
     await settle()
 
     expect(asked).toEqual(['Heat.md', 'Heat.md'])
-    expect(notes.shown('Heat.md').body).toBe('unchanged')
+    expect(notes.getOpenNote('Heat.md').body).toBe('unchanged')
   })
 
   it('reaches a note with nothing unsaved, and passes one with something', async () => {
@@ -150,7 +150,7 @@ describe('a change in the vault', () => {
     notes.changed(['Heat.md'])
     await settle()
 
-    expect(notes.shown('Heat.md').body).toBe('mine')
+    expect(notes.getOpenNote('Heat.md').body).toBe('mine')
   })
 
   it('naming no paths at all reaches every note with nothing unsaved', async () => {
@@ -164,7 +164,7 @@ describe('a change in the vault', () => {
     notes.changed([])
     await settle()
 
-    expect(notes.shown('Heat.md').body).toBe('after')
+    expect(notes.getOpenNote('Heat.md').body).toBe('after')
   })
 
   it('naming other paths only reaches nobody', async () => {
@@ -243,7 +243,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     await notes.settles('Heat.md')
 
     expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
-    expect(notes.shown('Heat.md').state).toBe('clean')
+    expect(notes.getOpenNote('Heat.md').state).toBe('clean')
   })
 
   it('answers what a write in the air still owes before it says it has settled', async () => {
@@ -410,15 +410,15 @@ describe('a note that changed on disk under a save', () => {
   it('is put to the person, and nothing more is written', async () => {
     const { notes, wrote } = await createCaughtSave()
 
-    expect(notes.shown('Heat.md').state).toBe('stale')
+    expect(notes.getOpenNote('Heat.md').state).toBe('stale')
     expect(notes.stale('Heat.md')?.says).toBe('this note changed on disk, and saving stopped')
-    expect(notes.shown('Heat.md').body).toBe('mine')
+    expect(notes.getOpenNote('Heat.md').body).toBe('mine')
 
     notes.setBody('Heat.md', 'mine and more')
     await new Promise((wake) => setTimeout(wake, 20))
 
     expect(wrote).toHaveLength(1)
-    expect(notes.shown('Heat.md').state).toBe('stale')
+    expect(notes.getOpenNote('Heat.md').state).toBe('stale')
   })
 
   it('keeps what the person has, and the file takes it', async () => {
@@ -428,7 +428,7 @@ describe('a note that changed on disk under a save', () => {
     await settle()
 
     expect(files.get('Heat.md')).toBe('mine')
-    expect(notes.shown('Heat.md').state).toBe('clean')
+    expect(notes.getOpenNote('Heat.md').state).toBe('clean')
     expect(notes.stale('Heat.md')).toBeNull()
   })
 
@@ -438,8 +438,8 @@ describe('a note that changed on disk under a save', () => {
     notes.take('Heat.md')
     await settle()
 
-    expect(notes.shown('Heat.md').body).toBe('theirs')
-    expect(notes.shown('Heat.md').state).toBe('clean')
+    expect(notes.getOpenNote('Heat.md').body).toBe('theirs')
+    expect(notes.getOpenNote('Heat.md').state).toBe('clean')
     expect(notes.stale('Heat.md')).toBeNull()
   })
 
@@ -456,7 +456,7 @@ describe('a note that changed on disk under a save', () => {
     await vi.waitFor(() => expect(wrote).toHaveLength(2))
 
     expect(files.get('Heat.md')).toBe('one two three')
-    expect(notes.shown('Heat.md').state).toBe('clean')
+    expect(notes.getOpenNote('Heat.md').state).toBe('clean')
   })
 })
 
@@ -472,7 +472,7 @@ describe('a core that cannot be reached', () => {
     notes.open('Heat.md')
     await settle()
 
-    expect(notes.shown('Heat.md').state).toBe('stuck')
+    expect(notes.getOpenNote('Heat.md').state).toBe('stuck')
   })
 })
 
@@ -487,7 +487,7 @@ describe('a save that was refused', () => {
     await settle()
 
     notes.setBody('Heat.md', '---\nnot a body\n---\n')
-    await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
+    await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
 
     expect(notes.getErrorMessage('Heat.md')).toBe(
       'a note begins below its frontmatter, and this text begins with one',
@@ -506,7 +506,7 @@ describe('a save that was refused', () => {
     await settle()
 
     notes.setBody('Heat.md', 'one two')
-    await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
+    await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
 
     expect(notes.getErrorMessage('Heat.md')).toBe(
       'the vault could not be reached, so this note was not written',
@@ -527,7 +527,7 @@ describe('closing a note that could not be written', () => {
     await settle()
 
     notes.setBody('Heat.md', 'one two')
-    await vi.waitFor(() => expect(notes.shown('Heat.md').state).toBe('stuck'))
+    await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
 
     await notes.shut('Heat.md')
     expect(notes.all()).toEqual(['Heat.md'])
@@ -570,7 +570,7 @@ describe('a note that points somewhere', () => {
     await settle()
 
     expect(notes.link('Entropy.md')).toStrictEqual(linked.link)
-    expect(notes.shown('Entropy.md').body).toBe('What I made of it.')
+    expect(notes.getOpenNote('Entropy.md').body).toBe('What I made of it.')
   })
 
   it('points nowhere once a read says it points nowhere', async () => {

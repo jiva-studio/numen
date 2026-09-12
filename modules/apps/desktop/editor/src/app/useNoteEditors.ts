@@ -52,7 +52,7 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
 
   const stores: readonly Store[] = [noted.kept, decks.kept, stencils.kept]
   const reached = createNotes(stores, tabOpeners)
-  const getTitle = (id: string): string => stores.find((one) => one.has(id))?.called(id) ?? ''
+  const getTitle = (id: string): string => stores.find((one) => one.has(id))?.getTitle(id) ?? ''
 
   const kinds = [noted.kind, decks.kind, stencils.kind, schedules.kind]
 

@@ -99,6 +99,7 @@ test('what counts as a function', () => {
     'export const delta = async (one: string) => one',
     'const epsilon: Holder = (one) => one',
     'const zeta = (one = held()) => one',
+    'export const omega = async (one: string): Promise<Answer> => one',
     'const eta = 3',
     'class Eta { theta() {} }',
     'export interface Iota { kappa(): void }',
@@ -107,5 +108,5 @@ test('what counts as a function', () => {
     'function nu() {}',
     '`',
   ].join('\n')
-  assert.deepEqual(declares(source), ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta'])
+  assert.deepEqual(declares(source), ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'omega'])
 })

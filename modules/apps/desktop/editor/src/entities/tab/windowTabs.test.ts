@@ -20,17 +20,17 @@ const kind = ({ keeps = false, ...over }: Partial<AnyTabKind> & { keeps?: boolea
   const seen: string[] = []
   const one: AnyTabKind = {
     kind: 'thing',
-    opens: (at: string) => {
+    open: (at: string) => {
       opened.push(at)
       return { at, title: at || 'a thing' }
     },
-    called: (state: { title: string }) => state.title,
-    draws: {},
-    shuts: (state: { at: string }) => {
+    getTitle: (state: { title: string }) => state.title,
+    pane: {},
+    onClose: (state: { at: string }) => {
       shut.push(state.at)
       return !keeps
     },
-    shown: (state: { at: string }) => {
+    onShow: (state: { at: string }) => {
       seen.push(state.at)
     },
     ...over,
@@ -62,7 +62,7 @@ describe('a tab of a kind', () => {
   })
 
   it('carries the word its kind gives it, and none where the kind gives none', async () => {
-    const marked = kind({ marked: (state: { at: string }) => (state.at ? 'unsaved' : undefined) })
+    const marked = kind({ getMark: (state: { at: string }) => (state.at ? 'unsaved' : undefined) })
     const window = told([marked.declared])
 
     const one = await window.opens('thing', 'Note.md')
@@ -268,7 +268,7 @@ describe('a key struck on the window', () => {
     return {
       took,
       one: kind({
-        presses: (state: { at: string }, event: KeyboardEvent) => {
+        onKeyPress: (state: { at: string }, event: KeyboardEvent) => {
           if (!event.key.startsWith('Arrow')) return false
           took.push(`${state.at} ${event.key}`)
           return true
@@ -342,7 +342,7 @@ describe('the window going', () => {
 
   it('lets a kind that has its own way of going take it, and asks no more', async () => {
     const going: string[] = []
-    const thing = kind({ gone: (state: { at: string }) => going.push(state.at) })
+    const thing = kind({ onDestroy: (state: { at: string }) => going.push(state.at) })
     const window = told([thing.declared])
     await window.opens('thing', 'One.md')
 

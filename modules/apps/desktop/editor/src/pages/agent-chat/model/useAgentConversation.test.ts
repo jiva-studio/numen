@@ -249,14 +249,14 @@ describe('what an agent tab is called', () => {
       { id: 'a', voice: 'asked', text: 'what is this whole vault about', state: 'done' },
     ] as unknown as Turn[]
 
-    expect(window.kind.called?.(one.state)).toBe('what is this whole…')
+    expect(window.kind.getTitle?.(one.state)).toBe('what is this whole…')
   })
 
   it('is the word for an agent while nothing has been asked of it', async () => {
     const window = tabs()
     const one = await window.openTab()
 
-    expect(window.kind.called?.(one.state)).toBe('Agent')
+    expect(window.kind.getTitle?.(one.state)).toBe('Agent')
   })
 })
 

@@ -8,16 +8,14 @@
  *
  * It takes no room from what it covers, and what each card says is the caller's.
  */
-import { computed, nextTick, ref, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
+import { useTemplateRef } from 'vue'
 import { LiveRegions } from './live-regions'
 import NoticeCard from './NoticeCard.vue'
-import { arrivals, dwellOf, getFinishedNotices, getShownNotices, WAIT } from '../lib/dwell'
-import { foldNotices, ROOM } from '../lib/fold'
-import { measured, type Movement } from '../lib/movement'
-import { readable, remembered, tallyOf, type Notice } from '../lib/notice'
-import { getRemainingWord } from '../lib/tally'
+import { WAIT } from '../lib/dwell'
+import { ROOM } from '../lib/fold'
+import { type Notice } from '../lib/notice'
 import { useAnnouncer } from '../model/announcer'
-import { useNoticeStack } from '../model/stack'
+import { useNoticeCards } from '../model/cards'
 
 const props = withDefaults(
   defineProps<{
@@ -55,133 +53,28 @@ const emit = defineEmits<{
   (event: 'gone', id: string): void
 }>()
 
-/** How fast each count is moving. This is the clock the rate is read against. */
-const moving = shallowRef<ReadonlyMap<string, Movement>>(new Map())
-
-/** The ones a person has put away, and when each of the rest arrived. */
-const away = shallowRef<ReadonlySet<string>>(new Set())
-const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
-
 const stack = useTemplateRef<HTMLElement>('stack')
 
-/** How long the corner has been held for, and the moment a card is read against. */
-const { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut } = useNoticeStack(
+const {
+  drawn,
+  folds,
+  opened,
+  leftOn,
+  holdCard,
+  put,
+  onPointerOver,
+  onPointerOut,
+  onFocusIn,
+  onFocusOut,
+} = useNoticeCards({
   stack,
-  () => props.clock(),
-  () => props.hidden(),
-)
-
-/** The ones whose caller has already been told they are finished with. */
-const forgotten = new Set<string>()
-
-/**
- * The clock forward, and every count read against it.
- *
- * A count is read on the clock rather than as it arrives, so how fast it is
- * moving is measured over stretches of time and not over however often the work
- * behind it happens to speak.
- */
-const sample = (): void => {
-  beat()
-  moving.value = measured(moving.value, props.notices, now.value)
-}
-
-watch(
-  () => props.notices,
-  (all) => {
-    sample()
-    arrived.value = arrivals(arrived.value, all, read.value)
-    away.value = remembered(away.value, all)
-    const here = new Set(readable(all).map((one) => one.id))
-    for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
-  },
-  { immediate: true },
-)
-
-const leftOn = (one: Notice): string => {
-  const tally = tallyOf(one)
-  if (tally === undefined) return ''
-  return getRemainingWord(tally.total - tally.done, moving.value.get(one.id)?.rate ?? 0)
-}
-
-const drawn = computed(() =>
-  getShownNotices(props.notices, arrived.value, away.value, read.value, props.wait),
-)
-/** Whether a person has asked to see what is folded away behind the rest. */
-const opened = ref(false)
-const folds = computed(() =>
-  foldNotices(drawn.value, opened.value ? drawn.value.length : props.room),
-)
-
-// Asking to see what is behind the rest is asked about what stands then. Once
-// it all fits again, the next stack over the room folds as any other would.
-watch(drawn, (all) => {
-  if (all.length <= props.room) opened.value = false
+  notices: () => props.notices,
+  wait: () => props.wait,
+  room: () => props.room,
+  clock: () => props.clock(),
+  hidden: () => props.hidden(),
+  gone: (id) => emit('gone', id),
 })
-
-/** Whether anything readable has not yet lasted long enough to be drawn. */
-const coming = computed(() => {
-  const shown = new Set(drawn.value.map((one) => one.id))
-  return readable(props.notices).some(
-    (one) => one.stay !== 'read' && !away.value.has(one.id) && !shown.has(one.id),
-  )
-})
-
-/** Whether anything drawn is going to go by itself. */
-const dwelling = computed(() =>
-  drawn.value.some(
-    (one) => one.stay === 'read' && dwellOf(one.says, one.about) !== Infinity,
-  ),
-)
-
-/** Whether anything drawn is counting, and so has a rate to be read. */
-const counting = computed(() => drawn.value.some((one) => tallyOf(one) !== undefined))
-
-// The corner changes by itself while nothing else changes, so the moment is
-// watched for as long as something is waiting on it.
-watchEffect((clean) => {
-  if (!coming.value && !dwelling.value && !counting.value) return
-  const tick = setInterval(sample, 250)
-  clean(() => clearInterval(tick))
-})
-
-watchEffect(() => {
-  for (const id of getFinishedNotices(props.notices, arrived.value, read.value)) {
-    if (forgotten.has(id)) continue
-    forgotten.add(id)
-    emit('gone', id)
-  }
-})
-
-/** A card standing now, which carries the way away under it. */
-interface CardHandle {
-  readonly way: HTMLElement | null
-}
-
-/** The cards drawn, each under the notice it stands for. */
-const cards = new Map<string, CardHandle>()
-
-const holdCard = (id: string, card: unknown): void => {
-  if (card) cards.set(id, card as CardHandle)
-  else cards.delete(id)
-}
-
-/**
- * A card put away, and the keyboard left where it can go on putting them away:
- * on the card that takes the place of the one that went, or on the last.
- */
-const put = async (id: string) => {
-  const at = folds.value.shown.findIndex((one) => one.id === id)
-  const held = cards.get(id)?.way === document.activeElement
-  forgotten.add(id)
-  away.value = new Set([...away.value, id])
-  emit('gone', id)
-  if (!held || at < 0) return
-  await nextTick()
-  const left = folds.value.shown
-  const next = left[Math.min(at, left.length - 1)]
-  if (next) cards.get(next.id)?.way?.focus()
-}
 
 /** What the corner is read out through. */
 const { told, cried } = useAnnouncer(() => drawn.value)

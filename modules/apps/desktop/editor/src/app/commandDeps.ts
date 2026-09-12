@@ -22,8 +22,8 @@ export interface CommandDepsOptions {
   reached: Notes
   opensPreset: (path: string) => Promise<void>
   dressed: { chooseItem: (item: string) => Promise<void> | void }
-  oneName: { chooses: (item: string) => Promise<void> | void }
-  hungParts: { chooses: (item: string) => Promise<void> | void; choosesCount: (item: string) => Promise<void> | void }
+  oneName: { choose: (item: string) => Promise<void> | void }
+  hungParts: { choose: (item: string) => Promise<void> | void; chooseCount: (item: string) => Promise<void> | void }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
@@ -115,14 +115,14 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
       travel: async (path) => {
         await plexes().travel(path)
       },
-      leaves: async (from, to) => {
+      leave: async (from, to) => {
         await plexes().leavePath(from, to)
       },
       opening,
       opens: (kind) => void held.opens(kind),
       preset: (path) => opensPreset(path),
       closes: (tab) => held.requestClose(tab),
-      asks: (text) => void agents().askQuestion(text),
+      ask: (text) => void agents().askQuestion(text),
       searches: options.searches ?? (() => {}),
     },
     settings: {
@@ -130,13 +130,13 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
         await dressed.chooseItem(chosen)
       },
       syncing: async (chosen) => {
-        await oneName.chooses(chosen)
+        await oneName.choose(chosen)
       },
       hanging: async (chosen) => {
-        await hungParts.chooses(chosen)
+        await hungParts.choose(chosen)
       },
       parts: async (chosen) => {
-        await hungParts.choosesCount(chosen)
+        await hungParts.chooseCount(chosen)
       },
     },
     notes: reached,

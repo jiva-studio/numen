@@ -118,7 +118,7 @@ export const tallyOf = (notice: Notice): { done: number; total: number } | undef
  * What is still worth remembering as put away: the notices that are still
  * there. Work that ends and begins again is news, and says so.
  */
-export const remembered = (
+export const getStillAway = (
   away: ReadonlySet<string>,
   notices: readonly Notice[],
 ): ReadonlySet<string> => {

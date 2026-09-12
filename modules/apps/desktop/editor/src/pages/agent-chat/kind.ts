@@ -25,10 +25,10 @@ export function agentKind(handle: WindowHandle, opens: () => AgentTabState, abou
 
   const kind: TabKind<AgentTabState, typeof AGENT> = {
     kind: AGENT,
-    opens,
-    called: getTitle,
-    draws: AgentTab,
-    shuts: (state) => {
+    open: opens,
+    getTitle,
+    pane: AgentTab,
+    onClose: (state) => {
       state.finish()
       return true
     },

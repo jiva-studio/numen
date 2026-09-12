@@ -45,20 +45,20 @@ export function usePresetTab(
 
   const kind: TabKind<PresetTabState, typeof PRESET> = {
     kind: PRESET,
-    opens: (path) => {
+    open: (path) => {
       const one = createOpenPreset(path, today(), bounds.value)
       open.set(path, one)
       void readPreset(one, core, bounds, titles, today())
       return createPresetState(one, path, handle, closePreset, core, bounds, said, today, titles)
     },
-    called: (one) => getTitle(one.id),
-    draws: PresetTab,
+    getTitle: (one) => getTitle(one.id),
+    pane: PresetTab,
     identity: (path) => path,
-    shuts: (one, id) => {
-      one.shuts(id)
+    onClose: (one, id) => {
+      one.close(id)
       return false
     },
-    gone: () => {},
+    onDestroy: () => {},
   }
 
   const openPreset = (path: string, title = '', showing: PlexDestination = 'here'): void => {
@@ -93,5 +93,5 @@ export function usePresetTab(
     )
   }
 
-  return { kind, getState, changed: applyPathChanges, called: getTitle, openPreset, flush }
+  return { kind, getState, changed: applyPathChanges, getTitle, openPreset, flush }
 }

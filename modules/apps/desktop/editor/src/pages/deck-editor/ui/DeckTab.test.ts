@@ -129,7 +129,7 @@ const mountDeck = async (
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
-    makes: async () => ({ path: '', error: null }),
+    createPreset: async () => ({ path: '', error: null }),
     scheduling: async () => ({
       preset: {
         path: by,
@@ -142,7 +142,7 @@ const mountDeck = async (
       at: '',
       bounds: NO_BOUNDS,
     }),
-    schedules: async (_deck, preset) => {
+    scheduleDeck: async (_deck, preset) => {
       put.push(preset)
       if (scheduling.notScheduled) {
         return { error: scheduling.notScheduled, changed: false, at: '' }

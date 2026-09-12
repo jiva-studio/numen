@@ -43,20 +43,20 @@ function onSelectRule(said: string) {
 
 function onFieldType(field: Field, said: number | null) {
   if (said === null) return
-  props.state.types(field, field === 'retention' ? round(said / 100, 2) : said)
+  props.state.updateSetting(field, field === 'retention' ? round(said / 100, 2) : said)
 }
 
 function onFieldSettle() {
-  props.state.settles()
+  props.state.settle()
 }
 
 function onChooseSetting(field: Field, value: SettingValue) {
-  props.state.types(field, value)
-  props.state.settles()
+  props.state.updateSetting(field, value)
+  props.state.settle()
 }
 
 function onUpdateSlider(field: Field, share: number) {
-  props.state.types(field, share)
+  props.state.updateSetting(field, share)
 }
 
 function onToggleEvenLoad(on: boolean) {

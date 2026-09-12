@@ -12,7 +12,7 @@ import { createMarks, areMarksEqual, type Marks } from '@/entities/deck'
 
 /** The string a tab holds, and the file it stands at. */
 export interface ShownStore {
-  shown(id: string): { body: string }
+  getOpenNote(id: string): { body: string }
   where(id: string): string
 }
 
@@ -23,7 +23,7 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
 
   /** The deck one tab is showing, read out of the string the store holds. */
   const deckAt = (id: string): BufferDeck => {
-    const body = store.shown(id).body
+    const body = store.getOpenNote(id).body
     const held = parsed.get(id)
     if (held && held.body === body) return held.deck
     // A file read again carries fresh identities for the same cards, so the

@@ -68,7 +68,7 @@ function onWriteFace(id: string, half: Half, text: string) {
   <div class="stencil-tab">
     <FileConflictPrompt
       :errorMessage="props.state.errorMessage.value"
-      :conflict="conflictIn(props.state.shown.value.state)"
+      :conflict="conflictIn(props.state.note.value.state)"
       :words="words"
       @keep="onKeep"
       @take="onTake"

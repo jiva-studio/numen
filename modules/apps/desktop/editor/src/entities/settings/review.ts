@@ -60,7 +60,7 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
   }
 
   /** The day the vault now counts from, asked again once an hour is written. */
-  const counted = async (): Promise<void> => {
+  const readDay = async (): Promise<void> => {
     try {
       day.value = (await core.getReviewSettings()).day
     } catch {
@@ -86,7 +86,7 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
     }
     if (!failed) {
       // The hour moved the boundary, and the day standing is the vault's to say.
-      await counted()
+      await readDay()
       return
     }
     said(`${words.unturned} ${failed}`, 'error')
