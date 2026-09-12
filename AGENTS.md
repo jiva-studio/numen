@@ -221,19 +221,32 @@ general meaning. Obvious industry terms (tree, drag, chunk, window, theme) do no
 
 ---
 
-## 10. File placement — domain code stays in its domain
+## 10. The roles, and where each tree's own rules are written
 
-Code that serves a single domain tab lives inside that tab's folder, **not** in
-`shared/`:
+This file holds what every language here shares. What is true of one tree only
+— its layers, what each layer holds, which way an import may point, the checks
+that prove it — is written in the role for that tree. Read the role before
+touching the tree.
 
-| File | Belongs in |
-|---|---|
-| Note-specific types (`Move`, `Focus`, `Enabler`) | `note-tab/` |
-| File-manager entries (`FileEntry`, `MoveResult`) | `plex-tab/` or `file-manager/` |
-| Flashcard review settings | `flashcards-stencil-tab/` |
+| Role | Covers | File |
+|---|---|---|
+| frontend-engineer | writes TypeScript and Vue: `modules/apps/desktop/**`, `modules/libs/ui` | [`.claude/agents/frontend-engineer.md`](.claude/agents/frontend-engineer.md) |
+| go-engineer | writes Go: `modules/libs/core`, `modules/apps/**` | [`.claude/agents/go-engineer.md`](.claude/agents/go-engineer.md) |
+| architecture-reviewer | reviews where code stands and which way it reaches, both languages | [`.claude/agents/architecture-reviewer.md`](.claude/agents/architecture-reviewer.md) |
+| frontend-reviewer | reviews TypeScript and Vue against these conventions | [`.claude/agents/frontend-reviewer.md`](.claude/agents/frontend-reviewer.md) |
+| go-reviewer | reviews Go against the decision records and Go practice | [`.claude/agents/go-reviewer.md`](.claude/agents/go-reviewer.md) |
+| naming-reviewer | reviews the names of functions, types, files and folders | [`.claude/agents/naming-reviewer.md`](.claude/agents/naming-reviewer.md) |
 
-`shared/` is **only** for types and utilities genuinely used by two or more
-domains.
+The two engineer roles are where the layers are written down. The four reviewer
+roles judge against them and change nothing.
+
+A rule that stands in the way is not worked around. The edge goes into the
+`baseline` of the check that refused it, with a line saying why. Those lists
+only shrink.
+
+What checks all of it: `npm run check --prefix modules/tools/depgraph`,
+`node --test modules/tools/lint/*.test.mjs`, and `go test ./container/...` in
+`modules/libs/core`.
 
 ---
 
