@@ -9,26 +9,15 @@
  * It takes no room from what it covers, and what each card says is the caller's.
  */
 import { computed, nextTick, ref, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
-import { Activity } from './activity'
 import { LiveRegions } from './live-regions'
-import { remainingWord } from './activity/tally'
-import { useAnnouncer } from './announcer'
-import { useNoticeStack } from './stack'
-import {
-  arrivals,
-  dwellOf,
-  finished,
-  folded,
-  measured,
-  readable,
-  remembered,
-  ROOM,
-  showing,
-  tallyOf,
-  WAIT,
-  type Movement,
-  type Notice,
-} from './notice'
+import NoticeCard from './NoticeCard.vue'
+import { arrivals, dwellOf, finished, showing, WAIT } from '../lib/dwell'
+import { folded, ROOM } from '../lib/fold'
+import { measured, type Movement } from '../lib/movement'
+import { readable, remembered, tallyOf, type Notice } from '../lib/notice'
+import { remainingWord } from '../lib/tally'
+import { useAnnouncer } from '../model/announcer'
+import { useNoticeStack } from '../model/stack'
 
 const props = withDefaults(
   defineProps<{
@@ -164,12 +153,17 @@ watchEffect(() => {
   }
 })
 
-/** The ways away, each under the card it stands on. */
-const ways = new Map<string, HTMLElement>()
+/** A card standing now, which carries the way away under it. */
+interface CardHandle {
+  readonly way: HTMLElement | null
+}
 
-const holdWay = (id: string, way: unknown): void => {
-  if (way) ways.set(id, way as HTMLElement)
-  else ways.delete(id)
+/** The cards drawn, each under the notice it stands for. */
+const cards = new Map<string, CardHandle>()
+
+const holdCard = (id: string, card: unknown): void => {
+  if (card) cards.set(id, card as CardHandle)
+  else cards.delete(id)
 }
 
 /**
@@ -178,7 +172,7 @@ const holdWay = (id: string, way: unknown): void => {
  */
 const put = async (id: string) => {
   const at = folds.value.shown.findIndex((one) => one.id === id)
-  const held = ways.get(id) === document.activeElement
+  const held = cards.get(id)?.way === document.activeElement
   forgotten.add(id)
   away.value = new Set([...away.value, id])
   emit('gone', id)
@@ -186,7 +180,7 @@ const put = async (id: string) => {
   await nextTick()
   const left = folds.value.shown
   const next = left[Math.min(at, left.length - 1)]
-  if (next) ways.get(next.id)?.focus()
+  if (next) cards.get(next.id)?.way?.focus()
 }
 
 /** What the corner is read out through. */
@@ -219,34 +213,16 @@ const { told, cried } = useAnnouncer(() => drawn.value)
           {{ folds.over }} {{ more }}
         </button>
 
-        <article
+        <NoticeCard
           v-for="one in folds.shown"
           :key="one.id"
-          class="notice"
-          :data-tone="one.tone ?? 'plain'"
+          :ref="(card) => holdCard(one.id, card)"
+          :one="one"
+          :put-away="putAway"
+          :left="leftOn(one)"
           @pointerover="enters"
-        >
-          <Activity
-            class="notice__work"
-            :says="one.says"
-            :about="one.about ?? ''"
-            :tally="tallyOf(one)"
-            :working="one.working ?? false"
-            :left="leftOn(one)"
-            :tone="one.tone ?? 'plain'"
-          />
-          <button
-            :ref="(way) => holdWay(one.id, way)"
-            type="button"
-            class="notice__away outline-none ring-numen"
-            :aria-label="`${putAway}: ${one.says}`"
-            @click="put(one.id)"
-          >
-            <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-              <path d="M3 3 L9 9 M9 3 L3 9" />
-            </svg>
-          </button>
-        </article>
+          @put="put(one.id)"
+        />
       </TransitionGroup>
     </aside>
   </div>
@@ -311,37 +287,6 @@ const { told, cried } = useAnnouncer(() => drawn.value)
 .notice__folded:hover,
 .notice__folded:focus-visible {
   opacity: 1;
-}
-
-.notice__work {
-  min-inline-size: 0;
-  flex: 1;
-}
-
-.notice__away {
-  flex: none;
-  display: grid;
-  place-items: center;
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  border-radius: var(--numen-radius-pill);
-  color: inherit;
-  opacity: 0.5;
-}
-
-.notice__away:hover,
-.notice__away:focus-visible {
-  opacity: 1;
-  background: color-mix(in oklab, currentColor 12%, transparent);
-}
-
-.notice__away svg {
-  inline-size: 0.75rem;
-  block-size: 0.75rem;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  fill: none;
 }
 
 .notice-enter-active,

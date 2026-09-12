@@ -10,11 +10,12 @@
  */
 import { useTemplateRef } from 'vue'
 
-import { placeIn, pointsAway, type BookLink } from './link'
-import { handTurn, keyTurn } from './turn'
-import { useBookLayout } from './layout'
-import { BOOK_WORDS } from './spread'
-import type { BookProps } from './props'
+import { placeIn, pointsAway, type BookLink } from '../lib/link'
+import { handTurn, keyTurn } from '../lib/turn'
+import { useBookLayout } from '../model/layout'
+import { BOOK_WORDS } from '../lib/words'
+import type { BookProps } from '../lib/props'
+import BookFoot from './BookFoot.vue'
 
 const props = withDefaults(defineProps<BookProps>(), {
   markup: '',
@@ -160,16 +161,16 @@ defineExpose({
       </div>
     </div>
 
-    <!-- One line under the text, and nothing to press on it: a book is turned
-         by the hand and the keyboard. The count is carried over the book and
-         what is left of the chapter is measured on the page in front. -->
-    <footer class="book__foot text-small text-hushed">
-      <span class="book__way"><slot name="way" /></span>
-      <template v-if="spreadCount > 0">
-        <span class="book__count">{{ words.of(front.page, front.pages) }}</span>
-        <span class="book__left">{{ words.left(leftInChapter) }}</span>
-      </template>
-    </footer>
+    <!-- A book is turned by the hand and the keyboard, so the line under the
+         text carries no control. -->
+    <BookFoot
+      :words="words"
+      :front="front"
+      :left-in-chapter="leftInChapter"
+      :spread-count="spreadCount"
+    >
+      <template #way><slot name="way" /></template>
+    </BookFoot>
   </div>
 </template>
 
@@ -177,28 +178,6 @@ defineExpose({
 .book {
   /* The margin over the text, which the running head stands in the middle of. */
   --book-head: 4rem;
-}
-
-/* One line under the text: the count in the middle of it and what is left of
-   the chapter at the end, as a book has them. Nothing on it is pressed, so it
-   lets a press through to the page behind. */
-.book__foot {
-  position: absolute;
-  inset-block-end: var(--numen-inset-wide);
-  inset-inline: var(--numen-inset-wide);
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: baseline;
-  pointer-events: none;
-}
-
-.book__count {
-  grid-column: 2;
-}
-
-.book__left {
-  grid-column: 3;
-  justify-self: end;
 }
 
 /* The clearance the text keeps from the pane, and the room the controls stand
@@ -227,14 +206,6 @@ defineExpose({
   text-align: center;
   text-overflow: ellipsis;
   pointer-events: none;
-}
-
-/* The way into the contents stands on the line under the text and carries
-   nothing drawn around it. */
-.book__way {
-  grid-column: 1;
-  justify-self: start;
-  pointer-events: auto;
 }
 
 /* The page a person is reading carries nothing drawn around it. */

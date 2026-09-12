@@ -3,29 +3,17 @@
  * One node: its box, its title, and the handle to reach out from. Every number
  * it draws with is already on the node it was handed, but for what it is to a
  * gesture, which arrives as its role in one.
- *
- * The title goes through a `foreignObject`: SVG text cannot ellipsise and does
- * not reorder a right-to-left run.
  */
-import {
-  Comment,
-  computed,
-  Fragment,
-  ref,
-  Text,
-  useSlots,
-  useTemplateRef,
-  watch,
-  type VNode,
-} from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
+import PlexNodeBox from './PlexNodeBox.vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeParts from './PlexNodeParts.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
-import { boxOf, DWELL, useDwell, type WideBox } from '../dwell'
-import { byHandle, type ReachStrategy } from '../reaching'
-import { byDoubleClick, joined, showingOf, type PlexShowing, type ShowStrategy } from '../showing'
-import type { HungParts } from '../inside'
-import { browserClock, type Clock } from '../transition'
+import { boxOf, DWELL, useDwell, type WideBox } from '../../model/dwell'
+import { byHandle, type ReachStrategy } from '../../model/reaching'
+import { byDoubleClick, joined, showingOf, type PlexShowing, type ShowStrategy } from '../../model/showing'
+import type { HungParts } from '../../lib/inside'
+import { browserClock, type Clock } from '../../model/transition'
 import type { MenuOpening } from '@/shared/ui/menu'
 import {
   handleIn,
@@ -35,7 +23,7 @@ import {
   type GestureRole,
   type PlacedNode,
   type Position,
-} from '../node'
+} from '../../lib/node'
 
 // --- Props & Emits ---
 const props = withDefaults(
@@ -114,13 +102,6 @@ defineExpose({ focus: () => group.value?.focus() })
 const isOver = ref(false)
 const isAttended = ref(false)
 
-const slots = useSlots()
-
-/**
- * Whether this node is drawn something before its title.
- */
-const hasIcon = computed(() => hasAnything(slots.icon?.({ node: props.node })))
-
 /** Not a node yet, so nothing may be done to it and nothing is told about it. */
 const isGhost = computed(() => props.gestureRole === 'ghost')
 
@@ -165,9 +146,6 @@ const under = computed(() =>
 const open = useDwell(() => under.value, () => props.dwell, props.clock)
 
 const box = computed(() => boxOf(props.node, props.wide, open.value))
-
-/** Where the box begins, which everything drawn in it is placed from. */
-const startsAt = computed(() => box.value.offset - box.value.width / 2)
 
 // A box that has begun to open is already over its neighbours.
 watch(
@@ -274,19 +252,6 @@ function showNode(modified: boolean): void {
   if (canStop.value) emit('show', showingOf(modified))
 }
 
-/** Whether anything was drawn at all, which a placeholder and a blank are not. */
-function hasAnything(drawn: readonly VNode[] | undefined): boolean {
-  return (
-    !!drawn &&
-    drawn.some((one) => {
-      if (one.type === Comment) return false
-      if (one.type === Fragment) return hasAnything(one.children as VNode[])
-      if (one.type === Text) return String(one.children).trim() !== ''
-      return true
-    })
-  )
-}
-
 /** The middle of the node, for a press, which carries no point of its own. */
 function getMiddleOf(element: SVGGElement): Position {
   const box = element.getBoundingClientRect()
@@ -335,28 +300,11 @@ function updateAttendance(event: FocusEvent): void {
     @focusin="onFocusIn"
     @focusout="onFocusOut"
   >
-    <rect
-      class="plex__box"
-      :x="startsAt"
-      :y="-node.height / 2"
-      :width="box.width"
-      :height="node.height"
-    />
-    <foreignObject
-      :x="startsAt"
-      :y="-node.height / 2"
-      :width="box.width"
-      :height="node.height"
-    >
-      <div class="plex__title" :class="{ 'caps-numen': isGhost }">
-        <!-- Whatever stands for the thing a node addresses. The plex has no
-             way to know what that is, so it is handed one. -->
-        <span v-if="hasIcon" class="plex__icon" aria-hidden="true">
-          <slot name="icon" :node="node" />
-        </span>
-        <span class="plex__title-text">{{ node.title }}</span>
-      </div>
-    </foreignObject>
+    <PlexNodeBox :node="node" :box="box" :ghost="isGhost">
+      <template v-if="$slots.icon" #icon="{ node: drawn }">
+        <slot name="icon" :node="drawn" />
+      </template>
+    </PlexNodeBox>
 
     <PlexNodeParts
       v-if="hung"
@@ -392,11 +340,11 @@ function updateAttendance(event: FocusEvent): void {
 /* Hover mixes a little of a node's own text into the ground under it, which
    darkens a light node and lightens a dark one. The outline is left to the
    seat's hue, and the focused node is painted from the pair it wears. */
-.plex__node:hover .plex__box {
+.plex__node:hover :deep(.plex__box) {
   fill: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 8%);
 }
 
-.plex__node--focus:hover .plex__box {
+.plex__node--focus:hover :deep(.plex__box) {
   fill: color-mix(in oklab, var(--numen-accent), var(--numen-accent-ink) 8%);
 }
 
@@ -404,65 +352,16 @@ function updateAttendance(event: FocusEvent): void {
   cursor: default;
 }
 
-/* The hue comes from the node's own seat, so a new seat needs a token and
-   nothing here. The outline changes over the length of the move that changes
-   the seat; the fill answers the pointer at the speed a pointer is answered. */
-.plex__box {
-  rx: var(--radius);
-  fill: var(--numen-raised);
-  stroke: var(--numen-seat-hue, var(--numen-rule));
-  stroke-width: var(--numen-stroke);
-  transition:
-    fill var(--numen-motion-hover) var(--numen-easing),
-    stroke var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);
-}
-
 /* While the plex is moving, the fill is a seat's colour too: the focused node
    is painted from its own pair, and follows the move as the outline does. */
-[data-moving] .plex__box {
+[data-moving] :deep(.plex__box) {
   transition:
     fill var(--numen-plex-move, var(--numen-motion)) var(--numen-easing),
     stroke var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);
 }
 
-/* Icon then title, centred together in a box of a size the arrangement chose. A
-   title is something to look at and press, and takes no selection. */
-.plex__title {
-  block-size: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--numen-node-gap);
-  padding-inline: var(--numen-node-padding);
-  box-sizing: border-box;
-  color: var(--numen-ink);
-  font-family: var(--numen-font-sans);
-  font-size: var(--numen-font-size);
-  line-height: var(--numen-line-height);
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-select: none;
-  transition: color var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);
-}
-
-.plex__icon {
-  flex: none;
-  display: flex;
-  align-items: center;
-  color: var(--numen-seat-hue, var(--numen-ink));
-}
-
-/* One line, then an ellipsis. A box stands at the height the arrangement gave
-   it, whatever its title runs to. */
-.plex__title-text {
-  min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* The node a link would be made to, while the pointer is still on it. */
-.plex__node--target .plex__box {
+.plex__node--target :deep(.plex__box) {
   stroke: var(--numen-ring);
   stroke-width: var(--numen-ring-width);
 }
@@ -475,14 +374,14 @@ function updateAttendance(event: FocusEvent): void {
   pointer-events: none;
 }
 
-.plex__node--ghost .plex__box {
+.plex__node--ghost :deep(.plex__box) {
   fill: none;
   stroke: var(--numen-seat-hue, var(--numen-ring));
   stroke-dasharray: var(--ghost-dash);
   transition: none;
 }
 
-.plex__node--ghost .plex__title {
+.plex__node--ghost :deep(.plex__title) {
   color: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
 }
@@ -491,24 +390,24 @@ function updateAttendance(event: FocusEvent): void {
   outline: none;
 }
 
-.plex__node:focus-visible .plex__box {
+.plex__node:focus-visible :deep(.plex__box) {
   outline: none;
 }
 
-.plex__node--focus .plex__box {
+.plex__node--focus :deep(.plex__box) {
   rx: var(--radius-focus);
   fill: var(--numen-accent);
   stroke: var(--numen-accent);
 }
 
-.plex__node--focus .plex__title {
+.plex__node--focus :deep(.plex__title) {
   color: var(--numen-accent-ink);
 }
 
 /* The focused node is painted from its own pair, and its seat's hue is the
    ground it stands on. What it is drawn before its title takes the ink the
    title is set in. */
-.plex__node--focus .plex__icon {
+.plex__node--focus :deep(.plex__icon) {
   color: inherit;
 }
 </style>

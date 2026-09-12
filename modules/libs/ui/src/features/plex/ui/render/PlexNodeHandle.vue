@@ -7,7 +7,7 @@
  * It sits inside a node that answers a click and a double click of its own, so
  * pressing it must never reach that.
  */
-import type { Position } from '../node'
+import type { Position } from '../../lib/node'
 import { isPress } from './keys'
 
 defineProps<{

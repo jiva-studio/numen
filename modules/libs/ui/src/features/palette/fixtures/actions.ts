@@ -1,5 +1,5 @@
 /** Actions to offer an item in a test. */
-import type { PaletteAction } from '../item'
+import type { PaletteAction } from '../types'
 
 /** Five actions, which is three more than there are keys. */
 export const MANY: readonly PaletteAction[] = [

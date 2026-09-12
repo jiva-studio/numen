@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
-import { neighbourhoods } from '../fixtures/neighbourhoods'
+import { neighbourhoods } from '../../fixtures/neighbourhoods'
 import type { PlexFrame } from '../frame'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode, PlexNode } from '../node'

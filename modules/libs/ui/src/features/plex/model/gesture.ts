@@ -3,11 +3,11 @@
  * what a gesture *means* is worked out in `arrange/drop.ts`, as a value.
  */
 import { computed, onScopeDispose, ref, type Ref } from 'vue'
-import { resolveDrop, seatWithoutDirection, type Drop } from './arrange'
-import type { PlexOptions } from './arrange'
-import type { PlexFrame } from './frame'
-import type { Position } from './node'
-import type { PlexRelatedSeat } from './seat'
+import { resolveDrop, seatWithoutDirection, type Drop } from '../lib/arrange'
+import type { PlexOptions } from '../lib/arrange'
+import type { PlexFrame } from '../lib/frame'
+import type { Position } from '../lib/node'
+import type { PlexRelatedSeat } from '../lib/seat'
 
 export interface Gesture {
   /** The node it started from, while one is under way. */

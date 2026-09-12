@@ -1,9 +1,9 @@
 /** A frame moving towards each new neighbourhood. */
 import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
-import { arrangePlex, easeOut, interpolatePlex } from './arrange'
-import type { ArrangeInput } from './arrange'
-import type { PlexFrame } from './frame'
-import type { PlexNeighbourhood } from './neighbourhood'
+import { arrangePlex, easeOut, interpolatePlex } from '../lib/arrange'
+import type { ArrangeInput } from '../lib/arrange'
+import type { PlexFrame } from '../lib/frame'
+import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import { browserClock, type Clock } from '@/shared/lib/clock'
 
 export { browserClock, type Clock }

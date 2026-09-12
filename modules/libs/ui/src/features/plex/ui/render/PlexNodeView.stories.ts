@@ -10,12 +10,12 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
-import { awkwardLabels } from '../fixtures/neighbourhoods'
+import { awkwardLabels } from '../../fixtures/neighbourhoods'
 import { hovered, lightness } from '@/shared/fixtures/colour'
 import { DARK, drawnDark } from '@/shared/fixtures/theme'
-import type { GestureRole, PlacedNode } from '../node'
-import { RELATED_SEATS, type PlexSeat } from '../seat'
-import type { PlexShowing } from '../showing'
+import type { GestureRole, PlacedNode } from '../../lib/node'
+import { RELATED_SEATS, type PlexSeat } from '../../lib/seat'
+import type { PlexShowing } from '../../model/showing'
 
 interface Knobs {
   title: string

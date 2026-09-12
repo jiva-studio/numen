@@ -4,10 +4,10 @@
  * None of this comes from a vault: a fixture taken from the domain is how the
  * dependency gets back in through the door marked "tests".
  */
-import type { PlexEdge } from '../edge'
-import type { PlexNeighbourhood } from '../neighbourhood'
-import type { PlexNode } from '../node'
-import type { PlexSeat } from '../seat'
+import type { PlexEdge } from '../lib/edge'
+import type { PlexNeighbourhood } from '../lib/neighbourhood'
+import type { PlexNode } from '../lib/node'
+import type { PlexSeat } from '../lib/seat'
 
 /**
  * Focus in, everything else out — the shape every fixture below is built as.

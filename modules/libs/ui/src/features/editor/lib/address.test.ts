@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addressAt } from './address'
-import { parsed } from './fixtures/state'
+import { parsed } from '../fixtures/state'
 
 describe('the address under a position in the text', () => {
   const at = (doc: string, text: string) => addressAt(parsed(doc), doc.indexOf(text) + 1)

@@ -6,7 +6,7 @@
  * the type was multiplied by, so a box goes on holding its label.
  */
 import { onScopeDispose, ref, type Ref } from 'vue'
-import { DEFAULT_OPTIONS, type PlexOptions, type Size } from './arrange'
+import { DEFAULT_OPTIONS, type PlexOptions, type Size } from '../lib/arrange'
 
 /**
  * The size a node's label is set at with nothing multiplying it, which is the

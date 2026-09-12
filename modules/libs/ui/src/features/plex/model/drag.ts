@@ -4,11 +4,11 @@
  * in `arrange/drop.ts`, as a value.
  */
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
-import { seatDropped, type PlexOptions, type Size } from './arrange'
+import { seatDropped, type PlexOptions, type Size } from '../lib/arrange'
 import { positionIn } from './gesture'
-import type { PlexFrame } from './frame'
-import type { Position } from './node'
-import type { PlexRelatedSeat } from './seat'
+import type { PlexFrame } from '../lib/frame'
+import type { Position } from '../lib/node'
+import type { PlexRelatedSeat } from '../lib/seat'
 
 const CAPTURE = { capture: true } as const
 

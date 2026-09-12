@@ -9,9 +9,9 @@
 import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch, type Ref } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { WorkspacePane } from '../pane'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../context'
-import { orientationAt, type Branch, type Orientation, type TabId } from '../node'
-import { atLeast, fit } from '../shares'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
+import { orientationAt, type Branch, type Orientation, type TabId } from '../../lib/node'
+import { atLeast, fit } from '../../lib/shares'
 
 defineOptions({ name: 'WorkspaceBranch' })
 

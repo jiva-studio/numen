@@ -30,7 +30,7 @@ export const depcruise = installed('.bin/depcruise')
  * reach is `layers.cjs`.
  */
 export const layered = new Map([
-  ['@numen/ui', 'src/features/cards/deck.ts'],
+  ['@numen/ui', 'src/features/cards/lib/deck.ts'],
   ['@numen/editor', 'src/pages/deck-editor/model/useDeckTabs.ts'],
   ['@numen/flashcards', 'src/pages/decks/model/presets.ts'],
 ])
@@ -71,12 +71,11 @@ export const baseline = new Map([
       // from and come back to measures its text again. That is the contract
       // between the two features, and the story is where it is held. The
       // editor itself reaches nothing of the workspace.
-      'no-features-slice-reaches-a-slice: src/features/editor/Editor.stories.ts → src/features/workspace/index.ts',
-      // The plex's fixtures are read by its arranging tests, and one file of
-      // them — `fixtures/ring.ts` — takes the `Placement` type back. That one
-      // type import is the whole of the second half of the ring.
-      'no-folder-going-round: src/features/plex/arrange → src/features/plex/fixtures',
-      'no-folder-going-round: src/features/plex/fixtures → src/features/plex/arrange',
+      'no-features-slice-reaches-a-slice: src/features/editor/ui/Editor.stories.ts → src/features/workspace/index.ts',
+      // The plex's fixtures are built by its arranging tests and read by them:
+      // `fixtures/build.test.ts` arranges what it builds, and every test under
+      // The workspace's fixtures build a window out of `lib`'s own branches and
+      // panes, and `lib`'s tests read the windows they build.
     ],
   ],
 ])

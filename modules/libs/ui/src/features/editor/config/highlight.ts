@@ -2,7 +2,7 @@
  * What the parser's tags are painted in.
  *
  * Covers the languages a fenced block can be written in. What the markdown
- * itself looks like is decided in `live.ts`, which draws the constructs.
+ * itself looks like is decided in `lib/marks.ts`, which draws the constructs.
  */
 import { HighlightStyle } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'

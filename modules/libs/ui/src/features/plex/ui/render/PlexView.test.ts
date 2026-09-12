@@ -3,9 +3,9 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
 import PlexNodeView from './PlexNodeView.vue'
-import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../arrange'
-import type { PlexNeighbourhood } from '../neighbourhood'
-import type { PlacedNode } from '../node'
+import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
+import type { PlexNeighbourhood } from '../../lib/neighbourhood'
+import type { PlacedNode } from '../../lib/node'
 
 const before: PlexNeighbourhood = {
   nodes: [

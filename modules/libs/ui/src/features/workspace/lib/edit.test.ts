@@ -23,8 +23,8 @@ import {
   stack,
   withSpare,
   workspaceOf,
-} from './fixtures/build'
-import { broken } from './fixtures/invariants'
+} from '../fixtures/build'
+import { broken } from '../fixtures/invariants'
 
 const SCREEN = { x: 0, y: 0, width: 1000, height: 600 }
 

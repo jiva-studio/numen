@@ -25,12 +25,12 @@ import {
 } from '@codemirror/view'
 import { follow } from './address'
 import { changing, marked, pacing, type EditorChange } from './change'
-import { highlighting } from './highlight'
-import { LANGUAGES } from './languages'
+import { highlighting } from '../config/highlight'
+import { LANGUAGES } from '../config/languages'
 import { live, wholeLines } from './live'
 import { GFM } from '@lezer/markdown'
 import { saving } from './outside'
-import { monospaced, theme } from './theme'
+import { monospaced, theme } from '../config/theme'
 
 /** What can be changed without the editor being built again. */
 export const drawing = new Compartment()

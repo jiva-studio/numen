@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onScopeDispose, ref } from 'vue'
 import Agent from './Agent.vue'
-import type { Turn } from '@/features/thread/turn'
+import type { Turn } from '@/features/thread'
 import { framed } from '@/shared/fixtures/frame'
 import { LONG, MULTILINE, RUSSIAN } from '@/shared/fixtures/prose'
 

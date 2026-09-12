@@ -8,27 +8,28 @@
  * it.
  */
 import { describe, expect, it } from 'vitest'
+import { keptOn, placeActions } from './actions'
 import {
-  actionAt,
   choosable,
-  commandKeyChord,
   flatten,
   keptAt,
-  keptOn,
-  keyed,
-  keyChord,
-  opensActions,
   ordered,
-  overlayIcon,
-  partsOf,
-  placeActions,
-  placePalette,
   stepIn,
   stepTo,
   type PaletteItem,
   type PaletteGroup,
 } from './item'
-import { MANY } from './fixtures/actions'
+import {
+  actionAt,
+  commandKeyChord,
+  keyed,
+  keyChord,
+  opensActions,
+  overlayIcon,
+} from './keys'
+import { partsOf } from './parts'
+import { placePalette } from './place'
+import { MANY } from '../fixtures/actions'
 
 const OPEN = [{ id: 'open', text: 'Open' }]
 const BOTH = [

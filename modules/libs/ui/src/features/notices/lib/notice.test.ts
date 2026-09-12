@@ -8,15 +8,11 @@ import {
   arrivals,
   dwellOf,
   finished,
-  folded,
-  measured,
-  readable,
-  remembered,
   showing,
-  tallyOf,
-  type Movement,
-  type Notice,
-} from './notice'
+} from './dwell'
+import { folded } from './fold'
+import { measured, type Movement } from './movement'
+import { readable, remembered, tallyOf, type Notice } from './notice'
 
 const one = (over: Partial<Notice> = {}): Notice => ({
   id: 'embedding',

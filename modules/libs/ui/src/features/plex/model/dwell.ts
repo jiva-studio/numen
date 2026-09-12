@@ -5,9 +5,9 @@
  * The opening is drawn frame by frame, off the same clock the plex moves on.
  */
 import { onScopeDispose, ref, watch, type Ref } from 'vue'
-import { easeOut, lerp, type Size } from './arrange'
+import { easeOut, lerp, type Size } from '../lib/arrange'
 import { browserClock, type Clock } from './transition'
-import type { PlacedNode } from './node'
+import type { PlacedNode } from '../lib/node'
 
 /** How long a hand stays on a box before it opens, in milliseconds. */
 export const DWELL = 500

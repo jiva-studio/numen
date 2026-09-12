@@ -9,9 +9,9 @@
 import { computed, useTemplateRef, ref, watch } from 'vue'
 import { ReaderToolbar } from './reader-toolbar'
 import { Sheet } from './sheet'
-import { usePageWidth } from './width'
+import { usePageWidth } from '../model/width'
 import { useViewport } from '@/shared/lib/viewport'
-import { useHandScroll } from './scroll'
+import { useHandScroll } from '../model/scroll'
 import {
   GAP,
   READER_WORDS,
@@ -22,7 +22,7 @@ import {
   type Rect,
   type ReaderWords,
   type Page,
-} from './strip'
+} from '../lib/strip'
 
 const props = withDefaults(
   defineProps<{

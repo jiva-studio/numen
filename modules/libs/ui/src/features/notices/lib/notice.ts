@@ -2,7 +2,7 @@
  * What a notice is, as plain values. No DOM, no clock, no measurement.
  */
 
-import { rateOf, type TallyUnit, type Tone } from './activity/tally'
+import type { TallyUnit, Tone } from './tally'
 
 export type { Tone }
 
@@ -113,139 +113,6 @@ export const tallyOf = (notice: Notice): { done: number; total: number } | undef
   notice.total === undefined || notice.done === undefined
     ? undefined
     : { done: notice.done, total: notice.total }
-
-/** What one count stood at when it last moved, and when that was. */
-export interface Movement {
-  readonly done: number
-  readonly rate: number
-  readonly at: number
-}
-
-/**
- * How fast each count is moving, from where it last moved to where it is now.
- *
- * A reading that saw no movement leaves the mark where it is, so the stretch a
- * count stood still over is time the work took and is measured as such.
- *
- * A count that has gone is forgotten, and one that has just arrived is read once
- * before it has a rate.
- */
-export const measured = (
-  was: ReadonlyMap<string, Movement>,
-  notices: readonly Notice[],
-  at: number,
-): ReadonlyMap<string, Movement> => {
-  const moving = new Map<string, Movement>()
-  for (const notice of readable(notices)) {
-    const tally = tallyOf(notice)
-    if (tally === undefined) continue
-    const before = was.get(notice.id)
-    if (before === undefined) {
-      moving.set(notice.id, { done: tally.done, rate: 0, at })
-      continue
-    }
-    if (tally.done === before.done) {
-      moving.set(notice.id, before)
-      continue
-    }
-    const rate = rateOf(before, tally.done, (at - before.at) / 1000)
-    moving.set(notice.id, { done: tally.done, rate, at })
-  }
-  return moving
-}
-
-/**
- * How long work runs before it is worth a card, in milliseconds.
- *
- * Most passes are over before a person could read what they were called. A
- * notice somebody asked for does not wait: they are waiting for it.
- */
-export const WAIT = 10_000
-
-/** How long the shortest thing worth saying stands, in milliseconds. */
-export const SETTLE = 4_000
-
-/** How much longer it stands for each word it carries, in milliseconds. */
-export const PER_WORD = 400
-
-/** The length past which a notice is not read in passing. */
-export const TOO_MUCH = 20
-
-/**
- * How long a notice stands to be read, in milliseconds.
- *
- * Longer words are read for longer. Past twenty of them the time never runs
- * out: a list of names is something a person acts on, and it waits for them.
- */
-export const dwellOf = (says: string, about = ''): number => {
-  const words = `${says} ${about}`.split(/\s+/).filter((word) => word !== '')
-  if (words.length > TOO_MUCH) return Infinity
-  return SETTLE + words.length * PER_WORD
-}
-
-/**
- * When each notice standing now was first seen. One that has been here keeps
- * the moment it arrived; one that has gone is forgotten.
- */
-export const arrivals = (
-  was: ReadonlyMap<string, number>,
-  notices: readonly Notice[],
-  at: number,
-): ReadonlyMap<string, number> =>
-  new Map(readable(notices).map((notice) => [notice.id, was.get(notice.id) ?? at]))
-
-/** Whether a notice has stood long enough to have been read. */
-const over = (
-  notice: Notice,
-  arrived: ReadonlyMap<string, number>,
-  at: number,
-): boolean => at - (arrived.get(notice.id) ?? at) >= dwellOf(notice.says, notice.about)
-
-/** The notices drawn: the ones that have lasted, less the ones put away. */
-export const showing = (
-  notices: readonly Notice[],
-  arrived: ReadonlyMap<string, number>,
-  away: ReadonlySet<string>,
-  at: number,
-  wait: number = WAIT,
-): readonly Notice[] =>
-  readable(notices).filter((notice) => {
-    if (away.has(notice.id)) return false
-    if (notice.stay === 'read') return !over(notice, arrived, at)
-    return notice.asked || at - (arrived.get(notice.id) ?? at) >= wait
-  })
-
-/** The notices that have been read, and whose caller may forget them. */
-export const finished = (
-  notices: readonly Notice[],
-  arrived: ReadonlyMap<string, number>,
-  at: number,
-): readonly string[] =>
-  readable(notices)
-    .filter((notice) => notice.stay === 'read' && over(notice, arrived, at))
-    .map((notice) => notice.id)
-
-/** How many cards stand at once. */
-export const ROOM = 4
-
-/**
- * The cards that stand, and how many are folded away behind them.
- *
- * What folds is what has been said and has gone right. Work, what is so, and
- * anything that stopped badly stand however many of them there are.
- */
-export const folded = (
-  drawn: readonly Notice[],
-  room: number = ROOM,
-): { shown: readonly Notice[]; over: number } => {
-  if (drawn.length <= room) return { shown: drawn, over: 0 }
-  const spare = drawn.filter(
-    (notice) =>
-      notice.stay !== undefined && notice.stay !== 'holds' && notice.tone !== 'alarm',
-  )
-  const away = new Set(spare.slice(0, drawn.length - room).map((notice) => notice.id))
-  return { shown: drawn.filter((notice) => !away.has(notice.id)), over: away.size }
-}
 
 /**
  * What is still worth remembering as put away: the notices that are still

@@ -8,8 +8,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Card from './Card.vue'
-import { grid, type DeckCard, type Tile } from '../../deck'
-import type { Stencil } from '../../card'
+import type { DeckCard } from '../../../lib/deck'
+import { grid, type Tile } from '../../../lib/grid'
+import type { Stencil } from '../../../lib/card'
 
 interface Corpus {
   readonly card: DeckCard

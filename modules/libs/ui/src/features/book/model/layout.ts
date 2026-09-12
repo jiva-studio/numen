@@ -3,7 +3,7 @@
  * text set against it, the spread in front carried there, and the runs asked
  * about marked where they stand.
  *
- * Apart from the component the way `turn.ts` is: the component hands over the
+ * Apart from the component the way `lib/turn.ts` is: the component hands over the
  * two elements, what it was told, and the one measurement this makes of the
  * browser, and answers for nothing here.
  */
@@ -12,12 +12,12 @@ import type { ShallowRef } from 'vue'
 
 import { useViewport } from '@/shared/lib/viewport'
 import { onNextFrame } from '@/shared/lib/clock'
-import { ELSEWHERE, HIGHLIGHT, highlight, unhighlight } from './highlight'
-import { marksIn, offsetAt, rangesOver, runsIn, type Run } from './runs'
-import type { BookLink } from './link'
-import { GAP, LARGEST, SMALLEST, beginsAt, columnHeight, held, columnWidth, columnsIn, holding, inFront, leftInDocument, pagesOf, spreads, type Flow, type Mark } from './spread'
-import { turnTo, type PageTurn } from './turn'
-import type { SettledBookProps } from './props'
+import { ELSEWHERE, HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
+import { marksIn, offsetAt, rangesOver, runsIn, type Run } from '../lib/runs'
+import type { BookLink } from '../lib/link'
+import { GAP, LARGEST, SMALLEST, beginsAt, columnHeight, held, columnWidth, columnsIn, holding, inFront, leftInDocument, pagesOf, spreads, type Flow, type Mark } from '../lib/spread'
+import { turnTo, type PageTurn } from '../lib/turn'
+import type { SettledBookProps } from '../lib/props'
 
 /**
  * The room one document of a book is read in, and everything measured from it.

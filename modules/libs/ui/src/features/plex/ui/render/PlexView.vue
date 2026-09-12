@@ -10,16 +10,17 @@ import { computed, ref, useId, useTemplateRef, watch } from 'vue'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
+import PlexThread from './PlexThread.vue'
 import { linesOf } from './lines'
-import type { PlexFrame } from '../frame'
-import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Position } from '../node'
-import { seatWord, type PlexRelatedSeat } from '../seat'
-import { DWELL, type WideBox } from '../dwell'
-import { byHandle, type ReachStrategy } from '../reaching'
-import { byDoubleClick, type PlexShowing, type ShowStrategy } from '../showing'
-import type { HungParts } from '../inside'
-import { browserClock, type Clock } from '../transition'
-import { threadOf, type Drop } from '../arrange'
+import type { PlexFrame } from '../../lib/frame'
+import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Position } from '../../lib/node'
+import { seatWord, type PlexRelatedSeat } from '../../lib/seat'
+import { DWELL, type WideBox } from '../../model/dwell'
+import { byHandle, type ReachStrategy } from '../../model/reaching'
+import { byDoubleClick, type PlexShowing, type ShowStrategy } from '../../model/showing'
+import type { HungParts } from '../../lib/inside'
+import { browserClock, type Clock } from '../../model/transition'
+import { threadOf, type Drop } from '../../lib/arrange'
 import type { MenuOpening } from '@/shared/ui/menu'
 
 const props = withDefaults(
@@ -300,16 +301,15 @@ const ghost = computed<PlacedNode | null>(() => {
     </g>
 
     <!-- The gesture itself, drawn over everything it may land on. -->
-    <g v-if="thread" class="plex__reach">
-      <path class="plex__thread" :d="thread" aria-hidden="true" />
-      <PlexNodeView v-if="ghost" :node="ghost" gesture-role="ghost" />
-    </g>
+    <PlexThread v-if="thread" class="plex__reach" :d="thread" :ghost="ghost" />
 
     <!-- Something dragged in from outside, drawn over everything it crosses. -->
-    <g v-if="dragging" class="plex__dragged">
-      <path class="plex__thread" :d="dragging.thread" aria-hidden="true" />
-      <PlexNodeView :node="dragging.ghost" gesture-role="ghost" />
-    </g>
+    <PlexThread
+      v-if="dragging"
+      class="plex__dragged"
+      :d="dragging.thread"
+      :ghost="dragging.ghost"
+    />
   </svg>
 </template>
 
@@ -352,12 +352,5 @@ const ghost = computed<PlacedNode | null>(() => {
 /* What is dragged across the picture catches nothing on its way over. */
 .plex__dragged {
   pointer-events: none;
-}
-
-.plex__thread {
-  fill: none;
-  stroke: var(--numen-ring);
-  stroke-width: var(--numen-edge-width);
-  stroke-dasharray: var(--numen-thread-dash);
 }
 </style>

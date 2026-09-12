@@ -14,10 +14,10 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { Tooltip } from './tooltip'
 import type { Box } from '@/shared/lib/place'
 import { DaySummary } from './day-summary'
-import { days, fits, ROWS } from './heatmap'
-import type { Day, Tally } from './heatmap'
-import { useWidth } from './width'
-import type { Words } from './words'
+import { days, fits, ROWS } from '../lib/heatmap'
+import type { Day, Tally } from '../lib/heatmap'
+import { useWidth } from '../model/width'
+import type { Words } from '../lib/words'
 
 const props = withDefaults(
   defineProps<{

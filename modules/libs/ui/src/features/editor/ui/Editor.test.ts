@@ -11,8 +11,8 @@ import { undo } from '@codemirror/commands'
 import { EditorSelection, StateField } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
-import { marked, type EditorChange } from './change'
-import { opening, resolving } from './outside'
+import { marked, type EditorChange } from '../lib/change'
+import { opening, resolving } from '../lib/outside'
 
 type Props = InstanceType<typeof Editor>['$props']
 type EditorHandle = { focus: () => void; measure: () => void; reveal: (line: number) => boolean }

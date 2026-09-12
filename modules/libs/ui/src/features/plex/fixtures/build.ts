@@ -1,7 +1,7 @@
-import type { PlexEdge } from '../edge'
-import type { PlexNeighbourhood } from '../neighbourhood'
-import type { PlexNode } from '../node'
-import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
+import type { PlexEdge } from '../lib/edge'
+import type { PlexNeighbourhood } from '../lib/neighbourhood'
+import type { PlexNode } from '../lib/node'
+import { RELATED_SEATS, type PlexRelatedSeat } from '../lib/seat'
 import { nameFor } from './names'
 
 export type SeatCounts = Readonly<Partial<Record<PlexRelatedSeat, number>>>

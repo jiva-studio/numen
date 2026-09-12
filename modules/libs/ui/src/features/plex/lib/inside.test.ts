@@ -4,14 +4,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { easeOut } from './arrange'
-import {
-  furthest,
-  hangParts,
-  openedTo,
-  woundBy,
-  type PartsDeps,
-  type PlexPart,
-} from './inside'
+import { hangParts, type PartsDeps, type PlexPart } from './inside'
+import { furthest, openedTo, woundBy } from './open'
 import type { PlacedNode } from './node'
 
 const NODE: PlacedNode = {

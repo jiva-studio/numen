@@ -1,8 +1,8 @@
 /** The plex at another size: what a size carries, and what it leaves alone. */
 import { describe, expect, it } from 'vitest'
 import { DESIGNED_TYPE, optionsForType, scaleOptions } from './sizing'
-import { arrangePlex, DEFAULT_OPTIONS, type PlexOptions } from './arrange'
-import { build } from './fixtures/build'
+import { arrangePlex, DEFAULT_OPTIONS, type PlexOptions } from '../lib/arrange'
+import { build } from '../fixtures/build'
 
 const HALF_AGAIN = 1.5
 

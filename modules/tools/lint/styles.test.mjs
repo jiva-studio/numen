@@ -29,7 +29,7 @@ test('no component styles a class no template of its can set', () => {
     `${read.length} components with a style block read: the walk is not reading them`,
   )
   assert.ok(
-    read.some((at) => at.endsWith('welcome/WelcomePage.vue')),
+    read.some((at) => at.endsWith('welcome/ui/WelcomePage.vue')),
     'the walk did not read WelcomePage.vue, which is the component this rule exists for',
   )
   assert.ok(

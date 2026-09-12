@@ -6,9 +6,9 @@
  * domain. It exists because the movement can only be judged by walking a real
  * graph back and forth.
  */
-import type { PlexEdge } from '../edge'
-import type { PlexNeighbourhood } from '../neighbourhood'
-import type { PlexNode } from '../node'
+import type { PlexEdge } from '../lib/edge'
+import type { PlexNeighbourhood } from '../lib/neighbourhood'
+import type { PlexNode } from '../lib/node'
 
 interface GraphNode {
   readonly title: string

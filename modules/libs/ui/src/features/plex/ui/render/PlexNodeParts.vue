@@ -6,7 +6,8 @@
  * are and what choosing one does are the caller's.
  */
 import { computed, ref, watch } from 'vue'
-import { openedTo, woundBy, type Arrow, type HungParts } from '../inside'
+import type { HungParts } from '../../lib/inside'
+import { openedTo, woundBy, type Arrow } from '../../lib/open'
 
 const props = defineProps<{
   /** The parts and the room they are given. */

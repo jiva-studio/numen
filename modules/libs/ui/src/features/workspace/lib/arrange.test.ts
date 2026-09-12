@@ -1,7 +1,7 @@
 /** Where the tree puts each node inside a box. */
 import { describe, expect, it } from 'vitest'
 import { arrangeWorkspace } from './arrange'
-import { deep, sideBySide, split, stack, workspaceOf } from './fixtures/build'
+import { deep, sideBySide, split, stack, workspaceOf } from '../fixtures/build'
 
 const SCREEN = { x: 0, y: 0, width: 1000, height: 600 }
 

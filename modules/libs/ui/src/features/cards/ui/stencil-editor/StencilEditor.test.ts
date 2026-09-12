@@ -12,7 +12,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Stencil from './StencilEditor.vue'
-import type { StencilFace } from '../stencil'
+import type { StencilFace } from '../../lib/stencil'
 
 const FIELDS = ['Name', 'Height', 'Weight']
 

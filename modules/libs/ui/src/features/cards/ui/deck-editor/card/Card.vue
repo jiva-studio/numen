@@ -13,8 +13,9 @@ import { CardHeader } from '../../card-header'
 import { RemoveButton } from '../../remove-button'
 import { AutosizeTextarea } from '../../autosize-textarea'
 import { Divider } from '../../divider'
-import { DECK_WORDS, type CardWords, type PlacedFieldValue, type Tile } from '../../deck'
-import { sealed, type StepDirection } from '../../order'
+import { DECK_WORDS, type CardWords } from '../../../lib/deck'
+import type { PlacedFieldValue, Tile } from '../../../lib/grid'
+import { sealed, type StepDirection } from '../../../lib/order'
 
 const props = withDefaults(
   defineProps<{

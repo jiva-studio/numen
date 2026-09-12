@@ -10,7 +10,7 @@
 import { onBeforeUnmount, onMounted, useId, useTemplateRef, watch } from 'vue'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import type { EditorChange } from './change'
+import type { EditorChange } from '../lib/change'
 import {
   adding,
   code,
@@ -23,10 +23,10 @@ import {
   showing,
   shown,
   written,
-} from './setup'
-import { wholly } from './languages'
-import { opening, resolving, saving } from './outside'
-import { replace } from './replace'
+} from '../lib/setup'
+import { wholly } from '../config/languages'
+import { opening, resolving, saving } from '../lib/outside'
+import { replace } from '../lib/replace'
 
 const props = withDefaults(
   defineProps<{

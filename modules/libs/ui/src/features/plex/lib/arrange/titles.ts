@@ -7,17 +7,10 @@
  * place while it is not, cut to the longest clear stretch where the whole of the
  * words stand nowhere, and dropped where that stretch holds less than half.
  */
-import { headingOf, lengthOf, rulerOf, type PlacedEdge } from '../edge'
-import type { PlacedNode, Position } from '../node'
+import { headingOf, lengthOf, type PlacedEdge } from '../edge'
+import type { PlacedNode } from '../node'
+import { boxOf, meets, ribbonOf, runBoxes, type Box } from './boxes'
 import { cutToFit, MIDDLE, type Routing } from './routing'
-
-/** An upright box in the plex's own coordinates. */
-interface Box {
-  readonly minX: number
-  readonly minY: number
-  readonly maxX: number
-  readonly maxY: number
-}
 
 /** A run of one line, as fractions of its length. */
 interface Span {
@@ -39,22 +32,6 @@ const LEAST = 0.5
 
 /** How much of a line's depth a title keeps clear of whatever it stands near. */
 const APART = 0.25
-
-/** How many points along a run the box around it is drawn from. */
-const RUN_SAMPLES = 8
-
-const meets = (one: Box, other: Box): boolean =>
-  one.minX < other.maxX &&
-  other.minX < one.maxX &&
-  one.minY < other.maxY &&
-  other.minY < one.maxY
-
-const boxOf = (node: PlacedNode, apart: number): Box => ({
-  minX: node.x - node.width / 2 - apart,
-  minY: node.y - node.height / 2 - apart,
-  maxX: node.x + node.width / 2 + apart,
-  maxY: node.y + node.height / 2 + apart,
-})
 
 const getSpanLength = (span: Span): number => span.to - span.from
 
@@ -165,26 +142,6 @@ function settle(
 }
 
 /**
- * The room a title takes up, step by step along the run it is set on.
- *
- * A title set across the picture is a ribbon and not a rectangle: the box
- * around the whole of a diagonal run stands over most of a quarter of the
- * picture, and a line crossing anywhere near it would find nowhere to be.
- */
-function ribbonOf(
-  boxAt: (from: number, to: number) => Box,
-  from: number,
-  to: number,
-  step: number,
-): Box[] {
-  const boxes: Box[] = []
-  for (let at = from; at < to; at += step) {
-    boxes.push(boxAt(at, Math.min(at + step, to)))
-  }
-  return boxes
-}
-
-/**
  * The runs of a line with nothing in the way, `ends` of it kept clear at
  * either end for whatever is drawn there. Every step of the line is looked at
  * on its own, so a line crossing a box comes back as the spans to either
@@ -233,41 +190,4 @@ function nearestPlace(clear: readonly Span[], half: number): number | null {
   }
 
   return nearest
-}
-
-/**
- * The box a run of the line fills. The words follow the line, so the run is
- * sampled along it and each sample carries the depth of a line of type across
- * the line, which is where the letters stand.
- */
-function runBoxes(edge: PlacedEdge, depth: number): (from: number, to: number) => Box {
-  const along = rulerOf(edge)
-  const deep = depth / 2
-
-  return (from, to) => {
-    const run: Position[] = []
-    for (let sample = 0; sample <= RUN_SAMPLES; sample += 1) {
-      run.push(along(from + ((to - from) * sample) / RUN_SAMPLES))
-    }
-
-    let minX = Infinity
-    let minY = Infinity
-    let maxX = -Infinity
-    let maxY = -Infinity
-
-    for (const [sample, point] of run.entries()) {
-      const back = run[Math.max(sample - 1, 0)]!
-      const on = run[Math.min(sample + 1, run.length - 1)]!
-      const span = Math.hypot(on.x - back.x, on.y - back.y) || 1
-      const acrossX = (Math.abs(on.y - back.y) / span) * deep
-      const acrossY = (Math.abs(on.x - back.x) / span) * deep
-
-      minX = Math.min(minX, point.x - acrossX)
-      minY = Math.min(minY, point.y - acrossY)
-      maxX = Math.max(maxX, point.x + acrossX)
-      maxY = Math.max(maxY, point.y + acrossY)
-    }
-
-    return { minX, minY, maxX, maxY }
-  }
 }

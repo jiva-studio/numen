@@ -6,7 +6,7 @@
  * itself and not as a thing to fill in. What is wrong with what is typed is
  * said by whatever draws this, under the row the box stands in.
  */
-import type { NamingState } from '../naming'
+import type { NamingState } from '../../model/naming'
 
 const props = defineProps<{
   /** The naming this box types into. */

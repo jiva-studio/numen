@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { around, build, type TitledNode } from './build'
-import { arrangePlex } from '../arrange'
+import { arrangePlex } from '../lib/arrange'
 
 const COUNTS = { parent: 3, child: 6, jump: 3, sibling: 3 }
 

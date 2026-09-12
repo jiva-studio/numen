@@ -5,7 +5,7 @@
  * this is the element those answers are applied to.
  */
 import { ref, type Ref, type ShallowRef } from 'vue'
-import { Hand, wheeled } from './hand'
+import { Hand, wheeled } from '../lib/hand'
 
 /** How near the row has to be to count as standing where it was sent, in CSS pixels. */
 const THERE = 1

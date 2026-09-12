@@ -12,9 +12,9 @@ import { Face } from './face'
 import { Fields } from './fields'
 import { Icon } from '../icon'
 import { Divider } from '../divider'
-import { useDrag } from '../drag'
+import { useDrag } from '../../model/drag'
 import { Button } from '@/shared/ui/button'
-import { declared, numbered, type Half, type InsertionPoint } from '../order'
+import { declared, numbered, type Half, type InsertionPoint } from '../../lib/order'
 import {
   faceRows,
   NOTHING_AMISS,
@@ -22,8 +22,8 @@ import {
   type StencilFace,
   type StencilWords,
   type StencilWrong,
-} from '../stencil'
-import { sampled } from '../fill'
+} from '../../lib/stencil'
+import { sampled } from '../../lib/fill'
 
 /**
  * What the caller found wrong with the stencil it handed in. A face's stands

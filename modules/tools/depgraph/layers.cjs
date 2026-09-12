@@ -43,6 +43,13 @@ const named = Object.keys(LAYERS)
  */
 const HARNESS = '^src/testing/'
 
+/**
+ * A stand a test is built on. It makes what the code it stands up declares, and
+ * the tests of that code draw it, so it points both ways by the nature of what
+ * it is. The ring rule does not read it; the direction rules do.
+ */
+const STAND = '(^|/)fixtures/'
+
 /** A folder under `src/` naming no layer, captured. The harness is no screen. */
 const SCREEN = `^src/(?!(?:${named.join('|')}|testing)/)([^/]+)/`
 
@@ -173,10 +180,11 @@ module.exports = {
   extends: './rules.cjs',
   forbidden,
   options: {
-    // The harness stands on no layer, and a walk that reads it finds a ring
-    // through every folder there is: each layer's tests draw it, and it draws
-    // the window. It is left out of the walk, which is the same thing the
-    // rules above say by not reading it.
-    exclude: { path: '^(dist|storybook-static|coverage)/|^src/testing/' },
+    // The harness and the stands stand on no layer, and a walk that reads one
+    // finds a ring through every folder it touches: the tests of a thing draw
+    // the stand, and the stand makes what that thing declares. They are left
+    // out of the walk, which is the same thing the rules above say by not
+    // reading the harness.
+    exclude: { path: `^(dist|storybook-static|coverage)/|${HARNESS.slice(1)}|${STAND}` },
   },
 }

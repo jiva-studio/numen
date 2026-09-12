@@ -6,8 +6,10 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import Notices from './Notices.vue'
-import { SETTLE, type Notice } from './notice'
+import { SETTLE } from '../lib/dwell'
+import type { Notice } from '../lib/notice'
 
 /** A clock a test winds by hand, so nothing waits on the real one. */
 function wound(at = 0) {
@@ -92,6 +94,29 @@ describe('a corner nothing is holding any more', () => {
     await corner.setProps({ notices: [report] })
 
     expect(corner.emitted('gone')).toStrictEqual([['embedding'], ['renamed']])
+  })
+})
+
+describe('the keyboard on a card that goes', () => {
+  it('is left on the card that takes its place', async () => {
+    const { clock } = wound()
+    const kept: readonly Notice[] = [
+      { id: 'first', says: 'Filed there', stay: 'kept', asked: true },
+      { id: 'second', says: 'Filed here', stay: 'kept', asked: true },
+    ]
+    const corner = mount(Notices, {
+      attachTo: document.body,
+      props: { notices: kept, wait: 0, clock, hidden: () => false },
+    })
+
+    const ways = corner.findAll('.notice__away')
+    ;(ways[0]!.element as HTMLElement).focus()
+    await ways[0]!.trigger('click')
+    await corner.setProps({ notices: kept })
+    await nextTick()
+
+    expect(document.activeElement).toBe(ways[1]!.element)
+    corner.unmount()
   })
 })
 

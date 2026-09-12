@@ -9,7 +9,7 @@
  */
 import { computed } from 'vue'
 import { Spinner } from '@/shared/ui/spinner'
-import { activity, percentWord, type Tally, type Tone } from './tally'
+import { activity, percentWord, type Tally, type Tone } from '../../lib/tally'
 
 const props = withDefaults(
   defineProps<{

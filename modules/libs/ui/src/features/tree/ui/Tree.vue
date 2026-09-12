@@ -414,8 +414,7 @@ function getLandingAt(rows: readonly RowId[], at: Position): RowLanding | null {
   flex: 0 0 auto;
 }
 
-/* What a drop would land inside: the row, or the whole tree for the top level. */
-.tree__row[data-into],
+/* What a drop at the top level would land inside: the whole tree. */
 .tree[data-into] {
 }
 

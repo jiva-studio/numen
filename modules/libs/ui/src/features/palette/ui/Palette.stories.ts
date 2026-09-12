@@ -10,7 +10,8 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref, type Component } from 'vue'
 import { AudioLines, BookOpen, FileText, Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import Palette from './Palette.vue'
-import { keyChord, type PaletteGroup } from './item'
+import { keyChord } from '../lib/keys'
+import type { PaletteGroup } from '../lib/item'
 import type { Span } from '@/shared/lib/span'
 import {
   ARABIC,

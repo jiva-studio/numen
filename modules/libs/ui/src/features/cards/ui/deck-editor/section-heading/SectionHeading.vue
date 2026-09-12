@@ -12,9 +12,10 @@ import { ErrorMessage } from '../../error-message'
 import { RemoveButton } from '../../remove-button'
 import { NameBox } from '../../name-box'
 import { Divider } from '../../divider'
-import { useNaming } from '../../naming'
-import { DECK_WORDS, type DeckWords, type PlacedSection } from '../../deck'
-import { heading, type Refusal } from '../../order'
+import { useNaming } from '../../../model/naming'
+import { DECK_WORDS, type DeckWords } from '../../../lib/deck'
+import type { PlacedSection } from '../../../lib/grid'
+import { heading, type Refusal } from '../../../lib/order'
 
 const props = withDefaults(
   defineProps<{

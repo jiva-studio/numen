@@ -14,7 +14,7 @@
 import { onScopeDispose, shallowRef } from 'vue'
 import { CardRow } from '../card-row'
 import { Icon } from '../icon'
-import { directionOf, STEP_KEYS, type StepDirection } from '../order'
+import { directionOf, STEP_KEYS, type StepDirection } from '../../lib/order'
 
 defineProps<{
   /** What is said of taking hold of it. */

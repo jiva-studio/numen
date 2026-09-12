@@ -21,27 +21,21 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import { KeyCap } from '@/shared/ui/key-cap'
+import PaletteKeyHints from './PaletteKeyHints.vue'
 import { PaletteActions } from './palette-actions'
 import { PaletteResults } from './palette-results'
+import { ACTION_WORDS, type ActionWords } from '../lib/actions'
 import {
-  actionAt,
   choosable,
-  commandKeyChord,
   flatten,
   keptAt,
-  keyed,
-  listId,
-  opensActions,
-  optionId,
   ordered,
-  placePalette,
   stepTo,
-  ACTION_WORDS,
-  type ActionWords,
   type PaletteGroup,
   type PaletteLit,
-} from './item'
+} from '../lib/item'
+import { actionAt, commandKeyChord, keyed, opensActions } from '../lib/keys'
+import { listId, optionId, placePalette } from '../lib/place'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
 
 const props = withDefaults(
@@ -431,19 +425,12 @@ onBeforeUnmount(() => {
 
         <!-- What the item now lit can be asked. An item offering one action
              says one key, and the last word opens the rest. -->
-        <footer
+        <PaletteKeyHints
           v-if="offered.length"
-          class="palette__keys flex items-center gap-3 text-small text-hushed"
-        >
-          <span v-for="one in hinted" :key="one.action.id" class="palette__key" data-palette="key">
-            <KeyCap v-if="one.key" :keys="one.key" />
-            {{ one.action.text }}
-          </span>
-          <span class="palette__more ml-auto" data-palette="more">
-            <KeyCap :keys="actionKey" />
-            {{ actionWords.name }}
-          </span>
-        </footer>
+          :hinted="hinted"
+          :action-key="actionKey"
+          :name="actionWords.name"
+        />
       </div>
     </div>
   </Teleport>
@@ -509,16 +496,4 @@ onBeforeUnmount(() => {
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
 }
 
-.palette__keys {
-  padding: var(--numen-inset) var(--numen-inset-wide);
-  border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
-}
-
-/* What a key reaches stands beside the cap that reaches it. */
-.palette__key,
-.palette__more {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4em;
-}
 </style>

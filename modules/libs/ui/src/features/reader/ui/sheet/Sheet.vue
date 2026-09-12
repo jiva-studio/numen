@@ -9,7 +9,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import { Spinner } from '@/shared/ui/spinner'
-import type { Rect } from '../strip'
+import type { Rect } from '../../lib/strip'
 
 const props = withDefaults(
   defineProps<{

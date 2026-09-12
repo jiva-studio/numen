@@ -10,8 +10,8 @@
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { Prose } from '@/shared/ui/prose'
 import { ToolCall } from './tool-call'
-import { atFoot, footOf } from './foot'
-import { placeTurns, type PlacedTurn, type Turn } from './turn'
+import { atFoot, footOf } from '../lib/foot'
+import { placeTurns, type PlacedTurn, type Turn } from '../lib/turn'
 
 const props = defineProps<{
   turns: readonly Turn[]

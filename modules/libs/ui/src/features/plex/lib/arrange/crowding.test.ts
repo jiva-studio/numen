@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { crowdingFor, packed } from './crowding'
 import { DEFAULT_OPTIONS } from './options'
-import { build } from '../fixtures/build'
+import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
 
 const { nodeSize, minWidth, gap, squeeze, margin } = DEFAULT_OPTIONS

@@ -9,10 +9,10 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref, watch } from 'vue'
 import WorkspaceLayout from './WorkspaceLayout.vue'
-import TabStub from './fixtures/TabStub.vue'
-import type { Tab, Workspace as State } from './node'
-import { panesOf } from './tree'
-import { crowded, deep, empty, oneStack, sideBySide, stack, workspaceOf } from './fixtures/build'
+import TabStub from '../fixtures/TabStub.vue'
+import type { Tab, Workspace as State } from '../lib/node'
+import { panesOf } from '../lib/tree'
+import { crowded, deep, empty, oneStack, sideBySide, stack, workspaceOf } from '../fixtures/build'
 
 const TITLES: Readonly<Record<string, string>> = {
   plex: 'Plex',

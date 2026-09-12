@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import Agent from './Agent.vue'
-import type { Turn } from '@/features/thread/turn'
+import type { Turn } from '@/features/thread'
 
 const said = (id: string, text = 'said'): Turn => ({ id, voice: 'asked', text })
 const back = (id: string, text = 'back'): Turn => ({ id, voice: 'answered', text })

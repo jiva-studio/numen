@@ -8,11 +8,11 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, provide, ref } from 'vue'
 import WorkspaceBranch from './WorkspaceBranch.vue'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../context'
-import TabStub from '../fixtures/TabStub.vue'
-import { split, stack } from '../fixtures/build'
-import { type Branch, type NodeId, type Tab, type TabId } from '../node'
-import { fit } from '../shares'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
+import TabStub from '../../fixtures/TabStub.vue'
+import { split, stack } from '../../fixtures/build'
+import { type Branch, type NodeId, type Tab, type TabId } from '../../lib/node'
+import { fit } from '../../lib/shares'
 
 const TITLES: Readonly<Record<string, string>> = {
   one: 'One',

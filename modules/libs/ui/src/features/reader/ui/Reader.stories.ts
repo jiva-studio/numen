@@ -12,7 +12,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import Reader from './Reader.vue'
-import { GAP } from './strip'
+import { GAP } from '../lib/strip'
 import { framed } from '@/shared/fixtures/frame'
 
 const meta = {

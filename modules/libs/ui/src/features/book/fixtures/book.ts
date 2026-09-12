@@ -7,7 +7,8 @@
  * Cyrillic carries the numbers such a book really carries. Storybook's
  * furniture; it ships to nobody.
  */
-import { bytesIn, type Span } from '@/features/book/spread'
+import { bytesIn } from '../lib/bytes'
+import type { Span } from '../lib/spread'
 
 /** One run of a document. */
 export interface Run {

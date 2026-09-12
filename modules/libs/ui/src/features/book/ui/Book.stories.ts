@@ -12,8 +12,9 @@ import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import Book from './Book.vue'
-import { GAP, bytesIn, type Span } from './spread'
-import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '@/features/book/fixtures/book'
+import { GAP, type Span } from '../lib/spread'
+import { bytesIn } from '../lib/bytes'
+import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '../fixtures/book'
 
 const meta = {
   title: 'Reading/Book',

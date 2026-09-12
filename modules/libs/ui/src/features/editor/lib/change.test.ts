@@ -9,7 +9,7 @@ import { EditorState, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { changing, marked, pacing, revealOf, stepped, type EditorChange } from './change'
 import type { Clock } from '@/shared/lib/clock'
-import { parsed } from './fixtures/state'
+import { parsed } from '../fixtures/state'
 import { RUSSIAN } from '@/shared/fixtures/prose'
 
 // Nothing here has a size, and the editor measures anyway.

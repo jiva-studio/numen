@@ -8,10 +8,10 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
-import { byHandle, byHolding } from './reaching'
-import { APART, byDoubleClick, byDoubleTap, TAP } from './showing'
-import { HOLD } from './holding'
-import { build } from './fixtures/build'
+import { byHandle, byHolding } from '../model/reaching'
+import { APART, byDoubleClick, byDoubleTap, TAP } from '../model/showing'
+import { HOLD } from '../model/holding'
+import { build } from '../fixtures/build'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
 

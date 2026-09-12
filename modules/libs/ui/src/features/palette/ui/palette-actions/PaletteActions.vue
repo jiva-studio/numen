@@ -10,15 +10,10 @@
  * and `hunt`. An action is an option.
  */
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
-import { KeyCap } from '@/shared/ui/key-cap'
-import {
-  keptOn,
-  opensActions,
-  placeActions,
-  stepIn,
-  type ActionWords,
-  type PaletteAction,
-} from '../item'
+import ActionRow from './ActionRow.vue'
+import { keptOn, placeActions, type ActionWords } from '../../lib/actions'
+import { stepIn, type PaletteAction } from '../../lib/item'
+import { opensActions } from '../../lib/keys'
 
 const props = defineProps<{
   /** What the lit item offers, in the order it offers them. */
@@ -68,14 +63,19 @@ const over = (to: number, event: PointerEvent) => {
 /** What is lit is brought into sight. Only a key does this. */
 const reveal = async () => {
   await nextTick()
-  drawn.get(held.value)?.scrollIntoView?.({ block: 'nearest' })
+  drawn.get(held.value)?.element?.scrollIntoView?.({ block: 'nearest' })
+}
+
+/** A row standing now, which carries the element it is drawn as. */
+interface RowHandle {
+  readonly element: HTMLElement | null
 }
 
 /** The rows as they are drawn, each under the action it stands for. */
-const drawn = new Map<string, HTMLElement>()
+const drawn = new Map<string, RowHandle>()
 
 const hold = (action: string, row: unknown): void => {
-  if (row) drawn.set(action, row as HTMLElement)
+  if (row) drawn.set(action, row as RowHandle)
   else drawn.delete(action)
 }
 
@@ -147,29 +147,17 @@ const onKey = (event: KeyboardEvent) => {
       role="listbox"
       :aria-label="words.name"
     >
-      <div
+      <ActionRow
         v-for="row in actions"
         :id="actionName(row.at)"
         :ref="(element) => hold(row.action.id, element)"
         :key="row.action.id"
-        class="actions__item flex items-center gap-3 rounded-node px-2 py-1.5"
-        role="option"
-        :aria-selected="row.at === here"
-        :data-here="row.at === here || undefined"
+        :row="row"
+        :here="row.at === here"
         @pointermove="over(row.at, $event)"
         @pointerdown.prevent
         @click="run(row.at)"
-      >
-        <span class="actions__name min-w-0 flex-1" data-actions="name">
-          <span
-            v-for="(part, piece) in row.name"
-            :key="piece"
-            :data-hit="part.hit || undefined"
-            >{{ part.text }}</span
-          >
-        </span>
-        <KeyCap v-if="row.key" class="actions__hint" data-actions="hint" :keys="row.key" />
-      </div>
+      />
     </div>
 
     <p
@@ -222,38 +210,8 @@ const onKey = (event: KeyboardEvent) => {
   overscroll-behavior: contain;
 }
 
-.actions__item {
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.actions__item[data-here] {
-  background: var(--numen-bubble-bg);
-}
-
-/* One line, then an ellipsis. A list is read down its leading edge. */
-.actions__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Why the action is here. It sits under words that are being read, so it is a
-   tint and not a colour. */
-.actions__name [data-hit] {
-  border-radius: 2px;
-  background: var(--numen-highlight);
-  font-weight: 600;
-}
-
 .actions__silence {
   margin: 0;
-}
-
-/* A key written on a row is the last thing on it, and is read after the name. */
-.actions__hint {
-  flex: none;
 }
 
 .actions__hunt {

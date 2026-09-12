@@ -8,11 +8,11 @@
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
-import { OPENING, type WideBox } from '../dwell'
-import { hangParts, type PlexPart } from '../inside'
+import { OPENING, type WideBox } from '../../model/dwell'
+import { hangParts, type PlexPart } from '../../lib/inside'
 import { stubClock } from '@/shared/fixtures/clock'
-import type { GestureRole, PlacedNode } from '../node'
-import type { PlexSeat } from '../seat'
+import type { GestureRole, PlacedNode } from '../../lib/node'
+import type { PlexSeat } from '../../lib/seat'
 
 const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',

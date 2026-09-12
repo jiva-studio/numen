@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  BOOK_WORDS,
   GAP,
   NARROWEST,
   beginsAt,
-  bytesIn,
   columnHeight,
   columnWidth,
   columnsIn,
@@ -16,10 +14,11 @@ import {
   pagesOf,
   spreadAt,
   spreads,
-  unitsIn,
   type Flow,
   type Mark,
 } from './spread'
+import { bytesIn, unitsIn } from './bytes'
+import { BOOK_WORDS } from './words'
 import { EDGE, SWIPE, handTurn, keyTurn, pressTurn, swipeTurn, turnTo } from './turn'
 
 /** A wide reading area, which takes two columns, and a narrow one, which takes one. */

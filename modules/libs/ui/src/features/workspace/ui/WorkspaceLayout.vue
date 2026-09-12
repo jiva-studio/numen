@@ -11,7 +11,8 @@ import { browserClock, type Clock } from '@/shared/lib/clock'
 import { DragPreview, usePressDrag } from '@/shared/ui/drag-preview'
 import { WorkspaceBranch } from './branch'
 import { WorkspacePane } from './pane'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from './context'
+import WorkspaceOverlay from './WorkspaceOverlay.vue'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../model/context'
 import {
   activateTab,
   closeTab,
@@ -21,10 +22,10 @@ import {
   moveTabWithin,
   resizeBranch,
   type NodeIdFactory,
-} from './edit'
-import { rectOf, caretAt, edgeOf, overlayFor, sideAt, slotAt, type TabLanding } from './drop'
-import { type NodeId, type Tab, type TabId, type Workspace } from './node'
-import type { Rect } from './rect'
+} from '../lib/edit'
+import { rectOf, caretAt, edgeOf, overlayFor, sideAt, slotAt, type TabLanding } from '../lib/drop'
+import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
+import type { Rect } from '../lib/rect'
 
 const props = withDefaults(
   defineProps<{
@@ -254,17 +255,7 @@ function landingAt(x: number, y: number): TabLanding | null {
       </template>
     </WorkspacePane>
 
-    <div
-      v-if="overlay"
-      class="workspace__overlay"
-      :data-caret="landing?.kind === 'strip' || undefined"
-      :style="{
-        left: `${overlay.x}px`,
-        top: `${overlay.y}px`,
-        width: `${overlay.width}px`,
-        height: `${overlay.height}px`,
-      }"
-    />
+    <WorkspaceOverlay v-if="overlay" :box="overlay" :caret="landing?.kind === 'strip'" />
 
     <DragPreview
       v-if="label && position"
@@ -279,34 +270,6 @@ function landingAt(x: number, y: number): TabLanding | null {
 .workspace {
   block-size: 100%;
   overflow: hidden;
-}
-
-/* Where the tab would go, shown over everything and catching nothing. The
-   wash is the same colour as the outline, laid on thinly. */
-.workspace__overlay {
-  /* How heavily the wash inside the outline is laid on. */
-  --wash: 0.16;
-
-  position: absolute;
-  z-index: 2;
-  pointer-events: none;
-  border: var(--numen-ring-width) solid var(--numen-ring);
-  border-radius: var(--numen-radius);
-}
-
-.workspace__overlay::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--numen-ring);
-  opacity: var(--wash);
-}
-
-.workspace__overlay[data-caret] {
-  inline-size: var(--numen-caret);
-  margin-inline-start: calc(var(--numen-caret) / -2);
-  border: none;
-  background: var(--numen-ring);
 }
 
 /* The tab being dragged stands over the panes and the overlay both. */

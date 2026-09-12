@@ -8,9 +8,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Stencil from './StencilEditor.vue'
-import { ordered, reordered, type Half, type InsertionPoint } from '../order'
-import type { StencilFace } from '../stencil'
-import { renamedIn } from '../fill'
+import { ordered, reordered, type Half, type InsertionPoint } from '../../lib/order'
+import type { StencilFace } from '../../lib/stencil'
+import { renamedIn } from '../../lib/fill'
 
 interface Corpus {
   readonly fields: readonly string[]

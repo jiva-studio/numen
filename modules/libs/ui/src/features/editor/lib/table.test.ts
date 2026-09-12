@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import { emptyRow, readTable, rowsOf, shown, widthOf, withColumn, written } from './table'
-import { parsed } from './fixtures/state'
+import { parsed } from '../fixtures/state'
 
 const tableIn = (state: EditorState) => {
   const node = syntaxTree(state).topNode.getChild('Table')

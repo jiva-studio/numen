@@ -1,0 +1,13 @@
+/** A neighbourhood of notes drawn as a graph, and the seats its edges run between. */
+export { default as Plex } from './ui/Plex.vue'
+export { RELATED_SEATS, seatWord } from './lib/seat'
+export type { PlexRelatedSeat } from './lib/seat'
+export { optionsForType, useTypeSize } from './model/sizing'
+export { byHolding } from './model/reaching'
+export { byDoubleTap } from './model/showing'
+export type { PlexShowing } from './model/showing'
+export type { PlexPart } from './lib/inside'
+export type { EdgeArrow, PlexEdge } from './lib/edge'
+export type { PlexNeighbourhood } from './lib/neighbourhood'
+export type { PlexNode, Position } from './lib/node'
+export { neighbourhoods } from './fixtures/neighbourhoods'

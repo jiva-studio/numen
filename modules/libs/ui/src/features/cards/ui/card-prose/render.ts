@@ -9,7 +9,7 @@
  * breaks it was written with and each such line reads as the line it is. A
  * break standing between two tags is whitespace of the markup, and is taken out.
  */
-import { safe } from '../safe'
+import { safe } from '../../lib/safe'
 
 /** The tags whose own whitespace is the markup's, and no line of a card. */
 const BLOCKS = new Set([

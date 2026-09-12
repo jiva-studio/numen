@@ -10,8 +10,8 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import DeckEditor from './DeckEditor.vue'
-import { endOf, HEAD, type DeckSection, type DeckCard } from '../deck'
-import type { Stencil } from '../card'
+import { endOf, HEAD, type DeckSection, type DeckCard } from '../../lib/deck'
+import type { Stencil } from '../../lib/card'
 
 const CUTS: readonly Stencil[] = [
   { name: 'Animal', fields: ['Name', 'Height', 'Life span'] },

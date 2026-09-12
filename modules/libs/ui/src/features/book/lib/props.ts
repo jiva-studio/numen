@@ -1,7 +1,8 @@
 /**
  * What the reader of a book that reflows is told, before it draws anything.
  */
-import type { BookWords, Span } from './spread'
+import type { Span } from './spread'
+import type { BookWords } from './words'
 
 /** What one document of a book reaches the reader as. */
 export interface BookProps {

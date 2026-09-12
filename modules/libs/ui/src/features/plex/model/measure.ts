@@ -6,7 +6,7 @@
  * arranged from. The answer comes at once, while the arrangement is worked out.
  */
 import { computed, onScopeDispose, shallowRef, type Ref } from 'vue'
-import type { PlexNode } from './node'
+import type { PlexNode } from '../lib/node'
 
 /** The width a node's box needs, padding included. */
 export type Measure = (node: PlexNode) => number

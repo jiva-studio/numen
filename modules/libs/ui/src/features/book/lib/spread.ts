@@ -209,52 +209,9 @@ export function holding(marks: readonly Mark[], flow: Flow, at: number): number 
   return found ? spreadAt(flow, found.x) : 0
 }
 
-const encoder = new TextEncoder()
-
-/** How many bytes a text comes to. */
-export function bytesIn(text: string): number {
-  return encoder.encode(text).length
-}
-
-/**
- * How many UTF-16 units of a text its first so many bytes cover.
- *
- * The offsets a book carries are bytes and a JavaScript string is units. A
- * character of Devanagari is three bytes and one of Cyrillic is two, so the two
- * numbers part company on the first word of the corpus this reads.
- */
-export function unitsIn(text: string, bytes: number): number {
-  if (bytes <= 0) return 0
-  let counted = 0
-  let units = 0
-  for (const character of text) {
-    const size = encoder.encode(character).length
-    if (counted + size > bytes) break
-    counted += size
-    units += character.length
-  }
-  return units
-}
-
 /** How large the text may be set. */
 export const SMALLEST = 0.8
 export const LARGEST = 2
-
-/** The words a book is read with. */
-export interface BookWords {
-  /** What the columns the text stands in are called. */
-  readonly pages: string
-  /** Where in the book the page in front stands. */
-  readonly of: (page: number, pages: number) => string
-  /** How much of the chapter in front is still to come. */
-  readonly left: (pages: number) => string
-}
-
-export const BOOK_WORDS: BookWords = {
-  pages: 'Pages',
-  of: (page, pages) => `${page} of ${pages}`,
-  left: (pages) => `${pages} ${pages === 1 ? 'page' : 'pages'} left in chapter`,
-}
 
 /** A number held inside the bounds it is read between. */
 export const held = (value: number, least: number, most: number): number =>

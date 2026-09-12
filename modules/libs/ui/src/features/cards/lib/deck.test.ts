@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   blanks,
   DECK_WORDS,
-  grid,
   laid,
   NOTHING_WRONG,
   type DeckSection,
   type DeckCard,
 } from './deck'
+import { grid } from './grid'
 import type { Stencil } from './card'
 
 describe('laid', () => {

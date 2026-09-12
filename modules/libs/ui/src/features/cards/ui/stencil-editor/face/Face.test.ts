@@ -9,10 +9,10 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Face from './Face.vue'
-import type { FieldValue } from '../../card'
-import { declared } from '../../order'
-import { faceRows, type FaceRow, type StencilFace } from '../../stencil'
-import { sampled } from '../../fill'
+import type { FieldValue } from '../../../lib/card'
+import { declared } from '../../../lib/order'
+import { faceRows, type FaceRow, type StencilFace } from '../../../lib/stencil'
+import { sampled } from '../../../lib/fill'
 
 const FIELDS = ['Name', 'Height', 'Weight']
 

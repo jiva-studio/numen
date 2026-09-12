@@ -10,9 +10,9 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import { WorkspacePane } from '../pane'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../context'
-import { split, stack } from '../fixtures/build'
-import { type Branch, type Tab, type TabId } from '../node'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
+import { split, stack } from '../../fixtures/build'
+import { type Branch, type Tab, type TabId } from '../../lib/node'
 
 const TITLES: Readonly<Record<string, string>> = { one: 'One', two: 'Two', three: 'Three' }
 

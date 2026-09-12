@@ -124,6 +124,10 @@ watch(
   outline: none;
 }
 
+/* What a drop would land inside: the row. */
+.tree__row[data-into] {
+}
+
 .tree__row[data-before]::before {
   content: '';
   position: absolute;

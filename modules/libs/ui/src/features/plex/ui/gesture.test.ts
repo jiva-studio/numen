@@ -9,8 +9,8 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
-import { build } from './fixtures/build'
-import type { PlexRelatedSeat } from './seat'
+import { build } from '../fixtures/build'
+import type { PlexRelatedSeat } from '../lib/seat'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
 const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.seat === 'child')!.title

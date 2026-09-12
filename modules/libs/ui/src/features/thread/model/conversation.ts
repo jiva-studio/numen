@@ -9,8 +9,8 @@
  */
 import { ref, type Ref } from 'vue'
 import { onNextFrame } from '@/shared/lib/clock'
-import { charsWord, type Turn } from './turn'
-import type { AgentPort, Place } from './agent'
+import { charsWord, type Turn } from '../lib/turn'
+import type { AgentPort, Place } from '../lib/agent'
 
 /** The words the panel puts up itself. */
 export interface ConversationStrings {

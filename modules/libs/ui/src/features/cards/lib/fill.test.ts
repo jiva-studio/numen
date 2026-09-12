@@ -19,7 +19,7 @@ import {
  * flashcards/format for the window a card is reviewed in. The table both are
  * held to is one file, and neither owns it.
  */
-import corpus from '../../../../protocol/testdata/faces.json'
+import corpus from '../../../../../protocol/testdata/faces.json'
 
 const VALUES = [
   { field: 'Height', text: 'about 45"' },

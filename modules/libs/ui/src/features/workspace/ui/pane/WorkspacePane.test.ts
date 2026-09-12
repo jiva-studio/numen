@@ -3,8 +3,8 @@ import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import { describe, expect, it } from 'vitest'
 import WorkspacePane from './WorkspacePane.vue'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../context'
-import { pane, type Tab } from '../node'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
+import { pane, type Tab } from '../../lib/node'
 
 const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
 

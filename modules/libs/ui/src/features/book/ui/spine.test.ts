@@ -8,9 +8,9 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import spine from '../../../../protocol/testdata/spine.html?raw'
+import spine from '../../../../../protocol/testdata/spine.html?raw'
 import Book from './Book.vue'
-import { bytesIn } from './spread'
+import { bytesIn } from '../lib/bytes'
 
 /** The document the corpus is taken from, as the archive names it. */
 const MIDDLE = 'OEBPS/middle.xhtml'

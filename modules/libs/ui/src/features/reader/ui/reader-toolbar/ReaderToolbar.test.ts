@@ -8,7 +8,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import ReaderToolbar from './ReaderToolbar.vue'
-import { CLOSEST, FURTHEST, NEARER, READER_WORDS } from '../strip'
+import { CLOSEST, FURTHEST, NEARER, READER_WORDS } from '../../lib/strip'
 
 /** The controls over a document of that many pages, open at the first. */
 const drawn = (pages = 200, at = 0) =>

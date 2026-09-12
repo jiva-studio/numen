@@ -9,10 +9,10 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import Heatmap from './Heatmap.vue'
-import { ROWS } from './heatmap'
+import { ROWS } from '../lib/heatmap'
 import { dayNamed } from '@/shared/lib/day'
-import type { Tally } from './heatmap'
-import type { Words } from './words'
+import type { Tally } from '../lib/heatmap'
+import type { Words } from '../lib/words'
 import { lightness } from '@/shared/fixtures/colour'
 import { DARK, drawnDark } from '@/shared/fixtures/theme'
 

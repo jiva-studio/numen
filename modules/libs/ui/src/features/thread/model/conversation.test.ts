@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { useConversation, type ConversationStrings } from './conversation'
-import type { AgentPort, AgentStep, Place } from './agent'
+import type { AgentPort, AgentStep, Place } from '../lib/agent'
 
 const words: ConversationStrings = {
   thinking: 'Thinking',

@@ -2,10 +2,10 @@
 import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { usePlexTransition } from './transition'
-import { neighbourhoods } from './fixtures/neighbourhoods'
+import { neighbourhoods } from '../fixtures/neighbourhoods'
 import { stubClock } from '@/shared/fixtures/clock'
-import type { PlexNeighbourhood } from './neighbourhood'
-import type { PlacedNode } from './node'
+import type { PlexNeighbourhood } from '../lib/neighbourhood'
+import type { PlacedNode } from '../lib/node'
 
 /** Run a composable inside a scope, as a component would. */
 function inScope<T>(build: () => T): T {

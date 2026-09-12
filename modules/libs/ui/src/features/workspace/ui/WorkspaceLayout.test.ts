@@ -8,8 +8,8 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import WorkspaceLayout from './WorkspaceLayout.vue'
 import { WorkspacePane } from './pane'
-import { type Tab, type Workspace as State } from './node'
-import { oneStack, sideBySide, stack, workspaceOf } from './fixtures/build'
+import { type Tab, type Workspace as State } from '../lib/node'
+import { oneStack, sideBySide, stack, workspaceOf } from '../fixtures/build'
 
 const TABS: readonly Tab[] = [
   { id: 'plex', title: 'Plex' },

@@ -1,6 +1,6 @@
 /** What is true of every workspace an edit produces. */
-import type { Workspace, WorkspaceNode } from '../node'
-import { isBranch, panesOf } from '../tree'
+import type { Workspace, WorkspaceNode } from '../lib/node'
+import { isBranch, panesOf } from '../lib/tree'
 
 /** Anything that does not hold about a workspace, said in words. */
 export function broken(workspace: Workspace): readonly string[] {

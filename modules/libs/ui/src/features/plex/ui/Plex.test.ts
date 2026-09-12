@@ -6,9 +6,9 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import Plex from './Plex.vue'
-import { DEFAULT_OPTIONS, type Size } from './arrange'
+import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
 import type { Viewport } from '@/shared/lib/viewport'
-import { neighbourhoods } from './fixtures/neighbourhoods'
+import { neighbourhoods } from '../fixtures/neighbourhoods'
 
 /** No movement unless a test is about movement. */
 const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>

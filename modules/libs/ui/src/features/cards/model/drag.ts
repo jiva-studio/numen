@@ -6,7 +6,7 @@
  * what a landing comes to are the caller's, and each is stated once.
  */
 import { shallowRef, type ShallowRef } from 'vue'
-import { stepped, type InsertionPoint, type StepDirection } from './order'
+import { stepped, type InsertionPoint, type StepDirection } from '../lib/order'
 
 /**
  * What following a drag takes: the order it runs along, and the rules.

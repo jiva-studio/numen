@@ -11,9 +11,9 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Palette from './Palette.vue'
-import type { PaletteGroup } from './item'
+import type { PaletteGroup } from '../lib/item'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
-import { MANY } from './fixtures/actions'
+import { MANY } from '../fixtures/actions'
 
 /** A keystroke that reaches an item away from the palette. */
 const OPTION_1: PaletteKeys = { icons: ['option'], letter: '1' }

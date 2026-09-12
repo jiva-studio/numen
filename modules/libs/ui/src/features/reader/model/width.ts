@@ -5,7 +5,7 @@
  * it, and it follows the row only once the row has stood still.
  */
 import { computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { SETTLED, STAGE, type Row } from './strip'
+import { SETTLED, STAGE, type Row } from '../lib/strip'
 
 /** How many device pixels a CSS pixel is. One, where there is no window to ask. */
 const pixelRatio = (): number =>

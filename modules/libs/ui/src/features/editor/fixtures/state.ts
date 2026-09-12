@@ -7,7 +7,7 @@
 import { markdown } from '@codemirror/lang-markdown'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorState } from '@codemirror/state'
-import { LANGUAGES } from '../languages'
+import { LANGUAGES } from '../config/languages'
 import { GFM } from '@lezer/markdown'
 
 export const parsed = (doc: string, caret = 0) => {

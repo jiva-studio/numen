@@ -5,8 +5,8 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import DaySummary from './DaySummary.vue'
-import type { Day } from '../heatmap'
-import type { Words } from '../words'
+import type { Day } from '../../lib/heatmap'
+import type { Words } from '../../lib/words'
 
 const WORDS: Words = {
   names: (day) => `on ${day}`,

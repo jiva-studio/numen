@@ -7,7 +7,7 @@
  */
 import { computed, ref } from 'vue'
 import { Button } from '@/shared/ui/button'
-import { clamped, CLOSEST, FURTHEST, NEARER, READER_WORDS, type ReaderWords } from '../strip'
+import { clamped, CLOSEST, FURTHEST, NEARER, READER_WORDS, type ReaderWords } from '../../lib/strip'
 
 withDefaults(
   defineProps<{

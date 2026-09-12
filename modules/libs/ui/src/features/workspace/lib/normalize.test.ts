@@ -7,8 +7,8 @@ import { normalize } from './normalize'
 import { pane } from './node'
 import { isBranch, isPane } from './tree'
 import { arrangeWorkspace } from './arrange'
-import { split, stack, workspaceOf } from './fixtures/build'
-import { broken } from './fixtures/invariants'
+import { split, stack, workspaceOf } from '../fixtures/build'
+import { broken } from '../fixtures/invariants'
 
 const SCREEN = { x: 0, y: 0, width: 1280, height: 800 }
 

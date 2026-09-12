@@ -8,7 +8,8 @@
  * offsets and they are kept in it, so the run an offset falls in is the last
  * one beginning at or before it.
  */
-import { bytesIn, unitsIn, type Mark, type Span } from './spread'
+import { bytesIn, unitsIn } from './bytes'
+import type { Mark, Span } from './spread'
 
 /** One run of the book's text as it is drawn. */
 export interface Run {

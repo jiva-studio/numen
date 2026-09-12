@@ -6,7 +6,7 @@
  * inside one tick, and the second reads out everything neither has read yet.
  */
 import { nextTick, onMounted, ref, shallowRef, watch, type Ref } from 'vue'
-import type { Notice } from './notice'
+import type { Notice } from '../lib/notice'
 
 /** What each card reads out as. */
 const wordsOf = (one: Notice): string => (one.about ? `${one.says} — ${one.about}` : one.says)

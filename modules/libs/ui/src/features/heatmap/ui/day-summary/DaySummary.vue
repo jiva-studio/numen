@@ -8,8 +8,8 @@
  */
 import { computed } from 'vue'
 
-import type { Day } from '../heatmap'
-import type { Words } from '../words'
+import type { Day } from '../../lib/heatmap'
+import type { Words } from '../../lib/words'
 
 const props = defineProps<{
   day: Day

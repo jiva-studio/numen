@@ -13,7 +13,7 @@
 import { nextTick } from 'vue'
 import { Spinner } from '@/shared/ui/spinner'
 import { KeyCap } from '@/shared/ui/key-cap'
-import { listId, optionId, type PlacedGroup } from '../item'
+import { listId, optionId, type PlacedGroup } from '../../lib/place'
 
 const props = defineProps<{
   /** The groups as they are drawn, their rows numbered over the whole list. */

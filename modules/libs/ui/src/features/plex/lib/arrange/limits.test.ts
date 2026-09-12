@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { limitsFor } from './limits'
 import { DEFAULT_OPTIONS } from './options'
-import { neighbourhoods } from '../fixtures/neighbourhoods'
-import { build } from '../fixtures/build'
+import { neighbourhoods } from '../../fixtures/neighbourhoods'
+import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
 
 /**

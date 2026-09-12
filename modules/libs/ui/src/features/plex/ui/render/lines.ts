@@ -1,6 +1,6 @@
 /** An edge with what the drawing asks of it, worked out once for both layers. */
-import { arrowTransformOf, pathOf, readingPathOf } from '../arrange'
-import { edgeKey, type PlacedEdge } from '../edge'
+import { arrowTransformOf, pathOf, readingPathOf } from '../../lib/arrange'
+import { edgeKey, type PlacedEdge } from '../../lib/edge'
 
 export interface EdgeLine {
   readonly edge: PlacedEdge

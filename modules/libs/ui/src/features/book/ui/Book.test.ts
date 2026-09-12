@@ -1,8 +1,8 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import Book from './Book.vue'
-import { chapterOf } from '@/features/book/fixtures/book'
-import { bytesIn } from './spread'
+import { chapterOf } from '../fixtures/book'
+import { bytesIn } from '../lib/bytes'
 
 /**
  * A chapter standing in the middle of a book, with a document before it and a
