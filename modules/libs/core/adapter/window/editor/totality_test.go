@@ -100,20 +100,20 @@ func TestEveryPresenceIsWrittenFromOne(t *testing.T) {
 	}, func(is port.Presence) v1.Presence { return presences[is] })
 }
 
-func TestEveryVaultsRefusalIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.VaultsRefusal]error{
-		v1.VaultsRefusal_VAULTS_REFUSAL_UNREADABLE: vaults.ErrUnreadable,
-		v1.VaultsRefusal_VAULTS_REFUSAL_COPY:       vaults.ErrCopy,
-		v1.VaultsRefusal_VAULTS_REFUSAL_OVERLAPS:   domain.ErrOverlaps,
-		v1.VaultsRefusal_VAULTS_REFUSAL_NAME_TAKEN: vaults.ErrNameTaken,
-		v1.VaultsRefusal_VAULTS_REFUSAL_LAST_VAULT: vaults.ErrLastVault,
-		v1.VaultsRefusal_VAULTS_REFUSAL_SHOWING:    errShowing,
-		v1.VaultsRefusal_VAULTS_REFUSAL_UNKNOWN:    vaults.ErrUnknown,
-		v1.VaultsRefusal_VAULTS_REFUSAL_NO_TRASH:   port.ErrNoTrash,
-		v1.VaultsRefusal_VAULTS_REFUSAL_ASKING:     errAsking,
-	}, func(err error) v1.VaultsRefusal {
-		refusal, _ := vaultRefusedBy(err)
-		return refusal
+func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {
+	testsupport.Produced(t, map[v1.VaultsErrorCode]error{
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: vaults.ErrUnreadable,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       vaults.ErrCopy,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   domain.ErrOverlaps,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: vaults.ErrNameTaken,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: vaults.ErrLastVault,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING:    errShowing,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN:    vaults.ErrUnknown,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   port.ErrNoTrash,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:     errAsking,
+	}, func(err error) v1.VaultsErrorCode {
+		reason, _ := vaultsErrorCodeBy(err)
+		return reason
 	})
 }
 

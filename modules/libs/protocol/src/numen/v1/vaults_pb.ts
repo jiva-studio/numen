@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vaults.proto.
  */
 export const file_numen_v1_vaults: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkAKBVZhdWx0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRIPCgdtaXNzaW5nGAQgASgIIhMKEUxpc3RWYXVsdHNSZXF1ZXN0IjUKEkxpc3RWYXVsdHNSZXNwb25zZRIfCgZ2YXVsdHMYASADKAsyDy5udW1lbi52MS5WYXVsdCI5ChNDaG9vc2VGb2xkZXJSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC3N0YXJ0aW5nX2F0GAIgASgJIjMKFENob29zZUZvbGRlclJlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFY2hvc2UYAiABKAgiLQoPQWRkVmF1bHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCSJ8ChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgdyZWZ1c2FsGAIgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgBiAEBQggKBl92YXVsdEIKCghfcmVmdXNhbCIuChJSZW5hbWVWYXVsdFJlcXVlc3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCSJ/ChNSZW5hbWVWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgdyZWZ1c2FsGAIgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgBiAEBQggKBl92YXVsdEIKCghfcmVmdXNhbCIvChJSZW1vdmVWYXVsdFJlcXVlc3QSCgoCaWQYASABKAkSDQoFdHJhc2gYAiABKAgiUAoTUmVtb3ZlVmF1bHRSZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIh4KEE9wZW5WYXVsdFJlcXVlc3QSCgoCaWQYASABKAkiTgoRT3BlblZhdWx0UmVzcG9uc2USLQoHcmVmdXNhbBgBIAEoDjIXLm51bWVuLnYxLlZhdWx0c1JlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCqyAgoNVmF1bHRzUmVmdXNhbBIeChpWQVVMVFNfUkVGVVNBTF9VTlNQRUNJRklFRBAAEh0KGVZBVUxUU19SRUZVU0FMX1VOUkVBREFCTEUQARIXChNWQVVMVFNfUkVGVVNBTF9DT1BZEAISGwoXVkFVTFRTX1JFRlVTQUxfT1ZFUkxBUFMQAxIdChlWQVVMVFNfUkVGVVNBTF9OQU1FX1RBS0VOEAQSHQoZVkFVTFRTX1JFRlVTQUxfTEFTVF9WQVVMVBAFEhoKFlZBVUxUU19SRUZVU0FMX1NIT1dJTkcQBhIaChZWQVVMVFNfUkVGVVNBTF9VTktOT1dOEAcSGwoXVkFVTFRTX1JFRlVTQUxfTk9fVFJBU0gQCBIZChVWQVVMVFNfUkVGVVNBTF9BU0tJTkcQCTLIAwoNVmF1bHRzU2VydmljZRJHCgpMaXN0VmF1bHRzEhsubnVtZW4udjEuTGlzdFZhdWx0c1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VmF1bHRzUmVzcG9uc2USTQoMQ2hvb3NlRm9sZGVyEh0ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNob29zZUZvbGRlclJlc3BvbnNlEkEKCEFkZFZhdWx0EhkubnVtZW4udjEuQWRkVmF1bHRSZXF1ZXN0GhoubnVtZW4udjEuQWRkVmF1bHRSZXNwb25zZRJKCgtSZW5hbWVWYXVsdBIcLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVzcG9uc2USSgoLUmVtb3ZlVmF1bHQSHC5udW1lbi52MS5SZW1vdmVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW1vdmVWYXVsdFJlc3BvbnNlEkQKCU9wZW5WYXVsdBIaLm51bWVuLnYxLk9wZW5WYXVsdFJlcXVlc3QaGy5udW1lbi52MS5PcGVuVmF1bHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkAKBVZhdWx0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRIPCgdtaXNzaW5nGAQgASgIIhMKEUxpc3RWYXVsdHNSZXF1ZXN0IjUKEkxpc3RWYXVsdHNSZXNwb25zZRIfCgZ2YXVsdHMYASADKAsyDy5udW1lbi52MS5WYXVsdCI5ChNDaG9vc2VGb2xkZXJSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC3N0YXJ0aW5nX2F0GAIgASgJIjMKFENob29zZUZvbGRlclJlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFY2hvc2UYAiABKAgiLQoPQWRkVmF1bHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCSJ6ChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgVlcnJvchgCIAEoDjIZLm51bWVuLnYxLlZhdWx0c0Vycm9yQ29kZUgBiAEBQggKBl92YXVsdEIICgZfZXJyb3IiLgoSUmVuYW1lVmF1bHRSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkifQoTUmVuYW1lVmF1bHRSZXNwb25zZRIjCgV2YXVsdBgBIAEoCzIPLm51bWVuLnYxLlZhdWx0SACIAQESLQoFZXJyb3IYAiABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAYgBAUIICgZfdmF1bHRCCAoGX2Vycm9yIi8KElJlbW92ZVZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCRINCgV0cmFzaBgCIAEoCCJOChNSZW1vdmVWYXVsdFJlc3BvbnNlEi0KBWVycm9yGAEgASgOMhkubnVtZW4udjEuVmF1bHRzRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yIh4KEE9wZW5WYXVsdFJlcXVlc3QSCgoCaWQYASABKAkiTAoRT3BlblZhdWx0UmVzcG9uc2USLQoFZXJyb3IYASABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAIgBAUIICgZfZXJyb3Iq0gIKD1ZhdWx0c0Vycm9yQ29kZRIhCh1WQVVMVFNfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiAKHFZBVUxUU19FUlJPUl9DT0RFX1VOUkVBREFCTEUQARIaChZWQVVMVFNfRVJST1JfQ09ERV9DT1BZEAISHgoaVkFVTFRTX0VSUk9SX0NPREVfT1ZFUkxBUFMQAxIgChxWQVVMVFNfRVJST1JfQ09ERV9OQU1FX1RBS0VOEAQSIAocVkFVTFRTX0VSUk9SX0NPREVfTEFTVF9WQVVMVBAFEh0KGVZBVUxUU19FUlJPUl9DT0RFX1NIT1dJTkcQBhIdChlWQVVMVFNfRVJST1JfQ09ERV9VTktOT1dOEAcSHgoaVkFVTFRTX0VSUk9SX0NPREVfTk9fVFJBU0gQCBIcChhWQVVMVFNfRVJST1JfQ09ERV9BU0tJTkcQCTLIAwoNVmF1bHRzU2VydmljZRJHCgpMaXN0VmF1bHRzEhsubnVtZW4udjEuTGlzdFZhdWx0c1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VmF1bHRzUmVzcG9uc2USTQoMQ2hvb3NlRm9sZGVyEh0ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNob29zZUZvbGRlclJlc3BvbnNlEkEKCEFkZFZhdWx0EhkubnVtZW4udjEuQWRkVmF1bHRSZXF1ZXN0GhoubnVtZW4udjEuQWRkVmF1bHRSZXNwb25zZRJKCgtSZW5hbWVWYXVsdBIcLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVzcG9uc2USSgoLUmVtb3ZlVmF1bHQSHC5udW1lbi52MS5SZW1vdmVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW1vdmVWYXVsdFJlc3BvbnNlEkQKCU9wZW5WYXVsdBIaLm51bWVuLnYxLk9wZW5WYXVsdFJlcXVlc3QaGy5udW1lbi52MS5PcGVuVmF1bHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * Vault is one vault the installation holds, as the list has it.
@@ -193,9 +193,9 @@ export type AddVaultResponse = Message<"numen.v1.AddVaultResponse"> & {
   /**
    * Set when nothing was added, and why.
    *
-   * @generated from field: optional numen.v1.VaultsRefusal refusal = 2;
+   * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
    */
-  refusal?: VaultsRefusal | undefined;
+  error?: VaultsErrorCode | undefined;
 };
 
 /**
@@ -246,9 +246,9 @@ export type RenameVaultResponse = Message<"numen.v1.RenameVaultResponse"> & {
   /**
    * Set when the vault was not renamed, and why.
    *
-   * @generated from field: optional numen.v1.VaultsRefusal refusal = 2;
+   * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
    */
-  refusal?: VaultsRefusal | undefined;
+  error?: VaultsErrorCode | undefined;
 };
 
 /**
@@ -294,9 +294,9 @@ export type RemoveVaultResponse = Message<"numen.v1.RemoveVaultResponse"> & {
    * Set when the vault is still on the list, and why. The folder is where it
    * was.
    *
-   * @generated from field: optional numen.v1.VaultsRefusal refusal = 1;
+   * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
    */
-  refusal?: VaultsRefusal | undefined;
+  error?: VaultsErrorCode | undefined;
 };
 
 /**
@@ -332,9 +332,9 @@ export type OpenVaultResponse = Message<"numen.v1.OpenVaultResponse"> & {
   /**
    * Set when the window is showing what it was, and why.
    *
-   * @generated from field: optional numen.v1.VaultsRefusal refusal = 1;
+   * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
    */
-  refusal?: VaultsRefusal | undefined;
+  error?: VaultsErrorCode | undefined;
 };
 
 /**
@@ -345,21 +345,21 @@ export const OpenVaultResponseSchema: GenMessage<OpenVaultResponse> = /*@__PURE_
   messageDesc(file_numen_v1_vaults, 12);
 
 /**
- * VaultsRefusal is why the list is as it was, or why the window is still
+ * VaultsErrorCode is why the list is as it was, or why the window is still
  * showing the vault it was showing.
  *
- * @generated from enum numen.v1.VaultsRefusal
+ * @generated from enum numen.v1.VaultsErrorCode
  */
-export enum VaultsRefusal {
+export enum VaultsErrorCode {
   /**
-   * @generated from enum value: VAULTS_REFUSAL_UNSPECIFIED = 0;
+   * @generated from enum value: VAULTS_ERROR_CODE_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
 
   /**
    * The path is not a folder, or cannot be read.
    *
-   * @generated from enum value: VAULTS_REFUSAL_UNREADABLE = 1;
+   * @generated from enum value: VAULTS_ERROR_CODE_UNREADABLE = 1;
    */
   UNREADABLE = 1,
 
@@ -368,14 +368,14 @@ export enum VaultsRefusal {
    * still carries it: the two are copies of one vault, and one index cannot
    * hold both.
    *
-   * @generated from enum value: VAULTS_REFUSAL_COPY = 2;
+   * @generated from enum value: VAULTS_ERROR_CODE_COPY = 2;
    */
   COPY = 2,
 
   /**
    * The folder lies inside a vault that is on the list, or holds one.
    *
-   * @generated from enum value: VAULTS_REFUSAL_OVERLAPS = 3;
+   * @generated from enum value: VAULTS_ERROR_CODE_OVERLAPS = 3;
    */
   OVERLAPS = 3,
 
@@ -383,28 +383,28 @@ export enum VaultsRefusal {
    * Another vault is called this. It reaches RenameVault; AddVault appends a
    * number to a taken name.
    *
-   * @generated from enum value: VAULTS_REFUSAL_NAME_TAKEN = 4;
+   * @generated from enum value: VAULTS_ERROR_CODE_NAME_TAKEN = 4;
    */
   NAME_TAKEN = 4,
 
   /**
    * It is the only vault this installation has.
    *
-   * @generated from enum value: VAULTS_REFUSAL_LAST_VAULT = 5;
+   * @generated from enum value: VAULTS_ERROR_CODE_LAST_VAULT = 5;
    */
   LAST_VAULT = 5,
 
   /**
    * It is the vault this window is showing.
    *
-   * @generated from enum value: VAULTS_REFUSAL_SHOWING = 6;
+   * @generated from enum value: VAULTS_ERROR_CODE_SHOWING = 6;
    */
   SHOWING = 6,
 
   /**
    * No vault of that identity is on the list.
    *
-   * @generated from enum value: VAULTS_REFUSAL_UNKNOWN = 7;
+   * @generated from enum value: VAULTS_ERROR_CODE_UNKNOWN = 7;
    */
   UNKNOWN = 7,
 
@@ -412,7 +412,7 @@ export enum VaultsRefusal {
    * This machine has nowhere to put what is deleted, so the folder stays where
    * it is and the vault stays on the list.
    *
-   * @generated from enum value: VAULTS_REFUSAL_NO_TRASH = 8;
+   * @generated from enum value: VAULTS_ERROR_CODE_NO_TRASH = 8;
    */
   NO_TRASH = 8,
 
@@ -420,15 +420,15 @@ export enum VaultsRefusal {
    * A tab is holding text the person has to answer for, so the window stayed
    * where it was.
    *
-   * @generated from enum value: VAULTS_REFUSAL_ASKING = 9;
+   * @generated from enum value: VAULTS_ERROR_CODE_ASKING = 9;
    */
   ASKING = 9,
 }
 
 /**
- * Describes the enum numen.v1.VaultsRefusal.
+ * Describes the enum numen.v1.VaultsErrorCode.
  */
-export const VaultsRefusalSchema: GenEnum<VaultsRefusal> = /*@__PURE__*/
+export const VaultsErrorCodeSchema: GenEnum<VaultsErrorCode> = /*@__PURE__*/
   enumDesc(file_numen_v1_vaults, 0);
 
 /**

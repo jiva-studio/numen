@@ -41,42 +41,42 @@ service VaultsService {
   rpc OpenVault(OpenVaultRequest) returns (OpenVaultResponse);
 }
 
-// VaultsRefusal is why the list is as it was, or why the window is still
+// VaultsErrorCode is why the list is as it was, or why the window is still
 // showing the vault it was showing.
-enum VaultsRefusal {
-  VAULTS_REFUSAL_UNSPECIFIED = 0;
+enum VaultsErrorCode {
+  VAULTS_ERROR_CODE_UNSPECIFIED = 0;
 
   // The path is not a folder, or cannot be read.
-  VAULTS_REFUSAL_UNREADABLE = 1;
+  VAULTS_ERROR_CODE_UNREADABLE = 1;
 
   // The folder carries an identity registered at another path, and that path
   // still carries it: the two are copies of one vault, and one index cannot
   // hold both.
-  VAULTS_REFUSAL_COPY = 2;
+  VAULTS_ERROR_CODE_COPY = 2;
 
   // The folder lies inside a vault that is on the list, or holds one.
-  VAULTS_REFUSAL_OVERLAPS = 3;
+  VAULTS_ERROR_CODE_OVERLAPS = 3;
 
   // Another vault is called this. It reaches RenameVault; AddVault appends a
   // number to a taken name.
-  VAULTS_REFUSAL_NAME_TAKEN = 4;
+  VAULTS_ERROR_CODE_NAME_TAKEN = 4;
 
   // It is the only vault this installation has.
-  VAULTS_REFUSAL_LAST_VAULT = 5;
+  VAULTS_ERROR_CODE_LAST_VAULT = 5;
 
   // It is the vault this window is showing.
-  VAULTS_REFUSAL_SHOWING = 6;
+  VAULTS_ERROR_CODE_SHOWING = 6;
 
   // No vault of that identity is on the list.
-  VAULTS_REFUSAL_UNKNOWN = 7;
+  VAULTS_ERROR_CODE_UNKNOWN = 7;
 
   // This machine has nowhere to put what is deleted, so the folder stays where
   // it is and the vault stays on the list.
-  VAULTS_REFUSAL_NO_TRASH = 8;
+  VAULTS_ERROR_CODE_NO_TRASH = 8;
 
   // A tab is holding text the person has to answer for, so the window stayed
   // where it was.
-  VAULTS_REFUSAL_ASKING = 9;
+  VAULTS_ERROR_CODE_ASKING = 9;
 }
 
 // Vault is one vault the installation holds, as the list has it.
@@ -138,7 +138,7 @@ message AddVaultResponse {
   optional Vault vault = 1;
 
   // Set when nothing was added, and why.
-  optional VaultsRefusal refusal = 2;
+  optional VaultsErrorCode error = 2;
 }
 
 message RenameVaultRequest {
@@ -155,7 +155,7 @@ message RenameVaultResponse {
   optional Vault vault = 1;
 
   // Set when the vault was not renamed, and why.
-  optional VaultsRefusal refusal = 2;
+  optional VaultsErrorCode error = 2;
 }
 
 message RemoveVaultRequest {
@@ -171,7 +171,7 @@ message RemoveVaultRequest {
 message RemoveVaultResponse {
   // Set when the vault is still on the list, and why. The folder is where it
   // was.
-  optional VaultsRefusal refusal = 1;
+  optional VaultsErrorCode error = 1;
 }
 
 message OpenVaultRequest {
@@ -181,5 +181,5 @@ message OpenVaultRequest {
 
 message OpenVaultResponse {
   // Set when the window is showing what it was, and why.
-  optional VaultsRefusal refusal = 1;
+  optional VaultsErrorCode error = 1;
 }

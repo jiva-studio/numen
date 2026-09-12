@@ -265,7 +265,7 @@ func TestAFolderInsideAVaultOnTheListIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := out.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_OVERLAPS {
+	if got := out.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS {
 		t.Errorf("a folder inside a vault was answered %v", got)
 	}
 	if out.Msg.GetVault() != nil {
@@ -294,7 +294,7 @@ func TestACopyOfAVaultOnTheListIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := out.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_COPY {
+	if got := out.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY {
 		t.Errorf("a copy of a vault was answered %v", got)
 	}
 }
@@ -311,8 +311,8 @@ func TestAFolderJoinsTheListUnderANameAnotherVaultHas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.Refusal != nil {
-		t.Fatalf("the folder was refused: %v", out.Msg.GetRefusal())
+	if out.Msg.Error != nil {
+		t.Fatalf("the folder was refused: %v", out.Msg.GetError())
 	}
 	if got := out.Msg.GetVault().GetName(); got != "one 2" {
 		t.Errorf("the vault that joined the list is called %q", got)
@@ -333,7 +333,7 @@ func TestANameAnotherVaultHasIsNotGivenToASecond(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := out.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_NAME_TAKEN {
+	if got := out.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN {
 		t.Errorf("a name another vault has was answered %v", got)
 	}
 	if onList(t, f.held(t), string(f.second.ID)).GetName() != f.second.Name {
@@ -352,8 +352,8 @@ func TestAVaultIsCalledWhatThePersonCallsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.Refusal != nil {
-		t.Fatalf("the vault was not renamed: %v", out.Msg.GetRefusal())
+	if out.Msg.Error != nil {
+		t.Fatalf("the vault was not renamed: %v", out.Msg.GetError())
 	}
 	if got := out.Msg.GetVault().GetName(); got != "journal" {
 		t.Errorf("the vault is called %q", got)
@@ -373,7 +373,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := forgot.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_SHOWING {
+	if got := forgot.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING {
 		t.Errorf("removing the vault being shown was answered %v", got)
 	}
 
@@ -382,7 +382,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := erased.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_SHOWING {
+	if got := erased.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING {
 		t.Errorf("trashing the vault being shown was answered %v", got)
 	}
 
@@ -409,8 +409,8 @@ func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gone.Msg.Refusal != nil {
-		t.Fatalf("the second vault was not removed: %v", gone.Msg.GetRefusal())
+	if gone.Msg.Error != nil {
+		t.Fatalf("the second vault was not removed: %v", gone.Msg.GetError())
 	}
 
 	only, err := f.client.RemoveVault(t.Context(),
@@ -418,7 +418,7 @@ func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := only.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_LAST_VAULT {
+	if got := only.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT {
 		t.Errorf("the only vault this installation has was answered %v", got)
 	}
 	onList(t, f.held(t), string(f.first.ID))
@@ -450,13 +450,13 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for what, got := range map[string]v1.VaultsRefusal{
-		"rename": rename.Msg.GetRefusal(),
-		"remove": forget.Msg.GetRefusal(),
-		"trash":  erase.Msg.GetRefusal(),
-		"open":   open.Msg.GetRefusal(),
+	for what, got := range map[string]v1.VaultsErrorCode{
+		"rename": rename.Msg.GetError(),
+		"remove": forget.Msg.GetError(),
+		"trash":  erase.Msg.GetError(),
+		"open":   open.Msg.GetError(),
 	} {
-		if got != v1.VaultsRefusal_VAULTS_REFUSAL_UNKNOWN {
+		if got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN {
 			t.Errorf("%s of an identity on no list was answered %v", what, got)
 		}
 	}
@@ -474,8 +474,8 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.Refusal != nil {
-		t.Fatalf("the vault was not removed: %v", out.Msg.GetRefusal())
+	if out.Msg.Error != nil {
+		t.Fatalf("the vault was not removed: %v", out.Msg.GetError())
 	}
 	if got := f.bin.trashed(); len(got) != 1 || got[0] != f.second.Path {
 		t.Errorf("trashed %v, want %s", got, f.second.Path)
@@ -498,7 +498,7 @@ func TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := out.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_NO_TRASH {
+	if got := out.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH {
 		t.Errorf("a machine with nowhere to put it was answered %v", got)
 	}
 	onList(t, f.held(t), string(f.second.ID))
@@ -519,8 +519,8 @@ func TestAnotherVaultIsPutInTheWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.Refusal != nil {
-		t.Fatalf("the vault was not shown: %v", out.Msg.GetRefusal())
+	if out.Msg.Error != nil {
+		t.Fatalf("the vault was not shown: %v", out.Msg.GetError())
 	}
 	if shown := f.asked(); len(shown) != 1 || shown[0].ID != f.second.ID {
 		t.Errorf("the window was asked to show %v", shown)
@@ -537,7 +537,7 @@ func TestAPageHoldingAnUnansweredQuestionKeepsTheVaultItWasTypedIn(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := out.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_ASKING {
+	if got := out.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING {
 		t.Errorf("a page holding a question was answered %v", got)
 	}
 }

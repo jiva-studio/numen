@@ -405,7 +405,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a folder could not be added: %v", err)
 	}
-	if refused := added.Msg.Refusal; refused != nil {
+	if refused := added.Msg.Error; refused != nil {
 		t.Fatalf("the folder was refused: %v", *refused)
 	}
 

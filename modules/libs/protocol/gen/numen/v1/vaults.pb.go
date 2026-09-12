@@ -27,89 +27,89 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// VaultsRefusal is why the list is as it was, or why the window is still
+// VaultsErrorCode is why the list is as it was, or why the window is still
 // showing the vault it was showing.
-type VaultsRefusal int32
+type VaultsErrorCode int32
 
 const (
-	VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED VaultsRefusal = 0
+	VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED VaultsErrorCode = 0
 	// The path is not a folder, or cannot be read.
-	VaultsRefusal_VAULTS_REFUSAL_UNREADABLE VaultsRefusal = 1
+	VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE VaultsErrorCode = 1
 	// The folder carries an identity registered at another path, and that path
 	// still carries it: the two are copies of one vault, and one index cannot
 	// hold both.
-	VaultsRefusal_VAULTS_REFUSAL_COPY VaultsRefusal = 2
+	VaultsErrorCode_VAULTS_ERROR_CODE_COPY VaultsErrorCode = 2
 	// The folder lies inside a vault that is on the list, or holds one.
-	VaultsRefusal_VAULTS_REFUSAL_OVERLAPS VaultsRefusal = 3
+	VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS VaultsErrorCode = 3
 	// Another vault is called this. It reaches RenameVault; AddVault appends a
 	// number to a taken name.
-	VaultsRefusal_VAULTS_REFUSAL_NAME_TAKEN VaultsRefusal = 4
+	VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN VaultsErrorCode = 4
 	// It is the only vault this installation has.
-	VaultsRefusal_VAULTS_REFUSAL_LAST_VAULT VaultsRefusal = 5
+	VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT VaultsErrorCode = 5
 	// It is the vault this window is showing.
-	VaultsRefusal_VAULTS_REFUSAL_SHOWING VaultsRefusal = 6
+	VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING VaultsErrorCode = 6
 	// No vault of that identity is on the list.
-	VaultsRefusal_VAULTS_REFUSAL_UNKNOWN VaultsRefusal = 7
+	VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN VaultsErrorCode = 7
 	// This machine has nowhere to put what is deleted, so the folder stays where
 	// it is and the vault stays on the list.
-	VaultsRefusal_VAULTS_REFUSAL_NO_TRASH VaultsRefusal = 8
+	VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH VaultsErrorCode = 8
 	// A tab is holding text the person has to answer for, so the window stayed
 	// where it was.
-	VaultsRefusal_VAULTS_REFUSAL_ASKING VaultsRefusal = 9
+	VaultsErrorCode_VAULTS_ERROR_CODE_ASKING VaultsErrorCode = 9
 )
 
-// Enum value maps for VaultsRefusal.
+// Enum value maps for VaultsErrorCode.
 var (
-	VaultsRefusal_name = map[int32]string{
-		0: "VAULTS_REFUSAL_UNSPECIFIED",
-		1: "VAULTS_REFUSAL_UNREADABLE",
-		2: "VAULTS_REFUSAL_COPY",
-		3: "VAULTS_REFUSAL_OVERLAPS",
-		4: "VAULTS_REFUSAL_NAME_TAKEN",
-		5: "VAULTS_REFUSAL_LAST_VAULT",
-		6: "VAULTS_REFUSAL_SHOWING",
-		7: "VAULTS_REFUSAL_UNKNOWN",
-		8: "VAULTS_REFUSAL_NO_TRASH",
-		9: "VAULTS_REFUSAL_ASKING",
+	VaultsErrorCode_name = map[int32]string{
+		0: "VAULTS_ERROR_CODE_UNSPECIFIED",
+		1: "VAULTS_ERROR_CODE_UNREADABLE",
+		2: "VAULTS_ERROR_CODE_COPY",
+		3: "VAULTS_ERROR_CODE_OVERLAPS",
+		4: "VAULTS_ERROR_CODE_NAME_TAKEN",
+		5: "VAULTS_ERROR_CODE_LAST_VAULT",
+		6: "VAULTS_ERROR_CODE_SHOWING",
+		7: "VAULTS_ERROR_CODE_UNKNOWN",
+		8: "VAULTS_ERROR_CODE_NO_TRASH",
+		9: "VAULTS_ERROR_CODE_ASKING",
 	}
-	VaultsRefusal_value = map[string]int32{
-		"VAULTS_REFUSAL_UNSPECIFIED": 0,
-		"VAULTS_REFUSAL_UNREADABLE":  1,
-		"VAULTS_REFUSAL_COPY":        2,
-		"VAULTS_REFUSAL_OVERLAPS":    3,
-		"VAULTS_REFUSAL_NAME_TAKEN":  4,
-		"VAULTS_REFUSAL_LAST_VAULT":  5,
-		"VAULTS_REFUSAL_SHOWING":     6,
-		"VAULTS_REFUSAL_UNKNOWN":     7,
-		"VAULTS_REFUSAL_NO_TRASH":    8,
-		"VAULTS_REFUSAL_ASKING":      9,
+	VaultsErrorCode_value = map[string]int32{
+		"VAULTS_ERROR_CODE_UNSPECIFIED": 0,
+		"VAULTS_ERROR_CODE_UNREADABLE":  1,
+		"VAULTS_ERROR_CODE_COPY":        2,
+		"VAULTS_ERROR_CODE_OVERLAPS":    3,
+		"VAULTS_ERROR_CODE_NAME_TAKEN":  4,
+		"VAULTS_ERROR_CODE_LAST_VAULT":  5,
+		"VAULTS_ERROR_CODE_SHOWING":     6,
+		"VAULTS_ERROR_CODE_UNKNOWN":     7,
+		"VAULTS_ERROR_CODE_NO_TRASH":    8,
+		"VAULTS_ERROR_CODE_ASKING":      9,
 	}
 )
 
-func (x VaultsRefusal) Enum() *VaultsRefusal {
-	p := new(VaultsRefusal)
+func (x VaultsErrorCode) Enum() *VaultsErrorCode {
+	p := new(VaultsErrorCode)
 	*p = x
 	return p
 }
 
-func (x VaultsRefusal) String() string {
+func (x VaultsErrorCode) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (VaultsRefusal) Descriptor() protoreflect.EnumDescriptor {
+func (VaultsErrorCode) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_vaults_proto_enumTypes[0].Descriptor()
 }
 
-func (VaultsRefusal) Type() protoreflect.EnumType {
+func (VaultsErrorCode) Type() protoreflect.EnumType {
 	return &file_numen_v1_vaults_proto_enumTypes[0]
 }
 
-func (x VaultsRefusal) Number() protoreflect.EnumNumber {
+func (x VaultsErrorCode) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use VaultsRefusal.Descriptor instead.
-func (VaultsRefusal) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use VaultsErrorCode.Descriptor instead.
+func (VaultsErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{0}
 }
 
@@ -442,7 +442,7 @@ type AddVaultResponse struct {
 	// The vault that joined the list. Absent when nothing was added.
 	Vault *Vault `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
 	// Set when nothing was added, and why.
-	Refusal       *VaultsRefusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.VaultsRefusal,oneof" json:"refusal,omitempty"`
+	Error         *VaultsErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -484,11 +484,11 @@ func (x *AddVaultResponse) GetVault() *Vault {
 	return nil
 }
 
-func (x *AddVaultResponse) GetRefusal() VaultsRefusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *AddVaultResponse) GetError() VaultsErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
+	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
 }
 
 type RenameVaultRequest struct {
@@ -551,7 +551,7 @@ type RenameVaultResponse struct {
 	// vault already has is not a change and answers with the vault as it stands.
 	Vault *Vault `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
 	// Set when the vault was not renamed, and why.
-	Refusal       *VaultsRefusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.VaultsRefusal,oneof" json:"refusal,omitempty"`
+	Error         *VaultsErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -593,11 +593,11 @@ func (x *RenameVaultResponse) GetVault() *Vault {
 	return nil
 }
 
-func (x *RenameVaultResponse) GetRefusal() VaultsRefusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *RenameVaultResponse) GetError() VaultsErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
+	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
 }
 
 type RemoveVaultRequest struct {
@@ -660,7 +660,7 @@ type RemoveVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the vault is still on the list, and why. The folder is where it
 	// was.
-	Refusal       *VaultsRefusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.VaultsRefusal,oneof" json:"refusal,omitempty"`
+	Error         *VaultsErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -695,11 +695,11 @@ func (*RemoveVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *RemoveVaultResponse) GetRefusal() VaultsRefusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *RemoveVaultResponse) GetError() VaultsErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
+	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
 }
 
 type OpenVaultRequest struct {
@@ -750,7 +750,7 @@ func (x *OpenVaultRequest) GetId() string {
 type OpenVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the window is showing what it was, and why.
-	Refusal       *VaultsRefusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.VaultsRefusal,oneof" json:"refusal,omitempty"`
+	Error         *VaultsErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -785,11 +785,11 @@ func (*OpenVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *OpenVaultResponse) GetRefusal() VaultsRefusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *OpenVaultResponse) GetError() VaultsErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
+	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
 }
 
 var File_numen_v1_vaults_proto protoreflect.FileDescriptor
@@ -814,46 +814,42 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x05chose\x18\x02 \x01(\bR\x05chose\"9\n" +
 	"\x0fAddVaultRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x8c\x01\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x88\x01\n" +
 	"\x10AddVaultResponse\x12*\n" +
-	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x126\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
-	"\x06_vaultB\n" +
-	"\n" +
-	"\b_refusal\"8\n" +
+	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x124\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x01R\x05error\x88\x01\x01B\b\n" +
+	"\x06_vaultB\b\n" +
+	"\x06_error\"8\n" +
 	"\x12RenameVaultRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x8f\x01\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x8b\x01\n" +
 	"\x13RenameVaultResponse\x12*\n" +
-	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x126\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
-	"\x06_vaultB\n" +
-	"\n" +
-	"\b_refusal\":\n" +
+	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x124\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x01R\x05error\x88\x01\x01B\b\n" +
+	"\x06_vaultB\b\n" +
+	"\x06_error\":\n" +
 	"\x12RemoveVaultRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05trash\x18\x02 \x01(\bR\x05trash\"Y\n" +
-	"\x13RemoveVaultResponse\x126\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal\"\"\n" +
+	"\x05trash\x18\x02 \x01(\bR\x05trash\"U\n" +
+	"\x13RemoveVaultResponse\x124\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error\"\"\n" +
 	"\x10OpenVaultRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"W\n" +
-	"\x11OpenVaultResponse\x126\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal*\xb2\x02\n" +
-	"\rVaultsRefusal\x12\x1e\n" +
-	"\x1aVAULTS_REFUSAL_UNSPECIFIED\x10\x00\x12\x1d\n" +
-	"\x19VAULTS_REFUSAL_UNREADABLE\x10\x01\x12\x17\n" +
-	"\x13VAULTS_REFUSAL_COPY\x10\x02\x12\x1b\n" +
-	"\x17VAULTS_REFUSAL_OVERLAPS\x10\x03\x12\x1d\n" +
-	"\x19VAULTS_REFUSAL_NAME_TAKEN\x10\x04\x12\x1d\n" +
-	"\x19VAULTS_REFUSAL_LAST_VAULT\x10\x05\x12\x1a\n" +
-	"\x16VAULTS_REFUSAL_SHOWING\x10\x06\x12\x1a\n" +
-	"\x16VAULTS_REFUSAL_UNKNOWN\x10\a\x12\x1b\n" +
-	"\x17VAULTS_REFUSAL_NO_TRASH\x10\b\x12\x19\n" +
-	"\x15VAULTS_REFUSAL_ASKING\x10\t2\xc8\x03\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"S\n" +
+	"\x11OpenVaultResponse\x124\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error*\xd2\x02\n" +
+	"\x0fVaultsErrorCode\x12!\n" +
+	"\x1dVAULTS_ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cVAULTS_ERROR_CODE_UNREADABLE\x10\x01\x12\x1a\n" +
+	"\x16VAULTS_ERROR_CODE_COPY\x10\x02\x12\x1e\n" +
+	"\x1aVAULTS_ERROR_CODE_OVERLAPS\x10\x03\x12 \n" +
+	"\x1cVAULTS_ERROR_CODE_NAME_TAKEN\x10\x04\x12 \n" +
+	"\x1cVAULTS_ERROR_CODE_LAST_VAULT\x10\x05\x12\x1d\n" +
+	"\x19VAULTS_ERROR_CODE_SHOWING\x10\x06\x12\x1d\n" +
+	"\x19VAULTS_ERROR_CODE_UNKNOWN\x10\a\x12\x1e\n" +
+	"\x1aVAULTS_ERROR_CODE_NO_TRASH\x10\b\x12\x1c\n" +
+	"\x18VAULTS_ERROR_CODE_ASKING\x10\t2\xc8\x03\n" +
 	"\rVaultsService\x12G\n" +
 	"\n" +
 	"ListVaults\x12\x1b.numen.v1.ListVaultsRequest\x1a\x1c.numen.v1.ListVaultsResponse\x12M\n" +
@@ -878,7 +874,7 @@ func file_numen_v1_vaults_proto_rawDescGZIP() []byte {
 var file_numen_v1_vaults_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_vaults_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_numen_v1_vaults_proto_goTypes = []any{
-	(VaultsRefusal)(0),           // 0: numen.v1.VaultsRefusal
+	(VaultsErrorCode)(0),         // 0: numen.v1.VaultsErrorCode
 	(*Vault)(nil),                // 1: numen.v1.Vault
 	(*ListVaultsRequest)(nil),    // 2: numen.v1.ListVaultsRequest
 	(*ListVaultsResponse)(nil),   // 3: numen.v1.ListVaultsResponse
@@ -896,11 +892,11 @@ var file_numen_v1_vaults_proto_goTypes = []any{
 var file_numen_v1_vaults_proto_depIdxs = []int32{
 	1,  // 0: numen.v1.ListVaultsResponse.vaults:type_name -> numen.v1.Vault
 	1,  // 1: numen.v1.AddVaultResponse.vault:type_name -> numen.v1.Vault
-	0,  // 2: numen.v1.AddVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
+	0,  // 2: numen.v1.AddVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
 	1,  // 3: numen.v1.RenameVaultResponse.vault:type_name -> numen.v1.Vault
-	0,  // 4: numen.v1.RenameVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	0,  // 5: numen.v1.RemoveVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	0,  // 6: numen.v1.OpenVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
+	0,  // 4: numen.v1.RenameVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
+	0,  // 5: numen.v1.RemoveVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
+	0,  // 6: numen.v1.OpenVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
 	2,  // 7: numen.v1.VaultsService.ListVaults:input_type -> numen.v1.ListVaultsRequest
 	4,  // 8: numen.v1.VaultsService.ChooseFolder:input_type -> numen.v1.ChooseFolderRequest
 	6,  // 9: numen.v1.VaultsService.AddVault:input_type -> numen.v1.AddVaultRequest

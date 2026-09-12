@@ -51,18 +51,18 @@ func (s vaultsService) ChooseFolder(
 }
 
 // AddVault turns a folder into a vault on the list. A name another vault has
-// gets a number appended, and is not a refusal here.
+// gets a number appended, and is not an error here.
 func (s vaultsService) AddVault(
 	_ context.Context,
 	r *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
 	added, err := s.api.Vaults.Add.Execute(r.Msg.GetPath(), r.Msg.GetName())
 	if err != nil {
-		refusal, refused := vaultRefusedBy(err)
+		reason, refused := vaultsErrorCodeBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.AddVaultResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.AddVaultResponse{Error: &reason}), nil
 	}
 	return connect.NewResponse(&v1.AddVaultResponse{Vault: vaultOf(added, s.api.Readers)}), nil
 }
@@ -78,11 +78,11 @@ func (s vaultsService) RenameVault(
 		v, err = s.api.Vaults.Rename.Execute(ctx, v, r.Msg.GetName())
 	}
 	if err != nil {
-		refusal, refused := vaultRefusedBy(err)
+		reason, refused := vaultsErrorCodeBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.RenameVaultResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.RenameVaultResponse{Error: &reason}), nil
 	}
 	return connect.NewResponse(&v1.RenameVaultResponse{Vault: vaultOf(v, s.api.Readers)}), nil
 }
@@ -98,11 +98,11 @@ func (s vaultsService) RemoveVault(
 		err = s.removal(ctx, v, r.Msg.GetTrash())
 	}
 	if err != nil {
-		refusal, refused := vaultRefusedBy(err)
+		reason, refused := vaultsErrorCodeBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.RemoveVaultResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &reason}), nil
 	}
 	return connect.NewResponse(&v1.RemoveVaultResponse{}), nil
 }
@@ -133,11 +133,11 @@ func (s vaultsService) OpenVault(
 	if errors.Is(err, errGoing) || errors.Is(err, errSettling) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
-	refusal, refused := vaultRefusedBy(err)
+	reason, refused := vaultsErrorCodeBy(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.OpenVaultResponse{Refusal: &refusal}), nil
+	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
 }
 
 // offTheList is the vault an identity names, asked to leave. The vault the
@@ -171,30 +171,30 @@ func vaultOf(v domain.Vault, readers port.VaultReaders) *v1.Vault {
 	}
 }
 
-// vaultRefusedBy says which refusal an error about the list is, and whether it
-// is one at all. Anything else is the list, the index or the machine being out
-// of reach.
-func vaultRefusedBy(err error) (v1.VaultsRefusal, bool) {
+// vaultsErrorCodeBy says which code an error about the list carries, and
+// whether it carries one at all. Anything else is the list, the index or the
+// machine being out of reach.
+func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 	switch {
 	case errors.Is(err, vaults.ErrUnreadable):
-		return v1.VaultsRefusal_VAULTS_REFUSAL_UNREADABLE, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE, true
 	case errors.Is(err, vaults.ErrCopy):
-		return v1.VaultsRefusal_VAULTS_REFUSAL_COPY, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY, true
 	case errors.Is(err, domain.ErrOverlaps):
-		return v1.VaultsRefusal_VAULTS_REFUSAL_OVERLAPS, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS, true
 	case errors.Is(err, vaults.ErrNameTaken):
-		return v1.VaultsRefusal_VAULTS_REFUSAL_NAME_TAKEN, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN, true
 	case errors.Is(err, vaults.ErrLastVault):
-		return v1.VaultsRefusal_VAULTS_REFUSAL_LAST_VAULT, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
 	case errors.Is(err, errShowing):
-		return v1.VaultsRefusal_VAULTS_REFUSAL_SHOWING, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING, true
 	case errors.Is(err, vaults.ErrUnknown):
-		return v1.VaultsRefusal_VAULTS_REFUSAL_UNKNOWN, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN, true
 	case errors.Is(err, port.ErrNoTrash):
-		return v1.VaultsRefusal_VAULTS_REFUSAL_NO_TRASH, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH, true
 	case errors.Is(err, errAsking):
-		return v1.VaultsRefusal_VAULTS_REFUSAL_ASKING, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING, true
 	default:
-		return v1.VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED, false
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED, false
 	}
 }
