@@ -6,8 +6,8 @@ import "testing"
 // link together writes one that opens nothing as often as not, so the search
 // hands it over already written, and this is the shape the window reads back.
 //
-// The window's own reading of it is `agent-tab/places.ts:spotOf`, which takes
-// the path with decodeURIComponent and the two numbers off the query.
+// The window's own reading of it is `shared/links.ts:parseLinkTarget`, which
+// takes the path with decodeURIComponent and the two numbers off the query.
 func TestThePassageAddressIsTheOneTheWindowOpens(t *testing.T) {
 	for _, one := range []struct {
 		name   string
