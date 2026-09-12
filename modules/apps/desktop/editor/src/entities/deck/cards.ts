@@ -6,7 +6,6 @@ import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
 import { cardsService } from '@/shared/clients'
 import type { Cards, DeckService, StencilService } from './types'
 import {
-  deserializeCard,
   deserializeDeck,
   deserializeStencil,
   deserializeStencilSummary,

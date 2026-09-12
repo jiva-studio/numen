@@ -386,7 +386,7 @@ node --test modules/tools/lint/*.test.mjs
 
 Готово, когда: `grep -rl "@connectrpc\|@numen/wire" src/entities src/widgets` ничего не находит; клиенты создаются только в `app/vault/clients.ts`.
 
-**13. `modules/libs/ui` и `modules/apps/desktop/flashcards`** — отдельной веткой.
+**13. `modules/libs/ui` и `modules/apps/desktop/flashcards`** — в этой же ветке.
 
 Готово, когда: в `libs/ui` нет файлов длиннее 250 строк; `flashcards` разложен по слоям и попадает под ту же таблицу рангов.
 

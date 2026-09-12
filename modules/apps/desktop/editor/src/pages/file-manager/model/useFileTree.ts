@@ -90,7 +90,7 @@ export function useFileTree(core: Folders): FileTree {
   }
 
   const toggleFolder = (folder: string) =>
-    isFolderOpen(folder) ? void closeFolder(folder) : openFolder(folder)
+    void (isFolderOpen(folder) ? closeFolder(folder) : openFolder(folder))
 
   const selectPaths = (paths: readonly string[]) => {
     selectedPaths.value = paths

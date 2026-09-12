@@ -153,7 +153,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
   },
   /** A stream that stays open, so nothing the window follows ever ends. */
   async *held(): AsyncGenerator<never> {
-    await new Promise<never>(() => {})
+    yield await new Promise<never>(() => {})
   },
   /** What the window asked the application for, in the order it asked. */
   asked: {
