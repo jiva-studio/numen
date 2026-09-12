@@ -7,8 +7,8 @@
  * rename after the choice is the first one it answers.
  */
 import { ref } from 'vue'
-import type { StepGroup } from '../../shared/../features/command-palette/lists'
-import type { MessageWriter } from '../../shared/notices/messages'
+import type { StepGroup } from '@/shared/lists'
+import type { MessageWriter } from '@/shared/notices/messages'
 
 /** The command whose step offers the two. */
 export const SYNCING = 'syncing'

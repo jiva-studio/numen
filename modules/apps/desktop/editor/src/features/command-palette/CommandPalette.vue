@@ -14,10 +14,11 @@ import type { Commands } from './palette'
 import type { CommandDeps } from './deps'
 import { does } from './handlers'
 import type { SearchState } from './search'
-import { iconFor, iconOfNote, iconOfSource } from '../../shared/icons'
+import { iconFor, iconOfSource } from '@/shared/icons'
+import { iconOfNote } from '@/entities/note/icons'
 import { chorded } from './chords'
 import { lands, type DestinationDeps } from './destination'
-import { WORDS as words } from '../../shared/words'
+import { WORDS as words } from '@/shared/words'
 
 // --- Props & Emits ---
 const props = defineProps<{

@@ -6,11 +6,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
 import { bookKind, useBookTab, type BookHandle, type BookTabState } from './useBookTab'
-import { BOOK } from '../../../entities/tab/workspace'
+import { BOOK } from '@/entities/tab/workspace'
 import type { BookReaderState } from './useBookReader'
-import type { FileOpeners, SourceReader } from '../../../entities/tab/openers'
-import type { Span } from '../../../shared/core'
-import type { WindowHandle } from '../../../entities/tab/windowTabs'
+import type { FileOpeners, SourceReader } from '@/entities/tab/openers'
+import type { Span } from '@/shared/span'
+import type { WindowHandle } from '@/entities/tab/windowTabs'
 
 const read = (path: string, title = '', close = vi.fn()) =>
   ({ path, title: ref(title), close }) as unknown as BookReaderState

@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { Role } from '@numen/protocol'
-import type { Role as WindowRole } from '../../shared/core'
+import type { Role as WindowRole } from '@/shared/core'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 

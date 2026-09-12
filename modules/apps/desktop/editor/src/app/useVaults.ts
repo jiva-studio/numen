@@ -2,12 +2,12 @@
  * Vaults listing, active vault tracking, and coverage monitoring.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { running } from '../shared/artifacts'
-import type { ArtifactStates, VaultList } from '../shared/core'
-import type { IndexCoverage } from '../shared/notices/coverage'
-import type { MessageLog } from '../shared/notices/messages'
-import type { VaultRef } from '../features/command-palette/target'
-import { WORDS } from '../shared/words'
+import { running } from '@/shared/artifacts'
+import type { ArtifactStates, VaultList } from '@/shared/core'
+import type { IndexCoverage } from '@/shared/notices/coverage'
+import type { MessageLog } from '@/shared/notices/messages'
+import type { VaultRef } from '@/features/command-palette/target'
+import { WORDS } from '@/shared/words'
 import type { VaultCore } from './vault'
 
 type Words = typeof WORDS

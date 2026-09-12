@@ -16,8 +16,8 @@ import {
   type StopReason,
 } from "@numen/protocol"
 import { goalNames, goalOf, namesOf, transport, type Goal } from "@numen/wire"
-import { fingerprint, errorIn, staleIn, stamp } from "../../shared/answers"
-import type { ErrorCode } from "../../shared/core"
+import { fingerprint, errorIn, staleIn, stamp } from "@/shared/answers"
+import type { ErrorCode } from '@/shared/errors'
 
 export type { Goal }
 

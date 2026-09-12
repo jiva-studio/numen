@@ -8,7 +8,7 @@
  */
 import { Code, type ConnectError } from '@connectrpc/connect'
 import { Refusal as ProtoErrorCode } from '@numen/protocol'
-import type { ErrorCode } from './note'
+import type { ErrorCode } from '@/shared/errors'
 
 /** The file an answer came out of, as the one string the window carries. */
 export const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>

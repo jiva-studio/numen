@@ -3,10 +3,10 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/ui'
-import { answerGuard, type Question } from '../../shared/questions'
-import type { Source } from '../../shared/file'
-import type { NoteType } from '../../shared/note'
-import type { IndexCoverage } from '../../shared/notices/coverage'
+import { answerGuard, type Question } from '@/shared/questions'
+import type { Source } from '@/shared/file'
+import type { NoteType } from '@/entities/note'
+import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
   createNameItem,
   createPassageItem,

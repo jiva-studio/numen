@@ -7,7 +7,7 @@
  */
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { MessageWriter } from '../../shared/notices/messages'
+import type { MessageWriter } from '@/shared/notices/messages'
 
 /** The hour an installation nobody has configured begins the day at. */
 export const DEFAULT_STARTS = '04:00'

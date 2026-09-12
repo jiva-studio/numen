@@ -12,16 +12,10 @@ import { plexKind, usePlexTab, type PlexTabState, type PlexEditor, type PlexTabD
 import { ITEMS, NEW_NOTE } from '../menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
-import {
-  getRenamedPath,
-  type PathRename,
-  type NoteHeading,
-  type Neighbourhood,
-  type NoteType,
-  type Seat,
-} from '../../../shared/core'
-import { useWindowTabs, type AnyTabKind } from '../../../entities/tab/windowTabs'
-import { PLEX } from '../../../entities/tab/workspace'
+import type { NoteHeading, Neighbourhood, NoteType, Seat } from '@/shared/core'
+import { getRenamedPath, type PathRename } from '@/shared/paths'
+import { useWindowTabs, type AnyTabKind } from '@/entities/tab/windowTabs'
+import { PLEX } from '@/entities/tab/workspace'
 
 /** A moment for whatever a gesture asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))

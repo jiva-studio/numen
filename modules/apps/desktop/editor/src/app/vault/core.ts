@@ -7,9 +7,9 @@ import { searchCore } from './search'
 import { sessionCore } from './session'
 import { settingsCore } from './settings'
 import { vaultsCore } from './vaults'
-import type { CommandsDeps } from '../../features/command-palette/target'
-import type { SearchDeps } from '../../features/command-palette/search'
-import type { Core } from '../../shared/core'
+import type { CommandsDeps } from '@/features/command-palette/target'
+import type { SearchDeps } from '@/features/command-palette/search'
+import type { Core } from '@/shared/core'
 
 export type VaultCore = Core & SearchDeps & CommandsDeps
 

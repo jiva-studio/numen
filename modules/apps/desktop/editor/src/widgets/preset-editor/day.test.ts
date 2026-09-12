@@ -13,8 +13,8 @@ import { dayAfter } from '@numen/ui'
 import { usePresetTab } from './composables/usePresetTab'
 import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from './core'
 import { BOUNDS } from './drawn'
-import type { WindowHandle } from '../../entities/tab/windowTabs'
-import type { FileOpeners } from '../../entities/tab/openers'
+import type { WindowHandle } from '@/entities/tab/windowTabs'
+import type { FileOpeners } from '@/entities/tab/openers'
 
 /** The review day the window is told, which is the day holding one in the morning. */
 const DAY = '2026-09-04'

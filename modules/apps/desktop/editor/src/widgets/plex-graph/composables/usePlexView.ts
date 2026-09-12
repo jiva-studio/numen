@@ -6,8 +6,9 @@
  */
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import { answerGuard } from '../../../shared/questions'
-import { getRenamedPath, type Neighbourhood, type PathRename } from '../../../shared/core'
+import { answerGuard } from '@/shared/questions'
+import type { Neighbourhood } from '@/shared/core'
+import { getRenamedPath, type PathRename } from '@/shared/paths'
 import { alike } from '../picture'
 
 /** The one question a plex asks of the vault: what is around a note. */

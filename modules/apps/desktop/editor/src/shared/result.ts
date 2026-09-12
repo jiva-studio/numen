@@ -4,7 +4,7 @@
  * A fallible operation returns either success carrying a value or failure
  * carrying an error discriminant.
  */
-import type { ErrorCode } from './note'
+import type { ErrorCode } from '@/shared/errors'
 
 export type Result<T, E = ErrorCode> =
   | { readonly ok: true; readonly value: T; readonly error?: never }

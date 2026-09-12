@@ -3,7 +3,7 @@
  */
 import { agentService, vault, windowService, workspace, WINDOW } from './clients'
 import { counted, owing } from './words'
-import type { Core } from '../../shared/core'
+import type { Core } from '@/shared/core'
 
 export type SessionCore = Pick<
   Core,

@@ -6,8 +6,8 @@
  * holds, choosing another writes it, and the plex reads both as it draws.
  */
 import { ref } from 'vue'
-import type { StepGroup, StepRow } from '../../shared/../features/command-palette/lists'
-import type { MessageWriter } from '../../shared/notices/messages'
+import type { StepGroup, StepRow } from '@/shared/lists'
+import type { MessageWriter } from '@/shared/notices/messages'
 
 /** The command whose step offers the two, and the one that offers the counts. */
 export const HANGING = 'hanging'

@@ -15,13 +15,13 @@ import {
   WorkspaceLayout,
   type PaletteGroup,
 } from '@numen/ui'
-import AgentTab from '../widgets/agent-chat/components/AgentTab.vue'
-import DeckTab from '../widgets/deck-editor/components/DeckTab.vue'
-import FilesTab from '../widgets/file-manager/components/FilesTab.vue'
-import { NEW_DECK, NEW_STENCIL } from '../widgets/file-manager/menu'
-import NoteTab from '../widgets/note-editor/components/NoteTab.vue'
-import PlexTab from '../widgets/plex-graph/components/PlexTab.vue'
-import { WORDS as plexWords } from '../widgets/plex-graph/words'
+import AgentTab from '@/widgets/agent-chat/components/AgentTab.vue'
+import DeckTab from '@/widgets/deck-editor/components/DeckTab.vue'
+import FilesTab from '@/widgets/file-manager/components/FilesTab.vue'
+import { NEW_DECK, NEW_STENCIL } from '@/widgets/file-manager/menu'
+import NoteTab from '@/widgets/note-editor/components/NoteTab.vue'
+import PlexTab from '@/widgets/plex-graph/components/PlexTab.vue'
+import { WORDS as plexWords } from '@/widgets/plex-graph/words'
 import {
   asked,
   cards,
@@ -36,8 +36,8 @@ import {
   said,
   settles,
   sourceSaid,
-} from '../shared/testing/window'
-import { ERRORS, WORDS } from '../shared/words'
+} from '@/testing/window'
+import { ERRORS, WORDS } from '@/shared/words'
 
 describe('the palette', () => {
   /** A keystroke taken on the window, and whether the window took it. */

@@ -7,8 +7,8 @@ import { NumberField, SegmentedControl, Select, Switch, TimeField } from '@numen
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../composables/useSettingsTab'
-import type { Mode } from '../../../entities/settings/theme'
-import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '../../../entities/settings/appearance'
+import type { Mode } from '@/entities/settings/theme'
+import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '@/entities/settings/appearance'
 import { WORDS as words } from '../words'
 
 // --- Props & Emits ---

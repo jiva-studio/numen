@@ -7,9 +7,9 @@
  * fields and the faces a file is written from, is here.
  */
 import { ordered, reordered, type InsertionPoint } from '@numen/ui'
-import type { VaultFace, VaultStencil } from '../../entities/deck/cards'
-import { generateId, type IdMaker } from '../../entities/deck/identity'
-import type { Surrounds } from '../../entities/deck/surrounds'
+import type { VaultFace, VaultStencil } from '@/entities/deck/cards'
+import { generateId, type IdMaker } from '@/entities/deck/identity'
+import type { Surrounds } from '@/entities/deck/surrounds'
 
 /** One face as the window holds it: what the file says, under an identity of its own. */
 export interface BufferFace {

@@ -11,11 +11,12 @@ import { runSupport } from './runs'
 import { invocationOf, type CommandInvocation, type CommandTarget } from './target'
 import { reaching, type CommandDeps, type Store } from './deps'
 import { does } from './handlers'
-import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '../../shared/artifacts'
-import type { FileMoveResult } from '../../shared/file'
-import type { ErrorCode, RemoveResult, RenameResult } from '../../shared/note'
-import type { Vault, VaultErrorCode, VaultResult } from '../../shared/vaults'
-import { WORDS as words } from '../../shared/words'
+import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/shared/artifacts'
+import type { FileMoveResult } from '@/shared/file'
+import type { RemoveResult, RenameResult } from '@/entities/note'
+import type { ErrorCode } from '@/shared/errors'
+import type { Vault, VaultErrorCode, VaultResult } from '@/shared/vaults'
+import { WORDS as words } from '@/shared/words'
 
 /** What is in front, which every invocation is carried out over. */
 const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({

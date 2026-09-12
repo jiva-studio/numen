@@ -6,8 +6,9 @@
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */
 import type { PlexShowing } from '@numen/ui'
-import type { BookFormat, DocumentFormat, FileKind } from '../../shared/file'
-import type { NoteType, Span } from '../../shared/note'
+import type { BookFormat, DocumentFormat, FileKind } from '@/shared/file'
+import type { NoteType } from '@/entities/note'
+import type { Span } from '@/shared/span'
 
 /**
  * What a file the window opens is opened as: which kind of note it is, or the

@@ -1,7 +1,7 @@
 /**
  * Tab-level card and section mutations for flashcard deck tabs.
  */
-import type { StencilSummary, Value } from '../../entities/deck/cards'
+import type { StencilSummary, Value } from '@/entities/deck/cards'
 import {
   addCard,
   addSection,

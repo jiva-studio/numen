@@ -2,7 +2,9 @@
  * What the window is showing, and the rules for changing it.
  */
 import { ref, shallowRef } from 'vue'
-import type { Core, PathRename, NoteEdit, Span, Task } from '../shared/core'
+import type { Core, NoteEdit, Task } from '@/shared/core'
+import type { PathRename } from '@/shared/paths'
+import type { Span } from '@/shared/span'
 import { formatErrorMessage } from '@numen/wire'
 import { useWindowStreams } from './useWindowStreams'
 

@@ -9,7 +9,7 @@
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import type { Model, SettingEdit } from './configuration'
-import type { MessageWriter } from '../../shared/notices/messages'
+import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from './write'
 
 /** Everything this says in the window's voice. */

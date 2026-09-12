@@ -12,9 +12,9 @@ import { runSupport, type RunSupport } from './runs'
 import type { CommandTarget } from './target'
 import type { NoteLookup, PaletteLists, StepGroup } from './lists'
 import { useCommandPalette } from './palette'
-import type { VaultList, Vault } from '../../shared/vaults'
+import type { VaultList, Vault } from '@/shared/vaults'
 import type { NameMatch } from './search'
-import { WORDS as words } from '../../shared/words'
+import { WORDS as words } from '@/shared/words'
 
 /** What is in front, which a test moves under the commands. */
 const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({

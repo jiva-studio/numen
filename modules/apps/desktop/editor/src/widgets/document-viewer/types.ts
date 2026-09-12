@@ -1,7 +1,7 @@
 /**
  * Types and interfaces for document viewing and navigation.
  */
-import type { Span } from '../../shared/core'
+import type { Span } from '@/shared/span'
 
 /** Bounding rectangle on a page, in normalized fractions (0 to 1). */
 export interface Rect {

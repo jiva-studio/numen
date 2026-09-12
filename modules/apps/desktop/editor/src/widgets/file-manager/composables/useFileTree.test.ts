@@ -2,7 +2,7 @@
  * Tests for useFileTree state and tree operations.
  */
 import { describe, expect, it } from 'vitest'
-import type { Entry } from '../../../shared/core'
+import type { Entry } from '@/shared/core'
 import type { ListingRow } from '../types'
 import {
   generateUniqueName,

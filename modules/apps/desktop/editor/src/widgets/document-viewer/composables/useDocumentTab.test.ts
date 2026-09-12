@@ -6,11 +6,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { documentKind, useDocumentTab, type DocumentTabState, type PageHandle } from './useDocumentTab'
-import { DOCUMENT } from '../../../entities/tab/workspace'
+import { DOCUMENT } from '@/entities/tab/workspace'
 import type { DocumentReaderState } from './useDocumentReader'
-import type { FileOpeners, SourceReader } from '../../../entities/tab/openers'
-import type { Span } from '../../../shared/core'
-import type { WindowHandle } from '../../../entities/tab/windowTabs'
+import type { FileOpeners, SourceReader } from '@/entities/tab/openers'
+import type { Span } from '@/shared/span'
+import type { WindowHandle } from '@/entities/tab/windowTabs'
 
 const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as DocumentReaderState
 

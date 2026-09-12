@@ -4,6 +4,14 @@
 import type { Ref } from 'vue'
 import type { StopReason } from '@numen/protocol'
 import type { Field } from './curve'
+import type {
+  Curve,
+  Goal,
+  Load,
+  PresetCounts,
+  Settings,
+  SettingsBounds,
+} from '@/entities/deck/presets'
 
 export type {
   Goal,
@@ -23,7 +31,7 @@ export type {
   Curve,
   PresetChoice,
   Presets,
-} from '../../entities/deck/presets'
+} from '@/entities/deck/presets'
 export {
   GOALS,
   BUDGET_UNITS,
@@ -35,7 +43,7 @@ export {
   DEFAULTS,
   NO_BOUNDS,
   NOWHERE,
-} from '../../entities/deck/presets'
+} from '@/entities/deck/presets'
 
 export type { Field }
 

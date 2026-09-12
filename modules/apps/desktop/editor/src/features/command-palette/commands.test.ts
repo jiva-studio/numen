@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { commandsOf, overNote } from './commands'
 import { asksCommands } from './target'
-import { WORDS as words } from '../../shared/words'
+import { WORDS as words } from '@/shared/words'
 
 describe('the character that means the commands', () => {
   it('is one typed into a field holding nothing', () => {

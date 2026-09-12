@@ -1,7 +1,7 @@
 /**
  * Types and interfaces for agent conversation tabs.
  */
-import type { Span } from '../../shared/core'
+import type { Span } from '@/shared/span'
 
 /** External dependencies required by an agent tab. */
 export interface AgentTabDeps {

@@ -4,9 +4,9 @@
  */
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
-import FileConflictPrompt from '../../../features/file-conflict/FileConflictPrompt.vue'
-import { conflictIn } from '../../../features/file-conflict/flushing'
-import { WORDS as words } from '../../../entities/note/words'
+import FileConflictPrompt from '@/features/file-conflict/FileConflictPrompt.vue'
+import { conflictIn } from '@/features/file-conflict/flushing'
+import { WORDS as words } from '@/entities/note/words'
 import type { NoteTabState } from '../types'
 
 // --- Props & Emits ---

@@ -3,9 +3,9 @@
  * vault refuses or cannot be asked at all.
  */
 import { describe, expect, it } from 'vitest'
-import type { ErrorCode } from '../../shared/note'
-import { writer } from '../../shared/testing/writer'
-import { ERRORS } from '../../shared/words'
+import type { ErrorCode } from '@/shared/errors'
+import { writer } from '@/testing/writer'
+import { ERRORS } from '@/shared/words'
 import { fileOpeners } from './openers'
 import { createFileCreators, type VaultCreator } from './makers'
 

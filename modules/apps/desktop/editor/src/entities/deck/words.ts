@@ -1,6 +1,6 @@
 /** What a deck tab and a stencil tab say: what they are called, and what is wrong. */
 import { many } from '@numen/ui'
-import { fileOf } from '../../shared/paths'
+import { fileOf } from '@/shared/paths'
 
 export const WORDS = {
   deck: 'Deck',

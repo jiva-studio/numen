@@ -7,7 +7,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { noteTitles, type NoteTitlesDeps } from './titles'
-import type { openNotes, State } from '../../entities/note'
+import type { openNotes, State } from '@/entities/note'
 
 /** A vault that answers with the heading written into each note. */
 const vault = (titles: Record<string, string> = {}): NoteTitlesDeps => ({

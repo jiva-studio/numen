@@ -1,7 +1,7 @@
 /**
  * Search scoring, coverage evaluation, and group ranking limits.
  */
-import { wordsOnly, type IndexCoverage } from '../../shared/notices/coverage'
+import { wordsOnly, type IndexCoverage } from '@/shared/notices/coverage'
 import type { Words } from './search'
 
 /** Which group is which, and nothing else is one. */

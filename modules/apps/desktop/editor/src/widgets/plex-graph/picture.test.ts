@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Neighbourhood, Seat } from '../../shared/core'
+import type { Neighbourhood, Seat } from '@/shared/core'
 import { asPlex } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 

@@ -6,14 +6,16 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { iconFor, iconOfKind, iconOfNote } from '../shared/icons'
-import { PRESET } from '../entities/tab/workspace'
-import { commandsOf } from '../features/command-palette/commands'
-import { itemsFor } from '../widgets/file-manager/menu'
-import { ITEMS, NONE } from '../widgets/plex-graph/menu'
-import { waysIn } from '../widgets/welcome/screen'
-import { WORDS as words } from '../shared/words'
-import type { NoteType, Source } from '../shared/core'
+import { iconFor } from '@/shared/icons'
+import { iconOfNote } from '@/entities/note/icons'
+import { iconOfKind } from '@/entities/tab/icons'
+import { PRESET } from '@/entities/tab/workspace'
+import { commandsOf } from '@/features/command-palette/commands'
+import { itemsFor } from '@/widgets/file-manager/menu'
+import { ITEMS, NONE } from '@/widgets/plex-graph/menu'
+import { waysIn } from '@/widgets/welcome/screen'
+import { WORDS as words } from '@/shared/words'
+import type { NoteType, Source } from '@/shared/core'
 
 /** A window that has been told nothing, which can do every run. */
 const anything = () => true

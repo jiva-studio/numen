@@ -8,8 +8,8 @@
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { answerGuard as latest } from '../../shared/questions'
-import type { Vault } from '../../shared/vaults'
+import { answerGuard as latest } from '@/shared/questions'
+import type { Vault } from '@/shared/vaults'
 import { commandsOf } from './commands'
 import { view } from './view'
 import type { RunSupport } from './runs'

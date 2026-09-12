@@ -17,7 +17,7 @@ import {
 } from 'vue'
 import { closeTab, openTab, openTabBeside, pane, paneById, panesOf } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
-import type { Source } from '../../shared/file'
+import type { Source } from '@/shared/file'
 import type { ProgressOf } from './tab'
 import { minted } from './workspace'
 

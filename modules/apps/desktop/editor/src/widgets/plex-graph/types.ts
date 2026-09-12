@@ -9,8 +9,9 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import type { NoteHeading, NoteType, PathRename } from '../../shared/core'
-import type { PlexView } from './usePlexView'
+import type { NoteHeading, NoteType } from '@/shared/core'
+import type { PathRename } from '@/shared/paths'
+import type { PlexView } from './composables/usePlexView'
 
 /** Where the menu stands, and the node it was asked for on. */
 export interface MenuRequest {

@@ -1,7 +1,7 @@
 /**
  * UI messages for background media and artifact jobs.
  */
-import type { Artifact, ArtifactState } from '../artifacts'
+import type { Artifact, ArtifactState } from '@/shared/artifacts'
 
 export const FETCHED: Record<ArtifactState, string> = {
   none: 'The address published none of what was asked for.',

@@ -13,7 +13,7 @@ import {
   type RecordingSummary,
   type Transcript,
 } from './transcript'
-import type { ArtifactStates } from '../../shared/artifacts'
+import type { ArtifactStates } from '@/shared/artifacts'
 import type { Cue } from './cues'
 import { createMediaTypeProbe, type Player } from './player'
 import { WORDS } from './words'

@@ -3,8 +3,8 @@
  */
 import { shallowRef, watch, type Ref } from 'vue'
 import type { PlexPart } from '@numen/ui'
-import { answerGuard } from '../../../shared/questions'
-import type { NoteType } from '../../../shared/core'
+import { answerGuard } from '@/shared/questions'
+import type { NoteType } from '@/shared/core'
 import { asParts } from '../picture'
 import type { PlexTabDeps } from '../types'
 import type { NodeIdMap } from '../nodeIdMap'

@@ -3,9 +3,9 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
-import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '../../../shared/links'
-import type { TabKind, WindowHandle } from '../../../entities/tab/windowTabs'
-import { AGENT } from '../../../entities/tab/workspace'
+import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/shared/links'
+import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
+import { AGENT } from '@/entities/tab/workspace'
 import AgentTab from '../components/AgentTab.vue'
 import { WORDS as words } from '../words'
 import { firstLine } from '../title'

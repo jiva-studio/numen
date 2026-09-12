@@ -2,9 +2,10 @@
  * Stencil listing and schedule coordination for deck tabs.
  */
 import { computed, shallowRef } from 'vue'
-import type { PathRename } from '../../../shared/core'
-import type { Cards, StencilSummary } from '../../../entities/deck/cards'
-import type { openNotes } from '../../../entities/note'
+import type { PathRename } from '@/shared/paths'
+import type { Cards, StencilSummary } from '@/entities/deck/cards'
+import type { openNotes } from '@/entities/note'
+import type { Presets } from '@/entities/deck/presets'
 import { useDeckSchedule } from './useDeckSchedule'
 import { sameOffers, stencilsOf } from '../deck'
 

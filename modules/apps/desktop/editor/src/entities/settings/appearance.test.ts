@@ -7,7 +7,7 @@
  * drawn only once the keyboard has stood on its row.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { StepGroup } from '../../shared/../features/command-palette/lists'
+import type { StepGroup } from '@/shared/lists'
 import type { Appearance, Themes } from './theme'
 import {
   INTERFACE_SCALE,
@@ -18,7 +18,7 @@ import {
   TEXT_SCALE,
   windowAppearance,
 } from './appearance'
-import { WORDS as words } from '../../shared/words'
+import { WORDS as words } from '@/shared/words'
 
 /** What the page was served wearing. */
 const SERVED = ':root { --numen-surface: #101014 }'

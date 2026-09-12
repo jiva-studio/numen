@@ -4,8 +4,8 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { BookSpan, ContentsEntry } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
-import type { Span } from '../../../shared/core'
-import type { MessageWriter } from '../../../shared/notices/messages'
+import type { Span } from '@/shared/span'
+import type { MessageWriter } from '@/shared/notices/messages'
 import { resolveImageUrls } from '../markup'
 import { getContents, getDocumentAtOffset, getPageNumber } from '../pagination'
 import type {

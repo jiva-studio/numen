@@ -3,12 +3,12 @@
  */
 import { computed, type ComputedRef } from 'vue'
 import type { Notice } from '@numen/ui'
-import { cornerOf } from '../shared/notices/corner'
-import type { MessageLog } from '../shared/notices/messages'
+import { cornerOf } from '@/shared/notices/corner'
+import type { MessageLog } from '@/shared/notices/messages'
 import type { useWindowDisplay } from './useWindowDisplay'
 import type { useSettings } from './useSettings'
 import type { useVaults } from './useVaults'
-import { WORDS as words } from '../shared/words'
+import { WORDS as words } from '@/shared/words'
 
 export interface WindowNoticesDeps {
   log: MessageLog

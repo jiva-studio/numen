@@ -2,7 +2,7 @@
  * The name a row is given, as the path the file is filed under from now on.
  */
 import { getFolderPath, ROOT } from './composables/useFileTree'
-import { fileOf } from '../../shared/paths'
+import { fileOf } from '@/shared/paths'
 
 /**
  * Where a name's ending begins, and nowhere for a name carrying none.

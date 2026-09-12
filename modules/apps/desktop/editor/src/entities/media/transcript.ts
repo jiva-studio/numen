@@ -3,12 +3,12 @@
  * transcript, which cue is being said now, and the words as a person edits
  * them.
  */
-import type { ArtifactStates } from '../../shared/artifacts'
-import type { Span } from '../../shared/note'
+import type { ArtifactStates } from '@/shared/artifacts'
+import type { Span } from '@/shared/span'
 import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
-import { answerGuard as latest } from '../../shared/questions'
+import { answerGuard as latest } from '@/shared/questions'
 import { applyCues, same, spanCues, getText, type Cue } from './cues'
 import { createMediaTypeProbe, player, type MediaTypeProbe, type Player } from './player'
 import { WORDS } from './words'

@@ -15,7 +15,7 @@ import type {
   Entry,
   MoveResult,
   Source,
-} from '../../shared/core'
+} from '@/shared/core'
 import { noteType } from './noteWords'
 
 /** A source this window has no word for is a file it holds no source for. */

@@ -8,9 +8,9 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { recordingKind, type MediaTabState, type Medium } from './kind'
 import type { TranscriptState } from './transcript'
-import { fileOpeners } from '../../entities/tab/openers'
-import { useWindowTabs } from '../../entities/tab/windowTabs'
-import { RECORDING } from '../../entities/tab/workspace'
+import { fileOpeners } from '@/entities/tab/openers'
+import { useWindowTabs } from '@/entities/tab/windowTabs'
+import { RECORDING } from '@/entities/tab/workspace'
 
 /** A medium drawn by nothing, which is as much of one as a kind is asked for. */
 const played: Medium = {

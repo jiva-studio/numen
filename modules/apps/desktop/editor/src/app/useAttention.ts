@@ -2,10 +2,10 @@
  * Attention reporting to the application and tab icon resolution.
  */
 import { computed, watch } from 'vue'
-import { iconOfKind } from '../shared/icons'
-import { AGENT } from '../entities/tab/workspace'
-import type { Attention, Core } from '../shared/core'
-import type { OpenTab, useWindowTabs } from '../entities/tab/windowTabs'
+import { iconOfKind } from '@/entities/tab/icons'
+import { AGENT } from '@/entities/tab/workspace'
+import type { Attention, Core } from '@/shared/core'
+import type { OpenTab, useWindowTabs } from '@/entities/tab/windowTabs'
 
 export interface AttentionDeps {
   core: Core

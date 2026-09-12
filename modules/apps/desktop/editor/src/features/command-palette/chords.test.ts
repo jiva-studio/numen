@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { chorded, commandFor, keyOf, keysOf, CHORDS } from './chords'
 import { commandsOf } from './commands'
-import { WORDS as words } from '../../shared/words'
+import { WORDS as words } from '@/shared/words'
 
 const pressing = (over: Partial<KeyboardEventInit> = {}) => ({
   altKey: false,

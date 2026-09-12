@@ -1,4 +1,5 @@
-import type { CreateResult, ErrorCode } from '../../shared/note'
+import type { CreateResult } from '@/entities/note'
+import type { ErrorCode } from '@/shared/errors'
 import type { Surrounds } from './surrounds'
 
 /** One stencil as the list of them names it. */

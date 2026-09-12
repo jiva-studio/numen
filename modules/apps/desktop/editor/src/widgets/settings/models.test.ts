@@ -6,7 +6,7 @@
  * invented.
  */
 import { describe, expect, it } from 'vitest'
-import type { Model } from '../../entities/settings/configuration'
+import type { Model } from '@/entities/settings/configuration'
 import { choicesFor, nameOf } from './models'
 
 const WORDS = {

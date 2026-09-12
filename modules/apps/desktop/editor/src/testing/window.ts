@@ -9,7 +9,7 @@ import { afterEach, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { panesOf, WorkspaceLayout, type Workspace } from '@numen/ui'
-import type { Tab } from '../core'
+import type { Tab } from '@/shared/core'
 
 
 const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoisted(() => ({
@@ -146,7 +146,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
       decks: [] as string[],
       cards: 0,
       notWritten: [] as { path: string; text: string }[],
-      error: null as import('../note').ErrorCode | null,
+      error: null as import('@/shared/errors').ErrorCode | null,
       changed: false,
       at: 'a2',
     },
@@ -208,7 +208,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
   } as Record<string, readonly Record<string, unknown>[]>,
 }))
 
-vi.mock('../../app/vault', () => ({
+vi.mock('@/app/vault', () => ({
   vaults: {
     list: async () => listed,
     choose: async () => {
@@ -296,7 +296,7 @@ vi.mock('../../app/vault', () => ({
   },
 }))
 
-vi.mock('../../widgets/document-viewer/wire', () => ({
+vi.mock('@/widgets/document-viewer/wire', () => ({
   documents: {
     getDocumentLayout: async () => ({ pages: [{ width: 100, height: 100 }], fingerprint: '' }),
     getPageUrl: () => '',
@@ -304,7 +304,7 @@ vi.mock('../../widgets/document-viewer/wire', () => ({
   },
 }))
 
-vi.mock('../../widgets/book-reader/wire', () => ({
+vi.mock('@/widgets/book-reader/wire', () => ({
   books: {
     getBook: async (path: string) => ({
       title: path,
@@ -321,7 +321,7 @@ vi.mock('../../widgets/book-reader/wire', () => ({
   },
 }))
 
-vi.mock('../../entities/media/wire', () => ({
+vi.mock('@/entities/media/wire', () => ({
   recordings: {
     getSummary: async (path: string) => {
       asked.listened.push(path)
@@ -343,7 +343,7 @@ vi.mock('../../entities/media/wire', () => ({
   },
 }))
 
-vi.mock('../artifacts', () => ({
+vi.mock('@/shared/artifacts', () => ({
   running: {
     getArtifactStates: async (path: string) => {
       asked.carried.push(path)
@@ -373,7 +373,7 @@ vi.mock('../artifacts', () => ({
   },
 }))
 
-vi.mock('../../entities/deck/cards', () => ({
+vi.mock('@/entities/deck/cards', () => ({
   cards: {
     // A card is named by the first field of the stencil it is cut by, so the
     // window is told of one.
@@ -435,9 +435,9 @@ vi.mock('../../entities/deck/cards', () => ({
   },
 }))
 
-vi.mock('../../widgets/agent-chat/core', () => ({ core: { ask: held, finish: async () => {} } }))
+vi.mock('@/widgets/agent-chat/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
-vi.mock('../../entities/settings/theme', () => ({
+vi.mock('@/entities/settings/theme', () => ({
   themes: {
     appearance: async () => ({
       themes: [
@@ -462,7 +462,7 @@ vi.mock('../../entities/settings/theme', () => ({
   },
 }))
 
-const App = (await import('../../app/App.vue')).default
+const App = (await import('@/app/App.vue')).default
 
 /** A moment for whatever the window asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))

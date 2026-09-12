@@ -1,7 +1,7 @@
 /**
  * Map connecting note file paths to stable node IDs drawn on the plex graph.
  */
-import { getRenamedPath, type PathRename } from '../../shared/core'
+import { getRenamedPath, type PathRename } from '@/shared/paths'
 
 export function createNodeIdMap() {
   let held = new Map<string, string>()

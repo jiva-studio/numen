@@ -2,8 +2,8 @@
  * Step navigation, stack tracking, and presentation for command palette steps.
  */
 import { computed, shallowRef, type Ref } from 'vue'
-import { getRenamedPath, type PathRename } from '../../shared/note'
-import type { Vault } from '../../shared/vaults'
+import { getRenamedPath, type PathRename } from '@/shared/paths'
+import type { Vault } from '@/shared/vaults'
 import type { PaletteLists, NoteLookup } from './lists'
 import { EXACT, NO, YES, type PendingStep } from './step'
 import type { CommandInvocation, CommandTarget, Words } from './target'

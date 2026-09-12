@@ -21,9 +21,9 @@ import {
   WorkspaceLayout,
   type Workspace,
 } from '@numen/ui'
-import DocumentTab from '../widgets/document-viewer/components/DocumentTab.vue'
-import NoteTab from '../widgets/note-editor/components/NoteTab.vue'
-import RecordingTab from '../widgets/media-recording/components/RecordingTab.vue'
+import DocumentTab from '@/widgets/document-viewer/components/DocumentTab.vue'
+import NoteTab from '@/widgets/note-editor/components/NoteTab.vue'
+import RecordingTab from '@/widgets/media-recording/components/RecordingTab.vue'
 import {
   asked,
   cards,
@@ -38,7 +38,7 @@ import {
   passageSaid,
   said,
   settles,
-} from '../shared/testing/window'
+} from '@/testing/window'
 
 describe('the window with no note to show', () => {
   it('says the vault could not be read, and that nothing was read from it', async () => {

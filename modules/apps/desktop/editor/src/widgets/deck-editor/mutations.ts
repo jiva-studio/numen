@@ -6,9 +6,9 @@ import {
   cardEnded,
   type InsertionPoint,
 } from '@numen/ui'
-import type { Value } from '../../entities/deck/cards'
-import { generateId, type IdMaker } from '../../entities/deck/identity'
-import { nameOf } from '../../shared/paths'
+import type { Value } from '@/entities/deck/cards'
+import { generateId, type IdMaker } from '@/entities/deck/identity'
+import { nameOf } from '@/shared/paths'
 import type { BufferCard, BufferDeck } from './types'
 
 /**

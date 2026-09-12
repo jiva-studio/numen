@@ -8,12 +8,13 @@
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { RunSupport } from './runs'
 import type { CommandInvocation, VaultRef } from './target'
-import type { EditorKind } from '../../entities/tab/openers'
-import type { Artifact, ArtifactState, ArtifactRunner } from '../../shared/artifacts'
-import type { FileMoveResult } from '../../shared/file'
-import type { ErrorCode, RemoveResult, RenameResult } from '../../shared/note'
-import type { VaultErrorCode, Vaults } from '../../shared/vaults'
-import type { MessageWriter } from '../../shared/notices/messages'
+import type { EditorKind } from '@/entities/tab/openers'
+import type { Artifact, ArtifactState, ArtifactRunner } from '@/shared/artifacts'
+import type { FileMoveResult } from '@/shared/file'
+import type { RemoveResult, RenameResult } from '@/entities/note'
+import type { ErrorCode } from '@/shared/errors'
+import type { VaultErrorCode, Vaults } from '@/shared/vaults'
+import type { MessageWriter } from '@/shared/notices/messages'
 
 
 /**

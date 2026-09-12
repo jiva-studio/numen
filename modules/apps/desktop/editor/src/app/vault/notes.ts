@@ -3,8 +3,8 @@
  */
 import { notes } from './clients'
 import { mapBaseline, mapLink, mapMoveResult, mapNeighbourhood, mapNoteResult, run, writes } from './words'
-import { errorIn, staleIn } from '../../shared/answers'
-import type { Core } from '../../shared/core'
+import { errorIn, staleIn } from '@/shared/answers'
+import type { Core } from '@/shared/core'
 
 export type NoteOperations = Pick<
   Core,

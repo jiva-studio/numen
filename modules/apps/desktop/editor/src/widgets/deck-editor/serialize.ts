@@ -1,8 +1,8 @@
 /**
  * Serialization and conversion between vault deck data and buffer deck models.
  */
-import type { VaultCard, VaultDeck, VaultSection } from '../../entities/deck/cards'
-import { generateId, type IdMaker } from '../../entities/deck/identity'
+import type { VaultCard, VaultDeck, VaultSection } from '@/entities/deck/cards'
+import { generateId, type IdMaker } from '@/entities/deck/identity'
 import { NO_DECK, type BufferDeck } from './types'
 
 /**

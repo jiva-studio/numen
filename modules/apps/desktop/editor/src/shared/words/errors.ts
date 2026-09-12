@@ -1,8 +1,8 @@
 /**
  * UI error messages for note operations and vault operations.
  */
-import type { ErrorCode } from '../note'
-import type { VaultErrorCode } from '../vaults'
+import type { ErrorCode } from '@/shared/errors'
+import type { VaultErrorCode } from '@/shared/vaults'
 
 /** What the vault reports as error for a command, in words a person reads. */
 export const ERRORS: Record<ErrorCode, string> = {

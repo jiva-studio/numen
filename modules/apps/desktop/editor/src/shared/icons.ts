@@ -10,9 +10,7 @@ import {
   ArrowRightLeft,
   AudioLines,
   BookOpen,
-  BookText,
   Bot,
-  Braces,
   Captions,
   CaptionsOff,
   Command,
@@ -23,8 +21,6 @@ import {
   CornerLeftUp,
   FilePlus,
   FileText,
-  File,
-  Folder,
   FolderOpen,
   FolderPlus,
   FolderRoot,
@@ -53,23 +49,7 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
-import type { Entry, Source } from './file'
-import type { NoteType } from './note'
-import {
-  AGENT,
-  BOOK,
-  DECK,
-  DOCUMENT,
-  FILES,
-  NOTE,
-  PLEX,
-  PRESET,
-  RECORDING,
-  SETTINGS,
-  SETTINGS_FILE,
-  STENCIL,
-  URL,
-} from '../entities/tab/workspace'
+import type { Source } from './file'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
@@ -129,41 +109,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
 /** The icon for a command, and nothing where it has none. */
 export const iconFor = (id: string): LucideIcon | null => ICONS.get(id) ?? null
 
-/** What each kind of tab is drawn as, before the name it carries. */
-const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
-  [PLEX, Waypoints],
-  [AGENT, Bot],
-  [FILES, FolderTree],
-  [NOTE, FileText],
-  [DOCUMENT, BookOpen],
-  [BOOK, BookText],
-  [RECORDING, AudioLines],
-  [URL, Globe],
-  [DECK, Layers],
-  [STENCIL, LayoutTemplate],
-  [PRESET, Gauge],
-  [SETTINGS, SlidersHorizontal],
-  [SETTINGS_FILE, Braces],
-])
-
-/** The icon for a kind of tab, and nothing for a kind that has none. */
-export const iconOfKind = (kind: string): LucideIcon | null => KINDS.get(kind) ?? null
-
-/**
- * What each kind of note is drawn as, wherever a note's kind is drawn: the
- * files list, the plex, and the tab it opens in. One mark to a kind, so a
- * preset is the same thing in the tree that it is in the tab.
- */
-const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
-  ['note', FileText],
-  ['deck', Layers],
-  ['stencil', LayoutTemplate],
-  ['preset', Gauge],
-])
-
-/** The icon for a kind of note. Every kind has one. */
-export const iconOfNote = (type: NoteType): LucideIcon => NOTES.get(type) ?? FileText
-
 /**
  * What each kind of source that is not a note is drawn as: the mark of the tab
  * it opens in, so a recording is the same thing in a list that it is once it is
@@ -177,15 +122,3 @@ const SOURCES: ReadonlyMap<Source, LucideIcon> = new Map([
 
 /** The icon for a source, and nothing for a file the vault holds no source for. */
 export const iconOfSource = (kind: Source): LucideIcon | null => SOURCES.get(kind) ?? null
-
-/**
- * The icon one entry of the files tree is drawn as. A folder says whether what
- * it holds is drawn; a note is drawn by which kind of note it is, and every
- * other file by the source the vault holds it as.
- */
-export const iconOfEntry = (entry: Entry | null | undefined, open: boolean): LucideIcon => {
-  if (!entry) return File
-  if (entry.folder) return open ? FolderOpen : Folder
-  if (entry.kind === 'note') return iconOfNote(entry.type)
-  return iconOfSource(entry.kind) ?? File
-}

@@ -15,7 +15,7 @@ import {
   type SearchMode,
   type Words,
 } from './search'
-import { later, type Deferred } from '../../shared/testing/later'
+import { later, type Deferred } from '@/testing/later'
 
 const WORDS: Words = {
   names: 'Names',

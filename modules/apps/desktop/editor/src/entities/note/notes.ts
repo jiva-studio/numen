@@ -14,7 +14,7 @@ import {
   type Move,
   type Tab,
 } from "./tab"
-import type { LinkAddress } from "../../shared/core"
+import type { LinkAddress } from "@/shared/core"
 import type { OpenNote, Notes, OpenNotesOptions } from "./noteTypes"
 import { createNoteQueue } from "./queue"
 import { createConflictCoordinator } from "./conflict"

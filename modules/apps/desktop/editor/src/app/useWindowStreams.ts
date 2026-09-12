@@ -3,7 +3,9 @@
  */
 import type { Ref, ShallowRef } from 'vue'
 import { following } from '@numen/ui'
-import type { Core, PathRename, NoteEdit, Span, Task } from '../shared/core'
+import type { Core, NoteEdit, Task } from '@/shared/core'
+import type { PathRename } from '@/shared/paths'
+import type { Span } from '@/shared/span'
 
 export interface WindowStreamsDeps {
   readonly core: Core

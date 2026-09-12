@@ -7,10 +7,10 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import type { NoteType, PathRename } from '../../../shared/core'
-import type { TabKind, WindowHandle } from '../../../entities/tab/windowTabs'
-import { PLEX } from '../../../entities/tab/workspace'
-import { fileOf } from '../../../shared/paths'
+import type { NoteType } from '@/shared/core'
+import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
+import { PLEX } from '@/entities/tab/workspace'
+import { fileOf, type PathRename } from '@/shared/paths'
 import { NEW_NOTE, OFFERED } from '../menu'
 import { asPlex, typesIn } from '../picture'
 import { createNodeIdMap } from '../nodeIdMap'

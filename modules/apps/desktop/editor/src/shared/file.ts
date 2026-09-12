@@ -2,7 +2,8 @@
  * The files of the vault: what stands at a path, what a listing of one folder
  * reports, and what moving one comes back with.
  */
-import type { ErrorCode, MoveResult, NoteType } from './note'
+import type { MoveResult, NoteType } from '@/entities/note'
+import type { ErrorCode } from '@/shared/errors'
 
 /**
  * What the vault holds at a path. A file it holds no source for — a picture,

@@ -6,7 +6,7 @@
  * it answers picks the tab the file opens in.
  */
 import { describe, expect, it } from 'vitest'
-import type { FileKind } from '../../shared/file'
+import type { FileKind } from '@/shared/file'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
 /** A vault that answers what it was told, and counts the questions. */

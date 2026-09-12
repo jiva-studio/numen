@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { grouped } from '@numen/ui'
-import type { Source } from '../../shared/core'
+import type { Source } from '@/shared/core'
 import {
   itemsFor,
   type RunGuard,

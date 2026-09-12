@@ -3,13 +3,13 @@
  */
 import { settingsService } from './clients'
 import { fetched } from './words'
-import { staleIn } from '../../shared/answers'
-import { DEFAULT_PARTS } from '../../entities/settings/hanging'
-import { DEFAULT_STARTS } from '../../entities/settings/review'
-import { settingAt } from '../../entities/settings/store'
-import { write } from '../../entities/settings/write'
+import { staleIn } from '@/shared/answers'
+import { DEFAULT_PARTS } from '@/entities/settings/hanging'
+import { DEFAULT_STARTS } from '@/entities/settings/review'
+import { settingAt } from '@/entities/settings/store'
+import { write } from '@/entities/settings/write'
 import { formatErrorMessage } from '@numen/wire'
-import type { Configuration, Core, HangingSettings, ReviewSettings, SettingEdit } from '../../shared/core'
+import type { Configuration, Core, HangingSettings, ReviewSettings, SettingEdit } from '@/shared/core'
 
 const SYNCS = ['naming', 'sync_title_and_filename']
 const HANGS = ['appearance', 'hang_parts_under_a_node']

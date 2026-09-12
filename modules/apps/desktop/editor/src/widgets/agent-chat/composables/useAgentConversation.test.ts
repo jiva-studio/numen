@@ -8,9 +8,9 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
 import { agentKind, firstLine, useAgentConversation, type AgentTabState } from './useAgentConversation'
-import type { Span } from '../../../shared/core'
-import { useWindowTabs } from '../../../entities/tab/windowTabs'
-import { AGENT } from '../../../entities/tab/workspace'
+import type { Span } from '@/shared/span'
+import { useWindowTabs } from '@/entities/tab/windowTabs'
+import { AGENT } from '@/entities/tab/workspace'
 
 /** A talk that records what it was asked, and the places its lines name. */
 const talked = (places: Record<string, { path: string; span: Span }> = {}) => {

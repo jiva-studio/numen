@@ -8,13 +8,13 @@
 import { Notices, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
-import UnsavedChangesPrompt from '../features/file-conflict/UnsavedChangesPrompt.vue'
-import CoreFailureNotice from '../shared/notices/CoreFailureNotice.vue'
-import CommandPalette from '../features/command-palette/CommandPalette.vue'
-import WelcomeScreen from '../widgets/welcome/components/WelcomeScreen.vue'
+import UnsavedChangesPrompt from '@/features/file-conflict/UnsavedChangesPrompt.vue'
+import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
+import CommandPalette from '@/features/command-palette/CommandPalette.vue'
+import WelcomeScreen from '@/widgets/welcome/components/WelcomeScreen.vue'
 import { useWindow } from './useWindow'
-import { WORDS as words } from '../shared/words'
-import { WORDS as note } from '../entities/note/words'
+import { WORDS as words } from '@/shared/words'
+import { WORDS as note } from '@/entities/note/words'
 
 // --- Props & Emits ---
 

@@ -4,7 +4,7 @@
  * Everything in the window that has something to say takes a `MessageWriter`,
  * so a test that wants to read what was written hands one of these over.
  */
-import type { MessageKind, MessageWriter } from '../notices/messages'
+import type { MessageKind, MessageWriter } from '@/shared/notices/messages'
 
 export function writer() {
   const told: { text: string; kind: MessageKind }[] = []

@@ -2,25 +2,8 @@
  * The words the vault speaks about notes, and what the window asks of it over
  * them.
  */
-
-/** A note or file that is no longer where it was, and where it now is. */
-export interface PathRename {
-  readonly from: string
-  readonly to: string
-}
-
-/** Where a file went, and nothing where none of these moved it. */
-export const getRenamedPath = (renamed: readonly PathRename[], path: string): string =>
-  renamed.find((one) => one.from === path)?.to ?? ''
-
-/**
- * A run of text, by where it begins and where it ends. What it counts in is the
- * field carrying it.
- */
-export interface Span {
-  readonly from: number
-  readonly to: number
-}
+import type { ErrorCode } from '@/shared/errors'
+import type { Span } from '@/shared/span'
 
 /**
  * One report of a change being made to the prose of a note, while it is being
@@ -103,22 +86,6 @@ export interface LinkAddress {
   readonly url: string
   readonly embed: string
 }
-
-/** The canonical error code for note operations. */
-export type ErrorCode =
-  | 'missing'
-  | 'notANote'
-  | 'notText'
-  | 'tooLarge'
-  | 'bodyRefused'
-  | 'unreadable'
-  | 'occupied'
-  | 'unnameable'
-  | 'notAStencil'
-  | 'notADeck'
-  | 'deckTooLarge'
-  | 'notAPreset'
-  | 'unreachable'
 
 /** A note to make: what it is called, where it goes, and what it arrives joined to. */
 export interface NewNote {

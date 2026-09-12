@@ -5,7 +5,7 @@
 import { createClient } from '@connectrpc/connect'
 import { CardsService } from '@numen/protocol'
 import { transport } from '@numen/wire'
-import { fingerprint, errorIn, staleIn, stamp } from '../../shared/answers'
+import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
 import type { Cards, DeckService, StencilService } from './types'
 import {
   deserializeCard,

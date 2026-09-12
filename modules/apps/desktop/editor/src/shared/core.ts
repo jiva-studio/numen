@@ -6,9 +6,7 @@
  */
 import type {
   CreateResult,
-  ErrorCode,
   Link,
-  PathRename,
   Neighbourhood,
   NewNote,
   NoteEdit,
@@ -16,13 +14,15 @@ import type {
   NoteResult,
   RemoveResult,
   RenameResult,
-} from './note'
+} from '@/entities/note'
+import type { ErrorCode } from './errors'
+import type { PathRename } from './paths'
 import type { Entry, FileKind, Movement } from './file'
 import type { Task } from './notices/task'
-import type { Configuration, SettingEdit } from '../entities/settings/configuration'
-import type { HangingSettings } from '../entities/settings/hanging'
-import type { ReviewSettings } from '../entities/settings/review'
-import type { Attention } from '../entities/tab/tab'
+import type { Configuration, SettingEdit } from '@/entities/settings/configuration'
+import type { HangingSettings } from '@/entities/settings/hanging'
+import type { ReviewSettings } from '@/entities/settings/review'
+import type { Attention } from '@/entities/tab/tab'
 
 export interface Core {
   neighbourhood(path: string): Promise<Neighbourhood>
@@ -231,13 +231,16 @@ export interface Core {
   flushed(token: string, owed?: 'written' | 'asking'): Promise<void>
 }
 
-export * from './note'
+export * from '@/entities/note'
 export type * from './file'
 export * from './artifacts'
 export type * from './notices/task'
-export type * from '../entities/settings/configuration'
-export type { HangingSettings } from '../entities/settings/hanging'
-export type { ReviewSettings } from '../entities/settings/review'
-export type * from '../entities/tab/tab'
+export type * from '@/entities/settings/configuration'
+export type { HangingSettings } from '@/entities/settings/hanging'
+export type { ReviewSettings } from '@/entities/settings/review'
+export type * from '@/entities/tab/tab'
+// A note declares a Tab of its own, which is the state one open note is in.
+// The Tab this module hands out is the window's.
+export type { Tab } from '@/entities/tab/tab'
 export type * from './vaults'
 export * from './result'

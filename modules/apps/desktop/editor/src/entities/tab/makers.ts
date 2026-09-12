@@ -4,8 +4,9 @@
  * in front of the person in a tab of its own.
  */
 import { formatErrorMessage } from '@numen/wire'
-import type { CreateResult, ErrorCode } from '../../shared/note'
-import type { MessageWriter } from '../../shared/notices/messages'
+import type { CreateResult } from '@/entities/note'
+import type { ErrorCode } from '@/shared/errors'
+import type { MessageWriter } from '@/shared/notices/messages'
 import type { FileOpeners } from './openers'
 
 /** Which of the four a file is created as. */

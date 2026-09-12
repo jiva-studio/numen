@@ -6,7 +6,7 @@
  * was typed into it has landed.
  */
 import { shallowRef, watch } from 'vue'
-import type { openNotes } from '../../entities/note'
+import type { openNotes } from '@/entities/note'
 
 /** The notes of the whole window, as far as this reads them. */
 type Notes = ReturnType<typeof openNotes>

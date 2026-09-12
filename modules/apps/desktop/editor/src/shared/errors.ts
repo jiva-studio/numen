@@ -1,0 +1,15 @@
+/** The error code a vault operation answers with. */
+export type ErrorCode =
+  | 'missing'
+  | 'notANote'
+  | 'notText'
+  | 'tooLarge'
+  | 'bodyRefused'
+  | 'unreadable'
+  | 'occupied'
+  | 'unnameable'
+  | 'notAStencil'
+  | 'notADeck'
+  | 'deckTooLarge'
+  | 'notAPreset'
+  | 'unreachable'

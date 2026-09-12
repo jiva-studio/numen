@@ -2,7 +2,7 @@
  * Settings configuration, theme dressing, and palette lists for the window.
  */
 import { computed, watch } from 'vue'
-import { themes } from '../entities/settings/theme'
+import { themes } from '@/entities/settings/theme'
 import {
   APPEARANCE,
   DRESSING,
@@ -10,18 +10,18 @@ import {
   MODE,
   TEXT_SCALE,
   windowAppearance,
-} from '../entities/settings/appearance'
-import { reviewSetting } from '../entities/settings/review'
-import { OFF, ON, SYNCING, syncSetting } from '../entities/settings/sync'
-import { HANGING, PARTS, useHangingSetting } from '../entities/settings/hanging'
-import { settingsStore } from '../entities/settings/store'
-import { useSettingsTab } from '../widgets/settings/composables/useSettingsTab'
-import { createSettingsFileTabKind } from '../widgets/text-editor/composables/useTextEditor'
-import type { PaletteLists } from '../features/command-palette/lists'
-import type { Core } from '../shared/core'
-import type { MessageLog } from '../shared/notices/messages'
-import { WORDS } from '../shared/words'
-import type { useWindowTabs } from '../entities/tab/windowTabs'
+} from '@/entities/settings/appearance'
+import { reviewSetting } from '@/entities/settings/review'
+import { OFF, ON, SYNCING, syncSetting } from '@/entities/settings/sync'
+import { HANGING, PARTS, useHangingSetting } from '@/entities/settings/hanging'
+import { settingsStore } from '@/entities/settings/store'
+import { useSettingsTab } from '@/widgets/settings/composables/useSettingsTab'
+import { createSettingsFileTabKind } from '@/widgets/text-editor/composables/useTextEditor'
+import type { PaletteLists } from '@/features/command-palette/lists'
+import type { Core } from '@/shared/core'
+import type { MessageLog } from '@/shared/notices/messages'
+import { WORDS } from '@/shared/words'
+import type { useWindowTabs } from '@/entities/tab/windowTabs'
 
 type Words = typeof WORDS
 

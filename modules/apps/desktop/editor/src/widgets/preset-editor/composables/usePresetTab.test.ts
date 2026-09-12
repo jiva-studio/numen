@@ -23,9 +23,9 @@ import {
   type WriteResult,
 } from '../core'
 import { BOUNDS } from '../drawn'
-import type { ErrorCode } from '../../../shared/core'
-import type { WindowHandle } from '../../../entities/tab/windowTabs'
-import type { FileOpeners } from '../../../entities/tab/openers'
+import type { ErrorCode } from '@/shared/errors'
+import type { WindowHandle } from '@/entities/tab/windowTabs'
+import type { FileOpeners } from '@/entities/tab/openers'
 import { WORDS as words } from '../words'
 
 const point = (over: Partial<Point> = {}): Point => ({

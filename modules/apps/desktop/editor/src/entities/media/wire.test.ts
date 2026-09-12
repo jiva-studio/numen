@@ -8,7 +8,7 @@ vi.mock('@connectrpc/connect', async (actual) => ({
   createClient: () => asked,
 }))
 
-vi.mock('../../shared/artifacts', () => ({
+vi.mock('@/shared/artifacts', () => ({
   running: {
     getArtifactStates: vi.fn().mockResolvedValue({ 'transcript.corrected': 'done' }),
   },

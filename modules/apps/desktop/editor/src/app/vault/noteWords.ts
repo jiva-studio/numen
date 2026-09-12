@@ -12,7 +12,7 @@ import type {
   Refusal,
 } from '@numen/protocol'
 import { namesOf } from '@numen/wire'
-import { fingerprint, errorIn, staleIn, stamp } from '../../shared/answers'
+import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
 import type {
   Link,
   Neighbourhood,
@@ -20,7 +20,7 @@ import type {
   NoteType,
   Role,
   Seat,
-} from '../../shared/core'
+} from '@/shared/core'
 
 /**
  * Whether a rename wrote the title into the note, by the namer it was named

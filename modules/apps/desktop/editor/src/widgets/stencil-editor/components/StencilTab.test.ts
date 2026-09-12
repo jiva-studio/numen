@@ -8,13 +8,13 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Cards, VaultFace, DeckProblem } from '../../../entities/deck/cards'
-import { fileOpeners } from '../../../entities/tab/openers'
-import { useWindowTabs } from '../../../entities/tab/windowTabs'
-import { STENCIL } from '../../../entities/tab/workspace'
+import type { Cards, VaultFace, DeckProblem } from '@/entities/deck/cards'
+import { fileOpeners } from '@/entities/tab/openers'
+import { useWindowTabs } from '@/entities/tab/windowTabs'
+import { STENCIL } from '@/entities/tab/workspace'
 import StencilTab from './StencilTab.vue'
 import { useStencilTabs, type StencilTabState } from '../composables/useStencilTabs'
-import { WORDS as words } from '../../../entities/deck/words'
+import { WORDS as words } from '@/entities/deck/words'
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => fileOpeners({ fileKinds: async () => new Map() })
