@@ -25,8 +25,8 @@ func (a *API) GetVaultDeckPreset(
 	}
 
 	out := &v1.GetVaultDeckPresetResponse{}
-	if reason, refused := wire.RefusalOf(found.Outcome); refused {
-		out.Refusal = &reason
+	if reason, refused := wire.ErrorCodeOf(found.Outcome); refused {
+		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
 	out.Preset = wire.PresetOf(found, wire.Titled(ctx, a.Notes, v.ID, found.Path))

@@ -228,8 +228,8 @@ func save(t *testing.T, f *behind, path, body string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the save of %s was refused: %v", path, refusal)
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the save of %s was refused: %v", path, code)
 	}
 }
 

@@ -52,7 +52,7 @@ func at(t *testing.T, api *API, path string) *v1.LastRead {
 	return &v1.LastRead{Prose: out.Msg.GetBody(), At: out.Msg.GetAt()}
 }
 
-// A note holding prose the client has not read is its own answer. A refusal is
+// A note holding prose the client has not read is its own answer. An error is
 // something a tab can do nothing about, and this one is a question for the
 // person.
 func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
@@ -73,8 +73,8 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
 	}
-	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_STALE {
-		t.Errorf("a note that changed was answered %v", refusal)
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+		t.Errorf("a note that changed was answered %v", code)
 	}
 	if out.Msg.GetAt() != nil {
 		t.Error("a write that wrote nothing answered with a fingerprint")
@@ -103,7 +103,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.Msg.GetRefusal() == v1.Refusal_REFUSAL_STALE {
+	if first.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
 		t.Fatal("the first write said the note changed")
 	}
 	if first.Msg.GetAt() == nil {
@@ -118,7 +118,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if second.Msg.GetRefusal() == v1.Refusal_REFUSAL_STALE {
+	if second.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
 		t.Error("the write after a write said the note changed")
 	}
 
@@ -193,8 +193,8 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
 	}
-	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_STALE {
-		t.Errorf("a note that changed was answered %v", refusal)
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+		t.Errorf("a note that changed was answered %v", code)
 	}
 
 	raw, err := os.ReadFile(on)

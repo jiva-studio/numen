@@ -380,7 +380,7 @@ message GetDeckPresetResponse {
   optional Preset preset = 1;
 
   // Set when the preset was not read, and why.
-  optional Refusal refusal = 2;
+  optional ErrorCode error = 2;
 
   // The file the settings came out of, for the caller to present at its next
   // write. Absent for a deck naming no preset, and when the preset was
@@ -420,7 +420,7 @@ message CreatePresetResponse {
   string path = 1;
 
   // Set when nothing was made, and why.
-  optional Refusal refusal = 2;
+  optional ErrorCode error = 2;
 
   // Set when the preset is on disk and the index would not come level with it.
   // The preset was made and `path` stands; search does not answer about it
@@ -443,9 +443,9 @@ message ScheduleDeckRequest {
 
 message ScheduleDeckResponse {
   // Set when nothing was written, and why. A deck that is no longer the one
-  // this caller read is REFUSAL_STALE, and the person chooses what happens
+  // this caller read is ERROR_CODE_STALE, and the person chooses what happens
   // next.
-  optional Refusal refusal = 1;
+  optional ErrorCode error = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
@@ -466,7 +466,7 @@ message ReadPresetResponse {
   optional Preset preset = 1;
 
   // Set when the preset was not read, and why.
-  optional Refusal refusal = 2;
+  optional ErrorCode error = 2;
 
   // The file the settings came out of, for the caller to present at its next
   // write. Absent when the preset was refused.
@@ -508,9 +508,9 @@ message WritePresetRequest {
 
 message WritePresetResponse {
   // Set when nothing was written, and why. A file that is no longer the one
-  // this caller read is REFUSAL_STALE, and the person chooses what happens to
+  // this caller read is ERROR_CODE_STALE, and the person chooses what happens to
   // their settings.
-  optional Refusal refusal = 1;
+  optional ErrorCode error = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.

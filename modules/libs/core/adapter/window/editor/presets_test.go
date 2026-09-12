@@ -125,7 +125,7 @@ func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a write over a preset the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "Sanskrit.md"); held != theirs {
@@ -135,7 +135,7 @@ func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 
 // TestADeckNamingNoPresetIsScheduledByTheDefaults. A vault holding no preset at
 // all schedules every deck, so a deck pointing at nothing is answered with
-// settings and not with a refusal.
+// settings and not with an error.
 func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 	f := steering(t, pointed)
 
@@ -145,8 +145,8 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("a deck naming no preset was refused %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("a deck naming no preset was refused %v", code)
 	}
 	if path := answer.Msg.GetPreset().GetPath(); path != "" {
 		t.Errorf("a deck naming no preset was answered from %q", path)
@@ -346,8 +346,8 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := made.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("making a preset answered %v", refusal)
+	if code := made.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("making a preset answered %v", code)
 	}
 	if path := made.Msg.GetPath(); path != "presets/Prosody.md" {
 		t.Fatalf("the preset was filed at %q", path)
@@ -368,8 +368,8 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := read.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the preset just made was refused with %v", refusal)
+	if code := read.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the preset just made was refused with %v", code)
 	}
 	if problems := read.Msg.GetPreset().GetProblems(); len(problems) != 0 {
 		t.Errorf("the preset just made stands against %v", problems)
@@ -433,7 +433,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if put.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if put.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the write was refused: %+v", put.Msg)
 	}
 	if put.Msg.GetAt() == nil {
@@ -460,7 +460,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if off.Msg.GetRefusal() == v1.Refusal_REFUSAL_STALE {
+	if off.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
 		t.Fatal("the deck this caller had just written was answered as changed")
 	}
 	if held := onDisk(t, f.root, "decks/Terms.md"); strings.Contains(held, "preset") {
@@ -493,8 +493,8 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_NOT_A_PRESET {
-		t.Errorf("the write was answered %v", answer.Msg.GetRefusal())
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_A_PRESET {
+		t.Errorf("the write was answered %v", answer.Msg.GetError())
 	}
 	if held := onDisk(t, f.root, "decks/Terms.md"); held != terms {
 		t.Errorf("the deck on disk is now %q", held)
@@ -512,8 +512,8 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_MISSING {
-		t.Errorf("the write was answered %v", answer.Msg.GetRefusal())
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_MISSING {
+		t.Errorf("the write was answered %v", answer.Msg.GetError())
 	}
 	if held := onDisk(t, f.root, "decks/Terms.md"); held != terms {
 		t.Errorf("the deck on disk is now %q", held)
@@ -543,7 +543,7 @@ func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a write over a deck the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "decks/Roots.md"); held != theirs {

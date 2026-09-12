@@ -52,8 +52,8 @@ func TestAStencilTheIndexWouldNotComeLevelWithIsAnsweredWithItsPath(t *testing.T
 	if err != nil {
 		t.Fatalf("the stencil is on disk and the client was told %v", err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the stencil was made and answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the stencil was made and answered %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "cards/Animal.md" {
 		t.Fatalf("the stencil is filed at %q", path)
@@ -75,8 +75,8 @@ func TestADeckTheIndexWouldNotComeLevelWithIsAnsweredWithItsPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the deck is on disk and the client was told %v", err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the deck was made and answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the deck was made and answered %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "Animals.md" {
 		t.Fatalf("the deck is filed at %q", path)
@@ -153,7 +153,7 @@ func TestAStencilTheIndexWouldNotComeLevelWithCannotBeMadeAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := again.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_OCCUPIED {
-		t.Fatalf("making the stencil a second time answered %v", refusal)
+	if code := again.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+		t.Fatalf("making the stencil a second time answered %v", code)
 	}
 }

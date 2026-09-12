@@ -64,7 +64,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refused := written.Msg.GetRefusal(); refused != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if refused := written.Msg.GetError(); refused != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the save was refused: %v", refused)
 	}
 

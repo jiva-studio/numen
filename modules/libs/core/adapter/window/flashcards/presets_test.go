@@ -33,8 +33,8 @@ func scheduled(t *testing.T, api *API, v domain.Vault, path string) *v1.Preset {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("%s was refused: %v", path, out.Msg.GetRefusal())
+	if out.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("%s was refused: %v", path, out.Msg.GetError())
 	}
 	return out.Msg.GetPreset()
 }

@@ -109,7 +109,7 @@ func TestAListingLeavesOutWhatTheVaultLeavesAlone(t *testing.T) {
 	}
 }
 
-// TestAFolderThatIsNotThereIsNotAnEmptyOne. A listing carries no refusal, so
+// TestAFolderThatIsNotThereIsNotAnEmptyOne. A listing carries no error code, so
 // the two are told apart by the answer itself.
 func TestAFolderThatIsNotThereIsNotAnEmptyOne(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -143,8 +143,8 @@ func TestEverythingTheVaultHoldsMoves(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-			t.Fatalf("moving %s was refused: %v", one.from, refusal)
+		if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+			t.Fatalf("moving %s was refused: %v", one.from, code)
 		}
 		moved := answer.Msg.GetMoved()
 		if moved.GetFrom() != one.from || moved.GetTo() != one.to {
@@ -178,8 +178,8 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the folder was refused: %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the folder was refused: %v", code)
 	}
 	if repaired := answer.Msg.GetMoved().GetRepaired(); len(repaired) != 0 {
 		t.Errorf("a link written by name was repaired: %v", repaired)
@@ -222,8 +222,8 @@ func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_OCCUPIED {
-		t.Errorf("a name already taken was answered with %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+		t.Errorf("a name already taken was answered with %v", code)
 	}
 	if moved := answer.Msg.GetMoved(); moved != nil {
 		t.Errorf("a refused move said the file did %+v", moved)
@@ -237,7 +237,7 @@ func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
 }
 
 // TestAMoveOfAPathWithNothingAtItLeavesNothingBehind, and says so as a
-// refusal: the core is what names a path as missing.
+// an error: the core is what names a path as missing.
 func TestAMoveOfAPathWithNothingAtItLeavesNothingBehind(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
@@ -247,8 +247,8 @@ func TestAMoveOfAPathWithNothingAtItLeavesNothingBehind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_MISSING {
-		t.Errorf("a path with nothing at it was answered with %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_MISSING {
+		t.Errorf("a path with nothing at it was answered with %v", code)
 	}
 	if answer.Msg.GetMoved() != nil {
 		t.Error("a move that did not happen came back with a file under a different name")
@@ -274,8 +274,8 @@ func TestARemovedFolderGoesToTheTrashWithEverythingUnderIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the folder was refused: %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the folder was refused: %v", code)
 	}
 	if trashed := answer.Msg.GetTrashed(); trashed != ".trash/physics" {
 		t.Errorf("the folder sits at %q", trashed)
@@ -306,8 +306,8 @@ func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the folder was refused: %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the folder was refused: %v", code)
 	}
 	if !folder(t, f.root, "science/physics") {
 		t.Fatal("the folder is not on the disk")
@@ -326,8 +326,8 @@ func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := again.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Errorf("a folder that is already there was answered with %v", refusal)
+	if code := again.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Errorf("a folder that is already there was answered with %v", code)
 	}
 }
 
@@ -342,8 +342,8 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_OCCUPIED {
-		t.Errorf("a path a file already holds was answered with %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+		t.Errorf("a path a file already holds was answered with %v", code)
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); now != held {
 		t.Errorf("the file was written:\n%s", now)
@@ -396,7 +396,7 @@ func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
 
 	_, err := f.client.ListFileKinds(t.Context(), connect.NewRequest(&v1.ListFileKindsRequest{Paths: paths}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("err = %v, want a refusal of the paths named", err)
+		t.Fatalf("err = %v, want the paths named to be refused", err)
 	}
 }
 

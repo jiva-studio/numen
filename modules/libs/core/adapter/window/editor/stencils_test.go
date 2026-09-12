@@ -47,7 +47,7 @@ func TestAStencilIsWrittenWithItsFacesAndItsFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a stencil answered %+v", answer.Msg)
 	}
 
@@ -82,7 +82,7 @@ func TestAStencilIsWrittenWithTheFieldsItNowDeclares(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a stencil answered %+v", answer.Msg)
 	}
 
@@ -124,7 +124,7 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Fatalf("a write over a stencil the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "cards/Animal.md"); held != theirs {
@@ -144,8 +144,8 @@ func TestWritingAStencilWhereTheVaultHoldsNoNoteIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_MISSING {
-		t.Errorf("writing a stencil where the vault holds no note answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_MISSING {
+		t.Errorf("writing a stencil where the vault holds no note answered %v", code)
 	}
 	if _, err := os.Stat(filepath.Join(f.root, "cards", "Nowhere.md")); err == nil {
 		t.Error("a file was made where the write was refused")
@@ -163,8 +163,8 @@ func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_OCCUPIED {
-		t.Errorf("making a stencil on a name already taken answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+		t.Errorf("making a stencil on a name already taken answered %v", code)
 	}
 	if held := onDisk(t, f.root, "cards/Animal.md"); held != animal {
 		t.Errorf("the stencil that was there is now %q", held)
@@ -182,8 +182,8 @@ func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_OCCUPIED {
-		t.Errorf("making a deck on a name already taken answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+		t.Errorf("making a deck on a name already taken answered %v", code)
 	}
 	if held := onDisk(t, f.root, "cards/Animal.md"); held != animal {
 		t.Errorf("the file that was there is now %q", held)
@@ -248,8 +248,8 @@ func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_OCCUPIED {
-		t.Errorf("making a deck under a file answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+		t.Errorf("making a deck under a file answered %v", code)
 	}
 	if held := onDisk(t, f.root, "Entropy.md"); held != "# Entropy\n" {
 		t.Errorf("the file in the way is now %q", held)

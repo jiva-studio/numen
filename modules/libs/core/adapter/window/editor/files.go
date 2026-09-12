@@ -153,10 +153,10 @@ func (a *API) MoveFile(
 	}
 	out.Unlevelled = a.unlevelled(err)
 	if err != nil && !out.GetUnlevelled() {
-		reason, refused := wire.RefusalBy(err)
+		reason, refused := wire.ErrorCodeBy(err)
 		switch {
 		case refused:
-			out.Refusal = &reason
+			out.Error = &reason
 		case !moved.Landed:
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -185,11 +185,11 @@ func (a *API) CreateFolder(
 	}
 	out := &v1.CreateFolderResponse{}
 	if err := writer.MakeFolder(ctx, r.Msg.GetPath()); err != nil {
-		reason, refused := wire.RefusalBy(err)
+		reason, refused := wire.ErrorCodeBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Refusal = &reason
+		out.Error = &reason
 	}
 	return connect.NewResponse(out), nil
 }
@@ -223,11 +223,11 @@ func (a *API) CreateURL(
 	if err == nil {
 		return connect.NewResponse(&v1.CreateURLResponse{}), nil
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.CreateURLResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.CreateURLResponse{Error: &reason}), nil
 }
 
 // listing is the code a folder that could not be listed is answered with.

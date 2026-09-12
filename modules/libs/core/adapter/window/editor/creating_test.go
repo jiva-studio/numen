@@ -38,8 +38,8 @@ func TestANoteIsMadeCarryingTheLinkThatSeatsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the note was refused: %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the note was refused: %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "Entropy.md" {
 		t.Fatalf("the note was filed at %q", path)
@@ -143,8 +143,8 @@ func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_OCCUPIED {
-		t.Errorf("a name already taken was answered with %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+		t.Errorf("a name already taken was answered with %v", code)
 	}
 	if answer.Msg.GetPath() != "" {
 		t.Errorf("a note that was not made was filed at %q", answer.Msg.GetPath())
@@ -155,7 +155,7 @@ func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 }
 
 // TestALinkNamingNoRoleLeavesNoNote. A link the application acts on carries one
-// of the roles the schema names, and the refusal comes before the file does.
+// of the roles the schema names, and the error comes before the file does.
 func TestALinkNamingNoRoleLeavesNoNote(t *testing.T) {
 	f := quitting(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
@@ -189,8 +189,8 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the link was refused: %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the link was refused: %v", code)
 	}
 
 	joined := fileAt(t, f.root, "Ontology.md")

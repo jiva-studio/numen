@@ -11,7 +11,7 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { NoteType, Refusal } from "./shared_pb.js";
+import type { ErrorCode, NoteType } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5InkKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZmb2xkZXIYAyABKAgSIgoEa2luZBgEIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSIAoEdHlwZRgFIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kIoQBCghGaWxlS2luZBIMCgRwYXRoGAEgASgJEiIKBGtpbmQYAiABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kEiAKBHR5cGUYAyABKA4yEi5udW1lbi52MS5Ob3RlVHlwZRIkCgZmb3JtYXQYBCABKA4yFC5udW1lbi52MS5Cb29rRm9ybWF0IisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIo8BChBNb3ZlRmlsZVJlc3BvbnNlEigKBW1vdmVkGAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESEgoKdW5sZXZlbGxlZBgDIAEoCEIICgZfbW92ZWRCCgoIX3JlZnVzYWwiSgoKTW92ZVJlc3VsdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhAKCHJlcGFpcmVkGAMgAygJEhAKCGRhbmdsaW5nGAQgAygJIjIKEVJlbW92ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDwoHZGVzdHJveRgCIAEoCCKAAQoSUmVtb3ZlRmlsZVJlc3BvbnNlEg8KB3RyYXNoZWQYASABKAkSEAoIZGFuZ2xpbmcYAiADKAkSJwoHcmVmdXNhbBgDIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARISCgp1bmxldmVsbGVkGAQgASgIQgoKCF9yZWZ1c2FsIiMKE0NyZWF0ZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSJLChRDcmVhdGVGb2xkZXJSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIi0KEENyZWF0ZVVSTFJlcXVlc3QSCwoDdXJsGAEgASgJEgwKBHBhdGgYAiABKAkiVgoRQ3JlYXRlVVJMUmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsKoUBCgpTb3VyY2VLaW5kEhsKF1NPVVJDRV9LSU5EX1VOU1BFQ0lGSUVEEAASFAoQU09VUkNFX0tJTkRfTk9URRABEhQKEFNPVVJDRV9LSU5EX0JPT0sQAhIZChVTT1VSQ0VfS0lORF9SRUNPUkRJTkcQAxITCg9TT1VSQ0VfS0lORF9VUkwQBCpUCgpCb29rRm9ybWF0EhsKF0JPT0tfRk9STUFUX1VOU1BFQ0lGSUVEEAASEwoPQk9PS19GT1JNQVRfUERGEAESFAoQQk9PS19GT1JNQVRfRVBVQhACMsYDCgtGaWxlU2VydmljZRJECglMaXN0RmlsZXMSGi5udW1lbi52MS5MaXN0RmlsZXNSZXF1ZXN0GhsubnVtZW4udjEuTGlzdEZpbGVzUmVzcG9uc2USUAoNTGlzdEZpbGVLaW5kcxIeLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1Jlc3BvbnNlEkEKCE1vdmVGaWxlEhkubnVtZW4udjEuTW92ZUZpbGVSZXF1ZXN0GhoubnVtZW4udjEuTW92ZUZpbGVSZXNwb25zZRJHCgpSZW1vdmVGaWxlEhsubnVtZW4udjEuUmVtb3ZlRmlsZVJlcXVlc3QaHC5udW1lbi52MS5SZW1vdmVGaWxlUmVzcG9uc2USTQoMQ3JlYXRlRm9sZGVyEh0ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlc3BvbnNlEkQKCUNyZWF0ZVVSTBIaLm51bWVuLnYxLkNyZWF0ZVVSTFJlcXVlc3QaGy5udW1lbi52MS5DcmVhdGVVUkxSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5InkKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZmb2xkZXIYAyABKAgSIgoEa2luZBgEIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSIAoEdHlwZRgFIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kIoQBCghGaWxlS2luZBIMCgRwYXRoGAEgASgJEiIKBGtpbmQYAiABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kEiAKBHR5cGUYAyABKA4yEi5udW1lbi52MS5Ob3RlVHlwZRIkCgZmb3JtYXQYBCABKA4yFC5udW1lbi52MS5Cb29rRm9ybWF0IisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIo0BChBNb3ZlRmlsZVJlc3BvbnNlEigKBW1vdmVkGAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESEgoKdW5sZXZlbGxlZBgDIAEoCEIICgZfbW92ZWRCCAoGX2Vycm9yIkoKCk1vdmVSZXN1bHQSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCRIQCghyZXBhaXJlZBgDIAMoCRIQCghkYW5nbGluZxgEIAMoCSIyChFSZW1vdmVGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB2Rlc3Ryb3kYAiABKAgifgoSUmVtb3ZlRmlsZVJlc3BvbnNlEg8KB3RyYXNoZWQYASABKAkSEAoIZGFuZ2xpbmcYAiADKAkSJwoFZXJyb3IYAyABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBARISCgp1bmxldmVsbGVkGAQgASgIQggKBl9lcnJvciIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiSQoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBAUIICgZfZXJyb3IiLQoQQ3JlYXRlVVJMUmVxdWVzdBILCgN1cmwYASABKAkSDAoEcGF0aBgCIAEoCSJUChFDcmVhdGVVUkxSZXNwb25zZRIMCgRwYXRoGAEgASgJEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yKoUBCgpTb3VyY2VLaW5kEhsKF1NPVVJDRV9LSU5EX1VOU1BFQ0lGSUVEEAASFAoQU09VUkNFX0tJTkRfTk9URRABEhQKEFNPVVJDRV9LSU5EX0JPT0sQAhIZChVTT1VSQ0VfS0lORF9SRUNPUkRJTkcQAxITCg9TT1VSQ0VfS0lORF9VUkwQBCpUCgpCb29rRm9ybWF0EhsKF0JPT0tfRk9STUFUX1VOU1BFQ0lGSUVEEAASEwoPQk9PS19GT1JNQVRfUERGEAESFAoQQk9PS19GT1JNQVRfRVBVQhACMsYDCgtGaWxlU2VydmljZRJECglMaXN0RmlsZXMSGi5udW1lbi52MS5MaXN0RmlsZXNSZXF1ZXN0GhsubnVtZW4udjEuTGlzdEZpbGVzUmVzcG9uc2USUAoNTGlzdEZpbGVLaW5kcxIeLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1Jlc3BvbnNlEkEKCE1vdmVGaWxlEhkubnVtZW4udjEuTW92ZUZpbGVSZXF1ZXN0GhoubnVtZW4udjEuTW92ZUZpbGVSZXNwb25zZRJHCgpSZW1vdmVGaWxlEhsubnVtZW4udjEuUmVtb3ZlRmlsZVJlcXVlc3QaHC5udW1lbi52MS5SZW1vdmVGaWxlUmVzcG9uc2USTQoMQ3JlYXRlRm9sZGVyEh0ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlc3BvbnNlEkQKCUNyZWF0ZVVSTBIaLm51bWVuLnYxLkNyZWF0ZVVSTFJlcXVlc3QaGy5udW1lbi52MS5DcmVhdGVVUkxSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
@@ -231,9 +231,9 @@ export type MoveFileResponse = Message<"numen.v1.MoveFileResponse"> & {
   /**
    * Set when nothing was moved, and why.
    *
-   * @generated from field: optional numen.v1.Refusal refusal = 2;
+   * @generated from field: optional numen.v1.ErrorCode error = 2;
    */
-  refusal?: Refusal | undefined;
+  error?: ErrorCode | undefined;
 
   /**
    * Set when the move reached the vault and the index would not come level with
@@ -347,9 +347,9 @@ export type RemoveFileResponse = Message<"numen.v1.RemoveFileResponse"> & {
   /**
    * Set when nothing was removed, and why.
    *
-   * @generated from field: optional numen.v1.Refusal refusal = 3;
+   * @generated from field: optional numen.v1.ErrorCode error = 3;
    */
-  refusal?: Refusal | undefined;
+  error?: ErrorCode | undefined;
 
   /**
    * Set when the file has gone and the index would not come level with it.
@@ -394,9 +394,9 @@ export type CreateFolderResponse = Message<"numen.v1.CreateFolderResponse"> & {
   /**
    * Set when nothing was made, and why.
    *
-   * @generated from field: optional numen.v1.Refusal refusal = 1;
+   * @generated from field: optional numen.v1.ErrorCode error = 1;
    */
-  refusal?: Refusal | undefined;
+  error?: ErrorCode | undefined;
 };
 
 /**
@@ -448,9 +448,9 @@ export type CreateURLResponse = Message<"numen.v1.CreateURLResponse"> & {
   /**
    * Set when nothing was made, and why.
    *
-   * @generated from field: optional numen.v1.Refusal refusal = 2;
+   * @generated from field: optional numen.v1.ErrorCode error = 2;
    */
-  refusal?: Refusal | undefined;
+  error?: ErrorCode | undefined;
 };
 
 /**

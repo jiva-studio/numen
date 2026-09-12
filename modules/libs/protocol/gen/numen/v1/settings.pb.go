@@ -605,9 +605,9 @@ func (x *WriteSettingsFileRequest) GetSeen() string {
 type WriteSettingsFileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was written, and why. A file holding bytes this caller
-	// has not read is REFUSAL_STALE, and the person chooses what happens to
+	// has not read is ERROR_CODE_STALE, and the person chooses what happens to
 	// their text.
-	Refusal       *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error         *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -642,11 +642,11 @@ func (*WriteSettingsFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *WriteSettingsFileResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *WriteSettingsFileResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 var File_numen_v1_settings_proto protoreflect.FileDescriptor
@@ -684,11 +684,10 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x18WriteSettingsFileRequest\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x17\n" +
 	"\x04seen\x18\x02 \x01(\tH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"Y\n" +
-	"\x19WriteSettingsFileResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal*s\n" +
+	"\x05_seen\"U\n" +
+	"\x19WriteSettingsFileResponse\x12.\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error*s\n" +
 	"\bPresence\x12\x18\n" +
 	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PRESENCE_PRESENT\x10\x01\x12\x18\n" +
@@ -727,7 +726,7 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*WriteSettingsFileRequest)(nil),  // 9: numen.v1.WriteSettingsFileRequest
 	(*WriteSettingsFileResponse)(nil), // 10: numen.v1.WriteSettingsFileResponse
 	(*Bounds)(nil),                    // 11: numen.v1.Bounds
-	(Refusal)(0),                      // 12: numen.v1.Refusal
+	(ErrorCode)(0),                    // 12: numen.v1.ErrorCode
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
@@ -735,7 +734,7 @@ var file_numen_v1_settings_proto_depIdxs = []int32{
 	4,  // 2: numen.v1.Model.writes:type_name -> numen.v1.Setting
 	0,  // 3: numen.v1.Model.presence:type_name -> numen.v1.Presence
 	4,  // 4: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	12, // 5: numen.v1.WriteSettingsFileResponse.refusal:type_name -> numen.v1.Refusal
+	12, // 5: numen.v1.WriteSettingsFileResponse.error:type_name -> numen.v1.ErrorCode
 	1,  // 6: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
 	5,  // 7: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
 	7,  // 8: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest

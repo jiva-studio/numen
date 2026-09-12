@@ -539,7 +539,7 @@ type MoveFileResponse struct {
 	// What the file did. Absent when nothing was moved.
 	Moved *MoveResult `protobuf:"bytes,1,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when nothing was moved, and why.
-	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Set when the move reached the vault and the index would not come level with
 	// it. Search answers about these files as it read them last, until a walk
 	// goes past.
@@ -585,11 +585,11 @@ func (x *MoveFileResponse) GetMoved() *MoveResult {
 	return nil
 }
 
-func (x *MoveFileResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *MoveFileResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *MoveFileResponse) GetUnlevelled() bool {
@@ -739,7 +739,7 @@ type RemoveFileResponse struct {
 	// The notes whose links pointed at what was removed and now reach nothing.
 	Dangling []string `protobuf:"bytes,2,rep,name=dangling,proto3" json:"dangling,omitempty"`
 	// Set when nothing was removed, and why.
-	Refusal *Refusal `protobuf:"varint,3,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Set when the file has gone and the index would not come level with it.
 	// Search answers about it as it read it last, until a walk goes past.
 	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
@@ -791,11 +791,11 @@ func (x *RemoveFileResponse) GetDangling() []string {
 	return nil
 }
 
-func (x *RemoveFileResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *RemoveFileResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *RemoveFileResponse) GetUnlevelled() bool {
@@ -854,7 +854,7 @@ func (x *CreateFolderRequest) GetPath() string {
 type CreateFolderResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was made, and why.
-	Refusal       *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error         *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -889,11 +889,11 @@ func (*CreateFolderResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *CreateFolderResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *CreateFolderResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 type CreateURLRequest struct {
@@ -957,7 +957,7 @@ type CreateURLResponse struct {
 	// Where the file is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error         *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -999,11 +999,11 @@ func (x *CreateURLResponse) GetPath() string {
 	return ""
 }
 
-func (x *CreateURLResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *CreateURLResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 var File_numen_v1_file_proto protoreflect.FileDescriptor
@@ -1032,16 +1032,15 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x06format\x18\x04 \x01(\x0e2\x14.numen.v1.BookFormatR\x06format\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\"\xab\x01\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"\xa7\x01\n" +
 	"\x10MoveFileResponse\x12/\n" +
-	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x03 \x01(\bR\n" +
 	"unlevelledB\b\n" +
-	"\x06_movedB\n" +
-	"\n" +
-	"\b_refusal\"h\n" +
+	"\x06_movedB\b\n" +
+	"\x06_error\"h\n" +
 	"\n" +
 	"MoveResult\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
@@ -1050,30 +1049,27 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\bdangling\x18\x04 \x03(\tR\bdangling\"A\n" +
 	"\x11RemoveFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa8\x01\n" +
+	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa4\x01\n" +
 	"\x12RemoveFileResponse\x12\x18\n" +
 	"\atrashed\x18\x01 \x01(\tR\atrashed\x12\x1a\n" +
-	"\bdangling\x18\x02 \x03(\tR\bdangling\x120\n" +
-	"\arefusal\x18\x03 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\bdangling\x18\x02 \x03(\tR\bdangling\x12.\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x04 \x01(\bR\n" +
-	"unlevelledB\n" +
-	"\n" +
-	"\b_refusal\")\n" +
+	"unlevelledB\b\n" +
+	"\x06_error\")\n" +
 	"\x13CreateFolderRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"T\n" +
-	"\x14CreateFolderResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal\"8\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"P\n" +
+	"\x14CreateFolderResponse\x12.\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error\"8\n" +
 	"\x10CreateURLRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"e\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"a\n" +
 	"\x11CreateURLResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal*\x85\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error*\x85\x01\n" +
 	"\n" +
 	"SourceKind\x12\x1b\n" +
 	"\x17SOURCE_KIND_UNSPECIFIED\x10\x00\x12\x14\n" +
@@ -1128,7 +1124,7 @@ var file_numen_v1_file_proto_goTypes = []any{
 	(*CreateURLRequest)(nil),      // 15: numen.v1.CreateURLRequest
 	(*CreateURLResponse)(nil),     // 16: numen.v1.CreateURLResponse
 	(NoteType)(0),                 // 17: numen.v1.NoteType
-	(Refusal)(0),                  // 18: numen.v1.Refusal
+	(ErrorCode)(0),                // 18: numen.v1.ErrorCode
 }
 var file_numen_v1_file_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
@@ -1139,10 +1135,10 @@ var file_numen_v1_file_proto_depIdxs = []int32{
 	17, // 5: numen.v1.FileKind.type:type_name -> numen.v1.NoteType
 	1,  // 6: numen.v1.FileKind.format:type_name -> numen.v1.BookFormat
 	10, // 7: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
-	18, // 8: numen.v1.MoveFileResponse.refusal:type_name -> numen.v1.Refusal
-	18, // 9: numen.v1.RemoveFileResponse.refusal:type_name -> numen.v1.Refusal
-	18, // 10: numen.v1.CreateFolderResponse.refusal:type_name -> numen.v1.Refusal
-	18, // 11: numen.v1.CreateURLResponse.refusal:type_name -> numen.v1.Refusal
+	18, // 8: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	18, // 9: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	18, // 10: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
+	18, // 11: numen.v1.CreateURLResponse.error:type_name -> numen.v1.ErrorCode
 	2,  // 12: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
 	5,  // 13: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
 	8,  // 14: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest

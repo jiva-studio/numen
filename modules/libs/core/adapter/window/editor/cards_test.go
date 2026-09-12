@@ -230,7 +230,7 @@ func TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a write over a deck the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "Animals.md"); held != theirs {
@@ -259,7 +259,7 @@ func TestADeckWrittenBackKeepsTheCardsItHeld(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a deck straight back answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(held, dividedRun) {
@@ -291,7 +291,7 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing the deck answered %+v", answer.Msg)
 	}
 
@@ -356,7 +356,7 @@ func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a deck straight back answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(held, cardRun) {
@@ -402,8 +402,8 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("making a deck answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("making a deck answered %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "decks/Camelids.md" {
 		t.Fatalf("the deck was filed at %q", path)
@@ -413,8 +413,8 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 	}
 
 	read := deck(t, f, "decks/Camelids.md")
-	if refusal := read.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the deck just made was refused with %v", refusal)
+	if code := read.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the deck just made was refused with %v", code)
 	}
 	if cards := read.GetDeck().GetCards(); len(cards) != 0 {
 		t.Errorf("a deck of no cards came back with %+v", cards)
@@ -432,8 +432,8 @@ func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("making a stencil answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("making a stencil answered %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "cards/Bird.md" {
 		t.Fatalf("the stencil was filed at %q", path)
@@ -445,8 +445,8 @@ func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := read.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the stencil just made was refused with %v", refusal)
+	if code := read.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the stencil just made was refused with %v", code)
 	}
 	if fields := read.Msg.GetStencil().GetFields(); len(fields) != 2 || fields[0] != "Species" {
 		t.Errorf("the stencil asks for %v", fields)
@@ -469,8 +469,8 @@ func TestRenamingAFieldReachesTheDecksThatStencilCuts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the rename answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the rename answered %v", code)
 	}
 	if decks := answer.Msg.GetDecks(); len(decks) != 1 || decks[0] != "Animals.md" {
 		t.Fatalf("the rename says it wrote %v", decks)
@@ -507,7 +507,7 @@ func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the rename answered %+v", answer.Msg)
 	}
 
@@ -563,7 +563,7 @@ func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a rename over a stencil the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "cards/Animal.md"); held != theirs {
@@ -581,8 +581,8 @@ func TestADeckIsRefusedWhereTheNoteIsAStencil(t *testing.T) {
 	f := dealing(t, map[string]string{"Animal.md": animal})
 
 	read := deck(t, f, "Animal.md")
-	if refusal := read.GetRefusal(); refusal != v1.Refusal_REFUSAL_NOT_A_DECK {
-		t.Errorf("a stencil asked for as a deck answered %v", refusal)
+	if code := read.GetError(); code != v1.ErrorCode_ERROR_CODE_NOT_A_DECK {
+		t.Errorf("a stencil asked for as a deck answered %v", code)
 	}
 	if read.GetDeck() != nil {
 		t.Error("a refused deck came back with cards on it")

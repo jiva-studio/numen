@@ -32,106 +32,106 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Refusal is why a note could not be read or written.
-type Refusal int32
+// ErrorCode is why a note could not be read or written.
+type ErrorCode int32
 
 const (
-	Refusal_REFUSAL_UNSPECIFIED Refusal = 0
+	ErrorCode_ERROR_CODE_UNSPECIFIED ErrorCode = 0
 	// Nothing is at the path. A read says so; a write creates the file.
-	Refusal_REFUSAL_MISSING Refusal = 1
+	ErrorCode_ERROR_CODE_MISSING ErrorCode = 1
 	// The file is in the vault and is not a note.
-	Refusal_REFUSAL_NOT_A_NOTE Refusal = 2
+	ErrorCode_ERROR_CODE_NOT_A_NOTE ErrorCode = 2
 	// The file is not text this can carry.
-	Refusal_REFUSAL_NOT_TEXT Refusal = 3
+	ErrorCode_ERROR_CODE_NOT_TEXT ErrorCode = 3
 	// The file is past the size a note is read at.
-	Refusal_REFUSAL_TOO_LARGE Refusal = 4
+	ErrorCode_ERROR_CODE_TOO_LARGE ErrorCode = 4
 	// The prose opens with a frontmatter delimiter, so writing it would put a
 	// second block inside the first.
-	Refusal_REFUSAL_BODY_REFUSED Refusal = 5
+	ErrorCode_ERROR_CODE_BODY_UNWRITABLE ErrorCode = 5
 	// The frontmatter cannot be read, so the note can be neither read nor written
 	// from here.
-	Refusal_REFUSAL_UNREADABLE Refusal = 6
+	ErrorCode_ERROR_CODE_UNREADABLE ErrorCode = 6
 	// A file is already where the note would go. Nothing is written there; a
 	// rename may already have written the note it was moving.
-	Refusal_REFUSAL_OCCUPIED Refusal = 7
+	ErrorCode_ERROR_CODE_OCCUPIED ErrorCode = 7
 	// A note cannot be called this: the title leaves nothing a file can be named
 	// after, it is more than one line, or a heading would read it back as
 	// something else. Nothing is written.
-	Refusal_REFUSAL_UNNAMEABLE Refusal = 8
+	ErrorCode_ERROR_CODE_UNNAMEABLE ErrorCode = 8
 	// The note at the path is not a stencil, and a stencil was asked for.
-	Refusal_REFUSAL_NOT_A_STENCIL Refusal = 9
+	ErrorCode_ERROR_CODE_NOT_A_STENCIL ErrorCode = 9
 	// The note at the path is not a deck, and a deck was asked for.
-	Refusal_REFUSAL_NOT_A_DECK Refusal = 10
+	ErrorCode_ERROR_CODE_NOT_A_DECK ErrorCode = 10
 	// The file is past the size a deck is read at, which stands above the size a
 	// note is read at.
-	Refusal_REFUSAL_DECK_TOO_LARGE Refusal = 11
+	ErrorCode_ERROR_CODE_DECK_TOO_LARGE ErrorCode = 11
 	// The note at the path is not a preset, and a preset was asked for.
-	Refusal_REFUSAL_NOT_A_PRESET Refusal = 12
+	ErrorCode_ERROR_CODE_NOT_A_PRESET ErrorCode = 12
 	// The file is no longer the one this caller read. Nothing was written, and
 	// the person chooses what happens to what they have.
-	Refusal_REFUSAL_STALE Refusal = 13
+	ErrorCode_ERROR_CODE_STALE ErrorCode = 13
 )
 
-// Enum value maps for Refusal.
+// Enum value maps for ErrorCode.
 var (
-	Refusal_name = map[int32]string{
-		0:  "REFUSAL_UNSPECIFIED",
-		1:  "REFUSAL_MISSING",
-		2:  "REFUSAL_NOT_A_NOTE",
-		3:  "REFUSAL_NOT_TEXT",
-		4:  "REFUSAL_TOO_LARGE",
-		5:  "REFUSAL_BODY_REFUSED",
-		6:  "REFUSAL_UNREADABLE",
-		7:  "REFUSAL_OCCUPIED",
-		8:  "REFUSAL_UNNAMEABLE",
-		9:  "REFUSAL_NOT_A_STENCIL",
-		10: "REFUSAL_NOT_A_DECK",
-		11: "REFUSAL_DECK_TOO_LARGE",
-		12: "REFUSAL_NOT_A_PRESET",
-		13: "REFUSAL_STALE",
+	ErrorCode_name = map[int32]string{
+		0:  "ERROR_CODE_UNSPECIFIED",
+		1:  "ERROR_CODE_MISSING",
+		2:  "ERROR_CODE_NOT_A_NOTE",
+		3:  "ERROR_CODE_NOT_TEXT",
+		4:  "ERROR_CODE_TOO_LARGE",
+		5:  "ERROR_CODE_BODY_UNWRITABLE",
+		6:  "ERROR_CODE_UNREADABLE",
+		7:  "ERROR_CODE_OCCUPIED",
+		8:  "ERROR_CODE_UNNAMEABLE",
+		9:  "ERROR_CODE_NOT_A_STENCIL",
+		10: "ERROR_CODE_NOT_A_DECK",
+		11: "ERROR_CODE_DECK_TOO_LARGE",
+		12: "ERROR_CODE_NOT_A_PRESET",
+		13: "ERROR_CODE_STALE",
 	}
-	Refusal_value = map[string]int32{
-		"REFUSAL_UNSPECIFIED":    0,
-		"REFUSAL_MISSING":        1,
-		"REFUSAL_NOT_A_NOTE":     2,
-		"REFUSAL_NOT_TEXT":       3,
-		"REFUSAL_TOO_LARGE":      4,
-		"REFUSAL_BODY_REFUSED":   5,
-		"REFUSAL_UNREADABLE":     6,
-		"REFUSAL_OCCUPIED":       7,
-		"REFUSAL_UNNAMEABLE":     8,
-		"REFUSAL_NOT_A_STENCIL":  9,
-		"REFUSAL_NOT_A_DECK":     10,
-		"REFUSAL_DECK_TOO_LARGE": 11,
-		"REFUSAL_NOT_A_PRESET":   12,
-		"REFUSAL_STALE":          13,
+	ErrorCode_value = map[string]int32{
+		"ERROR_CODE_UNSPECIFIED":     0,
+		"ERROR_CODE_MISSING":         1,
+		"ERROR_CODE_NOT_A_NOTE":      2,
+		"ERROR_CODE_NOT_TEXT":        3,
+		"ERROR_CODE_TOO_LARGE":       4,
+		"ERROR_CODE_BODY_UNWRITABLE": 5,
+		"ERROR_CODE_UNREADABLE":      6,
+		"ERROR_CODE_OCCUPIED":        7,
+		"ERROR_CODE_UNNAMEABLE":      8,
+		"ERROR_CODE_NOT_A_STENCIL":   9,
+		"ERROR_CODE_NOT_A_DECK":      10,
+		"ERROR_CODE_DECK_TOO_LARGE":  11,
+		"ERROR_CODE_NOT_A_PRESET":    12,
+		"ERROR_CODE_STALE":           13,
 	}
 )
 
-func (x Refusal) Enum() *Refusal {
-	p := new(Refusal)
+func (x ErrorCode) Enum() *ErrorCode {
+	p := new(ErrorCode)
 	*p = x
 	return p
 }
 
-func (x Refusal) String() string {
+func (x ErrorCode) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Refusal) Descriptor() protoreflect.EnumDescriptor {
+func (ErrorCode) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_shared_proto_enumTypes[0].Descriptor()
 }
 
-func (Refusal) Type() protoreflect.EnumType {
+func (ErrorCode) Type() protoreflect.EnumType {
 	return &file_numen_v1_shared_proto_enumTypes[0]
 }
 
-func (x Refusal) Number() protoreflect.EnumNumber {
+func (x ErrorCode) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Refusal.Descriptor instead.
-func (Refusal) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ErrorCode.Descriptor instead.
+func (ErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_shared_proto_rawDescGZIP(), []int{0}
 }
 
@@ -323,23 +323,23 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\"*\n" +
 	"\x04Span\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\x05R\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\x05R\x02to*\xd8\x02\n" +
-	"\aRefusal\x12\x17\n" +
-	"\x13REFUSAL_UNSPECIFIED\x10\x00\x12\x13\n" +
-	"\x0fREFUSAL_MISSING\x10\x01\x12\x16\n" +
-	"\x12REFUSAL_NOT_A_NOTE\x10\x02\x12\x14\n" +
-	"\x10REFUSAL_NOT_TEXT\x10\x03\x12\x15\n" +
-	"\x11REFUSAL_TOO_LARGE\x10\x04\x12\x18\n" +
-	"\x14REFUSAL_BODY_REFUSED\x10\x05\x12\x16\n" +
-	"\x12REFUSAL_UNREADABLE\x10\x06\x12\x14\n" +
-	"\x10REFUSAL_OCCUPIED\x10\a\x12\x16\n" +
-	"\x12REFUSAL_UNNAMEABLE\x10\b\x12\x19\n" +
-	"\x15REFUSAL_NOT_A_STENCIL\x10\t\x12\x16\n" +
-	"\x12REFUSAL_NOT_A_DECK\x10\n" +
-	"\x12\x1a\n" +
-	"\x16REFUSAL_DECK_TOO_LARGE\x10\v\x12\x18\n" +
-	"\x14REFUSAL_NOT_A_PRESET\x10\f\x12\x11\n" +
-	"\rREFUSAL_STALE\x10\r*f\n" +
+	"\x02to\x18\x02 \x01(\x05R\x02to*\x87\x03\n" +
+	"\tErrorCode\x12\x1a\n" +
+	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12ERROR_CODE_MISSING\x10\x01\x12\x19\n" +
+	"\x15ERROR_CODE_NOT_A_NOTE\x10\x02\x12\x17\n" +
+	"\x13ERROR_CODE_NOT_TEXT\x10\x03\x12\x18\n" +
+	"\x14ERROR_CODE_TOO_LARGE\x10\x04\x12\x1e\n" +
+	"\x1aERROR_CODE_BODY_UNWRITABLE\x10\x05\x12\x19\n" +
+	"\x15ERROR_CODE_UNREADABLE\x10\x06\x12\x17\n" +
+	"\x13ERROR_CODE_OCCUPIED\x10\a\x12\x19\n" +
+	"\x15ERROR_CODE_UNNAMEABLE\x10\b\x12\x1c\n" +
+	"\x18ERROR_CODE_NOT_A_STENCIL\x10\t\x12\x19\n" +
+	"\x15ERROR_CODE_NOT_A_DECK\x10\n" +
+	"\x12\x1d\n" +
+	"\x19ERROR_CODE_DECK_TOO_LARGE\x10\v\x12\x1b\n" +
+	"\x17ERROR_CODE_NOT_A_PRESET\x10\f\x12\x14\n" +
+	"\x10ERROR_CODE_STALE\x10\r*f\n" +
 	"\bNoteType\x12\x19\n" +
 	"\x15NOTE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eNOTE_TYPE_DECK\x10\x01\x12\x15\n" +
@@ -361,7 +361,7 @@ func file_numen_v1_shared_proto_rawDescGZIP() []byte {
 var file_numen_v1_shared_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_numen_v1_shared_proto_goTypes = []any{
-	(Refusal)(0),        // 0: numen.v1.Refusal
+	(ErrorCode)(0),      // 0: numen.v1.ErrorCode
 	(NoteType)(0),       // 1: numen.v1.NoteType
 	(*Fingerprint)(nil), // 2: numen.v1.Fingerprint
 	(*Span)(nil),        // 3: numen.v1.Span

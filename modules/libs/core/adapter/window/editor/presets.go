@@ -29,8 +29,8 @@ func (a *API) GetDeckPreset(
 	}
 
 	out := &v1.GetDeckPresetResponse{Bounds: wire.SettingsBounds()}
-	if reason, refused := wire.RefusalOf(found.Outcome); refused {
-		out.Refusal = &reason
+	if reason, refused := wire.ErrorCodeOf(found.Outcome); refused {
+		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
 	out.Preset = wire.PresetOf(found, wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path))
@@ -67,14 +67,14 @@ func (a *API) ListPresets(
 func (a *API) CreatePreset(
 	ctx context.Context, r *connect.Request[v1.CreatePresetRequest],
 ) (*connect.Response[v1.CreatePresetResponse], error) {
-	made, refused, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Preset(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}
 	return connect.NewResponse(&v1.CreatePresetResponse{
-		Path: made.Path, Refusal: refused, Unlevelled: unlevelled,
+		Path: made.Path, Error: code, Unlevelled: unlevelled,
 	}), nil
 }
 
@@ -108,14 +108,14 @@ func (a *API) ScheduleDeck(
 		}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
-		reason := v1.Refusal_REFUSAL_NOT_A_PRESET
-		return connect.NewResponse(&v1.ScheduleDeckResponse{Refusal: &reason}), nil
+		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
+		return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
 		return nil, connect.NewError(wire.Coded(err), err)
 	}
-	return connect.NewResponse(&v1.ScheduleDeckResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
 }
 
 // ReadPreset is the settings of one preset.
@@ -132,8 +132,8 @@ func (a *API) ReadPreset(
 	}
 
 	out := &v1.ReadPresetResponse{Bounds: wire.SettingsBounds()}
-	if reason, refused := wire.RefusalOf(found.Outcome); refused {
-		out.Refusal = &reason
+	if reason, refused := wire.ErrorCodeOf(found.Outcome); refused {
+		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
 	out.Preset = wire.PresetOf(found, wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path))
@@ -178,14 +178,14 @@ func (a *API) WritePreset(
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
-		reason := v1.Refusal_REFUSAL_NOT_A_PRESET
-		return connect.NewResponse(&v1.WritePresetResponse{Refusal: &reason}), nil
+		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
+		return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
 		return nil, connect.NewError(wire.Coded(err), err)
 	}
-	return connect.NewResponse(&v1.WritePresetResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil
 }
 
 // ComputeCurve is what these settings come to over the whole range of the goal

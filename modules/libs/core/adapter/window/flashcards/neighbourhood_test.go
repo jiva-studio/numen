@@ -73,10 +73,10 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 	if found == nil {
 		t.Fatalf("the note the deck points at is not among %+v", out.Msg.GetNotes())
 	}
-	if found.Refusal == nil {
-		t.Fatal("a note that is not there came back without a refusal")
+	if found.Error == nil {
+		t.Fatal("a note that is not there came back without an error")
 	}
-	if got := found.GetRefusal(); got != v1.Refusal_REFUSAL_MISSING {
+	if got := found.GetError(); got != v1.ErrorCode_ERROR_CODE_MISSING {
 		t.Errorf("a note that is not there is refused as %v", got)
 	}
 	if found.GetBody() != "" {

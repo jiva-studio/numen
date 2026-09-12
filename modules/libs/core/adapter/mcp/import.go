@@ -65,13 +65,13 @@ func addImportTool(server *sdk.Server, core Core) {
 			Address: at, Path: in.Folder,
 		})
 		if err != nil {
-			return nil, ImportOutcome{Path: made.Path, Refused: refusing(err)}, nil
+			return nil, ImportOutcome{Path: made.Path, Refused: sayError(err)}, nil
 		}
 
 		out := ImportOutcome{Path: made.Path}
 		fetched, err := core.Sources.Import.Execute(ctx, v, made.Path)
 		if err != nil {
-			out.Refused = refusing(err)
+			out.Refused = sayError(err)
 			return nil, out, nil
 		}
 		out.Path, out.Producer = fetched.Path, fetched.Producer
@@ -94,7 +94,7 @@ func copies(
 	case errors.Is(err, source.ErrBeingDownloaded):
 		return 0, "another run is downloading this address"
 	case err != nil:
-		return 0, refusing(err)
+		return 0, sayError(err)
 	case got.TooLarge():
 		return 0, fmt.Sprintf(
 			"it is %d MB, over the %d MB importing.copy_max_size_mb allows",

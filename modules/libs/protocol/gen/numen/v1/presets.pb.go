@@ -1031,7 +1031,7 @@ type GetDeckPresetResponse struct {
 	// Absent when the preset was refused.
 	Preset *Preset `protobuf:"bytes,1,opt,name=preset,proto3,oneof" json:"preset,omitempty"`
 	// Set when the preset was not read, and why.
-	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file the settings came out of, for the caller to present at its next
 	// write. Absent for a deck naming no preset, and when the preset was
 	// refused.
@@ -1080,11 +1080,11 @@ func (x *GetDeckPresetResponse) GetPreset() *Preset {
 	return nil
 }
 
-func (x *GetDeckPresetResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *GetDeckPresetResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetDeckPresetResponse) GetAt() *Fingerprint {
@@ -1295,7 +1295,7 @@ type CreatePresetResponse struct {
 	// Where the preset is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Set when the preset is on disk and the index would not come level with it.
 	// The preset was made and `path` stands; search does not answer about it
 	// until a walk goes past.
@@ -1341,11 +1341,11 @@ func (x *CreatePresetResponse) GetPath() string {
 	return ""
 }
 
-func (x *CreatePresetResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *CreatePresetResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *CreatePresetResponse) GetUnlevelled() bool {
@@ -1423,9 +1423,9 @@ func (x *ScheduleDeckRequest) GetSeen() *Fingerprint {
 type ScheduleDeckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was written, and why. A deck that is no longer the one
-	// this caller read is REFUSAL_STALE, and the person chooses what happens
+	// this caller read is ERROR_CODE_STALE, and the person chooses what happens
 	// next.
-	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1467,11 +1467,11 @@ func (*ScheduleDeckResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *ScheduleDeckResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *ScheduleDeckResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ScheduleDeckResponse) GetAt() *Fingerprint {
@@ -1537,7 +1537,7 @@ type ReadPresetResponse struct {
 	// Absent when the preset was refused.
 	Preset *Preset `protobuf:"bytes,1,opt,name=preset,proto3,oneof" json:"preset,omitempty"`
 	// Set when the preset was not read, and why.
-	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file the settings came out of, for the caller to present at its next
 	// write. Absent when the preset was refused.
 	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1585,11 +1585,11 @@ func (x *ReadPresetResponse) GetPreset() *Preset {
 	return nil
 }
 
-func (x *ReadPresetResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *ReadPresetResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ReadPresetResponse) GetAt() *Fingerprint {
@@ -1771,9 +1771,9 @@ func (x *WritePresetRequest) GetSeen() *Fingerprint {
 type WritePresetResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was written, and why. A file that is no longer the one
-	// this caller read is REFUSAL_STALE, and the person chooses what happens to
+	// this caller read is ERROR_CODE_STALE, and the person chooses what happens to
 	// their settings.
-	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1815,11 +1815,11 @@ func (*WritePresetResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *WritePresetResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *WritePresetResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *WritePresetResponse) GetAt() *Fingerprint {
@@ -1997,15 +1997,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
 	"\x03day\x18\x03 \x01(\tR\x03day\"*\n" +
 	"\x14GetDeckPresetRequest\x12\x12\n" +
-	"\x04deck\x18\x01 \x01(\tR\x04deck\"\xf4\x01\n" +
+	"\x04deck\x18\x01 \x01(\tR\x04deck\"\xf0\x01\n" +
 	"\x15GetDeckPresetResponse\x12-\n" +
-	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12*\n" +
+	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01\x120\n" +
 	"\x06bounds\x18\x04 \x01(\v2\x18.numen.v1.SettingsBoundsR\x06boundsB\t\n" +
-	"\a_presetB\n" +
-	"\n" +
-	"\b_refusalB\x05\n" +
+	"\a_presetB\b\n" +
+	"\x06_errorB\x05\n" +
 	"\x03_at\"\x14\n" +
 	"\x12ListPresetsRequest\"H\n" +
 	"\x13ListPresetsResponse\x121\n" +
@@ -2015,39 +2014,36 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\"?\n" +
 	"\x13CreatePresetRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"\x88\x01\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\x84\x01\n" +
 	"\x14CreatePresetResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\n" +
-	"\n" +
-	"\b_refusal\"z\n" +
+	"unlevelledB\b\n" +
+	"\x06_error\"z\n" +
 	"\x13ScheduleDeckRequest\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x16\n" +
 	"\x06preset\x18\x02 \x01(\tR\x06preset\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa7\x01\n" +
-	"\x14ScheduleDeckResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
+	"\x05_seen\"\xa3\x01\n" +
+	"\x14ScheduleDeckResponse\x12.\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\n" +
-	"\n" +
-	"\b_refusalB\x05\n" +
+	"unlevelledB\b\n" +
+	"\x06_errorB\x05\n" +
 	"\x03_at\"'\n" +
 	"\x11ReadPresetRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xf1\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xed\x01\n" +
 	"\x12ReadPresetResponse\x12-\n" +
-	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12*\n" +
+	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01\x120\n" +
 	"\x06bounds\x18\x04 \x01(\v2\x18.numen.v1.SettingsBoundsR\x06boundsB\t\n" +
-	"\a_presetB\n" +
-	"\n" +
-	"\b_refusalB\x05\n" +
+	"\a_presetB\b\n" +
+	"\x06_errorB\x05\n" +
 	"\x03_at\"\xda\x02\n" +
 	"\x0eSettingsBounds\x124\n" +
 	"\rminutes_a_day\x18\x01 \x01(\v2\x10.numen.v1.BoundsR\vminutesADay\x12,\n" +
@@ -2061,15 +2057,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa6\x01\n" +
-	"\x13WritePresetResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
+	"\x05_seen\"\xa2\x01\n" +
+	"\x13WritePresetResponse\x12.\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\n" +
-	"\n" +
-	"\b_refusalB\x05\n" +
+	"unlevelledB\b\n" +
+	"\x06_errorB\x05\n" +
 	"\x03_at\"Y\n" +
 	"\x13ComputeCurveRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
@@ -2161,7 +2156,7 @@ var file_numen_v1_presets_proto_goTypes = []any{
 	(*ComputeCurveRequest)(nil),   // 24: numen.v1.ComputeCurveRequest
 	(*ComputeCurveResponse)(nil),  // 25: numen.v1.ComputeCurveResponse
 	nil,                           // 26: numen.v1.Settings.LoadEntry
-	(Refusal)(0),                  // 27: numen.v1.Refusal
+	(ErrorCode)(0),                // 27: numen.v1.ErrorCode
 	(*Fingerprint)(nil),           // 28: numen.v1.Fingerprint
 	(*Bounds)(nil),                // 29: numen.v1.Bounds
 }
@@ -2179,16 +2174,16 @@ var file_numen_v1_presets_proto_depIdxs = []int32{
 	9,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.Place
 	4,  // 11: numen.v1.Point.closed:type_name -> numen.v1.BudgetName
 	6,  // 12: numen.v1.GetDeckPresetResponse.preset:type_name -> numen.v1.Preset
-	27, // 13: numen.v1.GetDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 13: numen.v1.GetDeckPresetResponse.error:type_name -> numen.v1.ErrorCode
 	28, // 14: numen.v1.GetDeckPresetResponse.at:type_name -> numen.v1.Fingerprint
 	21, // 15: numen.v1.GetDeckPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
 	14, // 16: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.PresetSummary
-	27, // 17: numen.v1.CreatePresetResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 17: numen.v1.CreatePresetResponse.error:type_name -> numen.v1.ErrorCode
 	28, // 18: numen.v1.ScheduleDeckRequest.seen:type_name -> numen.v1.Fingerprint
-	27, // 19: numen.v1.ScheduleDeckResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 19: numen.v1.ScheduleDeckResponse.error:type_name -> numen.v1.ErrorCode
 	28, // 20: numen.v1.ScheduleDeckResponse.at:type_name -> numen.v1.Fingerprint
 	6,  // 21: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
-	27, // 22: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 22: numen.v1.ReadPresetResponse.error:type_name -> numen.v1.ErrorCode
 	28, // 23: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
 	21, // 24: numen.v1.ReadPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
 	29, // 25: numen.v1.SettingsBounds.minutes_a_day:type_name -> numen.v1.Bounds
@@ -2200,7 +2195,7 @@ var file_numen_v1_presets_proto_depIdxs = []int32{
 	29, // 31: numen.v1.SettingsBounds.load:type_name -> numen.v1.Bounds
 	5,  // 32: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
 	28, // 33: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
-	27, // 34: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 34: numen.v1.WritePresetResponse.error:type_name -> numen.v1.ErrorCode
 	28, // 35: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
 	5,  // 36: numen.v1.ComputeCurveRequest.settings:type_name -> numen.v1.Settings
 	7,  // 37: numen.v1.ComputeCurveResponse.curve:type_name -> numen.v1.Curve

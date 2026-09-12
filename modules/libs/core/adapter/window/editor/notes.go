@@ -27,8 +27,8 @@ func (a *API) ReadNote(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.ReadNoteResponse{Body: found.Body}
-	if reason, refused := wire.RefusalOf(found.Outcome); refused {
-		out.Refusal = &reason
+	if reason, refused := wire.ErrorCodeOf(found.Outcome); refused {
+		out.Error = &reason
 	} else {
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
@@ -69,11 +69,11 @@ func (a *API) WriteNote(
 			At: fingerprintOf(at), Unlevelled: behind,
 		}), nil
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.WriteNoteResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.WriteNoteResponse{Error: &reason}), nil
 }
 
 // CreateNote makes a note, named after the title it is given and joined to
@@ -114,11 +114,11 @@ func (a *API) CreateNote(
 	if err == nil {
 		return connect.NewResponse(&v1.CreateNoteResponse{}), nil
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.CreateNoteResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.CreateNoteResponse{Error: &reason}), nil
 }
 
 // WriteLink writes one relationship into one note. What is already written
@@ -144,11 +144,11 @@ func (a *API) WriteLink(
 	if _, err := a.Notes.Linking.Add(
 		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,
 	); err != nil {
-		reason, refused := wire.RefusalBy(err)
+		reason, refused := wire.ErrorCodeBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.WriteLinkResponse{Refusal: &reason}), nil
+		return connect.NewResponse(&v1.WriteLinkResponse{Error: &reason}), nil
 	}
 	return connect.NewResponse(&v1.WriteLinkResponse{}), nil
 }

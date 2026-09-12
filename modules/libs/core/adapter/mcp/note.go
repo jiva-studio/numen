@@ -232,12 +232,12 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			Title: in.Title, Body: in.Body, Path: in.Folder,
 			Links: written(in.Links),
 		})
-		// A path alongside a refusal means the file was written and something
+		// A path alongside an error means the file was written and something
 		// after it was not; the note is there under that name.
 		outcome := CreateOutcome{CreateResult: created}
 		if err != nil {
 			outcome.CreateResult.Title = in.Title
-			outcome.Refused = refusing(err)
+			outcome.Refused = sayError(err)
 		}
 		return nil, outcome, nil
 	})
@@ -374,7 +374,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			outcome := MoveOutcome{MoveResult: moved}
 			if err != nil {
 				outcome.MoveResult = note.MoveResult{From: path}
-				outcome.Refused = refusing(err)
+				outcome.Refused = sayError(err)
 			}
 			res.Moved = append(res.Moved, outcome)
 		}
@@ -429,7 +429,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			outcome := RemoveOutcome{RemoveResult: removed}
 			if err != nil {
 				outcome.RemoveResult = note.RemoveResult{Path: path}
-				outcome.Refused = refusing(err)
+				outcome.Refused = sayError(err)
 			}
 			res.Removed = append(res.Removed, outcome)
 		}

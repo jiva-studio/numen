@@ -236,8 +236,8 @@ func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 	}
 }
 
-// The file holds a person's keys, and what a refusal says does not repeat them.
-func TestWhatARefusalSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
+// The file holds a person's keys, and what an error says does not repeat them.
+func TestWhatAnErrorSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	secret := "sk-not-a-real-key-0000"
 
@@ -251,7 +251,7 @@ func TestWhatARefusalSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 		t.Fatal("the file was taken")
 	}
 	if strings.Contains(err.Error(), secret) {
-		t.Errorf("the refusal says %q", err)
+		t.Errorf("the error says %q", err)
 	}
 }
 
@@ -289,7 +289,7 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+	if said.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Error("the write landed, wanted the question put to the person")
 	}
 
@@ -317,7 +317,7 @@ func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if said.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatal("the write was answered the question, wanted it to land")
 	}
 

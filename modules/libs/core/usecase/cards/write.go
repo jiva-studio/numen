@@ -117,7 +117,7 @@ func (u Write) stencil(
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
 	if markdown.OpensFrontmatter(body) {
-		return domain.Fingerprint{}, note.ErrBodyRefused
+		return domain.Fingerprint{}, note.ErrBodyUnwritable
 	}
 
 	e := note.NewEdit(u.Readers, u.Writers, u.Index, u.Now)

@@ -85,8 +85,8 @@ func (a *API) WriteSettingsFile(
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
 	if err := a.Configuring.WritesFile(r.Msg.GetWritten(), r.Msg.Seen); err != nil {
 		if errors.Is(err, port.ErrStale) {
-			stale := v1.Refusal_REFUSAL_STALE
-			return connect.NewResponse(&v1.WriteSettingsFileResponse{Refusal: &stale}), nil
+			stale := v1.ErrorCode_ERROR_CODE_STALE
+			return connect.NewResponse(&v1.WriteSettingsFileResponse{Error: &stale}), nil
 		}
 		if errors.Is(err, port.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)

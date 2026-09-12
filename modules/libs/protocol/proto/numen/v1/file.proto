@@ -139,7 +139,7 @@ message MoveFileResponse {
   optional MoveResult moved = 1;
 
   // Set when nothing was moved, and why.
-  optional Refusal refusal = 2;
+  optional ErrorCode error = 2;
 
   // Set when the move reached the vault and the index would not come level with
   // it. Search answers about these files as it read them last, until a walk
@@ -184,7 +184,7 @@ message RemoveFileResponse {
   repeated string dangling = 2;
 
   // Set when nothing was removed, and why.
-  optional Refusal refusal = 3;
+  optional ErrorCode error = 3;
 
   // Set when the file has gone and the index would not come level with it.
   // Search answers about it as it read it last, until a walk goes past.
@@ -199,7 +199,7 @@ message CreateFolderRequest {
 
 message CreateFolderResponse {
   // Set when nothing was made, and why.
-  optional Refusal refusal = 1;
+  optional ErrorCode error = 1;
 }
 
 message CreateURLRequest {
@@ -217,5 +217,5 @@ message CreateURLResponse {
   string path = 1;
 
   // Set when nothing was made, and why.
-  optional Refusal refusal = 2;
+  optional ErrorCode error = 2;
 }

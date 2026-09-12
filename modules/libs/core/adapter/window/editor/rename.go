@@ -36,10 +36,10 @@ func (a *API) RenameNote(
 	}
 	out.Unlevelled = a.unlevelled(err)
 	if err != nil && !out.GetUnlevelled() {
-		reason, refused := wire.RefusalBy(err)
+		reason, refused := wire.ErrorCodeBy(err)
 		switch {
 		case refused:
-			out.Refusal = &reason
+			out.Error = &reason
 		case out.GetPath() == "":
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -66,11 +66,11 @@ func (a *API) RemoveFile(
 	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
 	behind := a.unlevelled(err)
 	if err != nil && !behind {
-		reason, refused := wire.RefusalBy(err)
+		reason, refused := wire.ErrorCodeBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.RemoveFileResponse{Refusal: &reason}), nil
+		return connect.NewResponse(&v1.RemoveFileResponse{Error: &reason}), nil
 	}
 	// The watcher reports only the paths the vault holds a source for. What
 	// went is said here, so the tree drops the row whatever stood on it.

@@ -25,8 +25,8 @@ func Bounded(path string, size, bound int) error {
 		path, ErrTooLarge, size, bound)
 }
 
-// ErrBodyRefused is a body that opens with the frontmatter delimiter.
-var ErrBodyRefused = markdown.ErrBodyRefused
+// ErrBodyUnwritable is a body that opens with the frontmatter delimiter.
+var ErrBodyUnwritable = markdown.ErrBodyUnwritable
 
 // ErrUnreadable is a note whose frontmatter is not YAML. A write discovers it
 // on the way past and leaves the file alone: repairing the block means guessing
@@ -87,7 +87,7 @@ func (u Write) Execute(
 	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
 	if markdown.OpensFrontmatter(body) {
-		return domain.Fingerprint{}, ErrBodyRefused
+		return domain.Fingerprint{}, ErrBodyUnwritable
 	}
 
 	e := Edit{
@@ -163,7 +163,7 @@ func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, seen *LastRead,
 ) (domain.Fingerprint, error) {
 	if markdown.OpensFrontmatter(body) {
-		return domain.Fingerprint{}, ErrBodyRefused
+		return domain.Fingerprint{}, ErrBodyUnwritable
 	}
 	e := Edit{
 		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,

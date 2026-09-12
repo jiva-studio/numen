@@ -84,12 +84,12 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 			res.Added = append(res.Added, AddOutcome{From: add.From, To: add.To})
 			link := writes(add.Link)
 			if err := note.Writable(link); err != nil {
-				res.Added[i].Refused = refusing(err)
+				res.Added[i].Refused = sayError(err)
 				continue
 			}
 			seen, err := parseFingerprint(add.Fingerprint)
 			if err != nil {
-				res.Added[i].Refused = refusing(err)
+				res.Added[i].Refused = sayError(err)
 				continue
 			}
 			// One note's links are one write, so the note they are written
@@ -118,7 +118,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 				ctx, core.shown().Vault, from, held[from], group[0], group[1:]...)
 			if err != nil {
 				for _, i := range at[from] {
-					res.Added[i].Refused = refusing(err)
+					res.Added[i].Refused = sayError(err)
 				}
 				continue
 			}

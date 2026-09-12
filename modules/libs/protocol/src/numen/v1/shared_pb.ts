@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUq2AIKB1JlZnVzYWwSFwoTUkVGVVNBTF9VTlNQRUNJRklFRBAAEhMKD1JFRlVTQUxfTUlTU0lORxABEhYKElJFRlVTQUxfTk9UX0FfTk9URRACEhQKEFJFRlVTQUxfTk9UX1RFWFQQAxIVChFSRUZVU0FMX1RPT19MQVJHRRAEEhgKFFJFRlVTQUxfQk9EWV9SRUZVU0VEEAUSFgoSUkVGVVNBTF9VTlJFQURBQkxFEAYSFAoQUkVGVVNBTF9PQ0NVUElFRBAHEhYKElJFRlVTQUxfVU5OQU1FQUJMRRAIEhkKFVJFRlVTQUxfTk9UX0FfU1RFTkNJTBAJEhYKElJFRlVTQUxfTk9UX0FfREVDSxAKEhoKFlJFRlVTQUxfREVDS19UT09fTEFSR0UQCxIYChRSRUZVU0FMX05PVF9BX1BSRVNFVBAMEhEKDVJFRlVTQUxfU1RBTEUQDSpmCghOb3RlVHlwZRIZChVOT1RFX1RZUEVfVU5TUEVDSUZJRUQQABISCg5OT1RFX1RZUEVfREVDSxABEhUKEU5PVEVfVFlQRV9TVEVOQ0lMEAISFAoQTk9URV9UWVBFX1BSRVNFVBADQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUqhwMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASFgoSRVJST1JfQ09ERV9NSVNTSU5HEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIXChNFUlJPUl9DT0RFX09DQ1VQSUVEEAcSGQoVRVJST1JfQ09ERV9VTk5BTUVBQkxFEAgSHAoYRVJST1JfQ09ERV9OT1RfQV9TVEVOQ0lMEAkSGQoVRVJST1JfQ09ERV9OT1RfQV9ERUNLEAoSHQoZRVJST1JfQ09ERV9ERUNLX1RPT19MQVJHRRALEhsKF0VSUk9SX0NPREVfTk9UX0FfUFJFU0VUEAwSFAoQRVJST1JfQ09ERV9TVEFMRRANKmYKCE5vdGVUeXBlEhkKFU5PVEVfVFlQRV9VTlNQRUNJRklFRBAAEhIKDk5PVEVfVFlQRV9ERUNLEAESFQoRTk9URV9UWVBFX1NURU5DSUwQAhIUChBOT1RFX1RZUEVfUFJFU0VUEANCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * Fingerprint is which file this is: where it is filed, how big it is, and when
@@ -81,41 +81,41 @@ export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 1);
 
 /**
- * Refusal is why a note could not be read or written.
+ * ErrorCode is why a note could not be read or written.
  *
- * @generated from enum numen.v1.Refusal
+ * @generated from enum numen.v1.ErrorCode
  */
-export enum Refusal {
+export enum ErrorCode {
   /**
-   * @generated from enum value: REFUSAL_UNSPECIFIED = 0;
+   * @generated from enum value: ERROR_CODE_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
 
   /**
    * Nothing is at the path. A read says so; a write creates the file.
    *
-   * @generated from enum value: REFUSAL_MISSING = 1;
+   * @generated from enum value: ERROR_CODE_MISSING = 1;
    */
   MISSING = 1,
 
   /**
    * The file is in the vault and is not a note.
    *
-   * @generated from enum value: REFUSAL_NOT_A_NOTE = 2;
+   * @generated from enum value: ERROR_CODE_NOT_A_NOTE = 2;
    */
   NOT_A_NOTE = 2,
 
   /**
    * The file is not text this can carry.
    *
-   * @generated from enum value: REFUSAL_NOT_TEXT = 3;
+   * @generated from enum value: ERROR_CODE_NOT_TEXT = 3;
    */
   NOT_TEXT = 3,
 
   /**
    * The file is past the size a note is read at.
    *
-   * @generated from enum value: REFUSAL_TOO_LARGE = 4;
+   * @generated from enum value: ERROR_CODE_TOO_LARGE = 4;
    */
   TOO_LARGE = 4,
 
@@ -123,15 +123,15 @@ export enum Refusal {
    * The prose opens with a frontmatter delimiter, so writing it would put a
    * second block inside the first.
    *
-   * @generated from enum value: REFUSAL_BODY_REFUSED = 5;
+   * @generated from enum value: ERROR_CODE_BODY_UNWRITABLE = 5;
    */
-  BODY_REFUSED = 5,
+  BODY_UNWRITABLE = 5,
 
   /**
    * The frontmatter cannot be read, so the note can be neither read nor written
    * from here.
    *
-   * @generated from enum value: REFUSAL_UNREADABLE = 6;
+   * @generated from enum value: ERROR_CODE_UNREADABLE = 6;
    */
   UNREADABLE = 6,
 
@@ -139,7 +139,7 @@ export enum Refusal {
    * A file is already where the note would go. Nothing is written there; a
    * rename may already have written the note it was moving.
    *
-   * @generated from enum value: REFUSAL_OCCUPIED = 7;
+   * @generated from enum value: ERROR_CODE_OCCUPIED = 7;
    */
   OCCUPIED = 7,
 
@@ -148,21 +148,21 @@ export enum Refusal {
    * after, it is more than one line, or a heading would read it back as
    * something else. Nothing is written.
    *
-   * @generated from enum value: REFUSAL_UNNAMEABLE = 8;
+   * @generated from enum value: ERROR_CODE_UNNAMEABLE = 8;
    */
   UNNAMEABLE = 8,
 
   /**
    * The note at the path is not a stencil, and a stencil was asked for.
    *
-   * @generated from enum value: REFUSAL_NOT_A_STENCIL = 9;
+   * @generated from enum value: ERROR_CODE_NOT_A_STENCIL = 9;
    */
   NOT_A_STENCIL = 9,
 
   /**
    * The note at the path is not a deck, and a deck was asked for.
    *
-   * @generated from enum value: REFUSAL_NOT_A_DECK = 10;
+   * @generated from enum value: ERROR_CODE_NOT_A_DECK = 10;
    */
   NOT_A_DECK = 10,
 
@@ -170,14 +170,14 @@ export enum Refusal {
    * The file is past the size a deck is read at, which stands above the size a
    * note is read at.
    *
-   * @generated from enum value: REFUSAL_DECK_TOO_LARGE = 11;
+   * @generated from enum value: ERROR_CODE_DECK_TOO_LARGE = 11;
    */
   DECK_TOO_LARGE = 11,
 
   /**
    * The note at the path is not a preset, and a preset was asked for.
    *
-   * @generated from enum value: REFUSAL_NOT_A_PRESET = 12;
+   * @generated from enum value: ERROR_CODE_NOT_A_PRESET = 12;
    */
   NOT_A_PRESET = 12,
 
@@ -185,15 +185,15 @@ export enum Refusal {
    * The file is no longer the one this caller read. Nothing was written, and
    * the person chooses what happens to what they have.
    *
-   * @generated from enum value: REFUSAL_STALE = 13;
+   * @generated from enum value: ERROR_CODE_STALE = 13;
    */
   STALE = 13,
 }
 
 /**
- * Describes the enum numen.v1.Refusal.
+ * Describes the enum numen.v1.ErrorCode.
  */
-export const RefusalSchema: GenEnum<Refusal> = /*@__PURE__*/
+export const ErrorCodeSchema: GenEnum<ErrorCode> = /*@__PURE__*/
   enumDesc(file_numen_v1_shared, 0);
 
 /**
