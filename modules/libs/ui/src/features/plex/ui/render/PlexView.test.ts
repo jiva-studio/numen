@@ -402,7 +402,7 @@ describe('the box the attention has settled on', () => {
   const boxOf = (view: ReturnType<typeof mountView>, name: string) =>
     view.findAllComponents(PlexNodeView).find((node) => node.props('node').id === name)!
 
-  const resting = () =>
+  const mountResting = () =>
     mount(PlexView, {
       props: {
         frame: arrangePlex(before),
@@ -412,7 +412,7 @@ describe('the box the attention has settled on', () => {
     })
 
   it('is drawn last of all, so its widened box stands over its neighbours', async () => {
-    const view = resting()
+    const view = mountResting()
     expect(drawn(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
 
     boxOf(view, 'staying').vm.$emit('rest', true)
@@ -421,7 +421,7 @@ describe('the box the attention has settled on', () => {
   })
 
   it('is the same element there as it was where it stood', async () => {
-    const view = resting()
+    const view = mountResting()
     const was = view.get('[aria-label^="Staying"]').element
 
     boxOf(view, 'staying').vm.$emit('rest', true)
@@ -431,7 +431,7 @@ describe('the box the attention has settled on', () => {
   })
 
   it('goes back to where it was drawn once the hand has left it', async () => {
-    const view = resting()
+    const view = mountResting()
     boxOf(view, 'staying').vm.$emit('rest', true)
     await view.vm.$nextTick()
 

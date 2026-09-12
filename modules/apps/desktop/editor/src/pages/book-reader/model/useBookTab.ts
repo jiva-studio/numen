@@ -24,7 +24,7 @@ export function useBookTab(read: BookReaderState) {
 
   const measure = () => reader.value?.measure()
   const focusTab = () => tab.value?.focus()
-  const handleKeyPress = (event: KeyboardEvent) => reader.value?.pressed(event) ?? false
+  const handleKeyPress = (event: KeyboardEvent) => reader.value?.handleKey(event) ?? false
 
   return {
     ...read,

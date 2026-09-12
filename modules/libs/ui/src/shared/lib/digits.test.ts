@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { grouped, many, percent, plural } from './digits'
+import { groupDigits, many, percent, plural } from './digits'
 
 describe('a whole number', () => {
   it('is grouped in thousands', () => {
-    expect(grouped(1)).toBe('1')
-    expect(grouped(1000)).toBe('1 000')
-    expect(grouped(123456)).toBe('123 456')
+    expect(groupDigits(1)).toBe('1')
+    expect(groupDigits(1000)).toBe('1 000')
+    expect(groupDigits(123456)).toBe('123 456')
   })
 })
 

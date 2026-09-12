@@ -2,7 +2,7 @@
  * What a thread is made of, as plain values.
  */
 
-import { grouped } from '@/shared/lib/digits'
+import { groupDigits } from '@/shared/lib/digits'
 
 export interface VoiceDescriptor {
   /** Drawn in a bubble of its own, or as text on the surface. */
@@ -75,6 +75,6 @@ export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] =>
  * reach five figures on one note.
  */
 export const charsWord = (written: number): string =>
-  written <= 0 ? '' : `${grouped(written)} characters`
+  written <= 0 ? '' : `${groupDigits(written)} characters`
 
 

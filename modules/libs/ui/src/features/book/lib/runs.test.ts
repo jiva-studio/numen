@@ -132,7 +132,7 @@ describe('a stretch of the book marked where it stands', () => {
 })
 
 /** A run the browser has put somewhere, which jsdom never does by itself. */
-const standing = (markup: string, lefts: readonly number[]): HTMLElement => {
+const createPaper = (markup: string, lefts: readonly number[]): HTMLElement => {
   const paper = paperOf(markup)
   const runs = paper.querySelectorAll<HTMLElement>('[data-offset]')
   runs.forEach((run, at) => {
@@ -147,7 +147,7 @@ const standing = (markup: string, lefts: readonly number[]): HTMLElement => {
 
 describe('where the runs stand across the columns', () => {
   it('is where the first of the rectangles a run has begins', () => {
-    const paper = standing(TWO, [120, 480])
+    const paper = createPaper(TWO, [120, 480])
 
     const marks = marksIn(runsIn(paper), 40)
 
@@ -160,7 +160,7 @@ describe('where the runs stand across the columns', () => {
   it('is nothing for a run the browser has put nowhere', () => {
     // A run broken over a column edge has a rectangle in each column, and a
     // document nothing has laid out has no rectangles at all.
-    const paper = standing(TWO, [120])
+    const paper = createPaper(TWO, [120])
 
     expect(marksIn(runsIn(paper), 0)).toStrictEqual([{ at: 0, x: 120 }])
   })

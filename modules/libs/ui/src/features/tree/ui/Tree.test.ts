@@ -128,7 +128,7 @@ const dragTo = async (held: Tree, row: string, y: number): Promise<void> => {
   await held.vm.$nextTick()
 }
 
-const draggedIn = (held: Tree) => held.find('.tree__dragged')
+const findDragged = (held: Tree) => held.find('.tree__dragged')
 
 describe('what is drawn', () => {
   it('is the rows an open row holds, in their place', () => {
@@ -528,7 +528,7 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 60)
     await held.vm.$nextTick()
 
-    expect(draggedIn(held).text()).toBe('Loose')
+    expect(findDragged(held).text()).toBe('Loose')
   })
 
   it('says how many are being dragged, where there are several', async () => {
@@ -537,7 +537,7 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 60)
     await held.vm.$nextTick()
 
-    expect(draggedIn(held).text()).toBe('2 rows')
+    expect(findDragged(held).text()).toBe('2 rows')
   })
 
   it('says it in the words the caller gave for how many', async () => {
@@ -549,7 +549,7 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 60)
     await held.vm.$nextTick()
 
-    expect(draggedIn(held).text()).toBe('2 files')
+    expect(findDragged(held).text()).toBe('2 files')
   })
 
   it('stands where the pointer is', async () => {
@@ -558,7 +558,7 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 60)
     await held.vm.$nextTick()
 
-    expect(draggedIn(held).attributes('style')).toContain('top: 60px')
+    expect(findDragged(held).attributes('style')).toContain('top: 60px')
   })
 
   it('is drawn nowhere before the pointer has travelled far enough', async () => {
@@ -567,18 +567,18 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 110)
     await held.vm.$nextTick()
 
-    expect(draggedIn(held).exists()).toBe(false)
+    expect(findDragged(held).exists()).toBe(false)
   })
 
   it('is drawn nowhere once the rows have been let go of', async () => {
     const held = mountTree()
     await dragTo(held, 'loose', 12)
 
-    expect(draggedIn(held).exists()).toBe(false)
+    expect(findDragged(held).exists()).toBe(false)
   })
 
   it('is drawn nowhere at all while nothing is being dragged', () => {
-    expect(draggedIn(mountTree()).exists()).toBe(false)
+    expect(findDragged(mountTree()).exists()).toBe(false)
   })
 })
 

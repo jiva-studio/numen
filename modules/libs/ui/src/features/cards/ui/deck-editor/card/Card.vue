@@ -15,7 +15,7 @@ import { AutosizeTextarea } from '../../autosize-textarea'
 import { Divider } from '../../divider'
 import { DECK_WORDS, type CardWords } from '../../../lib/deck'
 import type { PlacedFieldValue, Tile } from '../../../lib/grid'
-import { sealed, type StepDirection } from '../../../lib/order'
+import { createSealedMap, type StepDirection } from '../../../lib/order'
 
 const props = withDefaults(
   defineProps<{
@@ -28,7 +28,7 @@ const props = withDefaults(
     /** The words it is drawn with. */
     words?: CardWords
   }>(),
-  { wrong: () => [], wrongUnder: () => sealed(), words: () => DECK_WORDS },
+  { wrong: () => [], wrongUnder: () => createSealedMap(), words: () => DECK_WORDS },
 )
 
 const emit = defineEmits<{

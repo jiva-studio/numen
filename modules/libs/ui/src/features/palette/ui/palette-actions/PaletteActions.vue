@@ -13,7 +13,7 @@ import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import ActionRow from './ActionRow.vue'
 import { keptOn, placeActions, type ActionWords } from '../../lib/actions'
 import { stepIn, type PaletteAction } from '../../lib/item'
-import { opensActions } from '../../lib/keys'
+import { isActionsChord } from '../../lib/keys'
 
 const props = defineProps<{
   /** What the lit item offers, in the order it offers them. */
@@ -114,7 +114,7 @@ const onKey = (event: KeyboardEvent) => {
     goTo(stepIn(actions.value.length, from, by))
     void reveal()
   }
-  if (opensActions(event) || event.key === 'Escape') {
+  if (isActionsChord(event) || event.key === 'Escape') {
     event.preventDefault()
     open.value = false
   } else if (event.key === 'ArrowDown') step(1)

@@ -17,11 +17,11 @@ export const ELSEWHERE = 'numen-book-elsewhere'
 const held = new Map<string, Map<object, readonly Range[]>>()
 
 /** Whether this browser draws a range the page hands it. */
-const draws = (): boolean =>
+const canHighlight = (): boolean =>
   typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function'
 
 const redraw = (entry: string): void => {
-  if (!draws()) return
+  if (!canHighlight()) return
   const all: Range[] = []
   for (const ranges of held.get(entry)?.values() ?? []) all.push(...ranges)
   if (all.length === 0) CSS.highlights.delete(entry)

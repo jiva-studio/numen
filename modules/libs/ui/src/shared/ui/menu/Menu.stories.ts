@@ -44,7 +44,7 @@ const menuElement = () => document.body.querySelector<HTMLElement>('.menu')
  * asked, and the story plays the caller's part: it holds whether the menu is
  * open, and it puts it away when the menu says so.
  */
-const asked = (args: Knobs) => ({
+const renderMenu = (args: Knobs) => ({
   components: { Menu },
   setup() {
     const open = ref(true)
@@ -136,7 +136,7 @@ const meta = {
     onChoose: fn(),
     onDismiss: fn(),
   },
-  render: asked,
+  render: renderMenu,
 } satisfies Meta<Knobs>
 
 export default meta
@@ -196,12 +196,12 @@ export const GivingItBack: Story = {
   args: { opening: 'keyboard' },
   play: async ({ canvasElement }) => {
     const node = within(canvasElement).getByRole('button', { name: 'A node' })
-    const named = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
+    const getItem = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
 
-    await expect(named('Open')).toHaveFocus()
+    await expect(getItem('Open')).toHaveFocus()
 
     await userEvent.keyboard('{Tab}')
-    await expect(named('New child note')).toHaveFocus()
+    await expect(getItem('New child note')).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
     await waitFor(async () => {
@@ -419,13 +419,13 @@ export const NotChoosable: Story = {
   },
   play: async () => {
     // The keyboard passes over it in both directions.
-    const named = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
+    const getItem = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
 
-    await expect(named('Open')).toHaveFocus()
+    await expect(getItem('Open')).toHaveFocus()
     await userEvent.keyboard('{ArrowDown}')
-    await expect(named('Copy path')).toHaveFocus()
+    await expect(getItem('Copy path')).toHaveFocus()
     await userEvent.keyboard('{ArrowUp}')
-    await expect(named('Open')).toHaveFocus()
+    await expect(getItem('Open')).toHaveFocus()
   },
 }
 

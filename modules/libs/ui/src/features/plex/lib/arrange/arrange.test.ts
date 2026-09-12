@@ -19,7 +19,7 @@ const every = Object.entries(neighbourhoods)
 const byTitle = (node: PlexNode): number => 40 + node.title.length * 7
 
 /** A neighbourhood whose titles are picked for their lengths alone. */
-const titled = (seat: PlexRelatedSeat, ...titles: string[]): PlexNeighbourhood => ({
+const createNeighbourhood = (seat: PlexRelatedSeat, ...titles: string[]): PlexNeighbourhood => ({
   nodes: [
     { id: 'focus', title: 'Focus', seat: 'focus' },
     ...titles.map((title, index) => ({ id: `${seat}-${index}`, title, seat })),
@@ -47,7 +47,7 @@ const focusOf = (layout: { nodes: readonly PlacedNode[] }) => {
 }
 
 /** Boxes are centred on their coordinates; touching edges is not overlapping. */
-function overlaps(a: PlacedNode, b: PlacedNode): boolean {
+function isOverlapping(a: PlacedNode, b: PlacedNode): boolean {
   return (
     Math.abs(a.x - b.x) < (a.width + b.width) / 2 - 1e-9 &&
     Math.abs(a.y - b.y) < (a.height + b.height) / 2 - 1e-9
@@ -147,13 +147,13 @@ describe('a box is as wide as its title needs', () => {
   })
 
   it('gives each box the width it was measured at', () => {
-    const measurable = titled('child', 'Domain', 'Use case', 'Aggregate', 'Repository')
+    const measurable = createNeighbourhood('child', 'Domain', 'Use case', 'Aggregate', 'Repository')
     const layout = arrangePlex(measurable, { measure: byTitle })
     for (const node of layout.nodes) expect(node.width).toBe(byTitle(node))
   })
 
   it('sizes the focus to its title as it sizes any other box', () => {
-    const layout = arrangePlex(titled('child', 'Port'), { measure: byTitle })
+    const layout = arrangePlex(createNeighbourhood('child', 'Port'), { measure: byTitle })
     const focus = focusOf(layout)
     expect(focus.width).toBe(byTitle(focus))
     expect(focus.width).toBeLessThan(focusSize.width)
@@ -166,13 +166,13 @@ describe('a box is as wide as its title needs', () => {
   })
 
   it('gives a title that measures next to nothing the minimum', () => {
-    const layout = arrangePlex(titled('child', '', 'A'), { measure: () => 0 })
+    const layout = arrangePlex(createNeighbourhood('child', '', 'A'), { measure: () => 0 })
     expect(focusOf(layout).width).toBe(minWidth)
     for (const node of withSeat(layout, 'child')) expect(node.width).toBe(minWidth)
   })
 
   it('leaves a row packed to one gap between boxes, and centred on the focus', () => {
-    const mixed = titled('child', 'A', 'Domain', 'Composition root', 'Port', 'Use case')
+    const mixed = createNeighbourhood('child', 'A', 'Domain', 'Composition root', 'Port', 'Use case')
     const children = withSeat(arrangePlex(mixed, { measure: byTitle }), 'child')
 
     expect(new Set(children.map((node) => node.width)).size).toBeGreaterThan(1)
@@ -188,7 +188,7 @@ describe('a box is as wide as its title needs', () => {
   })
 
   it('turns one edge of a column towards the focus, whatever the widths', () => {
-    const mixed = titled('jump', 'A', 'Dependency inversion', 'Port')
+    const mixed = createNeighbourhood('jump', 'A', 'Dependency inversion', 'Port')
     const jumps = withSeat(arrangePlex(mixed, { measure: byTitle }), 'jump')
 
     expect(new Set(jumps.map((node) => node.width)).size).toBeGreaterThan(1)
@@ -278,7 +278,7 @@ describe('no two nodes are drawn on top of each other', () => {
         const a = nodes[i]
         const b = nodes[j]
         if (!a || !b) continue
-        expect(overlaps(a, b), `${a.id} overlaps ${b.id}`).toBe(false)
+        expect(isOverlapping(a, b), `${a.id} overlaps ${b.id}`).toBe(false)
       }
     }
   }

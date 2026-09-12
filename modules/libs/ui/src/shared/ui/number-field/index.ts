@@ -1,13 +1,13 @@
 export { default as NumberField } from './NumberField.vue'
 export {
-  allowed,
-  clamped,
+  isAllowed,
+  clamp,
   numberOf,
   onItsWay,
-  settled,
-  standsFor,
-  stepped,
-  walked,
+  snapToBounds,
+  isTextForValue,
+  stepBy,
+  stepForKey,
   written,
   DEFAULT_BOUNDS,
 } from './number'

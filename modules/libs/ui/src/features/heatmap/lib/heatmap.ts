@@ -73,7 +73,7 @@ export interface HeatmapMetrics {
  * room. What is left over is spread between the cells, which keeps the grid
  * flush to both edges.
  */
-export function fits(metrics: HeatmapMetrics): { columns: number; cell: number; gap: number } {
+export function measureGrid(metrics: HeatmapMetrics): { columns: number; cell: number; gap: number } {
   const cell = Math.max(1, metrics.cell)
   const gap = Math.max(0, metrics.gap)
   const step = cell + gap
@@ -138,7 +138,7 @@ export function days(
       ...(ahead ? NOTHING : tally),
       day,
       did: count,
-      weight: weighs(count),
+      weight: getWeight(count),
       today: day === today,
       ahead,
     })
@@ -183,7 +183,7 @@ function weekday(at: Date): number {
  * answered five cards did sit down, and the grid says so as plainly as it says
  * a day of fifty.
  */
-export function weighs(did: number): Day['weight'] {
+export function getWeight(did: number): Day['weight'] {
   if (did <= 0) return 0
   if (did < 5) return 1
   if (did < 20) return 2

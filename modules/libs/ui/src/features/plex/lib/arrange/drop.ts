@@ -42,7 +42,7 @@ export const seatWithoutDirection = (
  * is down, and dragging towards where the children plainly are would name
  * something off to the side.
  */
-function towards(dx: number, dy: number, bias: number): Direction | null {
+function getDropDirection(dx: number, dy: number, bias: number): Direction | null {
   if (dx === 0 && dy === 0) return null
   return Math.abs(dy) * bias >= Math.abs(dx)
     ? dy < 0
@@ -65,7 +65,7 @@ export function seatTowards(
   to: Position,
   options: PlexOptions,
 ): PlexRelatedSeat | null {
-  const heading = towards(to.x - from.x, to.y - from.y, options.gesture.verticalBias)
+  const heading = getDropDirection(to.x - from.x, to.y - from.y, options.gesture.verticalBias)
   if (!heading) return null
   return RELATED_SEATS.find((seat) => options.direction[seat] === heading) ?? null
 }

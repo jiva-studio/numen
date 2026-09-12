@@ -1,7 +1,7 @@
 /** A box widened under a hand that stays on it: how wide, where, and when. */
 import { effectScope, nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { OPENING, useDwell, widenedFor } from './dwell'
+import { OPENING, useDwell, getWideBox } from './dwell'
 import { stubClock } from '@/shared/fixtures/clock'
 import type { PlacedNode } from '../lib/node'
 
@@ -30,7 +30,7 @@ const spanOf = (node: PlacedNode, wide: { width: number; offset: number }) => ({
 describe('a box with more of its title to show', () => {
   it('widens to the room the whole title asks for', () => {
     const node = nodeAt()
-    expect(widenedFor(node, 300, WINDOW, MARGIN)).toStrictEqual({
+    expect(getWideBox(node, 300, WINDOW, MARGIN)).toStrictEqual({
       width: 300,
       offset: 0,
     })
@@ -38,20 +38,20 @@ describe('a box with more of its title to show', () => {
 
   it('grows about its own middle, so it opens both ways at once', () => {
     const node = nodeAt({ x: 120 })
-    const wide = widenedFor(node, 300, WINDOW, MARGIN)!
+    const wide = getWideBox(node, 300, WINDOW, MARGIN)!
     expect(spanOf(node, wide)).toStrictEqual({ from: -30, to: 270 })
   })
 
   it('slides back inside the window where its middle leaves no room', () => {
     const node = nodeAt({ x: 500 })
-    const wide = widenedFor(node, 300, WINDOW, MARGIN)!
+    const wide = getWideBox(node, 300, WINDOW, MARGIN)!
     expect(wide.width).toBe(300)
     expect(spanOf(node, wide)).toStrictEqual({ from: 284, to: 584 })
   })
 
   it('grows no wider than the window, the margin kept clear', () => {
     const node = nodeAt({ x: 500 })
-    const wide = widenedFor(node, 2000, WINDOW, MARGIN)!
+    const wide = getWideBox(node, 2000, WINDOW, MARGIN)!
     expect(wide.width).toBe(WINDOW.width - 2 * MARGIN)
     expect(spanOf(node, wide)).toStrictEqual({ from: -584, to: 584 })
   })
@@ -59,11 +59,11 @@ describe('a box with more of its title to show', () => {
 
 describe('a box with nothing more to show', () => {
   it('stays as it was placed when its title is already in it', () => {
-    expect(widenedFor(nodeAt(), 120, WINDOW, MARGIN)).toBeNull()
+    expect(getWideBox(nodeAt(), 120, WINDOW, MARGIN)).toBeNull()
   })
 
   it('stays as it was placed when the window is no wider than it is', () => {
-    expect(widenedFor(nodeAt(), 300, { width: 160, height: 800 }, MARGIN)).toBeNull()
+    expect(getWideBox(nodeAt(), 300, { width: 160, height: 800 }, MARGIN)).toBeNull()
   })
 })
 
@@ -76,7 +76,7 @@ describe('a box opening under the attention', () => {
   })
 
   /** The wait, run in a scope of its own, as a component gives it. */
-  const waiting = (on: () => string | null, delay: () => number = () => WAIT) => {
+  const createDwell = (on: () => string | null, delay: () => number = () => WAIT) => {
     vi.useFakeTimers()
     const world = stubClock()
     const scope = effectScope()
@@ -86,7 +86,7 @@ describe('a box opening under the attention', () => {
 
   it('stays shut until the attention has been on one thing for the wait', async () => {
     const on = ref<string | null>(null)
-    const { open, world } = waiting(() => on.value)
+    const { open, world } = createDwell(() => on.value)
 
     on.value = 'a box'
     await nextTick()
@@ -97,7 +97,7 @@ describe('a box opening under the attention', () => {
 
   it('opens across several frames rather than in one', async () => {
     const on = ref<string | null>(null)
-    const { open, world } = waiting(() => on.value)
+    const { open, world } = createDwell(() => on.value)
 
     on.value = 'a box'
     await nextTick()
@@ -117,7 +117,7 @@ describe('a box opening under the attention', () => {
 
   it('shuts again the moment the attention leaves', async () => {
     const on = ref<string | null>('a box')
-    const { open, world } = waiting(() => on.value)
+    const { open, world } = createDwell(() => on.value)
 
     await vi.advanceTimersByTimeAsync(WAIT)
     world.run()
@@ -131,7 +131,7 @@ describe('a box opening under the attention', () => {
 
   it('shuts and begins the wait again where what it was on has moved', async () => {
     const on = ref<string | null>('a box at 0 0')
-    const { open, world } = waiting(() => on.value)
+    const { open, world } = createDwell(() => on.value)
 
     await vi.advanceTimersByTimeAsync(WAIT)
     world.run()
@@ -149,7 +149,7 @@ describe('a box opening under the attention', () => {
 
   it('never opens where there is no wait at all', async () => {
     const on = ref<string | null>(null)
-    const { open, world } = waiting(
+    const { open, world } = createDwell(
       () => on.value,
       () => 0,
     )
@@ -163,7 +163,7 @@ describe('a box opening under the attention', () => {
 
   it('lets go of a wait its scope outlives', async () => {
     const on = ref<string | null>(null)
-    const { open, world, stop } = waiting(() => on.value)
+    const { open, world, stop } = createDwell(() => on.value)
 
     on.value = 'a box'
     await nextTick()

@@ -50,7 +50,7 @@ function reduce(node: WorkspaceNode): Slice {
 }
 
 /** A pane with nothing in it, kept so that a workspace always has a root. */
-const emptied = (root: WorkspaceNode): WorkspaceNode => {
+const emptyPane = (root: WorkspaceNode): WorkspaceNode => {
   const first = panesOf(root)[0]
   return { kind: 'pane', id: first?.id ?? root.id, tabs: [], active: null }
 }
@@ -59,7 +59,7 @@ export function normalize(workspace: Workspace): Workspace {
   const slice = reduce(workspace.root)
 
   const only = slice.nodes[0]
-  if (!only) return { ...workspace, root: emptied(workspace.root) }
+  if (!only) return { ...workspace, root: emptyPane(workspace.root) }
   if (slice.nodes.length === 1) return { ...workspace, root: only }
 
   // The root itself kept one child and handed its children up. There is no

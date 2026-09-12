@@ -26,7 +26,7 @@ const caret = (doc: string, line: number, column: number) =>
   EditorSelection.single(EditorState.create({ doc }).doc.line(line).from + column)
 
 /** Every stretch of text the change puts something else in the place of. */
-const changed = (doc: string, fresh: string) => {
+const applyChange = (doc: string, fresh: string) => {
   const state = EditorState.create({ doc })
   const found: [number, number, string][] = []
   state
@@ -48,25 +48,25 @@ describe('a document put in over another', () => {
   })
 
   it('changes what differs and no more than that', () => {
-    expect(changed(DOC, 'one\ntwo again\nthree\nfour')).toEqual([[7, 7, ' again']])
+    expect(applyChange(DOC, 'one\ntwo again\nthree\nfour')).toEqual([[7, 7, ' again']])
   })
 
   it('changes the lines that were added at the end', () => {
-    expect(changed(DOC, `${DOC}\nfive`)).toEqual([[18, 18, '\nfive']])
+    expect(applyChange(DOC, `${DOC}\nfive`)).toEqual([[18, 18, '\nfive']])
   })
 
   it('changes what was taken from the middle', () => {
-    expect(changed(DOC, 'one\nfour')).toEqual([[4, 14, '']])
+    expect(applyChange(DOC, 'one\nfour')).toEqual([[4, 14, '']])
   })
 
   it('changes everything when the text shares no line with it', () => {
-    expect(changed(DOC, 'a\nb')).toEqual([[0, 18, 'a\nb']])
+    expect(applyChange(DOC, 'a\nb')).toEqual([[0, 18, 'a\nb']])
   })
 
   it('holds text that is nothing but one line', () => {
-    expect(changed('one', 'two')).toEqual([[0, 3, 'two']])
-    expect(changed('', 'one')).toEqual([[0, 0, 'one']])
-    expect(changed('one', '')).toEqual([[0, 3, '']])
+    expect(applyChange('one', 'two')).toEqual([[0, 3, 'two']])
+    expect(applyChange('', 'one')).toEqual([[0, 0, 'one']])
+    expect(applyChange('one', '')).toEqual([[0, 3, '']])
   })
 })
 

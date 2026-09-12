@@ -200,7 +200,7 @@ describe('a wheel on the strip', () => {
     vi.useRealTimers()
   })
 
-  const waits = async (ms: number) => {
+  const wait = async (ms: number) => {
     vi.advanceTimersByTime(ms)
     await nextTick()
     await nextTick()
@@ -214,7 +214,7 @@ describe('a wheel on the strip', () => {
     expect(one.emitted('update:at')).toEqual([['after']])
     await one.setProps({ at: 'after' })
 
-    await waits(200)
+    await wait(200)
     expect(window_.scrollLeft).toBe(440)
   })
 
@@ -225,7 +225,7 @@ describe('a wheel on the strip', () => {
     await ran(window_, 260)
     expect(one.emitted('update:at')).toBeUndefined()
 
-    await waits(200)
+    await wait(200)
     expect(window_.scrollLeft).toBe(220)
   })
 
@@ -238,7 +238,7 @@ describe('a wheel on the strip', () => {
     await ran(window_, 380)
     expect(one.emitted('update:at')).toEqual([['after']])
 
-    await waits(200)
+    await wait(200)
     expect(window_.scrollLeft).toBe(220)
   })
 
@@ -266,7 +266,7 @@ describe('a wheel on the strip', () => {
     await one.setProps({ at: 'after' })
     await ran(window_, 300)
 
-    await waits(200)
+    await wait(200)
     expect(window_.scrollLeft).toBe(440)
   })
 })

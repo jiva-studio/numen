@@ -9,7 +9,7 @@ import { extentOf, type PlexFrame } from '../frame'
 import { assertNeighbourhood, type PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode, PlexNode } from '../node'
 import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
-import { crowdingFor } from './crowding'
+import { measureCrowding } from './crowding'
 import { limitsFor, type Limits } from './limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput } from './options'
 import { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
@@ -56,7 +56,7 @@ export function arrangePlex(
 
   // Packed as closely as this window needs and no closer, so a box narrows
   // and a gap closes before a seat is given up.
-  const resolved = crowdingFor(asked, counts)
+  const resolved = measureCrowding(asked, counts)
   const widthOf = widthsFor(resolved, measure)
 
   const focus: PlacedNode = {

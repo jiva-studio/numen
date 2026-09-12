@@ -118,7 +118,7 @@ describe('the decks of a vault', () => {
 
 describe('a deck with nothing waiting', () => {
   /** A vault whose one deck holds these cards and owes this much of them. */
-  const holding = (faces: number, due: number, fresh: number, unbegun = 0): VaultCardsDue => ({
+  const createVault = (faces: number, due: number, fresh: number, unbegun = 0): VaultCardsDue => ({
     ...vault,
     due,
     new: fresh,
@@ -128,7 +128,7 @@ describe('a deck with nothing waiting', () => {
   // Something was answered under the preset today and nothing of this deck is
   // left, which is the day's work met.
   it('says the day is done where the deck was answered and owes none', () => {
-    const one = shown([preset({ cards: 0, answered: 6, took: 3 })], holding(20, 0, 0))
+    const one = shown([preset({ cards: 0, answered: 6, took: 3 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__met').text()).toBe('Done today')
     expect(one.findAll('.due-count')).toHaveLength(1)
@@ -138,7 +138,7 @@ describe('a deck with nothing waiting', () => {
   // Having nothing due is not having finished. Nothing was answered under this
   // preset today, so no deck of it has done anything.
   it('says a deck nothing fell due for has nothing, and never that it is done', () => {
-    const one = shown([preset({ cards: 0, answered: 0, took: 0 })], holding(20, 0, 0))
+    const one = shown([preset({ cards: 0, answered: 0, took: 0 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__stopped').text()).toBe('nothing today')
     expect(one.findAll('.decks__met')).toHaveLength(0)
@@ -147,7 +147,7 @@ describe('a deck with nothing waiting', () => {
   // The budget was spent elsewhere under this preset, so this deck is asked
   // nothing. That is the preset's reason, the way a paused one's is.
   it('says the preset is full where its budget is what left the deck nothing', () => {
-    const one = shown([preset({ cards: 0, answered: 55, took: 20 })], holding(20, 0, 0))
+    const one = shown([preset({ cards: 0, answered: 55, took: 20 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__stopped').text()).toBe('the day is full')
     expect(one.findAll('.decks__met')).toHaveLength(0)
@@ -158,7 +158,7 @@ describe('a deck with nothing waiting', () => {
   it('says nothing here can be begun where the preset begins none a day', () => {
     const one = shown(
       [preset({ cards: 0, budget: { new: 0, reviews: 200, minutes: 20 } })],
-      holding(20, 0, 0, 20),
+      createVault(20, 0, 0, 20),
     )
 
     expect(one.find('.decks__stopped').text()).toBe('no cards to begin')
@@ -170,7 +170,7 @@ describe('a deck with nothing waiting', () => {
   it('says nothing today where some of the deck has been begun', () => {
     const one = shown(
       [preset({ cards: 0, budget: { new: 0, reviews: 200, minutes: 20 } })],
-      holding(20, 0, 0, 19),
+      createVault(20, 0, 0, 19),
     )
 
     expect(one.find('.decks__stopped').text()).toBe('nothing today')
@@ -179,20 +179,20 @@ describe('a deck with nothing waiting', () => {
   // The preset begins cards a day, so the unbegun material is waiting on the
   // day and not on a setting.
   it('says nothing today where the preset does begin cards a day', () => {
-    const one = shown([preset({ cards: 0 })], holding(20, 0, 0, 20))
+    const one = shown([preset({ cards: 0 })], createVault(20, 0, 0, 20))
 
     expect(one.find('.decks__stopped').text()).toBe('nothing today')
   })
 
   it('says the reason instead where the preset schedules nothing today', () => {
-    const one = shown([preset({ cards: 0, paused: 'no cards a day' })], holding(20, 0, 0))
+    const one = shown([preset({ cards: 0, paused: 'no cards a day' })], createVault(20, 0, 0))
 
     expect(one.find('.decks__stopped').text()).toBe('no cards a day')
     expect(one.findAll('.decks__met')).toHaveLength(0)
   })
 
   it('says neither where the deck holds no card at all', () => {
-    const one = shown([preset({ cards: 0 })], holding(0, 0, 0))
+    const one = shown([preset({ cards: 0 })], createVault(0, 0, 0))
 
     expect(one.findAll('.decks__met')).toHaveLength(0)
     expect(one.findAll('.decks__stopped')).toHaveLength(0)
@@ -201,7 +201,7 @@ describe('a deck with nothing waiting', () => {
   })
 
   it('counts what is waiting where something is', () => {
-    const one = shown([preset()], holding(20, 8, 2))
+    const one = shown([preset()], createVault(20, 8, 2))
 
     expect(one.find('.decks__deck').find('.due-count').text()).toBe('10 to review')
     expect(one.findAll('.decks__met')).toHaveLength(0)

@@ -30,12 +30,9 @@ export const nouns = {
 
 /**
  * baseline are the types still named by a gerund, and the list only shrinks.
- *
- * PlexShowing is the last of them because the stem runs through SHOWINGS,
- * ShowingDescriptor and showingOf, and renaming the type alone would leave the
- * family behind. That is one decision, not five.
+ * It is empty, and a name added to it is debt somebody wrote down.
  */
-export const baseline = ['PlexShowing']
+export const baseline = []
 
 /** The words of one name, as a reader says them. */
 export const words = (name) =>

@@ -18,7 +18,7 @@ export type Holdings<Name extends string> = Readonly<
 >
 
 /** Order is the screens from the first one in to the last, and never empty. */
-export function screens<Name extends string>(
+export function useScreens<Name extends string>(
   order: readonly [Name, ...Name[]],
   holds: Holdings<Name>,
 ) {
@@ -28,12 +28,12 @@ export function screens<Name extends string>(
    * To a screen. Every screen standing after it lets go of what it holds, so a
    * person going back never meets what the screen they left was showing.
    */
-  const goes = (to: Name) => {
+  const goTo = (to: Name) => {
     for (const name of order.slice(order.indexOf(to) + 1)) {
       for (const forget of holds[name] ?? []) forget()
     }
     on.value = to
   }
 
-  return { on, goes }
+  return { on, goTo }
 }

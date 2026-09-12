@@ -14,7 +14,7 @@ import { Icon } from '../icon'
 import { Divider } from '../divider'
 import { useDrag } from '../../model/drag'
 import { Button } from '@/shared/ui/button'
-import { declared, numbered, type Half, type InsertionPoint } from '../../lib/order'
+import { getDeclaredFields, getFreeName, type Half, type InsertionPoint } from '../../lib/order'
 import {
   faceRows,
   NOTHING_AMISS,
@@ -23,7 +23,7 @@ import {
   type StencilWords,
   type StencilWrong,
 } from '../../lib/stencil'
-import { sampled } from '../../lib/fill'
+import { sampleValues } from '../../lib/fill'
 
 /**
  * What the caller found wrong with the stencil it handed in. A face's stands
@@ -70,7 +70,7 @@ const emit = defineEmits<{
 }>()
 
 /** The fields a card is asked for, a name declared twice naming one field. */
-const asked = computed(() => declared(props.fields))
+const asked = computed(() => getDeclaredFields(props.fields))
 
 /**
  * The face under the pointer's hand, and where letting go would put it. The
@@ -88,12 +88,12 @@ const {
 } = useDrag<InsertionPoint>({
   order: () => props.faces.map((each) => each.id),
   nowhere: null,
-  lands: (held, lands) => lands !== held,
+  doesMove: (held, lands) => lands !== held,
   moves: (held, lands) => emit('move-face', held, lands),
 })
 
 /** What a preview stands in the slots, which is each field under its own name. */
-const sample = computed(() => sampled(asked.value))
+const sample = computed(() => sampleValues(asked.value))
 
 /** The faces as they are drawn. */
 const drawn = computed(() => faceRows(props.faces, asked.value, sample.value))
@@ -102,7 +102,7 @@ const drawn = computed(() => faceRows(props.faces, asked.value, sample.value))
 const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
 
 const addFace = (): void => {
-  emit('add-face', numbered(props.faces.map((each) => each.name), props.words.faceStem))
+  emit('add-face', getFreeName(props.faces.map((each) => each.name), props.words.faceStem))
 }
 </script>
 

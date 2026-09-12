@@ -10,7 +10,7 @@
  */
 import { useTemplateRef } from 'vue'
 
-import { placeIn, pointsAway, type BookLink } from '../lib/link'
+import { isOutwardHref, placeIn, type BookLink } from '../lib/link'
 import { handTurn, keyTurn } from '../lib/turn'
 import { useBookLayout } from '../model/layout'
 import { BOOK_WORDS } from '../lib/words'
@@ -60,7 +60,7 @@ const { measured, setting, spreadCount, front, leftInChapter } = layout
  * A key the tab caught. Turning belongs to whatever holds the book, so the
  * page it turns is answered for and the key is not listened for here.
  */
-const pressed = (event: KeyboardEvent): boolean => {
+const handleKey = (event: KeyboardEvent): boolean => {
   const way = keyTurn(event.key)
   if (!way) return false
   layout.turn(way)
@@ -75,7 +75,7 @@ const took = (event: PointerEvent) => {
 }
 
 /** Whether words of the text stand taken up. */
-const selecting = (): boolean => {
+const isSelecting = (): boolean => {
   const taken = window.getSelection()
   if (!taken || taken.isCollapsed || taken.toString().trim() === '') return false
   const text = paper.value
@@ -94,7 +94,7 @@ const letGo = (event: PointerEvent) => {
   if ((event.target as HTMLElement | null)?.closest?.('a')) return
 
   const edge = box.getBoundingClientRect().left
-  const way = handTurn(from - edge, event.clientX - edge, box.clientWidth, selecting())
+  const way = handTurn(from - edge, event.clientX - edge, box.clientWidth, isSelecting())
   if (way) layout.turn(way)
 }
 
@@ -109,7 +109,7 @@ const follow = (press: MouseEvent) => {
   if (href === null || href === undefined) return
 
   press.preventDefault()
-  if (pointsAway(href)) return
+  if (isOutwardHref(href)) return
 
   const place = placeIn(href)
   if (place.path !== '' && place.path !== props.path) {
@@ -125,9 +125,9 @@ defineExpose({
    * Set the text again. A reader drawn out of sight has no reading area, and
    * the caller says when it is on screen.
    */
-  measure: () => layout.settle(layout.keeping()),
+  measure: () => layout.settle(layout.getKeptOffset()),
   /** A key the tab caught: true where it turned the page. */
-  pressed,
+  handleKey,
 })
 </script>
 

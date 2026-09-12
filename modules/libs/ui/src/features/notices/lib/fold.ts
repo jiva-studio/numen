@@ -11,7 +11,7 @@ export const ROOM = 4
  * What folds is what has been said and has gone right. Work, what is so, and
  * anything that stopped badly stand however many of them there are.
  */
-export const folded = (
+export const foldNotices = (
   drawn: readonly Notice[],
   room: number = ROOM,
 ): { shown: readonly Notice[]; over: number } => {

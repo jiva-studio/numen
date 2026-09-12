@@ -98,7 +98,7 @@ const chips = (canvas: HTMLElement): readonly HTMLElement[] =>
 const said = (canvas: HTMLElement): readonly string[] =>
   chips(canvas).map((chip) => chip.getAttribute('aria-label') ?? '')
 
-const offered = (): readonly string[] =>
+const getOfferedLabels = (): readonly string[] =>
   Array.from(document.body.querySelectorAll('.menu__item')).map(
     (one) => one.textContent?.trim() ?? '',
   )
@@ -135,7 +135,7 @@ export const ALevelNotOnOffer: Story = {
 
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
     await waitFor(() =>
-      expect(offered()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%']),
+      expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%']),
     )
   },
 }
@@ -175,7 +175,7 @@ export const NoLevelsAtAll: Story = {
     await userEvent.click(chips(canvasElement)[0] as HTMLElement)
     // The level the day stands at is on offer wherever it is asked for, so a
     // day is never asked to choose without its own among the choices.
-    await waitFor(() => expect(offered()).toEqual(['100%']))
+    await waitFor(() => expect(getOfferedLabels()).toEqual(['100%']))
   },
 }
 
@@ -248,7 +248,7 @@ export const DisabledOffersNothing: Story = {
 
     await userEvent.click(chip)
     await userEvent.keyboard(' ')
-    expect(offered()).toEqual([])
+    expect(getOfferedLabels()).toEqual([])
   },
 }
 
@@ -266,14 +266,14 @@ export const PressingADayOffersTheLevels: Story = {
   args: { levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
-    await waitFor(() => expect(offered()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']))
+    await waitFor(() => expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']))
 
     const quarter = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item')).find(
       (one) => one.textContent?.trim() === '25%',
     )
     await userEvent.click(quarter as HTMLElement)
     await waitFor(() => expect(said(canvasElement)[5]).toBe('Saturday, 25%'))
-    await waitFor(() => expect(offered()).toEqual([]))
+    await waitFor(() => expect(getOfferedLabels()).toEqual([]))
   },
 }
 
@@ -312,13 +312,13 @@ export const TheKeyboardComesBack: Story = {
     expect(onOffer()[3]?.getAttribute('aria-checked')).toBe('true')
 
     await userEvent.keyboard('{Escape}')
-    await waitFor(() => expect(offered()).toEqual([]))
+    await waitFor(() => expect(getOfferedLabels()).toEqual([]))
     expect(document.activeElement).toBe(chip)
 
     await userEvent.keyboard(' ')
-    await waitFor(() => expect(offered()).toHaveLength(7))
+    await waitFor(() => expect(getOfferedLabels()).toHaveLength(7))
     await userEvent.keyboard('{ArrowUp}{Enter}')
-    await waitFor(() => expect(offered()).toEqual([]))
+    await waitFor(() => expect(getOfferedLabels()).toEqual([]))
     expect(document.activeElement).toBe(chip)
     expect(said(canvasElement)[5]).toBe('Saturday, 25%')
   },
@@ -368,6 +368,6 @@ export const TheKeyboardWalksAndOffers: Story = {
     expect(document.activeElement).toBe(chips(canvasElement)[2])
 
     await userEvent.keyboard(' ')
-    await waitFor(() => expect(offered()).toHaveLength(7))
+    await waitFor(() => expect(getOfferedLabels()).toHaveLength(7))
   },
 }

@@ -32,7 +32,7 @@ const agent: AgentPort = {
 }
 
 /** The panel over one card, with the session around it standing in for it. */
-const holding = (unreachable = ''): AgentPanelState => {
+const createPanel = (unreachable = ''): AgentPanelState => {
   // What the window is showing is the window's, and the test holds it for it.
   const open = ref(false)
   return useAgentPanel({
@@ -43,7 +43,7 @@ const holding = (unreachable = ''): AgentPanelState => {
     shows: (it) => {
       open.value = it
     },
-    says: () => {},
+    showNotice: () => {},
     // The words are put up as they arrive, so a test reads them without waiting
     // for a frame.
     paint: (draw) => draw(),
@@ -52,8 +52,8 @@ const holding = (unreachable = ''): AgentPanelState => {
 
 /** A panel holding the card, with a reason nothing can be asked where there is one. */
 const held = (unreachable = ''): AgentPanelState => {
-  const panel = holding(unreachable)
-  panel.opens()
+  const panel = createPanel(unreachable)
+  panel.openPanel()
   return panel
 }
 
@@ -76,10 +76,10 @@ describe('the panel a card is asked about in', () => {
 
   // A panel opened is a panel opened to write in.
   it('takes the keyboard into the field when it comes up', async () => {
-    const panel = holding()
+    const panel = createPanel()
     const one = mount(AgentPanel, { props: { held: panel }, attachTo: document.body })
 
-    panel.opens()
+    panel.openPanel()
     await nextTick()
     await nextTick()
 

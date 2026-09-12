@@ -5,7 +5,7 @@
  * this is the element those answers are applied to.
  */
 import { ref, type Ref, type ShallowRef } from 'vue'
-import { Hand, wheeled } from '../lib/hand'
+import { Hand, getWheelOffset } from '../lib/hand'
 
 /** How near the row has to be to count as standing where it was sent, in CSS pixels. */
 const THERE = 1
@@ -27,12 +27,12 @@ export interface HandScroll {
    * The row moved: how far along it is now, and whether it is standing still.
    * A row travelling to where it was sent passes over pages nobody turned to.
    */
-  readonly stands: () => boolean
+  readonly isStill: () => boolean
   /** The hand on the row, and the wheel over it. */
   readonly took: (event: PointerEvent) => void
-  readonly pulled: (event: PointerEvent) => void
+  readonly onPointerMove: (event: PointerEvent) => void
   readonly letGo: (event: PointerEvent) => void
-  readonly turned: (event: WheelEvent) => void
+  readonly onWheel: (event: WheelEvent) => void
 }
 
 export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): HandScroll {
@@ -53,7 +53,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     area.value.scrollTo({ left: to, behavior: how })
   }
 
-  const stands = (): boolean => {
+  const isStill = (): boolean => {
     if (!area.value) return false
     along.value = area.value.scrollLeft
     if (heading === undefined) return true
@@ -78,7 +78,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     )
   }
 
-  const pulled = (event: PointerEvent): void => {
+  const onPointerMove = (event: PointerEvent): void => {
     if (!area.value || !hand.holding) return
     const stood = hand.to({ x: event.clientX, y: event.clientY })
     if (!stood) return
@@ -117,10 +117,10 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
    * A wheel turned. A row at rest has one axis and a wheel turned down means the
    * next page; drawn closer the room has both, and then down means down.
    */
-  const turned = (event: WheelEvent): void => {
+  const onWheel = (event: WheelEvent): void => {
     if (!area.value) return
     const hasBelow = area.value.scrollHeight > area.value.clientHeight
-    const by = wheeled({ x: event.deltaX, y: event.deltaY }, hasBelow)
+    const by = getWheelOffset({ x: event.deltaX, y: event.deltaY }, hasBelow)
     if (by.x === 0 && by.y === 0) return
     event.preventDefault()
     // The wheel has the row now, wherever it was being taken.
@@ -129,5 +129,5 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     area.value.scrollTop += by.y
   }
 
-  return { along, dragging, whereabouts, send, stands, took, pulled, letGo, turned }
+  return { along, dragging, whereabouts, send, isStill, took, onPointerMove, letGo, onWheel }
 }

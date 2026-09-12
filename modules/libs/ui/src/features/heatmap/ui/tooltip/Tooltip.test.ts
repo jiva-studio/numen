@@ -48,7 +48,7 @@ const mountTooltip = async (props: Record<string, unknown> = {}) => {
 }
 
 /** Where it was placed, as the two numbers the style carries. */
-const placed = (tooltip: Awaited<ReturnType<typeof mountTooltip>>) => {
+const getPlacement = (tooltip: Awaited<ReturnType<typeof mountTooltip>>) => {
   const style = tooltip.get('[role="tooltip"]').element as HTMLElement
   return { x: style.style.insetInlineStart, y: style.style.insetBlockStart }
 }
@@ -63,12 +63,12 @@ describe('the tooltip itself', () => {
 
 describe('where it stands', () => {
   it('runs on from the far end of the thing it is about, and level with its top', async () => {
-    expect(placed(await mountTooltip())).toEqual({ x: '128px', y: '200px' })
+    expect(getPlacement(await mountTooltip())).toEqual({ x: '128px', y: '200px' })
   })
 
   // The far side is off the edge, so it runs back from the near end instead.
   it('takes the near side where the far side has no room for it', async () => {
-    expect(placed(await mountTooltip({ at: about({ x: 900 }) })).x).toBe('772px')
+    expect(getPlacement(await mountTooltip({ at: about({ x: 900 }) })).x).toBe('772px')
   })
 
   it('is brought inside the edge where neither side has room', async () => {
@@ -76,7 +76,7 @@ describe('where it stands', () => {
       at: about({ x: 60, y: 10 }),
       viewport: { width: 200, height: 800 },
     })
-    expect(placed(tooltip).x).toBe('72px')
+    expect(getPlacement(tooltip).x).toBe('72px')
   })
 
   it('folds up from the foot of the room rather than running past it', async () => {
@@ -84,7 +84,7 @@ describe('where it stands', () => {
       at: about({ y: 90 }),
       viewport: { width: 1000, height: 100 },
     })
-    expect(placed(tooltip).y).toBe('50px')
+    expect(getPlacement(tooltip).y).toBe('50px')
   })
 
   it('stands clear of the edge it is against where it is larger than the room', async () => {
@@ -92,18 +92,18 @@ describe('where it stands', () => {
       at: about({ x: 10, y: 10 }),
       viewport: { width: 60, height: 800 },
     })
-    expect(placed(tooltip).x).toBe('8px')
+    expect(getPlacement(tooltip).x).toBe('8px')
   })
 })
 
 describe('the thing it is about moving', () => {
   it('is placed again beside where that thing now is', async () => {
     const tooltip = await mountTooltip()
-    expect(placed(tooltip).x).toBe('128px')
+    expect(getPlacement(tooltip).x).toBe('128px')
 
     await tooltip.setProps({ at: about({ x: 400 }) })
     await nextTick()
-    expect(placed(tooltip)).toEqual({ x: '428px', y: '200px' })
+    expect(getPlacement(tooltip)).toEqual({ x: '428px', y: '200px' })
   })
 })
 
@@ -114,12 +114,12 @@ describe('the room it is placed in', () => {
     const was = window.innerWidth
     window.innerWidth = 2000
     const tooltip = await mountTooltip({ at: about({ x: 900 }), viewport: null })
-    expect(placed(tooltip).x).toBe('928px')
+    expect(getPlacement(tooltip).x).toBe('928px')
 
     window.innerWidth = 1000
     window.dispatchEvent(new Event('resize'))
     await nextTick()
-    expect(placed(tooltip).x).toBe('772px')
+    expect(getPlacement(tooltip).x).toBe('772px')
 
     window.innerWidth = was
   })

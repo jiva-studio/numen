@@ -35,22 +35,22 @@ describe('a page still coming', () => {
 })
 
 describe('a page that has come', () => {
-  const arrived = async () => {
+  const loadPage = async () => {
     const page = sheet()
     await page.find('.reader__picture').trigger('load')
     return page
   }
 
   it('paints the picture', async () => {
-    expect((await arrived()).find('.reader__picture').classes()).not.toContain('invisible')
+    expect((await loadPage()).find('.reader__picture').classes()).not.toContain('invisible')
   })
 
   it('takes the ring away', async () => {
-    expect((await arrived()).find('.reader__spinner').exists()).toBe(false)
+    expect((await loadPage()).find('.reader__spinner').exists()).toBe(false)
   })
 
   it('lights what was found on it', async () => {
-    expect((await arrived()).findAll('.reader__highlight')).toHaveLength(HIGHLIGHTS.length)
+    expect((await loadPage()).findAll('.reader__highlight')).toHaveLength(HIGHLIGHTS.length)
   })
 
   it('marks the other places apart from the one it was opened at', async () => {

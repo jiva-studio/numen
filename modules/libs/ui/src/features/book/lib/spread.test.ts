@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   GAP,
   NARROWEST,
-  beginsAt,
   columnHeight,
   columnWidth,
   columnsIn,
   columnsFilled,
   columnsInAll,
-  holding,
+  findSpreadAt,
+  getSpreadStart,
   inFront,
   leftInDocument,
   pagesOf,
@@ -160,14 +160,14 @@ describe('where a spread begins', () => {
     // A hundred spreads out, the place is still exactly the place the hundredth
     // column pair begins at: nothing is added up along the way.
     const one = columnWidth(flow)
-    expect(beginsAt(flow, 100)).toBe(200 * (one + GAP))
+    expect(getSpreadStart(flow, 100)).toBe(200 * (one + GAP))
   })
 
   it('begins one whole reading area along from the spread before it', () => {
     // The gap a column keeps stands inside the area at either edge, so nothing
     // stands between two spreads for the turn to carry over.
     const flow = laid(WIDE, 2, 10)
-    expect(beginsAt(flow, 1) - beginsAt(flow, 0)).toBe(WIDE)
+    expect(getSpreadStart(flow, 1) - getSpreadStart(flow, 0)).toBe(WIDE)
   })
 })
 
@@ -209,7 +209,7 @@ describe('which run of the text is in front', () => {
   it('is nothing where no run stands in the spread', () => {
     const flow = laid(WIDE, 2, 10)
     // A picture filling the third spread on its own, with no run of text in it.
-    const marks: Mark[] = [{ at: 0, x: 0 }, { at: 500, x: beginsAt(flow, 3) }]
+    const marks: Mark[] = [{ at: 0, x: 0 }, { at: 500, x: getSpreadStart(flow, 3) }]
 
     expect(inFront(marks, flow, 2)).toBeUndefined()
   })
@@ -229,20 +229,20 @@ describe('which spread an offset stands in', () => {
   ]
 
   it('is the spread of the last run beginning at or before it', () => {
-    expect(holding(marks, flow, 0)).toBe(0)
-    expect(holding(marks, flow, 99)).toBe(0)
-    expect(holding(marks, flow, 100)).toBe(1)
-    expect(holding(marks, flow, 180)).toBe(1)
-    expect(holding(marks, flow, 240)).toBe(3)
+    expect(findSpreadAt(marks, flow, 0)).toBe(0)
+    expect(findSpreadAt(marks, flow, 99)).toBe(0)
+    expect(findSpreadAt(marks, flow, 100)).toBe(1)
+    expect(findSpreadAt(marks, flow, 180)).toBe(1)
+    expect(findSpreadAt(marks, flow, 240)).toBe(3)
   })
 
   it('is the first spread for an offset before anything the document carries', () => {
-    expect(holding(marks, flow, -5)).toBe(0)
-    expect(holding([], flow, 900)).toBe(0)
+    expect(findSpreadAt(marks, flow, -5)).toBe(0)
+    expect(findSpreadAt([], flow, 900)).toBe(0)
   })
 
   it('is the spread of the last run for an offset past everything', () => {
-    expect(holding(marks, flow, 10_000)).toBe(3)
+    expect(findSpreadAt(marks, flow, 10_000)).toBe(3)
   })
 })
 
@@ -355,13 +355,13 @@ describe('the page a person is looking at', () => {
   const book = { begins: 0, ends: 10_000 }
 
   /** A run standing in each column the text was laid into. */
-  const filling = (columns: number): Mark[] =>
+  const createMarks = (columns: number): Mark[] =>
     Array.from({ length: columns }, (_, column) => ({
       at: document.begins + column,
       x: column * (columnWidth(flow) + GAP),
     }))
 
-  const marks = filling(columnsInAll(flow))
+  const marks = createMarks(columnsInAll(flow))
   const here = marks.length
   const perColumn = (document.ends - document.begins) / here
   const before = Math.round((document.begins - book.begins) / perColumn)
@@ -381,7 +381,7 @@ describe('the page a person is looking at', () => {
 
   it('counts the columns the text fills and not the boxes drawn beside them', () => {
     // A document of one line stands in one column of a spread of two.
-    const one = filling(1)
+    const one = createMarks(1)
     expect(columnsFilled(one, flow)).toBe(1)
     expect(pagesOf({ ...document }, document, flow, 0, one)).toEqual({ page: 1, pages: 1 })
   })

@@ -9,7 +9,7 @@ import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import DeckEditor from './DeckEditor.vue'
 import { blanks, HEAD, type DeckSection, type DeckCard, type Wrong } from '../../lib/deck'
-import { declared, type InsertionPoint } from '../../lib/order'
+import { getDeclaredFields, type InsertionPoint } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
 
 interface Corpus {
@@ -331,7 +331,7 @@ const meta: Meta<Knobs> = {
       )
 
       /** The cards, with one of them changed. */
-      const changed = (id: string, into: (card: DeckCard) => DeckCard): readonly DeckCard[] =>
+      const changeCard = (id: string, into: (card: DeckCard) => DeckCard): readonly DeckCard[] =>
         cards.value.map((card) => (card.id === id ? into(card) : card))
 
       /** The section the last of them is, which is where a new card is made. */
@@ -346,17 +346,17 @@ const meta: Meta<Knobs> = {
         onAdd: (stencil: string) => {
           const id = `made00000${cards.value.length}`
           const cut = cuts.value.find((each) => each.name === stencil)
-          const filled = blanks(declared(cut?.fields ?? []))
+          const filled = blanks(getDeclaredFields(cut?.fields ?? []))
           cards.value = [...cards.value, { id, section: lastSection(), stencil, filled }]
         },
         onRemove: (id: string) => {
           cards.value = cards.value.filter((card) => card.id !== id)
         },
         onMove: (id: string, at: InsertionPoint) => {
-          cards.value = moved(cards.value, sections.value, id, at)
+          cards.value = moveCard(cards.value, sections.value, id, at)
         },
         onWrite: (id: string, field: string, nth: number, text: string) => {
-          cards.value = changed(id, (card) => {
+          cards.value = changeCard(id, (card) => {
             // The one written is the one counted off under its own field.
             let under = 0
             const filled = card.filled.map((each) => {
@@ -413,7 +413,7 @@ const sectionsOf = (corpus: Corpus): readonly DeckSection[] => corpus.sections ?
  * section, or at the end of it. A card takes the section of whatever it lands
  * in front of.
  */
-const moved = (
+const moveCard = (
   cards: readonly DeckCard[],
   sections: readonly DeckSection[],
   id: string,

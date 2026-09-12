@@ -34,7 +34,7 @@ export interface GroupedItem extends MenuItem {
  * The items in the order they were given, each saying whether a rule stands
  * above it. The first item begins the menu, and nothing is drawn above it.
  */
-export const grouped = (items: readonly MenuItem[]): readonly GroupedItem[] =>
+export const groupItems = (items: readonly MenuItem[]): readonly GroupedItem[] =>
   items.map((item, at) => ({ ...item, rule: at > 0 && item.group !== items[at - 1]?.group }))
 
 /** What placing a menu needs to know. */
@@ -118,7 +118,7 @@ export const MENU_OPENINGS_ALL = Object.keys(MENU_OPENINGS) as readonly MenuOpen
  * keyboard it lands on the item in force, and on the first where the menu
  * holds none.
  */
-export const landsOn = (
+export const getLandingIndex = (
   opening: MenuOpening,
   items: readonly MenuItem[],
   current: string | null = null,

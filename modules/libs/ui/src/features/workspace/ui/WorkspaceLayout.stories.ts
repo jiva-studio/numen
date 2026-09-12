@@ -12,7 +12,7 @@ import WorkspaceLayout from './WorkspaceLayout.vue'
 import TabStub from '../fixtures/TabStub.vue'
 import type { Tab, Workspace as State } from '../lib/node'
 import { panesOf } from '../lib/tree'
-import { crowded, deep, empty, oneStack, sideBySide, stack, workspaceOf } from '../fixtures/build'
+import { manyTabs, deep, empty, oneStack, sideBySide, stack, workspaceOf } from '../fixtures/build'
 
 const TITLES: Readonly<Record<string, string>> = {
   plex: 'Plex',
@@ -28,7 +28,7 @@ const TITLES: Readonly<Record<string, string>> = {
   eight: 'Eight',
 }
 
-const named = (state: State, marks: Readonly<Record<string, string>>): readonly Tab[] =>
+const createTabs = (state: State, marks: Readonly<Record<string, string>>): readonly Tab[] =>
   panesOf(state.root)
     .flatMap((pane) => pane.tabs)
     .map((id) => ({ id, title: TITLES[id] ?? id, ...(marks[id] ? { mark: marks[id] } : {}) }))
@@ -38,7 +38,7 @@ const ARRANGEMENTS = {
   'side by side': sideBySide,
   'one stack': oneStack,
   nested: deep,
-  crowded,
+  crowded: manyTabs,
   empty,
   alone: () => workspaceOf(stack('main', 'plex')),
 } satisfies Record<string, () => State>
@@ -85,7 +85,7 @@ const meta: Meta<Knobs> = {
           held.value = ARRANGEMENTS[next]()
         },
       )
-      const tabs = () => named(held.value, args.marks)
+      const tabs = () => createTabs(held.value, args.marks)
 
       return { held, args, tabs }
     },
@@ -155,7 +155,7 @@ interface Position {
  * that whole pixel of the window falls back in the story. The story is drawn
  * at a scale, and the pointer goes to whole pixels of the window.
  */
-const framedIn = (at: Position): { window: Position; story: Position } => {
+const mapToFrame = (at: Position): { window: Position; story: Position } => {
   const frame = window.frameElement as HTMLElement | null
   if (!frame) {
     const whole = { x: Math.round(at.x), y: Math.round(at.y) }
@@ -181,7 +181,7 @@ const framedIn = (at: Position): { window: Position; story: Position } => {
  */
 const swept = async (from: Position, to: Position): Promise<void> => {
   const context = await import('vitest/browser')
-  await context.commands.sweep(framedIn(from).window, framedIn(to).window)
+  await context.commands.sweep(mapToFrame(from).window, mapToFrame(to).window)
   await new Promise((done) => setTimeout(done, 16))
 }
 
@@ -234,7 +234,7 @@ async function caughtAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<read
 }
 
 /** What a handle that catches its whole reach, and no further, draws at those places. */
-const reaching = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <= 6 ? cursor : null])
+const getReach = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <= 6 ? cursor : null])
 
 /** The furthest out along that line the splitter still had the pointer. */
 function furthest(caught: readonly Caught[]): Position {
@@ -480,15 +480,15 @@ export const SelectsNothingWhileResizing: Story = {
     const from = { clientX: at.x + at.width / 2, clientY: at.y + at.height / 2 }
 
     /** The branch being resized, while the pointer is on its way. */
-    const resizing = () => canvasElement.querySelector('.branch[data-resizing]')
+    const getResizingBranch = () => canvasElement.querySelector('.branch[data-resizing]')
 
     let marked = false
     const watch = () => {
-      marked ||= resizing() !== null
+      marked ||= getResizingBranch() !== null
     }
     window.addEventListener('pointermove', watch, true)
 
-    await expect(resizing()).toBeNull()
+    await expect(getResizingBranch()).toBeNull()
 
     await userEvent.pointer([
       { keys: '[MouseLeft>]', target: handle, coords: from },
@@ -500,7 +500,7 @@ export const SelectsNothingWhileResizing: Story = {
     window.removeEventListener('pointermove', watch, true)
 
     await expect(marked).toBe(true)
-    await expect(resizing()).toBeNull()
+    await expect(getResizingBranch()).toBeNull()
     await expect(getSelection()?.toString() ?? '').toBe('')
   },
 }
@@ -544,7 +544,7 @@ export const DragsFromItsWholeReach: Story = {
     const caught = await caughtAcross(handle, 'x')
 
     await expect(caught.map((place) => [place.away, place.cursor])).toStrictEqual(
-      reaching('ew-resize'),
+      getReach('ew-resize'),
     )
     await expect(getComputedStyle(handle).cursor).toBe('ew-resize')
 
@@ -571,7 +571,7 @@ export const DragsFromItsWholeReachDownwards: Story = {
     const caught = await caughtAcross(handle, 'y')
 
     await expect(caught.map((place) => [place.away, place.cursor])).toStrictEqual(
-      reaching('ns-resize'),
+      getReach('ns-resize'),
     )
     await expect(getComputedStyle(handle).cursor).toBe('ns-resize')
 

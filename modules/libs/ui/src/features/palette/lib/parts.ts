@@ -16,7 +16,7 @@ export interface PalettePart {
  * outwards, so no run ends on half of one.
  */
 export const partsOf = (text: string, at: readonly Span[] = []): readonly PalettePart[] => {
-  const runs = merged(text, at)
+  const runs = mergeSpans(text, at)
   if (runs.length === 0) return text === '' ? [] : [{ text, hit: false }]
 
   const out: PalettePart[] = []
@@ -34,11 +34,11 @@ export const partsOf = (text: string, at: readonly Span[] = []): readonly Palett
  * The spans as runs of this text: inside it, in order, none of them empty, and
  * no two of them touching.
  */
-const merged = (text: string, at: readonly Span[]): Span[] => {
+const mergeSpans = (text: string, at: readonly Span[]): Span[] => {
   const kept = at
     .map((span) => ({
-      from: whole(text, bounded(text, Math.min(span.from, span.to)), -1),
-      to: whole(text, bounded(text, Math.max(span.from, span.to)), 1),
+      from: whole(text, clampToText(text, Math.min(span.from, span.to)), -1),
+      to: whole(text, clampToText(text, Math.max(span.from, span.to)), 1),
     }))
     .filter((span) => span.from < span.to)
     .sort((one, other) => one.from - other.from)
@@ -55,7 +55,7 @@ const merged = (text: string, at: readonly Span[]): Span[] => {
   return out
 }
 
-const bounded = (text: string, at: number): number =>
+const clampToText = (text: string, at: number): number =>
   Math.max(0, Math.min(Math.trunc(at) || 0, text.length))
 
 /**

@@ -38,7 +38,7 @@ function stubCanvas() {
 /** The tokens as a theme writes them, which is in whatever unit it likes. */
 let theme: Record<string, string> = {}
 
-function themed(written: Record<string, string> = {}): void {
+function setTheme(written: Record<string, string> = {}): void {
   theme = {
     '--numen-font-size': '13px',
     '--numen-font-sans': 'Test Sans, sans-serif',
@@ -53,7 +53,7 @@ function themed(written: Record<string, string> = {}): void {
 const inPixels = (written: string): string =>
   written.endsWith('rem') ? `${Number.parseFloat(written) * 16}px` : written
 
-const resolved = (declaration: string): string => {
+const resolveValue = (declaration: string): string => {
   const token = /^var\((--[a-z-]+)\)$/.exec(declaration)?.[1]
   if (!token) return declaration
   const written = theme[token]
@@ -72,14 +72,14 @@ function stubStyles() {
     pseudo?: string | null,
   ) => {
     const style = (element as HTMLElement).style
-    const declared = (property: string) => resolved(style?.getPropertyValue(property) ?? '')
-    if (!declared('font-size')) return engine(element, pseudo)
+    const getDeclared = (property: string) => resolveValue(style?.getPropertyValue(property) ?? '')
+    if (!getDeclared('font-size')) return engine(element, pseudo)
 
     return {
-      fontSize: declared('font-size'),
-      fontFamily: declared('font-family'),
-      paddingInlineStart: declared('padding-inline'),
-      columnGap: declared('column-gap'),
+      fontSize: getDeclared('font-size'),
+      fontFamily: getDeclared('font-family'),
+      paddingInlineStart: getDeclared('padding-inline'),
+      columnGap: getDeclared('column-gap'),
     } as CSSStyleDeclaration
   }) as typeof window.getComputedStyle)
 }
@@ -112,13 +112,13 @@ describe('where there is nothing to measure with', () => {
   it('gives nothing where the platform has no canvas', () => {
     // jsdom, and a page rendered on a server. The arrangement is still defined:
     // handed no measurer, it draws every box at its widest.
-    themed()
+    setTheme()
     stubStyles()
     expect(widths()).toBeUndefined()
   })
 
   it('leaves nothing of itself in the page', () => {
-    themed()
+    setTheme()
     stubStyles()
     widths()
     expect(document.body.children).toHaveLength(0)
@@ -129,7 +129,7 @@ describe('what a title needs', () => {
   it('adds the padding on both sides of the text', () => {
     stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     const measures = widths()!
     expect(measures.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
   })
@@ -139,7 +139,7 @@ describe('what a title needs', () => {
     // rem is measured as one in px is.
     const { context } = stubCanvas()
     stubStyles()
-    themed({ '--numen-font-size': '1.0625rem', '--numen-node-padding': '0.25rem' })
+    setTheme({ '--numen-font-size': '1.0625rem', '--numen-node-padding': '0.25rem' })
     const measures = widths()!
     expect(measures.node(node('ab'))).toBe(2 * PER_CHARACTER + 8)
     expect(context.font).toBe('17px Test Sans, sans-serif')
@@ -148,7 +148,7 @@ describe('what a title needs', () => {
   it('gives an empty title the padding alone', () => {
     stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     const measures = widths()!
     expect(measures.node(node(''))).toBe(20)
   })
@@ -156,7 +156,7 @@ describe('what a title needs', () => {
   it('answers in whole pixels', () => {
     const { context } = stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     context.measureText = (text: string) => ({ width: text.length * 6.4 }) as TextMetrics
     const measures = widths()!
     expect(measures.node(node('abc'))).toBe(Math.ceil(3 * 6.4) + 20)
@@ -165,7 +165,7 @@ describe('what a title needs', () => {
   it('measures a string once, however many nodes carry it', () => {
     const { asked } = stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     const measures = widths()!
 
     measures.node({ id: 'a', title: 'Adapter', seat: 'child' })
@@ -182,14 +182,14 @@ describe('where a caller draws an icon', () => {
   it('keeps the room it asked for, and a gap between icon and title', () => {
     stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     expect(widths(18)!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20 + 18 + 6)
   })
 
   it('keeps neither where no icon is drawn', () => {
     stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     expect(widths(0)!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
   })
 })
@@ -198,14 +198,14 @@ describe('what a label needs', () => {
   it('is the words alone: a label stands on a line and carries no padding', () => {
     stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     expect(widths()!.label('names')).toBe(5 * PER_CHARACTER)
   })
 
   it('is measured in the size a label is set at, not a title', () => {
     const { context } = stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     const measures = widths()!
 
     measures.node(node('Domain'))
@@ -218,7 +218,7 @@ describe('what a label needs', () => {
   it('stands as deep as the font sets its letters about the baseline', () => {
     const { context } = stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     context.measureText = (text: string) =>
       ({
         width: text.length * PER_CHARACTER,
@@ -234,7 +234,7 @@ describe('what a label needs', () => {
     // them alone.
     stubCanvas()
     stubStyles()
-    themed({ '--numen-font-size': '20px', '--numen-edge-label-size': '11px' })
+    setTheme({ '--numen-font-size': '20px', '--numen-edge-label-size': '11px' })
 
     expect(widths()!.labelDepth).toBe(11)
   })
@@ -249,13 +249,13 @@ describe('a theme changed under a plex already standing', () => {
   it('measures again when the type has changed', () => {
     stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     const observers = stubObserver()
     const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
 
-    themed({ '--numen-node-padding': '1rem' })
+    setTheme({ '--numen-node-padding': '1rem' })
     for (const ring of observers) ring()
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 32)
@@ -265,7 +265,7 @@ describe('a theme changed under a plex already standing', () => {
   it('is the same measurer while the type stands, so nothing is re-arranged', () => {
     stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     const observers = stubObserver()
     const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
 
@@ -279,7 +279,7 @@ describe('a theme changed under a plex already standing', () => {
   it('takes its box back out of the page when the plex goes', () => {
     stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     stubObserver()
     const { stop } = scoped(() => useTitleWidths(() => 0))
 
@@ -291,7 +291,7 @@ describe('a theme changed under a plex already standing', () => {
   it('follows nothing where the platform cannot say a box has changed', () => {
     stubCanvas()
     stubStyles()
-    themed()
+    setTheme()
     const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)

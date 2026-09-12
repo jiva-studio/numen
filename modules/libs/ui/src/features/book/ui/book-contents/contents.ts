@@ -20,7 +20,7 @@ export interface ContentsEntry {
  * Which line holds an offset: the last one beginning at or before it, and none
  * where the offset precedes every name. The entries ascend by offset.
  */
-export function standingIn(entries: readonly ContentsEntry[], at: number): number {
+export function findLineAt(entries: readonly ContentsEntry[], at: number): number {
   let found = -1
   for (let i = 0; i < entries.length; i++) {
     if (entries[i]!.at > at) break
@@ -34,7 +34,7 @@ export function standingIn(entries: readonly ContentsEntry[], at: number): numbe
  * finds every line, and the letters are folded so a name is found however it
  * was typed.
  */
-export function matching(
+export function findEntries(
   entries: readonly ContentsEntry[],
   query: string,
 ): readonly ContentsEntry[] {

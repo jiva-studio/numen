@@ -132,17 +132,17 @@ export function useConversation(
       up = true
     }
 
-    const waiting = (on: boolean) => {
+    const setWaiting = (on: boolean) => {
       if (on) put({ id: wait, voice: 'doing', text: words.thinking, about: '', state: 'arriving' })
       else drop(wait)
     }
 
     clear = () => {
       takeDown()
-      waiting(false)
+      setWaiting(false)
     }
 
-    waiting(true)
+    setWaiting(true)
 
     // The calls reached for since the model last spoke or was asked again. A
     // tool answering says which of them it was for none of them.
@@ -183,7 +183,7 @@ export function useConversation(
             // and nothing saying anybody is working.
             if (step.text === '') break
             calls.clear()
-            waiting(false)
+            setWaiting(false)
             if (!saying) {
               takeDown()
               saying = `${next++}`
@@ -200,7 +200,7 @@ export function useConversation(
 
           case 'toolCall':
             settleAnswer()
-            waiting(false)
+            setWaiting(false)
             calls.add(`${step.tool}\u0000${step.about}`)
             says = spoken(step.tool)
             about = step.about
@@ -220,7 +220,7 @@ export function useConversation(
           case 'answered':
             if (calls.size > 1) break
             if (up) nowDoing('settled')
-            waiting(true)
+            setWaiting(true)
             break
 
           // A request to the model has begun: from here, what happens is not
@@ -230,7 +230,7 @@ export function useConversation(
             calls.clear()
             settleAnswer()
             takeDown()
-            waiting(true)
+            setWaiting(true)
             break
 
           case 'stopped':
@@ -239,7 +239,7 @@ export function useConversation(
         }
       }
       takeDown()
-      waiting(false)
+      setWaiting(false)
       const said = answer !== ''
       settleAnswer()
 
@@ -254,7 +254,7 @@ export function useConversation(
       // not be reached. That is what all but one of these are; the exception is
       // a fault in the reading above, and this cannot tell the two apart.
       takeDown()
-      waiting(false)
+      setWaiting(false)
       settleAnswer()
       if (!flight.signal.aborted) {
         put({ id: `${next++}`, voice: 'answered', text: words.unreachable, state: 'failed' })

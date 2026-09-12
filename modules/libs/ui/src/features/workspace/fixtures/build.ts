@@ -32,7 +32,7 @@ export const workspaceOf = (
 })
 
 /** Identities that count up, so a test can name what a gesture made. */
-export function naming(prefix = 'made'): NodeIdFactory {
+export function createIdFactory(prefix = 'made'): NodeIdFactory {
   let made = 0
   return () => `${prefix}-${++made}`
 }
@@ -61,7 +61,7 @@ export const deep = (): Workspace =>
   )
 
 /** A stack with more tabs than a narrow strip can show. */
-export const crowded = (): Workspace =>
+export const manyTabs = (): Workspace =>
   workspaceOf(
     split(
       'root',

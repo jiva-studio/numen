@@ -7,12 +7,12 @@ import type { Task } from '@numen/ui'
 describe('what the window has to say', () => {
   it('names each thing once, so putting one away leaves the rest', () => {
     const one = useNotices()
-    one.says('the first', 'caution')
-    one.says('the second', 'caution')
+    one.showNotice('the first', 'caution')
+    one.showNotice('the second', 'caution')
 
     const first = one.notices.value[0]!
     one.putAway(first.id)
-    one.says('the third', 'caution')
+    one.showNotice('the third', 'caution')
 
     expect(one.notices.value.map((said) => said.says)).toEqual(['the second', 'the third'])
     const names = one.notices.value.map((said) => said.id)
@@ -21,7 +21,7 @@ describe('what the window has to say', () => {
 
   it('says trouble in the person’s own words, and stands until they put it away', () => {
     const one = useNotices()
-    one.failed(new ConnectError('the vault could not be read', Code.Unavailable))
+    one.reportError(new ConnectError('the vault could not be read', Code.Unavailable))
 
     const said = one.notices.value[0]!
     expect(said.says).toBe('The vault could not be read.')
@@ -33,7 +33,7 @@ describe('what the window has to say', () => {
   // application said is what a person needs. How it travelled is not.
   it('says a refusal without the wire it came over', () => {
     const one = useNotices()
-    one.failed(
+    one.reportError(
       new ConnectError('this preset schedules nothing today: it is paused', Code.FailedPrecondition),
     )
 
@@ -44,14 +44,14 @@ describe('what the window has to say', () => {
 
   it('leaves a sentence that already ends where it ends', () => {
     const one = useNotices()
-    one.failed(new ConnectError('The deck could not be written.', Code.Unavailable))
+    one.reportError(new ConnectError('The deck could not be written.', Code.Unavailable))
 
     expect(one.notices.value[0]!.says).toBe('The deck could not be written.')
   })
 
   it('puts away nothing when the name is not one it holds', () => {
     const one = useNotices()
-    one.says('the first', 'caution')
+    one.showNotice('the first', 'caution')
     one.putAway('nothing')
 
     expect(one.notices.value).toHaveLength(1)
@@ -61,7 +61,7 @@ describe('what the window has to say', () => {
   // the window on that vault, so the card is drawn the moment it arrives.
   it('draws work being done, and draws it at once', () => {
     const one = useNotices()
-    one.doing([reads()])
+    one.setTasks([reads()])
 
     expect(one.notices.value[0]).toMatchObject({
       id: 'reading\t01A',
@@ -74,7 +74,7 @@ describe('what the window has to say', () => {
 
   it('says why work stopped, and stands until it is put away', () => {
     const one = useNotices()
-    one.doing([reads({ failed: 'no such folder' })])
+    one.setTasks([reads({ failed: 'no such folder' })])
 
     expect(one.notices.value[0]).toMatchObject({
       says: 'no such folder',
@@ -88,9 +88,9 @@ describe('what the window has to say', () => {
   // finished is work the next list leaves out.
   it('lets go of work the list no longer names', () => {
     const one = useNotices()
-    one.doing([reads()])
-    one.says('the first', 'caution')
-    one.doing([])
+    one.setTasks([reads()])
+    one.showNotice('the first', 'caution')
+    one.setTasks([])
 
     expect(one.notices.value.map((said) => said.says)).toEqual(['the first'])
   })

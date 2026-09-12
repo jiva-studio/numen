@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import { emptyRow, readTable, rowsOf, shown, widthOf, withColumn, written } from './table'
-import { parsed } from '../fixtures/state'
+import { createState } from '../fixtures/state'
 
 const tableIn = (state: EditorState) => {
   const node = syntaxTree(state).topNode.getChild('Table')
@@ -10,7 +10,7 @@ const tableIn = (state: EditorState) => {
   return readTable(state, node)
 }
 
-const read = (doc: string) => tableIn(parsed(doc))
+const read = (doc: string) => tableIn(createState(doc))
 
 const TABLE = `| Word | Kind |
 |:-----|----:|
@@ -20,7 +20,7 @@ const TABLE = `| Word | Kind |
 
 describe('reading a table', () => {
   it('gives every cell the stretch of the text it is written in', () => {
-    const state = parsed(TABLE)
+    const state = createState(TABLE)
     const table = tableIn(state)
     const cell = table.body[0]?.[0]
 
@@ -40,7 +40,7 @@ describe('reading a table', () => {
   })
 
   it('gives an empty cell a place to be written', () => {
-    const state = parsed('| a | b |\n|---|---|\n| c |  |\n')
+    const state = createState('| a | b |\n|---|---|\n| c |  |\n')
     const empty = tableIn(state).body[0]?.[1]
 
     expect(empty).toBeTruthy()

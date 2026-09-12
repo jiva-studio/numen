@@ -55,7 +55,7 @@ const difference = (was: Text, now: Text): ChangeSpec => {
   ) {
     tail += 1
   }
-  if (tail > 0 && paired(before.charCodeAt(before.length - tail))) tail -= 1
+  if (tail > 0 && isTrailing(before.charCodeAt(before.length - tail))) tail -= 1
 
   return {
     from: head,
@@ -68,7 +68,7 @@ const difference = (was: Text, now: Text): ChangeSpec => {
 const lone = (code: number) => code >= 0xd800 && code <= 0xdbff
 
 /** The trailing half of one. */
-const paired = (code: number) => code >= 0xdc00 && code <= 0xdfff
+const isTrailing = (code: number) => code >= 0xdc00 && code <= 0xdfff
 
 /** The text of `fresh`, put in over what the state holds. */
 export const replace = (state: EditorState, fresh: string): TransactionSpec => {

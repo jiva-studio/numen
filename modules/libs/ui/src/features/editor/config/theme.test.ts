@@ -29,7 +29,7 @@ afterEach(() => {
 })
 
 /** The sheet the theme lays into the page once a view is painted with it. */
-function painted(): string {
+function getSheet(): string {
   mounted = new EditorView({ state: EditorState.create({ extensions: [theme] }) })
   const sheets = [...document.head.querySelectorAll('style')]
     .map((one) => one.textContent ?? '')
@@ -45,13 +45,13 @@ const selectors = (css: string): readonly string[] =>
 
 describe('the editor’s stylesheet', () => {
   it('is laid into the page when a view is painted with it', () => {
-    expect(painted()).not.toBe('')
+    expect(getSheet()).not.toBe('')
   })
 
   // A selector the browser cannot read takes its whole rule with it, and says
   // nothing about it.
   it('is written in selectors a document can be asked for', () => {
-    const written = selectors(painted())
+    const written = selectors(getSheet())
     expect(written.length).toBeGreaterThan(20)
 
     for (const selector of written) {
@@ -61,7 +61,7 @@ describe('the editor’s stylesheet', () => {
 
   // A colour is a token, and a name no token carries paints nothing.
   it('reads only tokens that are declared', () => {
-    const read = [...painted().matchAll(/var\((--numen-[\w-]+)/g)].map(
+    const read = [...getSheet().matchAll(/var\((--numen-[\w-]+)/g)].map(
       (found) => found[1] as string,
     )
     expect(read.length).toBeGreaterThan(10)

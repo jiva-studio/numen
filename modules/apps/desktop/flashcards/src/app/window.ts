@@ -8,13 +8,13 @@
  * belongs to.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { opensVault } from '@numen/ui'
+import { getVaultForKey } from '@numen/ui'
 
 import { cards } from '@/shared/clients'
-import { screens } from '@/shared/screens'
+import { useScreens } from '@/shared/screens'
 import { deckName, useReviewCounter } from '@/entities/vault'
-import { asks, picks, swallows } from '@/features/keyboard'
-import { opens, useReviewedDays, useVaultPresets } from '@/pages/decks'
+import { getPickerKeyIntent, getSessionKeyIntent, isSwallowed } from '@/features/keyboard'
+import { canStart, useReviewedDays, useVaultPresets } from '@/pages/decks'
 import { useReviewSession } from '@/pages/session'
 import { useNotices } from './notices'
 import { usePanels } from './usePanels'
@@ -28,27 +28,27 @@ export const useWindow = () => {
   /** The vault whose decks are open, and whose cards are being asked. */
   const vault = ref('')
 
-  const { notices, says, failed, doing, putAway } = useNotices()
-  const { vaults, counting: busy, day: today, count, stop } = useReviewCounter({ cards, failed })
-  const state = useReviewSession({ cards, failed })
-  const done = useReviewedDays({ cards, failed })
+  const { notices, showNotice, reportError, setTasks, putAway } = useNotices()
+  const { vaults, counting: busy, day: today, count, stop } = useReviewCounter({ cards, reportError })
+  const state = useReviewSession({ cards, reportError })
+  const done = useReviewedDays({ cards, reportError })
   const schedules = useVaultPresets({ presets: cards })
 
   /** Why nothing can be asked here, empty while something can. */
   const unreachable = ref('')
 
-  const { showing, at, moved, agentPanel, notesPanel, reads, talks } = usePanels({
+  const { showing, at, moveTo, agentPanel, notesPanel, toggleNotes, toggleAgent } = usePanels({
     card: () => state.card.value,
     unreachable: () => unreachable.value,
     vault: () => vault.value,
-    says: (said) => says(said, 'caution'),
+    showNotice: (said) => showNotice(said, 'caution'),
   })
 
   /**
    * The three screens, and what each of them holds. Everything a screen took up
    * stands here beside it, which is the whole of what going back lets go of.
    */
-  const { on, goes } = screens(['vaults', 'decks', 'session'] as const, {
+  const { on, goTo } = useScreens(['vaults', 'decks', 'session'] as const, {
     decks: [
       done.forget,
       schedules.forget,
@@ -56,7 +56,7 @@ export const useWindow = () => {
         vault.value = ''
       },
     ],
-    session: [state.forget, agentPanel.ends, notesPanel.ends],
+    session: [state.forget, agentPanel.endConversation, notesPanel.endSession],
   })
 
   /** What is read, so the keys can scroll it: the caret is nowhere in it. */
@@ -71,7 +71,7 @@ export const useWindow = () => {
   const choose = (id: string) => {
     stop()
     vault.value = id
-    goes('decks')
+    goTo('decks')
     void done.read(id)
     void schedules.read(chosen.value, today.value)
   }
@@ -82,31 +82,31 @@ export const useWindow = () => {
    * the vault's answers that could not be read is a card standing where the rest
    * of its history left it.
    */
-  const reported = (said: Report) => {
+  const reportSession = (said: Report) => {
     if (said.unwritten.length) {
-      says(
+      showNotice(
         `Not asked from ${said.unwritten.map(deckName).join(', ')}: the deck could not be written.`,
         'caution',
       )
     }
     if (said.skipped > 0) {
-      says(`${said.skipped} answers in this vault could not be read.`, 'caution')
+      showNotice(`${said.skipped} answers in this vault could not be read.`, 'caution')
     }
   }
 
   const start = async (deck: string) => {
     const said = await state.start(vault.value, deck)
     if (!said) return
-    goes('session')
-    reported(said)
+    goTo('session')
+    reportSession(said)
   }
 
   /** Sit down to every deck one preset schedules, held to the budget it keeps. */
   const startPreset = async (preset: string) => {
     const said = await state.start(vault.value, '', preset)
     if (!said) return
-    goes('session')
-    reported(said)
+    goTo('session')
+    reportSession(said)
   }
 
   /**
@@ -114,15 +114,15 @@ export const useWindow = () => {
    * the days too: what a person just answered is part of what they have done.
    */
   const leave = async () => {
-    goes('decks')
+    goTo('decks')
     void done.read(vault.value)
     await count()
     void schedules.read(chosen.value, today.value)
   }
 
   /** Back to the vaults, which is where a person picks another collection. */
-  const vaultsAgain = async () => {
-    goes('vaults')
+  const goToVaults = async () => {
+    goTo('vaults')
     await count()
   }
 
@@ -130,30 +130,30 @@ export const useWindow = () => {
    * The card answered. The conversation the panel was holding is over with the
    * card it was about.
    */
-  const answered = async (how: Grade) => {
-    agentPanel.ends()
+  const answerCard = async (how: Grade) => {
+    agentPanel.endConversation()
     await state.answer(how)
   }
 
-  const keyed = (press: KeyboardEvent) => {
-    if (on.value === 'vaults') return picking(press)
-    if (on.value === 'decks') return chosen.value ? choosing(press, chosen.value) : undefined
+  const handleKey = (press: KeyboardEvent) => {
+    if (on.value === 'vaults') return handleVaultKey(press)
+    if (on.value === 'decks') return chosen.value ? handleDeckKey(press, chosen.value) : undefined
     if (on.value !== 'session') return
 
-    const asked = asks(press, {
+    const asked = getSessionKeyIntent(press, {
       shown: state.shown.value,
       asking: showing.value === 'asking',
       reading: showing.value === 'reading',
     })
     if (!asked) return
-    if (swallows(asked)) press.preventDefault()
+    if (isSwallowed(asked)) press.preventDefault()
 
     switch (asked.does) {
       case 'show':
         state.show()
         break
       case 'answer':
-        void answered(asked.how)
+        void answerCard(asked.how)
         break
       case 'takeBack':
         void state.takeBack()
@@ -162,17 +162,17 @@ export const useWindow = () => {
         void leave()
         break
       case 'ask':
-        talks()
+        toggleAgent()
         break
       case 'read':
-        reads()
+        toggleNotes()
         break
       case 'scroll':
-        page.value?.scrolls(asked.back)
+        page.value?.scrollPage(asked.back)
         break
       case 'shut':
-        if (showing.value === 'asking') agentPanel.shuts()
-        else notesPanel.shuts()
+        if (showing.value === 'asking') agentPanel.closePanel()
+        else notesPanel.closePanel()
         break
     }
   }
@@ -182,8 +182,8 @@ export const useWindow = () => {
    * it, which is the letter drawn on that row. A vault whose count has not
    * arrived carries no letter, and the letter standing at it opens nothing.
    */
-  const picking = (press: KeyboardEvent) => {
-    const at = opensVault(press, vaults.value.length)
+  const handleVaultKey = (press: KeyboardEvent) => {
+    const at = getVaultForKey(press, vaults.value.length)
     const one = at === null ? undefined : vaults.value[at]
     if (!one || !one.counted) return
     press.preventDefault()
@@ -191,8 +191,8 @@ export const useWindow = () => {
   }
 
   /** The keys a person picks what to sit down to with. */
-  const choosing = (press: KeyboardEvent, vault: VaultCardsDue) => {
-    const asked = picks(press, vault.decks.length)
+  const handleDeckKey = (press: KeyboardEvent, vault: VaultCardsDue) => {
+    const asked = getPickerKeyIntent(press, vault.decks.length)
     if (!asked) return
     press.preventDefault()
 
@@ -202,11 +202,11 @@ export const useWindow = () => {
         break
       case 'deck': {
         const deck = vault.decks[asked.at]
-        if (deck && opens(deck, schedules.byDeck.value)) void start(deck.deck)
+        if (deck && canStart(deck, schedules.byDeck.value)) void start(deck.deck)
         break
       }
       case 'back':
-        void vaultsAgain()
+        void goToVaults()
         break
     }
   }
@@ -224,7 +224,7 @@ export const useWindow = () => {
     await schedules.read(chosen.value, today.value)
   }
 
-  useWindowStreams({ failed, doing, keyed, count, stop, refresh, unreachable })
+  useWindowStreams({ reportError, setTasks, handleKey, count, stop, refresh, unreachable })
 
   return {
     /** The window's own: which screen is on, and what it has to say. */
@@ -236,9 +236,19 @@ export const useWindow = () => {
     vaults: { list: vaults, counting: busy, choose },
 
     /** One vault's decks and presets, and the ways to sit down to them. */
-    decks: { chosen, today, done, schedules, start, startPreset, vaultsAgain },
+    decks: { chosen, today, done, schedules, start, startPreset, goToVaults },
 
     /** The session, and the two panels standing beside the card. */
-    session: { state, at, moved, answered, talks, reads, leave, agentPanel, notesPanel },
+    session: {
+      state,
+      at,
+      moveTo,
+      answerCard,
+      toggleAgent,
+      toggleNotes,
+      leave,
+      agentPanel,
+      notesPanel,
+    },
   }
 }

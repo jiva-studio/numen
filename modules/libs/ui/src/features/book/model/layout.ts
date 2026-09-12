@@ -15,7 +15,7 @@ import { onNextFrame } from '@/shared/lib/clock'
 import { ELSEWHERE, HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
 import { marksIn, offsetAt, rangesOver, runsIn, type Run } from '../lib/runs'
 import type { BookLink } from '../lib/link'
-import { GAP, LARGEST, SMALLEST, beginsAt, columnHeight, held, columnWidth, columnsIn, holding, inFront, leftInDocument, pagesOf, spreads, type Flow, type Mark } from '../lib/spread'
+import { GAP, LARGEST, SMALLEST, columnHeight, clamp, columnWidth, columnsIn, findSpreadAt, getSpreadStart, inFront, leftInDocument, pagesOf, spreads, type Flow, type Mark } from '../lib/spread'
 import { turnTo, type PageTurn } from '../lib/turn'
 import type { SettledBookProps } from '../lib/props'
 
@@ -33,7 +33,7 @@ export function useBookLayout(
   edgeOf: (of: HTMLElement) => number,
 ) {
   /** How large the text is set, held inside what a book may be read at. */
-  const textSize = computed(() => held(props.textSize, SMALLEST, LARGEST))
+  const textSize = computed(() => clamp(props.textSize, SMALLEST, LARGEST))
 
   /** The reading area, taken again whenever it changes. */
   const { viewport, measure } = useViewport(area)
@@ -122,7 +122,7 @@ export function useBookLayout(
     standing.value = Math.min(Math.max(spread, 0), Math.max(spreadCount.value - 1, 0))
     if (!text) return
 
-    const to = `${-beginsAt(flow.value, standing.value)}px 0`
+    const to = `${-getSpreadStart(flow.value, standing.value)}px 0`
     if (how === 'smooth') {
       text.style.translate = to
       return
@@ -148,7 +148,7 @@ export function useBookLayout(
   }
 
   /** What the person is reading now, to be kept in front while the text is set again. */
-  const keeping = () => inFront(marks.value, flow.value, standing.value) ?? props.at
+  const getKeptOffset = () => inFront(marks.value, flow.value, standing.value) ?? props.at
 
   /** The offset a place named inside the drawn document stands at. */
   const placeAt = (fragment: string): number | undefined => {
@@ -178,9 +178,9 @@ export function useBookLayout(
       gather()
       const landed =
         led && (led.path === '' || led.path === props.path) ? placeAt(led.fragment) : undefined
-      stand(holding(marks.value, flow.value, landed ?? keep), 'auto')
+      stand(findSpreadAt(marks.value, flow.value, landed ?? keep), 'auto')
       if (landed !== undefined) moved(landed)
-      marking()
+      markRuns()
     })
   }
 
@@ -192,7 +192,7 @@ export function useBookLayout(
   }
 
   /** The runs asked about marked where they stand, and the rest more faintly. */
-  const marking = () => {
+  const markRuns = () => {
     highlight(HIGHLIGHT, props, rangesOver(runs, props.highlights))
     highlight(ELSEWHERE, props, rangesOver(runs, props.elsewhere))
   }
@@ -200,7 +200,7 @@ export function useBookLayout(
   // A reading area of another size, or a text of another size, is another set of
   // columns.
   watch([() => viewport.value.width, () => viewport.value.height, textSize], () => {
-    settle(keeping())
+    settle(getKeptOffset())
   })
 
   // Another document is opened at the offset asked for, and there is nothing to
@@ -214,7 +214,7 @@ export function useBookLayout(
     },
   )
 
-  watch([() => props.highlights, () => props.elsewhere], marking)
+  watch([() => props.highlights, () => props.elsewhere], markRuns)
 
   // An offset asked for from outside is turned to. One reached by the hand is
   // already in front.
@@ -222,7 +222,7 @@ export function useBookLayout(
     () => props.at,
     (at) => {
       if (at < props.span.begins || at >= props.span.ends) return
-      const want = holding(marks.value, flow.value, at)
+      const want = findSpreadAt(marks.value, flow.value, at)
       if (want !== standing.value) stand(want, 'smooth')
     },
   )
@@ -231,7 +231,7 @@ export function useBookLayout(
     settle(props.at)
     // The columns are counted over the type the book is set in, which arrives
     // after the markup does.
-    void document.fonts?.ready.then(() => settle(keeping()))
+    void document.fonts?.ready.then(() => settle(getKeptOffset()))
   })
 
   onBeforeUnmount(() => {
@@ -246,7 +246,7 @@ export function useBookLayout(
     front,
     leftInChapter,
     setting,
-    keeping,
+    getKeptOffset,
     settle,
     placeAt,
     turn,

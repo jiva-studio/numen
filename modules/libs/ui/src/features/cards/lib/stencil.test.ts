@@ -119,7 +119,7 @@ describe('panes', () => {
     return drawn
   }
 
-  const divided = (face: StencilFace) => panes(faceOf(face, FIELDS, SAMPLE))
+  const getPanes = (face: StencilFace) => panes(faceOf(face, FIELDS, SAMPLE))
 
   const FULL: StencilFace = {
     id: 'recognise',
@@ -129,7 +129,7 @@ describe('panes', () => {
   }
 
   it('divides a face into four, the markup of each half before what it comes to', () => {
-    expect(divided(FULL).map((pane) => [pane.half, pane.shows])).toEqual([
+    expect(getPanes(FULL).map((pane) => [pane.half, pane.shows])).toEqual([
       ['front', 'written'],
       ['front', 'preview'],
       ['back', 'written'],
@@ -138,7 +138,7 @@ describe('panes', () => {
   })
 
   it('stands the markup in one part and the sample filling it in the next', () => {
-    expect(divided(FULL).map((pane) => pane.text)).toEqual([
+    expect(getPanes(FULL).map((pane) => pane.text)).toEqual([
       '{{Name}}',
       'Llama',
       '{{Height}}',
@@ -147,7 +147,7 @@ describe('panes', () => {
   })
 
   it('calls each part what it holds', () => {
-    expect(divided(FULL).map((pane) => pane.said)).toEqual([
+    expect(getPanes(FULL).map((pane) => pane.said)).toEqual([
       'Front',
       'Preview',
       'Back',
@@ -156,12 +156,12 @@ describe('panes', () => {
   })
 
   it('announces a preview by the face and the half it is of', () => {
-    expect(divided(FULL)[1]?.named).toBe('Preview: Recognise Front')
+    expect(getPanes(FULL)[1]?.named).toBe('Preview: Recognise Front')
   })
 
   it('calls a part blank while nothing but space stands in it', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: ' \n ', back: '{{Height}}' }
-    expect(divided(face).map((pane) => pane.blank)).toEqual([true, true, false, false])
+    expect(getPanes(face).map((pane) => pane.blank)).toEqual([true, true, false, false])
   })
 
   it('calls a part blank where what is written fills out to nothing', () => {
@@ -173,7 +173,7 @@ describe('panes', () => {
 
   it('says a stray slot under the markup naming it, and not under the preview', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: '{{Colour}}', back: '' }
-    expect(divided(face).map((pane) => pane.stray)).toEqual([['Colour'], [], [], []])
+    expect(getPanes(face).map((pane) => pane.stray)).toEqual([['Colour'], [], [], []])
   })
 
   it('draws every part with the words it was handed', () => {

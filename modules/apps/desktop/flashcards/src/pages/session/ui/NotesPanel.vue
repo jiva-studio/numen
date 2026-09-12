@@ -34,16 +34,16 @@ const holdNote = (one: Neighbour, element: unknown): void => {
 const STEP = 0.85
 
 /** The panel scrolled by a key, because the caret is nowhere in it. */
-const scrolls = (back = false) => {
+const scrollPage = (back = false) => {
   const at = column.value
   if (!at) return
   at.scrollBy({ top: at.clientHeight * STEP * (back ? -1 : 1), behavior: 'smooth' })
 }
 
-defineExpose({ scrolls })
+defineExpose({ scrollPage })
 
 /** A note is named by its title, and by how it was written where it has none. */
-const named = (one: Neighbour) => one.title || one.written
+const getNoteName = (one: Neighbour) => one.title || one.written
 
 // A link pressed in the card opens the panel on the note it names, so the
 // reading starts where the person was looking. The notes are waited for: the
@@ -77,7 +77,7 @@ watch(
         class="reading__note"
       >
         <header class="reading__head">
-          <h2 class="reading__name">{{ named(one) }}</h2>
+          <h2 class="reading__name">{{ getNoteName(one) }}</h2>
           <!-- The path is here because two notes can be called the same thing. -->
           <p class="reading__quiet">
             <span v-if="one.path">{{ one.path }}</span>

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { safe } from './safe'
 
 /** What the text comes to, with the case of the tags settled. */
-const cleaned = (html: string): string => safe(html).toLowerCase()
+const cleanHtml = (html: string): string => safe(html).toLowerCase()
 
 /** Every element the text comes to, read back the way a window reads it. */
 const elements = (html: string): readonly Element[] => [
@@ -49,58 +49,58 @@ describe('safe, what a card may be drawn with', () => {
   })
 
   it('keeps the words of a tag it does not draw, and drops the tag', () => {
-    expect(cleaned('<marquee>still here</marquee>')).toBe('still here')
+    expect(cleanHtml('<marquee>still here</marquee>')).toBe('still here')
   })
 })
 
 describe('safe, what does not survive', () => {
   it('drops a script and everything in it', () => {
-    expect(cleaned('<script>alert(1)</script>')).toBe('')
-    expect(cleaned('a<script>alert(1)</script>b')).toBe('ab')
+    expect(cleanHtml('<script>alert(1)</script>')).toBe('')
+    expect(cleanHtml('a<script>alert(1)</script>b')).toBe('ab')
   })
 
   it('drops a script whose tag is written in capitals', () => {
-    expect(cleaned('<SCRIPT>alert(1)</SCRIPT>')).toBe('')
+    expect(cleanHtml('<SCRIPT>alert(1)</SCRIPT>')).toBe('')
   })
 
   it('drops a handler on a tag it does keep', () => {
-    expect(cleaned('<img src="x" onerror="alert(1)">')).toBe('<img src="x">')
+    expect(cleanHtml('<img src="x" onerror="alert(1)">')).toBe('<img src="x">')
   })
 
   it('drops a handler however it is written', () => {
-    expect(cleaned('<p ONLOAD="alert(1)" onclick="alert(2)">a</p>')).toBe('<p>a</p>')
+    expect(cleanHtml('<p ONLOAD="alert(1)" onclick="alert(2)">a</p>')).toBe('<p>a</p>')
   })
 
   it('drops a link that would run something', () => {
-    expect(cleaned('<a href="javascript:alert(1)">press</a>')).toBe('<a>press</a>')
+    expect(cleanHtml('<a href="javascript:alert(1)">press</a>')).toBe('<a>press</a>')
   })
 
   it('drops a link hiding its scheme behind spaces and control characters', () => {
-    expect(cleaned('<a href="java\tscript:alert(1)">press</a>')).toBe('<a>press</a>')
-    expect(cleaned('<a href=" javascript:alert(1)">press</a>')).toBe('<a>press</a>')
+    expect(cleanHtml('<a href="java\tscript:alert(1)">press</a>')).toBe('<a>press</a>')
+    expect(cleanHtml('<a href=" javascript:alert(1)">press</a>')).toBe('<a>press</a>')
   })
 
   it('drops a frame, an object and an embed', () => {
-    expect(cleaned('<iframe src="https://example.org"></iframe>')).toBe('')
-    expect(cleaned('<object data="x.swf"></object>')).toBe('')
-    expect(cleaned('<embed src="x.swf">')).toBe('')
+    expect(cleanHtml('<iframe src="https://example.org"></iframe>')).toBe('')
+    expect(cleanHtml('<object data="x.swf"></object>')).toBe('')
+    expect(cleanHtml('<embed src="x.swf">')).toBe('')
   })
 
   it('drops a stylesheet and a style block', () => {
-    expect(cleaned('<style>body{display:none}</style>')).toBe('')
-    expect(cleaned('<link rel="stylesheet" href="x.css">')).toBe('')
+    expect(cleanHtml('<style>body{display:none}</style>')).toBe('')
+    expect(cleanHtml('<link rel="stylesheet" href="x.css">')).toBe('')
   })
 
   it('drops a form and everything it would collect', () => {
-    expect(cleaned('<form action="https://example.org"><input name="p"></form>')).toBe('')
+    expect(cleanHtml('<form action="https://example.org"><input name="p"></form>')).toBe('')
   })
 
   it('drops an image whose source would run something', () => {
-    expect(cleaned('<img src="javascript:alert(1)">')).toBe('<img>')
+    expect(cleanHtml('<img src="javascript:alert(1)">')).toBe('<img>')
   })
 
   it('drops an image standing in the text that is not an image', () => {
-    expect(cleaned('<img src="data:text/html;base64,aaa">')).toBe('<img>')
+    expect(cleanHtml('<img src="data:text/html;base64,aaa">')).toBe('<img>')
   })
 
   it('keeps an image standing in the text that is one', () => {
@@ -112,18 +112,18 @@ describe('safe, what does not survive', () => {
   // machine is a request the moment the card is drawn, and tells them the deck
   // was read and from where.
   it('drops an image that would be fetched from off the machine', () => {
-    expect(cleaned('<img src="https://tracker.example/pixel.png">')).toBe('<img>')
-    expect(cleaned('<img src="http://tracker.example/pixel.png">')).toBe('<img>')
-    expect(cleaned('<img src="//tracker.example/pixel.png">')).toBe('<img>')
-    expect(cleaned('<img src="\\\\tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleanHtml('<img src="https://tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleanHtml('<img src="http://tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleanHtml('<img src="//tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleanHtml('<img src="\\\\tracker.example/pixel.png">')).toBe('<img>')
   })
 
   it('drops a comment, which is read differently by every parser', () => {
-    expect(cleaned('a<!--[if IE]><script>alert(1)</script><![endif]-->b')).toBe('ab')
+    expect(cleanHtml('a<!--[if IE]><script>alert(1)</script><![endif]-->b')).toBe('ab')
   })
 
   it('drops an svg, and the handler it would carry', () => {
-    expect(cleaned('<svg><animate onbegin="alert(1)"></animate></svg>')).toBe('')
+    expect(cleanHtml('<svg><animate onbegin="alert(1)"></animate></svg>')).toBe('')
   })
 
   it('leaves no handler in what a second reading makes of the text', () => {
@@ -149,29 +149,29 @@ describe('safe, what does not survive', () => {
   })
 
   it('drops an attribute a tag it keeps may not carry', () => {
-    expect(cleaned('<a href="x" target="_blank" id="taken">a</a>')).toBe('<a href="x">a</a>')
+    expect(cleanHtml('<a href="x" target="_blank" id="taken">a</a>')).toBe('<a href="x">a</a>')
   })
 })
 
 describe('safe, the styles a card may carry', () => {
   it('keeps a declaration a card is styled with', () => {
-    expect(cleaned('<span style="color: red">a</span>')).toBe('<span style="color: red">a</span>')
+    expect(cleanHtml('<span style="color: red">a</span>')).toBe('<span style="color: red">a</span>')
   })
 
   it('keeps the alignment a table column is written with', () => {
-    expect(cleaned('<table><tr><td style="text-align:right">a</td></tr></table>')).toContain(
+    expect(cleanHtml('<table><tr><td style="text-align:right">a</td></tr></table>')).toContain(
       '<td style="text-align:right">a</td>',
     )
   })
 
   it('drops a declaration that would fetch something', () => {
-    expect(cleaned('<span style="background-color: url(https://example.org/x)">a</span>')).toBe(
+    expect(cleanHtml('<span style="background-color: url(https://example.org/x)">a</span>')).toBe(
       '<span>a</span>',
     )
   })
 
   it('drops a declaration a card is not styled with', () => {
-    expect(cleaned('<span style="position: fixed; color: red">a</span>')).toBe(
+    expect(cleanHtml('<span style="position: fixed; color: red">a</span>')).toBe(
       '<span style="color: red">a</span>',
     )
   })
@@ -180,7 +180,7 @@ describe('safe, the styles a card may carry', () => {
   // declarations above are the whole of what a card says about how it looks,
   // and they are held to what a card may say.
   it('drops a class, which names the window s own styles and not the card s', () => {
-    expect(cleaned('<div class="fixed inset-0 bg-black">a</div>')).toBe('<div>a</div>')
+    expect(cleanHtml('<div class="fixed inset-0 bg-black">a</div>')).toBe('<div>a</div>')
   })
 })
 

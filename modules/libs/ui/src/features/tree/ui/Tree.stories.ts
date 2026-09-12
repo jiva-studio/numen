@@ -39,22 +39,22 @@ const put = (rows: readonly Row[], at: RowLanding, held: readonly Row[]): readon
   })
 
 /** The application's part: what a move comes to, in the rows it holds. */
-const moved = (rows: readonly Row[], dragged: readonly RowId[], at: RowLanding): readonly Row[] => {
+const moveRows = (rows: readonly Row[], dragged: readonly RowId[], at: RowLanding): readonly Row[] => {
   const held = dragged.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
   const left = dragged.reduce((rest, row) => without(rest, row), rows)
   return held.length ? put(left, at, held) : rows
 }
 
 /** The application's part again: rows taken out of the tree. */
-const removed = (rows: readonly Row[], dragged: readonly RowId[]): readonly Row[] =>
+const removeRows = (rows: readonly Row[], dragged: readonly RowId[]): readonly Row[] =>
   dragged.reduce((rest, row) => without(rest, row), rows)
 
 /** The application's part again: a row under a new name. */
-const renamed = (rows: readonly Row[], row: RowId, name: string): readonly Row[] =>
+const renameRow = (rows: readonly Row[], row: RowId, name: string): readonly Row[] =>
   rows.map((each) => ({
     ...each,
     ...(each.id === row ? { name } : {}),
-    ...(each.rows ? { rows: renamed(each.rows, row, name) } : {}),
+    ...(each.rows ? { rows: renameRow(each.rows, row, name) } : {}),
   }))
 
 const FEW: readonly Row[] = [
@@ -216,14 +216,14 @@ const meta: Meta<Knobs> = {
           selected.value = picked
         },
         onMove: (dragged: readonly RowId[], at: RowLanding) => {
-          rows.value = moved(rows.value, dragged, at)
+          rows.value = moveRows(rows.value, dragged, at)
         },
         onRemove: (dragged: readonly RowId[]) => {
-          rows.value = removed(rows.value, dragged)
+          rows.value = removeRows(rows.value, dragged)
           selected.value = []
         },
         onRename: (row: RowId, name: string) => {
-          rows.value = renamed(rows.value, row, name)
+          rows.value = renameRow(rows.value, row, name)
         },
       }
     },
@@ -298,7 +298,7 @@ const drawn = (canvas: HTMLElement) =>
   [...canvas.querySelectorAll('[data-tree-row]')].map((row) => row.getAttribute('data-tree-row'))
 
 /** The rows the tree announces as selected, in the order they are drawn. */
-const selectedIn = (canvas: HTMLElement) =>
+const getSelected = (canvas: HTMLElement) =>
   [...canvas.querySelectorAll('[aria-selected="true"]')].map((row) =>
     row.getAttribute('data-tree-row'),
   )
@@ -376,10 +376,10 @@ export const JoinsARow: Story = {
 
     await hand.keyboard('{Control>}')
     await hand.click(rowIn(canvasElement, 'loose'))
-    await expect(selectedIn(canvasElement)).toStrictEqual(['work', 'loose'])
+    await expect(getSelected(canvasElement)).toStrictEqual(['work', 'loose'])
 
     await hand.click(rowIn(canvasElement, 'loose'))
-    await expect(selectedIn(canvasElement)).toStrictEqual(['work'])
+    await expect(getSelected(canvasElement)).toStrictEqual(['work'])
     await hand.keyboard('{/Control}')
   },
 }
@@ -393,10 +393,10 @@ export const ReachesToARow: Story = {
 
     await hand.keyboard('{Shift>}')
     await hand.click(rowIn(canvasElement, 'empty'))
-    await expect(selectedIn(canvasElement)).toStrictEqual(['plans', 'notes', 'empty'])
+    await expect(getSelected(canvasElement)).toStrictEqual(['plans', 'notes', 'empty'])
 
     await hand.click(rowIn(canvasElement, 'work'))
-    await expect(selectedIn(canvasElement)).toStrictEqual(['work', 'plans'])
+    await expect(getSelected(canvasElement)).toStrictEqual(['work', 'plans'])
     await hand.keyboard('{/Shift}')
   },
 }

@@ -52,5 +52,5 @@ export interface BookWords {
 /** Port for interacting with the rendered book element. */
 export interface BookHandle {
   measure(): void
-  pressed(event: KeyboardEvent): boolean
+  handleKey(event: KeyboardEvent): boolean
 }

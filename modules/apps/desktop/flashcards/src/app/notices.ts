@@ -7,7 +7,7 @@
  */
 import { computed, shallowRef } from 'vue'
 
-import { noticed } from '@numen/ui'
+import { createNotice } from '@numen/ui'
 import type { Notice, Task, Tone } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
 
@@ -23,7 +23,7 @@ export function useNotices() {
   /** How many have been raised, which is what names the next one. */
   let raised = 0
 
-  const says = (said: string, tone: Tone) => {
+  const showNotice = (said: string, tone: Tone) => {
     raised += 1
     told.value = [
       ...told.value,
@@ -44,17 +44,17 @@ export function useNotices() {
    * Trouble, in the person's own words. A call the window itself stopped has
    * nothing to say, and nothing is raised for it.
    */
-  const failed = (why: unknown) => {
+  const reportError = (why: unknown) => {
     const said = sentence(formatErrorMessage(why))
-    if (said) says(said, 'alarm')
+    if (said) showNotice(said, 'alarm')
   }
 
   /**
    * What is being done behind the window, as cards to draw. The whole list
    * arrives at once, so the whole list is what stands.
    */
-  const doing = (said: readonly Task[]) => {
-    tasks.value = said.map(noticed)
+  const setTasks = (said: readonly Task[]) => {
+    tasks.value = said.map(createNotice)
   }
 
   /** One card let go of. Work put away is the corner's own to keep away. */
@@ -62,7 +62,7 @@ export function useNotices() {
     told.value = told.value.filter((one) => one.id !== id)
   }
 
-  return { notices, says, failed, doing, putAway }
+  return { notices, showNotice, reportError, setTasks, putAway }
 }
 
 /** One thing said, as a sentence: it opens with a capital and it ends. */

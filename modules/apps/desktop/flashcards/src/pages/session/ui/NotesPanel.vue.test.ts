@@ -10,7 +10,7 @@ import type { DeckNeighbourhood, Neighbour } from '../api/notes'
 import type { NotesPanelState } from '../model/notes'
 
 /** One note as the window hands it over. */
-const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
+const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   written: 'Leaf mould',
   path: 'notes/Leaf mould.md',
   title: 'Leaf mould',
@@ -33,21 +33,21 @@ const held = (around: DeckNeighbourhood): NotesPanelState => {
     vault: () => 'one',
     deck: () => 'decks/Words.md',
     around: async () => around,
-    says: () => {},
+    showNotice: () => {},
   })
 }
 
 /** The panel, opened and drawn. */
 const shown = async (around: DeckNeighbourhood) => {
   const panel = held(around)
-  await panel.opens()
+  await panel.openPanel()
   return mount(NotesPanel, { props: { held: panel } })
 }
 
 describe('the panel the deck is read in', () => {
   it('names every note it read, one under another', async () => {
     const one = await shown({
-      notes: [joined(), joined({ title: 'Humus', path: 'notes/Humus.md' })],
+      notes: [createNeighbour(), createNeighbour({ title: 'Humus', path: 'notes/Humus.md' })],
       unread: 0,
     })
     expect(one.findAll('.reading__name').map((it) => it.text())).toEqual(['Leaf mould', 'Humus'])
@@ -57,7 +57,10 @@ describe('the panel the deck is read in', () => {
   // differently, so which way the link runs is said.
   it('says which of them point at the deck rather than being pointed at', async () => {
     const one = await shown({
-      notes: [joined(), joined({ title: 'Humus', path: 'notes/Humus.md', points: false })],
+      notes: [
+        createNeighbour(),
+        createNeighbour({ title: 'Humus', path: 'notes/Humus.md', points: false }),
+      ],
       unread: 0,
     })
     expect(one.text()).toContain(words.pointsHere)
@@ -68,7 +71,7 @@ describe('the panel the deck is read in', () => {
   // hiding the question answers it wrongly.
   it('names a link that reached no note, and reads nothing under it', async () => {
     const one = await shown({
-      notes: [joined({ path: '', title: '', body: '', written: 'Mould' })],
+      notes: [createNeighbour({ path: '', title: '', body: '', written: 'Mould' })],
       unread: 0,
     })
     expect(one.find('.reading__name').text()).toBe('Mould')
@@ -76,14 +79,14 @@ describe('the panel the deck is read in', () => {
   })
 
   it('says where a name several notes answer to was read as the nearest', async () => {
-    const one = await shown({ notes: [joined({ ambiguous: true })], unread: 0 })
+    const one = await shown({ notes: [createNeighbour({ ambiguous: true })], unread: 0 })
     expect(one.text()).toContain(words.ambiguous)
     expect(one.text()).not.toContain(words.dangling)
   })
 
   it('says why a note it could reach has no text', async () => {
     const one = await shown({
-      notes: [joined({ body: '', refusal: 'that note is not in the vault' })],
+      notes: [createNeighbour({ body: '', refusal: 'that note is not in the vault' })],
       unread: 0,
     })
     expect(one.text()).toContain('that note is not in the vault')
@@ -92,7 +95,7 @@ describe('the panel the deck is read in', () => {
   // The bound is where a person can see it, rather than a list that quietly
   // stops.
   it('says how many at the end it did not read', async () => {
-    const one = await shown({ notes: [joined()], unread: 4 })
+    const one = await shown({ notes: [createNeighbour()], unread: 4 })
     expect(one.text()).toContain(words.named(4))
   })
 
@@ -114,12 +117,12 @@ describe('a reading opened on one note', () => {
   // named is waited for rather than looked for once and given up on.
   it('scrolls to it once the notes have arrived', async () => {
     const panel = held({
-      notes: [joined(), joined({ title: 'Humus', path: 'notes/Humus.md' })],
+      notes: [createNeighbour(), createNeighbour({ title: 'Humus', path: 'notes/Humus.md' })],
       unread: 0,
     })
     const one = mount(NotesPanel, { props: { held: panel } })
 
-    await panel.opens('notes/Humus.md')
+    await panel.openPanel('notes/Humus.md')
     await nextTick()
     await nextTick()
 

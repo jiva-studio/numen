@@ -1,8 +1,15 @@
 /** The grid a deck is drawn as: its cards laid out as tiles under the sections they stand in. */
 
 import type { Stencil } from './card'
-import { declared, type InsertionPoint } from './order'
-import { ended, HEAD, laid, type CardFieldValue, type DeckCard, type DeckSection } from './deck'
+import { getDeclaredFields, type InsertionPoint } from './order'
+import {
+  getRunEnd,
+  HEAD,
+  laid,
+  type CardFieldValue,
+  type DeckCard,
+  type DeckSection,
+} from './deck'
 
 /** One value of a card as its tile draws it. */
 export interface PlacedFieldValue extends CardFieldValue {
@@ -93,7 +100,7 @@ export function grid(
   const sectioned = new Set(sections.map((section) => section.id))
   const tiles = cards.map((card) => {
     const cut = stencils.find((each) => each.name === card.stencil)
-    const fields = declared(cut?.fields ?? [])
+    const fields = getDeclaredFields(cut?.fields ?? [])
 
     /** How many values the card writes under each field, as they are counted off. */
     const under = new Map<string, number>()
@@ -167,11 +174,11 @@ export function grid(
  * stands moves nothing: the head of the deck is where the first card standing
  * under no section already is, and the end of a run is where its last card is.
  */
-export const lands = (runs: readonly Run[], dragged: string, at: InsertionPoint): boolean => {
+export const doesMove = (runs: readonly Run[], dragged: string, at: InsertionPoint): boolean => {
   if (at === dragged) return false
   if (at === HEAD) return runs[0]?.tiles[0]?.id !== dragged
 
-  const run = ended(at)
+  const run = getRunEnd(at)
   if (run !== null) return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== dragged
   return true
 }

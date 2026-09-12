@@ -4,7 +4,7 @@
  * area it has to fit in.
  */
 import { describe, expect, it } from 'vitest'
-import { grouped, landsOn, placeMenu, stepTo, type MenuItem } from './item'
+import { groupItems, getLandingIndex, placeMenu, stepTo, type MenuItem } from './item'
 
 const VIEWPORT = { width: 1000, height: 800 }
 const SIZE = { width: 200, height: 300 }
@@ -99,16 +99,16 @@ describe('where the keyboard lands as a menu opens', () => {
   ]
 
   it('is the first item that can be chosen, for one opened from the keyboard', () => {
-    expect(landsOn('keyboard', items)).toBe(1)
+    expect(getLandingIndex('keyboard', items)).toBe(1)
   })
 
   it('is no item at all, for one opened by hand', () => {
-    expect(landsOn('pointer', items)).toBe(-1)
+    expect(getLandingIndex('pointer', items)).toBe(-1)
   })
 
   it('is no item at all either way when there is nothing to land on', () => {
-    expect(landsOn('keyboard', [])).toBe(-1)
-    expect(landsOn('pointer', [])).toBe(-1)
+    expect(getLandingIndex('keyboard', [])).toBe(-1)
+    expect(getLandingIndex('pointer', [])).toBe(-1)
   })
 
   it('is the item in force where the menu names one', () => {
@@ -117,22 +117,22 @@ describe('where the keyboard lands as a menu opens', () => {
       { id: 'two', text: 'Two' },
       { id: 'three', text: 'Three' },
     ]
-    expect(landsOn('keyboard', three, 'three')).toBe(2)
-    expect(landsOn('pointer', three, 'three')).toBe(-1)
+    expect(getLandingIndex('keyboard', three, 'three')).toBe(2)
+    expect(getLandingIndex('pointer', three, 'three')).toBe(-1)
   })
 
   it('is the first that can be chosen where the one in force is not among them', () => {
-    expect(landsOn('keyboard', items, 'gone')).toBe(1)
-    expect(landsOn('keyboard', items, 'one')).toBe(1)
+    expect(getLandingIndex('keyboard', items, 'gone')).toBe(1)
+    expect(getLandingIndex('keyboard', items, 'one')).toBe(1)
   })
 })
 
 describe('the rules a menu draws between its groups', () => {
-  const ruled = (items: readonly MenuItem[]) => grouped(items).map((one) => one.rule)
+  const getRules = (items: readonly MenuItem[]) => groupItems(items).map((one) => one.rule)
 
   it('stands where one group gives way to the next', () => {
     expect(
-      ruled([
+      getRules([
         { id: 'open', text: 'Open', group: 'open' },
         { id: 'note', text: 'New note', group: 'file' },
         { id: 'folder', text: 'New folder', group: 'file' },
@@ -143,7 +143,7 @@ describe('the rules a menu draws between its groups', () => {
 
   it('stands nowhere in a menu whose items name no group', () => {
     expect(
-      ruled([
+      getRules([
         { id: 'open', text: 'Open' },
         { id: 'copy', text: 'Copy path' },
       ]),
@@ -151,12 +151,12 @@ describe('the rules a menu draws between its groups', () => {
   })
 
   it('never stands above the first item, whatever group it names', () => {
-    expect(ruled([{ id: 'remove', text: 'Remove', group: 'gone' }])).toStrictEqual([false])
+    expect(getRules([{ id: 'remove', text: 'Remove', group: 'gone' }])).toStrictEqual([false])
   })
 
   it('stands again where a group comes back after another', () => {
     expect(
-      ruled([
+      getRules([
         { id: 'one', text: 'One', group: 'file' },
         { id: 'two', text: 'Two', group: 'plex' },
         { id: 'three', text: 'Three', group: 'file' },
@@ -169,11 +169,11 @@ describe('the rules a menu draws between its groups', () => {
       { id: 'one', text: 'One', group: 'file', disabled: true },
       { id: 'two', text: 'Two', group: 'plex' },
     ]
-    expect(grouped(items).map((one) => one.id)).toStrictEqual(['one', 'two'])
-    expect(grouped(items)[0]?.disabled).toBe(true)
+    expect(groupItems(items).map((one) => one.id)).toStrictEqual(['one', 'two'])
+    expect(groupItems(items)[0]?.disabled).toBe(true)
   })
 
   it('has nothing to draw for a menu holding nothing', () => {
-    expect(grouped([])).toStrictEqual([])
+    expect(groupItems([])).toStrictEqual([])
   })
 })

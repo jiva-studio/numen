@@ -569,7 +569,7 @@ const book = answers('Book', {
   measure: () => {},
   // The book writes down every key it was handed and turns no page: what is
   // asked of the window is that the key reaches the book it is showing.
-  pressed: (event: KeyboardEvent) => {
+  handleKey: (event: KeyboardEvent) => {
     asked.pressed.push(event.key)
     return event.key.startsWith('Arrow')
   },

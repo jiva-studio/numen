@@ -68,7 +68,7 @@ const area = useTemplateRef<HTMLElement>('area')
 const { viewport, measure } = useViewport(area)
 
 /** Where the row stands, and what a hand or a wheel does to it. */
-const { along, dragging, whereabouts, send, stands, took, pulled, letGo, turned } =
+const { along, dragging, whereabouts, send, isStill, took, onPointerMove, letGo, onWheel } =
   useHandScroll(area)
 
 const laid = computed(() => row(props.pages, viewport.value, zoom.value))
@@ -89,8 +89,8 @@ const drawing = (page: number) => (drawnAt.value > 0 ? props.picture(page) : '')
  * row still on its way to where it was sent says nothing: the pages it passes
  * over are pages nobody turned to.
  */
-const scrolled = () => {
-  if (!stands()) return
+const onScroll = () => {
+  if (!isStill()) return
   if (middle.value !== props.at) emit('go', middle.value)
 }
 
@@ -149,12 +149,12 @@ defineExpose({
       tabindex="0"
       role="region"
       :aria-label="words.pages"
-      @scroll.passive="scrolled"
+      @scroll.passive="onScroll"
       @pointerdown="took"
-      @pointermove="pulled"
+      @pointermove="onPointerMove"
       @pointerup="letGo"
       @pointercancel="letGo"
-      @wheel="turned"
+      @wheel="onWheel"
     >
       <div
         v-if="pages.length > 0"

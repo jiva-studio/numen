@@ -64,7 +64,7 @@ const boxOf = (half: Half): HTMLTextAreaElement | null =>
   (half === 'front' ? front.value : back.value)?.box ?? null
 
 /** A part was drawn, or taken away. The part a half is written in holds its box. */
-const holds = (pane: Pane, drawn: Element | ComponentPublicInstance | null): void => {
+const setBox = (pane: Pane, drawn: Element | ComponentPublicInstance | null): void => {
   if (pane.shows !== 'written') return
   const box = drawn as InstanceType<typeof FacePane> | null
   if (pane.half === 'front') front.value = box
@@ -75,7 +75,7 @@ const holds = (pane: Pane, drawn: Element | ComponentPublicInstance | null): voi
 const divided = computed<readonly Pane[]>(() => panes(props.face, props.words))
 
 /** The part a field would be written into. */
-const aiming = (pane: Pane): boolean => pane.shows === 'written' && aimed.value === pane.half
+const isAimed = (pane: Pane): boolean => pane.shows === 'written' && aimed.value === pane.half
 
 /**
  * A field written into the half aimed at, where the caret stands, the caret
@@ -124,9 +124,9 @@ const put = async (field: string): Promise<void> => {
       <FacePane
         v-for="pane in divided"
         :key="`${pane.half}-${pane.shows}`"
-        :ref="(held) => holds(pane, held)"
+        :ref="(held) => setBox(pane, held)"
         :pane="pane"
-        :aimed="aiming(pane)"
+        :aimed="isAimed(pane)"
         :words="words"
         @aim="aim = pane.half"
         @write="(text: string) => emit('write', pane.half, text)"

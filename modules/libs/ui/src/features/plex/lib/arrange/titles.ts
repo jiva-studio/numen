@@ -9,7 +9,7 @@
  */
 import { headingOf, lengthOf, type PlacedEdge } from '../edge'
 import type { PlacedNode } from '../node'
-import { boxOf, meets, ribbonOf, runBoxes, type Box } from './boxes'
+import { boxOf, isOverlapping, ribbonOf, runBoxes, type Box } from './boxes'
 import { cutToFit, MIDDLE, type Routing } from './routing'
 
 /** A run of one line, as fractions of its length. */
@@ -161,7 +161,7 @@ function clearSpans(
 
   for (let at = ends; at < last; at += step) {
     const box = boxAt(at, Math.min(at + step, last))
-    if (placed.some((other) => meets(other, box))) {
+    if (placed.some((other) => isOverlapping(other, box))) {
       if (open !== null) spans.push({ from: open, to: at })
       open = null
     } else if (open === null) {

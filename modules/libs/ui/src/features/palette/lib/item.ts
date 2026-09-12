@@ -69,7 +69,7 @@ export interface PalettePlace {
  * of its own and is drawn nowhere. Such a group holds no item either way, so
  * what the keyboard counts is untouched.
  */
-export const ordered = (groups: readonly PaletteGroup[]): readonly PaletteGroup[] => [
+export const orderGroups = (groups: readonly PaletteGroup[]): readonly PaletteGroup[] => [
   ...groups.filter((one) => one.items.length > 0),
   ...groups.filter((one) => one.items.length === 0 && (one.working || Boolean(one.silence))),
 ]

@@ -10,7 +10,7 @@ import './shared/tokens/window.css'
 export { Plex } from './features/plex'
 export { seatWord } from './features/plex'
 
-export { Menu, grouped } from './shared/ui/menu'
+export { Menu, groupItems } from './shared/ui/menu'
 export type { MenuItem, MenuOpening } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
@@ -48,7 +48,7 @@ export { dayAfter, dayNamed, dayOf, daysBetween, isDay } from './shared/lib/day'
 export type { Tally as HeatmapTally } from './features/heatmap'
 export { WelcomePage } from './features/welcome'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
-export { opensVault, typing } from './features/welcome'
+export { getVaultForKey, isTyping } from './features/welcome'
 export type { VaultRow, WelcomeAction } from './features/welcome'
 
 export { Palette } from './features/palette'
@@ -69,7 +69,7 @@ export { Player } from './features/player'
 export { clock } from './shared/lib/duration'
 
 /** A stream taken up again for as long as a window is open. */
-export { following } from './shared/lib/stream'
+export { createFollower } from './shared/lib/stream'
 
 export { Spinner } from './shared/ui/spinner'
 export { Skeleton } from './shared/ui/skeleton'
@@ -80,10 +80,10 @@ export type { Conversation } from './features/thread'
 export type { AgentPort, AgentStep } from './features/thread'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
-export { pointsAtNote, wikilinksIn } from './shared/lib/address'
+export { isNoteAddress, wikilinksIn } from './shared/lib/address'
 
 /** A link that leads out of the application, and the window held against it. */
-export { holdsTheWindow } from './shared/lib/outward'
+export { holdWindow } from './shared/lib/outward'
 
 /** Numbers as they are read out, which both windows read the same way. */
 export { many, percent, plural } from './shared/lib/digits'
@@ -94,7 +94,7 @@ export { Prose } from './shared/ui/prose'
 export type { TallyUnit, Tone } from './features/notices'
 
 export { Notices } from './features/notices'
-export { noticed } from './features/notices'
+export { createNotice } from './features/notices'
 export type { Notice, Stay, Task } from './features/notices'
 
 export { default as Agent } from './screens/Agent.vue'
@@ -127,14 +127,14 @@ export { CardProse } from './features/cards'
 /** The schemes a link in a card may point at. An address naming none is the caller's. */
 export { scheme } from './features/cards'
 /** For putting a card or a field where a person let it go, without drawing it. */
-export { ordered, reordered } from './features/cards'
+export { orderNames, reorderFields } from './features/cards'
 export type { Half, InsertionPoint } from './features/cards'
 /**
  * Where a card let go at the head of a deck lands, before its first section,
  * and where one let go past the last card standing under a heading lands.
  */
-export { blanks as cardBlanks, ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './features/cards'
-export { declared as cardFields } from './features/cards'
+export { blanks as cardBlanks, getRunEnd as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './features/cards'
+export { getDeclaredFields as cardFields } from './features/cards'
 export type { DeckCard, DeckSection } from './features/cards'
 export type { Stencil } from './features/cards'
 
@@ -145,4 +145,4 @@ export type { EdgeArrow, PlexEdge } from './features/plex'
 export type { PlexNeighbourhood } from './features/plex'
 export type { PlexNode, Position } from './features/plex'
 export type { PlexRelatedSeat } from './features/plex'
-export type { PlexShowing } from './features/plex'
+export type { PlexDestination } from './features/plex'

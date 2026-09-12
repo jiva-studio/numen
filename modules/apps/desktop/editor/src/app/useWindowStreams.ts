@@ -2,7 +2,7 @@
  * Background streaming subscriptions for the window.
  */
 import type { Ref, ShallowRef } from 'vue'
-import { following } from '@numen/ui'
+import { createFollower } from '@numen/ui'
 import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
 import type { NoteEdit } from '@/entities/note'
@@ -48,7 +48,7 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
   } = deps
 
   /** Every stream is read the same way, and taken up again the same way. */
-  const follows = following({
+  const follows = createFollower({
     open: isOpen,
     lost: setLost,
     wait,

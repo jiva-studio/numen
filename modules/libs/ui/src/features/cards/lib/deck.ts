@@ -5,7 +5,12 @@
  */
 
 import type { FieldValue } from './card'
-import { declared, sealed, type Problems, type InsertionPoint } from './order'
+import {
+  getDeclaredFields,
+  createSealedMap,
+  type Problems,
+  type InsertionPoint,
+} from './order'
 
 /**
  * Where a card let go at the head of the deck lands: before the first section,
@@ -25,7 +30,7 @@ const END = 'the end of '
 export const endOf = (run: string): InsertionPoint => `${END}${run}`
 
 /** Which run's end a landing is, and nothing for a landing that is not one. */
-export const ended = (at: InsertionPoint): string | null =>
+export const getRunEnd = (at: InsertionPoint): string | null =>
   typeof at === 'string' && at.startsWith(END) ? at.slice(END.length) : null
 
 /** One card as the deck draws it. */
@@ -118,8 +123,8 @@ export interface Wrong {
 
 /** Nothing wrong with anything. */
 export const NOTHING_WRONG: Wrong = Object.freeze({
-  at: sealed<string, readonly string[]>(),
-  under: sealed<string, Problems>(),
+  at: createSealedMap<string, readonly string[]>(),
+  under: createSealedMap<string, Problems>(),
 })
 
 /** One value of a card, laid out under the stencil that cuts it. */
@@ -139,7 +144,7 @@ export function laid(
   filled: readonly FieldValue[],
   fields: readonly string[],
 ): readonly CardFieldValue[] {
-  const stood = declared(fields).flatMap((field) => {
+  const stood = getDeclaredFields(fields).flatMap((field) => {
     const written = filled.filter((each) => each.field === field)
     if (!written.length) return [{ field, text: '', declared: true }]
     return written.map((each) => ({ field, text: each.text, declared: true }))

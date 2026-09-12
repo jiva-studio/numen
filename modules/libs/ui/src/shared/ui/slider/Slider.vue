@@ -10,7 +10,7 @@
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { cn } from '@/shared/lib/classes'
-import { clamped, walked, walks, type Bounds } from './track'
+import { clamp, isWalkingKey, stepForKey, type Bounds } from './track'
 
 defineOptions({ inheritAttrs: false })
 
@@ -44,7 +44,7 @@ watch(model, (now) => {
   handed = now
 })
 
-const hands = (said: number) => {
+const setValue = (said: number) => {
   if (said === handed) return
   handed = said
   model.value = said
@@ -53,13 +53,13 @@ const hands = (said: number) => {
 const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: props.step }))
 
 /** Where the handle stands, which is inside the ends whatever it was given. */
-const inForce = computed(() => clamped(model.value, bounds.value))
+const inForce = computed(() => clamp(model.value, bounds.value))
 
-watch(inForce, hands, { immediate: true })
+watch(inForce, setValue, { immediate: true })
 
-const moved = (value: number[] | undefined) => {
+const onMove = (value: number[] | undefined) => {
   const said = value?.[0]
-  if (typeof said === 'number') hands(said)
+  if (typeof said === 'number') setValue(said)
 }
 
 /** Whether a key is down, and where the handle stood when it went down. */
@@ -71,8 +71,8 @@ let began = 0
  * key held down and a key struck again are one walk, which is over when the key
  * is let go of.
  */
-const takes = (event: KeyboardEvent) => {
-  if (!walks(event.key)) return
+const onKeyDown = (event: KeyboardEvent) => {
+  if (!isWalkingKey(event.key)) return
   event.preventDefault()
   event.stopPropagation()
   if (props.disabled) return
@@ -80,12 +80,12 @@ const takes = (event: KeyboardEvent) => {
     walking = true
     began = handed
   }
-  const said = walked(event.key, inForce.value, bounds.value, event.shiftKey)
-  if (said !== null) hands(said)
+  const said = stepForKey(event.key, inForce.value, bounds.value, event.shiftKey)
+  if (said !== null) setValue(said)
 }
 
 /** The handle let go of, at what the walk left it standing at. */
-const rests = () => {
+const onRelease = () => {
   if (!walking) return
   walking = false
   if (handed !== began) raises('settles', handed)
@@ -96,10 +96,10 @@ const rests = () => {
  * on before it is said to have settled, so a caller acting on the second has
  * the first.
  */
-const settled = (value: number[]) => {
+const onCommit = (value: number[]) => {
   const said = value[0]
   if (typeof said !== 'number') return
-  hands(said)
+  setValue(said)
   raises('settles', said)
 }
 </script>
@@ -120,8 +120,8 @@ const settled = (value: number[]) => {
         props.class,
       )
     "
-    @update:model-value="moved"
-    @value-commit="settled"
+    @update:model-value="onMove"
+    @value-commit="onCommit"
   >
     <SliderTrack class="relative h-1 w-full grow rounded-pill bg-hushed">
       <SliderRange class="absolute h-full rounded-pill bg-accent" />
@@ -136,9 +136,9 @@ const settled = (value: number[]) => {
           'data-[disabled]:cursor-not-allowed',
         )
       "
-      @keydown="takes"
-      @keyup="rests"
-      @blur="rests"
+      @keydown="onKeyDown"
+      @keyup="onRelease"
+      @blur="onRelease"
     />
   </SliderRoot>
 </template>

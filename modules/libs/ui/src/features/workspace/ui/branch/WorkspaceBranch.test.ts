@@ -21,7 +21,7 @@ const twoPanes = (): Branch =>
   split('root', [stack('left', 'one'), stack('right', 'two')], [0.7, 0.3]) as Branch
 
 /** A pane beside a branch of two, so a branch holds a branch. */
-const nested = (): Branch =>
+const createNested = (): Branch =>
   split('root', [
     stack('left', 'one'),
     split('down', [stack('upper', 'two'), stack('lower', 'three')]),
@@ -59,7 +59,7 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
  * out from. Nothing here has a size, so the observer the branch follows its own
  * element with is stood in for. Call it before mounting.
  */
-const measuring = (): ((length: number) => void) => {
+const stubResizeObserver = (): ((length: number) => void) => {
   const told: ResizeObserverCallback[] = []
 
   vi.stubGlobal(
@@ -85,7 +85,7 @@ const panes = ({ held }: BranchFixture) => held.findAllComponents(WorkspacePane)
 
 const groups = ({ held }: BranchFixture) => held.findAllComponents(SplitterGroup)
 
-const handles = ({ held }: BranchFixture) => held.findAllComponents(SplitterResizeHandle)
+const getHandles = ({ held }: BranchFixture) => held.findAllComponents(SplitterResizeHandle)
 
 /** The splitter reporting the shares it has settled on, in percent. */
 const layout = (one: BranchFixture, at: number, sizes: number[]) =>
@@ -100,11 +100,11 @@ describe('what a branch draws', () => {
     const one = mountBranch(twoPanes())
 
     expect(panes(one)).toHaveLength(2)
-    expect(handles(one)).toHaveLength(1)
+    expect(getHandles(one)).toHaveLength(1)
   })
 
   it('nests a branch inside a branch, and draws every pane of it', () => {
-    const one = mountBranch(nested())
+    const one = mountBranch(createNested())
 
     expect(one.held.findAllComponents(WorkspaceBranch)).toHaveLength(1)
     expect(panes(one)).toHaveLength(3)
@@ -114,7 +114,7 @@ describe('what a branch draws', () => {
   })
 
   it('turns a quarter at each level down', () => {
-    const one = mountBranch(nested())
+    const one = mountBranch(createNested())
 
     expect(groups(one)[0]?.props('direction')).toBe('horizontal')
     expect(groups(one)[1]?.props('direction')).toBe('vertical')
@@ -129,7 +129,7 @@ describe('what a branch draws', () => {
   })
 
   it('leaves each panel a share of the branch worth drawing in', async () => {
-    const stretch = measuring()
+    const stretch = stubResizeObserver()
     const one = mountBranch(twoPanes())
     const floors = () =>
       one.held.findAllComponents(SplitterPanel).map((each) => each.props('minSize'))
@@ -153,7 +153,7 @@ describe('what a branch draws', () => {
   })
 
   it('hands a slot down however deep the pane stands', () => {
-    const one = mountBranch(nested())
+    const one = mountBranch(createNested())
 
     expect(one.held.findAll('.held')).toHaveLength(3)
   })
@@ -169,7 +169,7 @@ describe('what a branch draws', () => {
 })
 
 describe('a handle taken up and put down', () => {
-  const grab = (one: BranchFixture, now: boolean) => handles(one)[0]!.vm.$emit('dragging', now)
+  const grab = (one: BranchFixture, now: boolean) => getHandles(one)[0]!.vm.$emit('dragging', now)
 
   it('says nothing while it is still held', async () => {
     const one = mountBranch(twoPanes())
@@ -225,7 +225,7 @@ describe('a handle taken up and put down', () => {
   })
 
   it('names the branch it belongs to and no other', async () => {
-    const one = mountBranch(nested())
+    const one = mountBranch(createNested())
 
     layout(one, 1, [30, 70])
     await one.held.vm.$nextTick()

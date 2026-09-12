@@ -71,7 +71,7 @@ const nodeAt = (plex: ReturnType<typeof mountPlex>, seat: string) => {
   return { x: 600 + at[0]!, y: 400 + at[1]! }
 }
 
-const draggedIn = (plex: ReturnType<typeof mountPlex>) => plex.find('.plex__dragged')
+const findDragged = (plex: ReturnType<typeof mountPlex>) => plex.find('.plex__dragged')
 
 describe('letting go of something dragged in', () => {
   it('joins it to the focus in the seat the drag went towards', async () => {
@@ -156,7 +156,7 @@ describe('letting go of something dragged in', () => {
     await letGo(plex, 600, 40)
 
     expect(plex.emitted('bring')).toBeUndefined()
-    expect(draggedIn(plex).exists()).toBe(false)
+    expect(findDragged(plex).exists()).toBe(false)
   })
 
   it('joins them before whoever is dragging them hears the same release', async () => {
@@ -220,8 +220,8 @@ describe('while something is being dragged over the plex', () => {
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(draggedIn(plex).find('.plex__thread').exists()).toBe(true)
-    expect(draggedIn(plex).get('.plex__title-text').text()).toBe('parent')
+    expect(findDragged(plex).find('.plex__thread').exists()).toBe(true)
+    expect(findDragged(plex).get('.plex__title-text').text()).toBe('parent')
   })
 
   it('says it in the words it was given, not in its own', async () => {
@@ -229,45 +229,45 @@ describe('while something is being dragged over the plex', () => {
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(draggedIn(plex).get('.plex__title-text').text()).toBe('as parent')
+    expect(findDragged(plex).get('.plex__title-text').text()).toBe('as parent')
   })
 
   it('draws nothing where letting go would come to nothing', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(draggedIn(plex).exists()).toBe(true)
+    expect(findDragged(plex).exists()).toBe(true)
 
     // Past the edge, and towards a seat the caller left out: the picture
     // promises only what letting go would actually do.
     window.dispatchEvent(pointer('pointermove', 600, 1400))
     await plex.vm.$nextTick()
-    expect(draggedIn(plex).exists()).toBe(false)
+    expect(findDragged(plex).exists()).toBe(false)
 
     window.dispatchEvent(pointer('pointermove', 1100, 400))
     await plex.vm.$nextTick()
-    expect(draggedIn(plex).exists()).toBe(false)
+    expect(findDragged(plex).exists()).toBe(false)
   })
 
   it('draws nothing the moment the window says it is dragging nothing', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(draggedIn(plex).exists()).toBe(true)
+    expect(findDragged(plex).exists()).toBe(true)
 
     await plex.setProps({ dragged: [] })
-    expect(draggedIn(plex).exists()).toBe(false)
+    expect(findDragged(plex).exists()).toBe(false)
   })
 
   it('draws nothing once it has been let go of', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(draggedIn(plex).exists()).toBe(true)
+    expect(findDragged(plex).exists()).toBe(true)
 
     window.dispatchEvent(pointer('pointerup', 600, 40))
     await plex.vm.$nextTick()
-    expect(draggedIn(plex).exists()).toBe(false)
+    expect(findDragged(plex).exists()).toBe(false)
   })
 
   it('draws a shape nobody can reach: it is not a node of the picture yet', async () => {
@@ -275,7 +275,7 @@ describe('while something is being dragged over the plex', () => {
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    const shape = draggedIn(plex).get('.plex__node')
+    const shape = findDragged(plex).get('.plex__node')
     expect(shape.attributes('role')).toBeUndefined()
     expect(shape.attributes('aria-label')).toBeUndefined()
     expect(shape.attributes('tabindex')).toBe('-1')

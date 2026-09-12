@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { easeOut } from './arrange'
 import { hangParts, type PartsDeps, type PlexPart } from './inside'
-import { furthest, openedTo, woundBy } from './open'
+import { furthest, getOpenParts, woundBy } from './open'
 import type { PlacedNode } from './node'
 
 const NODE: PlacedNode = {
@@ -98,14 +98,14 @@ describe('winding the window over the parts', () => {
   const many = () => hung(parts(MOST + 3))!
 
   it('opens on the first of them, with more below and none above', () => {
-    const shown = openedTo(many(), 1)!
+    const shown = getOpenParts(many(), 1)!
     expect(shown.parts[0]!.text).toBe('Part 0')
     expect(shown.above).toBe(false)
     expect(shown.below).toBe(true)
   })
 
   it('moves by whole parts, so none is ever half on the ground', () => {
-    const shown = openedTo(many(), 1, 2)!
+    const shown = getOpenParts(many(), 1, 2)!
     expect(shown.parts[0]!.text).toBe('Part 2')
     expect(shown.parts.map((part) => part.at)).toStrictEqual(
       shown.parts.map((_, at) => at * SIZES.partHeight),
@@ -113,24 +113,24 @@ describe('winding the window over the parts', () => {
   })
 
   it('says there is more above it once it has been wound', () => {
-    expect(openedTo(many(), 1, 1)!.above).toBe(true)
+    expect(getOpenParts(many(), 1, 1)!.above).toBe(true)
   })
 
   it('winds no further than the last of them', () => {
     const settled = many()
-    const shown = openedTo(settled, 1, 99)!
+    const shown = getOpenParts(settled, 1, 99)!
     expect(shown.parts.at(-1)!.text).toBe(`Part ${settled.parts.length - 1}`)
     expect(shown.below).toBe(false)
   })
 
   it('winds no further back than the first of them', () => {
-    expect(openedTo(many(), 1, -5)!.parts[0]!.text).toBe('Part 0')
+    expect(getOpenParts(many(), 1, -5)!.parts[0]!.text).toBe('Part 0')
   })
 
   it('stands the window full however far it is wound', () => {
     const settled = many()
     for (const wound of [0, 1, 2, 3, 99]) {
-      expect(openedTo(settled, 1, wound)!.parts).toHaveLength(settled.shown)
+      expect(getOpenParts(settled, 1, wound)!.parts).toHaveLength(settled.shown)
     }
   })
 })
@@ -159,32 +159,32 @@ describe('how far in a part is set', () => {
 })
 
 describe('the opening', () => {
-  const opened = (open: number, count = 3) => openedTo(hung(parts(count))!, open)
+  const openTo = (open: number, count = 3) => getOpenParts(hung(parts(count))!, open)
 
   it('draws nothing while it is shut', () => {
-    expect(opened(0)).toBeNull()
+    expect(openTo(0)).toBeNull()
   })
 
   it('has its ground barely up before any of them has risen', () => {
-    expect(opened(0.0001)?.opacity).toBeLessThan(0.01)
+    expect(openTo(0.0001)?.opacity).toBeLessThan(0.01)
   })
 
   it('brings the ground up at the depth it keeps', () => {
     const settled = hung(parts(3))!
     for (const open of [0.2, 0.5, 1]) {
-      expect(openedTo(settled, open)!.height).toBe(settled.height)
+      expect(getOpenParts(settled, open)!.height).toBe(settled.height)
     }
-    expect(openedTo(settled, 1)!.opacity).toBe(1)
+    expect(getOpenParts(settled, 1)!.opacity).toBe(1)
   })
 
   it('has the first part further along than the last', () => {
-    const drawn = opened(0.5)?.parts ?? []
+    const drawn = openTo(0.5)?.parts ?? []
     expect(drawn[0]!.opacity).toBeGreaterThan(drawn.at(-1)!.opacity)
   })
 
   it('rises onto its place from below, never from above it', () => {
     const settled = hung(parts(3))!
-    openedTo(settled, 0.5)!.parts.forEach((part, at) => {
+    getOpenParts(settled, 0.5)!.parts.forEach((part, at) => {
       const rests = settled.parts[at]!.at
       expect(part.y).toBeGreaterThanOrEqual(rests)
       expect(part.y).toBeLessThanOrEqual(rests + settled.partHeight)
@@ -196,7 +196,7 @@ describe('the opening', () => {
     // what the ground is there to stop.
     const settled = hung(parts(5))!
     for (const open of [0.05, 0.2, 0.4, 0.6, 0.8, 1]) {
-      for (const part of openedTo(settled, open)!.parts) {
+      for (const part of getOpenParts(settled, open)!.parts) {
         expect(part.y).toBeGreaterThanOrEqual(0)
         expect(part.y + settled.partHeight).toBeLessThanOrEqual(
           settled.height - 2 * settled.pad,
@@ -207,19 +207,19 @@ describe('the opening', () => {
 
   it('rests every part where it hangs once it is all the way open', () => {
     const settled = hung(parts(3))!
-    const drawn = openedTo(settled, 1)?.parts ?? []
+    const drawn = getOpenParts(settled, 1)?.parts ?? []
     expect(drawn.map((part) => part.y)).toStrictEqual(settled.parts.map((part) => part.at))
     expect(drawn.every((part) => part.opacity === 1)).toBe(true)
   })
 
   it('brings the ground up before the parts have finished rising', () => {
     const settled = hung(parts(3))!
-    const half = openedTo(settled, 0.5)!
+    const half = getOpenParts(settled, 0.5)!
     expect(half.opacity).toBeGreaterThan(half.parts.at(-1)!.opacity)
   })
 
   it('carries the words and the indent through untouched', () => {
-    const part = opened(1)?.parts[1]
+    const part = openTo(1)?.parts[1]
     expect(part?.text).toBe('Part 1')
     expect(part?.id).toBe('1')
     expect(part?.indent).toBe(0)
@@ -312,19 +312,19 @@ describe('a node with little room under it', () => {
 })
 
 describe('what a wheel winds', () => {
-  const settled = () => hung(parts(20))!
+  const hangMany = () => hung(parts(20))!
   /** A wheel said in pixels, which is what a hand on a trackpad gives. */
   const pixels = (delta: number) => ({ delta, mode: 0 })
 
   it('is nothing at all until the pixels come to a whole part', () => {
-    const wheel = woundBy(settled(), pixels(SIZES.partHeight - 1), 0)
+    const wheel = woundBy(hangMany(), pixels(SIZES.partHeight - 1), 0)
     expect(wheel.by).toBe(0)
     expect(wheel.left).toBe(SIZES.partHeight - 1)
   })
 
   it('carries what was left over into the next one', () => {
-    const first = woundBy(settled(), pixels(12), 0)
-    const next = woundBy(settled(), pixels(12), first.left)
+    const first = woundBy(hangMany(), pixels(12), 0)
+    const next = woundBy(hangMany(), pixels(12), first.left)
     expect(first.by).toBe(0)
     expect(next.by).toBe(1)
     expect(next.left).toBe(4)
@@ -335,7 +335,7 @@ describe('what a wheel winds', () => {
     let carried = 0
     let wound = 0
     for (let at = 0; at < 8; at++) {
-      const wheel = woundBy(settled(), pixels(3), carried)
+      const wheel = woundBy(hangMany(), pixels(3), carried)
       carried = wheel.left
       wound += wheel.by
     }
@@ -343,16 +343,16 @@ describe('what a wheel winds', () => {
   })
 
   it('reads a wheel said in lines as one part the line', () => {
-    expect(woundBy(settled(), { delta: 2, mode: 1 }, 0).by).toBe(2)
+    expect(woundBy(hangMany(), { delta: 2, mode: 1 }, 0).by).toBe(2)
   })
 
   it('reads a wheel said in windows as the whole window', () => {
-    const held = settled()
+    const held = hangMany()
     expect(woundBy(held, { delta: 1, mode: 2 }, 0).by).toBe(held.shown)
   })
 
   it('winds back the way it came, and carries the leftover the same way', () => {
-    const back = woundBy(settled(), pixels(-SIZES.partHeight - 6), 0)
+    const back = woundBy(hangMany(), pixels(-SIZES.partHeight - 6), 0)
     expect(back.by).toBe(-1)
     expect(back.left).toBe(-6)
   })
@@ -368,7 +368,7 @@ describe('however many parts stand at once', () => {
     // on a ground drawn deep enough to hold them.
     for (const ceiling of [1, 2, 6, 9, 12, 20]) {
       const settled = under(ceiling)
-      const drawn = openedTo(settled, 1)!.parts
+      const drawn = getOpenParts(settled, 1)!.parts
       expect(drawn).toHaveLength(settled.shown)
       for (const part of drawn) expect(part.opacity).toBe(1)
     }
@@ -376,12 +376,12 @@ describe('however many parts stand at once', () => {
 
   it('the first of them is still ahead of the last partway through', () => {
     for (const ceiling of [2, 6, 12, 20]) {
-      const drawn = openedTo(under(ceiling), 0.5)!.parts
+      const drawn = getOpenParts(under(ceiling), 0.5)!.parts
       expect(drawn[0]!.opacity).toBeGreaterThan(drawn.at(-1)!.opacity)
     }
   })
 
   it('one alone opens with the whole of the opening to itself', () => {
-    expect(openedTo(under(1), 0.5)!.parts[0]!.opacity).toBe(easeOut(0.5))
+    expect(getOpenParts(under(1), 0.5)!.parts[0]!.opacity).toBe(easeOut(0.5))
   })
 })

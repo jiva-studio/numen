@@ -8,9 +8,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Stencil from './StencilEditor.vue'
-import { ordered, reordered, type Half, type InsertionPoint } from '../../lib/order'
+import { orderNames, reorderFields, type Half, type InsertionPoint } from '../../lib/order'
 import type { StencilFace } from '../../lib/stencil'
-import { renamedIn } from '../../lib/fill'
+import { renameField } from '../../lib/fill'
 
 interface Corpus {
   readonly fields: readonly string[]
@@ -167,15 +167,15 @@ const meta: Meta<Knobs> = {
           fields.value = fields.value.map((each) => (each === field ? name : each))
           faces.value = faces.value.map((face) => ({
             ...face,
-            front: renamedIn(face.front, field, name),
-            back: renamedIn(face.back, field, name),
+            front: renameField(face.front, field, name),
+            back: renameField(face.back, field, name),
           }))
         },
         onRemoveField: (field: string) => {
           fields.value = fields.value.filter((each) => each !== field)
         },
         onMoveField: (field: string, at: InsertionPoint) => {
-          fields.value = reordered(fields.value, field, at)
+          fields.value = reorderFields(fields.value, field, at)
         },
         onAddFace: (name: string) => {
           faces.value = [...faces.value, { id: `face-${faces.value.length}`, name, front: '', back: '' }]
@@ -188,7 +188,7 @@ const meta: Meta<Knobs> = {
         },
         /* Nothing among the faces is fixed, so any of them lands anywhere. */
         onMoveFace: (id: string, at: InsertionPoint) => {
-          const order = ordered(faces.value.map((face) => face.id), id, at)
+          const order = orderNames(faces.value.map((face) => face.id), id, at)
           faces.value = order.flatMap((each) => faces.value.filter((face) => face.id === each))
         },
         onWrite: (id: string, half: Half, text: string) => {

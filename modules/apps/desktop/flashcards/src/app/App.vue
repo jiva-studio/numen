@@ -42,7 +42,7 @@ const { on, notices, putAway, vaults, decks, session } = useWindow()
       :today="decks.today.value"
       @start="decks.start"
       @start-preset="decks.startPreset"
-      @back="decks.vaultsAgain"
+      @back="decks.goToVaults"
     />
 
     <SessionSummary
@@ -58,13 +58,13 @@ const { on, notices, putAway, vaults, decks, session } = useWindow()
       :left="session.state.left.value"
       :taken-back="session.state.answers.value.length > 0"
       :at="session.at.value"
-      @update:at="session.moved"
+      @update:at="session.moveTo"
       @show="session.state.show"
-      @answer="session.answered"
+      @answer="session.answerCard"
       @take-back="session.state.takeBack"
       @leave="session.leave"
-      @ask="session.talks"
-      @read="session.reads"
+      @ask="session.toggleAgent"
+      @read="session.toggleNotes"
     >
       <template #reading>
         <NotesPanel :held="session.notesPanel" />

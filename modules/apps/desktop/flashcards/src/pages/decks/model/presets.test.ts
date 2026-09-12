@@ -4,10 +4,10 @@ import { goalNames } from '@numen/wire'
 
 import { useVaultPresets } from './presets'
 import type { PresetsClient } from '../api/presets'
-import { opens, spent, through } from '../lib/progress'
+import { canStart, spent, through } from '../lib/progress'
 import { CLOSES_NOTHING } from '../types'
 import type { Budget, Preset, Settings, SettingsMessage } from '../types'
-import { goalWords, leftWords, STOPPED, stoppedWords } from '../words'
+import { getStoppedWords, goalWords, leftWords, STOPPED } from '../words'
 import type { BudgetKeys, PresetCardsDue, VaultCardsDue } from '@/entities/vault'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
@@ -23,7 +23,10 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
 })
 
 /** The same settings, as the schema carries them. */
-const carried = (held: Settings): SettingsMessage => ({ ...held, goal: goalNames[held.goal] })
+const createSettingsMessage = (held: Settings): SettingsMessage => ({
+  ...held,
+  goal: goalNames[held.goal],
+})
 
 const budget = (said: Partial<Budget> = {}): Budget => ({
   new: 10,
@@ -101,7 +104,7 @@ const vault = (
 })
 
 /** An application answering one preset for each deck named here. */
-const answering = (
+const createPresets = (
   by: Record<string, { path: string; title: string; settings: Settings; stopsOn?: StopReason }>,
 ): PresetsClient => ({
   async getVaultDeckPreset({ deck }) {
@@ -111,7 +114,7 @@ const answering = (
       preset: {
         path: one.path,
         title: one.title,
-        settings: carried(one.settings),
+        settings: createSettingsMessage(one.settings),
         problems: [],
         stopsOn: one.stopsOn ?? StopReason.NOTHING,
       },
@@ -126,34 +129,34 @@ describe('why a preset schedules nothing, in words', () => {
   const on = '2026-09-05'
 
   it('says nothing at all of a preset that schedules', () => {
-    expect(stoppedWords(StopReason.NOTHING, settings(), on)).toBe('')
+    expect(getStoppedWords(StopReason.NOTHING, settings(), on)).toBe('')
     // A build that said nothing about it is read as scheduling.
-    expect(stoppedWords(StopReason.UNSPECIFIED, settings(), on)).toBe('')
+    expect(getStoppedWords(StopReason.UNSPECIFIED, settings(), on)).toBe('')
   })
 
   it('says which budget stands at nothing', () => {
-    expect(stoppedWords(StopReason.NO_MINUTES, settings(), on)).toBe('no budget in time')
-    expect(stoppedWords(StopReason.NO_CARDS, settings(), on)).toBe('no cards a day')
-    expect(stoppedWords(StopReason.NO_DAY, settings(), on)).toBe('by no day')
+    expect(getStoppedWords(StopReason.NO_MINUTES, settings(), on)).toBe('no budget in time')
+    expect(getStoppedWords(StopReason.NO_CARDS, settings(), on)).toBe('no cards a day')
+    expect(getStoppedWords(StopReason.NO_DAY, settings(), on)).toBe('by no day')
   })
 
   it('names the day a goal aimed at, where the settings carry one', () => {
     const by = settings({ goal: 'date', byDate: '2026-08-31' })
 
-    expect(stoppedWords(StopReason.PAST_DAY, by, on)).toMatch(/has passed$/)
+    expect(getStoppedWords(StopReason.PAST_DAY, by, on)).toMatch(/has passed$/)
     // A preset counted with no settings on hand still says what stopped it.
-    expect(stoppedWords(StopReason.PAST_DAY, null, on)).toBe('the day has passed')
+    expect(getStoppedWords(StopReason.PAST_DAY, null, on)).toBe('the day has passed')
   })
 
   // The fifth of September in 2026 is a Saturday.
   it('names the day of the week carrying none of the load', () => {
-    expect(stoppedWords(StopReason.NO_LOAD, settings(), on)).toBe('no load on Saturday')
+    expect(getStoppedWords(StopReason.NO_LOAD, settings(), on)).toBe('no load on Saturday')
   })
 
   // A week at nothing names no day: there is no next one to name.
   it('names no day for a week carrying none of the load', () => {
-    expect(stoppedWords(StopReason.NO_WEEK, settings(), on)).toBe('no load on any day')
-    expect(stoppedWords(StopReason.NO_WEEK, null, on)).toBe('no load on any day')
+    expect(getStoppedWords(StopReason.NO_WEEK, settings(), on)).toBe('no load on any day')
+    expect(getStoppedWords(StopReason.NO_WEEK, null, on)).toBe('no load on any day')
   })
 })
 
@@ -293,20 +296,20 @@ describe('whether starting a session on a deck is offered', () => {
   const by = (one?: Preset) => new Map(one ? [['decks/Words.md', one]] : [])
 
   it('is offered where the deck owes and its preset schedules something', () => {
-    expect(opens(deck(3), by(preset()))).toBe(true)
-    expect(opens(deck(0, 1), by(preset()))).toBe(true)
+    expect(canStart(deck(3), by(preset()))).toBe(true)
+    expect(canStart(deck(0, 1), by(preset()))).toBe(true)
   })
 
   it('is refused where the deck owes nothing', () => {
-    expect(opens(deck(0), by(preset()))).toBe(false)
+    expect(canStart(deck(0), by(preset()))).toBe(false)
   })
 
   it('is refused where the preset scheduling it schedules nothing', () => {
-    expect(opens(deck(3), by(preset({ paused: 'no cards a day' })))).toBe(false)
+    expect(canStart(deck(3), by(preset({ paused: 'no cards a day' })))).toBe(false)
   })
 
   it('is offered where nothing says which preset schedules the deck', () => {
-    expect(opens(deck(3), by())).toBe(true)
+    expect(canStart(deck(3), by())).toBe(true)
   })
 })
 
@@ -329,7 +332,7 @@ describe('why a preset or a deck is asking nothing', () => {
 describe('which preset schedules each deck', () => {
   it('gathers the decks of one preset and counts them together', async () => {
     const one = useVaultPresets({
-      presets: answering({
+      presets: createPresets({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
         'decks/Roots.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
       }),
@@ -358,7 +361,7 @@ describe('which preset schedules each deck', () => {
   // count of the vault's own.
   it('takes today from the count of the vault, budget and all', async () => {
     const one = useVaultPresets({
-      presets: answering({
+      presets: createPresets({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
       }),
     })
@@ -395,7 +398,7 @@ describe('which preset schedules each deck', () => {
   // count it shows.
   it('asks for exactly what its decks owe, over all of them', async () => {
     const one = useVaultPresets({
-      presets: answering({
+      presets: createPresets({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
         'decks/Roots.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
       }),
@@ -414,7 +417,7 @@ describe('which preset schedules each deck', () => {
 
   it('calls a deck naming no preset scheduled by the defaults', async () => {
     const one = useVaultPresets({
-      presets: answering({
+      presets: createPresets({
         'decks/Words.md': { path: '', title: '', settings: settings() },
       }),
     })
@@ -426,7 +429,7 @@ describe('which preset schedules each deck', () => {
 
   it('holds nothing of the day for a preset that schedules nothing, and says why', async () => {
     const one = useVaultPresets({
-      presets: answering({
+      presets: createPresets({
         'decks/Words.md': {
           path: 'Stopped.md',
           title: 'Stopped',
@@ -465,7 +468,7 @@ describe('which preset schedules each deck', () => {
   // place it can come from.
   it('gives a preset no deck points at a row of its own', async () => {
     const one = useVaultPresets({
-      presets: answering({
+      presets: createPresets({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
       }),
     })
@@ -508,7 +511,7 @@ describe('which preset schedules each deck', () => {
   // A preset no deck answers for has no settings on hand, so the count's own
   // verdict is the only thing that can say it schedules nothing.
   it('says why a preset no deck points at schedules nothing', async () => {
-    const one = useVaultPresets({ presets: answering({}) })
+    const one = useVaultPresets({ presets: createPresets({}) })
 
     await one.read(
       vault(
@@ -537,7 +540,7 @@ describe('which preset schedules each deck', () => {
   // An empty deck owes nothing, so no deck answers for the preset it names and
   // the count is the only place that row can come from.
   it('gives a preset whose only deck is empty a row of its own', async () => {
-    const one = useVaultPresets({ presets: answering({}) })
+    const one = useVaultPresets({ presets: createPresets({}) })
 
     await one.read(
       vault(
@@ -562,7 +565,7 @@ describe('which preset schedules each deck', () => {
   })
 
   it('names a preset the count could not name after its file', async () => {
-    const one = useVaultPresets({ presets: answering({}) })
+    const one = useVaultPresets({ presets: createPresets({}) })
 
     await one.read(
       vault(
@@ -621,7 +624,7 @@ describe('which preset schedules each deck', () => {
   })
 
   it('says nothing is wrong with a preset no deck of this vault answered for', async () => {
-    const one = useVaultPresets({ presets: answering({}) })
+    const one = useVaultPresets({ presets: createPresets({}) })
 
     await one.read(vault([], [presetDue()]), '2026-09-05')
 
@@ -638,7 +641,7 @@ describe('which preset schedules each deck', () => {
             preset: {
               path: 'Sanskrit.md',
               title: 'Sanskrit',
-              settings: carried(settings()),
+              settings: createSettingsMessage(settings()),
               problems: ['`new_a_day` is not a number'],
               stopsOn: StopReason.NOTHING,
             },
@@ -662,7 +665,7 @@ describe('which preset schedules each deck', () => {
   // settings the preset itself was read with.
   it('falls back to the settings for what the day holds', async () => {
     const one = useVaultPresets({
-      presets: answering({
+      presets: createPresets({
         'decks/Words.md': {
           path: 'Sanskrit.md',
           title: 'Sanskrit',
@@ -691,7 +694,7 @@ describe('which preset schedules each deck', () => {
             preset: {
               path: 'Sanskrit.md',
               title: 'Sanskrit',
-              settings: carried(settings()),
+              settings: createSettingsMessage(settings()),
               problems: [],
               stopsOn: StopReason.NOTHING,
             },
@@ -709,7 +712,7 @@ describe('which preset schedules each deck', () => {
   })
 
   it('holds no preset for a vault a person has left', async () => {
-    const one = useVaultPresets({ presets: answering({}) })
+    const one = useVaultPresets({ presets: createPresets({}) })
 
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
     one.forget()
@@ -722,7 +725,7 @@ describe('which preset schedules each deck', () => {
 describe('every question about a preset', () => {
   it('names the vault it is about', async () => {
     const named: string[] = []
-    const answers = answering({
+    const answers = createPresets({
       'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
     })
     const one = useVaultPresets({

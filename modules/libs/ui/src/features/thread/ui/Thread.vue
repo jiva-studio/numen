@@ -48,7 +48,7 @@ const area = useTemplateRef<HTMLElement>('area')
 /** Whether the foot is followed. Scrolling away from it stops that. */
 const follows = ref(true)
 
-const scrolled = () => {
+const onScroll = () => {
   if (area.value) follows.value = atFoot(area.value)
 }
 
@@ -70,7 +70,7 @@ defineExpose({ toFoot })
   <div
     ref="area"
     class="thread numen flex min-h-0 flex-col gap-turn overflow-y-auto overscroll-contain font-sans text-base"
-    @scroll="scrolled"
+    @scroll="onScroll"
   >
     <p v-if="!placed.length" class="m-auto text-hushed">
       <slot name="silence">Nothing said yet</slot>

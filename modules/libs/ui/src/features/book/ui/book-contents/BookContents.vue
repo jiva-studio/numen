@@ -9,8 +9,8 @@
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import {
   CONTENTS_WORDS,
-  matching,
-  standingIn,
+  findEntries,
+  findLineAt,
   type ContentsEntry,
   type ContentsWords,
 } from './contents'
@@ -42,10 +42,10 @@ const typed = ref('')
 /** The lines as they are drawn, which the list is brought along by. */
 const lines = useTemplateRef<HTMLElement[]>('lines')
 
-const shown = computed(() => matching(props.entries, typed.value))
+const shown = computed(() => findEntries(props.entries, typed.value))
 
 /** The line the person is reading, and none where they stand before the first. */
-const standing = computed(() => props.entries[standingIn(props.entries, props.at)])
+const standing = computed(() => props.entries[findLineAt(props.entries, props.at)])
 
 /**
  * How deep a line is set in. Past the fourth level it stops: a name set any

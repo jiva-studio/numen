@@ -58,10 +58,10 @@ interface Tile {
  * decks hold cards. A preset that schedules nothing today is still one of
  * these, and says why.
  */
-const schedules = (one: Preset): boolean => one.named > 0 && one.faces > 0
+const isScheduling = (one: Preset): boolean => one.named > 0 && one.faces > 0
 
 const tiles = computed<Tile[]>(() =>
-  props.presets.filter(schedules).map((one) => {
+  props.presets.filter(isScheduling).map((one) => {
     const done = through(one)
     const over = done > 1
     return {

@@ -18,14 +18,14 @@ import {
 import {
   everyRow,
   sameRows,
-  selects,
+  resolveSelection,
   PLAIN,
   type Press,
   type RowSelection,
 } from '../lib/select'
 import { isTreeKey, stepTo } from '../lib/step'
-import { dragged, dragLabel, type DragLabel } from '../lib/drag'
-import { holderOf, landing, refuses, type RowLanding } from '../lib/drop'
+import { getDraggedRows, dragLabel, type DragLabel } from '../lib/drag'
+import { holderOf, isRefused, landing, type RowLanding } from '../lib/drop'
 import type { Position } from '@/shared/lib/geometry'
 import { browserClock, type Clock } from '@/shared/lib/clock'
 import { DragPreview, usePressDrag } from '@/shared/ui/drag-preview'
@@ -180,17 +180,17 @@ function onRowPointerDown(rowId: RowId, event: PointerEvent): void {
   const how: Press = { joining: event.ctrlKey || event.metaKey, reaching: event.shiftKey }
   said.value = how.joining || how.reaching || !picked.value.has(rowId)
   const taken = said.value
-    ? applySelection(selects(shown.value, props.selected, anchor.value, rowId, how))
+    ? applySelection(resolveSelection(shown.value, props.selected, anchor.value, rowId, how))
     : props.selected
 
-  lift(dragged(taken, rowId), event)
+  lift(getDraggedRows(taken, rowId), event)
 }
 
 function onRowClick(row: ShownRow): void {
   const spoken = said.value
   said.value = false
   if (dragging.value?.moved || spoken) return
-  applySelection(selects(shown.value, props.selected, anchor.value, row.id, PLAIN))
+  applySelection(resolveSelection(shown.value, props.selected, anchor.value, row.id, PLAIN))
 }
 
 function onRowDoubleClick(row: ShownRow): void {
@@ -240,7 +240,7 @@ function onKeyDown(event: KeyboardEvent): void {
   if (event.key === ' ') {
     event.preventDefault()
     const press: Press = { joining: true, reaching: false }
-    applySelection(selects(shown.value, props.selected, anchor.value, on.id, press))
+    applySelection(resolveSelection(shown.value, props.selected, anchor.value, on.id, press))
     return
   }
 
@@ -259,7 +259,7 @@ function onKeyDown(event: KeyboardEvent): void {
   else if (step.turn) emit('close', step.turn.row)
   if (step.at !== null) {
     const press: Press = { joining: false, reaching: event.shiftKey }
-    applySelection(selects(shown.value, props.selected, anchor.value, step.at, press))
+    applySelection(resolveSelection(shown.value, props.selected, anchor.value, step.at, press))
   }
   void focusRow(step.at)
 }
@@ -310,7 +310,7 @@ function activateRow(row: ShownRow): void {
 /** A menu asked for on a row, which the selection takes in first, or off every row. */
 function requestMenu(row: ShownRow | null, at: Position): void {
   if (row && !picked.value.has(row.id)) {
-    applySelection(selects(shown.value, props.selected, anchor.value, row.id, PLAIN))
+    applySelection(resolveSelection(shown.value, props.selected, anchor.value, row.id, PLAIN))
   }
   emit('menu', row?.id ?? null, at)
 }
@@ -334,7 +334,7 @@ function getLandingAt(rows: readonly RowId[], at: Position): RowLanding | null {
   const found = landing(shown.value, rows, at.y - drawn.getBoundingClientRect().top, height)
   if (!found) return null
 
-  return refuses(props.rows, rows, holderOf(shown.value, found)) ? null : found
+  return isRefused(props.rows, rows, holderOf(shown.value, found)) ? null : found
 }
 </script>
 

@@ -14,7 +14,7 @@ import type { PlexFrame } from '../frame'
  * against the bare half-window lets a row run flush to the top of the screen
  * with nothing to say so.
  */
-const escapes = (
+const findEscaped = (
   frame: PlexFrame,
   viewport: { width: number; height: number },
   margin = DEFAULT_OPTIONS.margin,
@@ -41,18 +41,18 @@ describe('nothing reaches past the edge', () => {
   it.each(WINDOWS)('$width×$height, heavily populated', (viewport) => {
     const heavy = build('A node', { parent: 6, child: 21, jump: 7, sibling: 7 })
     const frame = arrangePlex(heavy, { options: { viewport } })
-    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
   it.each(WINDOWS)('$width×$height, past every limit', (viewport) => {
     const frame = arrangePlex(neighbourhoods.overcrowded, { options: { viewport } })
-    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
   it.each(Object.entries(neighbourhoods))('%s', (_name, neighbourhood) => {
     const viewport = { width: 1200, height: 800 }
     const frame = arrangePlex(neighbourhood, { options: { viewport } })
-    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 })
 
@@ -109,7 +109,7 @@ describe('the row is measured against the window either way', () => {
     const frame = arrangePlex(onlyChildren, {
       options: { viewport, maxPerLine: 9 },
     })
-    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
 })
@@ -137,7 +137,7 @@ describe('the rows keep the room when it runs out', () => {
 
     const frame = arrangePlex(build('A node', counts), { options: { viewport } })
     expect(frame.overflow.child).toBeUndefined()
-    expect(escapes(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
   it('gives a row the whole window when nothing sits beside it', () => {

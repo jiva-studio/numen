@@ -21,7 +21,7 @@ export const childOf = (node: SyntaxNode, name: string) => {
 }
 
 /** Whether a position stands in code, where a link is an example of one. */
-const coded = (node: SyntaxNode): boolean => {
+const isCode = (node: SyntaxNode): boolean => {
   for (let one: SyntaxNode | null = node; one; one = one.parent) {
     if (one.name === 'FencedCode' || one.name === 'CodeBlock' || one.name === 'InlineCode') {
       return true
@@ -36,7 +36,7 @@ const coded = (node: SyntaxNode): boolean => {
  */
 export const addressAt = (state: EditorState, at: number): string | null => {
   const innermost = syntaxTree(state).resolveInner(at, 1)
-  if (!coded(innermost)) {
+  if (!isCode(innermost)) {
     const line = state.doc.lineAt(at)
     const wiki = wikilinkAt(line.text, at - line.from)
     if (wiki) return wiki.address

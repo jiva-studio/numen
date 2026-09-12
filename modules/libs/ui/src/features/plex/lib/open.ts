@@ -99,7 +99,7 @@ export const furthest = (hung: HungParts): number =>
  *
  * Nothing while it is shut, which is what a node draws nothing at all under.
  */
-export function openedTo(hung: HungParts, open: number, wound = 0): OpenParts | null {
+export function getOpenParts(hung: HungParts, open: number, wound = 0): OpenParts | null {
   const opened = clamp01(open)
   if (opened <= 0) return null
 

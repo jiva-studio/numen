@@ -29,12 +29,12 @@ import {
   choosable,
   flatten,
   keptAt,
-  ordered,
+  orderGroups,
   stepTo,
   type PaletteGroup,
   type PaletteLit,
 } from '../lib/item'
-import { actionAt, commandKeyChord, keyed, opensActions } from '../lib/keys'
+import { actionAt, commandKeyChord, getShortcuts, isActionsChord } from '../lib/keys'
 import { listId, optionId, placePalette } from '../lib/place'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
 
@@ -133,7 +133,7 @@ const field = useTemplateRef<HTMLInputElement>('field')
 const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 
 /** What is drawn, and in what order: a group holding nothing stands at the foot. */
-const shown = computed(() => ordered(props.groups))
+const shown = computed(() => orderGroups(props.groups))
 
 const places = computed(() => flatten(shown.value))
 const placed = computed(() => placePalette(shown.value))
@@ -161,7 +161,7 @@ const lit = computed(() => places.value[here.value]?.item)
 const offered = computed(() => lit.value?.actions ?? [])
 
 /** The actions a key reaches, which is what the foot of the palette says. */
-const hinted = computed(() => keyed(lit.value))
+const hinted = computed(() => getShortcuts(lit.value))
 
 const goTo = (at: number) => {
   held.value = places.value[at]?.item.id ?? ''
@@ -202,7 +202,7 @@ watch(held, (now) => emit('lit', now), { flush: 'post' })
  */
 let stood = { x: -1, y: -1 }
 
-const moved = (event: PointerEvent): boolean => {
+const hasMoved = (event: PointerEvent): boolean => {
   if (event.clientX === stood.x && event.clientY === stood.y) return false
   stood = { x: event.clientX, y: event.clientY }
   return true
@@ -212,7 +212,7 @@ const over = (at: number, event: PointerEvent) => {
   // The action panel is about the item that was lit when it opened, and stays
   // about it while a pointer crosses the list.
   if (panel.value) return
-  if (!moved(event)) return
+  if (!hasMoved(event)) return
   // An item the keyboard steps over is one the pointer passes over.
   const item = places.value[at]?.item
   if (item && choosable(item)) goTo(at)
@@ -258,7 +258,7 @@ const onKey = (event: KeyboardEvent) => {
     void reveal()
   }
   // A chord that opens nothing is left to whoever else answers it.
-  if (opensActions(event)) {
+  if (isActionsChord(event)) {
     if (!offered.value.length) return
     event.preventDefault()
     panel.value = true

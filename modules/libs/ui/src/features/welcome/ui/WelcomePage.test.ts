@@ -62,16 +62,16 @@ describe('a vault on the list', () => {
 })
 
 describe('a vault the window has not answered for yet', () => {
-  const working = (id: string): VaultRow => ({ ...vault(id), working: true })
+  const createWorkingVault = (id: string): VaultRow => ({ ...vault(id), working: true })
 
   it('stands on the list under its own name', () => {
-    const screen = draw([working('physics')])
+    const screen = draw([createWorkingVault('physics')])
 
     expect(screen.find('.welcome-page__row--vault').text()).toContain('physics')
   })
 
   it('is not opened by a hand', async () => {
-    const screen = draw([working('physics'), vault('heat')])
+    const screen = draw([createWorkingVault('physics'), vault('heat')])
 
     await screen.findAll('.welcome-page__row--vault')[0]!.trigger('click')
 
@@ -81,7 +81,7 @@ describe('a vault the window has not answered for yet', () => {
   // The letter is the whole of how a row is opened from the keyboard, so a row
   // that opens nothing carries none. The rows below it keep theirs.
   it('carries no letter, and moves no letter off the rows beside it', () => {
-    expect(caps(draw([working('physics'), vault('heat')]))).toStrictEqual(['B'])
+    expect(caps(draw([createWorkingVault('physics'), vault('heat')]))).toStrictEqual(['B'])
   })
 
   it('is opened once the window has answered for it', async () => {

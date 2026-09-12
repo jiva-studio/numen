@@ -15,7 +15,7 @@ import { scheduled, UNREAD } from '../api/presets'
 import type { DeckPresetResult, PresetsClient } from '../api/presets'
 import { CLOSES_NOTHING } from '../types'
 import type { Budget, Preset, Settings } from '../types'
-import { stoppedWords } from '../words'
+import { getStoppedWords } from '../words'
 
 export interface VaultPresetsDeps {
   presets: PresetsClient
@@ -146,7 +146,7 @@ const gather = (vault: VaultCardsDue, answered: readonly DeckPresetResult[], tod
       answeredNew: day?.answeredNew ?? 0,
       answeredReviews: day?.answeredReviews ?? 0,
       took: day?.took ?? 0,
-      paused: stoppedWords(one.stopsOn, one.settings, today),
+      paused: getStoppedWords(one.stopsOn, one.settings, today),
       wrong: [...one.problems].join('; '),
     }
   })
@@ -154,7 +154,7 @@ const gather = (vault: VaultCardsDue, answered: readonly DeckPresetResult[], tod
   // A preset every one of whose decks is empty is answered for no deck, and so
   // is one whose settings could not be read, so both stand here on the count
   // alone, beside the presets nothing points at.
-  const why = refusedFor(answered)
+  const why = getRefusedReason(answered)
   for (const one of vault.presets) {
     if (at.has(one.preset)) continue
     out.push({
@@ -174,7 +174,7 @@ const gather = (vault: VaultCardsDue, answered: readonly DeckPresetResult[], tod
       answeredReviews: one.answeredReviews,
       took: one.took,
       // The count answered for this preset, so its verdict is the count's.
-      paused: stoppedWords(one.stopsOn, null, today),
+      paused: getStoppedWords(one.stopsOn, null, today),
       wrong: one.decks > 0 ? why : '',
     })
   }
@@ -186,7 +186,7 @@ const gather = (vault: VaultCardsDue, answered: readonly DeckPresetResult[], tod
  * preset is refused for the same reason, so a reason every refused deck gave is
  * the reason of each preset none of them could read.
  */
-const refusedFor = (answered: readonly DeckPresetResult[]): string => {
+const getRefusedReason = (answered: readonly DeckPresetResult[]): string => {
   const why = new Set(answered.filter((one) => one.refused).map((one) => one.refused))
   if (why.size === 0) return ''
   return why.size === 1 ? ([...why][0] ?? '') : UNREAD

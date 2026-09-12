@@ -23,7 +23,7 @@ export const STOPPED = {
   /** No day of the week carries any of the load, so there is no next day. */
   noWeek: 'no load on any day',
   /** Every card face here is unbegun, and the preset begins none a day. */
-  beginsNothing: 'no cards to begin',
+  noneToBegin: 'no cards to begin',
 } as const
 
 /**
@@ -72,7 +72,7 @@ const WHY: Record<StopReason, (settings: Settings | null, today: string) => stri
  * The verdict is the core's: it is what the session hands its cards out by. Two
  * of the reasons name a day, and the settings carry the one a date aimed at.
  */
-export const stoppedWords = (why: StopReason, settings: Settings | null, today: string): string =>
+export const getStoppedWords = (why: StopReason, settings: Settings | null, today: string): string =>
   WHY[why](settings, today)
 
 /**

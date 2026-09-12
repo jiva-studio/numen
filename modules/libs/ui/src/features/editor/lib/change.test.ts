@@ -7,9 +7,9 @@
 import { describe, expect, it } from 'vitest'
 import { EditorState, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { changing, marked, pacing, revealOf, stepped, type EditorChange } from './change'
+import { changing, marked, createPacePlugin, revealOf, stepped, type EditorChange } from './change'
 import type { Clock } from '@/shared/lib/clock'
-import { parsed } from '../fixtures/state'
+import { createState } from '../fixtures/state'
 import { RUSSIAN } from '@/shared/fixtures/prose'
 
 // Nothing here has a size, and the editor measures anyway.
@@ -36,8 +36,8 @@ const drawn = (state: EditorState): Drawn[] => {
 }
 
 /** A state with the parser the editor runs, and a change put in over it. */
-const marking = (doc: string, change: EditorChange | null): EditorState =>
-  parsed(doc).update({
+const createMarkedState = (doc: string, change: EditorChange | null): EditorState =>
+  createState(doc).update({
     effects: StateEffect.appendConfig.of([marked, changing.of(change)]),
   }).state
 
@@ -89,32 +89,32 @@ describe('a change on its way', () => {
   const CHANGE: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog' }
 
   it('marks the stretch it is about to replace', () => {
-    expect(drawn(marking(DOC, CHANGE))).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
+    expect(drawn(createMarkedState(DOC, CHANGE))).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
   })
 
   it('is drawn for nobody while there is no change', () => {
-    expect(drawn(marking(DOC, null))).toEqual([])
+    expect(drawn(createMarkedState(DOC, null))).toEqual([])
   })
 
   it('moves with the text when something is typed before it', () => {
-    const typed = marking(DOC, CHANGE).update({ changes: { from: 0, insert: 'so ' } }).state
+    const typed = createMarkedState(DOC, CHANGE).update({ changes: { from: 0, insert: 'so ' } }).state
     expect(drawn(typed)).toEqual([{ from: 7, to: 10, mark: 'cm-changing' }])
   })
 
   it('is drawn for nothing where it is addressed past the end of the text', () => {
     const past: EditorChange = { id: 'a', from: 40, to: 90, text: 'dog' }
-    expect(drawn(marking(DOC, past))).toEqual([])
+    expect(drawn(createMarkedState(DOC, past))).toEqual([])
   })
 
   it('leaves the text as it was', () => {
-    expect(marking(DOC, CHANGE).doc.toString()).toBe(DOC)
+    expect(createMarkedState(DOC, CHANGE).doc.toString()).toBe(DOC)
   })
 })
 
 describe('a change that puts nothing in', () => {
   it('marks the stretch it takes out, and there is nothing to show', () => {
     const gone: EditorChange = { id: 'a', from: 4, to: 8, text: '' }
-    expect(drawn(marking('the cat sat', gone))).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
+    expect(drawn(createMarkedState('the cat sat', gone))).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
   })
 })
 
@@ -123,22 +123,22 @@ describe('a change whose text has arrived', () => {
   const CHANGE: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog and cat' }
 
   it('covers all of the text before any of it is shown', () => {
-    expect(drawn(marking(DOC, CHANGE))).toEqual([{ from: 4, to: 15, mark: null }])
+    expect(drawn(createMarkedState(DOC, CHANGE))).toEqual([{ from: 4, to: 15, mark: null }])
   })
 
   it('shows the words that have had their turn and covers the rest', () => {
-    expect(drawn(at(marking(DOC, CHANGE), CHANGE, 0.4))).toEqual([
+    expect(drawn(at(createMarkedState(DOC, CHANGE), CHANGE, 0.4))).toEqual([
       { from: 4, to: 8, mark: 'cm-arriving' },
       { from: 8, to: 15, mark: null },
     ])
   })
 
   it('draws nothing at all once every word is shown', () => {
-    expect(drawn(at(marking(DOC, CHANGE), CHANGE, 1))).toEqual([])
+    expect(drawn(at(createMarkedState(DOC, CHANGE), CHANGE, 1))).toEqual([])
   })
 
   it('takes over from the mark when the text lands in the document', () => {
-    const waiting = marking('the cat sat', { id: 'a', from: 4, to: 7, text: 'dog' })
+    const waiting = createMarkedState('the cat sat', { id: 'a', from: 4, to: 7, text: 'dog' })
     expect(drawn(waiting)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
 
     const landed = waiting.update({ changes: { from: 4, to: 7, insert: 'dog' } }).state
@@ -146,14 +146,14 @@ describe('a change whose text has arrived', () => {
   })
 
   it('goes back to the mark when the text is typed away from under it', () => {
-    const shown = at(marking(DOC, CHANGE), CHANGE, 0.4)
+    const shown = at(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
     const typed = shown.update({ changes: { from: 5, to: 6, insert: 'i' } }).state
     expect(drawn(typed)).toEqual([{ from: 4, to: 15, mark: 'cm-changing' }])
   })
 })
 
 /** A clock the test winds by hand. */
-const clocked = () => {
+const createClock = () => {
   let pending: ((now: number) => void) | null = null
   const clock: Clock = {
     now: () => 0,
@@ -181,12 +181,12 @@ describe('the showing, stepped by the clock', () => {
   const CHANGE: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog and cat' }
 
   const wound = () => {
-    const world = clocked()
+    const world = createClock()
     const view = new EditorView({
       parent: document.body,
       state: EditorState.create({
         doc: DOC,
-        extensions: [marked, changing.of(CHANGE), pacing(world.clock)],
+        extensions: [marked, changing.of(CHANGE), createPacePlugin(world.clock)],
       }),
     })
     return { world, view }

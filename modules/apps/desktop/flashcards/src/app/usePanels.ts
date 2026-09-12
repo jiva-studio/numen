@@ -20,7 +20,7 @@ export interface PanelsDeps {
   /** The vault the session is on. */
   readonly vault: () => string
   /** Where the window says what a person has to know. */
-  readonly says: (said: string) => void
+  readonly showNotice: (said: string) => void
 }
 
 export const usePanels = (deps: PanelsDeps) => {
@@ -40,9 +40,9 @@ export const usePanels = (deps: PanelsDeps) => {
    * The strip taken somewhere by a hand. A panel reached this way is opened, not
    * merely shown: what is in it is fetched and started when it is asked for.
    */
-  const moved = (where: PanelPlace) => {
-    if (where === 'before') void notesPanel.opens()
-    else if (where === 'after') agentPanel.opens()
+  const moveTo = (where: PanelPlace) => {
+    if (where === 'before') void notesPanel.openPanel()
+    else if (where === 'after') agentPanel.openPanel()
     else showing.value = 'here'
   }
 
@@ -58,7 +58,7 @@ export const usePanels = (deps: PanelsDeps) => {
       if (open) showing.value = 'asking'
       else if (showing.value === 'asking') showing.value = 'here'
     },
-    says: deps.says,
+    showNotice: deps.showNotice,
   })
 
   const notesPanel = useNotesPanel({
@@ -70,7 +70,7 @@ export const usePanels = (deps: PanelsDeps) => {
     vault: deps.vault,
     deck: () => deps.card()?.deck ?? '',
     around,
-    says: deps.says,
+    showNotice: deps.showNotice,
   })
 
   /**
@@ -80,15 +80,15 @@ export const usePanels = (deps: PanelsDeps) => {
    * A link pressed in the card names the note to open on and brings the reading
    * in: the press was about that note.
    */
-  const reads = (named = '') => {
-    if (named === '' && showing.value === 'reading') notesPanel.shuts()
-    else void notesPanel.opens(named)
+  const toggleNotes = (named = '') => {
+    if (named === '' && showing.value === 'reading') notesPanel.closePanel()
+    else void notesPanel.openPanel(named)
   }
 
-  const talks = () => {
-    if (showing.value === 'asking') agentPanel.shuts()
-    else agentPanel.opens()
+  const toggleAgent = () => {
+    if (showing.value === 'asking') agentPanel.closePanel()
+    else agentPanel.openPanel()
   }
 
-  return { showing, at, moved, agentPanel, notesPanel, reads, talks }
+  return { showing, at, moveTo, agentPanel, notesPanel, toggleNotes, toggleAgent }
 }

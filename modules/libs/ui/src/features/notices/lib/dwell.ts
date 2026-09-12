@@ -50,7 +50,7 @@ const over = (
 ): boolean => at - (arrived.get(notice.id) ?? at) >= dwellOf(notice.says, notice.about)
 
 /** The notices drawn: the ones that have lasted, less the ones put away. */
-export const showing = (
+export const getShownNotices = (
   notices: readonly Notice[],
   arrived: ReadonlyMap<string, number>,
   away: ReadonlySet<string>,
@@ -64,7 +64,7 @@ export const showing = (
   })
 
 /** The notices that have been read, and whose caller may forget them. */
-export const finished = (
+export const getFinishedNotices = (
   notices: readonly Notice[],
   arrived: ReadonlyMap<string, number>,
   at: number,

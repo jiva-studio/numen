@@ -81,7 +81,9 @@ class Grid extends WidgetType {
     body.forEach((row, index) => rest.appendChild(draw(row, index + 1, 'td')))
     table.append(top, rest)
 
-    const grown = this.writable ? [adding('cm-add-column'), adding('cm-add-row')] : []
+    const grown = this.writable
+      ? [createAddButton('cm-add-column'), createAddButton('cm-add-row')]
+      : []
     frame.replaceChildren(table, ...grown)
     span(frame, this.table)
   }
@@ -93,7 +95,7 @@ const span = (frame: HTMLElement, table: Table) => {
   frame.dataset['to'] = String(table.to)
 }
 
-const adding = (name: string) => {
+const createAddButton = (name: string) => {
   const button = document.createElement('button')
   button.className = name
   button.textContent = '+'

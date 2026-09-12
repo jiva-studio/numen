@@ -60,21 +60,21 @@ describe('a turn that failed', () => {
 })
 
 describe('a line about work that opens something', () => {
-  const doing = (id: string, opens?: boolean): Turn =>
+  const createDoing = (id: string, opens?: boolean): Turn =>
     opens === undefined
       ? { id, voice: 'doing', text: 'Read a document' }
       : { id, voice: 'doing', text: 'Read a document', opens }
 
   it('can be pressed, and says which turn was pressed', async () => {
-    const wrapper = thread([doing('1', true)])
+    const wrapper = thread([createDoing('1', true)])
 
     await wrapper.find('.thread__opens').trigger('click')
 
-    expect(wrapper.emitted('open')).toEqual([[doing('1', true)]])
+    expect(wrapper.emitted('open')).toEqual([[createDoing('1', true)]])
   })
 
   it('is a line and nothing to press where the turn opens nothing', () => {
-    expect(thread([doing('1')]).find('.thread__opens').exists()).toBe(false)
+    expect(thread([createDoing('1')]).find('.thread__opens').exists()).toBe(false)
   })
 })
 
@@ -105,7 +105,7 @@ const SCREEN = 100
  * A thread over an area that scrolls, since the document a test runs in lays
  * nothing out. One turn is one screenful.
  */
-const scrolling = (turns: readonly Turn[]) => {
+const createScrollingThread = (turns: readonly Turn[]) => {
   const wrapper = thread(turns)
   const area = wrapper.element as HTMLElement
   let top = 0
@@ -136,7 +136,7 @@ const scrolling = (turns: readonly Turn[]) => {
 
 describe('following the foot', () => {
   it('brings a turn that arrives into view', async () => {
-    const one = scrolling([said('1'), back('2')])
+    const one = createScrollingThread([said('1'), back('2')])
 
     await one.arrives(said('3'))
 
@@ -144,7 +144,7 @@ describe('following the foot', () => {
   })
 
   it('follows an answer as it is written', async () => {
-    const one = scrolling([said('1'), back('2', '')])
+    const one = createScrollingThread([said('1'), back('2', '')])
 
     await one.wrapper.setProps({ turns: [said('1'), back('2', 'a first word')] })
 
@@ -152,7 +152,7 @@ describe('following the foot', () => {
   })
 
   it('leaves a reader who scrolled up where they are reading', async () => {
-    const one = scrolling([said('1'), back('2'), said('3')])
+    const one = createScrollingThread([said('1'), back('2'), said('3')])
     await one.reads(0)
 
     await one.arrives(back('4'))
@@ -161,7 +161,7 @@ describe('following the foot', () => {
   })
 
   it('takes the foot up again once it is read back down to', async () => {
-    const one = scrolling([said('1'), back('2'), said('3')])
+    const one = createScrollingThread([said('1'), back('2'), said('3')])
     await one.reads(0)
     await one.reads(2 * SCREEN)
 
@@ -171,7 +171,7 @@ describe('following the foot', () => {
   })
 
   it('is asked back to the foot, wherever it was left', async () => {
-    const one = scrolling([said('1'), back('2'), said('3')])
+    const one = createScrollingThread([said('1'), back('2'), said('3')])
     await one.reads(0)
 
     ;(one.wrapper.vm as unknown as { toFoot: (again?: boolean) => void }).toFoot(true)
@@ -188,7 +188,7 @@ describe('following the foot', () => {
  * is said about a turn beside it.
  */
 describe('the step each part is set at', () => {
-  const doing = (id: string): Turn => ({ id, voice: 'doing', text: 'Thinking' })
+  const createDoing = (id: string): Turn => ({ id, voice: 'doing', text: 'Thinking' })
 
   it("sets the thread in the interface's own text", () => {
     expect(thread([]).classes()).toContain('text-base')
@@ -199,7 +199,7 @@ describe('the step each part is set at', () => {
   })
 
   it('sets a line about work at that step as well', () => {
-    expect(thread([doing('1')]).find('.tool-call').classes()).toContain('text-base')
+    expect(thread([createDoing('1')]).find('.tool-call').classes()).toContain('text-base')
   })
 
   it('says a turn did not send in the quiet step', () => {

@@ -49,7 +49,7 @@ type Render = NonNullable<Story['render']>
  * Every story holds its own text, as the application would: the composer says
  * what was written and leaves clearing it to whoever answers.
  */
-const holding = (...starts: string[]): Render => (args) => ({
+const renderComposers = (...starts: string[]): Render => (args) => ({
   components: { MessageComposer },
   setup: () => ({ args, texts: starts.map((start) => ref(start)) }),
   template: `
@@ -66,7 +66,7 @@ const holding = (...starts: string[]): Render => (args) => ({
 
 /** Empty, and with a line in it. Turn `working` on for the disc that stops. */
 export const Playground: Story = {
-  render: holding('', 'What does a plex draw?'),
+  render: renderComposers('', 'What does a plex draw?'),
   play: async ({ canvasElement }) => {
     // One line of typing stands as tall as the button, which is what puts the
     // two on the same middle.
@@ -85,7 +85,7 @@ export const Playground: Story = {
  * stops growing and scrolls instead.
  */
 export const Grown: Story = {
-  render: holding(MULTILINE, `${LONG}\n\n${LONG}`),
+  render: renderComposers(MULTILINE, `${LONG}\n\n${LONG}`),
   play: async ({ canvasElement }) => {
     for (const field of canvasElement.querySelectorAll('textarea')) {
       const within = field.closest('.composer')?.getBoundingClientRect().bottom ?? 0
@@ -96,7 +96,7 @@ export const Grown: Story = {
 
 /** A word with nowhere to break, a script that is not Latin, and one that
  *  runs the other way. */
-export const AwkwardText: Story = { render: holding(LINK, DEVANAGARI, ARABIC) }
+export const AwkwardText: Story = { render: renderComposers(LINK, DEVANAGARI, ARABIC) }
 
 /**
  * As narrow as a pane is ever drawn, with words standing in that are longer

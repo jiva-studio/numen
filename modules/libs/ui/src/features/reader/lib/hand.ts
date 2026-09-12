@@ -29,7 +29,7 @@ export const DRAG_THRESHOLD = 3
  * the room has both, and then a wheel turned down means down — the way it does
  * everywhere else — and sideways is what a wheel says sideways.
  */
-export function wheeled(wheel: Wheel, hasBelow: boolean): Offset {
+export function getWheelOffset(wheel: Wheel, hasBelow: boolean): Offset {
   if (hasBelow) return { x: wheel.x, y: wheel.y }
   return { x: wheel.x + wheel.y, y: 0 }
 }

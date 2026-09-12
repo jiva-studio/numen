@@ -8,11 +8,11 @@ import { formatErrorCodeMessage } from '@numen/wire'
 import NoteSheet from './NoteSheet.vue'
 import type { Core } from '../core'
 
-const holding = (notes: Record<string, unknown>) => ({ notes }) as unknown as Core
+const createCore = (notes: Record<string, unknown>) => ({ notes }) as unknown as Core
 
 describe('a note the core refused', () => {
   it('says why it could not be read, in words, and closes', async () => {
-    const core = holding({
+    const core = createCore({
       readNote: vi.fn().mockResolvedValue({ body: '', at: undefined, refusal: Refusal.MISSING }),
     })
     const sheet = mount(NoteSheet, { props: { core, path: 'Gone.md' }, attachTo: document.body })
@@ -26,7 +26,7 @@ describe('a note the core refused', () => {
   })
 
   it('says why it could not be written, in words, and stays open', async () => {
-    const core = holding({
+    const core = createCore({
       readNote: vi.fn().mockResolvedValue({ body: 'One line.\n', at: undefined }),
       writeNote: vi.fn().mockResolvedValue({ refusal: Refusal.STALE }),
     })

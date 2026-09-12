@@ -6,7 +6,7 @@
  * were given. Minting those identities, and turning what a person did into the
  * fields and the faces a file is written from, is here.
  */
-import { ordered, reordered, type InsertionPoint } from '@numen/ui'
+import { orderNames, reorderFields, type InsertionPoint } from '@numen/ui'
 import type { VaultFace, VaultStencil } from '@/entities/deck'
 import { generateId, type IdMaker } from '@/entities/deck'
 import type { Surrounds } from '@/entities/deck'
@@ -96,7 +96,7 @@ export const fieldGone = (stencil: BufferStencil, field: string): BufferStencil 
  */
 export const fieldDropped = (stencil: BufferStencil, field: string, at: InsertionPoint): BufferStencil => ({
   ...stencil,
-  fields: reordered(stencil.fields, field, at),
+  fields: reorderFields(stencil.fields, field, at),
 })
 
 /**
@@ -105,7 +105,7 @@ export const fieldDropped = (stencil: BufferStencil, field: string, at: Insertio
  * nothing among them is fixed.
  */
 export const faceDropped = (stencil: BufferStencil, id: string, at: InsertionPoint): BufferStencil => {
-  const order = ordered(
+  const order = orderNames(
     stencil.faces.map((face) => face.id),
     id,
     at,

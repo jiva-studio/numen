@@ -9,10 +9,10 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref, watch } from 'vue'
 import Face from './Face.vue'
 import type { FieldValue } from '../../../lib/card'
-import { declared, type Half } from '../../../lib/order'
+import { getDeclaredFields, type Half } from '../../../lib/order'
 import { faceRows, type FaceRow, type StencilFace } from '../../../lib/stencil'
-import { sampled } from '../../../lib/fill'
-import { hovered, lightness } from '@/shared/fixtures/colour'
+import { sampleValues } from '../../../lib/fill'
+import { hoverOver, lightness } from '@/shared/fixtures/colour'
 import { DARK, drawnDark } from '@/shared/fixtures/theme'
 
 interface Corpus {
@@ -142,8 +142,8 @@ const meta: Meta<Knobs> = {
       )
 
       const drawn = computed<FaceRow>(() => {
-        const fields = declared(held.value.fields)
-        const laid = faceRows([written.value], fields, held.value.sample ?? sampled(fields))[0]
+        const fields = getDeclaredFields(held.value.fields)
+        const laid = faceRows([written.value], fields, held.value.sample ?? sampleValues(fields))[0]
         if (!laid) throw new Error('a corpus holding no face')
         return { ...laid, taken: held.value.taken ?? [] }
       })
@@ -502,7 +502,7 @@ export const Dark: Story = {
     const resting = lightness(getComputedStyle(chip).backgroundColor)
     expect(ink).toBeGreaterThan(resting)
 
-    await hovered(chip)
+    await hoverOver(chip)
     await waitFor(() =>
       expect(lightness(getComputedStyle(chip).backgroundColor)).toBeGreaterThan(resting + 2),
     )

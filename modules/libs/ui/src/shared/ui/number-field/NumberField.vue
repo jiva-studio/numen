@@ -9,13 +9,13 @@
 import { computed, nextTick, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/classes'
 import {
-  allowed,
-  clamped,
+  isAllowed,
+  clamp,
   numberOf,
   onItsWay,
-  settled,
-  standsFor,
-  walked,
+  snapToBounds,
+  isTextForValue,
+  stepForKey,
   written,
   DEFAULT_BOUNDS,
 } from './number'
@@ -68,7 +68,7 @@ const refused = computed(() => {
   if (said === '') return false
   if (!onItsWay(said)) return true
   const value = numberOf(said)
-  return value !== null && value !== clamped(value, bounds.value)
+  return value !== null && value !== clamp(value, bounds.value)
 })
 
 /** What a refused line is said as, so it is read out and not only marked. */
@@ -76,7 +76,7 @@ const saying = computed(() => (refused.value ? typed.value.trim() : undefined))
 
 /** The number in force, which is a number the bounds hold. */
 const inForce = computed(() =>
-  model.value === null ? null : clamped(model.value, bounds.value),
+  model.value === null ? null : clamp(model.value, bounds.value),
 )
 
 /** A number the bounds no longer hold is brought in, and stands there written out. */
@@ -95,7 +95,7 @@ const element = useTemplateRef<HTMLInputElement>('element')
 
 /** A number set from outside is written out; typing that means it is left alone. */
 watch(model, (now) => {
-  if (standsFor(typed.value, now)) return
+  if (isTextForValue(typed.value, now)) return
   typed.value = written(now)
   rested = now
 })
@@ -103,7 +103,7 @@ watch(model, (now) => {
 const took = (event: Event) => {
   typed.value = (event.target as HTMLInputElement).value
   if (typed.value.trim() === '') model.value = null
-  else if (allowed(typed.value, bounds.value)) model.value = numberOf(typed.value)
+  else if (isAllowed(typed.value, bounds.value)) model.value = numberOf(typed.value)
 }
 
 /**
@@ -115,7 +115,7 @@ const took = (event: Event) => {
  */
 const settle = async () => {
   const value = numberOf(typed.value)
-  const now = value === null ? null : settled(value, bounds.value)
+  const now = value === null ? null : snapToBounds(value, bounds.value)
   model.value = now
   typed.value = written(now)
   if (now !== rested) {
@@ -123,7 +123,7 @@ const settle = async () => {
     raises('settles', now)
   }
   await nextTick()
-  if (!standsFor(typed.value, model.value)) {
+  if (!isTextForValue(typed.value, model.value)) {
     typed.value = written(model.value)
     rested = model.value
   }
@@ -133,12 +133,12 @@ const settle = async () => {
  * A key the spin button answers: the arrows a step, the page keys ten, and home
  * and end the ends. Enter settles the field where it stands.
  */
-const pressed = (event: KeyboardEvent) => {
+const onKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     void settle()
     return
   }
-  const said = walked(event.key, numberOf(typed.value) ?? model.value, bounds.value)
+  const said = stepForKey(event.key, numberOf(typed.value) ?? model.value, bounds.value)
   if (said === null) return
   event.preventDefault()
   if (props.disabled) return
@@ -183,6 +183,6 @@ defineExpose({
     "
     @input="took"
     @blur="settle"
-    @keydown="pressed"
+    @keydown="onKeyDown"
   />
 </template>

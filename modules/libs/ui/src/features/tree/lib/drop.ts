@@ -9,7 +9,7 @@ import type { Row, RowId, ShownRow } from './row'
 export type RowLanding = { readonly into: RowId | null } | { readonly before: RowId }
 
 /** The row a landing names, and nothing for the top level. */
-const named = (at: RowLanding): RowId | null => ('into' in at ? at.into : at.before)
+const getLandingRow = (at: RowLanding): RowId | null => ('into' in at ? at.into : at.before)
 
 /**
  * What letting go at a height comes to.
@@ -29,7 +29,7 @@ export function landing(
   const found = bandAt(shown, y, height)
   if (!found) return null
 
-  const on = named(found)
+  const on = getLandingRow(found)
   return on !== null && dragging.includes(on) ? null : found
 }
 
@@ -59,7 +59,7 @@ export const holderOf = (shown: readonly ShownRow[], at: RowLanding): RowId | nu
  * Rows cannot land in one of themselves, nor in anything one of them holds.
  * Everything else is allowed, and the top level refuses nothing.
  */
-export function refuses(
+export function isRefused(
   rows: readonly Row[],
   dragging: readonly RowId[],
   into: RowId | null,

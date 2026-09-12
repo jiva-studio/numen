@@ -59,7 +59,7 @@ export interface Report {
 /** What a session is built over: the application, and what it says went wrong. */
 export interface SessionDeps {
   cards: SessionClient
-  failed(why: unknown): void
+  reportError(why: unknown): void
   /** When it is, in milliseconds. How long a card stood there is measured with it. */
   now?(): number
 }
@@ -127,14 +127,14 @@ export function useReviewSession(deps: SessionDeps) {
       )
       vault.value = named
       run.value = opened.run
-      asked.value = opened.asked.map(asking)
+      asked.value = opened.asked.map(createCardFace)
       at.value = 0
       shown.value = false
       answers.value = []
       put = now()
       return { unwritten: opened.unwritten, skipped: opened.skipped }
     } catch (why) {
-      deps.failed(why)
+      deps.reportError(why)
       return null
     }
   }
@@ -164,7 +164,7 @@ export function useReviewSession(deps: SessionDeps) {
       })
       answers.value.push(given.answer)
     } catch (why) {
-      deps.failed(why)
+      deps.reportError(why)
       return
     } finally {
       writing.value = false
@@ -185,7 +185,7 @@ export function useReviewSession(deps: SessionDeps) {
     try {
       await deps.cards.takeBackAnswer({ vault: vault.value, run: run.value, answer: last })
     } catch (why) {
-      deps.failed(why)
+      deps.reportError(why)
       return
     } finally {
       writing.value = false
@@ -217,7 +217,7 @@ export function useReviewSession(deps: SessionDeps) {
 }
 
 /** One card as the window holds it: the seconds come across as numbers. */
-const asking = (one: SessionStart['asked'][number]): CardFace => ({
+const createCardFace = (one: SessionStart['asked'][number]): CardFace => ({
   deck: one.deck,
   section: one.section,
   mark: one.mark,

@@ -34,7 +34,7 @@ export interface WideBox {
  * Nothing where the box already holds the title, and nothing where the window
  * is no wider than the box.
  */
-export function widenedFor(
+export function getWideBox(
   node: PlacedNode,
   wanted: number,
   viewport: Size,

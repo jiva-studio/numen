@@ -63,7 +63,7 @@ describe('useNaming', () => {
 
   it('stands what is typed in the box it is typed in, and in no other', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', 'Tall')
+    naming.setDraft('Height', 'Tall')
     expect(naming.text('Height')).toBe('Tall')
     expect(naming.text('Weight')).toBe('Weight')
     // It stands there until it is committed, and nothing is renamed meanwhile.
@@ -72,7 +72,7 @@ describe('useNaming', () => {
 
   it('renames the thing under the name typed, once it is committed', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', 'Tallness')
+    naming.setDraft('Height', 'Tallness')
     naming.commit('Height')
     expect(renamed).toEqual([['Height', 'Tallness']])
     expect(naming.text('Height')).toBe('Height')
@@ -80,14 +80,14 @@ describe('useNaming', () => {
 
   it('drops the space around a name it commits', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', '  Tallness  ')
+    naming.setDraft('Height', '  Tallness  ')
     naming.commit('Height')
     expect(renamed).toEqual([['Height', 'Tallness']])
   })
 
   it('objects to nothing where a thing is typed the name it already carries', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', 'Height')
+    naming.setDraft('Height', 'Height')
     expect(naming.objection('Height')).toBeNull()
     naming.commit('Height')
     expect(renamed).toEqual([])
@@ -95,7 +95,7 @@ describe('useNaming', () => {
 
   it('objects to a name another one carries, and renames nothing', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', 'Weight')
+    naming.setDraft('Height', 'Weight')
     expect(naming.objection('Height')).toBe('taken')
     naming.commit('Height')
     expect(renamed).toEqual([])
@@ -103,7 +103,7 @@ describe('useNaming', () => {
 
   it('objects to a name with nothing in it, and renames nothing', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', '   ')
+    naming.setDraft('Height', '   ')
     expect(naming.objection('Height')).toBe('blank')
     naming.commit('Height')
     expect(renamed).toEqual([])
@@ -111,7 +111,7 @@ describe('useNaming', () => {
 
   it('objects to a brace in a field’s name, which no slot could write', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', 'How {{tall}}')
+    naming.setDraft('Height', 'How {{tall}}')
     expect(naming.objection('Height')).toBe('braced')
     naming.commit('Height')
     expect(renamed).toEqual([])
@@ -119,7 +119,7 @@ describe('useNaming', () => {
 
   it('takes a brace in a face’s name, which stands in a heading', () => {
     const { naming, renamed } = overFaces(new Map([['one', 'One']]))
-    naming.typing('one', 'What {{Name}} is')
+    naming.setDraft('one', 'What {{Name}} is')
     expect(naming.objection('one')).toBeNull()
     naming.commit('one')
     expect(renamed).toEqual([['one', 'What {{Name}} is']])
@@ -132,7 +132,7 @@ describe('useNaming', () => {
         ['two', 'Two'],
       ]),
     )
-    naming.typing('one', 'Two')
+    naming.setDraft('one', 'Two')
     expect(naming.objection('one')).toBe('taken')
     naming.commit('one')
     expect(renamed).toEqual([])
@@ -142,7 +142,7 @@ describe('useNaming', () => {
      objects to nothing. */
   it('consults on a commit the objection that was drawn', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', 'Weight')
+    naming.setDraft('Height', 'Weight')
     const drawn = naming.objection('Height')
     naming.commit('Height')
     expect(drawn).toBe('taken')
@@ -152,7 +152,7 @@ describe('useNaming', () => {
 
   it('commits a name on a break, and gives up the box it was typed in', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', 'Tallness')
+    naming.setDraft('Height', 'Tallness')
     const box = press(naming, 'Height', 'Enter')
     expect(renamed).toEqual([['Height', 'Tallness']])
     expect(document.activeElement).not.toBe(box)
@@ -160,7 +160,7 @@ describe('useNaming', () => {
 
   it('abandons what is typed on escape, and renames nothing', () => {
     const { naming, renamed } = overFields(FIELDS)
-    naming.typing('Height', 'Tallness')
+    naming.setDraft('Height', 'Tallness')
     press(naming, 'Height', 'Escape')
     expect(naming.text('Height')).toBe('Height')
     naming.commit('Height')
@@ -169,7 +169,7 @@ describe('useNaming', () => {
 
   it('leaves what is typed standing under any other key', () => {
     const { naming } = overFields(FIELDS)
-    naming.typing('Height', 'Tallness')
+    naming.setDraft('Height', 'Tallness')
     press(naming, 'Height', 'a')
     expect(naming.text('Height')).toBe('Tallness')
   })

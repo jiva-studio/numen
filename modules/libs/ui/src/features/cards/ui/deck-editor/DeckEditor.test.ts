@@ -77,14 +77,14 @@ const dragTo = async (held: Grid, id: string, onto: string | null): Promise<void
 }
 
 /** A box typed into, as a person types into it. */
-const typed = (box: HTMLTextAreaElement | undefined, text: string): void => {
+const typeInto = (box: HTMLTextAreaElement | undefined, text: string): void => {
   if (!box) throw new Error('no box to type in')
   box.value = text
   box.dispatchEvent(new Event('input'))
 }
 
 /** A key pressed on something, as the event it was pressed with. */
-const pressing = (on: Element, key: string): KeyboardEvent => {
+const pressKey = (on: Element, key: string): KeyboardEvent => {
   const press = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
   on.dispatchEvent(press)
   return press
@@ -161,7 +161,7 @@ describe('DeckEditor', () => {
   it('holds what was typed, breaks and all, in every box, the first field’s among them', async () => {
     const held = mountDeck()
     const box = boxFor(held, 'llama', 'Name')
-    expect(pressing(box.element, 'Enter').defaultPrevented).toBe(false)
+    expect(pressKey(box.element, 'Enter').defaultPrevented).toBe(false)
 
     await box.setValue('Llama\nand alpaca')
     expect(held.emitted('write')).toEqual([['llama', 'Name', 1, 'Llama\nand alpaca']])
@@ -291,27 +291,27 @@ describe('DeckEditor', () => {
 
     it('emits a tile dragged one place down the order', () => {
       const held = mountDeck()
-      const press = pressing(stripOf(held, 'llama').element, 'ArrowDown')
+      const press = pressKey(stripOf(held, 'llama').element, 'ArrowDown')
       expect(press.defaultPrevented).toBe(true)
       expect(held.emitted('move')).toEqual([['llama', null]])
     })
 
     it('emits a tile dragged one place up the order', () => {
       const held = mountDeck()
-      pressing(stripOf(held, 'yak').element, 'ArrowUp')
+      pressKey(stripOf(held, 'yak').element, 'ArrowUp')
       expect(held.emitted('move')).toEqual([['yak', 'llama']])
     })
 
     it('moves nothing where there is no place that way', () => {
       const held = mountDeck()
-      const press = pressing(stripOf(held, 'llama').element, 'ArrowUp')
+      const press = pressKey(stripOf(held, 'llama').element, 'ArrowUp')
       expect(press.defaultPrevented).toBe(false)
       expect(held.emitted('move')).toBeUndefined()
     })
 
     it('moves nothing on a key that is no way along the order', () => {
       const held = mountDeck()
-      pressing(stripOf(held, 'llama').element, 'ArrowRight')
+      pressKey(stripOf(held, 'llama').element, 'ArrowRight')
       expect(held.emitted('move')).toBeUndefined()
     })
   })
@@ -462,8 +462,8 @@ describe('DeckEditor', () => {
     ]
     const held = mountDeck({ cards: twice })
     const boxes = boxesFor(held, 'twice', 'Name')
-    typed(boxes[0], 'Vicuña')
-    typed(boxes[1], 'Guanaco')
+    typeInto(boxes[0], 'Vicuña')
+    typeInto(boxes[1], 'Guanaco')
 
     expect(held.emitted('write')).toEqual([
       ['twice', 'Name', 1, 'Vicuña'],
@@ -644,14 +644,14 @@ describe('DeckEditor', () => {
 
       it('emit the first card of the deck dragged out of its section', () => {
         const held = mountSectioned({ cards: INSIDE })
-        const press = pressing(tileFor(held, 'llama').get('.card-header__grip').element, 'ArrowUp')
+        const press = pressKey(tileFor(held, 'llama').get('.card-header__grip').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(true)
         expect(held.emitted('move')).toEqual([['llama', HEAD]])
       })
 
       it('move nothing where the card dragged up already stands there', () => {
         const held = mountSectioned()
-        const press = pressing(tileFor(held, 'loose').get('.card-header__grip').element, 'ArrowUp')
+        const press = pressKey(tileFor(held, 'loose').get('.card-header__grip').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(false)
         expect(held.emitted('move')).toBeUndefined()
       })

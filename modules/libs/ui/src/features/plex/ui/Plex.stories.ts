@@ -22,7 +22,7 @@ import type { PlexEdge } from '../lib/edge'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlexNode, Position } from '../lib/node'
 import type { PlexRelatedSeat } from '../lib/seat'
-import type { PlexShowing } from '../model/showing'
+import type { PlexDestination } from '../model/showing'
 import type { Clock } from '../model/transition'
 import type { MenuOpening } from '@/shared/ui/menu'
 
@@ -33,7 +33,7 @@ interface Knobs {
   duration: number
   dwell: number
   onActivate: (id: string) => void
-  onShow: (id: string, showing: PlexShowing) => void
+  onShow: (id: string, showing: PlexDestination) => void
   onCreate: (from: string, seat: PlexRelatedSeat) => void
   onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
   onBring: (dragged: readonly string[], seat: PlexRelatedSeat) => void
@@ -93,7 +93,7 @@ interface Knobs {
   clock?: Clock
 }
 
-const knobbed = (a: Knobs): PlexOptionsInput => ({
+const getOptions = (a: Knobs): PlexOptionsInput => ({
   focusSize: { width: a.focusWidth, height: a.focusHeight },
   nodeSize: { width: a.nodeWidth, height: a.nodeHeight },
   gap: a.gap,
@@ -119,7 +119,7 @@ const knobbed = (a: Knobs): PlexOptionsInput => ({
  * the clearances are handed in to hold that label.
  */
 const optionsFrom = (a: Knobs, type: number): PlexOptionsInput =>
-  optionsForType(type, resolveOptions(knobbed(a)))
+  optionsForType(type, resolveOptions(getOptions(a)))
 
 const range = (min: number, max: number, step = 1, category = 'Layout') => ({
   control: { type: 'range' as const, min, max, step },
@@ -179,7 +179,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
     }
 
     /** A node seated beside another one, linked the way that seat is written. */
-    const seats = (from: string, title: string, seat: PlexRelatedSeat) => {
+    const createSeated = (from: string, title: string, seat: PlexRelatedSeat) => {
       const id = `made/${made.value.length}`
       made.value = [...made.value, { id, title, seat }]
       links.value = [
@@ -196,7 +196,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
      * really to be called is a later idea and somebody else's screen.
      */
     const create = (from: string, seat: PlexRelatedSeat) => {
-      seats(from, args.naming(), seat)
+      createSeated(from, args.naming(), seat)
     }
 
     /**
@@ -205,10 +205,10 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
      * identifiers address is the story's to know, and the plex handed them
      * back untouched.
      */
-    const bring = (dragged: readonly string[], seat: PlexRelatedSeat) => {
+    const dropOnto = (dragged: readonly string[], seat: PlexRelatedSeat) => {
       const here = neighbourhood.value.nodes.find((node) => node.seat === 'focus')
       if (!here) return
-      for (const one of dragged) seats(here.id, one, seat)
+      for (const one of dragged) createSeated(here.id, one, seat)
     }
 
     const link = (from: string, to: string, seat: PlexRelatedSeat) => {
@@ -223,7 +223,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
       chose,
       create,
       link,
-      bring,
+      dropOnto,
       neighbourhood,
       options: computed(() => optionsFrom(args, type.value)),
     }
@@ -245,7 +245,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
         @show="(id, showing) => args.onShow(id, showing)"
         @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
         @link="(from, to, seat) => { link(from, to, seat); args.onLink(from, to, seat) }"
-        @bring="(dragged, seat) => { bring(dragged, seat); args.onBring(dragged, seat) }"
+        @bring="(dragged, seat) => { dropOnto(dragged, seat); args.onBring(dragged, seat) }"
         @menu="args.onMenu"
         @dismiss="args.onDismiss"
       />
@@ -259,7 +259,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
  * The neighbourhood is computed: a fresh object on every render tells the plex
  * it has somewhere new to go, and it re-aims once a frame.
  */
-const walking = (args: Knobs) => ({
+const renderWalk = (args: Knobs) => ({
   components: { Plex },
   setup() {
     const type = useTypeSize()
@@ -536,7 +536,7 @@ export const DraggingThemIn: Story = {
       window.dispatchEvent(
         new PointerEvent('pointermove', { clientX, clientY, pointerId: 1, bubbles: true }),
       )
-    const says = async (words: string | null) => {
+    const expectDraggedTitle = async (words: string | null) => {
       await waitFor(async () => {
         await expect(
           canvasElement.querySelector('.plex__dragged .plex__title-text')?.textContent ?? null,
@@ -546,22 +546,22 @@ export const DraggingThemIn: Story = {
 
     // Above the focus, where the parents are, and in the words the story gave.
     dragTo(middle, box.y - 220)
-    await says('as parent')
+    await expectDraggedTitle('as parent')
     await expect(canvasElement.querySelector('.plex__dragged .plex__thread')).not.toBeNull()
 
     // Below it, where the children are: the words follow the pointer.
     dragTo(middle, box.bottom + 220)
-    await says('as child')
+    await expectDraggedTitle('as child')
 
     // Off the edge of the plex, where letting go would join nothing: nothing
     // is promised, and the line goes with the promise.
     dragTo(middle, -400)
-    await says(null)
+    await expectDraggedTitle(null)
     await expect(canvasElement.querySelector('.plex__dragged')).toBeNull()
 
     // Back over the picture, and left there to be looked at.
     dragTo(middle, box.y - 220)
-    await says('as parent')
+    await expectDraggedTitle('as parent')
   },
 }
 
@@ -587,7 +587,7 @@ export const OneHandleAtATime: Story = {
   render: invented.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const handles = () => canvasElement.querySelectorAll('.plex__handle')
+    const getHandles = () => canvasElement.querySelectorAll('.plex__handle')
     const boxes = [
       canvas.getByLabelText(/, focus$/),
       ...canvas.getAllByLabelText(/, (parent|child|jump|sibling)$/).slice(0, 3),
@@ -595,22 +595,22 @@ export const OneHandleAtATime: Story = {
     const first = boxes[0]!
 
     // A picture nobody is on offers nothing.
-    await expect(handles()).toHaveLength(0)
+    await expect(getHandles()).toHaveLength(0)
 
     // The focus a click leaves is one the keyboard is not visibly on, and no
     // hand is anywhere near.
     first.focus({ focusVisible: false } as KeyboardFocus)
     await expect(first).toHaveFocus()
-    await expect(handles()).toHaveLength(0)
+    await expect(getHandles()).toHaveLength(0)
 
     // The hand across the picture, box after box. One handle in the whole
     // plex, on the box the hand is on, and none left behind it.
     for (const box of boxes) {
       await userEvent.hover(box)
-      await expect(handles()).toHaveLength(1)
+      await expect(getHandles()).toHaveLength(1)
       await expect(box.querySelector('.plex__handle')).not.toBeNull()
       await userEvent.unhover(box)
-      await expect(handles()).toHaveLength(0)
+      await expect(getHandles()).toHaveLength(0)
     }
 
     // Arriving by tab is the keyboard being used, and the box it stops at
@@ -619,7 +619,7 @@ export const OneHandleAtATime: Story = {
     await userEvent.tab()
     const stop = canvasElement.ownerDocument.activeElement!
     await expect(stop).toHaveClass('plex__node')
-    await expect(handles()).toHaveLength(1)
+    await expect(getHandles()).toHaveLength(1)
     await expect(stop.querySelector('.plex__handle')).not.toBeNull()
   },
 }
@@ -857,9 +857,9 @@ interface Edges {
  * Two counts, and the assertion is the count itself, so a picture that gets
  * worse says by how much.
  */
-const titlesStandClear = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
   /** Whether two boxes on the screen share any of it. */
-  const meets = (one: Edges, other: Edges) =>
+  const isOverlapping = (one: Edges, other: Edges) =>
     one.left < other.right &&
     other.left < one.right &&
     one.top < other.bottom &&
@@ -919,14 +919,16 @@ const titlesStandClear = async ({ canvasElement }: { canvasElement: HTMLElement 
   for (const [at, title] of drawn.entries()) {
     for (const other of drawn.slice(at + 1)) {
       const touching = title.letters.some((letter) =>
-        other.letters.some((mine) => meets(letter, mine)),
+        other.letters.some((mine) => isOverlapping(letter, mine)),
       )
       if (touching) piled.push(`${title.words} × ${other.words}`)
     }
   }
 
   const overBoxes = drawn
-    .filter((title) => title.letters.some((letter) => boxes.some((box) => meets(letter, box))))
+    .filter((title) =>
+      title.letters.some((letter) => boxes.some((box) => isOverlapping(letter, box))),
+    )
     .map((title) => title.words)
 
   await expect(drawn.length).toBeGreaterThan(0)
@@ -949,7 +951,7 @@ const titlesStandClear = async ({ canvasElement }: { canvasElement: HTMLElement 
 export const TitlesFindRoom: Story = {
   args: { ...invented.args, duration: 0 },
   render: invented.render,
-  play: titlesStandClear,
+  play: expectTitlesClear,
 }
 
 /**
@@ -963,7 +965,7 @@ export const TitlesFindRoom: Story = {
  */
 export const TitlesAcrossRows: Story = {
   args: { neighbourhood: neighbourhoods.labelledRows, duration: 0 },
-  play: titlesStandClear,
+  play: expectTitlesClear,
 }
 
 /**
@@ -1003,7 +1005,7 @@ export const ArrowedLines: Story = {
     const svg = canvasElement.querySelector('svg')!
 
     /** Whether a box holds a point, give or take a pixel. */
-    const holds = (box: DOMRect, at: DOMPoint) =>
+    const hasPoint = (box: DOMRect, at: DOMPoint) =>
       at.x >= box.left - 1 &&
       at.x <= box.right + 1 &&
       at.y >= box.top - 1 &&
@@ -1027,7 +1029,7 @@ export const ArrowedLines: Story = {
     const lineAt = (name: string) => {
       const box = canvas.getByLabelText(name).getBoundingClientRect()
       for (const { line, ends } of lines()) {
-        const end = ends.find((point) => holds(box, point))
+        const end = ends.find((point) => hasPoint(box, point))
         if (end) return { line, end }
       }
       throw new Error(`no line touches ${name}`)
@@ -1041,7 +1043,7 @@ export const ArrowedLines: Story = {
 
     /** Whether an arrowhead was drawn on a given end of a line. */
     const headAt = (end: DOMPoint) =>
-      heads().some((head) => holds(head.getBoundingClientRect(), end))
+      heads().some((head) => hasPoint(head.getBoundingClientRect(), end))
 
     /** Where every head and every end of every line stands, as one reading. */
     const reading = () =>
@@ -1084,10 +1086,10 @@ export const ArrowedLines: Story = {
     // line, and its tip is what touches the border.
     const jump = lineAt('Bram Doyle, jump')
     const box = canvas.getByLabelText('Bram Doyle, jump').getBoundingClientRect()
-    const head = heads().find((one) => holds(one.getBoundingClientRect(), jump.end))!
+    const head = heads().find((one) => hasPoint(one.getBoundingClientRect(), jump.end))!
     const drawn = head.getBoundingClientRect()
     await expect(
-      holds(box, new DOMPoint(drawn.x + drawn.width / 2, drawn.y + drawn.height / 2)),
+      hasPoint(box, new DOMPoint(drawn.x + drawn.width / 2, drawn.y + drawn.height / 2)),
     ).toBe(false)
 
     // The title on that line is cut short of the head, at either end of the
@@ -1194,7 +1196,7 @@ export const Walk: Story = {
      * just been clicked holds the focus, and so wears a handle that hangs off
      * its trailing edge and would count towards the group's width.
      */
-    const arrived = async (label: string) =>
+    const waitForNode = async (label: string) =>
       await waitFor(
         async () => {
           const box = canvas
@@ -1225,13 +1227,13 @@ export const Walk: Story = {
     await userEvent.keyboard('{Enter}')
     await expect(args.onActivate).toHaveBeenCalledWith('architecture')
 
-    await arrived('Architecture, focus')
+    await waitForNode('Architecture, focus')
 
     // Go back the way you came. Where it ends up is what a browser is needed
     // for: that a click on an SVG group lands, and that the plex settles with
     // the chosen node centred.
     await userEvent.click(canvas.getByLabelText('Hexagonal architecture, child'))
-    await arrived('Hexagonal architecture, focus')
+    await waitForNode('Hexagonal architecture, focus')
 
     // The node walked away from took the seat above, and the plex is a plex
     // again.
@@ -1247,7 +1249,7 @@ export const Walk: Story = {
       },
     },
   },
-  render: walking,
+  render: renderWalk,
 }
 
 /**

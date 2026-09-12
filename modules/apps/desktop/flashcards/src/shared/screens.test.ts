@@ -6,12 +6,12 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { screens } from './screens'
+import { useScreens } from './screens'
 
 /** Three screens, each holding one thing that says when it was let go of. */
 const three = () => {
   const dropped: string[] = []
-  const held = screens(['list', 'rows', 'one'] as const, {
+  const held = useScreens(['list', 'rows', 'one'] as const, {
     rows: [() => dropped.push('rows')],
     one: [() => dropped.push('one')],
   })
@@ -24,30 +24,30 @@ describe('going to a screen', () => {
   })
 
   it('lets go of everything the screens after it hold', () => {
-    const { dropped, goes, on } = three()
+    const { dropped, goTo, on } = three()
 
-    goes('one')
-    goes('list')
+    goTo('one')
+    goTo('list')
 
     expect(dropped).toStrictEqual(['rows', 'one'])
     expect(on.value).toBe('list')
   })
 
   it('leaves what the screens before it hold', () => {
-    const { dropped, goes } = three()
+    const { dropped, goTo } = three()
 
-    goes('one')
-    goes('rows')
+    goTo('one')
+    goTo('rows')
 
     expect(dropped).toStrictEqual(['one'])
   })
 
   it('lets go of nothing going further in', () => {
-    const { dropped, goes } = three()
+    const { dropped, goTo } = three()
 
-    goes('rows')
+    goTo('rows')
     dropped.length = 0
-    goes('one')
+    goTo('one')
 
     expect(dropped).toStrictEqual([])
   })

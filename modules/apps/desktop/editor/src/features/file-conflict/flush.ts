@@ -6,7 +6,7 @@
  * raises a conflict, and the window stays until every conflict is settled.
  */
 import { shallowRef, type Ref } from 'vue'
-import { following } from '@numen/ui'
+import { createFollower } from '@numen/ui'
 
 /** How a flush came out: everything written, or a person still being asked. */
 export type FlushResult = 'written' | 'asking'
@@ -142,7 +142,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     },
   })
 
-  const follows = following({
+  const follows = createFollower({
     open: () => open,
     lost: () => {},
     wait,

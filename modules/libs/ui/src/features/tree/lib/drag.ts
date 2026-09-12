@@ -7,7 +7,7 @@ import type { RowId, ShownRow } from './row'
  * The rows a press on a row drags: the selection, where the row stands in it,
  * and the row alone where it stands outside.
  */
-export const dragged = (selected: readonly RowId[], row: RowId): readonly RowId[] =>
+export const getDraggedRows = (selected: readonly RowId[], row: RowId): readonly RowId[] =>
   selected.includes(row) ? selected : [row]
 
 /** What is drawn at the pointer while rows are dragged. */

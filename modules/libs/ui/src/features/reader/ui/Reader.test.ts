@@ -28,15 +28,15 @@ const room = async (held: ReturnType<typeof mount>, wide: number, high: number) 
 }
 
 /** The widths the reader has asked for, in the order it asked. */
-const asked = (held: ReturnType<typeof mount>) =>
+const getWidths = (held: ReturnType<typeof mount>) =>
   (held.emitted('wide') ?? []).map((one) => (one as [number])[0])
 
 describe('the room a document is read in', () => {
   it('asks for a width once it knows how big the room is', async () => {
     const held = await reader(1000, 800)
 
-    expect(asked(held)).toHaveLength(1)
-    expect(asked(held)[0]).toBeGreaterThan(0)
+    expect(getWidths(held)).toHaveLength(1)
+    expect(getWidths(held)[0]).toBeGreaterThan(0)
   })
 
   it('asks for nothing while it has no room', async () => {
@@ -45,7 +45,7 @@ describe('the room a document is read in', () => {
     // thrown away.
     const held = await reader(0, 0)
 
-    expect(asked(held)).toHaveLength(0)
+    expect(getWidths(held)).toHaveLength(0)
   })
 
   it('keeps the room it had when it is put out of sight', async () => {
@@ -58,7 +58,7 @@ describe('the room a document is read in', () => {
 
     await room(held, 0, 0)
 
-    expect(asked(held)).toHaveLength(1)
+    expect(getWidths(held)).toHaveLength(1)
     expect(held.find('.reader__row').attributes('style')).toBe(before)
   })
 
@@ -73,7 +73,7 @@ describe('the room a document is read in', () => {
       await room(held, 1400, 1100)
       await vi.advanceTimersByTimeAsync(300)
 
-      expect(asked(held).length).toBeGreaterThan(1)
+      expect(getWidths(held).length).toBeGreaterThan(1)
     } finally {
       vi.useRealTimers()
     }
@@ -99,14 +99,14 @@ describe('the pages drawn', () => {
 
 describe('the page it says it stands on', () => {
   /** The row scrolled by hand, and the reader told about it. */
-  const moved = async (held: ReturnType<typeof mount>, to: number) => {
+  const scrollTo = async (held: ReturnType<typeof mount>, to: number) => {
     const area = held.find('.reader__viewport').element as HTMLElement
     area.scrollLeft = to
     await held.find('.reader__viewport').trigger('scroll')
   }
 
   /** Which pages the reader has asked to be turned to, in the order it asked. */
-  const turned = (held: ReturnType<typeof mount>) =>
+  const getTurns = (held: ReturnType<typeof mount>) =>
     (held.emitted('go') ?? []).map((one) => (one as [number])[0])
 
   it('says nothing while the row travels to the page it was turned to', async () => {
@@ -116,19 +116,19 @@ describe('the page it says it stands on', () => {
     const held = await reader(1000, 800)
     await held.setProps({ at: 4 })
 
-    await moved(held, 0)
-    await moved(held, 200)
+    await scrollTo(held,0)
+    await scrollTo(held,200)
 
-    expect(turned(held)).toHaveLength(0)
+    expect(getTurns(held)).toHaveLength(0)
   })
 
   it('says where the row stands once the hand has it', async () => {
     const held = await reader(1000, 800)
 
-    await moved(held, 4000)
+    await scrollTo(held,4000)
 
-    expect(turned(held).length).toBeGreaterThan(0)
-    expect(turned(held).at(-1)).toBeGreaterThan(0)
+    expect(getTurns(held).length).toBeGreaterThan(0)
+    expect(getTurns(held).at(-1)).toBeGreaterThan(0)
   })
 
   it('turns again when the page changes before the row has said it arrived', async () => {

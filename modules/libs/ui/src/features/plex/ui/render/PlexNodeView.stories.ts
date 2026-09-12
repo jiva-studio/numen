@@ -11,11 +11,11 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { awkwardLabels } from '../../fixtures/neighbourhoods'
-import { hovered, lightness } from '@/shared/fixtures/colour'
+import { hoverOver, lightness } from '@/shared/fixtures/colour'
 import { DARK, drawnDark } from '@/shared/fixtures/theme'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { RELATED_SEATS, type PlexSeat } from '../../lib/seat'
-import type { PlexShowing } from '../../model/showing'
+import type { PlexDestination } from '../../model/showing'
 
 interface Knobs {
   title: string
@@ -30,7 +30,7 @@ interface Knobs {
   icon: boolean
 
   onActivate: () => void
-  onShow: (showing: PlexShowing) => void
+  onShow: (showing: PlexDestination) => void
   onReach: (pointer: PointerEvent) => void
   onAsk: () => void
 }
@@ -379,7 +379,7 @@ export const Dark: Story = {
       await expect(Math.abs(ink - resting)).toBeGreaterThan(40)
       await expect(Math.sign(ink - resting)).toBe(title === 'Where you are' ? -1 : 1)
 
-      await hovered(node)
+      await hoverOver(node)
       await waitFor(async () => {
         const moved = lightness(getComputedStyle(box).fill) - resting
         await expect(Math.abs(moved)).toBeGreaterThan(2)

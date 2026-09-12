@@ -27,7 +27,7 @@ export interface Ink {
 /** How large a drawing is painted again to be measured, in pixels a side. */
 const GRAIN = 240
 
-const painting = (): CanvasRenderingContext2D => {
+const createCanvas = (): CanvasRenderingContext2D => {
   const canvas = document.createElement('canvas')
   canvas.width = GRAIN
   canvas.height = GRAIN
@@ -37,7 +37,7 @@ const painting = (): CanvasRenderingContext2D => {
 }
 
 /** The lines the ink on a painting reaches, and how thick it is, in its pixels. */
-const painted = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; run: number } => {
+const readInk = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; run: number } => {
   const data = ctx.getImageData(0, 0, GRAIN, GRAIN).data
   const on = (x: number, y: number): boolean =>
     x >= 0 && y >= 0 && x < GRAIN && y < GRAIN && data[(y * GRAIN + x) * 4 + 3]! > 128
@@ -92,10 +92,10 @@ export const drawingInk = async (drawing: SVGElement): Promise<Ink> => {
       'data:image/svg+xml;charset=utf-8,' +
       encodeURIComponent(new XMLSerializer().serializeToString(copy))
   })
-  const ctx = painting()
+  const ctx = createCanvas()
   ctx.drawImage(image, 0, 0, GRAIN, GRAIN)
 
-  const ink = painted(ctx)
+  const ink = readInk(ctx)
   const down = (at: number): number => box.top + (at / GRAIN) * box.height
   return {
     top: down(ink.top),

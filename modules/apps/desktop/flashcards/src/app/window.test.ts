@@ -81,7 +81,7 @@ const { useWindow } = await import('./window')
 
 type Window = ReturnType<typeof useWindow>
 
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 /**
  * Everything the window hands out, as plain values: a ref stands for what it
@@ -99,7 +99,7 @@ const shot = (value: unknown): unknown => {
 }
 
 /** The window made, in a page, with the counts on the screen. */
-const opened = async () => {
+const openWindow = async () => {
   let held: Window | null = null
   const page = mount(
     defineComponent({
@@ -110,8 +110,8 @@ const opened = async () => {
     }),
   )
   pages.push(page)
-  await settles()
-  await settles()
+  await settle()
+  await settle()
   return held as unknown as Window
 }
 
@@ -123,35 +123,35 @@ afterEach(() => {
 
 describe('a person who went in and came back out', () => {
   it('finds the window as they opened it', async () => {
-    const window = await opened()
+    const window = await openWindow()
     const asOpened = shot(window)
 
     window.vaults.choose('roots')
-    await settles()
+    await settle()
     await window.decks.start('decks/Suffixes.md')
-    window.session.talks()
-    window.session.reads()
+    window.session.toggleAgent()
+    window.session.toggleNotes()
     window.session.state.show()
-    await settles()
-    await settles()
+    await settle()
+    await settle()
 
     await window.session.leave()
-    await window.decks.vaultsAgain()
-    await settles()
-    await settles()
+    await window.decks.goToVaults()
+    await settle()
+    await settle()
 
     expect(shot(window)).toStrictEqual(asOpened)
   })
 
   it('was holding something on the way', async () => {
-    const window = await opened()
+    const window = await openWindow()
 
     window.vaults.choose('roots')
-    await settles()
+    await settle()
     await window.decks.start('decks/Suffixes.md')
-    window.session.talks()
-    window.session.reads()
-    await settles()
+    window.session.toggleAgent()
+    window.session.toggleNotes()
+    await settle()
 
     expect(window.on.value).toBe('session')
     expect(window.session.state.card.value?.mark).toBe('mark-1')

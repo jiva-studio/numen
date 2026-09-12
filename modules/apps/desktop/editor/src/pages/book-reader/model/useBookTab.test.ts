@@ -55,7 +55,7 @@ const kindOver = (held: BookTabState) => bookKind(createMockWindow(held).handle,
 
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {
-    const drawn: BookHandle = { measure: vi.fn(), pressed: vi.fn(() => false) }
+    const drawn: BookHandle = { measure: vi.fn(), handleKey: vi.fn(() => false) }
     const held = useBookTab(read('library/Mahabharata.epub'))
 
     held.measure()
@@ -73,8 +73,8 @@ describe('what a book tab holds', () => {
   it('delegates focus and keypresses to the held elements', () => {
     const focus = vi.fn()
     const element = { focus } as unknown as HTMLElement
-    const pressed = vi.fn(() => true)
-    const drawn: BookHandle = { measure: vi.fn(), pressed }
+    const handleKey = vi.fn(() => true)
+    const drawn: BookHandle = { measure: vi.fn(), handleKey }
     const held = useBookTab(read('library/Mahabharata.epub'))
 
     held.setTabElement(element)
@@ -86,7 +86,7 @@ describe('what a book tab holds', () => {
 
     held.setBookHandle(drawn)
     expect(held.handleKeyPress(event)).toBe(true)
-    expect(pressed).toHaveBeenCalledWith(event)
+    expect(handleKey).toHaveBeenCalledWith(event)
   })
 })
 

@@ -14,7 +14,7 @@ const pixelRatio = (): number =>
     : window.devicePixelRatio
 
 /** The width a page is asked for at, staged. */
-const staged = (pixels: number): number => Math.ceil(pixels / STAGE) * STAGE
+const stageWidth = (pixels: number): number => Math.ceil(pixels / STAGE) * STAGE
 
 export interface PageWidthState {
   /** What the row asks for its pages at, in device pixels. */
@@ -27,7 +27,7 @@ export function usePageWidth(laid: () => Row, atWidth: (pixels: number) => void)
   /** The widest page there is, staged, in device pixels. */
   const needed = computed(() => {
     const widest = laid().widths.reduce((most, each) => Math.max(most, each), 0)
-    return widest > 0 ? staged(widest * pixelRatio()) : 0
+    return widest > 0 ? stageWidth(widest * pixelRatio()) : 0
   })
 
   const drawnAt = ref(0)

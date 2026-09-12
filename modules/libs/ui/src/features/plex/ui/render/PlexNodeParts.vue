@@ -7,7 +7,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import type { HungParts } from '../../lib/inside'
-import { openedTo, woundBy, type Arrow } from '../../lib/open'
+import { getOpenParts, woundBy, type Arrow } from '../../lib/open'
 
 const props = defineProps<{
   /** The parts and the room they are given. */
@@ -25,7 +25,7 @@ const emit = defineEmits<{
 const wound = ref(0)
 
 /** The parts, as far out from under the box as they have come. */
-const opened = computed(() => openedTo(props.hung, props.open, wound.value))
+const opened = computed(() => getOpenParts(props.hung, props.open, wound.value))
 
 /** What a wheel moved that came to no whole part, held for the next one. */
 let carried = 0

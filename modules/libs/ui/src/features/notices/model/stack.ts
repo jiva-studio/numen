@@ -17,11 +17,11 @@ export interface NoticeStackState {
   /** Takes the clock forward, and the held time with it. */
   readonly beat: () => void
   /** A pointer went over a card, and left the stack. */
-  readonly enters: (event: PointerEvent) => void
-  readonly leaves: (event: PointerEvent) => void
+  readonly onPointerOver: (event: PointerEvent) => void
+  readonly onPointerOut: (event: PointerEvent) => void
   /** The keyboard came into the stack, and left it. */
-  readonly holds: () => void
-  readonly lets: (event: FocusEvent) => void
+  readonly onFocusIn: () => void
+  readonly onFocusOut: (event: FocusEvent) => void
 }
 
 export function useNoticeStack(
@@ -35,7 +35,7 @@ export function useNoticeStack(
   const pointed = ref(false)
   const focused = ref(false)
   /** Whether the corner is being held. */
-  const holding = (): boolean => pointed.value || focused.value || hidden()
+  const isHolding = (): boolean => pointed.value || focused.value || hidden()
   /** How long it has been held for. */
   const heldFor = ref(0)
 
@@ -56,32 +56,32 @@ export function useNoticeStack(
     }
     if (focused.value && !stack.value?.contains(document.activeElement)) focused.value = false
     const at = clock()
-    if (holding()) heldFor.value += at - now.value
+    if (isHolding()) heldFor.value += at - now.value
     now.value = at
   }
 
   /** Answered by the card the pointer went over, whatever inside it was under it. */
-  const enters = (event: PointerEvent): void => {
+  const onPointerOver = (event: PointerEvent): void => {
     on = event.currentTarget as Element | null
     pointed.value = true
   }
 
-  const leaves = (event: PointerEvent): void => {
+  const onPointerOut = (event: PointerEvent): void => {
     const to = event.relatedTarget
     if (to instanceof Node && stack.value?.contains(to)) return
     pointed.value = false
     on = null
   }
 
-  const holds = (): void => {
+  const onFocusIn = (): void => {
     focused.value = true
   }
 
-  const lets = (event: FocusEvent): void => {
+  const onFocusOut = (event: FocusEvent): void => {
     const to = event.relatedTarget
     if (to instanceof Node && stack.value?.contains(to)) return
     focused.value = false
   }
 
-  return { now, read, beat, enters, leaves, holds, lets }
+  return { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut }
 }

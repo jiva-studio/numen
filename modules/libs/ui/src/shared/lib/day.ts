@@ -37,13 +37,13 @@ export const isDay = (day: string): boolean => !Number.isNaN(Date.parse(`${day}T
  */
 export const daysBetween = (from: string, to: string): number => {
   if (!isDay(from) || !isDay(to)) return 0
-  return Math.round((numbered(to) - numbered(from)) / DAY)
+  return Math.round((getDayNumber(to) - getDayNumber(from)) / DAY)
 }
 
 /** The day that many days after a written one, and itself where it is not a day. */
 export const dayAfter = (from: string, days: number): string => {
   if (!isDay(from)) return from
-  const at = new Date(numbered(from))
+  const at = new Date(getDayNumber(from))
   at.setUTCDate(at.getUTCDate() + days)
   return at.toISOString().slice(0, 10)
 }
@@ -52,7 +52,7 @@ export const dayAfter = (from: string, days: number): string => {
  * A written day as a number of days, counted on a calendar no clock change
  * touches. It is not an instant and nothing is shown from it.
  */
-const numbered = (day: string): number => {
+const getDayNumber = (day: string): number => {
   const [year, month, at] = day.split('-').map(Number)
   return Date.UTC(year ?? 2000, (month ?? 1) - 1, at ?? 1)
 }

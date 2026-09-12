@@ -70,7 +70,7 @@ export interface PartsDeps {
  * note whose parts begin at the second level is set in from the edge as one
  * beginning at the first.
  */
-function indents(parts: readonly PlexPart[], step: number): Map<number, number> {
+function getIndents(parts: readonly PlexPart[], step: number): Map<number, number> {
   const levels = [...new Set(parts.map((part) => part.level))].sort((a, b) => a - b)
   return new Map(levels.map((level, rank) => [level, Math.min(rank, DEEPEST) * step]))
 }
@@ -101,7 +101,7 @@ export function hangParts(
   if (rows < 1) return null
 
   const shown = Math.min(maxParts, rows, parts.length)
-  const setIn = indents(parts, partIndent)
+  const setIn = getIndents(parts, partIndent)
 
   const hung: HungPart[] = parts.map((part, at) => ({
     id: part.id,

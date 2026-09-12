@@ -32,7 +32,7 @@ describe('what a vault was answered on', () => {
         )
       },
     }
-    const one = useReviewedDays({ cards, failed: () => {} })
+    const one = useReviewedDays({ cards, reportError: () => {} })
 
     await one.read('01VAULT')
 
@@ -56,7 +56,7 @@ describe('what a vault was answered on', () => {
         return Promise.resolve(said([['2026-08-29', 1]], 1))
       },
     }
-    const one = useReviewedDays({ cards, failed: () => {} })
+    const one = useReviewedDays({ cards, reportError: () => {} })
 
     const slow = one.read('01SLOW')
     await one.read('01OTHER')
@@ -77,7 +77,7 @@ describe('what a vault was answered on', () => {
         ])
       },
     }
-    const one = useReviewedDays({ cards, failed: () => {} })
+    const one = useReviewedDays({ cards, reportError: () => {} })
 
     await one.read('01VAULT')
 
@@ -88,7 +88,7 @@ describe('what a vault was answered on', () => {
 
   it('is nothing for no vault at all', async () => {
     const cards: ReviewDaysClient = { listReviewDays: () => Promise.reject(new Error('never asked')) }
-    const one = useReviewedDays({ cards, failed: () => {} })
+    const one = useReviewedDays({ cards, reportError: () => {} })
 
     await one.read('')
 
@@ -99,7 +99,7 @@ describe('what a vault was answered on', () => {
   it('says what went wrong and holds nothing', async () => {
     const trouble: unknown[] = []
     const cards: ReviewDaysClient = { listReviewDays: () => Promise.reject(new Error('no such vault')) }
-    const one = useReviewedDays({ cards, failed: (why) => trouble.push(why) })
+    const one = useReviewedDays({ cards, reportError: (why) => trouble.push(why) })
 
     await one.read('01VAULT')
 

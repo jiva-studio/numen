@@ -21,7 +21,7 @@ const WRITTEN = [
   '[[a note]]',
 ].join('\n\n')
 
-const holding = (body: string) =>
+const createCore = (body: string) =>
   ({
     notes: { readNote: vi.fn().mockResolvedValue({ body, at: undefined }) },
   }) as unknown as Core
@@ -29,7 +29,7 @@ const holding = (body: string) =>
 describe('a note read on the phone', () => {
   it('puts no address in the page for the window to be sent to', async () => {
     const sheet = mount(NoteSheet, {
-      props: { core: holding(WRITTEN), path: 'Synced.md' },
+      props: { core: createCore(WRITTEN), path: 'Synced.md' },
       attachTo: document.body,
     })
     await flushPromises()

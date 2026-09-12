@@ -4,11 +4,11 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  braced,
+  braceField,
   insert,
-  previewed,
-  renamedIn,
-  sampled,
+  renderPreview,
+  renameField,
+  sampleValues,
   slotsIn,
   strayIn,
 } from './fill'
@@ -62,7 +62,7 @@ describe('a card face', () => {
       if (want !== face) changed += 1
 
       const said = { name, construct, laid: want }
-      expect({ name, construct, laid: previewed(face, values, fields) }).toStrictEqual(said)
+      expect({ name, construct, laid: renderPreview(face, values, fields) }).toStrictEqual(said)
     }
 
     expect(laid).toBe(corpus.count)
@@ -91,30 +91,30 @@ describe('slotsIn', () => {
   })
 })
 
-describe('previewed', () => {
+describe('renderPreview', () => {
   it('stands a value in every slot the fields name', () => {
-    expect(previewed('{{Height}}', VALUES, ['Height'])).toBe('about 45"')
+    expect(renderPreview('{{Height}}', VALUES, ['Height'])).toBe('about 45"')
   })
 
   it('stands the naming field like any other', () => {
     const values = [{ field: 'Name', text: 'Llama' }]
-    expect(previewed('{{Name}} is tall', values, ['Name'])).toBe('Llama is tall')
+    expect(renderPreview('{{Name}} is tall', values, ['Name'])).toBe('Llama is tall')
   })
 
   it('leaves a slot nothing was handed for empty', () => {
-    expect(previewed('[{{Weight}}]', VALUES, ['Weight'])).toBe('[]')
+    expect(renderPreview('[{{Weight}}]', VALUES, ['Weight'])).toBe('[]')
   })
 
   it('keeps the markup around the slots', () => {
     const fields = ['Height', 'Life span']
-    expect(previewed('<li>{{Height}}</li>\n<li>{{Life span}}</li>\n', VALUES, fields)).toBe(
+    expect(renderPreview('<li>{{Height}}</li>\n<li>{{Life span}}</li>\n', VALUES, fields)).toBe(
       '<li>about 45"</li>\n<li>about 20 years</li>\n',
     )
   })
 
   it('stands a value that is itself markup', () => {
     const values = [{ field: 'Picture', text: '<img src="llama.jpg" alt="a llama">' }]
-    expect(previewed('{{Picture}}', values, ['Picture'])).toBe(
+    expect(renderPreview('{{Picture}}', values, ['Picture'])).toBe(
       '<img src="llama.jpg" alt="a llama">',
     )
   })
@@ -124,7 +124,7 @@ describe('previewed', () => {
       { field: 'One', text: '{{Two}}' },
       { field: 'Two', text: 'caught' },
     ]
-    expect(previewed('{{One}}', values, ['One', 'Two'])).toBe('{{Two}}')
+    expect(renderPreview('{{One}}', values, ['One', 'Two'])).toBe('{{Two}}')
   })
 
   it('stands text that is not Latin', () => {
@@ -132,33 +132,33 @@ describe('previewed', () => {
       { field: 'Перевод', text: 'compost' },
       { field: 'Слово', text: 'Компост' },
     ]
-    expect(previewed('{{Перевод}} — {{Слово}}', values, ['Перевод', 'Слово'])).toBe(
+    expect(renderPreview('{{Перевод}} — {{Слово}}', values, ['Перевод', 'Слово'])).toBe(
       'compost — Компост',
     )
   })
 
   it('leaves a slot the fields do not name in its braces, marked where it stands', () => {
-    expect(previewed('a {{Colour}} b', VALUES, ['Height'])).toBe('a <mark>{{Colour}}</mark> b')
+    expect(renderPreview('a {{Colour}} b', VALUES, ['Height'])).toBe('a <mark>{{Colour}}</mark> b')
   })
 
   it('marks every stray slot where each of them stands', () => {
-    expect(previewed('{{A}}{{Height}}{{B}}', VALUES, ['Height'])).toBe(
+    expect(renderPreview('{{A}}{{Height}}{{B}}', VALUES, ['Height'])).toBe(
       '<mark>{{A}}</mark>about 45"<mark>{{B}}</mark>',
     )
   })
 
   it('stands a marked slot as text, so its braces draw no tags', () => {
-    expect(previewed('{{<img src=x>}}', [], [])).toBe(
+    expect(renderPreview('{{<img src=x>}}', [], [])).toBe(
       '<mark>{{&lt;img src=x&gt;}}</mark>',
     )
   })
 
   it('marks a slot whose name is written with space around it', () => {
-    expect(previewed('{{ Height }}', VALUES, ['Height'])).toBe('<mark>{{ Height }}</mark>')
+    expect(renderPreview('{{ Height }}', VALUES, ['Height'])).toBe('<mark>{{ Height }}</mark>')
   })
 
   it('marks a slot with no name, which no field is called', () => {
-    expect(previewed('[{{}}]', [], ['Height'])).toBe('[<mark>{{}}</mark>]')
+    expect(renderPreview('[{{}}]', [], ['Height'])).toBe('[<mark>{{}}</mark>]')
   })
 })
 
@@ -204,31 +204,31 @@ describe('insert', () => {
   })
 })
 
-describe('renamedIn', () => {
+describe('renameField', () => {
   it('rewrites every slot naming the field', () => {
-    expect(renamedIn('{{A}} {{B}} {{A}}', 'A', 'C')).toBe('{{C}} {{B}} {{C}}')
+    expect(renameField('{{A}} {{B}} {{A}}', 'A', 'C')).toBe('{{C}} {{B}} {{C}}')
   })
 
   it('leaves the field’s name in the prose alone', () => {
-    expect(renamedIn('A is {{A}}', 'A', 'C')).toBe('A is {{C}}')
+    expect(renameField('A is {{A}}', 'A', 'C')).toBe('A is {{C}}')
   })
 
   it('rewrites no slot whose name is written with space around it', () => {
-    expect(renamedIn('{{ A }}', 'A', 'C')).toBe('{{ A }}')
+    expect(renameField('{{ A }}', 'A', 'C')).toBe('{{ A }}')
   })
 })
 
-describe('sampled', () => {
+describe('sampleValues', () => {
   it('stands each field under its own name', () => {
-    expect(sampled(['Height', 'Weight'])).toEqual([
+    expect(sampleValues(['Height', 'Weight'])).toEqual([
       { field: 'Height', text: 'Height' },
       { field: 'Weight', text: 'Weight' },
     ])
   })
 })
 
-describe('braced', () => {
+describe('braceField', () => {
   it('is what a slot is written as', () => {
-    expect(slotsIn(braced('Life span'))[0]?.field).toBe('Life span')
+    expect(slotsIn(braceField('Life span'))[0]?.field).toBe('Life span')
   })
 })

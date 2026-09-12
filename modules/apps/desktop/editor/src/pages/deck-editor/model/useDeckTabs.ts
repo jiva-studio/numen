@@ -2,7 +2,7 @@
  * Window registration and tab state for flashcard deck tabs.
  */
 import { computed } from 'vue'
-import type { PlexShowing } from '@numen/ui'
+import type { PlexDestination } from '@numen/ui'
 import type { PathRename } from '@/shared/paths'
 import type { Cards } from '@/entities/deck'
 import type { Store } from '@/features/command-palette'
@@ -172,7 +172,7 @@ export function useDeckTabs(
     createDeckTabState,
   })
 
-  const openDeckTab = (path: string, title = '', showing: PlexShowing = 'here'): void => {
+  const openDeckTab = (path: string, title = '', showing: PlexDestination = 'here'): void => {
     const id = getOrCreateTabId(path)
     if (title) said.names(path, title)
     void (showing === 'beside' ? handle.beside(DECK, id) : handle.opens(DECK, id))

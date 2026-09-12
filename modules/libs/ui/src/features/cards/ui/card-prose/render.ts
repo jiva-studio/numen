@@ -23,18 +23,18 @@ const BLOCKS = new Set([
 ])
 
 /** Whether the whitespace beside this node stands between tags. The end of what holds it counts. */
-const blocking = (node: Node | null): boolean =>
+const isBlock = (node: Node | null): boolean =>
   node === null ||
   (node.nodeType === 1 && BLOCKS.has((node as Element).tagName.toLowerCase()))
 
 const spacing = (node: Node): boolean =>
   node.nodeType === 3 &&
   (node.textContent ?? '').trim() === '' &&
-  blocking(node.previousSibling) &&
-  blocking(node.nextSibling)
+  isBlock(node.previousSibling) &&
+  isBlock(node.nextSibling)
 
 /** The text with the whitespace that stands between tags taken out of it. */
-const tightened = (html: string): string => {
+const tightenHtml = (html: string): string => {
   const read = new DOMParser().parseFromString(html, 'text/html')
 
   const walk = (node: Node): void => {
@@ -51,4 +51,4 @@ const tightened = (html: string): string => {
 }
 
 /** Text as the HTML a card draws, with nothing in it that a card may not. */
-export const rendered = (html: string): string => tightened(safe(html))
+export const renderCardHtml = (html: string): string => tightenHtml(safe(html))

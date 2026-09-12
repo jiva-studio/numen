@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import type {
   PlexNeighbourhood,
   PlexRelatedSeat,
-  PlexShowing,
+  PlexDestination,
 } from '@numen/ui'
 import type { NoteType } from '@/shared/file'
 import { fileOf, type PathRename } from '@/shared/paths'
@@ -99,7 +99,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (written) await view.go(here)
   }
 
-  const openNode = (node: string, showing: PlexShowing = 'here') => {
+  const openNode = (node: string, showing: PlexDestination = 'here') => {
     const path = map.getNodePath(node)
     if (path) deps.opens(path, getName(path), showing)
   }

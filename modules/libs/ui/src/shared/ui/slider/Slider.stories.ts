@@ -79,7 +79,7 @@ const handle = (canvas: HTMLElement): HTMLElement => {
   return found
 }
 
-const standsAt = (canvas: HTMLElement): string | null =>
+const getValueNow = (canvas: HTMLElement): string | null =>
   handle(canvas).getAttribute('aria-valuenow')
 
 /** A share of a session, part of the way along its track. */
@@ -104,7 +104,7 @@ export const AnotherRange: Story = { args: { min: 5, max: 8, step: 1, value: 6 }
 export const PastTheEnd: Story = {
   args: { value: 90, max: 50 },
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('50'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('50'))
     expect(canvasElement.textContent).toContain('50%')
   },
 }
@@ -113,7 +113,7 @@ export const PastTheEnd: Story = {
 export const UnderTheFloor: Story = {
   args: { value: -20 },
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('0'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('0'))
     expect(canvasElement.textContent).toContain('0%')
   },
 }
@@ -127,10 +127,10 @@ export const AStepAtTheCeiling: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.tab()
     await userEvent.keyboard('{ArrowRight}')
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('10'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('10'))
 
     await userEvent.keyboard('{ArrowLeft}')
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('9'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('9'))
   },
 }
 
@@ -157,7 +157,7 @@ export const AnnouncedAsASlider: Story = {
     expect(control.getAttribute('aria-orientation')).toBe('horizontal')
     expect(control.getAttribute('aria-valuemin')).toBe('0')
     expect(control.getAttribute('aria-valuemax')).toBe('100')
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('40'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('40'))
   },
 }
 
@@ -170,16 +170,16 @@ export const TheKeyboardMovesIt: Story = {
     expect(document.activeElement).toBe(control)
 
     await userEvent.keyboard('{ArrowRight}')
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('41'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('41'))
 
     await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('39'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('39'))
 
     await userEvent.keyboard('{End}')
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('100'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('100'))
 
     await userEvent.keyboard('{Home}')
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('0'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('0'))
   },
 }
 
@@ -229,7 +229,7 @@ export const SettlesWhenTheKeyIsLetGo: Story = {
 
     await userEvent.tab()
     await userEvent.keyboard('{ArrowRight>3/}')
-    await waitFor(() => expect(standsAt(canvasElement)).toBe('43'))
+    await waitFor(() => expect(getValueNow(canvasElement)).toBe('43'))
     await waitFor(() => expect(rests()).toBe('43'))
 
     await userEvent.keyboard('{End}')

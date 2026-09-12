@@ -181,10 +181,10 @@ describe('the edges follow the boxes', () => {
  * a curve in flight decides neither.
  */
 describe('the title a line carries while the picture moves', () => {
-  const named = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
+  const getEdgeKey = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
 
   it('holds the way round the words are read', () => {
-    const settled = new Map(to.edges.map((edge) => [named(edge), edge.heading]))
+    const settled = new Map(to.edges.map((edge) => [getEdgeKey(edge), edge.heading]))
 
     // A child promoted to the focus swings its edge across the page, and
     // halfway over it runs the other way round from the way it ends.
@@ -194,9 +194,9 @@ describe('the title a line carries while the picture moves', () => {
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(from, to, t).edges) {
-        const heading = settled.get(named(edge))
+        const heading = settled.get(getEdgeKey(edge))
         if (heading === undefined) continue
-        expect(edge.heading, `${named(edge)} at ${t.toFixed(2)}`).toBe(heading)
+        expect(edge.heading, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(heading)
       }
     }
   })
@@ -204,7 +204,7 @@ describe('the title a line carries while the picture moves', () => {
   it('holds the words a settled line was cut to', () => {
     // Wide letters and a long label, so the cut is well short of the whole.
     const wide = (label: string) => 30 * [...label].length
-    const saying = (neighbourhood: PlexNeighbourhood) =>
+    const arrangeWithLabels = (neighbourhood: PlexNeighbourhood) =>
       arrangePlex(
         {
           ...neighbourhood,
@@ -216,8 +216,8 @@ describe('the title a line carries while the picture moves', () => {
         { measureLabel: wide },
       )
 
-    const start = saying(before)
-    const end = saying(after)
+    const start = arrangeWithLabels(before)
+    const end = arrangeWithLabels(after)
     const cut = end.edges.find((e) => e.to === 'a')!.words!
     expect(cut.endsWith('…')).toBe(true)
 
@@ -232,7 +232,7 @@ describe('the title a line carries while the picture moves', () => {
 
     // A window that wraps the fan, at the settings: what this is about is a
     // title moving off the middle, not how much room the window has to spare.
-    const titled = (neighbourhood: PlexNeighbourhood) =>
+    const arrangeWithTitles = (neighbourhood: PlexNeighbourhood) =>
       arrangePlex(
         {
           ...neighbourhood,
@@ -257,9 +257,9 @@ describe('the title a line carries while the picture moves', () => {
       ],
     }
 
-    const start = titled(before)
-    const end = titled(fanned)
-    const settled = new Map(end.edges.map((edge) => [named(edge), edge.wordsAt]))
+    const start = arrangeWithTitles(before)
+    const end = arrangeWithTitles(fanned)
+    const settled = new Map(end.edges.map((edge) => [getEdgeKey(edge), edge.wordsAt]))
 
     // Some of the lines out of one node had to move their titles to stand
     // clear, and those are the ones a movement could set crawling.
@@ -267,9 +267,9 @@ describe('the title a line carries while the picture moves', () => {
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(start, end, t).edges) {
-        const at = settled.get(named(edge))
+        const at = settled.get(getEdgeKey(edge))
         if (at === undefined) continue
-        expect(edge.wordsAt, `${named(edge)} at ${t.toFixed(2)}`).toBe(at)
+        expect(edge.wordsAt, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(at)
       }
     }
   })
@@ -292,15 +292,15 @@ describe('the title a line carries while the picture moves', () => {
 })
 
 describe('the arrow a line carries while the picture moves', () => {
-  const marked = (neighbourhood: PlexNeighbourhood): PlexNeighbourhood => ({
+  const markArrows = (neighbourhood: PlexNeighbourhood): PlexNeighbourhood => ({
     ...neighbourhood,
     edges: neighbourhood.edges.map((edge) =>
       edge.to === 'a' ? { ...edge, arrow: 'to' as const } : edge,
     ),
   })
 
-  const start = arrangePlex(marked(before))
-  const end = arrangePlex(marked(after))
+  const start = arrangePlex(markArrows(before))
+  const end = arrangePlex(markArrows(after))
 
   it('keeps it on the end of the line, wherever the line has got to', () => {
     for (let t = 0.05; t < 1; t += 0.05) {

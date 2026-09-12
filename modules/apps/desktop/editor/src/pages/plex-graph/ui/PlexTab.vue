@@ -4,7 +4,7 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
-import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
+import type { MenuOpening, PlexRelatedSeat, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from '../lib/menu'
 import { iconFor } from '@/shared/icons'
@@ -72,7 +72,7 @@ function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuOpe
   props.state.openMenu({ node, at, opening })
 }
 
-function onShowNode(node: string, how: PlexShowing) {
+function onShowNode(node: string, how: PlexDestination) {
   props.state.openNode(node, how)
 }
 

@@ -2,7 +2,7 @@
  * Window registration and tab state for flashcard preset tabs.
  */
 import { shallowRef } from 'vue'
-import type { PlexShowing } from '@numen/ui'
+import type { PlexDestination } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
@@ -61,7 +61,7 @@ export function usePresetTab(
     gone: () => {},
   }
 
-  const openPreset = (path: string, title = '', showing: PlexShowing = 'here'): void => {
+  const openPreset = (path: string, title = '', showing: PlexDestination = 'here'): void => {
     if (title) titles.set(path, title)
     void (showing === 'beside' ? handle.beside(PRESET, path) : handle.opens(PRESET, path))
   }

@@ -79,7 +79,7 @@ const bare = (url: string): string => url.replace(/[\u0000-\u0020]/g, '')
 export const scheme = (url: string): string | null =>
   /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(bare(url))?.[0]?.toLowerCase() ?? null
 
-const points = (url: string): boolean => {
+const canLinkTo = (url: string): boolean => {
   const said = scheme(url)
   return said === null || SCHEMES.has(said)
 }
@@ -90,7 +90,7 @@ const points = (url: string): boolean => {
  * An address off the machine is a request the moment the card is drawn, which
  * tells whoever wrote the deck that it was read, and from where.
  */
-const shows = (url: string): boolean => {
+const canShow = (url: string): boolean => {
   const said = bare(url)
   if (scheme(said) === 'data:') return INLINE_IMAGE.test(said)
   // An address opening with two slashes names a host and keeps the window's
@@ -99,7 +99,7 @@ const shows = (url: string): boolean => {
 }
 
 /** A style with every declaration that is not drawn with dropped. */
-const styled = (value: string): string =>
+const filterStyles = (value: string): string =>
   value
     .split(';')
     .map((each) => each.trim())
@@ -114,7 +114,7 @@ const styled = (value: string): string =>
     .join('; ')
 
 /** Comments go: what a parser makes of one is not what the next parser makes. */
-const uncommented = (root: ParentNode & Node): void => {
+const stripComments = (root: ParentNode & Node): void => {
   const walk = (node: Node): void => {
     for (const child of [...node.childNodes]) {
       if (child.nodeType === 8) child.parentNode?.removeChild(child)
@@ -130,7 +130,7 @@ const strip = (element: Element): void => {
     const name = attribute.name.toLowerCase()
 
     if (name === 'style') {
-      const said = styled(attribute.value)
+      const said = filterStyles(attribute.value)
       if (said === '') element.removeAttribute(attribute.name)
       else element.setAttribute('style', said)
       continue
@@ -141,15 +141,15 @@ const strip = (element: Element): void => {
       continue
     }
 
-    if (name === 'href' && !points(attribute.value)) element.removeAttribute(attribute.name)
-    if (name === 'src' && !shows(attribute.value)) element.removeAttribute(attribute.name)
+    if (name === 'href' && !canLinkTo(attribute.value)) element.removeAttribute(attribute.name)
+    if (name === 'src' && !canShow(attribute.value)) element.removeAttribute(attribute.name)
   }
 }
 
 /** One reading of the text, with everything not drawn with taken out of it. */
 const pass = (html: string): string => {
   const read = new DOMParser().parseFromString(html, 'text/html')
-  uncommented(read.body)
+  stripComments(read.body)
 
   for (const element of [...read.body.querySelectorAll('*')]) {
     const tag = element.tagName.toLowerCase()

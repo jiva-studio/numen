@@ -44,7 +44,7 @@ interface Box {
   maxY: number
 }
 
-const meets = (one: Box, other: Box): boolean =>
+const isOverlapping = (one: Box, other: Box): boolean =>
   one.minX < other.maxX &&
   other.minX < one.maxX &&
   one.minY < other.maxY &&
@@ -122,7 +122,7 @@ describe('a title finds room on its line', () => {
     const piled: string[] = []
     for (let one = 0; one < boxes.length; one += 1) {
       for (let other = one + 1; other < boxes.length; other += 1) {
-        if (meets(boxes[one]!, boxes[other]!)) piled.push(`${one} x ${other}`)
+        if (isOverlapping(boxes[one]!, boxes[other]!)) piled.push(`${one} x ${other}`)
       }
     }
     expect(piled).toStrictEqual([])
@@ -189,7 +189,7 @@ describe('a title finds room on its line', () => {
     const boxes = frame.nodes.map(boxAround)
 
     const over = frame.edges.filter((edge) =>
-      boxes.some((box) => meets(box, boxOf(edge, measureLabel))),
+      boxes.some((box) => isOverlapping(box, boxOf(edge, measureLabel))),
     )
     expect(over).toStrictEqual([])
   })
@@ -244,7 +244,7 @@ describe('a title finds room on its line', () => {
 
     const over = frame.edges
       .filter((edge) => edge.words)
-      .filter((edge) => boxes.some((box) => meets(box, boxOf(edge, measureLabel))))
+      .filter((edge) => boxes.some((box) => isOverlapping(box, boxOf(edge, measureLabel))))
       .map((edge) => edge.words)
 
     expect(over).toStrictEqual([])

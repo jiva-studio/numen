@@ -173,7 +173,7 @@ export function spreads(flow: Flow): number {
  * keeps stands inside the area at either edge, so one spread begins the whole
  * of a reading area along from the one before it.
  */
-export function beginsAt(flow: Flow, spread: number): number {
+export function getSpreadStart(flow: Flow, spread: number): number {
   return spread * flow.width
 }
 
@@ -200,7 +200,7 @@ export function inFront(
 }
 
 /** The spread an offset stands in: that of the last run beginning at or before it. */
-export function holding(marks: readonly Mark[], flow: Flow, at: number): number {
+export function findSpreadAt(marks: readonly Mark[], flow: Flow, at: number): number {
   let found: Mark | undefined
   for (const mark of marks) {
     if (mark.at > at) break
@@ -214,5 +214,5 @@ export const SMALLEST = 0.8
 export const LARGEST = 2
 
 /** A number held inside the bounds it is read between. */
-export const held = (value: number, least: number, most: number): number =>
+export const clamp = (value: number, least: number, most: number): number =>
   Math.min(Math.max(value, least), most)

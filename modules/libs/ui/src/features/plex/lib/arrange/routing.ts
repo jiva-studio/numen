@@ -70,17 +70,17 @@ export function cutToFit(
   if (width(label) <= room) return label
 
   const letters = [...label]
-  const ended = (count: number) =>
+  const truncateTo = (count: number) =>
     `${letters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
 
   let fits = 0
   let over = letters.length
   while (fits + 1 < over) {
     const middle = Math.floor((fits + over) / 2)
-    if (width(ended(middle)) <= room) fits = middle
+    if (width(truncateTo(middle)) <= room) fits = middle
     else over = middle
   }
-  return ended(fits)
+  return truncateTo(fits)
 }
 
 /** A fixed place on a border, so a row of edges reads as a fan. */
@@ -98,7 +98,7 @@ function gate(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Posi
 }
 
 /** Whether there is clear space between two boxes along the given axis. */
-function separated(a: PlacedNode, b: PlacedNode, vertical: boolean): boolean {
+function isSeparated(a: PlacedNode, b: PlacedNode, vertical: boolean): boolean {
   return vertical
     ? Math.abs(b.y - a.y) > (a.height + b.height) / 2
     : Math.abs(b.x - a.x) > (a.width + b.width) / 2
@@ -128,7 +128,7 @@ export function routeEdge(
   // Two nodes in the same row have no vertical room between their gates.
   // Joining them bottom-to-top there loops down out of one box and back up.
   const vertical =
-    separated(from, to, wanted) || !separated(from, to, !wanted) ? wanted : !wanted
+    isSeparated(from, to, wanted) || !isSeparated(from, to, !wanted) ? wanted : !wanted
 
   const fromFirst = vertical ? from.y <= to.y : from.x <= to.x
   const [first, second] = fromFirst ? [from, to] : [to, from]

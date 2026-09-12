@@ -34,7 +34,7 @@ export interface Day {
 
 export interface ReviewDaysDeps {
   cards: ReviewDaysClient
-  failed(why: unknown): void
+  reportError(why: unknown): void
 }
 
 export function useReviewedDays(deps: ReviewDaysDeps) {
@@ -67,13 +67,13 @@ export function useReviewedDays(deps: ReviewDaysDeps) {
       // A person who moved to another vault while this was on its way is
       // looking at that one, and these days are not its days.
       if (of.value !== vault) return
-      days.value = new Map(said.days.map((one) => [one.day, counted(one)]))
+      days.value = new Map(said.days.map((one) => [one.day, createTally(one)]))
       due.value = new Map(said.due.map((one) => [one.day, one.answered]))
       streak.value = said.streak
       answered.value = said.answered
     } catch (why) {
       if (of.value !== vault) return
-      deps.failed(why)
+      deps.reportError(why)
       forget()
     }
   }
@@ -82,7 +82,7 @@ export function useReviewedDays(deps: ReviewDaysDeps) {
 }
 
 /** One day as the grid holds it. */
-const counted = (one: Day): HeatmapTally => ({
+const createTally = (one: Day): HeatmapTally => ({
   answered: one.answered,
   again: one.again,
   hard: one.hard,

@@ -11,11 +11,11 @@
 import { computed, nextTick, ref, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
 import { LiveRegions } from './live-regions'
 import NoticeCard from './NoticeCard.vue'
-import { arrivals, dwellOf, finished, showing, WAIT } from '../lib/dwell'
-import { folded, ROOM } from '../lib/fold'
+import { arrivals, dwellOf, getFinishedNotices, getShownNotices, WAIT } from '../lib/dwell'
+import { foldNotices, ROOM } from '../lib/fold'
 import { measured, type Movement } from '../lib/movement'
 import { readable, remembered, tallyOf, type Notice } from '../lib/notice'
-import { remainingWord } from '../lib/tally'
+import { getRemainingWord } from '../lib/tally'
 import { useAnnouncer } from '../model/announcer'
 import { useNoticeStack } from '../model/stack'
 
@@ -65,7 +65,7 @@ const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
 const stack = useTemplateRef<HTMLElement>('stack')
 
 /** How long the corner has been held for, and the moment a card is read against. */
-const { now, read, beat, enters, leaves, holds, lets } = useNoticeStack(
+const { now, read, beat, onPointerOver, onPointerOut, onFocusIn, onFocusOut } = useNoticeStack(
   stack,
   () => props.clock(),
   () => props.hidden(),
@@ -101,16 +101,16 @@ watch(
 const leftOn = (one: Notice): string => {
   const tally = tallyOf(one)
   if (tally === undefined) return ''
-  return remainingWord(tally.total - tally.done, moving.value.get(one.id)?.rate ?? 0)
+  return getRemainingWord(tally.total - tally.done, moving.value.get(one.id)?.rate ?? 0)
 }
 
 const drawn = computed(() =>
-  showing(props.notices, arrived.value, away.value, read.value, props.wait),
+  getShownNotices(props.notices, arrived.value, away.value, read.value, props.wait),
 )
 /** Whether a person has asked to see what is folded away behind the rest. */
 const opened = ref(false)
 const folds = computed(() =>
-  folded(drawn.value, opened.value ? drawn.value.length : props.room),
+  foldNotices(drawn.value, opened.value ? drawn.value.length : props.room),
 )
 
 // Asking to see what is behind the rest is asked about what stands then. Once
@@ -146,7 +146,7 @@ watchEffect((clean) => {
 })
 
 watchEffect(() => {
-  for (const id of finished(props.notices, arrived.value, read.value)) {
+  for (const id of getFinishedNotices(props.notices, arrived.value, read.value)) {
     if (forgotten.has(id)) continue
     forgotten.add(id)
     emit('gone', id)
@@ -197,9 +197,9 @@ const { told, cried } = useAnnouncer(() => drawn.value)
       ref="stack"
       class="notices__stack flex flex-col"
       :aria-label="name"
-      @pointerout="leaves"
-      @focusin="holds"
-      @focusout="lets"
+      @pointerout="onPointerOut"
+      @focusin="onFocusIn"
+      @focusout="onFocusOut"
     >
       <TransitionGroup name="notice">
         <button
@@ -207,7 +207,7 @@ const { told, cried } = useAnnouncer(() => drawn.value)
           key="folded"
           type="button"
           class="notice notice__folded"
-          @pointerover="enters"
+          @pointerover="onPointerOver"
           @click="opened = true"
         >
           {{ folds.over }} {{ more }}
@@ -220,7 +220,7 @@ const { told, cried } = useAnnouncer(() => drawn.value)
           :one="one"
           :put-away="putAway"
           :left="leftOn(one)"
-          @pointerover="enters"
+          @pointerover="onPointerOver"
           @put="put(one.id)"
         />
       </TransitionGroup>

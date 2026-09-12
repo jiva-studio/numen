@@ -10,7 +10,7 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import { answerGuard } from '@/shared/questions'
 import type { StepGroup, StepRow } from '@/features/command-palette/@x/settings-commands'
-import { following, percent } from '@numen/ui'
+import { createFollower, percent } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
 import {
   DESIGNED,
@@ -204,7 +204,7 @@ export function windowAppearance(
   let open = true
   /** Let go of the stream the window is listening to. */
   const listening = new AbortController()
-  const follows = following({
+  const follows = createFollower({
     open: () => open,
     lost: (gone) => (lost.value = gone),
     wait,

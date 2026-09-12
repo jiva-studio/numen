@@ -64,17 +64,17 @@ const measure = () => {
   if (box) size.value = { width: box.width, height: box.height }
 }
 
-const resized = () => {
+const onResize = () => {
   window_.value = { width: window.innerWidth, height: window.innerHeight }
   measure()
 }
 
 onMounted(() => {
   measure()
-  window.addEventListener('resize', resized)
+  window.addEventListener('resize', onResize)
 })
 
-onBeforeUnmount(() => window.removeEventListener('resize', resized))
+onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 
 // Measured again once the drawing has caught up with the thing it is about.
 watch(() => props.at, measure, { flush: 'post' })

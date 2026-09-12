@@ -69,7 +69,7 @@ export function usePlexGesture(
   const pointer = ref<number | null>(null)
 
   /** Far enough from where it started to be a drag rather than a click. */
-  const travelled = (now: Position) => {
+  const hasTravelled = (now: Position) => {
     const began = start.value
     return !!began && Math.hypot(now.x - began.x, now.y - began.y) >= threshold()
   }
@@ -81,7 +81,7 @@ export function usePlexGesture(
 
     // A gesture that has not travelled is a press, and a press has a rule
     // rather than a direction.
-    if (!travelled(now)) {
+    if (!hasTravelled(now)) {
       const seat = seatWithoutDirection(allowed())
       return seat ? { kind: 'create', from: source, seat } : null
     }

@@ -73,7 +73,7 @@ const marks = (text: string, word: string): Span[] => {
   return out
 }
 
-const named = (id: string, title: string, word: string) => ({
+const createItem = (id: string, title: string, word: string) => ({
   id,
   title,
   at: marks(title, word),
@@ -101,8 +101,8 @@ const NAMES: PaletteGroup = {
   id: 'names',
   title: 'Names',
   items: [
-    named('entropy', 'Entropy', 'ent'),
-    named('enthalpy', 'Enthalpy of formation', 'ent'),
+    createItem('entropy', 'Entropy', 'ent'),
+    createItem('enthalpy', 'Enthalpy of formation', 'ent'),
     inside('carnot', 'The Carnot cycle', 'Entropy over one cycle', 'ent'),
     inside('gibbs', 'Gibbs free energy', 'Entropy and the second law', 'ent'),
   ],
@@ -341,7 +341,7 @@ export const OpensOnNothingThere: Story = {
  */
 export const LitAlone: Story = {
   args: {
-    groups: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
+    groups: [{ id: 'names', title: 'Names', items: [createItem('entropy', 'Entropy', 'ent')] }],
   },
   play: async ({ args }) => {
     await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('entropy'))
@@ -373,7 +373,7 @@ export const LitFarDown: Story = {
         id: 'names',
         title: 'Names',
         items: Array.from({ length: 60 }, (_, at) =>
-          named(`note-${at}`, `Entropy in ${at + 1} dimensions`, 'ent'),
+          createItem(`note-${at}`, `Entropy in ${at + 1} dimensions`, 'ent'),
         ),
       },
     ],
@@ -400,9 +400,9 @@ export const NotLit: Story = {
         id: 'names',
         title: 'Names',
         items: [
-          { ...named('entropy', 'Entropy', 'ent'), actions: EVERYTHING },
+          { ...createItem('entropy', 'Entropy', 'ent'), actions: EVERYTHING },
           { id: 'stuck', title: 'Enthalpy — this file cannot be read', disabled: true },
-          named('gibbs', 'Gibbs free energy', 'e'),
+          createItem('gibbs', 'Gibbs free energy', 'e'),
         ],
       },
     ],
@@ -576,7 +576,7 @@ export const Unasked: Story = {
 /** One group, one item, one thing to do with it. */
 export const Alone: Story = {
   args: {
-    groups: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
+    groups: [{ id: 'names', title: 'Names', items: [createItem('entropy', 'Entropy', 'ent')] }],
   },
 }
 
@@ -591,7 +591,7 @@ const ICONS: Record<string, Component> = {
 }
 
 /** A palette whose rows carry an icon, which is the caller filling the icon slot. */
-const marked = (args: Knobs) => ({
+const renderWithIcons = (args: Knobs) => ({
   components: { Palette },
   setup() {
     const open = ref(true)
@@ -632,10 +632,10 @@ export const Icons: Story = {
         id: 'names',
         title: 'Names',
         items: [
-          named('note', 'Entropy', 'ent'),
-          named('deck', 'Words to learn', ''),
-          named('stencil', 'Animal', ''),
-          named('preset', 'Every day', ''),
+          createItem('note', 'Entropy', 'ent'),
+          createItem('deck', 'Words to learn', ''),
+          createItem('stencil', 'Animal', ''),
+          createItem('preset', 'Every day', ''),
         ],
       },
       {
@@ -644,12 +644,12 @@ export const Icons: Story = {
         items: [
           passage('book', 'The Mahabharata', 'the war of the two houses', 'war'),
           passage('recording', '730709BG.LON.mp3', 'what was said that morning', 'said'),
-          named('nothing', 'A file of no kind', ''),
+          createItem('nothing', 'A file of no kind', ''),
         ],
       },
     ],
   },
-  render: marked,
+  render: renderWithIcons,
   play: async () => {
     await waitFor(() => expect(options()).toHaveLength(7))
 
@@ -678,13 +678,13 @@ export const IconsOnTheName: Story = {
         id: 'names',
         title: 'Names',
         items: [
-          named('note', 'Entropy', 'ent'),
+          createItem('note', 'Entropy', 'ent'),
           passage('deck', 'Words to learn', LONG, 'the'),
         ],
       },
     ],
   },
-  render: marked,
+  render: renderWithIcons,
   play: async () => {
     await waitFor(() => expect(options()).toHaveLength(2))
 
@@ -716,7 +716,7 @@ export const FarTooMany: Story = {
         id: 'names',
         title: 'Names',
         items: Array.from({ length: 60 }, (_, at) =>
-          named(`note-${at}`, `Entropy in ${at + 1} dimensions`, 'ent'),
+          createItem(`note-${at}`, `Entropy in ${at + 1} dimensions`, 'ent'),
         ),
       },
     ],
@@ -747,9 +747,9 @@ export const NotLatin: Story = {
         id: 'names',
         title: 'Названия',
         items: [
-          named('ru', RUSSIAN, 'заметки'),
-          named('sa', DEVANAGARI, 'बगीचा'),
-          named('ar', ARABIC, 'السطر'),
+          createItem('ru', RUSSIAN, 'заметки'),
+          createItem('sa', DEVANAGARI, 'बगीचा'),
+          createItem('ar', ARABIC, 'السطر'),
         ],
       },
     ],
@@ -771,8 +771,8 @@ export const TooLong: Story = {
         id: 'names',
         title: 'Names',
         items: [
-          named('long', LONG, 'component'),
-          named('word', UNBREAKABLE, 'schiff'),
+          createItem('long', LONG, 'component'),
+          createItem('word', UNBREAKABLE, 'schiff'),
           passage('link', LINK, LINK, 'query'),
         ],
       },
@@ -807,7 +807,7 @@ export const Graphemes: Story = {
         title: 'Names',
         items: [
           { id: 'whole', title: GRAPHEMES, at: [{ from: 0, to: 1 }], actions: TRAVEL },
-          named('mixed', `Waving 👋🏽 at the reader`, 'reader'),
+          createItem('mixed', `Waving 👋🏽 at the reader`, 'reader'),
         ],
       },
     ],
@@ -822,9 +822,9 @@ export const NotToBeChosen: Story = {
         id: 'names',
         title: 'Names',
         items: [
-          named('entropy', 'Entropy', 'ent'),
+          createItem('entropy', 'Entropy', 'ent'),
           { id: 'stuck', title: 'Enthalpy — this file cannot be read', disabled: true },
-          named('gibbs', 'Gibbs free energy', 'e'),
+          createItem('gibbs', 'Gibbs free energy', 'e'),
         ],
       },
     ],
@@ -873,8 +873,8 @@ export const FiveActions: Story = {
         id: 'names',
         title: 'Names',
         items: [
-          { ...named('entropy', 'Entropy', 'ent'), actions: EVERYTHING.slice(0, 5) },
-          named('enthalpy', 'Enthalpy of formation', 'ent'),
+          { ...createItem('entropy', 'Entropy', 'ent'), actions: EVERYTHING.slice(0, 5) },
+          createItem('enthalpy', 'Enthalpy of formation', 'ent'),
         ],
       },
     ],
@@ -905,8 +905,8 @@ export const ActionPanel: Story = {
         id: 'names',
         title: 'Names',
         items: [
-          { ...named('entropy', 'Entropy', 'ent'), actions: EVERYTHING },
-          named('enthalpy', 'Enthalpy of formation', 'ent'),
+          { ...createItem('entropy', 'Entropy', 'ent'), actions: EVERYTHING },
+          createItem('enthalpy', 'Enthalpy of formation', 'ent'),
         ],
       },
     ],

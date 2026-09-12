@@ -110,7 +110,7 @@ export const percentWord = (share: number): string => {
  * a clock and this has none. A rate of nothing means nothing is known, and
  * nothing is said: an estimate from no movement is a guess dressed as a fact.
  */
-export const remainingWord = (left: number, perSecond: number): string => {
+export const getRemainingWord = (left: number, perSecond: number): string => {
   if (left <= 0 || perSecond <= 0) return ''
   return clock((left / perSecond) * 1000)
 }

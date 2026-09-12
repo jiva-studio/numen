@@ -36,7 +36,7 @@ const said = (id: string, text: string, state?: Turn['state']): Turn =>
 const back = (id: string, text: string, state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'answered', text } : { id, voice: 'answered', text, state }
 
-const framed = (turns: readonly Turn[]): Render => () => ({
+const renderThread = (turns: readonly Turn[]): Render => () => ({
   components: { Thread },
   setup: () => ({ turns }),
   template: `
@@ -47,14 +47,14 @@ const framed = (turns: readonly Turn[]): Render => () => ({
 })
 
 /** Nothing said yet. */
-export const Silent: Story = { render: framed([]) }
+export const Silent: Story = { render: renderThread([]) }
 
 /**
  * The ordinary case: questions and answers, a run of turns in one voice, and
  * the line breaks that were typed.
  */
 export const Playground: Story = {
-  render: framed([
+  render: renderThread([
     said('1', 'What does a plex draw?'),
     back('2', 'One node in focus, and everything else placed by its seat.'),
     said('3', 'Two things.'),
@@ -65,7 +65,7 @@ export const Playground: Story = {
 
 /** An answer still arriving, and a turn that did not go. */
 export const InFlight: Story = {
-  render: framed([
+  render: renderThread([
     said('1', 'And the seats?', 'failed'),
     said('2', 'What does a plex draw?'),
     back('3', 'One node in focus, and everything else', 'arriving'),
@@ -75,7 +75,7 @@ export const InFlight: Story = {
 /** Words with nowhere to break, scripts that are not Latin, and one that runs
  *  the other way. */
 export const AwkwardText: Story = {
-  render: framed([
+  render: renderThread([
     said('1', UNBREAKABLE),
     back('2', LINK),
     said('3', DEVANAGARI),
@@ -90,7 +90,7 @@ export const AwkwardText: Story = {
  * prose is read as it was marked up rather than shown with its marks.
  */
 export const Working: Story = {
-  render: framed([
+  render: renderThread([
     said('1', 'Add ten children to this note.'),
     back('2', "I'll look at **Harmonic oscillator** first."),
     { id: '3', voice: 'doing', text: 'note_neighbourhood' },
@@ -105,7 +105,7 @@ export const Working: Story = {
 
 /** Far too many. What the scrolling is for. */
 export const FarTooMany: Story = {
-  render: framed(
+  render: renderThread(
     Array.from({ length: 200 }, (_, index) =>
       index % 2 === 0
         ? said(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
@@ -158,7 +158,7 @@ const wordAt = (root: Element, word: string): Position => {
 }
 
 /** The same place told to the window the story is framed in. */
-const framedIn = (at: Position): Position => {
+const mapToFrame = (at: Position): Position => {
   const frame = window.frameElement as HTMLElement | null
   if (!frame) return at
 
@@ -179,7 +179,7 @@ const dragged = async (from: Position, to: Position): Promise<string | null> => 
   if (!context) return null
 
   window.getSelection()?.removeAllRanges()
-  await context.commands.sweep(framedIn(from), framedIn(to))
+  await context.commands.sweep(mapToFrame(from), mapToFrame(to))
   await new Promise((done) => setTimeout(done, 16))
 
   return String(window.getSelection() ?? '')
@@ -191,7 +191,7 @@ const dragged = async (from: Position, to: Position): Promise<string | null> => 
  * nothing above. It is asserted only where a browser pointer can be driven.
  */
 export const Selecting: Story = {
-  render: framed([
+  render: renderThread([
     said('1', 'Which of these are worth keeping?'),
     back(
       '2',

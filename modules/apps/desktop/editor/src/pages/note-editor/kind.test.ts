@@ -8,7 +8,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
-import type { PlexShowing } from '@numen/ui'
+import type { PlexDestination } from '@numen/ui'
 import { useNoteTab, type NoteTabDeps, type NoteTabState } from './kind'
 import { fileOpeners } from '@/entities/tab'
 import type { EditorHandle } from './model/keyboard'
@@ -135,7 +135,7 @@ const window = (
    * A note put in front of the person. It reaches the tab the only way anything
    * does, which is through the one place a file is opened from.
    */
-  const openNote = (path: string, title = '', showing: PlexShowing = 'here') =>
+  const openNote = (path: string, title = '', showing: PlexDestination = 'here') =>
     tabOpeners.made(path, title, 'note', showing)
   return { noted, held, open, openNote, ...store, drawings: drawing }
 }

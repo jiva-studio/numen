@@ -120,7 +120,7 @@ const drawn = (
  * Whether the text is in the document where the change said it would be. A
  * change that puts nothing in has no text to wait for.
  */
-const arrived = (state: EditorState, change: EditorChange, from: number) =>
+const hasArrived = (state: EditorState, change: EditorChange, from: number) =>
   change.text.length > 0 &&
   state.doc.sliceString(from, from + change.text.length) === change.text
 
@@ -129,7 +129,7 @@ const start = (state: EditorState): Mark => {
   if (!change) return NOTHING
 
   const from = Math.max(0, Math.min(change.from, state.doc.length))
-  const reveal = arrived(state, change, from) ? revealOf(change.text, 0) : null
+  const reveal = hasArrived(state, change, from) ? revealOf(change.text, 0) : null
   // Once the text is there, the stretch the change is about is the text.
   const to = reveal
     ? from + change.text.length
@@ -159,7 +159,7 @@ export const marked = StateField.define<Mark>({
     const from = transaction.changes.mapPos(was.from, -1)
     const reveal =
       stepping ??
-      (arrived(transaction.state, change, from) ? (was.reveal ?? revealOf(change.text, 0)) : null)
+      (hasArrived(transaction.state, change, from) ? (was.reveal ?? revealOf(change.text, 0)) : null)
     const to = reveal
       ? from + change.text.length
       : Math.max(from, transaction.changes.mapPos(was.to, 1))
@@ -220,5 +220,5 @@ class Pace {
   }
 }
 
-export const pacing = (clock: Clock = browserClock) =>
+export const createPacePlugin = (clock: Clock = browserClock) =>
   ViewPlugin.define((view) => new Pace(view, clock))

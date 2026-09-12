@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { addressAt } from './address'
-import { parsed } from '../fixtures/state'
+import { createState } from '../fixtures/state'
 
 describe('the address under a position in the text', () => {
-  const at = (doc: string, text: string) => addressAt(parsed(doc), doc.indexOf(text) + 1)
+  const at = (doc: string, text: string) => addressAt(createState(doc), doc.indexOf(text) + 1)
 
   it('is what a link points at', () => {
     expect(at('go [there](https://example.invalid)', 'there')).toBe('https://example.invalid')

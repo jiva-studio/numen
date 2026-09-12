@@ -14,7 +14,7 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { Tooltip } from './tooltip'
 import type { Box } from '@/shared/lib/place'
 import { DaySummary } from './day-summary'
-import { days, fits, ROWS } from '../lib/heatmap'
+import { days, measureGrid, ROWS } from '../lib/heatmap'
 import type { Day, Tally } from '../lib/heatmap'
 import { useWidth } from '../model/width'
 import type { Words } from '../lib/words'
@@ -41,7 +41,7 @@ const root = useTemplateRef<HTMLElement>('root')
 const room = useWidth(root)
 
 const laid = computed(() =>
-  fits({ width: room.value, cell: props.cell, gap: props.gap }),
+  measureGrid({ width: room.value, cell: props.cell, gap: props.gap }),
 )
 const shown = computed(() => days(laid.value.columns, props.now, props.did, props.due))
 
@@ -55,7 +55,7 @@ const yOf = (at: number) => (at % ROWS) * step.value
 /** The day a person is pointing at, and the cell on the page it is drawn in. */
 const pointed = ref<{ day: Day; at: Box } | null>(null)
 
-const reaches = (day: Day, press: MouseEvent) => {
+const setPointed = (day: Day, press: MouseEvent) => {
   const cell = (press.target as SVGRectElement).getBoundingClientRect()
   pointed.value = {
     day,
@@ -89,7 +89,7 @@ const reaches = (day: Day, press: MouseEvent) => {
         :data-weight="day.weight"
         :data-ahead="day.ahead ? 'yes' : undefined"
         :data-today="day.today ? 'yes' : undefined"
-        @mouseenter="reaches(day, $event)"
+        @mouseenter="setPointed(day, $event)"
         @mouseleave="pointed = null"
       />
     </svg>

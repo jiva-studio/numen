@@ -11,7 +11,13 @@ import PlexNodeParts from './PlexNodeParts.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { boxOf, DWELL, useDwell, type WideBox } from '../../model/dwell'
 import { byHandle, type ReachStrategy } from '../../model/reaching'
-import { byDoubleClick, joined, showingOf, type PlexShowing, type ShowStrategy } from '../../model/showing'
+import {
+  byDoubleClick,
+  mergeListeners,
+  getDestination,
+  type PlexDestination,
+  type ShowStrategy,
+} from '../../model/showing'
 import type { HungParts } from '../../lib/inside'
 import { browserClock, type Clock } from '../../model/transition'
 import type { MenuOpening } from '@/shared/ui/menu'
@@ -68,7 +74,7 @@ const emit = defineEmits<{
    * Asked to be drawn out on its own, and where it is to go. The modifier is
    * read here, so what travels on is the meaning.
    */
-  (event: 'show', showing: PlexShowing): void
+  (event: 'show', showing: PlexDestination): void
   /** A gesture began at the handle, and a pointer is dragging it somewhere. */
   (event: 'reach', pointer: PointerEvent): void
   /** The handle was pressed from the keyboard, where there is nowhere to drag. */
@@ -169,7 +175,7 @@ const hue = computed(() => ({
 /**
  * What this node listens for beyond the handle, and whether it draws one.
  */
-const listening = joined(
+const listening = mergeListeners(
   props.reaching.listeners({
     ready: () => !isGhost.value && props.gestureRole === 'open',
     reach: (event: PointerEvent) => emit('reach', event),
@@ -249,7 +255,7 @@ function activateNode(): void {
 }
 
 function showNode(modified: boolean): void {
-  if (canStop.value) emit('show', showingOf(modified))
+  if (canStop.value) emit('show', getDestination(modified))
 }
 
 /** The middle of the node, for a press, which carries no point of its own. */

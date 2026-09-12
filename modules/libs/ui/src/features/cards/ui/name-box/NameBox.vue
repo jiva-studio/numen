@@ -20,7 +20,7 @@ const props = defineProps<{
 }>()
 
 /** Whether what is typed cannot be used. */
-const objects = (): boolean => props.naming.objection(props.over) !== null
+const hasObjection = (): boolean => props.naming.objection(props.over) !== null
 </script>
 
 <template>
@@ -32,9 +32,9 @@ const objects = (): boolean => props.naming.objection(props.over) !== null
     :value="naming.text(over)"
     :placeholder="stem"
     :aria-label="stem"
-    :aria-invalid="objects() || undefined"
+    :aria-invalid="hasObjection() || undefined"
     :aria-describedby="describedBy ?? undefined"
-    @input="naming.typing(over, ($event.target as HTMLInputElement).value)"
+    @input="naming.setDraft(over, ($event.target as HTMLInputElement).value)"
     @change="naming.commit(over)"
     @keydown="naming.onKey($event, over)"
   />

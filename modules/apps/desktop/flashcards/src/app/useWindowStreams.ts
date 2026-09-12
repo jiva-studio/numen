@@ -4,7 +4,7 @@
  */
 import { onMounted, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
-import { following } from '@numen/ui'
+import { createFollower } from '@numen/ui'
 import type { Task } from '@numen/ui'
 
 import { WINDOW, agent as agentState, cards, itself } from '@/shared/clients'
@@ -13,11 +13,11 @@ import { WORDS } from '@/pages/session'
 /** What the streams ask of the window they are followed in. */
 export interface WindowStreamsDeps {
   /** Trouble, in the person's own words. */
-  readonly failed: (why: unknown) => void
+  readonly reportError: (why: unknown) => void
   /** What is being done behind the window, as cards to draw. */
-  readonly doing: (said: readonly Task[]) => void
+  readonly setTasks: (said: readonly Task[]) => void
   /** A key pressed anywhere in the window. */
-  readonly keyed: (press: KeyboardEvent) => void
+  readonly handleKey: (press: KeyboardEvent) => void
   /** Everything the window shows, counted again. */
   readonly count: () => Promise<void>
   /** The counting ended where it stands. */
@@ -32,14 +32,14 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   /** Whether the window is still open, which is how long anything is followed. */
   let open = true
 
-  const follows = following({
+  const follows = createFollower({
     open: () => open,
-    lost: deps.failed,
+    lost: deps.reportError,
     wait: (ms) => new Promise((then) => setTimeout(then, ms)),
   })
 
   onMounted(() => {
-    window.addEventListener('keydown', deps.keyed)
+    window.addEventListener('keydown', deps.handleKey)
     void deps.count()
     // Whether a card can be asked about is the window's to know before a person
     // reaches for it, so it is asked once and the way in is drawn from it.
@@ -67,7 +67,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     void follows(
       () => itself.watchTasks({ window: WINDOW }),
       (said) => {
-        deps.doing(
+        deps.setTasks(
           said.tasks.map((at) => ({
             id: at.id,
             doing: at.doing,
@@ -82,6 +82,6 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   onUnmounted(() => {
     open = false
     deps.stop()
-    window.removeEventListener('keydown', deps.keyed)
+    window.removeEventListener('keydown', deps.handleKey)
   })
 }

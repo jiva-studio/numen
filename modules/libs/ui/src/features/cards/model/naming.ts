@@ -37,7 +37,7 @@ export interface NamingState<Why> {
   /** Why what is in the box cannot be used, and nothing while it can. */
   readonly objection: (over: string) => Why | null
   /** Something was typed into the box. */
-  readonly typing: (over: string, text: string) => void
+  readonly setDraft: (over: string, text: string) => void
   /** What was typed is committed, and nothing where it objects or says what it said. */
   readonly commit: (over: string) => void
   /** A key struck in the box: a break commits what was typed, escape abandons it. */
@@ -49,24 +49,24 @@ export function useNaming<Why>(named: NamingDeps<Why>): NamingState<Why> {
   const draft = shallowRef<Draft | null>(null)
 
   /** What is being typed over this thing, and nothing where nothing is. */
-  const typed = (over: string): string | null => {
+  const getDraft = (over: string): string | null => {
     const held = draft.value
     return held?.over === over ? held.text : null
   }
 
-  const text = (over: string): string => typed(over) ?? named.carries(over)
+  const text = (over: string): string => getDraft(over) ?? named.carries(over)
 
   const objection = (over: string): Why | null => {
-    const said = typed(over)
+    const said = getDraft(over)
     return said === null ? null : named.amiss(said, named.taken(over))
   }
 
-  const typing = (over: string, text: string): void => {
+  const setDraft = (over: string, text: string): void => {
     draft.value = { over, text }
   }
 
   const commit = (over: string): void => {
-    const said = typed(over)
+    const said = getDraft(over)
     // The objection stands on what is being typed, so it is read while it is.
     const why = objection(over)
     draft.value = null
@@ -91,5 +91,5 @@ export function useNaming<Why>(named: NamingDeps<Why>): NamingState<Why> {
     }
   }
 
-  return { text, objection, typing, commit, onKey }
+  return { text, objection, setDraft, commit, onKey }
 }

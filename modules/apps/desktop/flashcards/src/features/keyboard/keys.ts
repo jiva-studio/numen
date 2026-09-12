@@ -4,7 +4,7 @@
  * Apart from the template because what a key means is a rule, and a rule inside
  * a component can only be exercised by pressing a key at a screen.
  */
-import { typing } from '@numen/ui'
+import { isTyping } from '@numen/ui'
 import { grades } from '@/entities/card'
 import type { Grade } from '@/entities/card'
 
@@ -42,13 +42,16 @@ export const READS = 'r'
  * into a question and space or enter on a button the focus has moved to answer
  * nothing.
  */
-export function asks(press: KeyboardEvent, showing: ScreenState): SessionKeyIntent | null {
+export function getSessionKeyIntent(
+  press: KeyboardEvent,
+  showing: ScreenState,
+): SessionKeyIntent | null {
   // A field takes the overlay key too: control and A is how a person selects
   // what they have written.
-  if (typing(press)) return press.key === 'Escape' ? { does: 'shut' } : null
+  if (isTyping(press)) return press.key === 'Escape' ? { does: 'shut' } : null
   // The panels are held with the overlay key, because the letters on their own
   // are what a card is answered by.
-  if (chorded(press)) {
+  if (hasOverlayKey(press)) {
     const letter = press.key.toLowerCase()
     if (letter === ASKS) return { does: 'ask' }
     if (letter === READS) return { does: 'read' }
@@ -78,7 +81,7 @@ export function asks(press: KeyboardEvent, showing: ScreenState): SessionKeyInte
  * keyboard, and the letter would be the first thing typed into it. So is space
  * over the reading, which the page would otherwise scroll instead.
  */
-export const swallows = (asked: SessionKeyIntent | null): boolean =>
+export const isSwallowed = (asked: SessionKeyIntent | null): boolean =>
   asked?.does === 'show' ||
   asked?.does === 'ask' ||
   asked?.does === 'read' ||
@@ -104,7 +107,7 @@ export const letterOf = (at: number): string => LETTERS[at] ?? ''
  * The whole vault is the daily act, so it is the key under the hand. A deck is
  * a letter because a person reads down the list and presses what they see.
  */
-export function picks(press: KeyboardEvent, decks: number): PickerKeyIntent | null {
+export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerKeyIntent | null {
   if (spoken(press)) return null
   if (press.key === 'Escape') return { does: 'back' }
   if (press.key === 'Enter' || press.key === ' ') return { does: 'all' }
@@ -123,5 +126,5 @@ const spoken = (press: KeyboardEvent): boolean =>
   press.repeat || press.altKey || press.ctrlKey || press.metaKey
 
 /** Whether the overlay key is held, which is control here and command on a Mac. */
-const chorded = (press: KeyboardEvent): boolean =>
+const hasOverlayKey = (press: KeyboardEvent): boolean =>
   !press.repeat && !press.altKey && (press.ctrlKey || press.metaKey)

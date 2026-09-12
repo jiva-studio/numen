@@ -40,7 +40,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
-const framed =
+const renderEditor =
   (text: string, props: Record<string, unknown> = {}): Render =>
   () => ({
     components: { Editor },
@@ -49,13 +49,13 @@ const framed =
   })
 
 /** One of everything: headings, marks, lists, a rule, a table, code and maths. */
-export const Playground: Story = { render: framed(MARKED_UP) }
+export const Playground: Story = { render: renderEditor(MARKED_UP) }
 
 /** The marks as they are written, with nothing drawn for them. */
-export const AsWritten: Story = { render: framed(MARKED_UP, { live: false }) }
+export const AsWritten: Story = { render: renderEditor(MARKED_UP, { live: false }) }
 
 /** Nothing to type into. */
-export const ReadOnly: Story = { render: framed(MARKED_UP, { readonly: true }) }
+export const ReadOnly: Story = { render: renderEditor(MARKED_UP, { readonly: true }) }
 
 /* One line of every construct whose marks are concealed, each with a blank
    line after it, and a line at the end to park the caret on. */
@@ -99,7 +99,7 @@ const LOW = { name: 'numen-low', size: '60%' }
 const FACES = [TALL, LOW]
 
 /** The two faces, handed to the page. */
-const cutting = () => {
+const loadFaces = () => {
   const sheet = document.createElement('style')
   sheet.textContent = FACES.map(
     ({ name, size }) => `@font-face { font-family: '${name}'; src: ${SANS}; size-adjust: ${size} }`,
@@ -128,14 +128,14 @@ const reach = (name: string) => {
  * the machine's font and under both cut faces.
  */
 export const Steady: Story = {
-  render: framed(STEADY),
+  render: renderEditor(STEADY),
   play: async ({ canvasElement }) => {
     const view = viewOf(canvasElement)
 
     const put = async (line: number, column: number) => {
       view.dispatch({ selection: EditorSelection.single(view.state.doc.line(line).from + column) })
-      await settled()
-      await settled()
+      await nextFrame()
+      await nextFrame()
     }
 
     /** The block the editor drew for a line, measured where it stands. */
@@ -149,7 +149,7 @@ export const Steady: Story = {
       return drawn.getBoundingClientRect().height
     }
 
-    await cutting()
+    await loadFaces()
     // A face the machine cannot cut pins nothing.
     await expect(reach(TALL.name) > reach(LOW.name)).toBe(true)
 
@@ -157,7 +157,7 @@ export const Steady: Story = {
       const face = chosen ? chosen.name : 'the machine'
       if (chosen) view.dom.style.setProperty('--numen-font-sans', `'${chosen.name}'`)
       else view.dom.style.removeProperty('--numen-font-sans')
-      await settled()
+      await nextFrame()
 
       for (const text of CONCEALED) {
         const line = written(text)
@@ -226,10 +226,10 @@ export const Steady: Story = {
  * Escape leaves the table. The two buttons along its edges make a row and a
  * column.
  */
-export const Table: Story = { render: framed(TABLE) }
+export const Table: Story = { render: renderEditor(TABLE) }
 
 /** The editor with what it holds beside it, so a change to the text is read back. */
-const edited =
+const renderWithSource =
   (text: string): Render =>
   () => ({
     components: { Editor },
@@ -268,7 +268,7 @@ const asATable = async (canvas: HTMLElement) => {
  * is what happens to the markdown behind it.
  */
 export const TableTypedInto: Story = {
-  render: edited(TABLED),
+  render: renderWithSource(TABLED),
   play: async ({ canvasElement }) => {
     await asATable(canvasElement)
 
@@ -299,7 +299,7 @@ export const TableTypedInto: Story = {
 
 /** A table grown by the buttons along the two edges it can grow along. */
 export const TableGrown: Story = {
-  render: edited(TABLED),
+  render: renderWithSource(TABLED),
   play: async ({ canvasElement }) => {
     await asATable(canvasElement)
     const was = source(canvasElement)
@@ -347,7 +347,7 @@ const codeLine = (canvas: HTMLElement, holding: string) =>
   )
 
 /** Everything on that line painted in something other than the line's own ink. */
-const painted = (line: HTMLElement) => {
+const getColouredSpans = (line: HTMLElement) => {
   const ink = getComputedStyle(line).color
   return [...line.querySelectorAll('span')].filter((span) => getComputedStyle(span).color !== ink)
 }
@@ -358,7 +358,7 @@ const painted = (line: HTMLElement) => {
  * arrives on a later frame.
  */
 export const FencedInEveryLanguage: Story = {
-  render: edited(FENCED),
+  render: renderWithSource(FENCED),
   play: async ({ canvasElement }) => {
     const found = (holding: string) => {
       const line = codeLine(canvasElement, holding)
@@ -367,28 +367,28 @@ export const FencedInEveryLanguage: Story = {
     }
 
     // The pack lands and paints the block it was fetched for.
-    await waitFor(() => expect(painted(found('const answered')).length).toBeGreaterThan(0))
-    await waitFor(() => expect(painted(found('answered_here')).length).toBeGreaterThan(0))
+    await waitFor(() => expect(getColouredSpans(found('const answered')).length).toBeGreaterThan(0))
+    await waitFor(() => expect(getColouredSpans(found('answered_here')).length).toBeGreaterThan(0))
 
     // A word no pack answers to leaves the block plain, and leaves the text
     // itself alone.
-    await expect(painted(found('unpainted'))).toHaveLength(0)
+    await expect(getColouredSpans(found('unpainted'))).toHaveLength(0)
     await expect(source(canvasElement)).toContain('```notalanguage')
   },
 }
 
 /** Nothing written yet, and something to say so. */
-export const Empty: Story = { render: framed('', { placeholder: 'Write' }) }
+export const Empty: Story = { render: renderEditor('', { placeholder: 'Write' }) }
 
 /** No text, and nothing said about there being none. */
-export const NothingAtAll: Story = { render: framed('', { placeholder: '' }) }
+export const NothingAtAll: Story = { render: renderEditor('', { placeholder: '' }) }
 
 /** One line, which is what a note is for its first minute. */
-export const OneLine: Story = { render: framed('# Entropy\n') }
+export const OneLine: Story = { render: renderEditor('# Entropy\n') }
 
 /** Far too many lines. What the scrolling is for. */
 export const FarTooMany: Story = {
-  render: framed(
+  render: renderEditor(
     Array.from({ length: 400 }, (_, index) =>
       index % 8 === 0 ? `## Part ${index / 8 + 1}` : `${index}. ${RUSSIAN}`,
     ).join('\n'),
@@ -397,18 +397,18 @@ export const FarTooMany: Story = {
 
 /** One paragraph past any width, and a quotation of the same. */
 export const FarTooLong: Story = {
-  render: framed(`${LONG} ${LONG} ${LONG}\n\n> ${LONG}\n`),
+  render: renderEditor(`${LONG} ${LONG} ${LONG}\n\n> ${LONG}\n`),
 }
 
 /** A word and an address with nowhere in them to break. */
 export const NothingToBreakAt: Story = {
-  render: framed(`${UNBREAKABLE}\n\n- ${UNBREAKABLE}\n- <${LINK}>\n\n\`${UNBREAKABLE}\`\n`),
+  render: renderEditor(`${UNBREAKABLE}\n\n- ${UNBREAKABLE}\n- <${LINK}>\n\n\`${UNBREAKABLE}\`\n`),
 }
 
 /** Scripts that are not Latin, one that runs the other way, and a word with
  *  nowhere to break. */
 export const AwkwardText: Story = {
-  render: framed(
+  render: renderEditor(
     `# ${RUSSIAN}\n\n${DEVANAGARI}\n\n${ARABIC}\n\n- ${UNBREAKABLE}\n- <${LINK}>\n`,
   ),
 }
@@ -427,7 +427,7 @@ const viewOf = (canvas: HTMLElement): EditorView => {
   return view
 }
 
-const settled = () => new Promise((done) => requestAnimationFrame(() => done(null)))
+const nextFrame = () => new Promise((done) => requestAnimationFrame(() => done(null)))
 
 /** The line at the top of what can be seen. */
 const topmost = (view: EditorView): number => {
@@ -464,13 +464,13 @@ export const ReadAgain: Story = {
 
     view.dispatch({ selection: EditorSelection.single(view.state.doc.line(LINE).from + COLUMN) })
     view.scrollDOM.scrollTop = 600
-    await settled()
+    await nextFrame()
     await expect(view.scrollDOM.scrollTop).toBeGreaterThan(0)
     const top = topmost(view)
 
     await userEvent.click(within(canvasElement).getByRole('button'))
-    await settled()
-    await settled()
+    await nextFrame()
+    await nextFrame()
 
     await expect(view.state.doc.toString()).toBe(AFTER)
 
@@ -506,7 +506,7 @@ export const TenOpenTabs: Story = {
       (performance as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? 0
     const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
 
-    await settled()
+    await nextFrame()
     const room = canvasElement.querySelector('[data-tabs]') as HTMLElement
     await expect(room.querySelectorAll('.cm-editor').length).toBe(1)
     const one = heap()
@@ -521,8 +521,8 @@ export const TenOpenTabs: Story = {
       app.mount(held)
       return app
     })
-    await settled()
-    await settled()
+    await nextFrame()
+    await nextFrame()
     await expect(room.querySelectorAll('.cm-editor').length).toBe(10)
     const ten = heap()
 
@@ -584,19 +584,19 @@ export const ShownAgain: Story = {
 
     view.dispatch({ selection: EditorSelection.single(view.state.doc.line(LINE).from + COLUMN) })
     view.scrollDOM.scrollTop = 600
-    await settled()
+    await nextFrame()
     const offset = view.scrollDOM.scrollTop
     await expect(offset).toBeGreaterThan(0)
     const top = topmost(view)
 
     // Away: the panel is held out of sight, and what has no box has no offset.
     await userEvent.click(tab(BESIDE))
-    await settled()
+    await nextFrame()
     await expect(view.scrollDOM.scrollTop).toBe(0)
 
     await userEvent.click(tab(NOTE_TAB))
-    await settled()
-    await settled()
+    await nextFrame()
+    await nextFrame()
 
     await expect(view.scrollDOM.scrollTop).toBe(offset)
     await expect(topmost(view)).toBe(top)
@@ -643,11 +643,11 @@ export const Kept: Story = {
       (canvasElement.querySelector(`[${what}]`) as HTMLElement).textContent?.trim()
 
     await userEvent.click(view.contentDOM)
-    await settled()
+    await nextFrame()
     await expect(view.hasFocus).toBe(true)
 
     await userEvent.keyboard('{Control>}s{/Control}')
-    await settled()
+    await nextFrame()
 
     await expect(said('data-asked')).toBe('1')
     await expect(said('data-answered')).toBe('answered')
@@ -725,22 +725,22 @@ const NOTE =
   'an export: the files are the notes.\n'
 
 /** Where a run of the text stands, as a change addresses it. */
-const spanning = (text: string, run: string) => {
+const findSpan = (text: string, run: string) => {
   const from = text.indexOf(run)
   return { from, to: from + run.length }
 }
 
 /** The text as it stands once the change has been made. */
-const applied = (text: string, change: EditorChange) =>
+const applyChange = (text: string, change: EditorChange) =>
   text.slice(0, change.from) + change.text + text.slice(change.to)
 
-const making =
+const renderWithChange =
   (text: string, change: EditorChange): Render =>
   () => ({
     components: { Editor },
     setup: () => {
       const held = ref(text)
-      return { held, change, make: () => (held.value = applied(text, change)) }
+      return { held, change, make: () => (held.value = applyChange(text, change)) }
     },
     template: `
       <div class="numen flex h-screen flex-col bg-surface">
@@ -756,7 +756,7 @@ const making =
 
 const MIDDLE: EditorChange = {
   id: 'middle',
-  ...spanning(NOTE, 'an ordinary folder'),
+  ...findSpan(NOTE, 'an ordinary folder'),
   text: 'a folder anyone can open',
 }
 
@@ -765,33 +765,33 @@ const MIDDLE: EditorChange = {
  * the words arrive one at a time once the text has landed.
  */
 export const Changed: Story = {
-  render: making(NOTE, MIDDLE),
+  render: renderWithChange(NOTE, MIDDLE),
   play: async ({ canvasElement }) => {
     const view = viewOf(canvasElement)
-    const arriving = () => canvasElement.querySelectorAll('.cm-arriving')
+    const getArriving = () => canvasElement.querySelectorAll('.cm-arriving')
 
     await expect(canvasElement.querySelectorAll('.cm-changing').length).toBeGreaterThan(0)
 
     await userEvent.click(within(canvasElement).getByRole('button'))
-    await settled()
+    await nextFrame()
 
-    await expect(view.state.doc.toString()).toBe(applied(NOTE, MIDDLE))
+    await expect(view.state.doc.toString()).toBe(applyChange(NOTE, MIDDLE))
     await expect(canvasElement.querySelector('.cm-changing')).toBeNull()
     await expect(view.contentDOM.textContent).not.toContain(MIDDLE.text)
 
     // One word arrives at a time: the same element for as long as it fades,
     // and the next word a run of its own. An element drawn again, or one
     // growing to hold everything shown so far, would fade a word twice.
-    await waitFor(async () => await expect(arriving().length).toBe(1))
-    const element = arriving()[0]
+    await waitFor(async () => await expect(getArriving().length).toBe(1))
+    const element = getArriving()[0]
     const word = element?.textContent ?? ''
-    await settled()
-    await settled()
-    await expect(arriving().length).toBe(1)
-    await expect(arriving()[0]).toBe(element)
+    await nextFrame()
+    await nextFrame()
+    await expect(getArriving().length).toBe(1)
+    await expect(getArriving()[0]).toBe(element)
 
-    await waitFor(async () => await expect(arriving()[0]?.textContent).not.toBe(word))
-    await expect(arriving()[0]?.textContent?.startsWith(word)).toBe(false)
+    await waitFor(async () => await expect(getArriving()[0]?.textContent).not.toBe(word))
+    await expect(getArriving()[0]?.textContent?.startsWith(word)).toBe(false)
 
     await waitFor(async () => await expect(view.contentDOM.textContent).toContain(MIDDLE.text), {
       timeout: 5000,
@@ -801,9 +801,9 @@ export const Changed: Story = {
 
 /** A change at the very first character of the text. */
 export const ChangedAtTheStart: Story = {
-  render: making(NOTE, {
+  render: renderWithChange(NOTE, {
     id: 'start',
-    ...spanning(NOTE, '# Entropy'),
+    ...findSpan(NOTE, '# Entropy'),
     text: '# Entropy, and what it costs to keep',
   }),
 }
@@ -812,16 +812,16 @@ const ENDING = NOTE.trimEnd()
 
 /** A change running to the very last character of the text. */
 export const ChangedAtTheEnd: Story = {
-  render: making(ENDING, {
+  render: renderWithChange(ENDING, {
     id: 'end',
-    ...spanning(ENDING, 'the files are the notes.'),
+    ...findSpan(ENDING, 'the files are the notes.'),
     text: 'the files are the notes, and the index is a cache.',
   }),
 }
 
 /** A change covering the whole of the text. */
 export const ChangedThroughout: Story = {
-  render: making(NOTE, {
+  render: renderWithChange(NOTE, {
     id: 'throughout',
     from: 0,
     to: NOTE.length,
@@ -831,18 +831,18 @@ export const ChangedThroughout: Story = {
 
 /** A change that puts nothing in: the stretch is marked and then it is gone. */
 export const ChangedToNothing: Story = {
-  render: making(NOTE, {
+  render: renderWithChange(NOTE, {
     id: 'nothing',
-    ...spanning(NOTE, ' Not a database and not an export: the files are the notes.'),
+    ...findSpan(NOTE, ' Not a database and not an export: the files are the notes.'),
     text: '',
   }),
 }
 
 /** A change far longer than what it replaces. */
 export const ChangedForMore: Story = {
-  render: making(NOTE, {
+  render: renderWithChange(NOTE, {
     id: 'more',
-    ...spanning(NOTE, 'a database'),
+    ...findSpan(NOTE, 'a database'),
     text:
       'a database, an index, a cache, or anything else that can be thrown ' +
       'away and made again from the files it was built out of',
@@ -854,7 +854,7 @@ const SCRIPTS = `# ${RUSSIAN}\n\n${ARABIC}\n\n${DEVANAGARI}\n`
 /** A change written in a script that is not Latin, over one that runs the
  *  other way. */
 export const ChangedInAnotherScript: Story = {
-  render: making(SCRIPTS, { id: 'script', ...spanning(SCRIPTS, ARABIC), text: DEVANAGARI }),
+  render: renderWithChange(SCRIPTS, { id: 'script', ...findSpan(SCRIPTS, ARABIC), text: DEVANAGARI }),
 }
 
 const SETTINGS = `{
@@ -874,10 +874,10 @@ const SETTINGS = `{
  * the face code is set in. This is what a settings file is opened in.
  */
 export const AWholeDocumentOfCode: Story = {
-  render: framed(SETTINGS, { live: false, language: 'json' }),
+  render: renderEditor(SETTINGS, { live: false, language: 'json' }),
 }
 
 /** A language no fence answers to leaves the document plain. */
 export const ALanguageNothingAnswersTo: Story = {
-  render: framed(SETTINGS, { live: false, language: 'not-a-language' }),
+  render: renderEditor(SETTINGS, { live: false, language: 'not-a-language' }),
 }

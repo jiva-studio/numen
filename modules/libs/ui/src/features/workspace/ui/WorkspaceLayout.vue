@@ -57,7 +57,7 @@ const slots = defineSlots<{
 const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 
 /** What a slot was given, handed on as it came. */
-const handedOn = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
+const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const workspace = defineModel<Workspace>({ required: true })
 
@@ -236,7 +236,7 @@ function landingAt(x: number, y: number): TabLanding | null {
       :depth="0"
     >
       <template v-for="name in passed" #[name]="bound">
-        <slot :name="name" v-bind="handedOn(bound)" />
+        <slot :name="name" v-bind="getSlotProps(bound)" />
       </template>
     </WorkspaceBranch>
 
@@ -251,7 +251,7 @@ function landingAt(x: number, y: number): TabLanding | null {
       @claim="claim(workspace.root.id)"
     >
       <template v-for="name in passed" #[name]="bound">
-        <slot :name="name" v-bind="handedOn(bound)" />
+        <slot :name="name" v-bind="getSlotProps(bound)" />
       </template>
     </WorkspacePane>
 

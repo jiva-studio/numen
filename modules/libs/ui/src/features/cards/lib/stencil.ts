@@ -5,11 +5,11 @@
  */
 
 import type { FieldValue } from './card'
-import { previewed, strayIn } from './fill'
+import { renderPreview, strayIn } from './fill'
 import {
-  declared,
+  getDeclaredFields,
   HALVES,
-  sealed,
+  createSealedMap,
   type Problems,
   type Half,
   type Objection,
@@ -92,8 +92,8 @@ export interface StencilWrong {
 
 /** Nothing wrong with any face and nothing wrong with any field. */
 export const NOTHING_AMISS: StencilWrong = Object.freeze({
-  at: sealed<string, readonly string[]>(),
-  fields: sealed<string, readonly string[]>(),
+  at: createSealedMap<string, readonly string[]>(),
+  fields: createSealedMap<string, readonly string[]>(),
 })
 
 /** One field of a stencil, as its row is drawn. */
@@ -114,7 +114,7 @@ export function fieldRows(
   fields: readonly string[],
   dragged: string | null,
 ): readonly FieldRow[] {
-  const stood = declared(fields)
+  const stood = getDeclaredFields(fields)
   return stood.map((field, index) => ({
     field,
     at: index + 1,
@@ -167,8 +167,8 @@ export function faceRows(
       taken: names.filter((_, at) => at !== index),
       front: face.front,
       back: face.back,
-      frontPreview: previewed(face.front, sample, fields),
-      backPreview: previewed(face.back, sample, fields),
+      frontPreview: renderPreview(face.front, sample, fields),
+      backPreview: renderPreview(face.back, sample, fields),
       frontStray: strayIn(face.front, fields),
       backStray: strayIn(face.back, fields),
     }

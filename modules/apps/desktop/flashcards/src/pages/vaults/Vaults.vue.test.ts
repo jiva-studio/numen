@@ -25,7 +25,7 @@ const vault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
 })
 
 /** A vault on the list whose count has not arrived. */
-const uncounted = (said: Partial<VaultCardsDue> = {}): VaultCardsDue =>
+const createUncountedVault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue =>
   vault({ counted: false, faces: 0, due: 0, new: 0, ...said })
 
 const shown = (counting: boolean, vaults: readonly VaultCardsDue[] = []) =>
@@ -56,7 +56,10 @@ describe('the front door before it knows which vaults there are', () => {
 describe('the front door while the vaults are being counted', () => {
   // The list is what the window opens on, and counting a vault runs behind it.
   it('draws every vault before any of them has a count', () => {
-    const one = shown(true, [uncounted(), uncounted({ vault: '01B', name: 'Sanskrit' })])
+    const one = shown(true, [
+      createUncountedVault(),
+      createUncountedVault({ vault: '01B', name: 'Sanskrit' }),
+    ])
 
     expect(one.findAll('.welcome-page__row--vault')).toHaveLength(2)
     expect(one.find('.vaults__counting').exists()).toBe(false)
@@ -67,7 +70,7 @@ describe('the front door while the vaults are being counted', () => {
   // A figure that has not been worked out is drawn as the shape it will be, in
   // the box it will stand in, so nothing moves when it lands.
   it('holds the room the number will take, and prints no number', () => {
-    const one = shown(true, [uncounted()])
+    const one = shown(true, [createUncountedVault()])
 
     expect(one.findComponent(Skeleton).exists()).toBe(true)
     expect(one.find('.welcome-page__row--vault').text()).toBe('Studies/vaults/01A')
@@ -83,7 +86,7 @@ describe('the front door while the vaults are being counted', () => {
   })
 
   it('does not open a vault whose count has not arrived', async () => {
-    const one = shown(true, [uncounted()])
+    const one = shown(true, [createUncountedVault()])
 
     const row = one.find('.welcome-page__row--vault')
     expect(row.attributes('disabled')).toBeDefined()
@@ -94,12 +97,12 @@ describe('the front door while the vaults are being counted', () => {
   // The letter is what the row is opened by, and a row that opens nothing
   // carries none.
   it('draws no letter on a vault it will not open', () => {
-    expect(shown(true, [uncounted()]).find('.cap').exists()).toBe(false)
+    expect(shown(true, [createUncountedVault()]).find('.cap').exists()).toBe(false)
     expect(shown(false, [vault()]).find('.cap').exists()).toBe(true)
   })
 
   it('opens a vault as soon as that vault has been counted', async () => {
-    const one = shown(true, [vault(), uncounted({ vault: '01B', name: 'Sanskrit' })])
+    const one = shown(true, [vault(), createUncountedVault({ vault: '01B', name: 'Sanskrit' })])
 
     await one.findAll('.welcome-page__row--vault')[0]?.trigger('click')
 

@@ -25,11 +25,11 @@ export interface Core {
   notes: ReturnType<typeof noteClient>
 }
 
-const reaching = (port: number) =>
+const createTransport = (port: number) =>
   createConnectTransport({ baseUrl: `http://127.0.0.1:${port}` })
 
-const vaultClient = (port: number) => createClient(VaultService, reaching(port))
-const noteClient = (port: number) => createClient(NoteService, reaching(port))
+const vaultClient = (port: number) => createClient(VaultService, createTransport(port))
+const noteClient = (port: number) => createClient(NoteService, createTransport(port))
 
 /** Start the core and answer with clients onto the vault it opened. */
 export async function reach(): Promise<Core> {

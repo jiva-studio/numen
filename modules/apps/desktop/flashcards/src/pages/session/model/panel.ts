@@ -36,7 +36,7 @@ export interface AgentPanelDeps {
    */
   readonly shows: (open: boolean) => void
   /** Where the window says what a person has to know. */
-  readonly says: (said: string) => void
+  readonly showNotice: (said: string) => void
   /** When the words that have arrived are put on the screen. */
   readonly paint?: (draw: () => void) => void
 }
@@ -60,9 +60,9 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const working = computed(() => talk.value?.working.value ?? false)
 
   /** The talk about one card, made once and let go of with the card. */
-  const talking = (card: CardFace) => {
+  const startTalk = (card: CardFace) => {
     if (talk.value && about.value?.mark === card.mark && about.value?.face === card.face) return
-    ends()
+    endConversation()
     about.value = card
     talk.value = useConversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
   }
@@ -71,24 +71,24 @@ export function useAgentPanel(deps: AgentPanelDeps) {
    * The panel asked for, on whichever card is up. A window that can reach no
    * agent says so: a gesture that does nothing is a gesture a person repeats.
    */
-  const opens = () => {
+  const openPanel = () => {
     const card = deps.card()
     if (!card) return
     const why = deps.unreachable()
     if (why) {
-      deps.says(why)
+      deps.showNotice(why)
       return
     }
-    talking(card)
+    startTalk(card)
     deps.shows(true)
   }
 
   /** The panel put away, with what was said in it kept. */
-  const shuts = () => {
+  const closePanel = () => {
     deps.shows(false)
   }
 
-  const writing = (text: string) => {
+  const setWritten = (text: string) => {
     written.value = text
   }
 
@@ -110,7 +110,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const stop = () => talk.value?.stop()
 
   /** The conversation is over: the agent is told, and the panel holds nothing. */
-  const ends = () => {
+  const endConversation = () => {
     talk.value?.finish()
     talk.value = null
     about.value = null
@@ -124,12 +124,12 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     about,
     turns,
     working,
-    opens,
-    shuts,
-    writing,
+    openPanel,
+    closePanel,
+    setWritten,
     send,
     stop,
-    ends,
+    endConversation,
     unreachable: deps.unreachable,
   }
 }

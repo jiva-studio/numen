@@ -5,7 +5,7 @@
  * others, so the negatives are the ones worth having.
  */
 import { describe, expect, it } from 'vitest'
-import { grouped } from '@numen/ui'
+import { groupItems } from '@numen/ui'
 import type { Source } from '@/shared/file'
 import {
   itemsFor,
@@ -27,7 +27,7 @@ const on = (source: Source, folder = false, canRun: RunGuard = canRunAnything): 
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
 const drawn = (source: Source): readonly string[] =>
-  grouped(itemsFor({ source, folder: false }, false, canRunAnything)).map(
+  groupItems(itemsFor({ source, folder: false }, false, canRunAnything)).map(
     (one) => `${one.rule ? '— ' : ''}${one.id}`,
   )
 

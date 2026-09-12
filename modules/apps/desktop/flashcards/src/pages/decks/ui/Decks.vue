@@ -12,7 +12,7 @@ import Progress from './Progress.vue'
 import Presets from './Presets.vue'
 import { deckName } from '@/entities/vault'
 import { letterOf } from '@/features/keyboard'
-import { beginsNothing, learned, opens, spent } from '../lib/progress'
+import { canStart, getLearnedShare, hasNothingToBegin, spent } from '../lib/progress'
 import { LEARNED, STOPPED } from '../words'
 import type { DeckCardsDue, VaultCardsDue } from '@/entities/vault'
 import type { Preset } from '../types'
@@ -44,7 +44,7 @@ defineEmits<{
 const allDue = computed(() => props.vault.due + props.vault.new)
 
 /** Why a deck is not studied today, and empty while its preset schedules it. */
-const stopped = (deck: string): string => props.byDeck.get(deck)?.paused ?? ''
+const getPauseReason = (deck: string): string => props.byDeck.get(deck)?.paused ?? ''
 
 /**
  * Whether a deck's day is done, which is the day's work met and not merely
@@ -64,7 +64,7 @@ const done = (deck: DeckCardsDue): boolean => {
 const empty = (deck: DeckCardsDue): string => {
   const one = props.byDeck.get(deck.deck)
   if (one && spent(one)) return STOPPED.full
-  return beginsNothing(deck, one) ? STOPPED.beginsNothing : STOPPED.nothing
+  return hasNothingToBegin(deck, one) ? STOPPED.noneToBegin : STOPPED.nothing
 }
 
 /**
@@ -74,7 +74,7 @@ const empty = (deck: DeckCardsDue): string => {
  */
 const share = (deck: DeckCardsDue): string => {
   if (props.scheduled && !props.byDeck.has(deck.deck)) return LEARNED.unruled
-  const of = learned(deck)
+  const of = getLearnedShare(deck)
   return of === null ? '' : LEARNED.share(of)
 }
 </script>
@@ -94,7 +94,7 @@ const share = (deck: DeckCardsDue): string => {
         <Button
           variant="outline"
           class="decks__deck"
-          :disabled="!opens(deck, byDeck)"
+          :disabled="!canStart(deck, byDeck)"
           @click="$emit('start', deck.deck)"
         >
           <!-- The letter it is picked by, where the alphabet reaches it: a
@@ -117,7 +117,9 @@ const share = (deck: DeckCardsDue): string => {
                nothing due is not having finished, so the day's work is only
                met where something was answered. A deck holding no cards at all
                says neither. -->
-          <span v-if="stopped(deck.deck)" class="decks__stopped">{{ stopped(deck.deck) }}</span>
+          <span v-if="getPauseReason(deck.deck)" class="decks__stopped">{{
+            getPauseReason(deck.deck)
+          }}</span>
           <DueCount v-else-if="deck.due + deck.new > 0" :due="deck.due + deck.new" />
           <template v-else-if="deck.faces > 0">
             <span v-if="done(deck)" class="decks__met">Done today</span>

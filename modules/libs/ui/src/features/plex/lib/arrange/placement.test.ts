@@ -21,7 +21,7 @@ const FOCUS: PlacedNode = {
 }
 
 /** Nodes of one seat, named after it. */
-const seated = (seat: PlexRelatedSeat, count: number): readonly PlexNode[] =>
+const createNodes = (seat: PlexRelatedSeat, count: number): readonly PlexNode[] =>
   Array.from({ length: count }, (_, at) => ({ id: `${seat}-${at}`, title: `${seat} ${at}`, seat }))
 
 const limits = (each: RoleLimits): Limits =>
@@ -48,14 +48,14 @@ const of = (placed: readonly PlacedNode[], seat: PlexRelatedSeat) =>
 
 describe('what comes back', () => {
   it('is every node it was given, and never the focus', () => {
-    const placed = place({ child: seated('child', 3), parent: seated('parent', 2) })
+    const placed = place({ child: createNodes('child', 3), parent: createNodes('parent', 2) })
 
     expect(placed).toHaveLength(5)
     expect(placed.some((node) => node.id === FOCUS.id)).toBe(false)
   })
 
   it('hands each node back with the identity and title it came in with', () => {
-    const [one] = place({ child: seated('child', 1) })
+    const [one] = place({ child: createNodes('child', 1) })
 
     expect(one?.id).toBe('child-0')
     expect(one?.title).toBe('child 0')
@@ -63,7 +63,7 @@ describe('what comes back', () => {
   })
 
   it('draws every box the width it was told and the height of a node', () => {
-    const placed = place({ child: seated('child', 3) })
+    const placed = place({ child: createNodes('child', 3) })
 
     expect(placed.map((node) => node.width)).toStrictEqual([144, 144, 144])
     expect(placed.map((node) => node.height)).toStrictEqual([36, 36, 36])
@@ -76,14 +76,14 @@ describe('what comes back', () => {
 
 describe('a row', () => {
   it('runs below the focus for children and above it for parents', () => {
-    const placed = place({ child: seated('child', 2), parent: seated('parent', 2) })
+    const placed = place({ child: createNodes('child', 2), parent: createNodes('parent', 2) })
 
     expect(of(placed, 'child').every((node) => node.y > 0)).toBe(true)
     expect(of(placed, 'parent').every((node) => node.y < 0)).toBe(true)
   })
 
   it('is centred on the focus', () => {
-    const row = of(place({ child: seated('child', 3) }), 'child')
+    const row = of(place({ child: createNodes('child', 3) }), 'child')
     const left = row[0]!.x - row[0]!.width / 2
     const right = row[2]!.x + row[2]!.width / 2
 
@@ -91,20 +91,20 @@ describe('a row', () => {
   })
 
   it('stands one gap between neighbours', () => {
-    const row = of(place({ child: seated('child', 3) }), 'child')
+    const row = of(place({ child: createNodes('child', 3) }), 'child')
 
     expect(row[1]!.x - row[0]!.x).toBeCloseTo(nodeSize.width + gap)
     expect(row[2]!.x - row[1]!.x).toBeCloseTo(nodeSize.width + gap)
   })
 
   it('clears the focus by the gap kept for it', () => {
-    const [one] = of(place({ child: seated('child', 1) }), 'child')
+    const [one] = of(place({ child: createNodes('child', 1) }), 'child')
 
     expect(one!.y - nodeSize.height / 2).toBeCloseTo(focusSize.height / 2 + focusGap)
   })
 
   it('numbers its nodes outward from the first', () => {
-    const row = of(place({ child: seated('child', 3) }), 'child')
+    const row = of(place({ child: createNodes('child', 3) }), 'child')
 
     expect(row.map((node) => node.order)).toStrictEqual([0, 1, 2])
   })
@@ -112,7 +112,7 @@ describe('a row', () => {
 
 describe('a row too long for one line', () => {
   it('wraps onto a second, each line standing one box beyond the last', () => {
-    const row = of(place({ child: seated('child', 4) }, 2), 'child')
+    const row = of(place({ child: createNodes('child', 4) }, 2), 'child')
     const lines = [...new Set(row.map((node) => node.y))].sort((a, b) => a - b)
 
     expect(lines).toHaveLength(2)
@@ -120,7 +120,7 @@ describe('a row too long for one line', () => {
   })
 
   it('shares its nodes out evenly, every line within one of every other', () => {
-    const row = of(place({ child: seated('child', 5) }, 3), 'child')
+    const row = of(place({ child: createNodes('child', 5) }, 3), 'child')
     const counts = [...new Map<number, number>(
       row.map((node) => [node.y, row.filter((each) => each.y === node.y).length]),
     ).values()]
@@ -129,7 +129,7 @@ describe('a row too long for one line', () => {
   })
 
   it('keeps numbering across the lines', () => {
-    const row = of(place({ child: seated('child', 4) }, 2), 'child')
+    const row = of(place({ child: createNodes('child', 4) }, 2), 'child')
 
     expect(row.map((node) => node.order)).toStrictEqual([0, 1, 2, 3])
   })
@@ -137,14 +137,14 @@ describe('a row too long for one line', () => {
 
 describe('a column', () => {
   it('runs left of the focus for jumps and right of it for siblings', () => {
-    const placed = place({ jump: seated('jump', 2), sibling: seated('sibling', 2) })
+    const placed = place({ jump: createNodes('jump', 2), sibling: createNodes('sibling', 2) })
 
     expect(of(placed, 'jump').every((node) => node.x < 0)).toBe(true)
     expect(of(placed, 'sibling').every((node) => node.x > 0)).toBe(true)
   })
 
   it('is centred on the focus, one gap between neighbours', () => {
-    const column = of(place({ sibling: seated('sibling', 3) }), 'sibling')
+    const column = of(place({ sibling: createNodes('sibling', 3) }), 'sibling')
 
     expect(column[1]!.y).toBeCloseTo(0)
     expect(column[1]!.y - column[0]!.y).toBeCloseTo(nodeSize.height + gap)
@@ -155,7 +155,7 @@ describe('a column', () => {
     const widths: Widths = (node) => (node.id.endsWith('1') ? 240 : nodeSize.width)
     const column = rowsAndColumns
       .place(
-        { sibling: seated('sibling', 2) },
+        { sibling: createNodes('sibling', 2) },
         FOCUS,
         DEFAULT_OPTIONS,
         limits({ perLine: 5, lines: 4 }),
@@ -168,9 +168,9 @@ describe('a column', () => {
   })
 
   it('stands clear of a row it reaches alongside', () => {
-    const alone = of(place({ sibling: seated('sibling', 5) }), 'sibling')
+    const alone = of(place({ sibling: createNodes('sibling', 5) }), 'sibling')
     const beside = of(
-      place({ sibling: seated('sibling', 5), child: seated('child', 5) }),
+      place({ sibling: createNodes('sibling', 5), child: createNodes('child', 5) }),
       'sibling',
     )
 
@@ -178,9 +178,9 @@ describe('a column', () => {
   })
 
   it('keeps its own distance from a row it never reaches alongside', () => {
-    const alone = of(place({ sibling: seated('sibling', 2) }), 'sibling')
+    const alone = of(place({ sibling: createNodes('sibling', 2) }), 'sibling')
     const beside = of(
-      place({ sibling: seated('sibling', 2), child: seated('child', 5) }),
+      place({ sibling: createNodes('sibling', 2), child: createNodes('child', 5) }),
       'sibling',
     )
 
@@ -188,7 +188,7 @@ describe('a column', () => {
   })
 
   it('gives both sides the one clearance, however tall each is', () => {
-    const placed = place({ jump: seated('jump', 1), sibling: seated('sibling', 4) })
+    const placed = place({ jump: createNodes('jump', 1), sibling: createNodes('sibling', 4) })
     const jump = of(placed, 'jump')[0]!
     const sibling = of(placed, 'sibling')[0]!
 
@@ -196,7 +196,7 @@ describe('a column', () => {
   })
 
   it('wraps into a second line clear of the widest box of the first', () => {
-    const column = of(place({ sibling: seated('sibling', 4) }, 2), 'sibling')
+    const column = of(place({ sibling: createNodes('sibling', 4) }, 2), 'sibling')
     const lines = [...new Set(column.map((node) => node.x))].sort((a, b) => a - b)
 
     expect(lines).toHaveLength(2)
@@ -206,24 +206,24 @@ describe('a column', () => {
 
 describe('rows and columns together', () => {
   it('never lays a column over a row', () => {
-    const placed = place({ child: seated('child', 5), sibling: seated('sibling', 3) })
-    const overlaps = (one: PlacedNode, two: PlacedNode) =>
+    const placed = place({ child: createNodes('child', 5), sibling: createNodes('sibling', 3) })
+    const isOverlapping = (one: PlacedNode, two: PlacedNode) =>
       Math.abs(one.x - two.x) < (one.width + two.width) / 2 &&
       Math.abs(one.y - two.y) < (one.height + two.height) / 2
 
     for (const row of of(placed, 'child')) {
       for (const column of of(placed, 'sibling')) {
-        expect(overlaps(row, column)).toBe(false)
+        expect(isOverlapping(row, column)).toBe(false)
       }
     }
   })
 
   it('leaves every box fully there', () => {
     const placed = place({
-      child: seated('child', 4),
-      parent: seated('parent', 2),
-      jump: seated('jump', 2),
-      sibling: seated('sibling', 2),
+      child: createNodes('child', 4),
+      parent: createNodes('parent', 2),
+      jump: createNodes('jump', 2),
+      sibling: createNodes('sibling', 2),
     })
 
     expect(placed.every((node) => node.opacity === 1)).toBe(true)

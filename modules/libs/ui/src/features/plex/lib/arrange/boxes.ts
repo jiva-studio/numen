@@ -13,7 +13,7 @@ export interface Box {
 /** How many points along a run the box around it is drawn from. */
 const RUN_SAMPLES = 8
 
-export const meets = (one: Box, other: Box): boolean =>
+export const isOverlapping = (one: Box, other: Box): boolean =>
   one.minX < other.maxX &&
   other.minX < one.maxX &&
   one.minY < other.maxY &&

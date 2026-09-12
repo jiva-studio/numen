@@ -39,7 +39,7 @@ const vault = (id: string, said: Partial<VaultCounts> = {}): VaultCounts => ({
 })
 
 /** The vaults as they stand before any of them is counted. */
-const listing = (...all: readonly VaultCounts[]): DueCounts => ({
+const createVaultList = (...all: readonly VaultCounts[]): DueCounts => ({
   day: '2026-09-05',
   vaults: all.map((one) => ({ ...vault(one.name), ...one, faces: 0, due: 0, new: 0, decks: [] })),
 })
@@ -48,7 +48,7 @@ const listing = (...all: readonly VaultCounts[]): DueCounts => ({
 const count = (one: VaultCounts): DueCounts => ({ day: '', vaults: [], counted: one })
 
 /** A count a test feeds by hand, message by message. */
-const feeding = () => {
+const createFeed = () => {
   const held: DueCounts[] = []
   let wake: (() => void) | null = null
   let over = false
@@ -91,11 +91,11 @@ const settles = () => new Promise((then) => setTimeout(then, 0))
 
 describe('counting what every vault owes', () => {
   it('holds the vaults before any of them is counted', async () => {
-    const front = feeding()
-    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
+    const front = createFeed()
+    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
 
     void one.count()
-    front.says(listing(vault('01A'), vault('01B')))
+    front.says(createVaultList(vault('01A'), vault('01B')))
     await settles()
 
     expect(one.day.value).toBe('2026-09-05')
@@ -109,11 +109,11 @@ describe('counting what every vault owes', () => {
   })
 
   it('fills each count into its own vault as it lands', async () => {
-    const front = feeding()
-    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
+    const front = createFeed()
+    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
 
     void one.count()
-    front.says(listing(vault('01A'), vault('01B')))
+    front.says(createVaultList(vault('01A'), vault('01B')))
     await settles()
     front.says(count(vault('01B', { due: 4, new: 1 })))
     await settles()
@@ -145,11 +145,11 @@ describe('counting what every vault owes', () => {
   })
 
   it('carries what a vault that could not be counted says, and counts the rest', async () => {
-    const front = feeding()
-    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
+    const front = createFeed()
+    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
 
     void one.count()
-    front.says(listing(vault('01A'), vault('01B')))
+    front.says(createVaultList(vault('01A'), vault('01B')))
     front.says(count(vault('01A', { unread: 'this folder cannot be read as a vault' })))
     front.says(count(vault('01B', { due: 6, new: 0 })))
     front.ends()
@@ -163,11 +163,11 @@ describe('counting what every vault owes', () => {
   // A vault being read into the index has no numbers yet, so its row goes on
   // waiting for them rather than standing at nothing.
   it('leaves a vault being read uncounted, and says it is being read', async () => {
-    const front = feeding()
-    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
+    const front = createFeed()
+    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
 
     void one.count()
-    front.says(listing(vault('01A')))
+    front.says(createVaultList(vault('01A')))
     front.says(count(vault('01A', { reading: true, faces: 0, due: 0, new: 0 })))
     front.ends()
     await settles()
@@ -176,11 +176,11 @@ describe('counting what every vault owes', () => {
   })
 
   it('is still counting until the last of them has arrived', async () => {
-    const front = feeding()
-    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
+    const front = createFeed()
+    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
 
     void one.count()
-    front.says(listing(vault('01A')))
+    front.says(createVaultList(vault('01A')))
     await settles()
     expect(one.counting.value).toBe(true)
 
@@ -194,19 +194,19 @@ describe('counting what every vault owes', () => {
   // ask, and they arrive together. One count answers all three.
   it('runs one count however many ask for it at once', async () => {
     let asked = 0
-    const front = feeding()
+    const front = createFeed()
     const cards: CardsDueClient = {
       watchCardsDue(said, how) {
         asked += 1
         return front.cards.watchCardsDue(said, how)
       },
     }
-    const one = useReviewCounter({ cards, failed: () => {} })
+    const one = useReviewCounter({ cards, reportError: () => {} })
 
     const three = [one.count(), one.count(), one.count()]
     expect(asked).toBe(1)
 
-    front.says(listing(vault('01A')))
+    front.says(createVaultList(vault('01A')))
     front.says(count(vault('01A')))
     front.ends()
     await Promise.all(three)
@@ -221,17 +221,17 @@ describe('counting what every vault owes', () => {
   // row out, so the asking it wakes is answered by a count of its own.
   it('counts again when asked after it has worked a row out', async () => {
     let asked = 0
-    const front = feeding()
+    const front = createFeed()
     const cards: CardsDueClient = {
       watchCardsDue(said, how) {
         asked += 1
         return front.cards.watchCardsDue(said, how)
       },
     }
-    const one = useReviewCounter({ cards, failed: () => {} })
+    const one = useReviewCounter({ cards, reportError: () => {} })
 
     const first = one.count()
-    front.says(listing(vault('01A')))
+    front.says(createVaultList(vault('01A')))
     front.says(count(vault('01A', { reading: true })))
     await settles()
 
@@ -250,17 +250,17 @@ describe('counting what every vault owes', () => {
   // A count that has already been worked out is what the window keeps showing
   // while the next one runs.
   it('leaves a vault at its last count while it is being counted again', async () => {
-    const front = feeding()
-    const one = useReviewCounter({ cards: front.cards, failed: () => {} })
+    const front = createFeed()
+    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
 
     void one.count()
-    front.says(listing(vault('01A')))
+    front.says(createVaultList(vault('01A')))
     front.says(count(vault('01A', { due: 9, new: 0 })))
     front.ends()
     await settles()
 
     void one.count()
-    front.says(listing(vault('01A')))
+    front.says(createVaultList(vault('01A')))
     await settles()
 
     expect(one.vaults.value[0]).toMatchObject({ counted: true, due: 9 })
@@ -273,7 +273,7 @@ describe('counting what every vault owes', () => {
         throw new Error('no registry')
       },
     }
-    const one = useReviewCounter({ cards, failed: (why) => trouble.push(why) })
+    const one = useReviewCounter({ cards, reportError: (why) => trouble.push(why) })
 
     await one.count()
 
@@ -286,11 +286,11 @@ describe('counting what every vault owes', () => {
   // for the rest of the counts and is not told that they stopped.
   it('stops the count without calling it a failure', async () => {
     const trouble: unknown[] = []
-    const front = feeding()
-    const one = useReviewCounter({ cards: front.cards, failed: (why) => trouble.push(why) })
+    const front = createFeed()
+    const one = useReviewCounter({ cards: front.cards, reportError: (why) => trouble.push(why) })
 
     const asked = one.count()
-    front.says(listing(vault('01A'), vault('01B')))
+    front.says(createVaultList(vault('01A'), vault('01B')))
     await settles()
     one.stop()
     await asked

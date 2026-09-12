@@ -2,7 +2,7 @@
  * Window registration and tab state for flashcard stencil tabs.
  */
 import { computed } from 'vue'
-import type { PlexShowing } from '@numen/ui'
+import type { PlexDestination } from '@numen/ui'
 import type { Cards } from '@/entities/deck'
 import type { Store } from '@/features/command-palette'
 import { openNotes, markOf } from '@/entities/note'
@@ -123,7 +123,7 @@ export function useStencilTabs(
     gone: () => {},
   }
 
-  const openStencil = (path: string, title = '', showing: PlexShowing = 'here'): void => {
+  const openStencil = (path: string, title = '', showing: PlexDestination = 'here'): void => {
     const id = mints(path)
     if (title) wire.setTitle(path, title)
     void (showing === 'beside' ? handle.beside(STENCIL, id) : handle.opens(STENCIL, id))

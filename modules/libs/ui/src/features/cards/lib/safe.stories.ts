@@ -124,7 +124,7 @@ const numbers = (seed: number): (() => number) => {
 }
 
 /** One arrangement: the known ones first, then pieces put together at random. */
-const arranged = (next: () => number, at: number): string => {
+const createArrangement = (next: () => number, at: number): string => {
   if (at < KNOWN.length) return KNOWN[at]!
 
   const among = <T,>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
@@ -208,12 +208,12 @@ interface Tally {
   elements: number
 }
 
-const measured = (): Tally => {
+const measureArrangements = (): Tally => {
   const next = numbers(SEED)
   const tally: Tally = { arrangements: 0, drawn: 0, elements: 0 }
 
   for (let at = 0; at < ARRANGEMENTS; at++) {
-    const written = arranged(next, at)
+    const written = createArrangement(next, at)
     const once = safe(written)
     tally.arrangements += 1
 
@@ -245,7 +245,7 @@ const measured = (): Tally => {
 const meta = {
   title: 'Cards/Safe',
   render: () => ({
-    setup: () => ({ tally: measured() }),
+    setup: () => ({ tally: measureArrangements() }),
     template: `
       <div class="numen" style="padding:32px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
         <p data-tally>{{ tally.arrangements }} arrangements, {{ tally.drawn }} of them drawn as {{ tally.elements }} elements</p>
@@ -294,7 +294,7 @@ export const NothingRuns: Story = {
 
     const next = numbers(SEED)
     for (let at = 0; at < ARRANGEMENTS; at++) {
-      held.innerHTML = safe(arranged(next, at))
+      held.innerHTML = safe(createArrangement(next, at))
     }
     await new Promise((settle) => view.requestAnimationFrame(() => view.setTimeout(settle, 0)))
 

@@ -147,23 +147,23 @@ describe('being put away', () => {
 
 describe('where the keyboard is while it is open', () => {
   /** Opened from the keyboard, which is the opening that lands on an item. */
-  const opened = (props: Partial<MenuProps> = {}) =>
+  const openMenu = (props: Partial<MenuProps> = {}) =>
     mountMenu({ opening: 'keyboard', ...props })
 
   it('is on the first item that can be chosen', async () => {
-    opened({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })
+    openMenu({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })
     await settle()
     expect(document.activeElement).toBe(choices()[1])
   })
 
   it('is on the menu itself when there is nothing to be on', async () => {
-    opened({ items: [] })
+    openMenu({ items: [] })
     await settle()
     expect(document.activeElement).toBe(drawn())
   })
 
   it('walks the items with the arrows, and wraps', async () => {
-    opened()
+    openMenu()
     await settle()
     const menu = drawn()!
 
@@ -178,7 +178,7 @@ describe('where the keyboard is while it is open', () => {
   })
 
   it('goes to the ends on Home and End', async () => {
-    opened()
+    openMenu()
     await settle()
     const menu = drawn()!
 
@@ -190,7 +190,7 @@ describe('where the keyboard is while it is open', () => {
   })
 
   it('is kept inside: tab moves within the items rather than out of them', async () => {
-    opened()
+    openMenu()
     await settle()
     const menu = drawn()!
 
@@ -355,13 +355,13 @@ describe('what an item says beside its words', () => {
 })
 
 describe('typing to jump', () => {
-  const types = (letter: string) =>
+  const typeLetter = (letter: string) =>
     drawn()?.dispatchEvent(new KeyboardEvent('keydown', { key: letter, bubbles: true }))
 
   it('lands on the first item the letter begins', async () => {
     mountMenu()
     await settle()
-    types('c')
+    typeLetter('c')
     await nextTick()
     expect(document.activeElement).toBe(choices()[2])
   })
@@ -369,9 +369,9 @@ describe('typing to jump', () => {
   it('walks the items one letter begins', async () => {
     mountMenu({ items: [...ITEMS, { id: 'cut', text: 'Cut' }] })
     await settle()
-    types('c')
+    typeLetter('c')
     await nextTick()
-    types('c')
+    typeLetter('c')
     await nextTick()
     expect(document.activeElement).toBe(choices()[3])
   })
@@ -379,7 +379,7 @@ describe('typing to jump', () => {
   it('lands on nothing where no item begins with it', async () => {
     mountMenu()
     await settle()
-    types('z')
+    typeLetter('z')
     await nextTick()
     expect(document.activeElement).toBe(drawn())
   })
@@ -387,7 +387,7 @@ describe('typing to jump', () => {
   it('leaves the space bar to the item it is on', async () => {
     mountMenu()
     await settle()
-    types(' ')
+    typeLetter(' ')
     await nextTick()
     expect(document.activeElement).toBe(drawn())
   })

@@ -4,7 +4,7 @@ import { useReviewSession } from './session'
 import type { SessionClient, SessionStart } from './session'
 
 /** One card as the application hands it over. */
-const asked = (mark: string) => ({
+const createCard = (mark: string) => ({
   deck: 'decks/Words.md',
   section: '',
   mark,
@@ -19,7 +19,7 @@ const asked = (mark: string) => ({
 /** opening is what starting a session comes back with. */
 const opening = (...cards: string[]): SessionStart => ({
   run: 'flashcards/01A.jsonl',
-  asked: cards.map(asked),
+  asked: cards.map(createCard),
   unwritten: [],
   skipped: 0,
 })
@@ -51,7 +51,7 @@ function held(said?: { answering?: Promise<{ answer: string }>; refuses?: unknow
     },
   }
   const trouble: unknown[] = []
-  const one = useReviewSession({ cards, failed: (why) => trouble.push(why), now: () => 1000 })
+  const one = useReviewSession({ cards, reportError: (why) => trouble.push(why), now: () => 1000 })
   return { one, asks, trouble }
 }
 
@@ -94,7 +94,7 @@ describe('what a session is opened over', () => {
       takeBackAnswer: () => Promise.reject(new Error('no')),
     }
     const trouble: unknown[] = []
-    const one = useReviewSession({ cards, failed: (why) => trouble.push(why) })
+    const one = useReviewSession({ cards, reportError: (why) => trouble.push(why) })
 
     expect(await one.start('01VAULT', '', 'Sanskrit.md')).toBeNull()
     expect(String(trouble[0])).toContain('this preset schedules nothing today')
@@ -232,7 +232,7 @@ describe('a session', () => {
       takeBackAnswer: () => Promise.reject(new Error('no')),
     }
     const trouble: unknown[] = []
-    const one = useReviewSession({ cards, failed: (why) => trouble.push(why) })
+    const one = useReviewSession({ cards, reportError: (why) => trouble.push(why) })
 
     expect(await one.start('01VAULT', '')).toBeNull()
     expect(trouble).toHaveLength(1)
@@ -254,7 +254,7 @@ describe('a session', () => {
         return {}
       },
     }
-    const one = useReviewSession({ cards, failed: () => {}, now: () => clock })
+    const one = useReviewSession({ cards, reportError: () => {}, now: () => clock })
 
     await one.start('01VAULT', '')
     clock += 4200

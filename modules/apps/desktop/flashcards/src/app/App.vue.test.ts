@@ -81,12 +81,12 @@ const { Decks } = await import('@/pages/decks')
 const drawn = async () => {
   const window = mount(App, { attachTo: document.body })
   windows.push(window)
-  await settles()
-  await settles()
+  await settle()
+  await settle()
   return window
 }
 
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 /**
  * Every window a test drew. A window listens for keystrokes for as long as it
@@ -102,12 +102,12 @@ afterEach(() => {
 /** One keystroke, taken on the window as a person takes it. */
 const press = async (key: string, more: KeyboardEventInit = {}) => {
   globalThis.dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true, ...more }))
-  await settles()
-  await settles()
+  await settle()
+  await settle()
 }
 
 /** The vault the window went into, and nothing while it is still on the list. */
-const opened = (window: VueWrapper): string => {
+const getOpenVault = (window: VueWrapper): string => {
   const decks = window.findComponent(Decks)
   return decks.exists() ? (decks.props('vault') as { vault: string }).vault : ''
 }
@@ -118,7 +118,7 @@ describe('a letter pressed on the vaults', () => {
 
     await press('b')
 
-    expect(opened(window)).toBe('words')
+    expect(getOpenVault(window)).toBe('words')
   })
 
   it('opens the first of them with the first letter of the alphabet', async () => {
@@ -126,7 +126,7 @@ describe('a letter pressed on the vaults', () => {
 
     await press('a')
 
-    expect(opened(window)).toBe('physics')
+    expect(getOpenVault(window)).toBe('physics')
   })
 
   it('opens nothing where no vault stands at the letter', async () => {
@@ -134,7 +134,7 @@ describe('a letter pressed on the vaults', () => {
 
     await press('c')
 
-    expect(opened(window)).toBe('')
+    expect(getOpenVault(window)).toBe('')
   })
 
   it('opens nothing where the letter is held with the overlay key', async () => {
@@ -142,7 +142,7 @@ describe('a letter pressed on the vaults', () => {
 
     await press('a', { ctrlKey: true })
 
-    expect(opened(window)).toBe('')
+    expect(getOpenVault(window)).toBe('')
   })
 })
 

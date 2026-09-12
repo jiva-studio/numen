@@ -40,30 +40,7 @@ export const nouns = {
  * left the source has to leave this list, and the test below refuses one that
  * nothing is called any more.
  */
-export const baseline = [
-  'adding', 'aiming', 'allowed', 'answered', 'answeredOn', 'answering', 'applied', 'arranged',
-  'arrived', 'arriving', 'asked', 'asking', 'attached', 'blocking', 'bounded', 'braced',
-  'bring', 'carried', 'changed', 'choosing', 'chorded', 'clamped', 'cleaned', 'clocked',
-  'coded', 'counted', 'crowded', 'crowdingFor', 'cutting', 'dated', 'declared', 'divided',
-  'doing', 'dragged', 'draggedIn', 'dropped', 'edited', 'emptied', 'ended', 'escaped',
-  'failed', 'feeding', 'fetching', 'filled', 'filledPercent', 'filling', 'finished', 'folded',
-  'followed', 'following', 'framed', 'framedIn', 'grouped', 'handed', 'handedOn', 'handling',
-  'holding', 'hovered', 'hurried', 'joined', 'keeping', 'keyed', 'knobbed', 'learned',
-  'listed', 'listing', 'making', 'marked', 'marking', 'matching', 'measured', 'measuring',
-  'measuringContext', 'merged', 'moved', 'named', 'naming', 'nested', 'nothing', 'noticed',
-  'numbered', 'offered', 'offering', 'opened', 'openedTo', 'ordered', 'pacing', 'packed',
-  'painted', 'painting', 'paired', 'parsed', 'picking', 'placed', 'pointing', 'pressed',
-  'pressing', 'previewed', 'pulled', 'reaching', 'refusedFor', 'remainingWord', 'removed',
-  'renamed', 'renamedIn', 'rendered', 'reordered', 'replaced', 'reported', 'resized',
-  'resizing', 'resolved', 'rested', 'resting', 'rounded', 'routed', 'ruled', 'sampled',
-  'saying', 'scrolled', 'scrolling', 'sealed', 'seated', 'selected', 'selectedIn', 'selecting',
-  'separated', 'settled', 'showing', 'showingOf', 'sized', 'spanning', 'stacked', 'staged',
-  'standing', 'standingIn', 'stated', 'stepped', 'stopped', 'stoppedWords', 'streamed',
-  'styled', 'switched', 'talking', 'themed', 'thinking', 'tightened', 'titled', 'travelled',
-  'turned', 'typed', 'typing', 'uncommented', 'uncounted', 'used', 'waiting', 'walked',
-  'walking', 'watching', 'wearing', 'wheeled', 'widenedFor', 'worked', 'working',
-  'workspacing', 'writing', 'zooming',
-]
+export const baseline = []
 
 /** The words of one name, as a reader says them. */
 export const words = (name) =>

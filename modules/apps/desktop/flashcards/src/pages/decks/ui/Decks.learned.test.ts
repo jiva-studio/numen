@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import Decks from './Decks.vue'
-import { learned } from '../lib/progress'
+import { getLearnedShare } from '../lib/progress'
 import type { BudgetKeys, DeckCardsDue, VaultCardsDue } from '@/entities/vault'
 import type { Preset, Settings } from '../types'
 
@@ -141,13 +141,13 @@ describe('how much of a deck stands learned', () => {
 
 describe('a deck as a share of itself', () => {
   it('is what stands learned over what the deck holds', () => {
-    expect(learned(deck({ faces: 20, learned: 5 }))).toBe(0.25)
-    expect(learned(deck({ faces: 4, learned: 4 }))).toBe(1)
-    expect(learned(deck({ faces: 4, learned: 0 }))).toBe(0)
+    expect(getLearnedShare(deck({ faces: 20, learned: 5 }))).toBe(0.25)
+    expect(getLearnedShare(deck({ faces: 4, learned: 4 }))).toBe(1)
+    expect(getLearnedShare(deck({ faces: 4, learned: 0 }))).toBe(0)
   })
 
   it('is nothing at all for a deck holding no card face', () => {
-    expect(learned(deck({ faces: 0, learned: 0 }))).toBeNull()
+    expect(getLearnedShare(deck({ faces: 0, learned: 0 }))).toBeNull()
   })
 })
 

@@ -56,7 +56,7 @@ const dragTo = async (held: Editor, field: string, onto: string | null): Promise
 }
 
 /** A key pressed on something, as the event it was pressed with. */
-const pressing = (on: Element, key: string): KeyboardEvent => {
+const pressKey = (on: Element, key: string): KeyboardEvent => {
   const press = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
   on.dispatchEvent(press)
   return press
@@ -321,26 +321,26 @@ describe('Stencil, the fields', () => {
 
     it('emits a field dragged one place down the order', () => {
       const held = mountStencil()
-      const press = pressing(gripFor(held, 'Height').element, 'ArrowDown')
+      const press = pressKey(gripFor(held, 'Height').element, 'ArrowDown')
       expect(press.defaultPrevented).toBe(true)
       expect(held.emitted('move-field')).toEqual([['Height', null]])
     })
 
     it('emits a field dragged one place up the order', () => {
       const held = mountStencil()
-      pressing(gripFor(held, 'Weight').element, 'ArrowUp')
+      pressKey(gripFor(held, 'Weight').element, 'ArrowUp')
       expect(held.emitted('move-field')).toEqual([['Weight', 'Height']])
     })
 
     it('drags nothing above the first field, which names every card', () => {
       const held = mountStencil()
-      pressing(gripFor(held, 'Height').element, 'ArrowUp')
+      pressKey(gripFor(held, 'Height').element, 'ArrowUp')
       expect(held.emitted('move-field')).toBeUndefined()
     })
 
     it('drags the first field nowhere', () => {
       const held = mountStencil()
-      pressing(gripFor(held, 'Name').element, 'ArrowDown')
+      pressKey(gripFor(held, 'Name').element, 'ArrowDown')
       expect(held.emitted('move-field')).toBeUndefined()
     })
   })
@@ -475,20 +475,20 @@ describe('Stencil, the faces', () => {
 
     it('emits a face dragged one place down the order', () => {
       const held = mountStencil({ faces: THREE })
-      const press = pressing(stripOf(held, 'one').element, 'ArrowDown')
+      const press = pressKey(stripOf(held, 'one').element, 'ArrowDown')
       expect(press.defaultPrevented).toBe(true)
       expect(held.emitted('move-face')).toEqual([['one', 'three']])
     })
 
     it('emits a face dragged one place up the order: nothing among them is fixed', () => {
       const held = mountStencil({ faces: THREE })
-      pressing(stripOf(held, 'two').element, 'ArrowUp')
+      pressKey(stripOf(held, 'two').element, 'ArrowUp')
       expect(held.emitted('move-face')).toEqual([['two', 'one']])
     })
 
     it('moves nothing where there is no place that way', () => {
       const held = mountStencil({ faces: THREE })
-      pressing(stripOf(held, 'one').element, 'ArrowUp')
+      pressKey(stripOf(held, 'one').element, 'ArrowUp')
       expect(held.emitted('move-face')).toBeUndefined()
     })
   })

@@ -13,7 +13,7 @@ const SCREEN = 100
  * An agent over a conversation that scrolls, since the document a test runs in
  * lays nothing out. One turn is one screenful.
  */
-const talking = (turns: readonly Turn[]) => {
+const createAgent = (turns: readonly Turn[]) => {
   const wrapper = mount(Agent, { props: { turns, modelValue: '' } })
   const thread = wrapper.find('.agent__thread').element as HTMLElement
   let top = 0
@@ -53,7 +53,7 @@ const talking = (turns: readonly Turn[]) => {
 
 describe('a question sent', () => {
   it('is carried to whoever answers it', async () => {
-    const one = talking([said('1'), back('2')])
+    const one = createAgent([said('1'), back('2')])
 
     await one.sends('what is a seat')
 
@@ -62,7 +62,7 @@ describe('a question sent', () => {
   })
 
   it('brings the foot of the conversation into view', async () => {
-    const one = talking([said('1'), back('2'), said('3')])
+    const one = createAgent([said('1'), back('2'), said('3')])
     await one.reads(0)
 
     await one.sends('and one more')
@@ -74,7 +74,7 @@ describe('a question sent', () => {
 
 describe('a conversation read further up', () => {
   it('stays where it is read while an answer arrives', async () => {
-    const one = talking([said('1'), back('2'), said('3')])
+    const one = createAgent([said('1'), back('2'), said('3')])
     await one.reads(0)
 
     await one.wrapper.setProps({ turns: [said('1'), back('2'), said('3'), back('4')] })

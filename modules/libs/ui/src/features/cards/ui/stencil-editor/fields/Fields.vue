@@ -16,7 +16,7 @@ import { useNaming } from '../../../model/naming'
 import { Button } from '@/shared/ui/button'
 import {
   landing,
-  numbered,
+  getFreeName,
   objection,
   type Problems,
   type InsertionPoint,
@@ -69,7 +69,7 @@ const naming = useNaming<Objection>({
 const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
-  lands: (held, lands) => landing(props.fields, held, lands),
+  doesMove: (held, lands) => landing(props.fields, held, lands),
   moves: (held, lands) => emit('move', held, lands),
 })
 
@@ -79,7 +79,7 @@ const rows = computed(() => fieldRows(props.fields, dragged.value))
 const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) ?? []
 
 const add = (): void => {
-  emit('add', numbered(props.fields, props.words.fieldStem))
+  emit('add', getFreeName(props.fields, props.words.fieldStem))
 }
 </script>
 

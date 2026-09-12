@@ -27,9 +27,9 @@ export const vaultLetter = (at: number): string => VAULT_LETTERS[at] ?? ''
  * own shortcut; a letter typed into a field is text. None of the three is a
  * person picking a vault.
  */
-export function opensVault(press: KeyboardEvent, vaults: number): number | null {
+export function getVaultForKey(press: KeyboardEvent, vaults: number): number | null {
   if (press.repeat || press.altKey || press.ctrlKey || press.metaKey) return null
-  if (typing(press)) return null
+  if (isTyping(press)) return null
   if (press.key.length !== 1) return null
 
   const at = VAULT_LETTERS.indexOf(press.key.toUpperCase())
@@ -40,7 +40,7 @@ export function opensVault(press: KeyboardEvent, vaults: number): number | null 
  * Whether the key was pressed into something being written in. A letter is text
  * there, and no screen reads its own keys out of a field.
  */
-export const typing = (press: KeyboardEvent): boolean => {
+export const isTyping = (press: KeyboardEvent): boolean => {
   const at = press.target as HTMLElement | null
   if (!at) return false
   return at.tagName === 'INPUT' || at.tagName === 'TEXTAREA' || at.isContentEditable === true

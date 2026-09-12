@@ -13,7 +13,7 @@ import {
   choosable,
   flatten,
   keptAt,
-  ordered,
+  orderGroups,
   stepIn,
   stepTo,
   type PaletteItem,
@@ -22,9 +22,9 @@ import {
 import {
   actionAt,
   commandKeyChord,
-  keyed,
+  getShortcuts,
+  isActionsChord,
   keyChord,
-  opensActions,
   overlayIcon,
 } from './keys'
 import { partsOf } from './parts'
@@ -185,22 +185,22 @@ describe('what a key reaches', () => {
   })
 
   it('hands out a key each, in the order the actions are offered', () => {
-    expect(keyed(item('one', { actions: BOTH }))).toEqual([
+    expect(getShortcuts(item('one', { actions: BOTH }))).toEqual([
       { action: BOTH[0], key: { icons: ['return'], letter: '' } },
       { action: BOTH[1], key: { icons: ['shift', 'return'], letter: '' } },
     ])
   })
 
   it('says nothing of the actions past the keys', () => {
-    expect(keyed(item('one', { actions: MANY })).map((one) => one.action.id)).toEqual([
+    expect(getShortcuts(item('one', { actions: MANY })).map((one) => one.action.id)).toEqual([
       'travel',
       'open',
     ])
   })
 
   it('says nothing at all of an item that cannot be chosen', () => {
-    expect(keyed(item('one', { disabled: true, actions: MANY }))).toEqual([])
-    expect(keyed(undefined)).toEqual([])
+    expect(getShortcuts(item('one', { disabled: true, actions: MANY }))).toEqual([])
+    expect(getShortcuts(undefined)).toEqual([])
   })
 })
 
@@ -216,22 +216,22 @@ describe('the keystroke that opens the action panel', () => {
   })
 
   it('is K held with either of the two keys that hold a chord', () => {
-    expect(opensActions(chord({ ctrlKey: true }))).toBe(true)
-    expect(opensActions(chord({ metaKey: true }))).toBe(true)
+    expect(isActionsChord(chord({ ctrlKey: true }))).toBe(true)
+    expect(isActionsChord(chord({ metaKey: true }))).toBe(true)
   })
 
   it('is the same key in either case', () => {
-    expect(opensActions(chord({ key: 'K', ctrlKey: true }))).toBe(true)
+    expect(isActionsChord(chord({ key: 'K', ctrlKey: true }))).toBe(true)
   })
 
   it('is not the letter on its own, and not another letter', () => {
-    expect(opensActions(chord({}))).toBe(false)
-    expect(opensActions(chord({ key: 'j', ctrlKey: true }))).toBe(false)
+    expect(isActionsChord(chord({}))).toBe(false)
+    expect(isActionsChord(chord({ key: 'j', ctrlKey: true }))).toBe(false)
   })
 
   it('is not the same chord with Shift held, which belongs to whoever takes it', () => {
-    expect(opensActions(chord({ ctrlKey: true, shiftKey: true }))).toBe(false)
-    expect(opensActions(chord({ metaKey: true, shiftKey: true }))).toBe(false)
+    expect(isActionsChord(chord({ ctrlKey: true, shiftKey: true }))).toBe(false)
+    expect(isActionsChord(chord({ metaKey: true, shiftKey: true }))).toBe(false)
   })
 
   it('is held with the key the keyboard in hand puts beside the space bar', () => {
@@ -470,16 +470,16 @@ describe('which group stands where', () => {
 
   it('keeps the groups holding something in the order they were offered', () => {
     const also = group('text', [item('two')])
-    expect(ordered([holding, also]).map((one) => one.id)).toEqual(['names', 'text'])
-    expect(ordered([also, holding]).map((one) => one.id)).toEqual(['text', 'names'])
+    expect(orderGroups([holding, also]).map((one) => one.id)).toEqual(['names', 'text'])
+    expect(orderGroups([also, holding]).map((one) => one.id)).toEqual(['text', 'names'])
   })
 
   it('sends a group holding nothing to the foot', () => {
-    expect(ordered([empty, holding]).map((one) => one.id)).toEqual(['names', 'text'])
+    expect(orderGroups([empty, holding]).map((one) => one.id)).toEqual(['names', 'text'])
   })
 
   it('keeps the groups holding nothing in the order they were offered', () => {
-    expect(ordered([empty, holding, alsoEmpty]).map((one) => one.id)).toEqual([
+    expect(orderGroups([empty, holding, alsoEmpty]).map((one) => one.id)).toEqual([
       'names',
       'text',
       'meaning',
@@ -488,24 +488,24 @@ describe('which group stands where', () => {
 
   it('draws a group that answered with nothing nowhere', () => {
     const answered = group('text', [])
-    expect(ordered([holding, answered]).map((one) => one.id)).toEqual(['names'])
-    expect(ordered([answered]).map((one) => one.id)).toEqual([])
+    expect(orderGroups([holding, answered]).map((one) => one.id)).toEqual(['names'])
+    expect(orderGroups([answered]).map((one) => one.id)).toEqual([])
   })
 
   it('draws a group holding nothing while it is still working', () => {
-    expect(ordered([group('meaning', [], { working: true })]).map((one) => one.id)).toEqual([
+    expect(orderGroups([group('meaning', [], { working: true })]).map((one) => one.id)).toEqual([
       'meaning',
     ])
   })
 
   it('draws a group that could not be asked, with what it has to say', () => {
     const notAsked = group('meaning', [], { silence: 'the vault could not answer' })
-    expect(ordered([notAsked]).map((one) => one.id)).toEqual(['meaning'])
+    expect(orderGroups([notAsked]).map((one) => one.id)).toEqual(['meaning'])
   })
 
   it('leaves what the keyboard counts exactly where it was', () => {
     const groups = [empty, holding, alsoEmpty, group('more', [item('two'), item('three')])]
-    expect(flatten(ordered(groups)).map((place) => place.item.id)).toEqual(
+    expect(flatten(orderGroups(groups)).map((place) => place.item.id)).toEqual(
       flatten(groups).map((place) => place.item.id),
     )
   })

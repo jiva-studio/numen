@@ -12,7 +12,7 @@ export type InsertionPoint = string | null
  * before itself, before nothing, or before a name that is not there leaves the
  * order as it was.
  */
-export function ordered(
+export function orderNames(
   names: readonly string[],
   dragged: string,
   at: InsertionPoint,
@@ -58,7 +58,7 @@ export const STEP_KEYS = 'ArrowUp ArrowDown'
  * there is no place that way. Landing before the entry past the next one is
  * what puts it one place further down, the entry being taken out first.
  */
-export function stepped(
+export function getStepLanding(
   names: readonly string[],
   dragged: string,
   direction: StepDirection,
@@ -71,11 +71,11 @@ export function stepped(
 }
 
 /** The order a dragged field lands in, with the first field left where it is. */
-export const reordered = (
+export const reorderFields = (
   fields: readonly string[],
   dragged: string,
   at: InsertionPoint,
-): readonly string[] => (landing(fields, dragged, at) ? ordered(fields, dragged, at) : fields)
+): readonly string[] => (landing(fields, dragged, at) ? orderNames(fields, dragged, at) : fields)
 
 /** Why a name cannot be used, and nothing where it can. */
 export type Objection = 'blank' | 'taken' | 'braced'
@@ -108,7 +108,7 @@ export function heading(name: string, taken: readonly string[]): Refusal | null 
  * The first free name numbered from a stem: `Field 1`, `Field 2`, … The stem
  * alone is not one of them, so every name made this way carries a number.
  */
-export function numbered(taken: readonly string[], stem: string): string {
+export function getFreeName(taken: readonly string[], stem: string): string {
   const held = new Set(taken.map((name) => name.trim()))
   for (let at = 1; ; at += 1) {
     const tried = `${stem} ${at}`
@@ -120,7 +120,9 @@ export function numbered(taken: readonly string[], stem: string): string {
  * A name is compared as written and the first of two stands, so a name a
  * stencil declares twice is one field.
  */
-export const declared = (fields: readonly string[]): readonly string[] => [...new Set(fields)]
+export const getDeclaredFields = (fields: readonly string[]): readonly string[] => [
+  ...new Set(fields),
+]
 
 /** Which half of a face is drawn. */
 export type Half = 'front' | 'back'
@@ -135,10 +137,10 @@ export type Problems = ReadonlyMap<string, readonly string[]>
  * A map of nothing that stays a map of nothing. An empty default stands for
  * every caller at once, so putting anything into it is refused.
  */
-export function sealed<K, V>(): ReadonlyMap<K, V> {
+export function createSealedMap<K, V>(): ReadonlyMap<K, V> {
   const empty = new Map<K, V>()
-  const refuses = (): never => {
+  const refuse = (): never => {
     throw new TypeError('an empty default holds nothing')
   }
-  return Object.freeze(Object.assign(empty, { set: refuses, delete: refuses, clear: refuses }))
+  return Object.freeze(Object.assign(empty, { set: refuse, delete: refuse, clear: refuse }))
 }

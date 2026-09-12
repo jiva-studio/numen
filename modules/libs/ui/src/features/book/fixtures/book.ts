@@ -26,7 +26,7 @@ export interface Chapter {
   readonly span: Span
 }
 
-const escaped = (text: string): string =>
+const escapeHtml = (text: string): string =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /**
@@ -40,7 +40,7 @@ export function chapterOf(runs: readonly Run[], begins = 0): Chapter {
   for (const run of runs) {
     const text = run.text ?? ''
     written.push(
-      `<${run.tag} data-offset="${at}">${escaped(text)}${run.inside ?? ''}</${run.tag}>`,
+      `<${run.tag} data-offset="${at}">${escapeHtml(text)}${run.inside ?? ''}</${run.tag}>`,
     )
     at += bytesIn(text)
   }

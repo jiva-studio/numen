@@ -2,7 +2,7 @@
  * Conversation state for agent tabs.
  */
 import { computed, ref, shallowRef, watch } from 'vue'
-import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
+import { isNoteAddress, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/shared/links'
 import type { AgentTabDeps } from '../types'
 
@@ -92,7 +92,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
       )
       return
     }
-    if (!pointsAtNote(href)) return
+    if (!isNoteAddress(href)) return
     const path = resolvedAddresses.value.get(href)
     if (path) deps.beside(path)
   }

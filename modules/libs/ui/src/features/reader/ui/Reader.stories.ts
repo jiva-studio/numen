@@ -13,11 +13,11 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import Reader from './Reader.vue'
 import { GAP } from '../lib/strip'
-import { framed } from '@/shared/fixtures/frame'
+import { frameStory } from '@/shared/fixtures/frame'
 
 const meta = {
   title: 'Reading/Reader',
-  decorators: [framed],
+  decorators: [frameStory],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta
 
@@ -50,7 +50,7 @@ const HIGHLIGHTS: readonly Rect[] = [
 ]
 
 /** Every page the same shape, the way a book is. */
-const sized = (pageCount: number) =>
+const createPages = (pageCount: number) =>
   Array.from({ length: pageCount }, () => ({ width: 612, height: 792 }))
 
 /**
@@ -86,7 +86,7 @@ const book =
         at.value = Math.min(Math.max(page, 0), pageCount - 1)
       }
 
-      return { at, wide, picture, highlightsOn, pages: sized(pageCount), go }
+      return { at, wide, picture, highlightsOn, pages: createPages(pageCount), go }
     },
     template: TEMPLATE,
   })
@@ -124,7 +124,7 @@ const roomOf = (canvasElement: HTMLElement) =>
  * the room. A turn is a scroll the browser animates at its own pace, and this
  * is where it ends.
  */
-const arrived = async (canvasElement: HTMLElement, page: number) =>
+const waitForPage = async (canvasElement: HTMLElement, page: number) =>
   await waitFor(
     async () => {
       const room = roomOf(canvasElement).getBoundingClientRect()
@@ -192,11 +192,11 @@ export const Turning: Story = {
     // The row travels to the page turned to, and what the controls say is
     // where the row stands, so each is pressed once the last one has arrived.
     await userEvent.click(canvas.getByLabelText('Next page'))
-    await arrived(canvasElement, 1)
+    await waitForPage(canvasElement,1)
     await waitFor(async () => await expect(canvas.getByLabelText('Page')).toHaveValue(2))
 
     await userEvent.click(canvas.getByLabelText('Previous page'))
-    await arrived(canvasElement, 0)
+    await waitForPage(canvasElement,0)
     await waitFor(async () => await expect(canvas.getByLabelText('Page')).toHaveValue(1))
 
     // Nowhere to turn back to from the first page.
@@ -205,7 +205,7 @@ export const Turning: Story = {
     const field = canvas.getByLabelText('Page')
     await userEvent.clear(field)
     await userEvent.type(field, '5{Enter}')
-    await arrived(canvasElement, 4)
+    await waitForPage(canvasElement,4)
   },
 }
 
@@ -292,7 +292,7 @@ export const Undrawn: Story = {
       return {
         at,
         picture,
-        pages: sized(4),
+        pages: createPages(4),
         go: (page: number) => (at.value = page),
       }
     },

@@ -5,7 +5,7 @@
  * in, and what it answered the last thing it was asked. A new kind of any of
  * them is an entry in one of the three lists and nothing here.
  */
-import { noticed } from '@numen/ui'
+import { createNotice } from '@numen/ui'
 import type { Notice, Stay, Tone } from '@numen/ui'
 import type { Task } from './task'
 import { wordsOnly, type IndexCoverage } from './coverage'
@@ -113,7 +113,7 @@ export const cornerOf = (
   vault: IndexCoverage,
   words: Words,
 ): readonly Notice[] => {
-  const working: readonly Notice[] = alone(tasks).map(noticed)
+  const working: readonly Notice[] = alone(tasks).map(createNotice)
 
   const so: Notice[] = [
     ...soThat('unwatched', state.unwatched && words.unwatched, {

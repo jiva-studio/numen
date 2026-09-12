@@ -11,7 +11,7 @@ const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
 const TITLES: Readonly<Record<string, string>> = { plex: 'Plex', chat: 'Chat', notes: 'Notes' }
 
 /** The workspace a pane stands in, as far as a pane on its own asks about it. */
-const workspacing = (marks: Readonly<Record<string, string>> = {}): WorkspaceContext => ({
+const createContext = (marks: Readonly<Record<string, string>> = {}): WorkspaceContext => ({
   tabOf: (id): Tab | undefined =>
     TITLES[id] === undefined
       ? undefined
@@ -30,7 +30,7 @@ const mountPane = (props: Record<string, unknown> = {}, slots: Record<string, st
   const { marks, ...rest } = props as { marks?: Readonly<Record<string, string>> }
   return mount(WorkspacePane, {
     attachTo: document.body,
-    global: { provide: { [WORKSPACE_CONTEXT as symbol]: computed(() => workspacing(marks)) } },
+    global: { provide: { [WORKSPACE_CONTEXT as symbol]: computed(() => createContext(marks)) } },
     props: { pane: three(), ...rest },
     slots,
   })
@@ -40,7 +40,7 @@ const strip = (held: ReturnType<typeof mountPane>) => held.findAll('[data-worksp
 
 const panels = (held: ReturnType<typeof mountPane>) => held.findAll('[role="tabpanel"]')
 
-const named = () => document.activeElement?.getAttribute('data-workspace-tab')
+const getFocusedTab = () => document.activeElement?.getAttribute('data-workspace-tab')
 
 describe('what the strip is', () => {
   it('is a list of tabs, each standing over a panel', () => {
@@ -86,22 +86,22 @@ describe('what the strip is', () => {
 })
 
 describe('a pane holding nothing', () => {
-  const nothing = (slots: Record<string, string> = {}) =>
+  const mountEmptyPane = (slots: Record<string, string> = {}) =>
     mountPane({ pane: pane('main', []) }, slots)
 
   it('says so, where the caller says nothing else', () => {
-    expect(nothing().text()).toContain('Nothing open')
+    expect(mountEmptyPane().text()).toContain('Nothing open')
   })
 
   it('is filled by what the caller draws', () => {
-    const held = nothing({ silence: '<p class="welcome">Welcome</p>' })
+    const held = mountEmptyPane({ silence: '<p class="welcome">Welcome</p>' })
 
     expect(held.find('.welcome').exists()).toBe(true)
     expect(held.text()).not.toContain('Nothing open')
   })
 
   it('stands over no panel', () => {
-    expect(panels(nothing())).toHaveLength(0)
+    expect(panels(mountEmptyPane())).toHaveLength(0)
   })
 })
 
@@ -111,7 +111,7 @@ describe('walking the strip', () => {
     await strip(held)[1]?.trigger('keydown', { key: 'ArrowRight' })
 
     expect(held.emitted('choose')).toStrictEqual([['notes']])
-    expect(named()).toBe('notes')
+    expect(getFocusedTab()).toBe('notes')
   })
 
   it('meets its own ends', async () => {
@@ -119,7 +119,7 @@ describe('walking the strip', () => {
     await strip(held)[0]?.trigger('keydown', { key: 'ArrowLeft' })
 
     expect(held.emitted('choose')).toStrictEqual([['notes']])
-    expect(named()).toBe('notes')
+    expect(getFocusedTab()).toBe('notes')
   })
 
   it('goes to either end by Home and End', async () => {
@@ -149,7 +149,7 @@ describe('the way out of a panel', () => {
     first?.element.focus()
     await first?.trigger('keydown', { key: 'Escape' })
 
-    expect(named()).toBe('chat')
+    expect(getFocusedTab()).toBe('chat')
   })
 
   // A tab closed ahead of the one showing hands it a place in the strip it did
@@ -162,7 +162,7 @@ describe('the way out of a panel', () => {
     first?.element.focus()
     await first?.trigger('keydown', { key: 'Escape' })
 
-    expect(named()).toBe('chat')
+    expect(getFocusedTab()).toBe('chat')
   })
 
   it('leaves Escape alone where the panel has already acted on it', async () => {

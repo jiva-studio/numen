@@ -8,7 +8,7 @@
  * standing at it, which is the letter drawn on that row.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
-import { opensVault, WelcomePage } from '@numen/ui'
+import { getVaultForKey, WelcomePage } from '@numen/ui'
 import type { Tab } from '@numen/ui'
 import {
   runInvocation,
@@ -82,7 +82,7 @@ function onOpens(id: string) {
 
 function onKeyDown(event: KeyboardEvent) {
   if (event.defaultPrevented || !welcoming.value) return
-  const at = opensVault(event, onList.value.length)
+  const at = getVaultForKey(event, onList.value.length)
   const one = at === null ? undefined : onList.value[at]
   if (!one) return
   event.preventDefault()

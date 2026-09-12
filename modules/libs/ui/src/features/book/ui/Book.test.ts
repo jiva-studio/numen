@@ -28,15 +28,15 @@ const reader = async (book = BOOK) => {
 }
 
 /** The offsets the reader has asked to be sent to, in the order it asked. */
-const asked = (held: Awaited<ReturnType<typeof reader>>) =>
+const getMoves = (held: Awaited<ReturnType<typeof reader>>) =>
   (held.emitted('moved') ?? []).map((one) => (one as [number])[0])
 
 /**
  * A key the tab caught and handed down, answered with whether it turned the
  * page. The tab listens; the reader is asked.
  */
-const keyed = (held: Awaited<ReturnType<typeof reader>>, key: string): boolean =>
-  (held.vm as unknown as { pressed(event: KeyboardEvent): boolean }).pressed(
+const pressKey = (held: Awaited<ReturnType<typeof reader>>, key: string): boolean =>
+  (held.vm as unknown as { handleKey(event: KeyboardEvent): boolean }).handleKey(
     new KeyboardEvent('keydown', { key }),
   )
 
@@ -52,7 +52,7 @@ describe('a document nothing has laid out', () => {
     // reading area nothing has measured has no run in front of anybody.
     const held = await reader()
 
-    expect(asked(held)).toHaveLength(0)
+    expect(getMoves(held)).toHaveLength(0)
   })
 
   it('shows nothing at all', async () => {
@@ -68,26 +68,26 @@ describe('turning past the end of a document', () => {
   it('asks for the offset the next document begins at', async () => {
     const held = await reader()
 
-    expect(keyed(held, 'ArrowRight')).toBe(true)
+    expect(pressKey(held,'ArrowRight')).toBe(true)
 
-    expect(asked(held)).toEqual([CHAPTER.span.ends])
+    expect(getMoves(held)).toEqual([CHAPTER.span.ends])
   })
 
   it('asks for the offset before this document, turning back', async () => {
     const held = await reader()
 
-    expect(keyed(held, 'ArrowLeft')).toBe(true)
+    expect(pressKey(held,'ArrowLeft')).toBe(true)
 
-    expect(asked(held)).toEqual([CHAPTER.span.begins - 1])
+    expect(getMoves(held)).toEqual([CHAPTER.span.begins - 1])
   })
 
   it('asks for nothing past either end of the book itself', async () => {
     const held = await reader(CHAPTER.span)
 
-    keyed(held, 'ArrowRight')
-    keyed(held, 'ArrowLeft')
+    pressKey(held, 'ArrowRight')
+    pressKey(held, 'ArrowLeft')
 
-    expect(asked(held)).toHaveLength(0)
+    expect(getMoves(held)).toHaveLength(0)
   })
 
   it('turns nothing on a key a book is not read with, and says so', async () => {
@@ -95,10 +95,10 @@ describe('turning past the end of a document', () => {
     // key the book does not read is left to whatever else is listening.
     const held = await reader()
 
-    expect(keyed(held, 'Enter')).toBe(false)
-    expect(keyed(held, 'a')).toBe(false)
+    expect(pressKey(held,'Enter')).toBe(false)
+    expect(pressKey(held,'a')).toBe(false)
 
-    expect(asked(held)).toHaveLength(0)
+    expect(getMoves(held)).toHaveLength(0)
   })
 })
 
@@ -112,7 +112,7 @@ describe('a document with no text at all', () => {
 
     expect(held.find('.book__paper').exists()).toBe(true)
     expect(held.findAll('[data-offset]')).toHaveLength(0)
-    expect(asked(held)).toHaveLength(0)
+    expect(getMoves(held)).toHaveLength(0)
   })
 })
 
@@ -132,7 +132,7 @@ const POINTING = chapterOf(
 )
 
 /** A reader drawing that document, and the press a link in it was given. */
-const pointing = async () => {
+const mountPointing = async () => {
   const held = mount(Book, {
     props: {
       markup: POINTING.markup,
@@ -150,7 +150,7 @@ const pointing = async () => {
 }
 
 /** One link of the document pressed, and the press as the page left it. */
-const press = async (held: Awaited<ReturnType<typeof pointing>>, says: string) => {
+const press = async (held: Awaited<ReturnType<typeof mountPointing>>, says: string) => {
   const link = held.findAll('a').find((one) => one.text() === says)!
   const event = new MouseEvent('click', { bubbles: true, cancelable: true })
   link.element.dispatchEvent(event)
@@ -160,7 +160,7 @@ const press = async (held: Awaited<ReturnType<typeof pointing>>, says: string) =
 
 describe('a link inside a book', () => {
   it('is taken by the reader, and never reaches the browser', async () => {
-    const held = await pointing()
+    const held = await mountPointing()
 
     for (const says of ['the second parva', 'the note', 'elsewhere']) {
       expect((await press(held, says)).defaultPrevented).toBe(true)
@@ -168,7 +168,7 @@ describe('a link inside a book', () => {
   })
 
   it('asks for the document it names, where that is another of the book', async () => {
-    const held = await pointing()
+    const held = await mountPointing()
 
     await press(held, 'the second parva')
 
@@ -176,19 +176,19 @@ describe('a link inside a book', () => {
   })
 
   it('asks for the offset the place stands at, inside the document being read', async () => {
-    const held = await pointing()
+    const held = await mountPointing()
 
     await press(held, 'the note')
 
-    expect(asked(held)).toEqual([POINTING.span.ends - bytesIn('The note pointed down to.')])
+    expect(getMoves(held)).toEqual([POINTING.span.ends - bytesIn('The note pointed down to.')])
   })
 
   it('asks for nothing of the book, where the link leads out of it', async () => {
-    const held = await pointing()
+    const held = await mountPointing()
 
     await press(held, 'elsewhere')
 
-    expect(asked(held)).toHaveLength(0)
+    expect(getMoves(held)).toHaveLength(0)
     expect(held.emitted('followed')).toBeUndefined()
   })
 })
@@ -200,7 +200,7 @@ const LAID = chapterOf(
 )
 
 /** What the browser is told about the reading area, which jsdom never says. */
-const measured = (area: HTMLElement, wide: number, high: number): void => {
+const setSize = (area: HTMLElement, wide: number, high: number): void => {
   Object.defineProperty(area, 'clientWidth', { value: wide, configurable: true })
   Object.defineProperty(area, 'clientHeight', { value: high, configurable: true })
   Object.defineProperty(area, 'getBoundingClientRect', {
@@ -238,7 +238,7 @@ const drawn = async () => {
   })
   const area = held.find('.book__area').element as HTMLElement
   area.scrollTo = () => {}
-  measured(area, 1100, 600)
+  setSize(area, 1100, 600)
   laid(held.find('.book__paper').element as HTMLElement, 3300, [10, 1150, 580])
 
   ;(held.vm as unknown as { measure(): void }).measure()
@@ -251,7 +251,7 @@ const drawn = async () => {
 }
 
 /** How far the text is carried sideways, as the reader set it last. */
-const carried = (held: Awaited<ReturnType<typeof drawn>>): string =>
+const getTranslate = (held: Awaited<ReturnType<typeof drawn>>): string =>
   (held.find('.book__paper').element as HTMLElement).style.translate
 
 describe('a document the browser has laid out', () => {
@@ -278,10 +278,10 @@ describe('a document the browser has laid out', () => {
   it('turns a spread at a time while spreads are left', async () => {
     const held = await drawn()
 
-    expect(keyed(held, 'ArrowRight')).toBe(true)
+    expect(pressKey(held,'ArrowRight')).toBe(true)
 
-    expect(carried(held)).toBe('-1100px 0')
-    expect(asked(held)).toEqual([LAID.span.begins + bytesIn('Первая строка.')])
+    expect(getTranslate(held)).toBe('-1100px 0')
+    expect(getMoves(held)).toEqual([LAID.span.begins + bytesIn('Первая строка.')])
 
     held.unmount()
   })
@@ -295,16 +295,16 @@ describe('a document the browser has laid out', () => {
     }
 
     press(1090)
-    expect(carried(held)).toBe('-1100px 0')
+    expect(getTranslate(held)).toBe('-1100px 0')
 
     press(1090)
-    expect(carried(held)).toBe('-2200px 0')
+    expect(getTranslate(held)).toBe('-2200px 0')
 
     press(20)
-    expect(carried(held)).toBe('-1100px 0')
+    expect(getTranslate(held)).toBe('-1100px 0')
 
     press(550)
-    expect(carried(held)).toBe('-1100px 0')
+    expect(getTranslate(held)).toBe('-1100px 0')
 
     held.unmount()
   })
@@ -315,7 +315,7 @@ describe('a document the browser has laid out', () => {
     await held.setProps({ at: LAID.span.begins + bytesIn('Первая строка.Вторая.') })
     await held.vm.$nextTick()
 
-    expect(carried(held)).toBe('0px 0')
+    expect(getTranslate(held)).toBe('0px 0')
 
     held.unmount()
   })

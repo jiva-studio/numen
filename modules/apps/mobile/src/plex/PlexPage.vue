@@ -52,10 +52,10 @@ async function made(from: string, seat: PlexRelatedSeat) {
     trouble.value = formatErrorCodeMessage(created.refusal)
     return
   }
-  await joined(from, created.path, seat)
+  await linkNotes(from, created.path, seat)
 }
 
-async function joined(from: string, to: string, seat: PlexRelatedSeat) {
+async function linkNotes(from: string, to: string, seat: PlexRelatedSeat) {
   if (!core.value) return
   // The picture is only ever asked for a seat it offers, and it offers no
   // sibling: no link writes one.
@@ -95,7 +95,7 @@ onMounted(async () => {
         @activate="(node: string) => void draw(node)"
         @show="(node: string) => (writing = node)"
         @create="(from: string, seat: PlexRelatedSeat) => void made(from, seat)"
-        @link="(from: string, to: string, seat: PlexRelatedSeat) => void joined(from, to, seat)"
+        @link="(from: string, to: string, seat: PlexRelatedSeat) => void linkNotes(from, to, seat)"
       />
       <IonToast
         :is-open="!!trouble"

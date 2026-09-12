@@ -24,7 +24,7 @@ import {
   rectangularSelection,
 } from '@codemirror/view'
 import { follow } from './address'
-import { changing, marked, pacing, type EditorChange } from './change'
+import { changing, marked, createPacePlugin, type EditorChange } from './change'
 import { highlighting } from '../config/highlight'
 import { LANGUAGES } from '../config/languages'
 import { live, wholeLines } from './live'
@@ -142,7 +142,7 @@ export const setup = (settings: Settings = {}): Extension => [
     ...(settings.describedBy ? { 'aria-describedby': settings.describedBy } : {}),
   }),
   marked,
-  pacing(),
+  createPacePlugin(),
   drawing.of(preview(settings.live ?? true)),
   editing.of(editable(!settings.readonly)),
   showing.of(shown(settings.change ?? null)),

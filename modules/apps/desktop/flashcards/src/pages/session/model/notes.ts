@@ -31,7 +31,7 @@ export interface NotesPanelDeps {
   /** What the deck is joined to. */
   readonly around: (vault: string, deck: string) => Promise<DeckNeighbourhood>
   /** Where the window says what a person has to know. */
-  readonly says: (said: string) => void
+  readonly showNotice: (said: string) => void
 }
 
 export function useNotesPanel(deps: NotesPanelDeps) {
@@ -55,11 +55,11 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   let asked = ''
 
   /** What the deck is joined to, asked for once and kept until the deck changes. */
-  const fetches = async (vault: string, deck: string) => {
+  const fetchNotes = async (vault: string, deck: string) => {
     if (held.value === deck) return
     // What is in hand belongs to the deck behind this one, and a person must
     // never read one deck's notes under another deck's card.
-    forgets()
+    clearNotes()
     asked = deck
     working.value = true
     try {
@@ -77,7 +77,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
       notes.value = []
       unread.value = 0
       held.value = ''
-      deps.says(words.unreached)
+      deps.showNotice(words.unreached)
     } finally {
       if (asked === deck) working.value = false
     }
@@ -87,16 +87,16 @@ export function useNotesPanel(deps: NotesPanelDeps) {
    * The panel asked for, on whichever deck is up. Named is the note it is
    * opened on, where a link in the card named one.
    */
-  const opens = async (named = '') => {
+  const openPanel = async (named = '') => {
     const deck = deps.deck()
     if (!deck) return
     at.value = named
     deps.shows(true)
-    await fetches(deps.vault(), deck)
+    await fetchNotes(deps.vault(), deck)
   }
 
   /** The panel put away, with what was read in it kept. */
-  const shuts = () => {
+  const closePanel = () => {
     deps.shows(false)
   }
 
@@ -105,7 +105,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     at.value = ''
   }
 
-  const forgets = () => {
+  const clearNotes = () => {
     notes.value = []
     unread.value = 0
     held.value = ''
@@ -113,8 +113,8 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   }
 
   /** The session is over: the panel holds nothing and is put away. */
-  const ends = () => {
-    forgets()
+  const endSession = () => {
+    clearNotes()
     at.value = ''
     deps.shows(false)
   }
@@ -125,10 +125,10 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     working,
     at,
     open,
-    opens,
-    shuts,
+    openPanel,
+    closePanel,
     read,
-    ends,
+    endSession,
   }
 }
 

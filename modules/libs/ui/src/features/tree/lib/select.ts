@@ -53,7 +53,7 @@ const inOrder = (shown: readonly ShownRow[], held: ReadonlySet<RowId>): readonly
  * The rows come back in the order they are drawn, and a row that is not drawn
  * is among none of them.
  */
-export function selects(
+export function resolveSelection(
   shown: readonly ShownRow[],
   selected: readonly RowId[],
   anchor: RowId | null,

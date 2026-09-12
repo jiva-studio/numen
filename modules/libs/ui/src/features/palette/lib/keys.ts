@@ -18,7 +18,7 @@ export interface PaletteShortcut {
  * The actions of this item a key reaches, in the order they are offered. This
  * is what the foot of the palette says, and where the keys are decided.
  */
-export const keyed = (item: PaletteItem | undefined): readonly PaletteShortcut[] => {
+export const getShortcuts = (item: PaletteItem | undefined): readonly PaletteShortcut[] => {
   const actions = item && choosable(item) ? (item.actions ?? []) : []
   return actions
     .slice(0, PALETTE_KEYS.length)
@@ -32,7 +32,7 @@ export const actionAt = (item: PaletteItem | undefined, second: boolean): string
 }
 
 /** Whether this keystroke asks for the action panel. */
-export const opensActions = (event: {
+export const isActionsChord = (event: {
   readonly key: string
   readonly ctrlKey: boolean
   readonly metaKey: boolean

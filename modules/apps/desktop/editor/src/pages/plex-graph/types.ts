@@ -7,7 +7,7 @@ import type {
   PlexNeighbourhood,
   PlexPart,
   PlexRelatedSeat,
-  PlexShowing,
+  PlexDestination,
 } from '@numen/ui'
 import type { NoteHeading } from '@/entities/note'
 import type { NoteType } from '@/shared/file'
@@ -34,7 +34,7 @@ export interface PlexTabDeps {
   readonly ready: Readonly<Ref<boolean>>
   readonly hangs: Readonly<Ref<boolean>>
   readonly parts: Readonly<Ref<number>>
-  opens(path: string, title: string, showing: PlexShowing, line?: number): void
+  opens(path: string, title: string, showing: PlexDestination, line?: number): void
   inside(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   asks(text: string): void
   runs(id: string, path: string, title: string): void
@@ -81,8 +81,8 @@ export interface PlexNodeActions {
   joined(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
   dropNodes(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
   brought(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
-  openNode(node: string, showing?: PlexShowing): void
-  opens(node: string, showing?: PlexShowing): void
+  openNode(node: string, showing?: PlexDestination): void
+  opens(node: string, showing?: PlexDestination): void
   createNote(): Promise<void>
   writes(): Promise<void>
   followMoves(renamed: readonly PathRename[]): void

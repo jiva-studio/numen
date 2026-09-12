@@ -19,7 +19,7 @@ import {
 } from 'vue'
 import PlexView from './render/PlexView.vue'
 import { useTitleWidths } from '../model/measure'
-import { DWELL, widenedFor } from '../model/dwell'
+import { DWELL, getWideBox } from '../model/dwell'
 import { byHandle, type ReachStrategy } from '../model/reaching'
 import { byDoubleClick, type ShowStrategy } from '../model/showing'
 import { hangParts, type PlexPart } from '../lib/inside'
@@ -29,7 +29,7 @@ import type { Placement, PlexOptionsInput, Size } from '../lib/arrange'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlacedNode, Position } from '../lib/node'
 import { countOf, seatWord, type PlexRelatedSeat } from '../lib/seat'
-import type { PlexShowing } from '../model/showing'
+import type { PlexDestination } from '../model/showing'
 import { resolveOptions } from '../lib/arrange'
 import { usePlexDrag } from '../model/drag'
 import { usePlexGesture } from '../model/gesture'
@@ -115,7 +115,7 @@ const emit = defineEmits<{
    * Where it is to be drawn is the second word, and the focus answers this as
    * every other node does.
    */
-  (event: 'show', id: string, showing: PlexShowing): void
+  (event: 'show', id: string, showing: PlexDestination): void
   /** Reached out into empty space: make a node in this seat of that one. */
   (event: 'create', from: string, seat: PlexRelatedSeat): void
   /** Reached out onto another node: relate the two in this seat. */
@@ -203,7 +203,7 @@ const widen = computed(() => {
 
   const { margin } = options.value
   const within = room.value
-  return (node: PlacedNode) => widenedFor(node, measure(node), within, margin)
+  return (node: PlacedNode) => getWideBox(node, measure(node), within, margin)
 })
 
 /**

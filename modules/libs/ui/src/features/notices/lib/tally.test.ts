@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activity, percentWord, rateOf, remainingWord, shareOf, SMOOTHING } from './tally'
+import { activity, percentWord, rateOf, getRemainingWord, shareOf, SMOOTHING } from './tally'
 
 describe('shareOf', () => {
   it.each([
@@ -84,7 +84,7 @@ describe('percentWord', () => {
   })
 })
 
-describe('remainingWord', () => {
+describe('getRemainingWord', () => {
   it.each([
     { left: 0, rate: 5, want: '', why: 'nothing left to wait for' },
     { left: 100, rate: 0, want: '', why: 'no rate is no estimate' },
@@ -95,7 +95,7 @@ describe('remainingWord', () => {
     { left: 36000, rate: 3, want: '3:20:00' },
     { left: 400000, rate: 3, want: '37:02:13' },
   ])('says $want for $left at $rate a second', ({ left, rate, want }) => {
-    expect(remainingWord(left, rate)).toBe(want)
+    expect(getRemainingWord(left, rate)).toBe(want)
   })
 })
 

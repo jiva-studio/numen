@@ -19,7 +19,7 @@ import { shell } from '@codemirror/legacy-modes/mode/shell'
 import { toml } from '@codemirror/legacy-modes/mode/toml'
 import { diff } from '@codemirror/legacy-modes/mode/diff'
 
-const streamed = (mode: Parameters<typeof StreamLanguage.define>[0]) =>
+const createStreamLanguage = (mode: Parameters<typeof StreamLanguage.define>[0]) =>
   new LanguageSupport(StreamLanguage.define(mode))
 
 export const LANGUAGES: readonly LanguageDescription[] = [
@@ -45,10 +45,10 @@ export const LANGUAGES: readonly LanguageDescription[] = [
   LanguageDescription.of({
     name: 'shell',
     alias: ['sh', 'bash', 'zsh', 'console'],
-    load: async () => streamed(shell),
+    load: async () => createStreamLanguage(shell),
   }),
-  LanguageDescription.of({ name: 'toml', load: async () => streamed(toml) }),
-  LanguageDescription.of({ name: 'diff', load: async () => streamed(diff) }),
+  LanguageDescription.of({ name: 'toml', load: async () => createStreamLanguage(toml) }),
+  LanguageDescription.of({ name: 'diff', load: async () => createStreamLanguage(diff) }),
 ]
 
 /**

@@ -59,7 +59,7 @@ const asking = ref<{ at: Position; wide: number } | null>(null)
  * The line opens the choices under itself, along its own leading edge and no
  * narrower than itself.
  */
-const opens = () => {
+const openChoices = () => {
   const line = element.value
   if (!line || props.disabled) return
   const box = line.getBoundingClientRect()
@@ -74,7 +74,7 @@ const chose = (id: string) => {
 const onKey = (event: KeyboardEvent) => {
   if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
   event.preventDefault()
-  opens()
+  openChoices()
 }
 
 defineExpose({
@@ -105,7 +105,7 @@ defineExpose({
         props.class,
       )
     "
-    @click="opens"
+    @click="openChoices"
     @keydown="onKey"
   >
     <span class="select__reading min-w-0" :class="{ 'text-hushed': !chosen && !model }">

@@ -10,12 +10,12 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onScopeDispose, ref } from 'vue'
 import Agent from './Agent.vue'
 import type { Turn } from '@/features/thread'
-import { framed } from '@/shared/fixtures/frame'
+import { frameStory } from '@/shared/fixtures/frame'
 import { LONG, MULTILINE, RUSSIAN } from '@/shared/fixtures/prose'
 
 const meta = {
   title: 'Chat/Agent',
-  decorators: [framed],
+  decorators: [frameStory],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta
 
@@ -56,7 +56,7 @@ const conversation = (start: readonly Turn[]): Render => () => ({
     let tick: ReturnType<typeof setInterval> | undefined
 
     /** What has arrived so far, put back in place of what was there. */
-    const arrived = (id: string, soFar: string, done: boolean) => {
+    const putTurn = (id: string, soFar: string, done: boolean) => {
       const index = turns.value.findIndex((turn) => turn.id === id)
       if (index < 0) return
       turns.value[index] = done
@@ -83,7 +83,7 @@ const conversation = (start: readonly Turn[]): Render => () => ({
       tick = setInterval(() => {
         at = Math.min(reply.length, at + 3)
         const done = at === reply.length
-        arrived(id, reply.slice(0, at), done)
+        putTurn(id, reply.slice(0, at), done)
         if (done) settle()
       }, 16)
     }
@@ -91,7 +91,7 @@ const conversation = (start: readonly Turn[]): Render => () => ({
     /** Given up on: what had arrived stays, and nothing more comes. */
     const onStop = () => {
       const last = turns.value.at(-1)
-      if (last?.state === 'arriving') arrived(last.id, last.text, true)
+      if (last?.state === 'arriving') putTurn(last.id, last.text, true)
       settle()
     }
 
@@ -107,7 +107,7 @@ const conversation = (start: readonly Turn[]): Render => () => ({
  * coordinates of the page. Both stops are written `calc(100% ± n)` from the
  * foot of the band the mask is painted over.
  */
-const fadesAt = (thread: HTMLElement): readonly number[] => {
+const getFadeStops = (thread: HTMLElement): readonly number[] => {
   const foot = thread.getBoundingClientRect().bottom
   return [
     ...getComputedStyle(thread).maskImage.matchAll(/calc\(100% ([+-]) ([\d.]+)px\)/g),
@@ -115,7 +115,7 @@ const fadesAt = (thread: HTMLElement): readonly number[] => {
 }
 
 /** The words go as the composer's top edge does, and are gone a fade later. */
-const fadesUnderTheComposer = async (canvasElement: HTMLElement) => {
+const expectFadeUnderComposer = async (canvasElement: HTMLElement) => {
   const thread = canvasElement.querySelector('.agent__thread') as HTMLElement
   const composer = canvasElement.querySelector('.composer') as HTMLElement
   // The thread keeps the fade clear at its head, which is where it is read in
@@ -123,7 +123,7 @@ const fadesUnderTheComposer = async (canvasElement: HTMLElement) => {
   const fade = parseFloat(getComputedStyle(thread).paddingBlockStart)
 
   await waitFor(async () => {
-    const [opaque, clear] = fadesAt(thread)
+    const [opaque, clear] = getFadeStops(thread)
     await expect(opaque).toBeCloseTo(composer.getBoundingClientRect().top, 0)
     await expect(clear).toBeCloseTo((opaque ?? 0) + fade, 0)
   })
@@ -185,7 +185,7 @@ export const LongConversation: Story = {
     await expect(stack.some((element) => element.closest('.thread__turn'))).toBe(true)
 
     // And it is on its way out where it reaches that edge.
-    await fadesUnderTheComposer(canvasElement)
+    await expectFadeUnderComposer(canvasElement)
 
     // The field grown taller carries the fade up with it.
     const field = canvasElement.querySelector('textarea') as HTMLTextAreaElement
@@ -193,6 +193,6 @@ export const LongConversation: Story = {
     await userEvent.keyboard(`one{Shift>}{Enter}{/Shift}two{Shift>}{Enter}{/Shift}three`)
     await expect(composer.getBoundingClientRect().height).toBeGreaterThan(over.height)
 
-    await fadesUnderTheComposer(canvasElement)
+    await expectFadeUnderComposer(canvasElement)
   },
 }

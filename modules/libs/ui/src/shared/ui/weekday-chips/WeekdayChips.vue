@@ -11,7 +11,7 @@ import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
 import { cn } from '@/shared/lib/classes'
 import { Menu } from '../menu'
 import type { Position } from '@/shared/lib/geometry'
-import { filled, filledPercent, offering, type Day } from './week'
+import { getFill, getFillPercent, getOfferedLevels, type Day } from './week'
 
 // The row and the levels it offers are two things drawn, so what a caller
 // names the row by is put on the row itself.
@@ -38,23 +38,23 @@ const raises = defineEmits<{
 const asking = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(null)
 
 const offered = computed(() =>
-  offering(props.levels, asking.value?.level ?? null).map((level) => ({
+  getOfferedLevels(props.levels, asking.value?.level ?? null).map((level) => ({
     id: `${level}`,
-    text: filledPercent(level),
+    text: getFillPercent(level),
   })),
 )
 
 /** Which of the levels on offer is the one in force, as the menu names it. */
 const current = computed(() => (asking.value === null ? null : `${asking.value.level}`))
 
-const asks = (day: Day, event: Event) => {
+const openLevels = (day: Day, event: Event) => {
   if (props.disabled) return
   const chip = event.currentTarget
   if (!(chip instanceof HTMLElement)) return
   const box = chip.getBoundingClientRect()
   asking.value = {
     day: day.id,
-    level: filled(day.level),
+    level: getFill(day.level),
     at: { x: box.left, y: box.bottom },
     from: chip,
   }
@@ -71,8 +71,8 @@ const chose = (said: string) => {
  * How strongly a day is filled: the whole of the accent at a day standing at
  * the whole of it, and no colour at all at a day standing at nothing.
  */
-const filling = (level: number) => {
-  const weight = filled(level) * 100
+const getFillStyle = (level: number) => {
+  const weight = getFill(level) * 100
   return {
     background: `color-mix(in oklab, var(--numen-raised), var(--numen-accent) ${weight}%)`,
     color: weight > 50 ? 'var(--numen-accent-ink)' : 'var(--numen-ink)',
@@ -93,10 +93,10 @@ const filling = (level: number) => {
       <button
         type="button"
         :aria-disabled="disabled || undefined"
-        :aria-label="`${day.long}, ${filledPercent(day.level)}`"
+        :aria-label="`${day.long}, ${getFillPercent(day.level)}`"
         aria-haspopup="menu"
         :aria-expanded="asking?.day === day.id"
-        :style="filling(day.level)"
+        :style="getFillStyle(day.level)"
         :class="
           cn(
             'inline-flex size-7 shrink-0 items-center justify-center rounded-pill',
@@ -106,7 +106,7 @@ const filling = (level: number) => {
             'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
           )
         "
-        @click="asks(day, $event)"
+        @click="openLevels(day, $event)"
       >
         {{ day.short }}
       </button>

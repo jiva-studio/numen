@@ -83,9 +83,9 @@ const reading =
 
       // Keys belong to whatever holds the reader too. The story listens where
       // the tab listens, and the book answers whether it took the key.
-      const book = ref<{ pressed(event: KeyboardEvent): boolean } | null>(null)
+      const book = ref<{ handleKey(event: KeyboardEvent): boolean } | null>(null)
       const turns = (event: KeyboardEvent) => {
-        if (book.value?.pressed(event)) event.preventDefault()
+        if (book.value?.handleKey(event)) event.preventDefault()
       }
       onMounted(() => window.addEventListener('keydown', turns))
       onBeforeUnmount(() => window.removeEventListener('keydown', turns))

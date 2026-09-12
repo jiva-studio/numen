@@ -1,7 +1,7 @@
 /** Changes to a workspace tree: a pane put alongside a node, a tab taken off, a pane replaced, and the canonical form restored. */
 import {
   branch,
-  leads,
+  isLeading,
   orientationAt,
   orientationOf,
   pane,
@@ -60,7 +60,7 @@ export function beside(
   const above = path.slice(0, -1)
 
   if (index === undefined) {
-    const pair = leads(side) ? [made, root] : [root, made]
+    const pair = isLeading(side) ? [made, root] : [root, made]
     return { root: branch(id(), pair, [0.5, 0.5]), axis: wanted, focus: made.id }
   }
 
@@ -68,9 +68,9 @@ export function beside(
   if (!parent || !isBranch(parent)) return { root, axis, focus: onto }
 
   if (orientationAt(axis, above.length) === wanted) {
-    const at = leads(side) ? index : index + 1
+    const at = isLeading(side) ? index : index + 1
     const children = [...parent.children.slice(0, at), made, ...parent.children.slice(at)]
-    const sizes = insert(parent.sizes, index, leads(side))
+    const sizes = insert(parent.sizes, index, isLeading(side))
     return {
       root: replaceAt(root, above, withChildren(parent, children, sizes)),
       axis,
@@ -81,7 +81,7 @@ export function beside(
   const target = nodeAt(root, path)
   if (!target) return { root, axis, focus: onto }
 
-  const pair = leads(side) ? [made, target] : [target, made]
+  const pair = isLeading(side) ? [made, target] : [target, made]
   return {
     root: replaceAt(root, path, branch(id(), pair, [0.5, 0.5])),
     axis,

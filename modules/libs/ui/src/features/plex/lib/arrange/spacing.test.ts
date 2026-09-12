@@ -26,7 +26,7 @@ const firstLine = (frame: PlexFrame) => {
   return children(frame).filter((node) => node.y === line)
 }
 
-const escapes = (frame: PlexFrame, viewport: { width: number; height: number }) =>
+const findEscaped = (frame: PlexFrame, viewport: { width: number; height: number }) =>
   frame.nodes.filter(
     (node) =>
       Math.abs(node.x) + node.width / 2 > viewport.width / 2 - margin ||
@@ -113,7 +113,7 @@ describe('what opens still keeps the window', () => {
   it.each(WINDOWS)('$width×$height, every seat taken', (viewport) => {
     const full = build('A node', { parent: 6, child: 21, jump: 7, sibling: 7 })
     const frame = arrangePlex(full, { options: { viewport, spread: 4 } })
-    expect(escapes(frame, viewport).map((node) => node.title)).toStrictEqual([])
+    expect(findEscaped(frame, viewport).map((node) => node.title)).toStrictEqual([])
   })
 })
 

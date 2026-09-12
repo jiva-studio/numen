@@ -6,7 +6,7 @@
  * what a landing comes to are the caller's, and each is stated once.
  */
 import { shallowRef, type ShallowRef } from 'vue'
-import { stepped, type InsertionPoint, type StepDirection } from '../lib/order'
+import { getStepLanding, type InsertionPoint, type StepDirection } from '../lib/order'
 
 /**
  * What following a drag takes: the order it runs along, and the rules.
@@ -22,7 +22,7 @@ export interface DragDeps<At extends InsertionPoint | undefined> {
   /** Where a landing stands while the pointer is over nothing that takes one. */
   readonly nowhere: At
   /** Whether letting the thing dragged go there moves it. */
-  readonly lands: (dragged: string, at: InsertionPoint) => boolean
+  readonly doesMove: (dragged: string, at: InsertionPoint) => boolean
   /** What a landing that is allowed comes to. */
   readonly moves: (dragged: string, at: InsertionPoint) => void
 }
@@ -72,12 +72,12 @@ export function useDrag<At extends InsertionPoint | undefined>(
     const lands = at.value
     release()
     if (held === null || lands === undefined) return
-    if (drag.lands(held, lands)) drag.moves(held, lands)
+    if (drag.doesMove(held, lands)) drag.moves(held, lands)
   }
 
   const step = (what: string, direction: StepDirection, press: KeyboardEvent): void => {
-    const lands = stepped(drag.order(), what, direction)
-    if (lands === undefined || !drag.lands(what, lands)) return
+    const lands = getStepLanding(drag.order(), what, direction)
+    if (lands === undefined || !drag.doesMove(what, lands)) return
     press.preventDefault()
     drag.moves(what, lands)
   }

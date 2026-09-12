@@ -85,7 +85,7 @@ const shelves = (): readonly string[] =>
   )
 
 /** The choices opened, which is what a person does before choosing one. */
-const opens = async (canvas: HTMLElement) => {
+const openSelect = async (canvas: HTMLElement) => {
   await userEvent.click(control(canvas))
 }
 
@@ -99,7 +99,7 @@ export const OnShelves: Story = {
     chosen: 'paper',
   },
   play: async ({ canvasElement }) => {
-    await opens(canvasElement)
+    await openSelect(canvasElement)
     expect(shelves()).toEqual(['Ships with numen', 'Yours'])
   },
 }
@@ -128,7 +128,7 @@ export const Unbroken: Story = {
 export const NoChoicesAtAll: Story = {
   args: { words: '', chosen: '' },
   play: async ({ canvasElement }) => {
-    await opens(canvasElement)
+    await openSelect(canvasElement)
     expect(rows()).toHaveLength(0)
     expect(document.body.querySelector('.menu__silence')).not.toBeNull()
   },
@@ -141,7 +141,7 @@ export const FarTooMany: Story = {
     chosen: 'choice-1',
   },
   play: async ({ canvasElement }) => {
-    await opens(canvasElement)
+    await openSelect(canvasElement)
     expect(rows()).toHaveLength(40)
   },
 }
@@ -176,7 +176,7 @@ export const OneStopOnTheWayRound: Story = {
 /** Typing jumps to the choice the letter begins. */
 export const TypingToJump: Story = {
   play: async ({ canvasElement }) => {
-    await opens(canvasElement)
+    await openSelect(canvasElement)
     await userEvent.keyboard('l')
     expect(document.activeElement).toBe(rows()[2])
   },
@@ -185,7 +185,7 @@ export const TypingToJump: Story = {
 /** Escape puts the choices away and leaves what is in force alone. */
 export const EscapePutsItAway: Story = {
   play: async ({ canvasElement }) => {
-    await opens(canvasElement)
+    await openSelect(canvasElement)
     await userEvent.keyboard('{Escape}')
     expect(rows()).toHaveLength(0)
     expect(control(canvasElement).textContent).toContain('Small')

@@ -6,7 +6,7 @@
  * a card may be drawn with. Typesetting is the typography plugin's.
  */
 import { computed } from 'vue'
-import { rendered } from './render'
+import { renderCardHtml } from './render'
 
 const props = defineProps<{
   /** HTML, as a person wrote it. */
@@ -21,9 +21,9 @@ const emit = defineEmits<{
   (event: 'follow', href: string, press: MouseEvent): void
 }>()
 
-const html = computed(() => rendered(props.text))
+const html = computed(() => renderCardHtml(props.text))
 
-const pressed = (press: MouseEvent) => {
+const onClick = (press: MouseEvent) => {
   const link = (press.target as HTMLElement | null)?.closest?.('a')
   const href = link?.getAttribute('href')
   if (href) emit('follow', href, press)
@@ -35,7 +35,7 @@ const pressed = (press: MouseEvent) => {
   <div
     class="prose prose-sm prose-numen numen max-w-none break-words"
     v-html="html"
-    @click="pressed"
+    @click="onClick"
   ></div>
 </template>
 

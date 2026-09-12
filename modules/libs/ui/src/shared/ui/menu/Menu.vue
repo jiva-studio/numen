@@ -8,7 +8,14 @@
  * one does are the caller's.
  */
 import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
-import { grouped, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './item'
+import {
+  groupItems,
+  getLandingIndex,
+  placeMenu,
+  stepTo,
+  type MenuItem,
+  type MenuOpening,
+} from './item'
 import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from './typeahead'
 import type { Position, Size } from '@/shared/lib/geometry'
 
@@ -90,7 +97,7 @@ const size = ref<Size>({ width: 0, height: 0 })
 const here = ref(-1)
 
 /** The items with the rules that stand between their groups. */
-const rows = computed(() => grouped(props.items))
+const rows = computed(() => groupItems(props.items))
 
 /** The area to stay inside. The browser's, unless a caller measures its own. */
 const room = computed<Size>(
@@ -201,7 +208,7 @@ const enter = async () => {
 
   await nextTick()
   measure()
-  goTo(landsOn(props.opening, props.items, props.current))
+  goTo(getLandingIndex(props.opening, props.items, props.current))
 }
 
 const leave = () => {

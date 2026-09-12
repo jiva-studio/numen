@@ -15,7 +15,7 @@ const ITEMS: MenuItem[] = [
 ]
 
 /** A word typed one letter at a time, each letter a moment after the last. */
-const types = (word: string): { typed: Typeahead; at: number | null } => {
+const typeWord = (word: string): { typed: Typeahead; at: number | null } => {
   let typed = NOTHING_TYPED
   let at: number | null = null
   let now = 0
@@ -30,15 +30,15 @@ const types = (word: string): { typed: Typeahead; at: number | null } => {
 
 describe('what a run of letters lands on', () => {
   it('lands on the first item the letter begins', () => {
-    expect(types('c').at).toBe(2)
+    expect(typeWord('c').at).toBe(2)
   })
 
   it('stands where it is while the word grows', () => {
-    expect(types('co').at).toBe(2)
+    expect(typeWord('co').at).toBe(2)
   })
 
   it('lands on the item the whole word begins rather than the first letter', () => {
-    expect(types('cu').at).toBe(3)
+    expect(typeWord('cu').at).toBe(3)
   })
 
   it('walks the items one letter begins, and wraps', () => {
@@ -53,7 +53,7 @@ describe('what a run of letters lands on', () => {
   })
 
   it('lands on nothing where no item begins with the word', () => {
-    expect(types('z').at).toBeNull()
+    expect(typeWord('z').at).toBeNull()
   })
 
   it('passes over an item that cannot be chosen', () => {

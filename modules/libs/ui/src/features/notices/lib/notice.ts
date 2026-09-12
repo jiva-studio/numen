@@ -78,7 +78,7 @@ export interface Task {
  * What stopped a piece of work is what its card is called: it is the sentence a
  * person acts on, and the room on a card is the words at the front of it.
  */
-export const noticed = (task: Task): Notice => {
+export const createNotice = (task: Task): Notice => {
   const failure = task.failureReason ?? task.failed
   const action = task.action ?? task.doing
   const subject = task.target ?? task.about

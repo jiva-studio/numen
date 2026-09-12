@@ -5,7 +5,7 @@
  * the vault says it holds there decides between the editors, the reader and the
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */
-import type { PlexShowing } from '@numen/ui'
+import type { PlexDestination } from '@numen/ui'
 import type { BookFormat, DocumentFormat, FileKind, NoteType } from '@/shared/file'
 import type { Span } from '@/shared/span'
 
@@ -22,7 +22,7 @@ export type EditorKind = NoteType | 'preset' | 'url'
 export type FileOpener = (
   path: string,
   title: string,
-  showing: PlexShowing,
+  showing: PlexDestination,
   line?: number,
 ) => void
 
@@ -105,7 +105,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
     path: string,
     title: string,
     type: EditorKind,
-    showing: PlexShowing = 'here',
+    showing: PlexDestination = 'here',
     line?: number,
   ): void => {
     editors.get(type)?.(path, title, showing, line)
@@ -119,7 +119,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const opens = async (
     path: string,
     title = '',
-    showing: PlexShowing = 'here',
+    showing: PlexDestination = 'here',
     line?: number,
   ): Promise<void> => {
     const kind = await fileKindAt(path)

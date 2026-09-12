@@ -63,7 +63,7 @@ const nearest = (left: number): PanelPlace => {
   return best
 }
 
-const goes = (where: PanelPlace) => {
+const slideTo = (where: PanelPlace) => {
   window.clearTimeout(settling)
   const at = window_.value
   if (!at) return
@@ -85,7 +85,7 @@ const goes = (where: PanelPlace) => {
  * the card already in it, and a resize moves the stops under a strip that is
  * standing on one, so neither is something to be seen sliding.
  */
-const puts = (where: PanelPlace) => {
+const placeAt = (where: PanelPlace) => {
   const at = window_.value
   if (!at) return
   window.clearTimeout(settling)
@@ -97,12 +97,12 @@ const puts = (where: PanelPlace) => {
   at.style.scrollBehavior = ''
 }
 
-const resized = () => puts(shown.value)
+const handleResize = () => placeAt(shown.value)
 
 watch(
   () => shown.value,
   (where) => {
-    if (!taking.value) goes(where)
+    if (!taking.value) slideTo(where)
   },
 )
 
@@ -110,7 +110,7 @@ watch(
  * Where a hand has taken the strip. Past the halfway mark between two of the
  * stops it has asked for the nearer one, and the window is told as it crosses.
  */
-const scrolled = () => {
+const handleScroll = () => {
   const at = window_.value
   if (!at) return
   // A move in flight is over when it arrives, whatever time it took.
@@ -134,7 +134,7 @@ const scrolled = () => {
   if (taking.value) return
   window.clearTimeout(settling)
   const going = aim
-  settling = window.setTimeout(() => goes(going ?? shown.value), SETTLES)
+  settling = window.setTimeout(() => slideTo(going ?? shown.value), SETTLES)
 }
 
 /** Where the hand went down, and where the strip was under it. */
@@ -150,7 +150,7 @@ const took = (press: PointerEvent) => {
   at.setPointerCapture(press.pointerId)
 }
 
-const takes = (press: PointerEvent) => {
+const handlePointerMove = (press: PointerEvent) => {
   const at = window_.value
   if (!at || !taking.value) return
   at.scrollLeft = was - (press.clientX - from)
@@ -168,16 +168,16 @@ const letGo = async () => {
   // Where the hand asked for and where the window went are two things: a panel
   // the window refused to open is one the strip goes back off.
   await nextTick()
-  goes(shown.value)
+  slideTo(shown.value)
 }
 
 onMounted(() => {
-  puts(shown.value)
-  window.addEventListener('resize', resized)
+  placeAt(shown.value)
+  window.addEventListener('resize', handleResize)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', resized)
+  window.removeEventListener('resize', handleResize)
   window.clearTimeout(sending)
   window.clearTimeout(settling)
 })
@@ -188,9 +188,9 @@ onBeforeUnmount(() => {
     ref="window"
     class="carousel"
     :class="{ 'carousel--taking': taking }"
-    @scroll="scrolled"
+    @scroll="handleScroll"
     @pointerdown="took"
-    @pointermove="takes"
+    @pointermove="handlePointerMove"
     @pointerup="letGo"
     @pointercancel="letGo"
   >

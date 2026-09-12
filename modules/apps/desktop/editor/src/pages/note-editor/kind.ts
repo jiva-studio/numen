@@ -2,7 +2,7 @@
  * Window registration and tab state for note tabs.
  */
 import { computed } from 'vue'
-import type { PlexShowing } from '@numen/ui'
+import type { PlexDestination } from '@numen/ui'
 import type { Store } from '@/features/command-palette'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { NOTE } from '@/entities/tab'
@@ -78,7 +78,7 @@ export function useNoteTab(
    * A note put in front of the person, under the name it is called by and in a
    * tab of its own. It takes the keyboard, opened now or already open.
    */
-  const openNote = (path: string, title = '', showing: PlexShowing = 'here') => {
+  const openNote = (path: string, title = '', showing: PlexDestination = 'here') => {
     const id = mints(path)
     if (title) names.calls(id, title)
     void (showing === 'beside' ? handle.beside(NOTE, id) : handle.opens(NOTE, id))

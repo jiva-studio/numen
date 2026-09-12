@@ -51,14 +51,14 @@ const build = (
   const doc = state.doc
   const blocks = wants === 'blocks'
 
-  const selected = (start: number, end: number) =>
+  const isSelected = (start: number, end: number) =>
     state.selection.ranges.some((range) => range.from <= end && range.to >= start)
 
-  const away = (node: SyntaxNodeRef) => !selected(node.from, node.to)
+  const away = (node: SyntaxNodeRef) => !isSelected(node.from, node.to)
 
   const under = (node: SyntaxNodeRef) => {
     const parent = node.node.parent
-    return parent ? selected(parent.from, parent.to) : true
+    return parent ? isSelected(parent.from, parent.to) : true
   }
 
   /** A mark and the space it is separated from its content by. */

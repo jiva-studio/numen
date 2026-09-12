@@ -22,8 +22,8 @@ import {
   type DeckCard,
   type Wrong,
 } from '../../lib/deck'
-import { grid, lands, type Run } from '../../lib/grid'
-import { numbered, type InsertionPoint, type StepDirection } from '../../lib/order'
+import { doesMove, grid, type Run } from '../../lib/grid'
+import { getFreeName, type InsertionPoint, type StepDirection } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
 
 // --- Props & Emits ---
@@ -67,7 +67,7 @@ const asking = shallowRef<string | null>(null)
 const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
-  lands: (held: string, at: InsertionPoint): boolean => lands(shown.value.runs, held, at),
+  doesMove: (held: string, at: InsertionPoint): boolean => doesMove(shown.value.runs, held, at),
   moves: (held, at) => emit('move', held, at),
 })
 
@@ -120,7 +120,7 @@ function onAddCard(stencil: Stencil, run: Run): void {
 }
 
 function onAddSection(): void {
-  emit('add-section', numbered(props.sections.map((each) => each.name), props.words.sectionStem))
+  emit('add-section', getFreeName(props.sections.map((each) => each.name), props.words.sectionStem))
 }
 </script>
 

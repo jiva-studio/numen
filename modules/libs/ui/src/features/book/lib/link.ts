@@ -6,7 +6,7 @@
  * it. Both are relative to the window's own address, and the reader turns one
  * into a move within the book.
  */
-import { pointsOutward } from '@/shared/lib/outward'
+import { isOutward } from '@/shared/lib/outward'
 
 /** Where a link inside a book points. */
 export interface BookLink {
@@ -24,10 +24,10 @@ export function placeIn(href: string): BookLink {
 }
 
 /** Whether an address names somewhere the window is not served from. */
-export function pointsAway(href: string): boolean {
+export function isOutwardHref(href: string): boolean {
   const here = new URL(window.location.href)
   try {
-    return pointsOutward(new URL(href, here), here)
+    return isOutward(new URL(href, here), here)
   } catch {
     // An href that is no address names nowhere outward, and the book is asked
     // for the place it names instead.

@@ -48,10 +48,10 @@ const shelves = () =>
   )
 
 /** Every choice the control has handed on, in the order it handed them on. */
-const handed = (control: ReturnType<typeof mountSelect>): readonly unknown[] =>
+const getEmitted = (control: ReturnType<typeof mountSelect>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
 
-const opens = async (control: ReturnType<typeof mountSelect>) => {
+const openSelect = async (control: ReturnType<typeof mountSelect>) => {
   await line(control).trigger('click')
   await settle()
 }
@@ -63,7 +63,7 @@ describe('the line at rest', () => {
 
   it('says the value itself where it is none of the choices', () => {
     expect(line(mountSelect({ modelValue: 'enormous' })).text()).toContain('enormous')
-    expect(handed(mountSelect({ modelValue: 'enormous' }))).toStrictEqual([])
+    expect(getEmitted(mountSelect({ modelValue: 'enormous' }))).toStrictEqual([])
   })
 
   it('says the stand-in where nothing is in force', () => {
@@ -81,7 +81,7 @@ describe('the line at rest', () => {
   it('is not opened while nobody may turn it', async () => {
     const control = mountSelect({ disabled: true })
     expect(line(control).attributes('disabled')).toBeDefined()
-    await opens(control)
+    await openSelect(control)
     expect(rows()).toHaveLength(0)
   })
 
@@ -94,7 +94,7 @@ describe('the line at rest', () => {
 describe('the choices offered', () => {
   it('are drawn in the order they were given', async () => {
     const control = mountSelect()
-    await opens(control)
+    await openSelect(control)
     expect(words()).toStrictEqual(['Small', 'Medium', 'Large'])
   })
 
@@ -106,12 +106,12 @@ describe('the choices offered', () => {
       ],
       modelValue: 'numen',
     })
-    await opens(control)
+    await openSelect(control)
     expect(shelves()).toStrictEqual(['Ships with numen', 'Yours'])
   })
 
   it('stand on no shelf where they name none', async () => {
-    await opens(mountSelect())
+    await openSelect(mountSelect())
     expect(shelves()).toStrictEqual([])
   })
 
@@ -120,7 +120,7 @@ describe('the choices offered', () => {
       choices: [{ id: 'small', text: 'Small', detail: 'somewhere/small.onnx' }],
       modelValue: 'small',
     })
-    await opens(control)
+    await openSelect(control)
     expect(document.body.querySelector('.menu__detail')?.textContent?.trim()).toBe(
       'somewhere/small.onnx',
     )
@@ -128,7 +128,7 @@ describe('the choices offered', () => {
 
   it('say so where there are none', async () => {
     const control = mountSelect({ choices: [], modelValue: '' })
-    await opens(control)
+    await openSelect(control)
     expect(document.body.querySelector('.menu__silence')?.textContent?.trim()).toBe(
       'Nothing to choose',
     )
@@ -138,18 +138,18 @@ describe('the choices offered', () => {
 describe('choosing', () => {
   it('hands back the identifier it was given', async () => {
     const control = mountSelect()
-    await opens(control)
+    await openSelect(control)
     await rows()[2]!.click()
-    expect(handed(control)).toStrictEqual(['large'])
+    expect(getEmitted(control)).toStrictEqual(['large'])
   })
 
   it('hands nothing back where the choices were put away untouched', async () => {
     const control = mountSelect()
-    await opens(control)
+    await openSelect(control)
     document.dispatchEvent(new Event('scroll', { bubbles: true }))
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await nextTick()
-    expect(handed(control)).toStrictEqual([])
+    expect(getEmitted(control)).toStrictEqual([])
     expect(line(control).attributes('aria-expanded')).toBe('false')
   })
 })
@@ -182,7 +182,7 @@ describe('the keyboard', () => {
 
   it('gives the keyboard back to the line it was opened from', async () => {
     const control = mountSelect()
-    await opens(control)
+    await openSelect(control)
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await nextTick()
     expect(document.activeElement).toBe(line(control).element)
@@ -195,7 +195,7 @@ describe('how wide the choices are drawn', () => {
     // jsdom measures nothing, so the width is the one the box reports.
     line(control).element.getBoundingClientRect = () =>
       ({ left: 0, bottom: 32, width: 288 }) as DOMRect
-    await opens(control)
+    await openSelect(control)
 
     expect(document.body.querySelector<HTMLElement>('.menu')?.style.getPropertyValue('--asking'))
       .toBe('288px')

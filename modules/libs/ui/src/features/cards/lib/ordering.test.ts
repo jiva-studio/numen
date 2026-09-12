@@ -3,37 +3,45 @@
  * No DOM, no measurement.
  */
 import { describe, expect, it } from 'vitest'
-import { directionOf, landing, numbered, objection, ordered, reordered, stepped } from './order'
+import {
+  directionOf,
+  landing,
+  getFreeName,
+  objection,
+  orderNames,
+  reorderFields,
+  getStepLanding,
+} from './order'
 
-describe('ordered', () => {
+describe('orderNames', () => {
   const NAMES = ['a', 'b', 'c']
 
   it('puts a dragged name before the one it lands on', () => {
-    expect(ordered(NAMES, 'c', 'a')).toEqual(['c', 'a', 'b'])
+    expect(orderNames(NAMES, 'c', 'a')).toEqual(['c', 'a', 'b'])
   })
 
   it('puts it at the end where it lands on nothing', () => {
-    expect(ordered(NAMES, 'a', null)).toEqual(['b', 'c', 'a'])
+    expect(orderNames(NAMES, 'a', null)).toEqual(['b', 'c', 'a'])
   })
 
   it('takes it out before it puts it back', () => {
-    expect(ordered(NAMES, 'a', 'c')).toEqual(['b', 'a', 'c'])
+    expect(orderNames(NAMES, 'a', 'c')).toEqual(['b', 'a', 'c'])
   })
 
   it('leaves the order alone where it lands on itself', () => {
-    expect(ordered(NAMES, 'b', 'b')).toEqual(NAMES)
+    expect(orderNames(NAMES, 'b', 'b')).toEqual(NAMES)
   })
 
   it('leaves the order alone where it lands on a name that is not there', () => {
-    expect(ordered(NAMES, 'b', 'z')).toEqual(NAMES)
+    expect(orderNames(NAMES, 'b', 'z')).toEqual(NAMES)
   })
 
   it('leaves the order alone where what is dragged is not there', () => {
-    expect(ordered(NAMES, 'z', 'a')).toEqual(NAMES)
+    expect(orderNames(NAMES, 'z', 'a')).toEqual(NAMES)
   })
 
   it('keeps one name alone where it is', () => {
-    expect(ordered(['only'], 'only', null)).toEqual(['only'])
+    expect(orderNames(['only'], 'only', null)).toEqual(['only'])
   })
 })
 
@@ -70,47 +78,47 @@ describe('landing', () => {
   })
 })
 
-describe('reordered', () => {
+describe('reorderFields', () => {
   const FIELDS = ['Name', 'Height', 'Weight']
 
   it('reorders the fields below the first', () => {
-    expect(reordered(FIELDS, 'Weight', 'Height')).toEqual(['Name', 'Weight', 'Height'])
+    expect(reorderFields(FIELDS, 'Weight', 'Height')).toEqual(['Name', 'Weight', 'Height'])
   })
 
   it('leaves the order alone where the first field is dragged', () => {
-    expect(reordered(FIELDS, 'Name', null)).toEqual(FIELDS)
+    expect(reorderFields(FIELDS, 'Name', null)).toEqual(FIELDS)
   })
 
   it('leaves the order alone where a field is let go above the first', () => {
-    expect(reordered(FIELDS, 'Weight', 'Name')).toEqual(FIELDS)
+    expect(reorderFields(FIELDS, 'Weight', 'Name')).toEqual(FIELDS)
   })
 })
 
-describe('stepped', () => {
+describe('getStepLanding', () => {
   const NAMES = ['a', 'b', 'c']
 
   it('lands what is dragged up before the one above it', () => {
-    expect(stepped(NAMES, 'c', 'up')).toBe('b')
-    expect(ordered(NAMES, 'c', stepped(NAMES, 'c', 'up') ?? null)).toEqual(['a', 'c', 'b'])
+    expect(getStepLanding(NAMES, 'c', 'up')).toBe('b')
+    expect(orderNames(NAMES, 'c', getStepLanding(NAMES, 'c', 'up') ?? null)).toEqual(['a', 'c', 'b'])
   })
 
   it('lands what is dragged down before the one below the one below it', () => {
-    expect(stepped(NAMES, 'a', 'down')).toBe('c')
-    expect(ordered(NAMES, 'a', stepped(NAMES, 'a', 'down') ?? null)).toEqual(['b', 'a', 'c'])
+    expect(getStepLanding(NAMES, 'a', 'down')).toBe('c')
+    expect(orderNames(NAMES, 'a', getStepLanding(NAMES, 'a', 'down') ?? null)).toEqual(['b', 'a', 'c'])
   })
 
   it('lands the last but one at the end', () => {
-    expect(stepped(NAMES, 'b', 'down')).toBeNull()
-    expect(ordered(NAMES, 'b', null)).toEqual(['a', 'c', 'b'])
+    expect(getStepLanding(NAMES, 'b', 'down')).toBeNull()
+    expect(orderNames(NAMES, 'b', null)).toEqual(['a', 'c', 'b'])
   })
 
   it('lands nothing above the first, and nothing below the last', () => {
-    expect(stepped(NAMES, 'a', 'up')).toBeUndefined()
-    expect(stepped(NAMES, 'c', 'down')).toBeUndefined()
+    expect(getStepLanding(NAMES, 'a', 'up')).toBeUndefined()
+    expect(getStepLanding(NAMES, 'c', 'down')).toBeUndefined()
   })
 
   it('lands nothing that is not there', () => {
-    expect(stepped(NAMES, 'z', 'up')).toBeUndefined()
+    expect(getStepLanding(NAMES, 'z', 'up')).toBeUndefined()
   })
 })
 
@@ -153,16 +161,16 @@ describe('objection', () => {
   })
 })
 
-describe('numbered', () => {
+describe('getFreeName', () => {
   it('numbers from one, so the first carries a number like the rest', () => {
-    expect(numbered([], 'Field')).toBe('Field 1')
+    expect(getFreeName([], 'Field')).toBe('Field 1')
   })
 
   it('numbers past what is taken', () => {
-    expect(numbered(['Field 1', 'Field 2'], 'Field')).toBe('Field 3')
+    expect(getFreeName(['Field 1', 'Field 2'], 'Field')).toBe('Field 3')
   })
 
   it('fills a gap in the numbering', () => {
-    expect(numbered(['Field 1', 'Field 3'], 'Field')).toBe('Field 2')
+    expect(getFreeName(['Field 1', 'Field 3'], 'Field')).toBe('Field 2')
   })
 })

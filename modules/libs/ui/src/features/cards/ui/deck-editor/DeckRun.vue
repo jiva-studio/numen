@@ -9,7 +9,7 @@ import { Icon } from '../icon'
 import { Button } from '@/shared/ui/button'
 import { DECK_WORDS, endOf, type DeckWords, type Wrong } from '../../lib/deck'
 import type { Run } from '../../lib/grid'
-import { sealed, type InsertionPoint, type StepDirection } from '../../lib/order'
+import { createSealedMap, type InsertionPoint, type StepDirection } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
 
 withDefaults(
@@ -49,7 +49,7 @@ const emit = defineEmits<{
 }>()
 
 /** A card nothing is wrong with any value of. */
-const NO_FIELDS: ReadonlyMap<string, readonly string[]> = sealed()
+const NO_FIELDS: ReadonlyMap<string, readonly string[]> = createSealedMap()
 
 /** Where a card let go past the last of this run lands. */
 const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)

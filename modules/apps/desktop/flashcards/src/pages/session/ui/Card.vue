@@ -49,7 +49,7 @@ const plain = (named: string) => {
  * A link inside a card is never followed — this window has one page — but a
  * link into the vault opens the reading beside the card on the note it names.
  */
-const followed = (href: string, press: MouseEvent) => {
+const handleFollow = (href: string, press: MouseEvent) => {
   press.preventDefault()
   // A name carrying no scheme points inside the vault, which is where the
   // reading beside the card is.
@@ -57,7 +57,7 @@ const followed = (href: string, press: MouseEvent) => {
 }
 
 /** The card is turned over by pressing it, a press spent on a link aside. */
-const pressed = (press: MouseEvent) => {
+const handleClick = (press: MouseEvent) => {
   if (press.defaultPrevented) return
   // A hand that took the card across was moving the panel into view, and a
   // press that went nowhere is a person asking for the answer.
@@ -68,10 +68,10 @@ const pressed = (press: MouseEvent) => {
 </script>
 
 <template>
-  <article class="card" @click="pressed" @pointerdown="took">
-    <CardProse :text="front" @follow="followed" />
+  <article class="card" @click="handleClick" @pointerdown="took">
+    <CardProse :text="front" @follow="handleFollow" />
     <div v-if="shown" class="card__rule" />
-    <CardProse v-if="shown" :text="back" @follow="followed" />
+    <CardProse v-if="shown" :text="back" @follow="handleFollow" />
   </article>
 </template>
 

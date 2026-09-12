@@ -45,7 +45,7 @@ import type { PlexNeighbourhood } from '@/features/plex'
 import type { PlexNode } from '@/features/plex'
 import type { Row } from '@/features/tree'
 import type { Turn } from '@/features/thread'
-import { hovered } from '@/shared/fixtures/colour'
+import { hoverOver } from '@/shared/fixtures/colour'
 
 const PLEX = 'plex'
 const NOTE = 'note'
@@ -309,7 +309,7 @@ const MARGIN = 84
 const FIRST = 132
 const LEADING = 27
 
-const escaped = (line: string) =>
+const escapeHtml = (line: string) =>
   line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 const drawnPage = (page: number): string => {
@@ -319,7 +319,7 @@ const drawnPage = (page: number): string => {
     .map((line, at) => {
       const y = FIRST + at * LEADING
       const weight = at === 0 && leaf === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
-      return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="16"${weight} fill="#1b1b1b">${escaped(line)}</text>`
+      return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="16"${weight} fill="#1b1b1b">${escapeHtml(line)}</text>`
     })
     .join('')
   const number = `<text x="${PAPER.wide / 2}" y="${PAPER.high - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#5a5a5a">${page + 1}</text>`
@@ -392,7 +392,7 @@ const READ_AT = { id: 'readAt', text: 'Open at this heading' }
 const READ_DOCUMENT = { id: 'readDocument', text: 'Open the document here' }
 
 /** A note whose name carries the words: the name, and nothing under it. */
-const named = (id: string, title: string): PaletteItem => ({
+const createItem = (id: string, title: string): PaletteItem => ({
   id,
   title,
   at: marks(title, 'entrop'),
@@ -431,8 +431,8 @@ const GROUPS: readonly PaletteGroup[] = [
     id: 'names',
     title: 'Names',
     items: [
-      named('n1', 'Entropy'),
-      named('n2', 'Entropy of mixing'),
+      createItem('n1', 'Entropy'),
+      createItem('n2', 'Entropy of mixing'),
       heading('n3', 'Entropy as missing information', 'Shannon entropy'),
     ],
   },
@@ -834,7 +834,7 @@ export const Hanging: Story = {
     // They come in one after another, so the picture is let settle first.
     const HEADINGS = (PARTS['focus'] ?? []).map((part) => part.text)
     const hung = () => HEADINGS.filter((words) => canvas.queryByText(words))
-    await hovered(focus)
+    await hoverOver(focus)
     await waitFor(() => expect(hung().length).toBeGreaterThan(4), { timeout: 5000 })
 
     // As many as the panel has room for, taken from the top of the note: what

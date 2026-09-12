@@ -35,7 +35,7 @@ export interface StreamDeps {
   reset?(): void
 }
 
-export function following(deps: StreamDeps) {
+export function createFollower(deps: StreamDeps) {
   /**
    * One stream, read for as long as the window is open. What arrives is
    * answered before the next of it is read, and what the answer throws ends

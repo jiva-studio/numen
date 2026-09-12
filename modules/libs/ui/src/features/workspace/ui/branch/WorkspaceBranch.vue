@@ -35,7 +35,7 @@ const slots = defineSlots<{
 const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 
 /** What a slot was given, handed on as it came. */
-const handedOn = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
+const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const direction = computed(() => orientationAt(props.axis, props.depth))
 
@@ -101,7 +101,7 @@ let reached: readonly number[] | null = null
  * A splitter reports the shares it settled on, including the ones it worked
  * out for itself when a panel arrived or left. Only a difference is passed on.
  */
-function settled(reported: number[]): void {
+function onLayout(reported: number[]): void {
   const shares = reported.map((size) => size / 100)
   const held = sizes.value
   const same =
@@ -120,13 +120,13 @@ function settled(reported: number[]): void {
 const RESIZING = 'data-resizing'
 
 /** The branch's own element, which carries that mark. */
-const marked = (): HTMLElement | undefined => frame.value?.$el as HTMLElement | undefined
+const getFrameElement = (): HTMLElement | undefined => frame.value?.$el as HTMLElement | undefined
 
 /** The handle put down, wherever the pointer had reached by then. */
 const putDown = () => {
   if (!holding) return
   holding = false
-  marked()?.removeAttribute(RESIZING)
+  getFrameElement()?.removeAttribute(RESIZING)
 
   const settled = reached
   reached = null
@@ -134,13 +134,13 @@ const putDown = () => {
 }
 
 /** A handle taken up, and put down where it stopped. */
-function handling(now: boolean): void {
+function setHolding(now: boolean): void {
   if (!now) {
     putDown()
     return
   }
   holding = true
-  marked()?.setAttribute(RESIZING, '')
+  getFrameElement()?.setAttribute(RESIZING, '')
 }
 </script>
 
@@ -151,7 +151,7 @@ function handling(now: boolean): void {
     :key="shape"
     class="branch min-h-0 min-w-0"
     :direction="direction"
-    @layout="settled"
+    @layout="onLayout"
   >
     <template v-for="(child, index) in node.children" :key="child.id">
       <SplitterResizeHandle
@@ -160,7 +160,7 @@ function handling(now: boolean): void {
         aria-label="Resize panes"
         :data-direction="direction"
         :hit-area-margins="reach"
-        @dragging="handling"
+        @dragging="setHolding"
       />
 
       <SplitterPanel
@@ -177,7 +177,7 @@ function handling(now: boolean): void {
           :depth="depth + 1"
         >
           <template v-for="name in passed" #[name]="bound">
-            <slot :name="name" v-bind="handedOn(bound)" />
+            <slot :name="name" v-bind="getSlotProps(bound)" />
           </template>
         </WorkspaceBranch>
 
@@ -192,7 +192,7 @@ function handling(now: boolean): void {
           @claim="workspace.claim(child.id)"
         >
           <template v-for="name in passed" #[name]="bound">
-            <slot :name="name" v-bind="handedOn(bound)" />
+            <slot :name="name" v-bind="getSlotProps(bound)" />
           </template>
         </WorkspacePane>
       </SplitterPanel>

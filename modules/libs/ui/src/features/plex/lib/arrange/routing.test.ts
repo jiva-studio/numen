@@ -179,7 +179,7 @@ describe('a title cut to the line it is set on', () => {
   const curve = placed.edges[0]!
   const arc = lengthOf(curve)
 
-  const routed = (measureLabel?: (label: string) => number) =>
+  const routeWithLabel = (measureLabel?: (label: string) => number) =>
     routeEdges(sideways.edges, byId, routingFor(DEFAULT_OPTIONS, measureLabel))[0]!
 
   it('estimates the curve between its chord and the way round its controls', () => {
@@ -199,18 +199,18 @@ describe('a title cut to the line it is set on', () => {
   const perLetter = (width: number) => (label: string) => width * [...label].length
 
   it('draws the whole label where it fits the curve', () => {
-    const edge = routed(perLetter(1))
+    const edge = routeWithLabel(perLetter(1))
     expect(edge.words).toBe('the scene in the assembly')
     expect(edge.label).toBe('the scene in the assembly')
   })
 
   it('draws the whole label where nothing measured it', () => {
-    expect(routed().words).toBe('the scene in the assembly')
+    expect(routeWithLabel().words).toBe('the scene in the assembly')
   })
 
   it('cuts words longer than the curve, and ends them in an ellipsis', () => {
     const width = perLetter(arc / 10)
-    const edge = routed(width)
+    const edge = routeWithLabel(width)
 
     expect(edge.words).not.toBe(edge.label)
     expect(edge.words!.endsWith('…')).toBe(true)
@@ -220,17 +220,17 @@ describe('a title cut to the line it is set on', () => {
 
   it('leaves no space hanging before the ellipsis', () => {
     // Ten letters' room, and the tenth letter of this label is a space.
-    const edge = routed(perLetter(arc / 10))
+    const edge = routeWithLabel(perLetter(arc / 10))
     expect(edge.words).toBe('the scene…')
   })
 
   it('carries the ellipsis alone where there is room for nothing', () => {
-    expect(routed(perLetter(arc)).words).toBe('…')
+    expect(routeWithLabel(perLetter(arc)).words).toBe('…')
   })
 
   it('measures the words it carries, and no other', () => {
     const asked: string[] = []
-    routed((label) => {
+    routeWithLabel((label) => {
       asked.push(label)
       return 0
     })
@@ -264,28 +264,28 @@ describe('the arrowhead a line carries', () => {
   ]
 
   /** One line straight down the page, so its ends are a quarter turn apart. */
-  const routed = (arrow?: EdgeArrow) =>
+  const routeWithArrow = (arrow?: EdgeArrow) =>
     arrangePlex({
       nodes,
       edges: [{ from: 'focus', to: 'below', ...(arrow ? { arrow } : {}) }],
     }).edges[0]!
 
   it('sits where the line arrives, aimed the way it is going', () => {
-    const edge = routed('to')
+    const edge = routeWithArrow('to')
     expect(edge.arrowhead!.at.x).toBe(edge.toPoint.x)
     expect(edge.arrowhead!.at.y).toBe(edge.toPoint.y)
     expect(edge.arrowhead!.angle).toBeCloseTo(90)
   })
 
   it('sits where the line leaves, aimed back out of it', () => {
-    const edge = routed('from')
+    const edge = routeWithArrow('from')
     expect(edge.arrowhead!.at.x).toBe(edge.fromPoint.x)
     expect(edge.arrowhead!.at.y).toBe(edge.fromPoint.y)
     expect(edge.arrowhead!.angle).toBeCloseTo(-90)
   })
 
   it('is drawn on no line that was given no arrow', () => {
-    expect(routed().arrowhead).toBeUndefined()
+    expect(routeWithArrow().arrowhead).toBeUndefined()
   })
 
   // A head has a body, and over its length a curve turns, so a head aimed
@@ -356,7 +356,7 @@ describe('the arrowhead a line carries', () => {
         routingFor(DEFAULT_OPTIONS, measure),
       )[0]!.words!
 
-    const room = lengthOf(routed()) - 2 * DEFAULT_OPTIONS.routing.arrowRoom
+    const room = lengthOf(routeWithArrow()) - 2 * DEFAULT_OPTIONS.routing.arrowRoom
     expect(measure(words('to'))).toBeLessThanOrEqual(room)
     expect(measure(words())).toBeGreaterThan(room)
   })

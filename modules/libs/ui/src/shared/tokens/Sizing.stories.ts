@@ -147,7 +147,7 @@ const drawn = (token: Token): number => {
 const root = () => parseFloat(getComputedStyle(document.documentElement).fontSize)
 
 /** Both multipliers as the page is wearing them. An empty string is neither. */
-const wearing = () => ({
+const getScales = () => ({
   drawnAt: document.documentElement.style.getPropertyValue('--numen-interface-scale'),
   setAt: document.documentElement.style.getPropertyValue('--numen-text-scale'),
 })
@@ -183,7 +183,7 @@ const each = async (tokens: readonly Token[], times: number) => {
  */
 export const Playground: Story = {
   play: async () => {
-    const held = wearing()
+    const held = getScales()
     try {
       // Nothing asked for, and 1: the pixel every length resolves to today.
       const asDesigned: readonly (readonly [string, string])[] = [

@@ -2,7 +2,7 @@
  * Tab state factory for an open note tab.
  */
 import { computed } from 'vue'
-import { pointsAtNote } from '@numen/ui'
+import { isNoteAddress } from '@numen/ui'
 import type { WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
 import type { noteChanges } from './changes'
@@ -38,7 +38,7 @@ export function createNoteTab(
   }
 
   const followLink = (url: string) => {
-    if (!pointsAtNote(url)) return
+    if (!isNoteAddress(url)) return
     const from = notes.where(id)
     void vault.resolve(from, [url]).then((landed) => {
       const path = landed.get(url)

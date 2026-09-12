@@ -17,7 +17,7 @@ import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Position }
 import { seatWord, type PlexRelatedSeat } from '../../lib/seat'
 import { DWELL, type WideBox } from '../../model/dwell'
 import { byHandle, type ReachStrategy } from '../../model/reaching'
-import { byDoubleClick, type PlexShowing, type ShowStrategy } from '../../model/showing'
+import { byDoubleClick, type PlexDestination, type ShowStrategy } from '../../model/showing'
 import type { HungParts } from '../../lib/inside'
 import { browserClock, type Clock } from '../../model/transition'
 import { threadOf, type Drop } from '../../lib/arrange'
@@ -98,7 +98,7 @@ const emit = defineEmits<{
   /** A node was chosen. The identifier is the caller's, handed back as given. */
   (event: 'activate', id: string): void
   /** A node was asked for on its own, and where it is to be drawn. */
-  (event: 'show', id: string, showing: PlexShowing): void
+  (event: 'show', id: string, showing: PlexDestination): void
   /** A gesture began at a node's handle. */
   (event: 'reach', id: string, pointer: PointerEvent): void
   /** A handle was pressed from the keyboard, where there is nowhere to drag. */

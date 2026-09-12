@@ -146,7 +146,7 @@ const sameType = (one: PlexType, other: PlexType): boolean =>
   one.gap === other.gap
 
 function measuresFor(type: PlexType, icon: number): PlexMetrics | undefined {
-  const context = measuringContext()
+  const context = getMeasuringContext()
   if (!context) return undefined
 
   const title = textWidths(context, type.font)
@@ -197,7 +197,7 @@ function textWidths(
  * A canvas to measure text with, kept off the page. Nothing where the platform
  * has none of its own.
  */
-function measuringContext(): CanvasRenderingContext2D | null {
+function getMeasuringContext(): CanvasRenderingContext2D | null {
   if (typeof CanvasRenderingContext2D === 'undefined') return null
   try {
     return document.createElement('canvas').getContext('2d')

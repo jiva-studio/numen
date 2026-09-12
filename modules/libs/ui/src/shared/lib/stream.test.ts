@@ -5,14 +5,14 @@
  * shows what the vault held a moment ago, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
-import { following, AGAIN, LOST } from './stream'
+import { createFollower, AGAIN, LOST } from './stream'
 
 /** A window that is open for as many streams as the test allows it. */
 const window = (streams = 3) => {
   const waits: number[] = []
   const lost: string[] = []
   let taken = 0
-  const follows = following({
+  const follows = createFollower({
     open: () => taken <= streams,
     lost: (said) => lost.push(said),
     wait: async (ms) => {
@@ -24,7 +24,7 @@ const window = (streams = 3) => {
 }
 
 /** A stream that says what it was given and ends. */
-const says = <T,>(...said: readonly T[]) =>
+const createStream = <T,>(...said: readonly T[]) =>
   async function* () {
     for (const one of said) yield one
   }
@@ -34,7 +34,7 @@ describe('a stream that ends', () => {
     const one = window(2)
     const heard: string[] = []
 
-    await one.follows(says('a change'), (said) => void heard.push(said))
+    await one.follows(createStream('a change'), (said) => void heard.push(said))
 
     expect(heard.length).toBeGreaterThanOrEqual(2)
     expect(one.waits).toStrictEqual([AGAIN, AGAIN, AGAIN])
@@ -43,7 +43,7 @@ describe('a stream that ends', () => {
   it('waits as long as it was told to', async () => {
     const one = window(1)
 
-    await one.follows(says('a change'), () => {}, 50)
+    await one.follows(createStream('a change'), () => {}, 50)
 
     expect(one.waits).toStrictEqual([50, 50])
   })
@@ -80,7 +80,7 @@ describe('a stream that fails', () => {
     const one = window(1)
     let answered = 0
 
-    await one.follows(says('a change'), () => {
+    await one.follows(createStream('a change'), () => {
       answered++
       throw new Error('the answer went wrong')
     })
@@ -92,10 +92,10 @@ describe('a stream that fails', () => {
 
 describe('a window that has closed', () => {
   it('follows nothing, and waits for nothing', async () => {
-    const closed = following({ open: () => false, lost: () => {}, wait: async () => {} })
+    const closed = createFollower({ open: () => false, lost: () => {}, wait: async () => {} })
     const heard: string[] = []
 
-    await closed(says('a change'), (said) => void heard.push(said))
+    await closed(createStream('a change'), (said) => void heard.push(said))
 
     expect(heard).toStrictEqual([])
   })
@@ -103,9 +103,9 @@ describe('a window that has closed', () => {
   it('drops what arrives after it closed', async () => {
     let open = true
     const heard: string[] = []
-    const follows = following({ open: () => open, lost: () => {}, wait: async () => {} })
+    const follows = createFollower({ open: () => open, lost: () => {}, wait: async () => {} })
 
-    await follows(says('one', 'two'), (said) => {
+    await follows(createStream('one', 'two'), (said) => {
       heard.push(said)
       open = false
     })
@@ -118,7 +118,7 @@ describe('what a follower holds for one reading of a stream', () => {
   it('is let go of when the stream ends, before it is taken up again', async () => {
     const order: string[] = []
     let taken = 0
-    const follows = following({
+    const follows = createFollower({
       open: () => taken <= 2,
       lost: () => {},
       wait: async () => {
@@ -128,7 +128,7 @@ describe('what a follower holds for one reading of a stream', () => {
       reset: () => void order.push('resets'),
     })
 
-    await follows(says('a change'), () => {})
+    await follows(createStream('a change'), () => {})
 
     expect(order).toStrictEqual(['resets', 'waits', 'resets', 'waits', 'resets', 'waits'])
   })
@@ -136,7 +136,7 @@ describe('what a follower holds for one reading of a stream', () => {
   it('is let go of when the stream fails, the same way', async () => {
     const order: string[] = []
     let taken = 0
-    const follows = following({
+    const follows = createFollower({
       open: () => taken < 1,
       lost: () => void order.push('lost'),
       wait: async () => {

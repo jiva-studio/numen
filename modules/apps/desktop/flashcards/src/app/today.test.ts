@@ -13,7 +13,7 @@ import { dayNamed } from '@numen/ui'
 import { useVaultPresets } from '@/pages/decks'
 import type { PresetsClient, SettingsMessage } from '@/pages/decks'
 
-const dated = (day: string): SettingsMessage => ({
+const createSettings = (day: string): SettingsMessage => ({
   goal: Goal.BY_DATE,
   byDate: day,
   minutesADay: 20,
@@ -38,7 +38,7 @@ const vault: VaultCardsDue = {
   reading: false,
 }
 
-const answering = (settings: SettingsMessage): PresetsClient => ({
+const createPresets = (settings: SettingsMessage): PresetsClient => ({
   async getVaultDeckPreset() {
     return {
       preset: {
@@ -63,7 +63,7 @@ describe('the day a goal is weighed against', () => {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
-    const held = useReviewCounter({ cards, failed: () => {} })
+    const held = useReviewCounter({ cards, reportError: () => {} })
 
     await held.count()
 
@@ -82,10 +82,10 @@ describe('the day a goal is weighed against', () => {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
-    const held = useReviewCounter({ cards, failed: () => {} })
+    const held = useReviewCounter({ cards, reportError: () => {} })
     await held.count()
 
-    const one = useVaultPresets({ presets: answering(dated('2026-09-04')) })
+    const one = useVaultPresets({ presets: createPresets(createSettings('2026-09-04')) })
     await one.read(vault, held.day.value)
 
     expect(one.presets.value[0]?.paused).toBe('')

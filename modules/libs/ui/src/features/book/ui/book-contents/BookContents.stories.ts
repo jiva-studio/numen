@@ -86,7 +86,7 @@ const reading =
 const listOf = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.contents__list') as HTMLElement
 
-const standingIn = (canvasElement: HTMLElement) =>
+const getStandingLine = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('[aria-current="true"]') as HTMLElement | null
 
 /** Choose a name, narrow the list, and watch the line being read follow. */
@@ -137,17 +137,17 @@ export const BroughtToWhereTheReadingIs: Story = {
   render: reading(PAGES, 1_200 * 1_024),
   play: async ({ canvasElement }) => {
     const list = listOf(canvasElement)
-    await expect(standingIn(canvasElement)?.textContent?.trim()).toBe('Page 1')
+    await expect(getStandingLine(canvasElement)?.textContent?.trim()).toBe('Page 1')
 
     await userEvent.click(within(canvasElement).getByText('Read on'))
     await waitFor(
-      async () => await expect(standingIn(canvasElement)?.textContent?.trim()).toBe('Page 1201'),
+      async () => await expect(getStandingLine(canvasElement)?.textContent?.trim()).toBe('Page 1201'),
       { timeout: ITS_OWN_PACE },
     )
 
     await waitFor(
       async () => {
-        const line = standingIn(canvasElement)
+        const line = getStandingLine(canvasElement)
         await expect(line).not.toBeNull()
         const box = line!.getBoundingClientRect()
         const inside = list.getBoundingClientRect()

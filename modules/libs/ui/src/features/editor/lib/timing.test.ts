@@ -31,7 +31,7 @@ const drawing = (times: { extension: Extension }) => {
 }
 
 /** Everything queued as an editor attached has run. */
-const attached = () => new Promise((done) => setTimeout(done, 0))
+const waitTick = () => new Promise((done) => setTimeout(done, 0))
 
 /** What stands in the gutter, line by line. */
 const gutter = (view: EditorView): string[] =>
@@ -147,7 +147,7 @@ describe('an editor drawn a second time', () => {
     first.destroy()
 
     const again = drawing(times)
-    await attached()
+    await waitTick()
 
     expect(gutter(again)).toStrictEqual(['0:01', '0:03', '0:06'])
     expect(current(again)).toStrictEqual(['Rain on the awning.'])
@@ -158,7 +158,7 @@ describe('an editor drawn a second time', () => {
     times.show(TIMED)
 
     const view = drawing(times)
-    await attached()
+    await waitTick()
 
     expect(gutter(view)).toStrictEqual(['0:01', '0:03', '0:06'])
   })
@@ -168,7 +168,7 @@ describe('an editor drawn a second time', () => {
     const first = drawing(times)
     times.show(TIMED)
     const again = drawing(times)
-    await attached()
+    await waitTick()
 
     times.show({ ...TIMED, times: ['9:01', '9:03', '9:06'] })
 
@@ -206,7 +206,7 @@ describe('the view going after the line being said', () => {
    * one effect and asks to be moved in a second, so a dispatch carrying two is
    * a dispatch that moves the view.
    */
-  const watching = (view: EditorView) => {
+  const watchView = (view: EditorView) => {
     let scrolls = 0
     const was = view.dispatch.bind(view)
     view.dispatch = ((...specs: Parameters<EditorView['dispatch']>) => {
@@ -221,10 +221,10 @@ describe('the view going after the line being said', () => {
 
   it('does not move for words arriving while nothing is being said', async () => {
     const { times, view } = editor()
-    await attached()
+    await waitTick()
     times.show({ ...TIMED, current: 1, following: true })
 
-    const scrolls = watching(view)
+    const scrolls = watchView(view)
     // The transcript grows: another line arrives, and the line being said is
     // the one it was.
     times.show({ times: [...TIMED.times, '0:09'], current: 1, following: true })
@@ -234,10 +234,10 @@ describe('the view going after the line being said', () => {
 
   it('moves where the line being said becomes another', async () => {
     const { times, view } = editor()
-    await attached()
+    await waitTick()
     times.show({ ...TIMED, current: 0, following: true })
 
-    const scrolls = watching(view)
+    const scrolls = watchView(view)
     times.show({ ...TIMED, current: 2, following: true })
 
     expect(scrolls()).toBe(1)
@@ -247,7 +247,7 @@ describe('the view going after the line being said', () => {
 describe('an editor drawn a second time', () => {
   it('is shown the times without the view being moved', async () => {
     const { times, view } = editor()
-    await attached()
+    await waitTick()
     times.show({ ...TIMED, current: 2, following: true })
     view.destroy()
 
@@ -263,7 +263,7 @@ describe('an editor drawn a second time', () => {
       }
       return was(...specs)
     }) as EditorView['dispatch']
-    await attached()
+    await waitTick()
 
     expect(gutter(again)).toStrictEqual(TIMED.times)
     expect(effects).toBe(0)
@@ -278,7 +278,7 @@ describe('an editor drawn again while the recording stands still', () => {
     first.destroy()
 
     const again = drawing(times)
-    await attached()
+    await waitTick()
 
     let effects = 0
     const was = again.dispatch.bind(again)

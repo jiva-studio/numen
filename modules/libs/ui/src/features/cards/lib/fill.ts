@@ -34,23 +34,23 @@ export function slotsIn(template: string): readonly Slot[] {
 }
 
 /** The braces a field is written as. */
-export const braced = (field: string): string => `{{${field}}}`
+export const braceField = (field: string): string => `{{${field}}}`
 
 /** Text standing as text where the marks around it are read as marks. */
-const escaped = (text: string): string =>
+const escapeHtml = (text: string): string =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /**
  * A face as its preview shows it. A slot the fields do not name keeps its
  * braces and is marked where it stands, so what is wrong is read in its place.
  */
-export function previewed(
+export function renderPreview(
   template: string,
   values: readonly FieldValue[],
   fields: readonly string[],
 ): string {
   return template.replace(SLOT, (whole: string, inside: string) => {
-    if (!fields.includes(inside)) return `<mark>${escaped(whole)}</mark>`
+    if (!fields.includes(inside)) return `<mark>${escapeHtml(whole)}</mark>`
     return values.find((each) => each.field === inside)?.text ?? ''
   })
 }
@@ -83,7 +83,7 @@ export interface InsertResult {
  */
 export function insert(template: string, at: number, field: string): InsertResult {
   const where = Math.max(0, Math.min(at, template.length))
-  const written = braced(field)
+  const written = braceField(field)
   return {
     text: template.slice(0, where) + written + template.slice(where),
     caret: where + written.length,
@@ -91,12 +91,12 @@ export function insert(template: string, at: number, field: string): InsertResul
 }
 
 /** A face whose every slot naming one field names another. */
-export function renamedIn(template: string, from: string, to: string): string {
+export function renameField(template: string, from: string, to: string): string {
   return template.replace(SLOT, (whole, inside: string) =>
-    inside === from ? braced(to) : whole,
+    inside === from ? braceField(to) : whole,
   )
 }
 
 /** What a preview stands in the slots: each field under its own name. */
-export const sampled = (fields: readonly string[]): readonly FieldValue[] =>
+export const sampleValues = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: field }))

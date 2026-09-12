@@ -40,8 +40,8 @@ const words: Words = {
   recalled: 'of cards you are reviewing came back',
 }
 
-/** worked is a year of days, most of them answered on. */
-function worked(): Map<string, Tally> {
+/** A year of days, most of them answered on. */
+function createYear(): Map<string, Tally> {
   const out = new Map<string, Tally>()
   for (let back = 0; back < 300; back += 1) {
     const on = new Date(now)
@@ -67,7 +67,7 @@ const cells = (canvas: HTMLElement) => canvas.querySelectorAll('[data-heatmap-da
 
 /** A year of answers, in the room a window gives it. */
 export const AYear: Story = {
-  args: { did: worked(), now, words },
+  args: { did: createYear(), now, words },
   render: (args) => ({
     components: { Heatmap },
     setup: () => ({ args }),
@@ -88,7 +88,7 @@ export const AYear: Story = {
  * were.
  */
 export const Narrow: Story = {
-  args: { did: worked(), now, words },
+  args: { did: createYear(), now, words },
   render: (args) => ({
     components: { Heatmap },
     setup: () => ({ args }),
@@ -115,7 +115,7 @@ export const Narrow: Story = {
  */
 export const Dark: Story = {
   globals: DARK,
-  args: { did: worked(), now, words },
+  args: { did: createYear(), now, words },
   render: (args) => ({
     components: { Heatmap },
     setup: () => ({ args }),
@@ -278,7 +278,7 @@ const CORNERS = [
  * is decided.
  */
 export const AtEveryEdge: Story = {
-  args: { did: worked(), now, words },
+  args: { did: createYear(), now, words },
   render: (args) => ({
     components: { Heatmap },
     setup: () => ({ args }),

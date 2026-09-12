@@ -7,7 +7,7 @@ import type { Preset } from '../types'
  * Whether starting a session on one deck is offered: it owes something today, and the
  * preset scheduling it schedules something.
  */
-export const opens = (deck: DeckCardsDue, by: ReadonlyMap<string, Preset>): boolean =>
+export const canStart = (deck: DeckCardsDue, by: ReadonlyMap<string, Preset>): boolean =>
   deck.due + deck.new > 0 && !by.get(deck.deck)?.paused
 
 /**
@@ -17,7 +17,7 @@ export const opens = (deck: DeckCardsDue, by: ReadonlyMap<string, Preset>): bool
  * It is a fact about the material, and not a reason the preset is stopped. The
  * preset schedules; there is nothing here for it to schedule.
  */
-export const beginsNothing = (deck: DeckCardsDue, by: Preset | undefined): boolean =>
+export const hasNothingToBegin = (deck: DeckCardsDue, by: Preset | undefined): boolean =>
   deck.faces > 0 && deck.unbegun === deck.faces && by?.budget.new === 0
 
 /**
@@ -52,5 +52,5 @@ export const spent = (one: Preset): boolean => through(one) >= 1
  * How much of a deck stands learned, as a share of its card faces, and null for
  * a deck holding none: a share of nothing is no share.
  */
-export const learned = (deck: DeckCardsDue): number | null =>
+export const getLearnedShare = (deck: DeckCardsDue): number | null =>
   deck.faces > 0 ? deck.learned / deck.faces : null

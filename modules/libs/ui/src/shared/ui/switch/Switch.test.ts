@@ -11,7 +11,7 @@ const mountSwitch = (props: Partial<SwitchProps> = {}) =>
   mount(Switch, { props: { modelValue: false, ...props } })
 
 /** Every answer the switch has handed on, in the order it handed them on. */
-const handed = (control: ReturnType<typeof mountSwitch>): readonly unknown[] =>
+const getEmitted = (control: ReturnType<typeof mountSwitch>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
 
 describe('Switch', () => {
@@ -28,13 +28,13 @@ describe('Switch', () => {
   it('turns the other way when it is pressed', async () => {
     const control = mountSwitch()
     await control.get('button').trigger('click')
-    expect(handed(control)).toEqual([true])
+    expect(getEmitted(control)).toEqual([true])
   })
 
   it('hands nothing on while nobody may turn it', async () => {
     const control = mountSwitch({ disabled: true })
     await control.get('button').trigger('click')
-    expect(handed(control)).toEqual([])
+    expect(getEmitted(control)).toEqual([])
   })
 
   it('is one stop on the way round the screen', () => {

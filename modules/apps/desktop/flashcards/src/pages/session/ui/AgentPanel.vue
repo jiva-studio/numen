@@ -40,7 +40,7 @@ watch(
       :placeholder="words.ask"
       :sends="words.send"
       :stops="words.stop"
-      @update:model-value="(text: string) => props.held.writing(text)"
+      @update:model-value="(text: string) => props.held.setWritten(text)"
       @submit="(text: string) => props.held.send(text)"
       @stop="props.held.stop()"
     >

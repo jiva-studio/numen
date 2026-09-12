@@ -7,7 +7,7 @@
  * is the typography plugin's.
  */
 import { computed } from 'vue'
-import { pointsAtNote } from '@/shared/lib/address'
+import { isNoteAddress } from '@/shared/lib/address'
 import { render } from './render'
 
 const props = withDefaults(
@@ -37,12 +37,12 @@ const emit = defineEmits<{
 const drawn = computed(() => render(props.text, new Set(props.unresolved)))
 const Drawn = () => drawn.value
 
-const pressed = (press: MouseEvent) => {
+const onClick = (press: MouseEvent) => {
   const link = (press.target as HTMLElement | null)?.closest?.('a')
   const href = link?.getAttribute('href')
   if (!href) return
   // A note is addressed and not located, so a browser has nowhere to take one.
-  if (pointsAtNote(href)) press.preventDefault()
+  if (isNoteAddress(href)) press.preventDefault()
   emit('follow', href, press)
 }
 </script>
@@ -51,7 +51,7 @@ const pressed = (press: MouseEvent) => {
   <div
     class="prose prose-sm prose-numen numen max-w-none break-words"
     :class="{ 'prose--arriving': arriving }"
-    @click="pressed"
+    @click="onClick"
   >
     <Drawn />
   </div>

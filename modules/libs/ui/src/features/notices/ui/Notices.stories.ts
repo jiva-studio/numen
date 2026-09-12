@@ -7,7 +7,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import Notices from './Notices.vue'
 import type { Notice } from '../lib/notice'
-import { hovered, lightness } from '@/shared/fixtures/colour'
+import { hoverOver, lightness } from '@/shared/fixtures/colour'
 import { LONG, RUSSIAN, UNBREAKABLE } from '@/shared/fixtures/prose'
 import { DARK, drawnDark } from '@/shared/fixtures/theme'
 
@@ -71,7 +71,7 @@ const OCCUPIED: Notice = {
  * What a card decides is decided against elapsed time, so the moment it starts
  * from does not matter and every story may share one of these.
  */
-const hurried = (times: number): (() => number) => {
+const createFastClock = (times: number): (() => number) => {
   const from = Date.now()
   return () => from + (Date.now() - from) * times
 }
@@ -143,7 +143,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const cards = () => document.querySelectorAll<HTMLElement>('article.notice')
-const folded = () => document.querySelector<HTMLElement>('.notice__folded')
+const getFoldedCard = () => document.querySelector<HTMLElement>('.notice__folded')
 
 /** One thing running, counting, with everything it can say. */
 export const Playground: Story = {}
@@ -213,7 +213,7 @@ export const WorkAndWords: Story = {
 
 /** Something said goes once it has been read. */
 export const SaidAndGone: Story = {
-  args: { notices: [RENAMED], clock: hurried(8) },
+  args: { notices: [RENAMED], clock: createFastClock(8) },
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(1))
     await waitFor(() => expect(cards()).toHaveLength(0), { timeout: 5000 })
@@ -222,7 +222,7 @@ export const SaidAndGone: Story = {
 
 /** Trouble does not go by itself. A person who has to act on it has to see it. */
 export const TroubleStays: Story = {
-  args: { notices: [OCCUPIED], clock: hurried(8) },
+  args: { notices: [OCCUPIED], clock: createFastClock(8) },
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(1))
     await new Promise((rest) => setTimeout(rest, AWHILE))
@@ -233,7 +233,7 @@ export const TroubleStays: Story = {
 
 /** Time spent with the corner under a pointer is not time spent reading it. */
 export const HeldUnderThePointer: Story = {
-  args: { notices: [RENAMED], clock: hurried(8) },
+  args: { notices: [RENAMED], clock: createFastClock(8) },
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(1))
     await userEvent.hover(cards()[0]!)
@@ -245,7 +245,7 @@ export const HeldUnderThePointer: Story = {
 
 /** Nobody reads a window they are not looking at. */
 export const NobodyLooking: Story = {
-  args: { notices: [RENAMED], clock: hurried(8), hidden: () => true },
+  args: { notices: [RENAMED], clock: createFastClock(8), hidden: () => true },
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(1))
     await new Promise((rest) => setTimeout(rest, AWHILE))
@@ -273,8 +273,8 @@ export const MoreThanThereIsRoomFor: Story = {
     ],
   },
   play: async () => {
-    await waitFor(() => expect(folded()).not.toBeNull())
-    await expect(folded()!.textContent).toContain('3 more')
+    await waitFor(() => expect(getFoldedCard()).not.toBeNull())
+    await expect(getFoldedCard()!.textContent).toContain('3 more')
     await expect(cards()).toHaveLength(3)
 
     // What folds is what has gone right. Trouble and work are what the corner
@@ -283,10 +283,10 @@ export const MoreThanThereIsRoomFor: Story = {
     await expect(left.some((words) => words.includes('not in the catalogue'))).toBe(true)
     await expect(left.some((words) => words.includes('Reading the vault'))).toBe(true)
 
-    await userEvent.click(folded()!)
+    await userEvent.click(getFoldedCard()!)
 
     await waitFor(() => expect(cards()).toHaveLength(6))
-    await waitFor(() => expect(folded()).toBeNull())
+    await waitFor(() => expect(getFoldedCard()).toBeNull())
   },
 }
 
@@ -434,7 +434,7 @@ export const Dark: Story = {
     await expect(getComputedStyle(away).backgroundColor).toBe('rgba(0, 0, 0, 0)')
 
     const behind = getComputedStyle(cards[2]!).backgroundColor
-    await hovered(away)
+    await hoverOver(away)
     await waitFor(async () => {
       const under = lightness(getComputedStyle(away).backgroundColor, behind)
       await expect(Math.abs(under - lightness(behind))).toBeGreaterThan(2)

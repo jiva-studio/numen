@@ -14,7 +14,7 @@ const HALVINGS = 7
  * widest and every gap at its setting; at nothing a box is `minWidth` and a
  * gap is the fraction of itself that `squeeze` allows.
  */
-export function packed(options: PlexOptions, tightness: number): PlexOptions {
+export function packOptions(options: PlexOptions, tightness: number): PlexOptions {
   const { minWidth, squeeze } = options
   return {
     ...options,
@@ -41,22 +41,22 @@ export function packed(options: PlexOptions, tightness: number): PlexOptions {
  * act on is a node drawn small; a node that is not drawn says only that there
  * were more.
  */
-export function crowdingFor(options: PlexOptions, counts: SeatCounts): PlexOptions {
+export function measureCrowding(options: PlexOptions, counts: SeatCounts): PlexOptions {
   if (!options.viewport || options.squeeze >= 1) return options
-  if (seatsAll(options, counts)) return options
+  if (canSeatAll(options, counts)) return options
 
   let held = 0
   let loose = 1
   for (let halving = 0; halving < HALVINGS; halving++) {
     const middle = (held + loose) / 2
-    if (seatsAll(packed(options, middle), counts)) held = middle
+    if (canSeatAll(packOptions(options, middle), counts)) held = middle
     else loose = middle
   }
-  return packed(options, held)
+  return packOptions(options, held)
 }
 
 /** Whether the window holds every node of every seat. */
-function seatsAll(options: PlexOptions, counts: SeatCounts): boolean {
+function canSeatAll(options: PlexOptions, counts: SeatCounts): boolean {
   const limits = limitsFor(options, counts)
   return RELATED_SEATS.every(
     (seat) => limits[seat].perLine * limits[seat].lines >= counts[seat],

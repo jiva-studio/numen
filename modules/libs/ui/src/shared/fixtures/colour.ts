@@ -29,7 +29,7 @@ export function lightness(colour: string, ground = '#000'): number {
  * A real pointer put over an element, so the browser's own `:hover` applies.
  * The events a test library synthesises leave it alone.
  */
-export async function hovered(element: Element): Promise<void> {
+export async function hoverOver(element: Element): Promise<void> {
   const context = await import('vitest/browser')
   await context.userEvent.hover(element)
 }

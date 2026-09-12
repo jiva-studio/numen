@@ -106,7 +106,7 @@ onMounted(() => {
       ],
     }),
   })
-  if (props.language) void writes(props.language)
+  if (props.language) void applyLanguage(props.language)
 })
 
 onBeforeUnmount(() => {
@@ -132,13 +132,13 @@ watch(
  * it arrives and is reconfigured once it is here. A document whose language
  * changed while one was loading keeps the one it asked for last.
  */
-const writes = async (name: string) => {
+const applyLanguage = async (name: string) => {
   const support = name ? await wholly(name) : null
   if (!view || name !== props.language) return
   view.dispatch({ effects: written.reconfigure(support ? code(support) : prose()) })
 }
 
-watch(() => props.language, writes)
+watch(() => props.language, applyLanguage)
 
 watch(
   () => props.readonly,
