@@ -17,6 +17,10 @@ An import that leaves its own folder is written through it: `@/entities/note`, n
 
 Two paths are outside this: a fixture the schema package holds, which is not under `src/` and which `@/` cannot name, and a file nested deeper inside its own slice reaching the top of that slice.
 
+### What checks it is not the boundary check
+
+A cruise judges where an import lands. `../../entities/note` and `@/entities/note` land on the same file, so it has nothing to say about which was written. The rule reading the text is `modules/tools/lint/reaching.mjs`, and it refuses a path climbing out of its own slice by counting folders.
+
 ## Consequences
 
 Which layer an import reaches is read off the import. The boundary check resolves `@/` through the module's own `tsconfig`, and the `nothing-unresolved` rule it already carries means an alias declared in one place and not another fails loudly rather than quietly widening what the walk cannot see.

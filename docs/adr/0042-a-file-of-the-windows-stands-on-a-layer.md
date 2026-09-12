@@ -47,6 +47,12 @@ Where two are bound by the domain rather than by convenience, the one asked of d
 
 What assembles a whole window so a test can ask what it drew is drawn by the tests of every layer and draws the window itself. It points both ways by the nature of what it is. It stands in `src/testing/`, outside the layers, and no rule reads it — including the ring rule, which would otherwise find a cycle through every folder there is.
 
+### A slice that hands out a door is reached through it
+
+A slice's `index.ts` names what the rest of the tree may take from it, and it is what the rest of the tree reaches. The surface is what is asked for, not everything there is.
+
+Which slices have a door is read off the tree being cruised rather than written down: a slice is covered the day it declares one, and a module that has declared none is judged by the direction rules alone. Nothing has to be added to a list when a file is added to a slice.
+
 ### An edge that stays is written down with why
 
 `baseline` in `modules/tools/depgraph/modules.mjs` holds the edges the tree still draws against these rules, each under a line saying why it stands. The list only shrinks, and the check refuses an entry naming an edge nobody draws any more.
