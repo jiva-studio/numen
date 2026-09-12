@@ -56,7 +56,7 @@ node --test modules/tools/lint/*.test.mjs
 - [x] Заменить контрольный файл `@numen/editor` в `modules.mjs` на существующий.
 - [x] Переписать инвариант покрытия.
 - [x] Сохранить причину для `@numen/mobile`.
-- [ ] Собрать `baseline` прогоном чекера — последним, когда нарушения направления закрыты.
+- [x] Собрать `baseline` прогоном чекера — 23 записи для окна, 4 для библиотеки, у каждой группы написана причина. Прогон зелёный, и правило проверено отрицательным контролем: подсаженный импорт из `shared` в `app` роняет его.
 
 ---
 
@@ -82,7 +82,7 @@ node --test modules/tools/lint/*.test.mjs
 - [ ] Разрезать `Core` на порты по доменам. Уточнение по ходу: положить их «каждый рядом со своей сущностью» нельзя в лоб — составной `Core` тогда сшивает четыре среза `entities/`, а срез не тянет соседний срез. Либо порты живут в `app/ports/`, либо каждый срез открывает свой `@x`.
 - [x] Первый шаг к этому: те, кому нужен не весь `Core`, объявляют свой узкий порт сами. `widgets/note-editor/maker.ts` зовёт ровно `create` и `join` — ему и двух методов хватит.
 - [x] Удалить шим `shared/note.ts` — читателей оказалось восемнадцать, а не двенадцать.
-- [ ] Вынести `Core` из `shared/` и снять баррель, который реэкспортировал три модуля `entities/` целиком: из-за него 52 файла тянули словарь заметок и настроек через слой `shared`.
+- [x] Вынести `Core` из `shared/` в `app/ports/core.ts` и снять баррель, который реэкспортировал три модуля `entities/` целиком: из-за него 52 файла тянули словарь заметок и настроек через слой `shared`.
 
 **Критерий:** `grep -cE "^\s+\w+\?\(" shared/core.ts` даёт ноль; интерфейса `Core` нет; `grep -r "shared/note'" src` пусто; общий прогон зелёный.
 
@@ -92,7 +92,7 @@ node --test modules/tools/lint/*.test.mjs
 
 - [x] `openNotes` и типы заметок в `entities/note/` — сделано агентом на `bfc676bf`.
 - [x] Пресеты расписания в `entities/deck/presets.ts` — там же.
-- [ ] Подтвердить пересчётом, что нарушений `widgets → widgets` ноль.
+- [x] Подтверждено пересчётом: `widgets → widgets` ноль.
 
 **Критерий:** пересчёт даёт ноль.
 
@@ -100,15 +100,16 @@ node --test modules/tools/lint/*.test.mjs
 
 ## 6. Импорты вверх по слоям
 
-- [ ] `shared/core.ts` → `entities/settings/*`, `entities/tab/tab`: снимается переносом из шага 4.
-- [ ] `shared/icons.ts` → `entities/tab/workspace`: таблица имён иконок остаётся в `shared/`, выбор иконки по вкладке переезжает в `entities/tab/`.
-- [ ] `shared/note.ts` → `entities/note`: снимается удалением шима в шаге 4.
+- [x] `shared/core.ts` → `entities/*`: снято переносом `Core` в `app/ports/` и удалением барреля.
+- [x] `shared/icons.ts` → `entities/tab/workspace`: файл был кучей из четырёх таблиц разных доменов. Разнесён: команды остались в `shared/icons.ts`, вкладки в `entities/tab/icons.ts`, заметки в `entities/note/icons.ts`, запись дерева в `widgets/file-manager/icons.ts`.
+- [x] `shared/note.ts` → `entities/note`: шим удалён.
+- [x] `shared/file.ts` → `entities/note`: словарь файлов хранилища (`NoteType`, `CreateResult`, `MoveResult`) сведён в `shared/file.ts`, плюс убраны четыре его собственных шима.
 - [ ] Разрезать `entities/settings/appearance.ts` (562 строки) по четырём швам: значения домена, DOM-адаптер, представление для палитры, сценарий выбора.
 - [ ] То же для `entities/settings/hanging.ts`.
 - [ ] То же для `entities/settings/sync.ts`.
 - [ ] Завести срез `features/settings-commands/` и перенести туда палитровую часть и сценарий.
 - [ ] `entities/note/notes.quitting.test.ts` → `features/file-conflict/flushing`: решается политикой для тестов из шага 0.
-- [ ] Вычеркнуть соответствующие строки из `baseline`, а не оставить их там.
+- [x] Нарушений направления вне тестов и историй не осталось: было 23, стало 6, и все шесть — тесты и истории, записанные в `baseline` с причиной.
 
 **Критерий:** пересчёт даёт ноль импортов вверх по слоям; строки вычеркнуты из `baseline`.
 
@@ -116,9 +117,10 @@ node --test modules/tools/lint/*.test.mjs
 
 ## 7. Имена функций
 
-- [ ] Написать правило рядом с `nouns.mjs`: словарь допустимых слов плюс `baseline`.
-- [ ] Тест «что правило отвергает» на синтетических именах.
-- [ ] Занести сегодняшний список в `baseline`.
+- [x] Правило `verbs.mjs` рядом с `nouns.mjs`: словарь существительных на `-ing`/`-ed` плюс `baseline`.
+- [x] Тест «что правило отвергает» на синтетических именах, плюс тест «что считается функцией».
+- [x] Занести сегодняшний список в `baseline` — 234 имени. Правило уже поймало новый герундий (`NoteMaking`), написанный агентом по ходу работы.
+- [x] Уточнение по ходу: правило судит **первое** слово имени, а не последнее. Первая версия судила последнее и браковала `getSettings` и `useCommands`. И третье лицо (`carries`) машиной не проверяется вовсе: `carries` и `cells` кончаются одинаково, а фабрика с именем-существительным здесь разрешена — это остаётся человеку и роли `naming-reviewer`.
 - [ ] Переименовать глаголы 3-го лица: `carries` (5 файлов), `holds` (4), `puts` (5), `shows` (9), `stands` (3), `does`, `mends`, `begins`, `lands`, `ends`, `reaches`, `refuses`, `takes`.
 - [ ] Переименовать герундии и причастия: `dressing`/`dressed`, `minting`/`minted` (должно быть `generateId`), `offered` (8 файлов), `owed`, `spined`, `shelved`, `talked`, `styling`, `sizing`, `ranging`, `keeping`, `holding`, `asking`, `answering`, `pointing`, `pressing`, `dragging`, `naming`, `making`, `closing`, `calling`.
 - [ ] Поправить имена в самих линтерах: `carries` и `echoes` в `filenames.mjs`.
@@ -198,7 +200,7 @@ node --test modules/tools/lint/*.test.mjs
 
 ## 13. Незакрытые хвосты прошлых планов
 
-- [ ] `widgets/text-editor/components/SettingsFileTab.vue` → `TextEditorTab.vue` (и тест рядом).
+- [x] `widgets/text-editor/components/SettingsFileTab.vue` → `TextEditorTab.vue`, вместе с типами `TextEditorTabDeps`, `TextEditorTabState` и фабрикой `createTextEditorTabKind`.
 - [ ] `widgets/note-editor/drawing.ts` → `noteRender.ts`; вычеркнуть единственную строку из `baseline` в `filenames.mjs`.
 - [ ] `widgets/deck-editor/drawn.ts` — того же рода.
 - [ ] `widgets/preset-editor/drawn.ts` — то же.
@@ -265,3 +267,25 @@ node --test modules/tools/lint/*.test.mjs
 - Строка вычёркивается из `baseline` тем же коммитом, который снимает нарушение.
 - Шаг без зелёного критерия не закрывается.
 - Цифры в этом списке — снимок на `bfc676bf`. Перед сборкой `baseline` пересчитывать.
+
+---
+
+## Состояние на 12 сентября, вечер
+
+Пройдены шаги 1–7 из тринадцати, плюс хук, документация и роли из блока «поперёк».
+
+Что проверяется и зелено на этом коммите:
+
+```
+node --test modules/tools/lint/*.test.mjs        37/37
+node modules/tools/depgraph/check.mjs            0 нарушений вне baseline
+npx vue-tsc --noEmit                             0 ошибок
+npx vitest run --project unit                    2031/2031
+npm run build  (libs/ui, apps/desktop/editor)    обе проходят
+go test ./container/...                          ok
+go test ./internal/layers/...                    ok
+```
+
+Нарушения направления: было 23, осталось 6, и все шесть — тесты и истории, записанные в `baseline` с причиной. Правило проверено отрицательным контролем.
+
+Осталось по списку: сегменты по стандарту (шаг 10), вкладки в `pages/` (шаг 9), публичные API срезов (шаг 8), разбор больших срезов (11), транспорт в адаптеры (12), хвосты имён (13), `libs/ui` и `flashcards` отдельной веткой (14), и проход по 234 именам функций, которые сейчас держит `baseline` нового правила.
