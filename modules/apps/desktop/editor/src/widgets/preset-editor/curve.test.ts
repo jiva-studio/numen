@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, NO_BOUNDS, NOWHERE, type Curve, type Point, type Settings } from './types'
-import { BOUNDS, curve as drawnCurve } from './drawn'
+import { BOUNDS, curve as drawnCurve } from './fixtures'
 import {
   approximate,
   costOf,

@@ -37,7 +37,7 @@ export interface TimerRequest {
   readonly after: number
 }
 
-export function drawing(limits: HoldLimits = holding) {
+export function holdChanges(limits: HoldLimits = holding) {
   const changes = new Map<string, Change>()
   /** The notes whose change is over and is being let go of. */
   const ending = new Set<string>()

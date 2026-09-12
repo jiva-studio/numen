@@ -5,7 +5,7 @@
  * Each stands with the three ways out of it, and the window waits until every
  * one of them has been settled or put off.
  */
-import type { ConflictPrompt } from './flushing'
+import type { ConflictPrompt } from './flush'
 
 /** The words the notes still unwritten are put to a person in. */
 export interface UnsavedChangesWords {

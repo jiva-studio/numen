@@ -6,7 +6,7 @@
  * two is theirs. A file that is gone keeps what is on screen and offers to make
  * it again. What either is said in is the tab's own.
  */
-import type { FileConflict } from './flushing'
+import type { FileConflict } from './flush'
 
 // --- Props & Emits ---
 /** The words the two conflicts are put in. */

@@ -12,7 +12,7 @@ import { dayAfter } from '@numen/ui'
 
 import { usePresetTab } from './kind'
 import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from './types'
-import { BOUNDS } from './drawn'
+import { BOUNDS } from './fixtures'
 import type { WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
 

@@ -2,7 +2,7 @@
  * Types and interfaces for note tabs.
  */
 import type { ComputedRef } from 'vue'
-import type { Change } from './drawing'
+import type { Change } from './hold'
 import type { OpenNote } from '@/entities/note'
 import type { NoteTitlesDeps } from './titles'
 

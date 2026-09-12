@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raiseConflicts, type Notes } from './conflicts'
-import type { Conflict } from './flushing'
+import type { Conflict } from './flush'
 
 /** The words this test puts its notes in. A screen has more; these are enough. */
 type Word = 'clean' | 'unsaved' | 'stale' | 'gone'

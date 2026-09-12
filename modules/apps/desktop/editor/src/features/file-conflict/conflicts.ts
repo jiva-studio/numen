@@ -5,7 +5,7 @@
  * stops, so the window waits on exactly what is still to be settled.
  */
 import { watch } from 'vue'
-import { conflictIn, type Conflict } from './flushing'
+import { conflictIn, type Conflict } from './flush'
 
 /** The notes of a window, each under the identity its tab opened under. */
 export interface Notes {

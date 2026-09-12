@@ -1,16 +1,16 @@
 /**
  * The changes the window is drawing, and the intervals they are let go of on.
  *
- * `drawing.ts` decides; this carries out what it decides — the intervals, and
+ * `hold.ts` decides; this carries out what it decides — the intervals, and
  * holding the answers where the template can draw them.
  */
 import { ref } from 'vue'
 import type { NoteEdit } from '@/entities/note'
-import { drawing, holding, type Change, type HoldLimits, type TimerRequest } from './drawing'
+import { holdChanges, holding, type Change, type HoldLimits, type TimerRequest } from './hold'
 
 /** Every change in flight, filed by the note it stands on. */
 export function noteChanges(limits: HoldLimits = holding) {
-  const decided = drawing(limits)
+  const decided = holdChanges(limits)
   /** What each note is drawn with, which Vue reads to draw it. */
   const changes = ref(new Map<string, Change>())
   /** The interval each note is waiting on, so arming again replaces it. */

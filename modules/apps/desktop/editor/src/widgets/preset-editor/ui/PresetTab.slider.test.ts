@@ -11,7 +11,7 @@ import PresetTab from './PresetTab.vue'
 import { NOWHERE, type Curve, type Point } from '../types'
 import { clearBacklog } from '../curve'
 import { FOOT } from '../plot'
-import { drawn, heights, point, tabAt } from '../drawn'
+import { drawn, heights, point, tabAt } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('the one slider', () => {

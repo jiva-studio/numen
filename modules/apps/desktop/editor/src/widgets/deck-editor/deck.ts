@@ -19,7 +19,7 @@ export {
   sameDeck,
   sameOffers,
   stencilsOf,
-} from './drawn'
+} from './view'
 export {
   addCard,
   addSection,

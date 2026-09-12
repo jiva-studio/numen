@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { openNotes, type Notes } from '@/entities/note'
-import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flushing'
+import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
 import type { NoteResult } from '@/entities/note'
 
 /** What the application says over the quit stream, when a test says it. */

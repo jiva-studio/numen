@@ -8,7 +8,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import UnsavedChangesPrompt from './UnsavedChangesPrompt.vue'
-import type { ConflictPrompt } from './flushing'
+import type { ConflictPrompt } from './flush'
 import type { UnsavedChangesWords } from './UnsavedChangesPrompt.vue'
 
 /** The words a window hands the prompt. The component knows none of its own. */

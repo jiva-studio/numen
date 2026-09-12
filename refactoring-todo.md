@@ -207,13 +207,13 @@ node --test modules/tools/lint/*.test.mjs
 ## 13. Незакрытые хвосты прошлых планов
 
 - [x] `widgets/text-editor/components/SettingsFileTab.vue` → `TextEditorTab.vue`, вместе с типами `TextEditorTabDeps`, `TextEditorTabState` и фабрикой `createTextEditorTabKind`.
-- [ ] `widgets/note-editor/drawing.ts` → `noteRender.ts`; вычеркнуть единственную строку из `baseline` в `filenames.mjs`.
-- [ ] `widgets/deck-editor/drawn.ts` — того же рода.
-- [ ] `widgets/preset-editor/drawn.ts` — то же.
-- [ ] `features/file-conflict/flushing.ts` — то же.
-- [ ] `PlexShowing` вместе с `SHOWINGS`, `ShowingDescriptor`, `showingOf`; вычеркнуть строку из `baseline` в `nouns.mjs`.
+- [x] `widgets/note-editor/drawing.ts` → `hold.ts`, функция `drawing()` → `holdChanges()`. Файл держит изменение, пока оно устаканивается, — это и сказано в имени. **`baseline` линтера `filenames.mjs` теперь пуст.**
+- [x] `widgets/deck-editor/drawn.ts` → `view.ts`: он переводит буфер колоды в то, что рисует библиотека.
+- [x] `widgets/preset-editor/drawn.ts` → `fixtures.ts`: он оказался не кодом виджета, а стендом для его тестов, и имя это теперь говорит.
+- [x] `features/file-conflict/flushing.ts` → `flush.ts`.
+- [ ] `PlexShowing` вместе с семьёй — объявлен в `libs/ui/src/features/plex/showing.ts`, то есть это раздел 14, отдельная ветка.
 
-**Критерий:** оба `baseline` линтеров пусты.
+**Критерий:** `baseline` в `filenames.mjs` пуст — сделано. В `nouns.mjs` останется `PlexShowing` до ветки по библиотеке.
 
 ---
 

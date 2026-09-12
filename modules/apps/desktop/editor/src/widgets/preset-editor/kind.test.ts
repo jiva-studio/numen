@@ -22,7 +22,7 @@ import {
   type Settings,
   type WriteResult,
 } from './types'
-import { BOUNDS } from './drawn'
+import { BOUNDS } from './fixtures'
 import type { ErrorCode } from '@/shared/errors'
 import type { WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
