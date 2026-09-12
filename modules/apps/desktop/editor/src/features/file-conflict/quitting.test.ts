@@ -6,9 +6,9 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { openNotes, type Notes } from './notes'
-import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from '@/features/file-conflict/flushing'
-import type { NoteResult } from './note'
+import { openNotes, type Notes } from '@/entities/note/notes'
+import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flushing'
+import type { NoteResult } from '@/entities/note/note'
 
 /** What the application says over the quit stream, when a test says it. */
 function stream() {

@@ -1,5 +1,9 @@
 /**
  * Links in the vault, as they are written into prose.
+ *
+ * The address here is the one the core writes: `adapter/mcp` hands a passage
+ * over already addressed, and names this module as what reads it back. Both
+ * ends of that contract are findable from either side.
  */
 
 /** The scheme a link to somewhere in the vault carries. */

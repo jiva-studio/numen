@@ -56,11 +56,11 @@ export const baseline = new Map([
   [
     '@numen/editor',
     [
-      // A slice says what its tab draws, and the component says what state it
-      // is drawn from, so the two segments name each other. The naming is the
-      // ring: the factory belongs at the top of the slice, not inside one of
-      // its segments, and it moves there when the segments take their
-      // standard names.
+      // Nine slices keep the factory that says what their tab draws inside
+      // the composable file, so the composable names the component and the
+      // component names the state the composable makes. Renaming the two
+      // segments does not touch this: the factory has to leave them, for a
+      // `kind.ts` at the top of the slice.
       'no-folder-going-round: src/widgets/agent-chat/components → src/widgets/agent-chat/composables',
       'no-folder-going-round: src/widgets/agent-chat/composables → src/widgets/agent-chat/components',
       'no-folder-going-round: src/widgets/book-reader/components → src/widgets/book-reader/composables',
@@ -86,9 +86,6 @@ export const baseline = new Map([
       'no-entities-slice-reaches-a-slice: src/entities/media/kind.test.ts → src/entities/tab/openers.ts',
       'no-entities-slice-reaches-a-slice: src/entities/media/kind.test.ts → src/entities/tab/windowTabs.ts',
       'no-entities-slice-reaches-a-slice: src/entities/media/kind.test.ts → src/entities/tab/workspace.ts',
-      // A note left unsaved is flushed on the way out, and the test of the
-      // store's quitting is where the two meet.
-      'no-entities-reaches-above-itself: src/entities/note/notes.quitting.test.ts → src/features/file-conflict/flushing.ts',
     ],
   ],
   [
@@ -100,8 +97,9 @@ export const baseline = new Map([
       // editor itself reaches nothing of the workspace.
       'no-features-slice-reaches-a-slice: src/features/editor/Editor.stories.ts → src/features/workspace/node.ts',
       'no-features-slice-reaches-a-slice: src/features/editor/Editor.stories.ts → src/features/workspace/pane/index.ts',
-      // The fixtures a plex is arranged from are arranged by the code they
-      // stand for.
+      // The plex's fixtures are read by its arranging tests, and one file of
+      // them — `fixtures/ring.ts` — takes the `Placement` type back. That one
+      // type import is the whole of the second half of the ring.
       'no-folder-going-round: src/features/plex/arrange → src/features/plex/fixtures',
       'no-folder-going-round: src/features/plex/fixtures → src/features/plex/arrange',
     ],
