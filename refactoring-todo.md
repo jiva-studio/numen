@@ -146,11 +146,10 @@ node --test modules/tools/lint/*.test.mjs
 
 ## 9. Вкладки в `pages/`
 
-- [ ] Завести `src/pages/`.
-- [ ] Перенести вкладки из `widgets/`; в `widgets/` оставить крупные блоки, которые страница собирает.
-- [ ] `App.vue` собирает страницы из `pages/`.
-- [ ] `app/useWindowKinds.ts` регистрирует виды из `pages/`.
-- [ ] `pages` включён в таблицу рангов и правило работает.
+- [x] Все четырнадцать срезов оказались страницами: у тринадцати `kind.ts` с `TabKind`, четырнадцатый — экран, который окно показывает без вкладок. Слой `widgets/` исчез: крупных блоков, которые страница собирает, у окна нет.
+- [x] `App.vue` и `app/useWindowKinds.ts` собирают страницы из `pages/`.
+- [x] `pages` уже стоял в таблице рангов, поэтому правила рассудили перенос без единой правки.
+- [x] Попутно найдено и починено: Go-застава и два линта называли `src/widgets/…` — то есть после переноса читали бы пустоту.
 
 **Критерий:** в `widgets/` не осталось ни одной вкладки; прогон зелёный. Отдельный коммит.
 
@@ -172,11 +171,11 @@ node --test modules/tools/lint/*.test.mjs
 
 ## 11. Разбор больших срезов
 
-- [ ] `widgets/note-editor/`: расшить пары `types.ts` / `noteTypes.ts`, `tab.ts` / `tabState.ts`.
-- [ ] `features/command-palette/` (22 файла): расшить пары `list.ts` / `lists.ts`, `step.ts` / `steps.ts`.
-- [ ] Разбить `useCommands.ts` на `usePaletteState`, `usePaletteSearch`, `useVaultCommands`.
-- [ ] `CommandsDeps` (`deps.ts`, 248 строк) принимает сгруппированные контексты вместо двух десятков полей.
-- [ ] Разбить `app/useWindowKinds.ts` (244 строки) на фабрики в `app/kinds/`.
+- [x] `note-editor`: пары уже расшиты — `noteTypes.ts` и `tabState.ts` уехали в `entities/note/`.
+- [x] `features/command-palette/`: пары `list`/`lists` и `step`/`steps` переименованы, срез разложен на `ui`/`model`/`lib`.
+- [x] `useCommands.ts` — 125 строк, разбивать нечего.
+- [ ] `CommandsDeps` в `deps.ts` (249 строк) по-прежнему длинный список полей.
+- [x] Разбить `app/useWindowKinds.ts` на фабрики в `app/kinds/` — было 250 строк, стало 74.
 - [ ] `entities/settings/appearance.ts` (562) — снимается шагом 6.
 - [ ] `entities/media/transcript.ts` (471).
 - [ ] `widgets/preset-editor/plot.ts` (394), `curve.ts` (353).
