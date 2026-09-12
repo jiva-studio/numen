@@ -9,7 +9,7 @@ vi.mock('@/shared/clients', () => ({
   articles: asked,
 }))
 
-vi.mock('@/shared/artifacts', () => ({
+vi.mock('@/entities/artifact/@x/media', () => ({
   running: {
     getArtifactStates: vi.fn().mockResolvedValue({ 'transcript.corrected': 'done' }),
   },

@@ -1,5 +1,5 @@
 /** What a recording tab asks of the application, and what comes back. */
-import type { ArtifactStates } from '@/shared/artifacts'
+import type { ArtifactStates } from '@/entities/artifact/@x/media'
 import type { Span } from '@/shared/span'
 import type { Cue } from './lib/cues'
 

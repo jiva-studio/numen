@@ -7,10 +7,8 @@
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
 import { ERRORS, VAULT_ERRORS } from './words/errors'
-import { FETCHED, MADE } from './words/artifacts'
 
 export { ERRORS, VAULT_ERRORS }
-export { FETCHED, MADE }
 
 
 export const WORDS = {
@@ -186,10 +184,6 @@ export const WORDS = {
   occupied: 'something of that name is filed there, so the file stayed where it was',
   /** This build cannot do the run at all, and stops offering it. */
   unrunnable: 'this installation of numen cannot do that at all',
-  /** What an artifact of a file now stands at. */
-  made: MADE,
-  /** What a run over the address a note points at came to. */
-  fetched: FETCHED,
   /** What the action panel of the palette is called. */
   actions: 'Actions',
   findAction: 'Search actions',

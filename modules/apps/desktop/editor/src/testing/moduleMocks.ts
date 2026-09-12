@@ -81,7 +81,10 @@ vi.mock('@/entities/media', async (original) => ({
   ...recordingsSaid,
 }))
 
-vi.mock('@/shared/artifacts', () => ({
+// The runs are answered here; what they are called is the window's own words,
+// and a test that reads one reads what the window would have shown.
+vi.mock('@/entities/artifact', async (original) => ({
+  ...(await original<typeof import('@/entities/artifact')>()),
   running: {
     getArtifactStates: async (path: string) => {
       requests.carried.push(path)

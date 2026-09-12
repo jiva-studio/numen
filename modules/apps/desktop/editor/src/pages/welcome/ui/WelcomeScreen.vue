@@ -14,6 +14,7 @@ import {
   runInvocation,
   invocationOf,
   keysOf,
+  ANSWER_WORDS,
   type CommandDeps,
   type Commands,
   type CommandTarget,
@@ -77,7 +78,11 @@ function onOpen(id: string) {
   const one = props.listed.vaults.find((vault) => vault.id === id)
   if (!one) return
   const vault: VaultRef = { id: one.id, name: one.name }
-  void runInvocation(invocationOf('openVault', { ...props.getTarget(), vault }), props.doing, words)
+  void runInvocation(
+    invocationOf('openVault', { ...props.getTarget(), vault }),
+    props.doing,
+    ANSWER_WORDS,
+  )
 }
 
 function onKeyDown(event: KeyboardEvent) {

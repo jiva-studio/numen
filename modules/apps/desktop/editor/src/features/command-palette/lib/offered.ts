@@ -5,7 +5,7 @@
  * file of a kind, a file nothing has been made from yet. Each answer here is
  * one such question, and the table in `table.ts` names which it asks.
  */
-import type { ArtifactState, ArtifactStates } from '@/shared/artifacts'
+import type { ArtifactState, ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/shared/file'
 import type { CommandTarget, RunSupport } from '../types'
 

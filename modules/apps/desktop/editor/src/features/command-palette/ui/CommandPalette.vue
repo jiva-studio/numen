@@ -19,6 +19,7 @@ import { iconFor, iconOfSource } from '@/shared/icons'
 import { iconOfNote } from '@/entities/note'
 import { isChord } from '../lib/chords'
 import { openDestination, type DestinationDeps } from '../model/destination'
+import { ANSWER_WORDS } from '../words'
 import { WORDS as words } from '@/shared/words'
 
 // --- Props & Emits ---
@@ -84,13 +85,17 @@ async function onChoose(item: string, action: string) {
     const invocation = props.commands.chooseItem(item, action)
     if (!invocation) return
     setCommandsOpen(false)
-    await runInvocation(invocation, props.doing, words)
+    await runInvocation(invocation, props.doing, ANSWER_WORDS)
     return
   }
   if (item === MAKING) {
     const name = props.search.typed.value.trim()
     setSearchOpen(false)
-    await runInvocation(createNoteInvocation(action, name, props.getTarget()), props.doing, words)
+    await runInvocation(
+      createNoteInvocation(action, name, props.getTarget()),
+      props.doing,
+      ANSWER_WORDS,
+    )
     return
   }
   const landing = props.search.chooseItem(item, action)

@@ -2,9 +2,15 @@
 import type { ShallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { cards, presets, WORDS as cardWords } from '@/entities/deck'
-import { running } from '@/shared/artifacts'
+import { running } from '@/entities/artifact'
 import { createFileCreators } from '@/entities/tab'
-import { invocationOf, openDestination, runInvocation, type DestinationDeps } from '@/features/command-palette'
+import {
+  ANSWER_WORDS,
+  invocationOf,
+  openDestination,
+  runInvocation,
+  type DestinationDeps,
+} from '@/features/command-palette'
 import { filesKind, useFileTree } from '@/pages/file-manager'
 import { WORDS as words } from '@/shared/words'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -83,12 +89,16 @@ export function createFilesKind({
       })
     },
     movePath: (from, to) =>
-      runInvocation(invocationOf('move', { ...getTarget(), path: from }, to), commandDeps(), words),
+      runInvocation(
+        invocationOf('move', { ...getTarget(), path: from }, to),
+        commandDeps(),
+        ANSWER_WORDS,
+      ),
     setDraggedPaths: (paths) => {
       dragged.value = paths
     },
     createFolder: (path) =>
-      runInvocation(invocationOf('createFolder', getTarget(), path), commandDeps(), words),
+      runInvocation(invocationOf('createFolder', getTarget(), path), commandDeps(), ANSWER_WORDS),
     createNote: async (folder) => (await editing.making.createUntitled(folder, []))?.path ?? '',
     createDeck: (folder, name) => made.createFile('deck', folder, name),
     createStencil: (folder, name) => made.createFile('stencil', folder, name, [cardWords.newField]),

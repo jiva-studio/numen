@@ -3,7 +3,7 @@
  */
 import type { Ref } from 'vue'
 import { vaults, type VaultCore } from './vault'
-import { running } from '@/shared/artifacts'
+import { running } from '@/entities/artifact'
 import { WORDS as cardWords } from '@/entities/deck'
 import type { CommandDeps, Notes, RunSupport, VaultRef } from '@/features/command-palette'
 import type { MessageWriter } from '@/shared/notices/messages'

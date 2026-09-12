@@ -8,6 +8,7 @@ import {
   runInvocation,
   useCommandPalette,
   useSearch,
+  ANSWER_WORDS,
   type CommandDeps,
   type CommandTarget,
   type Notes,
@@ -82,7 +83,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const runCommand = (id: string, at: CommandTarget) => {
     const invocation = commands.startCommand(id, at)
-    if (invocation) return void runInvocation(invocation, commandDeps, words)
+    if (invocation) return void runInvocation(invocation, commandDeps, ANSWER_WORDS)
     if (commands.open.value) return void palette.setOpen(false)
     writeMessage(commands.getObjection(id, at), 'error')
   }

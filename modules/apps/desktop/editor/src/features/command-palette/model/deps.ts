@@ -6,7 +6,7 @@
  * how what it has to say becomes one line.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { ArtifactRunner } from '@/shared/artifacts'
+import type { ArtifactRunner } from '@/entities/artifact'
 import type { Movement } from '@/shared/file'
 import type { RemoveResult, RenameResult } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'

@@ -13,12 +13,13 @@ import { createNotes } from '../lib/notes'
 import type { CommandDeps } from './deps'
 import type { CommandInvocation, CommandTarget, Store } from '../types'
 import { runInvocation } from './handlers'
-import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/shared/artifacts'
+import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/entities/artifact'
 import type { Movement } from '@/shared/file'
 import type { RemoveResult, RenameResult } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { Vault, VaultErrorCode, VaultResult } from '@/shared/vaults'
-import { WORDS as words } from '@/shared/words'
+import { WORDS } from '@/shared/words'
+import { ANSWER_WORDS as words } from '../words'
 
 /** What is in front, which every invocation is carried out over. */
 const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
@@ -247,7 +248,7 @@ const carry = async (invocation: CommandInvocation, on: CommandDeps) => runInvoc
 
 describe('every command that is offered', () => {
   it('is carried out by something', async () => {
-    for (const command of commandsOf(words)) {
+    for (const command of commandsOf(WORDS)) {
       const one = window()
       await carry(invocationOf(command.id, front(), 'Entropy'), one.on)
 

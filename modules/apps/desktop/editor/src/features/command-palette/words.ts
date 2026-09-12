@@ -8,10 +8,19 @@
  * them.
  */
 import type { PaletteKeys } from '@numen/ui'
-import type { Artifact, ArtifactState } from '@/shared/artifacts'
+import { FETCHED, MADE } from '@/entities/artifact'
+import type { Artifact, ArtifactState } from '@/entities/artifact'
 import type { ErrorCode } from '@/shared/errors'
 import type { VaultErrorCode } from '@/shared/vaults'
+import { WORDS } from '@/shared/words'
 import type { EmptyWords } from './model/search'
+
+/**
+ * What a command answers in: the window's own voice, and the words a run over a
+ * file is spoken about in. Each is written where it belongs, and a command is
+ * where the two meet.
+ */
+export const ANSWER_WORDS: AnswerWords = { ...WORDS, made: MADE, fetched: FETCHED }
 
 /** Everything carrying a command out says in the window's voice. */
 export interface AnswerWords {

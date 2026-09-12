@@ -6,7 +6,7 @@
  * and what the window offers one being carried out is `model/deps.ts`.
  */
 import type { PaletteKeys } from '@numen/ui'
-import type { ArtifactStates } from '@/shared/artifacts'
+import type { ArtifactStates } from '@/entities/artifact'
 import type { EditorKind } from '@/entities/tab'
 import type { Source } from '@/shared/file'
 import type { VaultList } from '@/shared/vaults'

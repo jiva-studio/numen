@@ -2,8 +2,8 @@
  * Vaults listing, active vault tracking, and coverage monitoring.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { running } from '@/shared/artifacts'
-import type { ArtifactStates } from '@/shared/artifacts'
+import { running } from '@/entities/artifact'
+import type { ArtifactStates } from '@/entities/artifact'
 import type { VaultList } from '@/shared/vaults'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog } from '@/shared/notices/messages'

@@ -4,7 +4,7 @@
  */
 import type { Cue as CueMessage } from '@numen/protocol'
 import { retryWhileBusy } from '@/shared/answers'
-import { running } from '@/shared/artifacts'
+import { running } from '@/entities/artifact/@x/media'
 import * as clients from '@/shared/clients'
 import type { Cue } from '../lib/cues'
 import type { Recordings } from '../types'

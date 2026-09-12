@@ -10,6 +10,7 @@ import type { ConnectError } from '@connectrpc/connect'
 import { ArtifactKind as Kinds, State as States } from '@numen/protocol'
 import { namesOf } from '@numen/wire'
 import { artifacts } from '@/shared/clients'
+import type { Artifact, ArtifactRunner, ArtifactState } from '../types'
 
 /**
  * What a model makes from one file of the vault, asked for by name. Which model
@@ -104,94 +105,3 @@ const become: Record<States, ArtifactState> = {
 /** A state this window has no word for is an artifact nothing has made. */
 const parseState = (state: States | undefined): ArtifactState =>
   (state === undefined ? undefined : become[state]) ?? 'none'
-
-/**
- * What is made from one file of the vault, by what it is: text with the place
- * on the page each word stands at, text with the times it was said at, either
- * of those put right, the prose a page is written around, and the bytes of a
- * video kept to be played.
- *
- * What made it is another question. A transcript is a transcript whether a
- * model here wrote it down or a site published it with a video.
- */
-export type Artifact =
-  | 'ocr'
-  | 'ocr.corrected'
-  | 'transcript'
-  | 'transcript.corrected'
-  | 'article'
-  | 'copy'
-
-/**
- * What has become of one artifact: nothing has been made, a run over it waits
- * its turn behind another, a run is writing it now, a run stopped part way and
- * what it reached is on disk, the whole of it stands, a run found nothing to
- * write down, or a run could not read the file at all.
- *
- * The last two are what a run answered, and asking again gets the same until
- * the artifact is taken away.
- */
-export type ArtifactState =
-  | 'none'
-  | 'queued'
-  | 'running'
-  | 'stopped'
-  | 'done'
-  | 'empty'
-  | 'failed'
-
-/**
- * What a file carries, and what has become of each. Partial because which
- * artifacts a file carries follows from the file: a scan carries no
- * transcript, and a recording carries no text read.
- */
-export type ArtifactStates = Partial<Record<Artifact, ArtifactState>>
-
-/**
- * What asking for an artifact to be made answered: which artifact, what it now
- * is, and what a run said about a file it could not read. A build that cannot
- * make it at all answers nothing else, and the run is offered nowhere after
- * that.
- */
-export type Outcome =
-  | { readonly able: false }
-  | {
-      readonly able: true
-      readonly of: Artifact
-      readonly made: ArtifactState
-      readonly error: string
-    }
-
-/** Reads which artifacts a file currently carries. */
-export interface ArtifactInspector {
-  getArtifactStates(path: string): Promise<ArtifactStates>
-}
-
-/** Initiates creation/recognition of an artifact for a file. */
-export interface ArtifactProducer {
-  createArtifact(path: string, of: Artifact): Promise<Outcome>
-}
-
-/** Corrects a file's OCR reading or transcript. */
-export interface ArtifactCorrector {
-  correctArtifact(path: string): Promise<Outcome>
-}
-
-/** Fetches content (transcript or article) for a URL address. */
-export interface ArtifactFetcher {
-  fetchArtifact(path: string): Promise<Outcome>
-}
-
-/** Removes artifact data from disk. */
-export interface ArtifactDeleter {
-  deleteTranscript(path: string): Promise<boolean>
-  deleteCopy(path: string): Promise<boolean>
-}
-
-/** Composed interface combining all artifact capabilities. */
-export interface ArtifactRunner
-  extends ArtifactInspector,
-    ArtifactProducer,
-    ArtifactCorrector,
-    ArtifactFetcher,
-    ArtifactDeleter {}

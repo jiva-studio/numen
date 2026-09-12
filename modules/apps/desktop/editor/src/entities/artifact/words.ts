@@ -1,7 +1,8 @@
 /**
- * UI messages for background media and artifact jobs.
+ * What the window says about a run, in the words of the thing being run over: a
+ * scan is recognised, a recording is transcribed, an address is fetched.
  */
-import type { Artifact, ArtifactState } from '@/shared/artifacts'
+import type { Artifact, ArtifactState } from './types'
 
 export const FETCHED: Record<ArtifactState, string> = {
   none: 'The address published none of what was asked for.',

@@ -18,6 +18,8 @@ export { useSearch } from './model/search'
 export type { SearchDeps, SearchMode, SearchState } from './model/search'
 export type { SearchDestination } from './model/lookup'
 export type { CommandDeps } from './model/deps'
+export { ANSWER_WORDS } from './words'
+export type { AnswerWords } from './words'
 export type {
   CommandsDeps,
   CommandTarget,
