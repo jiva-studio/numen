@@ -10,7 +10,7 @@ Where the imports point is not your subject; `architecture-reviewer` has it. Nam
 
 ## Where the rules are
 
-`AGENTS.md` at the repository root: comments, function naming, event handlers, component structure, composables, types, factories, the Result pattern, file placement, god objects. Judge a change against what is written there, not against this prompt.
+`AGENTS.md` at the repository root: comments, function naming, event handlers, component structure, composables, types, factories, one word for a failure, where a file stands, god objects. Judge a change against what is written there, not against this prompt.
 
 ## How to work
 

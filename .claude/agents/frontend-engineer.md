@@ -31,6 +31,8 @@ A slice of `entities/`, `features/`, `widgets/` or `pages/` reaches no sibling s
 
 Its folders are named `ui`, `api`, `model`, `lib`, `config`. `index.ts` is what the rest of the tree may reach; everything else is the slice's own.
 
+What says which component a tab draws stands at the top of the slice, in `kind.ts`. A segment naming another segment is a ring the boundary check reports, and the slice root is what may name both.
+
 An import that leaves its own folder is written `@/entities/note`, not `../../entities/note`. Inside the slice a relative path stays relative.
 
 ## How to work

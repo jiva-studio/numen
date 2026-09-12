@@ -27,6 +27,12 @@ Lowest first: `shared`, `entities`, `features`, `widgets`, `pages`, `app`. The c
 
 A window laid out flat is read as the same rule with one layer in it: a folder under `src/` naming no layer is a screen, and stands where the pages do. That is what `modules/apps/desktop/flashcards` is, and it is judged without being moved.
 
+### A slice is cut into the standard segments, and its root names them
+
+A slice's folders are `ui`, `api`, `model`, `lib`, `config` — the names the method already has, so nobody has to be told what ours mean.
+
+What says which component a tab draws stands at the top of the slice, in `kind.ts`. A segment naming another segment is a ring: the model would name the component it draws and the component would name the state the model makes, and neither could be read first. The slice root is what may name both.
+
 ### A slice reaches no sibling slice of its own layer
 
 `entities`, `features`, `widgets` and `pages` are each cut into slices named for what they are about. What two slices both need stands on a layer below.
