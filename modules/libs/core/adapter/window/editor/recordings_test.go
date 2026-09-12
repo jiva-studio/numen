@@ -117,7 +117,7 @@ func windowOn(t *testing.T, held port.DerivedStore) (*API, http.Handler) {
 		},
 	}
 	api.show(vault)
-	return api, api.Serving(http.NotFoundHandler())
+	return api, api.NewHandler(http.NotFoundHandler())
 }
 
 // whole is the store holding a finished transcript of the recording, and partly
@@ -145,7 +145,7 @@ func TestARecordingIsPlayedFromItsOwnBytes(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 
-	out := ask(handler, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk)))
+	out := ask(handler, back.Address(api.GetShownVault(), statOf(t, api, api.GetShownVault(), talk)))
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for the recording and got %d: %s", out.Code, out.Body)
 	}
@@ -167,7 +167,7 @@ func TestAPlayerAsksForOnePieceOfARecording(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	out := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk)), nil)
+	r := httptest.NewRequest(http.MethodGet, back.Address(api.GetShownVault(), statOf(t, api, api.GetShownVault(), talk)), nil)
 	r.Header.Set("Range", "bytes=4-12")
 	handler.ServeHTTP(out, r)
 
@@ -216,7 +216,7 @@ func TestARecordingNobodyHasListenedToHoldsNoWords(t *testing.T) {
 		t.Errorf("a recording nobody heard says %+v", told.GetCues())
 	}
 	back, playing := openLoopback(t, api)
-	if out := ask(playing, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk))); out.Code != http.StatusOK {
+	if out := ask(playing, back.Address(api.GetShownVault(), statOf(t, api, api.GetShownVault(), talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording itself was answered %d", out.Code)
 	}
 }
@@ -276,10 +276,10 @@ func TestABuildThatServesNoArtifactPlaysTheRecording(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := &API{Readers: filesystem.VaultReaders{}}
 	api.show(vault)
-	_ = api.Serving(http.NotFoundHandler(), numenv1connect.VaultServiceName)
+	_ = api.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName)
 
 	back, playing := openLoopback(t, api)
-	if out := ask(playing, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk))); out.Code != http.StatusOK {
+	if out := ask(playing, back.Address(api.GetShownVault(), statOf(t, api, api.GetShownVault(), talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording itself was answered %d", out.Code)
 	}
 }
@@ -377,7 +377,7 @@ func TestATranscriptAPersonWroteSaysSo(t *testing.T) {
 	if err := writeTranscript(api, cueOf("what Rupa said", 1500, 4200)); err != nil {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if !transcript.Written(held[derived.Corrections(asr, hashed)]) {
+	if !transcript.IsWrittenByHand(held[derived.Corrections(asr, hashed)]) {
 		t.Errorf("the transcript does not say a person wrote it:\n%s", held[derived.Corrections(asr, hashed)])
 	}
 }
@@ -615,7 +615,7 @@ func (s stating) Stat(ctx context.Context, path string) (domain.Fingerprint, err
 func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	held := whole(newCues())
 	api, _ := openRecordingWindow(t, held)
-	showing := api.Showing()
+	showing := api.GetShownVault()
 	elsewhere := testsupport.NewVault(t, map[string]string{talk: sound})
 
 	api.Readers = swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.show(elsewhere) }}

@@ -49,11 +49,11 @@ func (c Config) Level(db *Index) note.Levels {
 	refresh := vault.NewRefresh(
 		c.VaultReaders(),
 		db.Vaults(),
-		db.NotesCutAt(c.Chunking(), c.Legibility()),
+		db.NotesCutAt(c.GetChunkSizes(), c.Legibility()),
 		db.SourcesKnown(),
 		db.Sources(),
 	)
-	refresh.Derived = c.DerivedStores()
+	refresh.Derived = c.GetDerivedStores()
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err

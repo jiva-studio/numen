@@ -26,9 +26,9 @@ type Config struct {
 	Claude Claude `json:"claude"`
 }
 
-// Serving reports whether the tools go on a port: an installation naming an
-// agent for the panel is one, and so is one asking for the port itself.
-func (c Config) Serving() bool { return c.Use == UseClaude || c.ServeTools }
+// IsServingTools reports whether the tools go on a port: an installation naming
+// an agent for the panel is one, and so is one asking for the port itself.
+func (c Config) IsServingTools() bool { return c.Use == UseClaude || c.ServeTools }
 
 // Claude is how Claude Code is run.
 type Claude struct {

@@ -10,9 +10,9 @@ type OpenTabs struct {
 	FrontID string
 }
 
-// Fronted is the tab the person is looking at. A window holding none answers
-// with no tab at all.
-func (o OpenTabs) Fronted() (Tab, bool) {
+// GetFrontTab is the tab the person is looking at. A window holding none
+// answers with no tab at all.
+func (o OpenTabs) GetFrontTab() (Tab, bool) {
 	for _, one := range o.Tabs {
 		if one.ID != "" && one.ID == o.FrontID {
 			return one, true

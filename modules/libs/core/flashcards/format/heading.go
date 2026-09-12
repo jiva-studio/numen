@@ -57,7 +57,7 @@ func WriteHeading(text string, carried domain.CardID) string {
 // first line break and at HeadingRunes characters, and the spaces at either end
 // are dropped. A field that is empty, or holds only spaces, projects to nothing.
 func Project(value string) string {
-	line := markdown.Normalised(value)
+	line := markdown.Normalise(value)
 	if at := strings.IndexByte(line, '\n'); at >= 0 {
 		line = line[:at]
 	}
@@ -153,7 +153,7 @@ func links(line string) [][]int {
 // oneLine is what a name a caller composed a heading from stands as. A heading
 // is one line, so it holds what stands in front of the first break in it.
 func oneLine(name string) string {
-	line := markdown.Normalised(name)
+	line := markdown.Normalise(name)
 	if at := strings.IndexByte(line, '\n'); at >= 0 {
 		line = line[:at]
 	}

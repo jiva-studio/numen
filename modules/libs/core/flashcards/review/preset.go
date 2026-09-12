@@ -80,10 +80,10 @@ func (p Preset) Share(day time.Weekday) float64 {
 // over its days, and the days it has are the days it needs.
 func (p Preset) Evens() bool { return p.EvenLoad && p.Goal != GoalDate }
 
-// Placing is how this preset puts a card on a day, as a short name: whether it
-// evens the days out, and the share each day of the week carries. A schedule
+// GetPlacing is how this preset puts a card on a day, as a short name: whether
+// it evens the days out, and the share each day of the week carries. A schedule
 // worked out under one placing is not read back under another.
-func (p Preset) Placing() string {
+func (p Preset) GetPlacing() string {
 	var out strings.Builder
 	fmt.Fprintf(&out, "even=%t", p.Evens())
 	for day := time.Sunday; day <= time.Saturday; day++ {
@@ -101,8 +101,8 @@ const (
 	GoalDate      Goal = "by_date"
 )
 
-// KnownGoal reports whether a goal is one of the three.
-func KnownGoal(g Goal) bool {
+// IsKnownGoal reports whether a goal is one of the three.
+func IsKnownGoal(g Goal) bool {
 	switch g {
 	case GoalMinutes, GoalRetention, GoalDate:
 		return true
@@ -123,8 +123,8 @@ const (
 	RuleRetention LearnedRule = "retention"
 )
 
-// KnownRule reports whether a rule is one of the two.
-func KnownRule(r LearnedRule) bool {
+// IsKnownRule reports whether a rule is one of the two.
+func IsKnownRule(r LearnedRule) bool {
 	switch r {
 	case RuleInterval, RuleRetention:
 		return true
@@ -132,14 +132,14 @@ func KnownRule(r LearnedRule) bool {
 	return false
 }
 
-// Learned reports whether a card face standing at this schedule is one the
+// IsLearned reports whether a card face standing at this schedule is one the
 // person has learned at this instant, under the rule this preset names.
 //
 // A card face nobody has answered is learned by neither rule.
 //
 // It is the one place the rule is read.
-func (p Preset) Learned(s Schedule, at time.Time) bool {
-	if !s.Seen() {
+func (p Preset) IsLearned(s Schedule, at time.Time) bool {
+	if !s.IsSeen() {
 		return false
 	}
 	rule, interval, retention := p.getLearnedRule()
@@ -158,7 +158,7 @@ func (p Preset) Learned(s Schedule, at time.Time) bool {
 func (p Preset) getLearnedRule() (LearnedRule, int, float64) {
 	defaults := Defaults()
 	rule, interval, retention := p.Rule, p.Interval, p.Retention
-	if !KnownRule(rule) {
+	if !IsKnownRule(rule) {
 		rule = defaults.Rule
 	}
 	if !IntervalBounds.Holds(float64(interval)) {
@@ -188,8 +188,8 @@ const (
 // It is the one place the counting is read.
 func (u BudgetUnit) Charges(shown bool) bool { return u == BudgetUnitShows || !shown }
 
-// KnownBudgetUnit reports whether a value is one of the two.
-func KnownBudgetUnit(u BudgetUnit) bool {
+// IsKnownBudgetUnit reports whether a value is one of the two.
+func IsKnownBudgetUnit(u BudgetUnit) bool {
 	switch u {
 	case BudgetUnitCards, BudgetUnitShows:
 		return true
@@ -314,8 +314,8 @@ func (p Preset) StopsOn(d Day, now time.Time) StopReason {
 	return StoppedNothing
 }
 
-// Paused reports whether the preset schedules nothing.
-func (p Preset) Paused(d Day, now time.Time) bool { return p.Stops(d, now) != StoppedNothing }
+// IsPaused reports whether the preset schedules nothing.
+func (p Preset) IsPaused(d Day, now time.Time) bool { return p.Stops(d, now) != StoppedNothing }
 
 // paces is how much of the material a day holds when a date sets the pace: what
 // is left to begin, over the days on which beginning a card still leaves it time

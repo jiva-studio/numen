@@ -59,7 +59,7 @@ func newPages() *pages {
 // before it did not.
 func (p *pages) Supports(at domain.URL) bool { return !carries(at) }
 
-func (p *pages) Downloading(domain.URL) port.DownloadModel {
+func (p *pages) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: readerName, Producer: text.Article}
 }
 

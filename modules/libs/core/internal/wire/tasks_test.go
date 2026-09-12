@@ -64,7 +64,7 @@ func TestOneChangeIsSaidTwice(t *testing.T) {
 		}
 	}
 
-	tasks.Done("reading")
+	tasks.Remove("reading")
 	for telling := range 2 {
 		if list := receiveTasks(t, stream); len(list) != 0 {
 			t.Fatalf("telling %d said %v, and the work had ended", telling+1, list)

@@ -103,7 +103,7 @@ func (a *API) getProducer(at domain.URL) string {
 	if a.Imports == nil || a.Imports.By == nil || at == "" {
 		return ""
 	}
-	return a.Imports.By.Downloading(at).Producer
+	return a.Imports.By.GetDownloadModel(at).Producer
 }
 
 // getArtifactID is the name one artifact stands under in the store, and whether the
@@ -262,10 +262,10 @@ const (
 	copying  = "copying:"
 )
 
-// Changed says an artifact of the file at a path was written from outside the
-// window, so a tab drawing it reads what now stands. It is the same channel a
-// run reports itself through, and a tab follows both the same way.
-func (a *API) Changed(path string) {
+// ReportArtifactChange says an artifact of the file at a path was written from
+// outside the window, so a tab drawing it reads what now stands. It is the same
+// channel a run reports itself through, and a tab follows both the same way.
+func (a *API) ReportArtifactChange(path string) {
 	a.say(task.Task{ID: fetching + path, Doing: "Correcting a transcript", About: path})
 	a.finishTask(fetching + path)
 }
@@ -622,7 +622,6 @@ func newArtifact(of v1.ArtifactKind, got reached) *v1.Artifact {
 	return out
 }
 
-// getReachCode is the code a file that could not be reached is answered with.
 // getDownloadCode is what a run over an address answers with. What a tool said about
 // an address is what the person is owed, and it reaches them only under a code
 // that carries its own words.
@@ -633,6 +632,7 @@ func getDownloadCode(err error) connect.Code {
 	return connect.CodeFailedPrecondition
 }
 
+// getReachCode is the code a file that could not be reached is answered with.
 func getReachCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, port.ErrOutside):

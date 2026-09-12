@@ -82,7 +82,7 @@ func (u EditLinks) Update(
 	ctx context.Context, v domain.Vault, from string, to domain.Address,
 	change domain.Link, fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if change.Role != "" && !domain.KnownRole(change.Role) {
+	if change.Role != "" && !domain.IsKnownRole(change.Role) {
 		return domain.Fingerprint{}, fmt.Errorf("%q is not a role a link can carry", change.Role)
 	}
 	e := u.newEdit()
@@ -117,7 +117,7 @@ func (u EditLinks) PointAt(
 	if of == "" {
 		return domain.Fingerprint{}, errors.New("a link is pointed at under a type")
 	}
-	if to.Value != "" && !domain.KnownRole(role) {
+	if to.Value != "" && !domain.IsKnownRole(role) {
 		return domain.Fingerprint{}, fmt.Errorf("%q is not a role a link can carry", role)
 	}
 	e := u.newEdit()
@@ -150,7 +150,7 @@ func (u EditLinks) Remove(
 
 // Writable is what a link must carry before anything will write it.
 func Writable(link domain.Link) error {
-	if !domain.KnownRole(link.Role) {
+	if !domain.IsKnownRole(link.Role) {
 		return fmt.Errorf("%q is not a role a link can carry", link.Role)
 	}
 	if link.Target.Value == "" {

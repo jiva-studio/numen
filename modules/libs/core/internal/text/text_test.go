@@ -83,7 +83,7 @@ func checkLocation(t *testing.T, doc *text.Document, passage, want string) {
 
 func TestAReadingWithPartsLocatesAPassageBySectionAndPage(t *testing.T) {
 	raw, parts := writeRecognition(t)
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 
 	checkLocation(t, doc, ganges, sectionOne+", page 3 of the file")
 	checkLocation(t, doc, padmavati, sectionTwo+", page 4 of the file")
@@ -92,7 +92,7 @@ func TestAReadingWithPartsLocatesAPassageBySectionAndPage(t *testing.T) {
 
 func TestAReadingWithPartsNamesThem(t *testing.T) {
 	raw, parts := writeRecognition(t)
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 
 	want := []chunking.PartStart{
 		{Title: docTitle, Offset: at(t, doc, docTitle)},
@@ -106,7 +106,7 @@ func TestAReadingWithPartsNamesThem(t *testing.T) {
 
 func TestAReadingWithNoPartsLocatesAPassageByPageAlone(t *testing.T) {
 	raw, _ := writeRecognition(t)
-	doc := text.Recognised(raw, nil, nil, nil)
+	doc := text.ReadRecognition(raw, nil, nil, nil)
 
 	checkLocation(t, doc, ganges, "page 3 of the file")
 	checkLocation(t, doc, padmavati, "page 4 of the file")
@@ -117,7 +117,7 @@ func TestAReadingWithNoPartsLocatesAPassageByPageAlone(t *testing.T) {
 
 func TestAPassageBeforeTheFirstPartIsLocatedByPageAlone(t *testing.T) {
 	raw, parts := writeRecognition(t)
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 
 	checkLocation(t, doc, frontMatter, "page 1 of the file")
 }
@@ -130,7 +130,7 @@ func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
 		}},
 	})
 	parts := ocr.Pack([]ocr.Part{{Start: 0, Length: len(docTitle), Depth: 0}})
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 
 	if doc.Text[:len(docTitle)] != docTitle {
 		t.Fatalf("the prose begins %q, want it to begin with the title", doc.Text[:len(docTitle)])
@@ -146,7 +146,7 @@ func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
 		{Start: strings.Index(prose, sectionTwo), Length: len(sectionTwo), Depth: 1},
 		{Start: strings.Index(prose, sectionOne), Length: len(sectionOne), Depth: 1},
 	})
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 
 	if len(doc.Parts) != 0 {
 		t.Errorf("the document names %+v", doc.Parts)
@@ -161,7 +161,7 @@ func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
 		{Start: strings.Index(prose, sectionOne), Length: len(sectionOne), Depth: 1},
 		{Start: len(prose) - 4, Length: 100, Depth: 1},
 	})
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 
 	if len(doc.Parts) != 0 {
 		t.Errorf("the document names %+v", doc.Parts)
@@ -187,7 +187,7 @@ func TestAPageIsSaidByWhereItStandsInTheFile(t *testing.T) {
 		{Index: 0, Blocks: []ocr.Block{{Label: "text", Text: "Alpha beta."}}},
 		{Index: 1, Blocks: []ocr.Block{{Label: "text", Text: "Gamma delta."}}},
 	})
-	doc := text.Recognised(raw, nil, nil, nil)
+	doc := text.ReadRecognition(raw, nil, nil, nil)
 
 	if said := doc.Locate(0); said != "page 1 of the file" {
 		t.Errorf("the first page is located at %q", said)

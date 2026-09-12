@@ -87,8 +87,8 @@ func (t *Tasks) Set(task Task) {
 	t.tell()
 }
 
-// Done takes one task out. A task that is not there is the outcome asked for.
-func (t *Tasks) Done(id string) {
+// Remove takes one task out. A task that is not there is the outcome asked for.
+func (t *Tasks) Remove(id string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if _, held := t.held[id]; !held {

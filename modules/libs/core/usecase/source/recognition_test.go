@@ -90,7 +90,7 @@ func (w *watched) opening(t *testing.T) task.Task {
 func (w *watched) waitUntilDone(t *testing.T) {
 	t.Helper()
 	for range 200 {
-		if !w.Running() {
+		if !w.IsRunning() {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)
@@ -140,8 +140,8 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 	if got := w.Start(somewhere, "b.pdf"); got != port.Queued {
 		t.Errorf("the same document named again: %v", got)
 	}
-	if w.Waiting() != 1 {
-		t.Errorf("%d documents are in line", w.Waiting())
+	if w.CountWaiting() != 1 {
+		t.Errorf("%d documents are in line", w.CountWaiting())
 	}
 
 	close(held)
@@ -150,8 +150,8 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 	if w.countOpens() != 2 {
 		t.Errorf("a recogniser was opened %d times", w.countOpens())
 	}
-	if w.Waiting() != 0 {
-		t.Errorf("%d documents were left in line", w.Waiting())
+	if w.CountWaiting() != 0 {
+		t.Errorf("%d documents were left in line", w.CountWaiting())
 	}
 }
 

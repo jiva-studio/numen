@@ -102,7 +102,7 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 			StencilBody: format.StencilBody,
 		},
 
-		Showing: mcp.ShowingOne(v, v.Path), Readers: readers,
+		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),

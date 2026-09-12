@@ -26,7 +26,7 @@ func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
 		t.Errorf("listed %s then %s", list[0].ID, list[1].ID)
 	}
 
-	tasks.Done("reading")
+	tasks.Remove("reading")
 	if list := tasks.List(); len(list) != 1 || list[0].ID != "indexing" {
 		t.Errorf("after finishing one: %+v", list)
 	}
@@ -48,7 +48,7 @@ func TestWorkReportedAgainReplacesItself(t *testing.T) {
 
 func TestFinishingWhatIsNotThereIsTheOutcomeAskedFor(t *testing.T) {
 	tasks := task.New()
-	tasks.Done("nothing")
+	tasks.Remove("nothing")
 	if list := tasks.List(); len(list) != 0 {
 		t.Errorf("listed %+v", list)
 	}
@@ -73,7 +73,7 @@ func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
 		t.Errorf("after one more: %+v", list)
 	}
 
-	tasks.Done("reading")
+	tasks.Remove("reading")
 	if list := next(t, watching); len(list) != 1 || list[0].ID != "fetching" {
 		t.Errorf("after one finished: %+v", list)
 	}

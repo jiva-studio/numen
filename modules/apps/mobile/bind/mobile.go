@@ -104,7 +104,7 @@ func Start(dir string) (int, error) {
 	// beside the notes, which is a book read off the disk and a model set
 	// running over one.
 	server := &http.Server{
-		Handler: allowOrigin(opened.API.Serving(
+		Handler: allowOrigin(opened.API.NewHandler(
 			http.NotFoundHandler(),
 			numenv1connect.VaultServiceName,
 			numenv1connect.NoteServiceName,

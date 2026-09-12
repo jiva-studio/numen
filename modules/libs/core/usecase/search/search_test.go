@@ -103,7 +103,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 // given, in both of the representations a chunk carries.
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
-	owing, err := c.db.ChunkQueries().Unembedded(t.Context(), v.ID, model.Recipe(), 0, 1000)
+	owing, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, model.Recipe(), 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -600,7 +600,7 @@ func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by words answered %d passages about books in a vault of notes", len(words))
 	}
 
-	named, err := queries.Named(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
+	named, err := queries.GetNamedPassages(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}

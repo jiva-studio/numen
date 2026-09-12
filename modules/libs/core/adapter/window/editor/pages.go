@@ -24,7 +24,7 @@ var errShut = errors.New("this window is shut")
 
 // Pages is the interface itself, built by `make interface` and carried inside
 // the binary. A binary built without it says so.
-func Pages() (http.Handler, error) { return wire.Serving(pages) }
+func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
 // served is one service this build answers: where its calls arrive, and what
 // answers them.
@@ -36,14 +36,14 @@ type served struct {
 // mount takes a generated handler and the path it answers under as one.
 func mount(at string, to http.Handler) served { return served{at: at, to: to} }
 
-// Serving puts the questions in front of the pages, so that a window and a
+// NewHandler puts the questions in front of the pages, so that a window and a
 // browser are answered by one handler.
 //
 // named is the services this build answers, by the names the schema gives them.
 // A service left out is not mounted, and a call of one is unanswered because
 // nothing serves it — not because a handler standing there has nothing behind
 // it. Naming none is a build that answers the whole schema.
-func (a *API) Serving(files http.Handler, named ...string) http.Handler {
+func (a *API) NewHandler(files http.Handler, named ...string) http.Handler {
 	counted := a.newQuestionCounter()
 	serves := func(service string) bool {
 		return len(named) == 0 || slices.Contains(named, service)

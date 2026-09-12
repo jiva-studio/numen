@@ -17,7 +17,7 @@ import (
 func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 	api := &API{}
 
-	if open := api.Attended(); len(open.Tabs) != 0 || open.FrontID != "" {
+	if open := api.GetOpenTabs(); len(open.Tabs) != 0 || open.FrontID != "" {
 		t.Fatalf("a window that has said nothing has %+v open", open)
 	}
 
@@ -45,7 +45,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 				Book: &domain.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
 		},
 	}
-	if got := api.Attended(); !reflect.DeepEqual(got, want) {
+	if got := api.GetOpenTabs(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window has %+v open", got)
 	}
 }
@@ -65,7 +65,7 @@ func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	if len(heard) != 1 {
 		t.Fatalf("what the window has open was said %d times", len(heard))
 	}
-	front, held := heard[0].Fronted()
+	front, held := heard[0].GetFrontTab()
 	if !held || front.Path != "Entropy.md" {
 		t.Errorf("the tab in front is %+v", front)
 	}
@@ -90,7 +90,7 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			front, held := c.open.Fronted()
+			front, held := c.open.GetFrontTab()
 			if held != (c.want != "") {
 				t.Fatalf("a tab in front is %v", held)
 			}

@@ -11,7 +11,7 @@ import (
 // makeDueByDay is a table of the days of review, loaded with as many card faces
 // on each of these many days past an instant.
 func makeDueByDay(d review.Day, at time.Time, on map[int]int) *review.DueByDay {
-	out := review.Spreading(d)
+	out := review.NewDueByDay(d)
 	for day, cards := range on {
 		for range cards {
 			out.Holds(at.AddDate(0, 0, day))
@@ -157,7 +157,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	// The day the scheduler named already carries cards, so the placement moves
 	// the card and the arithmetic that adds days is reached.
 	loaded := func(on time.Time) *review.DueByDay {
-		s := review.Spreading(day)
+		s := review.NewDueByDay(day)
 		for range 9 {
 			s.Holds(on)
 		}

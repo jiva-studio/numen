@@ -97,7 +97,7 @@ func (h unheard) Fingerprints(
 	return out, nil
 }
 
-func (h unheard) Recognised(
+func (h unheard) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return nil, nil
@@ -185,7 +185,7 @@ func (h recognised) Fingerprints(
 	return map[string]domain.Fingerprint{h.path: {Path: h.path}}, nil
 }
 
-func (h recognised) Recognised(
+func (h recognised) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return []port.SourceText{{
@@ -197,7 +197,7 @@ func (h recognised) Under(context.Context, domain.VaultID, string) ([]domain.Fin
 	return nil, nil
 }
 
-func (h recognised) Unchunked(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
+func (h recognised) GetUnchunkedSources(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
 	return nil, nil
 }
 
@@ -243,8 +243,8 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 	if got := listening.Start(v, "talks/two.mp3"); got != port.Queued {
 		t.Errorf("the same recording named again: %v", got)
 	}
-	if listening.Waiting() != 1 {
-		t.Errorf("%d recordings are in line", listening.Waiting())
+	if listening.CountWaiting() != 1 {
+		t.Errorf("%d recordings are in line", listening.CountWaiting())
 	}
 
 	close(going)
@@ -253,8 +253,8 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 	if got := by.times(); got != 2 {
 		t.Errorf("%d recordings were heard", got)
 	}
-	if listening.Waiting() != 0 {
-		t.Errorf("%d recordings were left in line", listening.Waiting())
+	if listening.CountWaiting() != 0 {
+		t.Errorf("%d recordings were left in line", listening.CountWaiting())
 	}
 }
 
@@ -370,7 +370,7 @@ func (s sized) Fingerprints(
 	return out, nil
 }
 
-func (sized) Recognised(
+func (sized) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return nil, nil

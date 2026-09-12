@@ -115,7 +115,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 			case "called":
 				// The name the file carries written into the note, which is
 				// what a rename made outside the application settles into.
-				if err := c.move().Called(rt.Context(), c.vault, path); err != nil {
+				if err := c.move().WriteFilenameAsTitle(rt.Context(), c.vault, path); err != nil {
 					rt.Fatalf("call %s by its filename: %v", path, err)
 				}
 			}

@@ -130,14 +130,14 @@ func (c Config) handleError(err error) {
 	}
 }
 
-// Indexing is this configuration carrying what a settings file says about
+// SetIndexing is this configuration carrying what a settings file says about
 // making a vault searchable.
 //
 // Every section of it is carried here, in one place both entry points use. A
 // section an entry point leaves behind is a part of the application that does
 // nothing and says nothing, since naming no model is how a person turns one
 // off.
-func (c Config) Indexing(said settings.Indexing) Config {
+func (c Config) SetIndexing(said settings.Indexing) Config {
 	c.Embedding = said.Embedding
 	c.Recognition = said.Recognition.Config
 	c.Proofreading = said.Proofreading
@@ -166,9 +166,9 @@ func (c Config) SyncSetting() note.SyncSetting {
 	}
 }
 
-// Configured reads, as the window asks, every setting as JSON and the file it
+// ReadSettings reads, as the window asks, every setting as JSON and the file it
 // stands in.
-func (c Config) Configured() func() (string, string, error) {
+func (c Config) ReadSettings() func() (string, string, error) {
 	return func() (string, string, error) {
 		path, err := c.settingsFile()
 		if err != nil {
@@ -178,14 +178,14 @@ func (c Config) Configured() func() (string, string, error) {
 		if err != nil {
 			return "", path, err
 		}
-		written, err := settings.Written(held)
+		written, err := settings.WriteJSON(held)
 		return written, path, err
 	}
 }
 
-// ConfiguredFile reads, as the window asks, the settings file as its person
+// ReadSettingsFile reads, as the window asks, the settings file as its person
 // wrote it, and the file it stands in.
-func (c Config) ConfiguredFile() func() (string, string, error) {
+func (c Config) ReadSettingsFile() func() (string, string, error) {
 	return func() (string, string, error) {
 		path, err := c.settingsFile()
 		if err != nil {
@@ -231,8 +231,8 @@ func (c Config) Models() func() []port.Model {
 			}
 		}
 		fetched := settings.Fetches{
-			Embedding:   embed.Fetched,
-			Recognising: recognition.Fetched,
+			Embedding:   embed.IsFetched,
+			Recognising: recognition.IsFetched,
 		}
 		return append(settings.Models(held, fetched), settings.Agents()...)
 	}
@@ -323,10 +323,10 @@ func (c Config) VaultWriters() port.VaultWriters {
 	return filesystem.VaultWriters{Options: c.vaultOptions()}
 }
 
-// ImportedFiles reads what a person handed this application from outside every
-// vault. On a machine with a filesystem that is a path; a phone hands over
-// something else, and this is where the two part.
-func (c Config) ImportedFiles() port.ImportedFiles {
+// GetImportedFiles reads what a person handed this application from outside
+// every vault. On a machine with a filesystem that is a path; a phone hands
+// over something else, and this is where the two part.
+func (c Config) GetImportedFiles() port.ImportedFiles {
 	return filesystem.ImportedFiles{}
 }
 
@@ -355,14 +355,14 @@ func (c Config) vaultOptions() filesystem.Options {
 	}
 }
 
-// DerivedStores opens the shelf the application keeps its own irreplaceable
+// GetDerivedStores opens the shelf the application keeps its own irreplaceable
 // files on, inside a vault. It is a third opener beside the readers and the
 // writers because it is a third right: reading a person's vault, changing it,
 // and keeping something of our own in it are not the same permission.
 //
 // It answers for what a reading wrote and for what a transcription wrote, since
 // a use case that places a passage reads both.
-func (c Config) DerivedStores() port.DerivedStores {
+func (c Config) GetDerivedStores() port.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: c.vaultOptions(),
 		Area:    filesystem.OCRDir,

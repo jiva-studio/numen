@@ -217,9 +217,9 @@ func Hand() []byte {
 	return []byte("\n" + ByHand + "\n")
 }
 
-// Written says whether a person wrote these words. The mark is a note of its
-// own, and the same words spoken in a cue are speech.
-func Written(raw []byte) bool {
+// IsWrittenByHand says whether a person wrote these words. The mark is a note
+// of its own, and the same words spoken in a cue are speech.
+func IsWrittenByHand(raw []byte) bool {
 	for at := 0; at <= len(raw)-len(ByHand); {
 		found := bytes.Index(raw[at:], []byte(ByHand))
 		if found < 0 {
@@ -233,9 +233,9 @@ func Written(raw []byte) bool {
 	return false
 }
 
-// Reached is how far a run before this one got, and where the last note about
-// it ends. A file carrying none is a recording nothing has transcribed.
-func Reached(raw []byte) (ms, end int) {
+// ReadReached is how far a run before this one got, and where the last note
+// about it ends. A file carrying none is a recording nothing has transcribed.
+func ReadReached(raw []byte) (ms, end int) {
 	note := []byte(reaches)
 	// Each note is looked at once, and only what stands between it and the one
 	// after it is read.

@@ -96,7 +96,7 @@ func (u Highlight) Execute(
 	// coordinates describe those. A file rewritten since is read from its own
 	// layer, which is the words that are there now.
 	var boxes []highlight.Box
-	if said.Producer != "" && ref.Unchanged(said.Fingerprint) {
+	if said.Producer != "" && ref.IsUnchanged(said.Fingerprint) {
 		boxes, err = u.read(ctx, store, said)
 	} else {
 		said = port.SourceText{}

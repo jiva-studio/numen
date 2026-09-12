@@ -27,7 +27,7 @@ func writeSettings(t *testing.T, written string) (Config, string) {
 func TestTheSettingsReadOutHoldWhatTheFileLeavesOut(t *testing.T) {
 	cfg, path := writeSettings(t, `{"appearance": {"theme": "mine:sea"}}`)
 
-	written, said, err := cfg.Configured()()
+	written, said, err := cfg.ReadSettings()()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -156,8 +156,8 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 	if !slices.Equal(res.Indexed, []string{"Note.md"}) {
 		t.Errorf("indexed %v", res.Indexed)
 	}
-	if !slices.Equal(res.Changed(), []string{"Note.md"}) {
-		t.Errorf("the caller was told to look at %v", res.Changed())
+	if !slices.Equal(res.GetChangedPaths(), []string{"Note.md"}) {
+		t.Errorf("the caller was told to look at %v", res.GetChangedPaths())
 	}
 	if got := titles(t, db, v, "entropy"); !slices.Equal(got, []string{"Note"}) {
 		t.Errorf("the index holds %v", got)

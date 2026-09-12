@@ -9,12 +9,12 @@ const Agreement = 0.99
 // scripts, so two models that differ only outside one alphabet differ here.
 const Asked = "Zoë Brontë — Марроуфилд — the allotment gate"
 
-// Agreed says whether two vectors of one text came from one model.
+// IsAgreed says whether two vectors of one text came from one model.
 //
 // A question embedded in another space finds nothing the first indexed. Two
 // providers name a model by whatever each of them calls it, so what they
 // answer is compared instead.
-func Agreed(a, b []float32) bool {
+func IsAgreed(a, b []float32) bool {
 	if len(a) == 0 || len(a) != len(b) {
 		return false
 	}

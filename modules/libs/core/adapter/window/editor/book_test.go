@@ -214,7 +214,7 @@ func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
 	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
 	api.show(vault)
 	t.Cleanup(api.Viewer.close)
-	handler := api.Serving(http.NotFoundHandler())
+	handler := api.NewHandler(http.NotFoundHandler())
 	print := printOf(t, api, reflowed)
 
 	page := markupOf(t, api, reflowed, "OEBPS/cover.svg", print)
@@ -390,7 +390,7 @@ func readFrom(t *testing.T) (*API, http.Handler) {
 	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
 	api.show(vault)
 	t.Cleanup(api.Viewer.close)
-	return api, api.Serving(http.NotFoundHandler())
+	return api, api.NewHandler(http.NotFoundHandler())
 }
 
 // pictureOf is where a picture a book carries is asked for: the place it has in

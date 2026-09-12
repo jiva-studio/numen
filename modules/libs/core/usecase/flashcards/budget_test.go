@@ -81,7 +81,7 @@ func byDeck(sat flashcards.SessionResult) map[string]int {
 func unseen(sat flashcards.SessionResult) int {
 	out := 0
 	for _, one := range sat.Queue {
-		if !one.Schedule.Seen() {
+		if !one.Schedule.IsSeen() {
 			out++
 		}
 	}
@@ -1075,7 +1075,7 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 // all is answered with the day it was asked about.
 func admession(p review.Preset, day review.Day, now time.Time) time.Time {
 	for range 8 {
-		if !p.Admits(day, now, review.Spent{}, 0, 0).Paused() {
+		if !p.Admits(day, now, review.Spent{}, 0, 0).IsPaused() {
 			return now
 		}
 		now = day.GetEnd(now)
@@ -1318,7 +1318,7 @@ func (s vaulted) through(t *testing.T, day review.Day, now time.Time) int {
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
 			took := review.DefaultCost.Review
-			if !one.Schedule.Seen() {
+			if !one.Schedule.IsSeen() {
 				took = review.DefaultCost.New
 			}
 			faces[one.ID] = true

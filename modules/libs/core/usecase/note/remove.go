@@ -146,7 +146,7 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 }
 
 func (u Remove) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return Levelled(u.Index(ctx, v, paths), paths...)
+	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
 }
 
 // withSuffix puts something before the extension: `note.md` and `-2` make

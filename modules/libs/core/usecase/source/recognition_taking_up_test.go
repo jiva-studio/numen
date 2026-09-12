@@ -100,7 +100,7 @@ func newHaltedWorker(
 // books is the document one vault holds, as the index answers for it.
 type books struct{ port.SourceQueries }
 
-func (books) Recognised(
+func (books) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return []port.SourceText{{
@@ -140,7 +140,7 @@ func TestAReadingLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testing.T
 	}}
 	w, v, store, hash := newHaltedWorker(t, by, 1, lines...)
 
-	w.TakingUp(t.Context(), books{}, v)
+	w.TakeUp(t.Context(), books{}, v)
 	w.Wait()
 
 	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
@@ -161,7 +161,7 @@ func TestAReadingAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
 	by := &puts{}
 	w, v, _, _ := newHaltedWorker(t, by, 2, lines...)
 
-	w.TakingUp(t.Context(), books{}, v)
+	w.TakeUp(t.Context(), books{}, v)
 	w.Wait()
 
 	if got := by.lines(); len(got) != 0 {
@@ -180,7 +180,7 @@ func TestAReadingWithABatchOutIsLeftToTheCollection(t *testing.T) {
 	w, v, _, _ := newHaltedWorker(t, by, 1, lines...)
 	w.RecognitionWorker.with.Proofreading.Queue = func(string) (port.ProofreadQueue, error) { return leaves{}, nil }
 
-	w.TakingUp(t.Context(), books{}, v)
+	w.TakeUp(t.Context(), books{}, v)
 	w.Wait()
 
 	if got := by.lines(); len(got) != 0 {
@@ -220,7 +220,7 @@ func TestAReadingAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 		Count: 1, Total: 2,
 	})
 
-	w.TakingUp(t.Context(), books{}, v)
+	w.TakeUp(t.Context(), books{}, v)
 	w.Wait()
 
 	if at, held := w.getTask(t); !held || at.Doing != "Proofreading a reading" {

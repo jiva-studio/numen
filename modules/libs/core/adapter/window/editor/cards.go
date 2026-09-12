@@ -108,7 +108,7 @@ func (a *API) makes(
 	}
 	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return cards.CreateNoteResult{}, nil, false, connect.NewError(wire.Coded(err), err)
+		return cards.CreateNoteResult{}, nil, false, connect.NewError(wire.GetCode(err), err)
 	}
 	return cards.CreateNoteResult{}, &reason, false, nil
 }
@@ -148,7 +148,7 @@ func (a *API) RenameStencilField(
 	}
 	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 	return connect.NewResponse(&v1.RenameStencilFieldResponse{Error: &reason}), nil
 }
@@ -163,7 +163,7 @@ func (a *API) ReadStencil(
 	}
 	found, err := a.Cards.Read.Stencil(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
 	out := &v1.ReadStencilResponse{}
@@ -171,7 +171,7 @@ func (a *API) ReadStencil(
 		out.Error = &code
 		return connect.NewResponse(out), nil
 	}
-	title := wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path)
+	title := wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path)
 	out.Stencil = stencilOf(found.Path, title, found.Body)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the stencil back.
@@ -189,7 +189,7 @@ func (a *API) ReadDeck(
 	}
 	found, err := a.Cards.Read.Deck(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
 	out := &v1.ReadDeckResponse{}
@@ -202,7 +202,7 @@ func (a *API) ReadDeck(
 		}
 		return connect.NewResponse(out), nil
 	}
-	title := wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path)
+	title := wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path)
 	out.Deck = deckOf(found.Path, title, found.Body, found.Stencils)
 	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
@@ -248,7 +248,7 @@ func (a *API) WriteDeck(
 	}
 	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 	return connect.NewResponse(&v1.WriteDeckResponse{Error: &reason}), nil
 }
@@ -289,7 +289,7 @@ func (a *API) WriteStencil(
 	}
 	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 	return connect.NewResponse(&v1.WriteStencilResponse{Error: &reason}), nil
 }

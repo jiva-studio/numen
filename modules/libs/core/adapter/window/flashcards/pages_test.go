@@ -45,7 +45,7 @@ func (dressing) WatchThemes(
 func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
 	api := &API{Registry: registry{}, Themes: dressing{wearing: "Evening"}, Now: time.Now}
 
-	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
@@ -63,7 +63,7 @@ func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
 func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
 	api := &API{Registry: registry{}, Now: time.Now}
 
-	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)

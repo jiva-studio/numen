@@ -112,7 +112,7 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 		return out, err
 	}
 	written := append([]string{in.Stencil}, out.Decks...)
-	return out, note.Levelled(u.Index(ctx, v, written), written...)
+	return out, note.WrapUnlevelled(u.Index(ctx, v, written), written...)
 }
 
 // rename is the whole of the writing, under this vault's write lock from before

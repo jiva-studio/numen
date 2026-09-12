@@ -94,7 +94,7 @@ func openRunWindow(
 	api.Imports = &source.ImportURL{By: reachingASite{}}
 	api.show(vault)
 	setPasses(api, func(on *passes) { on.recognises, on.transcribes = scans, hears })
-	return api, api.Serving(http.NotFoundHandler())
+	return api, api.NewHandler(http.NotFoundHandler())
 }
 
 // noteRead is how a note is read, which is where a link note says it points.
@@ -173,7 +173,7 @@ func TestAScanIsReadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_OCR {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if scans.times != 1 || scans.path != book || scans.vault != string(api.Showing().ID) {
+	if scans.times != 1 || scans.path != book || scans.vault != string(api.GetShownVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", scans.path, scans.vault, scans.times)
 	}
 }
@@ -190,7 +190,7 @@ func TestARecordingIsHeardWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if hears.times != 1 || hears.path != talk || hears.vault != string(api.Showing().ID) {
+	if hears.times != 1 || hears.path != talk || hears.vault != string(api.GetShownVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", hears.path, hears.vault, hears.times)
 	}
 }
@@ -448,6 +448,6 @@ func TestListingWhatAFileCarriesBeginsNoRun(t *testing.T) {
 // url carries follows from what downloads it, and a test says which that is.
 type reachingASite struct{ port.Downloader }
 
-func (reachingASite) Downloading(domain.URL) port.DownloadModel {
+func (reachingASite) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "a test", Producer: derived.Captions}
 }

@@ -62,7 +62,7 @@ func (c Config) VaultOpenerWith(
 	scan := c.Scan(db)
 	scan.Readers = walking
 
-	held := &holding{NoteRepository: db.NotesCutAt(c.Chunking(), c.Legibility())}
+	held := &holding{NoteRepository: db.NotesCutAt(c.GetChunkSizes(), c.Legibility())}
 	return &VaultOpener{
 		watcher: watcher,
 		scan:    scan,
@@ -75,18 +75,18 @@ func (c Config) VaultOpenerWith(
 // and carrying what was fetched for a link note.
 func makeRefresh(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
 	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources())
-	refresh.Derived = c.DerivedStores()
+	refresh.Derived = c.GetDerivedStores()
 	return refresh
 }
 
-// Refreshing brings named notes up to date, through whatever is following the
+// GetRefresh brings named notes up to date, through whatever is following the
 // vault they are in. Whatever changes a note calls it, so what changed is
 // findable before the change is reported done.
-func (o *VaultOpener) Refreshing() vault.Refresh { return o.refresh }
+func (o *VaultOpener) GetRefresh() vault.Refresh { return o.refresh }
 
-// Scanning is the walk this opener makes, for a caller asked to read the vault
+// GetScan is the walk this opener makes, for a caller asked to read the vault
 // again.
-func (o *VaultOpener) Scanning() vault.Scan {
+func (o *VaultOpener) GetScan() vault.Scan {
 	scan := o.scan
 	scan.RebuildIndex = o.Rebuild
 	return scan
@@ -101,9 +101,10 @@ func (o *VaultOpener) Level(ctx context.Context, v domain.Vault, paths []string)
 
 // Begin opens the vault: the watch is started, and Read is the walk beside it.
 //
-// A vault that cannot be watched is opened all the same, and Unwatched says why.
+// A vault that cannot be watched is opened all the same, and
+// GetUnwatchedReason says why.
 func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
-	scan := o.Scanning()
+	scan := o.GetScan()
 	follow := vault.NewFollow(o.watcher, o.refresh, scan)
 	if told := o.Told; told != nil {
 		follow.Changed = func(m vault.VaultChanges) {
@@ -132,9 +133,10 @@ type OpenVault struct {
 	unwatched error
 }
 
-// Unwatched is why the vault is not being followed, and nothing while it is. A
-// vault nobody is following looks exactly like a vault nothing happens to.
-func (o *OpenVault) Unwatched() error { return o.unwatched }
+// GetUnwatchedReason is why the vault is not being followed, and nothing while
+// it is. A vault nobody is following looks exactly like a vault nothing happens
+// to.
+func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 
 // Read walks the vault into the index and answers how many notes it holds.
 // during, if set, is called while the walk is still running.

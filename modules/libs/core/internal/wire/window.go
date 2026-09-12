@@ -210,17 +210,17 @@ func (w *Window) Say(at task.Task) {
 	}
 }
 
-// Finished takes one piece of work out of the list.
-func (w *Window) Finished(id string) {
+// Finish takes one piece of work out of the list.
+func (w *Window) Finish(id string) {
 	if w != nil && w.Tasking != nil {
-		w.Tasking.Done(id)
+		w.Tasking.Remove(id)
 	}
 }
 
-// Settling asks every page to write what it owes and waits for the round to
+// Settle asks every page to write what it owes and waits for the round to
 // end. It answers false where a page is holding work a person is being asked
 // about, and where another round has taken this one's place.
-func (w *Window) Settling(ctx context.Context) bool {
+func (w *Window) Settle(ctx context.Context) bool {
 	round := w.clients.ask()
 	select {
 	case <-round.written:

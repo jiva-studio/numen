@@ -12,5 +12,5 @@ import (
 // zero, which the use case refuses; a person who pressed a button would be told
 // the answer was not one.
 func TestEveryRatingIsRead(t *testing.T) {
-	testsupport.Handled(t, func(r v1.Rating) bool { return newRating(r) != 0 })
+	testsupport.CheckHandled(t, func(r v1.Rating) bool { return newRating(r) != 0 })
 }

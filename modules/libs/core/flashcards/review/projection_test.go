@@ -788,14 +788,14 @@ func TestACardAtTheTargetExactlyIsLearned(t *testing.T) {
 	c := review.Schedule{
 		Last: now.Add(-away), Due: now, Reps: 3, Stability: stability, Difficulty: 5, Phase: 2,
 	}
-	if !p.Learned(c, now) {
+	if !p.IsLearned(c, now) {
 		t.Errorf("a card face recalled with a chance of %v stands short of a target of %v",
 			review.Recall(away, stability), p.Retention)
 	}
 	// And a target above where it stands does not learn it.
 	tighter := p
 	tighter.Retention = 0.99
-	if tighter.Learned(c, now) {
+	if tighter.IsLearned(c, now) {
 		t.Errorf("a card face recalled with a chance of %v is learned at a target of %v",
 			review.Recall(away, stability), tighter.Retention)
 	}
@@ -1167,7 +1167,7 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	}
 
 	kept := run
-	kept.Recalls = review.NothingForgotten
+	kept.Recalls = review.GetFullRecall
 	modelled := runProjection(t, run, now, p, at, 0)
 	nothing := runProjection(t, kept, now, p, at, 0)
 

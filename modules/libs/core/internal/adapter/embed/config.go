@@ -57,10 +57,10 @@ type Model struct {
 	Pooling string `json:"pooling"`
 }
 
-// Stored is this model in the words a vector is kept under, made at the address
-// given. It is the one crossing between the settings and the index, so nothing
-// copies the fields across by hand.
-func (m Model) Stored(from string) port.EmbeddingModel {
+// GetStoredModel is this model in the words a vector is kept under, made at the
+// address given. It is the one crossing between the settings and the index, so
+// nothing copies the fields across by hand.
+func (m Model) GetStoredModel(from string) port.EmbeddingModel {
 	return port.EmbeddingModel{
 		Name:       m.Name,
 		Dimensions: m.Dimensions,
@@ -96,20 +96,20 @@ func Defaults() Config {
 	}
 }
 
-// Asking is where the vector of a question is made. An installation that says
-// nothing about questions asks the way it indexed.
-func (c Config) Asking() Provider {
+// GetQueryProvider is where the vector of a question is made. An installation
+// that says nothing about questions asks the way it indexed.
+func (c Config) GetQueryProvider() Provider {
 	if c.Query.Use == "" {
 		return c.Indexing
 	}
 	return c.Query
 }
 
-// Stored is the identity every vector this installation keeps is filed under:
-// the model, made where the index is filled. A question is embedded wherever
-// the settings place it and claims the rows already there.
-func (c Config) Stored() port.EmbeddingModel {
-	return c.Model.Stored(c.Indexing.From())
+// GetStoredModel is the identity every vector this installation keeps is filed
+// under: the model, made where the index is filled. A question is embedded
+// wherever the settings place it and claims the rows already there.
+func (c Config) GetStoredModel() port.EmbeddingModel {
+	return c.Model.GetStoredModel(c.Indexing.From())
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.

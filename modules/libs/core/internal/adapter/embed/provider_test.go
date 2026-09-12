@@ -12,8 +12,8 @@ import (
 // two are not one set of vectors.
 func TestAModelRunHereAndOneServedAreTwoAddresses(t *testing.T) {
 	name := "intfloat/multilingual-e5-small"
-	here := embed.Provider{}.Running(embed.LocalModel{Name: name})
-	served := embed.Provider{}.Serving(embed.ServiceModel{BaseURL: "http://127.0.0.1:1/v1", Name: name})
+	here := embed.Provider{}.SetLocal(embed.LocalModel{Name: name})
+	served := embed.Provider{}.SetService(embed.ServiceModel{BaseURL: "http://127.0.0.1:1/v1", Name: name})
 	if a, b := here.From(), served.From(); a == b {
 		t.Errorf("both are %q", a)
 	}

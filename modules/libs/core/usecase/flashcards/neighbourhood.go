@@ -96,7 +96,7 @@ func (u ShowNeighbourhood) Execute(
 			continue
 		}
 		one := Neighbour{
-			Written:   l.Target.Written(),
+			Written:   l.Target.GetWritten(),
 			Path:      l.To,
 			Label:     l.Label,
 			Ambiguous: l.Ambiguous,

@@ -93,7 +93,7 @@ type embedder struct{ seed byte }
 
 func (e embedder) run(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
-	owing, err := db.ChunkQueries().Unembedded(t.Context(), vault.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vault.ID, "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

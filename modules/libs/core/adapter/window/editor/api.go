@@ -271,9 +271,9 @@ type IndexState struct {
 	Recipe atomic.Value
 }
 
-// Showing is the vault the window has open. A window standing on nothing
+// GetShownVault is the vault the window has open. A window standing on nothing
 // answers with no vault at all.
-func (a *API) Showing() domain.Vault {
+func (a *API) GetShownVault() domain.Vault {
 	if v := a.vault.Load(); v != nil {
 		return *v
 	}
@@ -338,7 +338,7 @@ func (a *API) forgets() func(domain.Vault, string) {
 func (a *API) say(at task.Task) { a.Window.Say(at) }
 
 // finishTask takes one piece of work out of that list.
-func (a *API) finishTask(id string) { a.Window.Finished(id) }
+func (a *API) finishTask(id string) { a.Window.Finish(id) }
 
 // isUnlevelled says whether a write reached the vault and the index did not
 // follow.
@@ -371,16 +371,16 @@ func (a *API) isClosed() bool { return a.shut.Load() }
 // getShownVault is the vault a question is answered over. A window standing on nothing
 // has none, and every question that would reach into a vault is refused there.
 func (a *API) getShownVault() (domain.Vault, error) {
-	v := a.Showing()
+	v := a.GetShownVault()
 	if v.ID == "" {
 		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
 	return v, nil
 }
 
-// Answering is the agent the panel's tasks go to, and nothing where the vault
+// GetAgent is the agent the panel's tasks go to, and nothing where the vault
 // has none.
-func (a *API) Answering() port.Agent {
+func (a *API) GetAgent() port.Agent {
 	if taking := a.agent.Load(); taking != nil {
 		return *taking
 	}
@@ -405,7 +405,7 @@ func text(v *atomic.Value) string {
 func (a *API) GetVaultState(
 	ctx context.Context, _ *connect.Request[v1.GetVaultStateRequest],
 ) (*connect.Response[v1.GetVaultStateResponse], error) {
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	out := &v1.GetVaultStateResponse{
 		Id:   string(showing.ID),
 		Name: showing.Name,

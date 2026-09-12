@@ -137,7 +137,7 @@ func TestACorrectedReadingIsTheTextTheSourceIsCutFrom(t *testing.T) {
 	}
 
 	names := textNames(t, shelved)
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
+	doc, err := text.ReadComposed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
 	}
 
 	names := textNames(t, shelved)
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
+	doc, err := text.ReadComposed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +204,7 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 	}
 
 	names := textNames(t, shelved)
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
+	doc, err := text.ReadComposed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
 	if res.Resumed != 0 {
 		t.Errorf("took up %d pages another proofreader had", res.Resumed)
 	}
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
+	doc, err := text.ReadComposed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -456,7 +456,7 @@ func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
 	}
 
 	names := textNames(t, shelved)
-	doc, err := text.Composed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
+	doc, err := text.ReadComposed(t.Context(), shelved, "ocr", names.hash, readShelf(t, shelved, names.artifact))
 	if err != nil {
 		t.Fatal(err)
 	}

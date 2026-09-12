@@ -121,7 +121,7 @@ func (b countingBy) Endings(s review.Schedule, at time.Time) (review.Schedule, r
 	return b.inner.Endings(s, at)
 }
 
-func (b countingBy) Spaced(s review.Schedule) bool { return b.inner.Spaced(s) }
+func (b countingBy) IsSpaced(s review.Schedule) bool { return b.inner.IsSpaced(s) }
 
 // loaded is a vault of many cards and many run files, with everything a request
 // asks of the store, the cache and the scheduler counted.

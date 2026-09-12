@@ -198,12 +198,12 @@ func spacing(b byte) bool {
 	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }
 
-// Counted is `at`, a byte offset into text, as a client counts text: in UTF-16
-// code units.
+// CountUTF16 is `at`, a byte offset into text, as a client counts text: in
+// UTF-16 code units.
 //
 // A note is read by something that counts its own way, and a span named in
 // bytes lands somewhere else in prose that is not ASCII.
-func Counted(text string, at int) int {
+func CountUTF16(text string, at int) int {
 	if at > len(text) {
 		at = len(text)
 	}

@@ -43,7 +43,7 @@ func newYtDLP(ctx context.Context, c Config) *ytDLP {
 // Supports is a video, on a machine holding the tool that gets at one.
 func (v *ytDLP) Supports(at domain.URL) bool { return carries(at) && v.command.isPresent() }
 
-func (v *ytDLP) Downloading(domain.URL) port.DownloadModel {
+func (v *ytDLP) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
 }
 

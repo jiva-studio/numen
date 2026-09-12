@@ -48,7 +48,6 @@ export const nouns = {
   seed: 'the number a run of chance is started from',
   sibling: 'a note under the same parent',
   spacing: 'the room left between things',
-  string: 'the text a value is written as, which is Go’s own word for it',
   timing: 'when something happens, and how long it takes',
 }
 
@@ -198,14 +197,26 @@ export function takes(source) {
 const GO_DECLARED = /^func\s+(?:\([^)]*\)\s*)?([A-Za-z_]\w*)/gm
 
 /**
- * Every function and method one Go file declares. gofmt puts a declaration of
- * the file's own at the left margin and nothing else, so a margin is all this
- * has to read.
+ * The method names Go's own interfaces fix. A type satisfies `context.Context`
+ * by declaring `Done`, and a name the standard library chose is not a name this
+ * repository is free to write differently.
+ */
+const given = new Set([
+  'Close', 'Done', 'Err', 'Error', 'Kind', 'Len', 'Less', 'Next', 'Read',
+  'Reset', 'Scan', 'Seek', 'String', 'Swap', 'Type', 'Value', 'Write',
+])
+
+/**
+ * Every function and method one Go file declares, less the ones Go names for
+ * it. gofmt puts a declaration of the file's own at the left margin and nothing
+ * else, so a margin is all this has to read.
  *
  * A method is read here where a TypeScript one is not: Go hangs it on a type by
  * a receiver and it is declared at the margin like any other function, so the
  * caller reads `day.GetName()` exactly as it reads `getName()`.
  */
 export function goDeclares(source) {
-  return [...code(source).matchAll(GO_DECLARED)].map((one) => one[1])
+  return [...code(source).matchAll(GO_DECLARED)]
+    .map((one) => one[1])
+    .filter((name) => !given.has(name))
 }

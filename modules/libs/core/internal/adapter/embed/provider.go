@@ -60,16 +60,16 @@ func (p Provider) Service() (ServiceModel, bool) {
 	return p.service, true
 }
 
-// Running is this provider making its vectors on this machine with the model
-// given, and Serving is it making them at the service given. Each sets the word
-// with the settings, so a half is never written without being put in force, and
-// each keeps the half it is not on the way the file does.
-func (p Provider) Running(m LocalModel) Provider {
+// SetLocal is this provider making its vectors on this machine with the model
+// given, and SetService is it making them at the service given. Each sets the
+// word with the settings, so a half is never written without being put in
+// force, and each keeps the half it is not on the way the file does.
+func (p Provider) SetLocal(m LocalModel) Provider {
 	p.Use, p.local = UseLocal, m
 	return p
 }
 
-func (p Provider) Serving(m ServiceModel) Provider {
+func (p Provider) SetService(m ServiceModel) Provider {
 	p.Use, p.service = UseService, m
 	return p
 }
@@ -109,9 +109,9 @@ type LocalModel struct {
 	Download bool `json:"download"`
 }
 
-// Threading is how much of this machine one forward pass may use. A recognition
-// runs beside this one and is told the same.
-func (m LocalModel) Threading() int {
+// GetThreads is how much of this machine one forward pass may use. A
+// recognition runs beside this one and is told the same.
+func (m LocalModel) GetThreads() int {
 	if m.Threads <= 0 {
 		return defaultThreads
 	}

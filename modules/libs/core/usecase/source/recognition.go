@@ -128,8 +128,8 @@ func (r *RecognitionWorker) Ready() bool { return r.with.Runtime.Ready() }
 // write goes into an index the application still holds open.
 func (r *RecognitionWorker) Wait() { r.going.Wait() }
 
-// Running says whether a document is being recognised.
-func (r *RecognitionWorker) Running() bool {
+// IsRunning says whether a document is being recognised.
+func (r *RecognitionWorker) IsRunning() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.running
@@ -165,8 +165,8 @@ func (r *RecognitionWorker) Start(v domain.Vault, path string) port.StartOutcome
 	return port.Began
 }
 
-// Waiting is how many documents a person named are still in line.
-func (r *RecognitionWorker) Waiting() int {
+// CountWaiting is how many documents a person named are still in line.
+func (r *RecognitionWorker) CountWaiting() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.queue.countWaiting()
@@ -377,7 +377,7 @@ func (r *RecognitionWorker) says(at task.Task, asked bool) {
 
 func (r *RecognitionWorker) finishTask(id string) {
 	if r.with.Tasks != nil {
-		r.with.Tasks.Done(id)
+		r.with.Tasks.Remove(id)
 	}
 }
 
@@ -389,7 +389,7 @@ func (r *RecognitionWorker) finishTask(id string) {
 //
 // The count is taken here and not in the goroutine it counts, so a wait that
 // begins the instant this returns covers the rounds behind it.
-func (r *RecognitionWorker) Collecting(
+func (r *RecognitionWorker) CollectBatches(
 	ctx context.Context,
 	known port.SourceQueries,
 	every time.Duration,
@@ -426,14 +426,14 @@ func (r *RecognitionWorker) runRounds(
 	}
 }
 
-// TakingUp puts right the readings of these vaults that stand short of
+// TakeUp puts right the readings of these vaults that stand short of
 // their last page, once, behind the caller.
 //
 // A proofreading stands at the page it reached, so a run that ended among the
 // batches is taken up at that page. A reading no proofreader has been over
 // stands at its first page and is put right whole. A proofreader with a queue
-// leaves a batch behind it and is taken up by Collecting.
-func (r *RecognitionWorker) TakingUp(
+// leaves a batch behind it and is taken up by CollectBatches.
+func (r *RecognitionWorker) TakeUp(
 	ctx context.Context,
 	known port.SourceQueries,
 	vaults ...domain.Vault,
@@ -468,7 +468,7 @@ func (r *RecognitionWorker) collect(
 	queue port.ProofreadQueue,
 	v domain.Vault,
 ) {
-	recognised, err := known.Recognised(ctx, v.ID, domain.KindBook)
+	recognised, err := known.GetRecognisedSources(ctx, v.ID, domain.KindBook)
 	if err != nil {
 		return
 	}

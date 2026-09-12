@@ -58,7 +58,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		read, err := core.Sources.Queries.Recognised(ctx, shown.Vault.ID, domain.KindBook)
+		read, err := core.Sources.Queries.GetRecognisedSources(ctx, shown.Vault.ID, domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -73,7 +73,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 		reading := ""
 		if core.Sources.Recognise != nil {
 			switch {
-			case core.Sources.Recognise.Running():
+			case core.Sources.Recognise.IsRunning():
 				reading = "one document is being read now"
 			case !core.Sources.Recognise.Ready():
 				reading = "what is needed to read scans is not here yet, and is fetched when one is asked for"
@@ -233,8 +233,8 @@ type Recogniser interface {
 	// Ready says whether reading could begin now without waiting for anything
 	// to arrive.
 	Ready() bool
-	// Running says whether a document is being read.
-	Running() bool
+	// IsRunning says whether a document is being read.
+	IsRunning() bool
 	// Start reads one document behind whoever asked, and says whether it began
 	// now or waits behind the reading already going. A document is never
 	// refused, and it runs under the application rather than under the call

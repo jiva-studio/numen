@@ -74,7 +74,7 @@ func (u Presets) Point(
 		case at.Outcome != note.Ok || at.Type != domain.TypePreset:
 			return domain.Fingerprint{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 		}
-		if to, err = note.Addressed(ctx, u.Notes, v.ID, preset); err != nil {
+		if to, err = note.GetAddress(ctx, u.Notes, v.ID, preset); err != nil {
 			return domain.Fingerprint{}, err
 		}
 	}
@@ -104,7 +104,7 @@ func (u Presets) Save(
 	if err != nil {
 		return at, err
 	}
-	return at, note.Levelled(u.Index(ctx, v, []string{path}), path)
+	return at, note.WrapUnlevelled(u.Index(ctx, v, []string{path}), path)
 }
 
 // save is the read, the change and the write, under this vault's write lock
@@ -277,18 +277,18 @@ var week = []time.Weekday{
 // checkBounds is what in the settings may not be written, and is nil when all
 // of them may.
 func checkBounds(p review.Preset) error {
-	if !review.KnownGoal(p.Goal) {
+	if !review.IsKnownGoal(p.Goal) {
 		return fmt.Errorf("%w: goal %s is not %s, %s or %s",
 			ErrOutOfBounds, p.Goal, review.GoalMinutes, review.GoalRetention, review.GoalDate)
 	}
 	if p.Goal == review.GoalDate && p.By.IsZero() {
 		return fmt.Errorf("%w: a preset aiming at a day says which day", ErrOutOfBounds)
 	}
-	if !review.KnownRule(p.Rule) {
+	if !review.IsKnownRule(p.Rule) {
 		return fmt.Errorf("%w: learned %s is not %s or %s",
 			ErrOutOfBounds, p.Rule, review.RuleInterval, review.RuleRetention)
 	}
-	if !review.KnownBudgetUnit(p.Counts) {
+	if !review.IsKnownBudgetUnit(p.Counts) {
 		return fmt.Errorf("%w: counts %s is not %s or %s",
 			ErrOutOfBounds, p.Counts, review.BudgetUnitCards, review.BudgetUnitShows)
 	}

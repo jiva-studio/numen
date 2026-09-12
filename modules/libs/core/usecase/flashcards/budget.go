@@ -91,7 +91,7 @@ func getBudgets(
 		counting[deck] = settings[path].Counts
 	}
 	named := day.GetName(now)
-	out.faced = review.Faced(day, named, log.Answers)
+	out.faced = review.GetFaced(day, named, log.Answers)
 
 	// A card face stands in one deck and one preset, so a preset's day is the
 	// sum of the days of the decks that name it.
@@ -106,7 +106,7 @@ func getBudgets(
 		spent[asked[deck]] = at
 	}
 
-	costed := review.CostedUnder(by, log.Answers, out.under)
+	costed := review.GetCostUnder(by, log.Answers, out.under)
 	for path, p := range settings {
 		cost, held := costed[path]
 		if !held {
@@ -141,7 +141,7 @@ func getBudgets(
 // whichever way the preset counts.
 func (b *budgets) takes(share *allowance, face review.CardFaceID, fresh bool) bool {
 	one, held := b.left[b.under[face]]
-	if !held || one.admits.Paused() {
+	if !held || one.admits.IsPaused() {
 		return false
 	}
 	counted := one.counts.Charges(b.faced[face])
@@ -208,7 +208,7 @@ func (b *budgets) refuses(preset string) error {
 	switch {
 	case !scheduling:
 		return fmt.Errorf("%w: no deck of this vault is scheduled by it", ErrSchedulesNothing)
-	case one.admits.Paused():
+	case one.admits.IsPaused():
 		return fmt.Errorf("%w: it is paused", ErrSchedulesNothing)
 	case one.spent.Answered > 0:
 		return fmt.Errorf("%w: its day is spent", ErrSchedulesNothing)
@@ -239,7 +239,7 @@ func (b *budgets) asks(
 		switch {
 		case !answered:
 			fresh = append(fresh, one)
-		case day.Owed(s, now):
+		case day.IsOwed(s, now):
 			owed = append(owed, one)
 		}
 	}
@@ -351,7 +351,7 @@ func (b *budgets) spends(owed, fresh []CardFace) taken {
 
 	for _, path := range order {
 		one, held := b.left[path]
-		if !held || one.admits.Paused() {
+		if !held || one.admits.IsPaused() {
 			continue
 		}
 		// The decks are handed their shares in the order their paths stand, so
@@ -441,7 +441,7 @@ func (b *budgets) deals(share *allowance, q *deckShare, owed, fresh []CardFace, 
 		}
 		// The next card comes from the side the share leaves short, and from
 		// whichever side is left when the other is done.
-		if share.admits.Paying(q.debt, q.begun, debt, begun) {
+		if share.admits.IsPayingDebt(q.debt, q.begun, debt, begun) {
 			if card := owed[q.owed[q.seen]]; b.takes(share, card.ID, false) {
 				out.owed[q.owed[q.seen]] = true
 				q.debt++

@@ -66,10 +66,10 @@ func ErrorCodeBy(err error) (v1.ErrorCode, bool) {
 	}
 }
 
-// Coded is the code an error the schema carries no error code for answers with.
-// A path that does not stay in the vault is the client's to correct; anything
-// else is the vault being out of reach.
-func Coded(err error) connect.Code {
+// GetCode is the code an error the schema carries no error code for answers
+// with. A path that does not stay in the vault is the client's to correct;
+// anything else is the vault being out of reach.
+func GetCode(err error) connect.Code {
 	if errors.Is(err, port.ErrOutside) {
 		return connect.CodeInvalidArgument
 	}

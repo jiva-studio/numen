@@ -102,9 +102,9 @@ func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
 	return nil
 }
 
-// Kept is the vectors this store already holds for the texts given, which is
-// what a real index answers out of what it was paid for.
-func (s *store) Kept(_ context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+// GetKeptVectors is the vectors this store already holds for the texts given,
+// which is what a real index answers out of what it was paid for.
+func (s *store) GetKeptVectors(_ context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
 	if s.kept == nil {
 		return nil, nil
 	}
@@ -129,7 +129,7 @@ func (s *store) Fingerprints(_ context.Context, vaultID domain.VaultID, kind dom
 	return out, nil
 }
 
-func (s *store) Unchunked(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
+func (s *store) GetUnchunkedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
 	return s.paths(vaultID, kind, limit, func(src domain.Source) bool {
 		return !s.cut(vaultID, src.Fingerprint.Path)
 	})
@@ -141,7 +141,7 @@ func (s *store) ByOtherRecipe(_ context.Context, vaultID domain.VaultID, kind do
 	})
 }
 
-func (s *store) Unembedded(_ context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
+func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
 	if limit <= 0 {
 		return nil, "", fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -642,7 +642,7 @@ func (s *store) Reading(_ context.Context, vaultID domain.VaultID, path string) 
 	}, true, nil
 }
 
-func (s *store) Recognised(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
+func (s *store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
 	var out []port.SourceText
 	for path, src := range s.sources[vaultID] {
 		if src.Fingerprint.Kind == kind && src.Producer != "" {

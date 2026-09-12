@@ -37,12 +37,12 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 	// The settings say whether the tools go on a port: an agent named for the
 	// panel puts them there, and so does a person asking for the port itself.
 	// An installation asking for neither opens no port and mints no token.
-	if !cfg.Agent.Serving() {
+	if !cfg.Agent.IsServingTools() {
 		opened.API.Unreachable.Store(unnamed)
 		return func() error { return nil }, nil
 	}
 
-	root, err := filepath.Abs(opened.Showing().Path)
+	root, err := filepath.Abs(opened.GetShownVault().Path)
 	if err != nil {
 		return nil, err
 	}
@@ -88,10 +88,10 @@ func makeDrafting(opened *editor.Installation) claudecode.Drafting {
 	reading := opened.Notes().Read
 	return claudecode.Drafting{
 		Report: func(ctx context.Context, said domain.Edit) {
-			_ = opened.API.Viewing().Editing(ctx, said)
+			_ = opened.API.GetWindow().ShowEdit(ctx, said)
 		},
 		Location: func(ctx context.Context, path, stood string) (int, int, bool) {
-			contents, err := reading.Execute(ctx, opened.Showing(), path)
+			contents, err := reading.Execute(ctx, opened.GetShownVault(), path)
 			if err != nil || contents.Outcome != note.Ok {
 				return 0, 0, false
 			}
@@ -99,8 +99,8 @@ func makeDrafting(opened *editor.Installation) claudecode.Drafting {
 			if len(at) != 1 {
 				return 0, 0, false
 			}
-			return markdown.Counted(contents.Body, at[0].From),
-				markdown.Counted(contents.Body, at[0].To), true
+			return markdown.CountUTF16(contents.Body, at[0].From),
+				markdown.CountUTF16(contents.Body, at[0].To), true
 		},
 	}
 }
@@ -115,14 +115,14 @@ func makeDrafting(opened *editor.Installation) claudecode.Drafting {
 // as the stretch that changed, and a note the person writes is not, because
 // they are looking at the text they typed.
 func agentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
-	notes := opened.Notes().Drawing(opened.API.Viewing())
+	notes := opened.Notes().Drawing(opened.API.GetWindow())
 	cutting := opened.Cards()
 
 	return mcp.Core{
-		Showing:   mcp.ShowingOne(opened.Showing(), root),
+		Showing:   mcp.ShowOneVault(opened.GetShownVault(), root),
 		Readers:   cfg.VaultReaders(),
-		View:      opened.API.Viewing(),
-		Attending: opened.API.Attended,
+		View:      opened.API.GetWindow(),
+		Attending: opened.API.GetOpenTabs,
 
 		// The list is the window's own, and an agent does not erase a vault:
 		// the folder that goes is a person's to ask for.
@@ -138,12 +138,12 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 		Sources: mcp.Sources{
 			Queries:    opened.Index.SourcesKnown(),
 			Recognise:  recogniser(opened),
-			Transcribe: opened.Transcribing(),
-			Derived:    cfg.DerivedStores(),
+			Transcribe: opened.GetTranscriptionWorker(),
+			Derived:    cfg.GetDerivedStores(),
 			Documents:  cfg.TextExtractor(),
 			URLs:       opened.API.Files.URLs,
 			Import:     opened.API.Imports,
-			Changed:    opened.API.Changed,
+			Changed:    opened.API.ReportArtifactChange,
 		},
 
 		Cards: mcp.Cards{
@@ -200,5 +200,5 @@ func opening(opened *editor.Installation, out io.Writer) func(context.Context, d
 // missing is fetched behind whoever asked, and the tool says so. A tool that is
 // not served at all leaves an agent saying the vault cannot do a thing it can.
 func recogniser(opened *editor.Installation) mcp.Recogniser {
-	return opened.Recognising()
+	return opened.GetRecognitionWorker()
 }

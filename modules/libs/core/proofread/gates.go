@@ -11,9 +11,9 @@ import (
 // MaxEditDistance is how far a correction may stand from the line as read.
 const MaxEditDistance = 0.30
 
-// Fixed is the lines a reply puts right, whether any of its runs ran on past
-// the last line the batch carries, and whether the reply answers the question
-// that was asked.
+// GetFixedLines is the lines a reply puts right, whether any of its runs ran on
+// past the last line the batch carries, and whether the reply answers the
+// question that was asked.
 //
 // A sentence carried on past the end of a batch is one the cut after that batch
 // broke, and past is how a caller learns of it.
@@ -28,7 +28,7 @@ const MaxEditDistance = 0.30
 // only puts something wordless in front of it, and as is one standing further
 // than maxDistance from the line as read. A maxDistance at or below zero sets
 // no limit.
-func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok bool) {
+func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, past, ok bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false, false
 	}
@@ -115,7 +115,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 	return out, past, true
 }
 
-// Gathered is what a run of batches put right, keyed by the line, and the
+// GetGatheredLines is what a run of batches put right, keyed by the line, and the
 // batches whose reply ran on past the last line they carry, in the order they
 // were asked. It is given the batches as they were asked and the replies keyed
 // by the number each batch is known by.
@@ -124,7 +124,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 // batch in which the line stands further from the end; where they stand equally
 // far, it is the one from the later batch. A reply the gates refuse puts
 // nothing right, and a line no accepted reply covers is not in the result.
-func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
+func GetGatheredLines(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
 	put := make(map[int]Line)
 	best := make(map[int]int)
 	var past []int
@@ -133,7 +133,7 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[i
 		if !answered {
 			continue
 		}
-		lines, ran, ok := Fixed(batch, reply, maxDistance)
+		lines, ran, ok := GetFixedLines(batch, reply, maxDistance)
 		if !ok {
 			continue
 		}

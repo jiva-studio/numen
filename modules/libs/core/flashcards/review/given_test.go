@@ -51,8 +51,8 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 			t.Errorf("%+v stands at %+v, want %+v", face, got, want)
 		}
 	}
-	for day1, want := range review.Retained(by, day, answers) {
-		if got := given.Retained(by, day)[day1]; got != want {
+	for day1, want := range review.GetRetained(by, day, answers) {
+		if got := given.GetRetained(by, day)[day1]; got != want {
 			t.Errorf("%s kept %+v, want %+v", day1, got, want)
 		}
 	}
@@ -61,8 +61,8 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 			t.Errorf("%s spent %+v, want %+v", path, got, want)
 		}
 	}
-	for face, want := range review.Faced(day, named, answers) {
-		if got := given.Faced(day, named)[face]; got != want {
+	for face, want := range review.GetFaced(day, named, answers) {
+		if got := given.GetFaced(day, named)[face]; got != want {
 			t.Errorf("%+v was faced %v, want %v", face, got, want)
 		}
 	}

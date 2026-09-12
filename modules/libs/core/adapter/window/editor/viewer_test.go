@@ -124,7 +124,7 @@ func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
 	api.show(vault)
 	api.Viewer.open = from.openScan
 	t.Cleanup(api.Viewer.close)
-	return api, api.Serving(http.NotFoundHandler())
+	return api, api.NewHandler(http.NotFoundHandler())
 }
 
 // alone turns off the page drawn ahead, for a test counting what was drawn: a
@@ -142,7 +142,7 @@ func fromTheLibrary(t *testing.T, raw string) (*API, http.Handler) {
 	api.show(vault)
 	api.Viewer.patience = time.Minute
 	t.Cleanup(api.Viewer.close)
-	return api, api.Serving(http.NotFoundHandler())
+	return api, api.NewHandler(http.NotFoundHandler())
 }
 
 // ask puts one request to the window and answers with what came back.

@@ -68,7 +68,7 @@ func read(t *testing.T, cfg container.Config) *container.Index {
 func TestASearchWithNoModelIsAnsweredByTheWords(t *testing.T) {
 	cfg, vault := makeScannedVault(t)
 
-	found, err := cfg.SearchingOver(read(t, cfg).Passages(), nil, nil).
+	found, err := cfg.NewSearchOver(read(t, cfg).Passages(), nil, nil).
 		Execute(t.Context(), vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
@@ -107,7 +107,7 @@ func TestAnIndexNobodyHasBuiltAnswersEmpty(t *testing.T) {
 	vault := domain.Vault{ID: "01ENTROPY", Name: "physics", Path: t.TempDir()}
 
 	db := read(t, cfg)
-	found, err := cfg.SearchingOver(db.Passages(), nil, nil).
+	found, err := cfg.NewSearchOver(db.Passages(), nil, nil).
 		Execute(t.Context(), vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)

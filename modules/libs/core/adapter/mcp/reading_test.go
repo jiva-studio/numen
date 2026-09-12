@@ -261,7 +261,7 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 	cutting := cfg.Cards(queries, db.Links(), levelNothing)
 
 	return mcp.Core{
-		Showing: mcp.ShowingOne(v, v.Path),
+		Showing: mcp.ShowOneVault(v, v.Path),
 		Readers: readers,
 		Notes: mcp.Notes{
 			Queries:       queries,

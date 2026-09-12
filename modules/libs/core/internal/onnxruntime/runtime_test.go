@@ -30,7 +30,7 @@ func TestTheRuntimeFetchedForThisPlatformOpens(t *testing.T) {
 	if err != nil {
 		t.Skip(err)
 	}
-	archive, err := Fetched(t.Context(), getSettings(), found.address())
+	archive, err := Fetch(t.Context(), getSettings(), found.address())
 	if err != nil {
 		t.Skip("nothing fetched on this machine:", err)
 	}

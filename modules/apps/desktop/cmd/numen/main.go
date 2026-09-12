@@ -53,7 +53,7 @@ func main() {
 	flag.Parse()
 
 	if telling {
-		fmt.Println(version.Built("numen"))
+		fmt.Println(version.GetVersionLine("numen"))
 		return
 	}
 
@@ -107,7 +107,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	if err != nil {
 		return err
 	}
-	cfg = cfg.Indexing(chosen.Indexing)
+	cfg = cfg.SetIndexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
 	cfg.Importing = chosen.Importing
 	cfg.InterfaceScale, cfg.TextScale = sizes.interfaceScale, sizes.textScale
@@ -138,7 +138,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		Serve: func() (func() error, error) {
 			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
 		},
-		Showing:      opened.Showing,
+		Showing:      opened.GetShownVault,
 		Handler:      opened.API.Answers,
 		Unreachable:  func(said string) { opened.API.Unreachable.Store(said) },
 		ErrorHandler: func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
@@ -178,7 +178,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	app := application.New(application.Options{
 		Name: "numen",
 		Assets: application.AssetOptions{
-			Handler: opened.API.Serving(pages),
+			Handler: opened.API.NewHandler(pages),
 		},
 		// The application ends when its last window closes.
 		Mac: application.MacOptions{
@@ -199,7 +199,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	})
 
 	window = app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  getWindowTitle(opened.Showing(), opened.API.Attended()),
+		Title:  getWindowTitle(opened.GetShownVault(), opened.API.GetOpenTabs()),
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
@@ -213,7 +213,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
-	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.Showing(), open)) }
+	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetShownVault(), open)) }
 	opened.API.Attends = naming
 
 	// Files let go of over the window, copied into the folder the mark under
@@ -235,7 +235,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// reach it through is stopped and started again around the swap.
 	opened.API.Opens = func(ctx context.Context, v domain.Vault) error {
 		err := reachable.Around(func() error { return opened.Show(ctx, v) })
-		naming(opened.API.Attended())
+		naming(opened.API.GetOpenTabs())
 		return err
 	}
 
@@ -269,7 +269,7 @@ const droppedInto = "data-file-drop-target"
 // the person is looking at. A window with no file in front of it is called
 // after the vault it is showing.
 func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
-	if front, held := open.Fronted(); held && front.Path != "" {
+	if front, held := open.GetFrontTab(); held && front.Path != "" {
 		return "numen — " + path.Base(front.Path)
 	}
 	if v.Name == "" {

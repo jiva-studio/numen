@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// Noted is what parsing each file turned up. The wording is the parser's and is
-// carried through as it was written.
-func (q *Queries) Noted(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
+// GetParseProblems is what parsing each file turned up. The wording is the
+// parser's and is carried through as it was written.
+func (q *Queries) GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
 	return q.getProblems(ctx, vaultID, "problems")
 }
 
@@ -48,11 +48,11 @@ func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, state
 	return out, rows.Err()
 }
 
-// Dangling is every link that reaches nothing.
+// GetDanglingLinks is every link that reaches nothing.
 //
 // The query is the whole answer here: a link with no candidate resolves to
 // nothing whichever priority rule is applied to it.
-func (q *Queries) Dangling(ctx context.Context, vaultID domain.VaultID) ([]domain.ResolvedLink, error) {
+func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil

@@ -174,7 +174,7 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 // now that the file is there. A name no link reaches comes back as it stands,
 // and the repair that writes it changes nothing.
 func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (string, error) {
-	to, err := Addressed(ctx, u.Names, v.ID, path)
+	to, err := GetAddress(ctx, u.Names, v.ID, path)
 	if errors.Is(err, ErrUnaddressable) {
 		return domain.Basename(path), nil
 	}
@@ -262,7 +262,7 @@ func (u Move) repair(
 }
 
 func (u Move) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return Levelled(u.Index(ctx, v, paths), paths...)
+	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
 }
 
 // Into is where a note lands when it is filed under a folder, keeping its name.

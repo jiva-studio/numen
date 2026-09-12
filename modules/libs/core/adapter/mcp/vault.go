@@ -25,8 +25,8 @@ func (c Core) getShownVault() ShownVault {
 	return c.Showing()
 }
 
-// ShowingOne answers with the same vault for as long as the server is served.
-func ShowingOne(v domain.Vault, root string) func() ShownVault {
+// ShowOneVault answers with the same vault for as long as the server is served.
+func ShowOneVault(v domain.Vault, root string) func() ShownVault {
 	return func() ShownVault { return ShownVault{Vault: v, Root: root} }
 }
 

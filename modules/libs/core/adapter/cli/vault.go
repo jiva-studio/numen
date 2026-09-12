@@ -227,7 +227,7 @@ func vaultOpen(out io.Writer, deps Deps, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := vaults.Registry.Opened(v.ID); err != nil {
+	if err := vaults.Registry.RecordOpened(v.ID); err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "the next window opens %s\n  path %s\n", v.Name, v.Path)

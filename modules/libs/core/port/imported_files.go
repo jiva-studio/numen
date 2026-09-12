@@ -28,9 +28,9 @@ type ImportedFile struct {
 // same reason: what arrives is a path on one machine and a content URI on
 // another, and nothing above this knows which.
 type ImportedFiles interface {
-	// Named is what the machine calls the file at a handle. It reads nothing,
+	// GetName is what the machine calls the file at a handle. It reads nothing,
 	// so a handle that cannot be opened still has a name to be refused under.
-	Named(handle string) string
+	GetName(handle string) string
 	// Stat says what is at a handle.
 	Stat(ctx context.Context, handle string) (ImportedFile, error)
 	// List is what a folder holds, each by its own handle, without descending.

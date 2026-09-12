@@ -10,9 +10,9 @@ import (
 // not review.
 const LongestAnswer = time.Minute
 
-// Counted is how long this answer counts for, wherever one is counted: what it
-// carries, held to LongestAnswer.
-func (a Answer) Counted() time.Duration { return min(a.Took, LongestAnswer) }
+// GetCountedTime is how long this answer counts for, wherever one is counted:
+// what it carries, held to LongestAnswer.
+func (a Answer) GetCountedTime() time.Duration { return min(a.Took, LongestAnswer) }
 
 // ShortestAnswer is the shortest a kind of answer is costed at. A card graded
 // before it could be read is a key hit and not review.
@@ -37,29 +37,29 @@ type AnswerCost struct {
 // DefaultCost is what a vault holding no answer times is projected at.
 var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 
-// Costed is how long an answer takes in this history, from the times the
+// GetCost is how long an answer takes in this history, from the times the
 // answers themselves carry. A kind of answer the history holds too few of
 // stands at the default.
 //
-// Production costs a preset at a time, through CostedUnder. This is the same
+// Production costs a preset at a time, through GetCostUnder. This is the same
 // arithmetic over the whole history, which the tests of what a cost is need in
 // order to state a property of the cost without a grouping in front of it.
-func Costed(by Scheduler, answers []Answer) AnswerCost {
+func GetCost(by Scheduler, answers []Answer) AnswerCost {
 	var took answerTimes
 	walkAnswers(by, answers, func(before Schedule, a Answer) {
-		took.holds(by.Spaced(before), a.Counted())
+		took.holds(by.IsSpaced(before), a.GetCountedTime())
 	})
 	return took.cost()
 }
 
-// CostedUnder is how long an answer takes under each preset, by the path the
+// GetCostUnder is how long an answer takes under each preset, by the path the
 // card faces are grouped under.
 //
 // A preset is costed from the answers to its own card faces: a preset of long
 // cards and one of short cards turn the same minutes into different counts. A
 // card face nothing groups is left out, and a kind of answer a preset holds too
 // few of stands at the default.
-func CostedUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) map[string]AnswerCost {
+func GetCostUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) map[string]AnswerCost {
 	held := make(map[string]*answerTimes)
 	walkAnswers(by, answers, func(before Schedule, a Answer) {
 		path, groups := under[a.CardFace]
@@ -71,7 +71,7 @@ func CostedUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) ma
 			one = &answerTimes{}
 			held[path] = one
 		}
-		one.holds(by.Spaced(before), a.Counted())
+		one.holds(by.IsSpaced(before), a.GetCountedTime())
 	})
 
 	out := make(map[string]AnswerCost, len(held))

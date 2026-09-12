@@ -15,9 +15,9 @@ import (
 // measures.
 var ErrTooLarge = errors.New("this is more text than a note is written with")
 
-// Bounded holds a file to the most it may be: its frontmatter and its prose
+// CheckSize holds a file to the most it may be: its frontmatter and its prose
 // together, as they are about to go to disk. Zero holds it to nothing.
-func Bounded(path string, size, bound int) error {
+func CheckSize(path string, size, bound int) error {
 	if bound <= 0 || size <= bound {
 		return nil
 	}
@@ -100,8 +100,8 @@ func (u Write) Execute(
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		// A note rewritten whole is drawn as the stretch that changed, so what
 		// a person watching sees is the change and not the note.
-		was := markdown.Normalised(doc.Body())
-		at, insert := markdown.Differs(was, markdown.Normalised(body))
+		was := markdown.Normalise(doc.Body())
+		at, insert := markdown.Differs(was, markdown.Normalise(body))
 		// Told after the write is settled: a refusal is not a stretch anybody
 		// watching should see change.
 		if err := doc.SetBody(body); err != nil {
@@ -110,8 +110,8 @@ func (u Write) Execute(
 		if at.From != at.To || insert != "" {
 			ends = u.Drawing.begins(ctx, u.Now, domain.Edit{
 				Path: path,
-				From: markdown.Counted(was, at.From),
-				To:   markdown.Counted(was, at.To),
+				From: markdown.CountUTF16(was, at.From),
+				To:   markdown.CountUTF16(was, at.To),
 				Text: insert,
 			})
 		}
@@ -142,7 +142,7 @@ func (s *LastRead) stale(on domain.Fingerprint, prose string) bool {
 	if s == nil {
 		return false
 	}
-	return prose != s.Prose && !on.Unchanged(s.Fingerprint)
+	return prose != s.Prose && !on.IsUnchanged(s.Fingerprint)
 }
 
 // Save puts body in the note at path, and makes the note where there is none.

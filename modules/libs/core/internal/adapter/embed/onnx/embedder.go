@@ -100,7 +100,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		return nil, err
 	}
 	defer options.Destroy()
-	if err := options.SetIntraOpNumThreads(int32(cfg.Threading())); err != nil {
+	if err := options.SetIntraOpNumThreads(int32(cfg.GetThreads())); err != nil {
 		return nil, err
 	}
 	session, err := engine.NewSession(paths.model, options)

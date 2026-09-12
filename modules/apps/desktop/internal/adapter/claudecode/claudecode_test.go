@@ -861,7 +861,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	if session := getResumedSession(argvOf(t, dir, "right-again")); session != "s-right" {
 		t.Errorf("conversation %q went on with %q, want %q", "two", session, "s-right")
 	}
-	if session := claude.Carrying("one"); session != "s-left-again" {
+	if session := claude.GetSession("one"); session != "s-left-again" {
 		t.Errorf("conversation %q is carrying %q, want %q", "one", session, "s-left-again")
 	}
 }
@@ -903,10 +903,10 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	getSteps(t, left)
 	getSteps(t, right)
 
-	if session := claude.Carrying("one"); session != "s-left" {
+	if session := claude.GetSession("one"); session != "s-left" {
 		t.Errorf("conversation %q is carrying %q, want %q", "one", session, "s-left")
 	}
-	if session := claude.Carrying("two"); session != "s-right" {
+	if session := claude.GetSession("two"); session != "s-right" {
 		t.Errorf("conversation %q is carrying %q, want %q", "two", session, "s-right")
 	}
 }
@@ -947,7 +947,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	if session := getResumedSession(argvOf(t, dir, "second")); session != "" {
 		t.Errorf("a question in no conversation went on with %q, want none", session)
 	}
-	if session := claude.Carrying(""); session != "" {
+	if session := claude.GetSession(""); session != "" {
 		t.Errorf("no conversation is carrying %q, want none", session)
 	}
 }
@@ -1011,7 +1011,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	if !slices.Contains(said, "second right") {
 		t.Errorf("the conversation left running said %q, want %q among it", said, "second right")
 	}
-	if session := claude.Carrying("two"); session != "s-right" {
+	if session := claude.GetSession("two"); session != "s-right" {
 		t.Errorf("conversation %q is carrying %q, want %q", "two", session, "s-right")
 	}
 }
@@ -1073,10 +1073,10 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 		t.Fatal(err)
 	}
 
-	if session := claude.Carrying("one"); session != "" {
+	if session := claude.GetSession("one"); session != "" {
 		t.Errorf("a conversation that is over is carrying %q, want none", session)
 	}
-	if session := claude.Carrying("two"); session != "s-right" {
+	if session := claude.GetSession("two"); session != "s-right" {
 		t.Errorf("conversation %q is carrying %q, want %q", "two", session, "s-right")
 	}
 }
@@ -1139,7 +1139,7 @@ sleep 120
 	if !isRunning(answering) {
 		t.Error("the conversation left open stopped answering")
 	}
-	if session := claude.Carrying("two"); session != "s-right" {
+	if session := claude.GetSession("two"); session != "s-right" {
 		t.Errorf("conversation %q is carrying %q, want %q", "two", session, "s-right")
 	}
 }

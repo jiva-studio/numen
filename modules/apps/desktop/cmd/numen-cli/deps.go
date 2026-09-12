@@ -170,8 +170,8 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 			ProofreadReading: func(
 				ctx context.Context, v domain.Vault,
 			) (cli.ProofreadReading, error) {
-				proofread, held, err := cfg.ProofreadingScans().
-					Reading(cfg.VaultReaders(), cfg.DerivedStores())
+				proofread, held, err := cfg.GetScanProofreading().
+					Reading(cfg.VaultReaders(), cfg.GetDerivedStores())
 				if err != nil || !held {
 					return cli.ProofreadReading{}, err
 				}
@@ -192,8 +192,8 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 			ProofreadTranscript: func(
 				ctx context.Context, v domain.Vault,
 			) (cli.ProofreadTranscript, error) {
-				proofread, held, err := cfg.ProofreadingSpeech().
-					Transcript(cfg.VaultReaders(), cfg.DerivedStores())
+				proofread, held, err := cfg.GetSpeechProofreading().
+					Transcript(cfg.VaultReaders(), cfg.GetDerivedStores())
 				if err != nil || !held {
 					return cli.ProofreadTranscript{}, err
 				}
@@ -218,9 +218,9 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				}
 				// Only the provider that embeds questions is opened. Nothing a
 				// search does fills an index.
-				asking, closeAsking, why := cfg.Asking(ctx)
+				asking, closeAsking, why := cfg.OpenQuestionEmbedder(ctx)
 				return cli.Search{
-					Search: cfg.Searching(db, asking, errorHandler),
+					Search: cfg.NewSearch(db, asking, errorHandler),
 					Words:  why,
 					Close: func() error {
 						if closeAsking != nil {

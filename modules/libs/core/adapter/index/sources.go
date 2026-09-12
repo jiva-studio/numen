@@ -60,8 +60,8 @@ func (s queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind 
 	return s.read.Fingerprints(ctx, vaultID, string(kind))
 }
 
-func (s queries) Unchunked(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
-	return s.read.Unchunked(ctx, vaultID, string(kind), limit)
+func (s queries) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
+	return s.read.GetUnchunkedSources(ctx, vaultID, string(kind), limit)
 }
 
 func (s queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
@@ -88,12 +88,12 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 	return s.write.SaveVectors(ctx, out)
 }
 
-func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
+func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
 	from, err := getCursorRow(after)
 	if err != nil {
 		return nil, "", err
 	}
-	found, err := s.read.Unembedded(ctx, vaultID, model.Recipe(), from, limit)
+	found, err := s.read.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), from, limit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -153,9 +153,9 @@ func chunks(in []domain.Chunk) []chunk.Chunk {
 	return out
 }
 
-// Kept is the vectors already made for these texts under this recipe.
-func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
-	return s.read.Kept(ctx, recipe, of)
+// GetKeptVectors is the vectors already made for these texts under this recipe.
+func (s sources) GetKeptVectors(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+	return s.read.GetKeptVectors(ctx, recipe, of)
 }
 
 // Reading is what one source's text came from, and false where the index holds
@@ -172,9 +172,9 @@ func (s queries) Reading(ctx context.Context, vaultID domain.VaultID, path strin
 	}, true, nil
 }
 
-// Recognised is the sources of one kind whose text a producer made.
-func (s queries) Recognised(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
-	found, err := s.read.Recognised(ctx, vaultID, string(kind))
+// GetRecognisedSources is the sources of one kind whose text a producer made.
+func (s queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
+	found, err := s.read.GetRecognisedSources(ctx, vaultID, string(kind))
 	if err != nil {
 		return nil, err
 	}

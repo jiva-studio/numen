@@ -32,7 +32,7 @@ func TestTheDebtTakesItsShareOfEveryPointOfTheRun(t *testing.T) {
 
 		var debt, begun int
 		for taken := 1; taken <= cards; taken++ {
-			if day.Paying(debt, begun, true, true) {
+			if day.IsPayingDebt(debt, begun, true, true) {
 				debt++
 			} else {
 				begun++
@@ -62,7 +62,7 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 
 		var debt, begun int
 		for debt+begun < admits && (debt < owed || begun < fresh) {
-			if day.Paying(debt, begun, debt < owed, begun < fresh) {
+			if day.IsPayingDebt(debt, begun, debt < owed, begun < fresh) {
 				debt++
 			} else {
 				begun++

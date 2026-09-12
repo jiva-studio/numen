@@ -67,11 +67,11 @@ const (
 // rescan, never data, and NORMAL under WAL is what that is worth.
 var synchronous = shipped
 
-// Unsynchronised stops every index this process opens from here on waiting for
-// the disk. WAL, the single writer and the busy timeout stay as they are; only
-// the moment of the flush moves. The grant is obtainable only inside this
+// SetUnsynchronised stops every index this process opens from here on waiting
+// for the disk. WAL, the single writer and the busy timeout stay as they are;
+// only the moment of the flush moves. The grant is obtainable only inside this
 // module.
-func Unsynchronised(testonly.Grant) { synchronous = unsynchronised }
+func SetUnsynchronised(testonly.Grant) { synchronous = unsynchronised }
 
 // AsShipped puts back the setting a person's index runs with, for a measurement
 // that has to pay what the application pays.

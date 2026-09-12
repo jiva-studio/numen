@@ -16,7 +16,7 @@ import (
 
 // Nothing a test binary writes outlives the run, so no index it opens waits for
 // the disk.
-func init() { index.Unsynchronised(testonly.Granted()) }
+func init() { index.SetUnsynchronised(testonly.NewGrant()) }
 
 var migrated = testsupport.NewTemplate(func(ctx context.Context, path string) error {
 	db, err := index.Open(ctx, path)
@@ -31,4 +31,4 @@ func Path(t testing.TB) string { return migrated.Path(t) }
 
 // AsShipped makes every index this binary opens from here on flush the way a
 // person's does. A benchmark and the load test pay what the application pays.
-func AsShipped() { index.AsShipped(testonly.Granted()) }
+func AsShipped() { index.AsShipped(testonly.NewGrant()) }

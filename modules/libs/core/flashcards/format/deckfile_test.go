@@ -838,7 +838,7 @@ func cardRun(t *testing.T, body string, card domain.CardID) string {
 // getCardHeading is the heading line of the card of a mark, without its hashes.
 func getCardHeading(t *testing.T, body string, card domain.CardID) string {
 	t.Helper()
-	for _, line := range strings.Split(markdown.Normalised(body), "\n") {
+	for _, line := range strings.Split(markdown.Normalise(body), "\n") {
 		if strings.HasPrefix(line, "## ") && strings.HasSuffix(line, "^"+string(card)) {
 			return strings.TrimPrefix(line, "## ")
 		}

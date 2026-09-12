@@ -140,7 +140,7 @@ func (u Extract) discover(
 		}
 		res.Seen++
 		found[ref.Path] = true
-		if previous, ok := held[ref.Path]; ok && !u.RebuildIndex && previous.Unchanged(ref) {
+		if previous, ok := held[ref.Path]; ok && !u.RebuildIndex && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			return nil
 		}
@@ -195,7 +195,7 @@ func (u Extract) readSourceTexts(
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.Queries.Recognised(ctx, v.ID, kind)
+	held, err := u.Queries.GetRecognisedSources(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -228,7 +228,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	stood := make(map[port.SourceText]bool)
 	named := make(map[string]bool)
 	for _, kind := range u.kinds() {
-		held, err := u.Queries.Recognised(ctx, v.ID, kind)
+		held, err := u.Queries.GetRecognisedSources(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -268,7 +268,7 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 		return nil
 	}
 	for _, kind := range u.kinds() {
-		recognised, err := u.Queries.Recognised(ctx, v.ID, kind)
+		recognised, err := u.Queries.GetRecognisedSources(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -322,7 +322,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	for _, kind := range u.kinds() {
 		questions = append(questions,
 			func(ctx context.Context) ([]string, error) {
-				return u.Queries.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
+				return u.Queries.GetUnchunkedSources(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
 				return u.Queries.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
@@ -523,7 +523,7 @@ func recipes(s chunking.Sizes) []string {
 
 // sizes are the sizes the cut works to, which is what the recipe has to name:
 // a recipe describing anything else describes bytes that were never written.
-func (u Extract) sizes() chunking.Sizes { return u.Sizes.Resolved() }
+func (u Extract) sizes() chunking.Sizes { return u.Sizes.Resolve() }
 
 func (u Extract) progress(res ExtractResult) {
 	if u.OnProgress != nil {
@@ -544,7 +544,7 @@ func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, h
 		if u.Derived == nil {
 			return &text.Document{}, "", nil
 		}
-		words, from, err := text.Downloaded(ctx, u.Derived, hash)
+		words, from, err := text.ReadDownloaded(ctx, u.Derived, hash)
 		if err != nil {
 			return nil, "", err
 		}
@@ -557,7 +557,7 @@ func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, h
 			case err == nil:
 				// The parts of a reading bound the chunks it is cut into, the
 				// way an outline bounds a book's.
-				doc, err := text.Composed(ctx, u.Derived, from, hash, found)
+				doc, err := text.ReadComposed(ctx, u.Derived, from, hash, found)
 				if err != nil {
 					return nil, "", err
 				}

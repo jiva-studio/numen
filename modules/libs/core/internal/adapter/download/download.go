@@ -41,7 +41,7 @@ type provider interface {
 	// in turn, and the first that says so is the one that answers.
 	Supports(at domain.URL) bool
 
-	Downloading(at domain.URL) port.DownloadModel
+	GetDownloadModel(at domain.URL) port.DownloadModel
 	Metadata(ctx context.Context, at domain.URL) (port.Metadata, error)
 	Text(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error)
 }
@@ -77,14 +77,14 @@ func (f *Downloader) providerFor(at domain.URL) (provider, error) {
 	return nil, fmt.Errorf("%s: %w", string(at), ErrNoTool)
 }
 
-// Downloading is what this address is downloaded by, and nothing where nothing
-// reaches it.
-func (f *Downloader) Downloading(at domain.URL) port.DownloadModel {
+// GetDownloadModel is what this address is downloaded by, and nothing where
+// nothing reaches it.
+func (f *Downloader) GetDownloadModel(at domain.URL) port.DownloadModel {
 	by, err := f.providerFor(at)
 	if err != nil {
 		return port.DownloadModel{}
 	}
-	return by.Downloading(at)
+	return by.GetDownloadModel(at)
 }
 
 // Metadata is what stands at the address, taking none of it.

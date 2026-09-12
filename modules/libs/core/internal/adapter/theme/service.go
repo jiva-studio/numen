@@ -75,7 +75,7 @@ func (s *Service) ListThemes(
 	_ *connect.Request[v1.ListThemesRequest],
 ) (*connect.Response[v1.ListThemesResponse], error) {
 	worn := s.getAppearance()
-	applied, missing := s.Catalogue.Applied(worn.ThemeName)
+	applied, missing := s.Catalogue.GetApplied(worn.ThemeName)
 	if missing != "" {
 		s.say(fmt.Sprintf("there is no theme called %s, so the window wears %s", missing, applied))
 	}
@@ -166,7 +166,7 @@ func (s *Service) WatchThemes(
 	_ *connect.Request[v1.WatchThemesRequest],
 	stream *connect.ServerStream[v1.WatchThemesResponse],
 ) error {
-	changed, err := s.Catalogue.Watching(ctx, s.Hold)
+	changed, err := s.Catalogue.Watch(ctx, s.Hold)
 	if err != nil {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}

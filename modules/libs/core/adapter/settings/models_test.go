@@ -16,7 +16,7 @@ import (
 
 // fetches are the adapters that would fetch a model, as the composition root
 // hands them in: a row says what is on this machine because they looked.
-var fetches = Fetches{Embedding: embed.Fetched, Recognising: recognition.Fetched}
+var fetches = Fetches{Embedding: embed.IsFetched, Recognising: recognition.IsFetched}
 
 // A model is nothing to the window unless it says where it is read from and
 // what choosing it writes.
@@ -203,7 +203,7 @@ func setModelDir(t *testing.T, held Config, dir string) Config {
 		t.Fatal("these settings run no model on this machine")
 	}
 	local.Dir = dir
-	held.Indexing.Embedding.Indexing = held.Indexing.Embedding.Indexing.Running(local)
+	held.Indexing.Embedding.Indexing = held.Indexing.Embedding.Indexing.SetLocal(local)
 	return held
 }
 

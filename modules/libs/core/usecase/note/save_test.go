@@ -629,7 +629,7 @@ func TestARefreshTellsAFileTheVaultLeavesAloneFromANoteThatVanished(t *testing.T
 	if len(res.Unreadable) != 0 {
 		t.Errorf("nothing here could not be read: %v", res.Unreadable)
 	}
-	if slices.Contains(res.Changed(), "photo.png") {
+	if slices.Contains(res.GetChangedPaths(), "photo.png") {
 		t.Error("a file that was never a note is reported as something to look at again")
 	}
 }

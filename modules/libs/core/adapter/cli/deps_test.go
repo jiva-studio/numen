@@ -124,10 +124,10 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 // oneVault is a list holding a single vault, answering nothing about any other.
 type oneVault struct{ held domain.Vault }
 
-func (o oneVault) All() ([]domain.Vault, error) { return []domain.Vault{o.held}, nil }
-func (oneVault) Save(domain.Vault) error        { return nil }
-func (oneVault) Remove(domain.VaultID) error    { return nil }
-func (oneVault) Opened(domain.VaultID) error    { return nil }
+func (o oneVault) All() ([]domain.Vault, error)    { return []domain.Vault{o.held}, nil }
+func (oneVault) Save(domain.Vault) error           { return nil }
+func (oneVault) Remove(domain.VaultID) error       { return nil }
+func (oneVault) RecordOpened(domain.VaultID) error { return nil }
 
 func (o oneVault) Find(nameOrPath string) (domain.Vault, bool, error) {
 	if nameOrPath == o.held.Name {

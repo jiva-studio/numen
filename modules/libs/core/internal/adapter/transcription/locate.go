@@ -104,7 +104,7 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 	if !onnxruntime.IsAddress(name) {
 		return "", fmt.Errorf("the %s %q is not beside the application, and is not somewhere to fetch it from", kind, name)
 	}
-	found, err := onnxruntime.Fetched(ctx, cfg.settings(), name)
+	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name)
 	if err != nil {
 		return "", fmt.Errorf("the %s: %w", kind, err)
 	}

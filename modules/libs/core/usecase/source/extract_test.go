@@ -180,7 +180,7 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 // every run.
 func TestTheRecipeNamesTheSizesTheCutKeptTo(t *testing.T) {
 	asked := chunking.Sizes{Large: 100, LargeOverlap: 100, Small: 20, SmallOverlap: 20}
-	kept := asked.Resolved()
+	kept := asked.Resolve()
 
 	if kept.LargeOverlap != 99 || kept.SmallOverlap != 19 {
 		t.Fatalf("the cut keeps to %+v", kept)

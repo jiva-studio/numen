@@ -22,21 +22,21 @@ import (
 // fails and not a field that quietly carries the unspecified value.
 
 func TestEverySearchModeIsRead(t *testing.T) {
-	testsupport.Handled(t, func(mode v1.SearchMode) bool {
+	testsupport.CheckHandled(t, func(mode v1.SearchMode) bool {
 		_, named := modeOf(mode)
 		return named
 	})
 }
 
 func TestEveryRoleIsRead(t *testing.T) {
-	testsupport.Handled(t, func(role v1.Role) bool {
+	testsupport.CheckHandled(t, func(role v1.Role) bool {
 		_, named := roleOf(role)
 		return named
 	})
 }
 
 func TestEveryFaultIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.Fault]format.Fault{
+	testsupport.CheckProduced(t, map[v1.Fault]format.Fault{
 		v1.Fault_FAULT_FIELD_DECLARED_TWICE:   format.FaultTwoFields,
 		v1.Fault_FAULT_STENCIL_WITHOUT_FIELDS: format.FaultNoFields,
 		v1.Fault_FAULT_FACE_MISSING_A_SIDE:    format.FaultFaceSide,
@@ -53,7 +53,7 @@ func TestEveryFaultIsWrittenFromOne(t *testing.T) {
 }
 
 func TestEverySeatIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.Seat]domain.Relation{
+	testsupport.CheckProduced(t, map[v1.Seat]domain.Relation{
 		v1.Seat_SEAT_PARENT:  domain.SeatParent,
 		v1.Seat_SEAT_CHILD:   domain.SeatChild,
 		v1.Seat_SEAT_JUMP:    domain.SeatJump,
@@ -62,7 +62,7 @@ func TestEverySeatIsWrittenFromOne(t *testing.T) {
 }
 
 func TestEveryNoteTypeIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.NoteType]domain.NoteType{
+	testsupport.CheckProduced(t, map[v1.NoteType]domain.NoteType{
 		v1.NoteType_NOTE_TYPE_DECK:    domain.TypeDeck,
 		v1.NoteType_NOTE_TYPE_STENCIL: domain.TypeStencil,
 		v1.NoteType_NOTE_TYPE_PRESET:  domain.TypePreset,
@@ -70,7 +70,7 @@ func TestEveryNoteTypeIsWrittenFromOne(t *testing.T) {
 }
 
 func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.SourceKind]domain.SourceKind{
+	testsupport.CheckProduced(t, map[v1.SourceKind]domain.SourceKind{
 		v1.SourceKind_SOURCE_KIND_NOTE:      domain.KindNote,
 		v1.SourceKind_SOURCE_KIND_BOOK:      domain.KindBook,
 		v1.SourceKind_SOURCE_KIND_RECORDING: domain.KindRecording,
@@ -79,21 +79,21 @@ func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
 }
 
 func TestEveryBookFormatIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.BookFormat]string{
+	testsupport.CheckProduced(t, map[v1.BookFormat]string{
 		v1.BookFormat_BOOK_FORMAT_EPUB: "library/a.epub",
 		v1.BookFormat_BOOK_FORMAT_PDF:  "library/a.pdf",
 	}, func(path string) v1.BookFormat { return formatOf(path, domain.KindBook) })
 }
 
 func TestEveryNamingIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.NamedBy]note.NameSource{
+	testsupport.CheckProduced(t, map[v1.NamedBy]note.NameSource{
 		v1.NamedBy_NAMED_BY_FRONTMATTER: note.ByFrontmatter,
 		v1.NamedBy_NAMED_BY_FILENAME:    note.ByFilename,
 	}, newNamedBy)
 }
 
 func TestEveryPresenceIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.Presence]port.Presence{
+	testsupport.CheckProduced(t, map[v1.Presence]port.Presence{
 		v1.Presence_PRESENCE_PRESENT:          port.Present,
 		v1.Presence_PRESENCE_NOT_FETCHED:      port.NotFetched,
 		v1.Presence_PRESENCE_NOTHING_TO_FETCH: port.NothingToFetch,
@@ -101,7 +101,7 @@ func TestEveryPresenceIsWrittenFromOne(t *testing.T) {
 }
 
 func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.VaultsErrorCode]error{
+	testsupport.CheckProduced(t, map[v1.VaultsErrorCode]error{
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: vaults.ErrUnreadable,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       vaults.ErrCopy,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   domain.ErrOverlaps,
@@ -121,7 +121,7 @@ func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {
 // and what a run just set going is. Each schema value names the call that
 // writes it.
 func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.State]func() v1.State{
+	testsupport.CheckProduced(t, map[v1.State]func() v1.State{
 		v1.State_STATE_NONE:    getStateAt(reached{stands: untouched}),
 		v1.State_STATE_DONE:    getStateAt(reached{stands: done}),
 		v1.State_STATE_RUNNING: getStateAt(reached{stands: under}),
@@ -135,11 +135,11 @@ func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
 // Every artifact the schema names stands under a name in the store, and is
 // carried by a file of some kind.
 func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
-	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
+	testsupport.CheckHandled(t, func(of v1.ArtifactKind) bool {
 		id, named := getArtifactID(of)
 		return named && id != ""
 	})
-	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
+	testsupport.CheckHandled(t, func(of v1.ArtifactKind) bool {
 		// A url carries what was fetched from the address it holds, and which
 		// of the two texts that is follows from what fetched it.
 		return slices.Contains(getArtifactKinds(domain.KindBook, ""), of) ||

@@ -78,15 +78,15 @@ func TestADocumentInLineOutlivesTheContext(t *testing.T) {
 	w.mu.Unlock()
 	w.drain(over)
 
-	if w.Waiting() != 1 {
-		t.Errorf("%d documents are in line after the context ended", w.Waiting())
+	if w.CountWaiting() != 1 {
+		t.Errorf("%d documents are in line after the context ended", w.CountWaiting())
 	}
 	if w.countOpens() != 0 {
 		t.Errorf("a recogniser was opened %d times after the context ended", w.countOpens())
 	}
 	// The run that gave up the line stops the running, so nothing is left
 	// standing over a line it will never come back to.
-	if w.Running() {
+	if w.IsRunning() {
 		t.Error("a run that gave up the line is still the one running")
 	}
 }
@@ -160,7 +160,7 @@ func TestADocumentNamedAsTheLineEmptiesIsRead(t *testing.T) {
 	if w.countOpens() != 3 {
 		t.Errorf("a recogniser was opened %d times", w.countOpens())
 	}
-	if w.Waiting() != 0 {
-		t.Errorf("%d documents were left in line", w.Waiting())
+	if w.CountWaiting() != 0 {
+		t.Errorf("%d documents were left in line", w.CountWaiting())
 	}
 }

@@ -295,7 +295,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 	}
 	t.Cleanup(func() { again.Close() })
 
-	if got := again.Showing(); got.ID != f.second.ID {
+	if got := again.GetShownVault(); got.ID != f.second.ID {
 		t.Errorf("the window opened on %s, want the vault it showed last", got.Name)
 	}
 }
@@ -456,7 +456,7 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 	case <-time.After(30 * time.Second):
 		t.Fatal("a page that says nothing held the swap with nothing to wait for")
 	}
-	if got := f.opened.Showing(); got.ID != f.second.ID {
+	if got := f.opened.GetShownVault(); got.ID != f.second.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
 }
@@ -568,7 +568,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the page never wrote what it holds")
 	}
-	if got := f.opened.Showing(); got.ID != f.first.ID {
+	if got := f.opened.GetShownVault(); got.ID != f.first.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
 }

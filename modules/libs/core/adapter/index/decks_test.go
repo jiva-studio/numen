@@ -72,7 +72,7 @@ func TestADeckContributesNoChunkAndNoVector(t *testing.T) {
 	if got := chunksOfNote(t, db, first, "decks/mammals.md"); got != 0 {
 		t.Errorf("a deck holds %d chunks, want none", got)
 	}
-	owing, err := db.ChunkQueries().Unembedded(t.Context(), first.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestAStencilContributesNoChunkAndNoVector(t *testing.T) {
 	if got := chunksOfNote(t, db, first, "stencils/term.md"); got != 0 {
 		t.Errorf("a stencil holds %d chunks, want none", got)
 	}
-	owing, err := db.ChunkQueries().Unembedded(t.Context(), first.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

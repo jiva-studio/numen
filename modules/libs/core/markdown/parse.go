@@ -65,7 +65,7 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 		case !isText:
 			problems = append(problems, "type is not text")
 		case strings.TrimSpace(name) == "":
-		case domain.KnownNoteType(domain.NoteType(name)):
+		case domain.IsKnownNoteType(domain.NoteType(name)):
 			n.Type = domain.NoteType(name)
 		default:
 			problems = append(problems, "type "+name+" is not one of "+describeNoteTypes())

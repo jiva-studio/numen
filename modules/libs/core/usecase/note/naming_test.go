@@ -30,7 +30,7 @@ func TestWhatARenameBringsIntoLine(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			moves, writes := c.sync.Renaming(c.by)
+			moves, writes := c.sync.GetRenameEffects(c.by)
 			if moves != c.moves {
 				t.Errorf("the file moves: %v", moves)
 			}

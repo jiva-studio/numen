@@ -69,7 +69,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	}
 
 	found, err := opened.Index.Passages().Lexical(
-		t.Context(), opened.Showing().ID, "tetragrammaton",
+		t.Context(), opened.GetShownVault().ID, "tetragrammaton",
 		[]domain.SourceKind{domain.KindNote}, 10, false,
 	)
 	if err != nil {

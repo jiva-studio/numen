@@ -36,9 +36,9 @@ type NoteQueries interface {
 	// the vault holds none.
 	Opening(ctx context.Context, vaultID domain.VaultID) (domain.NoteRef, bool, error)
 
-	// Named is the paths of every note filed under one name. More than one is
-	// what makes a link written by that name ambiguous.
-	Named(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
+	// GetNamedPaths is the paths of every note filed under one name. More than
+	// one is what makes a link written by that name ambiguous.
+	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 
 	// Stencils is every stencil one vault holds, by path. A card names the
 	// stencil it is cut by, and this is the list those names are picked from.

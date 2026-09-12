@@ -44,16 +44,16 @@ type WaitingEmbedder interface {
 	Wait(ctx context.Context) error
 }
 
-// Arriving is an embedder being loaded somewhere else, under the identity the
-// settings give it.
-func Arriving(is port.EmbeddingModel) *Embedder {
+// NewArriving is an embedder being loaded somewhere else, under the identity
+// the settings give it.
+func NewArriving(is port.EmbeddingModel) *Embedder {
 	return &Embedder{model: is, ready: make(chan struct{})}
 }
 
-// Landed is the model turning up, or the reason it never will. It is the first
-// of these that counts, and a model arriving after the wait is over is let go
-// of where it stands.
-func (e *Embedder) Landed(held port.Embedder, why error) {
+// ReportArrival is the model turning up, or the reason it never will. It is the
+// first of these that counts, and a model arriving after the wait is over is
+// let go of where it stands.
+func (e *Embedder) ReportArrival(held port.Embedder, why error) {
 	e.mu.Lock()
 	late := e.settled
 	if !late {
@@ -122,13 +122,13 @@ func (e *Embedder) Close() error {
 	return letGo(held)
 }
 
-// Filling waits for the model. Nothing is owed to anybody watching a pass over
-// a vault.
-func (e *Embedder) Filling() port.Embedder { return waitingEmbedder{e} }
+// GetWaitingEmbedder waits for the model. Nothing is owed to anybody watching a
+// pass over a vault.
+func (e *Embedder) GetWaitingEmbedder() port.Embedder { return waitingEmbedder{e} }
 
-// Asking does not wait. A search short of the half that asks by meaning is a
-// search the words answer.
-func (e *Embedder) Asking() port.Embedder { return impatient{e} }
+// GetImpatientEmbedder does not wait. A search short of the half that asks by
+// meaning is a search the words answer.
+func (e *Embedder) GetImpatientEmbedder() port.Embedder { return impatient{e} }
 
 // embed is what the model answers with, once it is here.
 func (e *Embedder) embed(ctx context.Context, texts []string) ([][]float32, error) {

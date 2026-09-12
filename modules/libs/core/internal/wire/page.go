@@ -22,9 +22,9 @@ const OpensAt = "index.html"
 // parses to none of them empty, and a window is asked for under all three.
 var OpenedAt = []string{"", "/", "/" + OpensAt}
 
-// Built is the interface as it sits inside a binary. A binary built without one
-// says so, in the words of the person who has to fix it.
-func Built(pages fs.FS) (fs.FS, error) {
+// GetInterface is the interface as it sits inside a binary. A binary built
+// without one says so, in the words of the person who has to fix it.
+func GetInterface(pages fs.FS) (fs.FS, error) {
 	missing := fmt.Errorf("no interface in this binary — run: make interface")
 	built, err := fs.Sub(pages, "pages/app")
 	if err != nil {
@@ -36,9 +36,9 @@ func Built(pages fs.FS) (fs.FS, error) {
 	return built, nil
 }
 
-// Serving is the built interface as a file server.
-func Serving(pages fs.FS) (http.Handler, error) {
-	built, err := Built(pages)
+// NewInterfaceServer is the built interface as a file server.
+func NewInterfaceServer(pages fs.FS) (http.Handler, error) {
+	built, err := GetInterface(pages)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func Page(
 	themes numenv1connect.ThemeServiceHandler,
 	files http.Handler,
 ) {
-	built, err := Built(pages)
+	built, err := GetInterface(pages)
 	if err != nil {
 		files.ServeHTTP(w, r)
 		return

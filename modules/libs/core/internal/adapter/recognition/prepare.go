@@ -23,9 +23,9 @@ func init() {
 // prepared says whether the runtime a page is read through was made.
 var prepared atomic.Bool
 
-// Prepared says whether this process made the runtime before it made anything
+// IsPrepared says whether this process made the runtime before it made anything
 // else.
-func Prepared() bool { return prepared.Load() }
+func IsPrepared() bool { return prepared.Load() }
 
 // Prepare makes the runtime a page is read through, and is called before a
 // window is. Every page this process reads is read through it, and one made

@@ -51,18 +51,18 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			api := &API{
 				Registry: registry{},
 				Now:      time.Now,
-				Window:   Watching(task.New()),
+				Window:   NewWindow(task.New()),
 			}
 			api.Answers(testsupport.SilentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()
 			cards, decks := numenv1connect.NewFlashcardsServiceHandler(api)
-			mux.Handle(cards, testsupport.Rooted(decks, entered, returned))
+			mux.Handle(cards, testsupport.NewRootedHandler(decks, entered, returned))
 			agent, agents := numenv1connect.NewAgentServiceHandler(api)
-			mux.Handle(agent, testsupport.Rooted(agents, entered, returned))
+			mux.Handle(agent, testsupport.NewRootedHandler(agents, entered, returned))
 			drawn, itself := numenv1connect.NewWindowServiceHandler(api.Window)
-			mux.Handle(drawn, testsupport.Rooted(itself, entered, returned))
+			mux.Handle(drawn, testsupport.NewRootedHandler(itself, entered, returned))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 

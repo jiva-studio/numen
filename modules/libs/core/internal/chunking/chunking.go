@@ -118,7 +118,7 @@ func (c Chunk) middle() int { return c.Start + c.Length/2 }
 // Cut returns the large chunks of the text, each carrying the small chunks
 // inside it.
 func Cut(text string, parts []PartStart, sizes Sizes, reads Legibility) []Chunk {
-	s, l := sizes.Resolved(), reads.resolve()
+	s, l := sizes.Resolve(), reads.resolve()
 	divisions := divisionsOf(text, parts)
 
 	if s.Large == Whole {
@@ -314,9 +314,9 @@ func extent(words []word, at [2]int, location string) Chunk {
 	return Chunk{Start: start, Length: end - start, Location: location}
 }
 
-// Resolved fills in what configuration left unset and keeps every size usable.
+// Resolve fills in what configuration left unset and keeps every size usable.
 // It is the sizes Cut works to, and what a caller names them by.
-func (s Sizes) Resolved() Sizes {
+func (s Sizes) Resolve() Sizes {
 	if s.Large == 0 {
 		s.Large = DefaultLarge
 	}

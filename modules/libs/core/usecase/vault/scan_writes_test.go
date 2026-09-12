@@ -39,7 +39,7 @@ func (g *groupedWrites) Remove(context.Context, domain.VaultID, []string) error 
 
 type countedMeasurements struct{ n int }
 
-func (c *countedMeasurements) Changed(context.Context) error { c.n++; return nil }
+func (c *countedMeasurements) ReportChanges(context.Context) error { c.n++; return nil }
 
 // TestNotesAreWrittenInGroups. Nothing about a scan's result says how many
 // writes it took, so that is what is asserted.

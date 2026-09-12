@@ -132,14 +132,14 @@ func (f *StencilFile) AddFace(face FaceTemplate) error {
 // nothing.
 func formatFace(face FaceTemplate) string {
 	blocks := []string{headingLine(2, face.Name)}
-	if lead := trimBlankLines(markdown.Normalised(face.Preamble)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalise(face.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	for _, side := range []struct{ heading, text string }{
 		{frontHeading, face.Front},
 		{backHeading, face.Back},
 	} {
-		text := trimBlankLines(markdown.Normalised(side.text))
+		text := trimBlankLines(markdown.Normalise(side.text))
 		if text == "" {
 			continue
 		}

@@ -215,7 +215,7 @@ func (r *PresetReads) getSchedulingPreset(
 	}
 
 	first := at[0]
-	by := first.Target.Written()
+	by := first.Target.GetWritten()
 	out := Default()
 	if first.To != "" {
 		by = first.To
@@ -246,7 +246,7 @@ func (r *PresetReads) roleless(ctx context.Context, v domain.Vault, deck string)
 		return nil, nil
 	}
 	if r.said == nil {
-		noted, err := r.Problems.Noted(ctx, v.ID)
+		noted, err := r.Problems.GetParseProblems(ctx, v.ID)
 		if err != nil {
 			return nil, fmt.Errorf("what was noted in %s: %w", v.ID, err)
 		}

@@ -187,7 +187,7 @@ func TestAnOffsetIsCountedTheWayAClientCountsText(t *testing.T) {
 		"past the end of it": {"сказал", 999, 6},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := Counted(c.text, c.at); got != c.want {
+			if got := CountUTF16(c.text, c.at); got != c.want {
 				t.Errorf("counted %d, wanted %d", got, c.want)
 			}
 		})

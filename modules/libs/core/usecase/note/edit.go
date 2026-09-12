@@ -22,10 +22,10 @@ var ErrNoNote = errors.New("the vault holds no note at this path")
 // path is levelled again at the next scan.
 var ErrUnlevelled = errors.New("the vault was written and the index was not brought level with it")
 
-// Levelled is what bringing the index up to date came to, said so that a caller
-// can tell it from a write that never landed. The paths are the ones the index
-// was asked about.
-func Levelled(err error, paths ...string) error {
+// WrapUnlevelled is what bringing the index up to date came to, said so that a
+// caller can tell it from a write that never landed. The paths are the ones the
+// index was asked about.
+func WrapUnlevelled(err error, paths ...string) error {
 	if err == nil {
 		return nil
 	}
@@ -84,7 +84,7 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 	}
 	// The file is on disk, so the fingerprint stands beside whatever the
 	// levelling came to and a caller can tell the two apart.
-	return written, Levelled(e.Index(ctx, v, []string{path}), path)
+	return written, WrapUnlevelled(e.Index(ctx, v, []string{path}), path)
 }
 
 // splice is the read, the change and the write, under this vault's write lock
@@ -141,7 +141,7 @@ func (e Edit) splice(
 
 	// A note that is not there cannot hold anything the caller has not read, so
 	// it is made.
-	if looked == nil && e.Seen.stale(on, markdown.Normalised(doc.Body())) {
+	if looked == nil && e.Seen.stale(on, markdown.Normalise(doc.Body())) {
 		return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrStale)
 	}
 
@@ -167,7 +167,7 @@ func (e Edit) splice(
 	// Every change to a note's contents comes through here, so the size it is
 	// written within is asked once, of the file the change came to.
 	content := doc.Bytes()
-	if err := Bounded(path, len(content), e.Bound); err != nil {
+	if err := CheckSize(path, len(content), e.Bound); err != nil {
 		return domain.Fingerprint{}, err
 	}
 

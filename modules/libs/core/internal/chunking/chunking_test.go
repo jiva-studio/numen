@@ -255,7 +255,7 @@ func TestCutNothing(t *testing.T) {
 // is in, and never crosses one.
 func assertCutRules(t *testing.T, text string, parts []PartStart, sizes Sizes, out []Chunk) {
 	t.Helper()
-	s := sizes.Resolved()
+	s := sizes.Resolve()
 	bounds := boundaries(text, parts)
 
 	ascending := -1

@@ -78,7 +78,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 			break
 		}
 	}
-	d.Preamble = markdown.Normalised(string(body[:first]))
+	d.Preamble = markdown.Normalise(string(body[:first]))
 
 	read := 0
 	under := NoSection
@@ -160,7 +160,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 
 	d.Problems = append(d.Problems, twoMarks(d.Cards)...)
 	if len(d.Cards) > 0 || len(d.Sections) > 0 {
-		d.Tail = markdown.Normalised(string(body[read:]))
+		d.Tail = markdown.Normalise(string(body[read:]))
 	}
 	return d, spans
 }

@@ -506,7 +506,7 @@ func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 		t.Errorf("local model is %q", local.Name)
 	}
 	// A question is asked the way the vault was indexed.
-	if got := e.Asking(); got.Use != embed.UseService {
+	if got := e.GetQueryProvider(); got.Use != embed.UseService {
 		t.Errorf("questions are embedded by %+v", got)
 	}
 }
@@ -542,9 +542,9 @@ func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
 	if !byService || indexing.Name != "baai/bge-m3" {
 		t.Errorf("indexed by %+v", e.Indexing)
 	}
-	asking, here := e.Asking().Local()
+	asking, here := e.GetQueryProvider().Local()
 	if !here || asking.Name != "BAAI/bge-m3" {
-		t.Errorf("asked by %+v", e.Asking())
+		t.Errorf("asked by %+v", e.GetQueryProvider())
 	}
 	// The section nobody wrote about keeps its default.
 	if indexing.BatchCharacters != asService(embed.Defaults().Indexing).BatchCharacters {
@@ -561,7 +561,7 @@ func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
 	if got := cfg.Indexing.Embedding.Indexing.Use; got != "" {
 		t.Errorf("uses %q", got)
 	}
-	if got := cfg.Indexing.Embedding.Asking().Use; got != "" {
+	if got := cfg.Indexing.Embedding.GetQueryProvider().Use; got != "" {
 		t.Errorf("questions are embedded by %q", got)
 	}
 }
@@ -697,7 +697,7 @@ func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Proofreading.Named() {
+	if cfg.Indexing.Proofreading.HasProfiles() {
 		t.Errorf("proofreads with %+v", cfg.Indexing.Proofreading)
 	}
 }
@@ -709,7 +709,7 @@ func TestAProofreadingProfileWithoutAModelNamesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Proofreading.Profiles["openrouter"].Named() {
+	if cfg.Indexing.Proofreading.Profiles["openrouter"].HasModel() {
 		t.Error("proofreads with a model nobody named")
 	}
 }
@@ -725,12 +725,12 @@ func TestEachKindOfProofreadingProfileIsRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	read := cfg.Indexing.Proofreading
-	if !read.Named() || len(read.Profiles) != 2 {
+	if !read.HasProfiles() || len(read.Profiles) != 2 {
 		t.Fatalf("got %+v", read)
 	}
 
 	service := read.Profiles["openrouter"]
-	if !service.Named() || service.Name != "google/gemini-2.5-flash" || service.BatchSize != 25 {
+	if !service.HasModel() || service.Name != "google/gemini-2.5-flash" || service.BatchSize != 25 {
 		t.Errorf("the service profile is %+v", service)
 	}
 	if service.BaseURL != proofreading.ServiceDefaults().BaseURL {
@@ -738,7 +738,7 @@ func TestEachKindOfProofreadingProfileIsRead(t *testing.T) {
 	}
 
 	agent := read.Profiles["agent"]
-	if !agent.Named() || agent.Model != "haiku" || agent.BatchSize != 20 || agent.Overlap != 2 {
+	if !agent.HasModel() || agent.Model != "haiku" || agent.BatchSize != 20 || agent.Overlap != 2 {
 		t.Errorf("the agent profile is %+v", agent)
 	}
 }

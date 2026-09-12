@@ -8,12 +8,12 @@ import (
 	"github.com/gomlx/go-huggingface/hub"
 )
 
-// Fetched says whether this model's files are on this machine: in the folder
+// IsFetched says whether this model's files are on this machine: in the folder
 // the configuration names, or in the repository's place in the download cache.
 //
 // It stats what a fetch would have written, and opens, reaches and creates
 // nothing.
-func Fetched(cfg LocalModel) bool {
+func IsFetched(cfg LocalModel) bool {
 	file := cfg.File
 	if file == "" {
 		file = ModelFile

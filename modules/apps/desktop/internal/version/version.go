@@ -14,9 +14,9 @@ var (
 	commit  = "unknown"
 )
 
-// Built is what the binary of this name says when it is asked: the version a
-// person reads, the number that tells apart two builds of one version, and the
-// commit that names the source it was made from.
-func Built(name string) string {
+// GetVersionLine is what the binary of this name says when it is asked: the
+// version a person reads, the number that tells apart two builds of one
+// version, and the commit that names the source it was made from.
+func GetVersionLine(name string) string {
 	return fmt.Sprintf("%s %s (build %s, commit %s)", name, version, build, commit)
 }

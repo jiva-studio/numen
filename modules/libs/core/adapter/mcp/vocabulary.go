@@ -102,8 +102,8 @@ func ReadingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) 
 	return vocabulary(ctx, NewReading(core))
 }
 
-// ReviewingVocabulary is the same, for the window a person runs their cards in.
-func ReviewingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
+// GetReviewVocabulary is the same, for the window a person runs their cards in.
+func GetReviewVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, NewReviewing(core))
 }
 

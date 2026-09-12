@@ -33,8 +33,8 @@ func TestARecordingInLineOutlivesTheContext(t *testing.T) {
 	listening.mu.Unlock()
 	listening.drain(over)
 
-	if listening.Waiting() != 1 {
-		t.Errorf("%d recordings are in line after the context ended", listening.Waiting())
+	if listening.CountWaiting() != 1 {
+		t.Errorf("%d recordings are in line after the context ended", listening.CountWaiting())
 	}
 	if got := by.times(); got != 0 {
 		t.Errorf("a transcriber was handed %d recordings after the context ended", got)
@@ -118,7 +118,7 @@ func TestARecordingNamedAsDrainAndReleaseEndsIsTranscribed(t *testing.T) {
 	if heard != 3 {
 		t.Errorf("a transcriber was opened %d times", heard)
 	}
-	if listening.Waiting() != 0 {
-		t.Errorf("%d recordings were left in line", listening.Waiting())
+	if listening.CountWaiting() != 0 {
+		t.Errorf("%d recordings were left in line", listening.CountWaiting())
 	}
 }

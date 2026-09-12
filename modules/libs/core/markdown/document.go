@@ -133,7 +133,7 @@ func (d *Document) SetBody(body string) error {
 	if d.unterminated {
 		return ErrUnterminated
 	}
-	text := Normalised(body)
+	text := Normalise(body)
 	if text != "" && !strings.HasSuffix(text, "\n") {
 		text += "\n"
 	}
@@ -155,7 +155,7 @@ func (d *Document) SpliceBody(start, end int, text string) error {
 		return fmt.Errorf("splice %d:%d is outside a body of %d bytes", start, end, len(d.body))
 	}
 
-	written := Normalised(text)
+	written := Normalise(text)
 	if d.eol == "\r\n" {
 		written = strings.ReplaceAll(written, "\n", "\r\n")
 	}

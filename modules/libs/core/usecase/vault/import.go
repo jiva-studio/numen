@@ -71,7 +71,7 @@ func (u Import) Execute(
 		if err := ctx.Err(); err != nil {
 			return brought, err
 		}
-		name := u.Files.Named(handle)
+		name := u.Files.GetName(handle)
 		if err := u.bring(ctx, writer, v, handle, joinPath(into, name), &brought); err != nil {
 			brought.Errors = append(brought.Errors, ImportFailure{Name: name, Why: err})
 		}

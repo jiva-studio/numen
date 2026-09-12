@@ -63,7 +63,7 @@ func TestAFileStampedByAClockIsUnchangedThroughTheIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if back := found["notes/Leaves.md"]; !back.Unchanged(ref) {
+	if back := found["notes/Leaves.md"]; !back.IsUnchanged(ref) {
 		t.Errorf("the index read the file back as %+v, and it is %+v", back, ref)
 	}
 }

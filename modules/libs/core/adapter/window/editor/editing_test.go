@@ -22,7 +22,7 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 	said := domain.Edit{
 		Change: "one", Path: "Aggressor.md", From: 2, To: 12, Text: "An axe",
 	}
-	if err := api.Viewing().Editing(t.Context(), said); err != nil {
+	if err := api.GetWindow().ShowEdit(t.Context(), said); err != nil {
 		t.Fatal(err)
 	}
 

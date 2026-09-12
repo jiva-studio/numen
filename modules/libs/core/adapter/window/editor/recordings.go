@@ -52,7 +52,7 @@ func (a *API) GetRecording(
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	transcribed, _ := transcript.Reached(raw)
+	transcribed, _ := transcript.ReadReached(raw)
 	_, cues := transcript.Parse(raw)
 	// Where a recording is played from and what it is played as are answered
 	// here: the socket is opened afresh for every run, and what counts as a
@@ -334,7 +334,7 @@ func within(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 // Everything from outside reaches the vault through a reader, so a path leaving
 // it is refused there.
 func (a *API) getShownFile(ctx context.Context, path string) (domain.Vault, domain.Fingerprint, error) {
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	if showing.ID == "" || a.Readers == nil {
 		return domain.Vault{}, domain.Fingerprint{}, errNoVault
 	}

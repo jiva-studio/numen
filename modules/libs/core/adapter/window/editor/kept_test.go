@@ -90,7 +90,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	}
 	_, drawn, _ := from.getCounts()
 
-	at := filepath.Join(string(api.Showing().Path), book)
+	at := filepath.Join(string(api.GetShownVault().Path), book)
 	if err := os.WriteFile(at, []byte("the bytes of another scan entirely"), 0o644); err != nil {
 		t.Fatal(err)
 	}

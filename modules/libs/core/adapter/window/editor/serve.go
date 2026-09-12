@@ -117,7 +117,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 
 	// Where a passage sits on the page is asked of whichever producer made the
 	// text it is a place in, which is what the index records.
-	highlighting := source.NewHighlight(cfg.VaultReaders(), db.SourcesKnown(), cfg.DerivedStores())
+	highlighting := source.NewHighlight(cfg.VaultReaders(), db.SourcesKnown(), cfg.GetDerivedStores())
 	highlighting.Documents = cfg.TextExtractor()
 
 	api := &API{
@@ -136,7 +136,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Files: Files{Writers: cfg.VaultWriters()},
 	}
 	// The editor is open on one vault, and answers which as itself.
-	api.Window.Vault = func() string { return string(api.Showing().ID) }
+	api.Window.Vault = func() string { return string(api.GetShownVault().ID) }
 	api.Indexing.Progress = db.Progress()
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
@@ -163,7 +163,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	// fitted leaves the words half to answer on its own.
 	// A search short of a half is said where the person is. A window opened
 	// from a desktop entry has no terminal to write to.
-	finds := cfg.Searching(db, asking, func(err error) {
+	finds := cfg.NewSearch(db, asking, func(err error) {
 		api.say(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Error: err.Error()})
 	})
 	api.Finds = &finds
@@ -191,7 +191,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	// A note the person saves is level before the save is answered, so the vault
 	// finds what it now holds without waiting on the watch.
 	opened.notes = cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(),
-		opened.level).Following(api.Viewing())
+		opened.level).FollowMoves(api.GetWindow())
 	opened.cards = cfg.Cards(db.Queries(), db.Links(), opened.level)
 	opened.vaults = cfg.Vaults(registry, db, opened.notes.Move)
 
@@ -217,10 +217,10 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.Presets = &running.Presets
 	api.Curves = &running.Curves
 	api.Configuring = SettingsPorts{
-		Configured:     cfg.Configured(),
+		Configured:     cfg.ReadSettings(),
 		Models:         cfg.Models(),
 		ChoosesSetting: cfg.TurnsSetting(),
-		ConfiguredFile: cfg.ConfiguredFile(),
+		ConfiguredFile: cfg.ReadSettingsFile(),
 		WritesFile:     cfg.WritesConfiguredFile(),
 		PartsUnderANode: Bounds{
 			Least: cfg.PartsUnderANodeBounds().Least,
@@ -247,7 +247,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Readers: cfg.VaultReaders(),
 		Sources: db.Sources(),
 		Queries: db.SourcesKnown(),
-		Derived: cfg.DerivedStores(),
+		Derived: cfg.GetDerivedStores(),
 	}
 
 	// A machine holding neither of the tools an address is reached with binds
@@ -300,8 +300,8 @@ func (o *Installation) Close() error {
 	return err
 }
 
-// Showing is the vault the window has open.
-func (o *Installation) Showing() domain.Vault { return o.API.Showing() }
+// GetShownVault is the vault the window has open.
+func (o *Installation) GetShownVault() domain.Vault { return o.API.GetShownVault() }
 
 // Notes and Cards are the use cases this window works its vault through.
 // Whatever else works the same vault in the same process is served these, so
@@ -318,34 +318,34 @@ func (o *Installation) Cards() container.Cards { return o.cards }
 // that what changed is findable before the change is reported done.
 func (o *Installation) Refresh() vaults.Refresh {
 	if on := o.API.showing.Load(); on != nil {
-		return on.opening.Refreshing()
+		return on.opening.GetRefresh()
 	}
 	refresh := vaults.NewRefresh(
 		o.cfg.VaultReaders(),
 		o.Index.Vaults(),
-		o.Index.NotesCutAt(o.cfg.Chunking(), o.cfg.Legibility()),
+		o.Index.NotesCutAt(o.cfg.GetChunkSizes(), o.cfg.Legibility()),
 		o.Index.SourcesKnown(),
 		o.Index.Sources(),
 	)
-	refresh.Derived = o.cfg.DerivedStores()
+	refresh.Derived = o.cfg.GetDerivedStores()
 	return refresh
 }
 
-// Recognising reads a scanned document for whoever asks. It is one job for the
-// window and for an agent alike, so that what a person started through one of
-// them is shown by the other. Nothing while the window has no vault.
-func (o *Installation) Recognising() *source.RecognitionWorker {
+// GetRecognitionWorker reads a scanned document for whoever asks. It is one job
+// for the window and for an agent alike, so that what a person started through
+// one of them is shown by the other. Nothing while the window has no vault.
+func (o *Installation) GetRecognitionWorker() *source.RecognitionWorker {
 	if on := o.API.showing.Load(); on != nil {
 		return on.recognising
 	}
 	return nil
 }
 
-// Transcribing hears a recording, for whoever asks and for the queue behind the
-// vault. It is one job for the window and for an agent alike, so that what a
-// person started through one of them is shown by the other. Nothing while the
-// window has no vault.
-func (o *Installation) Transcribing() *source.TranscriptionWorker {
+// GetTranscriptionWorker hears a recording, for whoever asks and for the queue
+// behind the vault. It is one job for the window and for an agent alike, so
+// that what a person started through one of them is shown by the other. Nothing
+// while the window has no vault.
+func (o *Installation) GetTranscriptionWorker() *source.TranscriptionWorker {
 	if on := o.API.showing.Load(); on != nil {
 		return on.transcribing
 	}

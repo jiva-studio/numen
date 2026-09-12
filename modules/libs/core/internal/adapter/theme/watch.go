@@ -23,12 +23,12 @@ const Backlog = 256
 // that is several events.
 const DefaultHold = 50 * time.Millisecond
 
-// Watching reports the person's themes changing, by name, until ctx ends.
+// Watch reports the person's themes changing, by name, until ctx ends.
 //
 // The watch is on the folder and not on any file: the file a watch was placed
 // on stops existing at the first save. One level, which is as deep as a theme
 // is.
-func (c Catalogue) Watching(ctx context.Context, hold time.Duration) (<-chan []string, error) {
+func (c Catalogue) Watch(ctx context.Context, hold time.Duration) (<-chan []string, error) {
 	if c.dir == "" {
 		return nil, ErrNoFolder
 	}

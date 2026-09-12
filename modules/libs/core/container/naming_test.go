@@ -27,7 +27,7 @@ func writeSettings(t *testing.T, body string) container.Config {
 func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 	cfg := writeSettings(t, `{"naming":{"sync_title_and_filename":true}}`)
 	asking := cfg.SyncSetting()
-	if !asking.Kept() {
+	if !asking.GetSetting() {
 		t.Fatal("a title and a filename are told apart")
 	}
 
@@ -35,7 +35,7 @@ func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 	if err := os.WriteFile(path, []byte(`{"naming":{"sync_title_and_filename":false}}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if asking.Kept() {
+	if asking.GetSetting() {
 		t.Error("the setting turned under it and the rename read the old one")
 	}
 }
@@ -50,7 +50,7 @@ func TestWhatIsReadWhereTheFileSaysNothing(t *testing.T) {
 		"a file that does not parse": `{"naming":`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			if !writeSettings(t, body).SyncSetting().Kept() {
+			if !writeSettings(t, body).SyncSetting().GetSetting() {
 				t.Error("a title and a filename are told apart")
 			}
 		})

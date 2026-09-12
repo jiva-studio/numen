@@ -33,7 +33,7 @@ func setServiceModel(t *testing.T, cfg embed.Config, change func(*embed.ServiceM
 		t.Fatal("the vault is not indexed by a service")
 	}
 	change(&service)
-	cfg.Indexing = cfg.Indexing.Serving(service)
+	cfg.Indexing = cfg.Indexing.SetService(service)
 	return cfg, service
 }
 
@@ -45,7 +45,7 @@ func client(t *testing.T, baseURL string, dimensions int) *openai.Client {
 	cfg, service := setServiceModel(t, cfg, func(at *embed.ServiceModel) {
 		at.BaseURL, at.Name = baseURL, "test-embed"
 	})
-	c, err := openai.New(cfg.Stored(), service)
+	c, err := openai.New(cfg.GetStoredModel(), service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +254,7 @@ func TestABatchIsCutByCharacters(t *testing.T) {
 		at.BaseURL, at.Name = s.URL, "test-embed"
 		at.BatchCharacters = len([]rune(verse)) * 2
 	})
-	c, err := openai.New(cfg.Stored(), service)
+	c, err := openai.New(cfg.GetStoredModel(), service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -290,7 +290,7 @@ func TestAServiceWithoutAKeyIsRefusedBeforeAnyRequest(t *testing.T) {
 	cfg, service := setServiceModel(t, embed.Defaults(), func(at *embed.ServiceModel) {
 		at.BaseURL = "http://127.0.0.1:1"
 	})
-	if _, err := openai.New(cfg.Stored(), service); !errors.Is(err, openai.ErrNoKey) {
+	if _, err := openai.New(cfg.GetStoredModel(), service); !errors.Is(err, openai.ErrNoKey) {
 		t.Fatalf("got %v", err)
 	}
 }

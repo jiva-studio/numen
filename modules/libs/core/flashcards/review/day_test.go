@@ -65,7 +65,7 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			s := review.Schedule{Due: one.due, Last: now.Add(-24 * time.Hour)}
-			if got := day.Owed(s, now); got != one.owed {
+			if got := day.IsOwed(s, now); got != one.owed {
 				t.Errorf("a card due %v is owed = %v, want %v", one.due, got, one.owed)
 			}
 		})
@@ -75,7 +75,7 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 // A card nobody has answered is owed the first time it is asked about.
 func TestACardNobodyAnsweredIsOwed(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts}
-	if !day.Owed(review.Schedule{}, time.Now()) {
+	if !day.IsOwed(review.Schedule{}, time.Now()) {
 		t.Error("a card with no answers behind it is not owed")
 	}
 }
@@ -135,7 +135,7 @@ func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
 		}
 		for hour := range 24 {
 			day := review.Day{Starts: time.Duration(hour) * time.Hour, In: in}
-			on := review.Spreading(day)
+			on := review.NewDueByDay(day)
 			days := make([]time.Time, 0, 800)
 			for at := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; at = day.GetEnd(at) {
 				days = append(days, at)

@@ -101,7 +101,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 	// own name ended up.
 	var called error
 	if isRename(travelling, from, to) {
-		called = u.Notes.Called(ctx, v, to)
+		called = u.Notes.WriteFilenameAsTitle(ctx, v, to)
 	}
 
 	for _, source := range travelling {

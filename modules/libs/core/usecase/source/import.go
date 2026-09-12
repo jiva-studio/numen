@@ -92,7 +92,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 
 	// One run to an address. The name is held for as long as the download takes,
 	// and two urls on one address are one download.
-	release, err := store.Claim(ctx, text.Partial(u.By.Downloading(at).Producer, hash))
+	release, err := store.Claim(ctx, text.Partial(u.By.GetDownloadModel(at).Producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return res, ErrBeingDownloaded
 	}
@@ -109,7 +109,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 
 	// An address already downloaded is not downloaded again. What a person asked
 	// for is what stands, until they ask for it afresh.
-	if words, producer, err := text.Downloaded(ctx, store, hash); err != nil {
+	if words, producer, err := text.ReadDownloaded(ctx, store, hash); err != nil {
 		return res, err
 	} else if producer != "" {
 		res.Producer, res.Bytes = producer, len(words)
@@ -167,7 +167,7 @@ func (u ImportURL) keeps(
 func (u ImportURL) silent(
 	ctx context.Context, at domain.URL, store port.DerivedStore, hash string,
 ) error {
-	return store.Write(ctx, text.Answer(u.By.Downloading(at).Producer, hash), []byte(text.Silent+"\n"))
+	return store.Write(ctx, text.Answer(u.By.GetDownloadModel(at).Producer, hash), []byte(text.Silent+"\n"))
 }
 
 // readURLFile is one url: where it points, the file itself, and the store what
@@ -257,7 +257,7 @@ func (u ImportURL) record(
 		Title:      said.Title,
 		Length:     said.Length,
 		Producer:   producer,
-		Downloader: u.By.Downloading(at).Recipe(),
+		Downloader: u.By.GetDownloadModel(at).Recipe(),
 	})
 	if err != nil {
 		return err

@@ -102,7 +102,7 @@ func open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	archive, err := Fetched(ctx, s, found.address())
+	archive, err := Fetch(ctx, s, found.address())
 	if err != nil {
 		return nil, "", fmt.Errorf("the onnx runtime: %w", err)
 	}

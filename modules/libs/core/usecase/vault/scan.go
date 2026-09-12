@@ -155,7 +155,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		res.Notes++
 		seen[ref.Path] = true
 
-		if previous, ok := known[ref.Path]; ok && !u.RebuildIndex && previous.Unchanged(ref) {
+		if previous, ok := known[ref.Path]; ok && !u.RebuildIndex && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			continue
 		}
@@ -202,7 +202,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	// A scan that stored nothing changed nothing, and a scan of an unchanged
 	// vault has to stay cheap enough to run at startup.
 	if res.Indexed > 0 || res.Removed > 0 {
-		if err := u.Maintenance.Changed(ctx); err != nil {
+		if err := u.Maintenance.ReportChanges(ctx); err != nil {
 			return res, fmt.Errorf("index upkeep for %s: %w", v.Name, err)
 		}
 	}

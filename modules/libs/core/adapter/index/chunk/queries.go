@@ -178,14 +178,14 @@ func (q *Queries) Lexical(ctx context.Context, vaultID domain.VaultID, query str
 	return out, rows.Err()
 }
 
-// Named is the sections of one vault whose names match what was typed, best
-// first.
+// GetNamedPassages is the sections of one vault whose names match what was
+// typed, best first.
 //
 // A section answers with the chunk it opens, so what comes back stands where the
 // section begins. Asked where a book speaks about a thing, this is the half that
 // answers with the chapter about it and not with the paragraph that says its
 // name most often.
-func (q *Queries) Named(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
+func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
 	}
@@ -339,9 +339,9 @@ func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
 	return p, true, nil
 }
 
-// Unchunked is the sources of one kind with no small chunk: the file changed,
-// or it has never been cut.
-func (q *Queries) Unchunked(ctx context.Context, vaultID domain.VaultID, kind string, limit int) ([]string, error) {
+// GetUnchunkedSources is the sources of one kind with no small chunk: the file
+// changed, or it has never been cut.
+func (q *Queries) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind string, limit int) ([]string, error) {
 	return q.paths(ctx, vaultID, "unchunked", limit, func(vault int64) []any {
 		return []any{vault, kind, limit}
 	})
@@ -359,10 +359,10 @@ func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kin
 	})
 }
 
-// Unembedded is the small chunks of a vault with no vector from the model in
-// use, from `after` onwards. Asked with the last id of the previous answer, it
-// resumes.
-func (q *Queries) Unembedded(ctx context.Context, vaultID domain.VaultID, recipe string, after int64, limit int) ([]Passage, error) {
+// GetUnembeddedChunks is the small chunks of a vault with no vector from the
+// model in use, from `after` onwards. Asked with the last id of the previous
+// answer, it resumes.
+func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after int64, limit int) ([]Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -439,12 +439,12 @@ func (q *Queries) Progress(ctx context.Context, vaultID domain.VaultID, recipe s
 	return held, embedded, err
 }
 
-// Kept is the vectors already made for the texts given under the recipe given,
-// by the hex of their hash.
+// GetKeptVectors is the vectors already made for the texts given under the
+// recipe given, by the hex of their hash.
 //
 // A vector that comes back was paid for once, and asking a model for it again
 // is buying what is already here.
-func (q *Queries) Kept(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
 	if len(of) == 0 {
 		return nil, nil
 	}
@@ -512,13 +512,13 @@ func (q *Queries) Reading(ctx context.Context, vaultID domain.VaultID, path stri
 	return found, true, nil
 }
 
-// Recognised is the sources of one kind whose text a producer made rather than
-// their own bytes, by path.
+// GetRecognisedSources is the sources of one kind whose text a producer made
+// rather than their own bytes, by path.
 //
 // A scan asks it in order to find the ones whose files are gone: the store is a
 // folder on the person's disk and they may empty it, and a source standing on
 // files that are not there answers a search with nothing.
-func (q *Queries) Recognised(ctx context.Context, vaultID domain.VaultID, kind string) ([]SourceText, error) {
+func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind string) ([]SourceText, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil

@@ -31,7 +31,7 @@ func readNames(t *testing.T, changed <-chan []string) []string {
 
 func startWatch(t *testing.T, catalogue theme.Catalogue, hold time.Duration) <-chan []string {
 	t.Helper()
-	changed, err := catalogue.Watching(t.Context(), hold)
+	changed, err := catalogue.Watch(t.Context(), hold)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,7 +147,7 @@ func TestAHandfulOfFilesLandingAtOnceIsOneReport(t *testing.T) {
 
 func TestAWatchOnAFolderThatIsNotThereIsRefused(t *testing.T) {
 	var catalogue theme.Catalogue
-	if _, err := catalogue.Watching(t.Context(), 0); err == nil {
+	if _, err := catalogue.Watch(t.Context(), 0); err == nil {
 		t.Error("a catalogue with no folder was watched")
 	}
 }
@@ -155,7 +155,7 @@ func TestAWatchOnAFolderThatIsNotThereIsRefused(t *testing.T) {
 // The watch ends where the caller does, and the channel is closed behind it.
 func TestAWatchStopsWithTheCallerItWasStartedFor(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
-	changed, err := folder(t).Watching(ctx, 20*time.Millisecond)
+	changed, err := folder(t).Watch(ctx, 20*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}

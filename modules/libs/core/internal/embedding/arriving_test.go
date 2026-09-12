@@ -43,29 +43,29 @@ func (s *shut) Close() error {
 // vector index is fitted to its width and a vector is claimed under its recipe
 // while it comes down.
 func TestAModelSaysWhatItIsBeforeItIsHere(t *testing.T) {
-	arriving := embedding.Arriving(bge)
-	if got := arriving.Asking().Model().Recipe(); got != bge.Recipe() {
+	arriving := embedding.NewArriving(bge)
+	if got := arriving.GetImpatientEmbedder().Model().Recipe(); got != bge.Recipe() {
 		t.Errorf("got %s", got)
 	}
-	if got := arriving.Filling().Model().Recipe(); got != bge.Recipe() {
+	if got := arriving.GetWaitingEmbedder().Model().Recipe(); got != bge.Recipe() {
 		t.Errorf("got %s", got)
 	}
 }
 
 func TestAQuestionIsNotMadeToWaitForAModelStillArriving(t *testing.T) {
-	arriving := embedding.Arriving(bge)
-	if _, err := arriving.Asking().Embed(t.Context(), []string{"anything"}); !errors.Is(err, embedding.ErrArriving) {
+	arriving := embedding.NewArriving(bge)
+	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, embedding.ErrArriving) {
 		t.Fatalf("got %v", err)
 	}
 }
 
 func TestAPassFillingTheIndexWaitsForTheModel(t *testing.T) {
-	arriving := embedding.Arriving(bge)
+	arriving := embedding.NewArriving(bge)
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		arriving.Landed(landed{}, nil)
+		arriving.ReportArrival(landed{}, nil)
 	}()
-	got, err := arriving.Filling().Embed(t.Context(), []string{"anything"})
+	got, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,13 +76,13 @@ func TestAPassFillingTheIndexWaitsForTheModel(t *testing.T) {
 
 func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 	unreachable := errors.New("dial tcp: network is unreachable")
-	arriving := embedding.Arriving(bge)
-	arriving.Landed(nil, unreachable)
+	arriving := embedding.NewArriving(bge)
+	arriving.ReportArrival(nil, unreachable)
 
-	if _, err := arriving.Filling().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
+	if _, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
 		t.Errorf("got %v", err)
 	}
-	if _, err := arriving.Asking().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
+	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
 		t.Errorf("got %v", err)
 	}
 }
@@ -92,8 +92,8 @@ func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 	wrong := errors.New("not one model")
 	held := &shut{}
-	arriving := embedding.Arriving(bge)
-	arriving.Landed(held, nil)
+	arriving := embedding.NewArriving(bge)
+	arriving.ReportArrival(held, nil)
 
 	if err := arriving.Disown(wrong); err != nil {
 		t.Fatal(err)
@@ -101,10 +101,10 @@ func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 	if !held.closed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
-	if _, err := arriving.Asking().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
+	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
 		t.Errorf("got %v", err)
 	}
-	if _, err := arriving.Filling().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
+	if _, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
 		t.Errorf("got %v", err)
 	}
 }
@@ -112,11 +112,11 @@ func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 // A model disowned before it turned up is one nobody waits for.
 func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 	wrong := errors.New("not one model")
-	arriving := embedding.Arriving(bge)
+	arriving := embedding.NewArriving(bge)
 	if err := arriving.Disown(wrong); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := arriving.Filling().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
+	if _, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
 		t.Errorf("got %v", err)
 	}
 }
@@ -124,26 +124,26 @@ func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 // A model let go of before it arrived is let go of when it does: the weights
 // are compiled by then and nothing else holds them.
 func TestAModelThatLandsAfterItWasDisownedIsLetGoOf(t *testing.T) {
-	arriving := embedding.Arriving(bge)
+	arriving := embedding.NewArriving(bge)
 	if err := arriving.Disown(errors.New("not one model")); err != nil {
 		t.Fatal(err)
 	}
 
 	held := &shut{}
-	arriving.Landed(held, nil)
+	arriving.ReportArrival(held, nil)
 	if !held.closed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
 }
 
 func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
-	arriving := embedding.Arriving(bge)
+	arriving := embedding.NewArriving(bge)
 	if err := arriving.Close(); err != nil {
 		t.Fatal(err)
 	}
 
 	held := &shut{}
-	arriving.Landed(held, nil)
+	arriving.ReportArrival(held, nil)
 	if !held.closed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
@@ -154,7 +154,7 @@ func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
 func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 	wrong := errors.New("not one model")
 	for range 2000 {
-		arriving := embedding.Arriving(bge)
+		arriving := embedding.NewArriving(bge)
 
 		waiting := make(chan struct{}, 8)
 		waited := make(chan error, cap(waiting))
@@ -180,10 +180,10 @@ func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 }
 
 func TestAPassStoppedWhileTheModelArrivesIsStopped(t *testing.T) {
-	arriving := embedding.Arriving(bge)
+	arriving := embedding.NewArriving(bge)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := arriving.Filling().Embed(ctx, []string{"anything"}); !errors.Is(err, context.Canceled) {
+	if _, err := arriving.GetWaitingEmbedder().Embed(ctx, []string{"anything"}); !errors.Is(err, context.Canceled) {
 		t.Errorf("got %v", err)
 	}
 }

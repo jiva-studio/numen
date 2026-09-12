@@ -86,7 +86,7 @@ func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string)
 func (a *API) ListFileKinds(
 	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],
 ) (*connect.Response[v1.ListFileKindsResponse], error) {
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}

@@ -29,12 +29,12 @@ type Tally struct {
 	Easy     int
 }
 
-// Counted is what was answered on each day, by the name of the day.
+// GetDayTallies is what was answered on each day, by the name of the day.
 //
 // It is a sum and not an order: an answer arriving from another machine after
 // later ones have been counted adds to the day it belongs to and disturbs
 // nothing, which is what lets these be worked out one file at a time and kept.
-func Counted(d Day, answers []Answer) map[string]Tally {
+func GetDayTallies(d Day, answers []Answer) map[string]Tally {
 	taken := make(map[string]bool)
 	for _, a := range answers {
 		if a.TakesBack() {
@@ -131,7 +131,7 @@ func (h History) GetSpentUnder(
 				one.Reviews++
 			}
 		}
-		if took := a.Counted(); took > 0 {
+		if took := a.GetCountedTime(); took > 0 {
 			one.Took += took
 		}
 		out[path] = one
@@ -139,14 +139,14 @@ func (h History) GetSpentUnder(
 	return out
 }
 
-// Faced is the card faces answered in the day named. An answer taken back is
+// GetFaced is the card faces answered in the day named. An answer taken back is
 // not one, and a card face answered again in the day is the one face.
-func Faced(d Day, day string, answers []Answer) map[CardFaceID]bool {
-	return Give(answers).Faced(d, day)
+func GetFaced(d Day, day string, answers []Answer) map[CardFaceID]bool {
+	return Give(answers).GetFaced(d, day)
 }
 
-// Faced is the same over a history already in order.
-func (h History) Faced(d Day, day string) map[CardFaceID]bool {
+// GetFaced is the same over a history already in order.
+func (h History) GetFaced(d Day, day string) map[CardFaceID]bool {
 	out := make(map[CardFaceID]bool)
 	for _, a := range h {
 		if d.GetName(a.At) == day {

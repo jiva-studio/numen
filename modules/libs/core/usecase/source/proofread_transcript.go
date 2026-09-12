@@ -150,7 +150,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	if err != nil {
 		return res, err
 	}
-	if beside && (transcript.Written(whole) || stood.By != u.By.Name()) {
+	if beside && (transcript.IsWrittenByHand(whole) || stood.By != u.By.Name()) {
 		// The words as they stand are somebody's own, and a model does not
 		// correct them. Deleting the file beside the artifact gives back what
 		// was heard.
@@ -165,7 +165,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	// the cuts a sentence was answered for past the end of. What the whole
 	// recording holds stands on every batch of it.
 	about := proofread.About(cues)
-	spoken := setContext(proofread.Spoken(cues, u.batchSize(), u.overlap()), about)
+	spoken := setContext(proofread.GetSpeechBatches(cues, u.batchSize(), u.overlap()), about)
 	batches := spoken
 	// The seams are cut from the transcript as this run found it, so the batch
 	// a line falls in does not move as sentences are put back together.
@@ -228,7 +228,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		}
 
 		wrote := false
-		put, past := proofread.Gathered(group, replies, unbounded)
+		put, past := proofread.GetGatheredLines(group, replies, unbounded)
 		// A seam is asked about once, so a run past the end of one names no
 		// further cut.
 		for _, batch := range past {
@@ -348,7 +348,7 @@ func countUncorrected(asked []proofread.Batch, replies map[int]string, apart flo
 		if !answered {
 			continue
 		}
-		if _, _, ok := proofread.Fixed(batch, reply, apart); !ok {
+		if _, _, ok := proofread.GetFixedLines(batch, reply, apart); !ok {
 			out++
 		}
 	}

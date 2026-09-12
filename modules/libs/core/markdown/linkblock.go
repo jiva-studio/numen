@@ -330,7 +330,7 @@ func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 	enc := yaml.NewEncoder(&out)
 	enc.SetIndent(2)
 	if err := enc.Encode([]linkEntry{{
-		To:    l.Target.Written(),
+		To:    l.Target.GetWritten(),
 		Role:  string(l.Role),
 		Type:  l.Type,
 		Note:  l.Why,
@@ -379,7 +379,7 @@ func linkOf(item *yaml.Node) domain.Link {
 // go, and a role it has decided on.
 func readable(item *yaml.Node) bool {
 	l := linkOf(item)
-	return item.Kind == yaml.MappingNode && l.Target.Value != "" && domain.KnownRole(l.Role)
+	return item.Kind == yaml.MappingNode && l.Target.Value != "" && domain.IsKnownRole(l.Role)
 }
 
 // ours is whether every key in an entry is one the application owns.

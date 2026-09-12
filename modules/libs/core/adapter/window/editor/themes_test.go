@@ -26,7 +26,7 @@ func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServ
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := httptest.NewServer((&API{Themes: themes}).Serving(http.NotFoundHandler()))
+	server := httptest.NewServer((&API{Themes: themes}).NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	return numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
@@ -213,7 +213,7 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 // A build put together without a catalogue answers that it has none, and the
 // rest of the window is as it was.
 func TestAWindowWithNoCatalogueAnswersThatItHasNone(t *testing.T) {
-	server := httptest.NewServer((&API{}).Serving(http.NotFoundHandler()))
+	server := httptest.NewServer((&API{}).NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)

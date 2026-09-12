@@ -92,7 +92,7 @@ func projections(t *testing.T) string {
 
 			// The day the whole material stands learned is drawn on a second run
 			// of the same place, in which nothing is forgotten.
-			run.Recalls = review.NothingForgotten
+			run.Recalls = review.GetFullRecall
 			nothing, err := run.Run(t.Context(), goldenNow, p.preset, m.at, m.unseen)
 			if err != nil {
 				t.Fatal(err)

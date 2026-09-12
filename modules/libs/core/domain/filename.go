@@ -16,7 +16,7 @@ var ErrUnnameable = errors.New("a note cannot be given this title")
 // Two titles are refused whatever the note: one that leaves no filename, and
 // one carrying a line break. The title comes in trimmed.
 func Filename(title string) (name string, exact bool, err error) {
-	switch name, exact = ReducedFilename(title); {
+	switch name, exact = GetReducedFilename(title); {
 	case name == "":
 		return "", false, fmt.Errorf("%w: %q leaves nothing a file can be named after", ErrUnnameable, title)
 	case strings.ContainsAny(title, "\n\r"):
@@ -29,7 +29,7 @@ func Filename(title string) (name string, exact bool, err error) {
 // 255 bytes for one component, and a title is not the place to find that out.
 const maxFilename = 120
 
-// ReducedFilename is the filename a title reduces to, refusing nothing: a
+// GetReducedFilename is the filename a title reduces to, refusing nothing: a
 // title that reduces to no name at all comes back empty.
 //
 // A note is shown by its `title`, else by its filename. So a file named after
@@ -38,7 +38,7 @@ const maxFilename = 120
 //
 // Every name that comes back is one Nameable accepts, so a link written by it
 // reaches the note back.
-func ReducedFilename(title string) (name string, exact bool) {
+func GetReducedFilename(title string) (name string, exact bool) {
 	var b strings.Builder
 	var last rune
 	for _, r := range strings.TrimSpace(title) {

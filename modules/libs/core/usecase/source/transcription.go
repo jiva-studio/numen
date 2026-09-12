@@ -146,8 +146,8 @@ func (t *TranscriptionWorker) Start(v domain.Vault, path string) port.StartOutco
 	return port.Began
 }
 
-// Waiting is how many recordings a person named are still in line.
-func (t *TranscriptionWorker) Waiting() int {
+// CountWaiting is how many recordings a person named are still in line.
+func (t *TranscriptionWorker) CountWaiting() int {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.queue.countWaiting()
@@ -261,7 +261,7 @@ func (t *TranscriptionWorker) getUntranscribed(ctx context.Context, known port.S
 	if err != nil {
 		return nil
 	}
-	recognised, err := known.Recognised(ctx, v.ID, domain.KindRecording)
+	recognised, err := known.GetRecognisedSources(ctx, v.ID, domain.KindRecording)
 	if err != nil {
 		return nil
 	}
@@ -486,14 +486,14 @@ func (t *TranscriptionWorker) proofreadTranscript(
 	return res, err
 }
 
-// TakingUp puts right the transcripts of these vaults that stand short of their
+// TakeUp puts right the transcripts of these vaults that stand short of their
 // last line, once, behind the caller.
 //
 // A proofreading stands at the line it reached, so a run that ended among the
 // batches is taken up at that line. A transcript no proofreader has been over
 // stands at its first line and is put right whole. Which transcripts a vault
 // holds is a question the index already answers.
-func (t *TranscriptionWorker) TakingUp(
+func (t *TranscriptionWorker) TakeUp(
 	ctx context.Context,
 	known port.SourceQueries,
 	vaults ...domain.Vault,
@@ -505,7 +505,7 @@ func (t *TranscriptionWorker) TakingUp(
 	go func() {
 		defer t.going.Done()
 		for _, v := range vaults {
-			recognised, err := known.Recognised(ctx, v.ID, domain.KindRecording)
+			recognised, err := known.GetRecognisedSources(ctx, v.ID, domain.KindRecording)
 			if err != nil {
 				continue
 			}
@@ -611,6 +611,6 @@ func (t *TranscriptionWorker) say(at task.Task, asked bool) {
 
 func (t *TranscriptionWorker) finishTask(id string) {
 	if t.with.Tasks != nil {
-		t.with.Tasks.Done(id)
+		t.with.Tasks.Remove(id)
 	}
 }

@@ -33,7 +33,7 @@ func (i indexed) Fingerprints(context.Context, domain.VaultID, domain.SourceKind
 	return nil, nil
 }
 
-func (i indexed) Unchunked(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
+func (i indexed) GetUnchunkedSources(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
 	return nil, nil
 }
 
@@ -41,7 +41,7 @@ func (i indexed) ByOtherRecipe(context.Context, domain.VaultID, domain.SourceKin
 	return nil, nil
 }
 
-func (i indexed) Recognised(context.Context, domain.VaultID, domain.SourceKind) ([]port.SourceText, error) {
+func (i indexed) GetRecognisedSources(context.Context, domain.VaultID, domain.SourceKind) ([]port.SourceText, error) {
 	return nil, nil
 }
 
@@ -74,7 +74,7 @@ func openHighlightWindow(t *testing.T) (*API, http.Handler, *pdf.Book) {
 		},
 	}
 	api.show(vault)
-	return api, api.Serving(http.NotFoundHandler()), doc
+	return api, api.NewHandler(http.NotFoundHandler()), doc
 }
 
 // where is where a word of the document is, as the window would ask about it.

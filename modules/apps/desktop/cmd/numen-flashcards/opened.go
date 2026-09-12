@@ -98,7 +98,7 @@ func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	}
 
 	open := opening.Begin(o.under, v)
-	if why := open.Unwatched(); why != nil {
+	if why := open.GetUnwatchedReason(); why != nil {
 		fmt.Fprintf(o.out, "numen-flashcards: %s is not being followed: %v\n", v.Name, why)
 	}
 	one.opening, one.open = opening, open

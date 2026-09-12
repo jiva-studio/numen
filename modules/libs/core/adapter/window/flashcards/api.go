@@ -143,9 +143,9 @@ func (a *API) Current() CurrentCard {
 	return CurrentCard{}
 }
 
-// Answering is the agent a question about a card goes to, and nothing where
+// GetAgent is the agent a question about a card goes to, and nothing where
 // this window has none.
-func (a *API) Answering() port.Agent {
+func (a *API) GetAgent() port.Agent {
 	if taking := a.agent.Load(); taking != nil {
 		return *taking
 	}
@@ -182,10 +182,10 @@ func (a *API) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWrite
 	return run, nil
 }
 
-// Watching is this window as the schema answers about it, over the list a build
-// keeps of what it is doing. It is what the API's Window is built from, which
-// is the whole of how a window outside this module names itself.
-func Watching(tasks *task.Tasks) *wire.Window {
+// NewWindow is this window as the schema answers about it, over the list a
+// build keeps of what it is doing. It is what the API's Window is built from,
+// which is the whole of how a window outside this module names itself.
+func NewWindow(tasks *task.Tasks) *wire.Window {
 	return &wire.Window{Named: wire.Review, Tasking: tasks}
 }
 
@@ -194,7 +194,7 @@ func Watching(tasks *task.Tasks) *wire.Window {
 func (a *API) say(at task.Task) { a.Window.Say(at) }
 
 // finishTask takes one piece of work out of that list.
-func (a *API) finishTask(id string) { a.Window.Finished(id) }
+func (a *API) finishTask(id string) { a.Window.Finish(id) }
 
 func (a *API) now() time.Time {
 	if a.Now == nil {

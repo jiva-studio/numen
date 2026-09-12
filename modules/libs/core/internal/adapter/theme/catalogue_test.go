@@ -193,7 +193,7 @@ func TestAFileTooLargeToSpliceIntoThePageIsNoTheme(t *testing.T) {
 
 func TestANameMatchingNothingWearsThisProductsPaletteAndSaysWhichNameItWas(t *testing.T) {
 	catalogue := folder(t)
-	applied, missing := catalogue.Applied("mine:the-one-i-deleted")
+	applied, missing := catalogue.GetApplied("mine:the-one-i-deleted")
 	if applied != theme.Default {
 		t.Errorf("wears %q", applied)
 	}
@@ -202,10 +202,10 @@ func TestANameMatchingNothingWearsThisProductsPaletteAndSaysWhichNameItWas(t *te
 	}
 
 	put(t, catalogue, "kept.css", ":root {}")
-	if applied, missing := catalogue.Applied("mine:kept"); applied != "mine:kept" || missing != "" {
+	if applied, missing := catalogue.GetApplied("mine:kept"); applied != "mine:kept" || missing != "" {
 		t.Errorf("wears %q, missing %q", applied, missing)
 	}
-	if applied, missing := catalogue.Applied(""); applied != theme.Default || missing != "" {
+	if applied, missing := catalogue.GetApplied(""); applied != theme.Default || missing != "" {
 		t.Errorf("an installation nobody dressed wears %q, missing %q", applied, missing)
 	}
 }
@@ -230,7 +230,7 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 			t.Errorf("a folder that cannot be read offered %q", one.Name)
 		}
 	}
-	if applied, _ := catalogue.Applied("mine:dracula"); applied != theme.Default {
+	if applied, _ := catalogue.GetApplied("mine:dracula"); applied != theme.Default {
 		t.Errorf("wears %q", applied)
 	}
 }

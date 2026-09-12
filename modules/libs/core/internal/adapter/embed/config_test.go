@@ -12,10 +12,10 @@ func TestVectorsAreKeptUnderTheProviderThatFillsTheIndex(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Query.Use = embed.UseService
 
-	if got := cfg.Stored().From; got != cfg.Indexing.From() {
+	if got := cfg.GetStoredModel().From; got != cfg.Indexing.From() {
 		t.Errorf("kept under %q, filled at %q", got, cfg.Indexing.From())
 	}
-	if got := cfg.Stored().Name; got != cfg.Model.Name {
+	if got := cfg.GetStoredModel().Name; got != cfg.Model.Name {
 		t.Errorf("kept under %q, and the model is %q", got, cfg.Model.Name)
 	}
 }

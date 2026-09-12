@@ -98,7 +98,7 @@ func takes(raw []byte, wrote []Setting) error {
 		if !covers(setting.At, dayStartsAt) {
 			continue
 		}
-		if _, err := Starting(held.Review.DayStarts); err != nil {
+		if _, err := ReadDayStart(held.Review.DayStarts); err != nil {
 			return err
 		}
 	}

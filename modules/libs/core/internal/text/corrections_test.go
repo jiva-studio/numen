@@ -90,7 +90,7 @@ func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
 		text.Corrections(text.ASR, "abc123"): writeCorrections(),
 	}
 
-	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
 func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
 	store := beside{text.Artifact(text.ASR, "abc123"): writeTranscript()}
 
-	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}

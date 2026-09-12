@@ -23,7 +23,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		switch {
 		case !isText:
 			problems = append(problems, "goal is not text")
-		case KnownGoal(Goal(name)):
+		case IsKnownGoal(Goal(name)):
 			p.Goal = Goal(name)
 		default:
 			problems = append(problems, "goal "+name+" is not minutes_a_day, retention or by_date")
@@ -35,7 +35,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		switch {
 		case !isText:
 			problems = append(problems, "learned is not text")
-		case KnownRule(LearnedRule(name)):
+		case IsKnownRule(LearnedRule(name)):
 			p.Rule = LearnedRule(name)
 		default:
 			problems = append(problems, "learned "+name+" is not interval or retention")
@@ -47,7 +47,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		switch {
 		case !isText:
 			problems = append(problems, "counts is not text")
-		case KnownBudgetUnit(BudgetUnit(name)):
+		case IsKnownBudgetUnit(BudgetUnit(name)):
 			p.Counts = BudgetUnit(name)
 		default:
 			problems = append(problems, "counts "+name+" is not cards or shows")

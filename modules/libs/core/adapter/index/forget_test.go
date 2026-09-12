@@ -261,7 +261,7 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 		}
 	}
 
-	sections, err := queries.Named(ctx, second.ID, "second section", nil, 10, false)
+	sections, err := queries.GetNamedPassages(ctx, second.ID, "second section", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}

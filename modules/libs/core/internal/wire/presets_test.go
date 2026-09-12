@@ -36,11 +36,11 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 	// A card face first seen yesterday and put off by sixteen days, which is
 	// under the default interval of twenty-one.
 	near := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
-	if p.Learned(near, now) {
+	if p.IsLearned(near, now) {
 		t.Error("a card face sixteen days off is learned under settings naming no rule")
 	}
 	far := review.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
-	if !p.Learned(far, now) {
+	if !p.IsLearned(far, now) {
 		t.Error("a card face twenty-one days off is not learned at the default interval")
 	}
 }
@@ -186,13 +186,13 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if review.KnownGoal(p.Goal) {
+	if review.IsKnownGoal(p.Goal) {
 		t.Errorf("an unspecified goal was read as %q", p.Goal)
 	}
-	if review.KnownRule(p.Rule) {
+	if review.IsKnownRule(p.Rule) {
 		t.Errorf("an unspecified rule was read as %q", p.Rule)
 	}
-	if review.KnownBudgetUnit(p.Counts) {
+	if review.IsKnownBudgetUnit(p.Counts) {
 		t.Errorf("an unspecified counts was read as %q", p.Counts)
 	}
 }

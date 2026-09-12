@@ -28,13 +28,13 @@ type Provider struct {
 	fetch OpenModel
 }
 
-// Reached is a provider that answers at once.
-func Reached(model port.EmbeddingModel, name string, held port.Embedder) Provider {
+// NewReached is a provider that answers at once.
+func NewReached(model port.EmbeddingModel, name string, held port.Embedder) Provider {
 	return Provider{model: model, name: name, held: held}
 }
 
-// Fetched is a model on this machine, opened behind whoever asked.
-func Fetched(model port.EmbeddingModel, name string, open OpenModel) Provider {
+// NewFetched is a model on this machine, opened behind whoever asked.
+func NewFetched(model port.EmbeddingModel, name string, open OpenModel) Provider {
 	return Provider{model: model, name: name, fetch: open}
 }
 
@@ -66,7 +66,7 @@ func Open(
 	}
 	first := open(ctx, tasks, indexing.newArrival(forIndexing))
 	if !query.isPlaced() {
-		return first.Filling(), first.Asking(), first.Close
+		return first.GetWaitingEmbedder(), first.GetImpatientEmbedder(), first.Close
 	}
 
 	at := query.newArrival(forQuery)
@@ -77,7 +77,7 @@ func Open(
 			reportError(tasks, at, err)
 		}
 	}()
-	return first.Filling(), second.Asking(), both(first.Close, second.Close)
+	return first.GetWaitingEmbedder(), second.GetImpatientEmbedder(), both(first.Close, second.Close)
 }
 
 // One is a single provider opened for a run with nowhere to show that a model
@@ -88,16 +88,16 @@ func One(ctx context.Context, from Provider) (port.Embedder, func() error) {
 		return nil, nil
 	}
 	held := open(ctx, nil, arrival{from: from})
-	return held.Filling(), held.Close
+	return held.GetWaitingEmbedder(), held.Close
 }
 
 // open is one provider held under the identity its vectors are kept under. What
 // it is is known before it is here, so the index is fitted and a vector claimed
 // under the right recipe while the weights are still coming down.
 func open(ctx context.Context, tasks *task.Tasks, at arrival) *embedding.Embedder {
-	held := embedding.Arriving(at.from.model)
+	held := embedding.NewArriving(at.from.model)
 	if at.from.fetch == nil {
-		held.Landed(at.from.held, nil)
+		held.ReportArrival(at.from.held, nil)
 		return held
 	}
 
@@ -106,11 +106,11 @@ func open(ctx context.Context, tasks *task.Tasks, at arrival) *embedding.Embedde
 	go func() {
 		model, err := at.from.fetch(ctx, tell)
 		if err != nil {
-			held.Landed(nil, err)
+			held.ReportArrival(nil, err)
 			reportError(tasks, at, err)
 			return
 		}
-		held.Landed(model, nil)
+		held.ReportArrival(model, nil)
 		ready(tasks, at)
 	}()
 	return held
@@ -139,15 +139,15 @@ func compareModels(ctx context.Context, first, second *embedding.Embedder) error
 		return unchecked(err)
 	}
 
-	said, err := first.Filling().Embed(ctx, []string{embedding.Asked})
+	said, err := first.GetWaitingEmbedder().Embed(ctx, []string{embedding.Asked})
 	if err != nil {
 		return unchecked(err)
 	}
-	back, err := second.Filling().Embed(ctx, []string{embedding.Asked})
+	back, err := second.GetWaitingEmbedder().Embed(ctx, []string{embedding.Asked})
 	if err != nil {
 		return unchecked(err)
 	}
-	if len(said) != 1 || len(back) != 1 || !embedding.Agreed(said[0], back[0]) {
+	if len(said) != 1 || len(back) != 1 || !embedding.IsAgreed(said[0], back[0]) {
 		return fmt.Errorf("%s and %s are not one model, and a question embedded by the second finds nothing the first indexed",
 			first.Model(), second.Model())
 	}
@@ -190,7 +190,7 @@ func newProgressReport(tasks *task.Tasks, at arrival) func(done, total int64) {
 
 func ready(tasks *task.Tasks, at arrival) {
 	if tasks != nil {
-		tasks.Done(at.id)
+		tasks.Remove(at.id)
 	}
 }
 

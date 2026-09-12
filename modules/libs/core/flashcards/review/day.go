@@ -111,9 +111,9 @@ func (d Day) GetEndOfDate(named time.Time) time.Time {
 	return d.opens(y, m, day+1)
 }
 
-// Owed reports whether a card is to be answered on this face in the day holding
-// now. A card face that has never been answered is owed the first time it is
-// asked about.
-func (d Day) Owed(s Schedule, now time.Time) bool {
-	return !s.Seen() || s.Due.Before(d.GetEnd(now))
+// IsOwed reports whether a card is to be answered on this face in the day
+// holding now. A card face that has never been answered is owed the first time
+// it is asked about.
+func (d Day) IsOwed(s Schedule, now time.Time) bool {
+	return !s.IsSeen() || s.Due.Before(d.GetEnd(now))
 }

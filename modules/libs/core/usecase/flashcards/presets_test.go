@@ -625,7 +625,7 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 			Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21,
 		},
 	}
-	if p.Learned(at[review.CardFaceID{Card: "near", Face: "Recognise"}], now) {
+	if p.IsLearned(at[review.CardFaceID{Card: "near", Face: "Recognise"}], now) {
 		t.Error("a card face sixteen days off is learned at an interval of twenty-one")
 	}
 

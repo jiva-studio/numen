@@ -134,8 +134,8 @@ type Allowance struct {
 	Stops StopReason
 }
 
-// Paused reports whether this day schedules nothing.
-func (a Allowance) Paused() bool { return a.Stops != StoppedNothing }
+// IsPaused reports whether this day schedules nothing.
+func (a Allowance) IsPaused() bool { return a.Stops != StoppedNothing }
 
 // Admits is what this preset's day admits.
 //
@@ -179,7 +179,7 @@ func (p Preset) Admits(
 // rest of the day to the other, and an odd card goes to the debt.
 //
 // It is the one rule for how a day is spent.
-func (a Allowance) Paying(debt, begun int, owed, fresh bool) bool {
+func (a Allowance) IsPayingDebt(debt, begun int, owed, fresh bool) bool {
 	if !owed {
 		return false
 	}

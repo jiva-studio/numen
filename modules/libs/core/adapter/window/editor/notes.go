@@ -156,7 +156,7 @@ func (a *API) WriteLink(
 func (a *API) GetOpeningNote(
 	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
 ) (*connect.Response[v1.GetOpeningNoteResponse], error) {
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	if showing.ID == "" {
 		// A window standing on nothing opens on no note.
 		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
@@ -270,7 +270,7 @@ func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, er
 // writes is one link as the note it is written in declares it.
 //
 // The window names the note at the other end by the path it is filed under.
-// How much of that path the link carries is `note.Addressed`: a name where it
+// How much of that path the link carries is `note.GetAddress`: a name where it
 // means one note, and the path where it would mean another.
 func (a *API) writes(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	role, ok := roleOf(l.GetRole())
@@ -293,7 +293,7 @@ func (a *API) getAddress(ctx context.Context, to string) (domain.Address, error)
 	if a.Notes.Queries == nil {
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
 	}
-	return note.Addressed(ctx, a.Notes.Queries, a.Showing().ID, to)
+	return note.GetAddress(ctx, a.Notes.Queries, a.GetShownVault().ID, to)
 }
 
 // roleOf is the role a link carries, in the core's words. A link is written

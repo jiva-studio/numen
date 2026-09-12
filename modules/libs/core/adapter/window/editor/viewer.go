@@ -233,7 +233,7 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
 // does, so a path leaving the vault is refused there. A window standing on
 // nothing holds no file to say anything about.
 func (a *API) stat(ctx context.Context, path string) (port.VaultReader, fingerprint, error) {
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	if showing.ID == "" {
 		return nil, fingerprint{}, errNoVault
 	}

@@ -87,7 +87,7 @@ func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 	held := newSaying("one-provider", 1, 0, 0)
 
 	filling, asking, letGo := embedders.Open(t.Context(), task.New(),
-		embedders.Reached(held.Model(), "one-provider", held), embedders.Provider{})
+		embedders.NewReached(held.Model(), "one-provider", held), embedders.Provider{})
 	if filling == nil || asking == nil {
 		t.Fatalf("got %v and %v", filling, asking)
 	}
@@ -110,8 +110,8 @@ func TestTwoProvidersAnsweringAlikeAreOneModel(t *testing.T) {
 
 	tasks := task.New()
 	filling, asking, letGo := embedders.Open(t.Context(), tasks,
-		embedders.Reached(first.Model(), "indexed-here", first),
-		embedders.Reached(second.Model(), "asked-elsewhere", second))
+		embedders.NewReached(first.Model(), "indexed-here", first),
+		embedders.NewReached(second.Model(), "asked-elsewhere", second))
 	defer func() { _ = letGo() }()
 
 	waitForComparison(t, first, second)
@@ -138,8 +138,8 @@ func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 
 	tasks := task.New()
 	_, asking, letGo := embedders.Open(t.Context(), tasks,
-		embedders.Reached(first.Model(), "indexed-here", first),
-		embedders.Reached(second.Model(), "somewhere-else", second))
+		embedders.NewReached(first.Model(), "indexed-here", first),
+		embedders.NewReached(second.Model(), "somewhere-else", second))
 	defer func() { _ = letGo() }()
 
 	held := waitForFailures(t, tasks, 1)
@@ -164,8 +164,8 @@ func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 
 	tasks := task.New()
 	_, _, letGo := embedders.Open(t.Context(), tasks,
-		embedders.Fetched(is("never-arrives"), "never-arrives", refuseFetch),
-		embedders.Reached(second.Model(), "asked-elsewhere", second))
+		embedders.NewFetched(is("never-arrives"), "never-arrives", refuseFetch),
+		embedders.NewReached(second.Model(), "asked-elsewhere", second))
 	defer func() { _ = letGo() }()
 
 	if held := waitForFailures(t, tasks, 2); len(held) != 2 {
@@ -179,8 +179,8 @@ func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 func TestTwoProvidersOfOneRepositoryAreTwoLines(t *testing.T) {
 	tasks := task.New()
 	_, _, letGo := embedders.Open(t.Context(), tasks,
-		embedders.Fetched(is("one/repository"), "one/repository", refuseFetch),
-		embedders.Fetched(is("one/repository"), "one/repository", refuseFetch))
+		embedders.NewFetched(is("one/repository"), "one/repository", refuseFetch),
+		embedders.NewFetched(is("one/repository"), "one/repository", refuseFetch))
 	defer func() { _ = letGo() }()
 
 	held := waitForFailures(t, tasks, 2)
@@ -199,7 +199,7 @@ func TestAProviderReachedAtOnceStandsInNoList(t *testing.T) {
 
 	tasks := task.New()
 	_, _, letGo := embedders.Open(t.Context(), tasks,
-		embedders.Reached(held.Model(), "reached-at-once", held), embedders.Provider{})
+		embedders.NewReached(held.Model(), "reached-at-once", held), embedders.Provider{})
 	defer func() { _ = letGo() }()
 
 	if listed := tasks.List(); len(listed) != 0 {
@@ -221,7 +221,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 
 	tasks := task.New()
 	_, _, letGo := embedders.Open(t.Context(), tasks,
-		embedders.Fetched(is("a/model"), "a/model", opening), embedders.Provider{})
+		embedders.NewFetched(is("a/model"), "a/model", opening), embedders.Provider{})
 	defer func() { _ = letGo() }()
 
 	// Nothing is known yet: the line is in the list from the moment it starts.
@@ -268,7 +268,7 @@ func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
 
 	tasks := task.New()
 	filling, _, letGo := embedders.Open(t.Context(), tasks,
-		embedders.Fetched(held.Model(), "a/model", opening), embedders.Provider{})
+		embedders.NewFetched(held.Model(), "a/model", opening), embedders.Provider{})
 	defer func() { _ = letGo() }()
 
 	if _, err := filling.Embed(t.Context(), []string{"anything"}); err != nil {
@@ -282,7 +282,7 @@ func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
 // A model that never arrives says why.
 func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 	one, letGo := embedders.One(t.Context(),
-		embedders.Fetched(is("never-arrives"), "never-arrives", refuseFetch))
+		embedders.NewFetched(is("never-arrives"), "never-arrives", refuseFetch))
 	if one == nil {
 		t.Fatal("no embedder")
 	}

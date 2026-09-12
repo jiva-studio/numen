@@ -57,7 +57,7 @@ func Give(answers []Answer) History { return getGivenAnswers(answers) }
 // against.
 func (h History) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
-	on := Spreading(d)
+	on := NewDueByDay(d)
 	for _, a := range h {
 		one := by(a.CardFace)
 		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
@@ -81,19 +81,19 @@ type RecallTally struct {
 	Recalled int
 }
 
-// Retained is what came back on each day, by the name of the day.
+// GetRetained is what came back on each day, by the name of the day.
 //
 // It is worked out with the replay: whether a card face was spaced is a thing
 // only the answers before it can say.
-func Retained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
-	return Give(answers).Retained(by, d)
+func GetRetained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
+	return Give(answers).GetRetained(by, d)
 }
 
-// Retained is the same over a history already in order.
-func (h History) Retained(by Scheduler, d Day) map[string]RecallTally {
+// GetRetained is the same over a history already in order.
+func (h History) GetRetained(by Scheduler, d Day) map[string]RecallTally {
 	out := make(map[string]RecallTally)
 	h.walkAnswers(by, func(before Schedule, a Answer) {
-		if !by.Spaced(before) {
+		if !by.IsSpaced(before) {
 			return
 		}
 		day := d.GetName(a.At)

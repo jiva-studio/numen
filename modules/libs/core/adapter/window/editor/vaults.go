@@ -148,7 +148,7 @@ func (s vaultsService) offTheList(id string) (domain.Vault, error) {
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	if v.ID == s.api.Showing().ID {
+	if v.ID == s.api.GetShownVault().ID {
 		return domain.Vault{}, errShowing
 	}
 	return v, nil

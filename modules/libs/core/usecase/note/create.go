@@ -86,7 +86,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		return CreateResult{}, err
 	}
 
-	if err := Bounded(path, len(content), MaxBytes); err != nil {
+	if err := CheckSize(path, len(content), MaxBytes); err != nil {
 		return CreateResult{}, err
 	}
 
@@ -106,7 +106,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if err := u.index(ctx, v, path); err != nil {
 		return made, err
 	}
-	shares, err := u.Names.Named(ctx, v.ID, domain.Basename(path))
+	shares, err := u.Names.GetNamedPaths(ctx, v.ID, domain.Basename(path))
 	if err != nil {
 		return made, err
 	}
@@ -150,7 +150,7 @@ func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
 }
 
 func (u Create) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return Levelled(u.Index(ctx, v, paths), paths...)
+	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
 }
 
 func without(paths []string, path string) []string {

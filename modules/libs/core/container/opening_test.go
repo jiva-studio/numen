@@ -94,7 +94,7 @@ func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
 	cfg, db, v := openVault(t, note)
 	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
 
-	if open.Unwatched() == nil {
+	if open.GetUnwatchedReason() == nil {
 		t.Fatal("a vault nobody can follow says nothing about it")
 	}
 	// And it still reads: what cannot be followed can still be walked.

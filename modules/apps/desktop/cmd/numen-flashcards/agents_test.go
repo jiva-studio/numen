@@ -103,7 +103,7 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
-	if api.Answering() != nil {
+	if api.GetAgent() != nil {
 		t.Error("a card can be asked about")
 	}
 	if api.Unreachable.Why() == "" {
@@ -120,7 +120,7 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, true, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
-	if api.Answering() != nil {
+	if api.GetAgent() != nil {
 		t.Error("a card can be asked about")
 	}
 }
@@ -157,23 +157,23 @@ func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
 	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
-	if api.Answering() != nil {
+	if api.GetAgent() != nil {
 		t.Error("a card can be asked about before anybody has sat down")
 	}
 
 	api.Opened(t.Context(), vaults[0])
-	first := api.Answering()
+	first := api.GetAgent()
 	if first == nil {
 		t.Fatal("nothing answers about a card once a session is open")
 	}
 
 	api.Opened(t.Context(), vaults[0])
-	if api.Answering() != first {
+	if api.GetAgent() != first {
 		t.Error("a session on the same vault again started the agent over")
 	}
 
 	api.Opened(t.Context(), vaults[1])
-	if api.Answering() == first {
+	if api.GetAgent() == first {
 		t.Error("the agent stayed on the vault the person left")
 	}
 }

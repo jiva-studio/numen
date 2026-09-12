@@ -75,11 +75,11 @@ func (c Config) Schedules() (port.ScheduleStore, error) {
 	return kept, nil
 }
 
-// Counting is where what each day came to is remembered. It stands beside the
+// OpenDayCounts is where what each day came to is remembered. It stands beside the
 // schedules and not in them, because the two go out of date by different rules:
 // a schedule is the whole history read again, and a day is a sum one file at a
 // time.
-func (c Config) Counting() (port.ScheduleStore, error) {
+func (c Config) OpenDayCounts() (port.ScheduleStore, error) {
 	if c.SchedulesPath != "" {
 		return appstate.SchedulesAt(filepath.Join(c.SchedulesPath, "days")), nil
 	}
@@ -116,7 +116,7 @@ func (c Config) Flashcards(
 	)
 	day := review.Day{Starts: c.DayStarts()}
 
-	counting, err := c.Counting()
+	counting, err := c.OpenDayCounts()
 	if err != nil {
 		c.handleError(fmt.Errorf("the days are counted again at every launch: %w", err))
 	}

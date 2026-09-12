@@ -153,7 +153,7 @@ func (u Session) Execute(
 
 	// How loaded each day of review already is, which is what a card put on one
 	// of them is weighed against.
-	on := review.Spreading(u.Day)
+	on := review.NewDueByDay(u.Day)
 	for _, s := range schedules {
 		on.Holds(s.Due)
 	}

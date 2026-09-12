@@ -31,16 +31,16 @@ func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, 
 // caller that asked for that recording and waits for it. Transcribing is the
 // queue that listens to what nobody asked about.
 func (c Config) Transcribe(sources port.SourceRepository, by port.Transcriber) source.Transcribe {
-	return source.NewTranscribe(c.VaultReaders(), sources, c.DerivedStores(), by)
+	return source.NewTranscribe(c.VaultReaders(), sources, c.GetDerivedStores(), by)
 }
 
-// Transcribing is the queue that listens to this installation's recordings,
-// built against the adapters it was configured with and reporting itself into
-// the list of what is being done.
+// OpenTranscriptionWorker is the queue that listens to this installation's
+// recordings, built against the adapters it was configured with and reporting
+// itself into the list of what is being done.
 //
 // models is what it takes its turn at with the queue that reads scans: one run
 // holds this machine's models at a time.
-func (c Config) Transcribing(
+func (c Config) OpenTranscriptionWorker(
 	ctx context.Context,
 	sources port.SourceRepository,
 	tasks *task.Tasks,
@@ -48,7 +48,7 @@ func (c Config) Transcribing(
 ) *source.TranscriptionWorker {
 	return source.NewTranscriptionWorker(ctx, source.Transcriptions{
 		Readers: c.VaultReaders(),
-		Derived: c.DerivedStores(),
+		Derived: c.GetDerivedStores(),
 		Sources: sources,
 		Tasks:   tasks,
 		Models:  models,

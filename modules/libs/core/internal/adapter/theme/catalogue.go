@@ -170,9 +170,9 @@ func (c Catalogue) Text(name string) (string, error) {
 	return text, nil
 }
 
-// Applied is the theme a name asks for. A name matching nothing wears this
+// GetApplied is the theme a name asks for. A name matching nothing wears this
 // product's own palette, and is given back as the name that was not found.
-func (c Catalogue) Applied(name string) (applied, missing string) {
+func (c Catalogue) GetApplied(name string) (applied, missing string) {
 	if name == "" {
 		return Default, ""
 	}

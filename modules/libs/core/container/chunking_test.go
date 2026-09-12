@@ -29,15 +29,15 @@ func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cut.Sizes != held.Chunking() {
-		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.Chunking())
+	if cut.Sizes != held.GetChunkSizes() {
+		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.GetChunkSizes())
 	}
 }
 
 func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Indexing.Use = ""
-	if got := (container.Config{Embedding: cfg}).Chunking(); got != (chunking.Sizes{}) {
+	if got := (container.Config{Embedding: cfg}).GetChunkSizes(); got != (chunking.Sizes{}) {
 		t.Errorf("got %+v", got)
 	}
 }
@@ -45,7 +45,7 @@ func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 func TestTheModelSaidIsWhatAChunkIsCutUnder(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.MaxTokens = 512
-	if got := (container.Config{Embedding: cfg}).Chunking().Limit; got != chunking.Under(512) {
+	if got := (container.Config{Embedding: cfg}).GetChunkSizes().Limit; got != chunking.Under(512) {
 		t.Errorf("cut at %d, under %d", got, chunking.Under(512))
 	}
 }
@@ -83,7 +83,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, _, err := db.VectorsOwing().Unembedded(t.Context(), v.ID, wide{384}.Model(), "", 1000)
+	owing, _, err := db.VectorsOwing().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.Model(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

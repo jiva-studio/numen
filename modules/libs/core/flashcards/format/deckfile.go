@@ -75,7 +75,7 @@ func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 func (f *DeckFile) Whole(
 	stencils map[string]Stencil, createID func() (domain.CardID, error),
 ) ([]CardMark, error) {
-	body, given, err := Whole(markdown.Normalised(f.doc.Body()), stencils, createID)
+	body, given, err := Whole(markdown.Normalise(f.doc.Body()), stencils, createID)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (f *DeckFile) SetValue(card domain.CardID, field, value string) error {
 		}
 	}
 	block := headingLine(FieldLevel, oneLine(field))
-	if text := trimBlankLines(markdown.Normalised(value)); text != "" {
+	if text := trimBlankLines(markdown.Normalise(value)); text != "" {
 		block += "\n\n" + text
 	}
 	return f.doc.SpliceBody(span.end, span.end, insert(body, span.end, block))
@@ -253,7 +253,7 @@ func (f *DeckFile) RemoveSection(at int) error {
 func (f *DeckFile) AddSection(s Section) error {
 	body := []byte(f.doc.Body())
 	blocks := []string{headingLine(SectionLevel, oneLine(s.Name))}
-	if lead := trimBlankLines(markdown.Normalised(s.Preamble)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalise(s.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	at := len(body)
@@ -291,12 +291,12 @@ func cardBlock(card Card) string {
 	if card.StencilLink != "" {
 		blocks = append(blocks, "[["+card.StencilLink+"]]")
 	}
-	if lead := trimBlankLines(markdown.Normalised(card.Preamble)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalise(card.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	for _, v := range card.Values {
 		blocks = append(blocks, headingLine(FieldLevel, oneLine(v.Field)))
-		if text := trimBlankLines(markdown.Normalised(v.Text)); text != "" {
+		if text := trimBlankLines(markdown.Normalise(v.Text)); text != "" {
 			blocks = append(blocks, text)
 		}
 	}

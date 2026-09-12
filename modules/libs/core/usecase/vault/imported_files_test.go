@@ -21,7 +21,7 @@ type handedOver struct {
 	holding map[string][]string
 }
 
-func (h handedOver) Named(handle string) string { return h.names[handle] }
+func (h handedOver) GetName(handle string) string { return h.names[handle] }
 
 func (h handedOver) Stat(_ context.Context, handle string) (port.ImportedFile, error) {
 	one := port.ImportedFile{Name: h.names[handle], Handle: handle}

@@ -12,23 +12,23 @@ import (
 // NameQueries is the one question writing a link, or naming a new note, asks
 // of the vault.
 type NameQueries interface {
-	// Named is the paths of every note filed under one name. More than one is
-	// what makes a link written by that name mean the wrong note.
-	Named(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
+	// GetNamedPaths is the paths of every note filed under one name. More than
+	// one is what makes a link written by that name mean the wrong note.
+	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 }
 
 // ErrUnaddressable is a note no link reaches: its name carries a character a
 // link is read up to. Nothing is written.
 var ErrUnaddressable = errors.New("no link reaches a note named this")
 
-// Addressed is how a note the application knows by path is written into a
+// GetAddress is how a note the application knows by path is written into a
 // link: by its name, or by its path where the name would mean another note.
 //
 // A name is read back as an exact path from the root before it is read as a
 // neighbour, so a note filed beside a note of the same name at the root is
 // reached only by writing the path. Which of the two it is, only the vault
 // knows, and it is asked here.
-func Addressed(ctx context.Context, names NameQueries, vaultID domain.VaultID, path string) (domain.Address, error) {
+func GetAddress(ctx context.Context, names NameQueries, vaultID domain.VaultID, path string) (domain.Address, error) {
 	name := domain.Basename(path)
 	if name == "" {
 		return domain.Address{}, errors.New("a link needs a note to go to")
@@ -39,7 +39,7 @@ func Addressed(ctx context.Context, names NameQueries, vaultID domain.VaultID, p
 	if strings.ContainsAny(name, "#|") {
 		return domain.Address{}, fmt.Errorf("%w: %s", ErrUnaddressable, name)
 	}
-	shares, err := names.Named(ctx, vaultID, name)
+	shares, err := names.GetNamedPaths(ctx, vaultID, name)
 	if err != nil {
 		return domain.Address{}, err
 	}

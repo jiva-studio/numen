@@ -40,7 +40,7 @@ func main() {
 	flag.Parse()
 
 	if telling {
-		fmt.Println(version.Built("numen-flashcards"))
+		fmt.Println(version.GetVersionLine("numen-flashcards"))
 		return
 	}
 
@@ -81,7 +81,7 @@ func run(cfg container.Config, noAgent bool) error {
 	if err != nil {
 		return err
 	}
-	cfg = cfg.Indexing(chosen.Indexing)
+	cfg = cfg.SetIndexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
 
 	registry, err := cfg.Registry()
@@ -115,7 +115,7 @@ func run(cfg container.Config, noAgent bool) error {
 		Neighbourhood: flashcards.NewShowNeighbourhood(notes.Links, db.Queries(), notes.Read),
 		Presets:       running.Presets,
 		Notes:         db.Queries(),
-		Window:        window.Watching(task.New()),
+		Window:        window.NewWindow(task.New()),
 		Day:           running.Day,
 		Now:           time.Now,
 	}
@@ -127,7 +127,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// again where the last one failed.
 	vaults.record = func(v domain.Vault) {
 		api.Forget(v.ID)
-		api.Moved()
+		api.ReportChange()
 	}
 	api.Reading(ctx, vaults.reads)
 
@@ -184,7 +184,7 @@ func run(cfg container.Config, noAgent bool) error {
 	app := application.New(application.Options{
 		Name: "numen-flashcards",
 		Assets: application.AssetOptions{
-			Handler: api.Serving(pages),
+			Handler: api.NewHandler(pages),
 		},
 		// The application ends when its last window closes.
 		Mac: application.MacOptions{

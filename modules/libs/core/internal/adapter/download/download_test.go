@@ -242,7 +242,7 @@ func TestWhichProviderSupportsAnAddress(t *testing.T) {
 		{"https://youtu.be/dQw4w9WgXcQ", "yt-dlp"},
 		{"https://example.com/entropy", "go-readability"},
 	} {
-		if got := downloader.Downloading(address(t, one.written)).Tool; got != one.want {
+		if got := downloader.GetDownloadModel(address(t, one.written)).Tool; got != one.want {
 			t.Errorf("%s is fetched by %q, want %q", one.written, got, one.want)
 		}
 	}

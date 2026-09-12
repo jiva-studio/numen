@@ -97,7 +97,7 @@ func run(body []byte, from, to int) (string, int) {
 		begin = next
 	}
 	end = getTrimmedEnd(body, begin, end)
-	return markdown.Normalised(string(body[begin:end])), end
+	return markdown.Normalise(string(body[begin:end])), end
 }
 
 // getTrimmedEnd is the byte a run's own text stops at, the whitespace that

@@ -25,7 +25,7 @@ func TestPreparingMakesTheRuntimeWithoutAModel(t *testing.T) {
 	if err := Prepare(t.Context(), cfg); err != nil {
 		t.Fatal(err)
 	}
-	if !Prepared() {
+	if !IsPrepared() {
 		t.Error("the runtime a page is read through was not made")
 	}
 }

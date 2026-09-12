@@ -60,13 +60,13 @@ func (c Config) Notes(
 	}
 }
 
-// Following tells a window where each note went, so whoever is showing one at
+// FollowMoves tells a window where each note went, so whoever is showing one at
 // the name it had follows it to the name it now has. Every build with a window
 // binds it.
-func (n Notes) Following(view port.Window) Notes {
+func (n Notes) FollowMoves(view port.Window) Notes {
 	moving := n.Move
 	moving.Drawing = func(ctx context.Context, went domain.Move) {
-		_ = view.Moved(ctx, went)
+		_ = view.ShowMove(ctx, went)
 	}
 	n.Move, n.Rename = moving, note.NewRename(moving)
 	return n
@@ -79,7 +79,7 @@ func (n Notes) Following(view port.Window) Notes {
 // nothing, because the person is looking at the text they typed.
 func (n Notes) Drawing(view port.Window) Notes {
 	tell := note.TellEdit(func(ctx context.Context, said domain.Edit) {
-		_ = view.Editing(ctx, said)
+		_ = view.ShowEdit(ctx, said)
 	})
 	n.Write.Drawing, n.Replace.Drawing = tell, tell
 	return n

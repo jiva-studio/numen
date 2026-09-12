@@ -22,7 +22,7 @@ type site struct {
 	bytes []byte
 }
 
-func (s *site) Downloading(domain.URL) port.DownloadModel {
+func (s *site) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "a test", Version: "1", Producer: derived.Captions}
 }
 

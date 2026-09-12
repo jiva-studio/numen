@@ -109,13 +109,13 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 	return out, nil
 }
 
-// Cutting is the stencil each card of a deck is cut by, keyed by what stands in
-// the card's brackets. A name that reaches no note, or reaches a note that is
-// not a stencil, carries a stencil of nothing.
+// GetCardStencils is the stencil each card of a deck is cut by, keyed by what
+// stands in the card's brackets. A name that reaches no note, or reaches a note
+// that is not a stencil, carries a stencil of nothing.
 //
 // The two files are read against each other here, which is what says which of a
 // card's fields is first.
-func (u Read) Cutting(
+func (u Read) GetCardStencils(
 	ctx context.Context, v domain.Vault, path string, d format.Deck,
 ) (map[string]format.Stencil, error) {
 	at, err := getStencilPaths(ctx, u.Links, v.ID, path, d)

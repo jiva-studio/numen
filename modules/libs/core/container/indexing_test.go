@@ -13,7 +13,7 @@ import (
 // nothing, and turning a model off is done by naming none, so nothing says it.
 func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	said := settings.Defaults().Indexing
-	cfg := container.Config{IndexPath: "/somewhere/index.db"}.Indexing(said)
+	cfg := container.Config{IndexPath: "/somewhere/index.db"}.SetIndexing(said)
 
 	if !reflect.DeepEqual(cfg.Embedding, said.Embedding) {
 		t.Error("the embedding section did not arrive")

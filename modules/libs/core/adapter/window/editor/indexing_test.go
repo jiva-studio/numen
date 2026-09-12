@@ -118,12 +118,12 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 
 	// The weights are still coming down, and in this test they never land.
-	arriving := embedding.Arriving(model.Model())
+	arriving := embedding.NewArriving(model.Model())
 
 	over := make(chan struct{})
 	go func() {
 		defer close(over)
-		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.Filling(), nil)
+		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.GetWaitingEmbedder(), nil)
 	}()
 
 	select {
@@ -150,11 +150,11 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	arriving := embedding.Arriving(model.Model())
+	arriving := embedding.NewArriving(model.Model())
 	over := make(chan struct{})
 	go func() {
 		defer close(over)
-		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.Filling(), nil)
+		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.GetWaitingEmbedder(), nil)
 	}()
 
 	for range 20 {
@@ -164,7 +164,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 		time.Sleep(time.Millisecond)
 	}
 
-	arriving.Landed(model, nil)
+	arriving.ReportArrival(model, nil)
 	<-over
 
 	if at := findTask(t, api, makingVectors); at != nil {
@@ -257,7 +257,7 @@ func cut(t *testing.T, db *container.Index, api *API) {
 		Known:       db.Queries(),
 		Maintenance: db.Maintenance(),
 	}
-	if _, err := scan.Execute(t.Context(), api.Showing()); err != nil {
+	if _, err := scan.Execute(t.Context(), api.GetShownVault()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -296,10 +296,10 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	// A provider that answers over a network is here the moment it is made, so
 	// there is no arrival to wait for and the pass begins at once.
 	over := &overheard{asked: model, tasks: api.Window.Tasking}
-	held := embedding.Arriving(model.Model())
-	held.Landed(over, nil)
+	held := embedding.NewArriving(model.Model())
+	held.ReportArrival(over, nil)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, held.Filling(), nil)
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, held.GetWaitingEmbedder(), nil)
 
 	for _, list := range over.lists() {
 		for _, at := range list {

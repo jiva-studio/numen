@@ -32,7 +32,7 @@ func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
 // that file when the address comes back.
 func TestAFileStampedByAClockIsStillItselfThroughTheSchema(t *testing.T) {
 	ref := domain.Fingerprint{Path: "recordings/Compost.mp3", Size: 3, ModTime: time.Now()}
-	if back := refOf(fingerprintOf(ref)); !back.Unchanged(ref) {
+	if back := refOf(fingerprintOf(ref)); !back.IsUnchanged(ref) {
 		t.Errorf("the message carried the file back as %+v, and it is %+v", back, ref)
 	}
 }

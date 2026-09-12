@@ -163,7 +163,7 @@ func TestTheVaultOpenedLastSurvivesARoundTrip(t *testing.T) {
 	if err := first.Save(v); err != nil {
 		t.Fatal(err)
 	}
-	if err := first.Opened(v.ID); err != nil {
+	if err := first.RecordOpened(v.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -198,7 +198,7 @@ func TestRemovingTheVaultOpenedLastForgetsThatItWas(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := r.Opened("01BBB"); err != nil {
+	if err := r.RecordOpened("01BBB"); err != nil {
 		t.Fatal(err)
 	}
 	if err := r.Remove("01BBB"); err != nil {
@@ -224,7 +224,7 @@ func TestOpeningAVaultThatIsNotOnTheListIsRefused(t *testing.T) {
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.Opened("01NEVERADDED"); err == nil {
+	if err := r.RecordOpened("01NEVERADDED"); err == nil {
 		t.Fatal("an identity nothing on the list carries was recorded")
 	}
 	if got, found, err := r.Last(); err != nil || found {
@@ -284,7 +284,7 @@ func TestTheFileNamesTheVaultOpenedLast(t *testing.T) {
 	if _, present := shape()["last"]; present {
 		t.Errorf("nothing has been opened, and the file says one was: %v", shape())
 	}
-	if err := r.Opened("01AAA"); err != nil {
+	if err := r.RecordOpened("01AAA"); err != nil {
 		t.Fatal(err)
 	}
 	if got := shape()["last"]; got != "01AAA" {

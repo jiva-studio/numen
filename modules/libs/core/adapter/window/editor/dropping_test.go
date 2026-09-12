@@ -46,7 +46,7 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*API, *noting
 		},
 	}
 	api.show(vault)
-	return api, index, api.Serving(http.NotFoundHandler())
+	return api, index, api.NewHandler(http.NotFoundHandler())
 }
 
 // newTranscriptIndex is what the index says a recording a model listened to stands on.

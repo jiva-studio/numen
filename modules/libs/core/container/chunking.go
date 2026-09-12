@@ -10,14 +10,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// Chunking is how a source's text is cut into chunks.
+// GetChunkSizes is how a source's text is cut into chunks.
 //
 // It is a fact about the settings and not about what is loaded: the sizes are
 // part of what a chunk is kept under, and a chunk cut one way in a window and
 // another way in a terminal is a source cut again every time the two take
 // turns. This is where the number comes from, and there is nowhere else to
 // take it from.
-func (c Config) Chunking() chunking.Sizes {
+func (c Config) GetChunkSizes() chunking.Sizes {
 	if c.Embedding.Indexing.Use == "" {
 		return chunking.Sizes{}
 	}
@@ -43,7 +43,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 	scan := vault.NewScan(
 		c.VaultReaders(),
 		db.Vaults(),
-		db.NotesCutAt(c.Chunking(), c.Legibility()),
+		db.NotesCutAt(c.GetChunkSizes(), c.Legibility()),
 		db.Queries(),
 		db.Maintenance(),
 	)
@@ -94,7 +94,7 @@ func (c Config) ReadWholeVault(
 
 // Embed gives a vault's chunks the vectors they owe.
 func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (source.Embed, error) {
-	derived, err := c.DerivedStores().Open(v)
+	derived, err := c.GetDerivedStores().Open(v)
 	if err != nil {
 		return source.Embed{}, err
 	}
@@ -108,14 +108,14 @@ func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (source
 // Extract cuts a vault's sources into chunks. Every entry point takes it from
 // here, so what a chunk is kept under is one answer.
 func (c Config) Extract(sources port.SourceRepository, known port.SourceQueries, v domain.Vault) (source.Extract, error) {
-	derived, err := c.DerivedStores().Open(v)
+	derived, err := c.GetDerivedStores().Open(v)
 	if err != nil {
 		return source.Extract{}, err
 	}
 	extract := source.NewExtract(c.VaultReaders(), sources, known)
 	extract.Derived = derived
 	extract.Documents = c.TextExtractor()
-	extract.Sizes = c.Chunking()
+	extract.Sizes = c.GetChunkSizes()
 	extract.Legibility = c.Legibility()
 	extract.RebuildIndex = c.RebuildIndex
 	return extract, nil

@@ -282,7 +282,7 @@ func TestAFileRenamedUnderFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T
 		t.Run(name, func(t *testing.T) {
 			c := changeable(t, map[string]string{"Entropy.md": raw})
 
-			if err := c.move().Called(t.Context(), c.vault, "Entropy.md"); err != nil {
+			if err := c.move().WriteFilenameAsTitle(t.Context(), c.vault, "Entropy.md"); err != nil {
 				t.Fatalf("the file had already landed: %v", err)
 			}
 			if got := c.read(t, "Entropy.md"); got != raw {
@@ -511,7 +511,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 				t.Errorf("the vault shows the note as %q", got)
 			}
 
-			found, err := c.db.Queries().Named(t.Context(), c.vault.ID, "Entropy")
+			found, err := c.db.Queries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
 			if err != nil {
 				t.Fatal(err)
 			}

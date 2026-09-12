@@ -728,7 +728,7 @@ func TestAReadingNamesItsParts(t *testing.T) {
 		t.Fatalf("the parts are not beside the artifact: %v", err)
 	}
 
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 	if len(doc.Parts) != res.Pages {
 		t.Fatalf("the reading names %d parts over %d pages", len(doc.Parts), res.Pages)
 	}
@@ -779,7 +779,7 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 	if len(doc.Parts) != res.Pages {
 		t.Fatalf("the reading names %d parts over %d pages", len(doc.Parts), res.Pages)
 	}

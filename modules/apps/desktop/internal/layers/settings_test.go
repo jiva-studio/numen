@@ -29,7 +29,7 @@ func TestEveryPathThePageReadsStandsInTheFile(t *testing.T) {
 		t.Fatal("the page draws no rows")
 	}
 
-	written, err := settings.Written(settings.Defaults())
+	written, err := settings.WriteJSON(settings.Defaults())
 	if err != nil {
 		t.Fatal(err)
 	}

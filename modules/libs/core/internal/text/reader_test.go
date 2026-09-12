@@ -26,7 +26,7 @@ func writeTranscript() []byte {
 }
 
 func TestATranscriptLocatesAPassageByWhenItWasSaid(t *testing.T) {
-	doc := text.Transcribed(writeTranscript())
+	doc := text.ReadTranscript(writeTranscript())
 
 	checkLocation(t, doc, opening, "0:01")
 	checkLocation(t, doc, middle, "1:23:45")
@@ -35,7 +35,7 @@ func TestATranscriptLocatesAPassageByWhenItWasSaid(t *testing.T) {
 
 // A transcription names no parts: the cues are where the speech was.
 func TestATranscriptNamesNoParts(t *testing.T) {
-	doc := text.Transcribed(writeTranscript())
+	doc := text.ReadTranscript(writeTranscript())
 
 	if len(doc.Parts) != 0 {
 		t.Errorf("the transcript names %+v", doc.Parts)
@@ -49,7 +49,7 @@ func TestATranscriptNamesNoParts(t *testing.T) {
 func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
 	store := beside{text.Artifact(text.ASR, "abc123"): writeTranscript()}
 
-	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
 		text.Corrections(text.ASR, "abc123"): append(put, transcript.Hand()...),
 	}
 
-	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestATranscriptPutRightToNothingIsWhatWasHeard(t *testing.T) {
 				text.Artifact(text.ASR, "abc123"):    writeTranscript(),
 				text.Corrections(text.ASR, "abc123"): one.put,
 			}
-			doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+			doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -162,7 +162,7 @@ func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
 		text.Corrections(text.ASR, "abc123"): torn,
 	}
 
-	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", writeTranscript())
+	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +178,7 @@ func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
 // before it moves every offset by exactly its own length.
 func TestALinkNoteIsItsProseAndThenWhatWasFetched(t *testing.T) {
 	prose := strings.Repeat("What I made of it. ", 20)
-	doc := text.Joined(prose, text.Transcribed(writeTranscript()))
+	doc := text.JoinDocuments(prose, text.ReadTranscript(writeTranscript()))
 
 	if !strings.HasPrefix(doc.Text, prose+text.Separator) {
 		t.Errorf("the note reads %q, want its prose first", doc.Text)

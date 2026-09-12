@@ -24,12 +24,12 @@ var policy = csp.Sources{Images: []string{"data:"}}.Policy()
 
 // Pages is the interface itself, built by `make interface` and carried inside
 // the binary. A binary built without it says so.
-func Pages() (http.Handler, error) { return wire.Serving(pages) }
+func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
-// Serving is the whole of what this window answers: the flashcards service, the
-// agent a card is asked about through, the window itself, the themes it is
+// NewHandler is the whole of what this window answers: the flashcards service,
+// the agent a card is asked about through, the window itself, the themes it is
 // dressed from, and the files the page is made of.
-func (a *API) Serving(files http.Handler) http.Handler {
+func (a *API) NewHandler(files http.Handler) http.Handler {
 	route, questions := numenv1connect.NewFlashcardsServiceHandler(a)
 	asking, agent := numenv1connect.NewAgentServiceHandler(a)
 	drawn, itself := numenv1connect.NewWindowServiceHandler(a.Window)

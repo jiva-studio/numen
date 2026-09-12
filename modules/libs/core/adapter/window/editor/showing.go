@@ -56,7 +56,7 @@ var errAsking = errors.New("a page is holding work a person has to answer for")
 // window stays on the one it had, and a window neither comes up in stands on
 // nothing and says so.
 func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
-	if v.ID == o.API.Showing().ID {
+	if v.ID == o.API.GetShownVault().ID {
 		return nil
 	}
 	if err := readable(o.cfg, v); err != nil {
@@ -75,7 +75,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 		return errAsking
 	}
 
-	was := o.API.Showing()
+	was := o.API.GetShownVault()
 	o.leave()
 	o.forget()
 
@@ -114,7 +114,7 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 	}
 	// Recorded before the vault is built, so the next window opens on it. A
 	// list that could not be written is said and nothing more.
-	if err := o.registry.Opened(v.ID); err != nil {
+	if err := o.registry.RecordOpened(v.ID); err != nil {
 		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
 	on, err := o.begins(v, rebuild)
@@ -137,7 +137,7 @@ func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
 	}
 
 	watching, stop := context.WithCancel(o.under)
-	recognising := o.cfg.Recognising(watching, o.Index.Sources(), o.tasks, o.models)
+	recognising := o.cfg.OpenRecognitionWorker(watching, o.Index.Sources(), o.tasks, o.models)
 
 	// What a recognition writes down is cut where every other cut happens. A
 	// document being read and a vault being scanned are then never two passes
@@ -152,16 +152,16 @@ func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
 	// A batch left with a proofreader outlives the run that left it, so one
 	// left before the application closed is collected when it opens. Every
 	// vault this installation holds is asked after.
-	recognising.Collecting(watching, o.Index.SourcesKnown(), collectedEvery, known...)
+	recognising.CollectBatches(watching, o.Index.SourcesKnown(), collectedEvery, known...)
 
 	// A proofreading stands at the page it reached, so one that ended among the
 	// batches is taken up when the application opens.
-	recognising.TakingUp(watching, o.Index.SourcesKnown(), known...)
+	recognising.TakeUp(watching, o.Index.SourcesKnown(), known...)
 
 	// A recording says nothing until a model has listened to it, so the ones
 	// this vault holds no transcript for are work whether or not anybody asks.
 	// What it writes is cut where every other cut happens.
-	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks, o.models)
+	transcribing := o.cfg.OpenTranscriptionWorker(watching, o.Index.Sources(), o.tasks, o.models)
 	transcribing.Cut = recognising.Cut
 	if o.cfg.Transcribes {
 		transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
@@ -170,7 +170,7 @@ func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
 	// A transcript's proofreading stands at the line it reached, and is taken up
 	// here whether or not this installation listens to recordings on its own.
 	// Every vault this installation holds is asked after.
-	transcribing.TakingUp(watching, o.Index.SourcesKnown(), known...)
+	transcribing.TakeUp(watching, o.Index.SourcesKnown(), known...)
 
 	// Reading every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.

@@ -59,7 +59,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 	// The welcome screen's way into a vault: the list opens one in this window.
 	opened.API.Opens = opened.Show
 
-	server := httptest.NewUnstartedServer(opened.API.Serving(http.NotFoundHandler()))
+	server := httptest.NewUnstartedServer(opened.API.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)
@@ -82,7 +82,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T) {
 	f := openEmptyWindow(t)
 
-	if got := f.opened.Showing(); got != (domain.Vault{}) {
+	if got := f.opened.GetShownVault(); got != (domain.Vault{}) {
 		t.Errorf("the window opened on %+v, want no vault", got)
 	}
 
@@ -209,7 +209,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				_ = f.opened.API.Viewing().Focus(asking, domain.Place{Path: "Somewhere.md"})
+				_ = f.opened.API.GetWindow().Focus(asking, domain.Place{Path: "Somewhere.md"})
 			}
 		}
 	}()
@@ -415,7 +415,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}
 
-	if got := string(f.opened.Showing().ID); got != added.Msg.GetVault().GetId() {
+	if got := string(f.opened.GetShownVault().ID); got != added.Msg.GetVault().GetId() {
 		t.Fatalf("the window is showing %q, want the vault just added", got)
 	}
 

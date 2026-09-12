@@ -37,9 +37,9 @@ type reaching struct {
 	vault domain.Vault
 }
 
-// Opened is a session opening on a vault. A session opened on the same vault
-// again leaves the agent where it is.
-func (r *reaching) Opened(_ context.Context, v domain.Vault) {
+// SetSessionVault is a session opening on a vault. A session opened on the same
+// vault again leaves the agent where it is.
+func (r *reaching) SetSessionVault(_ context.Context, v domain.Vault) {
 	r.mu.Lock()
 	again := r.vault.ID == v.ID
 	r.vault = v
@@ -119,7 +119,7 @@ func serveAgents(
 		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}
 
-	api.Opened = held.Opened
+	api.Opened = held.SetSessionVault
 	return func() error {
 		held.swapping.Off()
 		return nil
@@ -147,7 +147,7 @@ func makeReviewCore(
 	out io.Writer,
 ) mcp.Core {
 	return mcp.Core{
-		Showing: mcp.ShowingOne(v, root),
+		Showing: mcp.ShowOneVault(v, root),
 		Readers: cfg.VaultReaders(),
 		// Which card the person is on is a tool's answer and never part of the
 		// question, so a deck named by whoever synced it is data and not
@@ -161,13 +161,13 @@ func makeReviewCore(
 			Queries:       db.Queries(),
 			Neighbourhood: notes.Neighbourhood,
 			Links:         notes.Links,
-			Search: cfg.SearchingOver(db.Passages(), nil,
+			Search: cfg.NewSearchOver(db.Passages(), nil,
 				func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
 		},
 
 		Sources: mcp.Sources{
 			Queries:   db.SourcesKnown(),
-			Derived:   cfg.DerivedStores(),
+			Derived:   cfg.GetDerivedStores(),
 			Documents: cfg.TextExtractor(),
 		},
 

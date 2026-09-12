@@ -407,7 +407,7 @@ func learnt(
 	ctx context.Context, run Simulation, now time.Time, p Preset,
 	at map[CardFaceID]Schedule, unseen int,
 ) (int, error) {
-	run.Recalls = NothingForgotten
+	run.Recalls = GetFullRecall
 	// The day the material is learned is all this run is read for.
 	run.Retains = nil
 	ran, err := run.Run(ctx, now, p, at, unseen)

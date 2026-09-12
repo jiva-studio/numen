@@ -128,7 +128,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		case opts.Reads:
 			vocabulary = mcp.ReadingVocabulary
 		case opts.Reviews:
-			vocabulary = mcp.ReviewingVocabulary
+			vocabulary = mcp.GetReviewVocabulary
 		}
 		words, err := vocabulary(ctx, opts.Core)
 		if err != nil {

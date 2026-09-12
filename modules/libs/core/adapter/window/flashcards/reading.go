@@ -146,7 +146,7 @@ func (a *API) walk(ctx context.Context, read ReadVault, v domain.Vault, held boo
 		return
 	}
 	a.finishTask(at.ID)
-	a.Moved()
+	a.ReportChange()
 }
 
 // Forget lets go of why a vault could not be read. A vault that moved

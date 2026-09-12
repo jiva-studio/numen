@@ -91,7 +91,7 @@ func (f *Watch) Run(ctx context.Context) {
 				continue
 			}
 			f.handleError(nil)
-			f.reportChanges(VaultChanges{Paths: res.Changed(), Assets: res.Assets})
+			f.reportChanges(VaultChanges{Paths: res.GetChangedPaths(), Assets: res.Assets})
 
 		case <-f.lost:
 			// More changed at once than could be followed, or something went

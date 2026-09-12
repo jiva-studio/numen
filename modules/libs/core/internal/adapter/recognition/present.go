@@ -7,13 +7,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
-// Fetched says whether one recogniser's file is on this machine: the path
+// IsFetched says whether one recogniser's file is on this machine: the path
 // written down, a file beside the application, or what an address is kept under
 // in the download cache.
 //
 // It stats what a fetch would have written, and opens, reaches and creates
 // nothing.
-func Fetched(cfg Config, held RecogniserModel) bool {
+func IsFetched(cfg Config, held RecogniserModel) bool {
 	if held.Path != "" {
 		return stands(held.Path)
 	}
@@ -32,7 +32,7 @@ func Fetched(cfg Config, held RecogniserModel) bool {
 	if err != nil {
 		return false
 	}
-	return stands(filepath.Join(dir, onnxruntime.Cached(held.Name)))
+	return stands(filepath.Join(dir, onnxruntime.GetCacheName(held.Name)))
 }
 
 func stands(at string) bool {

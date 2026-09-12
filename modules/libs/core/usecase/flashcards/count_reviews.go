@@ -120,7 +120,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 			one = cachedRun{
 				Name: file.Name,
 				Size: ran.Size,
-				Days: review.Counted(u.Day, ran.Answers),
+				Days: review.GetDayTallies(u.Day, ran.Answers),
 				IDs:  identifiers(ran.Answers),
 			}
 		}
@@ -140,7 +140,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 					return ReviewCounts{}, err
 				}
 			}
-			days = review.Counted(u.Day, getUncounted(ran.Answers, seen))
+			days = review.GetDayTallies(u.Day, getUncounted(ran.Answers, seen))
 		}
 		for _, id := range one.IDs {
 			seen[id] = true
@@ -236,12 +236,12 @@ func (u CountReviews) ahead(
 	now := u.Now()
 	ends := u.Day.GetEnd(now)
 	for _, s := range schedules {
-		if !s.Seen() || s.Due.Before(ends) {
+		if !s.IsSeen() || s.Due.Before(ends) {
 			continue
 		}
 		falls[u.Day.GetName(s.Due)]++
 	}
-	return falls, held.History().Retained(u.Schedules.By, u.Day), nil
+	return falls, held.History().GetRetained(u.Schedules.By, u.Day), nil
 }
 
 // readRemembered is what was counted last time, by the name of the run it was

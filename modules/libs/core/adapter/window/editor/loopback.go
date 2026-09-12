@@ -251,7 +251,7 @@ func (a *API) serveCopy(
 // vaultOf is the vault an address names. The one the window shows is answered
 // without asking the list, which is every question but the first.
 func (a *API) vaultOf(id string) (domain.Vault, bool) {
-	if showing := a.Showing(); string(showing.ID) == id {
+	if showing := a.GetShownVault(); string(showing.ID) == id {
 		return showing, true
 	}
 	if a.Vaults.Registry == nil {

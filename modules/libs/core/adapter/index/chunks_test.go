@@ -132,7 +132,7 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	t.Helper()
 	ctx := t.Context()
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, vault.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,7 +311,7 @@ func TestAPassageSaysWhatItWasReadOutOf(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	named, err := queries.Named(ctx, first.ID, "opening", nil, 10, false)
+	named, err := queries.GetNamedPassages(ctx, first.ID, "opening", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -470,7 +470,7 @@ func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 100)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -590,7 +590,7 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	}
 
 	// A name resolves to a note, and a book is not one.
-	if paths, err := db.NoteQueries().Named(ctx, first.ID, "first"); err != nil {
+	if paths, err := db.NoteQueries().GetNamedPaths(ctx, first.ID, "first"); err != nil {
 		t.Fatal(err)
 	} else if len(paths) != 0 {
 		t.Errorf("the name of a book resolves to %v", paths)
@@ -649,7 +649,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 	book(t, db, first, "library/cut.epub", 0x00)
 	book(t, db, second, "library/other.epub", 0xff)
 
-	uncut, err := queries.Unchunked(ctx, first.ID, "book", 10)
+	uncut, err := queries.GetUnchunkedSources(ctx, first.ID, "book", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -679,7 +679,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 	}
 
 	// The model: chunks whose vectors were made by a different one.
-	owing, err := queries.Unembedded(ctx, first.ID, "another-model", 0, 10)
+	owing, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -691,7 +691,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 			t.Errorf("the first vault answered with %s", p.Path)
 		}
 	}
-	if done, err := queries.Unembedded(ctx, first.ID, "model", 0, 10); err != nil {
+	if done, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 10); err != nil {
 		t.Fatal(err)
 	} else if len(done) != 0 {
 		t.Errorf("%d chunks owe a vector from the model that made theirs", len(done))
@@ -709,14 +709,14 @@ func TestAnAnswerAboutWhatOwesWorkResumes(t *testing.T) {
 	}
 
 	queries := db.ChunkQueries()
-	firstBatch, err := queries.Unembedded(ctx, first.ID, "model", 0, 1)
+	firstBatch, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(firstBatch) != 1 {
 		t.Fatalf("a batch of one gave %d", len(firstBatch))
 	}
-	next, err := queries.Unembedded(ctx, first.ID, "model", firstBatch[0].Chunk, 10)
+	next, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", firstBatch[0].Chunk, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -793,7 +793,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	owing, err := db.ChunkQueries().Unembedded(ctx, vault.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -812,7 +812,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	owing, err = db.ChunkQueries().Unembedded(ctx, vault.ID, "model", 0, 1000)
+	owing, err = db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -862,7 +862,7 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 	cutInto(t, db, first, "library/recut.epub", "the passage as it was")
 
 	// What a pass is given, before anything moves under it.
-	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -944,7 +944,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 	cutInto(t, db, first, "library/coarse.epub", "the passage the bits prefer")
 	cutInto(t, db, first, "library/true.epub", "the passage the vectors prefer")
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -983,7 +983,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 	db := openDB(t)
 	cutInto(t, db, first, "library/kept.epub", "the passage that was paid for")
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1011,7 +1011,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 		t.Fatalf("%d vectors survived a rebuild of the chunks, want none", got)
 	}
 
-	kept, err := db.ChunkQueries().Kept(ctx, "a recipe", [][]byte{sum[:]})
+	kept, err := db.ChunkQueries().GetKeptVectors(ctx, "a recipe", [][]byte{sum[:]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1023,7 +1023,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 	}
 
 	// Another recipe is another vector, and this one was never made.
-	other, err := db.ChunkQueries().Kept(ctx, "another recipe", [][]byte{sum[:]})
+	other, err := db.ChunkQueries().GetKeptVectors(ctx, "another recipe", [][]byte{sum[:]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1043,7 +1043,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	cutInto(t, db, first, "library/first.epub", "a passage two models read")
 	queries := db.ChunkQueries()
 
-	owing, err := queries.Unembedded(ctx, first.ID, "another-model", 0, 10)
+	owing, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1094,7 +1094,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	cutInto(t, db, first, "library/edited.epub", "a passage that will be rewritten")
 	cutInto(t, db, first, "library/gone.epub", "a passage in a book that goes")
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1150,7 +1150,7 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 	cutInto(t, db, first, "library/one.epub", shared)
 	cutInto(t, db, first, "library/two.epub", shared)
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, "model", 0, 10)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1185,7 +1185,7 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 	cutInto(t, db, first, "library/one.epub", "something else entirely")
 
 	sum := sha256.Sum256([]byte(shared))
-	kept, err := db.ChunkQueries().Kept(ctx, "model", [][]byte{sum[:]})
+	kept, err := db.ChunkQueries().GetKeptVectors(ctx, "model", [][]byte{sum[:]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1228,7 +1228,7 @@ func TestRecognisedStaysInsideItsVault(t *testing.T) {
 		{first, chunk.SourceText{Path: "library/first.pdf", Producer: "ocr", Hash: "hash-first"}},
 		{second, chunk.SourceText{Path: "library/second.pdf", Producer: "ocr", Hash: "hash-second"}},
 	} {
-		found, err := db.ChunkQueries().Recognised(t.Context(), c.vault.ID, "book")
+		found, err := db.ChunkQueries().GetRecognisedSources(t.Context(), c.vault.ID, "book")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1301,7 +1301,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 		t.Fatal("the words half already answers with the section, and this proves nothing")
 	}
 
-	named, err := queries.Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := queries.GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1327,7 +1327,7 @@ func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
 	db := openDB(t)
 	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1342,7 +1342,7 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
 	saveSectionedBook(t, db, second, "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1390,7 +1390,7 @@ func TestASectionNameLeavesWithTheSourceItCameFrom(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().Named(ctx, first.ID, "Thermodynamics", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Thermodynamics", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1417,7 +1417,7 @@ func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1451,7 +1451,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().Named(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}

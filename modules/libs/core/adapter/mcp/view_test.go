@@ -36,12 +36,12 @@ func newSessionWithWindow(t *testing.T, notes map[string]string) (*sdk.ClientSes
 	looking := &window{}
 	core.View = looking
 	tells := note.TellEdit(func(ctx context.Context, said domain.Edit) {
-		_ = looking.Editing(ctx, said)
+		_ = looking.ShowEdit(ctx, said)
 	})
 	core.Notes.Write.Drawing = tells
 	core.Notes.Replace.Drawing = tells
 	moving := note.TellMove(func(ctx context.Context, went domain.Move) {
-		_ = looking.Moved(ctx, went)
+		_ = looking.ShowMove(ctx, went)
 	})
 	core.Notes.Move.Drawing = moving
 	core.Notes.Rename.Drawing = moving
@@ -166,7 +166,7 @@ func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
 
 // drawn is what the window was told about a change being made, in the order it
 // was told.
-func (w *window) Editing(_ context.Context, said domain.Edit) error {
+func (w *window) ShowEdit(_ context.Context, said domain.Edit) error {
 	if w.fails != nil {
 		return w.fails
 	}
@@ -175,7 +175,7 @@ func (w *window) Editing(_ context.Context, said domain.Edit) error {
 }
 
 // went is where the window was told each note moved to.
-func (w *window) Moved(_ context.Context, went domain.Move) error {
+func (w *window) ShowMove(_ context.Context, went domain.Move) error {
 	if w.fails != nil {
 		return w.fails
 	}

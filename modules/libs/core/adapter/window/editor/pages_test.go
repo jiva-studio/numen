@@ -45,7 +45,7 @@ func newPageHandler(t *testing.T, cfg container.Config) (http.Handler, numenv1co
 	if err != nil {
 		t.Fatal(err)
 	}
-	return (&API{Themes: themes}).Serving(files), themes
+	return (&API{Themes: themes}).NewHandler(files), themes
 }
 
 // puts a theme in the person's folder, which opening the catalogue made.
@@ -98,7 +98,7 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	held := csp.Sources{}.Policy()
 
-	handler := (&API{}).Serving(http.NotFoundHandler())
+	handler := (&API{}).NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetOf("a.pdf")} {
 		if said := getResponse(handler, path).Header().Get("Content-Security-Policy"); said != held {
 			t.Errorf("%q is held to %q", path, said)
@@ -117,7 +117,7 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 		t.Errorf("the window may frame %q", got)
 	}
 
-	said := getResponse((&API{}).Serving(http.NotFoundHandler()), "/").
+	said := getResponse((&API{}).NewHandler(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
 	if !strings.Contains(said, "frame-src 'self';") {
 		t.Errorf("the policy reads %q", said)
@@ -139,7 +139,7 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 // through to the pages and is answered not found; a route a service holds
 // answers a GET as a method that call does not take.
 func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
-	handler := (&API{}).Serving(http.NotFoundHandler())
+	handler := (&API{}).NewHandler(http.NotFoundHandler())
 	for _, route := range []string{
 		numenv1connect.VaultServiceGetVaultStateProcedure,
 		numenv1connect.FileServiceListFilesProcedure,
@@ -157,7 +157,7 @@ func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
 // have reached into.
 func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	api := &API{}
-	handler := api.Serving(http.NotFoundHandler())
+	handler := api.NewHandler(http.NotFoundHandler())
 	questions, _ := numenv1connect.NewVaultServiceHandler(api)
 	asked := []string{"", "/", "/index.html", assetOf("a.pdf"), questions + "Find"}
 
@@ -264,7 +264,7 @@ func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
 // The built stylesheet declares `color-scheme` at zero weight alone, so the
 // element the page carries stands unopposed whatever a theme says.
 func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
-	built, err := wire.Built(pages)
+	built, err := wire.GetInterface(pages)
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}
@@ -316,7 +316,7 @@ func TestAPageThatCannotSayWhatItWearsIsServedAsItWasBuilt(t *testing.T) {
 		t.Skipf("no interface in this binary: %v", err)
 	}
 
-	out := getResponse((&API{}).Serving(files), "/")
+	out := getResponse((&API{}).NewHandler(files), "/")
 	if out.Code != http.StatusOK {
 		t.Fatalf("answered %d", out.Code)
 	}
@@ -394,7 +394,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	api := &API{Readers: readers, Viewer: newViewer(nil)}
 	api.Viewer.open = func([]byte) (scan, error) { return nil, errNoPage }
 	api.show(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
-	handler := api.Serving(http.NotFoundHandler())
+	handler := api.NewHandler(http.NotFoundHandler())
 
 	answered := make(chan struct{})
 	go func() {

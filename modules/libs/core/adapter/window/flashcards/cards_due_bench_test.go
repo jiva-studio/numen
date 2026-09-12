@@ -35,7 +35,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 	}
 
 	ctx := b.Context()
-	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	b.Cleanup(server.Close)
 	client := numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 

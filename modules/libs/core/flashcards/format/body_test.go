@@ -67,7 +67,7 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("stencil body: %v", err)
 			}
-			if want := markdown.Normalised(doc.Body()); body != want {
+			if want := markdown.Normalise(doc.Body()); body != want {
 				t.Errorf("the round trip changed the stencil\n want %q\n  got %q", want, body)
 			}
 		})
@@ -112,7 +112,7 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("body: %v", err)
 			}
-			if want := markdown.Normalised(doc.Body()); body != want {
+			if want := markdown.Normalise(doc.Body()); body != want {
 				t.Errorf("the round trip changed the file\n want %q\n  got %q", want, body)
 			}
 		})
@@ -141,7 +141,7 @@ func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	want := strings.Replace(markdown.Normalised(doc.Body()), "{{Height}}\n\n## Name it",
+	want := strings.Replace(markdown.Normalise(doc.Body()), "{{Height}}\n\n## Name it",
 		"**{{Height}}**\n\n## Name it", 1)
 	if body != want {
 		t.Errorf("the write reached further than the face\n want %q\n  got %q", want, body)

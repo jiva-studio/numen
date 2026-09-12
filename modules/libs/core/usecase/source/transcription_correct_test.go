@@ -203,7 +203,7 @@ func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testin
 	}}
 	held, v, store, hash := newStoppedWorker(t, by, 1, "first thing", "second thing", "third thing")
 
-	held.TakingUp(t.Context(), recognised{recording}, v)
+	held.TakeUp(t.Context(), recognised{recording}, v)
 	held.Wait()
 
 	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
@@ -224,7 +224,7 @@ func TestATranscriptAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
 	by := &puts{}
 	held, v, _, _ := newStoppedWorker(t, by, 3, "first thing", "second thing", "third thing")
 
-	held.TakingUp(t.Context(), recognised{recording}, v)
+	held.TakeUp(t.Context(), recognised{recording}, v)
 	held.Wait()
 
 	if got := by.lines(); len(got) != 0 {
@@ -242,7 +242,7 @@ func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 	held, v, _, _ := newStoppedWorker(t, by, 1, "first thing", "second thing")
 	held.with.Proofreading.Automatically = false
 
-	held.TakingUp(t.Context(), recognised{recording}, v)
+	held.TakeUp(t.Context(), recognised{recording}, v)
 	held.Wait()
 
 	if got := by.lines(); len(got) != 0 {
@@ -265,7 +265,7 @@ func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 		Count: 1, Total: 2,
 	})
 
-	held.TakingUp(t.Context(), recognised{recording}, v)
+	held.TakeUp(t.Context(), recognised{recording}, v)
 	held.Wait()
 
 	if doing, _ := getTask(held, recording); doing != "Proofreading a transcript" {

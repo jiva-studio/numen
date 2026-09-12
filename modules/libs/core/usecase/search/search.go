@@ -149,7 +149,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	var named []domain.Passage
 	if p.Named > 0 {
-		found, err := u.passages.Named(ctx, v.ID, query, p.Kinds, p.Named, p.Growing)
+		found, err := u.passages.GetNamedPassages(ctx, v.ID, query, p.Kinds, p.Named, p.Growing)
 		if err != nil {
 			return nil, err
 		}
@@ -322,13 +322,13 @@ const (
 	ByName
 )
 
-// Typing is the parameters for a search asked in the mode named, while a person
-// is still typing it: the last word is matched by its opening.
+// GetTypingParameters is the parameters for a search asked in the mode named,
+// while a person is still typing it: the last word is matched by its opening.
 //
 // A mode that is not wanted keeps no candidates, which is how one is told not
 // to run. Every mode but the one named is silenced, so a caller drawing them
 // apart is shown one of them and not one and a half.
-func Typing(mode Mode, limit int) Parameters {
+func GetTypingParameters(mode Mode, limit int) Parameters {
 	p := Parameters{Limit: limit, Growing: true}.fill()
 	switch mode {
 	case Lexical:

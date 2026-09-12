@@ -169,7 +169,7 @@ func (a *API) countVault(ctx context.Context, v domain.Vault) *v1.VaultCardsDue 
 	for _, preset := range owing.Presets {
 		one.Presets = append(one.Presets, &v1.PresetCardsDue{
 			Preset:          preset.Preset,
-			Title:           wire.Titled(ctx, a.Notes, v.ID, preset.Preset),
+			Title:           wire.GetTitle(ctx, a.Notes, v.ID, preset.Preset),
 			Decks:           int32(preset.Decks),
 			Cards:           int32(preset.Cards),
 			OwedDue:         int32(preset.Due),
@@ -246,7 +246,7 @@ func newAsked(one flashcards.QueuedCardFace) *v1.Asked {
 		Heading: one.Heading,
 		Front:   front,
 		Back:    back,
-		Seen:    one.Schedule.Seen(),
+		Seen:    one.Schedule.IsSeen(),
 		Due:     stamp(one.Schedule.Due),
 		Ahead:   ahead(one.Ahead),
 	}

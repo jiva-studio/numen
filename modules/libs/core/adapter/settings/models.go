@@ -220,9 +220,9 @@ func newSetting(at []string, value any) port.Setting {
 	return port.Setting{Path: at, JSON: string(said)}
 }
 
-// Written is settings as JSON. What is handed in is what is written out, so a
+// WriteJSON is settings as JSON. What is handed in is what is written out, so a
 // Config read from a file carries the defaults the file leaves out.
-func Written(held Config) (string, error) {
+func WriteJSON(held Config) (string, error) {
 	said, err := json.Marshal(held)
 	if err != nil {
 		return "", err

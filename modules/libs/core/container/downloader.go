@@ -31,7 +31,7 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Downloader) so
 	notes := c.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), level)
 	return source.ImportURL{
 		Readers:     c.VaultReaders(),
-		Derived:     c.DerivedStores(),
+		Derived:     c.GetDerivedStores(),
 		By:          by,
 		CopyMaxSize: c.Importing.CopyBytes(),
 		ToVault:     c.Importing.KeepsCopiesInVault(),

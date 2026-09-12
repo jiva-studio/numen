@@ -134,7 +134,7 @@ func begin(
 	var running sync.WaitGroup
 
 	open := opening.Begin(ctx, v)
-	if why := open.Unwatched(); why != nil {
+	if why := open.GetUnwatchedReason(); why != nil {
 		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, why)
 		api.Unwatched.Store(why.Error())
 	}
@@ -145,7 +145,7 @@ func begin(
 		open.Run(ctx)
 		// Nothing reaches the window once the watch stops, so from here on the
 		// vault is one that is not being followed.
-		if open.Unwatched() == nil && ctx.Err() == nil {
+		if open.GetUnwatchedReason() == nil && ctx.Err() == nil {
 			api.Unwatched.Store("the watch stopped")
 		}
 	}()

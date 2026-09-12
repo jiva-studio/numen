@@ -54,9 +54,9 @@ func (a *API) WriteOpenTabs(
 	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
 }
 
-// Attended is what the person has open, as the window last said. A window that
-// has said nothing has nothing open as far as anyone here knows.
-func (a *API) Attended() domain.OpenTabs {
+// GetOpenTabs is what the person has open, as the window last said. A window
+// that has said nothing has nothing open as far as anyone here knows.
+func (a *API) GetOpenTabs() domain.OpenTabs {
 	if open := a.openTabs.Load(); open != nil {
 		return *open
 	}

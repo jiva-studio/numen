@@ -111,10 +111,10 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 
 func TestWhichCodeAnErrorTheSchemaDoesNotCarryAnswersWith(t *testing.T) {
 	outside := fmt.Errorf("../elsewhere.md: %w", port.ErrOutside)
-	if got := wire.Coded(outside); got != connect.CodeInvalidArgument {
+	if got := wire.GetCode(outside); got != connect.CodeInvalidArgument {
 		t.Errorf("a path that leaves the vault answers %v", got)
 	}
-	if got := wire.Coded(errors.New("the disk is full")); got != connect.CodeInternal {
+	if got := wire.GetCode(errors.New("the disk is full")); got != connect.CodeInternal {
 		t.Errorf("the vault being out of reach answers %v", got)
 	}
 }

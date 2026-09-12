@@ -34,7 +34,7 @@ func TestAProjectedHeadingIsOneLineOfCharactersTheFieldOpensWith(t *testing.T) {
 		}
 		// A heading holds nothing of its own: every character of it comes off
 		// the front of the field's first line.
-		line, _, _ := strings.Cut(markdown.Normalised(value), "\n")
+		line, _, _ := strings.Cut(markdown.Normalise(value), "\n")
 		if opens := strings.TrimSpace(line); !strings.HasPrefix(opens, got) {
 			t.Fatalf("%q opens with %q and projects to %q, which is not its own",
 				value, opens, got)

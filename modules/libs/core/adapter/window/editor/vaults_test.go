@@ -161,7 +161,7 @@ func onAList(t *testing.T) *onTheList {
 	}
 	f.api.show(f.first)
 
-	server := httptest.NewUnstartedServer(f.api.Serving(http.NotFoundHandler()))
+	server := httptest.NewUnstartedServer(f.api.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)
@@ -617,7 +617,7 @@ func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 func TestABuildThatDoesNotServeTheListAnswersNothingAboutIt(t *testing.T) {
 	api := &API{}
 	server := httptest.NewUnstartedServer(
-		api.Serving(http.NotFoundHandler(), numenv1connect.NoteServiceName))
+		api.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName))
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)

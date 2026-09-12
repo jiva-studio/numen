@@ -191,7 +191,7 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, vault.ID, narrowRecipe(dims), 0, 10)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, narrowRecipe(dims), 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

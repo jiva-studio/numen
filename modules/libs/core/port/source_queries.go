@@ -21,9 +21,9 @@ type SourceQueries interface {
 	// file with the path it is filed under, and one query reads them.
 	Under(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error)
 
-	// Unchunked is the sources of one kind with no small chunk: the file
-	// changed, or nothing has cut it yet.
-	Unchunked(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error)
+	// GetUnchunkedSources is the sources of one kind with no small chunk: the
+	// file changed, or nothing has cut it yet.
+	GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error)
 
 	// ByOtherRecipe is the sources of one kind whose text was not produced by
 	// any of the recipes given. Their chunks describe text no reader in use
@@ -43,11 +43,12 @@ type SourceQueries interface {
 	// producer the offsets a chunk carries belong to.
 	Reading(ctx context.Context, vaultID domain.VaultID, path string) (SourceText, bool, error)
 
-	// Recognised is the sources of one kind whose text a producer made, by path.
+	// GetRecognisedSources is the sources of one kind whose text a producer
+	// made, by path.
 	//
 	// A scan asks it to find the ones whose files are gone: the store is a
 	// folder on the person's disk and they may empty it.
-	Recognised(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]SourceText, error)
+	GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]SourceText, error)
 }
 
 // SourceText is one source whose text a producer made: where the file is, what

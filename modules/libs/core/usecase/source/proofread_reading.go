@@ -217,7 +217,7 @@ func (u ProofreadReading) lines(
 		return nil, err
 	}
 	prose, _ := ocr.Read(artifact)
-	return proofread.Scanned(prose, highlight.Unpack(boxes)), nil
+	return proofread.GetScanBatches(prose, highlight.Unpack(boxes)), nil
 }
 
 // getCorrections is what a run of pages had put right, and how many of them
@@ -234,7 +234,7 @@ func (u ProofreadReading) getCorrections(
 		if !answered {
 			continue
 		}
-		lines, _, ok := proofread.Fixed(page, reply, u.distance())
+		lines, _, ok := proofread.GetFixedLines(page, reply, u.distance())
 		if !ok {
 			uncorrected++
 			continue

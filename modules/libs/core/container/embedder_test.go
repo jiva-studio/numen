@@ -44,7 +44,7 @@ func at(where embed.Provider, name, baseURL string) embed.Provider {
 	where.Use = embed.UseService
 	service, _ := where.Service()
 	service.Name, service.BaseURL = name, baseURL
-	return where.Serving(service)
+	return where.SetService(service)
 }
 
 func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
@@ -149,7 +149,7 @@ func TestAModelRunHereAndOneServedKeepTheirOwnVectors(t *testing.T) {
 	local, _ := here.Indexing.Local()
 	// The repository is named and not fetched, so nothing reaches a network.
 	local.Download = false
-	here.Indexing = here.Indexing.Running(local)
+	here.Indexing = here.Indexing.SetLocal(local)
 	served := makeEmbedConfig(here.Model.Name)
 	served.Indexing = at(served.Indexing, local.Name, nowhere)
 
@@ -168,7 +168,7 @@ func TestARunThatOnlyAsksClaimsWhatTheIndexWasFilledWith(t *testing.T) {
 	cfg := makeEmbedConfig("bge-m3")
 	cfg.Query = at(cfg.Query, "bge-m3", elsewhere)
 
-	asking, close, why := container.Config{Embedding: cfg}.Asking(t.Context())
+	asking, close, why := container.Config{Embedding: cfg}.OpenQuestionEmbedder(t.Context())
 	if why != nil {
 		t.Fatal(why)
 	}
@@ -244,7 +244,7 @@ func makeMissingProvider(t *testing.T) embed.Provider {
 	where := embed.Defaults().Indexing
 	local, _ := where.Local()
 	local.Dir, local.Download = t.TempDir(), false
-	return where.Running(local)
+	return where.SetLocal(local)
 }
 
 // waitForTasks is the list of what is being done, once it holds what is asked
@@ -271,7 +271,7 @@ func makeUncomparedTasks(t *testing.T) *task.Tasks {
 	cfg.Indexing = makeMissingProvider(t)
 	// A provider on a service is reached by the model it asks for, and names no
 	// repository at all.
-	cfg.Query = embed.Provider{}.Serving(
+	cfg.Query = embed.Provider{}.SetService(
 		embed.ServiceModel{Name: "reached-another-way", BaseURL: nowhere})
 
 	tasks := task.New()
@@ -321,7 +321,7 @@ func TestAQuestionWithNowhereToBeEmbeddedIsAReason(t *testing.T) {
 	cfg.Query.Use = embed.UseService
 	service, _ := cfg.Query.Service()
 	service.BaseURL = ""
-	cfg.Query = cfg.Query.Serving(service)
+	cfg.Query = cfg.Query.SetService(service)
 
 	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why == nil {

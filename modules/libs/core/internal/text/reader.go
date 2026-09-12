@@ -144,7 +144,7 @@ func (r Reader) readRecognition(ctx context.Context, from, hash string) (*Docume
 		if err != nil {
 			return nil, err
 		}
-		return Composed(ctx, r.Derived, from, hash, raw)
+		return ReadComposed(ctx, r.Derived, from, hash, raw)
 	}
 	// The store is a folder on the person's disk and they may empty it. The
 	// source says nothing until a scan notices and cuts it again.
@@ -170,15 +170,16 @@ func (r Reader) readLinkNote(ctx context.Context, path, producer, hash string) (
 	if err != nil {
 		return nil, err
 	}
-	return Joined(doc.Text, fetched), nil
+	return JoinDocuments(doc.Text, fetched), nil
 }
 
-// Joined is a link note's prose and what was fetched for it, as one text.
+// JoinDocuments is a link note's prose and what was fetched for it, as one
+// text.
 //
 // What the fetch named — the moment a stretch of speech was said, the parts of
 // an article — is moved out by as much as the prose and what stands between
 // them, so a place in the fetched half is the place it was.
-func Joined(prose string, fetched *Document) *Document {
+func JoinDocuments(prose string, fetched *Document) *Document {
 	at := len(prose) + len(Separator)
 	doc := &Document{Text: prose + Separator + fetched.Text}
 	for _, part := range fetched.Parts {
@@ -199,12 +200,12 @@ func Joined(prose string, fetched *Document) *Document {
 // published, because listening is asked for and publishing is not.
 func Producers() []string { return []string{ASR, Captions, Article} }
 
-// Downloaded is what was brought back for an address, as the text a link note is
-// cut with, and which producer brought it.
+// ReadDownloaded is what was brought back for an address, as the text a link
+// note is cut with, and which producer brought it.
 //
 // Nothing downloaded is no text and no producer, which is a link note nothing
 // has been downloaded for and is its ordinary state until something is.
-func Downloaded(
+func ReadDownloaded(
 	ctx context.Context, store port.DerivedStore, hash string,
 ) (words, producer string, err error) {
 	if store == nil {
@@ -219,7 +220,7 @@ func Downloaded(
 			if err != nil {
 				return "", "", err
 			}
-			doc, err := Composed(ctx, store, from, hash, raw)
+			doc, err := ReadComposed(ctx, store, from, hash, raw)
 			if err != nil {
 				return "", "", err
 			}
@@ -229,13 +230,13 @@ func Downloaded(
 	return "", "", nil
 }
 
-// Composed is a reading and everything kept beside it, as the text a source's
-// chunks are places in.
+// ReadComposed is a reading and everything kept beside it, as the text a
+// source's chunks are places in.
 //
 // The corrections are read before the coordinates, and a reading nothing
 // proofread is composed from its own bytes alone. A transcript is composed from
 // what it was put right to, and from its own bytes where nothing put it right.
-func Composed(
+func ReadComposed(
 	ctx context.Context,
 	store port.DerivedStore,
 	producer, hash string,
@@ -248,10 +249,10 @@ func Composed(
 		}
 		// A file beside the artifact holding no words is nothing put right, and
 		// the recording says what was heard in it.
-		if doc := Transcribed(put); doc.Text != "" {
+		if doc := ReadTranscript(put); doc.Text != "" {
 			return doc, nil
 		}
-		return Transcribed(raw), nil
+		return ReadTranscript(raw), nil
 	}
 	parts, err := beside(ctx, store, Parts(producer, hash))
 	if err != nil {
@@ -267,7 +268,7 @@ func Composed(
 			return nil, err
 		}
 	}
-	return Recognised(raw, parts, boxes, corrections), nil
+	return ReadRecognition(raw, parts, boxes, corrections), nil
 }
 
 // beside is what is kept under a name, and nothing where the store holds
@@ -283,8 +284,8 @@ func beside(ctx context.Context, store port.DerivedStore, name string) ([]byte, 
 	return raw, nil
 }
 
-// Recognised is a recognition, as the text its chunks are places in, the parts
-// that text is divided into, and the pages it names.
+// ReadRecognition is a recognition, as the text its chunks are places in, the
+// parts that text is divided into, and the pages it names.
 //
 // The parts are what a layout model called a heading, written beside the
 // artifact when it was read. A recognition that names none is a document with
@@ -292,7 +293,7 @@ func beside(ctx context.Context, store port.DerivedStore, name string) ([]byte, 
 //
 // A reading that was proofread is composed with its corrections in it, and the
 // pages and the parts stand where they now are.
-func Recognised(raw, parts, boxes, corrections []byte) *Document {
+func ReadRecognition(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	named := ocr.Unpack(parts)
 	if put := correction.Unpack(corrections); len(put) > 0 {
@@ -309,12 +310,12 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 	return doc
 }
 
-// Transcribed is what a model heard, as the text its chunks are places in and
-// the moments of the recording those places stand at.
+// ReadTranscript is what a model heard, as the text its chunks are places in
+// and the moments of the recording those places stand at.
 //
 // A transcript names no parts: the cues are where the speech was, and a chunk
 // is located by when what it holds was said.
-func Transcribed(raw []byte) *Document {
+func ReadTranscript(raw []byte) *Document {
 	prose, cues := transcript.Parse(raw)
 	doc := &Document{Text: prose}
 	for _, cue := range cues {
@@ -416,10 +417,10 @@ const (
 	Unopened = "unopened"
 )
 
-// Answered is which of the two a recording gave and what the run said about it,
-// read from what is kept under Answer. Bytes opening with neither word are
+// ReadAnswer is which of the two a recording gave and what the run said about
+// it, read from what is kept under Answer. Bytes opening with neither word are
 // nothing this wrote.
-func Answered(raw []byte) (gave, said string) {
+func ReadAnswer(raw []byte) (gave, said string) {
 	line := strings.TrimSpace(string(raw))
 	for _, one := range []string{Silent, Unopened} {
 		if line == one {

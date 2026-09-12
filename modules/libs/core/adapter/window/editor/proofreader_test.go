@@ -67,7 +67,7 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if by.times != 1 || by.path != talk || by.vault != string(api.Showing().ID) {
+	if by.times != 1 || by.path != talk || by.vault != string(api.GetShownVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", by.path, by.vault, by.times)
 	}
 }

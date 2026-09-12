@@ -12,5 +12,5 @@ import (
 // answered with the schema's own spelling of it, which is the one thing an agent
 // cannot act on: it says what the value is called and not what to do next.
 func TestEveryErrorCodeIsWorded(t *testing.T) {
-	testsupport.Handled(t, func(reason v1.ErrorCode) bool { return describeCode(reason) != reason.String() })
+	testsupport.CheckHandled(t, func(reason v1.ErrorCode) bool { return describeCode(reason) != reason.String() })
 }

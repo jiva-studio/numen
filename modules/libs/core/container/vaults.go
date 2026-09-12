@@ -38,6 +38,6 @@ func (c Config) Vaults(registry port.VaultRegistry, db *Index, notes note.Move) 
 		Erase:    vault.NewErase(c.VaultIdentity(), c.Trash(), forget),
 		Move: vault.NewMove(
 			c.VaultWriters(), db.Links(), db.SourcesKnown(), db.Sources(), notes),
-		Import: vault.NewImport(c.VaultWriters(), c.ImportedFiles()),
+		Import: vault.NewImport(c.VaultWriters(), c.GetImportedFiles()),
 	}
 }

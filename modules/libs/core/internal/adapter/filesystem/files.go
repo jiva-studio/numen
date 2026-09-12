@@ -14,7 +14,7 @@ import (
 // what they handed over is a path.
 type ImportedFiles struct{}
 
-func (ImportedFiles) Named(handle string) string { return filepath.Base(handle) }
+func (ImportedFiles) GetName(handle string) string { return filepath.Base(handle) }
 
 func (ImportedFiles) Stat(_ context.Context, handle string) (port.ImportedFile, error) {
 	// A link is not followed: what it points at is not what was handed over.

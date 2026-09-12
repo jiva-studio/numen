@@ -95,7 +95,7 @@ func (o *Installation) WaitForAnswers(ctx context.Context) bool {
 // ends the round: the vault and the door stay open, and the wait from there is
 // on a person. The writes are not bounded.
 func settle(ctx context.Context, pages *wire.Window, writes *inflight) bool {
-	if !pages.Settling(ctx) {
+	if !pages.Settle(ctx) {
 		return false
 	}
 	<-writes.seal()

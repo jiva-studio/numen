@@ -25,7 +25,7 @@ func (a *API) GetDeckPreset(
 	}
 	found, err := a.Presets.Of(ctx, showing, r.Msg.GetDeck())
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
 	out := &v1.GetDeckPresetResponse{Bounds: wire.SettingsBounds()}
@@ -33,7 +33,7 @@ func (a *API) GetDeckPreset(
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.PresetOf(found, wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path))
+	out.Preset = wire.PresetOf(found, wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path))
 	// What the file was when this came out of it, for the client to present
 	// when it writes the settings back.
 	out.At = fingerprintOf(found.Fingerprint)
@@ -52,7 +52,7 @@ func (a *API) ListPresets(
 	}
 	held, err := a.Presets.List(ctx, showing)
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
 	out := &v1.ListPresetsResponse{Presets: make([]*v1.PresetSummary, 0, len(held))}
@@ -113,7 +113,7 @@ func (a *API) ScheduleDeck(
 	}
 	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 	return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
 }
@@ -128,7 +128,7 @@ func (a *API) ReadPreset(
 	}
 	found, err := a.Presets.Read(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
 	out := &v1.ReadPresetResponse{Bounds: wire.SettingsBounds()}
@@ -136,7 +136,7 @@ func (a *API) ReadPreset(
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.PresetOf(found, wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path))
+	out.Preset = wire.PresetOf(found, wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path))
 	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
@@ -183,7 +183,7 @@ func (a *API) WritePreset(
 	}
 	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 	return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil
 }
@@ -204,7 +204,7 @@ func (a *API) ComputeCurve(
 	}
 	held, err := a.Curves.Execute(ctx, showing, r.Msg.GetPath(), settings)
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: wire.CurveOf(held)}), nil
 }

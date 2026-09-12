@@ -61,8 +61,8 @@ type RefreshResult struct {
 	Assets []string
 }
 
-// Changed is every note the caller may need to look at again.
-func (r RefreshResult) Changed() []string {
+// GetChangedPaths is every note the caller may need to look at again.
+func (r RefreshResult) GetChangedPaths() []string {
 	return append(append([]string(nil), r.Indexed...), r.Removed...)
 }
 

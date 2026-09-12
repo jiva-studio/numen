@@ -139,7 +139,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// A recording that gave no words gave an answer all the same, and it is
 	// recorded. Taking the record away is how a person asks for it again.
 	if held, err := store.Read(ctx, text.Answer(area, hash)); err == nil {
-		gave, _ := text.Answered(held)
+		gave, _ := text.ReadAnswer(held)
 		res.Silent = gave == text.Silent
 		res.Unopened = gave == text.Unopened
 		return res, u.stand(ctx, v, ref, hash, "")
@@ -333,7 +333,7 @@ func leftOff(
 	if err != nil {
 		return 0, 0, err
 	}
-	ms, end := transcript.Reached(raw)
+	ms, end := transcript.ReadReached(raw)
 	if end < len(raw) {
 		// Written back to the note. Bytes past it are cues no note claims.
 		if err := store.Write(ctx, partial, raw[:end]); err != nil {

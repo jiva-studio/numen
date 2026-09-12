@@ -59,10 +59,10 @@ type registry struct {
 	last domain.VaultID
 }
 
-func (r registry) All() ([]domain.Vault, error) { return r.held, nil }
-func (r registry) Save(domain.Vault) error      { return nil }
-func (r registry) Remove(domain.VaultID) error  { return nil }
-func (r registry) Opened(domain.VaultID) error  { return nil }
+func (r registry) All() ([]domain.Vault, error)      { return r.held, nil }
+func (r registry) Save(domain.Vault) error           { return nil }
+func (r registry) Remove(domain.VaultID) error       { return nil }
+func (r registry) RecordOpened(domain.VaultID) error { return nil }
 
 func (r registry) Find(id string) (domain.Vault, bool, error) {
 	for _, v := range r.held {
@@ -127,7 +127,7 @@ func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 		},
 		Presets: running.Presets,
 		Notes:   db.Queries(),
-		Window:  Watching(task.New()),
+		Window:  NewWindow(task.New()),
 		Day:     running.Day,
 		Now:     time.Now,
 	}
@@ -145,7 +145,7 @@ func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 // asks for it.
 func newFlashcardsClient(t *testing.T, api *API) numenv1connect.FlashcardsServiceClient {
 	t.Helper()
-	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 }
@@ -153,7 +153,7 @@ func newFlashcardsClient(t *testing.T, api *API) numenv1connect.FlashcardsServic
 // newWindowClient is the window itself, over that same handler.
 func newWindowClient(t *testing.T, api *API) numenv1connect.WindowServiceClient {
 	t.Helper()
-	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
 }
@@ -536,7 +536,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 		t.Errorf("the policy reads %q", policy)
 	}
 
-	handler := (&API{}).Serving(http.NotFoundHandler())
+	handler := (&API{}).NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css"} {
 		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r.URL.Path = path

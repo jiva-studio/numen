@@ -54,8 +54,8 @@ func NoteTypes() []NoteType {
 	return []NoteType{TypeNote, TypeDeck, TypeStencil, TypePreset}
 }
 
-// KnownNoteType reports whether a type is one this application has a word for.
-func KnownNoteType(t NoteType) bool {
+// IsKnownNoteType reports whether a type is one this application has a word for.
+func IsKnownNoteType(t NoteType) bool {
 	return slices.Contains(NoteTypes(), t)
 }
 

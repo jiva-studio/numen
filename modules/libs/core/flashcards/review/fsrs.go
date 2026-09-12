@@ -85,10 +85,10 @@ func writeNumber(sum hash.Hash, name string, value float64) {
 	fmt.Fprintf(sum, "%s=%s\n", name, strconv.FormatFloat(value, 'x', -1, 64))
 }
 
-// Spaced reports whether this scheduler has put a card face into review: it has
-// been answered well enough to come round in days.
-func (FSRS) Spaced(s Schedule) bool {
-	return s.Seen() && fsrs.State(s.Phase) == fsrs.Review
+// IsSpaced reports whether this scheduler has put a card face into review: it
+// has been answered well enough to come round in days.
+func (FSRS) IsSpaced(s Schedule) bool {
+	return s.IsSeen() && fsrs.State(s.Phase) == fsrs.Review
 }
 
 // Next is where an answer leaves a schedule.
@@ -143,7 +143,7 @@ type atAnswer struct {
 // and no difficulty.
 func (f FSRS) opens(s Schedule, at time.Time) atAnswer {
 	one := atAnswer{phase: fsrs.New}
-	if s.Seen() {
+	if s.IsSeen() {
 		one.last, one.phase = s, fsrs.State(s.Phase)
 	}
 	// The days away are the whole days gone by, and they do not go below none.

@@ -61,7 +61,7 @@ type WriteResult struct {
 func (u Write) Deck(
 	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
 ) (WriteResult, error) {
-	if err := note.Bounded(path, len(body), MaxBytes); err != nil {
+	if err := note.CheckSize(path, len(body), MaxBytes); err != nil {
 		return WriteResult{}, err
 	}
 	whole, given, err := u.whole(ctx, v, path, body)
@@ -84,7 +84,7 @@ func (u Write) whole(
 	ctx context.Context, v domain.Vault, path, body string,
 ) (string, []format.CardMark, error) {
 	read := Read{Readers: u.Readers, Links: u.Links}
-	by, err := read.Cutting(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
+	by, err := read.GetCardStencils(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
 	if err != nil {
 		return "", nil, err
 	}
@@ -104,7 +104,7 @@ func (u Write) Stencil(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if err := note.Bounded(path, len(body), note.MaxBytes); err != nil {
+	if err := note.CheckSize(path, len(body), note.MaxBytes); err != nil {
 		return domain.Fingerprint{}, err
 	}
 	return u.stencil(ctx, v, path, body, fields, fingerprint)

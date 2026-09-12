@@ -183,7 +183,7 @@ func Overdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
 	opened := d.GetStart(now)
 	out := 0
 	for _, s := range at {
-		if s.Seen() && s.Due.Before(opened) {
+		if s.IsSeen() && s.Due.Before(opened) {
 			out++
 		}
 	}
@@ -243,7 +243,7 @@ func (s Simulation) Run(
 	// Where the answers so far have left every card face is what the days
 	// ahead are loaded with, and which day of the run first asks for it. A card
 	// face falling due past the run is asked for on none of them.
-	on := Spreading(s.Day)
+	on := NewDueByDay(s.Day)
 	base := on.number(open)
 	falls := make([][]int, days)
 	for i, c := range cards {
@@ -307,7 +307,7 @@ func (s Simulation) Run(
 		// What closed the day is every budget that turned a card away. A day
 		// that asked for every card there was is closed by nothing.
 		var closed BudgetNames
-		if admits.Paused() {
+		if admits.IsPaused() {
 			closed = closed.with(ClosedPaused)
 		}
 
@@ -321,7 +321,7 @@ func (s Simulation) Run(
 		// Paid, settled and all are the three sides the day is done with: the
 		// debt it opened on, the cards it has answered into the day itself, and
 		// the material it has not begun.
-		paid, settled, all := admits.Paused(), admits.Paused(), admits.Paused()
+		paid, settled, all := admits.IsPaused(), admits.IsPaused(), admits.IsPaused()
 		for {
 			owed := !paid && take < len(due)
 			fresh := !all && left > 0
@@ -334,7 +334,7 @@ func (s Simulation) Run(
 			// before it comes back to a card it has already shown, which is the
 			// order the sessions of that day put them in.
 			repeat := !owed && !fresh
-			if repeat || admits.Paying(seen, begun, owed, fresh) {
+			if repeat || admits.IsPayingDebt(seen, begun, owed, fresh) {
 				at := 0
 				if repeat {
 					at = again[next]
@@ -377,7 +377,7 @@ func (s Simulation) Run(
 				shown[at]++
 				cards[at] = s.answers(cards[at], open, ends, p, on)
 				reckoned.countAnswer(at, cards[at], ends)
-				if s.Day.Owed(cards[at], open) && shown[at] < MostShowings {
+				if s.Day.IsOwed(cards[at], open) && shown[at] < MostShowings {
 					again = append(again, at)
 					continue
 				}
@@ -406,7 +406,7 @@ func (s Simulation) Run(
 			shown = append(shown, 1)
 			reckoned.countBegun(one, ends)
 			at := len(cards) - 1
-			if s.Day.Owed(one, open) && shown[at] < MostShowings {
+			if s.Day.IsOwed(one, open) && shown[at] < MostShowings {
 				again = append(again, at)
 				continue
 			}
@@ -426,7 +426,7 @@ func (s Simulation) Run(
 		out.Load = append(out.Load, answered)
 		out.Faced = append(out.Faced, faced)
 		out.Spent = append(out.Spent, used)
-		out.Admitted = append(out.Admitted, !admits.Paused())
+		out.Admitted = append(out.Admitted, !admits.IsPaused())
 		out.Closed = append(out.Closed, closed)
 
 		// How much of the material stands learned at the close of the day, which
@@ -511,7 +511,7 @@ func reckons(p Preset, cards []Schedule, at time.Time) *learnedCount {
 		out.learned = make([]bool, len(cards))
 	}
 	for i, c := range cards {
-		if !p.Learned(c, at) {
+		if !p.IsLearned(c, at) {
 			continue
 		}
 		out.count++
@@ -527,7 +527,7 @@ func (r *learnedCount) countAnswer(card int, c Schedule, at time.Time) {
 	if !r.carried {
 		return
 	}
-	stands := r.preset.Learned(c, at)
+	stands := r.preset.IsLearned(c, at)
 	if stands == r.learned[card] {
 		return
 	}
@@ -544,7 +544,7 @@ func (r *learnedCount) countBegun(c Schedule, at time.Time) {
 	if !r.carried {
 		return
 	}
-	stands := r.preset.Learned(c, at)
+	stands := r.preset.IsLearned(c, at)
 	r.learned = append(r.learned, stands)
 	if stands {
 		r.count++
@@ -575,7 +575,7 @@ func (r *learnedCount) closes(
 	for _, c := range cards {
 		one := Recall(at.Sub(c.Last), c.Stability)
 		back += one
-		if c.Seen() && one >= r.target {
+		if c.IsSeen() && one >= r.target {
 			stands++
 		}
 	}

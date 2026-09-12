@@ -107,7 +107,7 @@ func (u Replace) Execute(
 		Fingerprint: fingerprint, Bound: MaxBytes,
 	}
 	at, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		body := markdown.Normalised(doc.Body())
+		body := markdown.Normalise(doc.Body())
 
 		where, plainly := markdown.Where(body, stood)
 		switch {
@@ -130,8 +130,8 @@ func (u Replace) Execute(
 		// somewhere else in prose that is not ASCII.
 		ends = u.Drawing.begins(ctx, u.Now, domain.Edit{
 			Path: path,
-			From: markdown.Counted(body, span.From),
-			To:   markdown.Counted(body, span.To),
+			From: markdown.CountUTF16(body, span.From),
+			To:   markdown.CountUTF16(body, span.To),
 			Text: becomes,
 		})
 

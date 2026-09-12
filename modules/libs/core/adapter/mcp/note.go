@@ -63,7 +63,7 @@ func addNoteResolve(server *sdk.Server, core Core) {
 		type out = struct {
 			Paths []string `json:"paths"`
 		}
-		paths, err := core.Notes.Queries.Named(ctx, core.getShownVault().Vault.ID, domain.LinkName(in.Name))
+		paths, err := core.Notes.Queries.GetNamedPaths(ctx, core.getShownVault().Vault.ID, domain.LinkName(in.Name))
 		if err != nil {
 			return nil, out{}, err
 		}

@@ -98,7 +98,7 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 	// asks for the source to be tried afresh.
 	switch held, err := store.Read(ctx, derived.Answer(from, hash)); {
 	case err == nil:
-		switch answer, why := derived.Answered(held); answer {
+		switch answer, why := derived.ReadAnswer(held); answer {
 		case derived.Silent:
 			got.stands = silent
 		case derived.Unopened:

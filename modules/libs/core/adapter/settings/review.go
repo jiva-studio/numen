@@ -44,11 +44,11 @@ func (r Review) Starts() (time.Duration, bool) {
 // answer given before it finishes the evening it belongs to.
 func DefaultStarts() time.Duration { return review.DayStarts }
 
-// Starting is the hour a day of review is to begin at, as it goes into the
+// ReadDayStart is the hour a day of review is to begin at, as it goes into the
 // file. An hour past LatestDayStarts, anything that is not an hour of the
 // clock, and no hour at all, are review.ErrNotAnHour. It reads and writes
 // no file.
-func Starting(written string) (string, error) {
+func ReadDayStart(written string) (string, error) {
 	starts, hour := Review{DayStarts: written}.Starts()
 	if !hour || strings.TrimSpace(written) == "" {
 		return "", fmt.Errorf("%w, 00:00 to %s: %q",

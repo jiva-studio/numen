@@ -31,7 +31,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	if api.Files.Import == nil || len(paths) == 0 {
 		return
 	}
-	showing := api.Showing()
+	showing := api.GetShownVault()
 	if showing.ID == "" {
 		return
 	}

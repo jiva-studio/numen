@@ -379,7 +379,7 @@ func rename(ctx context.Context, tx *writing.Transaction, vault int64, from, to 
 	shown := title
 	if !named {
 		shown = name
-	} else if filed, _ := domain.ReducedFilename(title); domain.FoldName(filed) != domain.FoldName(name) {
+	} else if filed, _ := domain.GetReducedFilename(title); domain.FoldName(filed) != domain.FoldName(name) {
 		return nil
 	}
 	if err := exec(ctx, tx, "rename_note", domain.FoldName(name), shown, vault, from); err != nil {

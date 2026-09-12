@@ -92,7 +92,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
-		owing, next, err := u.Chunks.Unembedded(ctx, v.ID, model, after, chunksPerQuery)
+		owing, next, err := u.Chunks.GetUnembeddedChunks(ctx, v.ID, model, after, chunksPerQuery)
 		if err != nil {
 			return res, fmt.Errorf("what owes a vector from %s: %w", model, err)
 		}
@@ -177,7 +177,7 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 		}
 		hashes[i] = raw
 	}
-	kept, err := u.Vectors.Kept(ctx, recipe, hashes)
+	kept, err := u.Vectors.GetKeptVectors(ctx, recipe, hashes)
 	if err != nil {
 		return fmt.Errorf("what is already made: %w", err)
 	}

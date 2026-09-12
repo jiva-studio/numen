@@ -279,7 +279,7 @@ func TestWhyTheAgentCouldNotBeServedReachesThePage(t *testing.T) {
 // still the page's own file, so the routes stand in front of the files and not
 // over them.
 func TestTheAgentIsServedBesideTheCards(t *testing.T) {
-	handler := (&API{}).Serving(http.NotFoundHandler())
+	handler := (&API{}).NewHandler(http.NotFoundHandler())
 	asked := func(route string) int {
 		r := httptest.NewRequest(http.MethodPost, route, strings.NewReader("{}"))
 		r.Header.Set("Content-Type", "application/json")

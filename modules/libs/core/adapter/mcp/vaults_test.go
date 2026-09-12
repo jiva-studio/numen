@@ -105,7 +105,7 @@ func onTheList(t *testing.T) *installation {
 		swapped:  make(chan domain.Vault, 1),
 	}
 	f.core = mcp.Core{
-		Showing: mcp.ShowingOne(f.first, f.first.Path),
+		Showing: mcp.ShowOneVault(f.first, f.first.Path),
 		Readers: filesystem.VaultReaders{},
 		Vaults: mcp.Vaults{
 			Registry:     registry,
@@ -395,7 +395,7 @@ func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 	f := onTheList(t)
 	// The window is showing neither, so what is left is refused for being the
 	// last one and not for being in front of anybody.
-	f.core.Showing = mcp.ShowingOne(domain.Vault{ID: "elsewhere"}, "")
+	f.core.Showing = mcp.ShowOneVault(domain.Vault{ID: "elsewhere"}, "")
 	session := newSessionOver(t, f.core)
 
 	call[struct {

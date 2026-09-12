@@ -36,7 +36,7 @@ func (a *API) AskAgent(
 	r *connect.Request[v1.AskAgentRequest],
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
-	taking := a.Answering()
+	taking := a.GetAgent()
 	if taking == nil {
 		return connect.NewError(connect.CodeFailedPrecondition, ErrNoAgent)
 	}
@@ -62,7 +62,7 @@ func (a *API) AskAgent(
 func (a *API) FinishConversation(
 	ctx context.Context, r *connect.Request[v1.FinishConversationRequest],
 ) (*connect.Response[v1.FinishConversationResponse], error) {
-	taking := a.Answering()
+	taking := a.GetAgent()
 	if taking == nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, ErrNoAgent)
 	}

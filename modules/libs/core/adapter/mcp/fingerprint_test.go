@@ -28,7 +28,7 @@ func TestAFingerprintTakenFromAClockComesBackAsTheSameFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !back.Unchanged(ref) {
+	if !back.IsUnchanged(ref) {
 		t.Errorf("the agent handed back %+v, and the note is %+v", back, ref)
 	}
 }

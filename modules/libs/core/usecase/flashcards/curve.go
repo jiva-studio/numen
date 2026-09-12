@@ -131,7 +131,7 @@ func (u ProjectCurve) Execute(
 		return review.Curve{}, err
 	}
 
-	cost, costed := review.CostedUnder(u.Schedules.By, held.Answers, under)[path]
+	cost, costed := review.GetCostUnder(u.Schedules.By, held.Answers, under)[path]
 	if !costed {
 		cost = review.DefaultCost
 	}

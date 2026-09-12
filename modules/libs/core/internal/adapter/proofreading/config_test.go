@@ -64,7 +64,7 @@ func TestOneThresholdStandsOverEveryProfile(t *testing.T) {
 	if got := read(t, `{"max_edit_distance":0.1}`).Distance(); got != 0.1 {
 		t.Errorf("a file naming 0.1 holds a correction to %v", got)
 	}
-	if read(t, `{}`).Named() {
+	if read(t, `{}`).HasProfiles() {
 		t.Error("a file naming no profile was said to name one")
 	}
 }
@@ -146,8 +146,8 @@ func TestAProfileWithNoModelNamesNone(t *testing.T) {
 			if err := json.Unmarshal([]byte(one.raw), &held); err != nil {
 				t.Fatal(err)
 			}
-			if held.Named() != one.named {
-				t.Errorf("%s names a model: %v", one.raw, held.Named())
+			if held.HasModel() != one.named {
+				t.Errorf("%s names a model: %v", one.raw, held.HasModel())
 			}
 		})
 	}

@@ -23,8 +23,9 @@ type DueByDay struct {
 	on  map[int]int
 }
 
-// Spreading opens a table counting the days as this day of review divides them.
-func Spreading(d Day) *DueByDay { return &DueByDay{day: d, on: make(map[int]int)} }
+// NewDueByDay opens a table counting the days as this day of review divides
+// them.
+func NewDueByDay(d Day) *DueByDay { return &DueByDay{day: d, on: make(map[int]int)} }
 
 // Holds counts one card face against the day its schedule falls in.
 func (s *DueByDay) Holds(due time.Time) {

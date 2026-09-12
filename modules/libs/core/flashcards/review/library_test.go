@@ -106,7 +106,7 @@ func libraryAgrees(
 // clampLastAnswer is a card face at the days it stood away. One answered no
 // later than the answer it already carries stood none of them.
 func clampLastAnswer(s review.Schedule) review.Schedule {
-	if s.Seen() && libraryNow.Before(s.Last) {
+	if s.IsSeen() && libraryNow.Before(s.Last) {
 		s.Last = libraryNow
 	}
 	return s
@@ -256,7 +256,7 @@ func sameSchedule(t *testing.T, what string, got, want review.Schedule) {
 // asCard is a schedule as the library reads a card, which is how the scheduler
 // reads one. A card face nobody has answered is the card the library opens with.
 func asCard(s review.Schedule) fsrs.Card {
-	if !s.Seen() {
+	if !s.IsSeen() {
 		return fsrs.NewCard()
 	}
 	return fsrs.Card{

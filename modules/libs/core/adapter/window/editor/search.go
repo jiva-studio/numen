@@ -35,7 +35,7 @@ const (
 func (a *API) SearchNames(
 	ctx context.Context, r *connect.Request[v1.SearchNamesRequest],
 ) (*connect.Response[v1.SearchNamesResponse], error) {
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
@@ -65,7 +65,7 @@ func (a *API) ListHeadings(
 	ctx context.Context,
 	r *connect.Request[v1.ListHeadingsRequest],
 ) (*connect.Response[v1.ListHeadingsResponse], error) {
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListHeadingsResponse{}), nil
 	}
@@ -109,7 +109,7 @@ func (a *API) SearchPassages(
 	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
 ) (*connect.Response[v1.SearchPassagesResponse], error) {
 	query := r.Msg.GetQuery()
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	if strings.TrimSpace(query) == "" || showing.ID == "" {
 		return connect.NewResponse(&v1.SearchPassagesResponse{}), nil
 	}
@@ -120,7 +120,7 @@ func (a *API) SearchPassages(
 	}
 
 	found, err := a.Finds.Execute(ctx, showing,
-		query, search.Typing(mode, atMost(r.Msg.GetLimit())))
+		query, search.GetTypingParameters(mode, atMost(r.Msg.GetLimit())))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -146,7 +146,7 @@ func (a *API) SearchPassages(
 		// words about the first run that matched. A hit by meaning stands on no
 		// word, and the window opens where the chunk that matched begins.
 		read, hit := nearby(p.Text, p.HitAt)
-		text, at := around(read, spans(read, query), markdown.Counted(read, hit))
+		text, at := around(read, spans(read, query), markdown.CountUTF16(read, hit))
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,

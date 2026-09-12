@@ -65,7 +65,7 @@ func CacheDir(s Settings) (string, error) {
 	return filepath.Join(cache, filepath.FromSlash(cacheDir)), nil
 }
 
-// Fetched is the file one address names, downloaded if it is not already here.
+// Fetch is the file one address names, downloaded if it is not already here.
 //
 // Nothing checked here. The runtime's caller checks what it fetched against the
 // sums this build carries, because the runtime's address is this build's: one
@@ -79,12 +79,12 @@ func CacheDir(s Settings) (string, error) {
 // branch is written over, so a sum on those would refuse the model the day its
 // publisher republished it. A model a person names is a model a person trusts,
 // and it is fetched as named.
-func Fetched(ctx context.Context, s Settings, address string) (string, error) {
+func Fetch(ctx context.Context, s Settings, address string) (string, error) {
 	dir, err := CacheDir(s)
 	if err != nil {
 		return "", err
 	}
-	at := filepath.Join(dir, Cached(address))
+	at := filepath.Join(dir, GetCacheName(address))
 	if _, err := os.Stat(at); err == nil {
 		return at, nil
 	}
@@ -98,12 +98,12 @@ func Fetched(ctx context.Context, s Settings, address string) (string, error) {
 	return at, download(ctx, s, address, at)
 }
 
-// Cached is what one address is kept under: the file it ends in, and enough of
-// the address to tell two of them apart.
+// GetCacheName is what one address is kept under: the file it ends in, and
+// enough of the address to tell two of them apart.
 //
 // The name carries the address, so two files with one filename do not collide
 // and a changed address is a different file.
-func Cached(address string) string {
+func GetCacheName(address string) string {
 	sum := sha256.Sum256([]byte(address))
 	base := path.Base(address)
 	if base == "" || base == "." || base == "/" {

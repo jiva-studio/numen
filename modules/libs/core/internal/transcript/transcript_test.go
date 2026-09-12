@@ -59,7 +59,7 @@ func TestANoteIsNotSpeech(t *testing.T) {
 	if said != "said" || len(cues) != 1 {
 		t.Errorf("the note was read as speech: %q", said)
 	}
-	if ms, end := transcript.Reached(written); ms != 2000 || end != len(written) {
+	if ms, end := transcript.ReadReached(written); ms != 2000 || end != len(written) {
 		t.Errorf("the note says %d ms and ends at %d of %d", ms, end, len(written))
 	}
 }
@@ -71,7 +71,7 @@ func TestABatchNoNoteClaims(t *testing.T) {
 	whole = append(whole, transcript.Reaches(2000)...)
 	torn := slices.Concat(whole, []byte("\n00:00:02.000 --> 00:00:0"))
 
-	ms, end := transcript.Reached(torn)
+	ms, end := transcript.ReadReached(torn)
 	if ms != 2000 {
 		t.Errorf("the last note says %d ms", ms)
 	}
@@ -132,12 +132,12 @@ func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 		{Text: transcript.ByHand, From: 0, To: 2000},
 		{Text: "and then he said it again", From: 2000, To: 4000},
 	})
-	if transcript.Written(spoken) {
+	if transcript.IsWrittenByHand(spoken) {
 		t.Errorf("a cue saying %q was read as a person's own words:\n%s", transcript.ByHand, spoken)
 	}
 
 	own := slices.Concat(spoken, transcript.Hand())
-	if !transcript.Written(own) {
+	if !transcript.IsWrittenByHand(own) {
 		t.Errorf("the mark was not read:\n%s", own)
 	}
 
@@ -158,7 +158,7 @@ func TestHowFarARunGotIsANoteAndNotSpeech(t *testing.T) {
 	spoken := transcript.Marshal([]transcript.Cue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
 	whole := slices.Concat(claimed, bytes.TrimPrefix(spoken, []byte(transcript.Head+"\n")))
 
-	ms, end := transcript.Reached(whole)
+	ms, end := transcript.ReadReached(whole)
 	if ms != 2000 {
 		t.Errorf("the run is said to have reached %d ms", ms)
 	}
@@ -192,7 +192,7 @@ func TestANoteInsideALineIsNotANote(t *testing.T) {
 	})
 	whole = append(whole, transcript.Reaches(2000)...)
 
-	if ms, end := transcript.Reached(whole); ms != 2000 || end != len(whole) {
+	if ms, end := transcript.ReadReached(whole); ms != 2000 || end != len(whole) {
 		t.Errorf("the note says %d ms and ends at %d of %d", ms, end, len(whole))
 	}
 }
@@ -209,7 +209,7 @@ func TestReachedReadsALargeTranscriptAtOnce(t *testing.T) {
 
 	done := make(chan int, 1)
 	go func() {
-		ms, _ := transcript.Reached(raw)
+		ms, _ := transcript.ReadReached(raw)
 		done <- ms
 	}()
 	select {

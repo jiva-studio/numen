@@ -13,14 +13,14 @@ import (
 // can be asked.
 type named map[string][]string
 
-func (n named) Named(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
+func (n named) GetNamedPaths(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
 	return n[name], nil
 }
 
 // unreachable is a vault that cannot answer at all.
 type unreachable struct{}
 
-func (unreachable) Named(context.Context, domain.VaultID, string) ([]string, error) {
+func (unreachable) GetNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
 	return nil, errors.New("the index could not be read")
 }
 
@@ -28,7 +28,7 @@ func TestALinkIsWrittenByNameWhereTheNameMeansOneNote(t *testing.T) {
 	t.Parallel()
 	held := named{"Untitled note": {"allotments/Untitled note.md"}}
 
-	to, err := note.Addressed(t.Context(), held, "v", "allotments/Untitled note.md")
+	to, err := note.GetAddress(t.Context(), held, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestALinkIsWrittenByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 	t.Parallel()
 	held := named{"Untitled note": {"Untitled note.md", "allotments/Untitled note.md"}}
 
-	to, err := note.Addressed(t.Context(), held, "v", "allotments/Untitled note.md")
+	to, err := note.GetAddress(t.Context(), held, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestALinkIsWrittenByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 
 func TestALinkToANoteTheIndexDoesNotHoldYetIsWrittenByName(t *testing.T) {
 	t.Parallel()
-	to, err := note.Addressed(t.Context(), named{}, "v", "allotments/Untitled note.md")
+	to, err := note.GetAddress(t.Context(), named{}, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
@@ -73,14 +73,14 @@ func TestALinkToANoteTheIndexDoesNotHoldYetIsWrittenByName(t *testing.T) {
 
 func TestALinkToNowhereIsRefused(t *testing.T) {
 	t.Parallel()
-	if _, err := note.Addressed(t.Context(), named{}, "v", ""); err == nil {
+	if _, err := note.GetAddress(t.Context(), named{}, "v", ""); err == nil {
 		t.Error("Addressed() = nil error, want a refusal: a link needs a note to go to")
 	}
 }
 
 func TestAVaultThatCannotBeAskedWritesNoLink(t *testing.T) {
 	t.Parallel()
-	_, err := note.Addressed(t.Context(), unreachable{}, "v", "Note.md")
+	_, err := note.GetAddress(t.Context(), unreachable{}, "v", "Note.md")
 
 	if err == nil {
 		t.Error("Addressed() = nil error, want the one the index gave: a link written " +
@@ -103,7 +103,7 @@ func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 	} {
 		held := named{domain.Basename(path): {path}}
 
-		to, err := note.Addressed(t.Context(), held, "v", path)
+		to, err := note.GetAddress(t.Context(), held, "v", path)
 		if !errors.Is(err, note.ErrUnaddressable) {
 			t.Errorf("%s is addressed as %v %q, and answered %v",
 				path, to.Scheme, to.Value, err)

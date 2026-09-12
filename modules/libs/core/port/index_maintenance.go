@@ -9,5 +9,5 @@ import "context"
 // This says what changed. What the upkeep consists of is the index's own
 // business.
 type IndexMaintenance interface {
-	Changed(ctx context.Context) error
+	ReportChanges(ctx context.Context) error
 }
