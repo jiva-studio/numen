@@ -185,25 +185,41 @@ export interface SettingsWriter {
   parts(chosen: string): Promise<void>
 }
 
-/** What the window offers a command being carried out, one port to a job. */
-export interface CommandDeps {
+/** The vault a command reaches: what it writes, what it makes, and which one shows. */
+export interface VaultContext {
   readonly files: VaultWriter
-  readonly runs: ArtifactRunner
   readonly makers: FileMakers
   readonly vaults: VaultSwitcher
-  readonly goes: WindowNavigator
-  readonly settings: SettingsWriter
+}
+
+/** The tabs a command reaches: the files they hold, and where the window goes. */
+export interface TabContext {
   /** The open files a command reaches, whichever store holds each. */
   readonly notes: Notes
+  readonly goes: WindowNavigator
+}
+
+/** The runs a command asks for, and the ones this build has said it cannot do. */
+export interface RunContext {
+  readonly runs: ArtifactRunner
   /** The runs this window has been told this build cannot do. */
   readonly runSupport: RunSupport
-  /** A path put on the clipboard. */
-  copies(path: string): void
+}
+
+/** The one line the window says a command's answer in. */
+export interface Voice {
   /**
    * What was done, or could not be, in words a person reads. One command's
    * word replaces the last, and nothing said clears it.
    */
   readonly says: MessageWriter
+}
+
+/** What the window offers a command being carried out, one port to a job. */
+export interface CommandDeps extends VaultContext, TabContext, RunContext, Voice {
+  readonly settings: SettingsWriter
+  /** A path put on the clipboard. */
+  copies(path: string): void
 }
 
 /** Everything carrying a command out says in the window's voice. */

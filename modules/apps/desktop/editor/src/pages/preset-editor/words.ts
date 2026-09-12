@@ -3,7 +3,7 @@ import { StopReason } from '@numen/protocol'
 import { many, percent, plural } from '@numen/ui'
 import type { ErrorCode } from '@/shared/errors'
 import type { BudgetUnit, Goal, Rule } from './types'
-import type { Field } from './curve'
+import type { Field } from './lib/curve'
 
 /** What each of the three goals is offered as: the value it steers. */
 const GOALS: Record<Goal, string> = {

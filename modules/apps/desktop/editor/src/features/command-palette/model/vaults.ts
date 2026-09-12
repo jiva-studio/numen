@@ -5,14 +5,14 @@
  * A vault is not a note. What it holds is the person's folder, and every one
  * of these leaves the window standing somewhere else than it stood.
  */
-import type { CommandDeps, Words } from '../deps'
+import type { VaultContext, Voice, Words } from '../deps'
 import type { CommandInvocation } from '../target'
 
 /**
  * Another vault under this window. What the page holds belongs to the vault
  * that has gone, so the page is drawn again on the one that arrived.
  */
-export const showVault = async (id: string, on: CommandDeps, words: Words): Promise<void> => {
+export const showVault = async (id: string, on: VaultContext & Voice, words: Words): Promise<void> => {
   if (!id) return
   const error = await on.vaults.open(id)
   if (error) return on.says(words.vaultErrors[error], 'error')
@@ -23,7 +23,7 @@ export const showVault = async (id: string, on: CommandDeps, words: Words): Prom
  * A folder chosen on this machine, added as a vault and opened. A person who
  * chose no folder has asked for nothing.
  */
-export const addVault = async (on: CommandDeps, words: Words): Promise<void> => {
+export const addVault = async (on: VaultContext & Voice, words: Words): Promise<void> => {
   const path = await on.vaults.choose(words.folder)
   if (!path) return
   const answer = await on.vaults.add(path, '')
@@ -35,7 +35,7 @@ export const addVault = async (on: CommandDeps, words: Words): Promise<void> => 
 /** A vault called something else. Its folder keeps the name it has on disk. */
 export const renameVault = async (
   invocation: CommandInvocation,
-  on: CommandDeps,
+  on: VaultContext & Voice,
   words: Words,
 ): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.vault.name) return
@@ -51,7 +51,7 @@ export const renameVault = async (
 export const removeVault = async (
   invocation: CommandInvocation,
   erase: boolean,
-  on: CommandDeps,
+  on: VaultContext & Voice,
   words: Words,
 ): Promise<void> => {
   const id = invocation.vault.id

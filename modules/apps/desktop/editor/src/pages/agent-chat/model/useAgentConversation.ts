@@ -6,7 +6,7 @@ import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/shared/links'
 import type { AgentTabDeps } from '../types'
 
-export { firstLine } from '../title'
+export { firstLine } from '../lib/title'
 export type { AgentTabDeps, NoteRef } from '../types'
 
 /** What one agent tab holds. */

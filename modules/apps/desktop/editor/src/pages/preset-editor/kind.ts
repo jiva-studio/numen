@@ -11,8 +11,8 @@ import { PRESET } from '@/entities/tab'
 import { NO_BOUNDS, type Presets, type SettingsBounds } from './types'
 import { WORDS as words } from './words'
 import type { PresetTabState, SettingValue } from './types'
-import { createOpenPreset, createPresetState, readPreset, type OpenPreset } from './open'
-import { flushWrites } from './flight'
+import { createOpenPreset, createPresetState, readPreset, type OpenPreset } from './model/open'
+import { flushWrites } from './model/flight'
 import PresetTab from './ui/PresetTab.vue'
 
 export type { PresetTabState, SettingValue }

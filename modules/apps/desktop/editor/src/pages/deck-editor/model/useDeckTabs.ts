@@ -7,10 +7,10 @@ import type { PathRename } from '@/shared/paths'
 import type { Cards } from '@/entities/deck'
 import type { Store } from '@/features/command-palette'
 import type { Presets } from '@/entities/deck'
-import { answers } from '../answers'
-import { reader } from '../reader'
+import { answers } from './answers'
+import { reader } from './reader'
 import { useDeckScheduleSync } from './useDeckScheduleSync'
-import { createDeckTabActions } from '../deckTabActions'
+import { createDeckTabActions } from './deckTabActions'
 import { deckKind } from '../kind'
 import { openNotes } from '@/entities/note'
 import type { WindowHandle } from '@/entities/tab'
@@ -25,7 +25,7 @@ import {
   drawnOf,
   serializeBufferSectionsToVaultSections,
   type BufferDeck,
-} from '../deck'
+} from '../lib/deck'
 import type { DeckTabState } from '../types'
 
 export type { DeckTabState }

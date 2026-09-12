@@ -24,7 +24,6 @@ export {
   loadOn,
   NO_BOUNDS,
   NOWHERE,
-  presets,
   RULES,
   setLoadOn,
   WHOLE_LOAD,
@@ -48,5 +47,6 @@ export type {
   SettingsBounds,
   WriteResult,
 } from './presets'
+export { presets } from './presets.wire'
 export type { Surrounds } from './surrounds'
 export { WORDS } from './words'

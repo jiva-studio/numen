@@ -8,10 +8,10 @@ import type { Position, Row, RowMarker } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 
 import { iconFor } from '@/shared/icons'
-import { iconOfEntry } from '../icons'
+import { iconOfEntry } from '../lib/icons'
 import type { DropPosition, FilesTabState, ListingRow } from '../types'
-import { addressDropped, carriesAddress } from '../drag'
-import { itemsFor } from '../menu'
+import { addressDropped, carriesAddress } from '../lib/drag'
+import { itemsFor } from '../lib/menu'
 import { WORDS as words } from '../words'
 
 // --- Props & Emits ---

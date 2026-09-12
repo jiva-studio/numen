@@ -7,7 +7,7 @@ import { waiting } from '@/shared/answers'
 import { running } from '@/shared/artifacts'
 import * as clients from '@/shared/clients'
 import type { Cue } from './cues'
-import type { Recordings } from './transcript'
+import type { Recordings } from './types'
 
 const served = {
   recordings: clients.recordings,

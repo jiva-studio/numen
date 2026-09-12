@@ -6,8 +6,8 @@ import type { BookSpan, ContentsEntry } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '@/shared/span'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { resolveImageUrls } from '../markup'
-import { getContents, getDocumentAtOffset, getPageNumber } from '../pagination'
+import { resolveImageUrls } from '../lib/markup'
+import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 import type {
   Book,
   BookHandle,
@@ -27,7 +27,7 @@ export type {
   PrintedPage,
   SpineDocument,
 }
-export { getContents, getDocumentAtOffset, getPageNumber } from '../pagination'
+export { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 
 const spanOf = (span: Span): BookSpan => ({
   begins: span.from,

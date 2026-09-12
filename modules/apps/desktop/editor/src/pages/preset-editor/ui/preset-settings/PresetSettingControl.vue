@@ -8,7 +8,7 @@ import type { Day } from '@numen/ui'
 import type { PresetTabState, SettingValue } from '../../types'
 import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, loadOn, setLoadOn } from '../../types'
 import type { Bounds, BudgetUnit } from '../../types'
-import { round, type Field } from '../../curve'
+import { round, type Field } from '../../lib/curve'
 import { WORDS as words } from '../../words'
 
 // --- Props & Emits ---

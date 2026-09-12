@@ -13,7 +13,7 @@ import {
   stencilBodyOf,
   stencilIn,
   stencilOf,
-} from '../stencil'
+} from '../lib/stencil'
 
 /** What the vault said about one file the last time it was read or written. */
 export interface VaultAnswer {

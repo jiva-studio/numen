@@ -6,14 +6,14 @@ import type { PlexShowing } from '@numen/ui'
 import type { Store } from '@/features/command-palette'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { NOTE } from '@/entities/tab'
-import type { noteChanges } from './changes'
+import type { noteChanges } from './model/changes'
 import { markOf, type openNotes } from '@/entities/note'
-import { noteKeyboard, ITSELF } from './keyboard'
-import { noteTitles, type NoteTitlesDeps } from './titles'
+import { noteKeyboard, ITSELF } from './model/keyboard'
+import { noteTitles, type NoteTitlesDeps } from './model/titles'
 import NoteTab from './ui/NoteTab.vue'
 import type { FileOpeners } from '@/entities/tab'
 import type { NoteTabDeps, NoteTabState } from './types'
-import { createNoteTab } from './open'
+import { createNoteTab } from './model/open'
 
 export type { NoteTabDeps, NoteTabState, NoteTitlesDeps }
 

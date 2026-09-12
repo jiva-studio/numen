@@ -8,7 +8,15 @@
  * draws anything.
  */
 import { formatErrorMessage } from '@numen/wire'
-import { all, formatNames, type CommandDeps, type CommandHandler, type Words } from '../deps'
+import {
+  all,
+  formatNames,
+  type CommandDeps,
+  type CommandHandler,
+  type RunContext,
+  type Voice,
+  type Words,
+} from '../deps'
 export type { CommandDeps }
 import type { CommandInvocation } from '../target'
 import {
@@ -120,7 +128,7 @@ const WENT_WRONG: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'faile
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
  */
-const began = (invocation: CommandInvocation, outcome: Outcome, on: CommandDeps, words: Words): void => {
+const began = (invocation: CommandInvocation, outcome: Outcome, on: RunContext & Voice, words: Words): void => {
   if (!outcome.able) {
     on.runSupport.cannotRun(invocation.id)
     return on.says(words.unrunnable, 'error')

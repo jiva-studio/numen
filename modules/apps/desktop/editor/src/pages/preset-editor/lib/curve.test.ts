@@ -1,0 +1,384 @@
+/**
+ * The arithmetic behind the one control: where a value stands on the grid, the
+ * line the window draws while the honest one is on its way, and what a place of
+ * the curve produces.
+ */
+import { describe, expect, it } from 'vitest'
+
+import { DEFAULTS, NO_BOUNDS, NOWHERE, type Curve, type Point, type Settings } from '../types'
+import { BOUNDS, curve as drawnCurve } from '../fixtures'
+import {
+  approximate,
+  costOf,
+  FIELDS,
+  clamp,
+  nearest,
+  fieldsUnder,
+  idle,
+  produceSchedule,
+  shapeOf,
+  round,
+  goalValue,
+  valueAt,
+} from './curve'
+
+/**
+ * The sketch is drawn across the span the core holds a target to, before any
+ * answer from it has landed. Both read this one corpus, and neither owns it.
+ */
+import corpus from '../../../../../../../libs/protocol/testdata/presets.json'
+
+/** The review day the window is told, which is what a date is counted from. */
+const today = '2026-08-30'
+
+const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
+
+const point = (over: Partial<Point> = {}): Point => ({
+  reviews: 0,
+  minutes: 0,
+  retained: 0,
+  owed: 0,
+  through: 0,
+  enough: true,
+  closed: [],
+  clears: 0,
+  learned: 0,
+  short: 0,
+  backlog: [],
+  ...over,
+})
+
+describe('where a value stands on a grid', () => {
+  it('is the nearest place, whether the value sits on one or between two', () => {
+    expect(nearest([0, 10, 20, 30], 21)).toBe(2)
+    expect(nearest([0, 10, 20, 30], 30)).toBe(3)
+    expect(nearest([0, 10, 20, 30], -5)).toBe(0)
+  })
+
+  it('is nowhere at all on a grid with no places', () => {
+    expect(nearest([], 3)).toBe(-1)
+  })
+})
+
+describe('the line the window draws in the answer’s place', () => {
+  it('says it is not the application’s', () => {
+    expect(approximate(settings(), today, BOUNDS).honest).toBe(false)
+  })
+
+  it('runs over the whole range of minutes, and marks where the preset stands', () => {
+    const guess = approximate(settings({ minutesADay: 20 }), today, BOUNDS)
+    expect(guess.grid[0]).toBe(0)
+    expect(guess.grid[guess.grid.length - 1]).toBe(60)
+    expect(guess.grid[guess.now.at]).toBe(20)
+    expect(guess.suggested).toStrictEqual(NOWHERE)
+  })
+
+  it('brings back more of the material the longer the day runs', () => {
+    const guess = approximate(settings(), today, BOUNDS)
+    const costs = guess.at.map((one) => costOf('minutes', one))
+    expect(costs.every((cost, at) => at === 0 || cost >= (costs[at - 1] ?? 0))).toBe(true)
+  })
+
+  it('costs more of the day the more of the material is asked back', () => {
+    const guess = approximate(settings({ goal: 'retention', retention: 0.85 }), today, BOUNDS)
+    expect(guess.grid[0]).toBe(0.7)
+    expect(guess.grid[guess.grid.length - 1]).toBe(0.99)
+    const costs = guess.at.map((one) => costOf('retention', one))
+    expect(costs.every((cost, at) => at === 0 || cost >= (costs[at - 1] ?? 0))).toBe(true)
+  })
+
+  it('names a day at every place of a goal of a date', () => {
+    const guess = approximate(settings({ goal: 'date', byDate: '2026-09-29' }), today, BOUNDS)
+    expect(guess.days).toHaveLength(guess.grid.length)
+    expect(guess.days[guess.now.at]).toBe('2026-09-29')
+  })
+})
+
+describe('the span the sketch of a target is drawn across', () => {
+  it('is the one the application answered with, and not one kept here', () => {
+    const said = { ...BOUNDS, retention: { least: 0.75, most: 0.95 } }
+    const guess = approximate(settings({ goal: 'retention' }), today, said)
+    expect(guess.grid[0]).toBe(0.75)
+    expect(guess.grid.at(-1)).toBe(0.95)
+  })
+
+  it('answers the corpus, which is where that span is written down', () => {
+    const guess = approximate(settings({ goal: 'retention' }), today, BOUNDS)
+    expect({ least: guess.grid[0], most: guess.grid.at(-1) }).toStrictEqual(corpus.retentionBounds)
+  })
+
+  it('has no places at all until the application has said how far a target goes', () => {
+    expect(approximate(settings({ goal: 'retention' }), today, NO_BOUNDS).grid).toStrictEqual([])
+  })
+})
+
+describe('where the preset itself stands', () => {
+  it('is the value under the key its goal names', () => {
+    expect(goalValue(settings({ minutesADay: 25 }), today)).toBe(25)
+    expect(goalValue(settings({ goal: 'retention', retention: 0.85 }), today)).toBe(0.85)
+    expect(goalValue(settings({ goal: 'date', byDate: '2026-09-29' }), today)).toBe(30)
+  })
+})
+
+// The knob's own readout and the bubble over it say one number, and it is this
+// one: the preset's own value is not a place of the grid, and rounding it onto
+// one would read out a value nobody set.
+describe('the value the knob stands at', () => {
+  const riding = drawnCurve({ now: { at: 2, value: 21, day: '' } })
+
+  it('is the preset’s own where the knob has not been moved off it', () => {
+    expect(valueAt(riding, 2)).toBe(21)
+  })
+
+  it('is the place itself anywhere else, and where the preset falls outside the grid', () => {
+    expect(valueAt(riding, 3)).toBe(30)
+    expect(valueAt(drawnCurve({ now: NOWHERE }), 2)).toBe(20)
+  })
+
+  it('is nothing at all where the grid has no such place', () => {
+    expect(valueAt(riding, 9)).toBe(0)
+  })
+})
+
+describe('a number held inside the bounds of its setting', () => {
+  it('is the number where it is inside them, and the end it is past where it is not', () => {
+    expect(clamp(0.85, BOUNDS.retention)).toBe(0.85)
+    expect(clamp(0.5, BOUNDS.retention)).toBe(0.7)
+    expect(clamp(2, BOUNDS.retention)).toBe(0.99)
+    expect(clamp(-4, BOUNDS.minutesADay)).toBe(0)
+  })
+
+  // A tab draws its fields before the first read lands, and a number typed
+  // into one of them is nobody's to bring in until the application has said
+  // how far it goes.
+  it('is the number itself where the application has said no bound', () => {
+    expect(clamp(-4, undefined)).toBe(-4)
+    expect(clamp(9_000, undefined)).toBe(9_000)
+  })
+})
+
+describe('what one place of the curve produces', () => {
+  const curve: Curve = {
+    goal: 'minutes',
+    grid: [0, 10, 20, 30],
+    days: [],
+    at: [
+      point(),
+      point({ reviews: 40, retained: 0.8 }),
+      point({ reviews: 80, retained: 0.88 }),
+      point({ reviews: 120, retained: 0.93 }),
+    ],
+    now: { at: 2, value: 20, day: '' },
+    suggested: NOWHERE,
+    decks: 1,
+    cards: 400,
+    overdue: 0,
+    unbegun: 0,
+    honest: true,
+  }
+
+  // The control moves the one value its goal names. What that comes to on this
+  // vault is said in a sentence and becomes no setting, so no number the person
+  // did not name can close their day.
+  it('takes the goal’s own value off the grid, and writes nothing else', () => {
+    const was = settings({ newADay: 12, reviewsADay: 0, retention: 0.95 })
+    const made = produceSchedule(was, 3, curve, today, BOUNDS)
+    expect(made.minutesADay).toBe(30)
+    expect(made.newADay).toBe(12)
+    expect(made.reviewsADay).toBe(0)
+    expect(made.retention).toBe(0.95)
+  })
+
+  it('leaves the settings as they are where the grid has no such place', () => {
+    expect(produceSchedule(settings(), 9, curve, today, BOUNDS)).toStrictEqual(settings())
+  })
+
+  it('names the day of the place for a goal of a date, and nothing else', () => {
+    const dated: Curve = {
+      ...curve,
+      goal: 'date',
+      days: ['2026-08-31', '2026-09-09', '2026-09-19', '2026-09-29'],
+      at: curve.at.map((one) => ({ ...one, minutes: 45 })),
+    }
+    const was = settings({ goal: 'date', minutesADay: 20, reviewsADay: 0 })
+    const made = produceSchedule(was, 3, dated, today, BOUNDS)
+    expect(made.byDate).toBe('2026-09-29')
+    expect(made.minutesADay).toBe(20)
+    expect(made.reviewsADay).toBe(0)
+  })
+
+  it('moves the target alone under a goal of retention', () => {
+    const was = settings({ goal: 'retention', newADay: 12, reviewsADay: 30 })
+    const made = produceSchedule(was, 3, { ...curve, goal: 'retention' }, today, BOUNDS)
+    expect(made.retention).toBe(0.99)
+    expect(made.newADay).toBe(12)
+    expect(made.reviewsADay).toBe(30)
+  })
+
+  it('leaves the knob, the field and what is written at one value', () => {
+    const made = produceSchedule(settings(), 2, curve, today, BOUNDS)
+    expect(made.minutesADay).toBe(curve.grid[2])
+  })
+})
+
+describe('a goal with nothing to work on', () => {
+  const nothing: Curve = {
+    goal: 'minutes',
+    grid: [0, 10, 20],
+    days: [],
+    at: [point(), point(), point()],
+    now: NOWHERE,
+    suggested: NOWHERE,
+    decks: 0,
+    cards: 0,
+    overdue: 0,
+    unbegun: 0,
+    honest: true,
+  }
+
+  it('is a preset no deck points at, where the curve carries no deck', () => {
+    expect(idle(nothing)).toBe('unpointed')
+  })
+
+  it('is decks holding nothing between them, where they do point here', () => {
+    expect(idle({ ...nothing, decks: 1 })).toBe('noCards')
+    expect(idle({ ...nothing, decks: 4 })).toBe('noCards')
+  })
+
+  // A curve of zeros is a day behind us, a range of nothing, or a question the
+  // application would not answer. None of those is an empty preset: the count
+  // of cards says that and nothing else does.
+  it('is not a preset holding cards, whatever its curve comes to', () => {
+    expect(idle({ ...nothing, decks: 4, cards: 900 })).toBe('')
+    expect(idle({ ...nothing, decks: 4, cards: 900, goal: 'date', grid: [1, 2, 3] })).toBe('')
+  })
+
+  it('is not the line the window guessed, which is nobody’s answer', () => {
+    expect(idle({ ...nothing, honest: false })).toBe('')
+    expect(idle({ ...nothing, decks: 4, honest: false })).toBe('')
+  })
+
+  // The preset is not stopped: it schedules reviews, and nothing here can ever
+  // become one.
+  it('is a material nobody has begun that no place of the range begins', () => {
+    const all = { ...nothing, decks: 1, cards: 900, unbegun: 900 }
+    expect(idle(all)).toBe('beginsNothing')
+  })
+
+  it('is not a material a place of the range asks for', () => {
+    const all = { ...nothing, decks: 1, cards: 900, unbegun: 900 }
+    expect(idle({ ...all, at: [point(), point({ reviews: 12 }), point()] })).toBe('')
+  })
+
+  it('is not a material some of which somebody has begun', () => {
+    const some = { ...nothing, decks: 1, cards: 900, unbegun: 899 }
+    expect(idle(some)).toBe('')
+  })
+})
+
+describe('the settings a goal schedules by', () => {
+  // A goal names one budget, and the budgets of the other two take no part in
+  // it: they are not drawn, so nothing on the screen offers to cut the day
+  // short by a measure the person did not name.
+  it('is the minutes alone under a goal of minutes', () => {
+    const under = fieldsUnder('minutes', DEFAULTS.learned)
+    expect(under).toContain('minutesADay')
+    expect(under).not.toContain('newADay')
+    expect(under).not.toContain('reviewsADay')
+    expect(under).not.toContain('retention')
+    expect(under).not.toContain('byDate')
+  })
+
+  it('is the target and the counts that close a day under a goal of retention', () => {
+    const under = fieldsUnder('retention', DEFAULTS.learned)
+    expect(under).toContain('retention')
+    expect(under).toContain('newADay')
+    expect(under).toContain('reviewsADay')
+    expect(under).not.toContain('minutesADay')
+    expect(under).not.toContain('byDate')
+  })
+
+  it('is the day alone under a goal of a date, which nothing else may cut short', () => {
+    const under = fieldsUnder('date', DEFAULTS.learned)
+    expect(under).toContain('byDate')
+    expect(under).not.toContain('minutesADay')
+    expect(under).not.toContain('newADay')
+    expect(under).not.toContain('reviewsADay')
+  })
+
+  it('draws what stands under no goal in particular under all three', () => {
+    for (const goal of ['minutes', 'retention', 'date'] as const) {
+      expect(fieldsUnder(goal, DEFAULTS.learned)).toContain('load')
+      expect(fieldsUnder(goal, DEFAULTS.learned)).toContain('evenLoad')
+    }
+  })
+
+  // What a day's budget is spent on is a measure in cards, so it stands under
+  // the goal whose budget is cards and takes no part in the other two.
+  it('draws what a budget is spent on under the goal whose budget is cards', () => {
+    expect(fieldsUnder('retention', DEFAULTS.learned)).toContain('counts')
+    expect(fieldsUnder('minutes', DEFAULTS.learned)).not.toContain('counts')
+    expect(fieldsUnder('date', DEFAULTS.learned)).not.toContain('counts')
+  })
+
+  // The share of a day that goes to the debt says what a day is spent on and
+  // closes nothing. A goal of a date carries the whole material by its own
+  // reckoning and has no part in it.
+  it('draws the backlog share under the two goals that keep a budget of a day', () => {
+    expect(fieldsUnder('minutes', DEFAULTS.learned)).toContain('backlog')
+    expect(fieldsUnder('retention', DEFAULTS.learned)).toContain('backlog')
+    expect(fieldsUnder('date', DEFAULTS.learned)).not.toContain('backlog')
+  })
+
+  it('draws them in the order the receipt keeps them in', () => {
+    for (const goal of ['minutes', 'retention', 'date'] as const) {
+      const under = fieldsUnder(goal, DEFAULTS.learned)
+      const places = under.map((field) => FIELDS.indexOf(field))
+      expect(places).toStrictEqual([...places].sort((a, b) => a - b))
+    }
+  })
+})
+
+// The rule for what is learned is drawn under every goal, and under it the one
+// value that rule reads. The other keeps its value and takes no part.
+describe('the rule for what is learned', () => {
+  it('draws the rule under every goal, and the value the rule reads', () => {
+    for (const goal of ['minutes', 'retention', 'date'] as const) {
+      expect(fieldsUnder(goal, 'interval')).toContain('learned')
+      expect(fieldsUnder(goal, 'interval')).toContain('interval')
+      expect(fieldsUnder(goal, 'retention')).toContain('learned')
+      expect(fieldsUnder(goal, 'retention')).not.toContain('interval')
+    }
+  })
+
+  // One key is one row, whether it is read by the goal, by the rule, or by both.
+  it('draws the target once, and only where something reads it', () => {
+    const both = fieldsUnder('retention', 'retention')
+    expect(both.filter((one) => one === 'retention')).toHaveLength(1)
+    expect(fieldsUnder('minutes', 'retention')).toContain('retention')
+    expect(fieldsUnder('minutes', 'interval')).not.toContain('retention')
+  })
+
+  it('stands the rule over the value it reads', () => {
+    for (const learned of ['interval', 'retention'] as const) {
+      const under = fieldsUnder('minutes', learned)
+      const value = learned === 'interval' ? 'interval' : 'retention'
+      expect(under.indexOf(value)).toBe(under.indexOf('learned') + 1)
+    }
+  })
+
+  // A curve is asked again where a setting it is drawn from moves, and both of
+  // these move it: what is learned is counted off the run.
+  it('gives the curve its shape, both the rule and the days it reads', () => {
+    const one = settings({ learned: 'interval', interval: 21 })
+    expect(shapeOf(one)).not.toBe(shapeOf({ ...one, interval: 30 }))
+    expect(shapeOf(one)).not.toBe(shapeOf({ ...one, learned: 'retention' }))
+  })
+})
+
+describe('a number to that many places', () => {
+  it('rounds and does not truncate', () => {
+    expect(round(0.876, 2)).toBe(0.88)
+    expect(round(0.874, 2)).toBe(0.87)
+  })
+})

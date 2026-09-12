@@ -6,4 +6,4 @@
  * one says to the other.
  */
 export type { FileOpeners, SourceReader } from '../openers'
-export type { OpenTab, TabKind, WindowHandle } from '../windowTabs'
+export type { OpenTab, TabKind, WindowHandle } from '../kinds'

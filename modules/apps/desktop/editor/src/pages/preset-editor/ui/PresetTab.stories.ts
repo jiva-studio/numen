@@ -17,7 +17,7 @@ import {
   type Settings,
   type SettingsBounds,
 } from '../types'
-import { BACKLOG_HIGH, HIGH, WIDE } from '../plot'
+import { BACKLOG_HIGH, HIGH, WIDE } from '../lib/plot'
 import type { PresetTabState } from '../types'
 import { WORDS as words } from '../words'
 

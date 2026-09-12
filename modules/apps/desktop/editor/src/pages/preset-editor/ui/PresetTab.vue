@@ -9,7 +9,7 @@ import PresetSettings from './preset-settings/PresetSettings.vue'
 import type { PresetTabState } from '../types'
 import { GOALS } from '../types'
 import type { Goal } from '../types'
-import { idle, valueAt } from '../curve'
+import { idle, valueAt } from '../lib/curve'
 import { WORDS as words } from '../words'
 
 // --- Props & Emits ---

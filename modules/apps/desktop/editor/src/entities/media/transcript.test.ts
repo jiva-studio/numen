@@ -7,12 +7,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import {
-  useTranscript,
-  type Recordings,
-  type RecordingSummary,
-  type Transcript,
-} from './transcript'
+import { useTranscript } from './transcript'
+import type { Recordings, RecordingSummary, Transcript } from './types'
 import type { ArtifactStates } from '@/shared/artifacts'
 import type { Cue } from './cues'
 import { createMediaTypeProbe, type Player } from './player'

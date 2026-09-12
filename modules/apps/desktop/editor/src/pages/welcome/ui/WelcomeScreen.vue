@@ -22,8 +22,8 @@ import {
 } from '@/features/command-palette'
 import type { VaultList } from '@/shared/vaults'
 import { iconFor } from '@/shared/icons'
-import { VERSION } from '../version'
-import { COMMANDS, vaultsOn, waysIn } from '../screen'
+import { VERSION } from '../lib/version'
+import { COMMANDS, vaultsOn, waysIn } from '../lib/screen'
 import { WORDS as words } from '@/shared/words'
 
 // --- Props & Emits ---

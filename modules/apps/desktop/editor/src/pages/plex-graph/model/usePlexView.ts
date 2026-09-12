@@ -9,7 +9,7 @@ import { formatErrorMessage } from '@numen/wire'
 import { answerGuard } from '@/shared/questions'
 import type { Neighbourhood } from '@/entities/note'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
-import { alike } from '../picture'
+import { alike } from '../lib/picture'
 
 /** The one question a plex asks of the vault: what is around a note. */
 export interface Neighbours {

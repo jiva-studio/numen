@@ -3,7 +3,7 @@
  */
 import type { Ref } from 'vue'
 import type { StopReason } from '@numen/protocol'
-import type { Field } from './curve'
+import type { Field } from './lib/curve'
 import type {
   Curve,
   Goal,

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import type { Entry } from '@/shared/file'
 import { getLandingDestination, useFilesTab } from './useFilesTab'
 import { getFolderPath, ROOT, useFileTree } from './useFileTree'
-import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from '../menu'
+import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from '../lib/menu'
 import { WORDS as words } from '../words'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({

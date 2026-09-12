@@ -1,6 +1,6 @@
 import { computed, shallowRef, watch, ref } from 'vue'
 import type { Curve, PresetCounts } from '../../types'
-import { clearBacklog, valueAt } from '../../curve'
+import { clearBacklog, valueAt } from '../../lib/curve'
 import {
   calloutOf,
   extentOf,
@@ -15,7 +15,7 @@ import {
   walkGrid,
   type Extent,
   type Mark,
-} from '../../plot'
+} from '../../lib/plot'
 import { WORDS as words } from '../../words'
 
 export interface CurveSliderProps {

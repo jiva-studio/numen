@@ -5,7 +5,7 @@ import type { Ref } from 'vue'
 import type { Entry, Source } from '@/shared/file'
 import type { PathRename } from '@/shared/paths'
 import type { SearchDestination } from '@/features/command-palette'
-import type { RunGuard } from './menu'
+import type { RunGuard } from './lib/menu'
 
 /** Everything a files tab asks of the file storage/vault. */
 export interface Folders {

@@ -15,8 +15,8 @@ import {
   OFFERED,
   RENAME,
   type RunGuard,
-} from '../menu'
-import { resolveRenamePath } from '../rename'
+} from '../lib/menu'
+import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
   DropPosition,
@@ -26,7 +26,7 @@ import type {
   FileTree,
   MenuRequest,
 } from '../types'
-import { createFolder, createNote, createOne, getFolderFor } from '../create'
+import { createFolder, createNote, createOne, getFolderFor } from './create'
 
 export type { DropPosition, FileMaker, FilesTabDeps, FilesTabState, MenuRequest }
 

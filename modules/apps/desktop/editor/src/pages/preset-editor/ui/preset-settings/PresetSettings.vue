@@ -9,7 +9,7 @@
  */
 import { computed } from 'vue'
 import type { PresetTabState } from '../../types'
-import { fieldsUnder } from '../../curve'
+import { fieldsUnder } from '../../lib/curve'
 import { WORDS as words } from '../../words'
 import PresetSettingControl from './PresetSettingControl.vue'
 

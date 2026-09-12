@@ -14,7 +14,7 @@ import StencilTab from './ui/StencilTab.vue'
 import { fileOf, type PathRename } from '@/shared/paths'
 import type { StencilTabState } from './types'
 import { createStencilWire, type VaultAnswer } from './api/wire'
-import { createStencilFields } from './stencilTabs.fields'
+import { createStencilFields } from './model/fields'
 
 export type { StencilTabState, VaultAnswer }
 

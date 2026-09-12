@@ -7,7 +7,8 @@
 import { describe, expect, it } from 'vitest'
 import { panesOf } from '@numen/ui'
 import type { Workspace } from '@numen/ui'
-import { useWindowTabs, type AnyTabKind, type WindowHandle } from './windowTabs'
+import type { AnyTabKind, WindowHandle } from './kinds'
+import { useWindowTabs } from './windowTabs'
 
 /**
  * A kind that records what it was asked to do, under the names it opened on. A

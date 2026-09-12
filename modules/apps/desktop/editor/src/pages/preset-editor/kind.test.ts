@@ -10,7 +10,7 @@ import { StopReason } from '@numen/protocol'
 
 import { usePresetTab } from './kind'
 import type { SettingValue } from './types'
-import { fieldsUnder, goalValue, nearest, steer, type Field } from './curve'
+import { fieldsUnder, goalValue, nearest, steer, type Field } from './lib/curve'
 import {
   DEFAULTS,
   NO_BOUNDS,

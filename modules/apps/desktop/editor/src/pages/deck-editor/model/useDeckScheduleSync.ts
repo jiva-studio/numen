@@ -7,7 +7,7 @@ import type { Cards, StencilSummary } from '@/entities/deck'
 import type { openNotes } from '@/entities/note'
 import type { Presets } from '@/entities/deck'
 import { useDeckSchedule } from './useDeckSchedule'
-import { sameOffers, stencilsOf } from '../deck'
+import { sameOffers, stencilsOf } from '../lib/deck'
 
 export function useDeckScheduleSync(
   cards: Cards,

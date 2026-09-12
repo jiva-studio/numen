@@ -5,9 +5,9 @@ import { shallowRef, watch, type Ref } from 'vue'
 import type { PlexPart } from '@numen/ui'
 import { answerGuard } from '@/shared/questions'
 import type { NoteType } from '@/shared/file'
-import { asParts } from '../picture'
+import { asParts } from '../lib/picture'
 import type { PlexTabDeps } from '../types'
-import type { NodeIdMap } from '../nodeIdMap'
+import type { NodeIdMap } from '../lib/nodeIdMap'
 
 export function usePlexParts(
   drawn: Ref<readonly string[]>,

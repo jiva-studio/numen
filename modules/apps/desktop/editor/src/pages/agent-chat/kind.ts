@@ -5,7 +5,7 @@ import type { TabKind, WindowHandle } from '@/entities/tab'
 import { AGENT } from '@/entities/tab'
 import AgentTab from './ui/AgentTab.vue'
 import { WORDS as words } from './words'
-import { firstLine } from './title'
+import { firstLine } from './lib/title'
 import type { AgentTabState } from './model/useAgentConversation'
 import type { NoteRef } from './types'
 

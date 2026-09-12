@@ -2,7 +2,7 @@
  * Note and file creation and mutation helpers for command execution.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { CommandDeps, Words } from '../deps'
+import type { CommandDeps, TabContext, VaultContext, Voice, Words } from '../deps'
 import type { CommandInvocation } from '../target'
 import { NOTE } from '@/entities/tab'
 
@@ -16,14 +16,14 @@ export interface SettleResult {
  * The invocation at the file its note stands at now. One over a note no tab of the
  * window holds is at the name it was made over.
  */
-export const atItsFile = (invocation: CommandInvocation, on: CommandDeps): CommandInvocation =>
+export const atItsFile = (invocation: CommandInvocation, on: TabContext): CommandInvocation =>
   invocation.note ? { ...invocation, path: on.notes.where(invocation.note) } : invocation
 
 /**
  * The tab holding a note, once nothing of the note is on its way to its file.
  * A tab waiting on the person to answer for it settles nothing and says so.
  */
-export const settleTab = async (path: string, on: CommandDeps): Promise<SettleResult> => {
+export const settleTab = async (path: string, on: TabContext): Promise<SettleResult> => {
   const held = on.notes.holding(path)
   if (held === null) return { held, waiting: false }
   if (on.notes.asking(held)) return { held, waiting: true }
@@ -32,7 +32,7 @@ export const settleTab = async (path: string, on: CommandDeps): Promise<SettleRe
 }
 
 /** A note travelled to, and a vault with none to travel to said. */
-export const navigateToPath = async (path: string, on: CommandDeps, words: Words): Promise<void> => {
+export const navigateToPath = async (path: string, on: TabContext & Voice, words: Words): Promise<void> => {
   if (!path) return on.says(words.nowhere, 'caution')
   await on.goes.travel(path)
 }
@@ -83,7 +83,7 @@ export const moveFileCommand = async (invocation: CommandInvocation, on: Command
 }
 
 /** An empty folder, made under the path that was typed. */
-export const createFolderCommand = async (invocation: CommandInvocation, on: CommandDeps, words: Words): Promise<void> => {
+export const createFolderCommand = async (invocation: CommandInvocation, on: VaultContext & Voice, words: Words): Promise<void> => {
   if (!invocation.name) return
   const error = await on.files.makesFolder(invocation.name)
   if (error === 'occupied') return on.says(words.occupied, 'error')
