@@ -8,9 +8,9 @@
  * draws anything.
  */
 import { formatErrorMessage } from '@numen/wire'
-import { all, naming, type CommandDeps, type CommandHandler, type Words } from './deps'
+import { all, naming, type CommandDeps, type CommandHandler, type Words } from '../deps'
 export type { CommandDeps }
-import type { CommandInvocation } from './target'
+import type { CommandInvocation } from '../target'
 import {
   atItsFile,
   createNoteCommand,

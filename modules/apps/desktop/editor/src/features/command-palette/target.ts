@@ -9,7 +9,7 @@ import type { ArtifactStates } from '@/shared/artifacts'
 import type { Source } from '@/shared/file'
 import type { VaultList } from '@/shared/vaults'
 import type { RunSupport } from './runs'
-import type { EmptyWords, NameMatch } from './search'
+import type { EmptyWords, NameMatch } from './model/search'
 
 /** What the commands ask of the application before anything is chosen. */
 export interface CommandsDeps {

@@ -10,17 +10,17 @@
 import { computed, ref, shallowRef } from 'vue'
 import { answerGuard as latest } from '@/shared/questions'
 import type { Vault } from '@/shared/vaults'
-import { commandsOf } from './commands'
+import { commandsOf } from '../lib/commands'
 import { view } from './view'
-import type { RunSupport } from './runs'
+import type { RunSupport } from '../runs'
 import {
   invocationOf,
   type CommandsDeps,
   type CommandTarget,
   type CommandInvocation,
   type Words,
-} from './target'
-import type { NoteLookup, PaletteLists } from './rows'
+} from '../target'
+import type { NoteLookup, PaletteLists } from '../rows'
 import type { NameMatch } from './search'
 import { createPaletteSteps } from './navigation'
 

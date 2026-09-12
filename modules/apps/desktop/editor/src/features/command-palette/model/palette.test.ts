@@ -8,9 +8,9 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { runSupport, type RunSupport } from './runs'
-import type { CommandTarget } from './target'
-import type { NoteLookup, PaletteLists, StepGroup } from './rows'
+import { runSupport, type RunSupport } from '../runs'
+import type { CommandTarget } from '../target'
+import type { NoteLookup, PaletteLists, StepGroup } from '../rows'
 import { useCommandPalette } from './palette'
 import type { VaultList, Vault } from '@/shared/vaults'
 import type { NameMatch } from './search'

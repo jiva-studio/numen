@@ -4,11 +4,11 @@
 import { computed, shallowRef, type Ref } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/shared/vaults'
-import type { PaletteLists, NoteLookup } from './rows'
-import { EXACT, NO, YES, type PendingStep } from './step'
-import type { CommandInvocation, CommandTarget, Words } from './target'
+import type { PaletteLists, NoteLookup } from '../rows'
+import { EXACT, NO, YES, type PendingStep } from '../step'
+import type { CommandInvocation, CommandTarget, Words } from '../target'
 import type { NameMatch } from './search'
-import { isWebUrl } from './address'
+import { isWebUrl } from '../lib/address'
 
 export function createPaletteSteps(
   words: Words,

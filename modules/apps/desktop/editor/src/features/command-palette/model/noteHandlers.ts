@@ -2,8 +2,8 @@
  * Note and file creation and mutation helpers for command execution.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { CommandDeps, Words } from './deps'
-import type { CommandInvocation } from './target'
+import type { CommandDeps, Words } from '../deps'
+import type { CommandInvocation } from '../target'
 import { NOTE } from '@/entities/tab'
 
 /** A tab asked to settle: which one it was, and whether it is still waiting. */

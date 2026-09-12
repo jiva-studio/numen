@@ -5,8 +5,8 @@
  * A vault is not a note. What it holds is the person's folder, and every one
  * of these leaves the window standing somewhere else than it stood.
  */
-import type { CommandDeps, Words } from './deps'
-import type { CommandInvocation } from './target'
+import type { CommandDeps, Words } from '../deps'
+import type { CommandInvocation } from '../target'
 
 /**
  * Another vault under this window. What the page holds belongs to the vault

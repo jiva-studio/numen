@@ -7,8 +7,8 @@
  */
 import type { ArtifactState, ArtifactStates } from '@/shared/artifacts'
 import type { Source } from '@/shared/file'
-import type { RunSupport } from './runs'
-import type { CommandTarget } from './target'
+import type { RunSupport } from '../runs'
+import type { CommandTarget } from '../target'
 
 /** A command over the note in front, which there has to be one of. */
 export const onNote = (at: CommandTarget): boolean => at.ready && at.path !== ''

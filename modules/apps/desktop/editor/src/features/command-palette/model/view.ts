@@ -8,14 +8,14 @@
  */
 import type { Ref } from 'vue'
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
-import { isWebUrl } from './address'
+import { isWebUrl } from '../lib/address'
 import type { NoteType } from '@/shared/file'
 import type { Vault } from '@/shared/vaults'
-import { inGroup } from './commands'
-import type { PaletteLists, StepRow } from './rows'
-import type { RunSupport } from './runs'
+import { inGroup } from '../lib/commands'
+import type { PaletteLists, StepRow } from '../rows'
+import type { RunSupport } from '../runs'
 import type { NameMatch } from './search'
-import { CHOSEN, EXACT, NAME, NO, OPEN, PICK, YES, type PendingStep } from './step'
+import { CHOSEN, EXACT, NAME, NO, OPEN, PICK, YES, type PendingStep } from '../step'
 import type {
   Command,
   CommandGroup,
@@ -23,7 +23,7 @@ import type {
   ConfirmWords,
   RetypeWords,
   Words,
-} from './target'
+} from '../target'
 
 /** Everything the view reads, which is the palette's own state. */
 export interface ViewState {

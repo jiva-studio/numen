@@ -1,7 +1,7 @@
 /**
  * Command grouping and filtering.
  */
-import type { Command, CommandGroup } from './target'
+import type { Command, CommandGroup } from '../target'
 
 export { commandsOf } from './table'
 
