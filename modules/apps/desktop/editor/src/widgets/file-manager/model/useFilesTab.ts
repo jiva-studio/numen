@@ -4,10 +4,7 @@
 import { ref } from 'vue'
 import type { Entry, Source } from '@/shared/file'
 import type { SearchDestination } from '@/features/command-palette/search'
-import { fileOf, type PathRename } from '@/shared/paths'
-import type { TabKind, WindowHandle } from '@/entities/tab/windowTabs'
-import { FILES } from '@/entities/tab/workspace'
-import FilesTab from '../components/FilesTab.vue'
+import { fileOf } from '@/shared/paths'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import {
   NEW_DECK,
@@ -185,34 +182,4 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     getNameOf,
     canRun,
   }
-}
-
-export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: FilesTabDeps) {
-  const kind: TabKind<FilesTabState, typeof FILES> = {
-    kind: FILES,
-    opens: () => {
-      const state = useFilesTab(makes(), deps)
-      void state.list.openFolder(ROOT)
-      return state
-    },
-    called: () => words.files,
-    draws: FilesTab,
-    identity: () => FILES,
-    shuts: (state) => {
-      state.list.close()
-      return true
-    },
-  }
-
-  const getFrontState = (): FilesTabState | null => handle.last<FilesTabState>(FILES)?.state ?? null
-
-  const revealPath = async (path: string) => {
-    const id = await handle.opens(FILES)
-    await handle.holds<FilesTabState>(FILES, id)?.list.revealPath(path)
-  }
-
-  const refreshChangedPaths = (paths: readonly string[], renamed: readonly PathRename[] = []) =>
-    getFrontState()?.list.refreshChanged(paths, renamed) ?? Promise.resolve()
-
-  return { kind, revealPath, refreshChangedPaths }
 }

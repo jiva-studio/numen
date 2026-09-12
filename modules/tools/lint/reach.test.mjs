@@ -55,7 +55,7 @@ test('there are stories for the keyboard walk to run after', () => {
       5,
       [
         'modules/apps/desktop/editor/src/app/screens.stories.ts',
-        'modules/apps/desktop/editor/src/widgets/settings/setting-row/SettingRow.stories.ts',
+        'modules/apps/desktop/editor/src/widgets/settings/ui/setting-row/SettingRow.stories.ts',
       ],
     ],
     '@numen/flashcards': [1, ['modules/apps/desktop/flashcards/src/screens.stories.ts']],

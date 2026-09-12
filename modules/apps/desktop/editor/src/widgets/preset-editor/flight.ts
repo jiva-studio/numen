@@ -3,7 +3,7 @@
  */
 import { ref, type Ref } from 'vue'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { Presets, Settings } from './core'
+import type { Presets, Settings } from './api/core'
 import { WORDS as words } from './words'
 
 /** State tracking write flight and dirty settings for one preset file. */

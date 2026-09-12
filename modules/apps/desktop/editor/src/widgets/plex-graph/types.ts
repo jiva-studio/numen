@@ -12,7 +12,7 @@ import type {
 import type { NoteHeading } from '@/entities/note'
 import type { NoteType } from '@/shared/file'
 import type { PathRename } from '@/shared/paths'
-import type { PlexView } from './composables/usePlexView'
+import type { PlexView } from './model/usePlexView'
 
 /** Where the menu stands, and the node it was asked for on. */
 export interface MenuRequest {

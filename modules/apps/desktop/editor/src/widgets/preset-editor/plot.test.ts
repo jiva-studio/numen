@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { NOWHERE, type Curve, type Point } from './core'
+import { NOWHERE, type Curve, type Point } from './api/core'
 import {
   against,
   againstBox,

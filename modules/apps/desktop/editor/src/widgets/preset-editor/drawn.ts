@@ -9,7 +9,7 @@ import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 import { StopReason } from '@numen/protocol'
 
-import PresetTab from './components/PresetTab.vue'
+import PresetTab from './ui/PresetTab.vue'
 import {
   DEFAULTS,
   type Curve,
@@ -17,8 +17,8 @@ import {
   type PresetCounts,
   type Settings,
   type SettingsBounds,
-} from './core'
-import type { PresetTabState } from './composables/usePresetTab'
+} from './api/core'
+import type { PresetTabState } from './types'
 
 /**
  * How far each setting goes, as the application answers a read. A test says

@@ -296,7 +296,7 @@ vi.mock('@/app/vault', () => ({
   },
 }))
 
-vi.mock('@/widgets/document-viewer/wire', () => ({
+vi.mock('@/widgets/document-viewer/api/wire', () => ({
   documents: {
     getDocumentLayout: async () => ({ pages: [{ width: 100, height: 100 }], fingerprint: '' }),
     getPageUrl: () => '',
@@ -304,7 +304,7 @@ vi.mock('@/widgets/document-viewer/wire', () => ({
   },
 }))
 
-vi.mock('@/widgets/book-reader/wire', () => ({
+vi.mock('@/widgets/book-reader/api/wire', () => ({
   books: {
     getBook: async (path: string) => ({
       title: path,
@@ -435,7 +435,7 @@ vi.mock('@/entities/deck/cards', () => ({
   },
 }))
 
-vi.mock('@/widgets/agent-chat/core', () => ({ core: { ask: held, finish: async () => {} } }))
+vi.mock('@/widgets/agent-chat/api/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
 vi.mock('@/entities/settings/theme', () => ({
   themes: {

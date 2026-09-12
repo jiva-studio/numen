@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, NO_BOUNDS, NOWHERE, type Curve, type Point, type Settings } from './core'
+import { DEFAULTS, NO_BOUNDS, NOWHERE, type Curve, type Point, type Settings } from './api/core'
 import { BOUNDS, curve as drawnCurve } from './drawn'
 import {
   approximate,

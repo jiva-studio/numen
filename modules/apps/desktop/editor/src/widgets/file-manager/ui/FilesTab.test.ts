@@ -6,8 +6,8 @@ import { mount } from '@vue/test-utils'
 import { Menu, Tree } from '@numen/ui'
 import type { Entry } from '@/shared/file'
 import FilesTab from './FilesTab.vue'
-import { useFilesTab, type FilesTabState } from '../composables/useFilesTab'
-import { useFileTree, ROOT } from '../composables/useFileTree'
+import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
+import { useFileTree, ROOT } from '../model/useFileTree'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,

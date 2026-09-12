@@ -7,7 +7,7 @@ import type { Marks } from '@/entities/deck/marks'
 import type { Surrounds } from '@/entities/deck/surrounds'
 import type { Value } from '@/entities/deck/cards'
 import type { DeckCard, DeckSection, Stencil } from '@numen/ui'
-import type { Choice, DeckPreset } from './composables/useDeckSchedule'
+import type { Choice, DeckPreset } from './model/useDeckSchedule'
 
 export type { Choice, DeckPreset }
 

@@ -1,7 +1,7 @@
 /**
  * Creation of notes, folders, decks, stencils, and presets in the files tree.
  */
-import { getFolderPath, ROOT } from './composables/useFileTree'
+import { getFolderPath, ROOT } from './model/useFileTree'
 import { WORDS as words } from './words'
 import type { FileMaker, FilesTabDeps, FileTree } from './types'
 
