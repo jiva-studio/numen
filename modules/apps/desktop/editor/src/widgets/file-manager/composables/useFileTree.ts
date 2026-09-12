@@ -3,7 +3,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import type { FileEntry } from '@/shared/file'
+import type { Entry } from '@/shared/file'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { FileTree, Folders, ListingRow } from '../types'
 
@@ -41,14 +41,14 @@ export const generateUniqueName = (taken: readonly string[], word: string): stri
 }
 
 export function useFileTree(core: Folders): FileTree {
-  const held = shallowRef<ReadonlyMap<string, readonly FileEntry[]>>(new Map())
+  const held = shallowRef<ReadonlyMap<string, readonly Entry[]>>(new Map())
   const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
   const selectedPaths = shallowRef<readonly string[]>([])
   const errorMessage = ref('')
 
   let isAlive = true
 
-  const getEntriesInFolder = (folder: string): readonly FileEntry[] => held.value.get(folder) ?? []
+  const getEntriesInFolder = (folder: string): readonly Entry[] => held.value.get(folder) ?? []
 
   const isFolderOpen = (folder: string): boolean => open.value.has(folder)
 
@@ -61,7 +61,7 @@ export function useFileTree(core: Folders): FileTree {
   const rows = computed<readonly ListingRow[]>(() => getRowsInFolder(ROOT))
   const openRows = computed<readonly string[]>(() => [...open.value])
 
-  const getEntryAt = (path: string): FileEntry | null =>
+  const getEntryAt = (path: string): Entry | null =>
     getEntriesInFolder(getFolderPath(path)).find((one) => one.path === path) ?? null
 
   const loadFolder = async (folder: string) => {

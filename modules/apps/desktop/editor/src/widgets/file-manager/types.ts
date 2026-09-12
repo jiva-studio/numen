@@ -2,7 +2,7 @@
  * Type declarations for the files tab domain.
  */
 import type { Ref } from 'vue'
-import type { FileEntry, Source } from '@/shared/file'
+import type { Entry, Source } from '@/shared/file'
 import type { PathRename } from '@/shared/paths'
 import type { SearchDestination } from '@/features/command-palette/search'
 import type { RunGuard } from './menu'
@@ -10,14 +10,14 @@ import type { RunGuard } from './menu'
 /** Everything a files tab asks of the file storage/vault. */
 export interface Folders {
   /** What one folder holds, in the order to draw it. The root is the empty path. */
-  list(folder: string): Promise<readonly FileEntry[]>
+  list(folder: string): Promise<readonly Entry[]>
 }
 
 /**
  * One line of the tree: what it stands for, and the lines drawn under it.
  */
 export interface ListingRow {
-  readonly entry: FileEntry
+  readonly entry: Entry
   readonly rows: readonly ListingRow[]
 }
 
@@ -55,9 +55,9 @@ export interface FileTree {
   readonly openRows: Ref<readonly string[]>
   readonly selectedPaths: Ref<readonly string[]>
   readonly errorMessage: Ref<string>
-  getEntriesInFolder(folder: string): readonly FileEntry[]
+  getEntriesInFolder(folder: string): readonly Entry[]
   isFolderOpen(folder: string): boolean
-  getEntryAt(path: string): FileEntry | null
+  getEntryAt(path: string): Entry | null
   loadFolder(folder: string): Promise<void>
   openFolder(folder: string): Promise<void>
   closeFolder(folder: string): void

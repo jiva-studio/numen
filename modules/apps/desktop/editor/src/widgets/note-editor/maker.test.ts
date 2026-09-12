@@ -8,7 +8,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { CREATABLE, UNTITLED, noteCreator, type NoteMaker } from './maker'
-import type { CreateResult, Link, NewNote } from '@/entities/note'
+import type { Link, NewNote } from '@/entities/note'
+import type { CreateResult } from '@/shared/file'
 import type { ErrorCode } from '@/shared/errors'
 import { writer } from '@/testing/writer'
 

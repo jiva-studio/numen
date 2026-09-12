@@ -12,7 +12,7 @@ import { invocationOf, type CommandInvocation, type CommandTarget } from './targ
 import { reaching, type CommandDeps, type Store } from './deps'
 import { does } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/shared/artifacts'
-import type { FileMoveResult } from '@/shared/file'
+import type { Movement } from '@/shared/file'
 import type { RemoveResult, RenameResult } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { Vault, VaultErrorCode, VaultResult } from '@/shared/vaults'
@@ -87,7 +87,7 @@ const window = (
     /** What the list of vaults refused forgetting, erasing or opening one. */
     turnedDown?: VaultErrorCode
     /** What moving a file came back with. */
-    movement?: FileMoveResult
+    movement?: Movement
     /** What making a folder was refused with. */
     folderRefused?: ErrorCode
     /** What the file in front carries. */

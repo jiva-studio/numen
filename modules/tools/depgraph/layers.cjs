@@ -130,4 +130,14 @@ forbidden.push({
   to: { circular: true, pathNot: HARNESS },
 })
 
-module.exports = { extends: './rules.cjs', forbidden }
+module.exports = {
+  extends: './rules.cjs',
+  forbidden,
+  options: {
+    // The harness stands on no layer, and a walk that reads it finds a ring
+    // through every folder there is: each layer's tests draw it, and it draws
+    // the window. It is left out of the walk, which is the same thing the
+    // rules above say by not reading it.
+    exclude: { path: '^(dist|storybook-static|coverage)/|^src/testing/' },
+  },
+}

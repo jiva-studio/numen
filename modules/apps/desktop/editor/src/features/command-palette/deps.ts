@@ -10,7 +10,7 @@ import type { RunSupport } from './runs'
 import type { CommandInvocation, VaultRef } from './target'
 import type { EditorKind } from '@/entities/tab/openers'
 import type { Artifact, ArtifactState, ArtifactRunner } from '@/shared/artifacts'
-import type { FileMoveResult } from '@/shared/file'
+import type { Movement } from '@/shared/file'
 import type { RemoveResult, RenameResult } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { VaultErrorCode, Vaults } from '@/shared/vaults'
@@ -109,7 +109,7 @@ export interface VaultWriter {
    * A file or a folder filed somewhere else. The last segment of `to` is what
    * it is called from now on.
    */
-  moves(from: string, to: string): Promise<FileMoveResult>
+  moves(from: string, to: string): Promise<Movement>
   /** An empty folder. The folders above it are made with it. */
   makesFolder(path: string): Promise<ErrorCode | null>
 }

@@ -9,7 +9,7 @@
 import type { Ref } from 'vue'
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
 import { isWebUrl } from './address'
-import type { NoteType } from '@/entities/note'
+import type { NoteType } from '@/shared/file'
 import type { Vault } from '@/shared/vaults'
 import { inGroup } from './commands'
 import type { PaletteLists, StepRow } from './lists'

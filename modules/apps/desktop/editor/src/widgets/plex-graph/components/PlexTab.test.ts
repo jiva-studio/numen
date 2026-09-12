@@ -11,7 +11,7 @@ import { ref } from 'vue'
 import PlexTab from './PlexTab.vue'
 import type { MenuRequest, PlexTabState } from '../types'
 import { WORDS as words } from '../words'
-import type { NoteType } from '@/entities/note'
+import type { NoteType } from '@/shared/file'
 import { iconFor } from '@/shared/icons'
 
 /** A tab standing on one note, with a child beside it and no menu open. */

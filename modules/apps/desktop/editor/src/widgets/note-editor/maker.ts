@@ -7,7 +7,8 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
-import type { CreateResult, Link, NewNote, Role } from '@/entities/note'
+import type { Link, NewNote, Role } from '@/entities/note'
+import type { CreateResult } from '@/shared/file'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'

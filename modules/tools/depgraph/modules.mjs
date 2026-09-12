@@ -54,14 +54,56 @@ export const unlayered = {
  */
 export const baseline = new Map([
   [
+    '@numen/editor',
+    [
+      // A slice says what its tab draws, and the component says what state it
+      // is drawn from, so the two segments name each other. The naming is the
+      // ring: the factory belongs at the top of the slice, not inside one of
+      // its segments, and it moves there when the segments take their
+      // standard names.
+      'no-folder-going-round: src/widgets/agent-chat/components → src/widgets/agent-chat/composables',
+      'no-folder-going-round: src/widgets/agent-chat/composables → src/widgets/agent-chat/components',
+      'no-folder-going-round: src/widgets/book-reader/components → src/widgets/book-reader/composables',
+      'no-folder-going-round: src/widgets/book-reader/composables → src/widgets/book-reader/components',
+      'no-folder-going-round: src/widgets/deck-editor/components → src/widgets/deck-editor/composables',
+      'no-folder-going-round: src/widgets/deck-editor/composables → src/widgets/deck-editor/components',
+      'no-folder-going-round: src/widgets/document-viewer/components → src/widgets/document-viewer/composables',
+      'no-folder-going-round: src/widgets/document-viewer/composables → src/widgets/document-viewer/components',
+      'no-folder-going-round: src/widgets/file-manager/components → src/widgets/file-manager/composables',
+      'no-folder-going-round: src/widgets/file-manager/composables → src/widgets/file-manager/components',
+      'no-folder-going-round: src/widgets/preset-editor/components → src/widgets/preset-editor/preset-settings',
+      'no-folder-going-round: src/widgets/preset-editor/composables → src/widgets/preset-editor/components',
+      'no-folder-going-round: src/widgets/preset-editor/preset-settings → src/widgets/preset-editor/composables',
+      'no-folder-going-round: src/widgets/settings/components → src/widgets/settings/composables',
+      'no-folder-going-round: src/widgets/settings/composables → src/widgets/settings/components',
+      'no-folder-going-round: src/widgets/stencil-editor/components → src/widgets/stencil-editor/composables',
+      'no-folder-going-round: src/widgets/stencil-editor/composables → src/widgets/stencil-editor/components',
+      'no-folder-going-round: src/widgets/text-editor/components → src/widgets/text-editor/composables',
+      'no-folder-going-round: src/widgets/text-editor/composables → src/widgets/text-editor/components',
+      // The media entity is exercised against a real window of tabs, which is
+      // the only thing that can say what opening one does. What media is built
+      // on is `entities/tab/@x/media`; this is what its test mounts.
+      'no-entities-slice-reaches-a-slice: src/entities/media/kind.test.ts → src/entities/tab/openers.ts',
+      'no-entities-slice-reaches-a-slice: src/entities/media/kind.test.ts → src/entities/tab/windowTabs.ts',
+      'no-entities-slice-reaches-a-slice: src/entities/media/kind.test.ts → src/entities/tab/workspace.ts',
+      // A note left unsaved is flushed on the way out, and the test of the
+      // store's quitting is where the two meet.
+      'no-entities-reaches-above-itself: src/entities/note/notes.quitting.test.ts → src/features/file-conflict/flushing.ts',
+    ],
+  ],
+  [
     '@numen/ui',
     [
       // An editor is drawn in a pane of the workspace, and a tab switched away
       // from and come back to measures its text again. That is the contract
       // between the two features, and the story is where it is held. The
       // editor itself reaches nothing of the workspace.
-      'no-feature-reaches-a-feature: src/features/editor/Editor.stories.ts → src/features/workspace/node.ts',
-      'no-feature-reaches-a-feature: src/features/editor/Editor.stories.ts → src/features/workspace/pane/index.ts',
+      'no-features-slice-reaches-a-slice: src/features/editor/Editor.stories.ts → src/features/workspace/node.ts',
+      'no-features-slice-reaches-a-slice: src/features/editor/Editor.stories.ts → src/features/workspace/pane/index.ts',
+      // The fixtures a plex is arranged from are arranged by the code they
+      // stand for.
+      'no-folder-going-round: src/features/plex/arrange → src/features/plex/fixtures',
+      'no-folder-going-round: src/features/plex/fixtures → src/features/plex/arrange',
     ],
   ],
 ])

@@ -5,7 +5,6 @@
  * and this is what every one of them starts from.
  */
 import type {
-  CreateResult,
   Link,
   Neighbourhood,
   NewNote,
@@ -17,7 +16,7 @@ import type {
 } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { PathRename } from '@/shared/paths'
-import type { Entry, FileKind, Movement } from '@/shared/file'
+import type { CreateResult, Entry, FileKind, Movement } from '@/shared/file'
 import type { Task } from '@/shared/notices/task'
 import type { Configuration, SettingEdit } from '@/entities/settings/configuration'
 import type { HangingSettings } from '@/entities/settings/hanging'

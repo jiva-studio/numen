@@ -2,8 +2,7 @@
  * Search hit lookup, item formatting, and navigation destination mapping.
  */
 import type { PaletteItem } from '@numen/ui'
-import type { Source } from '@/shared/file'
-import type { NoteType } from '@/entities/note'
+import type { NoteType, Source } from '@/shared/file'
 import type { Words } from './search'
 
 /** A run of a name or a passage, counted the way this window counts text. */

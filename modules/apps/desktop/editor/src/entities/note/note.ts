@@ -4,6 +4,7 @@
  */
 import type { ErrorCode } from '@/shared/errors'
 import type { Span } from '@/shared/span'
+import type { MoveResult, NoteType } from '@/shared/file'
 
 /**
  * One report of a change being made to the prose of a note, while it is being
@@ -63,12 +64,6 @@ export interface NoteHeading {
 }
 
 /**
- * Which of five a note is, as the `type` key of its frontmatter says. It says
- * nothing about a file that is not a note.
- */
-export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
-
-/**
  * What a read or a write came back with. An error carries no body, and the
  * words for one belong to whatever shows it.
  */
@@ -118,13 +113,6 @@ export interface Link {
   label?: string
 }
 
-/** What creating a note, a deck or a stencil came back with. */
-export interface CreateResult {
-  /** Where the file is filed. Empty when nothing was made. */
-  path: string
-  error?: ErrorCode | null
-}
-
 /** What renaming a note came back with. */
 export interface RenameResult {
   /**
@@ -140,17 +128,6 @@ export interface RenameResult {
   error?: ErrorCode | null
   /** The note holds prose nobody here has seen, and nothing was written. */
   hasChanged: boolean
-}
-
-/**
- * A file under a different name, and what that did to the links written by the
- * name it had.
- */
-export interface MoveResult {
-  readonly from: string
-  readonly to: string
-  /** The notes whose link stopped resolving and was written again, by name. */
-  readonly repaired: readonly string[]
 }
 
 /** What removing a note came back with. */

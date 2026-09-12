@@ -17,10 +17,10 @@ import type {
   Link,
   Neighbourhood,
   NoteResult,
-  NoteType,
   Role,
   Seat,
 } from '@/entities/note'
+import type { NoteType } from '@/shared/file'
 
 /**
  * Whether a rename wrote the title into the note, by the namer it was named

@@ -15,8 +15,7 @@ import { itemsFor } from '@/widgets/file-manager/menu'
 import { ITEMS, NONE } from '@/widgets/plex-graph/menu'
 import { waysIn } from '@/widgets/welcome/screen'
 import { WORDS as words } from '@/shared/words'
-import type { NoteType } from '@/entities/note'
-import type { Source } from '@/shared/file'
+import type { NoteType, Source } from '@/shared/file'
 
 /** A window that has been told nothing, which can do every run. */
 const anything = () => true
