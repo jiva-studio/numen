@@ -1,1 +1,5 @@
 export * from './note'
+export * from './notes'
+export * from './noteTypes'
+export * from './tab'
+export * from './tabState'

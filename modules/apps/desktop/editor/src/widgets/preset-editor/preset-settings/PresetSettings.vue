@@ -8,7 +8,7 @@
  * the parts of one: `name`, `detail`, `day`, `choice` and `percent`.
  */
 import { computed } from 'vue'
-import type { PresetTabState } from '../usePresetTab'
+import type { PresetTabState } from '../composables/usePresetTab'
 import { fieldsUnder } from '../curve'
 import { WORDS as words } from '../words'
 import PresetSettingControl from './PresetSettingControl.vue'

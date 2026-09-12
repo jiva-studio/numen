@@ -38,7 +38,7 @@ function onFollowLink(turn: Turn, href: string, press: MouseEvent) {
 
 <template>
   <Agent
-    :model-value="props.state.asked.value"
+    :model-value="props.state.userQuestion.value"
     :turns="props.state.turns.value"
     :working="props.state.working.value"
     :placeholder="words.ask"

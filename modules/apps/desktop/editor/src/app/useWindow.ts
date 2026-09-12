@@ -2,9 +2,9 @@
  * The window put together: the vault it reads, the kinds it declares, and the
  * few things one kind asks of another.
  */
-import { onMounted, onUnmounted, watch } from 'vue'
+import { watch } from 'vue'
 import { core } from './vault'
-import { presets } from '../widgets/preset-editor/core'
+import { presets } from '../entities/deck/presets'
 import { runSupport } from '../features/command-palette/runs'
 import type { CommandTarget } from '../features/command-palette/target'
 import type { NoteLookup } from '../features/command-palette/lists'

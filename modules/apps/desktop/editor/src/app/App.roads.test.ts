@@ -21,9 +21,9 @@ import {
   WorkspaceLayout,
   type Workspace,
 } from '@numen/ui'
-import DocumentTab from '../widgets/document-viewer/DocumentTab.vue'
-import NoteTab from '../widgets/note-editor/NoteTab.vue'
-import RecordingTab from '../widgets/media-recording/RecordingTab.vue'
+import DocumentTab from '../widgets/document-viewer/components/DocumentTab.vue'
+import NoteTab from '../widgets/note-editor/components/NoteTab.vue'
+import RecordingTab from '../widgets/media-recording/components/RecordingTab.vue'
 import {
   asked,
   cards,

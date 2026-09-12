@@ -4,8 +4,7 @@
 import { computed, shallowRef } from 'vue'
 import type { PathRename } from '../../../shared/core'
 import type { Cards, StencilSummary } from '../../../entities/deck/cards'
-import type { Presets } from '../../preset-editor/core'
-import type { openNotes } from '../../note-editor/notes'
+import type { openNotes } from '../../../entities/note'
 import { useDeckSchedule } from './useDeckSchedule'
 import { sameOffers, stencilsOf } from '../deck'
 

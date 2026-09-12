@@ -18,23 +18,25 @@ export type { AgentTabDeps, NoteRef } from '../types'
 export type AgentTabState = ReturnType<typeof useAgentConversation>
 
 
-export function useAgentConversation(talk: Conversation, deps: AgentTabDeps) {
+export type ResolvedAddressMap = ReadonlyMap<string, string>
+
+export function useAgentConversation(conversation: Conversation, deps: AgentTabDeps) {
   /** The question being written, until it is sent. */
-  const asked = ref('')
+  const userQuestion = ref('')
 
   const setQuestion = (text: string) => {
-    asked.value = text
+    userQuestion.value = text
   }
 
   /** A question sent. What the person has open the agent reads for itself. */
   const send = (text: string) => {
-    asked.value = ''
-    void talk.ask(text, '')
+    userQuestion.value = ''
+    void conversation.ask(text, '')
   }
 
   /** A line about work pressed: the place that call was on is put in front. */
   const openTurnSource = (turn: Turn) => {
-    const at = talk.place(turn.id)
+    const at = conversation.place(turn.id)
     if (at) deps.opens(at.path, at.span)
   }
 
@@ -43,34 +45,34 @@ export function useAgentConversation(talk: Conversation, deps: AgentTabDeps) {
    * nothing is held as the empty path, which is what draws the link as not
    * resolving.
    */
-  const landed = shallowRef<ReadonlyMap<string, string>>(new Map())
-  const asking = new Set<string>()
+  const resolvedAddresses = shallowRef<ResolvedAddressMap>(new Map())
+  const pendingAddresses = new Set<string>()
 
-  /** Every address an answer points at, asked once each as they arrive. */
-  const asks = (addresses: readonly string[]) => {
-    const fresh = addresses.filter((one) => !asking.has(one))
+  /** Every address an answer points at, resolved once each as they arrive. */
+  const resolveAddresses = (addresses: readonly string[]) => {
+    const fresh = addresses.filter((one) => !pendingAddresses.has(one))
     if (!fresh.length) return
-    for (const one of fresh) asking.add(one)
+    for (const one of fresh) pendingAddresses.add(one)
     void deps.resolve(fresh).then((found) => {
-      const next = new Map(landed.value)
+      const next = new Map(resolvedAddresses.value)
       for (const one of fresh) next.set(one, found.get(one) ?? '')
-      landed.value = next
+      resolvedAddresses.value = next
     })
   }
 
   const addressesIn = (text: string) => wikilinksIn(text).map((one) => one.address)
 
   watch(
-    talk.turns,
-    (all) => asks(all.flatMap((turn) => addressesIn(turn.text))),
+    conversation.turns,
+    (all) => resolveAddresses(all.flatMap((turn) => addressesIn(turn.text))),
     { deep: true },
   )
 
   /** The turns as the thread draws them, each saying which of its links reach nothing. */
   const turns = computed<Turn[]>(() =>
-    talk.turns.value.map((turn) => {
+    conversation.turns.value.map((turn) => {
       const unresolved = addressesIn(turn.text).filter(
-        (address) => landed.value.get(address) === '',
+        (address) => resolvedAddresses.value.get(address) === '',
       )
       return unresolved.length ? { ...turn, unresolved } : turn
     }),
@@ -96,14 +98,14 @@ export function useAgentConversation(talk: Conversation, deps: AgentTabDeps) {
       return
     }
     if (!pointsAtNote(href)) return
-    const path = landed.value.get(href)
+    const path = resolvedAddresses.value.get(href)
     if (path) deps.beside(path)
   }
 
   return {
-    ...talk,
+    ...conversation,
     turns,
-    asked,
+    userQuestion,
     setQuestion,
     send,
     openTurnSource,

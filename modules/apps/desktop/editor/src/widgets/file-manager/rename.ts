@@ -1,7 +1,7 @@
 /**
  * The name a row is given, as the path the file is filed under from now on.
  */
-import { getFolderPath, ROOT } from './useFileTree'
+import { getFolderPath, ROOT } from './composables/useFileTree'
 import { fileOf } from '../../shared/paths'
 
 /**

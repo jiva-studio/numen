@@ -2,14 +2,14 @@
  * Editing, conflict handling, and flushing for open notes and flashcard stores.
  */
 import { cards } from '../entities/deck/cards'
-import { presets } from '../widgets/preset-editor/core'
+import { presets } from '../entities/deck/presets'
 import { useDeckTabs } from '../widgets/deck-editor/composables/useDeckTabs'
 import { useStencilTabs } from '../widgets/stencil-editor/composables/useStencilTabs'
-import { usePresetTab } from '../widgets/preset-editor/usePresetTab'
+import { usePresetTab } from '../widgets/preset-editor/composables/usePresetTab'
 import { noteChanges } from '../widgets/note-editor/changes'
-import { openNotes } from '../widgets/note-editor/notes'
+import { openNotes } from '../entities/note'
 import { noteCreator } from '../widgets/note-editor/maker'
-import { useNoteTab } from '../widgets/note-editor/useNoteTab'
+import { useNoteTab } from '../widgets/note-editor/composables/useNoteTab'
 import { useFileFlush } from '../features/file-conflict/flushing'
 import { raiseConflicts } from '../features/file-conflict/conflicts'
 import { reaching, type Store } from '../features/command-palette/deps'

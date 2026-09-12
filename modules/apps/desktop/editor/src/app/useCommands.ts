@@ -7,9 +7,7 @@ import { does } from '../features/command-palette/handlers'
 import { useCommandPalette } from '../features/command-palette/palette'
 import { useSearch } from '../features/command-palette/search'
 import type { CommandTarget, VaultRef } from '../features/command-palette/target'
-import { vaults } from './vault'
-import { running } from '../shared/artifacts'
-import { WORDS as cardWords } from '../entities/deck/words'
+import { createCommandDeps } from './commandDeps'
 import type { NoteLookup, PaletteLists } from '../features/command-palette/lists'
 import type { CommandDeps, Notes } from '../features/command-palette/deps'
 import type { RunSupport } from '../features/command-palette/runs'
@@ -84,94 +82,13 @@ export function useCommands(options: CommandsDepsOptions) {
   const palette = useSearch(core, words, { coverage })
   const commands = useCommandPalette(core, words, where, knows, kept, runs)
 
-  const doing: CommandDeps = {
-    files: {
-      makes: (title, from, seat) => making.createWithTitle(title, from, seat),
-      renames: (path, title) => core.rename(path, title),
-      removes: (path, destroy) => core.remove(path, destroy),
-      moves: (from, to) => core.move(from, to),
-      makesFolder: (path) => core.createFolder(path),
+  const doing: CommandDeps = createCommandDeps({
+    ...options,
+    searches: () => {
+      ;(commands.setOpen ?? commands.shows)(false)
+      ;(palette.setOpen ?? palette.shows)(true)
     },
-    runs: {
-      getArtifactStates: (path) => running.getArtifactStates(path),
-      createArtifact: async (path, of) => {
-        const outcome = await running.createArtifact(path, of)
-        void carrying(path)
-        return outcome
-      },
-      fetchArtifact: async (path) => {
-        const outcome = await running.fetchArtifact(path)
-        void carrying(path)
-        return outcome
-      },
-      correctArtifact: async (path) => {
-        const outcome = await running.correctArtifact(path)
-        void carrying(path)
-        return outcome
-      },
-      deleteTranscript: async (path) => {
-        const able = await running.deleteTranscript(path)
-        if (able) {
-          ;(recorded.onDelete ?? recorded.deleted)?.(path)
-          ;(pointed.onDelete ?? pointed.deleted)?.(path)
-        }
-        void carrying(path)
-        return able
-      },
-      deleteCopy: async (path) => {
-        const able = await running.deleteCopy(path)
-        if (able) {
-          void carrying(path)
-        }
-        return able
-      },
-    },
-    makers: {
-      ...made,
-      stencils: (folder, name) => made.stencils(folder, name, [cardWords.newField]),
-    },
-    vaults: {
-      ...vaults,
-      calls: (vault) => (shown.value = vault),
-      reloads,
-    },
-    goes: {
-      reveals: (path) => void files().revealPath(path),
-      travel: async (path) => {
-        await plexes().travel(path)
-      },
-      leaves: async (from, to) => {
-        await plexes().leaves(from, to)
-      },
-      opening,
-      opens: (kind) => void held.opens(kind),
-      preset: (path) => opensPreset(path),
-      closes: (tab) => held.drops(tab),
-      asks: (text) => void agents().askQuestion(text),
-      searches: () => {
-        ;(commands.setOpen ?? commands.shows)(false)
-        ;(palette.setOpen ?? palette.shows)(true)
-      },
-    },
-    settings: {
-      appearance: async (chosen) => {
-        await dressed.chooses(chosen)
-      },
-      syncing: async (chosen) => {
-        await oneName.chooses(chosen)
-      },
-      hanging: async (chosen) => {
-        await hungParts.chooses(chosen)
-      },
-      parts: async (chosen) => {
-        await hungParts.choosesCount(chosen)
-      },
-    },
-    notes: reached,
-    runSupport: runs,
-    copies: (path) => void navigator.clipboard?.writeText(path),
-    says: told,
-  }
+  })
 
   const carries = (id: string, at: CommandTarget) => {
     const invocation = commands.asks(id, at)

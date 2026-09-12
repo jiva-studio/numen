@@ -1,8 +1,7 @@
 /**
  * Wire adapters and vault communication for flashcard stencil tabs.
  */
-import type { PathRename, ErrorCode } from '../../shared/core'
-import type { NoteBaseline } from '../note-editor/tabState'
+import type { NoteBaseline } from '../../entities/note'
 import type { Cards, DeckProblem } from '../../entities/deck/cards'
 import type { MessageWriter } from '../../shared/notices/messages'
 import { ERRORS } from '../../shared/words'

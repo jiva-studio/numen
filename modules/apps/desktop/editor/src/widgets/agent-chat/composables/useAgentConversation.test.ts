@@ -98,7 +98,7 @@ describe('a question sent', () => {
 
     one.state.send('half a question')
 
-    expect(one.state.asked.value).toBe('')
+    expect(one.state.userQuestion.value).toBe('')
   })
 })
 
@@ -199,7 +199,7 @@ describe('something to ask about a note', () => {
     await window.askQuestion('Note.md — ')
 
     expect(window.open()).toHaveLength(1)
-    expect(window.talks[0]?.state.asked.value).toBe('Note.md — ')
+    expect(window.talks[0]?.state.userQuestion.value).toBe('Note.md — ')
   })
 
   it('goes to the agent the person was last in, and puts it in front', async () => {
@@ -212,8 +212,8 @@ describe('something to ask about a note', () => {
     await window.askQuestion('Note.md — ')
 
     expect(window.open()).toHaveLength(2)
-    expect(second.state.asked.value).toBe('Note.md — ')
-    expect(first.state.asked.value).toBe('')
+    expect(second.state.userQuestion.value).toBe('Note.md — ')
+    expect(first.state.userQuestion.value).toBe('')
   })
 
   it('opens another once the one the person was last in has closed', async () => {
@@ -225,7 +225,7 @@ describe('something to ask about a note', () => {
     await window.askQuestion('Note.md — ')
 
     expect(window.open()).toHaveLength(1)
-    expect(window.talks[1]?.state.asked.value).toBe('Note.md — ')
+    expect(window.talks[1]?.state.userQuestion.value).toBe('Note.md — ')
   })
 })
 

@@ -11,10 +11,10 @@ import './app.css'
 import UnsavedChangesPrompt from '../features/file-conflict/UnsavedChangesPrompt.vue'
 import CoreFailureNotice from '../shared/notices/CoreFailureNotice.vue'
 import CommandPalette from '../features/command-palette/CommandPalette.vue'
-import WelcomeScreen from '../widgets/welcome/WelcomeScreen.vue'
+import WelcomeScreen from '../widgets/welcome/components/WelcomeScreen.vue'
 import { useWindow } from './useWindow'
 import { WORDS as words } from '../shared/words'
-import { WORDS as note } from '../widgets/note-editor/words'
+import { WORDS as note } from '../entities/note/words'
 
 // --- Props & Emits ---
 

@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 import { dayAfter } from '@numen/ui'
 
-import { usePresetTab } from './usePresetTab'
+import { usePresetTab } from './composables/usePresetTab'
 import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from './core'
 import { BOUNDS } from './drawn'
 import type { WindowHandle } from '../../entities/tab/windowTabs'

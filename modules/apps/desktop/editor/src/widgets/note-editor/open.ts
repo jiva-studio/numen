@@ -7,7 +7,7 @@ import type { WindowHandle } from '../../entities/tab/windowTabs'
 import type { FileOpeners } from '../../entities/tab/openers'
 import type { noteChanges } from './changes'
 import type { noteKeyboard } from './keyboard'
-import type { openNotes } from './notes'
+import type { openNotes } from '../../entities/note'
 import type { noteTitles } from './titles'
 import type { NoteTabDeps, NoteTabState } from './types'
 

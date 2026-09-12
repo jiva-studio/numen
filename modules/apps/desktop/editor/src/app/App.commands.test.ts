@@ -17,10 +17,10 @@ import {
 } from '@numen/ui'
 import AgentTab from '../widgets/agent-chat/components/AgentTab.vue'
 import DeckTab from '../widgets/deck-editor/components/DeckTab.vue'
-import FilesTab from '../widgets/file-manager/FilesTab.vue'
+import FilesTab from '../widgets/file-manager/components/FilesTab.vue'
 import { NEW_DECK, NEW_STENCIL } from '../widgets/file-manager/menu'
-import NoteTab from '../widgets/note-editor/NoteTab.vue'
-import PlexTab from '../widgets/plex-graph/PlexTab.vue'
+import NoteTab from '../widgets/note-editor/components/NoteTab.vue'
+import PlexTab from '../widgets/plex-graph/components/PlexTab.vue'
 import { WORDS as plexWords } from '../widgets/plex-graph/words'
 import {
   asked,
