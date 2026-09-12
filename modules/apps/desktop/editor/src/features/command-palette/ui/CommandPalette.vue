@@ -8,8 +8,8 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Palette, type ActionWords } from '@numen/ui'
-import { asksCommands, type CommandTarget } from '../target'
-import { appendCreateOffer, creates, MAKING } from '../lib/offers'
+import { isCommandsTyped, type CommandTarget } from '../target'
+import { appendCreateOffer, createNoteInvocation, MAKING } from '../lib/offers'
 import type { Commands } from '../model/palette'
 import type { CommandDeps } from '../deps'
 import { runInvocation } from '../model/handlers'
@@ -69,7 +69,7 @@ const field = computed(() =>
 // --- Handlers ---
 function onTyping(text: string) {
   if (props.commands.open.value) return void props.commands.setTyped(text)
-  if (!asksCommands(props.search.typed.value, text)) return void props.search.setTyped(text)
+  if (!isCommandsTyped(props.search.typed.value, text)) return void props.search.setTyped(text)
   const setSearchOpen = props.search.setOpen
   const setCommandsOpen = props.commands.setOpen
   setSearchOpen(false)
@@ -80,7 +80,7 @@ async function onChoose(item: string, action: string) {
   const setSearchOpen = props.search.setOpen
   const setCommandsOpen = props.commands.setOpen
   if (props.commands.open.value) {
-    const invocation = props.commands.chose(item, action)
+    const invocation = props.commands.chooseItem(item, action)
     if (!invocation) return
     setCommandsOpen(false)
     await runInvocation(invocation, props.doing, words)
@@ -89,21 +89,21 @@ async function onChoose(item: string, action: string) {
   if (item === MAKING) {
     const name = props.search.typed.value.trim()
     setSearchOpen(false)
-    await runInvocation(creates(action, name, props.where()), props.doing, words)
+    await runInvocation(createNoteInvocation(action, name, props.where()), props.doing, words)
     return
   }
-  const landing = props.search.chose(item, action)
+  const landing = props.search.chooseItem(item, action)
   setSearchOpen(false)
   await openDestination(landing, props.places)
 }
 
 function onDismiss() {
-  if (props.commands.open.value) props.commands.leaves()
+  if (props.commands.open.value) props.commands.leaveStep()
   else props.search.setOpen(false)
 }
 
 function onBack() {
-  if (props.commands.open.value && props.commands.backs()) {
+  if (props.commands.open.value && props.commands.goBack()) {
     ;props.search.setOpen(true)
   }
 }
@@ -156,7 +156,7 @@ function rowIcon(id: string) {
     :action-words="actionWords"
     @update:model-value="onTyping"
     @choose="onChoose"
-    @lit="commands.lights"
+    @lit="commands.previewItem"
     @back="onBack"
     @dismiss="onDismiss"
   >

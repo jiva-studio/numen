@@ -172,7 +172,7 @@ const pictureIn = (canvas: HTMLElement): HTMLElement =>
   within(canvas).getByRole('slider', { name: words.knob })
 
 /** The first line of the bubble over the knob, which is the value being held. */
-const heldLine = (value: number): string =>
+const getBubbleLine = (value: number): string =>
   words.buys('minutes', {
     value,
     reviews: 0,
@@ -297,7 +297,7 @@ export const TheBubbleStandsOverTheKnob: Story = {
       await userEvent.keyboard(key)
       await waitFor(() => expect(picture).toHaveAttribute('aria-valuenow', String(value)))
 
-      const bubble = within(canvasElement).getByText(heldLine(value)).parentElement!
+      const bubble = within(canvasElement).getByText(getBubbleLine(value)).parentElement!
       const box = bubble.getBoundingClientRect()
       expect(box.width).toBeGreaterThan(0)
       expect(box.left).toBeGreaterThanOrEqual(frame.left - 1)

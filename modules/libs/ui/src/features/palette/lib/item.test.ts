@@ -8,11 +8,11 @@
  * it.
  */
 import { describe, expect, it } from 'vitest'
-import { keptOn, placeActions } from './actions'
+import { findKeptAction, placeActions } from './actions'
 import {
   choosable,
+  findKeptPlace,
   flatten,
-  keptAt,
   orderGroups,
   stepIn,
   stepTo,
@@ -151,20 +151,20 @@ describe('a group arriving under the keyboard', () => {
       group('text', [item('two')]),
     ])
 
-    expect(keptAt(before, 'one')).toBe(0)
-    expect(keptAt(after, 'one')).toBe(1)
+    expect(findKeptPlace(before, 'one')).toBe(0)
+    expect(findKeptPlace(after, 'one')).toBe(1)
   })
 
   it('hands the keyboard to the first item when the one it was on is gone', () => {
-    expect(keptAt(flatten(SECTIONS), 'vanished')).toBe(0)
+    expect(findKeptPlace(flatten(SECTIONS), 'vanished')).toBe(0)
   })
 
   it('hands it on when the item it was on is still there and turned off', () => {
-    expect(keptAt(flatten(SECTIONS), 'three')).toBe(0)
+    expect(findKeptPlace(flatten(SECTIONS), 'three')).toBe(0)
   })
 
   it('takes the keyboard nowhere when nothing is left to land on', () => {
-    expect(keptAt([], 'one')).toBe(-1)
+    expect(findKeptPlace([], 'one')).toBe(-1)
   })
 })
 
@@ -341,23 +341,23 @@ describe('the actions the panel draws', () => {
 
 describe('a list of actions changing under the panel', () => {
   it('keeps the action it was on, wherever the words put it', () => {
-    expect(keptOn(placeActions(MANY, 'open'), 'beside')).toBe(1)
-    expect(keptOn(placeActions(MANY), 'beside')).toBe(2)
+    expect(findKeptAction(placeActions(MANY, 'open'), 'beside')).toBe(1)
+    expect(findKeptAction(placeActions(MANY), 'beside')).toBe(2)
   })
 
   it('keeps it across a list offered again in arrays of its own', () => {
     const fresh = MANY.map((one) => ({ ...one }))
 
-    expect(keptOn(placeActions(fresh), 'rename')).toBe(3)
+    expect(findKeptAction(placeActions(fresh), 'rename')).toBe(3)
   })
 
   it('hands it to the first action when the one it was on is gone', () => {
-    expect(keptOn(placeActions(MANY, 'plex'), 'rename')).toBe(0)
+    expect(findKeptAction(placeActions(MANY, 'plex'), 'rename')).toBe(0)
   })
 
   it('takes it nowhere in a list holding none', () => {
-    expect(keptOn([], 'rename')).toBe(-1)
-    expect(keptOn(placeActions(MANY, 'nowhere'), 'rename')).toBe(-1)
+    expect(findKeptAction([], 'rename')).toBe(-1)
+    expect(findKeptAction(placeActions(MANY, 'nowhere'), 'rename')).toBe(-1)
   })
 })
 

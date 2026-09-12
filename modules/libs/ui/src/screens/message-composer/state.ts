@@ -32,11 +32,11 @@ export type ComposerState = keyof typeof COMPOSER_STATES
  */
 export const composerState = (text: string, working: boolean): ComposerState => {
   if (working) return 'writing'
-  return said(text) ? 'ready' : 'empty'
+  return getMessage(text) ? 'ready' : 'empty'
 }
 
 /** What is left after the whitespace, which is what would be sent. */
-export const said = (text: string): string => text.trim()
+export const getMessage = (text: string): string => text.trim()
 
 /** What the key that was pressed means. */
 export type KeyIntent = 'submit' | 'newline' | 'pass'

@@ -31,7 +31,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     ...deps,
     about: () => {
       const path = plexes.looking()
-      return { path, title: plexes.names(path) || path }
+      return { path, title: plexes.getName(path) || path }
     },
   })
 
@@ -47,7 +47,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   const { files, made } = createFilesKind({ ...deps, dragged, told, places })
 
-  held.declares([
+  held.registerKinds([
     ...editing.kinds,
     ...settings.kinds,
     plexes.kind,

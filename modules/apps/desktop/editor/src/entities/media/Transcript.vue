@@ -33,7 +33,7 @@ const {
 } = props.state
 
 /** The times in the editor's gutter, and the line being said. */
-const times = timing((line) => props.state.goes(line))
+const times = timing((line) => props.state.goToLine(line))
 
 // The words move under what is played: the line being said is drawn in the
 // accent, and following is what brings it back into view.
@@ -47,7 +47,7 @@ watchPostEffect(() =>
 
 // --- Handlers ---
 function onTranscribe() {
-  props.state.transcribes()
+  props.state.transcribe()
 }
 
 function onUpdateModelValue(said: string) {

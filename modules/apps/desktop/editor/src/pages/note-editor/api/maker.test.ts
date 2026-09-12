@@ -38,8 +38,8 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
 
 describe('making a note in a seat of another', () => {
   it('writes the note it was made from into it, in the seat facing the one asked for', async () => {
-    const { core, asked, says } = fake()
-    const made = await noteCreator(core, says).createInSeat('Ontology.md', 'child')
+    const { core, asked, write } = fake()
+    const made = await noteCreator(core, write).createInSeat('Ontology.md', 'child')
 
     expect(made).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
     expect(asked).toStrictEqual([
@@ -48,15 +48,15 @@ describe('making a note in a seat of another', () => {
   })
 
   it('makes a parent the new note is the child of', async () => {
-    const { core, asked, says } = fake()
-    await noteCreator(core, says).make('Ontology.md', 'parent')
+    const { core, asked, write } = fake()
+    await noteCreator(core, write).make('Ontology.md', 'parent')
 
     expect(asked[0]?.links).toStrictEqual([{ to: 'Ontology.md', role: 'child' }])
   })
 
   it('files it in the folder the note it was made from is in', async () => {
-    const { core, asked, says } = fake()
-    const made = await noteCreator(core, says).make('physics/Ontology.md', 'child')
+    const { core, asked, write } = fake()
+    const made = await noteCreator(core, write).make('physics/Ontology.md', 'child')
 
     expect(asked[0]?.folder).toBe('physics')
     expect(made?.path).toBe(`physics/${UNTITLED}.md`)
@@ -64,25 +64,25 @@ describe('making a note in a seat of another', () => {
 
   it('can make a note in every seat it offers', async () => {
     for (const seat of CREATABLE) {
-      const { core, asked, says } = fake()
-      expect(await noteCreator(core, says).make('Ontology.md', seat)).not.toBeNull()
+      const { core, asked, write } = fake()
+      expect(await noteCreator(core, write).make('Ontology.md', seat)).not.toBeNull()
       expect(asked[0]?.links).toHaveLength(1)
     }
   })
 
   it('makes nothing in a seat no link writes', async () => {
-    const { core, asked, says } = fake()
+    const { core, asked, write } = fake()
 
-    expect(await noteCreator(core, says).make('Ontology.md', 'sibling')).toBeNull()
+    expect(await noteCreator(core, write).make('Ontology.md', 'sibling')).toBeNull()
     expect(asked).toStrictEqual([])
   })
 
   it('asks for the next name for as long as the vault says the last one is taken', async () => {
-    const { core, asked, says, last } = fake([
+    const { core, asked, write, last } = fake([
       { path: '', error: 'occupied' },
       { path: '', error: 'occupied' },
     ])
-    const making = noteCreator(core, says)
+    const making = noteCreator(core, write)
     const made = await making.make('Ontology.md', 'child')
 
     expect(asked.map((note) => note.title)).toStrictEqual([
@@ -95,8 +95,8 @@ describe('making a note in a seat of another', () => {
   })
 
   it('creates an untitled note in a folder with links', async () => {
-    const { core, asked, says } = fake()
-    const made = await noteCreator(core, says).createUntitled('physics', [{ to: 'Ontology.md', role: 'parent' }])
+    const { core, asked, write } = fake()
+    const made = await noteCreator(core, write).createUntitled('physics', [{ to: 'Ontology.md', role: 'parent' }])
 
     expect(made).toStrictEqual({ path: `physics/${UNTITLED}.md`, title: UNTITLED })
     expect(asked).toStrictEqual([
@@ -105,8 +105,8 @@ describe('making a note in a seat of another', () => {
   })
 
   it('says an error that is not a name already taken, and asks for nothing more', async () => {
-    const { core, asked, says, told } = fake([{ path: '', error: 'notANote' }])
-    const making = noteCreator(core, says)
+    const { core, asked, write, told } = fake([{ path: '', error: 'notANote' }])
+    const making = noteCreator(core, write)
 
     expect(await making.make('Ontology.md', 'child')).toBeNull()
     expect(asked).toHaveLength(1)
@@ -120,8 +120,8 @@ describe('making a note in a seat of another', () => {
         throw new Error('the vault is out of reach')
       },
     } as unknown as NoteMaker
-    const { says, last } = writer()
-    const making = noteCreator(core, says)
+    const { write, last } = writer()
+    const making = noteCreator(core, write)
 
     expect(await making.make('Ontology.md', 'child')).toBeNull()
     expect(last()).toContain('numen did not answer')
@@ -131,8 +131,8 @@ describe('making a note in a seat of another', () => {
 
 describe('making a note under a name a person gave it', () => {
   it('files it beside the note it was made from, in that note’s seat', async () => {
-    const { core, asked, says } = fake()
-    const made = await noteCreator(core, says).createWithTitle('Entropy', 'physics/Ontology.md', 'child')
+    const { core, asked, write } = fake()
+    const made = await noteCreator(core, write).createWithTitle('Entropy', 'physics/Ontology.md', 'child')
 
     expect(made).toStrictEqual({ path: 'physics/Entropy.md', title: 'Entropy' })
     expect(asked).toStrictEqual([
@@ -141,8 +141,8 @@ describe('making a note under a name a person gave it', () => {
   })
 
   it('files it at the top of the vault, joined to nothing, when it stands on no note', async () => {
-    const { core, asked, says } = fake()
-    const made = await noteCreator(core, says).createWithTitle('Entropy', '', null)
+    const { core, asked, write } = fake()
+    const made = await noteCreator(core, write).createWithTitle('Entropy', '', null)
 
     expect(made).toStrictEqual({ path: 'Entropy.md', title: 'Entropy' })
     expect(asked).toStrictEqual([{ title: 'Entropy', folder: '', links: [] }])
@@ -151,8 +151,8 @@ describe('making a note under a name a person gave it', () => {
 
 describe('joining two notes that are both there', () => {
   it('writes the link in the note the gesture came from, in the seat it landed in', async () => {
-    const { core, joined, says, last } = fake()
-    const making = noteCreator(core, says)
+    const { core, joined, write, last } = fake()
+    const making = noteCreator(core, write)
 
     expect(await making.join('Ontology.md', 'Entropy.md', 'child')).toBe(true)
     expect(joined).toStrictEqual([
@@ -162,15 +162,15 @@ describe('joining two notes that are both there', () => {
   })
 
   it('writes nothing for a seat no link writes', async () => {
-    const { core, joined, says } = fake()
+    const { core, joined, write } = fake()
 
-    expect(await noteCreator(core, says).join('Ontology.md', 'Entropy.md', 'sibling')).toBe(false)
+    expect(await noteCreator(core, write).join('Ontology.md', 'Entropy.md', 'sibling')).toBe(false)
     expect(joined).toStrictEqual([])
   })
 
   it('says why nothing was written', async () => {
-    const { core, says, told } = fake([], ['unreadable'])
-    const making = noteCreator(core, says)
+    const { core, write, told } = fake([], ['unreadable'])
+    const making = noteCreator(core, write)
 
     expect(await making.join('Ontology.md', 'Entropy.md', 'jump')).toBe(false)
     expect(told.at(-1)?.text).not.toBe('')

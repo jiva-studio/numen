@@ -26,8 +26,8 @@ const offered = computed(() => [
 
 // --- Handlers ---
 function onChoose(id: string) {
-  if (id === PROOFREAD) props.state.proofreads()
-  if (id === DELETE_TEXT) props.state.deletes()
+  if (id === PROOFREAD) props.state.proofread()
+  if (id === DELETE_TEXT) props.state.deleteTranscript()
 }
 
 function onPlay() {

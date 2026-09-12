@@ -194,7 +194,7 @@ const spreadsIn = (canvasElement: HTMLElement) =>
  * The text laid out in columns, once the browser has laid it out. The count is
  * drawn from the spreads the text came to, so it stands there when it has.
  */
-const laid = async (canvasElement: HTMLElement) =>
+const waitForLayout = async (canvasElement: HTMLElement) =>
   await waitFor(
     async () => {
       await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
@@ -214,7 +214,7 @@ export const ABook: Story = {}
 export const TheListComesOverTheText: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
     const before = areaOf(canvasElement).getBoundingClientRect()
     const spreads = spreadsIn(canvasElement)
 
@@ -240,7 +240,7 @@ export const TheListComesOverTheText: Story = {
 export const TheListIsPutAway: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const way = canvas.getByLabelText(words.shows)
     await userEvent.click(way)
@@ -262,7 +262,7 @@ export const TheListIsPutAway: Story = {
 export const APlaceChosenIsTurnedTo: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
     await userEvent.click(canvas.getByLabelText(words.shows))
 
     const wanted = NAMED.parts[2]!
@@ -291,7 +291,7 @@ export const ABookThatNamesNothing: Story = {
   args: { book: UNNAMED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     await userEvent.click(canvas.getByLabelText(words.shows))
 
@@ -330,7 +330,7 @@ export const DrawnOutOfSight: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const area = areaOf(canvasElement)
     await expect(area.scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
@@ -383,7 +383,7 @@ export const ALinkIntoTheSameDocument: Story = {
   render: renderCrossedBook,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const press = await clickLink(canvas.getByText(BACK))
     await expect(press?.defaultPrevented).toBe(true)
@@ -403,7 +403,7 @@ export const ALinkIntoAnotherDocument: Story = {
   render: renderCrossedBook,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const press = await clickLink(canvas.getByText(ONWARD))
     await expect(press?.defaultPrevented).toBe(true)
@@ -428,7 +428,7 @@ export const ALinkOutOfTheBook: Story = {
   render: renderCrossedBook,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const press = await clickLink(canvas.getByText(ELSEWHERE))
 
@@ -466,7 +466,7 @@ export const InAPaneOfTheWindow: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const area = canvasElement.querySelector('.book__area') as HTMLElement
     const paper = canvasElement.querySelector('.book__paper') as HTMLElement
@@ -503,7 +503,7 @@ export const AnswersAKeyAsDrawn: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     // Struck at the book, with nothing pressed in it beforehand.
     const tab = canvasElement.querySelector('.book-tab') as HTMLElement

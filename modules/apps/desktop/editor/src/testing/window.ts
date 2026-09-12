@@ -3,7 +3,7 @@
  *
  * The application answers through four modules, and a test of the window
  * declares what each of them says here: `said` is what the vault answers,
- * `asked` is what it was asked, and `drawn` puts the window on the screen.
+ * `asked` is what it was asked, and `mountWindow` puts the window on the screen.
  */
 import { afterEach, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
@@ -512,7 +512,7 @@ vi.mock('@/entities/settings', async (original) => ({
 const App = (await import('@/app/App.vue')).default
 
 /** A moment for whatever the window asked the vault for to come back. */
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 /** Longer than the palette debounces a keystroke before it asks the vault. */
 const DEBOUNCE = 200
@@ -549,7 +549,7 @@ const sourceSaid = (path: string, kind: 'book' | 'recording') => ({
 })
 
 /** Something drawn in a pane that answers what the window asks of it. */
-const answers = (name: string, drawn: Record<string, unknown>) =>
+const createStub = (name: string, drawn: Record<string, unknown>) =>
   defineComponent({
     name,
     setup: (_, { expose }) => {
@@ -559,13 +559,13 @@ const answers = (name: string, drawn: Record<string, unknown>) =>
   })
 
 /** An editor answers the three things a note asks of one; a page, the one. */
-const editor = answers('Editor', {
+const editor = createStub('Editor', {
   focus: () => true,
   measure: () => (asked.measured += 1),
   reveal: () => true,
 })
-const reader = answers('Reader', { measure: () => {} })
-const book = answers('Book', {
+const reader = createStub('Reader', { measure: () => {} })
+const book = createStub('Book', {
   measure: () => {},
   // The book writes down every key it was handed and turns no page: what is
   // asked of the window is that the key reaches the book it is showing.
@@ -639,7 +639,7 @@ afterEach(() => {
  * The window drawn, with what each kind draws inside it stubbed. The tabs
  * themselves are the window's own, and they are what is asked about here.
  */
-async function drawn() {
+async function mountWindow() {
   const window = mount(App, {
     global: {
       // A stub is named by the binding the component is drawn through, and the
@@ -659,9 +659,9 @@ async function drawn() {
     attachTo: document.body,
   })
   windows.push(window)
-  await settles()
-  await settles()
-  await settles()
+  await settle()
+  await settle()
+  await settle()
   return window
 }
 
@@ -687,15 +687,15 @@ const nodeInPlex = (window: VueWrapper): string => {
  * The window with a palette a person can type into. The palette draws itself at
  * the end of the document, and is read off the document.
  */
-async function drawnWithPalette() {
+async function mountWindowWithPalette() {
   const window = mount(App, {
     global: { stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Book: book, Tree: true } },
     attachTo: document.body,
   })
   windows.push(window)
-  await settles()
-  await settles()
-  await settles()
+  await settle()
+  await settle()
+  await settle()
   return window
 }
 
@@ -717,8 +717,8 @@ export {
   cards,
   maker,
   DEBOUNCE,
-  drawn,
-  drawnWithPalette,
+  mountWindow,
+  mountWindowWithPalette,
   editor,
   folders,
   layoutOf,
@@ -730,7 +730,7 @@ export {
   passageSaid,
   reader,
   said,
-  settles,
+  settle,
   sourceSaid,
   tabsOf,
 }

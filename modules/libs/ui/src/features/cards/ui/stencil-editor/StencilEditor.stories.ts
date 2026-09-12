@@ -153,7 +153,7 @@ const meta: Meta<Knobs> = {
       )
 
       /** Every face, with one half of one of them rewritten. */
-      const written = (id: string, half: Half, text: string): readonly StencilFace[] =>
+      const rewriteFace = (id: string, half: Half, text: string): readonly StencilFace[] =>
         faces.value.map((face) => (face.id === id ? { ...face, [half]: text } : face))
 
       return {
@@ -192,7 +192,7 @@ const meta: Meta<Knobs> = {
           faces.value = order.flatMap((each) => faces.value.filter((face) => face.id === each))
         },
         onWrite: (id: string, half: Half, text: string) => {
-          faces.value = written(id, half, text)
+          faces.value = rewriteFace(id, half, text)
         },
       }
     },
@@ -242,7 +242,7 @@ const buttonSaying = (canvas: HTMLElement, said: string) => {
   return held
 }
 
-const drawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
+const getDrawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
   [...canvas.querySelectorAll('[data-field]')].map((row) => row.getAttribute('data-field'))
 
 /**
@@ -299,7 +299,7 @@ export const AStencil: Story = {
     await new Promise((settled) => {
       setTimeout(settled, 0)
     })
-    expect(drawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
+    expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
 
     // What the list is added to by stands in the middle of a divider as wide as
     // the list, and the line gives way to it either side.
@@ -338,7 +338,7 @@ export const WhatAPersonDoesToIt: Story = {
 
     // A field asked for stands under a name nothing had taken, below the last.
     await userEvent.click(buttonSaying(canvasElement, 'Add a field'))
-    expect(drawnFields(canvasElement)).toEqual([
+    expect(getDrawnFields(canvasElement)).toEqual([
       'Name',
       'Height',
       'Weight',
@@ -347,11 +347,11 @@ export const WhatAPersonDoesToIt: Story = {
     ])
 
     // The last face is let go over the first, and takes its place.
-    const drawn = (): readonly (string | null)[] =>
+    const getDrawnFaces = (): readonly (string | null)[] =>
       [...canvasElement.querySelectorAll('[data-face]')].map((each) =>
         each.getAttribute('data-face'),
       )
-    expect(drawn()).toEqual(['recognise', 'name-it'])
+    expect(getDrawnFaces()).toEqual(['recognise', 'name-it'])
 
     const header = found(canvasElement, '[data-face="name-it"] .card-header')
     expect(header.getAttribute('draggable')).toBe('true')
@@ -368,7 +368,7 @@ export const WhatAPersonDoesToIt: Story = {
 
     onto.dispatchEvent(new DragEvent('drop', { bubbles: true }))
 
-    await waitFor(() => expect(drawn()).toEqual(['name-it', 'recognise']))
+    await waitFor(() => expect(getDrawnFaces()).toEqual(['name-it', 'recognise']))
   },
 }
 
@@ -379,7 +379,7 @@ export const WhatAPersonDoesToIt: Story = {
 export const FarTooMany: Story = {
   args: { corpus: 'far too many' },
   play: async ({ canvasElement }) => {
-    expect(drawnFields(canvasElement)).toHaveLength(40)
+    expect(getDrawnFields(canvasElement)).toHaveLength(40)
     expect(canvasElement.querySelectorAll('[data-face]')).toHaveLength(12)
 
     const editor = found(canvasElement, '.stencil')
@@ -403,7 +403,7 @@ export const WhatIsWrong: Story = {
   play: async ({ canvasElement }) => {
     // The first of two fields of one name stands, and there is no second row
     // and no second chip going nowhere.
-    expect(drawnFields(canvasElement)).toEqual(['Name', 'Height'])
+    expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height'])
     expect(canvasElement.querySelectorAll('.stencil__field input')).toHaveLength(2)
     const chips = [...canvasElement.querySelectorAll('[data-face="stray"] [data-insert]')]
     expect(chips.map((chip) => chip.getAttribute('data-insert'))).toEqual(['Name', 'Height'])

@@ -27,7 +27,7 @@ interface Drawn {
   readonly mark: string | null
 }
 
-const drawn = (state: EditorState): Drawn[] => {
+const getDrawn = (state: EditorState): Drawn[] => {
   const found: Drawn[] = []
   state.field(marked).decorations.between(0, state.doc.length, (from, to, deco) => {
     found.push({ from, to, mark: (deco.spec as { class?: string }).class ?? null })
@@ -89,21 +89,21 @@ describe('a change on its way', () => {
   const CHANGE: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog' }
 
   it('marks the stretch it is about to replace', () => {
-    expect(drawn(createMarkedState(DOC, CHANGE))).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
+    expect(getDrawn(createMarkedState(DOC, CHANGE))).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
   })
 
   it('is drawn for nobody while there is no change', () => {
-    expect(drawn(createMarkedState(DOC, null))).toEqual([])
+    expect(getDrawn(createMarkedState(DOC, null))).toEqual([])
   })
 
   it('moves with the text when something is typed before it', () => {
     const typed = createMarkedState(DOC, CHANGE).update({ changes: { from: 0, insert: 'so ' } }).state
-    expect(drawn(typed)).toEqual([{ from: 7, to: 10, mark: 'cm-changing' }])
+    expect(getDrawn(typed)).toEqual([{ from: 7, to: 10, mark: 'cm-changing' }])
   })
 
   it('is drawn for nothing where it is addressed past the end of the text', () => {
     const past: EditorChange = { id: 'a', from: 40, to: 90, text: 'dog' }
-    expect(drawn(createMarkedState(DOC, past))).toEqual([])
+    expect(getDrawn(createMarkedState(DOC, past))).toEqual([])
   })
 
   it('leaves the text as it was', () => {
@@ -114,7 +114,7 @@ describe('a change on its way', () => {
 describe('a change that puts nothing in', () => {
   it('marks the stretch it takes out, and there is nothing to show', () => {
     const gone: EditorChange = { id: 'a', from: 4, to: 8, text: '' }
-    expect(drawn(createMarkedState('the cat sat', gone))).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
+    expect(getDrawn(createMarkedState('the cat sat', gone))).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
   })
 })
 
@@ -123,32 +123,32 @@ describe('a change whose text has arrived', () => {
   const CHANGE: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog and cat' }
 
   it('covers all of the text before any of it is shown', () => {
-    expect(drawn(createMarkedState(DOC, CHANGE))).toEqual([{ from: 4, to: 15, mark: null }])
+    expect(getDrawn(createMarkedState(DOC, CHANGE))).toEqual([{ from: 4, to: 15, mark: null }])
   })
 
   it('shows the words that have had their turn and covers the rest', () => {
-    expect(drawn(at(createMarkedState(DOC, CHANGE), CHANGE, 0.4))).toEqual([
+    expect(getDrawn(at(createMarkedState(DOC, CHANGE), CHANGE, 0.4))).toEqual([
       { from: 4, to: 8, mark: 'cm-arriving' },
       { from: 8, to: 15, mark: null },
     ])
   })
 
   it('draws nothing at all once every word is shown', () => {
-    expect(drawn(at(createMarkedState(DOC, CHANGE), CHANGE, 1))).toEqual([])
+    expect(getDrawn(at(createMarkedState(DOC, CHANGE), CHANGE, 1))).toEqual([])
   })
 
   it('takes over from the mark when the text lands in the document', () => {
     const waiting = createMarkedState('the cat sat', { id: 'a', from: 4, to: 7, text: 'dog' })
-    expect(drawn(waiting)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
+    expect(getDrawn(waiting)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
 
     const landed = waiting.update({ changes: { from: 4, to: 7, insert: 'dog' } }).state
-    expect(drawn(landed)).toEqual([{ from: 4, to: 7, mark: null }])
+    expect(getDrawn(landed)).toEqual([{ from: 4, to: 7, mark: null }])
   })
 
   it('goes back to the mark when the text is typed away from under it', () => {
     const shown = at(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
     const typed = shown.update({ changes: { from: 5, to: 6, insert: 'i' } }).state
-    expect(drawn(typed)).toEqual([{ from: 4, to: 15, mark: 'cm-changing' }])
+    expect(getDrawn(typed)).toEqual([{ from: 4, to: 15, mark: 'cm-changing' }])
   })
 })
 
@@ -196,25 +196,25 @@ describe('the showing, stepped by the clock', () => {
     const { world, view } = wound()
 
     world.tick(0)
-    expect(drawn(view.state)).toEqual([{ from: 4, to: 15, mark: null }])
+    expect(getDrawn(view.state)).toEqual([{ from: 4, to: 15, mark: null }])
 
     world.tick(220)
-    expect(drawn(view.state)).toEqual([
+    expect(getDrawn(view.state)).toEqual([
       { from: 4, to: 8, mark: 'cm-arriving' },
       { from: 8, to: 15, mark: null },
     ])
 
     world.tick(440)
-    expect(drawn(view.state)).toEqual([
+    expect(getDrawn(view.state)).toEqual([
       { from: 8, to: 12, mark: 'cm-arriving' },
       { from: 12, to: 15, mark: null },
     ])
 
     world.tick(660)
-    expect(drawn(view.state)).toEqual([{ from: 12, to: 15, mark: 'cm-arriving' }])
+    expect(getDrawn(view.state)).toEqual([{ from: 12, to: 15, mark: 'cm-arriving' }])
 
     world.tick(880)
-    expect(drawn(view.state)).toEqual([])
+    expect(getDrawn(view.state)).toEqual([])
 
     view.destroy()
   })
@@ -223,9 +223,9 @@ describe('the showing, stepped by the clock', () => {
     const { world, view } = wound()
     for (const now of [0, 220, 440, 660, 880]) world.tick(now)
 
-    const settled = drawn(view.state)
+    const settled = getDrawn(view.state)
     world.tick(1100)
-    expect(drawn(view.state)).toEqual(settled)
+    expect(getDrawn(view.state)).toEqual(settled)
 
     view.destroy()
   })

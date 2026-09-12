@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import type { NoteEdit } from '@/entities/note'
 import { holdChanges, holding } from './hold'
 
-const said = (over: Partial<NoteEdit> = {}): NoteEdit => ({
+const createEdit = (over: Partial<NoteEdit> = {}): NoteEdit => ({
   change: 'one',
   path: 'Note.md',
   span: { from: 2, to: 12 },
@@ -20,36 +20,36 @@ const said = (over: Partial<NoteEdit> = {}): NoteEdit => ({
 describe('a change being made', () => {
   it('is what its note is drawn with', () => {
     const drawn = holdChanges()
-    drawn.told(said())
-    expect(drawn.shown('Note.md')).toEqual({ id: 'one', from: 2, to: 12, text: 'An axe' })
+    drawn.reportChange(createEdit())
+    expect(drawn.getChange('Note.md')).toEqual({ id: 'one', from: 2, to: 12, text: 'An axe' })
   })
 
   it('is drawn over its own note and no other', () => {
     const drawn = holdChanges()
-    drawn.told(said())
-    expect(drawn.shown('Other.md')).toBeNull()
+    drawn.reportChange(createEdit())
+    expect(drawn.getChange('Other.md')).toBeNull()
   })
 
   it('is replaced by the next report of itself', () => {
     const drawn = holdChanges()
-    drawn.told(said())
-    drawn.told(said({ text: 'An axe, two-bladed' }))
-    expect(drawn.shown('Note.md')?.text).toBe('An axe, two-bladed')
+    drawn.reportChange(createEdit())
+    drawn.reportChange(createEdit({ text: 'An axe, two-bladed' }))
+    expect(drawn.getChange('Note.md')?.text).toBe('An axe, two-bladed')
   })
 })
 
 describe('a change that is over', () => {
   it('is still drawn, because the note has not caught up', () => {
     const drawn = holdChanges()
-    drawn.told(said())
-    drawn.told(said({ isComplete: true }))
-    expect(drawn.shown('Note.md')).not.toBeNull()
+    drawn.reportChange(createEdit())
+    drawn.reportChange(createEdit({ isComplete: true }))
+    expect(drawn.getChange('Note.md')).not.toBeNull()
   })
 
   it('waits the bound out where its text never arrives', () => {
     const drawn = holdChanges()
-    drawn.told(said())
-    expect(drawn.told(said({ isComplete: true }))).toEqual({
+    drawn.reportChange(createEdit())
+    expect(drawn.reportChange(createEdit({ isComplete: true }))).toEqual({
       path: 'Note.md',
       after: holding.bound,
     })
@@ -57,17 +57,17 @@ describe('a change that is over', () => {
 
   it('is let go of shortly after the note changes under it', () => {
     const drawn = holdChanges()
-    drawn.told(said())
-    drawn.told(said({ isComplete: true }))
+    drawn.reportChange(createEdit())
+    drawn.reportChange(createEdit({ isComplete: true }))
     expect(drawn.handleNoteChange('Note.md')).toEqual({ path: 'Note.md', after: holding.settle })
   })
 
   it('is gone once the interval fires', () => {
     const drawn = holdChanges()
-    drawn.told(said())
-    drawn.told(said({ isComplete: true }))
+    drawn.reportChange(createEdit())
+    drawn.reportChange(createEdit({ isComplete: true }))
     drawn.handleTimeout('Note.md')
-    expect(drawn.shown('Note.md')).toBeNull()
+    expect(drawn.getChange('Note.md')).toBeNull()
   })
 })
 
@@ -79,7 +79,7 @@ describe('a note that changed on its own', () => {
 
   it('arms nothing while the change it is drawn with is still being made', () => {
     const drawn = holdChanges()
-    drawn.told(said())
+    drawn.reportChange(createEdit())
     expect(drawn.handleNoteChange('Note.md')).toBeNull()
   })
 })
@@ -87,29 +87,29 @@ describe('a note that changed on its own', () => {
 describe('the end of a change nobody is drawing', () => {
   it('arms nothing', () => {
     const drawn = holdChanges()
-    expect(drawn.told(said({ isComplete: true }))).toBeNull()
+    expect(drawn.reportChange(createEdit({ isComplete: true }))).toBeNull()
   })
 })
 
 describe('a note the window closed', () => {
   it('is drawn with nothing', () => {
     const drawn = holdChanges()
-    drawn.told(said())
+    drawn.reportChange(createEdit())
     drawn.shut('Note.md')
-    expect(drawn.shown('Note.md')).toBeNull()
+    expect(drawn.getChange('Note.md')).toBeNull()
   })
 })
 
 describe('a change nobody says any more about', () => {
   it('is let go of on a bound of its own, so no drawing outlives its agent', () => {
     const drawn = holdChanges()
-    expect(drawn.told(said())).toEqual({ path: 'Note.md', after: holding.abandoned })
+    expect(drawn.reportChange(createEdit())).toEqual({ path: 'Note.md', after: holding.abandoned })
   })
 
   it('has that bound put off again by every report of itself', () => {
     const drawn = holdChanges()
-    drawn.told(said())
-    expect(drawn.told(said({ text: 'An axe, two-bladed' }))).toEqual({
+    drawn.reportChange(createEdit())
+    expect(drawn.reportChange(createEdit({ text: 'An axe, two-bladed' }))).toEqual({
       path: 'Note.md',
       after: holding.abandoned,
     })

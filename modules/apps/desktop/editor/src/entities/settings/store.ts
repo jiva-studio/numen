@@ -77,7 +77,7 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
   const at = (setting: readonly string[]): unknown => getSettingAt(held.value, setting)
 
   /** The models one setting can be set to, in the order they are offered. */
-  const offers = (setting: readonly string[]): readonly Model[] =>
+  const getModelsAt = (setting: readonly string[]): readonly Model[] =>
     models.value.filter((one) => one.namedAt.join('.') === setting.join('.'))
 
   /**
@@ -85,7 +85,7 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
    * refused is said, and the window reads the file again either way, so what is
    * drawn is what the settings hold.
    */
-  const chooses = async (written: readonly SettingEdit[]): Promise<void> => {
+  const writeSettings = async (written: readonly SettingEdit[]): Promise<void> => {
     if (written.length === 0) return
     said('')
 
@@ -99,7 +99,7 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, said: Messa
 
   /** One setting written, by what is to stand there. */
   const writeSetting = (setting: readonly string[], value: unknown): Promise<void> =>
-    chooses([{ at: setting, value: write(value) }])
+    writeSettings([{ at: setting, value: write(value) }])
 
-  return { held, path, models, start, at, offers, chooses, writeSetting }
+  return { held, path, models, start, at, getModelsAt, writeSettings, writeSetting }
 }

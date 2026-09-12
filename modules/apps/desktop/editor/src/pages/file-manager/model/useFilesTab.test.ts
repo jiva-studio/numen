@@ -35,7 +35,7 @@ const held: Record<string, readonly Entry[]> = {
 }
 
 /** A moment for whatever a gesture asked the vault for to come back. */
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 /** A tab of that vault, writing down everything it asked of the window. */
 const tab = (refuses = false) => {
@@ -419,7 +419,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_FOLDER)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['makes New folder'])
   })
@@ -428,7 +428,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_FOLDER)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['makes physics/New folder'])
   })
@@ -437,7 +437,7 @@ describe('an item chosen in the menu on a row', () => {
     const { one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_FOLDER)
-    await settles()
+    await settle()
 
     expect(one.renamingPath.value).toBe('New folder')
   })
@@ -446,7 +446,7 @@ describe('an item chosen in the menu on a row', () => {
     const { one } = await openRowMenu('Entropy.md', true)
 
     one.chooseMenuItem(NEW_FOLDER)
-    await settles()
+    await settle()
 
     expect(one.renamingPath.value).toBeNull()
   })
@@ -455,7 +455,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_NOTE)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['writes Untitled note.md'])
     expect(one.renamingPath.value).toBe('Untitled note.md')
@@ -465,7 +465,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_DECK)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual([`decks / ${words.newDeck}`])
     expect(one.renamingPath.value).toBe(`${words.newDeck}.note`)
@@ -475,7 +475,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_DECK)
-    await settles()
+    await settle()
 
     expect(done[0]).not.toContain('.md')
   })
@@ -484,7 +484,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_STENCIL)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual([`stencils / ${words.newStencil}`])
   })
@@ -493,7 +493,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_PRESET)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual([`presets / ${words.newPreset}`])
     expect(one.renamingPath.value).toBe(`${words.newPreset}.note`)
@@ -503,7 +503,7 @@ describe('an item chosen in the menu on a row', () => {
     const { one } = await openRowMenu()
 
     one.chooseMenuItem(NEW_PRESET)
-    await settles()
+    await settle()
 
     expect(one.list.getEntryAt(`${words.newPreset}.note`)?.type).toBe('preset')
   })
@@ -512,7 +512,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_PRESET)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual([`presets physics ${words.newPreset}`])
   })
@@ -521,7 +521,7 @@ describe('an item chosen in the menu on a row', () => {
     const { one } = await openRowMenu(undefined, true)
 
     one.chooseMenuItem(NEW_PRESET)
-    await settles()
+    await settle()
 
     expect(one.renamingPath.value).toBeNull()
   })
@@ -530,7 +530,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_DECK)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual([`decks physics ${words.newDeck}`])
   })
@@ -539,7 +539,7 @@ describe('an item chosen in the menu on a row', () => {
     const { one } = await openRowMenu(undefined, true)
 
     one.chooseMenuItem(NEW_DECK)
-    await settles()
+    await settle()
 
     expect(one.renamingPath.value).toBeNull()
   })
@@ -548,7 +548,7 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu('physics')
 
     one.chooseMenuItem(NEW_NOTE)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['writes physics/Untitled note.md'])
   })
@@ -557,10 +557,10 @@ describe('an item chosen in the menu on a row', () => {
     const { done, one } = await openRowMenu(null)
 
     one.chooseMenuItem(NEW_NOTE)
-    await settles()
+    await settle()
     one.openMenu({ path: null, at: { x: 0, y: 0 } })
     one.chooseMenuItem(NEW_FOLDER)
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['writes Untitled note.md', 'makes New folder'])
   })

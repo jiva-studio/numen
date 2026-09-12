@@ -11,7 +11,7 @@
  */
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import ActionRow from './ActionRow.vue'
-import { keptOn, placeActions, type ActionWords } from '../../lib/actions'
+import { findKeptAction, placeActions, type ActionWords } from '../../lib/actions'
 import { stepIn, type PaletteAction } from '../../lib/item'
 import { isActionsChord } from '../../lib/keys'
 
@@ -88,7 +88,7 @@ const run = (to: number) => {
 
 /** A fresh list keeps the action the panel was on, wherever the words put it. */
 watch(actions, (now) => {
-  if (open.value) goTo(keptOn(now, held.value))
+  if (open.value) goTo(findKeptAction(now, held.value))
 })
 
 // It opens on the first action there is, with an empty field and the keyboard
@@ -101,7 +101,7 @@ watch(
       return
     }
     hunted.value = ''
-    goTo(keptOn(actions.value, ''))
+    goTo(findKeptAction(actions.value, ''))
     await nextTick()
     hunt.value?.focus()
   },

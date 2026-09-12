@@ -101,7 +101,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * A file just made here, put in front of the person as what it was made as.
    * The vault is not asked what stands there.
    */
-  const made = (
+  const openNewFile = (
     path: string,
     title: string,
     type: EditorKind,
@@ -124,7 +124,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
   ): Promise<void> => {
     const kind = await fileKindAt(path)
     if (!kind) return
-    if (kind.kind === 'note') return void made(path, title, kind.type, showing, line)
+    if (kind.kind === 'note') return void openNewFile(path, title, kind.type, showing, line)
     readerOf(kind)?.(path, [])
   }
 
@@ -137,11 +137,11 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const opensAt = async (path: string, spans: readonly Span[]): Promise<void> => {
     const kind = await fileKindAt(path)
     if (!kind) return
-    if (kind.kind === 'note') return void made(path, '', kind.type)
+    if (kind.kind === 'note') return void openNewFile(path, '', kind.type)
     readerOf(kind)?.(path, spans)
   }
 
-  return { registerEditor, registerReader, opens, opensAt, made }
+  return { registerEditor, registerReader, opens, opensAt, made: openNewFile }
 }
 
 /** What the window puts files in front of the person with. */

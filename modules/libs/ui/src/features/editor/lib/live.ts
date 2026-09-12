@@ -34,7 +34,7 @@ const onScreen = (view: EditorView) => {
 }
 
 /** Those lines with a margin of them either side, which is what is drawn for. */
-const shown = (view: EditorView) => {
+const getDrawnRange = (view: EditorView) => {
   const seen = onScreen(view)
   if (!seen) return null
   const doc = view.state.doc
@@ -66,7 +66,7 @@ export const live = ViewPlugin.fromClass(
     span: { from: number; to: number } | null
 
     constructor(view: EditorView) {
-      this.span = shown(view)
+      this.span = getDrawnRange(view)
       this.decorations = this.span ? marks(view.state, this.span.from, this.span.to) : Decoration.none
     }
 
@@ -86,7 +86,7 @@ export const live = ViewPlugin.fromClass(
         return
       }
 
-      const span = shown(update.view)
+      const span = getDrawnRange(update.view)
       this.span = span
       this.decorations = span ? marks(update.view.state, span.from, span.to) : Decoration.none
     }

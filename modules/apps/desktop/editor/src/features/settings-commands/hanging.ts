@@ -80,7 +80,7 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
   })
 
   /** The two, in one group named for the setting they are of. */
-  const offers = (): readonly StepGroup[] => [
+  const getHangingGroups = (): readonly StepGroup[] => [
     {
       id: HANGING,
       title: words.hangingGroup,
@@ -89,7 +89,7 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
   ]
 
   /** The counts, in one group of their own. */
-  const counts = (): readonly StepGroup[] => [
+  const getPartsGroups = (): readonly StepGroup[] => [
     {
       id: PARTS,
       title: words.partsGroup,
@@ -136,5 +136,5 @@ export function useHangingSetting(core: HangingDeps, words: Words, said: Message
     parts.value = was
   }
 
-  return { hangs, parts, ends, start, offers, counts, chooses, choosesCount }
+  return { hangs, parts, ends, start, getHangingGroups, getPartsGroups, chooses, choosesCount }
 }

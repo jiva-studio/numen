@@ -27,7 +27,7 @@ const dropTarget = computed<RowMarker>(() => ({
   valueFor: (row: string | null) => props.state.getFolderFor(row),
 }))
 
-const rows = computed(() => drawn(props.state.list.rows.value))
+const rows = computed(() => rowsOf(props.state.list.rows.value))
 
 /** The row whose name is in a field, which the tree opens and closes itself. */
 const renaming = computed({
@@ -109,12 +109,12 @@ function onDismissMenu() {
 }
 
 // --- Helpers ---
-function drawn(listingRows: readonly ListingRow[]): Row[] {
+function rowsOf(listingRows: readonly ListingRow[]): Row[] {
   return listingRows.map((one) => ({
     id: one.entry.path,
     name: one.entry.name,
     holds: one.entry.folder,
-    rows: drawn(one.rows),
+    rows: rowsOf(one.rows),
   }))
 }
 

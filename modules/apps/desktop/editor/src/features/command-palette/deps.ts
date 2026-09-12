@@ -141,7 +141,7 @@ export interface VaultSwitcher extends Vaults {
    * The page drawn again, on the vault the window shows now. Every tab and
    * every plex belonged to the vault that has gone.
    */
-  reloads(): void
+  reload(): void
 }
 
 /** Where a command takes the window. */

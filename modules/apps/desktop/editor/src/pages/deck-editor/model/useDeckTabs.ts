@@ -17,12 +17,12 @@ import type { WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
 import {
-  drawnSectionsOf,
+  sectionsOf,
   serializeBufferDeckToString,
   serializeBufferCardsToVaultCards,
   deserializeBufferDeckFromString,
   deserializeVaultDeck,
-  drawnOf,
+  cardsOf,
   serializeBufferSectionsToVaultSections,
   type BufferDeck,
 } from '../lib/deck'
@@ -43,7 +43,7 @@ export function useDeckTabs(
       const answer = await cards.readDeck(path)
       const deck = answer.deck ? deserializeVaultDeck(answer.deck) : null
       const error = answer.error
-      said.reads(path, {
+      said.recordRead(path, {
         problems: answer.deck?.problems ?? [],
         error,
         bound: answer.bound,
@@ -65,7 +65,7 @@ export function useDeckTabs(
         seen?.at ?? null,
       )
       const error = answer.error
-      said.writes(path, { error, bound: answer.bound })
+      said.recordWrite(path, { error, bound: answer.bound })
       return {
         body: '',
         error,
@@ -79,8 +79,8 @@ export function useDeckTabs(
   const { deckAt, marksAt } = read
 
   const wiring = useDeckScheduleSync(cards, presets, store)
-  const { offers, stencils, lists, listsAgain, scheduled } = wiring
-  const { choices, listsPresets, listsPresetsAgain, asks, schedules, getDeckPreset } = scheduled
+  const { offers, stencils, listStencils, listStencilsAgain, scheduled } = wiring
+  const { choices, listPresets, listPresetsAgain, refreshDeckPreset, scheduleDeck, getDeckPreset } = scheduled
 
   const updateDeckState = (id: string, deck: BufferDeck): void => {
     const body = serializeBufferDeckToString(deck)
@@ -96,8 +96,8 @@ export function useDeckTabs(
       id,
       shown: computed(() => store.shown(id)),
       deck,
-      drawn: computed(() => drawnOf(deck.value, offers.value)),
-      sections: computed(() => drawnSectionsOf(deck.value)),
+      drawn: computed(() => cardsOf(deck.value, offers.value)),
+      sections: computed(() => sectionsOf(deck.value)),
       stencils,
       marks: computed(() => marksAt(id)),
       errorMessage: computed(() =>
@@ -105,7 +105,7 @@ export function useDeckTabs(
       ),
       scheduled: computed(() => getDeckPreset(id)),
       choices,
-      setSchedule: (preset) => void schedules(id, preset),
+      setSchedule: (preset) => void scheduleDeck(id, preset),
       ...actions,
       keepMine: () => store.keep(id),
       takeFile: () => store.take(id),
@@ -113,8 +113,8 @@ export function useDeckTabs(
         const path = store.where(id)
         void store.shut(id).then((gone) => {
           if (!gone) return
-          read.closes(id)
-          scheduled.closes(id)
+          read.forgetTab(id)
+          scheduled.forgetTab(id)
           forgetPath(path)
           handle.closes(tab)
         })
@@ -124,8 +124,8 @@ export function useDeckTabs(
 
   const forgetPath = (path: string): void => {
     if (store.all().some((one) => store.where(one) === path)) return
-    said.forgets(path)
-    scheduled.forgets(path)
+    said.forgetFile(path)
+    scheduled.forgetFile(path)
   }
 
   const closeTabById = (id: string): void => {
@@ -164,17 +164,17 @@ export function useDeckTabs(
     pendingTabIds,
     store,
     said,
-    lists,
-    listsPresets,
-    listsAgain,
-    listsPresetsAgain,
-    asks,
+    listStencils,
+    listPresets,
+    listStencilsAgain,
+    listPresetsAgain,
+    refreshDeckPreset,
     createDeckTabState,
   })
 
   const openDeckTab = (path: string, title = '', showing: PlexDestination = 'here'): void => {
     const id = getOrCreateTabId(path)
-    if (title) said.names(path, title)
+    if (title) said.setTitle(path, title)
     void (showing === 'beside' ? handle.beside(DECK, id) : handle.opens(DECK, id))
   }
 
@@ -192,7 +192,7 @@ export function useDeckTabs(
     kind,
     held: createDeckTabState,
     changed: applyPathChanges,
-    lists,
+    listStencils,
     called: said.getTitle,
     kept,
     all: store.all,

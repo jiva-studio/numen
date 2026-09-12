@@ -26,7 +26,7 @@ const on = (source: Source, folder = false, canRun: RunGuard = canRunAnything): 
   itemsFor({ source, folder }, false, canRun).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
-const drawn = (source: Source): readonly string[] =>
+const getGroupedIds = (source: Source): readonly string[] =>
   groupItems(itemsFor({ source, folder: false }, false, canRunAnything)).map(
     (one) => `${one.rule ? '— ' : ''}${one.id}`,
   )
@@ -77,7 +77,7 @@ describe('the menu on a row standing for anything else', () => {
 
 describe('where a run stands in the menu', () => {
   it('stands after the path and before the remove, parted from both by a rule', () => {
-    expect(drawn('recording')).toStrictEqual([
+    expect(getGroupedIds('recording')).toStrictEqual([
       'newNote',
       'newDeck',
       'newStencil',
@@ -91,7 +91,7 @@ describe('where a run stands in the menu', () => {
   })
 
   it('leaves no rule behind on a row that has no run', () => {
-    expect(drawn('other')).toStrictEqual([
+    expect(getGroupedIds('other')).toStrictEqual([
       'newNote',
       'newDeck',
       'newStencil',
@@ -132,7 +132,7 @@ describe('the four files the menu makes', () => {
   })
 
   it('offers a preset in the group the files stand in', () => {
-    expect(drawn('note')).toContain(NEW_PRESET)
+    expect(getGroupedIds('note')).toContain(NEW_PRESET)
   })
 })
 

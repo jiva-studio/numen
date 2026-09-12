@@ -105,10 +105,10 @@ export const rowsOf = (table: Table): Row[] => {
 }
 
 /** What a cell reads as. */
-export const shown = (text: string): string => text.replace(/\\\|/g, '|').trim()
+export const readCell = (text: string): string => text.replace(/\\\|/g, '|').trim()
 
 /** What typing in a cell writes. */
-export const written = (text: string): string =>
+export const writeCell = (text: string): string =>
   text.replace(/\s*\n\s*/g, ' ').replace(/\|/g, '\\|').trim()
 
 /** A row of empty cells, written under the table. */

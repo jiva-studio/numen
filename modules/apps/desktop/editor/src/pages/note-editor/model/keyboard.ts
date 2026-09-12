@@ -32,7 +32,7 @@ export function noteKeyboard() {
   /** The editor of each open note, for as long as its tab is drawn. */
   const editors = new Map<string, EditorHandle>()
 
-  const enters = (id: string) => {
+  const focusEditor = (id: string) => {
     const line = owed.get(id)
     const editor = editors.get(id)
     if (line === undefined || !editor) return
@@ -46,26 +46,26 @@ export function noteKeyboard() {
    * owed stands: a note opened at a place is asked for itself again as its tab
    * is drawn, and the place is what it was opened for.
    */
-  const owes = (id: string, line = ITSELF) => {
+  const requestFocus = (id: string, line = ITSELF) => {
     const was = owed.get(id) ?? ITSELF
     owed.set(id, line === ITSELF ? was : line)
-    void nextTick(() => enters(id))
+    void nextTick(() => focusEditor(id))
   }
 
   /** The editor of one note, as it is drawn and as it goes. */
-  const drew = (id: string, editor: unknown) => {
+  const setEditor = (id: string, editor: unknown) => {
     if (!editor) {
       editors.delete(id)
       return
     }
     editors.set(id, editor as EditorHandle)
-    void nextTick(() => enters(id))
+    void nextTick(() => focusEditor(id))
   }
 
   /** The note is on screen: its editor measures, and takes what it is owed. */
   const measure = (id: string) => {
     editors.get(id)?.measure()
-    enters(id)
+    focusEditor(id)
   }
 
   /**
@@ -73,12 +73,12 @@ export function noteKeyboard() {
    * once and keeps that; the type has changed inside a box whose own size has
    * not, so nothing else tells it to.
    */
-  const measures = () => {
+  const measureAll = () => {
     for (const editor of editors.values()) editor.measure()
   }
 
   /** The note is closing, and is owed nothing more. */
-  const drops = (id: string) => owed.delete(id)
+  const cancelFocusRequest = (id: string) => owed.delete(id)
 
-  return { owes, drew, measure, measures, drops }
+  return { requestFocus, setEditor, measure, measureAll, cancelFocusRequest }
 }

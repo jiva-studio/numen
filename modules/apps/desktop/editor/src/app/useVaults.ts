@@ -23,7 +23,7 @@ export interface VaultsDeps {
 }
 
 export function useVaults({ core, words, log, chunks, embedded, embedding }: VaultsDeps) {
-  const reloads = () => globalThis.location.reload()
+  const reload = () => globalThis.location.reload()
   const shown = ref<VaultRef>({ id: '', name: '' })
   const listed = ref<VaultList>({ vaults: [], showing: '' })
   const unlisted = log.under('listed')
@@ -61,7 +61,7 @@ export function useVaults({ core, words, log, chunks, embedded, embedding }: Vau
   }
 
   return {
-    reloads,
+    reload,
     shown,
     listed,
     loadVaults,

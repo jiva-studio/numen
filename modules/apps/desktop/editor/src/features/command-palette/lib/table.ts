@@ -2,7 +2,7 @@
  * Construction of the full list of commands offered by the application.
  */
 import { keysOf } from './chords'
-import { always, isUnmade, onEvidence, onNote, onVault } from './where'
+import { isUnmade, onAnything, onEvidence, onNote, onVault } from './where'
 import type { Command, Words } from '../target'
 
 /**
@@ -167,9 +167,9 @@ export const commandsOf = (
     needs: 'address',
     where: (at) => at.ready,
   },
-  { id: 'plex', text: words.newPlex, ...keysOf('plex', agent), group: 'window', where: always },
-  { id: 'files', text: words.files, group: 'window', where: always },
-  { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), group: 'window', where: always },
+  { id: 'plex', text: words.newPlex, ...keysOf('plex', agent), group: 'window', where: onAnything },
+  { id: 'files', text: words.files, group: 'window', where: onAnything },
+  { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), group: 'window', where: onAnything },
   {
     id: 'close',
     text: words.close,
@@ -177,21 +177,21 @@ export const commandsOf = (
     group: 'window',
     where: (at) => at.tab !== '',
   },
-  { id: 'find', text: words.find, keys: words.findKeys, group: 'window', where: always },
-  { id: 'appearance', text: words.appearance, group: 'window', needs: 'choosing', where: always },
-  { id: 'mode', text: words.mode, group: 'window', needs: 'choosing', where: always },
+  { id: 'find', text: words.find, keys: words.findKeys, group: 'window', where: onAnything },
+  { id: 'appearance', text: words.appearance, group: 'window', needs: 'choosing', where: onAnything },
+  { id: 'mode', text: words.mode, group: 'window', needs: 'choosing', where: onAnything },
   {
     id: 'interfaceScale',
     text: words.interfaceScale,
     group: 'window',
     needs: 'choosing',
-    where: always,
+    where: onAnything,
   },
-  { id: 'textScale', text: words.textScale, group: 'window', needs: 'choosing', where: always },
-  { id: 'syncing', text: words.syncing, group: 'window', needs: 'choosing', where: always },
-  { id: 'hanging', text: words.hanging, group: 'window', needs: 'choosing', where: always },
-  { id: 'parts', text: words.parts, group: 'window', needs: 'choosing', where: always },
-  { id: 'settings', text: words.settings, group: 'window', where: always },
+  { id: 'textScale', text: words.textScale, group: 'window', needs: 'choosing', where: onAnything },
+  { id: 'syncing', text: words.syncing, group: 'window', needs: 'choosing', where: onAnything },
+  { id: 'hanging', text: words.hanging, group: 'window', needs: 'choosing', where: onAnything },
+  { id: 'parts', text: words.parts, group: 'window', needs: 'choosing', where: onAnything },
+  { id: 'settings', text: words.settings, group: 'window', where: onAnything },
   { id: 'first', text: words.first, group: 'vault', where: (at) => at.ready },
   {
     id: 'goto',
@@ -201,13 +201,13 @@ export const commandsOf = (
     needs: 'picking',
     where: (at) => at.ready,
   },
-  { id: 'openVault', text: words.openVault, group: 'vault', needs: 'vaults', where: always },
+  { id: 'openVault', text: words.openVault, group: 'vault', needs: 'vaults', where: onAnything },
   {
     id: 'newVault',
     text: words.newVault,
     ...keysOf('newVault', agent),
     group: 'vault',
-    where: always,
+    where: onAnything,
   },
   {
     id: 'renameVault',
@@ -223,7 +223,7 @@ export const commandsOf = (
     group: 'vault',
     needs: 'vaults',
     next: 'asking',
-    where: always,
+    where: onAnything,
     answers: {
       keeps: words.keepsVault,
       kept: words.kept,
@@ -237,7 +237,7 @@ export const commandsOf = (
     group: 'vault',
     needs: 'vaults',
     next: 'exactly',
-    where: always,
+    where: onAnything,
     warns: { does: words.erases, then: words.binned, back: words.typeVaultBack },
   },
 ]

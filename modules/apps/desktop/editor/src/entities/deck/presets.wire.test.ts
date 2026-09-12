@@ -13,7 +13,7 @@ vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 let asked: Record<string, unknown>[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
-const answers = (said: unknown) => {
+const replyWith = (said: unknown) => {
   asked = []
   vi.stubGlobal(
     'fetch',
@@ -31,13 +31,13 @@ const { presets } = await import('./presets.wire')
 
 describe('the settings of a preset', () => {
   it('are the defaults where the file names none of them', async () => {
-    answers({ preset: { path: 'Daily.md', title: 'Daily' } })
+    replyWith({ preset: { path: 'Daily.md', title: 'Daily' } })
 
     expect((await presets.read('Daily.md')).preset?.settings).toEqual(DEFAULTS)
   })
 
   it('carry the rule and the unit in the words the window uses', async () => {
-    answers({
+    replyWith({
       preset: {
         path: 'Daily.md',
         title: 'Daily',
@@ -65,7 +65,7 @@ describe('the settings of a preset', () => {
   })
 
   it('take the default for a rule the file leaves unnamed', async () => {
-    answers({
+    replyWith({
       preset: { path: 'Daily.md', title: 'Daily', settings: { learned: 'RULE_UNSPECIFIED' } },
     })
 
@@ -73,7 +73,7 @@ describe('the settings of a preset', () => {
   })
 
   it('are no preset at all where the read was refused', async () => {
-    answers({ refusal: 'REFUSAL_NOT_A_PRESET' })
+    replyWith({ refusal: 'REFUSAL_NOT_A_PRESET' })
 
     const answer = await presets.read('Notes.md')
 
@@ -84,7 +84,7 @@ describe('the settings of a preset', () => {
 
 describe('how far each setting goes', () => {
   it('carries the ends the application named and nothing else', async () => {
-    answers({
+    replyWith({
       preset: { path: 'Daily.md', title: 'Daily' },
       bounds: { minutesADay: { least: 5, most: 240 }, load: { least: 0, most: 100 } },
     })
@@ -96,7 +96,7 @@ describe('how far each setting goes', () => {
   })
 
   it('is nothing at all until the application has said', async () => {
-    answers({ preset: { path: 'Daily.md', title: 'Daily' } })
+    replyWith({ preset: { path: 'Daily.md', title: 'Daily' } })
 
     expect((await presets.read('Daily.md')).bounds).toEqual({})
   })
@@ -104,7 +104,7 @@ describe('how far each setting goes', () => {
 
 describe('the presets of a vault', () => {
   it('come back as what each is called and where it stands', async () => {
-    answers({ presets: [{ path: 'Daily.md', title: 'Daily' }] })
+    replyWith({ presets: [{ path: 'Daily.md', title: 'Daily' }] })
 
     expect(await presets.list()).toEqual([{ path: 'Daily.md', title: 'Daily' }])
   })
@@ -112,7 +112,7 @@ describe('the presets of a vault', () => {
 
 describe('making a preset', () => {
   it('answers where it was filed', async () => {
-    answers({ path: 'Presets/Daily.md' })
+    replyWith({ path: 'Presets/Daily.md' })
 
     expect(await presets.makes('Daily', 'Presets')).toEqual({
       path: 'Presets/Daily.md',
@@ -123,7 +123,7 @@ describe('making a preset', () => {
 
 describe('putting a deck on a preset', () => {
   it('names the file the window read', async () => {
-    answers({ at: { path: 'Deck.md', size: '12', mtime: '34' } })
+    replyWith({ at: { path: 'Deck.md', size: '12', mtime: '34' } })
 
     const answer = await presets.schedules('Deck.md', 'Daily.md', '12 34 Deck.md')
 
@@ -132,7 +132,7 @@ describe('putting a deck on a preset', () => {
   })
 
   it('names no file where the window read none', async () => {
-    answers({})
+    replyWith({})
 
     await presets.schedules('Deck.md', '', '')
 
@@ -140,7 +140,7 @@ describe('putting a deck on a preset', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    answers({ refusal: 'REFUSAL_STALE' })
+    replyWith({ refusal: 'REFUSAL_STALE' })
 
     expect(await presets.schedules('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual({
       error: null,
@@ -152,7 +152,7 @@ describe('putting a deck on a preset', () => {
 
 describe('the preset a deck is scheduled by', () => {
   it('is read under the deck and not under a path', async () => {
-    answers({ preset: { path: '', title: '' } })
+    replyWith({ preset: { path: '', title: '' } })
 
     expect((await presets.scheduling('Deck.md')).preset?.path).toBe('')
     expect(asked[0]).toEqual({ deck: 'Deck.md' })
@@ -161,7 +161,7 @@ describe('the preset a deck is scheduled by', () => {
 
 describe('writing settings into a preset', () => {
   it('sends the rule and the unit as the schema names them', async () => {
-    answers({ at: { path: 'Daily.md', size: '12', mtime: '34' } })
+    replyWith({ at: { path: 'Daily.md', size: '12', mtime: '34' } })
 
     await presets.write(
       'Daily.md',
@@ -180,7 +180,7 @@ describe('writing settings into a preset', () => {
 
 describe('what a preset comes to over the range of its goal', () => {
   it('carries every place, and the day one is learned on where the rule has one', async () => {
-    answers({
+    replyWith({
       curve: {
         goal: 'GOAL_MINUTES_A_DAY',
         grid: [10, 20],
@@ -204,7 +204,7 @@ describe('what a preset comes to over the range of its goal', () => {
   })
 
   it('stands nowhere where the answer suggests no place', async () => {
-    answers({ curve: { goal: 'GOAL_MINUTES_A_DAY', grid: [], days: [], at: [] } })
+    replyWith({ curve: { goal: 'GOAL_MINUTES_A_DAY', grid: [], days: [], at: [] } })
 
     const curve = await presets.curve('Daily.md', DEFAULTS)
 
@@ -213,7 +213,7 @@ describe('what a preset comes to over the range of its goal', () => {
   })
 
   it('is an empty one where the answer carries no curve at all', async () => {
-    answers({})
+    replyWith({})
 
     expect(await presets.curve('Daily.md', DEFAULTS)).toMatchObject({
       goal: DEFAULTS.goal,

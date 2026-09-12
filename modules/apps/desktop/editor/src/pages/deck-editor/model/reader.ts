@@ -76,10 +76,10 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
   }
 
   /** What a tab that has closed was read as. */
-  const closes = (id: string): void => {
+  const forgetTab = (id: string): void => {
     parsed.delete(id)
     marked.delete(id)
   }
 
-  return { deckAt, marksAt, setParsed, closes }
+  return { deckAt, marksAt, setParsed, forgetTab }
 }

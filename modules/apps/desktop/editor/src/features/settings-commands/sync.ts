@@ -54,7 +54,7 @@ export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
   }
 
   /** The two, in one group named for the setting they are of. */
-  const offers = (): readonly StepGroup[] => {
+  const getSyncingGroups = (): readonly StepGroup[] => {
     const row = (id: string, title: string, inForce: boolean) => ({
       id,
       title,
@@ -87,5 +87,5 @@ export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
     kept.value = was
   }
 
-  return { kept, start, offers, chooses }
+  return { kept, start, getSyncingGroups, chooses }
 }

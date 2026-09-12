@@ -36,11 +36,11 @@ interface Knobs {
   neighbourhood: PlexNeighbourhood
 }
 
-const said = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
+const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
 const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
 
 const OPENING: readonly Turn[] = [
-  said('1', 'What is this note linked to?'),
+  createAsked('1', 'What is this note linked to?'),
   back('2', MULTILINE),
 ]
 
@@ -74,7 +74,7 @@ const meta: Meta<Knobs> = {
 
       /** An answer that arrives a few characters at a time. */
       const onSubmit = (asked: string) => {
-        turns.value.push(said(`${++next}`, asked))
+        turns.value.push(createAsked(`${++next}`, asked))
         text.value = ''
         working.value = true
 

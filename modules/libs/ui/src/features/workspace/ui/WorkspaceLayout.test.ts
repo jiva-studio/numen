@@ -140,17 +140,17 @@ describe('what a tab carries', () => {
  * whichever of the two it was drawn as.
  */
 describe('what is drawn before a tab’s name', () => {
-  const drawn = (state: State) =>
+  const mountWithIcon = (state: State) =>
     mountWorkspace(state, {}, { icon: '<i class="mine">{{ params.id }}</i>' })
 
   it('reaches the tabs of a workspace of one pane', () => {
-    const held = drawn(oneStack())
+    const held = mountWithIcon(oneStack())
 
     expect(held.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
   })
 
   it('reaches the tabs of every pane of a workspace that is split', () => {
-    const held = drawn(sideBySide())
+    const held = mountWithIcon(sideBySide())
 
     expect(held.findAll('.mine').map((one) => one.text())).toStrictEqual(['plex', 'chat'])
   })

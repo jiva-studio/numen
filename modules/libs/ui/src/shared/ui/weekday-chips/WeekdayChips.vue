@@ -60,7 +60,7 @@ const openLevels = (day: Day, event: Event) => {
   }
 }
 
-const chose = (said: string) => {
+const onChoose = (said: string) => {
   const day = asking.value?.day
   const level = Number(said)
   if (day === undefined || Number.isNaN(level)) return
@@ -121,7 +121,7 @@ const getFillStyle = (level: number) => {
     :current="current"
     open
     opening="keyboard"
-    @choose="chose"
+    @choose="onChoose"
     @dismiss="asking = null"
   />
 </template>

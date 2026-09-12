@@ -47,13 +47,13 @@ export interface Player {
 /** What makes the element a sound is played through. A test says otherwise. */
 export type AudioFactory = () => HTMLAudioElement
 
-const made: AudioFactory = () => new Audio()
+const createAudioElement: AudioFactory = () => new Audio()
 
 /**
  * One sound, played through one element made when it is first wanted. The
  * element is never put in the page, so nothing that is drawn can take it away.
  */
-export function audio(makes: AudioFactory = made): Player {
+export function audio(makes: AudioFactory = createAudioElement): Player {
   const address = ref('')
   const at = ref(0)
   const duration = ref(0)
@@ -62,7 +62,7 @@ export function audio(makes: AudioFactory = made): Player {
 
   let element: HTMLAudioElement | null = null
 
-  const held = (): HTMLAudioElement | null => {
+  const getElement = (): HTMLAudioElement | null => {
     if (element) return element
     try {
       element = makes()
@@ -93,7 +93,7 @@ export function audio(makes: AudioFactory = made): Player {
 
   /** Put a recording in the player, and say whether it is there. */
   const load = (wanted: string): boolean => {
-    const element = held()
+    const element = getElement()
     if (!element || !wanted) return false
     if (address.value === wanted) return true
     element.src = wanted

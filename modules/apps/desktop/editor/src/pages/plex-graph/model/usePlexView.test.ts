@@ -57,7 +57,7 @@ describe('a note that moved while a question was in flight', () => {
 
     holding = new Promise<void>((wake) => (release = wake))
     const asking = plex.go('Note.md')
-    plex.follows([{ from: 'Note.md', to: 'moved/Note.md' }])
+    plex.followMoves([{ from: 'Note.md', to: 'moved/Note.md' }])
     release()
     await asking
 
@@ -77,7 +77,7 @@ describe('a note that moved while a question was in flight', () => {
 
     holding = new Promise<void>((wake) => (release = wake))
     const asking = plex.go('Note.md')
-    plex.follows([{ from: 'Elsewhere.md', to: 'moved/Elsewhere.md' }])
+    plex.followMoves([{ from: 'Elsewhere.md', to: 'moved/Elsewhere.md' }])
     release()
     await asking
 

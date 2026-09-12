@@ -21,13 +21,13 @@ export interface CommandDepsOptions {
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
   opensPreset: (path: string) => Promise<void>
-  dressed: { chooses: (item: string) => Promise<void> | void }
+  dressed: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { chooses: (item: string) => Promise<void> | void }
   hungParts: { chooses: (item: string) => Promise<void> | void; choosesCount: (item: string) => Promise<void> | void }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
-  plexes: () => { travel: (path: string) => Promise<void> | void; leaves: (from: string, to: string) => Promise<void> | void }
+  plexes: () => { travel: (path: string) => Promise<void> | void; leavePath: (from: string, to: string) => Promise<void> | void }
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   opening: () => string
   runs: RunSupport
@@ -108,7 +108,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     vaults: {
       ...vaults,
       calls: (vault) => (shown.value = vault),
-      reloads,
+      reload: reloads,
     },
     goes: {
       reveals: (path) => void files().revealPath(path),
@@ -116,18 +116,18 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
         await plexes().travel(path)
       },
       leaves: async (from, to) => {
-        await plexes().leaves(from, to)
+        await plexes().leavePath(from, to)
       },
       opening,
       opens: (kind) => void held.opens(kind),
       preset: (path) => opensPreset(path),
-      closes: (tab) => held.drops(tab),
+      closes: (tab) => held.requestClose(tab),
       asks: (text) => void agents().askQuestion(text),
       searches: options.searches ?? (() => {}),
     },
     settings: {
       appearance: async (chosen) => {
-        await dressed.chooses(chosen)
+        await dressed.chooseItem(chosen)
       },
       syncing: async (chosen) => {
         await oneName.chooses(chosen)

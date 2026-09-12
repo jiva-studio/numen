@@ -137,7 +137,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   }
 
   const followMoves = (renamed: readonly PathRename[]) => {
-    view.follows(renamed)
+    view.followMoves(renamed)
     map.updateRenamedNodes(renamed)
   }
 

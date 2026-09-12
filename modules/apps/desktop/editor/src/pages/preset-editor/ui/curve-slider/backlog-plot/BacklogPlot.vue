@@ -62,17 +62,17 @@ const drawn = computed(() => props.honest && backlog.value.length > 1)
  */
 const heights = computed(() => {
   const { least, most } = extent.value
-  const said = (value: number) => words.backlogHeightAt(value)
-  const fits = (y: number, lift: string, value: number) =>
+  const formatValue = (value: number) => words.backlogHeightAt(value)
+  const heightsAt = (y: number, lift: string, value: number) =>
     clearAt(y, positions.value, [])
-      ? [{ at: against(y, lift, BACKLOG_PLOT.high), text: said(value) }]
+      ? [{ at: against(y, lift, BACKLOG_PLOT.high), text: formatValue(value) }]
       : []
   if (most === least) {
-    return [{ at: against(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high), text: said(least) }]
+    return [{ at: against(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high), text: formatValue(least) }]
   }
   return [
-    ...fits(BACKLOG_PLOT.top, '-100%', most),
-    ...fits(BACKLOG_PLOT.foot, '0', least),
+    ...heightsAt(BACKLOG_PLOT.top, '-100%', most),
+    ...heightsAt(BACKLOG_PLOT.foot, '0', least),
   ]
 })
 

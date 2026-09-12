@@ -44,13 +44,13 @@ export interface CommandsDepsOptions {
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
   opensPreset: (path: string) => Promise<void>
-  dressed: { chooses: (item: string) => Promise<void> | void }
+  dressed: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { chooses: (item: string) => Promise<void> | void }
   hungParts: { chooses: (item: string) => Promise<void> | void; choosesCount: (item: string) => Promise<void> | void }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
-  plexes: () => { travel: (path: string) => Promise<void> | void; leaves: (from: string, to: string) => Promise<void> | void }
+  plexes: () => { travel: (path: string) => Promise<void> | void; leavePath: (from: string, to: string) => Promise<void> | void }
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   opening: () => string
   told: MessageWriter
@@ -81,7 +81,7 @@ export function useCommands(options: CommandsDepsOptions) {
   })
 
   const runCommand = (id: string, at: CommandTarget) => {
-    const invocation = commands.asks(id, at)
+    const invocation = commands.startCommand(id, at)
     if (invocation) return void runInvocation(invocation, doing, words)
     if (commands.open.value) return void palette.setOpen(false)
     told(commands.getRefusal(id, at), 'error')
@@ -89,7 +89,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
-    if (held.presses(event)) return event.preventDefault()
+    if (held.onKeyPress(event)) return event.preventDefault()
     if (!isChord(event)) return
     const command = commandFor(event.key.toLowerCase(), event.shiftKey)
     if (!command) return

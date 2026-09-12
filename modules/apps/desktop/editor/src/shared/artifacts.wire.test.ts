@@ -13,7 +13,7 @@ vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 let asked: unknown[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
-const answers = (said: unknown) => {
+const answerWith = (said: unknown) => {
   asked = []
   vi.stubGlobal(
     'fetch',
@@ -43,7 +43,7 @@ const { running } = await import('./artifacts')
 
 describe('what a file carries', () => {
   it('is keyed by the word the window uses for each artifact', async () => {
-    answers({
+    answerWith({
       artifacts: [
         { kind: 'ARTIFACT_KIND_TRANSCRIPT', state: 'STATE_DONE' },
         { kind: 'ARTIFACT_KIND_ARTICLE', state: 'STATE_RUNNING' },
@@ -57,13 +57,13 @@ describe('what a file carries', () => {
   })
 
   it('leaves out an artifact this window has no word for', async () => {
-    answers({ artifacts: [{ kind: 99, state: 'STATE_DONE' }] })
+    answerWith({ artifacts: [{ kind: 99, state: 'STATE_DONE' }] })
 
     expect(await running.getArtifactStates('Talk.url')).toEqual({})
   })
 
   it('is nothing made where the answer names no state', async () => {
-    answers({ artifacts: [{ kind: 'ARTIFACT_KIND_OCR' }] })
+    answerWith({ artifacts: [{ kind: 'ARTIFACT_KIND_OCR' }] })
 
     expect(await running.getArtifactStates('Scan.pdf')).toEqual({ ocr: 'none' })
   })
@@ -71,7 +71,7 @@ describe('what a file carries', () => {
 
 describe('beginning a run', () => {
   it('names the artifact by the number the schema gave it', async () => {
-    answers({ artifact: { state: 'STATE_QUEUED' } })
+    answerWith({ artifact: { state: 'STATE_QUEUED' } })
 
     expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({
       able: true,
@@ -83,7 +83,7 @@ describe('beginning a run', () => {
   })
 
   it('carries back what went wrong with it', async () => {
-    answers({ artifact: { state: 'STATE_FAILED', error: 'the model is not here' } })
+    answerWith({ artifact: { state: 'STATE_FAILED', error: 'the model is not here' } })
 
     expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({
       able: true,
@@ -108,7 +108,7 @@ describe('beginning a run', () => {
 
 describe('putting a text right', () => {
   it('corrects the transcript of a file carrying one', async () => {
-    answers({
+    answerWith({
       artifacts: [{ kind: 'ARTIFACT_KIND_TRANSCRIPT', state: 'STATE_DONE' }],
       artifact: { state: 'STATE_QUEUED' },
     })
@@ -117,7 +117,7 @@ describe('putting a text right', () => {
   })
 
   it('corrects the reading of a file carrying no transcript', async () => {
-    answers({ artifacts: [], artifact: { state: 'STATE_QUEUED' } })
+    answerWith({ artifacts: [], artifact: { state: 'STATE_QUEUED' } })
 
     expect(await running.correctArtifact('Scan.pdf')).toMatchObject({ of: 'ocr.corrected' })
   })
@@ -125,7 +125,7 @@ describe('putting a text right', () => {
 
 describe('asking an address afresh', () => {
   it('asks for the transcript of a file carrying one', async () => {
-    answers({
+    answerWith({
       artifacts: [{ kind: 'ARTIFACT_KIND_TRANSCRIPT', state: 'STATE_DONE' }],
       artifact: { state: 'STATE_QUEUED' },
     })
@@ -134,7 +134,7 @@ describe('asking an address afresh', () => {
   })
 
   it('asks for the prose of a file carrying no transcript', async () => {
-    answers({ artifacts: [], artifact: { state: 'STATE_QUEUED' } })
+    answerWith({ artifacts: [], artifact: { state: 'STATE_QUEUED' } })
 
     expect(await running.fetchArtifact('Site.url')).toMatchObject({ of: 'article' })
   })
@@ -142,14 +142,14 @@ describe('asking an address afresh', () => {
 
 describe('taking one away', () => {
   it('names the transcript by the number the schema gave it', async () => {
-    answers({})
+    answerWith({})
 
     expect(await running.deleteTranscript('Talk.url')).toBe(true)
     expect(asked[0]).toEqual({ path: 'Talk.url', kind: 'ARTIFACT_KIND_TRANSCRIPT' })
   })
 
   it('names the copy by the number the schema gave it', async () => {
-    answers({})
+    answerWith({})
 
     expect(await running.deleteCopy('Talk.url')).toBe(true)
     expect(asked[0]).toEqual({ path: 'Talk.url', kind: 'ARTIFACT_KIND_COPY' })

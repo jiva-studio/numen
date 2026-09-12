@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
-import { emptyRow, readTable, rowsOf, shown, widthOf, withColumn, written } from './table'
+import { emptyRow, readCell, readTable, rowsOf, widthOf, withColumn, writeCell } from './table'
 import { createState } from '../fixtures/state'
 
 const tableIn = (state: EditorState) => {
@@ -63,19 +63,19 @@ describe('reading a table', () => {
 
 describe('what a cell holds', () => {
   it('escapes a pipe that is typed into it', () => {
-    expect(written('a | b')).toBe('a \\| b')
+    expect(writeCell('a | b')).toBe('a \\| b')
   })
 
   it('folds a line break into a space', () => {
-    expect(written('a\nb')).toBe('a b')
+    expect(writeCell('a\nb')).toBe('a b')
   })
 
   it('shows an escaped pipe as a pipe', () => {
-    expect(shown('a \\| b')).toBe('a | b')
+    expect(readCell('a \\| b')).toBe('a | b')
   })
 
   it('leaves nothing around what was typed', () => {
-    expect(written('  a  ')).toBe('a')
+    expect(writeCell('  a  ')).toBe('a')
   })
 })
 

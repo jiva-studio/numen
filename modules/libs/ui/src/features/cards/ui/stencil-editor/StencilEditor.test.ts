@@ -33,7 +33,7 @@ type Editor = ReturnType<typeof mountStencil>
 const rowFor = (held: Editor, field: string) => held.get(`[data-field="${field}"]`)
 const boxIn = (held: Editor, field: string) => rowFor(held, field).get('input')
 
-const drawnFields = (held: Editor) =>
+const getDrawnFields = (held: Editor) =>
   held.findAll('[data-field]').map((row) => row.attributes('data-field'))
 
 /** A name typed into a box and not yet committed. */
@@ -76,7 +76,7 @@ afterEach(() => {
 
 describe('Stencil, the fields', () => {
   it('draws a row per field, in the order they were handed in', () => {
-    expect(drawnFields(mountStencil())).toEqual(FIELDS)
+    expect(getDrawnFields(mountStencil())).toEqual(FIELDS)
   })
 
   it('draws the silence, and no rows, for a stencil naming nothing', () => {
@@ -279,7 +279,7 @@ describe('Stencil, the fields', () => {
 
   it('draws one row for a name the stencil declares twice', () => {
     const held = mountStencil({ fields: ['Name', 'Height', 'Height'] })
-    expect(drawnFields(held)).toEqual(['Name', 'Height'])
+    expect(getDrawnFields(held)).toEqual(['Name', 'Height'])
     expect(held.findAll('.stencil__field input')).toHaveLength(2)
   })
 

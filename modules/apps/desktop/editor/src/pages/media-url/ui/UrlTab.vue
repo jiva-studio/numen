@@ -23,7 +23,7 @@ const { address, deletable, framing, playable } = props.state
 // What is at the address plays where it is drawn, so a moment chosen in the
 // words is seeked there and the line being said follows it.
 const player = useTemplateRef<{ seeks(ms: number): void }>('player')
-watchPostEffect(() => props.state.playsIn(player.value))
+watchPostEffect(() => props.state.setFramePlayer(player.value))
 
 const offered = computed(() =>
   deletable.value ? [{ id: DELETE_TEXT, text: words.deleteText }] : [],
@@ -31,7 +31,7 @@ const offered = computed(() =>
 
 // --- Handlers ---
 function onChoose(id: string) {
-  if (id === DELETE_TEXT) props.state.deletes()
+  if (id === DELETE_TEXT) props.state.deleteTranscript()
 }
 
 function onTimeUpdate(ms: number) {

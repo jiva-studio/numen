@@ -24,7 +24,7 @@ export function useWindowTabs() {
     opens: (kind, at) => opens(kind, at),
     beside: (kind, at) => beside(kind, at),
     show: (id) => show(id),
-    closes: (id) => closes(id),
+    closes: (id) => finishClose(id),
     each: <TabState,>(kind: string) => each<TabState>(kind),
     last: <TabState,>(kind: string) => each<TabState>(kind).at(-1) ?? null,
     front: () => front(),
@@ -38,7 +38,7 @@ export function useWindowTabs() {
    * The kinds this window draws. It is told once, before a tab of any of them
    * is opened.
    */
-  const declares = (told: readonly AnyTabKind[]) => {
+  const registerKinds = (told: readonly AnyTabKind[]) => {
     for (const one of told) byKind.set(one.kind, one)
   }
 
@@ -76,7 +76,7 @@ export function useWindowTabs() {
   )
 
   /** What one tab holds, or nothing where the window holds no such tab. */
-  const heldIn = (id: string): WindowTab | null => open.value.get(id) ?? null
+  const getTab = (id: string): WindowTab | null => open.value.get(id) ?? null
 
   /**
    * What one tab of a kind holds, for a caller that knows the kind and what
@@ -145,7 +145,7 @@ export function useWindowTabs() {
   }
 
   /** A tab that took its own close, going now. */
-  const closes = (id: string) => {
+  const finishClose = (id: string) => {
     open.value = without(open.value, id)
     drop(id)
     layout.value = closeTab(layout.value, id)
@@ -155,7 +155,7 @@ export function useWindowTabs() {
    * The tab now on screen, where what it holds has room to measure. It goes to
    * the end of what the window holds, which is the order they were last in.
    */
-  const shown = (id: string) => {
+  const onTabShown = (id: string) => {
     const one = open.value.get(id)
     if (!one) return
     open.value = new Map([...without(open.value, id), [id, one]])
@@ -171,7 +171,7 @@ export function useWindowTabs() {
    * at, and several panes are drawn at once. A key nobody in the pane it names
    * reads is one the tab in front of them would have.
    */
-  const presses = (event: KeyboardEvent): boolean => {
+  const onKeyPress = (event: KeyboardEvent): boolean => {
     const drawn = panesOf(layout.value.root).map((one) => one.active)
     const front = paneById(layout.value.root, layout.value.focus)?.active
     const offered = new Set<string>()
@@ -203,7 +203,7 @@ export function useWindowTabs() {
    * A tab let go of from outside and taken off the screen. A kind with
    * something to finish keeps its tab and closes it itself.
    */
-  const drops = (id: string) => {
+  const requestClose = (id: string) => {
     if (shut(id)) layout.value = closeTab(layout.value, id)
   }
 
@@ -221,19 +221,19 @@ export function useWindowTabs() {
     layout,
     tabs,
     handle,
-    declares,
-    heldIn,
+    registerKinds,
+    getTab,
     holdsIn,
     createTab,
     makes,
     opens,
     beside,
     show,
-    closes,
-    shown,
-    presses,
+    finishClose,
+    onTabShown,
+    onKeyPress,
     shut,
-    drops,
+    requestClose,
     close,
   }
 }

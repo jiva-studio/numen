@@ -12,7 +12,7 @@ import Progress from './Progress.vue'
 import Presets from './Presets.vue'
 import { deckName } from '@/entities/vault'
 import { letterOf } from '@/features/keyboard'
-import { canStart, getLearnedShare, hasNothingToBegin, spent } from '../lib/progress'
+import { canStart, getLearnedShare, hasNothingToBegin, isSpent } from '../lib/progress'
 import { LEARNED, STOPPED } from '../words'
 import type { DeckCardsDue, VaultCardsDue } from '@/entities/vault'
 import type { Preset } from '../types'
@@ -51,9 +51,9 @@ const getPauseReason = (deck: string): string => props.byDeck.get(deck)?.paused 
  * nothing standing: something was answered under its preset today, and its
  * preset still had room for more.
  */
-const done = (deck: DeckCardsDue): boolean => {
+const isDone = (deck: DeckCardsDue): boolean => {
   const one = props.byDeck.get(deck.deck)
-  return !!one && !spent(one) && one.answered > 0
+  return !!one && !isSpent(one) && one.answered > 0
 }
 
 /**
@@ -63,7 +63,7 @@ const done = (deck: DeckCardsDue): boolean => {
  */
 const empty = (deck: DeckCardsDue): string => {
   const one = props.byDeck.get(deck.deck)
-  if (one && spent(one)) return STOPPED.full
+  if (one && isSpent(one)) return STOPPED.full
   return hasNothingToBegin(deck, one) ? STOPPED.noneToBegin : STOPPED.nothing
 }
 
@@ -122,7 +122,7 @@ const share = (deck: DeckCardsDue): string => {
           }}</span>
           <DueCount v-else-if="deck.due + deck.new > 0" :due="deck.due + deck.new" />
           <template v-else-if="deck.faces > 0">
-            <span v-if="done(deck)" class="decks__met">Done today</span>
+            <span v-if="isDone(deck)" class="decks__met">Done today</span>
             <span v-else class="decks__stopped">{{ empty(deck) }}</span>
           </template>
         </Button>

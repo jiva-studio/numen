@@ -8,7 +8,7 @@ import type { EditorState } from '@codemirror/state'
 import { EditorView, WidgetType } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
 import { listen } from './cells'
-import { readTable, rowsOf, shown, type Cell, type Row, type Table } from './table'
+import { readCell, readTable, rowsOf, type Cell, type Row, type Table } from './table'
 
 class Grid extends WidgetType {
   constructor(
@@ -50,7 +50,7 @@ class Grid extends WidgetType {
     drawn.forEach((element, index) => {
       const cell = cells[index]
       place(element, cell ?? null, this.writable)
-      if (cell && element !== document.activeElement) element.textContent = shown(cell.text)
+      if (cell && element !== document.activeElement) element.textContent = readCell(cell.text)
     })
     return true
   }
@@ -69,7 +69,7 @@ class Grid extends WidgetType {
         const align = this.table.align[column] ?? 'none'
         if (align !== 'none') element.style.textAlign = align === 'centre' ? 'center' : align
         place(element, cell, this.writable)
-        if (cell) element.textContent = shown(cell.text)
+        if (cell) element.textContent = readCell(cell.text)
         line.appendChild(element)
       })
       return line

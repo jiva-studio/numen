@@ -11,7 +11,7 @@ import DueCount from './DueCount.vue'
 import { Button } from '@/shared/ui/button'
 import { DUE_WORDS } from './due'
 import { lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 interface Knobs {
   /** Cards due today. Nothing until it has been counted. */
@@ -102,7 +102,7 @@ export const StillCounting: Story = {
 export const Dark: Story = {
   globals: DARK,
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const canvas = within(canvasElement)
     const [plain, over] = canvas.getAllByRole('status')
     const button = canvas.getByRole('button')

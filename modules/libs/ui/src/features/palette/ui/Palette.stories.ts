@@ -234,11 +234,12 @@ const actions = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
 
 /** What a line says, with the runs it is written in run together. */
-const said = (of: Element | null | undefined): string =>
+const getText = (of: Element | null | undefined): string =>
   (of?.textContent ?? '').replace(/\s+/g, ' ').trim()
 
 /** The keystroke a cap is announced as, which is all of it a reader hears. */
-const spoken = (cap: Element | null | undefined): string => said(cap?.querySelector('.sr-only'))
+const getSpokenKey = (cap: Element | null | undefined): string =>
+  getText(cap?.querySelector('.sr-only'))
 
 /** The two keyboards a keystroke is written for. */
 const APPLE = 'MacIntel'
@@ -516,9 +517,9 @@ export const NothingHeard: Story = {
 
     await waitFor(() => expect(region()).not.toBeNull())
     await expect(region()).toHaveAttribute('aria-live', 'polite')
-    await expect(said(region())).toBe('')
+    await expect(getText(region())).toBe('')
 
-    await waitFor(() => expect(said(region())).toBe('No note answers to that'), { timeout: 3000 })
+    await waitFor(() => expect(getText(region())).toBe('No note answers to that'), { timeout: 3000 })
   },
 }
 
@@ -539,7 +540,7 @@ export const Nothing: Story = {
     await waitFor(() =>
       expect(document.body.querySelectorAll('[data-palette="title"]')).toHaveLength(0),
     )
-    await expect(said(document.body.querySelector('[data-palette="nothing"]'))).toBe(
+    await expect(getText(document.body.querySelector('[data-palette="nothing"]'))).toBe(
       'Type to look for something',
     )
   },
@@ -559,12 +560,12 @@ export const CouldNotBeAsked: Story = {
     ],
   },
   play: async () => {
-    const drawn = () =>
+    const getDrawnTitles = () =>
       Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((group) =>
         group.textContent?.trim(),
       )
-    await waitFor(() => expect(drawn()).toEqual(['Meaning']))
-    await expect(said(document.body.querySelector('[data-palette="silence"]'))).toBe('No model is set')
+    await waitFor(() => expect(getDrawnTitles()).toEqual(['Meaning']))
+    await expect(getText(document.body.querySelector('[data-palette="silence"]'))).toBe('No model is set')
   },
 }
 
@@ -882,7 +883,7 @@ export const FiveActions: Story = {
   play: async ({ args }) => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const reach = Array.from(document.body.querySelectorAll('[data-palette="key"]')).map(said)
+    const reach = Array.from(document.body.querySelectorAll('[data-palette="key"]')).map(getText)
     await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open the note'])
     await expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain('Actions')
 
@@ -1053,7 +1054,7 @@ export const KeyHints: Story = {
     await waitFor(() => expect(lit()).not.toBeNull())
 
     const hints = Array.from(document.body.querySelectorAll('[data-palette="hint"]'))
-    await expect(hints.map(spoken)).toEqual([
+    await expect(hints.map(getSpokenKey)).toEqual([
       'Command N',
       'Command Shift P',
       'Control Shift W',

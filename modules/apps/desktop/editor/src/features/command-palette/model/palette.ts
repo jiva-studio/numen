@@ -70,19 +70,19 @@ export function useCommandPalette(
   }
 
   const setOpen = (now: boolean) => {
-    lights('')
+    previewItem('')
     open.value = now
     drop()
     typed.value = ''
     steps.reset()
   }
 
-  const lights = (item: string) => {
+  const previewItem = (item: string) => {
     const step = steps.here.value
     if (step?.step === 'choosing') holds.previewItem(step.command.id, item)
   }
 
-  const lists = async () => {
+  const loadVaults = async () => {
     const mine = asked.ask()
     isWorking.value = true
     said.value = ''
@@ -107,13 +107,13 @@ export function useCommandPalette(
     knows,
     typed,
     drop,
-    lights,
-    () => void lists(),
+    previewItem,
+    () => void loadVaults(),
     () => setOpen(false),
     invocation,
   )
 
-  const looks = async (query: string) => {
+  const searchNames = async (query: string) => {
     const mine = asked.ask()
     if (!query) {
       found.value = []
@@ -141,7 +141,7 @@ export function useCommandPalette(
 
   const setTyped = async (text: string) => {
     typed.value = text
-    if (steps.here.value?.step === 'picking') await looks(text.trim())
+    if (steps.here.value?.step === 'picking') await searchNames(text.trim())
   }
 
   const draws = view({
@@ -161,7 +161,7 @@ export function useCommandPalette(
 
   const groups = computed(() => draws.groupsOf(steps.here.value, on.value, typed.value))
 
-  const asks = (id: string, over: CommandTarget): CommandInvocation | null => {
+  const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
     const command = byId.get(id)
     if (!command || !command.where(over, runs)) return null
     if (!command.needs) return invocation(command.id, over)
@@ -179,9 +179,9 @@ export function useCommandPalette(
     return over.ready ? words.noNote : words.noVault
   }
 
-  const chose = (item: string, action: string): CommandInvocation | null => {
+  const chooseItem = (item: string, action: string): CommandInvocation | null => {
     const step = steps.here.value
-    if (!step) return asks(action, on.value)
+    if (!step) return startCommand(action, on.value)
     return steps.chooseInStep(step, item, action, found.value, known.value, (one) => Boolean(draws.aside(one)))
   }
 
@@ -194,14 +194,14 @@ export function useCommandPalette(
     opensOn: steps.opensOn,
     placeholder: steps.placeholder,
     setTyped,
-    lights,
+    previewItem,
     setOpen,
-    asks,
+    startCommand,
     getRefusal,
-    follows: steps.follows,
-    chose,
-    leaves: steps.leaves,
-    backs: steps.backs,
+    applyRenames: steps.applyRenames,
+    chooseItem,
+    leaveStep: steps.leaveStep,
+    goBack: steps.goBack,
     typeOf: draws.typeOf,
   }
 }

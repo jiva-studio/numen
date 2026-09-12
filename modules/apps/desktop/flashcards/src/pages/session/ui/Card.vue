@@ -27,7 +27,7 @@ const STILL = 4
 /** Where the hand went down, for telling a press from a drag across the card. */
 const from = ref<number | null>(null)
 
-const took = (press: PointerEvent) => {
+const handlePointerDown = (press: PointerEvent) => {
   from.value = press.clientX
 }
 
@@ -68,7 +68,7 @@ const handleClick = (press: MouseEvent) => {
 </script>
 
 <template>
-  <article class="card" @click="handleClick" @pointerdown="took">
+  <article class="card" @click="handleClick" @pointerdown="handlePointerDown">
     <CardProse :text="front" @follow="handleFollow" />
     <div v-if="shown" class="card__rule" />
     <CardProse v-if="shown" :text="back" @follow="handleFollow" />

@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { useReviewedDays } from './reviewed'
 import type { ReviewDays, ReviewDaysClient } from './reviewed'
 
-const said = (days: [string, number][], streak = 0, due: [string, number][] = []): ReviewDays => ({
+const createReviewDays = (
+  days: [string, number][],
+  streak = 0,
+  due: [string, number][] = [],
+): ReviewDays => ({
   days: days.map(([day, answered]) => ({
     day,
     answered,
@@ -23,7 +27,7 @@ describe('what a vault was answered on', () => {
   it('is held by the day it was answered on', async () => {
     const cards: ReviewDaysClient = {
       async listReviewDays() {
-        return said(
+        return createReviewDays(
           [
             ['2026-08-28', 12],
             ['2026-08-29', 3],
@@ -53,14 +57,14 @@ describe('what a vault was answered on', () => {
             settle = then
           })
         }
-        return Promise.resolve(said([['2026-08-29', 1]], 1))
+        return Promise.resolve(createReviewDays([['2026-08-29', 1]], 1))
       },
     }
     const one = useReviewedDays({ cards, reportError: () => {} })
 
     const slow = one.read('01SLOW')
     await one.read('01OTHER')
-    settle(said([['2020-01-01', 99]], 40))
+    settle(createReviewDays([['2020-01-01', 99]], 40))
     await slow
 
     expect(one.days.value.has('2020-01-01')).toBe(false)
@@ -71,7 +75,7 @@ describe('what a vault was answered on', () => {
   it('holds what is still to come apart from what was done', async () => {
     const cards: ReviewDaysClient = {
       async listReviewDays() {
-        return said([['2026-08-29', 3]], 1, [
+        return createReviewDays([['2026-08-29', 3]], 1, [
           ['2026-08-31', 12],
           ['2026-09-05', 4],
         ])

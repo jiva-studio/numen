@@ -186,7 +186,7 @@ const swept = async (from: Position, to: Position): Promise<void> => {
 }
 
 /** The cursor the splitter puts over the whole page while it has the pointer. */
-function heldCursor(): string | null {
+function getCursor(): string | null {
   const put = '*{cursor:'
 
   for (const style of document.head.querySelectorAll('style')) {
@@ -217,7 +217,7 @@ const AWAY = [-10, -6, -3, 0, 3, 6, 10]
  * cursor it draws there. The line is taken a quarter of the way along the
  * handle, clear of the handles a branch further in lays across this one.
  */
-async function caughtAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<readonly Caught[]> {
+async function measureAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<readonly Caught[]> {
   const box = rectOf(handle)
   const found: Caught[] = []
 
@@ -228,7 +228,7 @@ async function caughtAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<read
         : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
 
     await swept(at, at)
-    found.push({ away, at, cursor: heldCursor() })
+    found.push({ away, at, cursor: getCursor() })
   }
   return found
 }
@@ -541,7 +541,7 @@ export const DragsFromItsWholeReach: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle') as HTMLElement
-    const caught = await caughtAcross(handle, 'x')
+    const caught = await measureAcross(handle, 'x')
 
     await expect(caught.map((place) => [place.away, place.cursor])).toStrictEqual(
       getReach('ew-resize'),
@@ -568,7 +568,7 @@ export const DragsFromItsWholeReachDownwards: Story = {
     const handle = canvasElement.querySelector(
       '.branch__handle[data-direction="vertical"]',
     ) as HTMLElement
-    const caught = await caughtAcross(handle, 'y')
+    const caught = await measureAcross(handle, 'y')
 
     await expect(caught.map((place) => [place.away, place.cursor])).toStrictEqual(
       getReach('ns-resize'),

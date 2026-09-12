@@ -25,7 +25,7 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
 const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 // Each tab is drawn into the page, so the one before it goes before the next
 // stands: a mark is teleported to the tile a selector finds in the whole page.
@@ -65,7 +65,7 @@ const CARDS: readonly VaultCard[] = [
 const SECTIONS = [{ name: 'Roots', preamble: '' }]
 
 /** A window with one deck open, drawn. */
-const drawn = async (
+const mountDeck = async (
   problems: readonly DeckProblem[] = [],
   scheduling: {
     /** The presets the vault holds. */
@@ -168,19 +168,19 @@ const drawn = async (
 
   const held = useWindowTabs()
   const decks = useDeckTabs(core, presets, held.handle, tabOpeners())
-  held.declares([decks.kind])
+  held.registerKinds([decks.kind])
   const id = await held.opens(DECK, 'Animals.md')
-  await settles()
+  await settle()
   const tab = held.handle.holds<DeckTabState>(DECK, id) as DeckTabState
   // A mark is teleported into the tile it is about, so the grid has to stand in
   // the document for the tile to be found.
   const window = mount(DeckTab, { props: { state: tab }, attachTo: document.body })
-  await settles()
+  await settle()
   return { window, tab, decks, put }
 }
 
 /** The tile one card is drawn as, by the identity the window gave that card. */
-const tileOf = (window: Awaited<ReturnType<typeof drawn>>['window'], card: string) =>
+const tileOf = (window: Awaited<ReturnType<typeof mountDeck>>['window'], card: string) =>
   window.find(`[data-card="${card}"]`)
 
 const stencilless: DeckProblem = {
@@ -193,13 +193,13 @@ const stencilless: DeckProblem = {
 
 describe('a deck drawn', () => {
   it('draws a tile for every card the vault read', async () => {
-    const { window } = await drawn()
+    const { window } = await mountDeck()
 
     expect(window.findAll('[data-card]')).toHaveLength(2)
   })
 
   it('offers every stencil the vault holds once the plus is pressed', async () => {
-    const { window } = await drawn()
+    const { window } = await mountDeck()
 
     expect(window.find('[data-cut="Animal"]').exists()).toBe(false)
     await window.find('[data-plus]').find('button').trigger('click')
@@ -208,7 +208,7 @@ describe('a deck drawn', () => {
   })
 
   it('writes a card cut by the stencil that was chosen', async () => {
-    const { window, tab } = await drawn()
+    const { window, tab } = await mountDeck()
 
     // The plus of the last section, so the card it makes stands last of all.
     await window.findAll('[data-plus]').at(-1)!.find('button').trigger('click')
@@ -223,7 +223,7 @@ describe('a deck drawn', () => {
   })
 
   it('draws a heading for every section the vault read, with the cards under it', async () => {
-    const { window, tab } = await drawn()
+    const { window, tab } = await mountDeck()
     const roots = tab.sections.value[0]?.id ?? ''
 
     expect(window.get(`[data-section-head="${roots}"]`).get('input').element.value).toBe('Roots')
@@ -231,7 +231,7 @@ describe('a deck drawn', () => {
   })
 
   it('makes a section at the end of the deck', async () => {
-    const { window, tab } = await drawn()
+    const { window, tab } = await mountDeck()
 
     await window.get('[data-add-section]').trigger('click')
 
@@ -241,42 +241,42 @@ describe('a deck drawn', () => {
 
 describe('a mark on a tile', () => {
   it('is drawn inside the tile of the card it was read against', async () => {
-    const { window, tab } = await drawn([stencilless])
+    const { window, tab } = await mountDeck([stencilless])
     const second = tab.deck.value.cards[1]?.id ?? ''
 
     expect(tileOf(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
   })
 
   it('is drawn on no other tile', async () => {
-    const { window, tab } = await drawn([stencilless])
+    const { window, tab } = await mountDeck([stencilless])
     const first = tab.deck.value.cards[0]?.id ?? ''
 
     expect(tileOf(window, first).find('[data-wrong]').exists()).toBe(false)
   })
 
   it('is nowhere at all where the vault reported nothing wrong', async () => {
-    const { window } = await drawn()
+    const { window } = await mountDeck()
 
     expect(window.findAll('[data-wrong]')).toHaveLength(0)
   })
 
   it('goes when the card it stood on is taken out of the deck', async () => {
-    const { window, tab } = await drawn([stencilless])
+    const { window, tab } = await mountDeck([stencilless])
     const second = tab.deck.value.cards[1]?.id ?? ''
 
     tab.removeCard(second)
-    await settles()
+    await settle()
 
     expect(window.findAll('[data-wrong]')).toHaveLength(0)
   })
 
   it('stands with the card and not with its place, so removing another leaves it', async () => {
-    const { window, tab } = await drawn([stencilless])
+    const { window, tab } = await mountDeck([stencilless])
     const first = tab.deck.value.cards[0]?.id ?? ''
     const second = tab.deck.value.cards[1]?.id ?? ''
 
     tab.removeCard(first)
-    await settles()
+    await settle()
 
     expect(tileOf(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
   })
@@ -284,7 +284,7 @@ describe('a mark on a tile', () => {
 
 describe('what is wrong with the file itself', () => {
   it('is drawn above the grid, standing on no tile', async () => {
-    const { window } = await drawn([
+    const { window } = await mountDeck([
       { fault: 'unknown', card: null, face: null, field: '', text: 'the whole file' },
     ])
 
@@ -293,7 +293,7 @@ describe('what is wrong with the file itself', () => {
   })
 
   it('is drawn nowhere where every problem stands on a card', async () => {
-    const { window } = await drawn([stencilless])
+    const { window } = await mountDeck([stencilless])
 
     expect(window.find(`[aria-label="${words.problems}"]`).exists()).toBe(false)
   })
@@ -301,7 +301,7 @@ describe('what is wrong with the file itself', () => {
 
 describe('a gesture in the grid', () => {
   it('writes into the card the box belongs to', async () => {
-    const { window, tab } = await drawn()
+    const { window, tab } = await mountDeck()
     const first = tab.deck.value.cards[0]?.id ?? ''
     const box = tileOf(window, first).find('[data-value="Name"]')
 
@@ -311,7 +311,7 @@ describe('a gesture in the grid', () => {
   })
 
   it('leaves every other card as it was', async () => {
-    const { window, tab } = await drawn()
+    const { window, tab } = await mountDeck()
     const first = tab.deck.value.cards[0]?.id ?? ''
     const box = tileOf(window, first).find('[data-value="Name"]')
 
@@ -321,7 +321,7 @@ describe('a gesture in the grid', () => {
   })
 
   it('renames the section the box belongs to', async () => {
-    const { window, tab } = await drawn()
+    const { window, tab } = await mountDeck()
     const roots = tab.sections.value[0]?.id ?? ''
     const box = window.get(`[data-section-head="${roots}"]`).get('input')
 
@@ -332,7 +332,7 @@ describe('a gesture in the grid', () => {
   })
 
   it('takes a section away, and leaves the cards that stood under it', async () => {
-    const { window, tab } = await drawn()
+    const { window, tab } = await mountDeck()
     const roots = tab.sections.value[0]?.id ?? ''
 
     await window.get(`[data-section-head="${roots}"]`).get('.remove-button').trigger('click')
@@ -344,7 +344,7 @@ describe('a gesture in the grid', () => {
 
 describe('the question a file that changed on disk puts', () => {
   it('is not drawn while the deck is as the file has it', async () => {
-    const { window } = await drawn()
+    const { window } = await mountDeck()
 
     expect(window.text()).not.toContain(words.stale)
   })
@@ -352,7 +352,7 @@ describe('the question a file that changed on disk puts', () => {
 
 describe('the preset a deck is scheduled by', () => {
   it('stands on a line at the top of the deck, saying which one is in force', async () => {
-    const { window } = await drawn([], { by: 'Sanskrit.md' })
+    const { window } = await mountDeck([], { by: 'Sanskrit.md' })
 
     const line = window.get('.deck-tab__scheduled')
     expect(line.text()).toContain(words.scheduledBy)
@@ -360,13 +360,13 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('says the defaults for a deck naming no preset', async () => {
-    const { window } = await drawn()
+    const { window } = await mountDeck()
 
     expect(window.get('.deck-tab__choice').text()).toContain(words.defaults)
   })
 
   it('offers the defaults and every preset the vault holds', async () => {
-    const { window } = await drawn([], { by: 'Sanskrit.md' })
+    const { window } = await mountDeck([], { by: 'Sanskrit.md' })
     const line = window.get('.deck-tab__choice')
     expect(line.attributes('aria-haspopup')).toBe('menu')
     expect(document.body.querySelectorAll('.menu__item')).toHaveLength(0)
@@ -380,7 +380,7 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('marks the preset in force among the ones offered', async () => {
-    const { window } = await drawn([], { by: 'Sanskrit.md' })
+    const { window } = await mountDeck([], { by: 'Sanskrit.md' })
     await window.get('.deck-tab__choice').trigger('click')
 
     const checked = [...document.body.querySelectorAll('.menu__item')].filter(
@@ -390,14 +390,14 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('puts the deck on the preset that was chosen, and says it afterwards', async () => {
-    const { window, put } = await drawn()
+    const { window, put } = await mountDeck()
     await window.get('.deck-tab__choice').trigger('click')
     const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === 'Sanskrit',
     )
 
     chosen?.click()
-    await settles()
+    await settle()
     await window.vm.$nextTick()
 
     expect(put).toStrictEqual(['Sanskrit.md'])
@@ -405,14 +405,14 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('takes the deck back to the defaults', async () => {
-    const { window, put } = await drawn([], { by: 'Sanskrit.md' })
+    const { window, put } = await mountDeck([], { by: 'Sanskrit.md' })
     await window.get('.deck-tab__choice').trigger('click')
     const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === words.defaults,
     )
 
     chosen?.click()
-    await settles()
+    await settle()
     await window.vm.$nextTick()
 
     expect(put).toStrictEqual([''])
@@ -420,7 +420,7 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('says on the line what the deck names and the vault does not hold', async () => {
-    const { window } = await drawn([], {
+    const { window } = await mountDeck([], {
       saying: 'Sanskrit reaches no note, and the defaults stand',
     })
 
@@ -429,14 +429,14 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('says on the line that a choice was not written', async () => {
-    const { window } = await drawn([], { notScheduled: 'notAPreset' })
+    const { window } = await mountDeck([], { notScheduled: 'notAPreset' })
     await window.get('.deck-tab__choice').trigger('click')
     const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
       (one) => one.textContent?.trim() === 'Sanskrit',
     )
 
     chosen?.click()
-    await settles()
+    await settle()
     await window.vm.$nextTick()
 
     expect(window.get('.deck-tab__scheduled').text()).toContain(words.notScheduled)

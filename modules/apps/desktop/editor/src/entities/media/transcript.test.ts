@@ -107,12 +107,12 @@ function createPlayer() {
   }
 
   /** The recording plays on: the player moves of itself. */
-  const moves = (ms: number) => {
+  const setCurrentTime = (ms: number) => {
     address.value = SUMMARY.mediaUrl
     at.value = ms
   }
 
-  return { player, sought, moves, failed, address, duration, playing, at }
+  return { player, sought, setCurrentTime, failed, address, duration, playing, at }
 }
 
 /** Everything asked for has been answered and everything waiting has run. */
@@ -175,44 +175,44 @@ describe('a build that cannot read a transcript', () => {
 describe('the cue being said', () => {
   it('is the one the player stands in', async () => {
     const { recordings } = talk()
-    const { player, moves } = createPlayer()
+    const { player, setCurrentTime } = createPlayer()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
 
-    moves(3_000)
+    setCurrentTime(3_000)
 
     expect(heard.current.value).toBe(1)
   })
 
   it('is the last one said while a silence stands there', async () => {
     const { recordings } = talk()
-    const { player, moves } = createPlayer()
+    const { player, setCurrentTime } = createPlayer()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
 
-    moves(2_200)
+    setCurrentTime(2_200)
 
     expect(heard.current.value).toBe(0)
   })
 
   it('is none before the first of them begins', async () => {
     const { recordings } = talk([{ text: 'Said late.', from: 4_000, to: 5_000 }])
-    const { player, moves } = createPlayer()
+    const { player, setCurrentTime } = createPlayer()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
 
-    moves(1_000)
+    setCurrentTime(1_000)
 
     expect(heard.current.value).toBe(-1)
   })
 
   it('is none while the player holds another recording', async () => {
     const { recordings } = talk()
-    const { player, moves } = createPlayer()
+    const { player, setCurrentTime } = createPlayer()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
 
-    moves(3_000)
+    setCurrentTime(3_000)
     expect(heard.now.value).toBe(3_000)
 
     // The player is given another recording: this one stands at its beginning
@@ -367,9 +367,9 @@ describe('a transcript still growing', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3')
     await flush()
 
-    heard.ticks(true)
+    heard.setWorking(true)
     await flush()
-    heard.ticks(false)
+    heard.setWorking(false)
     await flush()
 
     expect(asked.filter((one) => one.startsWith('cues')).length).toBe(3)
@@ -380,8 +380,8 @@ describe('a transcript still growing', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3')
     await flush()
 
-    heard.ticks(false)
-    heard.ticks(false)
+    heard.setWorking(false)
+    heard.setWorking(false)
     await flush()
 
     expect(asked.filter((one) => one.startsWith('cues')).length).toBe(1)
@@ -417,7 +417,7 @@ describe('two questions about the words in flight at once', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3')
     await flush()
 
-    heard.ticks(true)
+    heard.setWorking(true)
     await flush()
 
     letGo()
@@ -586,7 +586,7 @@ describe('a transcript asked for twice at once', () => {
 
     const heard = useTranscript(recordings, 'talks/Ants.mp3')
     await flush()
-    heard.ticks(true)
+    heard.setWorking(true)
     await flush()
 
     // The later asking lands first, then the earlier one answers.
@@ -633,7 +633,7 @@ describe('what the tab says where the words would stand', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3')
     await flush()
 
-    heard.ticks(true)
+    heard.setWorking(true)
 
     expect(heard.error.value).toContain('numen did not answer')
     expect(heard.note.value).toBe(WORDS.transcribing)
@@ -660,7 +660,7 @@ describe('what the tab says where the words would stand', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3')
     await flush()
 
-    heard.ticks(true)
+    heard.setWorking(true)
 
     expect(heard.note.value).toBe(WORDS.transcribing)
   })
@@ -678,7 +678,7 @@ describe('what the tab says where the words would stand', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3')
     await flush()
 
-    heard.ticks(true)
+    heard.setWorking(true)
 
     expect(heard.note.value).toBe('')
   })
@@ -725,13 +725,13 @@ describe('the moments in the editor gutter', () => {
   // the recording playing does not touch them.
   it('are not worked out again as the recording plays', async () => {
     const { recordings } = talk()
-    const { player, moves } = createPlayer()
+    const { player, setCurrentTime } = createPlayer()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
     const written = heard.times.value
 
-    moves(3_000)
-    moves(6_000)
+    setCurrentTime(3_000)
+    setCurrentTime(6_000)
 
     expect(heard.current.value).toBe(2)
     expect(heard.times.value).toBe(written)
@@ -798,7 +798,7 @@ describe('the words as a person edits them', () => {
     await flush()
 
     heard.setProse('Mine.\nThe second thing said.\nThe third thing said.')
-    heard.ticks(true)
+    heard.setWorking(true)
     await flush()
 
     expect(heard.prose.value.startsWith('Mine.')).toBe(true)
@@ -864,7 +864,7 @@ describe('the line a person asked for', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
 
-    heard.goes(2)
+    heard.goToLine(2)
 
     expect(sought).toStrictEqual([5_000])
   })
@@ -875,7 +875,7 @@ describe('the line a person asked for', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
 
-    heard.goes(9)
+    heard.goToLine(9)
 
     expect(sought).toStrictEqual([])
   })
@@ -889,10 +889,10 @@ describe('following the line being said', () => {
 
     expect(heard.following.value).toBe(true)
 
-    heard.follows(false)
+    heard.setFollowing(false)
     expect(heard.following.value).toBe(false)
 
-    heard.follows(true)
+    heard.setFollowing(true)
     expect(heard.following.value).toBe(true)
   })
 })
@@ -900,12 +900,12 @@ describe('following the line being said', () => {
 describe('the line being said while the words are edited', () => {
   it('is the one the player stands in, as the lines now read', async () => {
     const { recordings } = talk()
-    const { player, moves } = createPlayer()
+    const { player, setCurrentTime } = createPlayer()
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player, quiet: 10_000 })
     await flush()
 
     heard.setProse('The first thing said. The second thing said.\nThe third thing said.')
-    moves(3_000)
+    setCurrentTime(3_000)
 
     expect(heard.current.value).toBe(0)
     expect(heard.times.value.length).toBe(2)
@@ -985,7 +985,7 @@ describe('the view going after the words', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
     await flush()
 
-    heard.ticks(true)
+    heard.setWorking(true)
     await flush()
 
     expect(heard.typing.value).toBe(false)

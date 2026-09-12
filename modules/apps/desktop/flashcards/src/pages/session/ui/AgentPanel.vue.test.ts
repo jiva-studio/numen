@@ -51,25 +51,25 @@ const createPanel = (unreachable = ''): AgentPanelState => {
 }
 
 /** A panel holding the card, with a reason nothing can be asked where there is one. */
-const held = (unreachable = ''): AgentPanelState => {
+const createOpenPanel = (unreachable = ''): AgentPanelState => {
   const panel = createPanel(unreachable)
   panel.openPanel()
   return panel
 }
 
-const shown = (panel: AgentPanelState) => mount(AgentPanel, { props: { held: panel } })
+const mountPanel = (panel: AgentPanelState) => mount(AgentPanel, { props: { held: panel } })
 
 describe('the panel a card is asked about in', () => {
   // The card it is about is the card the session is on, and the session says
   // which above both of them.
   it('names no card of its own', () => {
-    const one = shown(held())
+    const one = mountPanel(createOpenPanel())
     expect(one.text()).not.toContain(card.heading)
     expect(one.findAll('button').map((it) => it.text())).not.toContain(words.shut)
   })
 
   it('stands the reason nothing can be asked where the answers would be', () => {
-    const one = shown(held(words.unreachable))
+    const one = mountPanel(createOpenPanel(words.unreachable))
     expect(one.text()).toContain(words.unreachable)
     expect(one.text()).not.toContain(words.nothingSaid)
   })

@@ -11,10 +11,10 @@ import { Plex } from '@numen/ui'
 import {
   asked,
   cards,
-  drawnWithPalette,
+  mountWindowWithPalette,
   nodeInPlex,
   said,
-  settles,
+  settle,
 } from '@/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
 
@@ -41,7 +41,7 @@ describe('the four commands over how the window is drawn', () => {
 
   const press = async (key: string) => {
     field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
-    await settles()
+    await settle()
   }
 
   const type = async (text: string) => {
@@ -49,7 +49,7 @@ describe('the four commands over how the window is drawn', () => {
     if (!into) return
     into.value = text
     into.dispatchEvent(new Event('input'))
-    await settles()
+    await settle()
   }
 
   /** The page as the window's handler serves it, before the window is drawn. */
@@ -85,9 +85,9 @@ describe('the four commands over how the window is drawn', () => {
 
   /** The commands open, and the one the words typed name taken up. */
   const over = async (typed: string) => {
-    const window = await drawnWithPalette()
+    const window = await mountWindowWithPalette()
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-    await settles()
+    await settle()
     await type(typed)
     await press('Enter')
     return window
@@ -111,9 +111,9 @@ describe('the four commands over how the window is drawn', () => {
 
   describe('the words a person types for them', () => {
     it('find the theme by “theme”, and light and dark by either word', async () => {
-      await drawnWithPalette()
+      await mountWindowWithPalette()
       globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-      await settles()
+      await settle()
 
       await type('theme')
       expect(left()).toStrictEqual(['Change the theme'])
@@ -126,9 +126,9 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('find the two sizes by “interface”, by “font” and by “reading”', async () => {
-      await drawnWithPalette()
+      await mountWindowWithPalette()
       globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-      await settles()
+      await settle()
 
       await type('interface')
       expect(left()).toStrictEqual(['Interface size'])
@@ -141,9 +141,9 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('turn up both of them, and nothing else, for the word they share', async () => {
-      await drawnWithPalette()
+      await mountWindowWithPalette()
       globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-      await settles()
+      await settle()
 
       await type('size')
 
@@ -238,7 +238,7 @@ describe('the four commands over how the window is drawn', () => {
 
   describe('a step opened over a setting', () => {
     /** The page as the handler serves it, dressed as the settings say. */
-    const serves = (mode = PAIR, sizes = SIZED) => {
+    const applyServedStyles = (mode = PAIR, sizes = SIZED) => {
       for (const one of document.head.querySelectorAll('style')) one.remove()
       document.head.append(
         createStyle(IS_MODE, mode),
@@ -250,7 +250,7 @@ describe('the four commands over how the window is drawn', () => {
 
     it('stands on the theme the settings name, and goes on wearing it', async () => {
       said.applied = 'mine:sea'
-      const was = serves()
+      const was = applyServedStyles()
 
       await over('theme')
 
@@ -261,7 +261,7 @@ describe('the four commands over how the window is drawn', () => {
 
     it('stands on the half the tokens are read as, and goes on reading them so', async () => {
       said.mode = 'dark'
-      const was = serves(':root { color-scheme: dark; }')
+      const was = applyServedStyles(':root { color-scheme: dark; }')
 
       await over('light')
 
@@ -271,7 +271,10 @@ describe('the four commands over how the window is drawn', () => {
 
     it('stands on the size the interface is drawn at, and leaves it there', async () => {
       said.sizes = { interfaceScale: 1.5, textScale: 1 }
-      const was = serves(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
+      const was = applyServedStyles(
+        PAIR,
+        ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }',
+      )
 
       await over('interface')
       await wait()
@@ -282,7 +285,10 @@ describe('the four commands over how the window is drawn', () => {
 
     it('stands on a size between two steps, which is the row put in for it', async () => {
       said.sizes = { interfaceScale: 1, textScale: 1.17 }
-      const was = serves(PAIR, ':root { --numen-interface-scale: 1; --numen-text-scale: 1.17; }')
+      const was = applyServedStyles(
+        PAIR,
+        ':root { --numen-interface-scale: 1; --numen-text-scale: 1.17; }',
+      )
 
       await over('reading')
       await wait()
@@ -293,7 +299,7 @@ describe('the four commands over how the window is drawn', () => {
 
     it('leaves the keyboard where typing puts it, and does not walk it back', async () => {
       said.sizes = { interfaceScale: 1.5, textScale: 1 }
-      serves(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
+      applyServedStyles(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
       await over('interface')
 
       await type('137')
@@ -393,7 +399,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('End')
 
       await press('Enter')
-      await settles()
+      await settle()
 
       expect(cards(window).join(' ')).toContain('outside 0.8 to 1.5')
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
@@ -403,12 +409,12 @@ describe('the four commands over how the window is drawn', () => {
   describe('the editor of an open note', () => {
     /** A note in a tab of its own, with the editor's measurements taken. */
     const openNote = async () => {
-      const window = await drawnWithPalette()
+      const window = await mountWindowWithPalette()
       window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
-      await settles()
+      await settle()
       asked.measured = 0
       globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-      await settles()
+      await settle()
       return window
     }
 
@@ -430,7 +436,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('End')
       await press('Enter')
-      await settles()
+      await settle()
 
       expect(asked.measured).toBe(1)
     })

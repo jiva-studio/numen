@@ -43,7 +43,7 @@ export function holdChanges(limits: HoldLimits = holding) {
   const ending = new Set<string>()
 
   /** A change was reported. */
-  const told = (said: NoteEdit): TimerRequest | null => {
+  const reportChange = (said: NoteEdit): TimerRequest | null => {
     if (!said.isComplete) {
       changes.set(said.path, {
         id: said.change,
@@ -79,7 +79,7 @@ export function holdChanges(limits: HoldLimits = holding) {
   const shut = (path: string): void => handleTimeout(path)
 
   /** What one note is drawn with, or nothing. */
-  const shown = (path: string): Change | null => changes.get(path) ?? null
+  const getChange = (path: string): Change | null => changes.get(path) ?? null
 
-  return { told, handleNoteChange, handleTimeout, shut, shown }
+  return { reportChange, handleNoteChange, handleTimeout, shut, getChange }
 }

@@ -19,7 +19,7 @@ export function useDeckScheduleSync(
 
   const stencils = computed(() => stencilsOf(offers.value))
 
-  const lists = async (): Promise<void> => {
+  const listStencils = async (): Promise<void> => {
     try {
       const listed = (await cards.stencils()).stencils
       listedOk = true
@@ -30,8 +30,8 @@ export function useDeckScheduleSync(
     }
   }
 
-  const listsAgain = (): void => {
-    if (!listedOk) void lists()
+  const listStencilsAgain = (): void => {
+    if (!listedOk) void listStencils()
   }
 
   const scheduled = useDeckSchedule(presets, store)
@@ -41,16 +41,16 @@ export function useDeckScheduleSync(
       scheduled.moveFile(went.from, went.to)
     }
     if (store.all().length === 0) return
-    void lists()
-    void scheduled.listsPresets()
-    for (const one of store.all()) void scheduled.asks(store.where(one))
+    void listStencils()
+    void scheduled.listPresets()
+    for (const one of store.all()) void scheduled.refreshDeckPreset(store.where(one))
   }
 
   return {
     offers,
     stencils,
-    lists,
-    listsAgain,
+    listStencils,
+    listStencilsAgain,
     scheduled,
     applyPathChanges,
   }

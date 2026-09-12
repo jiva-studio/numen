@@ -16,7 +16,7 @@ import { WORDS as words } from '@/entities/deck'
 const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 const FACES: readonly VaultFace[] = [
   { name: 'Recognise', preamble: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
@@ -52,11 +52,11 @@ const vault = (
       renamed.push(`${path} ${from} ${to} ${seen ?? '—'}`)
       if (answers.renaming) return answers.renaming
       fields = fields.map((one) => (one === from ? to : one))
-      const braces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)
+      const rewriteBraces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)
       faces = faces.map((face) => ({
         ...face,
-        front: braces(face.front),
-        back: braces(face.back),
+        front: rewriteBraces(face.front),
+        back: rewriteBraces(face.back),
       }))
       return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
     },
@@ -110,9 +110,9 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   const said: string[] = []
   const road = tabOpeners()
   const stencils = useStencilTabs(one.core, held.handle, road, (text) => void said.push(text))
-  held.declares([stencils.kind])
+  held.registerKinds([stencils.kind])
   const id = await held.opens(STENCIL, path)
-  await settles()
+  await settle()
   const tab = held.handle.holds<StencilTabState>(STENCIL, id) as StencilTabState
   return { ...one, held, road, stencils, id, tab, said }
 }
@@ -143,7 +143,7 @@ describe('a field renamed in a stencil', () => {
     const { tab, renamed } = await open()
 
     tab.renameField('Height', 'Shoulder')
-    await settles()
+    await settle()
 
     expect(renamed).toStrictEqual(['Animal.md Height Shoulder read'])
   })
@@ -152,7 +152,7 @@ describe('a field renamed in a stencil', () => {
     const { stencils, tab, written } = await open()
 
     tab.renameField('Height', 'Shoulder')
-    await settles()
+    await settle()
     await stencils.flush()
 
     expect(written).toStrictEqual([])
@@ -162,8 +162,8 @@ describe('a field renamed in a stencil', () => {
     const { tab } = await open()
 
     tab.renameField('Height', 'Shoulder')
-    await settles()
-    await settles()
+    await settle()
+    await settle()
 
     expect(tab.stencil.value.fields).toStrictEqual(['Shoulder', 'Life span'])
     expect(tab.stencil.value.faces[0]?.back).toBe('**Height:** {{Shoulder}}')
@@ -174,7 +174,7 @@ describe('a field renamed in a stencil', () => {
 
     tab.renameField('Height', 'Height')
     tab.renameField('Height', '')
-    await settles()
+    await settle()
 
     expect(renamed).toStrictEqual([])
   })
@@ -192,7 +192,7 @@ describe('a field renamed in a stencil', () => {
     })
 
     tab.renameField('Height', 'Shoulder')
-    await settles()
+    await settle()
 
     expect(said).toContain(words.renamed(3, 2))
   })
@@ -210,7 +210,7 @@ describe('a field renamed in a stencil', () => {
     })
 
     tab.renameField('Height', 'Shoulder')
-    await settles()
+    await settle()
 
     expect(said).toContain(words.notWritten(['Broken.md']))
   })
@@ -228,7 +228,7 @@ describe('a field renamed in a stencil', () => {
     })
 
     tab.renameField('Height', 'Shoulder')
-    await settles()
+    await settle()
 
     expect(said).toStrictEqual([ERRORS.notAStencil])
   })
@@ -246,7 +246,7 @@ describe('a field renamed in a stencil', () => {
     })
 
     tab.renameField('Height', 'Shoulder')
-    await settles()
+    await settle()
 
     expect(said).toStrictEqual([words.notRenamed])
   })
@@ -303,7 +303,7 @@ describe('a stencil whose file moved past what was read', () => {
     tab.addField('Weight')
     await stencils.flush()
     tab.keepMine()
-    await settles()
+    await settle()
 
     expect(written).toHaveLength(2)
   })
@@ -393,7 +393,7 @@ describe('a stencil read again under the window', () => {
     const was = { stencil: one.tab.stencil.value, marks: one.tab.marks.value }
 
     one.stencils.changed(['Animal.md'])
-    await settles()
+    await settle()
 
     // Each of them the same thing, and not merely a thing that reads the same:
     // a field under the keyboard is redrawn by anything else.
@@ -407,7 +407,7 @@ describe('a stencil read again under the window', () => {
     const face = one.tab.stencil.value.faces[0]?.id ?? ''
 
     one.stencils.changed(['Animal.md'])
-    await settles()
+    await settle()
 
     expect(one.tab.marks.value.at.get(face)).toStrictEqual(['no back'])
   })
@@ -418,7 +418,7 @@ describe('a stencil read again under the window', () => {
 
     one.holds([{ name: 'Recall', preamble: '', front: '{{Height}}', back: '{{Life span}}' }])
     one.stencils.changed(['Animal.md'])
-    await settles()
+    await settle()
 
     expect(one.tab.stencil.value.faces.map((face) => face.name)).toStrictEqual(['Recall'])
     expect(one.tab.stencil.value).not.toBe(was)
@@ -430,9 +430,9 @@ describe('a stencil renamed under the window', () => {
     const one = await open()
 
     one.stencils.changed(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
-    await settles()
+    await settle()
     one.road.made('Beast.md', '', 'stencil')
-    await settles()
+    await settle()
 
     expect(one.stencils.all()).toHaveLength(1)
     expect(one.held.handle.each(STENCIL)).toHaveLength(1)
@@ -453,7 +453,7 @@ describe('a stencil whose tab has gone', () => {
     expect(one.stencils.called('Animal.md')).toBe('Animal')
 
     one.held.shut(one.id)
-    await settles()
+    await settle()
 
     expect(one.stencils.called('Animal.md')).toBe('Animal.md')
   })

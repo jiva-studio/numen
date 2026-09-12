@@ -85,7 +85,7 @@ type Tree = ReturnType<typeof mountTree>
 
 const rowIn = (held: Tree, row: string) => held.get(`[data-tree-row="${row}"]`)
 
-const drawn = (held: Tree) =>
+const getDrawnRows = (held: Tree) =>
   held.findAll('[data-tree-row]').map((row) => row.attributes('data-tree-row'))
 
 /** A pointer event of its own making: the button and the point are read-only. */
@@ -132,12 +132,12 @@ const findDragged = (held: Tree) => held.find('.tree__dragged')
 
 describe('what is drawn', () => {
   it('is the rows an open row holds, in their place', () => {
-    expect(drawn(mountTree())).toStrictEqual(['work', 'plans', 'notes', 'empty', 'loose'])
+    expect(getDrawnRows(mountTree())).toStrictEqual(['work', 'plans', 'notes', 'empty', 'loose'])
   })
 
   it('is nothing a shut row holds', () => {
     const held = mountTree({ open: [] })
-    expect(drawn(held)).toStrictEqual(['work', 'empty', 'loose'])
+    expect(getDrawnRows(held)).toStrictEqual(['work', 'empty', 'loose'])
     expect(held.text()).not.toContain('Plans')
   })
 
@@ -173,7 +173,7 @@ describe('what is drawn', () => {
 
   it('is what the caller says when there is nothing to draw', () => {
     const held = mountTree({ rows: [] }, { silence: '<i class="mine">No rows</i>' })
-    expect(drawn(held)).toStrictEqual([])
+    expect(getDrawnRows(held)).toStrictEqual([])
     expect(held.find('.mine').text()).toBe('No rows')
   })
 })

@@ -23,7 +23,7 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
 })
 
 /** The panel over one deck, with the session around it standing in for it. */
-const held = (around: DeckNeighbourhood): NotesPanelState => {
+const createPanel = (around: DeckNeighbourhood): NotesPanelState => {
   const open = ref(false)
   return useNotesPanel({
     open: () => open.value,
@@ -38,15 +38,15 @@ const held = (around: DeckNeighbourhood): NotesPanelState => {
 }
 
 /** The panel, opened and drawn. */
-const shown = async (around: DeckNeighbourhood) => {
-  const panel = held(around)
+const mountPanel = async (around: DeckNeighbourhood) => {
+  const panel = createPanel(around)
   await panel.openPanel()
   return mount(NotesPanel, { props: { held: panel } })
 }
 
 describe('the panel the deck is read in', () => {
   it('names every note it read, one under another', async () => {
-    const one = await shown({
+    const one = await mountPanel({
       notes: [createNeighbour(), createNeighbour({ title: 'Humus', path: 'notes/Humus.md' })],
       unread: 0,
     })
@@ -56,7 +56,7 @@ describe('the panel the deck is read in', () => {
   // What the deck was made from and what has since been hung off it are read
   // differently, so which way the link runs is said.
   it('says which of them point at the deck rather than being pointed at', async () => {
-    const one = await shown({
+    const one = await mountPanel({
       notes: [
         createNeighbour(),
         createNeighbour({ title: 'Humus', path: 'notes/Humus.md', points: false }),
@@ -70,7 +70,7 @@ describe('the panel the deck is read in', () => {
   // A vault where a name has come loose is a vault with a question in it, and
   // hiding the question answers it wrongly.
   it('names a link that reached no note, and reads nothing under it', async () => {
-    const one = await shown({
+    const one = await mountPanel({
       notes: [createNeighbour({ path: '', title: '', body: '', written: 'Mould' })],
       unread: 0,
     })
@@ -79,13 +79,13 @@ describe('the panel the deck is read in', () => {
   })
 
   it('says where a name several notes answer to was read as the nearest', async () => {
-    const one = await shown({ notes: [createNeighbour({ ambiguous: true })], unread: 0 })
+    const one = await mountPanel({ notes: [createNeighbour({ ambiguous: true })], unread: 0 })
     expect(one.text()).toContain(words.ambiguous)
     expect(one.text()).not.toContain(words.dangling)
   })
 
   it('says why a note it could reach has no text', async () => {
-    const one = await shown({
+    const one = await mountPanel({
       notes: [createNeighbour({ body: '', refusal: 'that note is not in the vault' })],
       unread: 0,
     })
@@ -95,12 +95,12 @@ describe('the panel the deck is read in', () => {
   // The bound is where a person can see it, rather than a list that quietly
   // stops.
   it('says how many at the end it did not read', async () => {
-    const one = await shown({ notes: [createNeighbour()], unread: 4 })
+    const one = await mountPanel({ notes: [createNeighbour()], unread: 4 })
     expect(one.text()).toContain(words.named(4))
   })
 
   it('says quietly that a deck is joined to nothing', async () => {
-    const one = await shown({ notes: [], unread: 0 })
+    const one = await mountPanel({ notes: [], unread: 0 })
     expect(one.text()).toContain(words.nothing)
   })
 })
@@ -116,7 +116,7 @@ describe('a reading opened on one note', () => {
   // The panel comes in while the notes are still being asked for, so what was
   // named is waited for rather than looked for once and given up on.
   it('scrolls to it once the notes have arrived', async () => {
-    const panel = held({
+    const panel = createPanel({
       notes: [createNeighbour(), createNeighbour({ title: 'Humus', path: 'notes/Humus.md' })],
       unread: 0,
     })

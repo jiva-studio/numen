@@ -13,7 +13,7 @@ import { ICONS } from './icons'
 import type { PaletteKeys, PaletteIcon } from './keys'
 import { lightness } from '@/shared/fixtures/colour'
 import { drawingInk } from '@/shared/fixtures/ink'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 const meta = {
   title: 'Application/KeyCap',
@@ -105,7 +105,7 @@ export const Dark: Story = {
   args: { keys: { icons: [], letter: 'W' } },
   render: ({ keys }) => row(EVERY.map((icon) => ({ icons: [icon], letter: keys.letter }))),
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const caps = Array.from(canvasElement.querySelectorAll('.cap'))
     await expect(caps).toHaveLength(EVERY.length)
 

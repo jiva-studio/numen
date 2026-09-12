@@ -34,7 +34,7 @@ const inForce = computed(() => (onTheClock(model.value) ? model.value : ''))
 
 const element = useTemplateRef<HTMLInputElement>('element')
 
-const took = (event: Event) => {
+const onChange = (event: Event) => {
   const said = (event.target as HTMLInputElement).value
   if (!onTheClock(said) || said === model.value) return
   model.value = said
@@ -68,7 +68,7 @@ defineExpose({
         props.class,
       )
     "
-    @change="took"
+    @change="onChange"
   />
 </template>
 

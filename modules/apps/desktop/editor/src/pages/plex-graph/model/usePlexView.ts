@@ -49,7 +49,7 @@ export function usePlexView(core: Neighbours) {
     }
   }
 
-  const follows = (renamed: readonly PathRename[]) => {
+  const followMoves = (renamed: readonly PathRename[]) => {
     const to = getRenamedPath(renamed, here.value)
     if (!to) return
     here.value = to
@@ -60,5 +60,5 @@ export function usePlexView(core: Neighbours) {
     asks.close()
   }
 
-  return { neighbourhood, here, error, go, follows, close }
+  return { neighbourhood, here, error, go, followMoves, close }
 }

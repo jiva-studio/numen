@@ -14,7 +14,7 @@ vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 let asked: Record<string, unknown>[] = []
 
 /** What the application answers with, in the words the schema writes it in. */
-const answers = (said: unknown) => {
+const replyWith = (said: unknown) => {
   asked = []
   vi.stubGlobal(
     'fetch',
@@ -34,7 +34,7 @@ const { cards } = await import('./cards')
 
 describe('the stencils of a vault', () => {
   it('come back with how many the vault holds', async () => {
-    answers({
+    replyWith({
       stencils: [{ path: 'Word.md', title: 'Word', fields: ['Front', 'Back'] }],
       total: 3,
     })
@@ -46,7 +46,7 @@ describe('the stencils of a vault', () => {
   })
 
   it('are asked for without a ceiling where none was named', async () => {
-    answers({ stencils: [], total: 0 })
+    replyWith({ stencils: [], total: 0 })
 
     await cards.stencils()
 
@@ -56,7 +56,7 @@ describe('the stencils of a vault', () => {
 
 describe('making a deck', () => {
   it('answers where it was filed', async () => {
-    answers({ path: 'Decks/Words.md' })
+    replyWith({ path: 'Decks/Words.md' })
 
     expect(await cards.createDeck('Words', 'Decks')).toEqual({
       path: 'Decks/Words.md',
@@ -65,7 +65,7 @@ describe('making a deck', () => {
   })
 
   it('carries the error in the words the window uses', async () => {
-    answers({ path: '', refusal: 'REFUSAL_OCCUPIED' })
+    replyWith({ path: '', refusal: 'REFUSAL_OCCUPIED' })
 
     expect((await cards.createDeck('Words', 'Decks')).error).toBe('occupied')
   })
@@ -73,7 +73,7 @@ describe('making a deck', () => {
 
 describe('making a stencil', () => {
   it('carries the fields it is cut with', async () => {
-    answers({ path: 'Word.md' })
+    replyWith({ path: 'Word.md' })
 
     expect(await cards.createStencil('Word', '', ['Front', 'Back'])).toEqual({
       path: 'Word.md',
@@ -85,7 +85,7 @@ describe('making a stencil', () => {
 
 describe('reading a deck', () => {
   it('carries every card, and the section as a number or as nothing', async () => {
-    answers({
+    replyWith({
       deck: {
         path: 'Deck.md',
         title: 'Deck',
@@ -119,7 +119,7 @@ describe('reading a deck', () => {
   })
 
   it('is no deck where the answer carries none', async () => {
-    answers({ refusal: 'REFUSAL_NOT_A_DECK' })
+    replyWith({ refusal: 'REFUSAL_NOT_A_DECK' })
 
     const answer = await cards.readDeck('Notes.md')
 
@@ -129,7 +129,7 @@ describe('reading a deck', () => {
   })
 
   it('names what is wrong with it in the words the window uses', async () => {
-    answers({
+    replyWith({
       deck: {
         path: 'Deck.md',
         title: 'Deck',
@@ -153,7 +153,7 @@ describe('reading a deck', () => {
 
 describe('writing a deck', () => {
   it('takes the file the window read back apart into what the schema holds', async () => {
-    answers({ at: { path: 'Deck.md', size: '12', mtime: '34' }, bound: '400' })
+    replyWith({ at: { path: 'Deck.md', size: '12', mtime: '34' }, bound: '400' })
 
     await cards.writeDeck(
       'Deck.md',
@@ -181,7 +181,7 @@ describe('writing a deck', () => {
   })
 
   it('names no file where the window read none', async () => {
-    answers({})
+    replyWith({})
 
     await cards.writeDeck('Deck.md', { preamble: '', tail: '', cards: [], sections: [] }, null)
 
@@ -189,7 +189,7 @@ describe('writing a deck', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    answers({ refusal: 'REFUSAL_STALE' })
+    replyWith({ refusal: 'REFUSAL_STALE' })
 
     const answer = await cards.writeDeck(
       'Deck.md',
@@ -204,7 +204,7 @@ describe('writing a deck', () => {
 
 describe('a stencil', () => {
   it('comes back with every face it shows a card through', async () => {
-    answers({
+    replyWith({
       stencil: {
         path: 'Word.md',
         title: 'Word',
@@ -223,13 +223,13 @@ describe('a stencil', () => {
   })
 
   it('is no stencil where the answer carries none', async () => {
-    answers({ refusal: 'REFUSAL_NOT_A_STENCIL' })
+    replyWith({ refusal: 'REFUSAL_NOT_A_STENCIL' })
 
     expect((await cards.readStencil('Notes.md')).stencil).toBeNull()
   })
 
   it('is written with its fields and its faces', async () => {
-    answers({ at: { path: 'Word.md', size: '12', mtime: '34' } })
+    replyWith({ at: { path: 'Word.md', size: '12', mtime: '34' } })
 
     const answer = await cards.writeStencil(
       'Word.md',
@@ -249,7 +249,7 @@ describe('a stencil', () => {
 
 describe('renaming a field', () => {
   it('counts what it reached and names what it did not', async () => {
-    answers({
+    replyWith({
       decks: ['Words.md', 'Roots.md'],
       cards: 12,
       notWritten: [{ path: 'Old.md', problem: { fault: 'FAULT_FIELD_NOT_RENAMED', text: 'Front' } }],
@@ -267,7 +267,7 @@ describe('renaming a field', () => {
   })
 
   it('leaves a deck it could not read carrying nothing to say', async () => {
-    answers({ decks: [], cards: 0, notWritten: [{ path: 'Old.md' }] })
+    replyWith({ decks: [], cards: 0, notWritten: [{ path: 'Old.md' }] })
 
     expect((await cards.renameField('Word.md', 'Front', 'Face', null)).notWritten).toEqual([
       { path: 'Old.md', text: '' },

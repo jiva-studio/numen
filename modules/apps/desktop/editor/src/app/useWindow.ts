@@ -11,7 +11,7 @@ import { useWindowTabs } from '@/entities/tab'
 import { messageLog } from '@/shared/notices/messages'
 import { createMediaTypeProbe } from '@/entities/media'
 import { WORDS as words } from '@/shared/words'
-import { AGENT, FILES, PLEX, begun } from '@/entities/tab'
+import { AGENT, FILES, PLEX, createWorkspace } from '@/entities/tab'
 
 import { useNoteEditors } from './useNoteEditors'
 import { useSettings } from './useSettings'
@@ -48,14 +48,14 @@ export const useWindow = () => {
       editing.decks.changed(paths, renamed)
       editing.stencils.changed(paths, renamed)
       editing.schedules.changed(paths, renamed)
-      commandsModule.commands.follows(renamed)
+      commandsModule.commands.applyRenames(renamed)
       await kinds.files.refreshChangedPaths(paths, renamed)
       await kinds.plexes.again(renamed)
     },
-    drawing: editing.changes.told,
+    drawing: editing.changes.reportChange,
     wanted: (path) => kinds.plexes.travel(path),
     reads: (path, spans) => void tabOpeners.opensAt(path, spans),
-    reloads: () => vaultsModule.reloads(),
+    reloads: () => vaultsModule.reload(),
   })
 
   const settings = useSettings({
@@ -63,7 +63,7 @@ export const useWindow = () => {
     words,
     log,
     held,
-    onSizeChanged: () => editing.noted.measures(),
+    onSizeChanged: () => editing.noted.measureAll(),
   })
 
   const vaultsModule = useVaults({
@@ -85,7 +85,7 @@ export const useWindow = () => {
   const where = (): CommandTarget => {
     const front = held.handle.front()
     const tab = front?.id ?? ''
-    const on = front && held.heldIn(tab)?.kind.over?.(front.state)
+    const on = front && held.getTab(tab)?.kind.over?.(front.state)
     const file = on?.file ?? ''
     return {
       tab,
@@ -129,7 +129,7 @@ export const useWindow = () => {
   const knows: NoteLookup = {
     called: (path) => {
       const heldId = editing.reached.holding(path)
-      return heldId === null ? kinds.plexes.names(path) : editing.getTitle(heldId)
+      return heldId === null ? kinds.plexes.getName(path) : editing.getTitle(heldId)
     },
     holding: (path) => editing.reached.holding(path),
   }
@@ -158,7 +158,7 @@ export const useWindow = () => {
     making: editing.making,
     made: kinds.made,
     shown: vaultsModule.shown,
-    reloads: vaultsModule.reloads,
+    reloads: vaultsModule.reload,
     loadArtifactStates: vaultsModule.loadArtifactStates,
     reached: editing.reached,
     opensPreset,
@@ -178,12 +178,12 @@ export const useWindow = () => {
     if (!held.shut(id)) hold?.()
   }
 
-  const starts = async () => {
+  const startLayout = async () => {
     if (!vaultsModule.shown.value.id) return
     const plex = await held.opens(PLEX)
     const talk = await held.opens(AGENT)
     const tree = await held.opens(FILES)
-    layout.value = begun(plex, talk, tree)
+    layout.value = createWorkspace(plex, talk, tree)
   }
 
   useAppHotkeys(commandsModule.asked)
@@ -191,7 +191,7 @@ export const useWindow = () => {
   useAppBootstrap({
     loadVaults: () => vaultsModule.loadVaults(),
     startSettings: () => settings.start(),
-    startLayout: starts,
+    startLayout,
     startWindow: () => window.start(),
     startEditing: () => void editing.going.start(),
     closeWindow: () => window.close(),

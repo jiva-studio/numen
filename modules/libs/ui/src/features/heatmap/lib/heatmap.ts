@@ -124,7 +124,7 @@ export function days(
   const behind = new Date(last)
   behind.setDate(behind.getDate() - (columns * ROWS - 1))
 
-  const opens = monday(began(did, due, now))
+  const opens = monday(getFirstDay(did, due, now))
   const first = opens > behind ? opens : behind
 
   for (let at = 0; at < columns * ROWS; at += 1) {
@@ -150,7 +150,7 @@ export function days(
  * The day a person's history begins, or today where they have none. A day still
  * to come counts: a vault whose cards are all ahead has a beginning too.
  */
-function began(
+function getFirstDay(
   did: ReadonlyMap<string, unknown>,
   due: ReadonlyMap<string, unknown>,
   now: Date,

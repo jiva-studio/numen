@@ -10,7 +10,7 @@ import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref } from 'vue'
 import Switch from './Switch.vue'
 import { lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 const UNBROKEN =
   'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
@@ -92,7 +92,7 @@ export const Dark: Story = {
   globals: DARK,
   args: { on: false },
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const control = getSwitch(canvasElement)
     const off = getComputedStyle(control).backgroundColor
 

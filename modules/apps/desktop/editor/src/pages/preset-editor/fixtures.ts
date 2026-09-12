@@ -138,7 +138,7 @@ const tabAt = (
   return { state, done }
 }
 
-const drawn = (
+const mountPresetTab = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   waiting = true,
@@ -149,4 +149,4 @@ const drawn = (
 }
 
 
-export { getCounts, curve, drawn, heights, point, rows, tabAt }
+export { getCounts, curve, mountPresetTab, heights, point, rows, tabAt }

@@ -70,7 +70,7 @@ const handleKey = (event: KeyboardEvent): boolean => {
 /** Where the hand went down, while it is down. */
 let hand: number | undefined
 
-const took = (event: PointerEvent) => {
+const onPointerDown = (event: PointerEvent) => {
   hand = event.button === 0 ? event.clientX : undefined
 }
 
@@ -143,7 +143,7 @@ defineExpose({
         class="book__area h-full overflow-hidden"
         role="region"
         :aria-label="words.pages"
-        @pointerdown="took"
+        @pointerdown="onPointerDown"
         @pointerup="letGo"
       >
         <!-- The markup reaches this component already measured against what may

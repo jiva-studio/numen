@@ -6,13 +6,13 @@ import type { StencilSummary, VaultCard } from '@/entities/deck'
 import type { BufferDeck } from '../types'
 import { serializeBufferCardsToVaultCards, serializeBufferSectionsToVaultSections } from './serialize'
 
-export const drawnSectionsOf = (deck: BufferDeck): readonly DeckSection[] =>
+export const sectionsOf = (deck: BufferDeck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
 
 /**
  * The cards as the grid draws them, each under the stencil its wikilink resolves to.
  */
-export const drawnOf = (deck: BufferDeck, offers: readonly StencilSummary[]): readonly DeckCard[] => {
+export const cardsOf = (deck: BufferDeck, offers: readonly StencilSummary[]): readonly DeckCard[] => {
   const titles = new Map(offers.map((offer) => [offer.path, offer.title]))
   return deck.cards.map((card) => ({
     id: card.id,

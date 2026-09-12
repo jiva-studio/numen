@@ -38,7 +38,7 @@ export function useStencilTabs(
     (id, field, name) => void wire.renameField(store.where(id), field, name, store.changed),
   )
 
-  const held = (id: string): StencilTabState => {
+  const createStencilTabState = (id: string): StencilTabState => {
     const closeTab = (tab: string) => {
       const path = store.where(id)
       void store.shut(id).then((gone) => {
@@ -66,7 +66,7 @@ export function useStencilTabs(
   const getTitle = (path: string): string => wire.getTitle(path) || fileOf(path)
 
   /** The tab holding a stencil lets go of it, wherever the window draws it. */
-  const shuts = (id: string): void => {
+  const closeTab = (id: string): void => {
     const tab = handle.each<StencilTabState>(STENCIL).find((one) => one.state.id === id)
     tab?.state.close(tab.id)
   }
@@ -78,7 +78,7 @@ export function useStencilTabs(
     called: (id) => getTitle(store.where(id)),
     asking: (id) => store.stale(id) !== null,
     settles: (id) => store.settles(id),
-    shuts,
+    shuts: closeTab,
     holding: (path) => store.all().find((id) => store.where(id) === path) ?? null,
   }
 
@@ -97,7 +97,6 @@ export function useStencilTabs(
     pendingTabPaths.set(id, path)
     return id
   }
-  const mints = getOrCreateTabId
 
   const kind: TabKind<StencilTabState, typeof STENCIL> = {
     kind: STENCIL,
@@ -106,7 +105,7 @@ export function useStencilTabs(
       store.open(id, path)
       pendingTabIds.delete(path)
       pendingTabPaths.delete(id)
-      return held(id)
+      return createStencilTabState(id)
     },
     called: (one) => getTitle(store.where(one.id)),
     marked: (one) => markOf(one.shown.value.state),
@@ -124,7 +123,7 @@ export function useStencilTabs(
   }
 
   const openStencil = (path: string, title = '', showing: PlexDestination = 'here'): void => {
-    const id = mints(path)
+    const id = getOrCreateTabId(path)
     if (title) wire.setTitle(path, title)
     void (showing === 'beside' ? handle.beside(STENCIL, id) : handle.opens(STENCIL, id))
   }
@@ -138,7 +137,7 @@ export function useStencilTabs(
 
   return {
     kind,
-    held,
+    createStencilTabState,
     changed: applyPathChanges,
     called: getTitle,
     kept,

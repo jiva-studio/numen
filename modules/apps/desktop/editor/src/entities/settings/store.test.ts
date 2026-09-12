@@ -83,8 +83,10 @@ describe('the models a setting offers', () => {
   it('are the ones read from that setting, and no others', async () => {
     const { kept } = createStore('{}')
     await kept.start()
-    expect(kept.offers(['agent', 'claude', 'model']).map((one) => one.name)).toStrictEqual(['opus'])
-    expect(kept.offers(['agent', 'use'])).toStrictEqual([])
+    expect(kept.getModelsAt(['agent', 'claude', 'model']).map((one) => one.name)).toStrictEqual([
+      'opus',
+    ])
+    expect(kept.getModelsAt(['agent', 'use'])).toStrictEqual([])
   })
 })
 
@@ -97,7 +99,7 @@ describe('a setting written', () => {
 
   it('asks nothing of the vault where there is nothing to write', async () => {
     const { kept, asked } = createStore('{}')
-    await kept.chooses([])
+    await kept.writeSettings([])
     expect(asked).toStrictEqual([])
   })
 

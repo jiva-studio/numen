@@ -78,7 +78,7 @@ const { default: App } = await import('./App.vue')
 const { Decks } = await import('@/pages/decks')
 
 /** The window drawn, with the vaults counted and on the screen. */
-const drawn = async () => {
+const mountWindow = async () => {
   const window = mount(App, { attachTo: document.body })
   windows.push(window)
   await settle()
@@ -114,7 +114,7 @@ const getOpenVault = (window: VueWrapper): string => {
 
 describe('a letter pressed on the vaults', () => {
   it('opens the vault standing at it', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     await press('b')
 
@@ -122,7 +122,7 @@ describe('a letter pressed on the vaults', () => {
   })
 
   it('opens the first of them with the first letter of the alphabet', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     await press('a')
 
@@ -130,7 +130,7 @@ describe('a letter pressed on the vaults', () => {
   })
 
   it('opens nothing where no vault stands at the letter', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     await press('c')
 
@@ -138,7 +138,7 @@ describe('a letter pressed on the vaults', () => {
   })
 
   it('opens nothing where the letter is held with the overlay key', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     await press('a', { ctrlKey: true })
 
@@ -152,7 +152,7 @@ describe('a letter pressed on the vaults', () => {
 describe('a letter pressed on the decks', () => {
   /** The window on the decks of the vault standing at this letter. */
   const on = async (vault: string) => {
-    const window = await drawn()
+    const window = await mountWindow()
     await press(vault)
     return window
   }

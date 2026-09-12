@@ -220,12 +220,12 @@ export const idle = (curve: Curve): IdleReason => {
   if (!curve.honest) return ''
   if (curve.decks === 0) return 'unpointed'
   if (curve.cards === 0) return 'noCards'
-  if (curve.unbegun === curve.cards && asksNothing(curve)) return 'beginsNothing'
+  if (curve.unbegun === curve.cards && hasNoReviews(curve)) return 'beginsNothing'
   return ''
 }
 
 /** Whether no place of the range asks for a card. A range with no place says nothing. */
-const asksNothing = (curve: Curve): boolean =>
+const hasNoReviews = (curve: Curve): boolean =>
   curve.at.length > 0 && curve.at.every((one) => one.reviews === 0)
 
 /**

@@ -294,7 +294,7 @@ const rowIn = (canvas: HTMLElement, row: string) => {
   return held
 }
 
-const drawn = (canvas: HTMLElement) =>
+const getDrawnRows = (canvas: HTMLElement) =>
   [...canvas.querySelectorAll('[data-tree-row]')].map((row) => row.getAttribute('data-tree-row'))
 
 /** The rows the tree announces as selected, in the order they are drawn. */
@@ -326,7 +326,7 @@ export const WalksWithTheKeyboard: Story = {
     rowIn(canvasElement, 'plans').focus()
 
     await userEvent.keyboard('{ArrowRight}')
-    await expect(drawn(canvasElement)).toContain('friday')
+    await expect(getDrawnRows(canvasElement)).toContain('friday')
     await expect(rowIn(canvasElement, 'plans').getAttribute('aria-expanded')).toBe('true')
 
     await userEvent.keyboard('{ArrowRight}')
@@ -334,7 +334,7 @@ export const WalksWithTheKeyboard: Story = {
     await expect(rowIn(canvasElement, 'friday').getAttribute('aria-selected')).toBe('true')
 
     await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
-    await expect(drawn(canvasElement)).not.toContain('friday')
+    await expect(getDrawnRows(canvasElement)).not.toContain('friday')
     await expect(document.activeElement).toBe(rowIn(canvasElement, 'plans'))
   },
 }
@@ -346,7 +346,7 @@ export const DragsIntoARow: Story = {
     await dragTo(rowIn(canvasElement, 'loose'), middleOf(rowIn(canvasElement, 'work')))
 
     await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
-    await expect(drawn(canvasElement)).toStrictEqual(['work', 'plans', 'notes', 'loose', 'empty'])
+    await expect(getDrawnRows(canvasElement)).toStrictEqual(['work', 'plans', 'notes', 'loose', 'empty'])
   },
 }
 
@@ -361,7 +361,7 @@ export const DragsBetweenRows: Story = {
       clientY: first.y + 1,
     })
 
-    await expect(drawn(canvasElement)).toStrictEqual(['loose', 'work', 'plans', 'notes', 'empty'])
+    await expect(getDrawnRows(canvasElement)).toStrictEqual(['loose', 'work', 'plans', 'notes', 'empty'])
     await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('1')
   },
 }
@@ -427,7 +427,7 @@ export const DragsSeveralIntoARow: Story = {
   play: async ({ canvasElement }) => {
     await dragTo(rowIn(canvasElement, 'loose'), middleOf(rowIn(canvasElement, 'work')))
 
-    await expect(drawn(canvasElement)).toStrictEqual(['work', 'plans', 'notes', 'loose', 'empty'])
+    await expect(getDrawnRows(canvasElement)).toStrictEqual(['work', 'plans', 'notes', 'loose', 'empty'])
     await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
     await expect(canvasElement.querySelector('.tree__dragged')).toBeNull()
   },
@@ -437,11 +437,11 @@ export const DragsSeveralIntoARow: Story = {
 export const RefusesWhatItHolds: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const before = drawn(canvasElement)
+    const before = getDrawnRows(canvasElement)
 
     await dragTo(rowIn(canvasElement, 'work'), middleOf(rowIn(canvasElement, 'plans')))
 
-    await expect(drawn(canvasElement)).toStrictEqual(before)
+    await expect(getDrawnRows(canvasElement)).toStrictEqual(before)
     await expect(rowIn(canvasElement, 'work').getAttribute('aria-level')).toBe('1')
   },
 }

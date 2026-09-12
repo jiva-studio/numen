@@ -14,7 +14,7 @@ import {
   isTextForValue,
   stepBy,
   stepForKey,
-  written,
+  formatNumber,
   type Bounds,
 } from './number'
 
@@ -127,9 +127,9 @@ describe('the places a step lays', () => {
 
 describe('how a number is written back', () => {
   it('writes the number, and nothing where there is none', () => {
-    expect(written(20)).toBe('20')
-    expect(written(0)).toBe('0')
-    expect(written(null)).toBe('')
+    expect(formatNumber(20)).toBe('20')
+    expect(formatNumber(0)).toBe('0')
+    expect(formatNumber(null)).toBe('')
   })
 })
 

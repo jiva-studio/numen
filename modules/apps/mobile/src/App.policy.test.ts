@@ -54,10 +54,10 @@ function allows(directive: string, address: string): boolean {
 }
 
 /** Every file the page is built from. Its tests are not built into it. */
-function built(from: string): string[] {
+function readSources(from: string): string[] {
   return readdirSync(from, { withFileTypes: true }).flatMap((entry) => {
     const path = join(from, entry.name)
-    if (entry.isDirectory()) return built(path)
+    if (entry.isDirectory()) return readSources(path)
     if (/\.test\.ts$/.test(entry.name)) return []
     return /\.(ts|vue)$/.test(entry.name) ? [readFileSync(path, 'utf8')] : []
   })
@@ -139,7 +139,7 @@ describe('what the page asks for', () => {
   })
 
   it('names no host but the core in what it is built from', () => {
-    const named = built(join(here, 'src')).flatMap((source) =>
+    const named = readSources(join(here, 'src')).flatMap((source) =>
       [...source.matchAll(/https?:\/\/([^:/'"`\s$]+)/g)].map((at) => at[1]),
     )
     expect([...new Set(named)]).toStrictEqual(['127.0.0.1'])

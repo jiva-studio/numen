@@ -13,7 +13,7 @@ import { getDeclaredFields, type Half } from '../../../lib/order'
 import { faceRows, type FaceRow, type StencilFace } from '../../../lib/stencil'
 import { sampleValues } from '../../../lib/fill'
 import { hoverOver, lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 interface Corpus {
   readonly face: StencilFace
@@ -493,7 +493,7 @@ export const WhatIsWrongWithIt: Story = {
 export const Dark: Story = {
   globals: DARK,
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const chip = within(canvasElement).getByRole('button', { name: 'Insert: Height' })
 
     // The ink the chip is read by stands above the ground it stands on, which

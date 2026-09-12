@@ -64,7 +64,7 @@ const APPEARANCE: Appearance = {
 }
 
 /** A moment for whatever was asked of the application to come back. */
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 /** The keyboard stood on a row for longer than the window holds a size. */
 const wait = () => new Promise((done) => setTimeout(done, 200))
@@ -99,7 +99,7 @@ const folder = () => {
     /** These themes changed, and the window has answered for them. */
     says: async (...names: readonly string[]) => {
       wake?.(names)
-      await settles()
+      await settle()
     },
   }
 }
@@ -157,7 +157,7 @@ const window = (over: Partial<Appearance> = {}, served = SERVED) => {
 const startWindow = async (over: Partial<Appearance> = {}, served = SERVED) => {
   const one = window(over, served)
   await one.worn.start()
-  await settles()
+  await settle()
   return one
 }
 
@@ -174,7 +174,7 @@ describe('the page as it was served', () => {
     const before = [...one.sheet.head.querySelectorAll('style')]
 
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
 
     expect([...one.sheet.head.querySelectorAll('style')]).toStrictEqual(before)
     expect(one.sheet.head.lastElementChild).toBe(before[2])
@@ -191,7 +191,7 @@ describe('the page as it was served', () => {
     const one = await startWindow({}, ':root { color-scheme: dark; --numen-text-scale: 1.3 }')
 
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([
       PAIR,
@@ -218,7 +218,7 @@ describe('the page as it was served', () => {
     await bare.start()
 
     bare.previewItem('mine:sea')
-    await settles()
+    await settle()
 
     expect(getHeadStyles(sheet)).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }'])
   })
@@ -229,7 +229,7 @@ describe('the theme the keyboard is standing on', () => {
     const one = await startWindow()
 
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
 
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
     expect(one.asked).toStrictEqual(['mine:sea'])
@@ -239,9 +239,9 @@ describe('the theme the keyboard is standing on', () => {
     const one = await startWindow()
 
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
     one.worn.previewItem('')
-    await settles()
+    await settle()
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
     // The theme the page arrived in is not read for again.
@@ -252,11 +252,11 @@ describe('the theme the keyboard is standing on', () => {
     const one = await startWindow()
 
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
     one.worn.previewItem('preset:dracula')
-    await settles()
+    await settle()
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
 
     expect(one.asked).toStrictEqual(['mine:sea', 'preset:dracula'])
   })
@@ -267,7 +267,7 @@ describe('the theme the keyboard is standing on', () => {
     one.refuses('the file is gone')
 
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
 
     expect(one.told.at(-1)).toStrictEqual({ text: words.unworn, kind: 'error' })
     expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
@@ -278,7 +278,7 @@ describe('the theme the keyboard is standing on', () => {
 
     one.worn.previewItem('preset:dracula')
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
 
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
   })
@@ -289,7 +289,7 @@ describe('which half of a pair the tokens are read as', () => {
     const one = await startWindow()
 
     one.worn.previewItem('mode:dark')
-    await settles()
+    await settle()
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([
       ':root { color-scheme: dark; }',
@@ -302,9 +302,9 @@ describe('which half of a pair the tokens are read as', () => {
     const one = await startWindow({ mode: 'light' })
 
     one.worn.previewItem('mode:dark')
-    await settles()
+    await settle()
     one.worn.previewItem('')
-    await settles()
+    await settle()
 
     expect(getHeadStyles(one.sheet).at(0)).toBe(':root { color-scheme: light; }')
   })
@@ -318,7 +318,7 @@ describe('the themes the step offers', () => {
   it('draws the themes in the two groups they come off, and nothing else', async () => {
     const one = await startWindow()
 
-    expect(getGroupIds(one.worn.offers())).toStrictEqual({
+    expect(getGroupIds(one.worn.getThemeGroups())).toStrictEqual({
       shipping: ['preset:numen', 'preset:dracula'],
       owned: ['mine:sea'],
     })
@@ -328,24 +328,24 @@ describe('the themes the step offers', () => {
     const one = await startWindow({ applied: 'preset:dracula' })
     const other = await startWindow({ applied: 'mine:sea' })
 
-    expect(getGroupIds(one.worn.offers())).toStrictEqual({
+    expect(getGroupIds(one.worn.getThemeGroups())).toStrictEqual({
       shipping: ['preset:dracula', 'preset:numen'],
       owned: ['mine:sea'],
     })
-    expect(other.worn.offers().map((group) => group.id)).toStrictEqual(['owned', 'shipping'])
+    expect(other.worn.getThemeGroups().map((group) => group.id)).toStrictEqual(['owned', 'shipping'])
   })
 
   it('says on a row only what is true of that row: that it is the one worn', async () => {
     const one = await startWindow()
 
-    const rows = one.worn.offers().flatMap((group) => group.items)
+    const rows = one.worn.getThemeGroups().flatMap((group) => group.items)
     expect(rows.map((row) => row.detail)).toStrictEqual([words.current, undefined, undefined])
   })
 
   it('says where a person’s own themes go while they have none', async () => {
     const one = await startWindow({ themes: APPEARANCE.themes.slice(0, 2) })
 
-    const own = one.worn.offers().find((group) => group.id === 'owned')
+    const own = one.worn.getThemeGroups().find((group) => group.id === 'owned')
     expect(own?.items).toStrictEqual([])
     expect(own?.silence).toBe(words.noneOwned)
   })
@@ -367,7 +367,7 @@ describe('the three halves the step offers', () => {
     const one = await startWindow()
 
     one.worn.previewItem('preset:dracula')
-    await settles()
+    await settle()
 
     expect(rows(one).map((row) => row.disabled)).toStrictEqual([true, true, true])
     expect(rows(one).map((row) => row.detail)).toStrictEqual([
@@ -381,9 +381,9 @@ describe('the three halves the step offers', () => {
     const one = await startWindow()
 
     one.worn.previewItem('preset:dracula')
-    await settles()
+    await settle()
     one.worn.previewItem('')
-    await settles()
+    await settle()
 
     expect(rows(one).map((row) => row.disabled)).toStrictEqual([undefined, undefined, undefined])
   })
@@ -479,9 +479,9 @@ describe('the number a person types at a size', () => {
   it('is taken with the sign a person reads on the rows, and with none', async () => {
     const one = await startWindow()
 
-    const titles = (typed: string) => rows(one, INTERFACE_SCALE, typed).map((row) => row.title)
-    expect(titles('137%')).toStrictEqual(titles('137'))
-    expect(titles(' 137 ')).toStrictEqual(titles('137'))
+    const getTitles = (typed: string) => rows(one, INTERFACE_SCALE, typed).map((row) => row.title)
+    expect(getTitles('137%')).toStrictEqual(getTitles('137'))
+    expect(getTitles(' 137 ')).toStrictEqual(getTitles('137'))
   })
 
   it('is not offered at all where the range does not reach it', async () => {
@@ -509,7 +509,7 @@ describe('the number a person types at a size', () => {
 
     one.worn.previewItem('interfaceScale:1.37')
     await wait()
-    await one.worn.chooses('interfaceScale:1.37')
+    await one.worn.chooseItem('interfaceScale:1.37')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.37/1'])
     expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }')
@@ -521,9 +521,9 @@ describe('the size the keyboard is standing on', () => {
     const one = await startWindow()
 
     one.worn.previewItem('interfaceScale:1.5')
-    await settles()
+    await settle()
     one.worn.previewItem('interfaceScale:1.75')
-    await settles()
+    await settle()
 
     expect(sizes(one.sheet)).toBe(SIZED)
   })
@@ -554,7 +554,7 @@ describe('the size the keyboard is standing on', () => {
     await wait()
 
     one.worn.previewItem('')
-    await settles()
+    await settle()
 
     expect(sizes(one.sheet)).toBe(SIZED)
     expect(one.chosen).toStrictEqual([])
@@ -575,7 +575,7 @@ describe('the size that was chosen', () => {
     const one = await startWindow()
     one.worn.previewItem('interfaceScale:1.25')
 
-    await one.worn.chooses('interfaceScale:1.5')
+    await one.worn.chooseItem('interfaceScale:1.5')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.5/1'])
     expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
@@ -584,7 +584,7 @@ describe('the size that was chosen', () => {
   it('is written beside the other size, which stands where it was', async () => {
     const one = await startWindow({ sizes: { interfaceScale: 1.25, textScale: 1 } })
 
-    await one.worn.chooses('textScale:1.75')
+    await one.worn.chooseItem('textScale:1.75')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.25/1.75'])
     expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.25; --numen-text-scale: 1.75; }')
@@ -594,8 +594,8 @@ describe('the size that was chosen', () => {
     const one = await startWindow()
     one.fails('appearance.interface_scale is 3, which is outside 0.8 to 2')
 
-    await one.worn.chooses('interfaceScale:2')
-    await settles()
+    await one.worn.chooseItem('interfaceScale:2')
+    await settle()
 
     expect(one.told.at(-1)).toStrictEqual({
       text: 'appearance.interface_scale is 3, which is outside 0.8 to 2',
@@ -607,7 +607,7 @@ describe('the size that was chosen', () => {
   it('is nothing at all where the range the window holds does not reach it', async () => {
     const one = await startWindow()
 
-    await one.worn.chooses('interfaceScale:3')
+    await one.worn.chooseItem('interfaceScale:3')
     one.worn.previewItem('textScale:3')
     await wait()
 
@@ -620,7 +620,7 @@ describe('the row that was chosen', () => {
   it('is written into the settings, and is what the window wears from then on', async () => {
     const one = await startWindow()
 
-    await one.worn.chooses('mine:sea')
+    await one.worn.chooseItem('mine:sea')
 
     expect(one.chosen).toStrictEqual(['mine:sea system 1/1'])
     expect(one.worn.applied.value).toBe('mine:sea')
@@ -630,7 +630,7 @@ describe('the row that was chosen', () => {
   it('is the mode, written beside the theme the settings already name', async () => {
     const one = await startWindow()
 
-    await one.worn.chooses('mode:dark')
+    await one.worn.chooseItem('mode:dark')
 
     expect(one.chosen).toStrictEqual(['preset:numen dark 1/1'])
     expect(one.worn.mode.value).toBe('dark')
@@ -645,7 +645,7 @@ describe('the row that was chosen', () => {
     const one = await startWindow()
     one.fails('the settings could not be written')
 
-    await one.worn.chooses('mine:sea')
+    await one.worn.chooseItem('mine:sea')
 
     expect(one.told.at(-1)).toStrictEqual({
       text: 'the settings could not be written',
@@ -658,7 +658,7 @@ describe('the row that was chosen', () => {
   it('is nothing at all where the window holds no such row', async () => {
     const one = await startWindow()
 
-    await one.worn.chooses('mine:tide')
+    await one.worn.chooseItem('mine:tide')
 
     expect(one.chosen).toStrictEqual([])
     expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
@@ -669,7 +669,7 @@ describe('the person editing their own theme file', () => {
   it('is followed: the file is read again, and the window wears what it now says', async () => {
     const one = await startWindow()
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
 
     one.writes('mine:sea', ':root { --numen-surface: #001 }')
     await one.says('mine:sea')
@@ -690,7 +690,7 @@ describe('the person editing their own theme file', () => {
   it('leaves a theme the folder said nothing about where it was', async () => {
     const one = await startWindow()
     one.worn.previewItem('mine:sea')
-    await settles()
+    await settle()
 
     await one.says('mine:tide')
 
@@ -705,7 +705,7 @@ describe('the person editing their own theme file', () => {
     await one.says('mine:sea')
 
     expect(one.listed()).toBe(2)
-    expect(one.worn.offers().flatMap((group) => group.items.map((row) => row.id))).toStrictEqual([
+    expect(one.worn.getThemeGroups().flatMap((group) => group.items.map((row) => row.id))).toStrictEqual([
       'preset:numen',
       'preset:dracula',
     ])

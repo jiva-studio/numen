@@ -132,7 +132,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /** One token's length, in the pixels the page draws it at. */
-const drawn = (token: Token): number => {
+const measureToken = (token: Token): number => {
   const probe = document.createElement('div')
   probe.style.position = 'fixed'
   probe.style.visibility = 'hidden'
@@ -171,7 +171,7 @@ const wear = (drawnAt: string, setAt: string) => {
  */
 const each = async (tokens: readonly Token[], times: number) => {
   for (const token of tokens) {
-    await expect(drawn(token), token).toBeCloseTo(AS_DESIGNED[token] * times, 1)
+    await expect(measureToken(token), token).toBeCloseTo(AS_DESIGNED[token] * times, 1)
   }
 }
 

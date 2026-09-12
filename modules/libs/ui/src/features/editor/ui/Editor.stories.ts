@@ -83,7 +83,7 @@ const EVERY = [...CONCEALED, ...REDRAWN]
 const STEADY = `${EVERY.join('\n\n')}\n\nSomething well away from all of it.\n`
 
 /** Which line a construct is written on, and the line nothing is drawn on. */
-const written = (text: string) => EVERY.indexOf(text) * 2 + 1
+const getLineOf = (text: string) => EVERY.indexOf(text) * 2 + 1
 const PARKED = EVERY.length * 2 + 1
 
 /* A heading is set at the tightest line in the editor, and how far a letter
@@ -160,7 +160,7 @@ export const Steady: Story = {
       await nextFrame()
 
       for (const text of CONCEALED) {
-        const line = written(text)
+        const line = getLineOf(text)
         await put(PARKED, 0)
         const concealed = heightOf(line)
         await put(line, 2)
@@ -172,7 +172,7 @@ export const Steady: Story = {
       }
 
       for (const text of REDRAWN) {
-        const line = written(text)
+        const line = getLineOf(text)
         await put(PARKED, 0)
         const concealed = heightOf(line)
         await put(line, 2)
@@ -194,7 +194,7 @@ export const Steady: Story = {
         [TASK, 0],
         [TASK, 1],
       ] as const) {
-        const line = written(text)
+        const line = getLineOf(text)
         const spot = view.coordsAtPos(view.state.doc.line(line).from + column)
         const back = spot
           ? view.posAtCoords({ x: spot.left + 1, y: (spot.top + spot.bottom) / 2 })
@@ -639,7 +639,7 @@ export const Kept: Story = {
   }),
   play: async ({ canvasElement }) => {
     const view = viewOf(canvasElement)
-    const said = (what: string) =>
+    const getText = (what: string) =>
       (canvasElement.querySelector(`[${what}]`) as HTMLElement).textContent?.trim()
 
     await userEvent.click(view.contentDOM)
@@ -649,8 +649,8 @@ export const Kept: Story = {
     await userEvent.keyboard('{Control>}s{/Control}')
     await nextFrame()
 
-    await expect(said('data-asked')).toBe('1')
-    await expect(said('data-answered')).toBe('answered')
+    await expect(getText('data-asked')).toBe('1')
+    await expect(getText('data-answered')).toBe('answered')
     await expect(view.state.doc.toString()).toBe(MARKED_UP)
   },
 }

@@ -46,7 +46,7 @@ const share = (spent: number, budget: number): number => (budget > 0 ? spent / b
  * Whether a preset's day is spent, which is what leaves every deck under it
  * nothing more to ask however much those decks still hold.
  */
-export const spent = (one: Preset): boolean => through(one) >= 1
+export const isSpent = (one: Preset): boolean => through(one) >= 1
 
 /**
  * How much of a deck stands learned, as a share of its card faces, and null for

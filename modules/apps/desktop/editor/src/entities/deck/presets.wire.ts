@@ -28,8 +28,8 @@ import type {
 
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {
-  read: async (path) => took(await asking.readPreset({ path })),
-  scheduling: async (deck) => took(await asking.getDeckPreset({ deck })),
+  read: async (path) => parseRead(await asking.readPreset({ path })),
+  scheduling: async (deck) => parseRead(await asking.getDeckPreset({ deck })),
   list: async () =>
     (await asking.listPresets({})).presets.map((one) => ({ path: one.path, title: one.title })),
   makes: async (title, folder) => {
@@ -47,25 +47,25 @@ export const presets: Presets = {
   write: async (path, settings, seen) => {
     const answer = await asking.writePreset({
       path,
-      settings: sent(settings),
+      settings: toSettingsMessage(settings),
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
     return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   curve: async (path, settings) => {
-    const answer = await asking.computeCurve({ path, settings: sent(settings) })
+    const answer = await asking.computeCurve({ path, settings: toSettingsMessage(settings) })
     return parseCurve(answer.curve)
   },
 }
 
 /** What a read answered, whichever of the two asked it. */
-const took = (answer: {
+const parseRead = (answer: {
   preset?: PresetMessage | undefined
   refusal?: number | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   bounds?: SettingsBoundsMessage | undefined
 }): ReadResult => ({
-  preset: answer.preset ? held(answer.preset) : null,
+  preset: answer.preset ? parsePreset(answer.preset) : null,
   error: errorIn(answer),
   at: stamp(answer.at) ?? '',
   bounds: parseSettingsBounds(answer.bounds),
@@ -89,7 +89,7 @@ const parseSettingsBounds = (said: SettingsBoundsMessage | undefined): SettingsB
 const parseBounds = (said: BoundsMessage): Bounds => ({ least: said.least, most: said.most })
 
 /** One preset as the window carries it. */
-const held = (one: PresetMessage): Preset => ({
+const parsePreset = (one: PresetMessage): Preset => ({
   path: one.path,
   title: one.title,
   settings: settingsOf(one.settings),
@@ -118,7 +118,7 @@ const settingsOf = (said: SettingsMessage | undefined): Settings =>
       }
 
 /** The settings in the shape the schema carries them. */
-const sent = (settings: Settings) => ({
+const toSettingsMessage = (settings: Settings) => ({
   goal: goalNames[settings.goal],
   byDate: settings.byDate,
   minutesADay: settings.minutesADay,

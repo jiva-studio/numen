@@ -2,7 +2,7 @@
 import { StopReason } from '@numen/protocol'
 import { dayOf, daysBetween, many, percent } from '@numen/ui'
 
-import { spent } from './lib/progress'
+import { isSpent } from './lib/progress'
 import type { Preset, Settings } from './types'
 
 /**
@@ -45,7 +45,7 @@ export const LEARNED = {
  */
 export const leftWords = (one: Preset): string => {
   if (one.cards > 0) return many(one.cards, 'card')
-  return spent(one) ? STOPPED.full : STOPPED.nothing
+  return isSpent(one) ? STOPPED.full : STOPPED.nothing
 }
 
 /**

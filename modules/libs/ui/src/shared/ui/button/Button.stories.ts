@@ -11,7 +11,7 @@ import { expect, waitFor, within } from 'storybook/test'
 import { Button } from '.'
 import type { ButtonVariants } from '.'
 import { hoverOver, lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 type Variant = NonNullable<ButtonVariants['variant']>
 
@@ -95,7 +95,7 @@ export const Disabled: Story = {
 export const Dark: Story = {
   globals: DARK,
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const canvas = within(canvasElement)
 
     // The way round the dark set is written: a filled button is dark on light

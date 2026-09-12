@@ -321,4 +321,4 @@ export const invocationOf = (
  * Whether what was typed asks for the commands: the field held nothing, and
  * what went into it is the one character that means them.
  */
-export const asksCommands = (was: string, now: string): boolean => was === '' && now === '>'
+export const isCommandsTyped = (was: string, now: string): boolean => was === '' && now === '>'

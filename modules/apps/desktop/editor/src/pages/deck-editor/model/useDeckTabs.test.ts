@@ -20,7 +20,7 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
 const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 // The two cards name one stencil two ways: by a path from the root, and by a
 // name carrying an alias. Both reach the file the vault says they reach.
@@ -224,9 +224,9 @@ const open = async (
   const held = useWindowTabs()
   const road = tabOpeners()
   const decks = useDeckTabs(one.core, one.presets, held.handle, road)
-  held.declares([decks.kind])
+  held.registerKinds([decks.kind])
   const id = await held.opens(DECK, path)
-  await settles()
+  await settle()
   const tab = held.handle.holds<DeckTabState>(DECK, id) as DeckTabState
   return { ...one, held, road, decks, id, tab }
 }
@@ -364,7 +364,7 @@ describe('a deck whose file moved past what was read', () => {
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
     tab.keepMine()
-    await settles()
+    await settle()
 
     expect(written).toHaveLength(2)
     expect(seen[1]).toBeNull()
@@ -376,7 +376,7 @@ describe('a deck whose file moved past what was read', () => {
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
     tab.takeFile()
-    await settles()
+    await settle()
 
     expect(reads()).toBe(2)
     expect(tab.shown.value.state).toBe('clean')
@@ -558,10 +558,10 @@ describe('the vault changing under the window', () => {
     const one = vault()
     const held = useWindowTabs()
     const decks = useDeckTabs(one.core, one.presets, held.handle, tabOpeners())
-    held.declares([decks.kind])
+    held.registerKinds([decks.kind])
 
     decks.changed(['Notes.md'])
-    await settles()
+    await settle()
 
     expect(one.listed()).toBe(0)
   })
@@ -570,7 +570,7 @@ describe('the vault changing under the window', () => {
     const { decks, listed } = await open()
 
     decks.changed(['Notes.md'])
-    await settles()
+    await settle()
 
     expect(listed()).toBe(2)
   })
@@ -600,7 +600,7 @@ describe('a deck read again under the window', () => {
     const was = drawing(one.tab)
 
     one.decks.changed(['Animals.md'])
-    await settles()
+    await settle()
 
     // Each of them the same thing, and not merely a thing that reads the same:
     // a card under the keyboard is redrawn by anything else.
@@ -617,7 +617,7 @@ describe('a deck read again under the window', () => {
     const second = one.tab.deck.value.cards[1]?.id ?? ''
 
     one.decks.changed(['Animals.md'])
-    await settles()
+    await settle()
 
     expect(one.tab.marks.value.at.get(second)).toStrictEqual(['a card under no stencil'])
   })
@@ -646,7 +646,7 @@ describe('a deck read again under the window', () => {
       },
     ])
     one.decks.changed(['Animals.md'])
-    await settles()
+    await settle()
 
     expect(one.tab.deck.value.cards.at(-1)?.id).toBe(made)
     expect(one.tab.deck.value.cards.at(-1)?.mark).toBe('w9s5jd2b1k')
@@ -675,7 +675,7 @@ describe('a deck read again under the window', () => {
       },
     ])
     one.decks.changed(['Animals.md'])
-    await settles()
+    await settle()
 
     expect(one.tab.deck.value.sections[0]?.id).toBe(stood)
   })
@@ -691,7 +691,7 @@ describe('a deck read again under the window', () => {
 
     one.holds(CARDS.map((card, at) => (at === 0 ? { ...card, heading: 'Llama and yak' } : card)))
     one.decks.changed(['Animals.md'])
-    await settles()
+    await settle()
 
     expect(one.tab.deck.value.cards[0]?.heading).toBe('Llama and yak')
     expect(one.tab.deck.value.cards[0]?.id).toBe(stood)
@@ -717,7 +717,7 @@ describe('a deck read again under the window', () => {
       },
     ])
     one.decks.changed(['Animals.md'])
-    await settles()
+    await settle()
 
     expect(one.tab.deck.value.cards).toHaveLength(CARDS.length + 1)
     expect(one.tab.deck.value.sections[0]?.id).toBe(stood)
@@ -747,7 +747,7 @@ describe('a deck read again under the window', () => {
       },
     ])
     one.decks.changed(['Animals.md'])
-    await settles()
+    await settle()
 
     expect(one.tab.deck.value.cards.at(-1)?.id).toBe(made)
   })
@@ -768,7 +768,7 @@ describe('a deck read again under the window', () => {
       },
     ])
     one.decks.changed(['Animals.md'])
-    await settles()
+    await settle()
 
     expect(one.tab.drawn.value.map((card) => card.id)).toStrictEqual(['w9s5jd2b1k'])
     expect(one.tab.deck.value).not.toBe(was.deck)
@@ -784,9 +784,9 @@ describe('a deck renamed under the window', () => {
     const one = await open()
 
     renameDeck(one)
-    await settles()
+    await settle()
     one.road.made('Beasts.md', '', 'deck')
-    await settles()
+    await settle()
 
     expect(one.decks.all()).toHaveLength(1)
     expect(one.held.handle.each(DECK)).toHaveLength(1)
@@ -826,7 +826,7 @@ describe('a deck whose tab has gone', () => {
     expect(one.decks.called('Animals.md')).toBe('Animals')
 
     one.held.shut(one.id)
-    await settles()
+    await settle()
 
     expect(one.decks.called('Animals.md')).toBe('Animals.md')
   })
@@ -855,7 +855,7 @@ describe('the stencils a listing did not answer with', () => {
     expect(one.tab.stencils.value).toStrictEqual([])
 
     one.decks.kind.shown?.(one.tab, one.id)
-    await settles()
+    await settle()
 
     expect(one.tab.stencils.value).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
   })
@@ -893,7 +893,7 @@ describe('the preset a deck is scheduled by', () => {
     const { tab, put } = await open()
 
     tab.setSchedule('Sanskrit.md')
-    await settles()
+    await settle()
 
     expect(put).toStrictEqual([{ deck: 'Animals.md', preset: 'Sanskrit.md', seen: 'read 1' }])
   })
@@ -903,7 +903,7 @@ describe('the preset a deck is scheduled by', () => {
     tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
     tab.setSchedule('Sanskrit.md')
-    await settles()
+    await settle()
 
     expect(written).toStrictEqual(['Animals.md Vicuña, Alpaca'])
     expect(put.map((one) => one.preset)).toStrictEqual(['Sanskrit.md'])
@@ -917,7 +917,7 @@ describe('the preset a deck is scheduled by', () => {
     const was = reads()
 
     tab.setSchedule('Sanskrit.md')
-    await settles()
+    await settle()
 
     expect(reads()).toBeGreaterThan(was)
     expect(tab.scheduled.value.path).toBe('Sanskrit.md')
@@ -927,7 +927,7 @@ describe('the preset a deck is scheduled by', () => {
     const { tab } = await open({ by: 'Sanskrit.md', notScheduled: 'notAPreset' })
 
     tab.setSchedule('presets/Slow.md')
-    await settles()
+    await settle()
 
     expect(tab.scheduled.value.errorMessage).toBe(words.notScheduled)
     expect(tab.scheduled.value.path).toBe('Sanskrit.md')
@@ -937,7 +937,7 @@ describe('the preset a deck is scheduled by', () => {
     const { tab } = await open({ schedulingChanged: true })
 
     tab.setSchedule('Sanskrit.md')
-    await settles()
+    await settle()
 
     expect(tab.scheduled.value.errorMessage).toBe(words.notScheduledChanged)
     expect(tab.scheduled.value.path).toBe('')

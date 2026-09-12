@@ -17,18 +17,18 @@ import { panesOf } from '@numen/ui'
 import {
   asked,
   cards,
-  drawn,
   layoutOf,
   listed,
+  mountWindow,
   paneKinds,
   said,
-  settles,
+  settle,
   tabsOf,
 } from '@/testing/window'
 
 describe('the window as it opens', () => {
   it('draws a plex in the room, and an agent in front of the files beside it', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     expect(paneKinds(window)).toStrictEqual([['plex'], ['agent', 'files']])
     expect(panesOf(layoutOf(window).root)[1]?.active).toMatch(/^agent:/)
@@ -38,7 +38,7 @@ describe('the window as it opens', () => {
   })
 
   it('leaves the person in the plex, which holds the greater share', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
     const root = layoutOf(window).root
 
     expect(layoutOf(window).focus).toBe('main')
@@ -46,7 +46,7 @@ describe('the window as it opens', () => {
   })
 
   it('hands the tree what the root of the vault holds', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     expect(
       (window.findComponent(Tree).props('rows') as readonly { id: string }[]).map((one) => one.id),
@@ -56,37 +56,37 @@ describe('the window as it opens', () => {
 
 describe('the window holding no tab', () => {
   /** Every tab closed, by the keystroke that closes the one in front. */
-  const closesEvery = async (window: VueWrapper) => {
+  const closeEveryTab = async (window: VueWrapper) => {
     for (let each = tabsOf(window).length; each > 0; each -= 1) {
       globalThis.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'W', ctrlKey: true, shiftKey: true, cancelable: true }),
       )
-      await settles()
+      await settle()
     }
   }
 
   it('opens on the welcome screen, holding nothing, while the list shows no vault', async () => {
     listed.showing = ''
 
-    const window = await drawn()
+    const window = await mountWindow()
 
     expect(tabsOf(window)).toStrictEqual([])
     expect(window.findComponent(WelcomePage).exists()).toBe(true)
   })
 
   it('comes to the same screen once every tab it opened with is closed', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
-    await closesEvery(window)
+    await closeEveryTab(window)
 
     expect(tabsOf(window)).toStrictEqual([])
     expect(window.findComponent(WelcomePage).exists()).toBe(true)
   })
 
   it('draws the vault the list is showing on it, said to be the one in front', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
-    await closesEvery(window)
+    await closeEveryTab(window)
 
     expect(window.findComponent(WelcomePage).props('vaults')).toStrictEqual([
       { id: 'physics', name: 'Physics', path: '/vaults/Physics', detail: 'Current' },
@@ -96,7 +96,7 @@ describe('the window holding no tab', () => {
   it('says in the corner that the vaults could not be listed, and draws none', async () => {
     said.listable = false
 
-    const window = await drawn()
+    const window = await mountWindow()
 
     expect(cards(window).join(' ')).toContain('The vaults could not be listed')
     expect(window.findComponent(WelcomePage).props('vaults')).toStrictEqual([])
@@ -111,13 +111,13 @@ describe('a letter pressed on the welcome screen', () => {
       { id: 'heat', name: 'Heat', path: '/vaults/Heat', missing: false },
     ]
     listed.showing = ''
-    return drawn()
+    return mountWindow()
   }
 
   const press = async (key: string, more: KeyboardEventInit = {}) => {
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key, cancelable: true, ...more }))
-    await settles()
-    await settles()
+    await settle()
+    await settle()
   }
 
   it('shows the vault standing at it', async () => {
@@ -154,7 +154,7 @@ describe('a letter pressed on the welcome screen', () => {
   })
 
   it('shows nothing while the window holds a tab, where the screen is not up', async () => {
-    await drawn()
+    await mountWindow()
 
     await press('a')
 
@@ -166,7 +166,7 @@ describe('the vault offered below the list', () => {
   it('carries the keystroke that reaches it, drawn on its own row', async () => {
     listed.showing = ''
 
-    const window = await drawn()
+    const window = await mountWindow()
 
     expect(window.findComponent(WelcomePage).props('offer')).toMatchObject({
       keys: { icons: ['control', 'shift'], letter: 'N' },
@@ -175,12 +175,12 @@ describe('the vault offered below the list', () => {
 
   it('is asked for by that keystroke, which is a folder chosen on this machine', async () => {
     listed.showing = ''
-    await drawn()
+    await mountWindow()
 
     globalThis.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'N', ctrlKey: true, shiftKey: true, cancelable: true }),
     )
-    await settles()
+    await settle()
 
     expect(asked.chose).toBe(1)
   })
@@ -188,10 +188,10 @@ describe('the vault offered below the list', () => {
 
 describe('a row activated in the files', () => {
   const activateRow = async (path: string) => {
-    const window = await drawn()
+    const window = await mountWindow()
     window.findComponent(Tree).vm.$emit('activate', path)
-    await settles()
-    await settles()
+    await settle()
+    await settle()
     return window
   }
 
@@ -218,12 +218,12 @@ describe('a row activated in the files', () => {
 describe('a file dragged out of the tree', () => {
   /** The window with the physics folder open, and a row dragged out of it. */
   const dragRows = async (rows: readonly string[]) => {
-    const window = await drawn()
+    const window = await mountWindow()
     const tree = window.findComponent(Tree)
     tree.vm.$emit('open', 'physics')
-    await settles()
+    await settle()
     tree.vm.$emit('drag', rows)
-    await settles()
+    await settle()
     return window
   }
 
@@ -251,7 +251,7 @@ describe('a file dragged out of the tree', () => {
     const window = await dragRows(['physics/Entropy.md'])
 
     window.findComponent(Tree).vm.$emit('drop')
-    await settles()
+    await settle()
 
     expect(getDragged(window)).toStrictEqual([])
   })

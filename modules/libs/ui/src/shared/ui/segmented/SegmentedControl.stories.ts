@@ -10,7 +10,7 @@ import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import SegmentedControl from './SegmentedControl.vue'
 import { lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 const UNBROKEN = 'supercalifragilisticexpialidocious'
 
@@ -73,7 +73,7 @@ type Story = StoryObj<Knobs>
 const segments = (canvas: HTMLElement): readonly HTMLElement[] =>
   Array.from(canvas.querySelectorAll<HTMLElement>('[role="radio"]'))
 
-const chosenOf = (canvas: HTMLElement): string | undefined =>
+const getChosen = (canvas: HTMLElement): string | undefined =>
   segments(canvas).find((one) => one.getAttribute('aria-checked') === 'true')?.textContent?.trim()
 
 /**
@@ -135,10 +135,10 @@ export const OneChoice: Story = {
   args: { words: 'Only this', chosen: 'only-this' },
   play: async ({ canvasElement }) => {
     expect(segments(canvasElement)).toHaveLength(1)
-    expect(chosenOf(canvasElement)).toBe('Only this')
+    expect(getChosen(canvasElement)).toBe('Only this')
 
     await userEvent.tab()
-    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Only this'))
+    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Only this'))
   },
 }
 
@@ -151,7 +151,7 @@ export const FarTooMany: Story = {
   },
   play: async ({ canvasElement }) => {
     expect(segments(canvasElement)).toHaveLength(12)
-    expect(chosenOf(canvasElement)).toBe('Choice 1')
+    expect(getChosen(canvasElement)).toBe('Choice 1')
 
     // One of them is in force, and only one.
     const checked = segments(canvasElement).filter(
@@ -168,14 +168,14 @@ export const FarTooMany: Story = {
 export const AValueNotAmongThem: Story = {
   args: { chosen: 'something-else' },
   play: async ({ canvasElement }) => {
-    expect(chosenOf(canvasElement)).toBeUndefined()
+    expect(getChosen(canvasElement)).toBeUndefined()
     expect(
       segments(canvasElement).map((one) => one.getAttribute('aria-checked')),
     ).toEqual(['false', 'false', 'false'])
 
     await userEvent.tab()
     expect(document.activeElement).toBe(segments(canvasElement)[0])
-    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Medium'))
+    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Medium'))
   },
 }
 
@@ -202,10 +202,10 @@ export const Dark: Story = {
   globals: DARK,
   args: { chosen: 'medium' },
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const [small, medium, large] = segments(canvasElement)
     expect(segments(canvasElement)).toHaveLength(3)
-    expect(chosenOf(canvasElement)).toBe('Medium')
+    expect(getChosen(canvasElement)).toBe('Medium')
 
     // A quiet segment keeps no ground of its own, so both are read over the
     // ground the control itself lays down.
@@ -230,7 +230,7 @@ export const AnnouncedAsChoices: Story = {
     const group = canvasElement.querySelector('[role="radiogroup"]')
     expect(group).not.toBeNull()
     expect(segments(canvasElement)).toHaveLength(3)
-    expect(chosenOf(canvasElement)).toBe('Small')
+    expect(getChosen(canvasElement)).toBe('Small')
   },
 }
 
@@ -240,11 +240,11 @@ export const ArrowKeysMoveBetweenThem: Story = {
     await userEvent.tab()
     expect(document.activeElement).toBe(segments(canvasElement)[0])
 
-    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Medium'))
-    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Large'))
+    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Medium'))
+    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Large'))
     // The last segment leads back round to the first.
-    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Small'))
-    await press('ArrowLeft', () => expect(chosenOf(canvasElement)).toBe('Large'))
+    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Small'))
+    await press('ArrowLeft', () => expect(getChosen(canvasElement)).toBe('Large'))
   },
 }
 

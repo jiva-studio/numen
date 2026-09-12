@@ -8,7 +8,7 @@ import { pane } from './node'
 import { isBranch, isPane } from './tree'
 import { arrangeWorkspace } from './arrange'
 import { split, stack, workspaceOf } from '../fixtures/build'
-import { broken } from '../fixtures/invariants'
+import { getFaults } from '../fixtures/invariants'
 
 const SCREEN = { x: 0, y: 0, width: 1280, height: 800 }
 
@@ -26,7 +26,7 @@ describe('what does not draw is cleared away', () => {
       'a',
       'b',
     ])
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('replaces a branch left with one pane by that pane', () => {
@@ -72,7 +72,7 @@ describe('a branch that keeps one child hands its grandchildren up', () => {
       'c',
       'd',
     ])
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('leaves them dividing their length the way they did', () => {

@@ -28,11 +28,11 @@ export function createNoteTab(
   tabOpeners: FileOpeners,
 ): NoteTabState {
   const closeTab = (tab: string) => {
-    keyboard.drops(id)
+    keyboard.cancelFocusRequest(id)
     changes.shut(notes.where(id))
     void notes.shut(id).then((gone) => {
       if (!gone) return
-      names.forgets(id)
+      names.forgetTab(id)
       handle.closes(tab)
     })
   }
@@ -50,12 +50,12 @@ export function createNoteTab(
     id,
     shown: computed(() => notes.shown(id)),
     errorMessage: computed(() => notes.getErrorMessage(id)),
-    change: computed(() => changes.shown(notes.where(id))),
+    change: computed(() => changes.getChange(notes.where(id))),
     updateBody: (body: string) => notes.setBody(id, body),
     save: () => notes.save(id),
     keepMine: () => notes.keep(id),
     takeFile: () => notes.take(id),
-    setEditor: (editor: unknown) => keyboard.drew(id, editor),
+    setEditor: (editor: unknown) => keyboard.setEditor(id, editor),
     measure: () => keyboard.measure(id),
     followLink,
     close: closeTab,

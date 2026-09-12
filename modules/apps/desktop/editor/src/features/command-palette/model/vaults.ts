@@ -16,7 +16,7 @@ export const showVault = async (id: string, on: VaultContext & Voice, words: Wor
   if (!id) return
   const error = await on.vaults.open(id)
   if (error) return on.says(words.vaultErrors[error], 'error')
-  on.vaults.reloads()
+  on.vaults.reload()
 }
 
 /**

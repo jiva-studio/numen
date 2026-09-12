@@ -6,18 +6,18 @@
  */
 import { describe, expect, it } from 'vitest'
 import { commandsOf, overNote } from './commands'
-import { asksCommands } from '../target'
+import { isCommandsTyped } from '../target'
 import { WORDS as words } from '@/shared/words'
 
 describe('the character that means the commands', () => {
   it('is one typed into a field holding nothing', () => {
-    expect(asksCommands('', '>')).toBe(true)
+    expect(isCommandsTyped('', '>')).toBe(true)
   })
 
   it('is not one typed into a field holding words, so a search for one stands', () => {
-    expect(asksCommands('foo', '>foo')).toBe(false)
-    expect(asksCommands('', '>foo')).toBe(false)
-    expect(asksCommands('>', '>>')).toBe(false)
+    expect(isCommandsTyped('foo', '>foo')).toBe(false)
+    expect(isCommandsTyped('', '>foo')).toBe(false)
+    expect(isCommandsTyped('>', '>>')).toBe(false)
   })
 })
 

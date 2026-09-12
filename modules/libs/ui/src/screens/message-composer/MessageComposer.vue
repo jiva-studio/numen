@@ -9,7 +9,7 @@
 import { computed, useTemplateRef } from 'vue'
 import { Textarea } from '@/shared/ui/textarea'
 import { Button } from '@/shared/ui/button'
-import { COMPOSER_STATES, composerState, keyIntent, said } from './state'
+import { COMPOSER_STATES, composerState, keyIntent, getMessage } from './state'
 
 const props = withDefaults(
   defineProps<{
@@ -54,7 +54,7 @@ const named = computed(() => (descriptor.value.shows === 'stop' ? props.stops : 
 const act = () => {
   if (barred.value) return
   if (descriptor.value.shows === 'stop') emit('stop')
-  else emit('submit', said(text.value))
+  else emit('submit', getMessage(text.value))
 }
 
 /** Enter sends, and while an answer is on its way it does nothing. */

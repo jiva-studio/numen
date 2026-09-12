@@ -210,7 +210,7 @@ const setSize = (area: HTMLElement, wide: number, high: number): void => {
 }
 
 /** What the browser is told about the laid-out text: how far it runs, where each run stands. */
-const laid = (paper: HTMLElement, along: number, lefts: readonly number[]): void => {
+const setLayout = (paper: HTMLElement, along: number, lefts: readonly number[]): void => {
   Object.defineProperty(paper, 'scrollWidth', { value: along, configurable: true })
   Object.defineProperty(paper, 'getBoundingClientRect', {
     value: () => ({ left: 0 }),
@@ -226,7 +226,7 @@ const laid = (paper: HTMLElement, along: number, lefts: readonly number[]): void
 }
 
 /** A reader the browser has measured: an area of two columns, three spreads of text. */
-const drawn = async () => {
+const mountBook = async () => {
   const held = mount(Book, {
     props: {
       markup: LAID.markup,
@@ -239,7 +239,7 @@ const drawn = async () => {
   const area = held.find('.book__area').element as HTMLElement
   area.scrollTo = () => {}
   setSize(area, 1100, 600)
-  laid(held.find('.book__paper').element as HTMLElement, 3300, [10, 1150, 580])
+  setLayout(held.find('.book__paper').element as HTMLElement, 3300, [10, 1150, 580])
 
   ;(held.vm as unknown as { measure(): void }).measure()
   // The columns are measured after the browser has laid them out, which is the
@@ -251,12 +251,12 @@ const drawn = async () => {
 }
 
 /** How far the text is carried sideways, as the reader set it last. */
-const getTranslate = (held: Awaited<ReturnType<typeof drawn>>): string =>
+const getTranslate = (held: Awaited<ReturnType<typeof mountBook>>): string =>
   (held.find('.book__paper').element as HTMLElement).style.translate
 
 describe('a document the browser has laid out', () => {
   it('is drawn, and says how many spreads it is read in', async () => {
-    const held = await drawn()
+    const held = await mountBook()
 
     expect((held.find('.book__paper').element as HTMLElement).style.display).not.toBe('none')
     expect(held.find('.book__count').text()).toMatch(/^\d+ of \d+$/)
@@ -266,7 +266,7 @@ describe('a document the browser has laid out', () => {
   })
 
   it('sets the columns against the room it was measured', async () => {
-    const held = await drawn()
+    const held = await mountBook()
 
     const style = (held.find('.book__paper').element as HTMLElement).style
     expect(style.getPropertyValue('--book-column')).toBe('478px')
@@ -276,7 +276,7 @@ describe('a document the browser has laid out', () => {
   })
 
   it('turns a spread at a time while spreads are left', async () => {
-    const held = await drawn()
+    const held = await mountBook()
 
     expect(pressKey(held,'ArrowRight')).toBe(true)
 
@@ -287,7 +287,7 @@ describe('a document the browser has laid out', () => {
   })
 
   it('is turned by a press near either edge, and by the edges alone', async () => {
-    const held = await drawn()
+    const held = await mountBook()
     const area = held.find('.book__area').element as HTMLElement
     const press = (at: number) => {
       area.dispatchEvent(new MouseEvent('pointerdown', { button: 0, clientX: at }))
@@ -310,7 +310,7 @@ describe('a document the browser has laid out', () => {
   })
 
   it('is stood where an offset from outside asks, while the offset is inside it', async () => {
-    const held = await drawn()
+    const held = await mountBook()
 
     await held.setProps({ at: LAID.span.begins + bytesIn('Первая строка.Вторая.') })
     await held.vm.$nextTick()

@@ -30,9 +30,9 @@ const ROWS: readonly Row[] = [
   { id: 'loose', name: 'Loose', holds: false },
 ]
 
-const shownWith = (...open: readonly RowId[]) => flatten(ROWS, new Set(open))
+const getShownRows = (...open: readonly RowId[]) => flatten(ROWS, new Set(open))
 
-const names = (...open: readonly RowId[]) => shownWith(...open).map((row) => row.id)
+const names = (...open: readonly RowId[]) => getShownRows(...open).map((row) => row.id)
 
 describe('what is drawn', () => {
   it('is the top level while nothing is open', () => {
@@ -57,15 +57,15 @@ describe('what is drawn', () => {
 
   it('leaves a row that cannot hold shut, named or not', () => {
     expect(names('loose')).toStrictEqual(['work', 'empty', 'loose'])
-    expect(shownWith('loose')[2]?.open).toBe(false)
+    expect(getShownRows('loose')[2]?.open).toBe(false)
   })
 
   it('counts the level from one, down the levels it walked', () => {
-    expect(shownWith('work', 'plans').map((row) => row.level)).toStrictEqual([1, 2, 3, 2, 1, 1])
+    expect(getShownRows('work', 'plans').map((row) => row.level)).toStrictEqual([1, 2, 3, 2, 1, 1])
   })
 
   it('says which row holds each, and nothing at the top', () => {
-    expect(shownWith('work').map((row) => row.parent)).toStrictEqual([
+    expect(getShownRows('work').map((row) => row.parent)).toStrictEqual([
       null,
       'work',
       'work',
@@ -75,7 +75,7 @@ describe('what is drawn', () => {
   })
 
   it('marks the last of the rows its holder holds', () => {
-    expect(shownWith('work').map((row) => row.last)).toStrictEqual([
+    expect(getShownRows('work').map((row) => row.last)).toStrictEqual([
       false,
       false,
       true,
@@ -85,7 +85,7 @@ describe('what is drawn', () => {
   })
 
   it('tells a row that can hold from one that is holding', () => {
-    const [, , , empty] = shownWith('work')
+    const [, , , empty] = getShownRows('work')
     expect(empty?.holds).toBe(true)
     expect(empty?.holding).toBe(false)
   })
@@ -107,7 +107,7 @@ describe('the keys a tree answers', () => {
 })
 
 describe('where a key takes the keyboard', () => {
-  const shown = shownWith('work')
+  const shown = getShownRows('work')
   const step = (from: RowId | null, key: Parameters<typeof stepTo>[2]) =>
     stepTo(shown, from, key)
 
@@ -144,7 +144,7 @@ describe('where a key takes the keyboard', () => {
 
   it('stays where there is nothing to descend into', () => {
     expect(step('notes', 'ArrowRight')).toStrictEqual({ at: 'notes', turn: null })
-    expect(stepTo(shownWith('work', 'empty'), 'empty', 'ArrowRight')).toStrictEqual({
+    expect(stepTo(getShownRows('work', 'empty'), 'empty', 'ArrowRight')).toStrictEqual({
       at: 'empty',
       turn: null,
     })
@@ -174,7 +174,7 @@ describe('where a key takes the keyboard', () => {
 
 describe('where a drag lands', () => {
   // work, plans, notes, empty, loose — one row every 24.
-  const shown = shownWith('work')
+  const shown = getShownRows('work')
   const HEIGHT = 24
   const at = (y: number, ...dragging: readonly RowId[]) =>
     landing(shown, dragging.length ? dragging : ['friday'], y, HEIGHT)
@@ -223,7 +223,7 @@ describe('where a drag lands', () => {
 })
 
 describe('the row a landing puts what is held inside', () => {
-  const shown = shownWith('work')
+  const shown = getShownRows('work')
 
   it('is the row itself, going into one', () => {
     expect(holderOf(shown, { into: 'work' })).toBe('work')
@@ -270,7 +270,7 @@ describe('what rows being dragged are refused', () => {
 })
 
 describe('the rows between two rows', () => {
-  const shown = shownWith('work')
+  const shown = getShownRows('work')
 
   it('are the ones drawn from the first to the second, both among them', () => {
     expect(between(shown, 'work', 'notes')).toStrictEqual(['work', 'plans', 'notes'])
@@ -298,7 +298,7 @@ describe('the rows between two rows', () => {
 })
 
 describe('what a press makes the selection', () => {
-  const shown = shownWith('work')
+  const shown = getShownRows('work')
   const JOINING: Press = { joining: true, reaching: false }
   const REACHING: Press = { joining: false, reaching: true }
 
@@ -362,20 +362,20 @@ describe('what a press makes the selection', () => {
   })
 
   it('drops a row that is not drawn', () => {
-    expect(resolveSelection(shownWith(), ['plans'], 'plans', 'loose', JOINING).rows).toStrictEqual(['loose'])
+    expect(resolveSelection(getShownRows(), ['plans'], 'plans', 'loose', JOINING).rows).toStrictEqual(['loose'])
   })
 })
 
 describe('every row drawn, selected at once', () => {
   it('is all of them, in the order they are drawn', () => {
-    expect(everyRow(shownWith('work'), 'notes')).toStrictEqual({
+    expect(everyRow(getShownRows('work'), 'notes')).toStrictEqual({
       rows: ['work', 'plans', 'notes', 'empty', 'loose'],
       anchor: 'notes',
     })
   })
 
   it('puts the anchor on the first row where there is none', () => {
-    expect(everyRow(shownWith(), null).anchor).toBe('work')
+    expect(everyRow(getShownRows(), null).anchor).toBe('work')
   })
 
   it('is nothing at all where nothing is drawn', () => {
@@ -407,7 +407,7 @@ describe('two selections', () => {
 })
 
 describe('what follows the pointer', () => {
-  const shown = shownWith('work')
+  const shown = getShownRows('work')
   const at = { x: 40, y: 60 }
   const formatCount = (rows: number) => `${rows} rows`
 

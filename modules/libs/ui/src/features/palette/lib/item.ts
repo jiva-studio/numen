@@ -120,7 +120,7 @@ export const stepIn = (total: number, from: number, by: number): number => {
  * was on, wherever that item has moved to. An item that is gone hands it to the
  * first item there is; a list with nothing to land on takes it nowhere.
  */
-export const keptAt = (places: readonly PalettePlace[], was: string): number => {
+export const findKeptPlace = (places: readonly PalettePlace[], was: string): number => {
   const held = places.findIndex((place) => place.item.id === was && choosable(place.item))
   return held >= 0 ? held : stepTo(places, -1, 1)
 }

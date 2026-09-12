@@ -30,7 +30,7 @@ const OFFER: Offer = {
   keys: { icons: ['control', 'shift'], letter: 'N' },
 }
 
-const held = (name: string, path: string, detail?: string): VaultRow => ({
+const createVault = (name: string, path: string, detail?: string): VaultRow => ({
   id: name.toLowerCase(),
   name,
   path,
@@ -38,23 +38,23 @@ const held = (name: string, path: string, detail?: string): VaultRow => ({
 })
 
 const VAULTS: readonly VaultRow[] = [
-  held('Studies', '/home/rowan/vaults/studies', 'Open'),
-  held('Sanskrit', '/home/rowan/vaults/sanskrit'),
-  held('Fieldwork', '/home/rowan/Documents/fieldwork'),
+  createVault('Studies', '/home/rowan/vaults/studies', 'Open'),
+  createVault('Sanskrit', '/home/rowan/vaults/sanskrit'),
+  createVault('Fieldwork', '/home/rowan/Documents/fieldwork'),
 ]
 
 /** More vaults than a short window has room for, which is where the list scrolls. */
 const MANY: readonly VaultRow[] = [
   ...VAULTS,
-  held('Птицы', '/home/rowan/vaults/birds'),
-  held('Boltzmann', '/home/rowan/vaults/boltzmann'),
-  held('Allotments', '/home/rowan/vaults/allotments'),
-  held('Letters', '/home/rowan/Documents/letters'),
-  held('Recipes', '/home/rowan/vaults/recipes'),
-  held('The rota', '/home/rowan/vaults/rota'),
-  held('Weather', '/home/rowan/vaults/weather'),
-  held('Hedgerow', '/home/rowan/vaults/hedgerow'),
-  held('Marrowfield', '/home/rowan/vaults/marrowfield'),
+  createVault('Птицы', '/home/rowan/vaults/birds'),
+  createVault('Boltzmann', '/home/rowan/vaults/boltzmann'),
+  createVault('Allotments', '/home/rowan/vaults/allotments'),
+  createVault('Letters', '/home/rowan/Documents/letters'),
+  createVault('Recipes', '/home/rowan/vaults/recipes'),
+  createVault('The rota', '/home/rowan/vaults/rota'),
+  createVault('Weather', '/home/rowan/vaults/weather'),
+  createVault('Hedgerow', '/home/rowan/vaults/hedgerow'),
+  createVault('Marrowfield', '/home/rowan/vaults/marrowfield'),
 ]
 
 interface Knobs {

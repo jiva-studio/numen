@@ -396,7 +396,7 @@ describe('a node keeps its own drawing across a change', () => {
  * drawn in is nobody's but the picture's.
  */
 describe('the box the attention has settled on', () => {
-  const drawn = (view: ReturnType<typeof mountView>) =>
+  const getDrawnOrder = (view: ReturnType<typeof mountView>) =>
     view.findAll('.plex__node').map((node) => node.attributes('aria-label'))
 
   const boxOf = (view: ReturnType<typeof mountView>, name: string) =>
@@ -413,11 +413,11 @@ describe('the box the attention has settled on', () => {
 
   it('is drawn last of all, so its widened box stands over its neighbours', async () => {
     const view = mountResting()
-    expect(drawn(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
+    expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
 
     boxOf(view, 'staying').vm.$emit('rest', true)
     await view.vm.$nextTick()
-    expect(drawn(view)).toStrictEqual(['Start, focus', 'Going, child', 'Staying, child'])
+    expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Going, child', 'Staying, child'])
   })
 
   it('is the same element there as it was where it stood', async () => {
@@ -437,7 +437,7 @@ describe('the box the attention has settled on', () => {
 
     boxOf(view, 'staying').vm.$emit('rest', false)
     await view.vm.$nextTick()
-    expect(drawn(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
+    expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
   })
 
   it('is handed the box the widening worked out for it', () => {

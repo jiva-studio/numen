@@ -24,7 +24,7 @@ import {
   withSpare,
   workspaceOf,
 } from '../fixtures/build'
-import { broken } from '../fixtures/invariants'
+import { getFaults } from '../fixtures/invariants'
 
 const SCREEN = { x: 0, y: 0, width: 1000, height: 600 }
 
@@ -39,7 +39,7 @@ describe('opening and showing', () => {
     const after = openTab(sideBySide(), 'notes', 'aside')
     expect(tabsOf(after, 'aside')).toStrictEqual(['chat', 'notes'])
     expect(after.focus).toBe('aside')
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('shows a tab that is already open where it is', () => {
@@ -62,7 +62,7 @@ describe('opening a tab in a pane of its own', () => {
     expect(ids(after)).toStrictEqual(['main', 'made-1', 'aside'])
     expect(tabsOf(after, 'made-1')).toStrictEqual(['notes'])
     expect(after.focus).toBe('made-1')
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('takes one that is already open away from where it was', () => {
@@ -71,7 +71,7 @@ describe('opening a tab in a pane of its own', () => {
     expect(paneWithTab(after.root, 'chat')?.id).toBe('made-1')
     expect(panesOf(after.root).map((each) => each.id)).toStrictEqual(['main', 'made-1'])
     expect(after.focus).toBe('made-1')
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('leaves one that is alone in the pane it would open beside where it is', () => {
@@ -95,14 +95,14 @@ describe('opening a tab in a pane of its own', () => {
 
     expect(ids(after)).toStrictEqual(order)
     expect(after.axis).toBe(axis)
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('joins the parent when the parent already divides that way', () => {
     const after = openTabBeside(withSpare(), 'more', 'left', createIdFactory(), 'aside')
 
     expect(ids(after)).toStrictEqual(['main', 'made-1', 'aside'])
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('wraps the pane when the parent divides the other way', () => {
@@ -114,7 +114,7 @@ describe('opening a tab in a pane of its own', () => {
       'main',
       'made-1',
     ])
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('takes half of what it opened beside', () => {
@@ -140,7 +140,7 @@ describe('opening a tab in a pane of its own', () => {
     const after = openTabBeside(focused, 'notes', 'right', createIdFactory())
 
     expect(ids(after)).toStrictEqual(['main', 'aside', 'made-1'])
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('divides a workspace holding nothing, and clears the empty pane away', () => {
@@ -148,7 +148,7 @@ describe('opening a tab in a pane of its own', () => {
 
     expect(isPane(after.root) && after.root.id).toBe('made-1')
     expect(tabsOf(after, 'made-1')).toStrictEqual(['notes'])
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('does nothing for the middle, which divides nothing', () => {
@@ -161,7 +161,7 @@ describe('opening a tab in a pane of its own', () => {
 
     expect(panesOf(after.root)).toHaveLength(2)
     expect(tabsOf(after, 'made-1')).toStrictEqual(['plex'])
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 })
 
@@ -172,7 +172,7 @@ describe('a tab let go beside a pane', () => {
     expect(ids(after)).toStrictEqual(['made-1', 'main'])
     expect(after.axis).toBe('horizontal')
     expect(after.focus).toBe('made-1')
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('wraps the pane when the parent divides the other way', () => {
@@ -184,7 +184,7 @@ describe('a tab let go beside a pane', () => {
       'main',
       'made-1',
     ])
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('takes half of what it landed beside', () => {
@@ -219,7 +219,7 @@ describe('a tab let go in the middle of a pane', () => {
     expect(tabsOf(after, 'main')).toStrictEqual(['plex', 'chat'])
     expect(panesOf(after.root)).toHaveLength(1)
     expect(after.root.id).toBe('main')
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('clears away the pane it came from', () => {
@@ -242,7 +242,7 @@ describe('a tab let go where it started', () => {
 
     expect(tabsOf(after, 'main')).toStrictEqual(['plex'])
     expect(panesOf(after.root)).toHaveLength(2)
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 })
 
@@ -252,7 +252,7 @@ describe('a tab let go on the outer edge', () => {
 
     expect(after.axis).toBe('vertical')
     expect(ids(after)).toStrictEqual(['root', 'made-1'])
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('does nothing for the middle, which is not an edge', () => {
@@ -265,7 +265,7 @@ describe('closing', () => {
   it('shows the next tab along', () => {
     const after = closeTab(oneStack(), 'plex')
     expect(panesOf(after.root)[0]?.active).toBe('chat')
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('clears the pane away and leaves the rest where they were', () => {
@@ -276,7 +276,7 @@ describe('closing', () => {
     expect(paneWithTab(after.root, 'four')).toBeNull()
     expect(arrangeWorkspace(after, SCREEN).get('e')).toStrictEqual(boxes.get('again'))
     expect(arrangeWorkspace(after, SCREEN).get('a')).toStrictEqual(boxes.get('a'))
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('leaves an empty workspace when the last tab goes', () => {
@@ -284,7 +284,7 @@ describe('closing', () => {
 
     expect(isPane(after.root) && after.root.tabs).toStrictEqual([])
     expect(isPane(after.root) && after.root.active).toBeNull()
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('ignores a tab that is not open', () => {
@@ -315,7 +315,7 @@ describe('resizing', () => {
     const boxes = arrangeWorkspace(after, SCREEN)
 
     expect(boxes.get('main')?.width).toBeCloseTo(400)
-    expect(broken(after)).toStrictEqual([])
+    expect(getFaults(after)).toStrictEqual([])
   })
 
   it('ignores a node that does not divide anything', () => {
@@ -343,7 +343,7 @@ describe('every gesture keeps the tree canonical', () => {
 
     for (const gesture of run) {
       workspace = gesture(workspace)
-      expect(broken(workspace)).toStrictEqual([])
+      expect(getFaults(workspace)).toStrictEqual([])
     }
   })
 })

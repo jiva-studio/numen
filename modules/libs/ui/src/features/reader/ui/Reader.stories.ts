@@ -57,7 +57,7 @@ const createPages = (pageCount: number) =>
  * A page, drawn to the width it was asked for. What a document does for real;
  * this one carries its own number and nothing else.
  */
-const drawn = (label: string, wide: number): string => {
+const renderPage = (label: string, wide: number): string => {
   const tall = Math.round((wide * 792) / 612)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${wide}" height="${tall}">
     <rect width="100%" height="100%" fill="#ffffff"/>
@@ -79,7 +79,7 @@ const book =
       /** The width the reader last asked for, in device pixels. */
       const wide = ref(0)
       const picture = (page: number) =>
-        wide.value > 0 ? drawn(String(page + 1), wide.value) : ''
+        wide.value > 0 ? renderPage(String(page + 1), wide.value) : ''
       const highlightsOn = (page: number) => (page === 0 ? highlights : [])
 
       const go = (page: number) => {

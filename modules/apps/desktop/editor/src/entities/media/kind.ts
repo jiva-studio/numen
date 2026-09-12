@@ -59,19 +59,19 @@ export function useTranscriptTab(read: TranscriptState, asks: MediaTabDeps) {
   const deletable = computed(() => written.value && !read.working.value && canRun(DELETE_TEXT))
 
   const called = fileOf(read.path)
-  const transcribes = () => asks.runs(TRANSCRIBE, read.path, called)
-  const proofreads = () => asks.runs(PROOFREAD, read.path, called)
-  const deletes = () => asks.runs(DELETE_TEXT, read.path, called)
+  const transcribe = () => asks.runs(TRANSCRIBE, read.path, called)
+  const proofread = () => asks.runs(PROOFREAD, read.path, called)
+  const deleteTranscript = () => asks.runs(DELETE_TEXT, read.path, called)
 
   return {
     ...read,
     called,
     transcribable,
-    transcribes,
+    transcribe,
     proofreadable,
-    proofreads,
+    proofread,
     deletable,
-    deletes,
+    deleteTranscript,
   }
 }
 
@@ -130,11 +130,11 @@ export function recordingKind<K extends string>(
 
   // The person is taken to the moment the first of the spans asked for was
   // spoken at.
-  const hears = async (path: string, spans: readonly Span[]) => {
+  const openAt = async (path: string, spans: readonly Span[]) => {
     const id = await handle.opens(as.tab, path)
     void handle.holds<MediaTabState>(as.tab, id)?.reach(...spans)
   }
-  as.hands(tabOpeners, (path, spans) => void hears(path, spans))
+  as.hands(tabOpeners, (path, spans) => void openAt(path, spans))
 
   /**
    * What the application is doing, as it last said. A tab whose recording is
@@ -142,7 +142,7 @@ export function recordingKind<K extends string>(
    */
   const updateTasks = (tasks: readonly Task[]) => {
     for (const one of handle.each<MediaTabState>(as.tab)) {
-      one.state.ticks(tasks.some((task) => task.about === one.state.path))
+      one.state.setWorking(tasks.some((task) => task.about === one.state.path))
     }
   }
 

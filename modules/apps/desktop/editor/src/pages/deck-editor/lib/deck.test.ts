@@ -10,7 +10,7 @@ import {
   stencilsOf,
   deserializeBufferDeckFromString,
   deserializeVaultDeck,
-  drawnOf,
+  cardsOf,
   fillCard,
   pathOfCut,
   removeCard,
@@ -182,7 +182,7 @@ describe('the cards as the grid draws them', () => {
     })
 
   it('carries the identity, the section, what cuts it, and the values under it', () => {
-    expect(drawnOf(deck(), OFFERS)[0]).toStrictEqual({
+    expect(cardsOf(deck(), OFFERS)[0]).toStrictEqual({
       id: LLAMA,
       section: null,
       stencil: 'Animal',
@@ -195,22 +195,22 @@ describe('the cards as the grid draws them', () => {
   })
 
   it('says nothing of the preamble, which nothing lays out', () => {
-    expect(JSON.stringify(drawnOf(deck(), OFFERS))).not.toContain('a note in the middle')
+    expect(JSON.stringify(cardsOf(deck(), OFFERS))).not.toContain('a note in the middle')
   })
 
   it('draws a card the stencil its link reached, whatever stood in the brackets', () => {
     const written = ['cards/Animal', 'Animal|животное', 'Animal#Recognise', 'stencils/Animal.md']
     for (const one of written) {
-      expect(drawnOf(cutBy(one, 'stencils/Animal.md'), OFFERS)[0]?.stencil).toBe('Animal')
+      expect(cardsOf(cutBy(one, 'stencils/Animal.md'), OFFERS)[0]?.stencil).toBe('Animal')
     }
   })
 
   it('draws a card whose link reached nothing under what the file wrote', () => {
-    expect(drawnOf(cutBy('Gone', ''), OFFERS)[0]?.stencil).toBe('Gone')
+    expect(cardsOf(cutBy('Gone', ''), OFFERS)[0]?.stencil).toBe('Gone')
   })
 
   it('draws a card that wrote no brackets at all as cut by nothing', () => {
-    expect(drawnOf(cutBy('', ''), OFFERS)[0]?.stencil).toBeNull()
+    expect(cardsOf(cutBy('', ''), OFFERS)[0]?.stencil).toBeNull()
   })
 })
 

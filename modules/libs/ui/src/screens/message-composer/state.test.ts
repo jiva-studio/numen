@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMPOSER_STATES, composerState, keyIntent, said } from './state'
+import { COMPOSER_STATES, composerState, keyIntent, getMessage } from './state'
 
 const press = (over: Partial<Parameters<typeof keyIntent>[0]> = {}) => ({
   key: 'Enter',
@@ -41,11 +41,11 @@ describe('what state a composer is in', () => {
 
 describe('what was said', () => {
   it('is what is left after the whitespace around it', () => {
-    expect(said('  hello  ')).toBe('hello')
+    expect(getMessage('  hello  ')).toBe('hello')
   })
 
   it('keeps the whitespace inside it', () => {
-    expect(said(' one  two \n three ')).toBe('one  two \n three')
+    expect(getMessage(' one  two \n three ')).toBe('one  two \n three')
   })
 })
 

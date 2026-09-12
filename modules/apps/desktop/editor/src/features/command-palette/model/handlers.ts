@@ -57,15 +57,15 @@ const carried: Record<string, CommandHandler> = {
   remove: (invocation, on, words) => removes(invocation, false, on, words),
   destroy: (invocation, on, words) => removes(invocation, true, on, words),
   transcribe: async (invocation, on, words) =>
-    began(invocation, await on.runs.createArtifact(invocation.file, 'transcript'), on, words),
+    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'transcript'), on, words),
   recognise: async (invocation, on, words) =>
-    began(invocation, await on.runs.createArtifact(invocation.file, 'ocr'), on, words),
+    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'ocr'), on, words),
   downloadText: async (invocation, on, words) =>
-    began(invocation, await on.runs.fetchArtifact(invocation.file), on, words),
+    reportOutcome(invocation, await on.runs.fetchArtifact(invocation.file), on, words),
   downloadCopy: async (invocation, on, words) =>
-    began(invocation, await on.runs.createArtifact(invocation.file, 'copy'), on, words),
+    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'copy'), on, words),
   proofread: async (invocation, on, words) =>
-    began(invocation, await on.runs.correctArtifact(invocation.file), on, words),
+    reportOutcome(invocation, await on.runs.correctArtifact(invocation.file), on, words),
   deleteText: async (invocation, on, words) => {
     if (await on.runs.deleteTranscript(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
@@ -128,7 +128,7 @@ const WENT_WRONG: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'faile
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
  */
-const began = (invocation: CommandInvocation, outcome: Outcome, on: RunContext & Voice, words: Words): void => {
+const reportOutcome = (invocation: CommandInvocation, outcome: Outcome, on: RunContext & Voice, words: Words): void => {
   if (!outcome.able) {
     on.runSupport.cannotRun(invocation.id)
     return on.says(words.unrunnable, 'error')

@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
 /** What the application answers with, in the words the schema writes it in. */
-const answers = (said: unknown) =>
+const answerWith = (said: unknown) =>
   vi.stubGlobal(
     'fetch',
     vi.fn(
@@ -24,13 +24,13 @@ const { core } = await import('./index')
 
 describe('a name the vault answers with', () => {
   it('is an ordinary note where the answer carries no kind at all', async () => {
-    answers({ found: [{ note: { path: 'Entropy.md', title: 'Entropy' }, at: [] }] })
+    answerWith({ found: [{ note: { path: 'Entropy.md', title: 'Entropy' }, at: [] }] })
 
     expect((await core.names('ent', 8))[0]?.type).toBe('note')
   })
 
   it('is drawn as whichever of four the answer names', async () => {
-    answers({
+    answerWith({
       found: [
         { note: { path: 'Ants.md', title: 'Ants' }, at: [], type: 'NOTE_TYPE_UNSPECIFIED' },
         { note: { path: 'Animals.md', title: 'Animals' }, at: [], type: 'NOTE_TYPE_DECK' },
@@ -48,7 +48,7 @@ describe('a name the vault answers with', () => {
   })
 
   it('is an ordinary note where the answer names a kind this window has no word for', async () => {
-    answers({ found: [{ note: { path: 'Later.md', title: 'Later' }, at: [], type: 9 }] })
+    answerWith({ found: [{ note: { path: 'Later.md', title: 'Later' }, at: [], type: 9 }] })
 
     expect((await core.names('la', 8))[0]?.type).toBe('note')
   })
@@ -56,7 +56,7 @@ describe('a name the vault answers with', () => {
 
 describe('a passage the vault answers with', () => {
   it('carries the kind of the note it was read out of', async () => {
-    answers({
+    answerWith({
       found: [
         { path: 'Daily.md', note: { path: 'Daily.md', title: 'Daily' }, at: [], type: 'NOTE_TYPE_PRESET' },
         { path: 'Ants.md', note: { path: 'Ants.md', title: 'Ants' }, at: [] },
@@ -69,7 +69,7 @@ describe('a passage the vault answers with', () => {
   })
 
   it('is no note at all where the answer names none', async () => {
-    answers({ found: [{ path: 'library/mahabharata.epub', text: 'war', at: [] }] })
+    answerWith({ found: [{ path: 'library/mahabharata.epub', text: 'war', at: [] }] })
 
     const found = await core.search('war', 'words', 8)
     expect(found[0]?.isNote).toBe(false)
@@ -77,7 +77,7 @@ describe('a passage the vault answers with', () => {
   })
 
   it('carries what the vault holds at its path, whichever source that is', async () => {
-    answers({
+    answerWith({
       found: [
         { path: 'Ants.md', note: { path: 'Ants.md' }, at: [], kind: 'SOURCE_KIND_NOTE' },
         { path: 'library/mahabharata.epub', at: [], kind: 'SOURCE_KIND_BOOK' },
@@ -93,7 +93,7 @@ describe('a passage the vault answers with', () => {
   })
 
   it('holds no source where the answer names none, or one this window cannot read', async () => {
-    answers({
+    answerWith({
       found: [
         { path: 'notes.txt', at: [] },
         { path: 'later.xyz', at: [], kind: 9 },
@@ -109,7 +109,7 @@ describe('a passage the vault answers with', () => {
 
 describe('a neighbourhood the vault answers with', () => {
   it('is drawn around the note in focus, with each note seated where it sits', async () => {
-    answers({
+    answerWith({
       focus: { path: 'Rota.md', title: 'The rota' },
       focusType: 'NOTE_TYPE_DECK',
       related: [
@@ -140,7 +140,7 @@ describe('a neighbourhood the vault answers with', () => {
   })
 
   it('leaves out a note it has no seat for, and one the answer names no note at', async () => {
-    answers({
+    answerWith({
       focus: { path: 'Rota.md', title: 'The rota' },
       related: [
         { note: { path: 'Odd.md', title: 'Odd' }, seat: 'SEAT_UNSPECIFIED' },
@@ -152,7 +152,7 @@ describe('a neighbourhood the vault answers with', () => {
   })
 
   it('stands on nothing where the vault no longer holds the note', async () => {
-    answers({ related: [] })
+    answerWith({ related: [] })
 
     expect((await core.neighbourhood('Gone.md')).focus.path).toBe('')
   })

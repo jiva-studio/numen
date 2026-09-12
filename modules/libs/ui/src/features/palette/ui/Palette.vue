@@ -27,8 +27,8 @@ import { PaletteResults } from './palette-results'
 import { ACTION_WORDS, type ActionWords } from '../lib/actions'
 import {
   choosable,
+  findKeptPlace,
   flatten,
-  keptAt,
   orderGroups,
   stepTo,
   type PaletteGroup,
@@ -229,7 +229,7 @@ const choose = (at: number, second: boolean) => {
 const panel = ref(false)
 
 /** An action chosen in the panel, on the item it was opened about. */
-const ran = (action: string) => {
+const onChooseAction = (action: string) => {
   const item = lit.value
   if (item) emit('choose', item.id, action)
 }
@@ -298,7 +298,7 @@ const onGround = () => {
  */
 const enter = async () => {
   panel.value = false
-  goTo(keptAt(places.value, props.opensOn || held.value))
+  goTo(findKeptPlace(places.value, props.opensOn || held.value))
   await nextTick()
   field.value?.focus()
   field.value?.select()
@@ -420,7 +420,7 @@ onBeforeUnmount(() => {
           v-model:open="panel"
           :offered="offered"
           :words="actionWords"
-          @choose="ran"
+          @choose="onChooseAction"
         />
 
         <!-- What the item now lit can be asked. An item offering one action

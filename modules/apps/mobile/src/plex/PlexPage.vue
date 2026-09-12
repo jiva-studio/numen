@@ -43,7 +43,7 @@ async function draw(path: string) {
   picture.value = asPlex(said)
 }
 
-async function made(from: string, seat: PlexRelatedSeat) {
+async function createRelatedNote(from: string, seat: PlexRelatedSeat) {
   if (!core.value) return
   const title = window.prompt(`A new ${seat}`)
   if (!title?.trim()) return
@@ -94,7 +94,7 @@ onMounted(async () => {
         :showing="showing"
         @activate="(node: string) => void draw(node)"
         @show="(node: string) => (writing = node)"
-        @create="(from: string, seat: PlexRelatedSeat) => void made(from, seat)"
+        @create="(from: string, seat: PlexRelatedSeat) => void createRelatedNote(from, seat)"
         @link="(from: string, to: string, seat: PlexRelatedSeat) => void linkNotes(from, to, seat)"
       />
       <IonToast

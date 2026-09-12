@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import Agent from './Agent.vue'
 import type { Turn } from '@/features/thread'
 
-const said = (id: string, text = 'said'): Turn => ({ id, voice: 'asked', text })
+const createAsked = (id: string, text = 'said'): Turn => ({ id, voice: 'asked', text })
 const back = (id: string, text = 'back'): Turn => ({ id, voice: 'answered', text })
 
 /** How tall the area the conversation scrolls in is, and one turn in it. */
@@ -53,7 +53,7 @@ const createAgent = (turns: readonly Turn[]) => {
 
 describe('a question sent', () => {
   it('is carried to whoever answers it', async () => {
-    const one = createAgent([said('1'), back('2')])
+    const one = createAgent([createAsked('1'), back('2')])
 
     await one.sends('what is a seat')
 
@@ -62,11 +62,13 @@ describe('a question sent', () => {
   })
 
   it('brings the foot of the conversation into view', async () => {
-    const one = createAgent([said('1'), back('2'), said('3')])
+    const one = createAgent([createAsked('1'), back('2'), createAsked('3')])
     await one.reads(0)
 
     await one.sends('and one more')
-    await one.wrapper.setProps({ turns: [said('1'), back('2'), said('3'), said('4')] })
+    await one.wrapper.setProps({
+      turns: [createAsked('1'), back('2'), createAsked('3'), createAsked('4')],
+    })
 
     expect(one.at()).toBe(3 * SCREEN)
   })
@@ -74,10 +76,12 @@ describe('a question sent', () => {
 
 describe('a conversation read further up', () => {
   it('stays where it is read while an answer arrives', async () => {
-    const one = createAgent([said('1'), back('2'), said('3')])
+    const one = createAgent([createAsked('1'), back('2'), createAsked('3')])
     await one.reads(0)
 
-    await one.wrapper.setProps({ turns: [said('1'), back('2'), said('3'), back('4')] })
+    await one.wrapper.setProps({
+      turns: [createAsked('1'), back('2'), createAsked('3'), back('4')],
+    })
 
     expect(one.at()).toBe(0)
   })

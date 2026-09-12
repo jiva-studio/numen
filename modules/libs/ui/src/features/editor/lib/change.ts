@@ -99,7 +99,7 @@ const NOTHING: Mark = {
   decorations: Decoration.none,
 }
 
-const drawn = (
+const getDecorations = (
   change: EditorChange,
   from: number,
   to: number,
@@ -134,7 +134,7 @@ const start = (state: EditorState): Mark => {
   const to = reveal
     ? from + change.text.length
     : Math.max(from, Math.min(change.to, state.doc.length))
-  return { change, from, to, reveal, decorations: drawn(change, from, to, reveal) }
+  return { change, from, to, reveal, decorations: getDecorations(change, from, to, reveal) }
 }
 
 /**
@@ -164,7 +164,7 @@ export const marked = StateField.define<Mark>({
       ? from + change.text.length
       : Math.max(from, transaction.changes.mapPos(was.to, 1))
 
-    return { change, from, to, reveal, decorations: drawn(change, from, to, reveal) }
+    return { change, from, to, reveal, decorations: getDecorations(change, from, to, reveal) }
   },
   provide: (field) => EditorView.decorations.from(field, (value) => value.decorations),
 })

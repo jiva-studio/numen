@@ -84,7 +84,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
 
   const save = (id: string): void => turn(id, { kind: 'saving' })
 
-  const shown = (id: string): OpenNote => {
+  const getOpenNote = (id: string): OpenNote => {
     const tab = tabs.value.get(id)
     const err = tab?.error ?? null
     return {
@@ -164,7 +164,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     save,
     keep: conflicts.keep,
     take: conflicts.take,
-    shown,
+    shown: getOpenNote,
     link: (id: string): LinkAddress | null => addresses.value.get(id) ?? null,
     all,
     getErrorMessage: conflicts.getErrorMessage,

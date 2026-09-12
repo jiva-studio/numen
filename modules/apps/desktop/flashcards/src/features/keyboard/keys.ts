@@ -57,7 +57,7 @@ export function getSessionKeyIntent(
     if (letter === READS) return { does: 'read' }
     return null
   }
-  if (spoken(press)) return null
+  if (hasModifierOrRepeat(press)) return null
   if (press.key === 'Escape') {
     return showing.asking || showing.reading ? { does: 'shut' } : { does: 'leave' }
   }
@@ -108,7 +108,7 @@ export const letterOf = (at: number): string => LETTERS[at] ?? ''
  * a letter because a person reads down the list and presses what they see.
  */
 export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerKeyIntent | null {
-  if (spoken(press)) return null
+  if (hasModifierOrRepeat(press)) return null
   if (press.key === 'Escape') return { does: 'back' }
   if (press.key === 'Enter' || press.key === ' ') return { does: 'all' }
 
@@ -122,7 +122,7 @@ export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerK
  * A key held down repeats, and a key pressed with a modifier is the machine's
  * own shortcut. Neither is a person asking for anything here.
  */
-const spoken = (press: KeyboardEvent): boolean =>
+const hasModifierOrRepeat = (press: KeyboardEvent): boolean =>
   press.repeat || press.altKey || press.ctrlKey || press.metaKey
 
 /** Whether the overlay key is held, which is control here and command on a Mac. */

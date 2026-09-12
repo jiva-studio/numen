@@ -52,7 +52,7 @@ function onCloseTab(id: string) {
 }
 
 function onShowTab(id: string) {
-  held.shown(id)
+  held.onTabShown(id)
 }
 
 function onForgetNotice(id: string) {
@@ -79,9 +79,9 @@ function onForgetNotice(id: string) {
 
       <template #tab="{ id }">
         <component
-          :is="held.heldIn(id)!.kind.draws"
-          v-if="held.heldIn(id)"
-          :state="held.heldIn(id)!.state"
+          :is="held.getTab(id)!.kind.draws"
+          v-if="held.getTab(id)"
+          :state="held.getTab(id)!.state"
         />
 
         <div v-else />

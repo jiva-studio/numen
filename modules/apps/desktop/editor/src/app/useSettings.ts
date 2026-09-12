@@ -54,7 +54,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     pinned: dressed.pinned,
     sizes: dressed.sized,
     bounds: dressed.bounds,
-    chooses: (item) => void dressed.chooses(item),
+    chooses: (item) => void dressed.chooseItem(item),
     syncing: computed({
       get: () => oneName.kept.value,
       set: (on) => void oneName.chooses(on ? ON : OFF),
@@ -70,8 +70,8 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     latestDayStarts: dayBegins.latest,
     choosesDayStarts: (hour) => void dayBegins.chooses(hour),
     setting: (at) => rest.at(at),
-    models: (at) => rest.offers(at),
-    writes: (written) => void rest.chooses(written),
+    models: (at) => rest.getModelsAt(at),
+    writes: (written) => void rest.writeSettings(written),
     file: rest.path,
     opensFile: () => file.openSettingsFile(),
   })
@@ -80,13 +80,13 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
 
   const kept: PaletteLists = {
     offers: (command, typed) => {
-      if (command === APPEARANCE) return dressed.offers()
+      if (command === APPEARANCE) return dressed.getThemeGroups()
       if (command === MODE) return dressed.modes()
       if (command === INTERFACE_SCALE || command === TEXT_SCALE)
         return dressed.sizes(command, typed)
-      if (command === SYNCING) return oneName.offers()
-      if (command === HANGING) return hungParts.offers()
-      if (command === PARTS) return hungParts.counts()
+      if (command === SYNCING) return oneName.getSyncingGroups()
+      if (command === HANGING) return hungParts.getHangingGroups()
+      if (command === PARTS) return hungParts.getPartsGroups()
       return []
     },
     previewItem: (command, item) => {

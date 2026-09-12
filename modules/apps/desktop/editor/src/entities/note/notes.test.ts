@@ -393,7 +393,7 @@ describe('a save asked for now', () => {
 
 describe('a note that changed on disk under a save', () => {
   /** A note open and typed into, whose file moved before the write landed. */
-  const caught = async () => {
+  const createCaughtSave = async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })
@@ -408,7 +408,7 @@ describe('a note that changed on disk under a save', () => {
   }
 
   it('is put to the person, and nothing more is written', async () => {
-    const { notes, wrote } = await caught()
+    const { notes, wrote } = await createCaughtSave()
 
     expect(notes.shown('Heat.md').state).toBe('stale')
     expect(notes.stale('Heat.md')?.says).toBe('this note changed on disk, and saving stopped')
@@ -422,7 +422,7 @@ describe('a note that changed on disk under a save', () => {
   })
 
   it('keeps what the person has, and the file takes it', async () => {
-    const { notes, files } = await caught()
+    const { notes, files } = await createCaughtSave()
 
     notes.keep('Heat.md')
     await settle()
@@ -433,7 +433,7 @@ describe('a note that changed on disk under a save', () => {
   })
 
   it("takes the file's, and what it holds replaces what was typed", async () => {
-    const { notes } = await caught()
+    const { notes } = await createCaughtSave()
 
     notes.take('Heat.md')
     await settle()

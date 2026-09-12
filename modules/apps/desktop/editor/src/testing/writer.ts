@@ -8,9 +8,9 @@ import type { MessageKind, MessageWriter } from '@/shared/notices/messages'
 
 export function writer() {
   const told: { text: string; kind: MessageKind }[] = []
-  const says: MessageWriter = (text, kind = 'report') => void told.push({ text, kind })
+  const write: MessageWriter = (text, kind = 'report') => void told.push({ text, kind })
   return {
-    says,
+    write,
     /** Everything written through it, each with the kind it was written as. */
     told,
     /** The same, as the words alone, in the order they were written. */

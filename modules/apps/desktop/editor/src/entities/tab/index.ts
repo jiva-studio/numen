@@ -8,9 +8,9 @@ export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './kinds'
 export { useWindowTabs } from './windowTabs'
 export {
   AGENT,
-  begun,
   BOOK,
   CONVERSATION,
+  createWorkspace,
   DECK,
   DOCUMENT,
   FILES,

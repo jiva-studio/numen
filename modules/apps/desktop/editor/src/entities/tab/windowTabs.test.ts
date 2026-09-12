@@ -41,7 +41,7 @@ const kind = ({ keeps = false, ...over }: Partial<AnyTabKind> & { keeps?: boolea
 /** A window told what kinds it draws, each of them made with what it is given. */
 const told = (declared: readonly ((handle: WindowHandle) => AnyTabKind)[]) => {
   const window = useWindowTabs()
-  window.declares(declared.map((one) => one(window.handle)))
+  window.registerKinds(declared.map((one) => one(window.handle)))
   return window
 }
 
@@ -58,7 +58,7 @@ describe('a tab of a kind', () => {
     expect(thing.opened).toEqual(['Note.md'])
     expect(onScreen(window.layout.value)).toContain(id)
     expect(window.tabs.value).toEqual([{ id, title: 'Note.md' }])
-    expect(window.heldIn(id)?.state).toEqual({ at: 'Note.md', title: 'Note.md' })
+    expect(window.getTab(id)?.state).toEqual({ at: 'Note.md', title: 'Note.md' })
   })
 
   it('carries the word its kind gives it, and none where the kind gives none', async () => {
@@ -103,8 +103,8 @@ describe('a tab of a kind', () => {
     const another = await window.opens('other', 'Note.md')
 
     expect(another).not.toBe(one)
-    expect(window.heldIn(one)?.kind.kind).toBe('thing')
-    expect(window.heldIn(another)?.kind.kind).toBe('other')
+    expect(window.getTab(one)?.kind.kind).toBe('thing')
+    expect(window.getTab(another)?.kind.kind).toBe('other')
   })
 
   it('is nothing for a kind the window was never told about', async () => {
@@ -128,7 +128,7 @@ describe('what a kind is given', () => {
 
     expect(other.opened).toEqual(['Note.md'])
     expect(onScreen(window.layout.value)).toContain(mine)
-    expect(window.heldIn(opened)).not.toBeNull()
+    expect(window.getTab(opened)).not.toBeNull()
   })
 })
 
@@ -140,7 +140,7 @@ describe('a tab that closes', () => {
 
     expect(window.shut(id)).toBe(true)
     expect(thing.shut).toEqual(['Note.md'])
-    expect(window.heldIn(id)).toBeNull()
+    expect(window.getTab(id)).toBeNull()
   })
 
   it('says it went, for an identity the window does not hold', () => {
@@ -155,7 +155,7 @@ describe('a tab that closes', () => {
     const id = await window.opens('thing', 'Note.md')
 
     expect(window.shut(id)).toBe(false)
-    expect(window.heldIn(id)?.state).toBeTruthy()
+    expect(window.getTab(id)?.state).toBeTruthy()
     expect(onScreen(window.layout.value)).toContain(id)
   })
 
@@ -167,7 +167,7 @@ describe('a tab that closes', () => {
 
     window.handle.closes(id)
 
-    expect(window.heldIn(id)).toBeNull()
+    expect(window.getTab(id)).toBeNull()
     expect(onScreen(window.layout.value)).not.toContain(id)
   })
 })
@@ -178,10 +178,10 @@ describe('a tab let go of from outside', () => {
     const window = told([thing.declared])
     const id = await window.opens('thing', 'Note.md')
 
-    window.drops(id)
+    window.requestClose(id)
 
     expect(thing.shut).toEqual(['Note.md'])
-    expect(window.heldIn(id)).toBeNull()
+    expect(window.getTab(id)).toBeNull()
     expect(onScreen(window.layout.value)).not.toContain(id)
   })
 
@@ -190,9 +190,9 @@ describe('a tab let go of from outside', () => {
     const window = told([holding.declared])
     const id = await window.opens('thing', 'Note.md')
 
-    window.drops(id)
+    window.requestClose(id)
 
-    expect(window.heldIn(id)?.state).toBeTruthy()
+    expect(window.getTab(id)?.state).toBeTruthy()
     expect(onScreen(window.layout.value)).toContain(id)
   })
 })
@@ -203,7 +203,7 @@ describe('the tab now on screen', () => {
     const window = told([thing.declared])
     const id = await window.opens('thing', 'Note.md')
 
-    window.shown(id)
+    window.onTabShown(id)
 
     expect(thing.seen).toEqual(['Note.md'])
   })
@@ -212,7 +212,7 @@ describe('the tab now on screen', () => {
     const thing = kind()
     const window = told([thing.declared])
 
-    window.shown('gone')
+    window.onTabShown('gone')
 
     expect(thing.seen).toEqual([])
   })
@@ -239,7 +239,7 @@ describe('the tab the person is looking at', () => {
     const two = await window.handle.beside('thing', 'Two.md')
     window.show(one)
     // Every pane says what it is showing when it is drawn.
-    window.shown(two)
+    window.onTabShown(two)
 
     expect(window.handle.front()?.id).toBe(one)
     expect(window.handle.last('thing')?.id).toBe(two)
@@ -277,7 +277,7 @@ describe('a key struck on the window', () => {
     }
   }
 
-  const struck = (key: string) => new KeyboardEvent('keydown', { key })
+  const createKeyEvent = (key: string) => new KeyboardEvent('keydown', { key })
 
   it('goes to the tab of the pane the person is in, and to no other', async () => {
     // Two panes are drawn at once, so a tab that listened for itself would have
@@ -288,7 +288,7 @@ describe('a key struck on the window', () => {
     await window.handle.beside('thing', 'Two.epub')
     window.show(one)
 
-    expect(window.presses(struck('ArrowRight'))).toBe(true)
+    expect(window.onKeyPress(createKeyEvent('ArrowRight'))).toBe(true)
 
     expect(read.took).toStrictEqual(['One.epub ArrowRight'])
   })
@@ -300,7 +300,7 @@ describe('a key struck on the window', () => {
     const two = await window.handle.beside('thing', 'Two.epub')
     window.show(two)
 
-    window.presses(struck('ArrowLeft'))
+    window.onKeyPress(createKeyEvent('ArrowLeft'))
 
     expect(read.took).toStrictEqual(['Two.epub ArrowLeft'])
   })
@@ -310,7 +310,7 @@ describe('a key struck on the window', () => {
     const window = told([read.one.declared])
     await window.opens('thing', 'One.epub')
 
-    expect(window.presses(struck('k'))).toBe(false)
+    expect(window.onKeyPress(createKeyEvent('k'))).toBe(false)
     expect(read.took).toStrictEqual([])
   })
 
@@ -318,13 +318,13 @@ describe('a key struck on the window', () => {
     const window = told([kind().declared])
     await window.opens('thing', 'One.md')
 
-    expect(window.presses(struck('ArrowRight'))).toBe(false)
+    expect(window.onKeyPress(createKeyEvent('ArrowRight'))).toBe(false)
   })
 
   it('is left alone while the pane in front holds no tab', () => {
     const window = told([reading().one.declared])
 
-    expect(window.presses(struck('ArrowRight'))).toBe(false)
+    expect(window.onKeyPress(createKeyEvent('ArrowRight'))).toBe(false)
   })
 })
 

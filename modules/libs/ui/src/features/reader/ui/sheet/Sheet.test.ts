@@ -69,7 +69,7 @@ describe('a page that has come', () => {
 
 describe('a page that will not come', () => {
   /** Asked for again as many times as it is going to be, and then refused. */
-  const givenUp = async () => {
+  const mountRefusedPage = async () => {
     const page = sheet()
     for (let ask = 0; ask <= 4; ask++) {
       await page.find('.reader__picture').trigger('error')
@@ -79,7 +79,7 @@ describe('a page that will not come', () => {
   }
 
   it('says so, once it has been asked for enough times', async () => {
-    const page = await givenUp()
+    const page = await mountRefusedPage()
 
     expect(page.text()).toContain('This page would not come.')
     expect(page.find('.spinner').exists()).toBe(false)
@@ -97,7 +97,7 @@ describe('a page that will not come', () => {
   })
 
   it('stops asking, and does not point at a picture at all', async () => {
-    expect((await givenUp()).find('.reader__picture').exists()).toBe(false)
+    expect((await mountRefusedPage()).find('.reader__picture').exists()).toBe(false)
   })
 })
 

@@ -12,7 +12,7 @@ import { computed } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { awkwardLabels } from '../../fixtures/neighbourhoods'
 import { hoverOver, lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { RELATED_SEATS, type PlexSeat } from '../../lib/seat'
 import type { PlexDestination } from '../../model/showing'
@@ -362,7 +362,7 @@ export const Dark: Story = {
     { width: 560, height: 200 },
   ),
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const canvas = within(canvasElement)
 
     const fills: number[] = []

@@ -63,7 +63,7 @@ export const placeActions = (
  * was on, wherever that action has moved to. An action that is gone hands it to
  * the first there is; a list holding none takes it nowhere.
  */
-export const keptOn = (actions: readonly PlacedAction[], was: string): number => {
+export const findKeptAction = (actions: readonly PlacedAction[], was: string): number => {
   const held = actions.findIndex((one) => one.action.id === was)
   if (held >= 0) return held
   return actions.length > 0 ? 0 : -1

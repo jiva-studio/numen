@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import Thread from './Thread.vue'
 import type { Turn } from '../lib/turn'
 
-const said = (id: string, text = 'said', state?: Turn['state']): Turn =>
+const createAsked = (id: string, text = 'said', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
 
 const back = (id: string, text = 'back', state?: Turn['state']): Turn =>
@@ -23,39 +23,39 @@ describe('what is drawn', () => {
   })
 
   it('drops the empty line the moment there is a turn', () => {
-    expect(thread([said('1')]).text()).not.toContain('Nothing said yet')
+    expect(thread([createAsked('1')]).text()).not.toContain('Nothing said yet')
   })
 
   it('draws one element per turn', () => {
-    expect(thread([said('1'), back('2'), said('3')]).findAll('.thread__turn')).toHaveLength(3)
+    expect(thread([createAsked('1'), back('2'), createAsked('3')]).findAll('.thread__turn')).toHaveLength(3)
   })
 
   it('keeps the turns in the order they were handed over', () => {
-    const wrapper = thread([said('1', 'first'), back('2', 'second')])
+    const wrapper = thread([createAsked('1', 'first'), back('2', 'second')])
     const turns = wrapper.findAll('.thread__turn')
     expect(turns[0]?.text()).toContain('first')
     expect(turns[1]?.text()).toContain('second')
   })
 
   it('says which voice each turn is in', () => {
-    const turns = thread([said('1'), back('2')]).findAll('.thread__turn')
+    const turns = thread([createAsked('1'), back('2')]).findAll('.thread__turn')
     expect(turns[0]?.attributes('data-voice')).toBe('asked')
     expect(turns[1]?.attributes('data-voice')).toBe('answered')
   })
 
   it('draws a turn with no text at all', () => {
-    expect(thread([said('1', '')]).findAll('.thread__turn')).toHaveLength(1)
+    expect(thread([createAsked('1', '')]).findAll('.thread__turn')).toHaveLength(1)
   })
 })
 
 
 describe('a turn that failed', () => {
   it('says so', () => {
-    expect(thread([said('1', 'gone', 'failed')]).text()).toContain('Did not send')
+    expect(thread([createAsked('1', 'gone', 'failed')]).text()).toContain('Did not send')
   })
 
   it('says nothing of the sort about a turn that settled', () => {
-    expect(thread([said('1')]).text()).not.toContain('Did not send')
+    expect(thread([createAsked('1')]).text()).not.toContain('Did not send')
   })
 })
 
@@ -136,23 +136,23 @@ const createScrollingThread = (turns: readonly Turn[]) => {
 
 describe('following the foot', () => {
   it('brings a turn that arrives into view', async () => {
-    const one = createScrollingThread([said('1'), back('2')])
+    const one = createScrollingThread([createAsked('1'), back('2')])
 
-    await one.arrives(said('3'))
+    await one.arrives(createAsked('3'))
 
     expect(one.at()).toBe(2 * SCREEN)
   })
 
   it('follows an answer as it is written', async () => {
-    const one = createScrollingThread([said('1'), back('2', '')])
+    const one = createScrollingThread([createAsked('1'), back('2', '')])
 
-    await one.wrapper.setProps({ turns: [said('1'), back('2', 'a first word')] })
+    await one.wrapper.setProps({ turns: [createAsked('1'), back('2', 'a first word')] })
 
     expect(one.at()).toBe(SCREEN)
   })
 
   it('leaves a reader who scrolled up where they are reading', async () => {
-    const one = createScrollingThread([said('1'), back('2'), said('3')])
+    const one = createScrollingThread([createAsked('1'), back('2'), createAsked('3')])
     await one.reads(0)
 
     await one.arrives(back('4'))
@@ -161,7 +161,7 @@ describe('following the foot', () => {
   })
 
   it('takes the foot up again once it is read back down to', async () => {
-    const one = createScrollingThread([said('1'), back('2'), said('3')])
+    const one = createScrollingThread([createAsked('1'), back('2'), createAsked('3')])
     await one.reads(0)
     await one.reads(2 * SCREEN)
 
@@ -171,7 +171,7 @@ describe('following the foot', () => {
   })
 
   it('is asked back to the foot, wherever it was left', async () => {
-    const one = createScrollingThread([said('1'), back('2'), said('3')])
+    const one = createScrollingThread([createAsked('1'), back('2'), createAsked('3')])
     await one.reads(0)
 
     ;(one.wrapper.vm as unknown as { toFoot: (again?: boolean) => void }).toFoot(true)
@@ -195,7 +195,7 @@ describe('the step each part is set at', () => {
   })
 
   it('leaves what was said at the step the thread is set in', () => {
-    expect(thread([said('1')]).find('.thread__body').classes()).not.toContain('text-small')
+    expect(thread([createAsked('1')]).find('.thread__body').classes()).not.toContain('text-small')
   })
 
   it('sets a line about work at that step as well', () => {
@@ -203,7 +203,7 @@ describe('the step each part is set at', () => {
   })
 
   it('says a turn did not send in the quiet step', () => {
-    expect(thread([said('1', 'gone', 'failed')]).find('.thread__failure').classes()).toContain(
+    expect(thread([createAsked('1', 'gone', 'failed')]).find('.thread__failure').classes()).toContain(
       'text-small',
     )
   })

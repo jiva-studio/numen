@@ -29,7 +29,7 @@ export interface HandScroll {
    */
   readonly isStill: () => boolean
   /** The hand on the row, and the wheel over it. */
-  readonly took: (event: PointerEvent) => void
+  readonly onPointerDown: (event: PointerEvent) => void
   readonly onPointerMove: (event: PointerEvent) => void
   readonly letGo: (event: PointerEvent) => void
   readonly onWheel: (event: WheelEvent) => void
@@ -69,7 +69,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
    */
   const hand = new Hand()
 
-  const took = (event: PointerEvent): void => {
+  const onPointerDown = (event: PointerEvent): void => {
     // The controls sit over the room and are pressed, not dragged.
     if (!area.value || event.button !== 0) return
     hand.take(
@@ -129,5 +129,15 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     area.value.scrollTop += by.y
   }
 
-  return { along, dragging, whereabouts, send, isStill, took, onPointerMove, letGo, onWheel }
+  return {
+    along,
+    dragging,
+    whereabouts,
+    send,
+    isStill,
+    onPointerDown,
+    onPointerMove,
+    letGo,
+    onWheel,
+  }
 }

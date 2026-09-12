@@ -12,7 +12,7 @@ import { expect } from 'storybook/test'
 export const DARK = { theme: 'dark' } as const
 
 /** Fail unless the page around the story is standing on the dark tokens. */
-export async function drawnDark(canvas: HTMLElement): Promise<void> {
+export async function expectDark(canvas: HTMLElement): Promise<void> {
   const root = canvas.ownerDocument.documentElement
   await expect(getComputedStyle(root).colorScheme).toBe('dark')
 }

@@ -13,7 +13,7 @@ interface Drawn {
 /** Somewhere for the caret to stand that is in nothing. */
 const ELSEWHERE = '\n\nelsewhere'
 
-const drawn = (doc: string, caret?: number): Drawn[] => {
+const getDrawn = (doc: string, caret?: number): Drawn[] => {
   const text = caret === undefined ? doc + ELSEWHERE : doc
   const state: EditorState = createState(text, caret ?? text.length)
   const found: Drawn[] = []
@@ -30,18 +30,18 @@ const drawn = (doc: string, caret?: number): Drawn[] => {
 /** Whether the stretch of text is drawn as something else. */
 const applyReplace = (doc: string, text: string, caret?: number) => {
   const at = doc.indexOf(text)
-  return drawn(doc, caret).some(
+  return getDrawn(doc, caret).some(
     (deco) => deco.from === at && deco.to === at + text.length && !deco.spec.class,
   )
 }
 
 const classes = (doc: string, caret?: number) =>
-  drawn(doc, caret)
+  getDrawn(doc, caret)
     .map((deco) => deco.spec.class)
     .filter((name): name is string => Boolean(name))
 
 const widgets = (doc: string, caret?: number) =>
-  drawn(doc, caret)
+  getDrawn(doc, caret)
     .map((deco) => deco.spec.widget)
     .filter(Boolean)
 
@@ -150,7 +150,7 @@ describe('a table', () => {
   })
 
   it('takes whole lines', () => {
-    const [deco] = drawn(TABLE).filter((it) => it.spec.widget)
+    const [deco] = getDrawn(TABLE).filter((it) => it.spec.widget)
     expect(deco?.from).toBe(0)
     expect(deco?.to).toBe(TABLE.trimEnd().length)
   })

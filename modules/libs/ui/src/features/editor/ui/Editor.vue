@@ -20,8 +20,8 @@ import {
   preview,
   prose,
   setup,
+  showChange,
   showing,
-  shown,
   written,
 } from '../lib/setup'
 import { wholly } from '../config/languages'
@@ -147,7 +147,7 @@ watch(
 
 watch(
   () => props.change,
-  (change) => view?.dispatch({ effects: showing.reconfigure(shown(change)) }),
+  (change) => view?.dispatch({ effects: showing.reconfigure(showChange(change)) }),
 )
 
 watch(

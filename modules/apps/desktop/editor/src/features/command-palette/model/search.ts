@@ -188,11 +188,11 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const kindOf = (item: string): Source | null => built.value.held.get(item)?.kind ?? null
 
-  const chose = (item: string, action: string): SearchDestination | null => {
+  const chooseItem = (item: string, action: string): SearchDestination | null => {
     return resolveDestination(built.value.held.get(item), action)
   }
 
-  return { open, typed, groups, setTyped, setOpen, chose, typeOf, kindOf }
+  return { open, typed, groups, setTyped, setOpen, chooseItem, typeOf, kindOf }
 }
 
 export type SearchState = ReturnType<typeof useSearch>

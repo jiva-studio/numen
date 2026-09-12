@@ -55,7 +55,7 @@ const applyBody = (tab: Tab, body: string, filePath: FilePath | null): Transitio
 })
 
 /** What the tab last saw, for a write to present. */
-const seenOf = (tab: Tab): NoteBaseline | null =>
+const getBaseline = (tab: Tab): NoteBaseline | null =>
   tab.written === null || tab.filePath === null ? null : { prose: tab.written, at: tab.filePath }
 
 /** A write of what is on screen now, presenting what it is given. */
@@ -111,7 +111,7 @@ const applyEdit = (tab: Tab, body: string, at: number, limits: WriteLimits): Tra
 const applyTimer = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'loading') return still(tab)
-  if (state === 'unsaved') return beginWrite(tab, seenOf(tab))
+  if (state === 'unsaved') return beginWrite(tab, getBaseline(tab))
   if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
   return still(tab)
 }
@@ -138,7 +138,7 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
     since: null,
     isDeleted: false,
   }
-  return tab.hasPendingWrite ? beginWrite(written, seenOf(written)) : still(written)
+  return tab.hasPendingWrite ? beginWrite(written, getBaseline(written)) : still(written)
 }
 
 const applyChange = (tab: Tab, paths: readonly string[], renamed: readonly Move[]): Transition => {
@@ -159,7 +159,7 @@ const applyChange = (tab: Tab, paths: readonly string[], renamed: readonly Move[
  */
 const applySave = (tab: Tab): Transition => {
   const state = stateOf(tab)
-  if (state === 'unsaved') return beginWrite(tab, seenOf(tab))
+  if (state === 'unsaved') return beginWrite(tab, getBaseline(tab))
   if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
   return still(tab)
 }
@@ -170,7 +170,7 @@ const applySave = (tab: Tab): Transition => {
 const applySettle = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'unsaved') {
-    const going = beginWrite(tab, seenOf(tab))
+    const going = beginWrite(tab, getBaseline(tab))
     return { tab: going.tab, effects: [{ kind: 'disarm' }, ...going.effects] }
   }
   if (state === 'saving') {
@@ -211,7 +211,7 @@ const applyClose = (tab: Tab): Transition => {
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
   if (state === 'stale') return { tab, effects: [{ kind: 'hold' }] }
   if (state === 'unsaved') {
-    const going = beginWrite(tab, seenOf(tab))
+    const going = beginWrite(tab, getBaseline(tab))
     return { tab: going.tab, effects: [...going.effects, { kind: 'hold' }] }
   }
   if (state === 'saving') {

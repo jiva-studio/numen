@@ -118,13 +118,13 @@ export const seriesOf = (
     x: xOf(place, values.length),
     y:
       span > 0
-        ? held(plot.foot - (plot.foot - plot.top) * ((value - extent.least) / span), plot)
+        ? clamp(plot.foot - (plot.foot - plot.top) * ((value - extent.least) / span), plot)
         : plot.foot,
   }))
 }
 
 /** A height inside the plot the line is drawn in. */
-const held = (y: number, plot: Plot): number => Math.min(Math.max(y, plot.top), plot.foot)
+const clamp = (y: number, plot: Plot): number => Math.min(Math.max(y, plot.top), plot.foot)
 
 /** The line through those places. */
 export const lineOf = (places: readonly Position[]): string =>
@@ -344,7 +344,7 @@ export const heightsOf = (
   said: (value: number) => string,
 ): readonly Height[] => {
   const { least, most } = extent
-  const fits = (y: number, lift: string, value: number): readonly Height[] => {
+  const measureHeightAt = (y: number, lift: string, value: number): readonly Height[] => {
     const box = againstBox(y, lift)
     if (!clearAt(y, places, marks)) return []
     if (over && !apart(box, over)) return []
@@ -356,7 +356,7 @@ export const heightsOf = (
   if (most === least) {
     return [{ at: against(FOOT, '0'), box: againstBox(FOOT, '0'), text: said(most) }]
   }
-  return [...fits(TOP, '-100%', most), ...fits(FOOT, '0', least)]
+  return [...measureHeightAt(TOP, '-100%', most), ...measureHeightAt(FOOT, '0', least)]
 }
 
 /**

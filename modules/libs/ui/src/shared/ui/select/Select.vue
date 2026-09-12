@@ -66,7 +66,7 @@ const openChoices = () => {
   asking.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
 }
 
-const chose = (id: string) => {
+const onChoose = (id: string) => {
   model.value = id
 }
 
@@ -125,7 +125,7 @@ defineExpose({
     groups
     open
     opening="keyboard"
-    @choose="chose"
+    @choose="onChoose"
     @dismiss="asking = null"
   >
     <template #silence>Nothing to choose</template>

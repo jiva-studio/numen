@@ -65,7 +65,7 @@ const tabs = (about = { path: '', title: '' }) => {
     },
     () => about,
   )
-  held.declares([agents.kind])
+  held.registerKinds([agents.kind])
 
   /** An agent tab of this window, and what it holds. */
   const openTab = async () => {
@@ -73,11 +73,11 @@ const tabs = (about = { path: '', title: '' }) => {
     return { id, state: held.holdsIn<AgentTabState>(id, AGENT)! }
   }
   /** The person is in this tab now. */
-  const enters = (id: string) => held.shown(id)
-  const shuts = (id: string) => held.shut(id)
+  const showTab = (id: string) => held.onTabShown(id)
+  const closeTab = (id: string) => held.shut(id)
   /** Every agent tab on screen, the one in front last. */
   const open = () => held.tabs.value.map((one) => one.id)
-  return { ...agents, openTab, enters, shuts, open, talks }
+  return { ...agents, openTab, showTab, closeTab, open, talks }
 }
 
 /** A line of an answer, as the panel hands one back. */
@@ -207,8 +207,8 @@ describe('something to ask about a note', () => {
     const window = tabs()
     const first = await window.openTab()
     const second = await window.openTab()
-    window.enters(first.id)
-    window.enters(second.id)
+    window.showTab(first.id)
+    window.showTab(second.id)
 
     await window.askQuestion('Note.md — ')
 
@@ -220,8 +220,8 @@ describe('something to ask about a note', () => {
   it('opens another once the one the person was last in has closed', async () => {
     const window = tabs()
     const one = await window.openTab()
-    window.enters(one.id)
-    window.shuts(one.id)
+    window.showTab(one.id)
+    window.closeTab(one.id)
 
     await window.askQuestion('Note.md — ')
 
@@ -235,7 +235,7 @@ describe('an agent tab that closes', () => {
     const window = tabs()
     const one = await window.openTab()
 
-    window.shuts(one.id)
+    window.closeTab(one.id)
 
     expect(window.talks[0]?.stopped).toEqual(['finish'])
   })

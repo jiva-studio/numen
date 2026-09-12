@@ -53,7 +53,7 @@ export function view(state: ViewState) {
   const { getStepTitle, getStepLabel } = state
 
   /** One command as it is drawn, and nothing where the words typed leave it out. */
-  const drawn = (one: Command, over: CommandTarget, word: string): PaletteItem | null => {
+  const renderItem = (one: Command, over: CommandTarget, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
     const also = one.also ? byId.get(one.also) : undefined
@@ -79,7 +79,7 @@ export function view(state: ViewState) {
     const items = (group: CommandGroup): readonly PaletteItem[] =>
       inGroup(commands, group)
         .filter((one) => one.where(over, runs))
-        .map((one) => drawn(one, over, word))
+        .map((one) => renderItem(one, over, word))
         .filter((item) => item !== null)
 
     // The runs are offered over a book and over a recording, and their group

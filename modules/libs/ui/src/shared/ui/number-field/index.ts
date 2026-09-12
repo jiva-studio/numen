@@ -8,7 +8,7 @@ export {
   isTextForValue,
   stepBy,
   stepForKey,
-  written,
+  formatNumber,
   DEFAULT_BOUNDS,
 } from './number'
 export type { Bounds } from './number'

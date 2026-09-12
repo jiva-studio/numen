@@ -11,7 +11,7 @@ import ReaderToolbar from './ReaderToolbar.vue'
 import { CLOSEST, FURTHEST, NEARER, READER_WORDS } from '../../lib/strip'
 
 /** The controls over a document of that many pages, open at the first. */
-const drawn = (pages = 200, at = 0) =>
+const mountToolbar = (pages = 200, at = 0) =>
   mount(ReaderToolbar, { props: { pages, at, 'onUpdate:at': (page: number) => void page } })
 
 /**
@@ -38,7 +38,7 @@ const createToolbar = (zoom = FURTHEST) => {
 
 describe('the page asked for', () => {
   it('is the page typed, counted from one', async () => {
-    const controls = drawn()
+    const controls = mountToolbar()
     const field = controls.get('input[type="number"]')
 
     await field.setValue('12')
@@ -50,7 +50,7 @@ describe('the page asked for', () => {
   // A key and the change it made are two events on one field, and the page
   // stands for the second of them.
   it('is asked for once when one page is typed', async () => {
-    const controls = drawn()
+    const controls = mountToolbar()
     const field = controls.get('input[type="number"]')
 
     await field.setValue('12')
@@ -61,7 +61,7 @@ describe('the page asked for', () => {
   })
 
   it('is nothing at all when the field was committed with nothing in it', async () => {
-    const controls = drawn()
+    const controls = mountToolbar()
     const field = controls.get('input[type="number"]')
 
     await field.trigger('keydown.enter')
@@ -71,7 +71,7 @@ describe('the page asked for', () => {
   })
 
   it('is nothing at all for a field holding only room', async () => {
-    const controls = drawn()
+    const controls = mountToolbar()
     const field = controls.get('input[type="number"]')
 
     await field.setValue('   ')

@@ -16,7 +16,7 @@ import type { EdgeLine } from './lines'
 import { arrowTransformOf, pathOf, readingPathOf } from '../../lib/arrange'
 import type { PlacedEdge } from '../../lib/edge'
 import { lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 interface Knobs {
   /** The words set along the line. Nothing draws no title at all. */
@@ -152,7 +152,7 @@ const partsOf = (canvas: HTMLElement, edge: string) => {
 export const Dark: Story = {
   globals: DARK,
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const ground = getComputedStyle(canvasElement.querySelector('[data-ground]')!).backgroundColor
     const surface = lightness(ground)
     const from = (colour: string) => Math.abs(lightness(colour, ground) - surface)

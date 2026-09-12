@@ -6,7 +6,7 @@ import type { NoteEdit } from '@/entities/note'
 const limits = { settle: 10, bound: 40, abandoned: 100 }
 
 /** One change reported on a note. */
-const said = (over: Partial<NoteEdit> = {}): NoteEdit => ({
+const createEdit = (over: Partial<NoteEdit> = {}): NoteEdit => ({
   change: 'c1',
   path: 'Entropy.md',
   span: { from: 0, to: 5 },
@@ -22,68 +22,68 @@ describe('a change reported on a note', () => {
   it('is what the note is drawn with', () => {
     const changes = noteChanges(limits)
 
-    changes.told(said())
+    changes.reportChange(createEdit())
 
-    expect(changes.shown('Entropy.md')).toEqual({ id: 'c1', from: 0, to: 5, text: 'Order' })
+    expect(changes.getChange('Entropy.md')).toEqual({ id: 'c1', from: 0, to: 5, text: 'Order' })
   })
 
   it('is nothing on a note nobody is drawing', () => {
-    expect(noteChanges(limits).shown('Entropy.md')).toBeNull()
+    expect(noteChanges(limits).getChange('Entropy.md')).toBeNull()
   })
 
   it('is let go of where nothing more is said about it', () => {
     const changes = noteChanges(limits)
-    changes.told(said())
+    changes.reportChange(createEdit())
 
     vi.advanceTimersByTime(limits.abandoned)
 
-    expect(changes.shown('Entropy.md')).toBeNull()
+    expect(changes.getChange('Entropy.md')).toBeNull()
   })
 
   it('waits again from the last word about it', () => {
     const changes = noteChanges(limits)
-    changes.told(said())
+    changes.reportChange(createEdit())
 
     vi.advanceTimersByTime(limits.abandoned - 1)
-    changes.told(said({ text: 'Order and disorder' }))
+    changes.reportChange(createEdit({ text: 'Order and disorder' }))
     vi.advanceTimersByTime(limits.abandoned - 1)
 
-    expect(changes.shown('Entropy.md')?.text).toBe('Order and disorder')
+    expect(changes.getChange('Entropy.md')?.text).toBe('Order and disorder')
   })
 })
 
 describe('a change that has ended', () => {
   it('stays until the note changes under it', () => {
     const changes = noteChanges(limits)
-    changes.told(said())
-    changes.told(said({ isComplete: true }))
+    changes.reportChange(createEdit())
+    changes.reportChange(createEdit({ isComplete: true }))
 
     changes.arrived('Entropy.md')
-    expect(changes.shown('Entropy.md')).not.toBeNull()
+    expect(changes.getChange('Entropy.md')).not.toBeNull()
 
     vi.advanceTimersByTime(limits.settle)
-    expect(changes.shown('Entropy.md')).toBeNull()
+    expect(changes.getChange('Entropy.md')).toBeNull()
   })
 
   it('is let go of on the longer bound where the text never arrives', () => {
     const changes = noteChanges(limits)
-    changes.told(said())
-    changes.told(said({ isComplete: true }))
+    changes.reportChange(createEdit())
+    changes.reportChange(createEdit({ isComplete: true }))
 
     vi.advanceTimersByTime(limits.bound)
 
-    expect(changes.shown('Entropy.md')).toBeNull()
+    expect(changes.getChange('Entropy.md')).toBeNull()
   })
 })
 
 describe('a note the window is no longer showing', () => {
   it('is drawn with nothing, and waits on nothing', () => {
     const changes = noteChanges(limits)
-    changes.told(said())
+    changes.reportChange(createEdit())
 
     changes.shut('Entropy.md')
 
-    expect(changes.shown('Entropy.md')).toBeNull()
+    expect(changes.getChange('Entropy.md')).toBeNull()
     expect(vi.getTimerCount()).toBe(0)
   })
 })
@@ -91,8 +91,8 @@ describe('a note the window is no longer showing', () => {
 describe('a window that is going', () => {
   it('lets go of every interval it is waiting on', () => {
     const changes = noteChanges(limits)
-    changes.told(said())
-    changes.told(said({ path: 'Order.md' }))
+    changes.reportChange(createEdit())
+    changes.reportChange(createEdit({ path: 'Order.md' }))
 
     changes.close()
 

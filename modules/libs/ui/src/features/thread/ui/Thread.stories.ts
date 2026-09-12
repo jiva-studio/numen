@@ -30,7 +30,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
-const said = (id: string, text: string, state?: Turn['state']): Turn =>
+const createAsked = (id: string, text: string, state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
 
 const back = (id: string, text: string, state?: Turn['state']): Turn =>
@@ -55,10 +55,10 @@ export const Silent: Story = { render: renderThread([]) }
  */
 export const Playground: Story = {
   render: renderThread([
-    said('1', 'What does a plex draw?'),
+    createAsked('1', 'What does a plex draw?'),
     back('2', 'One node in focus, and everything else placed by its seat.'),
-    said('3', 'Two things.'),
-    said('4', 'And where do the seats come from?'),
+    createAsked('3', 'Two things.'),
+    createAsked('4', 'And where do the seats come from?'),
     back('5', MULTILINE),
   ]),
 }
@@ -66,8 +66,8 @@ export const Playground: Story = {
 /** An answer still arriving, and a turn that did not go. */
 export const InFlight: Story = {
   render: renderThread([
-    said('1', 'And the seats?', 'failed'),
-    said('2', 'What does a plex draw?'),
+    createAsked('1', 'And the seats?', 'failed'),
+    createAsked('2', 'What does a plex draw?'),
     back('3', 'One node in focus, and everything else', 'arriving'),
   ]),
 }
@@ -76,12 +76,12 @@ export const InFlight: Story = {
  *  the other way. */
 export const AwkwardText: Story = {
   render: renderThread([
-    said('1', UNBREAKABLE),
+    createAsked('1', UNBREAKABLE),
     back('2', LINK),
-    said('3', DEVANAGARI),
+    createAsked('3', DEVANAGARI),
     back('4', RUSSIAN),
-    said('5', ARABIC),
-    said('6', ''),
+    createAsked('5', ARABIC),
+    createAsked('6', ''),
   ]),
 }
 
@@ -91,7 +91,7 @@ export const AwkwardText: Story = {
  */
 export const Working: Story = {
   render: renderThread([
-    said('1', 'Add ten children to this note.'),
+    createAsked('1', 'Add ten children to this note.'),
     back('2', "I'll look at **Harmonic oscillator** first."),
     { id: '3', voice: 'doing', text: 'note_neighbourhood' },
     { id: '4', voice: 'doing', text: 'note_read' },
@@ -108,7 +108,7 @@ export const FarTooMany: Story = {
   render: renderThread(
     Array.from({ length: 200 }, (_, index) =>
       index % 2 === 0
-        ? said(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
+        ? createAsked(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
         : back(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
     ),
   ),
@@ -119,7 +119,7 @@ export const OwnTurn: Story = {
   render: () => ({
     components: { Thread },
     setup: () => ({
-      turns: [said('1', 'Show me the note.'), back('2', 'entropy.md')] as readonly Turn[],
+      turns: [createAsked('1', 'Show me the note.'), back('2', 'entropy.md')] as readonly Turn[],
     }),
     template: `
       <div class="numen h-[300px] w-[420px] rounded-panel border border-rule bg-surface px-4 py-3">
@@ -192,12 +192,12 @@ const dragged = async (from: Position, to: Position): Promise<string | null> => 
  */
 export const Selecting: Story = {
   render: renderThread([
-    said('1', 'Which of these are worth keeping?'),
+    createAsked('1', 'Which of these are worth keeping?'),
     back(
       '2',
       'Three of them:\n\n- the harmonic one\n- the damped one\n- the driven one\n\nThe rest repeat what those already say.',
     ),
-    said('3', 'Then drop the rest.'),
+    createAsked('3', 'Then drop the rest.'),
     back('4', 'Dropped. Nine notes are left in the vault.'),
   ]),
   play: async ({ canvasElement }) => {

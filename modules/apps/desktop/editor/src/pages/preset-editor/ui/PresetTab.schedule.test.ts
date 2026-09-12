@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { StopReason } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
 import { NOWHERE, type Curve } from '../types'
-import { drawn, point, rows, tabAt } from '../fixtures'
+import { mountPresetTab, point, rows, tabAt } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('a preset that schedules nothing', () => {
@@ -75,22 +75,22 @@ describe('a goal with nothing to work on', () => {
   }
 
   it('says no deck points here, and draws no curve and no figures of nothing', () => {
-    const { tab } = drawn(nothing)
+    const { tab } = mountPresetTab(nothing)
     expect(tab.text()).toContain(words.unpointed)
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(0)
     expect(tab.text()).not.toContain('holds 0 cards')
   })
 
   it('says the decks pointing here hold no cards, where they do point here', () => {
-    expect(drawn({ ...nothing, decks: 1 }).tab.text()).toContain(words.noCards(1))
-    expect(drawn({ ...nothing, decks: 4 }).tab.text()).toContain(words.noCards(4))
-    expect(drawn({ ...nothing, decks: 1 }).tab.text()).not.toContain(words.unpointed)
+    expect(mountPresetTab({ ...nothing, decks: 1 }).tab.text()).toContain(words.noCards(1))
+    expect(mountPresetTab({ ...nothing, decks: 4 }).tab.text()).toContain(words.noCards(4))
+    expect(mountPresetTab({ ...nothing, decks: 1 }).tab.text()).not.toContain(words.unpointed)
   })
 
   // The preset schedules and there is nothing here it can schedule. It is said
   // in the control's place, and it is not a reason the preset is stopped.
   it('says a material nobody has begun that no place of the range begins', () => {
-    const { tab } = drawn({ ...nothing, decks: 1, cards: 900, unbegun: 900 })
+    const { tab } = mountPresetTab({ ...nothing, decks: 1, cards: 900, unbegun: 900 })
     expect(tab.text()).toContain(words.beginsNothing)
     expect(tab.findAll('[data-preset="stopped"]')).toHaveLength(0)
   })
@@ -98,14 +98,14 @@ describe('a goal with nothing to work on', () => {
   // A preset holding cards is never told it holds none, so a curve of zeros
   // keeps its control and says nothing about the vault.
   it('draws the control for a preset holding cards, whatever its curve comes to', () => {
-    const { tab } = drawn({ ...nothing, decks: 4, cards: 900 })
+    const { tab } = mountPresetTab({ ...nothing, decks: 4, cards: 900 })
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(1)
     expect(tab.text()).not.toContain(words.unpointed)
     expect(tab.text()).not.toContain(words.noCards(4))
   })
 
   it('draws it under a goal of a date, where a curve of zeros is likeliest', () => {
-    const { tab } = drawn({
+    const { tab } = mountPresetTab({
       ...nothing,
       decks: 4,
       cards: 900,
@@ -117,7 +117,7 @@ describe('a goal with nothing to work on', () => {
   })
 
   it('leaves its settings there to be set up before a deck points here', () => {
-    const { tab, done } = drawn(nothing)
+    const { tab, done } = mountPresetTab(nothing)
     expect(tab.findAll('[data-preset-row]')).toHaveLength(6)
     const minutes = tab
       .findAll('[data-preset-row]')
@@ -132,7 +132,7 @@ describe('the settings the chosen goal schedules by', () => {
   // A goal names one budget. The budgets of the other two are not drawn, so
   // nothing on the screen offers to close a day by a measure nobody named.
   it('draws the minutes alone under a goal of minutes', () => {
-    const { tab } = drawn()
+    const { tab } = mountPresetTab()
     expect(rows(tab)).toStrictEqual([
       words.fieldName('learned'),
       words.fieldName('interval'),
@@ -145,7 +145,7 @@ describe('the settings the chosen goal schedules by', () => {
   })
 
   it('draws the target and the counts that close a day under a goal of retention', () => {
-    const { tab } = drawn({ goal: 'retention' }, { goal: 'retention' })
+    const { tab } = mountPresetTab({ goal: 'retention' }, { goal: 'retention' })
     expect(rows(tab)).toStrictEqual([
       words.fieldName('newADay'),
       words.fieldName('reviewsADay'),
@@ -161,7 +161,7 @@ describe('the settings the chosen goal schedules by', () => {
   })
 
   it('draws the day under the goal that steers it, and moves the knob by it', async () => {
-    const { tab, done } = drawn(
+    const { tab, done } = mountPresetTab(
       {
         goal: 'date',
         grid: [10, 20, 30, 40],

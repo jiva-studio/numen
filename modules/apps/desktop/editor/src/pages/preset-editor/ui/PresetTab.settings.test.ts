@@ -14,12 +14,12 @@ import rowsSource from './preset-settings/PresetSettings.vue?raw'
 import sliderSource from './curve-slider/CurveSlider.vue?raw'
 import tilesSource from './curve-slider/CurveTiles.vue?raw'
 import { NO_BOUNDS, type Field, type PresetTabState, type SettingValue } from '../types'
-import { BOUNDS, drawn, rows, tabAt } from '../fixtures'
+import { BOUNDS, mountPresetTab, rows, tabAt } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('the settings under the control', () => {
   it('draws a row for each, with what it is beside it', () => {
-    const { tab } = drawn()
+    const { tab } = mountPresetTab()
     expect(tab.text()).toContain(words.fieldName('minutesADay'))
     expect(tab.text()).toContain(words.fieldDetail('minutesADay'))
     expect(tab.text()).toContain(words.fieldName('load'))
@@ -30,7 +30,7 @@ describe('the settings under the control', () => {
   // writes the group the way every other row does. It stands under the goal
   // whose budget is cards.
   it('offers the two things a budget is spent on', async () => {
-    const { tab, done } = drawn({ goal: 'retention' }, { goal: 'retention' })
+    const { tab, done } = mountPresetTab({ goal: 'retention' }, { goal: 'retention' })
     expect(tab.text()).toContain(words.fieldName('counts'))
 
     const unit = tab
@@ -44,7 +44,7 @@ describe('the settings under the control', () => {
   // of the hundred stands and none of them is a named position. The track
   // draws no figure, so the per cent is read out beside it.
   it('moves the share of a day the debt takes along a track, and reads it out', async () => {
-    const { tab, done } = drawn({}, { backlog: 70 })
+    const { tab, done } = mountPresetTab({}, { backlog: 70 })
     expect(tab.text()).toContain(words.fieldName('backlog'))
     const row = tab.get('[data-preset-row="backlog"]')
 
@@ -69,12 +69,12 @@ describe('the settings under the control', () => {
   // The rule stands over the one value it reads, and the value the other rule
   // reads is not drawn at all — the same rule a goal follows for its budgets.
   it('offers the two rules for the learned, and draws the value the chosen one reads', async () => {
-    const byInterval = drawn({}, { learned: 'interval', interval: 21 })
+    const byInterval = mountPresetTab({}, { learned: 'interval', interval: 21 })
     expect(rows(byInterval.tab)).toContain(words.fieldName('learned'))
     expect(rows(byInterval.tab)).toContain(words.fieldName('interval'))
     expect(rows(byInterval.tab)).not.toContain(words.fieldName('retention'))
 
-    const byRetention = drawn({}, { learned: 'retention' })
+    const byRetention = mountPresetTab({}, { learned: 'retention' })
     expect(rows(byRetention.tab)).toContain(words.fieldName('retention'))
     expect(rows(byRetention.tab)).not.toContain(words.fieldName('interval'))
   })
@@ -82,13 +82,13 @@ describe('the settings under the control', () => {
   // Under a goal of retention the target is the knob's own value and the rule
   // reads it too. It is one key, so the receipt draws it once.
   it('draws the target once where the goal and the rule both read it', () => {
-    const { tab } = drawn({ goal: 'retention' }, { goal: 'retention', learned: 'retention' })
+    const { tab } = mountPresetTab({ goal: 'retention' }, { goal: 'retention', learned: 'retention' })
     const named = rows(tab).filter((one) => one === words.fieldName('retention'))
     expect(named).toHaveLength(1)
   })
 
   it('opens the rules on the line that says which one is in force', async () => {
-    const { tab } = drawn({}, { learned: 'interval' })
+    const { tab } = mountPresetTab({}, { learned: 'interval' })
     const line = tab.get('[data-preset="choice"]')
     expect(line.text()).toContain(words.ruleName('interval'))
     expect(line.attributes('aria-haspopup')).toBe('menu')
@@ -102,7 +102,7 @@ describe('the settings under the control', () => {
   })
 
   it('hands on the rule that was chosen, and is done with it at once', async () => {
-    const { tab, done } = drawn({}, { learned: 'interval' })
+    const { tab, done } = mountPresetTab({}, { learned: 'interval' })
     await tab.get('[data-preset="choice"]').trigger('click')
     const chosen = [...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]')].find(
       (one) => one.textContent?.trim() === words.ruleName('retention'),
@@ -113,7 +113,7 @@ describe('the settings under the control', () => {
   })
 
   it('holds the days a card is put off inside what a preset may hold', async () => {
-    const { tab, done } = drawn({}, { learned: 'interval', interval: 21 })
+    const { tab, done } = mountPresetTab({}, { learned: 'interval', interval: 21 })
     const row = tab.get('[data-preset-row="interval"]')
     const field = row.get<HTMLInputElement>('input')
     expect(field.element.value).toBe('21')
@@ -160,7 +160,7 @@ describe('what the tab says went wrong', () => {
   })
 
   it('offers nothing where there is nothing to say', () => {
-    const { tab } = drawn()
+    const { tab } = mountPresetTab()
     expect(tab.findAll('[role="alert"]')).toHaveLength(0)
   })
 })
@@ -180,7 +180,7 @@ describe('a file that changed under the tab', () => {
   })
 
   it('says nothing where the file is the one the tab read', () => {
-    const { tab } = drawn()
+    const { tab } = mountPresetTab()
     expect(tab.findAll('[role="status"].preset__answering')).toHaveLength(0)
     expect(tab.text()).not.toContain(words.changed)
   })
@@ -267,7 +267,7 @@ describe('the line the tab is read against', () => {
   }
 
   /** What a rule holds a block off the column by, on the two sides it has. */
-  const heldOff = (style: string, names: readonly string[]): readonly string[] =>
+  const getSpacing = (style: string, names: readonly string[]): readonly string[] =>
     [...style.matchAll(/^\s*([a-z-]+):\s*([^;]+);/gm)]
       .filter(([, name]) => names.includes(name ?? ''))
       .map(([, name, value]) => `${name}: ${value}`)
@@ -290,13 +290,13 @@ describe('the line the tab is read against', () => {
 
   it('puts the edge of every box on the edge of the column', () => {
     for (const [sheet, selector] of BOXED) {
-      expect(heldOff(styleOf(sheet, selector), APART), selector).toStrictEqual([])
+      expect(getSpacing(styleOf(sheet, selector), APART), selector).toStrictEqual([])
     }
   })
 
   it('puts the text of every block that draws no box on that same edge', () => {
     for (const [sheet, selector] of BARE) {
-      expect(heldOff(styleOf(sheet, selector), [...APART, ...AIR]), selector).toStrictEqual([])
+      expect(getSpacing(styleOf(sheet, selector), [...APART, ...AIR]), selector).toStrictEqual([])
     }
   })
 })
@@ -305,7 +305,7 @@ describe('the line the tab is read against', () => {
 // on the curve, the words beside it, the axis. The row it is typed into is one.
 describe('the row a chance of recall is typed into', () => {
   it('stands in per cent, and is bounded and stepped in per cent', () => {
-    const { tab } = drawn({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
+    const { tab } = mountPresetTab({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
     const field = tab
       .findAll('[role="spinbutton"]')
       .find((one) => one.attributes('aria-valuemax') === '99')
@@ -317,7 +317,7 @@ describe('the row a chance of recall is typed into', () => {
   })
 
   it('hands a percentage back as the share the settings hold', async () => {
-    const { tab, done } = drawn({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
+    const { tab, done } = mountPresetTab({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
     const field = tab
       .findAll('[role="spinbutton"]')
       .find((one) => one.attributes('aria-valuemax') === '99')

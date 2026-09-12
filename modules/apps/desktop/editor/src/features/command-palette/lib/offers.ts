@@ -20,7 +20,11 @@ export const MAKING = 'creating'
  * The note a search did not find, made under the words that were looked for.
  * A seat hangs it off the note in front; anything else stands it on its own.
  */
-export const creates = (seat: string, name: string, at: CommandTarget): CommandInvocation =>
+export const createNoteInvocation = (
+  seat: string,
+  name: string,
+  at: CommandTarget,
+): CommandInvocation =>
   SEATED.includes(seat) && at.path
     ? invocationOf(seat, at, name)
     : invocationOf('note', { ...at, path: '', title: '' }, name)

@@ -123,9 +123,9 @@ const anchor = shallowRef<RowId | null>(null)
  * row of the selection, else the first row of all.
  */
 const tabbed = computed<RowId | null>(() => {
-  const drawn = (row: RowId | null | undefined) =>
+  const getDrawnRow = (row: RowId | null | undefined) =>
     row != null && shown.value.some((each) => each.id === row) ? row : null
-  return drawn(here.value) ?? drawn(props.selected[0]) ?? shown.value[0]?.id ?? null
+  return getDrawnRow(here.value) ?? getDrawnRow(props.selected[0]) ?? shown.value[0]?.id ?? null
 })
 
 /** Whether the press being made has said what the selection is already. */

@@ -29,10 +29,10 @@ const editor = (takes = true) => {
 describe('a note owed the keyboard', () => {
   it('takes it as soon as an editor is drawn', async () => {
     const owed = noteKeyboard()
-    owed.owes('Note.md')
+    owed.requestFocus('Note.md')
     const drew = editor()
 
-    owed.drew('Note.md', drew.drawn)
+    owed.setEditor('Note.md', drew.drawn)
     await nextTick()
 
     expect(drew.focused).toEqual([ITSELF])
@@ -41,9 +41,9 @@ describe('a note owed the keyboard', () => {
   it('is revealed at the line it was owed', async () => {
     const owed = noteKeyboard()
     const drew = editor()
-    owed.drew('Note.md', drew.drawn)
+    owed.setEditor('Note.md', drew.drawn)
 
-    owed.owes('Note.md', 12)
+    owed.requestFocus('Note.md', 12)
     await nextTick()
 
     expect(drew.focused).toEqual([12])
@@ -53,9 +53,9 @@ describe('a note owed the keyboard', () => {
     const owed = noteKeyboard()
     const drew = editor()
 
-    owed.owes('Note.md', 12)
-    owed.owes('Note.md')
-    owed.drew('Note.md', drew.drawn)
+    owed.requestFocus('Note.md', 12)
+    owed.requestFocus('Note.md')
+    owed.setEditor('Note.md', drew.drawn)
     await nextTick()
 
     expect(drew.focused).toEqual([12])
@@ -64,12 +64,12 @@ describe('a note owed the keyboard', () => {
   it('stays owed while the editor cannot take it', async () => {
     const owed = noteKeyboard()
     const early = editor(false)
-    owed.owes('Note.md')
-    owed.drew('Note.md', early.drawn)
+    owed.requestFocus('Note.md')
+    owed.setEditor('Note.md', early.drawn)
     await nextTick()
 
     const drew = editor()
-    owed.drew('Note.md', drew.drawn)
+    owed.setEditor('Note.md', drew.drawn)
     await nextTick()
 
     expect(drew.focused).toEqual([ITSELF])
@@ -78,8 +78,8 @@ describe('a note owed the keyboard', () => {
   it('is owed nothing once an editor has taken it', async () => {
     const owed = noteKeyboard()
     const drew = editor()
-    owed.owes('Note.md')
-    owed.drew('Note.md', drew.drawn)
+    owed.requestFocus('Note.md')
+    owed.setEditor('Note.md', drew.drawn)
     await nextTick()
 
     owed.measure('Note.md')
@@ -90,11 +90,11 @@ describe('a note owed the keyboard', () => {
 
   it('is owed nothing at all once its tab has closed', async () => {
     const owed = noteKeyboard()
-    owed.owes('Note.md')
-    owed.drops('Note.md')
+    owed.requestFocus('Note.md')
+    owed.cancelFocusRequest('Note.md')
 
     const drew = editor()
-    owed.drew('Note.md', drew.drawn)
+    owed.setEditor('Note.md', drew.drawn)
     await nextTick()
 
     expect(drew.focused).toEqual([])
@@ -104,10 +104,10 @@ describe('a note owed the keyboard', () => {
     const owed = noteKeyboard()
     const one = editor()
     const other = editor()
-    owed.drew('One.md', one.drawn)
-    owed.drew('Other.md', other.drawn)
+    owed.setEditor('One.md', one.drawn)
+    owed.setEditor('Other.md', other.drawn)
 
-    owed.owes('Other.md', 3)
+    owed.requestFocus('Other.md', 3)
     await nextTick()
 
     expect(one.focused).toEqual([])
@@ -120,10 +120,10 @@ describe('the window drawn at another size', () => {
     const owed = noteKeyboard()
     const one = editor()
     const other = editor()
-    owed.drew('One.md', one.drawn)
-    owed.drew('Other.md', other.drawn)
+    owed.setEditor('One.md', one.drawn)
+    owed.setEditor('Other.md', other.drawn)
 
-    owed.measures()
+    owed.measureAll()
 
     expect(one.measured).toHaveLength(1)
     expect(other.measured).toHaveLength(1)
@@ -132,10 +132,10 @@ describe('the window drawn at another size', () => {
   it('has nothing to say to an editor whose tab has let go of it', async () => {
     const owed = noteKeyboard()
     const drew = editor()
-    owed.drew('Note.md', drew.drawn)
-    owed.drew('Note.md', null)
+    owed.setEditor('Note.md', drew.drawn)
+    owed.setEditor('Note.md', null)
 
-    owed.measures()
+    owed.measureAll()
 
     expect(drew.measured).toEqual([])
   })
@@ -145,10 +145,10 @@ describe('an editor that goes', () => {
   it('is not handed anything after it has', async () => {
     const owed = noteKeyboard()
     const drew = editor()
-    owed.drew('Note.md', drew.drawn)
-    owed.drew('Note.md', null)
+    owed.setEditor('Note.md', drew.drawn)
+    owed.setEditor('Note.md', null)
 
-    owed.owes('Note.md')
+    owed.requestFocus('Note.md')
     await nextTick()
 
     expect(drew.focused).toEqual([])

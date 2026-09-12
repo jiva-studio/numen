@@ -11,7 +11,7 @@ const mountCard = (front: string, said: { back?: string; shown?: boolean } = {})
   })
 
 /** A hand going down on the card, across by so much, and up again. */
-const taken = async (face: ReturnType<typeof mountCard>, across: number) => {
+const dragCard = async (face: ReturnType<typeof mountCard>, across: number) => {
   const card = face.find('.card').element as HTMLElement
   card.dispatchEvent(new MouseEvent('pointerdown', { clientX: 100 }))
   card.dispatchEvent(new MouseEvent('click', { clientX: 100 + across }))
@@ -82,13 +82,13 @@ describe('a card', () => {
   // card is not turned over on the way.
   it('is not turned over by a hand that took it across', async () => {
     const face = mountCard('<p>Leaf mould</p>')
-    await taken(face, -120)
+    await dragCard(face, -120)
     expect(face.emitted('show')).toBeUndefined()
   })
 
   it('is turned over by a hand that went nowhere', async () => {
     const face = mountCard('<p>Leaf mould</p>')
-    await taken(face, 0)
+    await dragCard(face, 0)
     expect(face.emitted('show')).toHaveLength(1)
   })
 

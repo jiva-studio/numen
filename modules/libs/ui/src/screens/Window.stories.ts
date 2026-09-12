@@ -312,7 +312,7 @@ const LEADING = 27
 const escapeHtml = (line: string) =>
   line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-const drawnPage = (page: number): string => {
+const renderPage = (page: number): string => {
   const leaf = page - BOOK_FIRST
   const lines = BOOK_PAGES[leaf] ?? []
   const set = lines
@@ -338,7 +338,7 @@ const overLines = (from: number, to: number, ends: number) => ({
 /** The passage a search found in it: the sentence the count is defined by. */
 const HIGHLIGHTS = [overLines(8, 9, 420), overLines(10, 11, 360)]
 
-const said = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
+const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
 
 const did = (id: string, text: string, about: string, aside: string): Turn => ({
   id,
@@ -353,7 +353,7 @@ const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text 
 
 /** A tool is named the way the panel says it: as a program is named, spoken. */
 const TURNS: readonly Turn[] = [
-  said('1', 'What does this note leave out?'),
+  createAsked('1', 'What does this note leave out?'),
   did('2', 'note neighbourhood', 'Entropy', '4 links'),
   back(
     '3',
@@ -364,7 +364,7 @@ const TURNS: readonly Turn[] = [
       'the same measure, so one of them is wrong and it is not the one you wrote ' +
       'first.',
   ),
-  said('4', 'Then make the Landauer note and put it under Entropy.'),
+  createAsked('4', 'Then make the Landauer note and put it under Entropy.'),
   did('5', 'note create', "Landauer's principle", 'under Entropy'),
   back(
     '6',
@@ -631,7 +631,7 @@ const screen = ({
       groups: panel === 'commands' ? COMMANDS : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
       pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
-      picture: (page: number) => drawnPage(page),
+      picture: (page: number) => renderPage(page),
       highlightsOn: (page: number) => (page === BOOK_FIRST ? HIGHLIGHTS : []),
       go: (page: number) => {
         at.value = Math.min(Math.max(page, 0), BOOK_LEAVES - 1)

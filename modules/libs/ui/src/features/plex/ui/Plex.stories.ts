@@ -170,7 +170,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
       }
     })
 
-    const chose = (id: string) => {
+    const onActivate = (id: string) => {
       const chosen = neighbourhood.value.nodes.find((node) => node.id === id)
       if (!chosen) return
       const was = neighbourhood.value.nodes.find((node) => node.seat === 'focus')
@@ -220,7 +220,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
 
     return {
       args,
-      chose,
+      onActivate,
       create,
       link,
       dropOnto,
@@ -241,7 +241,7 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
         :drop-name="args.dropName"
         :parts="args.parts"
         @enter="(id, part) => args.onEnter(id, part)"
-        @activate="chose($event); args.onActivate($event)"
+        @activate="onActivate($event); args.onActivate($event)"
         @show="(id, showing) => args.onShow(id, showing)"
         @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
         @link="(from, to, seat) => { link(from, to, seat); args.onLink(from, to, seat) }"

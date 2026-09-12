@@ -51,11 +51,11 @@ export function bookKind(
     }),
   }
 
-  const turns = async (path: string, spans: readonly Span[]) => {
+  const openBook = async (path: string, spans: readonly Span[]) => {
     const id = await handle.opens(BOOK, path)
     void handle.holds<BookTabState>(BOOK, id)?.focusSpans(...spans)
   }
-  tabOpeners.registerReader({ kind: 'book', format: 'epub' }, (path, spans) => void turns(path, spans))
+  tabOpeners.registerReader({ kind: 'book', format: 'epub' }, (path, spans) => void openBook(path, spans))
 
   return { kind }
 }

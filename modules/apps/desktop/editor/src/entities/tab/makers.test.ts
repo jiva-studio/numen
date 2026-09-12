@@ -87,7 +87,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('says what the vault refused, and nothing opens', async () => {
     const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
     const told = writer()
-    const made = createFileCreators(maker('occupied'), tabOpeners, MAKING, told.says)
+    const made = createFileCreators(maker('occupied'), tabOpeners, MAKING, told.write)
 
     expect(await made.decks('zoology', 'Animals')).toBe('')
     expect(told.said).toStrictEqual([ERRORS.occupied])
@@ -95,7 +95,7 @@ describe('a deck, a stencil or a preset made', () => {
 
   it('says a vault that could not be asked at all', async () => {
     const told = writer()
-    const made = createFileCreators(maker(null, true), fileOpeners({ fileKinds: async () => new Map() }), MAKING, told.says)
+    const made = createFileCreators(maker(null, true), fileOpeners({ fileKinds: async () => new Map() }), MAKING, told.write)
 
     expect(await made.decks('zoology', 'Animals')).toBe('')
     expect(told.said.join(' ')).not.toContain('the vault is not there')

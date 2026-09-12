@@ -52,7 +52,7 @@ export function createStencilFields(
     return marks
   }
 
-  const turns = (id: string, stencil: BufferStencil): void => {
+  const applyStencil = (id: string, stencil: BufferStencil): void => {
     const body = stencilBodyOf(stencil)
     parsed.set(id, { body, stencil })
     onTyped(id, body)
@@ -64,21 +64,21 @@ export function createStencilFields(
   }
 
   const actionsFor = (id: string) => ({
-    addField: (name: string) => turns(id, fieldAdded(getStencil(id), name)),
+    addField: (name: string) => applyStencil(id,fieldAdded(getStencil(id), name)),
     renameField: (field: string, name: string) => void renameFieldOnWire(id, field, name),
-    removeField: (field: string) => turns(id, fieldGone(getStencil(id), field)),
-    moveField: (field: string, at: string | null) => turns(id, fieldDropped(getStencil(id), field, at)),
-    addFace: (name: string) => turns(id, faceAdded(getStencil(id), name)),
-    renameFace: (face: string, name: string) => turns(id, faceNamed(getStencil(id), face, name)),
-    removeFace: (face: string) => turns(id, faceGone(getStencil(id), face)),
-    moveFace: (face: string, at: string | null) => turns(id, faceDropped(getStencil(id), face, at)),
-    writeFaceHalf: (face: string, half: Half, text: string) => turns(id, faceWritten(getStencil(id), face, half, text)),
+    removeField: (field: string) => applyStencil(id,fieldGone(getStencil(id), field)),
+    moveField: (field: string, at: string | null) => applyStencil(id,fieldDropped(getStencil(id), field, at)),
+    addFace: (name: string) => applyStencil(id,faceAdded(getStencil(id), name)),
+    renameFace: (face: string, name: string) => applyStencil(id,faceNamed(getStencil(id), face, name)),
+    removeFace: (face: string) => applyStencil(id,faceGone(getStencil(id), face)),
+    moveFace: (face: string, at: string | null) => applyStencil(id,faceDropped(getStencil(id), face, at)),
+    writeFaceHalf: (face: string, half: Half, text: string) => applyStencil(id,faceWritten(getStencil(id), face, half, text)),
   })
 
   return {
     getStencil,
     getMarks,
-    turns,
+    applyStencil,
     forget,
     actionsFor,
   }

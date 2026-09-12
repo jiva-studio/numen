@@ -188,7 +188,7 @@ const inFrontOf = (canvasElement: HTMLElement) =>
  * The text set in columns, once the browser has laid it out. The count is drawn
  * from the spreads the text came to, so it stands there when it has.
  */
-const laid = async (canvasElement: HTMLElement) =>
+const waitForLayout = async (canvasElement: HTMLElement) =>
   await waitFor(
     async () => {
       await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
@@ -215,7 +215,7 @@ export const OneColumn: Story = {
   decorators: [NARROW],
   render: reading(chapterOf(PROSE)),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const area = areaOf(canvasElement).getBoundingClientRect()
     await expect(columnOf(canvasElement)).toBeCloseTo(area.width - GAP, -1)
@@ -231,7 +231,7 @@ export const NoLineCutInHalf: Story = {
   decorators: [WIDE],
   render: reading(chapterOf(PROSE)),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const paper = paperOf(canvasElement)
     const line = Number.parseFloat(getComputedStyle(paper).lineHeight)
@@ -253,7 +253,7 @@ export const OneColumnTurns: Story = {
   decorators: [NARROW],
   render: reading(chapterOf(PROSE)),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const area = areaOf(canvasElement)
     const paper = paperOf(canvasElement)
@@ -285,7 +285,7 @@ export const TwoColumns: Story = {
   decorators: [WIDE],
   render: reading(chapterOf(PROSE)),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const area = areaOf(canvasElement).getBoundingClientRect()
     const column = columnOf(canvasElement)
@@ -322,7 +322,7 @@ export const PictureTallerThanTheColumn: Story = {
     ]),
   ),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const picture = paperOf(canvasElement).querySelector('img')!
     await waitFor(async () => await expect(picture.complete).toBe(true), {
@@ -344,7 +344,7 @@ export const AWordWithNothingToBreakAt: Story = {
   decorators: [NARROW],
   render: reading(chapterOf([{ tag: 'p', text: UNBROKEN }, ...PROSE.slice(0, 4)])),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     // The run's own box is the column's whatever it holds, so what is asked is
     // whether the text inside it runs past the box.
@@ -370,7 +370,7 @@ export const ATableThatWillNotBreak: Story = {
     ]),
   ),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const table = paperOf(canvasElement).querySelector('table')!
     const box = table.getBoundingClientRect()
@@ -389,7 +389,7 @@ export const VerseSetInAPreElement: Story = {
   decorators: [WIDE],
   render: reading(chapterOf([{ tag: 'pre', text: VERSE }])),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const set = paperOf(canvasElement).querySelector('pre')!
     await expect(set.scrollHeight).toBeLessThanOrEqual(set.clientHeight + 1)
@@ -416,7 +416,7 @@ export const WordsCanBeTakenUp: Story = {
   decorators: [WIDE],
   render: reading(chapterOf([...PROSE])),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     // The room this story stands in forbids it, as the window does.
     await expect(getComputedStyle(canvasElement.firstElementChild!).userSelect).toBe('none')
@@ -431,7 +431,7 @@ export const OneLine: Story = {
   decorators: [WIDE],
   render: reading(chapterOf([{ tag: 'p', text: 'One line, and the book is over.' }])),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     await expect(canvasElement.querySelector('.book__count')?.textContent).toBe('1 of 1')
     await expect(canvasElement.querySelector('.book__left')?.textContent).toBe(
@@ -474,7 +474,7 @@ export const SetLarger: Story = {
   render: reading(chapterOf([...VERSES, ...PROSE])),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     await userEvent.keyboard('{ArrowRight}')
     await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
@@ -525,7 +525,7 @@ export const TurnedByHand: Story = {
   decorators: [WIDE],
   render: reading(chapterOf(PROSE)),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
     const area = areaOf(canvasElement)
 
     await userEvent.keyboard('{ArrowRight}')
@@ -561,7 +561,7 @@ export const DrawnOutOfSight: Story = {
   decorators: [WIDE],
   render: outOfSight(chapterOf(PROSE)),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const area = areaOf(canvasElement)
     await expect(paperOf(canvasElement).scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
@@ -580,7 +580,7 @@ export const TheTurnIsCarried: Story = {
   decorators: [WIDE],
   render: reading(chapterOf(PROSE)),
   play: async ({ canvasElement }) => {
-    await laid(canvasElement)
+    await waitForLayout(canvasElement)
 
     const paper = paperOf(canvasElement)
     await expect(getComputedStyle(paper).transitionProperty).toContain('translate')

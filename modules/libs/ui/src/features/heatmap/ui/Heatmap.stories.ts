@@ -14,7 +14,7 @@ import { dayNamed } from '@/shared/lib/day'
 import type { Tally } from '../lib/heatmap'
 import type { Words } from '../lib/words'
 import { lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 const meta = {
   title: 'Flash Cards/Heatmap',
@@ -122,7 +122,7 @@ export const Dark: Story = {
     template: '<div style="inline-size: 640px"><Heatmap v-bind="args" /></div>',
   }),
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
 
     const filled = new Map<string, string>()
     for (const day of cells(canvasElement)) {

@@ -8,7 +8,7 @@
  */
 
 /** A colour laid over the ground under it, as red, green and blue. */
-export function laid(colour: string, ground = '#000'): readonly [number, number, number] {
+export function resolveColour(colour: string, ground = '#000'): readonly [number, number, number] {
   const paint = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
   if (!paint) throw new Error('no canvas to read a colour on')
   for (const fill of [ground, colour]) {
@@ -21,7 +21,7 @@ export function laid(colour: string, ground = '#000'): readonly [number, number,
 
 /** How light a colour is over the ground under it, from 0 to 255. */
 export function lightness(colour: string, ground = '#000'): number {
-  const [red, green, blue] = laid(colour, ground)
+  const [red, green, blue] = resolveColour(colour, ground)
   return 0.2126 * red + 0.7152 * green + 0.0722 * blue
 }
 

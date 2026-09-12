@@ -41,5 +41,5 @@ const isEmpty = (states: ArtifactStates): boolean => Object.keys(states).length 
 export const isUnmade = (made: ArtifactState | undefined): boolean =>
   made === undefined || made === 'none' || made === 'stopped'
 
-export const always = (): boolean => true
+export const onAnything = (): boolean => true
 

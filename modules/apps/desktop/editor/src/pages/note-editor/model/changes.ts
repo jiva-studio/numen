@@ -17,7 +17,7 @@ export function noteChanges(limits: HoldLimits = holding) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
   const carry = (path: string, arm: TimerRequest | null): void => {
-    const change = decided.shown(path)
+    const change = decided.getChange(path)
     if (change) changes.value.set(path, change)
     else changes.value.delete(path)
     if (arm) hold(arm)
@@ -36,7 +36,7 @@ export function noteChanges(limits: HoldLimits = holding) {
   }
 
   /** A change was reported. */
-  const told = (said: NoteEdit): void => carry(said.path, decided.told(said))
+  const reportChange = (said: NoteEdit): void => carry(said.path, decided.reportChange(said))
 
   /** The note changed under whatever is drawn over it. */
   const handleNoteChange = (path: string): void => carry(path, decided.handleNoteChange(path))
@@ -50,7 +50,7 @@ export function noteChanges(limits: HoldLimits = holding) {
   }
 
   /** What one note is drawn with, or nothing. */
-  const shown = (path: string): Change | null => changes.value.get(path) ?? null
+  const getChange = (path: string): Change | null => changes.value.get(path) ?? null
 
   /** Every interval is let go of, for a window that is going. */
   const close = (): void => {
@@ -58,5 +58,5 @@ export function noteChanges(limits: HoldLimits = holding) {
     timers.clear()
   }
 
-  return { told, arrived: handleNoteChange, shut, shown, close }
+  return { reportChange, arrived: handleNoteChange, shut, getChange, close }
 }

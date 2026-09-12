@@ -20,10 +20,10 @@ const vault = (held: boolean, refuses: string | null = null) => {
 describe('whether a title and a filename are one name', () => {
   it('opens on what the settings hold, so the list stands on what is in force', async () => {
     const core = vault(false)
-    const held = syncSetting(core, words, writer().says)
+    const held = syncSetting(core, words, writer().write)
     await held.start()
 
-    const groups = held.offers()
+    const groups = held.getSyncingGroups()
     expect(groups.map((group) => group.id)).toStrictEqual([SYNCING])
     const items = groups.flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual([ON, OFF])
@@ -37,7 +37,7 @@ describe('whether a title and a filename are one name', () => {
         setSyncEnabled: async () => null,
       },
       words,
-      writer().says,
+      writer().write,
     )
     await held.start()
 
@@ -45,17 +45,17 @@ describe('whether a title and a filename are one name', () => {
   })
 
   it('says which of the two is the one in force, and nothing beside the other', async () => {
-    const held = syncSetting(vault(true), words, writer().says)
+    const held = syncSetting(vault(true), words, writer().write)
     await held.start()
 
-    const items = held.offers().flatMap((group) => group.items)
+    const items = held.getSyncingGroups().flatMap((group) => group.items)
     expect(items.find((row) => row.id === ON)?.detail).toBe(words.current)
     expect(items.find((row) => row.id === OFF)?.detail).toBeUndefined()
   })
 
   it('writes the row chosen and stands on it', async () => {
     const core = vault(true)
-    const held = syncSetting(core, words, writer().says)
+    const held = syncSetting(core, words, writer().write)
     await held.start()
 
     await held.chooses(OFF)
@@ -66,7 +66,7 @@ describe('whether a title and a filename are one name', () => {
 
   it('writes nothing for the row already in force', async () => {
     const core = vault(true)
-    const held = syncSetting(core, words, writer().says)
+    const held = syncSetting(core, words, writer().write)
     await held.start()
 
     await held.chooses(ON)
@@ -76,7 +76,7 @@ describe('whether a title and a filename are one name', () => {
 
   it('writes nothing for a row it does not offer', async () => {
     const core = vault(true)
-    const held = syncSetting(core, words, writer().says)
+    const held = syncSetting(core, words, writer().write)
     await held.start()
 
     await held.chooses('interfaceScale:1.5')
@@ -88,7 +88,7 @@ describe('whether a title and a filename are one name', () => {
   it('goes back to what the settings hold where the setting could not be written', async () => {
     const core = vault(true, 'unreadable')
     const told = writer()
-    const held = syncSetting(core, words, told.says)
+    const held = syncSetting(core, words, told.write)
     await held.start()
 
     await held.chooses(OFF)

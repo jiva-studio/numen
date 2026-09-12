@@ -140,7 +140,7 @@ export interface CardFieldValue extends FieldValue {
  * names nothing for come after the rest, marked as named by nothing, and what
  * is drawn of them is the caller's.
  */
-export function laid(
+export function getCardFieldValues(
   filled: readonly FieldValue[],
   fields: readonly string[],
 ): readonly CardFieldValue[] {

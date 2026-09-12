@@ -34,7 +34,7 @@ const emit = defineEmits<{
 /** A sound is at least as long as the furthest anything has stood in it. */
 const runs = computed(() => Math.max(props.length, props.at, 0))
 
-const sought = (event: Event) => emit('seek', Number((event.target as HTMLInputElement).value))
+const onSeek = (event: Event) => emit('seek', Number((event.target as HTMLInputElement).value))
 </script>
 
 <template>
@@ -61,7 +61,7 @@ const sought = (event: Event) => emit('seek', Number((event.target as HTMLInputE
       :value="Math.min(props.at, runs)"
       :aria-label="props.label"
       :aria-valuetext="clock(props.at)"
-      @input="sought"
+      @input="onSeek"
     />
 
     <span class="player__at">{{ clock(runs) }}</span>

@@ -13,11 +13,11 @@ export interface DeckTabsInside {
   readonly pendingTabIds: Map<string, string>
   readonly store: { open(id: string, path?: string): void; where(id: string): string }
   readonly said: { getTitle(path: string): string }
-  lists(): Promise<void>
-  listsPresets(): Promise<void>
-  listsAgain(): void
-  listsPresetsAgain(): void
-  asks(path: string): Promise<void>
+  listStencils(): Promise<void>
+  listPresets(): Promise<void>
+  listStencilsAgain(): void
+  listPresetsAgain(): void
+  refreshDeckPreset(path: string): Promise<void>
   createDeckTabState(id: string): DeckTabState
 }
 
@@ -26,11 +26,11 @@ export function deckKind({
   pendingTabIds,
   store,
   said,
-  lists,
-  listsPresets,
-  listsAgain,
-  listsPresetsAgain,
-  asks,
+  listStencils,
+  listPresets,
+  listStencilsAgain,
+  listPresetsAgain,
+  refreshDeckPreset,
   createDeckTabState,
 }: DeckTabsInside) {
   const kind: TabKind<DeckTabState, typeof DECK> = {
@@ -40,9 +40,9 @@ export function deckKind({
       store.open(id, path)
       pendingTabIds.delete(path)
       cardTabPathMap.delete(id)
-      void lists()
-      void listsPresets()
-      void asks(path)
+      void listStencils()
+      void listPresets()
+      void refreshDeckPreset(path)
       return createDeckTabState(id)
     },
     called: (one) => said.getTitle(store.where(one.id)),
@@ -50,8 +50,8 @@ export function deckKind({
     draws: DeckTab,
     identity: (id) => id,
     shown: () => {
-      listsAgain()
-      listsPresetsAgain()
+      listStencilsAgain()
+      listPresetsAgain()
     },
     shuts: (one, id) => {
       one.close(id)

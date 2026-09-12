@@ -51,7 +51,7 @@ type Paint = (draw: () => void) => void
  * A tool as the panel says it. A tool served with a title of its own arrives
  * with one; the rest arrive named the way a program is named.
  */
-const spoken = (tool: string) => tool.replaceAll('_', ' ')
+const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
 
 export function useConversation(
   agent: AgentPort,
@@ -202,7 +202,7 @@ export function useConversation(
             settleAnswer()
             setWaiting(false)
             calls.add(`${step.tool}\u0000${step.about}`)
-            says = spoken(step.tool)
+            says = getSpokenTool(step.tool)
             about = step.about
             // A call naming a run of a source's text names somewhere the line
             // can be pressed to open.

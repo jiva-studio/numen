@@ -25,11 +25,11 @@ const opening = (...cards: string[]): SessionStart => ({
 })
 
 /**
- * held is the application as a test holds it: what it was asked, and what it
- * answers. An answer that never settles is what a slow disk looks like from
- * here, so a second press arrives while the first is still being written.
+ * createSession is the application as a test holds it: what it was asked, and
+ * what it answers. An answer that never settles is what a slow disk looks like
+ * from here, so a second press arrives while the first is still being written.
  */
-function held(said?: { answering?: Promise<{ answer: string }>; refuses?: unknown }) {
+function createSession(said?: { answering?: Promise<{ answer: string }>; refuses?: unknown }) {
   const asks: { what: string; said: unknown }[] = []
   let written = 0
   const cards: SessionClient = {
@@ -60,7 +60,7 @@ function held(said?: { answering?: Promise<{ answer: string }>; refuses?: unknow
 // name none — so it is told apart from naming no preset at all.
 describe('what a session is opened over', () => {
   it('names no preset where it is opened over decks', async () => {
-    const { one, asks } = held()
+    const { one, asks } = createSession()
 
     await one.start('01VAULT', 'decks/Words.md')
 
@@ -68,7 +68,7 @@ describe('what a session is opened over', () => {
   })
 
   it('names the preset where it is opened over one', async () => {
-    const { one, asks } = held()
+    const { one, asks } = createSession()
 
     await one.start('01VAULT', '', 'Sanskrit.md')
 
@@ -76,7 +76,7 @@ describe('what a session is opened over', () => {
   })
 
   it('names the defaults by the empty path, and not by naming nothing', async () => {
-    const { one, asks } = held()
+    const { one, asks } = createSession()
 
     await one.start('01VAULT', '', '')
 
@@ -105,7 +105,7 @@ describe('what a session is opened over', () => {
 
 describe('a session', () => {
   it('opens on the cards it was handed, at the first of them', async () => {
-    const { one } = held()
+    const { one } = createSession()
     const report = await one.start('01VAULT', '')
 
     expect(report).toEqual({ unwritten: [], skipped: 0 })
@@ -117,7 +117,7 @@ describe('a session', () => {
   })
 
   it('is let go of whole, so no card of it can be drawn again', async () => {
-    const { one } = held()
+    const { one } = createSession()
     await one.start('01VAULT', '')
     one.show()
     one.forget()
@@ -134,7 +134,7 @@ describe('a session', () => {
     const answering = new Promise<{ answer: string }>((then) => {
       settle = then
     })
-    const { one, asks } = held({ answering })
+    const { one, asks } = createSession({ answering })
 
     await one.start('01VAULT', '')
     one.show()
@@ -150,7 +150,7 @@ describe('a session', () => {
   })
 
   it('leaves the card where it was when the answer could not be written', async () => {
-    const { one, asks, trouble } = held({ refuses: new Error('the disk is full') })
+    const { one, asks, trouble } = createSession({ refuses: new Error('the disk is full') })
     await one.start('01VAULT', '')
     one.show()
     await one.answer('good')
@@ -164,7 +164,7 @@ describe('a session', () => {
   })
 
   it('is not answered before the card is turned over', async () => {
-    const { one, asks } = held()
+    const { one, asks } = createSession()
     await one.start('01VAULT', '')
     await one.answer('good')
 
@@ -173,7 +173,7 @@ describe('a session', () => {
   })
 
   it('brings the card back with its answer showing when one is taken back', async () => {
-    const { one } = held()
+    const { one } = createSession()
     await one.start('01VAULT', '')
     one.show()
     await one.answer('good')
@@ -188,7 +188,7 @@ describe('a session', () => {
   })
 
   it('takes nothing back before anything was answered', async () => {
-    const { one, asks } = held()
+    const { one, asks } = createSession()
     await one.start('01VAULT', '')
     await one.takeBack()
 
@@ -197,12 +197,12 @@ describe('a session', () => {
   })
 
   it('keeps the answer it wrote when taking it back was refused', async () => {
-    const { one } = held()
+    const { one } = createSession()
     await one.start('01VAULT', '')
     one.show()
     await one.answer('good')
 
-    const { one: other } = held({ refuses: new Error('gone') })
+    const { one: other } = createSession({ refuses: new Error('gone') })
     await other.start('01VAULT', '')
     other.show()
     await other.answer('good')
@@ -213,7 +213,7 @@ describe('a session', () => {
   })
 
   it('is over when the last card has been answered', async () => {
-    const { one } = held()
+    const { one } = createSession()
     await one.start('01VAULT', '')
     for (const _ of [0, 1, 2]) {
       one.show()

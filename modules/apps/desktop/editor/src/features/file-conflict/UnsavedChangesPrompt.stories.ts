@@ -46,7 +46,7 @@ const notice = (canvas: HTMLElement) => within(canvas).queryByRole('alertdialog'
 const notes = (canvas: HTMLElement) => within(canvas).getAllByRole('listitem')
 
 /** Every way out of every note standing. */
-const answers = (canvas: HTMLElement) => within(canvas).getAllByRole('button')
+const getAnswers = (canvas: HTMLElement) => within(canvas).getAllByRole('button')
 
 /** Two notes, each with the three ways out of it. */
 export const TwoNotes: Story = {
@@ -55,10 +55,10 @@ export const TwoNotes: Story = {
     const said = notice(canvasElement)
     await expect(said).not.toBeNull()
     await expect(notes(canvasElement)).toHaveLength(2)
-    await expect(answers(canvasElement)).toHaveLength(6)
+    await expect(getAnswers(canvasElement)).toHaveLength(6)
 
     // An answer is a word in the sentence it stands in, with a line under it.
-    const answer = getComputedStyle(answers(canvasElement)[0]!)
+    const answer = getComputedStyle(getAnswers(canvasElement)[0]!)
     await expect(answer.textDecorationLine).toBe('underline')
     await expect(answer.backgroundColor).toBe('rgba(0, 0, 0, 0)')
 
@@ -78,7 +78,7 @@ export const AnsweredForOneNote: Story = {
 
     // The answer given is the answer for the note it stands beside, and the
     // other note is left standing.
-    const keep = answers(canvasElement).find((one) => one.textContent?.trim() === WORDS.keep)
+    const keep = getAnswers(canvasElement).find((one) => one.textContent?.trim() === WORDS.keep)
     await userEvent.click(keep as HTMLElement)
     await waitFor(() => expect(first?.keep).toHaveBeenCalledTimes(1))
     await expect(first?.take).not.toHaveBeenCalled()
@@ -97,7 +97,7 @@ export const AnUnbrokenName: Story = {
     await expect(title.scrollWidth).toBeGreaterThan(title.clientWidth)
 
     const row = row_.getBoundingClientRect()
-    for (const answer of answers(canvasElement)) {
+    for (const answer of getAnswers(canvasElement)) {
       const box = answer.getBoundingClientRect()
       await expect(box.right).toBeLessThanOrEqual(Math.ceil(row.right))
       await expect(box.width).toBeGreaterThan(0)

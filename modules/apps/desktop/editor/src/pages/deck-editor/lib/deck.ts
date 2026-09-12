@@ -13,11 +13,11 @@ export {
 export {
   applyHead,
   applyName,
-  drawnOf,
-  drawnSectionsOf,
+  cardsOf,
   pathOfCut,
   sameDeck,
   sameOffers,
+  sectionsOf,
   stencilsOf,
 } from './view'
 export {

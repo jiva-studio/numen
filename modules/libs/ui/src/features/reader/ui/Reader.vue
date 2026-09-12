@@ -68,8 +68,17 @@ const area = useTemplateRef<HTMLElement>('area')
 const { viewport, measure } = useViewport(area)
 
 /** Where the row stands, and what a hand or a wheel does to it. */
-const { along, dragging, whereabouts, send, isStill, took, onPointerMove, letGo, onWheel } =
-  useHandScroll(area)
+const {
+  along,
+  dragging,
+  whereabouts,
+  send,
+  isStill,
+  onPointerDown,
+  onPointerMove,
+  letGo,
+  onWheel,
+} = useHandScroll(area)
 
 const laid = computed(() => row(props.pages, viewport.value, zoom.value))
 const shown = computed(() => within(laid.value, viewport.value, along.value))
@@ -150,7 +159,7 @@ defineExpose({
       role="region"
       :aria-label="words.pages"
       @scroll.passive="onScroll"
-      @pointerdown="took"
+      @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="letGo"
       @pointercancel="letGo"

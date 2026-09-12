@@ -76,7 +76,7 @@ const vault: VaultCardsDue = {
   reading: false,
 }
 
-const shown = (presets: readonly Preset[], over: VaultCardsDue = vault) =>
+const mountDecks = (presets: readonly Preset[], over: VaultCardsDue = vault) =>
   mount(Decks, {
     props: {
       vault: over,
@@ -91,13 +91,13 @@ const shown = (presets: readonly Preset[], over: VaultCardsDue = vault) =>
 
 describe('the decks of a vault', () => {
   it('says which preset schedules each deck', () => {
-    const one = shown([preset({ decks: ['decks/Words.md', 'decks/Roots.md'] })])
+    const one = mountDecks([preset({ decks: ['decks/Words.md', 'decks/Roots.md'] })])
 
     expect(one.findAll('.decks__by').map((by) => by.text())).toEqual(['Sanskrit', 'Sanskrit'])
   })
 
   it('shows a deck of a preset that schedules nothing as not studied today', () => {
-    const one = shown([
+    const one = mountDecks([
       preset({ decks: ['decks/Words.md'], paused: 'no cards a day', cards: 0 }),
       preset({ path: 'Pali.md', name: 'Pali', decks: ['decks/Roots.md'] }),
     ])
@@ -109,7 +109,7 @@ describe('the decks of a vault', () => {
   })
 
   it('leaves a deck alone where nothing says which preset schedules it', () => {
-    const one = shown([])
+    const one = mountDecks([])
 
     expect(one.findAll('.decks__by')).toHaveLength(0)
     expect(one.findAll('.decks__stopped')).toHaveLength(0)
@@ -128,7 +128,7 @@ describe('a deck with nothing waiting', () => {
   // Something was answered under the preset today and nothing of this deck is
   // left, which is the day's work met.
   it('says the day is done where the deck was answered and owes none', () => {
-    const one = shown([preset({ cards: 0, answered: 6, took: 3 })], createVault(20, 0, 0))
+    const one = mountDecks([preset({ cards: 0, answered: 6, took: 3 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__met').text()).toBe('Done today')
     expect(one.findAll('.due-count')).toHaveLength(1)
@@ -138,7 +138,7 @@ describe('a deck with nothing waiting', () => {
   // Having nothing due is not having finished. Nothing was answered under this
   // preset today, so no deck of it has done anything.
   it('says a deck nothing fell due for has nothing, and never that it is done', () => {
-    const one = shown([preset({ cards: 0, answered: 0, took: 0 })], createVault(20, 0, 0))
+    const one = mountDecks([preset({ cards: 0, answered: 0, took: 0 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__stopped').text()).toBe('nothing today')
     expect(one.findAll('.decks__met')).toHaveLength(0)
@@ -147,7 +147,7 @@ describe('a deck with nothing waiting', () => {
   // The budget was spent elsewhere under this preset, so this deck is asked
   // nothing. That is the preset's reason, the way a paused one's is.
   it('says the preset is full where its budget is what left the deck nothing', () => {
-    const one = shown([preset({ cards: 0, answered: 55, took: 20 })], createVault(20, 0, 0))
+    const one = mountDecks([preset({ cards: 0, answered: 55, took: 20 })], createVault(20, 0, 0))
 
     expect(one.find('.decks__stopped').text()).toBe('the day is full')
     expect(one.findAll('.decks__met')).toHaveLength(0)
@@ -156,7 +156,7 @@ describe('a deck with nothing waiting', () => {
   // Every card face here is one nobody has begun and the preset begins none a
   // day, so no next day picks any of them up. The preset is not stopped.
   it('says nothing here can be begun where the preset begins none a day', () => {
-    const one = shown(
+    const one = mountDecks(
       [preset({ cards: 0, budget: { new: 0, reviews: 200, minutes: 20 } })],
       createVault(20, 0, 0, 20),
     )
@@ -168,7 +168,7 @@ describe('a deck with nothing waiting', () => {
   // A deck some of which has been begun has cards that come round, so its
   // quiet day is a quiet day.
   it('says nothing today where some of the deck has been begun', () => {
-    const one = shown(
+    const one = mountDecks(
       [preset({ cards: 0, budget: { new: 0, reviews: 200, minutes: 20 } })],
       createVault(20, 0, 0, 19),
     )
@@ -179,20 +179,20 @@ describe('a deck with nothing waiting', () => {
   // The preset begins cards a day, so the unbegun material is waiting on the
   // day and not on a setting.
   it('says nothing today where the preset does begin cards a day', () => {
-    const one = shown([preset({ cards: 0 })], createVault(20, 0, 0, 20))
+    const one = mountDecks([preset({ cards: 0 })], createVault(20, 0, 0, 20))
 
     expect(one.find('.decks__stopped').text()).toBe('nothing today')
   })
 
   it('says the reason instead where the preset schedules nothing today', () => {
-    const one = shown([preset({ cards: 0, paused: 'no cards a day' })], createVault(20, 0, 0))
+    const one = mountDecks([preset({ cards: 0, paused: 'no cards a day' })], createVault(20, 0, 0))
 
     expect(one.find('.decks__stopped').text()).toBe('no cards a day')
     expect(one.findAll('.decks__met')).toHaveLength(0)
   })
 
   it('says neither where the deck holds no card at all', () => {
-    const one = shown([preset({ cards: 0 })], createVault(0, 0, 0))
+    const one = mountDecks([preset({ cards: 0 })], createVault(0, 0, 0))
 
     expect(one.findAll('.decks__met')).toHaveLength(0)
     expect(one.findAll('.decks__stopped')).toHaveLength(0)
@@ -201,7 +201,7 @@ describe('a deck with nothing waiting', () => {
   })
 
   it('counts what is waiting where something is', () => {
-    const one = shown([preset()], createVault(20, 8, 2))
+    const one = mountDecks([preset()], createVault(20, 8, 2))
 
     expect(one.find('.decks__deck').find('.due-count').text()).toBe('10 to review')
     expect(one.findAll('.decks__met')).toHaveLength(0)
@@ -212,7 +212,7 @@ describe('a deck with nothing waiting', () => {
 // to whatever opens a session.
 describe('a preset pressed', () => {
   it('is passed on by the note it stands in', () => {
-    const one = shown([preset()])
+    const one = mountDecks([preset()])
 
     one.findComponent(Presets).vm.$emit('start', 'Sanskrit.md')
 
@@ -234,7 +234,7 @@ describe('the tile and the decks under it', () => {
         { deck: 'decks/Stems.md', faces: 20, due: 0, new: 0, learned: 0, unbegun: 0 },
       ],
     }
-    const one = shown(
+    const one = mountDecks(
       [
         preset({
           decks: ['decks/Words.md', 'decks/Roots.md', 'decks/Stems.md'],

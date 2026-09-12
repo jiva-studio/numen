@@ -130,12 +130,12 @@ describe('what did not fit', () => {
 
     // How much fits depends on the window, so the sentence is read against
     // what was actually drawn rather than against a number written here.
-    const drawn = (seat: string) =>
+    const countDrawn = (seat: string) =>
       plex.findAll('.plex__node').filter((n) => n.attributes('aria-label')?.endsWith(`, ${seat}`))
         .length
 
-    expect(status).toContain(`${200 - drawn('child')} children`)
-    expect(status).toContain(`${40 - drawn('jump')} jumps`)
+    expect(status).toContain(`${200 - countDrawn('child')} children`)
+    expect(status).toContain(`${40 - countDrawn('jump')} jumps`)
     expect(status).toContain('not shown')
   })
 

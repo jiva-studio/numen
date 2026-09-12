@@ -40,7 +40,7 @@ type Grid = ReturnType<typeof mountDeck>
 
 const tileFor = (held: Grid, id: string) => held.get(`[data-card="${id}"]`)
 
-const drawnCards = (held: Grid) =>
+const getDrawnCards = (held: Grid) =>
   held.findAll('[data-card]').map((tile) => tile.attributes('data-card'))
 
 /** The fields a tile puts in boxes, in the order it draws them. */
@@ -104,7 +104,7 @@ afterEach(() => {
 
 describe('DeckEditor', () => {
   it('draws a tile per card, in the order they were handed in', () => {
-    expect(drawnCards(mountDeck())).toEqual(['llama', 'yak'])
+    expect(getDrawnCards(mountDeck())).toEqual(['llama', 'yak'])
   })
 
   it('stands the plus last, and counts it in what a tile is announced as', () => {
@@ -663,7 +663,7 @@ describe('DeckEditor', () => {
         ]
         const held = mountSectioned({ cards: lost })
 
-        expect(drawnCards(held)).toEqual(['lost', 'llama'])
+        expect(getDrawnCards(held)).toEqual(['lost', 'llama'])
         expect(tileFor(held, 'lost').attributes('data-section')).toBeUndefined()
         // Every card is drawn, so what each tile is announced by counts them
         // all and the plus each run carries.

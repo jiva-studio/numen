@@ -34,7 +34,7 @@ const drawing = (neighbourhood: ReturnType<typeof around>) => {
  * Every edge, as the notes at its two ends. A ticket no note holds reads as
  * nothing, so an edge drawn under anything else says so here.
  */
-const drawn = (neighbourhood: ReturnType<typeof around>) => {
+const edgesOf = (neighbourhood: ReturnType<typeof around>) => {
   const { plex, note } = drawing(neighbourhood)
   return plex.edges.map(
     (edge) => `${note(edge.from)} -> ${note(edge.to)}${edge.label ? ` (${edge.label})` : ''}`,
@@ -44,7 +44,7 @@ const drawn = (neighbourhood: ReturnType<typeof around>) => {
 describe('what the plex is handed', () => {
   it('runs an edge the way the relationship runs', () => {
     expect(
-      drawn(
+      edgesOf(
         around('Here', [
           ['Above', 'parent', 'part of', ''],
           ['Below', 'child', '', ''],
@@ -62,7 +62,7 @@ describe('what the plex is handed', () => {
 
   it('hangs a sibling off the parent, not off the focus', () => {
     expect(
-      drawn(
+      edgesOf(
         around('Here', [
           ['Above', 'parent', 'part of', ''],
           ['Beside', 'sibling', '', 'Above'],
@@ -76,7 +76,7 @@ describe('what the plex is handed', () => {
     // knows which. A line drawn from the other one says a note is the child of
     // something the vault never joined it to.
     expect(
-      drawn(
+      edgesOf(
         around('Here', [
           ['Machine learning', 'parent', '', ''],
           ['Eigenvector', 'parent', 'needs', ''],
@@ -95,7 +95,7 @@ describe('what the plex is handed', () => {
   it('draws no sibling edge when no parent is shown', () => {
     // It would otherwise fall back to the focus, which says the wrong thing:
     // a sibling is not a child.
-    expect(drawn(around('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual([])
+    expect(edgesOf(around('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual([])
   })
 
   it('seats every note it was given', () => {

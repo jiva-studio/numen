@@ -13,7 +13,7 @@ import { WORDS as words } from '../words'
 
 const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
 
-const drawn = async (answers: Partial<TextEditorTabDeps> = {}) => {
+const mountTextEditor = async (answers: Partial<TextEditorTabDeps> = {}) => {
   const wrote: string[] = []
   const core: TextEditorTabDeps = {
     getSettingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
@@ -30,7 +30,7 @@ const drawn = async (answers: Partial<TextEditorTabDeps> = {}) => {
 
 describe('the file drawn', () => {
   it('stands in the editor, read as JSON', async () => {
-    const { tab } = await drawn()
+    const { tab } = await mountTextEditor()
     const editor = tab.getComponent({ name: 'Editor' })
 
     expect(editor.props('language')).toBe('json')
@@ -40,14 +40,14 @@ describe('the file drawn', () => {
   })
 
   it('carries no bar of its own over the text', async () => {
-    const { tab } = await drawn()
+    const { tab } = await mountTextEditor()
 
     expect(tab.findAll('button')).toHaveLength(0)
     expect(tab.text()).not.toContain('/numen.json')
   })
 
   it('is kept the way a note is kept', async () => {
-    const { tab, wrote } = await drawn()
+    const { tab, wrote } = await mountTextEditor()
     const editor = tab.getComponent({ name: 'Editor' })
 
     await editor.vm.$emit('update:modelValue', '{}\n')
@@ -57,7 +57,7 @@ describe('the file drawn', () => {
   })
 
   it('says what is wrong where the settings could not be read out of it', async () => {
-    const { tab, state } = await drawn({
+    const { tab, state } = await mountTextEditor({
       saveSettingsFile: () =>
         Promise.reject(
           new ConnectError('not a setting: it does not read as JSON, at byte 12', Code.InvalidArgument),
@@ -74,7 +74,7 @@ describe('the file drawn', () => {
 
   it('puts the two answers where the file moved past what was read', async () => {
     const wrote: string[] = []
-    const { tab, state } = await drawn({
+    const { tab, state } = await mountTextEditor({
       saveSettingsFile: (written, seen) => {
         if (seen !== null) return Promise.resolve({ changed: true })
         wrote.push(written)

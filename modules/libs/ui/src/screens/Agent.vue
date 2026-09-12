@@ -51,7 +51,7 @@ defineExpose({ focus: (how?: FocusOptions) => composer.value?.focus(how) })
 const room = ref('0px')
 
 /** Sent. The conversation takes up following its foot, where the question is. */
-const sent = (text: string) => {
+const onSubmit = (text: string) => {
   emit('submit', text)
   thread.value?.toFoot(true)
 }
@@ -103,7 +103,7 @@ onBeforeUnmount(() => watching?.disconnect())
       :disabled="disabled"
       :sends="sends"
       :stops="stops"
-      @submit="sent"
+      @submit="onSubmit"
       @stop="emit('stop')"
     />
   </div>

@@ -24,7 +24,7 @@ const around = (focus: string, related: Neighbour[]) =>
   })
 
 /** Every edge, as the notes at its two ends and what is written on it. */
-const drawn = (neighbourhood: ReturnType<typeof around>) =>
+const getEdges = (neighbourhood: ReturnType<typeof around>) =>
   asPlex(neighbourhood).edges.map(
     (edge) =>
       `${edge.from} -> ${edge.to}${edge.label ? ` (${edge.label})` : ''}` +
@@ -34,7 +34,7 @@ const drawn = (neighbourhood: ReturnType<typeof around>) =>
 describe('what the plex is handed', () => {
   it('runs an edge the way the relationship runs', () => {
     expect(
-      drawn(
+      getEdges(
         around('Here', [
           ['Above', Seat.PARENT, 'part of', ''],
           ['Below', Seat.CHILD, '', ''],
@@ -67,7 +67,7 @@ describe('what the plex is handed', () => {
   // points away from the focus whichever way the edge itself runs.
   it('marks the end away from the focus where both notes named the link', () => {
     expect(
-      drawn(
+      getEdges(
         around('Here', [
           ['Above', Seat.PARENT, '', '', true],
           ['Below', Seat.CHILD, '', '', true],
@@ -77,12 +77,12 @@ describe('what the plex is handed', () => {
   })
 
   it('leaves a one-sided link without an arrow', () => {
-    expect(drawn(around('Here', [['Below', Seat.CHILD, '', '']]))).toEqual(['Here -> Below'])
+    expect(getEdges(around('Here', [['Below', Seat.CHILD, '', '']]))).toEqual(['Here -> Below'])
   })
 
   it('hangs a sibling off the parent the two share, not off the focus', () => {
     expect(
-      drawn(
+      getEdges(
         around('Here', [
           ['Above', Seat.PARENT, 'part of', ''],
           ['Beside', Seat.SIBLING, '', 'Above'],
@@ -93,7 +93,7 @@ describe('what the plex is handed', () => {
 
   it('hangs each sibling off its own parent when there are two', () => {
     expect(
-      drawn(
+      getEdges(
         around('Here', [
           ['Above', Seat.PARENT, '', ''],
           ['Beyond', Seat.PARENT, '', ''],

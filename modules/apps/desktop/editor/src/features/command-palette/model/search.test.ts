@@ -273,12 +273,12 @@ describe('where a thing found takes the person', () => {
     const palette = await createFilledPalette()
     const item = groupOf(palette.groups.value, 'names')!.items[0]!
 
-    expect(palette.chose(item.id, 'plex')).toEqual({
+    expect(palette.chooseItem(item.id, 'plex')).toEqual({
       at: 'plex',
       path: 'notes/entropy.md',
       title: 'Entropy',
     })
-    expect(palette.chose(item.id, 'note')).toEqual({
+    expect(palette.chooseItem(item.id, 'note')).toEqual({
       at: 'file',
       path: 'notes/entropy.md',
       title: 'Entropy',
@@ -289,14 +289,14 @@ describe('where a thing found takes the person', () => {
     const palette = await createFilledPalette()
     const item = groupOf(palette.groups.value, 'names')!.items[1]!
 
-    expect(palette.chose(item.id, 'note')).toEqual({
+    expect(palette.chooseItem(item.id, 'note')).toEqual({
       at: 'file',
       path: 'notes/carnot.md',
       title: 'The Carnot cycle',
       line: 12,
     })
     // The plex draws notes and not the lines inside them.
-    expect(palette.chose(item.id, 'plex')).toEqual({
+    expect(palette.chooseItem(item.id, 'plex')).toEqual({
       at: 'plex',
       path: 'notes/carnot.md',
       title: 'The Carnot cycle',
@@ -314,7 +314,7 @@ describe('where a thing found takes the person', () => {
     await flushPromises()
     const item = groupOf(palette.groups.value, 'text')!.items[0]!
 
-    expect(palette.chose(item.id, 'note')).toEqual({
+    expect(palette.chooseItem(item.id, 'note')).toEqual({
       at: 'file',
       path: 'notes/heat.md',
       title: 'Heat engines',
@@ -324,7 +324,7 @@ describe('where a thing found takes the person', () => {
 
   it('takes nobody anywhere for an item it is not drawing', async () => {
     const palette = await createFilledPalette()
-    expect(palette.chose('notes/nowhere.md', 'plex')).toBeNull()
+    expect(palette.chooseItem('notes/nowhere.md', 'plex')).toBeNull()
   })
 })
 
@@ -339,14 +339,14 @@ describe('what a key reaches, per kind of thing found', () => {
     vault.mode('words')?.answers([passage()])
     await flushPromises()
 
-    const acts = (group: string, at: number) =>
+    const getActions = (group: string, at: number) =>
       (
         palette.groups.value.find((one) => one.id === group)?.items[at]?.actions ?? []
       ).map((one) => one.id)
 
-    expect(acts('names', 0)).toEqual(['plex', 'note'])
-    expect(acts('names', 1)).toEqual(['note', 'plex'])
-    expect(acts('text', 0)).toEqual(['note', 'plex'])
+    expect(getActions('names', 0)).toEqual(['plex', 'note'])
+    expect(getActions('names', 1)).toEqual(['note', 'plex'])
+    expect(getActions('text', 0)).toEqual(['note', 'plex'])
   })
 })
 
@@ -378,7 +378,7 @@ describe('a passage from something that is not a note', () => {
     expect(item.actions?.map((one) => one.text)).toEqual([WORDS.readDocument])
 
     // The document opens where the words stand in its own text.
-    expect(palette.chose(item.id, 'document')).toEqual({
+    expect(palette.chooseItem(item.id, 'document')).toEqual({
       at: 'document',
       path: 'library/mahabharata.epub',
       title: '',
@@ -386,8 +386,8 @@ describe('a passage from something that is not a note', () => {
       length: 31,
     })
     // It is neither a note nor a node, and neither is answered for.
-    expect(palette.chose(item.id, 'note')).toBeNull()
-    expect(palette.chose(item.id, 'plex')).toBeNull()
+    expect(palette.chooseItem(item.id, 'note')).toBeNull()
+    expect(palette.chooseItem(item.id, 'plex')).toBeNull()
   })
 })
 

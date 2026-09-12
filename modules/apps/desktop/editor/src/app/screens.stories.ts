@@ -479,7 +479,7 @@ const PLAYER: Player = {
   seek: () => {},
 }
 
-const heard = (cues: readonly Cue[]): Recordings => ({
+const createRecordings = (cues: readonly Cue[]): Recordings => ({
   getSummary: async () => ({
     duration: RUNS,
     mediaUrl: MEDIA,
@@ -500,7 +500,7 @@ export const Recording: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      useTranscriptTab(useTranscript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
+      useTranscriptTab(useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
     ),
 }
 
@@ -510,7 +510,7 @@ export const NoTranscript: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      useTranscriptTab(useTranscript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
+      useTranscriptTab(useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
     ),
 }
 
@@ -520,10 +520,10 @@ export const NoTranscript: Story = {
  */
 export const Transcribing: Story = {
   render: () => {
-    const state = useTranscriptTab(useTranscript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
+    const state = useTranscriptTab(useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
       runs: () => {},
     })
-    state.ticks(true)
+    state.setWorking(true)
     return window(`${RECORDING}:lecture`, RecordingTab, state)
   },
 }
@@ -609,7 +609,7 @@ const files = (open: readonly string[]) => {
 }
 
 /** A frame drawn, and the layout it has settled into. */
-const drawn = () => new Promise((then) => requestAnimationFrame(() => then(null)))
+const waitForFrame = () => new Promise((then) => requestAnimationFrame(() => then(null)))
 
 /* A scanned book, for the run that reads one. --------------------------------
  *
@@ -730,8 +730,8 @@ const createMenuStory = (
       await file.opens?.()
       await read
       await nextTick()
-      await drawn()
-      await drawn()
+      await waitForFrame()
+      await waitForFrame()
       const row = document.querySelector(`[data-tree-row="${CSS.escape(path)}"]`)
       const box = row?.getBoundingClientRect()
       state.openMenu({ path, at: { x: (box?.left ?? 0) + 24, y: box?.bottom ?? 0 } })
@@ -765,7 +765,7 @@ export const Transcribed: Story = {
     createMenuStory('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
       draws: RecordingTab,
-      state: useTranscriptTab(useTranscript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
+      state: useTranscriptTab(useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
         runs: () => {},
       }),
     }),

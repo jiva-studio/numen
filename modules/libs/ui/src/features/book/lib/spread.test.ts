@@ -30,7 +30,7 @@ const NARROW = 420
  * A column takes its share of the area, gap and all, which is how the browser
  * lays them out and how far a spread has to move.
  */
-const laid = (width: number, columns: number, all: number): Flow => ({
+const createFlow = (width: number, columns: number, all: number): Flow => ({
   along: (all * width) / columns,
   width,
   gap: GAP,
@@ -114,26 +114,26 @@ describe('how many columns the text of a document fills', () => {
 
 describe('how many spreads a document comes to', () => {
   it('counts the columns off the whole run', () => {
-    expect(columnsInAll(laid(WIDE, 2, 10))).toBe(10)
-    expect(columnsInAll(laid(NARROW, 1, 7))).toBe(7)
+    expect(columnsInAll(createFlow(WIDE, 2, 10))).toBe(10)
+    expect(columnsInAll(createFlow(NARROW, 1, 7))).toBe(7)
   })
 
   it('turns them into spreads, two columns to a spread in a wide area', () => {
-    expect(spreads(laid(WIDE, 2, 10))).toBe(5)
-    expect(spreads(laid(WIDE, 2, 9))).toBe(5)
-    expect(spreads(laid(NARROW, 1, 7))).toBe(7)
+    expect(spreads(createFlow(WIDE, 2, 10))).toBe(5)
+    expect(spreads(createFlow(WIDE, 2, 9))).toBe(5)
+    expect(spreads(createFlow(NARROW, 1, 7))).toBe(7)
   })
 
   it('adds no spread for a gap left standing after the last column', () => {
     // A run measured one gap longer than the columns in it is the same
     // document, and a spread of nothing at the end of a book is a page a person
     // turns to and finds empty.
-    const flow = laid(WIDE, 2, 10)
+    const flow = createFlow(WIDE, 2, 10)
     expect(spreads({ ...flow, along: flow.along + GAP })).toBe(5)
   })
 
   it('adds no spread for the pixel a browser rounds a column to', () => {
-    const flow = laid(WIDE, 2, 10)
+    const flow = createFlow(WIDE, 2, 10)
     expect(spreads({ ...flow, along: flow.along + 0.5 })).toBe(5)
     expect(spreads({ ...flow, along: flow.along - 0.5 })).toBe(5)
   })
@@ -144,8 +144,8 @@ describe('how many spreads a document comes to', () => {
   })
 
   it('comes to one spread for a document of one line', () => {
-    expect(spreads(laid(WIDE, 2, 1))).toBe(1)
-    expect(spreads(laid(NARROW, 1, 1))).toBe(1)
+    expect(spreads(createFlow(WIDE, 2, 1))).toBe(1)
+    expect(spreads(createFlow(NARROW, 1, 1))).toBe(1)
   })
 
   it('comes to nothing in an area nothing has been measured in', () => {
@@ -155,7 +155,7 @@ describe('how many spreads a document comes to', () => {
 
 describe('where a spread begins', () => {
   it('stands a whole number of spreads out from the first', () => {
-    const flow = laid(WIDE, 2, 200)
+    const flow = createFlow(WIDE, 2, 200)
 
     // A hundred spreads out, the place is still exactly the place the hundredth
     // column pair begins at: nothing is added up along the way.
@@ -166,14 +166,14 @@ describe('where a spread begins', () => {
   it('begins one whole reading area along from the spread before it', () => {
     // The gap a column keeps stands inside the area at either edge, so nothing
     // stands between two spreads for the turn to carry over.
-    const flow = laid(WIDE, 2, 10)
+    const flow = createFlow(WIDE, 2, 10)
     expect(getSpreadStart(flow, 1) - getSpreadStart(flow, 0)).toBe(WIDE)
   })
 })
 
 describe('which spread a place falls in', () => {
   it('is the spread the column at that place belongs to', () => {
-    const flow = laid(WIDE, 2, 10)
+    const flow = createFlow(WIDE, 2, 10)
     const step = columnWidth(flow) + GAP
 
     expect(spreadAt(flow, 0)).toBe(0)
@@ -184,7 +184,7 @@ describe('which spread a place falls in', () => {
   })
 
   it('goes no further than the last spread there is', () => {
-    const flow = laid(WIDE, 2, 10)
+    const flow = createFlow(WIDE, 2, 10)
     expect(spreadAt(flow, 100_000)).toBe(4)
     expect(spreadAt(flow, -100)).toBe(0)
   })
@@ -198,7 +198,7 @@ describe('which run of the text is in front', () => {
   }
 
   it('is the first run standing in the spread', () => {
-    const flow = laid(WIDE, 2, 10)
+    const flow = createFlow(WIDE, 2, 10)
     const marks = runs(flow, 10)
 
     expect(inFront(marks, flow, 0)).toBe(0)
@@ -207,7 +207,7 @@ describe('which run of the text is in front', () => {
   })
 
   it('is nothing where no run stands in the spread', () => {
-    const flow = laid(WIDE, 2, 10)
+    const flow = createFlow(WIDE, 2, 10)
     // A picture filling the third spread on its own, with no run of text in it.
     const marks: Mark[] = [{ at: 0, x: 0 }, { at: 500, x: getSpreadStart(flow, 3) }]
 
@@ -215,12 +215,12 @@ describe('which run of the text is in front', () => {
   })
 
   it('is nothing at all where the document has no runs', () => {
-    expect(inFront([], laid(WIDE, 2, 1), 0)).toBeUndefined()
+    expect(inFront([], createFlow(WIDE, 2, 1), 0)).toBeUndefined()
   })
 })
 
 describe('which spread an offset stands in', () => {
-  const flow = laid(WIDE, 2, 10)
+  const flow = createFlow(WIDE, 2, 10)
   const step = columnWidth(flow) + GAP
   const marks: Mark[] = [
     { at: 0, x: 0 },

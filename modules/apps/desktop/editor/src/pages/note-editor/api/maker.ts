@@ -90,7 +90,7 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
    * One note asked for. A name the vault has already filed is handed back as
    * `occupied` for the caller to answer for.
    */
-  async function creates(
+  async function createNote(
     title: string,
     folder: string,
     links: readonly Link[],
@@ -114,7 +114,7 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
    */
   async function createUntitled(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
     for (let taken = 1; taken <= names; taken++) {
-      const made = await creates(nameAt(taken), folder, links)
+      const made = await createNote(nameAt(taken), folder, links)
       if (made === 'occupied') continue
       return reportNoteResult(made)
     }
@@ -133,7 +133,7 @@ export function noteCreator(core: NoteMaker, said: MessageWriter) {
   ): Promise<NoteRef | null> {
     const links = resolveSeatLinks(from, seat)
     if (!links) return null
-    return reportNoteResult(await creates(title, from ? folderOf(from) : '', links))
+    return reportNoteResult(await createNote(title, from ? folderOf(from) : '', links))
   }
 
   /** Create a note in a seat of another one, filed in the folder that one is in. */

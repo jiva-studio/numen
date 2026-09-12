@@ -74,17 +74,17 @@ function onDateChange(event: Event) {
 // --- Helpers ---
 type ControlBounds = { min: number; max: number } | Record<string, never>
 
-function ends(one: Bounds | undefined, per = 1): ControlBounds {
+function minMaxOf(one: Bounds | undefined, per = 1): ControlBounds {
   return one ? { min: one.least * per, max: one.most * per } : {}
 }
 
 function boundsOf(field: Field, within: typeof bounds.value): ControlBounds {
-  if (field === 'newADay') return ends(within.newADay)
-  if (field === 'reviewsADay') return ends(within.reviewsADay)
-  if (field === 'minutesADay') return ends(within.minutesADay)
-  if (field === 'backlog') return ends(within.backlog)
-  if (field === 'interval') return ends(within.interval)
-  if (field === 'retention') return ends(within.retention, 100)
+  if (field === 'newADay') return minMaxOf(within.newADay)
+  if (field === 'reviewsADay') return minMaxOf(within.reviewsADay)
+  if (field === 'minutesADay') return minMaxOf(within.minutesADay)
+  if (field === 'backlog') return minMaxOf(within.backlog)
+  if (field === 'interval') return minMaxOf(within.interval)
+  if (field === 'retention') return minMaxOf(within.retention, 100)
   return {}
 }
 

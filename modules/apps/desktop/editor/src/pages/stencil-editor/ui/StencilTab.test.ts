@@ -20,14 +20,14 @@ import { WORDS as words } from '@/entities/deck'
 const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 // Each tab is drawn into the page, so the one before it goes before the next
 // stands: a mark is teleported to the row a selector finds in the whole page.
 enableAutoUnmount(afterEach)
 
 /** A window with one stencil open, drawn. */
-const drawn = async (problems: readonly DeckProblem[] = []) => {
+const mountStencil = async (problems: readonly DeckProblem[] = []) => {
   /** Each field rename the editor asked the vault for. */
   const renamed: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
@@ -44,11 +44,11 @@ const drawn = async (problems: readonly DeckProblem[] = []) => {
     renameField: async (path, from, to) => {
       renamed.push(`${path} ${from} ${to}`)
       fields = fields.map((one) => (one === from ? to : one))
-      const braces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)
+      const rewriteBraces = (text: string) => text.split(`{{${from}}}`).join(`{{${to}}}`)
       faces = faces.map((face) => ({
         ...face,
-        front: braces(face.front),
-        back: braces(face.back),
+        front: rewriteBraces(face.front),
+        back: rewriteBraces(face.back),
       }))
       return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
     },
@@ -64,14 +64,14 @@ const drawn = async (problems: readonly DeckProblem[] = []) => {
 
   const held = useWindowTabs()
   const stencils = useStencilTabs(core, held.handle, tabOpeners())
-  held.declares([stencils.kind])
+  held.registerKinds([stencils.kind])
   const id = await held.opens(STENCIL, 'Animal.md')
-  await settles()
+  await settle()
   const tab = held.handle.holds<StencilTabState>(STENCIL, id) as StencilTabState
   // A mark is teleported into the face or the row it is about, so the editor
   // has to stand in the document for those to be found.
   const window = mount(StencilTab, { props: { state: tab }, attachTo: document.body })
-  await settles()
+  await settle()
   return { window, tab, renamed }
 }
 
@@ -93,7 +93,7 @@ const twice: DeckProblem = {
 
 describe('a stencil drawn', () => {
   it('draws a row for every field and one for every face', async () => {
-    const { window } = await drawn()
+    const { window } = await mountStencil()
 
     expect(window.findAll('[data-field]')).toHaveLength(2)
     expect(window.findAll('[data-face]')).toHaveLength(2)
@@ -102,7 +102,7 @@ describe('a stencil drawn', () => {
 
 describe('a mark on a face', () => {
   it('is drawn inside the face it was read against', async () => {
-    const { window, tab } = await drawn([missing])
+    const { window, tab } = await mountStencil([missing])
     const second = tab.stencil.value.faces[1]?.id ?? ''
 
     expect(window.find(`[data-face="${second}"]`).find('[data-wrong]').text()).toBe(
@@ -111,7 +111,7 @@ describe('a mark on a face', () => {
   })
 
   it('is drawn under the name of that face, where the editor draws it', async () => {
-    const { window, tab } = await drawn([missing])
+    const { window, tab } = await mountStencil([missing])
     const second = tab.stencil.value.faces[1]?.id ?? ''
 
     expect(window.find(`[data-face="${second}"] header [data-wrong]`).text()).toBe(
@@ -120,19 +120,19 @@ describe('a mark on a face', () => {
   })
 
   it('is drawn on no other face', async () => {
-    const { window, tab } = await drawn([missing])
+    const { window, tab } = await mountStencil([missing])
     const first = tab.stencil.value.faces[0]?.id ?? ''
 
     expect(window.find(`[data-face="${first}"]`).find('[data-wrong]').exists()).toBe(false)
   })
 
   it('follows the face when another is taken out beside it', async () => {
-    const { window, tab } = await drawn([missing])
+    const { window, tab } = await mountStencil([missing])
     const first = tab.stencil.value.faces[0]?.id ?? ''
     const second = tab.stencil.value.faces[1]?.id ?? ''
 
     tab.removeFace(first)
-    await settles()
+    await settle()
 
     expect(window.find(`[data-face="${second}"]`).find('[data-wrong]').text()).toBe(
       'this face has no back',
@@ -140,7 +140,7 @@ describe('a mark on a face', () => {
   })
 
   it('is nowhere at all where the vault reported nothing wrong', async () => {
-    const { window } = await drawn()
+    const { window } = await mountStencil()
 
     expect(window.findAll('[data-wrong]')).toHaveLength(0)
   })
@@ -148,7 +148,7 @@ describe('a mark on a face', () => {
 
 describe('a mark on a field', () => {
   it('is drawn inside the row of the field it names', async () => {
-    const { window } = await drawn([twice])
+    const { window } = await mountStencil([twice])
 
     expect(window.find('[data-field="Height"]').find('[data-wrong]').text()).toBe(
       'declared twice',
@@ -156,13 +156,13 @@ describe('a mark on a field', () => {
   })
 
   it('is drawn on no other row', async () => {
-    const { window } = await drawn([twice])
+    const { window } = await mountStencil([twice])
 
     expect(window.find('[data-field="Life span"]').find('[data-wrong]').exists()).toBe(false)
   })
 
   it('is drawn nowhere above the editor, which is for what stands against neither', async () => {
-    const { window } = await drawn([twice])
+    const { window } = await mountStencil([twice])
 
     expect(window.find(`[aria-label="${words.problems}"]`).exists()).toBe(false)
   })
@@ -170,37 +170,37 @@ describe('a mark on a field', () => {
 
 describe('a gesture in the editor', () => {
   it('asks the vault to rename the field the box belongs to', async () => {
-    const { window, renamed } = await drawn()
+    const { window, renamed } = await mountStencil()
     const box = window.find('[data-field="Height"]').find('input')
 
     await box.setValue('Shoulder')
     await box.trigger('change')
-    await settles()
+    await settle()
 
     expect(renamed).toStrictEqual(['Animal.md Height Shoulder'])
   })
 
   it('shows the field and the braces as the vault left them', async () => {
-    const { window, tab } = await drawn()
+    const { window, tab } = await mountStencil()
     const box = window.find('[data-field="Height"]').find('input')
 
     await box.setValue('Shoulder')
     await box.trigger('change')
-    await settles()
-    await settles()
+    await settle()
+    await settle()
 
     expect(tab.stencil.value.fields).toStrictEqual(['Shoulder', 'Life span'])
     expect(tab.stencil.value.faces[0]?.back).toBe('{{Shoulder}}')
   })
 
   it('leaves the braces of every other field where they are', async () => {
-    const { window, tab } = await drawn()
+    const { window, tab } = await mountStencil()
     const box = window.find('[data-field="Height"]').find('input')
 
     await box.setValue('Shoulder')
     await box.trigger('change')
-    await settles()
-    await settles()
+    await settle()
+    await settle()
 
     expect(tab.stencil.value.faces[1]?.front).toBe('{{Life span}}')
   })

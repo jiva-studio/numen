@@ -7,7 +7,7 @@ import { getContents, getDocumentAtOffset, useBookReader, getPageNumber, type Bo
 const WORDS = { page: 'Page' }
 
 let heard: string[] = []
-const said = (text: string) => heard.push(text)
+const writeMessage = (text: string) => heard.push(text)
 
 beforeEach(() => {
   heard = []
@@ -62,7 +62,7 @@ function shelf(book: Book | Error = BOOK, markup: Error | null = null) {
   return { books, asked, drawn }
 }
 
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 describe('the page an offset falls on', () => {
   it('is the offset over the bytes a page of this book holds, counted from one', () => {
@@ -121,7 +121,7 @@ describe('what a book is reached by', () => {
 describe('a book opened', () => {
   it('asks what it is once, however much is read of it', async () => {
     const { books, asked } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     await read.goToOffset(3_000)
     await read.goToOffset(0)
@@ -131,9 +131,9 @@ describe('a book opened', () => {
 
   it('stands at the first byte of its text, in the document that holds it', async () => {
     const { books, drawn } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await settles()
+    await settle()
 
     expect(read.offset.value).toBe(0)
     expect(read.pages.value).toBe(3)
@@ -146,9 +146,9 @@ describe('a book opened', () => {
 
   it('is called what the book calls itself', async () => {
     const { books } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await settles()
+    await settle()
 
     expect(read.title.value).toBe('Mahābhārata')
   })
@@ -157,7 +157,7 @@ describe('a book opened', () => {
 describe('where the person is standing', () => {
   it('opens the document the offset falls in, and draws it once', async () => {
     const { books, drawn } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     await read.goToOffset(6_500)
     await read.goToOffset(6_600)
@@ -169,7 +169,7 @@ describe('where the person is standing', () => {
 
   it('is the page that offset falls on', async () => {
     const { books } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     await read.goToOffset(6_144)
 
@@ -178,7 +178,7 @@ describe('where the person is standing', () => {
 
   it('is never past either end of the book', async () => {
     const { books } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     await read.goToOffset(-40)
     expect(read.offset.value).toBe(0)
@@ -189,7 +189,7 @@ describe('where the person is standing', () => {
 
   it('draws nothing again where the offset stays in the document on screen', async () => {
     const { books, drawn } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     await read.goToOffset(100)
     await read.goToOffset(2_900)
@@ -201,7 +201,7 @@ describe('where the person is standing', () => {
 describe('a passage reached', () => {
   it('marks the run it was sent to and stands there', async () => {
     const { books } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     await read.focusSpans({ from: 3_600, to: 3_642 })
 
@@ -212,7 +212,7 @@ describe('a passage reached', () => {
 
   it('leaves the other spans somewhere else to look', async () => {
     const { books } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     await read.focusSpans({ from: 100, to: 110 }, { from: 6_500, to: 6_520 })
 
@@ -222,7 +222,7 @@ describe('a passage reached', () => {
 
   it('is nowhere at all when nothing was asked about', async () => {
     const { books } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     await read.focusSpans()
 
@@ -233,7 +233,7 @@ describe('a passage reached', () => {
 describe('a book that will not open', () => {
   it('says what went wrong and stands with nothing in it', async () => {
     const { books } = shelf(new Error('this file is not a book'))
-    const read = useBookReader(books, 'library/Broken.epub', WORDS, said)
+    const read = useBookReader(books, 'library/Broken.epub', WORDS, writeMessage)
 
     await read.goToOffset(400)
 
@@ -245,9 +245,9 @@ describe('a book that will not open', () => {
 
   it('says what went wrong where a document of it will not be drawn', async () => {
     const { books } = shelf(BOOK, new Error('this document is not in the book'))
-    useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
+    useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await settles()
+    await settle()
 
     expect(heard.join(' ')).toContain('numen did not answer')
   })
@@ -256,8 +256,8 @@ describe('a book that will not open', () => {
 describe('a book tab closed', () => {
   it('asks for nothing more and draws nothing', async () => {
     const { books, drawn } = shelf()
-    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, said)
-    await settles()
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+    await settle()
 
     read.close()
     await read.goToOffset(6_500)
@@ -270,8 +270,8 @@ describe('a book tab closed', () => {
 describe('a link inside a book followed', () => {
   it('draws the document it names, from the beginning of that document', async () => {
     const { books } = shelf()
-    const book = useBookReader(books, 'library/mbh.epub', WORDS, said)
-    await settles()
+    const book = useBookReader(books, 'library/mbh.epub', WORDS, writeMessage)
+    await settle()
 
     await book.followLink('text/part0003.xhtml')
 
@@ -281,8 +281,8 @@ describe('a link inside a book followed', () => {
 
   it('leads nowhere, where the book holds no such document', async () => {
     const { books } = shelf()
-    const book = useBookReader(books, 'library/mbh.epub', WORDS, said)
-    await settles()
+    const book = useBookReader(books, 'library/mbh.epub', WORDS, writeMessage)
+    await settle()
 
     await book.followLink('text/nowhere.xhtml')
 

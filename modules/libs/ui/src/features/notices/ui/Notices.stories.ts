@@ -9,7 +9,7 @@ import Notices from './Notices.vue'
 import type { Notice } from '../lib/notice'
 import { hoverOver, lightness } from '@/shared/fixtures/colour'
 import { LONG, RUSSIAN, UNBREAKABLE } from '@/shared/fixtures/prose'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 interface Knobs {
   notices: readonly Notice[]
@@ -401,7 +401,7 @@ export const Dark: Story = {
     ],
   },
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const corner = within(document.body)
     await waitFor(() => expect(corner.getAllByRole('article')).toHaveLength(3))
 

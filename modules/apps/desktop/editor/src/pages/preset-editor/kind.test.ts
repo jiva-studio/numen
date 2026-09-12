@@ -146,9 +146,9 @@ const after = async () => {
  * standing at the placeholder settings and not at the file's own.
  */
 const opening = async (file: Partial<Settings>) => {
-  let lands = () => {}
+  let resolveRead = () => {}
   const held = new Promise<void>((settle) => {
-    lands = settle
+    resolveRead = settle
   })
   const written: Settings[] = []
   const core: Presets = {
@@ -181,7 +181,7 @@ const opening = async (file: Partial<Settings>) => {
   const handle = { closes: () => {} } as unknown as WindowHandle
   const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
   const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => NOW)
-  return { tab: await kind.kind.opens('Steady.md'), written, lands }
+  return { tab: await kind.kind.opens('Steady.md'), written, resolveRead }
 }
 
 describe('the value the goal steers', () => {
@@ -544,11 +544,11 @@ describe('what a tab still owes the file', () => {
   })
 
   it('is waited for by the window going, where a write is already out', async () => {
-    let lands = () => {}
+    let resolveWrite = () => {}
     const { state, flush } = await openPresetTab({}, curve, () => ({}), (time) =>
       time === 0
         ? new Promise<Partial<WriteResult>>((done) => {
-            lands = () => done({})
+            resolveWrite = () => done({})
           })
         : {},
     )
@@ -562,7 +562,7 @@ describe('what a tab still owes the file', () => {
     })
     await after()
     expect(gone).toBe(false)
-    lands()
+    resolveWrite()
     await going
     expect(gone).toBe(true)
   })
@@ -776,7 +776,7 @@ describe('a field the goal does not steer, typed', () => {
  */
 describe('a field moved before the first read lands', () => {
   it('leaves every other setting to the read, and writes what the read said', async () => {
-    const { tab, written, lands } = await opening({
+    const { tab, written, resolveRead } = await opening({
       retention: 0.93,
       newADay: 3,
       interval: 40,
@@ -786,7 +786,7 @@ describe('a field moved before the first read lands', () => {
     expect(tab.settings.value.interval).toBe(DEFAULTS.interval)
 
     tab.types('backlog', 55)
-    lands()
+    resolveRead()
     await after()
 
     expect(tab.settings.value.backlog).toBe(55)
@@ -800,9 +800,9 @@ describe('a field moved before the first read lands', () => {
   })
 
   it('keeps the moved field where the person left it, whatever the file says', async () => {
-    const { tab, lands } = await opening({ backlog: 10 })
+    const { tab, resolveRead } = await opening({ backlog: 10 })
     tab.types('backlog', 55)
-    lands()
+    resolveRead()
     await after()
     expect(tab.settings.value.backlog).toBe(55)
   })

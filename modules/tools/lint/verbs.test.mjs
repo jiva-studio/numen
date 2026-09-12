@@ -74,6 +74,12 @@ test('what the verb rule refuses', () => {
     // A word ending in those letters by accident. Two letters is the shortest
     // an English verb runs to, so one in front of the ending is not one.
     { says: 'a word that ends there by accident', allowed: true, name: 'bed' },
+    // A past form carries no ending to read, so the words are listed.
+    { says: 'a past participle with no ending', allowed: false, name: 'drawn' },
+    { says: 'a past form with what it acts on after it', allowed: false, name: 'heldCursor' },
+    // A past form that doubles as the base is a caller asking.
+    { says: 'a past form that is also the base form', allowed: true, name: 'readTable' },
+    { says: 'a side, not a verb', allowed: true, name: 'leftInDocument' },
     // A third person verb reads exactly as a plural noun, and a factory here
     // may take a plain noun. A person reads those.
     { says: 'a third-person verb, which no machine can see', allowed: true, name: 'carries' },

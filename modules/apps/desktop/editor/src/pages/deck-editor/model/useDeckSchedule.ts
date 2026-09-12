@@ -47,7 +47,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   const chose = ref(new Map<string, string>())
 
   /** The presets of the vault, asked for again. */
-  const listsPresets = async (): Promise<void> => {
+  const listPresets = async (): Promise<void> => {
     try {
       offered.value = await presets.list()
       offeredOk = true
@@ -58,8 +58,8 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   /** The presets asked for again, where the last listing did not answer. */
-  const listsPresetsAgain = (): void => {
-    if (!offeredOk) void listsPresets()
+  const listPresetsAgain = (): void => {
+    if (!offeredOk) void listPresets()
   }
 
   /** The preset a deck names, as the line at the top of it draws it. */
@@ -75,7 +75,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   /** Which preset schedules the deck at a path, asked of the vault. */
-  const asks = async (path: string): Promise<void> => {
+  const refreshDeckPreset = async (path: string): Promise<void> => {
     let read: ReadResult
     try {
       read = await presets.scheduling(path)
@@ -87,28 +87,28 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   /** What one tab was told about the preset it last chose. */
-  const says = (id: string, text: string): void => {
+  const setChoiceMessage = (id: string, text: string): void => {
     chose.value.set(id, text)
   }
 
   /**
    * A deck put on a preset.
    */
-  const schedules = async (id: string, preset: string): Promise<void> => {
+  const scheduleDeck = async (id: string, preset: string): Promise<void> => {
     const path = store.where(id)
     await store.settles(id)
     try {
       const answer = await presets.schedules(path, preset, store.at(id))
-      if (answer.changed) says(id, words.notScheduledChanged)
-      else if (answer.error !== null) says(id, words.notScheduled)
-      else says(id, '')
+      if (answer.changed) setChoiceMessage(id, words.notScheduledChanged)
+      else if (answer.error !== null) setChoiceMessage(id, words.notScheduled)
+      else setChoiceMessage(id, '')
     } catch {
       // Scheduling preset failed.
-      says(id, words.unreachable)
+      setChoiceMessage(id, words.unreachable)
       return
     }
     store.changed([path])
-    await asks(path)
+    await refreshDeckPreset(path)
   }
 
   /** The presets a deck may be put on: the defaults, and every preset the vault holds. */
@@ -130,7 +130,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   /** What was known about a file no tab of this window stands at any longer. */
-  const forgets = (path: string): void => {
+  const forgetFile = (path: string): void => {
     scheduled.value.delete(path)
   }
 
@@ -142,20 +142,20 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   /** What a tab that has closed was told about the choice it made. */
-  const closes = (id: string): void => {
+  const forgetTab = (id: string): void => {
     chose.value.delete(id)
   }
 
   return {
     choices,
-    listsPresets,
-    listsPresetsAgain,
-    asks,
-    schedules,
+    listPresets,
+    listPresetsAgain,
+    refreshDeckPreset,
+    scheduleDeck,
     getDeckPreset,
-    says,
-    forgets,
+    setChoiceMessage,
+    forgetFile,
     moveFile,
-    closes,
+    forgetTab,
   }
 }

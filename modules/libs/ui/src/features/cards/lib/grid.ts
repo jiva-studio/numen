@@ -3,9 +3,9 @@
 import type { Stencil } from './card'
 import { getDeclaredFields, type InsertionPoint } from './order'
 import {
+  getCardFieldValues,
   getRunEnd,
   HEAD,
-  laid,
   type CardFieldValue,
   type DeckCard,
   type DeckSection,
@@ -104,7 +104,7 @@ export function grid(
 
     /** How many values the card writes under each field, as they are counted off. */
     const under = new Map<string, number>()
-    const told = (field: string): number => {
+    const countOff = (field: string): number => {
       const nth = (under.get(field) ?? 0) + 1
       under.set(field, nth)
       return nth
@@ -116,10 +116,10 @@ export function grid(
     // waiting for. A card naming no stencil waits for nothing, so everything it
     // wrote stands as it was written.
     const named = card.stencil !== null
-    const counted = laid(card.filled, fields)
+    const counted = getCardFieldValues(card.filled, fields)
       .filter((each) => each.declared || !named)
       .map((each, place) => {
-        const nth = told(each.field)
+        const nth = countOff(each.field)
         return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
       })
 

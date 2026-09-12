@@ -141,7 +141,7 @@ const handleScroll = () => {
 let from = 0
 let was = 0
 
-const took = (press: PointerEvent) => {
+const handlePointerDown = (press: PointerEvent) => {
   const at = window_.value
   if (!at || press.button !== 0) return
   taking.value = true
@@ -189,7 +189,7 @@ onBeforeUnmount(() => {
     class="carousel"
     :class="{ 'carousel--taking': taking }"
     @scroll="handleScroll"
-    @pointerdown="took"
+    @pointerdown="handlePointerDown"
     @pointermove="handlePointerMove"
     @pointerup="letGo"
     @pointercancel="letGo"

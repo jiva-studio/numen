@@ -3,7 +3,7 @@ import type { Workspace, WorkspaceNode } from '../lib/node'
 import { isBranch, panesOf } from '../lib/tree'
 
 /** Anything that does not hold about a workspace, said in words. */
-export function broken(workspace: Workspace): readonly string[] {
+export function getFaults(workspace: Workspace): readonly string[] {
   const faults: string[] = []
   const seen = new Set<string>()
 

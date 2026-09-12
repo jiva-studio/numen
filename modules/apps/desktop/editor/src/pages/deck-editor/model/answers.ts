@@ -39,7 +39,7 @@ export function answers() {
   const at = (path: string): VaultAnswer => told.get(path) ?? NOTHING
 
   /** What a read of a file came back with, under the title it came back as. */
-  const reads = (
+  const recordRead = (
     path: string,
     answer: {
       readonly problems: readonly DeckProblem[]
@@ -59,7 +59,7 @@ export function answers() {
   }
 
   /** What a write of a file came back with. What the last read found stands. */
-  const writes = (
+  const recordWrite = (
     path: string,
     answer: {
       readonly error?: ErrorCode | null
@@ -100,12 +100,12 @@ export function answers() {
   const getTitle = (path: string): string => titles.get(path) || fileOf(path)
 
   /** A file the window was told the title of before any read of it answered. */
-  const names = (path: string, title: string): void => {
+  const setTitle = (path: string, title: string): void => {
     titles.set(path, title)
   }
 
   /** What was said about a file no tab of this window stands at any longer. */
-  const forgets = (path: string): void => {
+  const forgetFile = (path: string): void => {
     told.delete(path)
     titles.delete(path)
   }
@@ -120,5 +120,5 @@ export function answers() {
     titles.delete(from)
   }
 
-  return { reads, writes, problemsAt, getErrorMessage, getTitle, names, forgets, moveFile }
+  return { recordRead, recordWrite, problemsAt, getErrorMessage, getTitle, setTitle, forgetFile, moveFile }
 }

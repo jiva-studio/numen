@@ -241,7 +241,7 @@ export function windowAppearance(
    * The two multipliers, written into the element the head ends with. The page
    * was served carrying them, so what already stands there is left alone.
    */
-  const draws = () => {
+  const writeSizes = () => {
     const css = getSizesCss(sized.value)
     if (css === written) return
     written = css
@@ -250,10 +250,10 @@ export function windowAppearance(
   }
 
   /** The window drawn again wherever the size it is drawn at changes. */
-  const drawing = watch(sized, draws)
+  const drawing = watch(sized, writeSizes)
 
   /** Every theme there is, and what the settings say the window is drawn as. */
-  const lists = async () => {
+  const loadAppearance = async () => {
     let answer: Appearance
     try {
       answer = await core.appearance()
@@ -286,7 +286,7 @@ export function windowAppearance(
       async (names) => {
         if (!names.length) return
         for (const name of names) files.delete(name)
-        await lists()
+        await loadAppearance()
         if (names.includes(worn.value)) await applyAppearance()
       },
     )
@@ -296,7 +296,7 @@ export function windowAppearance(
    * arrived dressed, and this is what it was dressed in.
    */
   const start = async () => {
-    await lists()
+    await loadAppearance()
     void follow()
   }
 
@@ -329,7 +329,7 @@ export function windowAppearance(
    * The themes, in the two groups they come off. The group the theme worn came
    * off stands first, so opening the list stands on what the window wears.
    */
-  const offers = (): readonly StepGroup[] => {
+  const getThemeGroups = (): readonly StepGroup[] => {
     const shipping = { id: 'shipping', title: words.shipping, items: shelf(true) }
     const own = {
       id: 'owned',
@@ -413,9 +413,9 @@ export function windowAppearance(
    * The row chosen: it is worn at once and written into the settings. Settings
    * that could not be written say so, and the window wears what they hold.
    */
-  const chooses = async (item: string) => {
+  const chooseItem = async (item: string) => {
     const size = sizeOf(item)
-    if (size) return await picks(size)
+    if (size) return await chooseSize(size)
     const was = { applied: applied.value, mode: mode.value }
     const chosen = modeOf(item)
     if (!chosen && !list.value.some((one) => one.name === item)) return
@@ -439,7 +439,7 @@ export function windowAppearance(
    * waiting for, and it is written into the settings beside the theme. A number
    * the settings refuse is said, and the window goes back to the size they hold.
    */
-  const picks = async (chosen: ScaleChoice) => {
+  const chooseSize = async (chosen: ScaleChoice) => {
     if (!isInBounds(its(bounds.value, chosen.which), chosen.size)) return
     const was = settings.value
     said('')
@@ -463,11 +463,11 @@ export function windowAppearance(
     isPinned,
     pinned,
     lost,
-    offers,
+    getThemeGroups,
     modes,
     sizes,
     previewItem,
-    chooses,
+    chooseItem,
     start,
     close,
   }

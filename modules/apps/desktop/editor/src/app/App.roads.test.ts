@@ -28,16 +28,16 @@ import {
   asked,
   cards,
   DEBOUNCE,
-  drawn,
   folders,
   layoutOf,
+  mountWindow,
   nameSaid,
   nodeInPlex,
   outside,
   paneKinds,
   passageSaid,
   said,
-  settles,
+  settle,
 } from '@/testing/window'
 
 describe('the window with no note to show', () => {
@@ -45,7 +45,7 @@ describe('the window with no note to show', () => {
     said.opening = null
     said.failed = 'the vault folder is not there'
 
-    const window = await drawn()
+    const window = await mountWindow()
 
     const corner = cards(window)
     expect(corner[0]).toContain('the vault folder is not there')
@@ -56,7 +56,7 @@ describe('the window with no note to show', () => {
     said.opening = null
     said.failed = ''
 
-    const window = await drawn()
+    const window = await mountWindow()
 
     expect(cards(window)).toStrictEqual([])
   })
@@ -86,7 +86,7 @@ describe('every road to a file', () => {
     },
     'a command': async (window) => {
       pressKey('p')
-      await settles()
+      await settle()
       window.findComponent(Palette).vm.$emit('choose', 'read', 'read')
     },
     // The two roads that arrive naming a span of a source's own text: a link
@@ -113,7 +113,7 @@ describe('every road to a file', () => {
   /** The search open, with words typed into it and the answers back. */
   const typeInSearch = async (window: VueWrapper, typed: string) => {
     pressKey('k')
-    await settles()
+    await settle()
     window.findComponent(Palette).vm.$emit('update:modelValue', typed)
     await new Promise((done) => setTimeout(done, DEBOUNCE))
   }
@@ -143,10 +143,10 @@ describe('every road to a file', () => {
     said.names = [nameSaid(path, path, type)]
     said.passages = [passageSaid(path, path, type)]
 
-    const window = await drawn()
+    const window = await mountWindow()
     await road(window, path)
-    await settles()
-    await settles()
+    await settle()
+    await settle()
     return paneKinds(window).flat()
   }
 
@@ -206,7 +206,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
   }
 
   it('lists every tab the window holds, the plex it opens on in front', async () => {
-    await drawn()
+    await mountWindow()
 
     expect([...(getLastReport()?.tabs ?? [])].map((one) => one.kind).sort()).toEqual([
       'agent',
@@ -218,7 +218,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
   })
 
   it('names the tab beside the agent, where the person is writing in one', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
     const workspace = window.findComponent(WorkspaceLayout)
 
     // The person is in the agent, which is where a question is written.
@@ -226,17 +226,17 @@ describe('what the person has open, as whoever answers for them is told it', () 
       ...(workspace.props('modelValue') as Workspace),
       focus: 'aside',
     })
-    await settles()
+    await settle()
 
     expect(front()?.kind).toBe('plex')
   })
 
   it('names the book in front, and the note the plex stands on beside it', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
-    await settles()
-    await settles()
+    await settle()
+    await settle()
     window.unmount()
 
     expect(front()?.kind).toBe('book')
@@ -247,20 +247,20 @@ describe('what the person has open, as whoever answers for them is told it', () 
 
 describe('a note asked for in the plex', () => {
   it('is drawn in a tab of its own', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
-    await settles()
+    await settle()
 
     expect(window.findComponent(NoteTab).exists()).toBe(true)
     expect(window.findComponent(NoteTab).findComponent(Editor).exists()).toBe(true)
   })
 
   it('is asked for by the node, and a path opens nothing', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     window.findComponent(Plex).vm.$emit('show', 'Root.md', 'here')
-    await settles()
+    await settle()
 
     expect(window.findComponent(NoteTab).exists()).toBe(false)
   })
@@ -268,7 +268,7 @@ describe('a note asked for in the plex', () => {
 
 describe('a place an answer names', () => {
   it('is drawn in the document it stands in', async () => {
-    const window = await drawn()
+    const window = await mountWindow()
 
     window
       .findComponent(Agent)
@@ -278,7 +278,7 @@ describe('a place an answer names', () => {
         'numen:Source.pdf?start=0&length=4',
         { preventDefault: () => {} },
       )
-    await settles()
+    await settle()
 
     expect(window.findComponent(DocumentTab).exists()).toBe(true)
     expect(window.findComponent(DocumentTab).findComponent(Reader).exists()).toBe(true)
@@ -293,10 +293,10 @@ describe('a recording put in front', () => {
 
   /** The window with that recording open, asked for from outside it. */
   const openRecording = async () => {
-    const window = await drawn()
+    const window = await mountWindow()
     outside.asks({ path: RECORDING, start: 0, length: 4 })
-    await settles()
-    await settles()
+    await settle()
+    await settle()
     return window
   }
 
@@ -348,7 +348,7 @@ describe('a recording put in front', () => {
 /** The runs the palette offers over the file in front, in the order it draws them. */
 const runsOffered = async (window: VueWrapper): Promise<readonly string[]> => {
   globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }))
-  await settles()
+  await settle()
   const groups = window.findComponent(Palette).props('groups') as readonly {
     id: string
     items: readonly { id: string }[]
@@ -362,11 +362,11 @@ describe('a key struck while a book is in front', () => {
     // The tab is asked before the commands are. A book that hears no key is a
     // book nothing turns: the arrows are what a page is turned by.
     said.opening = 'Root.md'
-    const window = await drawn()
+    const window = await mountWindow()
 
     outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
-    await settles()
-    await settles()
+    await settle()
+    await settle()
 
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
 
@@ -376,7 +376,7 @@ describe('a key struck while a book is in front', () => {
 
   it('reaches no book where the person is in another kind of tab', async () => {
     said.opening = 'Root.md'
-    const window = await drawn()
+    const window = await mountWindow()
 
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
 
@@ -390,10 +390,10 @@ describe('a book carried into another group of tabs', () => {
     // A tab dragged into another pane is drawn again where it landed, and a
     // book drawn again without the keyboard is one the arrows never reach.
     said.opening = 'Root.md'
-    const window = await drawn()
+    const window = await mountWindow()
     outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
-    await settles()
-    await settles()
+    await settle()
+    await settle()
     asked.pressed = []
 
     const workspace = window.findComponent(WorkspaceLayout)
@@ -402,8 +402,8 @@ describe('a book carried into another group of tabs', () => {
       .flatMap((one) => one.tabs)
       .find((tab) => tab.startsWith('book:'))!
     workspace.vm.$emit('update:modelValue', openTabBeside(was, book, 'right', () => 'landed'))
-    await settles()
-    await settles()
+    await settle()
+    await settle()
 
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
 
@@ -418,17 +418,17 @@ describe('a book beside the pane the person is in', () => {
     // book is in another, holding the keyboard, and the arrows are struck at
     // the book they are looking at.
     said.opening = 'Root.md'
-    const window = await drawn()
+    const window = await mountWindow()
     outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
-    await settles()
-    await settles()
+    await settle()
+    await settle()
     asked.pressed = []
 
     const workspace = window.findComponent(WorkspaceLayout)
     const was = layoutOf(window)
     const other = panesOf(was.root).find((one) => !one.tabs.some((tab) => tab.startsWith('book:')))!
     workspace.vm.$emit('update:modelValue', { ...was, focus: other.id })
-    await settles()
+    await settle()
 
     document.activeElement?.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true, bubbles: true }),

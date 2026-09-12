@@ -100,7 +100,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   const framed = ref(-1)
 
   /** The tab hands over the player it drew, and says where it stands. */
-  const playsIn = (player: TabPlayer | null) => {
+  const setFramePlayer = (player: TabPlayer | null) => {
     frame.value = player
     framed.value = -1
   }
@@ -172,7 +172,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
    * cannot read a transcript says so where the words would stand, and the
    * recording still plays.
    */
-  const reads = async () => {
+  const readRecording = async () => {
     const mine = asks.ask()
     try {
       const said = await recordings.getSummary(path)
@@ -214,7 +214,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   }
 
   /** What the recording is, asked for as its tab opens. */
-  const opened = reads()
+  const opened = readRecording()
 
   /** The moment the person went to. Before the beginning is the beginning. */
   const go = (ms: number) => {
@@ -237,13 +237,13 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   }
 
   /** The line a person asked for, counted from the first line on screen. */
-  const goes = (line: number) => {
+  const goToLine = (line: number) => {
     const span = spans.value[line]
     if (span) go(span.from)
   }
 
   /** Whether the view keeps the line being said in sight. */
-  const follows = (on: boolean) => {
+  const setFollowing = (on: boolean) => {
     following.value = on
   }
 
@@ -305,17 +305,17 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     clearTimeout(settling)
     settling = undefined
     owed = false
-    void reads()
+    void readRecording()
   }
 
   /**
    * Work on this recording, as the application last reported it. The words are
    * asked for again while a run is going and once more when it stops.
    */
-  const ticks = (running: boolean) => {
+  const setWorking = (running: boolean) => {
     if (!open || (!running && !working.value)) return
     working.value = running
-    void reads()
+    void readRecording()
   }
 
   /**
@@ -400,21 +400,21 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     current,
     timed,
     written,
-    playsIn,
+    setFramePlayer,
     setFrameTime,
     working,
     error,
     broken,
     go,
-    goes,
-    follows,
+    goToLine,
+    setFollowing,
     setProse,
     keep,
     again,
     playing,
     play,
     pause,
-    ticks,
+    setWorking,
     reach,
     close,
   }

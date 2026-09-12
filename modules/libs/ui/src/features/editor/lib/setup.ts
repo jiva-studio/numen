@@ -59,7 +59,7 @@ export interface Settings {
 
 export const preview = (on: boolean): Extension => (on ? [wholeLines, live, follow] : [])
 
-export const shown = (change: EditorChange | null): Extension => changing.of(change)
+export const showChange = (change: EditorChange | null): Extension => changing.of(change)
 
 export const editable = (on: boolean): Extension => [
   EditorView.editable.of(on),
@@ -145,6 +145,6 @@ export const setup = (settings: Settings = {}): Extension => [
   createPacePlugin(),
   drawing.of(preview(settings.live ?? true)),
   editing.of(editable(!settings.readonly)),
-  showing.of(shown(settings.change ?? null)),
+  showing.of(showChange(settings.change ?? null)),
   adding.of(settings.extensions ?? []),
 ]

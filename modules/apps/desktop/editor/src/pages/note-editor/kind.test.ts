@@ -128,7 +128,7 @@ const window = (
       new Map(paths.map((path) => [path, { kind: 'note' as const, type: 'note' as const }])),
   })
   const noted = useNoteTab(vault(titles, reaches), store.store, drawing.store, held.handle, tabOpeners)
-  held.declares([noted.kind])
+  held.registerKinds([noted.kind])
   /** Every note tab the window holds now. */
   const open = () => held.tabs.value.map((tab) => tab.id)
   /**
@@ -142,15 +142,15 @@ const window = (
 
 describe('a link in the prose followed', () => {
   /** A window holding one note, and the tab that note stands in. */
-  const written = async (reaches: Record<string, string> = {}) => {
+  const createNoteWindow = async (reaches: Record<string, string> = {}) => {
     const one = window({}, {}, reaches)
     one.openNote('Note.md')
     await flushPromises()
-    return { ...one, state: one.noted.opens(one.noted.kept.holding('Note.md') ?? 'Note.md') }
+    return { ...one, state: one.noted.openTab(one.noted.kept.holding('Note.md') ?? 'Note.md') }
   }
 
   it('opens the note it names, in a tab beside the one it was written in', async () => {
-    const one = await written({ 'name://Entropy': 'physics/Entropy.md' })
+    const one = await createNoteWindow({ 'name://Entropy': 'physics/Entropy.md' })
 
     one.state.followLink('name://Entropy')
     await flushPromises()
@@ -160,7 +160,7 @@ describe('a link in the prose followed', () => {
   })
 
   it('opens nothing where no note answers to it', async () => {
-    const one = await written()
+    const one = await createNoteWindow()
 
     one.state.followLink('name://Nowhere')
     await flushPromises()
@@ -169,7 +169,7 @@ describe('a link in the prose followed', () => {
   })
 
   it('opens nothing for an address that names no note at all', async () => {
-    const one = await written({ 'https://example.com': 'physics/Entropy.md' })
+    const one = await createNoteWindow({ 'https://example.com': 'physics/Entropy.md' })
 
     one.state.followLink('https://example.com')
     await flushPromises()
@@ -181,7 +181,7 @@ describe('a link in the prose followed', () => {
 describe('a note opened', () => {
   it('is owed the keyboard until there is an editor to take it', async () => {
     const one = window()
-    const state = one.noted.opens('Note.md')
+    const state = one.noted.openTab('Note.md')
     await nextTick()
 
     const drew = editor()
@@ -193,7 +193,7 @@ describe('a note opened', () => {
 
   it('is revealed at the line it was asked for', async () => {
     const one = window()
-    const state = one.noted.opens('Note.md', 12)
+    const state = one.noted.openTab('Note.md', 12)
     const drew = editor()
 
     state.setEditor(drew.drawn)
@@ -204,7 +204,7 @@ describe('a note opened', () => {
 
   it('stays owed while the editor could not take it, and is given it again', async () => {
     const one = window()
-    const state = one.noted.opens('Note.md')
+    const state = one.noted.openTab('Note.md')
     const early = editor(false)
     state.setEditor(early.drawn)
     await nextTick()
@@ -219,7 +219,7 @@ describe('a note opened', () => {
 
   it('is owed nothing once an editor has taken it', async () => {
     const one = window()
-    const state = one.noted.opens('Note.md')
+    const state = one.noted.openTab('Note.md')
     const drew = editor()
     state.setEditor(drew.drawn)
     await nextTick()
@@ -231,12 +231,12 @@ describe('a note opened', () => {
 
   it('takes the keyboard again when it is asked for while it is already open', async () => {
     const one = window()
-    const state = one.noted.opens('Note.md')
+    const state = one.noted.openTab('Note.md')
     const drew = editor()
     state.setEditor(drew.drawn)
     await nextTick()
 
-    one.noted.entersAt('Note.md')
+    one.noted.focusLine('Note.md')
     await nextTick()
 
     expect(drew.focused).toEqual([-1, -1])
@@ -244,16 +244,16 @@ describe('a note opened', () => {
 
   it('is called what it was opened under', () => {
     const one = window()
-    one.noted.calls('Deep/Note.md', 'A note')
+    one.noted.setTitle('Deep/Note.md', 'A note')
 
-    expect(one.noted.called('Deep/Note.md')).toBe('A note')
+    expect(one.noted.getTitle('Deep/Note.md')).toBe('A note')
   })
 
   it('is called by the file it is filed under while nothing has named it', () => {
     const one = window()
-    one.noted.opens('Deep/Note.md')
+    one.noted.openTab('Deep/Note.md')
 
-    expect(one.noted.called('Deep/Note.md')).toBe('Deep/Note.md')
+    expect(one.noted.getTitle('Deep/Note.md')).toBe('Deep/Note.md')
   })
 })
 
@@ -279,10 +279,10 @@ describe('a note that was renamed', () => {
     one.moves('Note.md', 'Renamed.md')
     await nextTick()
 
-    one.noted.calls('Renamed.md', 'Renamed')
+    one.noted.setTitle('Renamed.md', 'Renamed')
 
-    expect(one.noted.called('Renamed.md')).toBe('Renamed')
-    expect(one.noted.kind.called?.(one.noted.held(one.idOf('Renamed.md')))).toBe('Renamed')
+    expect(one.noted.getTitle('Renamed.md')).toBe('Renamed')
+    expect(one.noted.kind.called?.(one.noted.createNoteTabState(one.idOf('Renamed.md')))).toBe('Renamed')
   })
 
   it('leaves the name it had free, so a note made under it opens a tab of its own', async () => {
@@ -293,7 +293,7 @@ describe('a note that was renamed', () => {
     one.moves('Foo.md', 'Bar.md')
     await nextTick()
 
-    one.noted.calls('Foo.md', 'The second')
+    one.noted.setTitle('Foo.md', 'The second')
     one.openNote('Foo.md')
     await nextTick()
 
@@ -301,8 +301,8 @@ describe('a note that was renamed', () => {
     expect(open).toHaveLength(2)
     expect(open[0]).toBe(first)
     expect(one.idOf('Bar.md')).not.toBe(one.idOf('Foo.md'))
-    expect(one.noted.called('Bar.md')).toBe('The first')
-    expect(one.noted.called('Foo.md')).toBe('The second')
+    expect(one.noted.getTitle('Bar.md')).toBe('The first')
+    expect(one.noted.getTitle('Foo.md')).toBe('The second')
   })
 
   it('answers to the store under the identity it opened with, at the name it now has', async () => {
@@ -315,7 +315,7 @@ describe('a note that was renamed', () => {
 
     expect(one.noted.kept.holding('Renamed.md')).toBe(id)
     expect(one.noted.kept.holding('Note.md')).toBeNull()
-    expect(one.noted.held(id ?? '').shown.value.path).toBe('Renamed.md')
+    expect(one.noted.createNoteTabState(id ?? '').shown.value.path).toBe('Renamed.md')
   })
 
   it('is called by the file it now stands at while nothing has named it', async () => {
@@ -330,14 +330,14 @@ describe('a note that was renamed', () => {
 
   it('takes the keyboard in the tab holding it, under the name it now has', async () => {
     const one = window()
-    const state = one.noted.opens('Note.md')
+    const state = one.noted.openTab('Note.md')
     const drew = editor()
     state.setEditor(drew.drawn)
     await nextTick()
     one.moves('Note.md', 'Renamed.md')
     await nextTick()
 
-    one.noted.entersAt('Renamed.md', 4)
+    one.noted.focusLine('Renamed.md', 4)
     await nextTick()
 
     expect(drew.focused).toEqual([-1, 4])
@@ -347,32 +347,32 @@ describe('a note that was renamed', () => {
 describe('what a note is called', () => {
   it('is the heading the vault reads out of it once what was typed has landed', async () => {
     const one = window({ 'Note.md': 'What it is about' })
-    one.noted.calls('Note.md', 'Untitled note')
-    one.noted.opens('Note.md')
+    one.noted.setTitle('Note.md', 'Untitled note')
+    one.noted.openTab('Note.md')
 
     await nextTick()
-    await vi.waitFor(() => expect(one.noted.called('Note.md')).toBe('What it is about'))
+    await vi.waitFor(() => expect(one.noted.getTitle('Note.md')).toBe('What it is about'))
   })
 
   it('is the name it had when the vault cannot answer', async () => {
     const one = window()
-    one.noted.calls('Note.md', 'Untitled note')
+    one.noted.setTitle('Note.md', 'Untitled note')
     one.openNote('Note.md')
 
     await nextTick()
     await nextTick()
 
-    expect(one.noted.called('Note.md')).toBe('Untitled note')
+    expect(one.noted.getTitle('Note.md')).toBe('Untitled note')
   })
 
   it('is what a note was called before its tab opened, kept by the tab that opens', async () => {
     const one = window()
-    one.noted.calls('Made.md', 'A new note')
+    one.noted.setTitle('Made.md', 'A new note')
 
     one.openNote('Made.md')
     await nextTick()
 
-    expect(one.noted.called('Made.md')).toBe('A new note')
+    expect(one.noted.getTitle('Made.md')).toBe('A new note')
     expect(one.held.tabs.value.map((tab) => tab.title)).toEqual(['A new note'])
   })
 })
@@ -380,10 +380,10 @@ describe('what a note is called', () => {
 describe('the word a note tab carries', () => {
   it('is what its state is worth', () => {
     const one = window({}, { 'Note.md': 'unsaved', 'Other.md': 'clean' })
-    one.noted.opens('Note.md')
-    one.noted.opens('Other.md')
+    one.noted.openTab('Note.md')
+    one.noted.openTab('Other.md')
 
-    const getMark = (path: string) => one.noted.kind.marked?.(one.noted.held(path))
+    const getMark = (path: string) => one.noted.kind.marked?.(one.noted.createNoteTabState(path))
 
     expect(getMark('Note.md')).toBe('unsaved')
     expect(getMark('Other.md')).toBeUndefined()
@@ -393,7 +393,7 @@ describe('the word a note tab carries', () => {
 describe('the window going', () => {
   it('leaves an open note alone, since the quit is what writes what it owes', () => {
     const one = window()
-    const state = one.noted.opens('Note.md')
+    const state = one.noted.openTab('Note.md')
 
     one.noted.kind.gone?.(state, 'Note.md')
 
@@ -415,7 +415,7 @@ describe('a note tab closing', () => {
     expect(one.shut).toEqual(['Note.md'])
     expect(one.drawings.shut).toEqual(['Note.md'])
     await vi.waitFor(() => expect(one.open()).toEqual([]))
-    expect(one.noted.called('Note.md')).toBe('Note.md')
+    expect(one.noted.getTitle('Note.md')).toBe('Note.md')
   })
 
   it('stays open while the note is not done with it', async () => {
@@ -430,7 +430,7 @@ describe('a note tab closing', () => {
     await nextTick()
 
     expect(one.open()).toEqual([id])
-    expect(one.noted.called('Note.md')).toBe('A note')
+    expect(one.noted.getTitle('Note.md')).toBe('A note')
   })
 })
 
@@ -440,7 +440,7 @@ describe('a note the window is told to let go of', () => {
     one.openNote('Note.md', 'A note')
     await nextTick()
 
-    one.noted.shuts(one.idOf('Note.md'))
+    one.noted.closeTab(one.idOf('Note.md'))
     await nextTick()
 
     expect(one.shut).toEqual(['Note.md'])
@@ -455,7 +455,7 @@ describe('a note the window is told to let go of', () => {
     one.moves('Note.md', 'Moved.md')
     await nextTick()
 
-    one.noted.shuts(id)
+    one.noted.closeTab(id)
     await nextTick()
 
     expect(one.shut).toEqual(['Moved.md'])
@@ -466,7 +466,7 @@ describe('a note the window is told to let go of', () => {
     one.openNote('Note.md', 'A note')
     await nextTick()
 
-    one.noted.shuts('never opened')
+    one.noted.closeTab('never opened')
     await nextTick()
 
     expect(one.shut).toEqual([])

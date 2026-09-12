@@ -85,7 +85,7 @@ export function createPaletteSteps(
     startStep(step)
   }
 
-  const pops = () => {
+  const popStep = () => {
     onLights('')
     onDrop()
     typed.value = ''
@@ -93,7 +93,7 @@ export function createPaletteSteps(
     startStep(here.value)
   }
 
-  const follows = (renamed: readonly PathRename[] = []) => {
+  const applyRenames = (renamed: readonly PathRename[] = []) => {
     if (!renamed.length) return
     steps.value = steps.value.map((step) => {
       const to = getRenamedPath(renamed, step.on.path)
@@ -105,14 +105,14 @@ export function createPaletteSteps(
     steps.value = []
   }
 
-  const leaves = () => {
-    if (here.value) return pops()
+  const leaveStep = () => {
+    if (here.value) return popStep()
     onClose()
   }
 
-  const backs = (): boolean => {
+  const goBack = (): boolean => {
     if (here.value) {
-      pops()
+      popStep()
       return false
     }
     onClose()
@@ -157,7 +157,7 @@ export function createPaletteSteps(
     }
     if (step.step === 'asking') {
       if (action === NO) {
-        pops()
+        popStep()
         return null
       }
       if (action !== YES) return null
@@ -177,11 +177,11 @@ export function createPaletteSteps(
     step,
     opensOn,
     pushStep,
-    pops,
+    popStep,
     reset,
-    follows,
-    leaves,
-    backs,
+    applyRenames,
+    leaveStep,
+    goBack,
     chooseInStep,
   }
 }

@@ -59,7 +59,7 @@ function onDismissMenu() {
 }
 
 function onToggleFollow() {
-  props.state.follows(!follows.value)
+  props.state.setFollowing(!follows.value)
 }
 
 // --- Helpers ---

@@ -18,7 +18,7 @@ const answer = (path: string): Neighbourhood => ({
 })
 
 /** A stream that stays open, so a loop waiting on it is not the one under test. */
-const held = () => new Promise<never>(() => {})
+const waitForever = () => new Promise<never>(() => {})
 
 const settled = {
   id: '01JQVAULTPHYSICS0000000000',
@@ -49,7 +49,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     setFocus: async () => {},
     editing: async function* () {},
     tasks: async function* () {
-      await held()
+      await waitForever()
     },
     read: async () => ({ body: '', error: null }),
     write: async () => ({ body: '', error: null }),
@@ -91,7 +91,7 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
  * note is wanted in front of the person. What each tab does about either is
  * asked where that tab is.
  */
-const heard = (core: Core, reads?: (path: string, spans: readonly Span[]) => void) => {
+const createDisplay = (core: Core, reads?: (path: string, spans: readonly Span[]) => void) => {
   const changed: string[] = []
   const wanted: string[] = []
   const showed = useWindowDisplay(core, {
@@ -156,7 +156,7 @@ describe('the stream of changes', () => {
         yield { paths: ['Somewhere/Else.md'], shouldReload: false, renamed: [] }
       },
     })
-    const one = heard(core)
+    const one = createDisplay(core)
 
     await one.window.follow()
 
@@ -169,7 +169,7 @@ describe('the stream of changes', () => {
         yield { paths: ['Note.md'], shouldReload: true, renamed: [] }
       },
     })
-    const one = heard(core)
+    const one = createDisplay(core)
 
     await one.window.follow()
 
@@ -182,7 +182,7 @@ describe('the stream of changes', () => {
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Note.md', to: 'Renamed.md' }] }
       },
     })
-    const one = heard(core)
+    const one = createDisplay(core)
 
     await one.window.follow()
 
@@ -198,7 +198,7 @@ describe('the stream of changes', () => {
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Opening.md', to: 'Renamed.md' }] }
       },
     })
-    const one = heard(core)
+    const one = createDisplay(core)
     await one.window.first()
 
     await one.window.follow()
@@ -217,7 +217,7 @@ describe('the stream of changes', () => {
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Other.md', to: 'Renamed.md' }] }
       },
     })
-    const one = heard(core)
+    const one = createDisplay(core)
     await one.window.first()
 
     await one.window.follow()
@@ -254,13 +254,13 @@ describe('another vault under this window', () => {
       changes: async function* () {
         for (const path of ahead) yield { paths: [path], shouldReload: false, renamed: [] }
         yield { paths: [], shouldReload: true, renamed: [] }
-        await held()
+        await waitForever()
       },
       focus: async function* () {
-        await held()
+        await waitForever()
       },
       editing: async function* () {
-        await held()
+        await waitForever()
       },
     })
 
@@ -326,7 +326,7 @@ describe('a note asked for from outside the window', () => {
         yield { path: 'Wanted.md', spans: [] }
       },
     })
-    const one = heard(core)
+    const one = createDisplay(core)
 
     await one.window.watch()
 
@@ -338,7 +338,7 @@ describe('a place inside a source asked for from outside the window', () => {
   /** A window that records the documents it was asked to open, and where. */
   const createRecordingWindow = (core: Core) => {
     const opened: string[] = []
-    const one = heard(core, (path, spans) =>
+    const one = createDisplay(core, (path, spans) =>
       opened.push(`${path} ${spans.map((one) => `${one.from} ${one.to}`).join(' ')}`),
     )
     return { window: one.window, opened, wanted: one.wanted }
@@ -477,18 +477,18 @@ describe('what the application is doing', () => {
   it('is what the stream last said, whole', async () => {
     const core = fake({
       changes: async function* () {
-        await held()
+        await waitForever()
       },
       focus: async function* () {
-        await held()
+        await waitForever()
       },
       editing: async function* () {
-        await held()
+        await waitForever()
       },
       tasks: async function* () {
         yield [reading(16)]
         yield [reading(32)]
-        await held()
+        await waitForever()
       },
     })
     const window = useWindowDisplay(core, { wait: async () => {} })
@@ -505,19 +505,19 @@ describe('what the application is doing', () => {
     let opened = 0
     const core = fake({
       changes: async function* () {
-        await held()
+        await waitForever()
       },
       focus: async function* () {
-        await held()
+        await waitForever()
       },
       editing: async function* () {
-        await held()
+        await waitForever()
       },
       tasks: async function* () {
         opened++
         if (opened === 1) throw new Error('the stream dropped')
         yield [reading(48)]
-        await held()
+        await waitForever()
       },
     })
     // The clock is the test's, so the wait between one stream and the next is
@@ -542,13 +542,13 @@ describe('what the application is doing', () => {
     let asks = 0
     const core = fake({
       changes: async function* () {
-        await held()
+        await waitForever()
       },
       focus: async function* () {
-        await held()
+        await waitForever()
       },
       editing: async function* () {
-        await held()
+        await waitForever()
       },
       state: async () => {
         asks++
@@ -560,7 +560,7 @@ describe('what the application is doing', () => {
       tasks: async function* () {
         yield [reading(16)]
         yield []
-        await held()
+        await waitForever()
       },
     })
     const window = useWindowDisplay(core, { wait: async () => {} })

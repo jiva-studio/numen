@@ -47,7 +47,7 @@ export const generateId = (kind: string): string => `${kind}:${crypto.randomUUID
  * The plex with the room, and one pane along the trailing edge holding the
  * agent in front of the files. The person begins in the plex.
  */
-export const begun = (plex: string, agent: string, files: string): Workspace => ({
+export const createWorkspace = (plex: string, agent: string, files: string): Workspace => ({
   root: branch('root', [pane('main', [plex]), pane('aside', [agent, files])], [0.72, 0.28]),
   axis: 'horizontal',
   focus: 'main',

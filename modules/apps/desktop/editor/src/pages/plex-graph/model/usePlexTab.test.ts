@@ -20,7 +20,7 @@ import { useWindowTabs, type AnyTabKind } from '@/entities/tab'
 import { PLEX } from '@/entities/tab'
 
 /** A moment for whatever a gesture asked the vault for to come back. */
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 /** Which of three each note of a neighbourhood is, by the path it stands at. */
 type Types = Record<string, NoteType>
@@ -56,7 +56,7 @@ const viewOn = (at: string, related: readonly string[] = [], types: Types = {}) 
       view.here.value = path
       view.neighbourhood.value = around(path, [], types)
     },
-    follows: (renamed: readonly { from: string; to: string }[]) => {
+    followMoves: (renamed: readonly { from: string; to: string }[]) => {
       const one = renamed.find((went) => went.from === view.here.value)
       if (one) view.here.value = one.to
     },
@@ -71,7 +71,7 @@ const createVault = (takes = true) => {
   const joined: [string, string, string][] = []
   /** The notes this vault will write no link to, which a test names. */
   const refusedPaths = new Set<string>()
-  const makes: PlexEditor = {
+  const editor: PlexEditor = {
     make: async (from, seat) => {
       made.push([from, seat])
       return takes ? { path: 'Made.md', title: 'Made' } : null
@@ -81,7 +81,7 @@ const createVault = (takes = true) => {
       return takes && !refusedPaths.has(to)
     },
   }
-  return { makes, made, joined, refusedPaths }
+  return { editor, made, joined, refusedPaths }
 }
 
 /** A plex tab with the window it is drawn in written down. */
@@ -107,7 +107,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
   /** Every question the vault was asked about what the notes hold. */
   const insides: (readonly string[])[] = []
   const deps: PlexTabDeps = {
-    makes: vault.makes,
+    makes: vault.editor,
     ready: ref(true),
     hangs,
     parts: ref(6),
@@ -265,11 +265,11 @@ describe('a plex drawing nothing', () => {
       here: ref(''),
       error: ref(''),
       go: async () => {},
-      follows: () => {},
+      followMoves: () => {},
       close: () => {},
     }
     return usePlexTab(view as unknown as PlexView, {
-      makes: createVault().makes,
+      makes: createVault().editor,
       ready: ref(true),
       hangs: ref(true),
       parts: ref(6),
@@ -312,7 +312,7 @@ describe('the menu off every node', () => {
     one.state.asks(asked)
 
     one.state.chose(NEW_NOTE)
-    await settles()
+    await settle()
 
     expect(one.wrote).toStrictEqual(['Untitled note.md'])
     expect(one.went).toContain('Untitled note.md')
@@ -325,7 +325,7 @@ describe('the menu off every node', () => {
     one.state.asks(asked)
 
     one.state.chose(NEW_NOTE)
-    await settles()
+    await settle()
 
     expect(one.went).toStrictEqual([])
   })
@@ -335,7 +335,7 @@ describe('the menu off every node', () => {
     one.state.asks(asked)
 
     one.state.chose('read')
-    await settles()
+    await settle()
 
     expect(one.wrote).toStrictEqual([])
     expect(one.ran).toStrictEqual([])
@@ -360,7 +360,7 @@ describe('the picture', () => {
   it('is nothing while the window has nothing true to draw', () => {
     const plex = viewOn('Root.md')
     const state = usePlexTab(plex.view, {
-      makes: createVault().makes,
+      makes: createVault().editor,
       ready: ref(false),
       hangs: ref(true),
       parts: ref(6),
@@ -522,7 +522,7 @@ describe('the parts a node hangs', () => {
     one.divides.value = new Map([['Other.md', [heading('Heat', 4)]]])
 
     await one.state.view.go('Other.md')
-    await settles()
+    await settle()
 
     expect(one.state.partsOf(one.node('Other.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
@@ -535,7 +535,7 @@ describe('the parts a node hangs', () => {
     const answers: ((held: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
     const one = tab('Root.md')
     const plex = usePlexTab(one.state.view, {
-      makes: createVault().makes,
+      makes: createVault().editor,
       ready: ref(true),
       hangs: ref(true),
       parts: ref(6),
@@ -558,7 +558,7 @@ describe('the parts a node hangs', () => {
     void plex.reads()
     answers[asked + 1]?.(new Map([['Root.md', [heading('Fresh', 2)]]]))
     answers[asked]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
-    await settles()
+    await settle()
 
     expect(plex.partsOf(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
   })
@@ -635,11 +635,11 @@ describe('the parts a node hangs', () => {
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
     one.hangs.value = false
-    await settles()
+    await settle()
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([])
 
     one.hangs.value = true
-    await settles()
+    await settle()
 
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
@@ -730,7 +730,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     },
   })
   const state = usePlexTab(view, {
-    makes: vault.makes,
+    makes: vault.editor,
     ready: ref(true),
     hangs: ref(true),
     parts: ref(6),
@@ -757,21 +757,21 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   const edges = () => (picture()?.edges ?? []).map((one) => `${one.from} -> ${one.to}`)
 
   /** Files moved in the vault, and the plex told what went where. */
-  const follows = (...renamed: readonly PathRename[]) => {
+  const moveFiles = (...renamed: readonly PathRename[]) => {
     around = around.map((one) => ({
       ...one,
       path: getRenamedPath(renamed, one.path) || one.path,
       through: getRenamedPath(renamed, one.through) || one.through,
     }))
-    state.follows(renamed)
+    state.followMoves(renamed)
   }
   /** A move, followed by the picture being asked for again. */
-  const moves = async (...renamed: readonly PathRename[]) => {
-    follows(...renamed)
+  const moveFilesAndReload = async (...renamed: readonly PathRename[]) => {
+    moveFiles(...renamed)
     await view.go(view.here.value)
   }
   /** The person travels to another note, which is a picture of its own. */
-  const travels = async (path: string, ...now: readonly NeighbourRow[]) => {
+  const goToNote = async (path: string, ...now: readonly NeighbourRow[]) => {
     around = now.map(([at, seat, through]) => ({ path: at, seat, through: through ?? '' }))
     await view.go(path)
   }
@@ -783,9 +783,9 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     node,
     nodes,
     edges,
-    follows,
-    moves,
-    travels,
+    moveFiles,
+    moveFilesAndReload,
+    goToNote,
     asked,
     opened,
     ran,
@@ -804,7 +804,7 @@ describe('a note whose file moved', () => {
     const one = await inVault('Entropy.md')
     const before = one.nodes()
 
-    await one.moves({ from: 'Entropy.md', to: 'physics/Entropy.md' })
+    await one.moveFilesAndReload({ from: 'Entropy.md', to: 'physics/Entropy.md' })
 
     expect(one.nodes()).toStrictEqual(before)
   })
@@ -813,7 +813,7 @@ describe('a note whose file moved', () => {
     const one = await inVault('Entropy.md', [['Heat.md', 'child']])
     const before = one.node('Heat')
 
-    await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
+    await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     expect(one.node('Heat')).toBe(before)
     expect(one.view.here.value).toBe('Entropy.md')
@@ -823,7 +823,7 @@ describe('a note whose file moved', () => {
     const one = await inVault('Entropy.md', [['Heat.md', 'child']])
     const before = one.node('Entropy')
 
-    await one.moves({ from: 'Entropy.md', to: 'physics/Entropy.md' })
+    await one.moveFilesAndReload({ from: 'Entropy.md', to: 'physics/Entropy.md' })
 
     expect(one.node('Entropy')).toBe(before)
     expect(one.view.here.value).toBe('physics/Entropy.md')
@@ -836,7 +836,7 @@ describe('a note whose file moved', () => {
     ])
     const before = one.nodes()
 
-    await one.moves(
+    await one.moveFilesAndReload(
       { from: 'physics/Entropy.md', to: 'science/Entropy.md' },
       { from: 'physics/Heat.md', to: 'science/Heat.md' },
       { from: 'physics/Cold.md', to: 'science/Cold.md' },
@@ -853,7 +853,7 @@ describe('a note whose file moved', () => {
     ])
     const [, first, second] = one.picture()?.nodes ?? []
 
-    await one.moves({ from: 'One.md', to: 'Two.md' }, { from: 'Two.md', to: 'One.md' })
+    await one.moveFilesAndReload({ from: 'One.md', to: 'Two.md' }, { from: 'Two.md', to: 'One.md' })
 
     const [, now, later] = one.picture()?.nodes ?? []
     expect(now?.id).toBe(first?.id)
@@ -865,8 +865,8 @@ describe('a note whose file moved', () => {
     const one = await inVault('Entropy.md', [['Heat.md', 'child']])
     const before = one.nodes()
 
-    await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
-    await one.moves({ from: 'physics/Heat.md', to: 'thermo/Heat.md' })
+    await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
+    await one.moveFilesAndReload({ from: 'physics/Heat.md', to: 'thermo/Heat.md' })
 
     expect(one.nodes()).toStrictEqual(before)
   })
@@ -879,7 +879,7 @@ describe('a note whose file moved', () => {
     const before = one.edges()
     expect(before).toHaveLength(2)
 
-    await one.moves(
+    await one.moveFilesAndReload(
       { from: 'Physics.md', to: 'science/Physics.md' },
       { from: 'Heat.md', to: 'science/Heat.md' },
     )
@@ -894,7 +894,7 @@ describe('a note whose file moved', () => {
       ['Cold.md', 'sibling', 'Physics.md'],
     ])
 
-    await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
+    await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     const drawn = one.picture()?.nodes.map((node) => node.id) ?? []
     expect(new Set(drawn).size).toBe(4)
@@ -904,7 +904,7 @@ describe('a note whose file moved', () => {
 describe('a gesture the plex reports', () => {
   it('travels to the note the node stands for', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
-    await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
+    await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     one.state.activate(one.node('Heat'))
 
@@ -913,7 +913,7 @@ describe('a gesture the plex reports', () => {
 
   it('opens the note the node stands for, called what the picture calls it', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
-    await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
+    await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     one.state.opens(one.node('Heat'), 'beside')
 
@@ -922,7 +922,7 @@ describe('a gesture the plex reports', () => {
 
   it('runs a command on the note the menu stood on', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
-    await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
+    await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     one.state.asks({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
     one.state.chose('read')
@@ -932,7 +932,7 @@ describe('a gesture the plex reports', () => {
 
   it('makes a note in a seat of the note the node stands for', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
-    await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
+    await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     await one.state.made(one.node('Heat'), 'child')
 
@@ -941,7 +941,7 @@ describe('a gesture the plex reports', () => {
 
   it('joins the two notes a line was drawn between', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
-    await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
+    await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     await one.state.joined(one.node('Heat'), one.node('Root'), 'jump')
 
@@ -975,7 +975,7 @@ describe('a plex that travelled', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     const left = one.picture()?.nodes.map((node) => node.id) ?? []
 
-    await one.travels('Cold.md', ['Ice.md', 'child'])
+    await one.goToNote('Cold.md', ['Ice.md', 'child'])
 
     const arrived = one.picture()?.nodes.map((node) => node.id) ?? []
     expect(arrived).toHaveLength(2)
@@ -991,9 +991,9 @@ describe('a plex that travelled', () => {
     const root = one.node('Root')
     const before = one.node('Heat')
 
-    await one.travels('Root.md')
+    await one.goToNote('Root.md')
     expect(one.node('Heat')).toBe('')
-    await one.travels('Root.md', ['Heat.md', 'child'])
+    await one.goToNote('Root.md', ['Heat.md', 'child'])
 
     expect(one.node('Heat')).not.toBe(before)
     expect(one.node('Root')).toBe(root)
@@ -1007,7 +1007,7 @@ describe('a plex that travelled', () => {
     // that answer is on its way.
     one.holdAnswers()
     const asking = one.view.go('One.md')
-    one.follows({ from: 'One.md', to: 'moved/One.md' }, { from: 'Heat.md', to: 'moved/Heat.md' })
+    one.moveFiles({ from: 'One.md', to: 'moved/One.md' }, { from: 'Heat.md', to: 'moved/Heat.md' })
     one.answers()
     await asking
     one.picture()
@@ -1043,14 +1043,14 @@ const window = (opening = 'Opening.md') => {
   const insides: (readonly string[])[] = []
   const first = ref(opening)
 
-  const makes = () => {
+  const createView = () => {
     const view = viewOn('')
     views.push(view)
     return view.view
   }
   const held = useWindowTabs()
-  const plexes = plexKind(held.handle, makes, {
-    makes: createVault().makes,
+  const plexes = plexKind(held.handle, createView, {
+    makes: createVault().editor,
     ready: ref(true),
     hangs,
     parts: ref(6),
@@ -1071,7 +1071,7 @@ const window = (opening = 'Opening.md') => {
     writes: async () => '',
     creatable: ['parent', 'child', 'jump'],
   })
-  held.declares([plexes.kind, other])
+  held.registerKinds([plexes.kind, other])
 
   /** A plex tab of this window, opened on what it was given. */
   const openTab = async (at = '') => {
@@ -1079,11 +1079,11 @@ const window = (opening = 'Opening.md') => {
     return { id, state: held.holdsIn<PlexTabState>(id, PLEX)! }
   }
   /** The person is in this tab now. */
-  const enters = (id: string) => held.shown(id)
+  const showTab = (id: string) => held.onTabShown(id)
   /** The tab closes, and the window lets go of what it held. */
-  const shuts = (id: string) => held.shut(id)
+  const closeTab = (id: string) => held.shut(id)
   /** The vault gained a note, which is what it opens with from now on. */
-  const gains = (path: string) => {
+  const setOpeningNote = (path: string) => {
     first.value = path
   }
   const onScreen = () => panesOf(held.layout.value.root).flatMap((pane) => pane.tabs)
@@ -1095,9 +1095,9 @@ const window = (opening = 'Opening.md') => {
   return {
     ...plexes,
     openTab,
-    enters,
-    shuts,
-    gains,
+    showTab,
+    closeTab,
+    setOpeningNote,
     onScreen,
     active,
     elsewhere,
@@ -1148,10 +1148,10 @@ describe('the plex the person is looking at', () => {
     const first = await one.openTab('One.md')
     const second = await one.openTab('Two.md')
 
-    one.enters(first.id)
+    one.showTab(first.id)
     expect(one.looking()).toBe('One.md')
 
-    one.enters(second.id)
+    one.showTab(second.id)
     expect(one.looking()).toBe('Two.md')
   })
 
@@ -1161,7 +1161,7 @@ describe('the plex the person is looking at', () => {
     const second = await one.openTab('Two.md')
     second.state.view.error.value = 'Two.md is not in the vault'
 
-    one.shuts(second.id)
+    one.closeTab(second.id)
 
     expect(one.looking()).toBe('One.md')
     expect(first.state.view.error.value).toBe('')
@@ -1172,10 +1172,10 @@ describe('the plex the person is looking at', () => {
     const first = await one.openTab('One.md')
     const second = await one.openTab('Two.md')
     const third = await one.openTab('Three.md')
-    one.enters(second.id)
-    one.enters(third.id)
+    one.showTab(second.id)
+    one.showTab(third.id)
 
-    one.shuts(third.id)
+    one.closeTab(third.id)
 
     expect(one.looking()).toBe('Two.md')
     expect(first.state.view.here.value).toBe('One.md')
@@ -1193,7 +1193,7 @@ describe('a note put in front of the person', () => {
     const one = window()
     const first = await one.openTab('One.md')
     const second = await one.openTab('Two.md')
-    one.enters(second.id)
+    one.showTab(second.id)
 
     await one.travel('Wanted.md')
 
@@ -1218,7 +1218,7 @@ describe('a note that is no longer in the vault', () => {
     const second = await one.openTab('Gone.md')
     const third = await one.openTab('Elsewhere.md')
 
-    await one.leaves('Gone.md', 'Root.md')
+    await one.leavePath('Gone.md', 'Root.md')
 
     expect(first.state.view.here.value).toBe('Root.md')
     expect(second.state.view.here.value).toBe('Root.md')
@@ -1228,7 +1228,7 @@ describe('a note that is no longer in the vault', () => {
   it('leaves a window holding no plex at all alone', async () => {
     const one = window()
 
-    await expect(one.leaves('Gone.md', 'Root.md')).resolves.toBeUndefined()
+    await expect(one.leavePath('Gone.md', 'Root.md')).resolves.toBeUndefined()
   })
 
   it('brings the plex in front of the person, who was in another tab', async () => {
@@ -1288,7 +1288,7 @@ describe('every plex asked for its picture again', () => {
   it('gives one standing nowhere the note an empty vault has just gained', async () => {
     const one = window('')
     const { state } = await one.openTab()
-    one.gains('First.md')
+    one.setOpeningNote('First.md')
 
     await one.again()
 
@@ -1320,7 +1320,7 @@ describe('every plex asked for its picture again', () => {
     const one = window()
     const first = await one.openTab('One.md')
     const second = await one.openTab('Two.md')
-    one.shuts(second.id)
+    one.closeTab(second.id)
 
     await one.again()
 
@@ -1335,12 +1335,12 @@ describe('a plex tab the person has closed', () => {
     const one = window()
     const plex = await one.openTab('One.md')
     one.hangs.value = false
-    await settles()
+    await settle()
 
-    one.shuts(plex.id)
+    one.closeTab(plex.id)
     one.insides.length = 0
     one.hangs.value = true
-    await settles()
+    await settle()
 
     expect(one.insides).toStrictEqual([])
   })

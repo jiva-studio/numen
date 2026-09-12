@@ -609,13 +609,13 @@ export const NothingAtAll: Story = {
 export const WhatIsWrongWithACard: Story = {
   args: { corpus: 'what is wrong' },
   play: async ({ canvasElement }) => {
-    const said = (card: string, selector: string): string =>
+    const getText = (card: string, selector: string): string =>
       found(canvasElement, `[data-card="${card}"] ${selector}`).textContent ?? ''
 
-    expect(said('b8k4n2vqz6', '[data-wrong]')).toContain('not a lone wikilink')
-    expect(said('d6q2z8hn4v', '[data-wrong]')).toContain('writes one field twice')
-    expect(said('d6q2z8hn4v', '[data-wrong-value="Name"]')).toContain('writes Name twice')
-    expect(said('y1v5b9kt3n', '[data-wrong-value="Answer"]')).toContain('not in the stencil')
+    expect(getText('b8k4n2vqz6', '[data-wrong]')).toContain('not a lone wikilink')
+    expect(getText('d6q2z8hn4v', '[data-wrong]')).toContain('writes one field twice')
+    expect(getText('d6q2z8hn4v', '[data-wrong-value="Name"]')).toContain('writes Name twice')
+    expect(getText('y1v5b9kt3n', '[data-wrong-value="Answer"]')).toContain('not in the stencil')
 
     // The card nothing was said against carries no mark at all.
     expect(canvasElement.querySelector('[data-card="m3t9w5rj1x"] [data-wrong]')).toBeNull()
@@ -623,8 +623,8 @@ export const WhatIsWrongWithACard: Story = {
 
     // Two cards of one mark stand as two tiles, each carrying what is wrong
     // with it and each typed into on its own.
-    expect(said('copied-one', '[data-wrong]')).toContain('carry the mark')
-    expect(said('copied-again', '[data-wrong]')).toContain('carry the mark')
+    expect(getText('copied-one', '[data-wrong]')).toContain('carry the mark')
+    expect(getText('copied-again', '[data-wrong]')).toContain('carry the mark')
 
     const box = (card: string): HTMLTextAreaElement =>
       found(canvasElement, `[data-card="${card}"] [data-value="Answer"]`) as HTMLTextAreaElement

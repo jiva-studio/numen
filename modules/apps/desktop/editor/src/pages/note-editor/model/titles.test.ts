@@ -50,7 +50,7 @@ describe('what a note is called', () => {
   it('is what the window called it', () => {
     const names = noteTitles(vault(), notes().store)
 
-    names.calls('Deep/Note.md', 'A note')
+    names.setTitle('Deep/Note.md', 'A note')
 
     expect(names.getTitle('Deep/Note.md')).toBe('A note')
   })
@@ -58,7 +58,7 @@ describe('what a note is called', () => {
   it('is the heading the vault reads out of it once what was typed has landed', async () => {
     const store = notes()
     const names = noteTitles(vault({ 'Note.md': 'What it is about' }), store.store)
-    names.calls('Note.md', 'Untitled note')
+    names.setTitle('Note.md', 'Untitled note')
 
     store.stands('Note.md', 'clean')
     await nextTick()
@@ -69,7 +69,7 @@ describe('what a note is called', () => {
   it('is not asked for again while the note is still being written', async () => {
     const store = notes()
     const names = noteTitles(vault({ 'Note.md': 'What it is about' }), store.store)
-    names.calls('Note.md', 'Untitled note')
+    names.setTitle('Note.md', 'Untitled note')
 
     store.stands('Note.md', 'unsaved')
     await nextTick()
@@ -81,7 +81,7 @@ describe('what a note is called', () => {
   it('is the name it had when the vault cannot answer', async () => {
     const store = notes()
     const names = noteTitles(vault(), store.store)
-    names.calls('Note.md', 'Untitled note')
+    names.setTitle('Note.md', 'Untitled note')
 
     store.stands('Note.md', 'clean')
     await nextTick()
@@ -107,7 +107,7 @@ describe('what a note is called', () => {
   it('is asked for at the file a note moved to once it settles there', async () => {
     const store = notes()
     const names = noteTitles(vault({ 'Renamed.md': 'Renamed' }), store.store)
-    names.calls('Note.md', 'Untitled note')
+    names.setTitle('Note.md', 'Untitled note')
     store.stands('Note.md', 'unsaved')
     store.moves('Note.md', 'Renamed.md')
     await nextTick()
@@ -121,9 +121,9 @@ describe('what a note is called', () => {
 
   it('is forgotten with the note, so a name is not left behind it', () => {
     const names = noteTitles(vault(), notes().store)
-    names.calls('Note.md', 'A note')
+    names.setTitle('Note.md', 'A note')
 
-    names.forgets('Note.md')
+    names.forgetTab('Note.md')
 
     expect(names.getTitle('Note.md')).toBe('Note.md')
   })

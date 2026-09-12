@@ -28,12 +28,12 @@ const vault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
 const createUncountedVault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue =>
   vault({ counted: false, faces: 0, due: 0, new: 0, ...said })
 
-const shown = (counting: boolean, vaults: readonly VaultCardsDue[] = []) =>
+const mountVaults = (counting: boolean, vaults: readonly VaultCardsDue[] = []) =>
   mount(Vaults, { props: { vaults, counting, version: '0.1.0' } })
 
 describe('the front door before it knows which vaults there are', () => {
   it('says what it is doing, with the mark that says it is working', () => {
-    const one = shown(true)
+    const one = mountVaults(true)
 
     expect(one.find('.vaults__counting').text()).toBe('Reading the vaults')
     expect(one.findComponent(Spinner).exists()).toBe(true)
@@ -41,7 +41,7 @@ describe('the front door before it knows which vaults there are', () => {
 
   // A person is told what is happening, and the turning mark is for the eye.
   it('announces it, and draws no row while it has none', () => {
-    const one = shown(true)
+    const one = mountVaults(true)
 
     expect(one.find('.vaults__counting').attributes('role')).toBe('status')
     expect(one.findAll('.welcome-page__row--vault')).toHaveLength(0)
@@ -49,14 +49,14 @@ describe('the front door before it knows which vaults there are', () => {
 
   // The list is what the room is for, so the heading names it throughout.
   it('calls the list by its name while it fills', () => {
-    expect(shown(true).find('.welcome-page__heading').text()).toBe('Vaults')
+    expect(mountVaults(true).find('.welcome-page__heading').text()).toBe('Vaults')
   })
 })
 
 describe('the front door while the vaults are being counted', () => {
   // The list is what the window opens on, and counting a vault runs behind it.
   it('draws every vault before any of them has a count', () => {
-    const one = shown(true, [
+    const one = mountVaults(true, [
       createUncountedVault(),
       createUncountedVault({ vault: '01B', name: 'Sanskrit' }),
     ])
@@ -70,7 +70,7 @@ describe('the front door while the vaults are being counted', () => {
   // A figure that has not been worked out is drawn as the shape it will be, in
   // the box it will stand in, so nothing moves when it lands.
   it('holds the room the number will take, and prints no number', () => {
-    const one = shown(true, [createUncountedVault()])
+    const one = mountVaults(true, [createUncountedVault()])
 
     expect(one.findComponent(Skeleton).exists()).toBe(true)
     expect(one.find('.welcome-page__row--vault').text()).toBe('Studies/vaults/01A')
@@ -79,14 +79,14 @@ describe('the front door while the vaults are being counted', () => {
   // Nought is a vault with nothing to review, and it is not what a vault
   // nobody has counted says.
   it('is not the same as a vault counted at nothing', () => {
-    const counted = shown(false, [vault({ due: 0, new: 0 })])
+    const counted = mountVaults(false, [vault({ due: 0, new: 0 })])
 
     expect(counted.findComponent(Skeleton).exists()).toBe(false)
     expect(counted.find('.welcome-page__row--vault').text()).toContain('0')
   })
 
   it('does not open a vault whose count has not arrived', async () => {
-    const one = shown(true, [createUncountedVault()])
+    const one = mountVaults(true, [createUncountedVault()])
 
     const row = one.find('.welcome-page__row--vault')
     expect(row.attributes('disabled')).toBeDefined()
@@ -97,12 +97,12 @@ describe('the front door while the vaults are being counted', () => {
   // The letter is what the row is opened by, and a row that opens nothing
   // carries none.
   it('draws no letter on a vault it will not open', () => {
-    expect(shown(true, [createUncountedVault()]).find('.cap').exists()).toBe(false)
-    expect(shown(false, [vault()]).find('.cap').exists()).toBe(true)
+    expect(mountVaults(true, [createUncountedVault()]).find('.cap').exists()).toBe(false)
+    expect(mountVaults(false, [vault()]).find('.cap').exists()).toBe(true)
   })
 
   it('opens a vault as soon as that vault has been counted', async () => {
-    const one = shown(true, [vault(), createUncountedVault({ vault: '01B', name: 'Sanskrit' })])
+    const one = mountVaults(true, [vault(), createUncountedVault({ vault: '01B', name: 'Sanskrit' })])
 
     await one.findAll('.welcome-page__row--vault')[0]?.trigger('click')
 
@@ -112,7 +112,7 @@ describe('the front door while the vaults are being counted', () => {
 
 describe('the front door once the counts are in', () => {
   it('says nothing of the sort once the count is in', () => {
-    const one = shown(false, [vault()])
+    const one = mountVaults(false, [vault()])
 
     expect(one.find('.vaults__counting').exists()).toBe(false)
     expect(one.findComponent(Spinner).exists()).toBe(false)
@@ -121,14 +121,14 @@ describe('the front door once the counts are in', () => {
 
   // What a vault owes is what the window puts at the end of its row.
   it('puts what each vault owes on its row', () => {
-    const one = shown(false, [vault()])
+    const one = mountVaults(false, [vault()])
 
     expect(one.find('.welcome-page__row--vault').text()).toContain('10')
   })
 
   // A vault that could not be counted says why, and says nothing about cards.
   it('says why a vault could not be counted, and prints no shape for it', () => {
-    const one = shown(false, [vault({ unread: 'this folder cannot be read as a vault' })])
+    const one = mountVaults(false, [vault({ unread: 'this folder cannot be read as a vault' })])
 
     expect(one.find('.welcome-page__row--vault').text()).toContain('cannot be read')
     expect(one.findComponent(Skeleton).exists()).toBe(false)
@@ -137,7 +137,7 @@ describe('the front door once the counts are in', () => {
   // A vault the index does not carry is being read into it, which is what its
   // row says while that runs.
   it('says a vault is being read, and prints no shape for it', () => {
-    const one = shown(false, [vault({ counted: false, reading: true })])
+    const one = mountVaults(false, [vault({ counted: false, reading: true })])
 
     expect(one.find('.welcome-page__row--vault').text()).toContain('Reading the vault')
     expect(one.findComponent(Skeleton).exists()).toBe(false)

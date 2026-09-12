@@ -1,6 +1,6 @@
 /** Typing into a drawn table: what a cell writes back, and what the keys do. */
 import { EditorView } from '@codemirror/view'
-import { emptyRow, withColumn, written } from './table'
+import { emptyRow, withColumn, writeCell } from './table'
 
 const spanOf = (frame: HTMLElement) => {
   const from = Number(frame.dataset['from'])
@@ -21,7 +21,7 @@ const rangeOf = (element: HTMLElement) => {
 const keep = (view: EditorView, element: HTMLElement) => {
   const range = rangeOf(element)
   if (!range) return
-  const text = written(element.textContent ?? '')
+  const text = writeCell(element.textContent ?? '')
   if (view.state.doc.sliceString(range.from, range.to) === text) return
   view.dispatch({ changes: { from: range.from, to: range.to, insert: text } })
 }
@@ -85,7 +85,7 @@ export const listen = (frame: HTMLElement, view: EditorView) => {
     const clipboard = (event as ClipboardEvent).clipboardData
     if (!clipboard) return
     event.preventDefault()
-    const text = written(clipboard.getData('text/plain'))
+    const text = writeCell(clipboard.getData('text/plain'))
     frame.ownerDocument.execCommand('insertText', false, text)
   })
 

@@ -23,7 +23,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
-const said = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
+const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
 const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
 
 /**
@@ -71,7 +71,7 @@ const conversation = (start: readonly Turn[]): Render => () => ({
     }
 
     const onSubmit = (asked: string) => {
-      turns.value.push(said(`${next++}`, asked))
+      turns.value.push(createAsked(`${next++}`, asked))
       text.value = ''
       working.value = true
 
@@ -132,9 +132,9 @@ const expectFadeUnderComposer = async (canvasElement: HTMLElement) => {
 /** Type into it and press Enter. */
 export const Playground: Story = {
   render: conversation([
-    said('1', 'What does a plex draw?'),
+    createAsked('1', 'What does a plex draw?'),
     back('2', 'One node in focus, and everything else placed by its seat.'),
-    said('3', 'And where do the seats come from?'),
+    createAsked('3', 'And where do the seats come from?'),
     back('4', MULTILINE),
   ]),
 }
@@ -161,7 +161,7 @@ export const LongConversation: Story = {
   render: conversation(
     Array.from({ length: 60 }, (_, index) =>
       index % 2 === 0
-        ? said(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
+        ? createAsked(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
         : back(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
     ),
   ),

@@ -178,7 +178,7 @@ describe('a recording with no transcript', () => {
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
     await settle()
 
-    state.ticks(true)
+    state.setWorking(true)
     await settle()
     await drawn.vm.$nextTick()
 
@@ -199,7 +199,7 @@ describe('a recording with no transcript', () => {
 
     const head = drawn.find('.media__head').html()
 
-    state.ticks(true)
+    state.setWorking(true)
     await settle()
     await drawn.vm.$nextTick()
 
@@ -234,7 +234,7 @@ describe('a transcript still growing', () => {
     await drawn.vm.$nextTick()
     await settle()
 
-    state.ticks(true)
+    state.setWorking(true)
     await settle()
     await drawn.vm.$nextTick()
 
@@ -294,7 +294,7 @@ describe('the menu at the end of the player strip', () => {
     await drawn.vm.$nextTick()
     await settle()
 
-    const chooses = async (text: string) => {
+    const chooseMenuItem = async (text: string) => {
       await drawn.get('.media__more').trigger('click')
       const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
         (one) => one.textContent?.trim() === text,
@@ -303,8 +303,8 @@ describe('the menu at the end of the player strip', () => {
       await drawn.vm.$nextTick()
     }
 
-    await chooses(WORDS.proofread)
-    await chooses(WORDS.deleteText)
+    await chooseMenuItem(WORDS.proofread)
+    await chooseMenuItem(WORDS.deleteText)
 
     expect(asked).toStrictEqual([
       'proofread talks/Ants.mp3 Ants.mp3',
@@ -324,7 +324,7 @@ describe('the menu at the end of the player strip', () => {
     await drawn.vm.$nextTick()
     await settle()
 
-    state.ticks(true)
+    state.setWorking(true)
     await settle()
     await drawn.vm.$nextTick()
 

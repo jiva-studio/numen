@@ -23,7 +23,7 @@ export function useAttention({ core, tabs, held }: AttentionDeps) {
     if (at && at.kind !== AGENT) return at.id
     const beside = [...windowTabsManager.tabs.value]
       .reverse()
-      .find((one) => windowTabsManager.heldIn(one.id)?.kind.kind !== AGENT)
+      .find((one) => windowTabsManager.getTab(one.id)?.kind.kind !== AGENT)
     return beside?.id ?? at?.id ?? ''
   }
   const looked = getActiveTabId
@@ -31,7 +31,7 @@ export function useAttention({ core, tabs, held }: AttentionDeps) {
   const getAttention = (): Attention => ({
     front: getActiveTabId(),
     tabs: windowTabsManager.tabs.value.map(({ id, title }) => {
-      const one = windowTabsManager.heldIn(id)
+      const one = windowTabsManager.getTab(id)
       const said = (one?.kind.getAttention?.(one.state) ?? one?.kind.attends?.(one.state)) as
         | OpenTab<'document' | 'recording' | 'book'>
         | undefined
@@ -58,7 +58,7 @@ export function useAttention({ core, tabs, held }: AttentionDeps) {
     { immediate: true },
   )
 
-  const tabIcon = (id: string) => iconOfKind(windowTabsManager.heldIn(id)?.kind.kind ?? '')
+  const tabIcon = (id: string) => iconOfKind(windowTabsManager.getTab(id)?.kind.kind ?? '')
 
   return {
     attention,

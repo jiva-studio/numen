@@ -41,7 +41,7 @@ const hand = (kind: string, clientX: number) =>
   new MouseEvent(kind, { button: 0, clientX, bubbles: true })
 
 /** The strip left where a hand or a wheel put it, and the window told. */
-const ran = async (window_: HTMLElement, to: number) => {
+const scrollStrip = async (window_: HTMLElement, to: number) => {
   window_.scrollLeft = to
   window_.dispatchEvent(new Event('scroll'))
   await nextTick()
@@ -114,21 +114,21 @@ describe('a card with a panel on either side of it', () => {
 describe('a hand on the strip', () => {
   it('asks for whichever it has taken the strip nearest to', async () => {
     const chat = strip()
-    await ran(chat.window_, 400)
+    await scrollStrip(chat.window_, 400)
     expect(chat.one.emitted('update:at')).toEqual([['after']])
 
     const reading = strip()
-    await ran(reading.window_, 20)
+    await scrollStrip(reading.window_, 20)
     expect(reading.one.emitted('update:at')).toEqual([['before']])
 
     const card = strip('before')
-    await ran(card.window_, 190)
+    await scrollStrip(card.window_, 190)
     expect(card.one.emitted('update:at')).toEqual([['here']])
   })
 
   it('says nothing while the strip is still nearest where it stood', async () => {
     const { one, window_ } = strip()
-    await ran(window_, 180)
+    await scrollStrip(window_, 180)
     expect(one.emitted('update:at')).toBeUndefined()
   })
 
@@ -138,7 +138,7 @@ describe('a hand on the strip', () => {
     const { one, window_ } = strip('after')
 
     await one.setProps({ at: 'here' })
-    await ran(window_, 400)
+    await scrollStrip(window_, 400)
 
     expect(one.emitted('update:at')).toBeUndefined()
   })
@@ -210,7 +210,7 @@ describe('a wheel on the strip', () => {
     vi.useFakeTimers()
     const { one, window_ } = strip()
 
-    await ran(window_, 380)
+    await scrollStrip(window_, 380)
     expect(one.emitted('update:at')).toEqual([['after']])
     await one.setProps({ at: 'after' })
 
@@ -222,7 +222,7 @@ describe('a wheel on the strip', () => {
     vi.useFakeTimers()
     const { one, window_ } = strip()
 
-    await ran(window_, 260)
+    await scrollStrip(window_, 260)
     expect(one.emitted('update:at')).toBeUndefined()
 
     await wait(200)
@@ -235,7 +235,7 @@ describe('a wheel on the strip', () => {
     vi.useFakeTimers()
     const { one, window_ } = strip()
 
-    await ran(window_, 380)
+    await scrollStrip(window_, 380)
     expect(one.emitted('update:at')).toEqual([['after']])
 
     await wait(200)
@@ -253,7 +253,7 @@ describe('a wheel on the strip', () => {
     await nextTick()
     await nextTick()
 
-    await ran(window_, 380)
+    await scrollStrip(window_, 380)
     expect(one.emitted('update:at')).toEqual([['after']])
   })
 
@@ -264,7 +264,7 @@ describe('a wheel on the strip', () => {
     const { one, window_ } = strip()
 
     await one.setProps({ at: 'after' })
-    await ran(window_, 300)
+    await scrollStrip(window_, 300)
 
     await wait(200)
     expect(window_.scrollLeft).toBe(440)

@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { panesOf } from '@numen/ui'
-import { AGENT, CONVERSATION, PLEX, begun, generateId } from './workspace'
+import { AGENT, CONVERSATION, PLEX, createWorkspace, generateId } from './workspace'
 
 describe('the identity a tab is filed under', () => {
   it('is a new one every time, so a second of a kind is a second tab', () => {
@@ -49,7 +49,7 @@ describe('the name a conversation is answered under', () => {
 })
 
 describe('the layout the window opens with', () => {
-  const layout = begun('plex:one', 'agent:one', 'files:tree')
+  const layout = createWorkspace('plex:one', 'agent:one', 'files:tree')
 
   it('holds two panes, the plex alone and the agent over the files', () => {
     expect(panesOf(layout.root).map((one) => one.tabs)).toStrictEqual([

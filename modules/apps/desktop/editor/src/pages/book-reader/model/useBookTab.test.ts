@@ -39,7 +39,7 @@ const openers = () => {
   return { tabOpeners, opens: () => reader }
 }
 
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 const createBookTabAt = (path: string, offsetVal: number, page: number, pages: number, length = 5_120_000) =>
   ({
@@ -146,7 +146,7 @@ describe('a passage of a book reached', () => {
 
     const spans: readonly Span[] = [{ from: 3_600, to: 3_642 }]
     opens()?.('library/Mahabharata.epub', spans)
-    await settles()
+    await settle()
 
     expect(opened).toStrictEqual([`${BOOK} library/Mahabharata.epub`])
     expect(focusSpans).toHaveBeenCalledWith({ from: 3_600, to: 3_642 })

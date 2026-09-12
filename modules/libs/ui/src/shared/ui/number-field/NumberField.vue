@@ -16,7 +16,7 @@ import {
   snapToBounds,
   isTextForValue,
   stepForKey,
-  written,
+  formatNumber,
   DEFAULT_BOUNDS,
 } from './number'
 
@@ -52,7 +52,7 @@ const raises = defineEmits<{
 const bounds = computed(() => ({ min: props.min, max: props.max, step: props.step }))
 
 /** What stands in the field, which is what was typed until the field is left. */
-const typed = ref(written(model.value))
+const typed = ref(formatNumber(model.value))
 
 /** The number the field last stood at rest at. Settling is what moves it. */
 let rested = model.value
@@ -85,7 +85,7 @@ watch(
   (now) => {
     if (now === model.value) return
     model.value = now
-    typed.value = written(now)
+    typed.value = formatNumber(now)
     rested = now
   },
   { immediate: true },
@@ -96,11 +96,11 @@ const element = useTemplateRef<HTMLInputElement>('element')
 /** A number set from outside is written out; typing that means it is left alone. */
 watch(model, (now) => {
   if (isTextForValue(typed.value, now)) return
-  typed.value = written(now)
+  typed.value = formatNumber(now)
   rested = now
 })
 
-const took = (event: Event) => {
+const onInput = (event: Event) => {
   typed.value = (event.target as HTMLInputElement).value
   if (typed.value.trim() === '') model.value = null
   else if (isAllowed(typed.value, bounds.value)) model.value = numberOf(typed.value)
@@ -117,14 +117,14 @@ const settle = async () => {
   const value = numberOf(typed.value)
   const now = value === null ? null : snapToBounds(value, bounds.value)
   model.value = now
-  typed.value = written(now)
+  typed.value = formatNumber(now)
   if (now !== rested) {
     rested = now
     raises('settles', now)
   }
   await nextTick()
   if (!isTextForValue(typed.value, model.value)) {
-    typed.value = written(model.value)
+    typed.value = formatNumber(model.value)
     rested = model.value
   }
 }
@@ -143,7 +143,7 @@ const onKeyDown = (event: KeyboardEvent) => {
   event.preventDefault()
   if (props.disabled) return
   model.value = said
-  typed.value = written(said)
+  typed.value = formatNumber(said)
 }
 
 defineExpose({
@@ -181,7 +181,7 @@ defineExpose({
         props.class,
       )
     "
-    @input="took"
+    @input="onInput"
     @blur="settle"
     @keydown="onKeyDown"
   />

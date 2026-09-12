@@ -78,7 +78,7 @@ const meta: Meta<Knobs> = {
 
       /** The shares the last handle settled on, written where a story can read them. */
       const resize = (branch: NodeId, sizes: readonly number[]) => {
-        held.value = kept(held.value, branch, sizes)
+        held.value = resizeBranch(held.value, branch, sizes)
       }
 
       provide(
@@ -110,12 +110,12 @@ const meta: Meta<Knobs> = {
 }
 
 /** The branch with one of its own given other shares. */
-function kept(node: Branch, branch: NodeId, sizes: readonly number[]): Branch {
+function resizeBranch(node: Branch, branch: NodeId, sizes: readonly number[]): Branch {
   if (node.id === branch) return { ...node, sizes: fit(sizes, node.children.length) }
   return {
     ...node,
     children: node.children.map((child) =>
-      child.kind === 'branch' ? kept(child, branch, sizes) : child,
+      child.kind === 'branch' ? resizeBranch(child, branch, sizes) : child,
     ),
   }
 }

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   blanks,
   DECK_WORDS,
-  laid,
+  getCardFieldValues,
   NOTHING_WRONG,
   type DeckSection,
   type DeckCard,
@@ -11,7 +11,7 @@ import {
 import { grid } from './grid'
 import type { Stencil } from './card'
 
-describe('laid', () => {
+describe('getCardFieldValues', () => {
   const FIELDS = ['Height', 'Weight']
 
   it('lays the values in the order the stencil asks for them', () => {
@@ -19,11 +19,11 @@ describe('laid', () => {
       { field: 'Weight', text: 'heavy' },
       { field: 'Height', text: 'tall' },
     ]
-    expect(laid(filled, FIELDS).map((each) => each.field)).toEqual(FIELDS)
+    expect(getCardFieldValues(filled, FIELDS).map((each) => each.field)).toEqual(FIELDS)
   })
 
   it('stands a field the card leaves out empty', () => {
-    expect(laid([{ field: 'Height', text: 'tall' }], FIELDS)[1]).toEqual({
+    expect(getCardFieldValues([{ field: 'Height', text: 'tall' }], FIELDS)[1]).toEqual({
       field: 'Weight',
       text: '',
       declared: true,
@@ -32,8 +32,8 @@ describe('laid', () => {
 
   it('keeps a value the stencil does not name, after the rest', () => {
     const filled = [{ field: 'Colour', text: 'brown' }]
-    expect(laid(filled, FIELDS)).toHaveLength(3)
-    expect(laid(filled, FIELDS)[2]).toEqual({
+    expect(getCardFieldValues(filled, FIELDS)).toHaveLength(3)
+    expect(getCardFieldValues(filled, FIELDS)[2]).toEqual({
       field: 'Colour',
       text: 'brown',
       declared: false,
@@ -45,7 +45,7 @@ describe('laid', () => {
       { field: 'Height', text: 'tall' },
       { field: 'Height', text: 'taller' },
     ]
-    expect(laid(filled, FIELDS)).toEqual([
+    expect(getCardFieldValues(filled, FIELDS)).toEqual([
       { field: 'Height', text: 'tall', declared: true },
       { field: 'Height', text: 'taller', declared: true },
       { field: 'Weight', text: '', declared: true },
@@ -53,12 +53,12 @@ describe('laid', () => {
   })
 
   it('lays out nothing for a stencil naming nothing and a card holding nothing', () => {
-    expect(laid([], [])).toEqual([])
+    expect(getCardFieldValues([], [])).toEqual([])
   })
 
   it('lays a name the stencil declares twice out once, where it first stands', () => {
     const filled = [{ field: 'Height', text: 'tall' }]
-    expect(laid(filled, ['Height', 'Weight', 'Height'])).toEqual([
+    expect(getCardFieldValues(filled, ['Height', 'Weight', 'Height'])).toEqual([
       { field: 'Height', text: 'tall', declared: true },
       { field: 'Weight', text: '', declared: true },
     ])

@@ -15,7 +15,7 @@ import type { NoteType } from '@/shared/file'
 import { iconFor } from '@/shared/icons'
 
 /** A tab standing on one note, with a child beside it and no menu open. */
-const held = () =>
+const createTabState = () =>
   ({
     view: { error: ref('') },
     picture: ref({
@@ -82,21 +82,21 @@ afterEach(() => {
 describe('the box a node is drawn in', () => {
   it('is the size it was designed at when nothing multiplies the type', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { state: held() } })
+    const view = mount(PlexTab, { props: { state: createTabState() } })
     expect(widthOf(view, 'Root')).toBe(176)
     expect(widthOf(view, 'Child')).toBe(144)
   })
 
   it('is half again as large where the label is', () => {
     drawing(19.5)
-    const view = mount(PlexTab, { props: { state: held() } })
+    const view = mount(PlexTab, { props: { state: createTabState() } })
     expect(widthOf(view, 'Root')).toBe(264)
     expect(widthOf(view, 'Child')).toBe(216)
   })
 
   it('is smaller where the label is', () => {
     drawing(9.75)
-    const view = mount(PlexTab, { props: { state: held() } })
+    const view = mount(PlexTab, { props: { state: createTabState() } })
     expect(widthOf(view, 'Root')).toBe(132)
     expect(widthOf(view, 'Child')).toBe(108)
   })
@@ -107,7 +107,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
   const empty = () => {
     const asked: MenuRequest[] = []
     const tab = {
-      ...held(),
+      ...createTabState(),
       picture: ref(null),
       empty: ref(true),
       openMenu: (one: MenuRequest) => void asked.push(one),
@@ -143,7 +143,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
   it('leaves a tab drawing a picture to answer for itself', async () => {
     drawing(13)
     const asked: MenuRequest[] = []
-    const tab = { ...held(), asks: (one: MenuRequest) => void asked.push(one) } as PlexTabState
+    const tab = { ...createTabState(), asks: (one: MenuRequest) => void asked.push(one) } as PlexTabState
     const view = mount(PlexTab, { props: { state: tab } })
 
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
@@ -155,7 +155,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
 describe('what a node is drawn before its title', () => {
   /** A tab whose nodes are of the kinds a test names. */
   const createTypedTab = (types: Record<string, NoteType>) =>
-    ({ ...held(), typeOf: (node: string) => types[node] ?? 'note' }) as unknown as PlexTabState
+    ({ ...createTabState(), typeOf: (node: string) => types[node] ?? 'note' }) as unknown as PlexTabState
 
   it('is the icon the tree draws a deck under', () => {
     drawing(13)

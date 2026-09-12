@@ -73,7 +73,7 @@ const settle = async () => {
   await nextTick()
 }
 
-const drawn = () => document.body.querySelector<HTMLElement>('[data-palette="ground"]')
+const getDrawnGround = () => document.body.querySelector<HTMLElement>('[data-palette="ground"]')
 const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 const options = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="list"] [role="option"]'))
@@ -81,11 +81,12 @@ const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
 const keys = () => Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="key"]'))
 
 /** What a line says, with the runs it is written in run together. */
-const said = (of: Element | null | undefined): string =>
+const getText = (of: Element | null | undefined): string =>
   (of?.textContent ?? '').replace(/\s+/g, ' ').trim()
 
 /** The keystroke a cap is announced as, which is all of it a reader hears. */
-const spoken = (cap: Element | null | undefined): string => said(cap?.querySelector('.sr-only'))
+const getSpokenKey = (cap: Element | null | undefined): string =>
+  getText(cap?.querySelector('.sr-only'))
 
 /** The marks a cap draws, by the name Lucide files each under. */
 const marksOf = (cap: Element | null | undefined): readonly string[] =>
@@ -125,7 +126,7 @@ describe('being open and being closed', () => {
   it('draws nothing at all until it is opened', async () => {
     mountPalette({ open: false })
     await settle()
-    expect(drawn()).toBeNull()
+    expect(getDrawnGround()).toBeNull()
   })
 
   it('takes the keyboard into the field, and keeps it there while walking', async () => {
@@ -157,7 +158,7 @@ describe('being open and being closed', () => {
     await press('Escape')
     expect(palette.emitted('dismiss')).toHaveLength(1)
 
-    drawn()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    getDrawnGround()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     await nextTick()
     expect(palette.emitted('dismiss')).toHaveLength(2)
   })
@@ -361,11 +362,11 @@ describe('choosing', () => {
   it('says what the keys reach for the item that is lit', async () => {
     mountPalette()
     await settle()
-    expect(keys().map(said)).toEqual(['Return Show in plex', 'Shift Return Open the note'])
+    expect(keys().map(getText)).toEqual(['Return Show in plex', 'Shift Return Open the note'])
 
     await press('ArrowDown')
     await press('ArrowDown')
-    expect(keys().map(said)).toEqual(['Return Open the note'])
+    expect(keys().map(getText)).toEqual(['Return Open the note'])
   })
 
   it('draws each key held as its own mark, in the order it is held', async () => {
@@ -604,7 +605,7 @@ describe('an item offering more than two actions', () => {
     mountPalette({ groups: OFFERING })
     await settle()
 
-    expect(keys().map(said)).toEqual(['Return Show in plex', 'Shift Return Open the note'])
+    expect(keys().map(getText)).toEqual(['Return Show in plex', 'Shift Return Open the note'])
     expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain('Actions')
   })
 
@@ -626,7 +627,7 @@ describe('an item offering more than two actions', () => {
 
     const hint = options()[0]?.querySelector('[data-palette="hint"]')
     expect(marksOf(hint)).toEqual(['option'])
-    expect(spoken(hint)).toBe('Option 1')
+    expect(getSpokenKey(hint)).toBe('Option 1')
     expect(options()[1]?.querySelector('[data-palette="hint"]')).toBeNull()
   })
 })
@@ -643,14 +644,14 @@ describe('the action panel', () => {
   it('opens on the chord and lists everything the lit item offers', async () => {
     await open()
 
-    expect(actions().map((row) => said(row.querySelector('[data-actions="name"]')))).toEqual([
+    expect(actions().map((row) => getText(row.querySelector('[data-actions="name"]')))).toEqual([
       'Show in plex',
       'Open the note',
       'Open beside',
       'Rename',
       'Move to trash',
     ])
-    expect(actions().map((row) => spoken(row.querySelector('[data-actions="hint"]')))).toEqual([
+    expect(actions().map((row) => getSpokenKey(row.querySelector('[data-actions="hint"]')))).toEqual([
       'Return',
       'Shift Return',
       '',
@@ -710,7 +711,7 @@ describe('the action panel', () => {
     await open()
 
     await typeIn(hunt(), 'open')
-    expect(actions().map((row) => said(row.querySelector('[data-actions="name"]')))).toEqual([
+    expect(actions().map((row) => getText(row.querySelector('[data-actions="name"]')))).toEqual([
       'Open the note',
       'Open beside',
     ])
@@ -761,7 +762,7 @@ describe('the action panel', () => {
     await settle()
 
     expect(palette.emitted('dismiss')).toBeUndefined()
-    expect(drawn()).not.toBeNull()
+    expect(getDrawnGround()).not.toBeNull()
     expect(sheet()).toBeNull()
     expect(document.activeElement).toBe(field())
   })
@@ -869,11 +870,11 @@ describe('the action panel', () => {
   it('goes on a press on the ground, and the palette stays where it is', async () => {
     const palette = await open()
 
-    drawn()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    getDrawnGround()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     await settle()
 
     expect(sheet()).toBeNull()
-    expect(drawn()).not.toBeNull()
+    expect(getDrawnGround()).not.toBeNull()
     expect(palette.emitted('dismiss')).toBeUndefined()
   })
 

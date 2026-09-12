@@ -47,7 +47,7 @@ const reading = (over: Partial<Task> = {}): Task => ({
   ...over,
 })
 
-const told = (over: Partial<WindowMessage> = {}): WindowMessage => ({
+const createMessage = (over: Partial<WindowMessage> = {}): WindowMessage => ({
   id: 'command#1',
   name: 'command',
   kind: 'report',
@@ -239,31 +239,31 @@ describe('what is so about the window', () => {
 
 describe('what the window said', () => {
   it('draws a report to be read and then let go of', () => {
-    const drawn = corner([], [told()])
+    const drawn = corner([], [createMessage()])
 
     expect(drawn[0]).toMatchObject({ says: 'The note is in the trash', tone: 'plain', stay: 'read' })
   })
 
   it('draws a caution to be read and left standing', () => {
-    const drawn = corner([], [told({ kind: 'caution', text: 'that note changed on disk' })])
+    const drawn = corner([], [createMessage({ kind: 'caution', text: 'that note changed on disk' })])
 
     expect(drawn[0]).toMatchObject({ tone: 'caution', stay: 'kept' })
   })
 
   it('draws an error that stands until it is put away', () => {
-    const drawn = corner([], [told({ kind: 'error', text: 'a note of that name is filed there' })])
+    const drawn = corner([], [createMessage({ kind: 'error', text: 'a note of that name is filed there' })])
 
     expect(drawn[0]).toMatchObject({ tone: 'alarm', stay: 'kept' })
   })
 
   it('draws a state for as long as whoever said it keeps saying it', () => {
-    const drawn = corner([], [told({ kind: 'state', text: 'the themes stopped arriving' })])
+    const drawn = corner([], [createMessage({ kind: 'state', text: 'the themes stopped arriving' })])
 
     expect(drawn[0]).toMatchObject({ tone: 'plain', stay: 'holds' })
   })
 
   it('keeps each utterance under the identity it was given', () => {
-    const drawn = corner([], [told({ id: 'command#7' })])
+    const drawn = corner([], [createMessage({ id: 'command#7' })])
 
     expect(drawn[0]?.id).toBe('command#7')
   })
@@ -271,7 +271,7 @@ describe('what the window said', () => {
 
 describe('the order the corner draws in', () => {
   it('puts work first, so a state or a word arriving does not shift a moving count', () => {
-    const drawn = corner([reading()], [told()], well({ unwatched: '/home/vault' }))
+    const drawn = corner([reading()], [createMessage()], well({ unwatched: '/home/vault' }))
 
     expect(drawn.map((one) => one.id)).toStrictEqual(['reading-1', 'unwatched', 'command#1'])
   })

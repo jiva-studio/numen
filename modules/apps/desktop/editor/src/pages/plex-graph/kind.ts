@@ -49,7 +49,7 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
 
   const getCurrentPath = (): string => front()?.view.here.value ?? ''
 
-  const names = (path: string): string => (path ? (front()?.getName(path) ?? '') : '')
+  const getName = (path: string): string => (path ? (front()?.getName(path) ?? '') : '')
 
   const travel = async (path: string) => {
     const one = handle.last<PlexTabState>(PLEX)
@@ -61,7 +61,7 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
     await one.state.view.go(path)
   }
 
-  const leaves = async (from: string, to: string) => {
+  const leavePath = async (from: string, to: string) => {
     await Promise.all(
       all()
         .filter(({ state }) => state.view.here.value === from)
@@ -87,5 +87,5 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
     )
   }
 
-  return { kind, looking: getCurrentPath, names, travel, leaves, again }
+  return { kind, looking: getCurrentPath, getName, travel, leavePath, again }
 }

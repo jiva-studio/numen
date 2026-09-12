@@ -53,13 +53,40 @@ export const words = (name) =>
  *
  * Two letters is the shortest an English verb runs to — owing, doing, being —
  * so one letter in front of the ending is a word that ends there by accident:
- * a ring is a thing.
+ * a ring is a thing. The past forms that carry no ending are listed below.
  *
  * A third-person verb is not tested for. `carries` and `cells` end the same
  * way, and a factory here is free to take a plain noun, so no machine can tell
  * the narrator from the thing. A person reads those.
  */
-export const verbal = (word) => /^.{2,}(ing|ed)$/.test(word)
+export const verbal = (word) => /^.{2,}(ing|ed)$/.test(word) || past.has(word)
+
+/**
+ * The past forms no ending gives away. `drawn`, `held` and `took` narrate as
+ * plainly as `offered` does, and a machine reading suffixes cannot see it, so
+ * they are written down. English has a fixed number of these, and this is them.
+ *
+ * A form that doubles as the base is not here — `read`, `run`, `set`, `put`,
+ * `cut`, `hit`, `split`, `shut`, `spread`, `cost`, `let` — because
+ * `readTable` is a caller asking and nothing in the name says otherwise. Nor
+ * is `left`, which is a side. A word that lands here and means something else
+ * goes in the dictionary above, with what it means.
+ */
+const past = new Set([
+  'began', 'begun', 'blown', 'borne', 'bought', 'broke', 'broken', 'brought',
+  'built', 'burnt', 'came', 'caught', 'chose', 'chosen', 'dealt', 'done',
+  'drawn', 'drew', 'driven', 'drove', 'eaten', 'fallen', 'fell', 'felt',
+  'flew', 'flown', 'forgave', 'forgiven', 'forgot', 'forgotten', 'froze',
+  'frozen', 'gave', 'given', 'gone', 'got', 'gotten', 'grew', 'grown',
+  'heard', 'held', 'hid', 'hidden', 'kept', 'knew', 'known', 'laid', 'lain',
+  'lent', 'lost', 'made', 'meant', 'met', 'paid', 'ran', 'rang', 'risen',
+  'rung', 'said', 'sang', 'sank', 'sat', 'seen', 'sent', 'shaken', 'shone',
+  'shook', 'shown', 'shrunk', 'slept', 'slid', 'sold', 'sought', 'sown',
+  'spent', 'spoke', 'spoken', 'spun', 'stole', 'stolen', 'stood', 'struck',
+  'stuck', 'swept', 'swam', 'sworn', 'swum', 'taken', 'taught', 'thought',
+  'threw', 'thrown', 'told', 'took', 'tore', 'torn', 'understood', 'went',
+  'woke', 'woken', 'won', 'wore', 'worn', 'wove', 'woven', 'written', 'wrote',
+])
 
 /**
  * Whether a name is refused. The first word is what is read: it is the verb,

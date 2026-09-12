@@ -38,7 +38,7 @@ const openers = () => {
   return { tabOpeners, opens: () => reader }
 }
 
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 const createDocumentTabAt = (path: string, page: number, pageCount: number) =>
   ({ path, pageNumber: ref(page), pages: ref(Array.from({ length: pageCount })) }) as unknown as DocumentTabState
@@ -127,7 +127,7 @@ describe('a search that landed in a document', () => {
       { from: 400, to: 420 },
     ]
     opens()?.('physics/Boltzmann.pdf', spans)
-    await settles()
+    await settle()
 
     expect(opened).toEqual(['document physics/Boltzmann.pdf'])
     expect(focused).toHaveBeenCalledWith(...spans)

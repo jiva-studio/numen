@@ -29,11 +29,11 @@ export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
    */
   const titles = shallowRef<ReadonlyMap<string, string>>(new Map())
 
-  const calls = (id: string, name: string): void => {
+  const setTitle = (id: string, name: string): void => {
     titles.value = new Map(titles.value).set(id, name)
   }
 
-  const forgets = (id: string): void => {
+  const forgetTab = (id: string): void => {
     const rest = new Map(titles.value)
     rest.delete(id)
     titles.value = rest
@@ -43,10 +43,10 @@ export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
    * A note is asked about at the file it stands at now. A vault that cannot
    * answer leaves it under the name it had.
    */
-  const asks = async (id: string): Promise<void> => {
+  const refreshTitle = async (id: string): Promise<void> => {
     try {
       const said = (await vault.neighbourhood(notes.where(id))).focus?.title
-      if (said) calls(id, said)
+      if (said) setTitle(id, said)
     } catch {
       // The tab keeps the name it had, and the next thing that moves the note
       // asks again.
@@ -67,12 +67,12 @@ export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
    */
   watch(getSettledNotes, (now, before) => {
     for (const one of now) {
-      if (!before?.some((was) => was.id === one.id && was.at === one.at)) void asks(one.id)
+      if (!before?.some((was) => was.id === one.id && was.at === one.at)) void refreshTitle(one.id)
     }
   })
 
   /** What one note is called, and the file it stands at while nothing has named it. */
   const getTitle = (id: string): string => titles.value.get(id) ?? notes.where(id)
 
-  return { titles, calls, forgets, getTitle }
+  return { titles, setTitle, forgetTab, getTitle }
 }

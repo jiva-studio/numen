@@ -33,7 +33,7 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
 })
 
 /** One vault as the list answers one. */
-const known = (id: string, name: string): Vault => ({
+const createVault = (id: string, name: string): Vault => ({
   id,
   name,
   path: `/vaults/${name}`,
@@ -188,18 +188,18 @@ const window = (
         void done.push(`made ${type} ${path} ${title} ${showing}`),
     },
     vaults: {
-      list: async () => ({ vaults: [known('physics', 'Physics')], showing: 'physics' }),
+      list: async () => ({ vaults: [createVault('physics', 'Physics')], showing: 'physics' }),
       choose: async (title) => {
         done.push(`choose ${title}`)
         return answers.chose ?? '/vaults/Heat'
       },
       add: async (path, name) => {
         done.push(`add ${path} ${name || '—'}`)
-        return answers.added ?? { vault: known('heat', 'Heat'), error: null }
+        return answers.added ?? { vault: createVault('heat', 'Heat'), error: null }
       },
       rename: async (id, name) => {
         done.push(`renames vault ${id} ${name}`)
-        return answers.added ?? { vault: known(id, name), error: null }
+        return answers.added ?? { vault: createVault(id, name), error: null }
       },
       remove: async (id, trash) => {
         done.push(trash ? `erases ${id}` : `forgets ${id}`)
@@ -210,7 +210,7 @@ const window = (
         return turnedDown
       },
       calls: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
-      reloads: () => void done.push('reloads'),
+      reload: () => void done.push('reloads'),
     },
     goes: {
       reveals: (path) => void done.push(`reveals ${path}`),

@@ -4,7 +4,7 @@ import { goalNames } from '@numen/wire'
 
 import { useVaultPresets } from './presets'
 import type { PresetsClient } from '../api/presets'
-import { canStart, spent, through } from '../lib/progress'
+import { canStart, isSpent, through } from '../lib/progress'
 import { CLOSES_NOTHING } from '../types'
 import type { Budget, Preset, Settings, SettingsMessage } from '../types'
 import { getStoppedWords, goalWords, leftWords, STOPPED } from '../words'
@@ -200,7 +200,7 @@ describe('how far through its day a preset stands', () => {
     })
 
     expect(through(one)).toBeCloseTo(0.25)
-    expect(spent(one)).toBe(false)
+    expect(isSpent(one)).toBe(false)
   })
 
   it('is weighed against the counts where the counts are what close it', () => {
@@ -230,7 +230,7 @@ describe('how far through its day a preset stands', () => {
     })
 
     expect(through(one)).toBeCloseTo(1)
-    expect(spent(one)).toBe(true)
+    expect(isSpent(one)).toBe(true)
   })
 
   // A goal of a date paces the new cards and leaves the reviews unbounded, so

@@ -25,7 +25,7 @@ const props = withDefaults(
 /** Which choice is in force, by the identifier the caller gave it. */
 const model = defineModel<string>({ default: '' })
 
-const chose = (value: unknown) => {
+const onChoose = (value: unknown) => {
   if (typeof value === 'string') model.value = value
 }
 
@@ -56,7 +56,7 @@ const onKey = (event: KeyboardEvent) => {
         props.class,
       )
     "
-    @update:model-value="chose"
+    @update:model-value="onChoose"
     @keydown="onKey"
   >
     <RadioGroupItem

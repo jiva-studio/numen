@@ -44,14 +44,14 @@ function createElement() {
       element.started++
       if (element.fails) return Promise.reject(element.playError)
       element.paused = false
-      fires('play')
+      emit('play')
       return Promise.resolve()
     },
 
     pause() {
       element.stopped++
       element.paused = true
-      fires('pause')
+      emit('pause')
     },
   }
 
@@ -67,7 +67,7 @@ function createElement() {
   })
 
   /** One event, as the element fires it. */
-  const fires = (name: string) => {
+  const emit = (name: string) => {
     for (const run of listeners.get(name) ?? []) run()
   }
 
@@ -75,31 +75,31 @@ function createElement() {
   const countListeners = (name: string) => (listeners.get(name) ?? []).length
 
   /** The recording says how long it runs. */
-  const runs = (seconds: number) => {
+  const setDuration = (seconds: number) => {
     element.duration = seconds
-    fires('durationchange')
+    emit('durationchange')
   }
 
   /** The recording plays on, and says where it stands. */
-  const moves = (seconds: number) => {
+  const setCurrentTime = (seconds: number) => {
     element.currentTime = seconds
-    fires('timeupdate')
+    emit('timeupdate')
   }
 
   /** The element could not do it, and says which of the four it was. */
-  const breaks = (code: number) => {
+  const setError = (code: number) => {
     element.error = { code }
-    fires('error')
+    emit('error')
   }
 
-  return { element, fires, countListeners, runs, moves, breaks }
+  return { element, emit, countListeners, setDuration, setCurrentTime, setError }
 }
 
 /** A player standing on one element, and the element it stands on. */
 const player = () => {
   const stood = createElement()
-  const makes: AudioFactory = () => stood.element as unknown as HTMLAudioElement
-  return { plays: audio(makes), ...stood }
+  const getElement: AudioFactory = () => stood.element as unknown as HTMLAudioElement
+  return { plays: audio(getElement), ...stood }
 }
 
 describe('a recording loaded', () => {
@@ -115,9 +115,9 @@ describe('a recording loaded', () => {
   })
 
   it('is loaded once, however often it is asked for', () => {
-    const { plays, element, moves } = player()
+    const { plays, element, setCurrentTime } = player()
     plays.load(TALK)
-    moves(4)
+    setCurrentTime(4)
 
     plays.load(TALK)
 
@@ -135,9 +135,9 @@ describe('a recording loaded', () => {
   })
 
   it('leaves the moment it stood at behind when another takes the player', () => {
-    const { plays, moves } = player()
+    const { plays, setCurrentTime } = player()
     plays.load(TALK)
-    moves(6)
+    setCurrentTime(6)
 
     plays.load(OTHER)
 
@@ -218,9 +218,9 @@ describe('a recording played', () => {
   })
 
   it('stops where the person stops it, and stands where it stopped', () => {
-    const { plays, moves } = player()
+    const { plays, setCurrentTime } = player()
     plays.play(TALK)
-    moves(3)
+    setCurrentTime(3)
 
     plays.pause()
 
@@ -229,10 +229,10 @@ describe('a recording played', () => {
   })
 
   it('stops of itself when it ends', () => {
-    const { plays, fires } = player()
+    const { plays, emit } = player()
     plays.play(TALK)
 
-    fires('ended')
+    emit('ended')
 
     expect(plays.playing.value).toBe(false)
   })
@@ -240,28 +240,28 @@ describe('a recording played', () => {
 
 describe('how long a recording runs', () => {
   it('is what the recording says, in milliseconds', () => {
-    const { plays, runs } = player()
+    const { plays, setDuration } = player()
     plays.load(TALK)
 
-    runs(85.25)
+    setDuration(85.25)
 
     expect(plays.duration.value).toBe(85_250)
   })
 
   it('is nothing where the recording never ends', () => {
-    const { plays, runs } = player()
+    const { plays, setDuration } = player()
     plays.load(TALK)
 
-    runs(Number.POSITIVE_INFINITY)
+    setDuration(Number.POSITIVE_INFINITY)
 
     expect(plays.duration.value).toBe(0)
   })
 
   it('is nothing where the recording has not said', () => {
-    const { plays, runs } = player()
+    const { plays, setDuration } = player()
     plays.load(TALK)
 
-    runs(Number.NaN)
+    setDuration(Number.NaN)
 
     expect(plays.duration.value).toBe(0)
   })
@@ -269,27 +269,27 @@ describe('how long a recording runs', () => {
 
 describe('a recording the player could not read', () => {
   it('says which of the four it was, in words a person reads', () => {
-    const { plays, breaks } = player()
+    const { plays, setError } = player()
     plays.load(TALK)
 
-    breaks(2)
+    setError(2)
 
     expect(plays.failed.value).toBe(WORDS.unreached)
   })
 
   it('says the recording could not be played where it named no code', () => {
-    const { plays, breaks } = player()
+    const { plays, setError } = player()
     plays.load(TALK)
 
-    breaks(9)
+    setError(9)
 
     expect(plays.failed.value).toBe(WORDS.unreadable)
   })
 
   it('says nothing again once another recording takes the player', () => {
-    const { plays, breaks } = player()
+    const { plays, setError } = player()
     plays.load(TALK)
-    breaks(4)
+    setError(4)
 
     plays.load(OTHER)
 

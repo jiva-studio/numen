@@ -26,10 +26,10 @@ const held: Record<string, readonly Entry[]> = {
 }
 
 /** A moment for whatever the tab asked the vault for to come back. */
-const settles = () => new Promise((done) => setTimeout(done, 0))
+const settle = () => new Promise((done) => setTimeout(done, 0))
 
 /** A tab of that vault, drawn, and what it asked of the window written down. */
-const drawn = async (open: readonly string[] = []) => {
+const mountFiles = async (open: readonly string[] = []) => {
   const done: string[] = []
   const list = useFileTree({ list: async (at: string) => held[at] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
@@ -49,7 +49,7 @@ const drawn = async (open: readonly string[] = []) => {
   await list.openFolder(ROOT)
   for (const at of open) await list.openFolder(at)
   const window = mount(FilesTab, { props: { state: tab } })
-  await settles()
+  await settle()
   return { done, list, tab, window }
 }
 
@@ -59,7 +59,7 @@ const rowsOf = (rows: readonly { id: string; rows?: readonly unknown[] }[]): unk
 
 describe('the tree the tab draws', () => {
   it('is handed a row per file the vault holds, under the path it is filed at', async () => {
-    const { window } = await drawn()
+    const { window } = await mountFiles()
 
     expect(rowsOf(window.findComponent(Tree).props('rows'))).toStrictEqual([
       ['physics', []],
@@ -69,7 +69,7 @@ describe('the tree the tab draws', () => {
   })
 
   it('is handed what an open folder holds, inside the row that stands for it', async () => {
-    const { window } = await drawn(['physics'])
+    const { window } = await mountFiles(['physics'])
 
     expect(rowsOf(window.findComponent(Tree).props('rows'))).toStrictEqual([
       ['physics', [['physics/Kelvin.md', []]]],
@@ -79,19 +79,19 @@ describe('the tree the tab draws', () => {
   })
 
   it('says which folders are open, and names no folder that is closed', async () => {
-    const { window } = await drawn()
+    const { window } = await mountFiles()
 
     expect(window.findComponent(Tree).props('open')).not.toContain('physics')
   })
 
   it('draws an icon of its own beside every row', async () => {
-    const { window } = await drawn()
+    const { window } = await mountFiles()
 
     expect(window.findAll('.files__icon')).toHaveLength(3)
   })
 
   it('names the folder a file dragged in from outside is filed in', async () => {
-    const { window } = await drawn(['physics'])
+    const { window } = await mountFiles(['physics'])
     const marking = window.findComponent(Tree).props('marking') as {
       attribute: string
       valueFor: (row: string | null) => string
@@ -107,37 +107,37 @@ describe('the tree the tab draws', () => {
 
 describe('a row the tree reports', () => {
   it('takes the person to the note it stands for', async () => {
-    const { done, window } = await drawn()
+    const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('activate', 'Entropy.md')
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['lands file Entropy.md'])
   })
 
   it('takes the person to a file the vault holds no source for', async () => {
-    const { done, window } = await drawn()
+    const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('activate', 'Cover.png')
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['lands file Cover.png'])
   })
 
   it('is filed where it was let go of', async () => {
-    const { done, window } = await drawn()
+    const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('move', ['Entropy.md'], { into: 'physics' })
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['moves Entropy.md physics/Entropy.md'])
   })
 
   it('is one of several filed where they were all let go of', async () => {
-    const { done, window } = await drawn()
+    const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('move', ['Entropy.md', 'Cover.png'], { into: 'physics' })
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual([
       'moves Entropy.md physics/Entropy.md',
@@ -146,10 +146,10 @@ describe('a row the tree reports', () => {
   })
 
   it('is one of the rows the tree hands back as chosen', async () => {
-    const { list, window } = await drawn()
+    const { list, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('select', ['Entropy.md', 'Cover.png'])
-    await settles()
+    await settle()
 
     expect(list.selectedPaths.value).toStrictEqual(['Entropy.md', 'Cover.png'])
     expect(window.findComponent(Tree).props('selected')).toStrictEqual([
@@ -159,28 +159,28 @@ describe('a row the tree reports', () => {
   })
 
   it('is one of the rows asked to go, handed to the window as one command', async () => {
-    const { done, window } = await drawn()
+    const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('remove', ['Entropy.md', 'Cover.png'])
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
   })
 
   it('is filed under the name that was typed over it', async () => {
-    const { done, window } = await drawn()
+    const { done, window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('rename', 'Entropy.md', 'Order.md')
-    await settles()
+    await settle()
 
     expect(done).toStrictEqual(['moves Entropy.md Order.md'])
   })
 
   it('opens the folder it stands for, and what it holds is drawn', async () => {
-    const { window } = await drawn()
+    const { window } = await mountFiles()
 
     window.findComponent(Tree).vm.$emit('open', 'physics')
-    await settles()
+    await settle()
 
     expect(window.findComponent(Tree).props('open')).toContain('physics')
   })
@@ -188,16 +188,16 @@ describe('a row the tree reports', () => {
 
 describe('the menu on a row', () => {
   it('is drawn nowhere until a row asks for one', async () => {
-    const { window } = await drawn()
+    const { window } = await mountFiles()
 
     expect(window.findComponent(Menu).exists()).toBe(false)
   })
 
   const menuOn = async (path: string | null, chosen: readonly string[] = []) => {
-    const { list, window } = await drawn()
+    const { list, window } = await mountFiles()
     if (chosen.length) list.selectPaths(chosen)
     window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
-    await settles()
+    await settle()
     return window.findComponent(Menu).props('items') as readonly { id: string; group?: string }[]
   }
 
@@ -299,13 +299,13 @@ describe('a folder that could not be read', () => {
     await list.openFolder(ROOT)
 
     const window = mount(FilesTab, { props: { state: tab } })
-    await settles()
+    await settle()
 
     expect(window.find('.caution').text()).toContain('numen did not answer')
   })
 
   it('is said nowhere while the vault answers', async () => {
-    const { window } = await drawn()
+    const { window } = await mountFiles()
 
     expect(window.find('.caution').exists()).toBe(false)
   })

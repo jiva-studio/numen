@@ -394,7 +394,7 @@ describe('the names of the marks that fit', () => {
 })
 
 /** A number said as itself, so a test reads the height and not the wording. */
-const said = (value: number): string => String(value)
+const formatValue = (value: number): string => String(value)
 
 /** A curve drawn well clear of the left edge, where no number is read. */
 const clear: readonly Position[] = [
@@ -404,7 +404,7 @@ const clear: readonly Position[] = [
 
 describe('the numbers read off the picture’s edges', () => {
   it('is the most over the top and the least on the foot', () => {
-    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, said)
+    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, formatValue)
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['10', '0'])
     expect(numbers.map((one) => one.box)).toStrictEqual([
@@ -415,7 +415,7 @@ describe('the numbers read off the picture’s edges', () => {
 
   // An extent of no width has one number and nothing else to read.
   it('is one number on the foot for an extent of no width', () => {
-    const numbers = heightsOf({ least: 4, most: 4 }, clear, [], null, said)
+    const numbers = heightsOf({ least: 4, most: 4 }, clear, [], null, formatValue)
 
     expect(numbers).toStrictEqual([
       { at: against(FOOT, '0'), box: againstBox(FOOT, '0'), text: '4' },
@@ -423,26 +423,26 @@ describe('the numbers read off the picture’s edges', () => {
   })
 
   it('drops the number the curve itself stands on', () => {
-    const numbers = heightsOf({ least: 0, most: 10 }, [{ x: LEFT, y: FOOT }], [], null, said)
+    const numbers = heightsOf({ least: 0, most: 10 }, [{ x: LEFT, y: FOOT }], [], null, formatValue)
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['10'])
   })
 
   it('drops the number a mark stands on', () => {
-    const numbers = heightsOf({ least: 0, most: 10 }, clear, [{ x: LEFT, y: TOP }], null, said)
+    const numbers = heightsOf({ least: 0, most: 10 }, clear, [{ x: LEFT, y: TOP }], null, formatValue)
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['0'])
   })
 
   it('drops the number the bubble over the knob stands on', () => {
     const over = box(LEFT, 0, CALLOUT_WIDE, CALLOUT_HIGH)
-    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], over, said)
+    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], over, formatValue)
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['0'])
   })
 
   it('keeps every number it draws inside the picture', () => {
-    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, said)
+    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, formatValue)
 
     expect(numbers.every((one) => inside(one.box))).toBe(true)
   })

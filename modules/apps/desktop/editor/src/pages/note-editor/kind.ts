@@ -49,7 +49,7 @@ export function useNoteTab(
   const minted = new Map<string, string>()
 
   /** The identity of the tab standing at a file, minted where none stands there. */
-  const mints = (path: string): string => {
+  const getOrCreateTabId = (path: string): string => {
     const open = tabbed.value.get(path) ?? minting.get(path)
     if (open) return open
     const id = crypto.randomUUID()
@@ -65,13 +65,13 @@ export function useNoteTab(
    * A note opened under the identity it was minted. It is owed its keyboard
    * from here until an editor has taken it, on the line it was told to stand on.
    */
-  const opens = (id: string, line = ITSELF) => {
+  const openTab = (id: string, line = ITSELF) => {
     const path = minted.get(id) ?? id
     notes.open(id, path)
     minting.delete(path)
     minted.delete(id)
-    keyboard.owes(id, line)
-    return held(id)
+    keyboard.requestFocus(id, line)
+    return createNoteTabState(id)
   }
 
   /**
@@ -79,14 +79,14 @@ export function useNoteTab(
    * tab of its own. It takes the keyboard, opened now or already open.
    */
   const openNote = (path: string, title = '', showing: PlexDestination = 'here') => {
-    const id = mints(path)
-    if (title) names.calls(id, title)
+    const id = getOrCreateTabId(path)
+    if (title) names.setTitle(id, title)
     void (showing === 'beside' ? handle.beside(NOTE, id) : handle.opens(NOTE, id))
-    keyboard.owes(id)
+    keyboard.requestFocus(id)
   }
 
   /** A note given the keyboard on a line, in whichever tab holds it. */
-  const entersAt = (path: string, line?: number) => keyboard.owes(getTabId(path), line)
+  const focusLine = (path: string, line?: number) => keyboard.requestFocus(getTabId(path), line)
 
   // The editor of a note, which is where its prose is read and written. A line
   // is one of the lines of that prose, and the keyboard stands on it. A link
@@ -95,12 +95,12 @@ export function useNoteTab(
   for (const kind of ['note'] as const) {
     tabOpeners.registerEditor(kind, (path, title, showing, line) => {
       openNote(path, title, showing)
-      if (line !== undefined) entersAt(path, line)
+      if (line !== undefined) focusLine(path, line)
     })
   }
 
   /** The tab holding a note lets go of it, wherever the window draws it. */
-  const shuts = (id: string) => {
+  const closeTab = (id: string) => {
     const tab = handle.each<NoteTabState>(NOTE).find((one) => one.state.id === id)
     tab?.state.close(tab.id)
   }
@@ -109,7 +109,7 @@ export function useNoteTab(
    * What one tab of a note holds. What is being drawn over a note is filed by
    * the file it is being drawn on, which is where the note stands now.
    */
-  const held = (id: string): NoteTabState =>
+  const createNoteTabState = (id: string): NoteTabState =>
     createNoteTab(id, notes, changes, keyboard, vault, names, handle, tabOpeners)
 
   /**
@@ -117,12 +117,12 @@ export function useNoteTab(
    * identity it opened under.
    */
   /** The file this note stands at now, and nothing while the store has let it go. */
-  const standsAt = (state: NoteTabState): string =>
+  const getPath = (state: NoteTabState): string =>
     notes.has(state.id) ? notes.where(state.id) : ''
 
   const kind: TabKind<NoteTabState, typeof NOTE> = {
     kind: NOTE,
-    opens: (id) => opens(id),
+    opens: (id) => openTab(id),
     called: (state) => names.getTitle(state.id),
     getTitle: (state) => names.getTitle(state.id),
     marked: (state) => markOf(state.shown.value.state),
@@ -131,11 +131,11 @@ export function useNoteTab(
     shown: (state) => state.measure(),
     onShow: (state) => state.measure(),
     over: (state) => {
-      const path = standsAt(state)
+      const path = getPath(state)
       return { path, title: path ? names.getTitle(state.id) : '' }
     },
-    attends: (state) => ({ path: standsAt(state) }),
-    getAttention: (state) => ({ path: standsAt(state) }),
+    attends: (state) => ({ path: getPath(state) }),
+    getAttention: (state) => ({ path: getPath(state) }),
     shuts: (state, id) => {
       state.close(id)
       return false
@@ -157,22 +157,22 @@ export function useNoteTab(
     called: (id) => names.getTitle(id),
     asking: (id) => notes.stale(id) !== null,
     settles: (id) => notes.settles(id),
-    shuts,
+    shuts: closeTab,
     holding: (path) => tabbed.value.get(path) ?? null,
   }
 
   return {
     kind,
     kept,
-    held,
-    opens,
+    createNoteTabState,
+    openTab,
     titles: names.titles,
     /** Every open note's editor takes its measurements again. */
-    measures: keyboard.measures,
-    calls: (path: string, title: string) => names.calls(mints(path), title),
-    called: (path: string) => names.getTitle(getTabId(path)),
-    entersAt,
-    shuts,
+    measureAll: keyboard.measureAll,
+    setTitle: (path: string, title: string) => names.setTitle(getOrCreateTabId(path), title),
+    getTitle: (path: string) => names.getTitle(getTabId(path)),
+    focusLine,
+    closeTab,
     /**
      * What the application is doing, as it last said. A tab whose note is named
      * there is being fetched for, and asks for its transcript again — which is
