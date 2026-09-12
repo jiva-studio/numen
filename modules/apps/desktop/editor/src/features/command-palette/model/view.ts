@@ -8,8 +8,8 @@
  */
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
 import { inGroup } from '../lib/commands'
-import type { PendingStep } from '../step'
-import type { Command, CommandGroup, CommandTarget } from '../target'
+import type { PendingStep } from '../lib/step'
+import type { Command, CommandGroup, CommandTarget } from '../types'
 import { createStepGroups } from './stepGroups'
 import type { ViewState } from './viewState'
 
@@ -38,7 +38,7 @@ export function view(state: ViewState) {
   }
 
   /** Why nothing over the note in front is offered. */
-  const why = (over: CommandTarget): string =>
+  const getSilenceMessage = (over: CommandTarget): string =>
     !over.ready ? words.noVault : over.path ? words.noneFound : words.noNote
 
   /** Every command offered over what is in front, in the groups it holds. */
@@ -55,7 +55,7 @@ export function view(state: ViewState) {
     const overFile = items('file')
 
     return [
-      { id: 'note', title: words.overNote, items: items('note'), silence: why(over) },
+      { id: 'note', title: words.overNote, items: items('note'), silence: getSilenceMessage(over) },
       ...(overFile.length === 0 ? [] : [{ id: 'file', title: words.overFile, items: overFile }]),
       { id: 'window', title: words.overWindow, items: items('window'), silence: words.noneFound },
       { id: 'vault', title: words.overVault, items: items('vault'), silence: words.noneFound },
@@ -66,13 +66,13 @@ export function view(state: ViewState) {
   const groupsOf = (step: PendingStep | null, over: CommandTarget, text: string) => {
     if (!step) return getCommandGroups(over, text)
     if (step.step === 'naming') return [steps.getNamingGroup(text)]
-    if (step.step === 'address') return [steps.address(text)]
+    if (step.step === 'address') return [steps.getAddressGroup(text)]
     if (step.step === 'picking') return [steps.getPickingGroup(text)]
     if (step.step === 'choosing') return steps.getChoosingGroups(step, text)
     if (step.step === 'vaults') return [steps.getVaultsGroup(text, step)]
     if (step.step === 'asking') return [steps.getConfirmGroup(step, text)]
-    return [steps.exactly(step, text)]
+    return [steps.getExactlyGroup(step, text)]
   }
 
-  return { groupsOf, typeOf: steps.typeOf, aside: steps.aside }
+  return { groupsOf, typeOf: steps.typeOf, getVaultAside: steps.getVaultAside }
 }

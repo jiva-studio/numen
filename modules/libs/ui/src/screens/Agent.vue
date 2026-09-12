@@ -19,16 +19,16 @@ withDefaults(
     placeholder?: string
     disabled?: boolean
     /** What the disc at the end of the field is called while it sends. */
-    sends?: string
+    sendLabel?: string
     /** What it is called while it stops the answer on its way. */
-    stops?: string
+    stopLabel?: string
   }>(),
   {
     working: false,
     placeholder: 'Write a message',
     disabled: false,
-    sends: 'Send',
-    stops: 'Stop',
+    sendLabel: 'Send',
+    stopLabel: 'Stop',
   },
 )
 
@@ -101,8 +101,8 @@ onBeforeUnmount(() => watching?.disconnect())
       :working="working"
       :placeholder="placeholder"
       :disabled="disabled"
-      :sends="sends"
-      :stops="stops"
+      :send-label="sendLabel"
+      :stop-label="stopLabel"
       @submit="onSubmit"
       @stop="emit('stop')"
     />

@@ -1,5 +1,5 @@
 /** The decks and stencils a vault holds, and the schedule a deck is reviewed on. */
-export { cards } from './cards'
+export { cards } from './api/cards'
 export type {
   Cards,
   DeckProblem,
@@ -11,11 +11,11 @@ export type {
   VaultFace,
   VaultSection,
   VaultStencil,
-} from './cards'
-export { generateId } from './identity'
-export type { IdMaker } from './identity'
-export { areMarksEqual, createMarks } from './marks'
-export type { Marks } from './marks'
+} from './api/cards'
+export { generateId } from './lib/identity'
+export type { IdMaker } from './lib/identity'
+export { areMarksEqual, createMarks } from './lib/marks'
+export type { Marks } from './lib/marks'
 export {
   BUDGET_UNITS,
   DEFAULTS,
@@ -27,7 +27,7 @@ export {
   RULES,
   setLoadOn,
   WHOLE_LOAD,
-} from './presets'
+} from './lib/presets'
 export type {
   Bounds,
   BudgetUnit,
@@ -46,7 +46,7 @@ export type {
   Settings,
   SettingsBounds,
   WriteResult,
-} from './presets'
-export { presets } from './presets.wire'
-export type { Surrounds } from './surrounds'
+} from './lib/presets'
+export { presets } from './api/presets.wire'
+export type { Surrounds } from './lib/surrounds'
 export { WORDS } from './words'

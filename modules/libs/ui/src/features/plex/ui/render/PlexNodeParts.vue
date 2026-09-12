@@ -2,12 +2,12 @@
 /**
  * The places inside a node, come out from under its box.
  *
- * More of them than the window holds are wound through with a wheel. What they
- * are and what choosing one does are the caller's.
+ * More of them than the window holds are scrolled through with a wheel. What
+ * they are and what choosing one does are the caller's.
  */
 import { computed, ref, watch } from 'vue'
 import type { HungParts } from '../../lib/inside'
-import { getOpenParts, woundBy, type Arrow } from '../../lib/open'
+import { getOpenParts, scrollBy, type Arrow } from '../../lib/open'
 
 const props = defineProps<{
   /** The parts and the room they are given. */
@@ -21,11 +21,11 @@ const emit = defineEmits<{
   (event: 'enter', part: string): void
 }>()
 
-/** How far the window on the parts has been wound down, counted in parts. */
-const wound = ref(0)
+/** How far the window on the parts has been scrolled down, counted in parts. */
+const scrollOffset = ref(0)
 
 /** The parts, as far out from under the box as they have come. */
-const opened = computed(() => getOpenParts(props.hung, props.open, wound.value))
+const opened = computed(() => getOpenParts(props.hung, props.open, scrollOffset.value))
 
 /** What a wheel moved that came to no whole part, held for the next one. */
 let carried = 0
@@ -36,22 +36,22 @@ watch(
   () => props.open > 0,
   (now) => {
     if (!now) return
-    wound.value = 0
+    scrollOffset.value = 0
     carried = 0
   },
 )
 
 /**
- * Winding the window over the parts. A wheel with nowhere to go is left to
+ * Scrolling the window over the parts. A wheel with nowhere to go is left to
  * whatever else wants it, and what it moved that came to no whole part is
  * carried into the next one.
  */
-const wind = (event: WheelEvent) => {
+const scrollParts = (event: WheelEvent) => {
   const shown = opened.value
   if (!shown) return
 
   const wheel = { delta: event.deltaY, mode: event.deltaMode }
-  const { by, left } = woundBy(props.hung, wheel, carried)
+  const { by, left } = scrollBy(props.hung, wheel, carried)
   if (by === 0) {
     carried = left
     return
@@ -66,7 +66,7 @@ const wind = (event: WheelEvent) => {
   event.stopPropagation()
   // Stepped from where the window really stands, which is the picture's own
   // reckoning of it.
-  wound.value = shown.first + by
+  scrollOffset.value = shown.first + by
 }
 
 /** The line an arrow at an edge is drawn along. */
@@ -77,7 +77,7 @@ const arrowLine = (arrow: Arrow) =>
 <template>
   <!-- The parts are for the hand; the same parts are reached by name in the
        palette. -->
-  <g v-if="opened" class="plex__inside" aria-hidden="true" @wheel="wind">
+  <g v-if="opened" class="plex__inside" aria-hidden="true" @wheel="scrollParts">
     <!-- One ground under all of them, as deep as they have come. -->
     <rect
       class="plex__ground"
@@ -112,7 +112,7 @@ const arrowLine = (arrow: Arrow) =>
       </foreignObject>
     </g>
 
-    <!-- More of them than the window holds, the way they are wound to. -->
+    <!-- More of them than the window holds, the way they are scrolled to. -->
     <path
       v-for="arrow in opened.arrows"
       :key="arrow.at"
@@ -167,7 +167,7 @@ const arrowLine = (arrow: Arrow) =>
   white-space: nowrap;
 }
 
-/* There is more to wind to this way. */
+/* There is more to scroll to this way. */
 .plex__more {
   fill: none;
   stroke: var(--numen-edge-label);

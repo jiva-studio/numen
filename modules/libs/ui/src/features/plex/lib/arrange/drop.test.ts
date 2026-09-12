@@ -1,7 +1,7 @@
 /** What a drag away from a node comes to, worked out without a pointer. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { nodeAt, resolveDrop, seatDropped, seatTowards } from './drop'
+import { getDropSeat, nodeAt, resolveDrop, seatTowards } from './drop'
 import { DEFAULT_OPTIONS, resolveOptions } from './options'
 import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
@@ -173,9 +173,9 @@ describe('the seat something dragged in comes to', () => {
 
   const dropAt = (
     at: { x: number; y: number },
-    over: Partial<Parameters<typeof seatDropped>[0]> = {},
+    over: Partial<Parameters<typeof getDropSeat>[0]> = {},
   ) =>
-    seatDropped({
+    getDropSeat({
       frame,
       options: DEFAULT_OPTIONS,
       viewport: VIEWPORT,

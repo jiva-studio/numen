@@ -91,7 +91,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		addr = ephemeral
 	}
 
-	trouble := func(err error) { fmt.Fprintln(opts.Out, "agents:", err) }
+	errorHandler := func(err error) { fmt.Fprintln(opts.Out, "agents:", err) }
 	serving := mcp.ServeHTTP
 	switch {
 	case opts.Reads:
@@ -99,7 +99,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	case opts.Reviews:
 		serving = mcp.ServeReviewingHTTP
 	}
-	endpoint, err := serving(ctx, addr, secret, opts.Core, trouble)
+	endpoint, err := serving(ctx, addr, secret, opts.Core, errorHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -196,6 +196,6 @@ func Claude(
 		Model:               cfg.Agent.Claude.Model,
 		Turns:               cfg.Agent.Claude.MaxSteps,
 		ReadsHooksAndSkills: cfg.Agent.Claude.ReadsHooksAndSkills,
-		Trouble:             func(err error) { fmt.Fprintln(out, "agent:", err) },
+		ErrorHandler:        func(err error) { fmt.Fprintln(out, "agent:", err) },
 	}
 }

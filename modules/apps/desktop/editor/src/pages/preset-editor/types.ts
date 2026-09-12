@@ -57,7 +57,7 @@ export interface PresetSettingsData {
   readonly problems: Readonly<Ref<readonly string[]>>
   readonly stopped: Readonly<Ref<StopReason>>
   readonly errorMessage: Readonly<Ref<string>>
-  readonly changed: Readonly<Ref<boolean>>
+  readonly hasChanged: Readonly<Ref<boolean>>
   readonly material: Readonly<Ref<PresetCounts | null>>
 }
 

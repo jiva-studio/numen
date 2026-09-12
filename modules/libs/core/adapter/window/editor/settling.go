@@ -79,11 +79,13 @@ func (o *Installation) Settle(ctx context.Context) bool {
 	return settled
 }
 
-// Answered is every page having written what it owes. It is what the window
-// waits on while a person answers a question, and that wait is on a person and
-// is not measured. It answers false where ctx ended or the vault was asked
-// again.
-func (o *Installation) Answered(ctx context.Context) bool { return o.API.Window.Answered(ctx) }
+// WaitForAnswers waits for every page to write what it owes. It is what the
+// window waits on while a person answers a question, and that wait is on a
+// person and is not measured. It answers false where ctx ended or the vault was
+// asked again.
+func (o *Installation) WaitForAnswers(ctx context.Context) bool {
+	return o.API.Window.WaitForAnswers(ctx)
+}
 
 // settling is everything owed landing: every client writes what only it holds,
 // and then the writes already taken finish. It answers with whether the vault

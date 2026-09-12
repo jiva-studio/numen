@@ -74,7 +74,7 @@ export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] =>
  * only thing about it that moves. Grouped in thousands, because the numbers
  * reach five figures on one note.
  */
-export const charsWord = (count: number): string =>
+export const writeCharCount = (count: number): string =>
   count <= 0 ? '' : `${groupDigits(count)} characters`
 
 

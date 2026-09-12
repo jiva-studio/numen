@@ -87,7 +87,7 @@ const step = (event: KeyboardEvent): void => {
       :aria-keyshortcuts="STEP_KEYS"
       @keydown="step"
     >
-      <Icon shows="grip" />
+      <Icon name="grip" />
     </span>
 
     <span class="card-header__held min-w-0 flex-1"><slot /></span>

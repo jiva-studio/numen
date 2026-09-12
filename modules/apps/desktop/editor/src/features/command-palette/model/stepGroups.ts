@@ -9,15 +9,15 @@
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
 import type { NoteType } from '@/shared/file'
 import type { Vault } from '@/shared/vaults'
-import { isWebUrl } from '../lib/address'
-import type { StepRow } from '../rows'
-import { CHOSEN, EXACT, NAME, NO, OPEN, PICK, YES, type PendingStep } from '../step'
+import { isWebUrl } from '../lib/url'
+import { CHOSEN, EXACT, NAME, NO, OPEN, PICK, YES, type PendingStep } from '../lib/step'
+import type { StepRow } from '../types'
 import type { ConfirmWords, RetypeWords } from '../words'
 import type { ViewState } from './viewState'
 
 /** The groups a step draws, over the state the palette holds. */
 export function createStepGroups(state: ViewState) {
-  const { words, holds, found, known, showing, working, said } = state
+  const { words, lists, found, known, showing, isWorking, failureMessage } = state
   const { getStepTitle, getStepLabel } = state
 
   /** A name to give, as the one thing the words typed can be. */
@@ -44,7 +44,7 @@ export function createStepGroups(state: ViewState) {
    * offered is what a browser would go to; the vault reads it again and is what
    * refuses one it cannot fetch.
    */
-  const address = (text: string): PaletteGroup => {
+  const getAddressGroup = (text: string): PaletteGroup => {
     const raw = text.trim()
     return {
       id: 'address',
@@ -87,8 +87,8 @@ export function createStepGroups(state: ViewState) {
       id: 'picking',
       title: words.names,
       items,
-      working: working.value,
-      silence: said.value || (text.trim() ? words.noneFound : words.typeNote),
+      working: isWorking.value,
+      silence: failureMessage.value || (text.trim() ? words.noneFound : words.typeNote),
     }
   }
 
@@ -99,7 +99,7 @@ export function createStepGroups(state: ViewState) {
    */
   const getChoosingGroups = (step: PendingStep, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
-    return holds.getStepGroups(step.command.id, text).map((group) => ({
+    return lists.getStepGroups(step.command.id, text).map((group) => ({
       id: group.id,
       title: group.title,
       items: group.items.map((one) => getRowItem(one, word)).filter((item) => item !== null),
@@ -126,7 +126,7 @@ export function createStepGroups(state: ViewState) {
    * there, or it is the one the window is showing. A vault that can be chosen
    * is marked with nothing.
    */
-  const aside = (one: Vault): string =>
+  const getVaultAside = (one: Vault): string =>
     one.missing ? words.gone : one.id === showing.value ? words.current : ''
 
   /**
@@ -139,7 +139,7 @@ export function createStepGroups(state: ViewState) {
     const items: PaletteItem[] = known.value
       .filter((one) => word === '' || one.name.toLowerCase().includes(word))
       .map((one) => {
-        const why = aside(one)
+        const why = getVaultAside(one)
         return {
           id: one.id,
           title: one.name,
@@ -152,8 +152,8 @@ export function createStepGroups(state: ViewState) {
       id: 'vaults',
       title: words.vaults,
       items,
-      working: working.value,
-      silence: said.value || words.noneFound,
+      working: isWorking.value,
+      silence: failureMessage.value || words.noneFound,
     }
   }
 
@@ -164,7 +164,7 @@ export function createStepGroups(state: ViewState) {
    */
   const getConfirmGroup = (step: PendingStep, text: string): PaletteGroup => {
     const word = text.trim().toLowerCase()
-    const { keeps = '', kept = '', does = '', then = '' }: Partial<ConfirmWords> =
+    const { keeps = '', kept = '', action = '', then = '' }: Partial<ConfirmWords> =
       step.command.answers ?? {}
     const items: PaletteItem[] = [
       {
@@ -175,9 +175,9 @@ export function createStepGroups(state: ViewState) {
       },
       {
         id: YES,
-        title: `${does} ${getStepLabel(step)}`,
+        title: `${action} ${getStepLabel(step)}`,
         detail: then,
-        actions: [{ id: YES, text: does }],
+        actions: [{ id: YES, text: action }],
       },
     ]
     return {
@@ -191,19 +191,19 @@ export function createStepGroups(state: ViewState) {
   }
 
   /** The name typed back, which is the one thing that reaches destroying. */
-  const exactly = (step: PendingStep, text: string): PaletteGroup => {
+  const getExactlyGroup = (step: PendingStep, text: string): PaletteGroup => {
     const title = getStepTitle(step)
-    const { does = '', then = '' }: Partial<RetypeWords> = step.command.warns ?? {}
+    const { action = '', then = '' }: Partial<RetypeWords> = step.command.warns ?? {}
     return {
       id: 'exactly',
       title: words.exactly,
       items: [
         {
           id: EXACT,
-          title: `${does} “${title}”`,
+          title: `${action} “${title}”`,
           detail: then,
           disabled: text.trim() !== title,
-          actions: [{ id: EXACT, text: does }],
+          actions: [{ id: EXACT, text: action }],
         },
       ],
     }
@@ -211,13 +211,13 @@ export function createStepGroups(state: ViewState) {
 
   return {
     getNamingGroup,
-    address,
+    getAddressGroup,
     getPickingGroup,
     getChoosingGroups,
     getVaultsGroup,
     getConfirmGroup,
-    exactly,
+    getExactlyGroup,
     typeOf,
-    aside,
+    getVaultAside,
   }
 }

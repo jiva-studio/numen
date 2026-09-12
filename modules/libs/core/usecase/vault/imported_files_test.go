@@ -80,8 +80,8 @@ func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Refused) != 0 {
-		t.Fatalf("what was refused: %v", brought.Refused)
+	if len(brought.Errors) != 0 {
+		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
 	if len(brought.Landed) != 3 {
 		t.Fatalf("what landed: %v", brought.Landed)

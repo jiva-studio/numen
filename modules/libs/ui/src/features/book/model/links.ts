@@ -42,7 +42,7 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
       listeners.followed(place.path)
       return
     }
-    listeners.moved(placeAt(place.fragment) ?? props.span.begins)
+    listeners.moved(placeAt(place.fragment) ?? props.span.from)
   }
 
   return { takeLed, follow }

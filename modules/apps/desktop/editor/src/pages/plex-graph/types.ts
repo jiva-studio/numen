@@ -32,17 +32,17 @@ export interface PlexEditor {
 export interface PlexTabDeps {
   readonly editor: PlexEditor
   readonly ready: Readonly<Ref<boolean>>
-  readonly hangs: Readonly<Ref<boolean>>
+  readonly isHanging: Readonly<Ref<boolean>>
   readonly parts: Readonly<Ref<number>>
   openNote(path: string, title: string, showing: PlexDestination, line?: number): void
-  inside(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
+  readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   askAgent(text: string): void
   runCommand(id: string, path: string, title: string): void
-  readonly opening: Readonly<Ref<string>>
+  readonly openingPath: Readonly<Ref<string>>
   readonly dragged: Readonly<Ref<readonly string[]>>
   showMessage(text: string): void
   createUntitledNote(): Promise<string>
-  first(): Promise<string>
+  readOpeningPath(): Promise<string>
   readonly creatable: readonly PlexRelatedSeat[]
 }
 

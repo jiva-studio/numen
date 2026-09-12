@@ -23,7 +23,7 @@ export interface SettingsPort {
    * Those settings written into the settings file. What could not be written,
    * and nothing where it was. A count left out stands as it is.
    */
-  setHangingSettings(hangs: boolean, parts?: number): Promise<string | null>
+  setHangingSettings(isHanging: boolean, parts?: number): Promise<string | null>
   /**
    * The hour a day of review begins at, on the clock on the wall, written as
    * `04:00`, and how late in the day the vault takes one. An hour past that is

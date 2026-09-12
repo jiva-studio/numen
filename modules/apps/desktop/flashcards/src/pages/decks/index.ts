@@ -2,6 +2,6 @@
 export type { PresetsClient } from './api/presets'
 export { canStart } from './lib/progress'
 export { useVaultPresets } from './model/presets'
-export { useReviewedDays } from './model/reviewed'
+export { useReviewDays } from './model/reviewDays'
 export type { Preset, Settings, SettingsMessage } from './types'
 export { default as Decks } from './ui/Decks.vue'

@@ -5,9 +5,7 @@ import { search } from '@/shared/clients'
 import { modes, noteType, run, sourceKind } from './words'
 import type { SearchDeps } from '@/features/command-palette'
 
-export type SearchOperations = SearchDeps
-
-export const searchCore: SearchOperations = {
+export const searchCore: SearchDeps = {
   names: async (query, limit) => {
     const answer = await search.searchNames({ query, limit })
     return answer.found.map((one) => ({

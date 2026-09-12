@@ -351,20 +351,20 @@ describe('a hand put down and lifted', () => {
 
 describe('the page a person is looking at', () => {
   const flow = { along: 10 * WIDE, width: WIDE, gap: GAP, columns: 2 }
-  const document = { begins: 2000, ends: 3000 }
-  const book = { begins: 0, ends: 10_000 }
+  const document = { from: 2000, to: 3000 }
+  const book = { from: 0, to: 10_000 }
 
   /** A run standing in each column the text was laid into. */
   const createMarks = (columns: number): Mark[] =>
     Array.from({ length: columns }, (_, column) => ({
-      at: document.begins + column,
+      at: document.from + column,
       x: column * (columnWidth(flow) + GAP),
     }))
 
   const marks = createMarks(columnsInAll(flow))
   const here = marks.length
-  const perColumn = (document.ends - document.begins) / here
-  const before = Math.round((document.begins - book.begins) / perColumn)
+  const perColumn = (document.to - document.from) / here
+  const before = Math.round((document.from - book.from) / perColumn)
 
   it('counts the columns on the screen, so a spread of two turns two pages', () => {
     const first = pagesOf(book, document, flow, 0, marks)
@@ -375,7 +375,7 @@ describe('the page a person is looking at', () => {
   it('counts the columns before this document at what a column of it holds', () => {
     expect(pagesOf(book, document, flow, 0, marks).page).toBe(before + 1)
     expect(pagesOf(book, document, flow, 0, marks).pages).toBe(
-      Math.round((book.ends - book.begins) / perColumn),
+      Math.round((book.to - book.from) / perColumn),
     )
   })
 
@@ -421,8 +421,8 @@ describe('the words the page count is said in', () => {
 })
 
 describe('where a turn lands', () => {
-  const span = { begins: 400, ends: 900 }
-  const book = { begins: 0, ends: 1400 }
+  const span = { from: 400, to: 900 }
+  const book = { from: 0, to: 1400 }
 
   it('lands on the spread the turn asks for, inside the document', () => {
     expect(turnTo('next', 0, 3, span, book)).toStrictEqual({ spread: 1 })

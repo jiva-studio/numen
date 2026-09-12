@@ -43,8 +43,8 @@ func (d Day) zone() *time.Location {
 	return d.In
 }
 
-// Ends is the instant the day holding at gives way to the next.
-func (d Day) Ends(at time.Time) time.Time {
+// EndOf is the instant the day holding at gives way to the next.
+func (d Day) EndOf(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
 	if opened := d.opens(y, m, day); local.Before(opened) {
@@ -53,8 +53,8 @@ func (d Day) Ends(at time.Time) time.Time {
 	return d.opens(y, m, day+1)
 }
 
-// Opens is the instant the day holding at began.
-func (d Day) Opens(at time.Time) time.Time {
+// StartOf is the instant the day holding at began.
+func (d Day) StartOf(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
 	if opened := d.opens(y, m, day); !local.Before(opened) {
@@ -115,5 +115,5 @@ func (d Day) Ending(named time.Time) time.Time {
 // now. A card face that has never been answered is owed the first time it is
 // asked about.
 func (d Day) Owed(s Schedule, now time.Time) bool {
-	return !s.Seen() || s.Due.Before(d.Ends(now))
+	return !s.Seen() || s.Due.Before(d.EndOf(now))
 }

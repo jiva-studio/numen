@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>()
 
 // --- State ---
-const offeredPresets = computed(() =>
+const presetMenuItems = computed(() =>
   props.choices.map((one) => ({
     id: one.path,
     text: one.name,
@@ -67,7 +67,7 @@ function onDismissScheduleMenu() {
 
     <Menu
       v-if="scheduleMenuTarget"
-      :items="offeredPresets"
+      :items="presetMenuItems"
       :at="scheduleMenuTarget.at"
       :from="scheduleMenuTarget.from"
       :current="props.scheduled.path"

@@ -32,9 +32,9 @@ describe('what state a composer is in', () => {
   })
 
   it('stops the answer on its way, and sends the rest of the time', () => {
-    expect(COMPOSER_STATES.empty.shows).toBe('send')
-    expect(COMPOSER_STATES.ready.shows).toBe('send')
-    expect(COMPOSER_STATES.writing.shows).toBe('stop')
+    expect(COMPOSER_STATES.empty.action).toBe('send')
+    expect(COMPOSER_STATES.ready.action).toBe('send')
+    expect(COMPOSER_STATES.writing.action).toBe('stop')
   })
 
 })

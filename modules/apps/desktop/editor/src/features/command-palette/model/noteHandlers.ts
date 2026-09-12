@@ -2,9 +2,9 @@
  * Note and file creation and mutation helpers for command execution.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { CommandDeps, TabContext, VaultContext } from '../deps'
-import type { Voice, Words } from '../voice'
-import type { CommandInvocation } from '../target'
+import type { CommandDeps, TabContext, VaultContext, Voice } from './deps'
+import type { CommandInvocation } from '../types'
+import type { AnswerWords } from '../words'
 import { NOTE } from '@/entities/tab'
 
 /** A tab asked to settle: which one it was, and whether it is still waiting. */
@@ -33,8 +33,8 @@ export const settleTab = async (path: string, on: TabContext): Promise<SettleRes
 }
 
 /** A note travelled to, and a vault with none to travel to said. */
-export const navigateToPath = async (path: string, on: TabContext & Voice, words: Words): Promise<void> => {
-  if (!path) return on.says(words.nowhere, 'caution')
+export const navigateToPath = async (path: string, on: TabContext & Voice, words: AnswerWords): Promise<void> => {
+  if (!path) return on.writeMessage(words.nowhere, 'caution')
   await on.goes.travel(path)
 }
 
@@ -46,7 +46,7 @@ export const createNoteCommand = async (
   invocation: CommandInvocation,
   seat: PlexRelatedSeat | null,
   on: CommandDeps,
-  words: Words,
+  words: AnswerWords,
 ): Promise<void> => {
   if (!invocation.name) return
   const made = await on.files.createNote(invocation.name, seat ? invocation.path : '', seat)
@@ -59,34 +59,34 @@ export const createNoteCommand = async (
  * A note given a different name, and its file renamed with it where the two are
  * one name. Prose on disk that nobody here has seen leaves the note as it is.
  */
-export const renameNoteCommand = async (invocation: CommandInvocation, on: CommandDeps, words: Words): Promise<void> => {
+export const renameNoteCommand = async (invocation: CommandInvocation, on: CommandDeps, words: AnswerWords): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.title) return
   const tab = await settleTab(invocation.path, on)
-  if (tab.waiting) return on.says(words.unanswered, 'caution')
+  if (tab.waiting) return on.writeMessage(words.unanswered, 'caution')
   const answer = await on.files.rename(invocation.path, invocation.name)
-  if (answer.hasChanged) return on.says(words.stale, 'caution')
+  if (answer.hasChanged) return on.writeMessage(words.stale, 'caution')
   const error = answer.error
-  if (error) on.says(words.errors[error], 'error')
+  if (error) on.writeMessage(words.errors[error], 'error')
 }
 
 /**
  * A file or a folder filed somewhere else, carrying the name the path ends in.
  * A destination that is taken leaves it where it was.
  */
-export const moveFileCommand = async (invocation: CommandInvocation, on: CommandDeps, words: Words): Promise<void> => {
+export const moveFileCommand = async (invocation: CommandInvocation, on: CommandDeps, words: AnswerWords): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.path) return
   const tab = await settleTab(invocation.path, on)
-  if (tab.waiting) return on.says(words.unanswered, 'caution')
+  if (tab.waiting) return on.writeMessage(words.unanswered, 'caution')
   const answer = await on.files.move(invocation.path, invocation.name)
   const error = answer.error
-  if (error === 'occupied') return on.says(words.occupied, 'error')
-  if (error) on.says(words.errors[error], 'error')
+  if (error === 'occupied') return on.writeMessage(words.occupied, 'error')
+  if (error) on.writeMessage(words.errors[error], 'error')
 }
 
 /** An empty folder, made under the path that was typed. */
-export const createFolderCommand = async (invocation: CommandInvocation, on: VaultContext & Voice, words: Words): Promise<void> => {
+export const createFolderCommand = async (invocation: CommandInvocation, on: VaultContext & Voice, words: AnswerWords): Promise<void> => {
   if (!invocation.name) return
   const error = await on.files.createFolder(invocation.name)
-  if (error === 'occupied') return on.says(words.occupied, 'error')
-  if (error) on.says(words.errors[error], 'error')
+  if (error === 'occupied') return on.writeMessage(words.occupied, 'error')
+  if (error) on.writeMessage(words.errors[error], 'error')
 }

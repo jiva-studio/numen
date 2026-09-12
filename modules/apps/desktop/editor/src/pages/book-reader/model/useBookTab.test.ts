@@ -31,12 +31,12 @@ const createMockWindow = (tab?: BookTabState) => {
 const openers = () => {
   let reader: SourceReader | null = null
   const tabOpeners = {
-    registerReader: (key: { format?: string }, opens: SourceReader) => {
+    registerReader: (key: { format?: string }, read: SourceReader) => {
       if (!key.format) return
-      reader = opens
+      reader = read
     },
   } as unknown as FileOpeners
-  return { tabOpeners, opens: () => reader }
+  return { tabOpeners, getReader: () => reader }
 }
 
 const settle = () => new Promise((done) => setTimeout(done, 0))
@@ -46,7 +46,7 @@ const createBookTabAt = (path: string, offsetVal: number, page: number, pages: n
     path,
     title: ref(''),
     offset: ref(offsetVal),
-    span: computed(() => ({ begins: 0, ends: length })),
+    span: computed(() => ({ from: 0, to: length })),
     page: computed(() => page),
     pages: computed(() => pages),
   }) as unknown as BookTabState
@@ -141,11 +141,11 @@ describe('a passage of a book reached', () => {
     const focusSpans = vi.fn()
     const held = { focusSpans } as unknown as BookTabState
     const { handle, opened } = createMockWindow(held)
-    const { tabOpeners, opens } = openers()
+    const { tabOpeners, getReader } = openers()
     bookKind(handle, () => held, tabOpeners)
 
     const spans: readonly Span[] = [{ from: 3_600, to: 3_642 }]
-    opens()?.('library/Mahabharata.epub', spans)
+    getReader()?.('library/Mahabharata.epub', spans)
     await settle()
 
     expect(opened).toStrictEqual([`${BOOK} library/Mahabharata.epub`])

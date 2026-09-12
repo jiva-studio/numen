@@ -4,16 +4,15 @@
 import { computed, shallowRef, type Ref } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/shared/vaults'
-import type { PaletteLists, NoteLookup } from '../rows'
-import { EXACT, NO, YES, type PendingStep } from '../step'
-import type { CommandInvocation, CommandTarget } from '../target'
+import { EXACT, NO, YES, type PendingStep } from '../lib/step'
+import type { CommandInvocation, CommandTarget, NoteLookup, PaletteLists } from '../types'
 import type { Words } from '../words'
 import type { NameMatch } from './search'
-import { isWebUrl } from '../lib/address'
+import { isWebUrl } from '../lib/url'
 
 export function createPaletteSteps(
   words: Words,
-  holds: PaletteLists,
+  lists: PaletteLists,
   knows: NoteLookup,
   text: Ref<string>,
   onDrop: () => void,
@@ -71,7 +70,7 @@ export function createPaletteSteps(
   const opensOn = computed(() => {
     const step = here.value
     if (step?.step !== 'choosing') return ''
-    const rows = holds.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
+    const rows = lists.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
     return rows.find((one) => one.inForce)?.id ?? ''
   })
 
@@ -81,7 +80,7 @@ export function createPaletteSteps(
 
   const pushStep = (step: PendingStep) => {
     onDrop()
-    text.value = step.command.filled?.(step.on) ?? ''
+    text.value = step.command.getFieldText?.(step.on) ?? ''
     steps.value = [...steps.value, step]
     startStep(step)
   }
@@ -151,7 +150,7 @@ export function createPaletteSteps(
       return invocation(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {
-      const rows = holds.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
+      const rows = lists.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
       const one = rows.find((row) => row.id === item)
       if (!one || one.disabled) return null
       return invocation(step.command.id, step.on, one.id)

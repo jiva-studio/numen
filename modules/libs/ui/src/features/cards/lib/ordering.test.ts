@@ -7,7 +7,7 @@ import {
   directionOf,
   landing,
   getFreeName,
-  objection,
+  checkFieldName,
   orderNames,
   reorderFields,
   getStepLanding,
@@ -134,30 +134,34 @@ describe('directionOf', () => {
   })
 })
 
-describe('objection', () => {
+describe('checkFieldName', () => {
   it('objects to a name with nothing in it', () => {
-    expect(objection('   ', [])).toBe('blank')
+    expect(checkFieldName('   ', []).objection).toBe('blank')
   })
 
   it('objects to a name already taken', () => {
-    expect(objection('Height', ['Height'])).toBe('taken')
+    expect(checkFieldName('Height', ['Height']).objection).toBe('taken')
   })
 
   it('objects to a name taken but for the space around it', () => {
-    expect(objection(' Height ', ['Height'])).toBe('taken')
+    expect(checkFieldName(' Height ', ['Height']).objection).toBe('taken')
   })
 
   it('objects to a name holding a brace, which no slot could write', () => {
-    expect(objection('a{b', [])).toBe('braced')
-    expect(objection('a}b', [])).toBe('braced')
+    expect(checkFieldName('a{b', []).objection).toBe('braced')
+    expect(checkFieldName('a}b', []).objection).toBe('braced')
   })
 
   it('takes a name that is free', () => {
-    expect(objection('Weight', ['Height'])).toBeNull()
+    expect(checkFieldName('Weight', ['Height']).objection).toBeNull()
   })
 
   it('takes a name that is not Latin', () => {
-    expect(objection('Продолжительность жизни', ['Height'])).toBeNull()
+    expect(checkFieldName('Продолжительность жизни', ['Height']).objection).toBeNull()
+  })
+
+  it('answers with the name as it would be written, without the space around it', () => {
+    expect(checkFieldName(' Weight ', ['Height']).name).toBe('Weight')
   })
 })
 

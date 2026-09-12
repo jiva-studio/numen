@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { NoteEdit } from '@/entities/note'
-import { holdChanges, holding } from './hold'
+import { holdChanges, HOLD_LIMITS } from './hold'
 
 const createEdit = (over: Partial<NoteEdit> = {}): NoteEdit => ({
   change: 'one',
@@ -51,7 +51,7 @@ describe('a change that is over', () => {
     drawn.reportChange(createEdit())
     expect(drawn.reportChange(createEdit({ isComplete: true }))).toEqual({
       path: 'Note.md',
-      after: holding.bound,
+      after: HOLD_LIMITS.bound,
     })
   })
 
@@ -59,7 +59,7 @@ describe('a change that is over', () => {
     const drawn = holdChanges()
     drawn.reportChange(createEdit())
     drawn.reportChange(createEdit({ isComplete: true }))
-    expect(drawn.handleNoteChange('Note.md')).toEqual({ path: 'Note.md', after: holding.settle })
+    expect(drawn.handleNoteChange('Note.md')).toEqual({ path: 'Note.md', after: HOLD_LIMITS.settle })
   })
 
   it('is gone once the interval fires', () => {
@@ -103,7 +103,7 @@ describe('a note the window closed', () => {
 describe('a change nobody says any more about', () => {
   it('is let go of on a bound of its own, so no drawing outlives its agent', () => {
     const drawn = holdChanges()
-    expect(drawn.reportChange(createEdit())).toEqual({ path: 'Note.md', after: holding.abandoned })
+    expect(drawn.reportChange(createEdit())).toEqual({ path: 'Note.md', after: HOLD_LIMITS.abandoned })
   })
 
   it('has that bound put off again by every report of itself', () => {
@@ -111,7 +111,7 @@ describe('a change nobody says any more about', () => {
     drawn.reportChange(createEdit())
     expect(drawn.reportChange(createEdit({ text: 'An axe, two-bladed' }))).toEqual({
       path: 'Note.md',
-      after: holding.abandoned,
+      after: HOLD_LIMITS.abandoned,
     })
   })
 })

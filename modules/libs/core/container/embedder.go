@@ -63,17 +63,17 @@ func (c Config) Asking(ctx context.Context) (port.Embedder, func() error, error)
 // the passages, the vault's files, the text read out of books, and the model a
 // question is embedded by.
 //
-// trouble is where a half that could not run is said. A search short of the
-// half that asks by meaning is a search the words answer.
-func (c Config) Searching(db *Index, asking port.Embedder, trouble func(error)) search.Search {
-	return c.SearchingOver(db.Passages(), asking, trouble)
+// errorHandler is where a half that could not run is said. A search short of
+// the half that asks by meaning is a search the words answer.
+func (c Config) Searching(db *Index, asking port.Embedder, errorHandler func(error)) search.Search {
+	return c.SearchingOver(db.Passages(), asking, errorHandler)
 }
 
 // SearchingOver is that search over the passages given, for a run that holds
 // the index open for asking alone.
-func (c Config) SearchingOver(passages port.PassageQueries, asking port.Embedder, trouble func(error)) search.Search {
+func (c Config) SearchingOver(passages port.PassageQueries, asking port.Embedder, errorHandler func(error)) search.Search {
 	return search.New(passages, c.VaultReaders(), c.DerivedStores(), c.TextExtractor(),
-		asking, c.Embedding.Floor, trouble)
+		asking, c.Embedding.Floor, errorHandler)
 }
 
 // provider is which adapter answers for one half of the work, under the

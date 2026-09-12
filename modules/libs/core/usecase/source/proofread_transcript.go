@@ -67,17 +67,17 @@ func NewProofreadTranscript(
 
 // ProofreadTranscriptResult reports what proofreading a transcript did.
 type ProofreadTranscriptResult struct {
-	Path    string // the recording whose transcript is being put right
-	Lines   int    // how many lines the transcript has
-	Read    int    // how many have been asked about, this run and before it
-	Resumed int    // how many a run before this one had already asked about
-	Fixed   int    // lines put right
-	Left    int    // lines asked about that stand as they were heard
-	Refused int    // batches whose reply was no answer, and were left as heard
-	None    bool   // there is no transcript to put right, and nothing was done
-	Edited  bool   // somebody else wrote what stands, and it is left as they left it
-	Busy    bool   // the recording is held by another run
-	Already bool   // this proofreader has been over every line, and nothing was asked
+	Path               string // the recording whose transcript is being put right
+	Lines              int    // how many lines the transcript has
+	Read               int    // how many have been asked about, this run and before it
+	Resumed            int    // how many a run before this one had already asked about
+	Fixed              int    // lines put right
+	Left               int    // lines asked about that stand as they were heard
+	UncorrectedBatches int    // batches replied to without a correction, left as heard
+	None               bool   // there is no transcript to put right, and nothing was done
+	Edited             bool   // somebody else wrote what stands, and it is left as they left it
+	Busy               bool   // the recording is held by another run
+	Already            bool   // this proofreader has been over every line, and nothing was asked
 }
 
 // How a transcript is cut up where nothing says otherwise: the lines to a
@@ -218,7 +218,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		if err != nil {
 			return res, fmt.Errorf("proofread %s: %w", path, err)
 		}
-		res.Refused += refused(group, replies, unbounded)
+		res.UncorrectedBatches += uncorrected(group, replies, unbounded)
 		for _, batch := range group {
 			for _, line := range batch.Lines {
 				if line.Number >= from {
@@ -338,10 +338,10 @@ func (u ProofreadTranscript) counted(ctx context.Context, store port.DerivedStor
 	return store.Write(ctx, far, append(raw, '\n'))
 }
 
-// refused is how many of a run's batches answered with what is no answer. Such
-// a batch is one nothing was learned from, and its lines stand as they were
-// heard.
-func refused(asked []proofread.Batch, replies map[int]string, apart float64) int {
+// uncorrected is how many of a run's batches answered with what is no
+// correction. Such a batch is one nothing was learned from, and its lines stand
+// as they were heard.
+func uncorrected(asked []proofread.Batch, replies map[int]string, apart float64) int {
 	out := 0
 	for _, batch := range asked {
 		reply, answered := replies[batch.Number]

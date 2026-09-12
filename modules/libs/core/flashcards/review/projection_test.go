@@ -132,7 +132,7 @@ func TestTheLoadOfARunIsOverTheDaysAdmitted(t *testing.T) {
 func TestWhatStandsOverdue(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
-	open := day.Ends(now).AddDate(0, 0, -1)
+	open := day.EndOf(now).AddDate(0, 0, -1)
 	answered := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
 		return review.CardFaceID{Card: name, Face: "Say it"}, review.Schedule{
 			Last: open.AddDate(0, 0, -since), Due: open.AddDate(0, 0, due),
@@ -173,7 +173,7 @@ func TestWhatStandsOverdue(t *testing.T) {
 func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
-	open := day.Ends(now).AddDate(0, 0, -1)
+	open := day.EndOf(now).AddDate(0, 0, -1)
 	face := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
 		return review.CardFaceID{Card: name, Face: "Say it"}, review.Schedule{
 			Last: open.AddDate(0, 0, -since), Due: open.AddDate(0, 0, due),
@@ -291,7 +291,7 @@ var ahead = review.Day{Starts: review.DayStarts}
 
 // opens is the hour a day begins at, which is where a projection puts its
 // answers.
-func opens(at time.Time) time.Time { return ahead.Ends(at).AddDate(0, 0, -1) }
+func opens(at time.Time) time.Time { return ahead.EndOf(at).AddDate(0, 0, -1) }
 
 // ran is one projection, over a context nothing gives up on.
 func ran(
@@ -376,7 +376,7 @@ func comingRound(
 ) int {
 	last := from
 	for range days {
-		last = ahead.Ends(last)
+		last = ahead.EndOf(last)
 	}
 
 	out, at := 0, from
@@ -399,7 +399,7 @@ func comingRound(
 		c.Due = when.Add(time.Duration(away * float64(time.Second)))
 
 		// One answer a day: a card sent minutes away is asked again tomorrow.
-		at = ahead.Ends(when)
+		at = ahead.EndOf(when)
 	}
 }
 
@@ -507,7 +507,7 @@ func weekdays(now time.Time, days int) []time.Weekday {
 	open := opens(now)
 	for i := range out {
 		out[i] = open.Weekday()
-		open = ahead.Ends(open)
+		open = ahead.EndOf(open)
 	}
 	return out
 }

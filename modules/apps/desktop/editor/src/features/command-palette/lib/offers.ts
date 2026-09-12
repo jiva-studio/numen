@@ -6,7 +6,8 @@
  * front is what the note can be hung off as it is made.
  */
 import type { PaletteGroup } from '@numen/ui'
-import { invocationOf, type CommandInvocation, type CommandTarget } from '../target'
+import { invocationOf } from './invocation'
+import type { CommandInvocation, CommandTarget } from '../types'
 import type { Words } from '../words'
 
 /** The group and the item that offer to make the note a search did not find. */

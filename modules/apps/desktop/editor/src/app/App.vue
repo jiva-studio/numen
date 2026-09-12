@@ -30,25 +30,25 @@ const unsaved = {
 const {
   runCommand,
   commands,
-  doing,
+  commandDeps,
   failure,
-  going,
+  fileFlush,
   held,
   layout,
   listed,
   log,
   notices,
   palette,
-  places,
-  shut,
+  destinations,
+  closeTab,
   tabIcon,
   getTitle,
-  where,
+  getTarget,
 } = useWindow()
 
 // --- Handlers ---
 function onCloseTab(id: string) {
-  shut(id)
+  closeTab(id)
 }
 
 function onShowTab(id: string) {
@@ -93,8 +93,8 @@ function onForgetNotice(id: string) {
           :tabs="held.tabs.value"
           :commands="commands"
           :search="palette"
-          :doing="doing"
-          :where="where"
+          :doing="commandDeps"
+          :where="getTarget"
           :run-command="runCommand"
         />
       </template>
@@ -109,7 +109,7 @@ function onForgetNotice(id: string) {
     />
 
     <UnsavedChangesPrompt
-      :conflicts="going.conflicts.value"
+      :conflicts="fileFlush.conflicts.value"
       :called="getTitle"
       :words="unsaved"
     />
@@ -117,9 +117,9 @@ function onForgetNotice(id: string) {
     <CommandPalette
       :commands="commands"
       :search="palette"
-      :doing="doing"
-      :where="where"
-      :places="places"
+      :doing="commandDeps"
+      :where="getTarget"
+      :places="destinations"
     />
   </main>
 </template>

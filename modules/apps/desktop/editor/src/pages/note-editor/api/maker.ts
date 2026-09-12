@@ -44,7 +44,7 @@ export const CREATABLE = Object.keys(seatRoles) as readonly PlexRelatedSeat[]
  * seat the gesture named, so from where it stands the other one takes the
  * opposite seat.
  */
-const facing: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
+const opposites: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
   parent: 'child',
   child: 'parent',
   jump: 'jump',
@@ -56,7 +56,7 @@ const facing: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
  */
 const resolveSeatLinks = (from: string, seat: PlexRelatedSeat | null): readonly Link[] | null => {
   if (!seat) return []
-  const opposite = facing[seat]
+  const opposite = opposites[seat]
   const role = opposite && seatRoles[opposite]
   return role ? [{ to: from, role }] : null
 }

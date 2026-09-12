@@ -44,9 +44,7 @@ const writeSettings = async (
   return null
 }
 
-export type SettingsCore = SettingsPort
-
-export const settingsCore: SettingsCore = {
+export const settingsCore: SettingsPort = {
   getSyncEnabled: async () => getSettingAt(await readSettings(), SYNCS) !== false,
   setSyncEnabled: (kept) => writeSettings([{ at: SYNCS, value: kept }]),
   getHangingSettings: async () => {
@@ -54,15 +52,15 @@ export const settingsCore: SettingsCore = {
     const written = JSON.parse(answer.written)
     const held = answer.partsUnderANodeBounds
     return {
-      hangs: getSettingAt(written, HANGS) !== false,
+      isHanging: getSettingAt(written, HANGS) !== false,
       parts: partsIn(getSettingAt(written, PARTS)),
       least: held?.least ?? DEFAULT_PARTS,
       most: held?.most ?? DEFAULT_PARTS,
     } satisfies HangingSettings
   },
-  setHangingSettings: (hangs, parts) =>
+  setHangingSettings: (isHanging, parts) =>
     writeSettings([
-      { at: HANGS, value: hangs },
+      { at: HANGS, value: isHanging },
       ...(parts === undefined ? [] : [{ at: PARTS, value: parts }]),
     ]),
   getSettings: async () => {

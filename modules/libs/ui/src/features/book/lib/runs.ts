@@ -9,7 +9,8 @@
  * one beginning at or before it.
  */
 import { bytesIn, unitsIn } from './bytes'
-import type { Mark, Span } from './spread'
+import type { Span } from '@/shared/lib/span'
+import type { Mark } from './spread'
 
 /** One run of the book's text as it is drawn. */
 export interface Run {
@@ -107,11 +108,11 @@ const inside = (run: HTMLElement, into: number): { node: Text; offset: number } 
 
 /** One stretch of the book's text as a range over the nodes the markup carries. */
 const rangeOver = (runs: readonly Run[], span: Span): Range | undefined => {
-  const opens = runAt(runs, span.begins)
-  const closes = runAt(runs, span.ends)
+  const opens = runAt(runs, span.from)
+  const closes = runAt(runs, span.to)
   if (!opens || !closes) return undefined
-  const from = inside(opens.element, span.begins - opens.at)
-  const to = inside(closes.element, span.ends - closes.at)
+  const from = inside(opens.element, span.from - opens.at)
+  const to = inside(closes.element, span.to - closes.at)
   if (!from || !to) return undefined
   const range = document.createRange()
   range.setStart(from.node, from.offset)

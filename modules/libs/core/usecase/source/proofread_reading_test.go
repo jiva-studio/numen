@@ -156,7 +156,7 @@ func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Refused != 1 || res.Fixed != 1 {
+	if res.UncorrectedPages != 1 || res.Fixed != 1 {
 		t.Errorf("got %+v", res)
 	}
 

@@ -17,7 +17,7 @@ import (
 func (c Config) Downloader(ctx context.Context) port.Downloader {
 	downloader, err := download.New(ctx, c.Importing)
 	if err != nil {
-		c.trouble(err)
+		c.handleError(err)
 		return nil
 	}
 	return downloader

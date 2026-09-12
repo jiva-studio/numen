@@ -11,7 +11,7 @@ import { reach } from '../core'
 
 vi.mock('../core', () => ({ reach: vi.fn() }))
 
-/** The toast the page puts its trouble on, after the core has answered. */
+/** The toast the page puts its error on, after the core has answered. */
 async function toastAfter(why: unknown) {
   vi.mocked(reach).mockRejectedValueOnce(why)
   const page = mount(PlexPage)

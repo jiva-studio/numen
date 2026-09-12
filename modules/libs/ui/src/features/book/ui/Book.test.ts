@@ -9,7 +9,7 @@ import { bytesIn } from '../lib/bytes'
  * document after it.
  */
 const CHAPTER = chapterOf([{ tag: 'p', text: 'Один абзац, и глава окончена.' }], 400)
-const BOOK = { begins: 0, ends: CHAPTER.span.ends + 500 }
+const BOOK = { from: 0, to: CHAPTER.span.to + 500 }
 
 /**
  * A book reader in a room nothing has laid out. jsdom measures nothing, so the
@@ -18,7 +18,7 @@ const BOOK = { begins: 0, ends: CHAPTER.span.ends + 500 }
  */
 const reader = async (book = BOOK) => {
   const held = mount(Book, {
-    props: { markup: CHAPTER.markup, span: CHAPTER.span, book, at: CHAPTER.span.begins },
+    props: { markup: CHAPTER.markup, span: CHAPTER.span, book, at: CHAPTER.span.from },
     attachTo: document.body,
   })
   const area = held.find('.book__area').element as HTMLElement
@@ -70,7 +70,7 @@ describe('turning past the end of a document', () => {
 
     expect(pressKey(held,'ArrowRight')).toBe(true)
 
-    expect(getMoves(held)).toEqual([CHAPTER.span.ends])
+    expect(getMoves(held)).toEqual([CHAPTER.span.to])
   })
 
   it('asks for the offset before this document, turning back', async () => {
@@ -78,7 +78,7 @@ describe('turning past the end of a document', () => {
 
     expect(pressKey(held,'ArrowLeft')).toBe(true)
 
-    expect(getMoves(held)).toEqual([CHAPTER.span.begins - 1])
+    expect(getMoves(held)).toEqual([CHAPTER.span.from - 1])
   })
 
   it('asks for nothing past either end of the book itself', async () => {
@@ -105,7 +105,7 @@ describe('turning past the end of a document', () => {
 describe('a document with no text at all', () => {
   it('is drawn, and says nothing', async () => {
     const held = mount(Book, {
-      props: { markup: '', span: { begins: 0, ends: 0 }, book: BOOK },
+      props: { markup: '', span: { from: 0, to: 0 }, book: BOOK },
       attachTo: document.body,
     })
     await held.vm.$nextTick()
@@ -139,7 +139,7 @@ const mountPointing = async () => {
       path: 'OEBPS/first.xhtml',
       span: POINTING.span,
       book: BOOK,
-      at: POINTING.span.begins,
+      at: POINTING.span.from,
     },
     attachTo: document.body,
   })
@@ -180,7 +180,7 @@ describe('a link inside a book', () => {
 
     await press(held, 'the note')
 
-    expect(getMoves(held)).toEqual([POINTING.span.ends - bytesIn('The note pointed down to.')])
+    expect(getMoves(held)).toEqual([POINTING.span.to - bytesIn('The note pointed down to.')])
   })
 
   it('asks for nothing of the book, where the link leads out of it', async () => {
@@ -232,7 +232,7 @@ const mountBook = async () => {
       markup: LAID.markup,
       span: LAID.span,
       book: BOOK,
-      at: LAID.span.begins,
+      at: LAID.span.from,
     },
     attachTo: document.body,
   })
@@ -281,7 +281,7 @@ describe('a document the browser has laid out', () => {
     expect(pressKey(held,'ArrowRight')).toBe(true)
 
     expect(getTranslate(held)).toBe('-1100px 0')
-    expect(getMoves(held)).toEqual([LAID.span.begins + bytesIn('Первая строка.')])
+    expect(getMoves(held)).toEqual([LAID.span.from + bytesIn('Первая строка.')])
 
     held.unmount()
   })
@@ -312,7 +312,7 @@ describe('a document the browser has laid out', () => {
   it('is stood where an offset from outside asks, while the offset is inside it', async () => {
     const held = await mountBook()
 
-    await held.setProps({ at: LAID.span.begins + bytesIn('Первая строка.Вторая.') })
+    await held.setProps({ at: LAID.span.from + bytesIn('Первая строка.Вторая.') })
     await held.vm.$nextTick()
 
     expect(getTranslate(held)).toBe('0px 0')

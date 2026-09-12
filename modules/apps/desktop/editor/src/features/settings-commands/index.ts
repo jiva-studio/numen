@@ -5,8 +5,8 @@ export {
   INTERFACE_SCALE,
   MODE,
   TEXT_SCALE,
-  windowAppearance,
-} from './appearance'
-export { HANGING, PARTS, useHangingSetting } from './hanging'
-export { OFF, ON, SYNCING, syncSetting } from './sync'
+} from './lib/appearanceValues'
+export { windowAppearance } from './model/appearance'
+export { HANGING, PARTS, useHangingSetting } from './model/hanging'
+export { OFF, ON, SYNCING, syncSetting } from './model/sync'
 export { IS_MODE, IS_SIZES, IS_THEME, MARKER } from './lib/head'

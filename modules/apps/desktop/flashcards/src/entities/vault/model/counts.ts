@@ -106,7 +106,7 @@ export function useReviewCounter(deps: CountsDeps) {
       if (sampled) again = true
       return underway
     }
-    underway = runs().finally(() => {
+    underway = countUntilQuiet().finally(() => {
       underway = null
     })
     return underway
@@ -117,7 +117,7 @@ export function useReviewCounter(deps: CountsDeps) {
    * count was running is one whose numbers landed after that count had worked
    * its row out, so the asking is answered rather than dropped.
    */
-  const runs = async (): Promise<void> => {
+  const countUntilQuiet = async (): Promise<void> => {
     for (;;) {
       again = false
       if (!(await ask())) return

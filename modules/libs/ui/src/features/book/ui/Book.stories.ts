@@ -12,7 +12,8 @@ import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import Book from './Book.vue'
-import { GAP, type Span } from '../lib/spread'
+import { GAP } from '../lib/spread'
+import type { Span } from '@/shared/lib/span'
 import { bytesIn } from '../lib/bytes'
 import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '../fixtures/book'
 
@@ -76,7 +77,7 @@ const reading =
   () => ({
     components: { Book },
     setup() {
-      const at = ref(chapter.span.begins)
+      const at = ref(chapter.span.from)
       // How large the text is set belongs to whatever holds the reader, so the
       // story holds it, and presses its own way of setting it.
       const size = ref(1)
@@ -132,7 +133,7 @@ const outOfSight =
   () => ({
     components: { Book },
     setup() {
-      const at = ref(chapter.span.begins)
+      const at = ref(chapter.span.from)
       const room = ref(false)
       const markup = ref('')
       onMounted(() => {
@@ -455,7 +456,7 @@ export const OneLine: Story = {
  */
 export const NoTextAtAll: Story = {
   decorators: [WIDE],
-  render: reading({ markup: '', span: { begins: 0, ends: 0 } }),
+  render: reading({ markup: '', span: { from: 0, to: 0 } }),
   play: async ({ canvasElement }) => {
     await expect(paperOf(canvasElement)).toBeInTheDocument()
     await expect(runsOf(canvasElement)).toHaveLength(0)
@@ -515,8 +516,8 @@ export const Marked: Story = {
   decorators: [WIDE],
   render: (() => {
     const chapter = chapterOf(VERSES)
-    const second = chapter.span.begins + bytesIn(VERSES[0]!.text!)
-    return reading(chapter, [{ begins: second, ends: second + 30 }])
+    const second = chapter.span.from + bytesIn(VERSES[0]!.text!)
+    return reading(chapter, [{ from: second, to: second + 30 }])
   })(),
 }
 

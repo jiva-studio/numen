@@ -7,12 +7,12 @@ import type { Ref } from 'vue'
 import { createFollower } from '@numen/ui'
 import type { Task } from '@numen/ui'
 
-import { WINDOW, agent as agentState, cards, itself } from '@/shared/clients'
+import { WINDOW, agentService, cards, itself } from '@/shared/clients'
 import { WORDS } from '@/pages/session'
 
 /** What the streams ask of the window they are followed in. */
 export interface WindowStreamsDeps {
-  /** Trouble, in the person's own words. */
+  /** What went wrong, in the person's own words. */
   readonly reportError: (why: unknown) => void
   /** What is being done behind the window, as cards to draw. */
   readonly setTasks: (said: readonly Task[]) => void
@@ -43,7 +43,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     void deps.count()
     // Whether a card can be asked about is the window's to know before a person
     // reaches for it, so it is asked once and the way in is drawn from it.
-    void agentState
+    void agentService
       .getAgentState({})
       .then((said) => {
         deps.unreachable.value = said.unreachable

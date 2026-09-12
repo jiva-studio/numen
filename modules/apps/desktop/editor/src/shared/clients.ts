@@ -58,7 +58,7 @@ export const artifacts = createClient(ArtifactService, transport)
 export const cardsService = createClient(CardsService, transport)
 
 /** The presets a review is run under. */
-export const asking = createClient(PresetsService, transport)
+export const presetsService = createClient(PresetsService, transport)
 
 /** The recordings the vault holds, by their address and their duration. */
 export const recordings = createClient(RecordingService, transport)

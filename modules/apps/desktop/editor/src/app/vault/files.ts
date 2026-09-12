@@ -11,10 +11,7 @@ export type FilesCore = Pick<
   FilePort,
   'list' | 'move' | 'createFolder' | 'createUrl' | 'fileKinds'
 > &
-  Pick<NotePort, 'remove'> & {
-  makeFolder?: (path: string) => Promise<unknown>
-  makeURL?: (url: string, folder: string) => Promise<unknown>
-}
+  Pick<NotePort, 'remove'>
 
 export const filesCore: FilesCore = {
   remove: async (path, destroy) => {
@@ -37,12 +34,6 @@ export const filesCore: FilesCore = {
   },
   createFolder: async (path) => errorIn(await files.createFolder({ path })),
   createUrl: async (url, folder) => {
-    const answer = await files.createURL({ url, path: folder })
-    const error = errorIn(answer)
-    return { path: answer.path, error }
-  },
-  makeFolder: async (path) => errorIn(await files.createFolder({ path })),
-  makeURL: async (url, folder) => {
     const answer = await files.createURL({ url, path: folder })
     const error = errorIn(answer)
     return { path: answer.path, error }

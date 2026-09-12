@@ -67,15 +67,15 @@ func NewProofreadReading(
 
 // ProofreadReadingResult reports what proofreading a reading did.
 type ProofreadReadingResult struct {
-	Path    string // the document being proofread
-	Pages   int    // how many pages the reading has
-	Read    int    // how many have been asked about, this run and before it
-	Resumed int    // how many a run before this one had already asked about
-	Fixed   int    // lines put right
-	Refused int    // pages whose reply was no answer, and were left as they were
-	None    bool   // there is no reading to proofread, and nothing was done
-	Waiting bool   // a batch is out and what comes back is not there yet
-	Busy    bool   // somebody else is proofreading this reading
+	Path             string // the document being proofread
+	Pages            int    // how many pages the reading has
+	Read             int    // how many have been asked about, this run and before it
+	Resumed          int    // how many a run before this one had already asked about
+	Fixed            int    // lines put right
+	UncorrectedPages int    // pages replied to without a correction, left as they were read
+	None             bool   // there is no reading to proofread, and nothing was done
+	Waiting          bool   // a batch is out and what comes back is not there yet
+	Busy             bool   // somebody else is proofreading this reading
 }
 
 // DefaultPages is how many pages one request carries.
@@ -170,8 +170,8 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 		if err != nil {
 			return res, fmt.Errorf("proofread %s: %w", path, err)
 		}
-		put, refused := u.gathered(asked, replies)
-		res.Refused += refused
+		put, uncorrected := u.gathered(asked, replies)
+		res.UncorrectedPages += uncorrected
 
 		// The corrections are written, the source is cut, and the count stands
 		// after both: a batch no count claims is one the next run asks about
@@ -228,7 +228,7 @@ func (u ProofreadReading) lines(
 func (u ProofreadReading) gathered(
 	asked []proofread.Batch,
 	replies map[int]string,
-) (put []correction.Line, refused int) {
+) (put []correction.Line, uncorrected int) {
 	for _, page := range asked {
 		reply, answered := replies[page.Number]
 		if !answered {
@@ -236,14 +236,14 @@ func (u ProofreadReading) gathered(
 		}
 		lines, _, ok := proofread.Fixed(page, reply, u.distance())
 		if !ok {
-			refused++
+			uncorrected++
 			continue
 		}
 		for _, line := range lines {
 			put = append(put, correction.Line{Number: line.Number, Text: line.Text})
 		}
 	}
-	return put, refused
+	return put, uncorrected
 }
 
 // taken is how many pages a run before this one asked about, with the
@@ -303,8 +303,8 @@ func (u ProofreadReading) await(
 			return res, nil
 		}
 		end := min(stood.Pages+stood.Left, len(pages))
-		put, refused := u.gathered(pages[stood.Pages:end], replies)
-		res.Refused += refused
+		put, uncorrected := u.gathered(pages[stood.Pages:end], replies)
+		res.UncorrectedPages += uncorrected
 		if len(put) > 0 {
 			if err := store.Append(ctx, corrections, correction.Pack(put)); err != nil {
 				return res, err

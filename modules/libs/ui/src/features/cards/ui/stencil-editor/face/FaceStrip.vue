@@ -8,7 +8,7 @@ import { ErrorMessage } from '../../error-message'
 import { NameBox } from '../../name-box'
 import { useNaming } from '../../../model/naming'
 import { Button } from '@/shared/ui/button'
-import { heading, type HeadingObjection } from '../../../lib/order'
+import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
 import { STENCIL_WORDS, type FaceRow, type StencilWords } from '../../../lib/stencil'
 
 const props = withDefaults(
@@ -32,22 +32,22 @@ const emit = defineEmits<{
 /** What this face's objection is named by, which is this face's alone. */
 const uid = useId()
 
-const objectsId = `${uid}-objects`
+const objectionsId = `${uid}-objections`
 
 /** A name typed over the one this face carries, until it is committed. */
 const naming = useNaming<HeadingObjection>({
-  carries: () => props.face.name,
-  taken: () => props.face.taken,
-  amiss: heading,
-  renamed: (_over, name) => emit('rename', name),
+  getName: () => props.face.name,
+  getTakenNames: () => props.face.taken,
+  checkName: checkHeadingName,
+  rename: (_over, name) => emit('rename', name),
 })
 
 /** Why what is in the name box cannot be used, and nothing while it can. */
-const objects = computed(() => naming.objection(props.face.id))
+const objections = computed(() => naming.objection(props.face.id))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => {
-  const objection = objects.value
+  const objection = objections.value
   return objection === null ? null : props.words.faceObjection(objection)
 })
 </script>
@@ -60,7 +60,7 @@ const says = computed(() => {
         :naming="naming"
         :over="face.id"
         :stem="`${words.faceStem} ${face.at}`"
-        :described-by="says ? objectsId : null"
+        :described-by="says ? objectionsId : null"
       />
 
       <!-- The fields are small quiet chips, as small quiet actions are
@@ -85,11 +85,11 @@ const says = computed(() => {
     <!-- What is wrong with the face stands at the end of the strip, over
          the window under it. -->
     <div v-if="says || wrong.length" class="face__amiss">
-      <ErrorMessage v-if="says" :id="objectsId" class="face__objects" role="alert" :said="says" />
+      <ErrorMessage v-if="says" :id="objectionsId" class="face__objections" role="alert" :said="says" />
 
       <ErrorMessage
         v-if="wrong.length"
-        class="face__objects"
+        class="face__objections"
         data-wrong
         :said="wrong"
         :label="words.wrong"
@@ -158,7 +158,7 @@ const says = computed(() => {
 }
 
 /* What is wrong is read over whatever it covers, so it carries a ground. */
-.face__amiss > .face__objects {
+.face__amiss > .face__objections {
   padding: 0.125rem 0.375rem;
   border-radius: var(--numen-radius);
   background: var(--numen-alarm-bg);

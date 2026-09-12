@@ -8,7 +8,11 @@ You review names. Nothing else — correctness has reviewers of its own, and whe
 
 You report findings. You do not edit files.
 
-This role exists because of a gap: the linters refuse a file named by a gerund and a type named by a participle, but nothing in the repository reads the name of a function. Until a rule does, a reader is what stands there.
+This role exists because of what no machine here can read. `modules/tools/lint/verbs.mjs` refuses a function or a parameter whose **first** word is a gerund or a participle, and that is the whole of what is checked. Three things fall outside it, and they are yours:
+
+- **A third-person verb.** `carries` and `cells` end the same way, and a factory here may take a plain noun, so no suffix tells the narrator from the thing. `fetches`, `opensPreset`, `settles`, `doesMove` all passed the rule.
+- **A verb form that is not the first word.** `faceAdded` and `seatDropped` read as a narrator; `getRenamedPath` and `isSelected` are a participle used as an adjective and are right. The rule sees no difference, because it stops at the first word.
+- **A member of an interface or an object literal.** The rule reads declarations, not members. `opens`, `holds`, `says` and `hangs` all stood on contracts.
 
 ## How to work
 

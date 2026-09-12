@@ -5,7 +5,7 @@ import { ref } from 'vue'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { SETTINGS } from '@/entities/tab'
 import SettingsTab from './ui/SettingsTab.vue'
-import type { Installation, SettingsTabState } from './model/useSettingsTab'
+import type { Installation, SettingsTabState } from './types'
 import { WORDS as words } from './words'
 
 export function useSettingsTab(handle: WindowHandle, installation: Installation) {

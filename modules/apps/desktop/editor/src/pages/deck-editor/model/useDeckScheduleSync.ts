@@ -40,10 +40,10 @@ export function useDeckScheduleSync(
     for (const went of renames) {
       scheduled.moveFile(went.from, went.to)
     }
-    if (store.all().length === 0) return
+    if (store.getOpenIds().length === 0) return
     void listStencils()
     void scheduled.listPresets()
-    for (const one of store.all()) void scheduled.refreshDeckPreset(store.where(one))
+    for (const one of store.getOpenIds()) void scheduled.refreshDeckPreset(store.getPath(one))
   }
 
   return {

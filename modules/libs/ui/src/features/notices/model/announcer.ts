@@ -34,7 +34,7 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
   let reading = 0
   let waiting: readonly Notice[] = []
 
-  const reads = async (all: readonly Notice[]): Promise<void> => {
+  const readOut = async (all: readonly Notice[]): Promise<void> => {
     if (!listening) return
     const fresh = all.filter((one) => announced.value.get(one.id) !== wordsOf(one))
     announced.value = new Map(all.map((one) => [one.id, wordsOf(one)]))
@@ -55,12 +55,12 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     if (quiet.length) told.value = quiet.map(wordsOf).join('. ')
   }
 
-  watch(getNotices, (all) => void reads(all))
+  watch(getNotices, (all) => void readOut(all))
 
   onMounted(async () => {
     await nextTick()
     listening = true
-    void reads(getNotices())
+    void readOut(getNotices())
   })
 
   return { told, cried }

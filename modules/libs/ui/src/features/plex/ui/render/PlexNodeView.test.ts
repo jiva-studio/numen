@@ -542,13 +542,13 @@ describe('the parts a node hangs', () => {
     expect(node.emitted('activate')).toBeUndefined()
   })
 
-  it('stands the ceiling of them, and marks that there is more to wind to', async () => {
+  it('stands the ceiling of them, and marks that there is more to scroll to', async () => {
     const node = await rest(mountInside(parts(MOST + 3)))
     expect(node.findAll('.plex__part')).toHaveLength(MOST)
     expect(node.findAll('.plex__more')).toHaveLength(1)
   })
 
-  it('winds the window down a part at a time, and back up again', async () => {
+  it('scrolls the window down a part at a time, and back up again', async () => {
     const node = await rest(mountInside(parts(MOST + 3)))
     const first = () => node.findAll('.plex__part')[0]!.text()
 
@@ -563,7 +563,7 @@ describe('the parts a node hangs', () => {
     expect(first()).toBe('Part 1')
   })
 
-  it('winds no further than either end of them', async () => {
+  it('scrolls no further than either end of them', async () => {
     const node = await rest(mountInside(parts(MOST + 1)))
     const wheel = (deltaY: number) =>
       node.get('.plex__inside').trigger('wheel', { deltaY, deltaMode: 1 })
@@ -575,7 +575,7 @@ describe('the parts a node hangs', () => {
     expect(node.findAll('.plex__part').at(-1)!.text()).toBe(`Part ${MOST}`)
   })
 
-  it('winds nothing where every one of them stands at once', async () => {
+  it('scrolls nothing where every one of them stands at once', async () => {
     const node = await rest(mountInside(parts(3)))
     expect(node.findAll('.plex__more')).toHaveLength(0)
 
@@ -598,7 +598,7 @@ describe('the parts a node hangs', () => {
     expect(node.get('.plex__inside').attributes('aria-hidden')).toBe('true')
   })
 
-  it('fades out from where it was wound, and opens at the top again', async () => {
+  it('fades out from where it was scrolled, and opens at the top again', async () => {
     const mounted = mountInside(parts(MOST + 3))
     await rest(mounted)
     const first = () => mounted.node.findAll('.plex__part')[0]!.text()

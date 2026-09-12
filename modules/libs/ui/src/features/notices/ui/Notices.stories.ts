@@ -220,8 +220,8 @@ export const SaidAndGone: Story = {
   },
 }
 
-/** Trouble does not go by itself. A person who has to act on it has to see it. */
-export const TroubleStays: Story = {
+/** A failure does not go by itself. A person who has to act on it has to see it. */
+export const FailureStays: Story = {
   args: { notices: [OCCUPIED], clock: createFastClock(8) },
   play: async () => {
     await waitFor(() => expect(cards()).toHaveLength(1))

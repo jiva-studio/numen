@@ -23,7 +23,7 @@ import type { Core } from '../core'
 const props = defineProps<{ core: Core; path: string }>()
 const emit = defineEmits<{
   (event: 'close'): void
-  (event: 'trouble', said: string): void
+  (event: 'error', message: string): void
 }>()
 
 const prose = ref('')
@@ -33,14 +33,14 @@ const editor = useTemplateRef<InstanceType<typeof Editor>>('editor')
 
 onMounted(async () => {
   try {
-    const said = await props.core.notes.readNote({ path: props.path })
-    if (said.error) {
-      emit('trouble', formatErrorCodeMessage(said.error))
+    const answer = await props.core.notes.readNote({ path: props.path })
+    if (answer.error) {
+      emit('error', formatErrorCodeMessage(answer.error))
       emit('close')
       return
     }
-    prose.value = said.body
-    seen.value = said.at ? { prose: said.body, at: said.at } : null
+    prose.value = answer.body
+    seen.value = answer.at ? { prose: answer.body, at: answer.at } : null
   } finally {
     reading.value = false
   }
@@ -48,13 +48,13 @@ onMounted(async () => {
 })
 
 async function keep() {
-  const said = await props.core.notes.writeNote({
+  const answer = await props.core.notes.writeNote({
     path: props.path,
     body: prose.value,
     seen: seen.value ?? undefined,
   })
-  if (said.error) {
-    emit('trouble', formatErrorCodeMessage(said.error))
+  if (answer.error) {
+    emit('error', formatErrorCodeMessage(answer.error))
     return
   }
   emit('close')

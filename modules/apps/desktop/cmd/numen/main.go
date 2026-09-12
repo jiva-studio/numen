@@ -69,7 +69,7 @@ func main() {
 // is the same place everything else this binary could not do is said.
 func configured(out io.Writer) container.Config {
 	cfg := platform.Config()
-	cfg.Trouble = func(err error) { fmt.Fprintln(out, "numen:", err) }
+	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, "numen:", err) }
 	return cfg
 }
 
@@ -138,10 +138,10 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		Serve: func() (func() error, error) {
 			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
 		},
-		Showing:     opened.Showing,
-		Handler:     opened.API.Answers,
-		Unreachable: func(said string) { opened.API.Unreachable.Store(said) },
-		Trouble:     func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
+		Showing:      opened.Showing,
+		Handler:      opened.API.Answers,
+		Unreachable:  func(said string) { opened.API.Unreachable.Store(said) },
+		ErrorHandler: func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
 
 	going := &going{settle: opened.Settle}
@@ -252,7 +252,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// A cancelled event is where the hooks stop, and the destroy the window
 	// registered for itself is one of the listeners after them.
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		if !closing(ctx, going, seen, opened.Answered, window.Close) {
+		if !closing(ctx, going, seen, opened.WaitForAnswers, window.Close) {
 			event.Cancel()
 		}
 	})

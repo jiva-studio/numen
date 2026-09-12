@@ -12,7 +12,7 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { cards } from '@/shared/clients'
 import { useScreens } from '@/shared/screens'
 import { deckName, useReviewCounter } from '@/entities/vault'
-import { useReviewedDays, useVaultPresets } from '@/pages/decks'
+import { useReviewDays, useVaultPresets } from '@/pages/decks'
 import { useReviewSession } from '@/pages/session'
 import { useNotices } from './notices'
 import { usePanels } from './usePanels'
@@ -29,7 +29,7 @@ export const useWindow = () => {
   const { notices, showNotice, reportError, setTasks, putAway } = useNotices()
   const { vaults, counting: busy, day: today, count, stop } = useReviewCounter({ cards, reportError })
   const state = useReviewSession({ cards, reportError })
-  const done = useReviewedDays({ cards, reportError })
+  const done = useReviewDays({ cards, reportError })
   const schedules = useVaultPresets({ presets: cards })
 
   /** Why nothing can be asked here, empty while something can. */

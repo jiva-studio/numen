@@ -26,7 +26,7 @@ export interface NoteEditorsDeps {
 
 export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditorsDeps) {
   const changes = noteChanges()
-  const notes = openNotes(core, { replaced: changes.handleNoteChange })
+  const notes = openNotes(core, { onReplaced: changes.handleNoteChange })
   const making = noteCreator(core, log.under('made'))
 
   const noted = useNoteTab(core, notes, changes, held.handle, tabOpeners)
@@ -40,15 +40,15 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
     day,
   )
 
-  const going = useFileFlush(core)
-  going.addHandler(notes.flush)
-  going.addHandler(decks.flush)
-  going.addHandler(stencils.flush)
-  going.addHandler(schedules.flush)
+  const fileFlush = useFileFlush(core)
+  fileFlush.addHandler(notes.flush)
+  fileFlush.addHandler(decks.flush)
+  fileFlush.addHandler(stencils.flush)
+  fileFlush.addHandler(schedules.flush)
 
-  raiseConflicts(notes, going)
-  raiseConflicts(decks, going)
-  raiseConflicts(stencils, going)
+  raiseConflicts(notes, fileFlush)
+  raiseConflicts(decks, fileFlush)
+  raiseConflicts(stencils, fileFlush)
 
   const stores: readonly Store[] = [noted.kept, decks.kept, stencils.kept]
   const reached = createNotes(stores, tabOpeners)
@@ -58,7 +58,7 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
 
   const close = () => {
     changes.close()
-    going.close()
+    fileFlush.close()
   }
 
   return {
@@ -69,7 +69,7 @@ export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditors
     decks,
     stencils,
     schedules,
-    going,
+    fileFlush,
     stores,
     reached,
     getTitle,

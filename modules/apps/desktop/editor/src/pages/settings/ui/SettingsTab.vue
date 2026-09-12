@@ -5,7 +5,7 @@
  */
 import { computed } from 'vue'
 import { Button } from '@numen/ui'
-import type { SettingsTabState } from '../model/useSettingsTab'
+import type { SettingsTabState } from '../types'
 import WindowSettingsSection from './WindowSettingsSection.vue'
 import MediaSettingsSection from './MediaSettingsSection.vue'
 import AgentSettingsSection from './AgentSettingsSection.vue'

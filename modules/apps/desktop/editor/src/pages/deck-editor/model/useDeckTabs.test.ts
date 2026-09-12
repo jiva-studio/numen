@@ -206,10 +206,10 @@ const vault = (
     written,
     wrote: () => wrote,
     seen,
-    reads: () => reads,
+    getReadCount: () => reads,
     listed: () => listed,
     /** The file written from somewhere else, which the next read answers with. */
-    holds: (next: readonly VaultCard[]) => {
+    setCards: (next: readonly VaultCard[]) => {
       cards = next
     },
   }
@@ -371,14 +371,14 @@ describe('a deck whose file moved past what was read', () => {
   })
 
   it('reads the file again when the person takes what it holds', async () => {
-    const { decks, tab, reads } = await open({ changed: true })
+    const { decks, tab, getReadCount } = await open({ changed: true })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
     tab.takeFile()
     await settle()
 
-    expect(reads()).toBe(2)
+    expect(getReadCount()).toBe(2)
     expect(tab.note.value.state).toBe('clean')
     expect(tab.deck.value.cards.map(getCardName)).toStrictEqual(['Llama', 'Alpaca'])
   })
@@ -633,7 +633,7 @@ describe('a deck read again under the window', () => {
 
     // The deck was made whole where it was written: the card carries the mark
     // the core minted and the heading it read from the first field.
-    one.holds([
+    one.setCards([
       ...CARDS,
       {
         mark: 'w9s5jd2b1k',
@@ -662,7 +662,7 @@ describe('a deck read again under the window', () => {
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await one.decks.kept.settle(one.tab.id)
 
-    one.holds([
+    one.setCards([
       ...CARDS,
       {
         mark: 'w9s5jd2b1k',
@@ -689,7 +689,7 @@ describe('a deck read again under the window', () => {
     const one = await open()
     const stood = one.tab.deck.value.cards[0]?.id ?? ''
 
-    one.holds(CARDS.map((card, at) => (at === 0 ? { ...card, heading: 'Llama and yak' } : card)))
+    one.setCards(CARDS.map((card, at) => (at === 0 ? { ...card, heading: 'Llama and yak' } : card)))
     one.decks.changed(['Animals.md'])
     await settle()
 
@@ -704,7 +704,7 @@ describe('a deck read again under the window', () => {
     const one = await open({ sections: [{ name: 'Roots', preamble: '' }] })
     const stood = one.tab.deck.value.sections[0]?.id ?? ''
 
-    one.holds([
+    one.setCards([
       ...CARDS,
       {
         mark: 'w9s5jd2b1k',
@@ -734,7 +734,7 @@ describe('a deck read again under the window', () => {
 
     one.tab.writeCardField(made, 'Name', 1, 'Vicuña')
 
-    one.holds([
+    one.setCards([
       ...CARDS,
       {
         mark: 'w9s5jd2b1k',
@@ -756,7 +756,7 @@ describe('a deck read again under the window', () => {
     const one = await open()
     const was = drawing(one.tab)
 
-    one.holds([
+    one.setCards([
       {
         mark: 'w9s5jd2b1k',
         sectionIndex: null,
@@ -788,7 +788,7 @@ describe('a deck renamed under the window', () => {
     one.road.openNewFile('Beasts.md', '', 'deck')
     await settle()
 
-    expect(one.decks.all()).toHaveLength(1)
+    expect(one.decks.getOpenIds()).toHaveLength(1)
     expect(one.held.handle.each(DECK)).toHaveLength(1)
   })
 
@@ -825,7 +825,7 @@ describe('a deck whose tab has gone', () => {
     const one = await open()
     expect(one.decks.getTitle('Animals.md')).toBe('Animals')
 
-    one.held.shut(one.id)
+    one.held.releaseTab(one.id)
     await settle()
 
     expect(one.decks.getTitle('Animals.md')).toBe('Animals.md')
@@ -843,7 +843,7 @@ describe('a deck the vault could not be reached for', () => {
     const { decks, tab } = await open({ wrote: 'unreadable' })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
-    await decks.kept.settle(decks.all()[0] ?? '')
+    await decks.kept.settle(decks.getOpenIds()[0] ?? '')
 
     expect(tab.errorMessage.value).toBe(words.notSaved)
   })
@@ -913,13 +913,13 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('reads the deck again, so the tab writes against the file the choice made', async () => {
-    const { tab, reads } = await open()
-    const was = reads()
+    const { tab, getReadCount } = await open()
+    const was = getReadCount()
 
     tab.setSchedule('Sanskrit.md')
     await settle()
 
-    expect(reads()).toBeGreaterThan(was)
+    expect(getReadCount()).toBeGreaterThan(was)
     expect(tab.scheduled.value.path).toBe('Sanskrit.md')
   })
 

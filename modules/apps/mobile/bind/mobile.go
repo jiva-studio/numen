@@ -158,7 +158,7 @@ func configured(dir string, out io.Writer) container.Config {
 		IndexPath:    filepath.Join(dir, "index.db"),
 		RegistryPath: filepath.Join(dir, "vaults.json"),
 		ThemesPath:   filepath.Join(dir, "themes"),
-		Trouble:      func(err error) { fmt.Fprintln(out, "numen:", err) },
+		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen:", err) },
 	}
 }
 

@@ -18,9 +18,9 @@ import (
 type VaultOpener struct {
 	// Told, if set, is called each time the index and the vault are level again.
 	Told func(VaultChanges)
-	// Trouble, if set, is called with what went wrong, and with nil when a later
-	// attempt succeeds.
-	Trouble port.Trouble
+	// ErrorHandler, if set, is called with what went wrong, and with nil when a
+	// later attempt succeeds.
+	ErrorHandler port.ErrorHandler
 	// Rebuild reads every note again, whatever its fingerprint says.
 	Rebuild bool
 
@@ -110,7 +110,7 @@ func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 			told(VaultChanges{Paths: m.Paths, Assets: m.Assets, Reload: m.Reload})
 		}
 	}
-	follow.Trouble = o.Trouble
+	follow.ErrorHandler = o.ErrorHandler
 	watching, err := follow.Begin(ctx, v)
 	return &OpenVault{
 		opening:   o,
@@ -157,7 +157,7 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 	}
 	if len(under) > 0 {
 		if _, err := o.opening.refresh.Execute(ctx, o.vault, under); err != nil {
-			o.trouble(err)
+			o.handleError(err)
 		}
 	}
 	return res.Notes, nil
@@ -175,9 +175,9 @@ func (o *OpenVault) Run(ctx context.Context) {
 	o.watching.Run(ctx)
 }
 
-func (o *OpenVault) trouble(err error) {
-	if o.follow.Trouble != nil {
-		o.follow.Trouble(err)
+func (o *OpenVault) handleError(err error) {
+	if o.follow.ErrorHandler != nil {
+		o.follow.ErrorHandler(err)
 	}
 }
 

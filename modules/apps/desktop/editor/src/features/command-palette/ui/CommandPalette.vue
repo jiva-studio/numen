@@ -8,10 +8,11 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Palette, type ActionWords } from '@numen/ui'
-import { isCommandsTyped, type CommandTarget } from '../target'
+import { isCommandsTyped } from '../lib/commands'
+import type { CommandDeps } from '../model/deps'
+import type { CommandTarget } from '../types'
 import { appendCreateOffer, createNoteInvocation, MAKING } from '../lib/offers'
 import type { Commands } from '../model/palette'
-import type { CommandDeps } from '../deps'
 import { runInvocation } from '../model/handlers'
 import type { SearchState } from '../model/search'
 import { iconFor, iconOfSource } from '@/shared/icons'

@@ -19,7 +19,7 @@ const props = defineProps<{ state: PresetTabState }>()
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
 const {
-  changed,
+  hasChanged,
   curve,
   material,
   place,
@@ -85,7 +85,7 @@ function onSettleSlider() {
       </button>
     </p>
 
-    <p v-if="changed" role="status" class="preset__warning preset__answering">
+    <p v-if="hasChanged" role="status" class="preset__warning preset__answering">
       {{ words.changed }}
       <button type="button" class="answer" @click="onRefresh">
         {{ words.reads }}

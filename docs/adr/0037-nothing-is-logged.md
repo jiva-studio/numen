@@ -7,7 +7,7 @@
 
 ## Context
 
-Not one Go package here calls a logging function. There is no `log`, no `log/slog`, no third-party logger, and no file a run appends to. What this application says, it says in four places: the window it is showing, a line on a stream an entry point was handed, the error a call answers with, and `port.Trouble`.
+Not one Go package here calls a logging function. There is no `log`, no `log/slog`, no third-party logger, and no file a run appends to. What this application says, it says in four places: the window it is showing, a line on a stream an entry point was handed, the error a call answers with, and `port.ErrorHandler`.
 
 That is not an omission waiting for somebody to bind a logger. It is the shape the destinations already have. What has never been written down is who each destination reaches, and until that is settled, "this should be logged" is a sentence with no object: a machine nobody runs, a file nobody opens, or a person who is looking at a window and would rather be told there.
 
@@ -47,11 +47,11 @@ An application's entry point — a `cmd/` on the desktop, `bind/` on the phone �
 
 ### The core makes no message of its own
 
-Settled in [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md) and not restated here. `port.Trouble` carries an `error` and not a formatted line, and what words it is put into is decided by whoever bound it — which is why the same trouble becomes a `Reason` in a window and a prefixed line in a terminal without the core knowing there are two.
+Settled in [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md) and not restated here. `port.ErrorHandler` carries an `error` and not a formatted line, and what words it is put into is decided by whoever bound it — which is why the same trouble becomes a `Reason` in a window and a prefixed line in a terminal without the core knowing there are two.
 
 ### A message has no level
 
-There are three conditions here, and each already has a place of its own: a call could not answer, and that is its error; work carried on past went wrong, and that is `port.Trouble`; work a person is watching stopped badly, and that is `Failed` on its task. A fourth condition is an entry on this list, not a severity on a message.
+There are three conditions here, and each already has a place of its own: a call could not answer, and that is its error; work carried on past went wrong, and that is `port.ErrorHandler`; work a person is watching stopped badly, and that is `Failed` on its task. A fourth condition is an entry on this list, not a severity on a message.
 
 Levels are a filter, and a filter is for a reader wading through more than they want. Nobody wades here.
 
@@ -77,10 +77,10 @@ The window is not held to this. What it shows stands on the screen the material 
 
 ## Alternatives considered
 
-**`slog`, bound in `container/` and handed down as a port.** Rejected. It reaches nobody: its default handler writes to standard error, which is the stream the core is already forbidden and which the window's person never reads. A `*slog.Logger` is a concrete type, so a use case taking one holds a library rather than a port, and an interface wrapping it would be `port.Trouble` with levels bolted on. Neither layer guard would have caught it — `log/slog` is not the machine and reaches no disk — which is why this is written down instead of left to the guards.
+**`slog`, bound in `container/` and handed down as a port.** Rejected. It reaches nobody: its default handler writes to standard error, which is the stream the core is already forbidden and which the window's person never reads. A `*slog.Logger` is a concrete type, so a use case taking one holds a library rather than a port, and an interface wrapping it would be `port.ErrorHandler` with levels bolted on. Neither layer guard would have caught it — `log/slog` is not the machine and reaches no disk — which is why this is written down instead of left to the guards.
 
 **A log file beside the index.** Rejected. Nobody opens it, and it is where the privacy fault lands: the telling this application makes is thick with the names of a person's own files, and a file on disk outliving the run is a copy of their material in a place they did not choose. An index can be thrown away and made again; a log holds things no scan would put back.
 
-**Levels on `port.Trouble`.** Rejected. Nothing filters, and a level on a channel with one reader is a field that reader ignores.
+**Levels on `port.ErrorHandler`.** Rejected. Nothing filters, and a level on a channel with one reader is a field that reader ignores.
 
 **Telling everything on standard error as well as in the window.** Rejected. It is what an entry point does for the few states that happen before a window is up, and doing it for everything makes standard error a log under another name, with the same far end nobody owns.

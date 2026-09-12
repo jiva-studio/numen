@@ -39,13 +39,13 @@ defineExpose({
 <template>
   <div
     class="face__pane"
-    :data-pane="`${pane.half}-${pane.shows}`"
-    :data-shows="pane.shows"
+    :data-pane="`${pane.half}-${pane.mode}`"
+    :data-mode="pane.mode"
     :data-blank="pane.blank || undefined"
     :data-aimed="aimed || undefined"
   >
     <AutosizeTextarea
-      v-if="pane.shows === 'written'"
+      v-if="pane.mode === 'written'"
       ref="written"
       class="face__box"
       :text="pane.text"
@@ -69,7 +69,7 @@ defineExpose({
     <!-- What is wrong with the half stands in the foot of the part, over what is
          written there. -->
     <div v-if="pane.stray.length" class="face__amiss">
-      <ErrorMessage class="face__objects" role="alert" :said="words.stray(pane.stray)" />
+      <ErrorMessage class="face__objections" role="alert" :said="words.stray(pane.stray)" />
     </div>
   </div>
 </template>
@@ -89,7 +89,7 @@ defineExpose({
 
 /* What is written stands on the ground a box stands on; what it comes to
    stands on the ground the face is read on. */
-.face__pane[data-shows='preview'] {
+.face__pane[data-mode='preview'] {
   background: var(--numen-raised);
 }
 
@@ -115,7 +115,7 @@ defineExpose({
 }
 
 /* What is wrong is read over whatever it covers, so it carries a ground. */
-.face__amiss > .face__objects {
+.face__amiss > .face__objections {
   padding: 0.125rem 0.375rem;
   border-radius: var(--numen-radius);
   background: var(--numen-alarm-bg);

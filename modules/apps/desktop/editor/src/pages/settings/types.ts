@@ -1,0 +1,58 @@
+/**
+ * The settings tab, and what it holds.
+ *
+ * It holds nothing of its own: the window already keeps every setting it can
+ * write, and this is a second way to the same values. A row here and the
+ * command of the same name in the palette go through one piece of code.
+ */
+import type { Ref } from 'vue'
+import type { Model, SettingEdit } from '@/entities/settings'
+import type { Bounds, Mode, Ranges, Sizes, Theme } from '@/entities/settings'
+
+/** What this installation is configured as, as the window already holds it. */
+export interface Installation {
+  /** Every theme there is, and the one the settings name. */
+  readonly themes: Readonly<Ref<readonly Theme[]>>
+  readonly applied: Readonly<Ref<string>>
+  readonly mode: Readonly<Ref<Mode>>
+  /** Whether the theme worn declares light and dark itself. */
+  readonly pinned: Readonly<Ref<boolean>>
+  readonly sizes: Readonly<Ref<Sizes>>
+  readonly bounds: Readonly<Ref<Ranges>>
+  /**
+   * A value of one of the four appearance settings chosen, by the identity the
+   * palette offers it under. The theme, the half of the pair and the two sizes
+   * are each named a different way, so none of the four is written by hand.
+   */
+  choose(item: string): void
+  /** The two switches, which are read and written as the one value. */
+  readonly syncing: Ref<boolean>
+  readonly isHanging: Ref<boolean>
+  /** How many parts a day is hung in. A field offers no number as well. */
+  readonly parts: Readonly<Ref<number>>
+  /** How many the vault takes, which it says when it is asked what it holds. */
+  readonly partsBounds: Readonly<Ref<Bounds>>
+  chooseParts(count: number): void
+  /** The hour a day of review begins at, written as `04:00`. */
+  readonly dayStarts: Readonly<Ref<string>>
+  /** The latest hour the vault takes. One past it is refused. */
+  readonly latestDayStarts: Readonly<Ref<string>>
+  /** Written once the field settles, not on every hour typed through. */
+  chooseDayStarts(hour: string): void
+  /**
+   * The rest of the file: what stands at a setting, the models a setting that
+   * names one can be set to, and settings written where they stand.
+   */
+  setting(at: readonly string[]): unknown
+  models(at: readonly string[]): readonly Model[]
+  write(written: readonly SettingEdit[]): void
+  /** The file the settings stand in, absolute on this machine. */
+  readonly file: Readonly<Ref<string>>
+  /** That file opened whole, in a tab of its own. */
+  openFile(): void
+}
+
+/** What the settings tab holds. */
+export interface SettingsTabState {
+  readonly installation: Installation
+}

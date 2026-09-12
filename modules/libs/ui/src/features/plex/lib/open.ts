@@ -1,6 +1,6 @@
 /**
  * The window on what a node hangs: how far the parts have come out from under
- * its box, which of them stand in the window, and how far a wheel winds it.
+ * its box, which of them stand in the window, and how far a wheel scrolls it.
  */
 import { clamp01, easeOut, lerp } from './arrange'
 import type { HungPart, HungParts } from './inside'
@@ -45,7 +45,7 @@ export interface OpenParts {
   /** Whether the window has parts above it, and parts below it. */
   readonly above: boolean
   readonly below: boolean
-  /** The arrows at either edge, one per direction there is more to wind to. */
+  /** The arrows at either edge, one per direction there is more to scroll to. */
   readonly arrows: readonly Arrow[]
 }
 
@@ -57,14 +57,14 @@ export interface Arrow {
 }
 
 /**
- * How far a wheel winds the window, in whole parts, and what is left over.
+ * How far a wheel scrolls the window, in whole parts, and what is left over.
  *
  * A hand carries the leftover back into the next wheel, so a trackpad giving a
- * few pixels at a time winds as far as those pixels come to. A wheel says how
+ * few pixels at a time scrolls as far as those pixels come to. A wheel says how
  * far it moved in lines or in windows as readily as in pixels, and only pixels
  * can be measured against a part.
  */
-export function woundBy(
+export function scrollBy(
   hung: HungParts,
   wheel: { readonly delta: number; readonly mode: number },
   leftover: number,
@@ -85,7 +85,7 @@ function stride(hung: HungParts, mode: number): number {
 const LINES = 1
 const WINDOWS = 2
 
-/** The furthest the window on the parts may be wound down, counted in parts. */
+/** The furthest the window on the parts may be scrolled down, counted in parts. */
 export const furthest = (hung: HungParts): number =>
   Math.max(0, hung.parts.length - hung.shown)
 
@@ -99,12 +99,12 @@ export const furthest = (hung: HungParts): number =>
  *
  * Nothing while it is shut, which is what a node draws nothing at all under.
  */
-export function getOpenParts(hung: HungParts, open: number, wound = 0): OpenParts | null {
+export function getOpenParts(hung: HungParts, open: number, scrollOffset = 0): OpenParts | null {
   const opened = clamp01(open)
   if (opened <= 0) return null
 
-  // The window stands whole on the parts, wound by one at a time.
-  const first = Math.min(Math.max(Math.round(wound), 0), furthest(hung))
+  // The window stands whole on the parts, scrolled by one at a time.
+  const first = Math.min(Math.max(Math.round(scrollOffset), 0), furthest(hung))
   const shown = hung.parts.slice(first, first + hung.shown)
 
   // Each part sets off a lead behind the one above it, and the leads together
@@ -141,7 +141,7 @@ export function getOpenParts(hung: HungParts, open: number, wound = 0): OpenPart
 }
 
 /**
- * An arrow at one edge of the ground, pointing the way there is more to wind
+ * An arrow at one edge of the ground, pointing the way there is more to scroll
  * to. It is drawn about the middle of what is hung, which is where the eye is.
  */
 function arrowAt(hung: HungParts, down: number, direction: 1 | -1): Arrow {

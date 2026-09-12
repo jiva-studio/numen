@@ -104,14 +104,14 @@ func begin(
 	owed *pending,
 	out io.Writer,
 ) func() {
-	trouble := func(err error) {
+	errorHandler := func(err error) {
 		if err == nil {
 			api.Error.Store("")
 			return
 		}
 		api.Error.Store(err.Error())
 	}
-	opening.Trouble = trouble
+	opening.ErrorHandler = errorHandler
 	opening.Told = func(m container.VaultChanges) {
 		// A client draws every file the vault holds, so an asset is named to it
 		// the way a note is.

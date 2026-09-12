@@ -36,7 +36,7 @@ defineSlots<{
 const placed = computed(() => placeTurns(props.turns))
 
 /** What the line about a tool in hand is drawn from. */
-const toolOf = (entry: PlacedTurn) => ({
+const getToolCall = (entry: PlacedTurn) => ({
   tool: entry.turn.text,
   about: entry.turn.about ?? '',
   aside: entry.turn.aside ?? '',
@@ -100,9 +100,9 @@ defineExpose({ toFoot })
               class="thread__opens block w-full cursor-pointer rounded-node text-start outline-none ring-numen"
               @click="emit('open', entry.turn)"
             >
-              <ToolCall v-bind="toolOf(entry)" />
+              <ToolCall v-bind="getToolCall(entry)" />
             </button>
-            <ToolCall v-else v-bind="toolOf(entry)" />
+            <ToolCall v-else v-bind="getToolCall(entry)" />
           </template>
           <span v-else-if="entry.voice.bubble" class="thread__text">{{ entry.turn.text }}</span>
           <Prose

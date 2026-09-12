@@ -29,7 +29,7 @@ const props = withDefaults(
 /** Where the handle stands. */
 const model = defineModel<number>({ default: 0 })
 
-const raises = defineEmits<{
+const emit = defineEmits<{
   /** The handle let go of, at the end of a drag or of a walk with the keys. */
   settles: [value: number]
 }>()
@@ -88,7 +88,7 @@ const onKeyDown = (event: KeyboardEvent) => {
 const onRelease = () => {
   if (!walking) return
   walking = false
-  if (handed !== began) raises('settles', handed)
+  if (handed !== began) emit('settles', handed)
 }
 
 /**
@@ -100,7 +100,7 @@ const onCommit = (value: number[]) => {
   const said = value[0]
   if (typeof said !== 'number') return
   setValue(said)
-  raises('settles', said)
+  emit('settles', said)
 }
 </script>
 

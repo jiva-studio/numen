@@ -18,16 +18,16 @@ const props = withDefaults(
     working?: boolean
     disabled?: boolean
     /** What the disc is called while it sends. */
-    sends?: string
+    sendLabel?: string
     /** What the disc is called while it stops. */
-    stops?: string
+    stopLabel?: string
   }>(),
   {
     placeholder: 'Write a message',
     working: false,
     disabled: false,
-    sends: 'Send',
-    stops: 'Stop',
+    sendLabel: 'Send',
+    stopLabel: 'Stop',
   },
 )
 
@@ -49,11 +49,13 @@ const descriptor = computed(() => COMPOSER_STATES[state.value])
 const barred = computed(() => props.disabled || !descriptor.value.acts)
 
 /** What the disc is called. */
-const named = computed(() => (descriptor.value.shows === 'stop' ? props.stops : props.sends))
+const named = computed(() =>
+  descriptor.value.action === 'stop' ? props.stopLabel : props.sendLabel,
+)
 
 const act = () => {
   if (barred.value) return
-  if (descriptor.value.shows === 'stop') emit('stop')
+  if (descriptor.value.action === 'stop') emit('stop')
   else emit('submit', getMessage(text.value))
 }
 
@@ -61,7 +63,7 @@ const act = () => {
 const onKeydown = (event: KeyboardEvent) => {
   if (keyIntent(event) !== 'submit') return
   event.preventDefault()
-  if (descriptor.value.shows === 'send') act()
+  if (descriptor.value.action === 'send') act()
 }
 
 defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
@@ -96,13 +98,13 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
     <div class="composer__action">
       <Transition name="composer__swap" mode="out-in">
         <Button
-          :key="descriptor.shows"
+          :key="descriptor.action"
           size="icon"
           :disabled="barred"
           :aria-label="named"
           @click="act"
         >
-          <slot v-if="descriptor.shows === 'send'" name="glyph">
+          <slot v-if="descriptor.action === 'send'" name="glyph">
             <svg
               viewBox="0 0 16 16"
               class="size-4"

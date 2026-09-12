@@ -42,7 +42,7 @@ export interface FilesTabDeps {
   createDeck(folder: string, name: string): Promise<string>
   createStencil(folder: string, name: string): Promise<string>
   createPreset(folder: string, name: string): Promise<string>
-  importAddress(folder: string, address: string): Promise<string>
+  importUrl(folder: string, url: string): Promise<string>
   showError(text: string): void
   canRun?: RunGuard
 }
@@ -90,7 +90,7 @@ export interface FilesTabState {
   createFolder(path: string | null): Promise<void>
   createNote(path: string | null): Promise<void>
   createOne(path: string | null, createEntry: FileMaker, name: string): Promise<void>
-  importAddress(address: string): Promise<string>
+  importUrl(url: string): Promise<string>
   openMenu(asked: MenuRequest): void
   dismissMenu(): void
   chooseMenuItem(id: string): void

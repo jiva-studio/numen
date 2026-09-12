@@ -33,8 +33,8 @@ function talk(cues: readonly Cue[] = CUES): Recordings {
       url: '',
     }),
     getTaskStates: async () => ({ transcript: 'done' }),
-    readTranscript: async () => ({ cues, editable: true, prose: '' }),
-    readArticle: async () => ({ cues: [], editable: true, prose: '' }),
+    readTranscript: async () => ({ cues, isEditable: true, prose: '' }),
+    readArticle: async () => ({ cues: [], isEditable: true, prose: '' }),
     writeTranscript: async () => {},
     findCueTime: async () => null,
   }

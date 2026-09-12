@@ -25,16 +25,16 @@ const notes = () => {
   const states = ref<Record<string, State>>({})
   const at = ref<Record<string, string>>({})
   const store = {
-    all: () => Object.keys(states.value),
+    getOpenIds: () => Object.keys(states.value),
     getOpenNote: (path: string) => ({ state: states.value[path] ?? 'loading' }),
-    where: (path: string) => at.value[path] ?? path,
+    getPath: (path: string) => at.value[path] ?? path,
   }
   return {
     store: store as unknown as ReturnType<typeof openNotes>,
-    stands: (path: string, state: State) => {
+    setState: (path: string, state: State) => {
       states.value = { ...states.value, [path]: state }
     },
-    moves: (path: string, to: string) => {
+    moveNote: (path: string, to: string) => {
       at.value = { ...at.value, [path]: to }
     },
   }
@@ -60,7 +60,7 @@ describe('what a note is called', () => {
     const names = noteTitles(vault({ 'Note.md': 'What it is about' }), store.store)
     names.setTitle('Note.md', 'Untitled note')
 
-    store.stands('Note.md', 'clean')
+    store.setState('Note.md', 'clean')
     await nextTick()
 
     await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('What it is about'))
@@ -71,7 +71,7 @@ describe('what a note is called', () => {
     const names = noteTitles(vault({ 'Note.md': 'What it is about' }), store.store)
     names.setTitle('Note.md', 'Untitled note')
 
-    store.stands('Note.md', 'unsaved')
+    store.setState('Note.md', 'unsaved')
     await nextTick()
     await nextTick()
 
@@ -83,7 +83,7 @@ describe('what a note is called', () => {
     const names = noteTitles(vault(), store.store)
     names.setTitle('Note.md', 'Untitled note')
 
-    store.stands('Note.md', 'clean')
+    store.setState('Note.md', 'clean')
     await nextTick()
     await nextTick()
 
@@ -94,11 +94,11 @@ describe('what a note is called', () => {
     const store = notes()
     const said = vault({ 'Note.md': 'What it is about', 'Renamed.md': 'Renamed' })
     const names = noteTitles(said, store.store)
-    store.stands('Note.md', 'clean')
+    store.setState('Note.md', 'clean')
     await nextTick()
     await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('What it is about'))
 
-    store.moves('Note.md', 'Renamed.md')
+    store.moveNote('Note.md', 'Renamed.md')
     await nextTick()
 
     await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('Renamed'))
@@ -108,12 +108,12 @@ describe('what a note is called', () => {
     const store = notes()
     const names = noteTitles(vault({ 'Renamed.md': 'Renamed' }), store.store)
     names.setTitle('Note.md', 'Untitled note')
-    store.stands('Note.md', 'unsaved')
-    store.moves('Note.md', 'Renamed.md')
+    store.setState('Note.md', 'unsaved')
+    store.moveNote('Note.md', 'Renamed.md')
     await nextTick()
     expect(names.getTitle('Note.md')).toBe('Untitled note')
 
-    store.stands('Note.md', 'clean')
+    store.setState('Note.md', 'clean')
     await nextTick()
 
     await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('Renamed'))

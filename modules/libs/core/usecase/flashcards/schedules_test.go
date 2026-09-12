@@ -372,10 +372,10 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 func dayFrom(from, at time.Time) int {
 	open := from
 	for i := range 400 {
-		if at.Before(today.Ends(open)) {
+		if at.Before(today.EndOf(open)) {
 			return i
 		}
-		open = today.Ends(open)
+		open = today.EndOf(open)
 	}
 	return -1
 }
@@ -412,11 +412,11 @@ func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
 		t.Fatalf("the card comes round at %v, and the scheduler put it at %v", got, fell)
 	}
 
-	opens := today.Ends(fell).AddDate(0, 0, -1)
+	opens := today.EndOf(fell).AddDate(0, 0, -1)
 	if asked := s.sessionAt(t, today, opens.Add(6*time.Hour)).Queue; len(asked) != 0 {
 		t.Errorf("a %v carrying none of the load asked %d cards", fell.Weekday(), len(asked))
 	}
-	after := today.Ends(fell).Add(6 * time.Hour)
+	after := today.EndOf(fell).Add(6 * time.Hour)
 	if asked := s.sessionAt(t, today, after).Queue; len(asked) != 1 {
 		t.Errorf("the day after asked %d cards, want the one standing over", len(asked))
 	}

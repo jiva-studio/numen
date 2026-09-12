@@ -33,7 +33,7 @@ function onUpdateModelValue(text: string) {
 }
 
 function onSave() {
-  void props.state.keeps()
+  void props.state.save()
 }
 
 // --- Helpers ---

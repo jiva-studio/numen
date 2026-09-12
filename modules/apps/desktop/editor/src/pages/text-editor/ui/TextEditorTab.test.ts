@@ -64,7 +64,7 @@ describe('the file drawn', () => {
         ),
     })
     state.type('{ "agent": ')
-    await state.keeps()
+    await state.save()
     await tab.vm.$nextTick()
 
     const said = tab.get('[role="alert"]').text()
@@ -82,7 +82,7 @@ describe('the file drawn', () => {
       },
     })
     state.type('{}\n')
-    await state.keeps()
+    await state.save()
     await tab.vm.$nextTick()
 
     expect(tab.get('[role="status"]').text()).toContain(words.stale)

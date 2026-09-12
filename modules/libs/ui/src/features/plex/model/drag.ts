@@ -4,7 +4,7 @@
  * in `arrange/drop.ts`, as a value.
  */
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
-import { seatDropped, type PlexOptions, type Size } from '../lib/arrange'
+import { getDropSeat, type PlexOptions, type Size } from '../lib/arrange'
 import { positionIn } from './gesture'
 import type { PlexFrame } from '../lib/frame'
 import type { Position } from '../lib/node'
@@ -50,7 +50,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   const seat = computed<PlexRelatedSeat | null>(() => {
     const now = at.value
     if (!now) return null
-    return seatDropped({
+    return getDropSeat({
       frame: drag.frame(),
       options: drag.options(),
       viewport: drag.viewport(),

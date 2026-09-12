@@ -231,9 +231,9 @@ func (w *Window) Settling(ctx context.Context) bool {
 	return !round.pending() && w.clients.current() == round
 }
 
-// Answered waits for the round in progress to end with every page having
+// WaitForAnswers waits for the round in progress to end with every page having
 // written what it owes.
-func (w *Window) Answered(ctx context.Context) bool {
+func (w *Window) WaitForAnswers(ctx context.Context) bool {
 	round := w.clients.current()
 	if round == nil {
 		return false

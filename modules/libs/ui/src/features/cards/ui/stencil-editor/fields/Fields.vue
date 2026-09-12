@@ -17,7 +17,7 @@ import { Button } from '@/shared/ui/button'
 import {
   landing,
   getFreeName,
-  objection,
+  checkFieldName,
   type Problems,
   type InsertionPoint,
   type Objection,
@@ -48,17 +48,17 @@ const emit = defineEmits<{
 const uid = useId()
 
 /** What is wrong with a name, where what it is wrong about says so. */
-const objectsId = (over: string): string => `${uid}-${encodeURIComponent(over)}-objects`
+const objectionsId = (over: string): string => `${uid}-${encodeURIComponent(over)}-objections`
 
 /**
  * A name typed over the one a field carries. A field is named by its own name,
  * and what it is measured against is every other field's.
  */
 const naming = useNaming<Objection>({
-  carries: (field) => field,
-  taken: (field) => props.fields.filter((each) => each !== field),
-  amiss: objection,
-  renamed: (field, name) => emit('rename', field, name),
+  getName: (field) => field,
+  getTakenNames: (field) => props.fields.filter((each) => each !== field),
+  checkName: checkFieldName,
+  rename: (field, name) => emit('rename', field, name),
 })
 
 /**
@@ -69,8 +69,8 @@ const naming = useNaming<Objection>({
 const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
-  doesMove: (held, lands) => landing(props.fields, held, lands),
-  moves: (held, lands) => emit('move', held, lands),
+  isMoved: (held, lands) => landing(props.fields, held, lands),
+  move: (held, lands) => emit('move', held, lands),
 })
 
 const rows = computed(() => fieldRows(props.fields, dragged.value))
@@ -101,7 +101,7 @@ const add = (): void => {
         :key="row.field"
         :row="row"
         :naming="naming"
-        :objects-id="objectsId(row.field)"
+        :objections-id="objectionsId(row.field)"
         :wrong="wrongWith(row.field)"
         :before="row.field === at"
         :words="words"
@@ -118,7 +118,7 @@ const add = (): void => {
 
     <Divider>
       <Button variant="ghost" size="small" @click="add">
-        <Icon shows="plus" />
+        <Icon name="plus" />
         {{ words.addField }}
       </Button>
     </Divider>

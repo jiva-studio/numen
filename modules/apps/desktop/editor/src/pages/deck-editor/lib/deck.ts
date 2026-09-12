@@ -20,12 +20,5 @@ export {
   sectionsOf,
   stencilsOf,
 } from './view'
-export {
-  addCard,
-  addSection,
-  dropCard,
-  fillCard,
-  removeCard,
-  removeSection,
-  renameSection,
-} from './mutations'
+export { addCard, dropCard, fillCard, removeCard } from './cards'
+export { addSection, removeSection, renameSection } from './sections'

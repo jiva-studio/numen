@@ -7,10 +7,11 @@
  * said by whatever draws this, under the row the box stands in.
  */
 import type { NamingState } from '../../model/naming'
+import type { Objection } from '../../lib/order'
 
 const props = defineProps<{
   /** The naming this box types into. */
-  naming: NamingState<unknown>
+  naming: NamingState<Objection>
   /** What is being typed over, as the naming addresses it. */
   over: string
   /** What the box is announced by, and what stands in it while it is empty. */

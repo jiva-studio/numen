@@ -99,14 +99,14 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 
 		// No embedder: a test reaches no model, so a question is answered by its
 		// words alone.
-		Search: func(ctx context.Context, trouble port.Trouble) (cli.Search, error) {
+		Search: func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
 			db, err := index.Open(ctx, where.Index)
 			if err != nil {
 				return cli.Search{}, err
 			}
 			return cli.Search{
 				Search: search.New(db.ChunkQueries(), filesystem.VaultReaders{Options: options},
-					derived(options), pdf.Documents{}, nil, 0, trouble),
+					derived(options), pdf.Documents{}, nil, 0, errorHandler),
 				Close: db.Close,
 			}, nil
 		},

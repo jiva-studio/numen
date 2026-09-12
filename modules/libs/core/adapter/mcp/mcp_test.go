@@ -859,12 +859,11 @@ func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 	}
 }
 
-// read is one call of note_read, whole: what came back, what was not there and
-// what was refused.
+// reading is one call of note_read, whole: what came back, and what each path
+// that did not come back stopped on.
 type reading struct {
-	Notes   []mcp.Contents `json:"notes"`
-	Missing []string       `json:"missing"`
-	Refused []mcp.Refusal  `json:"refused"`
+	Notes  []mcp.Contents `json:"notes"`
+	Errors []mcp.Error    `json:"errors"`
 }
 
 // put writes a file into a vault that is already being served, for the ones a
@@ -893,11 +892,11 @@ func TestReadingRefusesWhatIsNotANote(t *testing.T) {
 			t.Errorf("the bytes of a book were handed over:\n%s", c.Body)
 		}
 	}
-	if len(got.Refused) != 1 || got.Refused[0].Path != "library.epub" {
-		t.Fatalf("want the book refused by name: %+v", got.Refused)
+	if len(got.Errors) != 1 || got.Errors[0].Path != "library.epub" {
+		t.Fatalf("want the book refused by name: %+v", got.Errors)
 	}
-	if !strings.Contains(got.Refused[0].Why, "note") {
-		t.Errorf("the refusal does not say what is wrong: %q", got.Refused[0].Why)
+	if !strings.Contains(got.Errors[0].Why, "note") {
+		t.Errorf("the error does not say what is wrong: %q", got.Errors[0].Why)
 	}
 }
 
@@ -913,11 +912,11 @@ func TestReadingRefusesAFileThatIsNotText(t *testing.T) {
 	if len(got.Notes) != 1 || got.Notes[0].Path != "Entropy.md" {
 		t.Fatalf("want only the note that is text: %+v", got.Notes)
 	}
-	if len(got.Refused) != 1 || got.Refused[0].Path != "Pasted.md" {
-		t.Fatalf("want the file refused by name: %+v", got.Refused)
+	if len(got.Errors) != 1 || got.Errors[0].Path != "Pasted.md" {
+		t.Fatalf("want the file refused by name: %+v", got.Errors)
 	}
-	if !strings.Contains(got.Refused[0].Why, "text") {
-		t.Errorf("the refusal does not say what is wrong: %q", got.Refused[0].Why)
+	if !strings.Contains(got.Errors[0].Why, "text") {
+		t.Errorf("the error does not say what is wrong: %q", got.Errors[0].Why)
 	}
 }
 
@@ -932,14 +931,14 @@ func TestReadingSaysWhichNoteIsTooLargeAndCarriesOn(t *testing.T) {
 	if len(got.Notes) != 1 || got.Notes[0].Path != "Entropy.md" {
 		t.Fatalf("the rest of the batch did not come back: %+v", got.Notes)
 	}
-	if len(got.Missing) != 1 || got.Missing[0] != "gone.md" {
-		t.Errorf("want the path with no file behind it: %+v", got.Missing)
+	if len(got.Errors) != 2 || got.Errors[0].Path != "Export.md" || got.Errors[1].Path != "gone.md" {
+		t.Fatalf("want the large note and the path with no file behind it: %+v", got.Errors)
 	}
-	if len(got.Refused) != 1 || got.Refused[0].Path != "Export.md" {
-		t.Fatalf("want the large note refused by name: %+v", got.Refused)
+	if !strings.Contains(got.Errors[0].Why, "open the file") {
+		t.Errorf("the error does not say what to do instead: %q", got.Errors[0].Why)
 	}
-	if !strings.Contains(got.Refused[0].Why, "open the file") {
-		t.Errorf("the refusal does not say what to do instead: %q", got.Refused[0].Why)
+	if !strings.Contains(got.Errors[1].Why, "no note at this path") {
+		t.Errorf("the error does not say the path holds nothing: %q", got.Errors[1].Why)
 	}
 }
 

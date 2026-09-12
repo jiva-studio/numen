@@ -845,7 +845,7 @@ func TestWhatThePortRuleRefuses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range []string{"TextExtractor", "PageRenderer", "Vector", "Trouble"} {
+	for _, one := range []string{"TextExtractor", "PageRenderer", "Vector", "ErrorHandler"} {
 		if !slices.Contains(unnamed, one) {
 			t.Errorf("nothing outside names port.%s and the rule does not refuse it", one)
 		}

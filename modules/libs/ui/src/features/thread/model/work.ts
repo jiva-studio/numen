@@ -2,8 +2,8 @@
  * The line that says what the agent has in hand, and the line under it that
  * says an answer is still on its way. One of each stands at a time.
  */
-import { charsWord, type Turn } from '../lib/turn'
-import type { Place } from '../lib/agent'
+import { writeCharCount, type Turn } from '../lib/turn'
+import type { SourceLocation } from '../lib/agent'
 
 /**
  * A tool as the panel says it. A tool served with a title of its own arrives
@@ -16,7 +16,7 @@ export interface WorkLine {
   readonly reach: (
     tool: string,
     about: string,
-    place: Place | null | undefined,
+    location: SourceLocation | null | undefined,
     written: number,
   ) => void
   /** What it reached for has answered, so the line stops claiming to run. */
@@ -30,13 +30,13 @@ export interface WorkLine {
 }
 
 /**
- * The two lines of one exchange. `workId` and `wait` name them, and `places`
+ * The two lines of one exchange. `workId` and `wait` name them, and `locations`
  * holds the source a line that says it opens one leads to.
  */
 export function createWorkLine(
   put: (turn: Turn) => void,
   drop: (id: string) => void,
-  places: Map<string, Place>,
+  locations: Map<string, SourceLocation>,
   waitWords: string,
   workId: string,
   wait: string,
@@ -58,16 +58,16 @@ export function createWorkLine(
       voice: 'doing',
       text: says,
       about,
-      aside: charsWord(count),
+      aside: writeCharCount(count),
       state,
-      ...(places.has(workId) ? { opens: true } : {}),
+      ...(locations.has(workId) ? { opens: true } : {}),
     })
     up = true
   }
 
   const takeDown = () => {
     drop(workId)
-    places.delete(workId)
+    locations.delete(workId)
     up = false
   }
 
@@ -77,13 +77,13 @@ export function createWorkLine(
   }
 
   return {
-    reach: (tool, named, place, written) => {
+    reach: (tool, named, location, written) => {
       says = getSpokenTool(tool)
       about = named
       // A call naming a run of a source's text names somewhere the line can be
       // pressed to open.
-      if (place && place.span.to > place.span.from) places.set(workId, place)
-      else places.delete(workId)
+      if (location && location.span.to > location.span.from) locations.set(workId, location)
+      else locations.delete(workId)
       show('arriving', written)
     },
     settle: () => {

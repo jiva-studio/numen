@@ -9,7 +9,7 @@ import { percent } from '@numen/ui'
 import type { StepGroup, StepRow } from '@/features/command-palette/@x/settings-commands'
 import { MODES, ladder, parseSize, isInBounds } from '@/entities/settings'
 import type { Mode, Ranges, Sizes, Theme } from '@/entities/settings'
-import type { Words } from '../appearanceWords'
+import type { AppearanceWords } from '../words'
 import { INTERFACE_SCALE, TEXT_SCALE, getModeId, getSizeId, its } from './appearanceValues'
 import type { ScaleKind } from './appearanceValues'
 
@@ -36,7 +36,7 @@ const shelf = (
   themes: readonly Theme[],
   themeName: string,
   isBuiltIn: boolean,
-  words: Words,
+  words: AppearanceWords,
 ): readonly StepRow[] => {
   const off = themes.filter((one) => one.isBuiltIn === isBuiltIn)
   const getThemeRow = (one: Theme): StepRow => ({
@@ -57,7 +57,7 @@ const shelf = (
 export const getThemeGroups = (
   themes: readonly Theme[],
   themeName: string,
-  words: Words,
+  words: AppearanceWords,
 ): readonly StepGroup[] => {
   const shipping = {
     id: 'shipping',
@@ -75,7 +75,7 @@ export const getThemeGroups = (
 }
 
 /** What is said about a mode: why it cannot be chosen, or that it is the one. */
-const beside = (one: Mode, mode: Mode, isPinned: boolean, words: Words): string => {
+const getModeDetail = (one: Mode, mode: Mode, isPinned: boolean, words: AppearanceWords): string => {
   if (isPinned) return words.pinned
   return one === mode ? words.current : ''
 }
@@ -87,10 +87,10 @@ const beside = (one: Mode, mode: Mode, isPinned: boolean, words: Words): string 
 export const getModeGroups = (
   mode: Mode,
   isPinned: boolean,
-  words: Words,
+  words: AppearanceWords,
 ): readonly StepGroup[] => {
   const row = (one: Mode): StepRow => {
-    const detail = beside(one, mode, isPinned, words)
+    const detail = getModeDetail(one, mode, isPinned, words)
     return {
       id: getModeId(one),
       title: words[one],
@@ -116,7 +116,7 @@ export const getSizeGroups = (
   text: string,
   sizes: Sizes,
   bounds: Ranges,
-  words: Words,
+  words: AppearanceWords,
 ): readonly StepGroup[] => {
   const which: ScaleKind = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
   const range = its(bounds, which)

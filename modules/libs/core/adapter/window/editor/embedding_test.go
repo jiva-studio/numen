@@ -98,8 +98,8 @@ type sulking struct {
 	turned int
 }
 
-func sulks(dims, refusals int) *sulking {
-	return &sulking{asked: &asked{dims: dims}, left: refusals}
+func newSulking(dims, errs int) *sulking {
+	return &sulking{asked: &asked{dims: dims}, left: errs}
 }
 
 func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error) {
@@ -117,8 +117,8 @@ func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error
 	return s.asked.Embed(ctx, texts)
 }
 
-// refused is how many askings it has turned down.
-func (s *sulking) refused() int {
+// turnedDown is how many askings it has turned down.
+func (s *sulking) turnedDown() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.turned
@@ -251,13 +251,13 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	// The first asking is turned down, so the note's chunks come out of the
 	// first reading still owing their vectors.
-	model := sulks(64, 1)
+	model := newSulking(64, 1)
 
 	f := openingWith(t, map[string]string{
 		"Note.md": noteWith(before, 200),
 	}, unwatchable{}, walked(), model, 20*time.Millisecond)
 
-	eventually(t, "the model was never asked at all", func() bool { return model.refused() > 0 })
+	eventually(t, "the model was never asked at all", func() bool { return model.turnedDown() > 0 })
 	if why := f.api.Unwatched.Why(); why == "" {
 		t.Fatal("a vault whose watch never started is shown as followed")
 	}

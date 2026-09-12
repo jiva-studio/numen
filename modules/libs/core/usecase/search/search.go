@@ -88,13 +88,13 @@ func (p Parameters) filled() Parameters {
 // Every field is asked for by New. An embedder that is left out answers: the
 // words half runs alone, with none of what the vectors hold.
 type Search struct {
-	passages  port.PassageQueries
-	readers   port.VaultReaders
-	embedder  port.Embedder
-	derived   port.DerivedStores
-	documents port.TextExtractor
-	floor     float64
-	trouble   func(error)
+	passages     port.PassageQueries
+	readers      port.VaultReaders
+	embedder     port.Embedder
+	derived      port.DerivedStores
+	documents    port.TextExtractor
+	floor        float64
+	errorHandler func(error)
 }
 
 // New is a search over one vault's index.
@@ -107,23 +107,23 @@ type Search struct {
 // `floor` is how near the query a passage stands to be an answer, in the units
 // the model in use measures in. Zero takes DefaultFloor.
 //
-// `trouble` hears about a half that could not answer. Nothing is said by
+// `errorHandler` hears about a half that could not answer. Nothing is said by
 // passing nothing.
-func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, trouble func(error)) Search {
+func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, errorHandler func(error)) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}
-	if trouble == nil {
-		trouble = func(error) {}
+	if errorHandler == nil {
+		errorHandler = func(error) {}
 	}
 	return Search{
-		passages:  passages,
-		readers:   readers,
-		embedder:  embedder,
-		derived:   derived,
-		documents: documents,
-		floor:     floor,
-		trouble:   trouble,
+		passages:     passages,
+		readers:      readers,
+		embedder:     embedder,
+		derived:      derived,
+		documents:    documents,
+		floor:        floor,
+		errorHandler: errorHandler,
 	}
 }
 
@@ -165,7 +165,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 			// A model out of reach leaves the words to answer. A vault is
 			// searched on a machine with no network, and by a person whose key
 			// has run out.
-			u.trouble(err)
+			u.errorHandler(err)
 		case err != nil:
 			return nil, err
 		default:

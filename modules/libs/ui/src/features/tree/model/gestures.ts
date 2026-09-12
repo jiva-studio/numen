@@ -28,7 +28,7 @@ export interface TreeGesturesOptions {
   readonly shown: () => readonly ShownRow[]
   readonly selected: () => readonly RowId[]
   /** The row whose name is in a field. */
-  readonly renaming: Ref<RowId | null>
+  readonly renamingPath: Ref<RowId | null>
   readonly rows: DrawnRowsState
   readonly selection: RowSelectionState
   readonly drag: RowDragState
@@ -51,7 +51,7 @@ export interface TreeGesturesState {
 }
 
 export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState {
-  const { shown, selected, renaming, rows, selection, drag, tell } = options
+  const { shown, selected, renamingPath, rows, selection, drag, tell } = options
 
   function toggleRow(row: ShownRow): void {
     if (row.open) tell('close', row.id)
@@ -105,18 +105,18 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
   }
 
   function onRename(row: RowId, name: string): void {
-    renaming.value = null
+    renamingPath.value = null
     tell('rename', row, name)
     void rows.focusRow(row)
   }
 
   function onAbandon(row: RowId): void {
-    renaming.value = null
+    renamingPath.value = null
     void rows.focusRow(row)
   }
 
   function onFieldBlur(): void {
-    renaming.value = null
+    renamingPath.value = null
   }
 
   function onKeyDown(event: KeyboardEvent): void {

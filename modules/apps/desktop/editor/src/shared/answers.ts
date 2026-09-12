@@ -80,7 +80,7 @@ const AGAIN = 1000
  * What the application answered. A document held by whoever is drawing from it
  * says so, and is asked again after a wait.
  */
-export const waiting = async <T>(ask: () => Promise<T>): Promise<T> => {
+export const retryWhileBusy = async <T>(ask: () => Promise<T>): Promise<T> => {
   for (let asked = 0; ; asked++) {
     try {
       return await ask()

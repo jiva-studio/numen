@@ -38,7 +38,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
    * at it, and nothing while it stands anywhere else.
    */
   const holding = ref<ScaleChoice | null>(null)
-  let holds: ReturnType<typeof setTimeout> | undefined
+  let hold: ReturnType<typeof setTimeout> | undefined
 
   /** Whether a row names a theme, which the rows of the other lists do not. */
   const isTheme = (item: string): boolean => item !== '' && !modeOf(item) && !sizeOf(item)
@@ -71,10 +71,10 @@ export function useAppearanceChoice(on: ChoiceDeps) {
    */
   const previewItem = (item: string) => {
     stood.value = item
-    clearTimeout(holds)
+    clearTimeout(hold)
     const size = sizeOf(item)
     if (size && isInBounds(its(bounds.value, size.which), size.size)) {
-      holds = setTimeout(() => (holding.value = size), HELD)
+      hold = setTimeout(() => (holding.value = size), HELD)
       return
     }
     holding.value = null
@@ -90,7 +90,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
     if (!isInBounds(its(bounds.value, choice.which), choice.size)) return
     const was = settings.value
     write('')
-    clearTimeout(holds)
+    clearTimeout(hold)
     holding.value = null
     stood.value = ''
     settings.value = onto(was, choice.which, choice.size)
@@ -126,7 +126,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
     await applyAppearance()
   }
 
-  const close = () => clearTimeout(holds)
+  const close = () => clearTimeout(hold)
 
   return { worn, half, sized, isPinned, previewItem, chooseItem, close }
 }

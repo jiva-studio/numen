@@ -96,7 +96,7 @@ const vault = (
     written,
     renamed,
     /** The file written from somewhere else, which the next read answers with. */
-    holds: (next: readonly VaultFace[]) => {
+    setFaces: (next: readonly VaultFace[]) => {
       faces = next
     },
   }
@@ -333,7 +333,7 @@ describe('a stencil the vault refused', () => {
     const { stencils, tab } = await open({ wrote: 'unreadable' })
 
     tab.addField('Weight')
-    await stencils.kept.settle(stencils.all()[0] ?? '')
+    await stencils.kept.settle(stencils.getOpenIds()[0] ?? '')
 
     expect(tab.errorMessage.value).toBe(words.notSaved)
   })
@@ -416,7 +416,7 @@ describe('a stencil read again under the window', () => {
     const one = await open()
     const was = one.tab.stencil.value
 
-    one.holds([{ name: 'Recall', preamble: '', front: '{{Height}}', back: '{{Life span}}' }])
+    one.setFaces([{ name: 'Recall', preamble: '', front: '{{Height}}', back: '{{Life span}}' }])
     one.stencils.changed(['Animal.md'])
     await settle()
 
@@ -434,7 +434,7 @@ describe('a stencil renamed under the window', () => {
     one.road.openNewFile('Beast.md', '', 'stencil')
     await settle()
 
-    expect(one.stencils.all()).toHaveLength(1)
+    expect(one.stencils.getOpenIds()).toHaveLength(1)
     expect(one.held.handle.each(STENCIL)).toHaveLength(1)
   })
 
@@ -452,7 +452,7 @@ describe('a stencil whose tab has gone', () => {
     const one = await open()
     expect(one.stencils.getTitle('Animal.md')).toBe('Animal')
 
-    one.held.shut(one.id)
+    one.held.releaseTab(one.id)
     await settle()
 
     expect(one.stencils.getTitle('Animal.md')).toBe('Animal.md')

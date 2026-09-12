@@ -44,7 +44,7 @@ const props = withDefaults(
 /** The number in force. An empty field holds none. */
 const model = defineModel<number | null>({ default: null })
 
-const raises = defineEmits<{
+const emit = defineEmits<{
   /** The field come to rest at a number other than the one it was resting at. */
   settles: [value: number | null]
 }>()
@@ -120,7 +120,7 @@ const settle = async () => {
   typed.value = formatNumber(now)
   if (now !== rested) {
     rested = now
-    raises('settles', now)
+    emit('settles', now)
   }
   await nextTick()
   if (!isTextForValue(typed.value, model.value)) {

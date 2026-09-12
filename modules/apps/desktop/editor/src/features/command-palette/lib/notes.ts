@@ -1,0 +1,30 @@
+/**
+ * The open files a command reaches, over every store the window keeps them in.
+ * An identity is answered by the store holding it, and one nobody holds by
+ * nothing at all.
+ */
+import type { Notes, Store } from '../types'
+
+export const createNotes = (
+  stores: readonly Store[],
+  noteOpeners: Pick<Notes, 'openFile' | 'openNewFile'>,
+): Notes => {
+  const holder = (id: string): Store | undefined => stores.find((one) => one.has(id))
+  return {
+    holding: (path) => {
+      for (const one of stores) {
+        const held = one.holding(path)
+        if (held !== null) return held
+      }
+      return null
+    },
+    where: (id) => holder(id)?.where(id) ?? id,
+    asking: (id) => holder(id)?.asking(id) ?? false,
+    settle: async (id) => {
+      await holder(id)?.settle(id)
+    },
+    close: (id) => holder(id)?.close(id),
+    openFile: noteOpeners.openFile,
+    openNewFile: noteOpeners.openNewFile,
+  }
+}

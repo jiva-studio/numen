@@ -105,9 +105,9 @@ type Config struct {
 	// are holding.
 	RebuildIndex bool
 
-	// Trouble is where what is assembled here says what went wrong in work it
-	// carries on past. An installation that sets none is told nothing.
-	Trouble port.Trouble
+	// ErrorHandler is where what is assembled here says what went wrong in work
+	// it carries on past. An installation that sets none is told nothing.
+	ErrorHandler port.ErrorHandler
 
 	// Now is what time it is, for every scenario that stamps a note or asks
 	// what is due today. An installation that names none reads this machine's
@@ -123,10 +123,10 @@ func (c Config) Clock() port.Clock {
 	return time.Now
 }
 
-// trouble says what went wrong to whoever asked to be told.
-func (c Config) trouble(err error) {
-	if c.Trouble != nil {
-		c.Trouble(err)
+// handleError says what went wrong to whoever asked to be told.
+func (c Config) handleError(err error) {
+	if c.ErrorHandler != nil {
+		c.ErrorHandler(err)
 	}
 }
 

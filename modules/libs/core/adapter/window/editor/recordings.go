@@ -146,17 +146,17 @@ func (a *API) ReadArticle(
 		return nil, connect.NewError(reaching(err), err)
 	}
 	whole, _ := transcript.Parse(raw)
-	prose, err := stretch(whole, r.Msg.GetSpan())
+	prose, err := readSpan(whole, r.Msg.GetSpan())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return connect.NewResponse(&v1.ReadArticleResponse{Text: prose}), nil
 }
 
-// stretch is the run of the prose a request named, and the whole of it where a
+// readSpan is the run of the prose a request named, and the whole of it where a
 // request named none. A run is held within the prose and stands on whole
 // characters.
-func stretch(prose string, at *v1.Span) (string, error) {
+func readSpan(prose string, at *v1.Span) (string, error) {
 	if at == nil {
 		return prose, nil
 	}

@@ -2,7 +2,7 @@
  * Wire adapter for BookService.
  */
 import type { SpineDocument as SpineDocumentMessage } from '@numen/protocol'
-import { asset, fingerprint, getBytesQuery, stamp, waiting } from '@/shared/answers'
+import * as answers from '@/shared/answers'
 import * as clients from '@/shared/clients'
 import type { Book, Books, SpineDocument } from '../types'
 
@@ -13,41 +13,40 @@ const served = {
 /** One document of the spine, as the window carries it. */
 const readSpineDocument = (one: SpineDocumentMessage): SpineDocument => ({
   path: one.path,
-  span: { begins: one.offset, ends: one.offset + one.length },
+  span: { from: one.offset, to: one.offset + one.length },
 })
 
 export const books: Books = {
   getBook: async (path) => {
-    const answer = await waiting(() => served.books.getBook({ path }))
+    const answer = await answers.retryWhileBusy(() => served.books.getBook({ path }))
     return {
       title: answer.title,
-      span: { begins: 0, ends: answer.textBytes },
+      span: { from: 0, to: answer.textBytes },
       documents: answer.documents.map(readSpineDocument),
       parts: answer.parts.map((one) => ({
         title: one.title,
         offset: one.offset,
         level: one.level,
       })),
-      printed: answer.printedPages.map((one) => ({
+      printedPages: answer.printedPages.map((one) => ({
         label: one.label,
         offset: one.offset,
       })),
       pages: answer.pageCount,
       pageBytes: answer.pageBytes,
-      fingerprint: stamp(answer.fingerprint) ?? '',
+      fingerprint: answers.stamp(answer.fingerprint) ?? '',
     } satisfies Book
   },
-  readMarkup: async (path, document, seen) => {
-    const answer = await waiting(() =>
+  readMarkup: async (path, document, fingerprint) => {
+    const answer = await answers.retryWhileBusy(() =>
       served.books.readBookMarkup({
         path,
         document,
-        ...(seen === '' ? {} : { seen: fingerprint(seen) }),
+        ...(fingerprint === '' ? {} : { seen: answers.fingerprint(fingerprint) }),
       }),
     )
     return answer.markup
   },
-  getEntryUrl: (path, name, seen) =>
-    `${asset(path)}/${name.split('/').map(encodeURIComponent).join('/')}?${getBytesQuery(seen)}`,
+  getEntryUrl: (path, name, fingerprint) =>
+    `${answers.asset(path)}/${name.split('/').map(encodeURIComponent).join('/')}?${answers.getBytesQuery(fingerprint)}`,
 }
-

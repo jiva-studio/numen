@@ -6,7 +6,7 @@
  * recording it holds moves and asks for the words again.
  */
 import { computed, type Component } from 'vue'
-import type { TranscriptState } from './transcript'
+import type { TranscriptState } from './model/transcript'
 import type { Source } from '@/shared/file'
 import type { Span } from '@/shared/span'
 import type { Task } from '@/shared/notices/task'
@@ -44,24 +44,24 @@ export type MediaTabState = ReturnType<typeof useTranscriptTab>
  * are. None is offered while a run is going, or where this build cannot do it
  * at all.
  */
-export function useTranscriptTab(read: TranscriptState, asks: MediaTabDeps) {
+export function useTranscriptTab(read: TranscriptState, deps: MediaTabDeps) {
   /** Whether this build can do a run. A window that says nothing offers every run. */
-  const canRun = (run: string): boolean => asks.canRun?.(run) ?? true
+  const canRun = (run: string): boolean => deps.canRun?.(run) ?? true
 
   const written = computed(() => read.times.value.length > 0)
 
   // The words of a url are fetched from the address, so nothing here writes
   // them down.
   const transcribable = computed(
-    () => !read.points.value && !written.value && !read.working.value && canRun(TRANSCRIBE),
+    () => !read.points.value && !written.value && !read.isWorking.value && canRun(TRANSCRIBE),
   )
-  const proofreadable = computed(() => written.value && !read.working.value && canRun(PROOFREAD))
-  const deletable = computed(() => written.value && !read.working.value && canRun(DELETE_TEXT))
+  const proofreadable = computed(() => written.value && !read.isWorking.value && canRun(PROOFREAD))
+  const deletable = computed(() => written.value && !read.isWorking.value && canRun(DELETE_TEXT))
 
   const called = fileOf(read.path)
-  const transcribe = () => asks.runs(TRANSCRIBE, read.path, called)
-  const proofread = () => asks.runs(PROOFREAD, read.path, called)
-  const deleteTranscript = () => asks.runs(DELETE_TEXT, read.path, called)
+  const transcribe = () => deps.runs(TRANSCRIBE, read.path, called)
+  const proofread = () => deps.runs(PROOFREAD, read.path, called)
+  const deleteTranscript = () => deps.runs(DELETE_TEXT, read.path, called)
 
   return {
     ...read,
@@ -85,7 +85,7 @@ export interface Medium<K extends string = string> {
   readonly tab: K
   readonly source: Source
   readonly pane: Component
-  register(tabOpeners: FileOpeners, opens: SourceReader): void
+  register(tabOpeners: FileOpeners, reader: SourceReader): void
 }
 
 /**
@@ -94,14 +94,14 @@ export interface Medium<K extends string = string> {
  */
 export function recordingKind<K extends string>(
   handle: WindowHandle,
-  opens: (path: string) => TranscriptState,
-  asks: MediaTabDeps,
+  createState: (path: string) => TranscriptState,
+  deps: MediaTabDeps,
   tabOpeners: FileOpeners,
   as: Medium<K>,
 ) {
   const kind: TabKind<MediaTabState, K> = {
     kind: as.tab,
-    open: (path) => useTranscriptTab(opens(path), asks),
+    open: (path) => useTranscriptTab(createState(path), deps),
     getTitle: (state) => state.called,
     pane: as.pane,
     identity: (path) => path,

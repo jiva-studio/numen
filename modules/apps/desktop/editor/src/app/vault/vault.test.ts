@@ -174,7 +174,7 @@ describe('settings domain', () => {
     expect(await core.setSyncEnabled(false)).toBeNull()
 
     const hung = await core.getHangingSettings()
-    expect(hung.hangs).toBe(true)
+    expect(hung.isHanging).toBe(true)
     expect(hung.parts).toBe(3)
     expect(await core.setHangingSettings(false, 2)).toBeNull()
 

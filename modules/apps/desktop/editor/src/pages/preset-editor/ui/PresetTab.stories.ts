@@ -98,7 +98,7 @@ const createPresetTab = (args: Knobs): PresetTabState => {
     problems: shallowRef([]),
     stopped: ref(StopReason.NOTHING),
     errorMessage: ref(''),
-    changed: ref(false),
+    hasChanged: ref(false),
     again: fn(),
     chooseGoal: fn(),
     moveSlider: (at: number) => {

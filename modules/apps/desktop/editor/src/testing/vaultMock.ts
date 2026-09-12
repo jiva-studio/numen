@@ -1,9 +1,9 @@
 /**
  * The vault the window reaches, answering out of `said` and writing down what
- * it was asked in `asked`.
+ * it was asked in `requests`.
  */
 import { vi } from 'vitest'
-import { asked } from './asked'
+import { requests } from './requests'
 import { folders, getFileKind, held, listed, outside, said } from './answers'
 import type { Tab } from '@/entities/tab'
 
@@ -11,14 +11,14 @@ vi.mock('@/app/vault', () => ({
   vaults: {
     list: async () => listed,
     choose: async () => {
-      asked.chose += 1
+      requests.chose += 1
       return ''
     },
     add: async () => ({ vault: null, error: null }),
     rename: async () => ({ vault: null, error: null }),
     remove: async () => null,
     open: async (id: string) => {
-      asked.opened.push(id)
+      requests.opened.push(id)
       return null
     },
   },
@@ -50,28 +50,28 @@ vi.mock('@/app/vault', () => ({
     read: async () => ({ body: 'what is written', at: 'a1' }),
     write: async () => ({ at: 'a2' }),
     create: async ({ title }: { title: string }) => {
-      asked.made.push(title)
+      requests.made.push(title)
       return { path: `${title}.md`, error: null }
     },
     rename: async (path: string, title: string) => {
-      asked.renamed.push(`${path} ${title}`)
+      requests.renamed.push(`${path} ${title}`)
       return { path, title, by: 'frontmatter', moved: null, error: null }
     },
     remove: async (path: string, destroy?: boolean) => {
-      asked.removed.push(`${path} ${destroy ?? false}`)
+      requests.removed.push(`${path} ${destroy ?? false}`)
       return { trashed: `.trash/${path}`, dangling: [], error: null }
     },
     list: async (folder: string) => folders[folder] ?? [],
     move: async (from: string, to: string) => {
-      asked.moved.push(`${from} ${to}`)
+      requests.moved.push(`${from} ${to}`)
       return { moved: null, error: null }
     },
     createFolder: async (path: string) => {
-      asked.folders.push(path)
+      requests.folders.push(path)
       return null
     },
     createUrl: async (url: string, folder: string) => {
-      asked.urls.push(`${url} ${folder}`)
+      requests.urls.push(`${url} ${folder}`)
       return { path: folder ? `${folder}/made.url` : 'made.url', error: null }
     },
     changes: held,
@@ -79,7 +79,7 @@ vi.mock('@/app/vault', () => ({
     tasks: held,
     focus: outside.stream,
     writeOpenTabs: async (open: { tabs: readonly Tab[]; front: string }) => {
-      asked.openTabs.push(open)
+      requests.openTabs.push(open)
     },
     quitting: held,
     flushed: async () => {},

@@ -2,18 +2,18 @@
 import { describe, expect, it } from 'vitest'
 import type { VaultStencil } from '@/entities/deck'
 import {
-  faceAdded,
-  faceGone,
-  faceNamed,
-  faceWritten,
+  addFace,
+  addField,
   facesOf,
-  fieldAdded,
-  fieldDropped,
-  fieldGone,
+  moveField,
+  removeFace,
+  removeField,
+  renameFace,
   sameStencil,
   stencilBodyOf,
   stencilIn,
   stencilOf,
+  writeFace,
   type BufferStencil,
 } from './stencil'
 
@@ -65,7 +65,7 @@ describe('a stencil as the window holds it', () => {
 
 describe('a field of a stencil', () => {
   it('is added at the end of the order', () => {
-    expect(fieldAdded(stencil(), 'Weight').fields).toStrictEqual([
+    expect(addField(stencil(), 'Weight').fields).toStrictEqual([
       'Height',
       'Life span',
       'Weight',
@@ -73,26 +73,26 @@ describe('a field of a stencil', () => {
   })
 
   it('leaves the braces standing when the stencil no longer names it', () => {
-    const held = fieldGone(stencil(), 'Height')
+    const held = removeField(stencil(), 'Height')
     expect(held.fields).toStrictEqual(['Life span'])
     expect(held.faces[0]?.back).toBe('**Height:** {{Height}}')
   })
 
   it('lands before the field it was let go on', () => {
-    expect(fieldDropped(stencil({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height')
+    expect(moveField(stencil({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height')
       .fields).toStrictEqual(['Name', 'Life span', 'Height'])
   })
 
   it('leaves the first field first, wherever the move came from', () => {
     const held = stencil({ fields: ['Name', 'Height', 'Life span'] })
-    expect(fieldDropped(held, 'Height', 'Name').fields).toStrictEqual(held.fields)
-    expect(fieldDropped(held, 'Name', null).fields).toStrictEqual(held.fields)
+    expect(moveField(held, 'Height', 'Name').fields).toStrictEqual(held.fields)
+    expect(moveField(held, 'Name', null).fields).toStrictEqual(held.fields)
   })
 })
 
 describe('a face of a stencil', () => {
   it('is added at the end, with both its halves empty', () => {
-    const held = faceAdded(stencil(), 'Spell it', () => 'c9')
+    const held = addFace(stencil(), 'Spell it', () => 'c9')
     expect(held.faces[2]).toStrictEqual({
       id: 'c9',
       name: 'Spell it',
@@ -103,15 +103,15 @@ describe('a face of a stencil', () => {
   })
 
   it('takes the name it was given', () => {
-    expect(faceNamed(stencil(), 'c1', 'Spot it').faces[0]?.name).toBe('Spot it')
+    expect(renameFace(stencil(), 'c1', 'Spot it').faces[0]?.name).toBe('Spot it')
   })
 
   it('goes, and the rest stay in the order they were in', () => {
-    expect(faceGone(stencil(), 'c1').faces.map((face) => face.name)).toStrictEqual(['Name it'])
+    expect(removeFace(stencil(), 'c1').faces.map((face) => face.name)).toStrictEqual(['Name it'])
   })
 
   it('takes what was written into one half, and the other stands', () => {
-    const held = faceWritten(stencil(), 'c1', 'front', '{{Height}}')
+    const held = writeFace(stencil(), 'c1', 'front', '{{Height}}')
     expect(held.faces[0]?.front).toBe('{{Height}}')
     expect(held.faces[0]?.back).toBe('**Height:** {{Height}}')
   })

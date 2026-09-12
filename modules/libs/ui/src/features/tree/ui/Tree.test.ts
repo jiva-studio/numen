@@ -586,7 +586,7 @@ describe('a name being typed', () => {
   const fieldIn = (wrapper: Tree) => wrapper.get('.tree__field')
 
   it('stands over the row it belongs to and over no other', () => {
-    const held = mountTree({ renaming: 'notes' })
+    const held = mountTree({ renamingPath: 'notes' })
 
     expect(rowIn(held, 'notes').find('.tree__field').exists()).toBe(true)
     expect(held.findAll('.tree__field')).toHaveLength(1)
@@ -594,31 +594,31 @@ describe('a name being typed', () => {
   })
 
   it('starts as the name the row already carries', () => {
-    expect((fieldIn(mountTree({ renaming: 'notes' })).element as HTMLInputElement).value).toBe(
+    expect((fieldIn(mountTree({ renamingPath: 'notes' })).element as HTMLInputElement).value).toBe(
       'Notes',
     )
   })
 
   it('is committed on Enter', async () => {
-    const held = mountTree({ renaming: 'notes' })
+    const held = mountTree({ renamingPath: 'notes' })
     await fieldIn(held).setValue('Friday notes')
     await fieldIn(held).trigger('keydown', { key: 'Enter' })
 
     expect(held.emitted('rename')).toStrictEqual([['notes', 'Friday notes']])
-    expect(held.emitted('update:renaming')).toStrictEqual([[null]])
+    expect(held.emitted('update:renamingPath')).toStrictEqual([[null]])
   })
 
   it('is abandoned on Escape, and renames nothing', async () => {
-    const held = mountTree({ renaming: 'notes' })
+    const held = mountTree({ renamingPath: 'notes' })
     await fieldIn(held).setValue('Friday notes')
     await fieldIn(held).trigger('keydown', { key: 'Escape' })
 
     expect(held.emitted('rename')).toBeUndefined()
-    expect(held.emitted('update:renaming')).toStrictEqual([[null]])
+    expect(held.emitted('update:renamingPath')).toStrictEqual([[null]])
   })
 
   it('keeps the arrows to itself while it is being typed in', async () => {
-    const held = mountTree({ renaming: 'notes', selected: ['notes'] })
+    const held = mountTree({ renamingPath: 'notes', selected: ['notes'] })
     await fieldIn(held).trigger('keydown', { key: 'ArrowDown' })
 
     expect(held.emitted('select')).toBeUndefined()

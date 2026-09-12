@@ -22,9 +22,9 @@ export interface DragDeps<At extends InsertionPoint | undefined> {
   /** Where a landing stands while the pointer is over nothing that takes one. */
   readonly nowhere: At
   /** Whether letting the thing dragged go there moves it. */
-  readonly doesMove: (dragged: string, at: InsertionPoint) => boolean
+  readonly isMoved: (dragged: string, at: InsertionPoint) => boolean
   /** What a landing that is allowed comes to. */
-  readonly moves: (dragged: string, at: InsertionPoint) => void
+  readonly move: (dragged: string, at: InsertionPoint) => void
 }
 
 /** What a drag answers: what is being dragged, where it would land, and the gestures. */
@@ -72,14 +72,14 @@ export function useDrag<At extends InsertionPoint | undefined>(
     const lands = at.value
     release()
     if (held === null || lands === undefined) return
-    if (drag.doesMove(held, lands)) drag.moves(held, lands)
+    if (drag.isMoved(held, lands)) drag.move(held, lands)
   }
 
   const step = (what: string, direction: StepDirection, press: KeyboardEvent): void => {
     const lands = getStepLanding(drag.order(), what, direction)
-    if (lands === undefined || !drag.doesMove(what, lands)) return
+    if (lands === undefined || !drag.isMoved(what, lands)) return
     press.preventDefault()
-    drag.moves(what, lands)
+    drag.move(what, lands)
   }
 
   return { dragged, at, lift, over, release, drop, step }

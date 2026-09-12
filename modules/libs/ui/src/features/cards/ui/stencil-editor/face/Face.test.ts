@@ -247,12 +247,12 @@ describe('Face, what is wrong with it', () => {
   it('says a stray slot over the markup naming it, and nowhere else', () => {
     const held = mountFace(faceOf({ id: 'one', name: 'One', front: '{{Name}}', back: '{{Colour}}' }))
 
-    expect(held.get('[data-pane="back-written"] .face__objects').text()).toBe(
+    expect(held.get('[data-pane="back-written"] .face__objections').text()).toBe(
       'Not a field: Colour',
     )
-    expect(held.find('[data-pane="back-preview"] .face__objects').exists()).toBe(false)
-    expect(held.find('[data-pane="front-written"] .face__objects').exists()).toBe(false)
-    expect(held.find('header .face__objects').exists()).toBe(false)
+    expect(held.find('[data-pane="back-preview"] .face__objections').exists()).toBe(false)
+    expect(held.find('[data-pane="front-written"] .face__objections').exists()).toBe(false)
+    expect(held.find('header .face__objections').exists()).toBe(false)
   })
 
   it('marks a stray slot in the preview where the slot itself stands', () => {
@@ -266,7 +266,7 @@ describe('Face, what is wrong with it', () => {
   })
 
   it('says nothing stray of a face naming only fields that are declared', () => {
-    expect(mountFace().find('.face__objects').exists()).toBe(false)
+    expect(mountFace().find('.face__objections').exists()).toBe(false)
   })
 
   it('says what the caller found wrong beside the name it is wrong about', () => {
@@ -280,11 +280,11 @@ describe('Face, what is wrong with it', () => {
     const held = mountFace(faceOf({ id: 'one', name: 'One', front: '{{Colour}}', back: '' }), {
       wrong: ['this face has no back'],
     })
-    expect(held.find('.face__head .face__objects').exists()).toBe(false)
-    expect(held.get('header .face__amiss').findAll('.face__objects')).toHaveLength(1)
+    expect(held.find('.face__head .face__objections').exists()).toBe(false)
+    expect(held.get('header .face__amiss').findAll('.face__objections')).toHaveLength(1)
 
     const stray = held.get('[data-pane="front-written"] .face__amiss')
-    expect(stray.findAll('.face__objects')).toHaveLength(1)
+    expect(stray.findAll('.face__objections')).toHaveLength(1)
   })
 
   it('says a line for each of them', () => {
@@ -346,7 +346,7 @@ describe('Face, its name', () => {
     const held = mountFace({ ...faceOf(FACE), taken: ['Recall'] })
     await type(held, 'Recall')
 
-    const said = held.get('header .face__objects')
+    const said = held.get('header .face__objections')
     expect(said.text()).toBe('That name is taken')
     expect(nameOf(held).attributes('aria-invalid')).toBe('true')
     expect(nameOf(held).attributes('aria-describedby')).toBe(said.attributes('id'))
@@ -354,7 +354,7 @@ describe('Face, its name', () => {
 
   it('says nothing about a name nothing is being typed over', () => {
     const held = mountFace()
-    expect(held.find('header .face__objects').exists()).toBe(false)
+    expect(held.find('header .face__objections').exists()).toBe(false)
     expect(nameOf(held).attributes('aria-invalid')).toBeUndefined()
   })
 
@@ -369,7 +369,7 @@ describe('Face, its name', () => {
     it('is said nothing about while it is being typed', async () => {
       const held = mountFace()
       await type(held, 'What {{Name}} is')
-      expect(held.find('header .face__objects').exists()).toBe(false)
+      expect(held.find('header .face__objections').exists()).toBe(false)
       expect(nameOf(held).attributes('aria-invalid')).toBeUndefined()
     })
   })

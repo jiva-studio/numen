@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// A voice is a recording made of stretches given in advance, and the model that
-// hears them. It counts the stretches it was handed, so a test can say that a
+// A voice is a recording made of spans given in advance, and the model that
+// hears them. It counts the spans it was handed, so a test can say that a
 // run taken up again did not hear one twice.
 type voice struct {
 	words []string
@@ -25,13 +25,13 @@ type voice struct {
 	refuse error
 
 	opens int
-	heard []int // the millisecond each stretch handed over began at
+	heard []int // the millisecond each span handed over began at
 	stop  func(int)
 }
 
-// stretch is where the words spoken n-th sit in the recording. Every stretch is
+// getSpan is where the words spoken n-th sit in the recording. Every span is
 // a second long with a fifth of a second of silence after it.
-func stretch(n int) port.Audio {
+func getSpan(n int) port.Audio {
 	return port.Audio{From: n * 1000, To: n*1000 + 800}
 }
 
@@ -68,7 +68,7 @@ func (p played) Length() int { return len(p.words) * 1000 }
 func (p played) Segments(_ context.Context, from, count int) ([]port.Audio, error) {
 	var out []port.Audio
 	for n := range p.words {
-		if at := stretch(n); at.From >= from {
+		if at := getSpan(n); at.From >= from {
 			out = append(out, at)
 			if len(out) == count {
 				break
@@ -130,7 +130,7 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	if res.Length != 3000 {
 		t.Errorf("the recording is %d ms long", res.Length)
 	}
-	if res.Heard != stretch(2).To {
+	if res.Heard != getSpan(2).To {
 		t.Errorf("heard %d ms of it", res.Heard)
 	}
 	if res.Silent || res.Unopened || res.Busy {
@@ -184,7 +184,7 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Resumed != stretch(0).To {
+	if res.Resumed != getSpan(0).To {
 		t.Errorf("the second run began at %d ms", res.Resumed)
 	}
 

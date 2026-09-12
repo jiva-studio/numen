@@ -22,9 +22,9 @@ export function useStencilTabs(
   cards: Cards,
   handle: WindowHandle,
   tabOpeners: FileOpeners,
-  says: MessageWriter = () => {},
+  writeMessage: MessageWriter = () => {},
 ) {
-  const wire = createStencilWire(cards, says)
+  const wire = createStencilWire(cards, writeMessage)
 
   const store = openNotes({
     read: wire.read,
@@ -34,17 +34,17 @@ export function useStencilTabs(
   const fields = createStencilFields(
     (id) => store.getOpenNote(id).body,
     (id, body) => store.setBody(id, body),
-    (id) => wire.getProblems(store.where(id)),
-    (id, field, name) => void wire.renameField(store.where(id), field, name, store.changed),
+    (id) => wire.getProblems(store.getPath(id)),
+    (id, field, name) => void wire.renameField(store.getPath(id), field, name, store.changed),
   )
 
   const createStencilTabState = (id: string): StencilTabState => {
     const closeTab = (tab: string) => {
-      const path = store.where(id)
-      void store.shut(id).then((gone) => {
+      const path = store.getPath(id)
+      void store.close(id).then((gone) => {
         if (!gone) return
         fields.forget(id)
-        wire.forget(path, store.all().some((one) => store.where(one) === path))
+        wire.forget(path, store.getOpenIds().some((one) => store.getPath(one) === path))
         handle.closeTab(tab)
       })
     }
@@ -54,7 +54,7 @@ export function useStencilTabs(
       note: computed(() => store.getOpenNote(id)),
       stencil: computed(() => fields.getStencil(id)),
       marks: computed(() => fields.getMarks(id)),
-      errorMessage: computed(() => wire.getErrorMessage(store.where(id), store.getOpenNote(id).error)),
+      errorMessage: computed(() => wire.getErrorMessage(store.getPath(id), store.getOpenNote(id).error)),
       ...fields.actionsFor(id),
       keepMine: () => store.keep(id),
       takeFile: () => store.take(id),
@@ -73,17 +73,17 @@ export function useStencilTabs(
 
   /** The stencils, as a command reaches the ones the window has open. */
   const kept: Store = {
-    has: (id) => store.all().includes(id),
-    where: (id) => store.where(id),
-    getTitle: (id) => getTitle(store.where(id)),
+    has: (id) => store.getOpenIds().includes(id),
+    where: (id) => store.getPath(id),
+    getTitle: (id) => getTitle(store.getPath(id)),
     asking: (id) => store.stale(id) !== null,
-    settle: (id) => store.settles(id),
+    settle: (id) => store.settle(id),
     close: closeTab,
-    holding: (path) => store.all().find((id) => store.where(id) === path) ?? null,
+    holding: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,
   }
 
   const tabbed = computed<ReadonlyMap<string, string>>(
-    () => new Map(store.all().map((one) => [store.where(one), one])),
+    () => new Map(store.getOpenIds().map((one) => [store.getPath(one), one])),
   )
 
   const pendingTabIds = new Map<string, string>()
@@ -107,7 +107,7 @@ export function useStencilTabs(
       pendingTabPaths.delete(id)
       return createStencilTabState(id)
     },
-    getTitle: (one) => getTitle(store.where(one.id)),
+    getTitle: (one) => getTitle(store.getPath(one.id)),
     getMark: (one) => markOf(one.note.value.state),
     pane: StencilTab,
     identity: (id) => id,
@@ -121,7 +121,7 @@ export function useStencilTabs(
   const openStencil = (path: string, title = '', how: PlexDestination = 'here'): void => {
     const id = getOrCreateTabId(path)
     if (title) wire.setTitle(path, title)
-    void (how === 'beside' ? handle.beside(STENCIL, id) : handle.openTab(STENCIL, id))
+    void (how === 'beside' ? handle.openTabBeside(STENCIL, id) : handle.openTab(STENCIL, id))
   }
 
   tabOpeners.registerEditor('stencil', openStencil)
@@ -137,7 +137,7 @@ export function useStencilTabs(
     changed: applyPathChanges,
     getTitle,
     kept,
-    all: store.all,
+    getOpenIds: store.getOpenIds,
     getOpenNote: store.getOpenNote,
     keep: store.keep,
     take: store.take,

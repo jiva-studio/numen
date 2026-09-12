@@ -267,17 +267,17 @@ describe('counting what every vault owes', () => {
   })
 
   it('says what went wrong and stops counting', async () => {
-    const trouble: unknown[] = []
+    const errors: unknown[] = []
     const cards: CardsDueClient = {
       watchCardsDue: async function* (): AsyncGenerator<DueCounts> {
         throw new Error('no registry')
       },
     }
-    const one = useReviewCounter({ cards, reportError: (why) => trouble.push(why) })
+    const one = useReviewCounter({ cards, reportError: (why) => errors.push(why) })
 
     await one.count()
 
-    expect(trouble).toHaveLength(1)
+    expect(errors).toHaveLength(1)
     expect(one.counting.value).toBe(false)
     expect(one.vaults.value).toHaveLength(0)
   })
@@ -285,9 +285,9 @@ describe('counting what every vault owes', () => {
   // A person who has chosen their vault, or closed the window, is not waiting
   // for the rest of the counts and is not told that they stopped.
   it('stops the count without calling it a failure', async () => {
-    const trouble: unknown[] = []
+    const errors: unknown[] = []
     const front = createFeed()
-    const one = useReviewCounter({ cards: front.cards, reportError: (why) => trouble.push(why) })
+    const one = useReviewCounter({ cards: front.cards, reportError: (why) => errors.push(why) })
 
     const asked = one.count()
     front.sendCount(createVaultList(vault('01A'), vault('01B')))
@@ -295,7 +295,7 @@ describe('counting what every vault owes', () => {
     one.stop()
     await asked
 
-    expect(trouble).toHaveLength(0)
+    expect(errors).toHaveLength(0)
     expect(one.counting.value).toBe(false)
     expect(one.vaults.value).toHaveLength(2)
   })

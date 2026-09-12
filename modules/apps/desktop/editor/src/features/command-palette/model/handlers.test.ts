@@ -7,9 +7,11 @@
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { commandsOf } from '../lib/commands'
-import { runSupport } from '../runs'
-import { invocationOf, type CommandInvocation, type CommandTarget } from '../target'
-import { createNotes, type CommandDeps, type Store } from '../deps'
+import { runSupport } from './runs'
+import { invocationOf } from '../lib/invocation'
+import { createNotes } from '../lib/notes'
+import type { CommandDeps } from './deps'
+import type { CommandInvocation, CommandTarget, Store } from '../types'
 import { runInvocation } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/shared/artifacts'
 import type { Movement } from '@/shared/file'
@@ -231,7 +233,7 @@ const window = (
     },
     runSupport: runs,
     copies: (path) => void done.push(`copies ${path}`),
-    says: (text, kind) => {
+    writeMessage: (text, kind) => {
       if (!text) return
       said.push(text)
       tones.push(kind ?? '')
@@ -808,7 +810,7 @@ describe('a folder made', () => {
   it('is asked of the vault under the path it goes at', async () => {
     const one = window()
 
-    await carry(invocationOf('makeFolder', front(), 'physics/heat'), one.on)
+    await carry(invocationOf('createFolder', front(), 'physics/heat'), one.on)
 
     expect(one.done).toStrictEqual(['createFolder physics/heat'])
   })
@@ -816,7 +818,7 @@ describe('a folder made', () => {
   it('is not made where something of that name is filed there', async () => {
     const one = window({ folderError: 'occupied' })
 
-    await carry(invocationOf('makeFolder', front(), 'physics/heat'), one.on)
+    await carry(invocationOf('createFolder', front(), 'physics/heat'), one.on)
 
     expect(one.said).toStrictEqual([words.occupied])
   })
@@ -824,7 +826,7 @@ describe('a folder made', () => {
   it('asks the vault for nothing where no path was given', async () => {
     const one = window()
 
-    await carry(invocationOf('makeFolder', front()), one.on)
+    await carry(invocationOf('createFolder', front()), one.on)
 
     expect(one.done).toStrictEqual([])
   })

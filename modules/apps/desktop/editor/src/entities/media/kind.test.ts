@@ -7,17 +7,17 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { recordingKind, type MediaTabState, type Medium } from './kind'
-import type { TranscriptState } from './transcript'
-import { fileOpeners } from '@/entities/tab/openers'
-import { useWindowTabs } from '@/entities/tab/windowTabs'
-import { RECORDING } from '@/entities/tab/workspace'
+import type { TranscriptState } from './model/transcript'
+import { fileOpeners } from '@/entities/tab/model/openers'
+import { useWindowTabs } from '@/entities/tab/model/windowTabs'
+import { RECORDING } from '@/entities/tab/lib/workspace'
 
 /** A medium drawn by nothing, which is as much of one as a kind is asked for. */
 const played: Medium = {
   tab: RECORDING,
   source: 'recording',
   pane: {},
-  register: (puts, opens) => puts.registerReader({ kind: played.source }, opens),
+  register: (puts, read) => puts.registerReader({ kind: played.source }, read),
 }
 
 /** A recording open in a tab, as far as the window reads one. */

@@ -12,7 +12,7 @@ import { onNextFrame } from '@/shared/lib/clock'
 import { createAnswer, type Paint } from './answer'
 import { createWorkLine } from './work'
 import type { Turn } from '../lib/turn'
-import type { AgentPort, Place } from '../lib/agent'
+import type { AgentPort, SourceLocation } from '../lib/agent'
 
 /** The words the panel puts up itself. */
 export interface ConversationStrings {
@@ -29,8 +29,8 @@ export interface Conversation {
   /** An answer is being written; the composer shows it. */
   readonly working: Ref<boolean>
   readonly ask: (question: string, focus: string) => Promise<void>
-  /** The place of a source one line names, for a line that says it opens one. */
-  readonly place: (turn: string) => Place | null
+  /** Where in a source one line was working, for a line that says it opens one. */
+  readonly getSourceLocation: (turn: string) => SourceLocation | null
   /** The answer on its way is let go of, and the conversation keeps what arrived. */
   readonly stop: () => void
   /**
@@ -50,8 +50,8 @@ export function useConversation(
   const turns = ref<Turn[]>([])
   const working = ref(false)
 
-  /** The place of a source each line about work names, under the line's name. */
-  const places = new Map<string, Place>()
+  /** Where in a source each line about work was working, under the line's name. */
+  const locations = new Map<string, SourceLocation>()
 
   let next = 0
   let inFlight: AbortController | null = null
@@ -83,7 +83,7 @@ export function useConversation(
     // The line for the work, up before anything comes back, and the line for
     // the wait under it. A question is in hand from the moment it is sent, and
     // the screen says so for every moment of it.
-    const work = createWorkLine(put, drop, places, words.thinking, `${next++}`, `${next++}`)
+    const work = createWorkLine(put, drop, locations, words.thinking, `${next++}`, `${next++}`)
 
     clear = work.clear
     work.setWaiting(true)
@@ -198,7 +198,7 @@ export function useConversation(
     turns,
     working,
     ask,
-    place: (turn: string) => places.get(turn) ?? null,
+    getSourceLocation: (turn: string) => locations.get(turn) ?? null,
     stop,
     finish,
   }

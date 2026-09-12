@@ -23,8 +23,8 @@ const props = withDefaults(
     picture?: string
     /** What is highlighted on it, in fractions of it. */
     highlights?: readonly Rect[]
-    /** The other places on it, each of them somewhere else to look. */
-    also?: readonly Rect[]
+    /** The other places named on it, apart from the one opened at. */
+    otherHighlights?: readonly Rect[]
     /** What the page is called, for whoever cannot see it. */
     page?: string
     /** What is said where it would not come. */
@@ -33,7 +33,7 @@ const props = withDefaults(
   {
     picture: '',
     highlights: () => [],
-    also: () => [],
+    otherHighlights: () => [],
     page: 'Page',
     undrawn: 'This page would not come.',
   },
@@ -95,9 +95,9 @@ const boxOf = (one: Rect) => ({
     </div>
     <template v-if="arrived">
       <div
-        v-for="(one, index) in also"
-        :key="`also-${index}`"
-        class="reader__also pointer-events-none absolute rounded-tight bg-(--numen-highlight)"
+        v-for="(one, index) in otherHighlights"
+        :key="`other-highlight-${index}`"
+        class="reader__other-highlight pointer-events-none absolute rounded-tight bg-(--numen-highlight)"
         :style="boxOf(one)"
       />
       <div
@@ -120,7 +120,7 @@ const boxOf = (one: Rect) => ({
 
 /* A place the person was not sent to is drawn faintly: it says there is
    something here, and the place they were sent to is the one drawn full. */
-.reader__also {
+.reader__other-highlight {
   opacity: 0.35;
 }
 

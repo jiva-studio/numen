@@ -102,14 +102,14 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
       <!-- A card is waiting for a stencil only where it names one. -->
       <ErrorMessage
         v-if="!tile.known && tile.stencil !== null"
-        class="card__objects"
+        class="card__objections"
         role="alert"
         :said="words.unknown(tile.stencil)"
       />
 
       <ErrorMessage
         v-if="wrong.length"
-        class="card__objects"
+        class="card__objections"
         data-wrong
         :said="wrong"
         :label="words.wrong"
@@ -147,7 +147,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
 
         <ErrorMessage
           v-if="wrongIn(value).length"
-          class="card__objects"
+          class="card__objections"
           :data-wrong-value="value.field"
           :said="wrongIn(value)"
           :label="words.wrong"
@@ -206,7 +206,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
 
 /* Everything the body holds stands over one edge: what is wrong with the card,
    what each value is called, and the value itself. */
-.card__objects,
+.card__objections,
 .card__wrote {
   margin: 0;
   padding-inline: var(--box-pad-inline);

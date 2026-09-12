@@ -54,8 +54,8 @@ func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Refused) != 0 {
-		t.Fatalf("files were refused: %v", brought.Refused)
+	if len(brought.Errors) != 0 {
+		t.Fatalf("files stayed outside: %v", brought.Errors)
 	}
 
 	if body := arrived(t, v.Path, "physics/Cover.png"); body != "PNG" {
@@ -89,8 +89,8 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Refused) != 0 {
-		t.Fatalf("files were refused: %v", brought.Refused)
+	if len(brought.Errors) != 0 {
+		t.Fatalf("files stayed outside: %v", brought.Errors)
 	}
 	// Four files, and the folder itself with the three under it.
 	if len(brought.Landed) != 8 {
@@ -122,11 +122,11 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(brought.Refused) != 1 || brought.Refused[0].Name != "Cover.png" {
-		t.Fatalf("what was refused: %v", brought.Refused)
+	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Cover.png" {
+		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
-	if !errors.Is(brought.Refused[0].Why, port.ErrOccupied) {
-		t.Errorf("the refusal: want ErrOccupied, got %v", brought.Refused[0].Why)
+	if !errors.Is(brought.Errors[0].Why, port.ErrOccupied) {
+		t.Errorf("the error: want ErrOccupied, got %v", brought.Errors[0].Why)
 	}
 	if body := arrived(t, v.Path, "Cover.png"); body != "MINE" {
 		t.Errorf("the file that was there was replaced with %q", body)
@@ -147,8 +147,8 @@ func TestAFolderHoldingTheVaultIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Refused) != 1 {
-		t.Fatalf("what was refused: %v", brought.Refused)
+	if len(brought.Errors) != 1 {
+		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
 	if len(brought.Landed) != 0 {
 		t.Errorf("%d files landed", len(brought.Landed))

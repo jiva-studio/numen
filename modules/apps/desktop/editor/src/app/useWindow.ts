@@ -27,7 +27,7 @@ import { useAppBootstrap } from './useAppBootstrap'
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
   const log = messageLog()
-  const told = log.under('command')
+  const writeMessage = log.under('command')
   const held = useWindowTabs()
   const { layout } = held
   const tabOpeners = fileOpeners(core)
@@ -43,19 +43,19 @@ export const useWindow = () => {
   })
 
   const window = useWindowDisplay(core, {
-    told: async (paths, renamed) => {
+    onVaultChanged: async (paths, renamed) => {
       editing.notes.changed(paths, renamed)
       editing.decks.changed(paths, renamed)
       editing.stencils.changed(paths, renamed)
       editing.schedules.changed(paths, renamed)
       commandsModule.commands.applyRenames(renamed)
       await kinds.files.refreshChangedPaths(paths, renamed)
-      await kinds.plexes.again(renamed)
+      await kinds.plexes.refresh(renamed)
     },
-    drawing: editing.changes.reportChange,
-    wanted: (path) => kinds.plexes.travel(path),
-    reads: (path, spans) => void tabOpeners.openFileAt(path, spans),
-    reloads: () => vaultsModule.reload(),
+    reportChange: editing.changes.reportChange,
+    travelTo: (path) => kinds.plexes.travel(path),
+    openFileAt: (path, spans) => void tabOpeners.openFileAt(path, spans),
+    reload: () => vaultsModule.reload(),
   })
 
   const settings = useSettings({
@@ -72,7 +72,7 @@ export const useWindow = () => {
     log,
     chunks: window.chunks,
     embedded: window.embedded,
-    embedding: window.embedding,
+    isEmbedding: window.isEmbedding,
   })
 
   const notices = useWindowNotices({
@@ -82,7 +82,7 @@ export const useWindow = () => {
     vaults: vaultsModule,
   })
 
-  const where = (): CommandTarget => {
+  const getTarget = (): CommandTarget => {
     const front = held.handle.front()
     const tab = front?.id ?? ''
     const on = front && held.getTab(tab)?.kind.over?.(front.state)
@@ -103,7 +103,7 @@ export const useWindow = () => {
   // The file in front decides what is offered over it, so what it carries is
   // asked for as it arrives.
   watch(
-    () => where().file,
+    () => getTarget().file,
     (file) => void vaultsModule.loadArtifactStates(file),
     { immediate: true },
   )
@@ -121,9 +121,9 @@ export const useWindow = () => {
     settings,
     vaults: vaultsModule,
     window,
-    where,
+    getTarget,
     runCommand,
-    doing: () => commandsModule.doing,
+    commandDeps: () => commandsModule.commandDeps,
   })
 
   const knows: NoteLookup = {
@@ -136,12 +136,12 @@ export const useWindow = () => {
 
   const openTabs = useOpenTabs({ core, held })
 
-  const opensPreset = async (path: string): Promise<void> => {
+  const openPreset = async (path: string): Promise<void> => {
     const kind = (await core.fileKinds([path])).get(path)
     if (kind?.type !== 'deck') return editing.schedules.openPreset(path)
     const answer = await presets.scheduling(path)
-    if (answer.error) return told(words.errors[answer.error], 'error')
-    if (!answer.preset?.path) return told(words.noPreset, 'caution')
+    if (answer.error) return writeMessage(words.errors[answer.error], 'error')
+    if (!answer.preset?.path) return writeMessage(words.noPreset, 'caution')
     editing.schedules.openPreset(answer.preset.path, answer.preset.title)
   }
 
@@ -150,7 +150,7 @@ export const useWindow = () => {
     words,
     log,
     held,
-    where,
+    getTarget,
     knows,
     kept: settings.kept,
     runs,
@@ -158,10 +158,10 @@ export const useWindow = () => {
     making: editing.making,
     made: kinds.made,
     shown: vaultsModule.shown,
-    reloads: vaultsModule.reload,
+    reload: vaultsModule.reload,
     loadArtifactStates: vaultsModule.loadArtifactStates,
     reached: editing.reached,
-    opensPreset,
+    openPreset,
     dressed: settings.dressed,
     oneName: settings.oneName,
     hungParts: settings.hungParts,
@@ -171,11 +171,11 @@ export const useWindow = () => {
     plexes: () => kinds.plexes,
     agents: () => kinds.agents,
     opening: () => window.opening.value,
-    told,
+    writeMessage,
   })
 
-  const shut = (id: string, hold?: () => void) => {
-    if (!held.shut(id)) hold?.()
+  const closeTab = (id: string, hold?: () => void) => {
+    if (!held.releaseTab(id)) hold?.()
   }
 
   const startLayout = async () => {
@@ -186,14 +186,14 @@ export const useWindow = () => {
     layout.value = createWorkspace(plex, talk, tree)
   }
 
-  useAppHotkeys(commandsModule.asked)
+  useAppHotkeys(commandsModule.onKeyDown)
 
   useAppBootstrap({
     loadVaults: () => vaultsModule.loadVaults(),
     startSettings: () => settings.start(),
     startLayout,
     startWindow: () => window.start(),
-    startEditing: () => void editing.going.start(),
+    startEditing: () => void editing.fileFlush.start(),
     closeWindow: () => window.close(),
     closeEditing: () => editing.close(),
     closeTabs: () => held.close(),
@@ -203,19 +203,19 @@ export const useWindow = () => {
   return {
     runCommand,
     commands: commandsModule.commands,
-    doing: commandsModule.doing,
+    commandDeps: commandsModule.commandDeps,
     failure: window.failure,
-    going: editing.going,
+    fileFlush: editing.fileFlush,
     held,
     layout,
     listed: vaultsModule.listed,
     log,
     notices,
     palette: commandsModule.palette,
-    places: kinds.places,
-    shut,
+    destinations: kinds.destinations,
+    closeTab,
     tabIcon: openTabs.tabIcon,
     getTitle: editing.getTitle,
-    where,
+    getTarget,
   }
 }

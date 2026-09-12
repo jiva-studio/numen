@@ -386,8 +386,8 @@ export const NoStencil: Story = {
     const body = found(canvasElement, '.card__body')
     const clearance = Number.parseFloat(getComputedStyle(body).paddingInlineStart)
     const stroke = Number.parseFloat(getComputedStyle(tile).borderInlineStartWidth)
-    const objects = found(canvasElement, '.card__objects').getBoundingClientRect()
-    expect(Math.round(objects.left)).toBe(
+    const objections = found(canvasElement, '.card__objections').getBoundingClientRect()
+    expect(Math.round(objections.left)).toBe(
       Math.round(tile.getBoundingClientRect().left + stroke + clearance),
     )
 
@@ -419,7 +419,7 @@ export const CutByNothing: Story = {
     expect(getComputedStyle(cut).color).toBe(getComputedStyle(label).color)
 
     // It is said once: the body carries what the vault found and nothing else.
-    const said = [...tile.querySelectorAll('.card__objects')]
+    const said = [...tile.querySelectorAll('.card__objections')]
     expect(said).toHaveLength(1)
     expect(said[0]?.textContent).toContain('not a lone wikilink')
     expect(getComputedStyle(cut).color).not.toBe(getComputedStyle(said[0] as Element).color)

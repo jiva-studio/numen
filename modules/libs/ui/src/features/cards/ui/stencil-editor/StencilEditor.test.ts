@@ -166,11 +166,11 @@ describe('Stencil, the fields', () => {
   it('says why a name typed cannot be used, while it is being typed', async () => {
     const held = mountStencil()
     await type(held, 'Height', 'Weight')
-    expect(rowFor(held, 'Height').get('.stencil__objects').text()).toBe('That name is taken')
+    expect(rowFor(held, 'Height').get('.stencil__objections').text()).toBe('That name is taken')
 
     // The line belongs to the row, and the box says what is wrong with it to a
     // reader.
-    expect(rowFor(held, 'Height').get('.stencil__row').attributes('data-objects')).toBe('taken')
+    expect(rowFor(held, 'Height').get('.stencil__row').attributes('data-objections')).toBe('taken')
     expect(boxIn(held, 'Height').attributes('aria-invalid')).toBe('true')
   })
 
@@ -196,7 +196,7 @@ describe('Stencil, the fields', () => {
 
   it('says nothing about a name nothing is being typed over', () => {
     const held = mountStencil()
-    expect(held.find('.stencil__field .stencil__objects').exists()).toBe(false)
+    expect(held.find('.stencil__field .stencil__objections').exists()).toBe(false)
   })
 
   it('renames nothing where the name typed is the one it already carries', async () => {
@@ -287,7 +287,7 @@ describe('Stencil, the fields', () => {
     const held = mountStencil()
     await type(held, 'Height', 'Weight')
 
-    const said = rowFor(held, 'Height').get('.stencil__objects')
+    const said = rowFor(held, 'Height').get('.stencil__objections')
     expect(boxIn(held, 'Height').attributes('aria-describedby')).toBe(said.attributes('id'))
     expect(said.attributes('id')).toBeTruthy()
   })

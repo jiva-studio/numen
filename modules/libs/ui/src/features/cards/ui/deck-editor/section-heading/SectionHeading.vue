@@ -15,7 +15,7 @@ import { Divider } from '../../divider'
 import { useNaming } from '../../../model/naming'
 import { DECK_WORDS, type DeckWords } from '../../../lib/deck'
 import type { PlacedSection } from '../../../lib/grid'
-import { heading, type HeadingObjection } from '../../../lib/order'
+import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
 
 const props = withDefaults(
   defineProps<{
@@ -35,24 +35,24 @@ const emit = defineEmits<{
 /** What this heading's objection is named by, which is this heading's alone. */
 const uid = useId()
 
-const objectsId = `${uid}-objects`
+const objectionsId = `${uid}-objections`
 
 /** A name typed over the one this section carries, until it is committed. */
 const naming = useNaming<HeadingObjection>({
-  carries: () => props.section.name,
-  taken: () => [],
-  amiss: heading,
-  renamed: (_over, name) => emit('rename', name),
+  getName: () => props.section.name,
+  getTakenNames: () => [],
+  checkName: checkHeadingName,
+  rename: (_over, name) => emit('rename', name),
 })
 
 /** What is in the box: the name it carries, or what is being typed over it. */
 const text = computed(() => naming.text(props.section.id))
 
 /** Why what is in the box cannot be used, and nothing while it can. */
-const objects = computed(() => naming.objection(props.section.id))
+const objections = computed(() => naming.objection(props.section.id))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
-const says = computed(() => (objects.value === null ? null : props.words.sectionObjection))
+const says = computed(() => (objections.value === null ? null : props.words.sectionObjection))
 
 /**
  * What the section is announced by. A section's name is a person's own text and
@@ -75,7 +75,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
             :naming="naming"
             :over="section.id"
             :stem="stem"
-            :described-by="says ? objectsId : null"
+            :described-by="says ? objectionsId : null"
           />
         </span>
 
@@ -87,8 +87,8 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
 
     <ErrorMessage
       v-if="says"
-      :id="objectsId"
-      class="section-heading__objects"
+      :id="objectionsId"
+      class="section-heading__objections"
       role="alert"
       :said="says"
     />
@@ -171,7 +171,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
 }
 
 /* What is wrong stands under the rule it is wrong about. */
-.section-heading__objects {
+.section-heading__objections {
   margin: 0;
   padding-inline: 0.375rem;
   overflow-wrap: anywhere;

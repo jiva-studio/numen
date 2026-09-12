@@ -50,9 +50,9 @@ Neither side hand-writes a type the schema already describes, so a field renamed
 
 The schema carries questions and their answers. It is not a second model of the vault. What the person wrote and what the application worked out do not arrive looking alike.
 
-### A status code says the call could not be answered; a refusal is an answer
+### A status code says the call could not be answered; an error code is an answer
 
-A status code is for a call that did not happen: nothing serves it, the window is going, the request is not a request. **A refusal is a successful call whose answer is no** — a name taken, a file that moved past the caller, a vault the list does not hold — and it rides in the response as a value of a closed enum, with the field that would have carried the answer absent.
+A status code is for a call that did not happen: nothing serves it, the window is going, the request is not a request. **An `ErrorCode` is a successful call whose answer is no** — a name taken, a file that moved past the caller, a vault the list does not hold — and it rides in the response as a value of a closed enum, with the field that would have carried the answer absent.
 
 A client that must read a status code to tell one outcome from the other has two paths to one answer, and the one it takes depends on what the transport did on the way.
 
@@ -74,7 +74,7 @@ Lint on every change, a breaking-change check against the branch being merged in
 
 ### Where the lint and Google's guidance disagree, the lint wins
 
-Buf's standard rules want a request and a response message of its own for every call, named after the call. Google's API guidance wants a read to answer with the resource itself and no wrapper around it. The two cannot both be followed, and this schema follows the lint: a rule a machine checks on every change is worth more here than one a reader has to remember, and the wrapper is what lets a call answer a refusal beside the thing that was asked for.
+Buf's standard rules want a request and a response message of its own for every call, named after the call. Google's API guidance wants a read to answer with the resource itself and no wrapper around it. The two cannot both be followed, and this schema follows the lint: a rule a machine checks on every change is worth more here than one a reader has to remember, and the wrapper is what lets a call answer an error code beside the thing that was asked for.
 
 ### No field changes name at this boundary
 

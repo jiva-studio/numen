@@ -211,7 +211,7 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				}, nil
 			},
 
-			Search: func(ctx context.Context, trouble port.Trouble) (cli.Search, error) {
+			Search: func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
 				db, err := cfg.OpenIndex(ctx)
 				if err != nil {
 					return cli.Search{}, err
@@ -220,7 +220,7 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				// search does fills an index.
 				asking, closeAsking, why := cfg.Asking(ctx)
 				return cli.Search{
-					Search: cfg.Searching(db, asking, trouble),
+					Search: cfg.Searching(db, asking, errorHandler),
 					Words:  why,
 					Close: func() error {
 						if closeAsking != nil {

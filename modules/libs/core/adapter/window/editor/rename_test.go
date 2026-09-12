@@ -562,21 +562,21 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 	}
 }
 
-// overtaking is the vault's writers, with the write refused the way one is when
-// something outside this process wrote the file in the meantime.
-type overtaking struct{ port.VaultWriters }
+// staleWriters is the vault's writers, with the write refused the way one is
+// when something outside this process wrote the file in the meantime.
+type staleWriters struct{ port.VaultWriters }
 
-func (o overtaking) Open(v domain.Vault) (port.VaultWriter, error) {
+func (o staleWriters) Open(v domain.Vault) (port.VaultWriter, error) {
 	writer, err := o.VaultWriters.Open(v)
 	if err != nil {
 		return nil, err
 	}
-	return overtaken{VaultWriter: writer}, nil
+	return staleWriter{VaultWriter: writer}, nil
 }
 
-type overtaken struct{ port.VaultWriter }
+type staleWriter struct{ port.VaultWriter }
 
-func (overtaken) Write(
+func (staleWriter) Write(
 	context.Context, string, []byte, domain.Fingerprint,
 ) (domain.Fingerprint, error) {
 	return domain.Fingerprint{}, port.ErrStale
@@ -590,7 +590,7 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
 	scanned(t, f)
-	f.opened.API.Notes.Rename.Writers = overtaking{VaultWriters: f.opened.API.Notes.Rename.Writers}
+	f.opened.API.Notes.Rename.Writers = staleWriters{VaultWriters: f.opened.API.Notes.Rename.Writers}
 
 	out, err := f.opened.API.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Old.md",

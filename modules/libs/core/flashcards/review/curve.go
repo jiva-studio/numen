@@ -286,7 +286,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
 
 	out := Curve{Goal: GoalDate, Now: Nowhere, Suggested: Nowhere}
-	open := run.Day.Opens(now)
+	open := run.Day.StartOf(now)
 	by := p.By.Format(Named)
 	if p.By.IsZero() || by < run.Day.Names(open) {
 		return out, nil

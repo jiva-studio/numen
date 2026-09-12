@@ -136,7 +136,7 @@ What two adapters both run on and neither owns — the ONNX Runtime a recognitio
 
 ### The core has no logger
 
-The core writes to no stream of its own. What went wrong in work it carries on past — a watcher that lost the folder it was following, a queue that could not read a file — is said through `port.Trouble`, and an installation that binds none is told nothing. What a call could not answer is that call's error, and goes back to whoever asked.
+The core writes to no stream of its own. What went wrong in work it carries on past — a watcher that lost the folder it was following, a queue that could not read a file — is said through `port.ErrorHandler`, and an installation that binds none is told nothing. What a call could not answer is that call's error, and goes back to whoever asked.
 
 ### SQL lives in files
 

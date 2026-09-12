@@ -8,7 +8,7 @@
 import { onBeforeUnmount, shallowRef, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
-import { ELSEWHERE, HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
+import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
 import { marksIn, offsetAt, rangesOver, runsIn, type Run } from '../lib/runs'
 import type { Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
@@ -49,10 +49,10 @@ export function useBookMarks(
   /** The runs asked about marked where they stand, and the rest more faintly. */
   const markRuns = () => {
     highlight(HIGHLIGHT, props, rangesOver(runs, props.highlights))
-    highlight(ELSEWHERE, props, rangesOver(runs, props.elsewhere))
+    highlight(OTHER_HIGHLIGHT, props, rangesOver(runs, props.otherHighlights))
   }
 
-  watch([() => props.highlights, () => props.elsewhere], markRuns)
+  watch([() => props.highlights, () => props.otherHighlights], markRuns)
 
   onBeforeUnmount(() => {
     unhighlight(props)

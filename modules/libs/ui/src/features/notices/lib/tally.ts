@@ -15,13 +15,13 @@ import { clock } from '@/shared/lib/duration'
  * `resting` has words and no work: something worth knowing that nothing is
  * going to change by itself. It is drawn without the marks of progress.
  */
-export type ActivityState = 'quiet' | 'working' | 'resting' | 'trouble'
+export type ActivityState = 'quiet' | 'working' | 'resting' | 'failed'
 
 /**
  * How a line reads.
  *
  * Given by whoever draws the line, where the state above is worked out from the
- * count. Alarm is what a line in trouble is drawn with.
+ * count. Alarm is what a line that failed is drawn with.
  */
 export type Tone = 'plain' | 'caution' | 'alarm'
 
@@ -67,19 +67,19 @@ export const shareOf = (tally: Tally): number | undefined => {
  * What to draw for a piece of work.
  *
  * Nothing to say is quiet, and a line with nothing to say draws nothing.
- * Trouble outranks every other state: a line that is both failing and counting
+ * Failure outranks every other state: a line that is both failing and counting
  * says it is failing. Quiet draws nothing — which is not
  * the same as finished. Everything else is resting or working, and a count is
  * what makes the difference visible.
  */
 export const activity = (input: {
   readonly says: string
-  readonly trouble?: boolean
+  readonly hasFailed?: boolean
   readonly working?: boolean
   readonly tally?: Tally
 }): ActivityDescriptor => {
   if (!input.says) return { state: 'quiet', counts: false }
-  if (input.trouble) return { state: 'trouble', counts: false }
+  if (input.hasFailed) return { state: 'failed', counts: false }
 
   // Work is claimed, not assumed. Words alone say something is so, and a caller
   // that means "this is happening now" says that too.

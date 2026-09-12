@@ -59,8 +59,8 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
       get: () => oneName.kept.value,
       set: (on) => void oneName.choose(on ? ON : OFF),
     }),
-    hangs: computed({
-      get: () => hungParts.hangs.value,
+    isHanging: computed({
+      get: () => hungParts.isHanging.value,
       set: (on) => void hungParts.choose(on ? ON : OFF),
     }),
     parts: hungParts.parts,
@@ -68,7 +68,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     chooseParts: (count) => void hungParts.chooseCount(`${count}`),
     dayStarts: dayBegins.starts,
     latestDayStarts: dayBegins.latest,
-    chooseDayStarts: (hour) => void dayBegins.chooses(hour),
+    chooseDayStarts: (hour) => void dayBegins.choose(hour),
     setting: (at) => rest.at(at),
     models: (at) => rest.getModelsAt(at),
     write: (written) => void rest.writeSettings(written),

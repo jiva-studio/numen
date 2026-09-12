@@ -43,7 +43,7 @@ const mountFiles = async (open: readonly string[] = []) => {
     createDeck: async (folderPath, name) => `${folderPath}${name}`,
     createStencil: async (folderPath, name) => `${folderPath}${name}`,
     createPreset: async (folderPath, name) => `${folderPath}${name}`,
-    importAddress: async () => '',
+    importUrl: async () => '',
     showError: (text) => void done.push(`says ${text}`),
   })
   await list.openFolder(ROOT)
@@ -293,7 +293,7 @@ describe('a folder that could not be read', () => {
       createDeck: async () => '',
       createStencil: async () => '',
       createPreset: async () => '',
-      importAddress: async () => '',
+      importUrl: async () => '',
       showError: () => {},
     })
     await list.openFolder(ROOT)

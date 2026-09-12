@@ -122,7 +122,7 @@ export const Caution: Story = {
 }
 
 /** Alarm outranks a count: a line that is both failing and counting says it is failing. */
-export const Trouble: Story = {
+export const Failed: Story = {
   args: {
     says: 'Reading',
     about: 'permission denied',
@@ -131,7 +131,7 @@ export const Trouble: Story = {
   },
   play: async ({ canvasElement }) => {
     const line = lineIn(canvasElement)
-    await expect(line).toHaveAttribute('data-state', 'trouble')
+    await expect(line).toHaveAttribute('data-state', 'failed')
     await expect(line).toHaveTextContent('permission denied')
     await expect(line).not.toHaveTextContent('2 of 8')
   },

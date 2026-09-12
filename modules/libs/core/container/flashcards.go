@@ -107,7 +107,7 @@ func (c Config) Flashcards(
 	if err != nil {
 		// A machine that cannot say where its caches go works the schedules out
 		// at every launch. That is slower and no less correct.
-		c.trouble(fmt.Errorf("the schedules are worked out at every launch: %w", err))
+		c.handleError(fmt.Errorf("the schedules are worked out at every launch: %w", err))
 	}
 
 	faces := flashcards.NewListCardFaces(c.VaultReaders(), notes, links)
@@ -118,7 +118,7 @@ func (c Config) Flashcards(
 
 	counting, err := c.Counting()
 	if err != nil {
-		c.trouble(fmt.Errorf("the days are counted again at every launch: %w", err))
+		c.handleError(fmt.Errorf("the days are counted again at every launch: %w", err))
 	}
 
 	presets := flashcards.NewPresets(

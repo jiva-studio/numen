@@ -13,7 +13,7 @@ import { createMarks, areMarksEqual, type Marks } from '@/entities/deck'
 /** The string a tab holds, and the file it stands at. */
 export interface ShownStore {
   getOpenNote(id: string): { body: string }
-  where(id: string): string
+  getPath(id: string): string
 }
 
 /** The reader one window has, over the decks that window holds. */
@@ -52,7 +52,7 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
    * with it from there.
    */
   const marksAt = (id: string): Marks => {
-    const problems = problemsAt(store.where(id))
+    const problems = problemsAt(store.getPath(id))
     const held = marked.get(id)
     if (held && held.problems === problems) return held.marks
     const read = createMarks(

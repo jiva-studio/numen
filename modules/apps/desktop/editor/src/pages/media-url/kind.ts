@@ -8,10 +8,10 @@ export const URLS: Medium<typeof URL> = {
   tab: URL,
   source: 'url',
   pane: UrlTab,
-  register: (tabOpeners, opens) => {
+  register: (tabOpeners, read) => {
     // A url is reached both ways: by what the vault says stands at a path,
     // and by having just been made here.
-    tabOpeners.registerReader({ kind: URLS.source }, opens)
-    tabOpeners.registerEditor('url', (path) => opens(path, []))
+    tabOpeners.registerReader({ kind: URLS.source }, read)
+    tabOpeners.registerEditor('url', (path) => read(path, []))
   },
 }

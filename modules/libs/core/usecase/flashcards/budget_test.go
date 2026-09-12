@@ -1078,7 +1078,7 @@ func admession(p review.Preset, day review.Day, now time.Time) time.Time {
 		if !p.Admits(day, now, review.Spent{}, 0, 0).Paused() {
 			return now
 		}
-		now = day.Ends(now)
+		now = day.EndOf(now)
 	}
 	return now
 }

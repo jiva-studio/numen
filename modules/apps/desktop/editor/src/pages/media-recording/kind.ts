@@ -8,5 +8,5 @@ export const RECORDINGS: Medium<typeof RECORDING> = {
   tab: RECORDING,
   source: 'recording',
   pane: RecordingTab,
-  register: (puts, opens) => puts.registerReader({ kind: RECORDINGS.source }, opens),
+  register: (puts, read) => puts.registerReader({ kind: RECORDINGS.source }, read),
 }

@@ -55,7 +55,7 @@ export interface LimitOptions {
   /** Lines per seat. Nodes past the last line are reported as overflow. */
   readonly maxLines: number
   /**
-   * How many parts a node hangs under its box at once. The rest are wound to,
+   * How many parts a node hangs under its box at once. The rest are scrolled to,
    * and a node with less depth under it than this hangs what the depth holds.
    */
   readonly maxParts: number

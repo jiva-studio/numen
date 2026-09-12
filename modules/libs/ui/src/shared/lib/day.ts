@@ -12,7 +12,7 @@
 const DAY = 86_400_000
 
 /** A day as it is written down: the year, the month and the day. */
-export const dayNamed = (at: Date): string => {
+export const getDayName = (at: Date): string => {
   const month = String(at.getMonth() + 1).padStart(2, '0')
   const day = String(at.getDate()).padStart(2, '0')
   return `${at.getFullYear()}-${month}-${day}`

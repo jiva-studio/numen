@@ -75,7 +75,7 @@ describe('what is typed over it', () => {
     await held.again()
 
     held.type('{\n  "agent": { "use": "" }\n}\n')
-    await held.keeps()
+    await held.save()
 
     expect(wrote).toStrictEqual(['{\n  "agent": { "use": "" }\n}\n'])
     expect(held.changed.value).toBe(false)
@@ -87,7 +87,7 @@ describe('what is typed over it', () => {
     await held.again()
 
     held.type('{}\n')
-    await held.keeps()
+    await held.save()
 
     expect(presented).toStrictEqual([HELD])
   })
@@ -95,7 +95,7 @@ describe('what is typed over it', () => {
   it('is written nowhere before the file has been read', async () => {
     const { held, wrote } = vault()
     held.type('{}\n')
-    await held.keeps()
+    await held.save()
 
     expect(wrote).toStrictEqual([])
   })
@@ -104,7 +104,7 @@ describe('what is typed over it', () => {
     const { held, reads } = vault()
     await held.again()
     held.type('{}\n')
-    await held.keeps()
+    await held.save()
 
     expect(reads).toHaveBeenCalledTimes(1)
   })
@@ -123,7 +123,7 @@ describe('a file the settings cannot be read out of', () => {
     const { held } = createUnwritableVault()
     await held.again()
     held.type('{ "agent": ')
-    await held.keeps()
+    await held.save()
 
     expect(held.errorMessage.value).toContain(words.unwritten)
     expect(held.errorMessage.value).toContain('at byte 12')
@@ -133,7 +133,7 @@ describe('a file the settings cannot be read out of', () => {
     const { held } = createUnwritableVault()
     await held.again()
     held.type('{ "agent": ')
-    await held.keeps()
+    await held.save()
 
     expect(held.text.value).toBe('{ "agent": ')
     expect(held.changed.value).toBe(true)
@@ -143,7 +143,7 @@ describe('a file the settings cannot be read out of', () => {
     const { held, reads } = createUnwritableVault()
     await held.again()
     held.type('{ "agent": ')
-    await held.keeps()
+    await held.save()
 
     expect(reads).not.toHaveBeenCalled()
   })
@@ -175,7 +175,7 @@ describe('a file that moved past what the tab read', () => {
     await held.again()
     stands = MOVED
     held.type(TYPED)
-    await held.keeps()
+    await held.save()
     return { held, wrote, reads }
   }
 
@@ -209,7 +209,7 @@ describe('a file that moved past what the tab read', () => {
 
   it('is written nowhere until the person answers', async () => {
     const { held, wrote } = await stale()
-    await held.keeps()
+    await held.save()
 
     expect(held.isStale.value).toBe(true)
     expect(wrote).toStrictEqual([])

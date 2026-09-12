@@ -473,7 +473,7 @@ func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibilit
 		// The name of a section is kept on the chunk that begins it, and on that
 		// one only: a small chunk standing at the same offset is inside it, and
 		// one section named twice is one section answering twice.
-		c.Opens = doc.Opens(large.Start)
+		c.Opens = doc.NamesAt(large.Start)
 		for _, small := range large.Small {
 			c.Small = append(c.Small, chunkAt(doc, small))
 		}

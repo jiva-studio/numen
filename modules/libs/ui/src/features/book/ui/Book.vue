@@ -22,11 +22,11 @@ import BookHead from './BookHead.vue'
 const props = withDefaults(defineProps<BookProps>(), {
   markup: '',
   path: '',
-  span: () => ({ begins: 0, ends: 0 }),
-  book: () => ({ begins: 0, ends: 0 }),
+  span: () => ({ from: 0, to: 0 }),
+  book: () => ({ from: 0, to: 0 }),
   at: 0,
   highlights: () => [],
-  elsewhere: () => [],
+  otherHighlights: () => [],
   textSize: 1,
   chapter: '',
   words: () => BOOK_WORDS,
@@ -235,7 +235,7 @@ defineExpose({
 
 /* A place the person was not sent to is drawn faintly: it says there is
    something here, and the place they were sent to is the one drawn full. */
-:global(::highlight(numen-book-elsewhere)) {
+:global(::highlight(numen-book-other-highlight)) {
   background-color: color-mix(in srgb, var(--numen-highlight) 35%, transparent);
 }
 </style>

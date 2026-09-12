@@ -99,7 +99,7 @@ describe('a stretch of the book marked where it stands', () => {
   it('runs over the nodes the markup carries, counted in bytes of them', () => {
     const paper = paperOf(TWO)
 
-    const [range] = rangesOver(runsIn(paper), [{ begins: 0, ends: 8 }])
+    const [range] = rangesOver(runsIn(paper), [{ from: 0, to: 8 }])
 
     expect(range?.toString()).toBe('Один')
   })
@@ -109,7 +109,7 @@ describe('a stretch of the book marked where it stands', () => {
     // and the stretch closes one letter into the second.
     const paper = paperOf(TWO)
 
-    const [range] = rangesOver(runsIn(paper), [{ begins: 4, ends: 10 }])
+    const [range] = rangesOver(runsIn(paper), [{ from: 4, to: 10 }])
 
     expect(range?.toString()).toBe('инд')
   })
@@ -117,17 +117,17 @@ describe('a stretch of the book marked where it stands', () => {
   it('is left out where it reaches past the text the document holds', () => {
     const paper = paperOf(TWO)
 
-    expect(rangesOver(runsIn(paper), [{ begins: 100, ends: 110 }])).toStrictEqual([])
+    expect(rangesOver(runsIn(paper), [{ from: 100, to: 110 }])).toStrictEqual([])
   })
 
   it('is left out where it begins before the first run', () => {
     const paper = paperOf('<p data-offset="900">Вторая глава</p>')
 
-    expect(rangesOver(runsIn(paper), [{ begins: 10, ends: 20 }])).toStrictEqual([])
+    expect(rangesOver(runsIn(paper), [{ from: 10, to: 20 }])).toStrictEqual([])
   })
 
   it('is nothing at all in a document with no runs in it', () => {
-    expect(rangesOver([], [{ begins: 0, ends: 8 }])).toStrictEqual([])
+    expect(rangesOver([], [{ from: 0, to: 8 }])).toStrictEqual([])
   })
 })
 

@@ -8,9 +8,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { runSupport, type RunSupport } from '../runs'
-import type { CommandTarget } from '../target'
-import type { NoteLookup, PaletteLists, StepGroup } from '../rows'
+import { runSupport } from './runs'
+import type { CommandTarget, NoteLookup, PaletteLists, RunSupport, StepGroup } from '../types'
 import { useCommandPalette } from './palette'
 import type { VaultList, Vault } from '@/shared/vaults'
 import type { NameMatch } from './search'
@@ -68,14 +67,14 @@ const createLookup = () => {
   return {
     knows,
     /** The note filed at a name is now filed at another, under another name. */
-    moves: (from: string, to: string, title: string) => {
+    moveNote: (from: string, to: string, title: string) => {
       titles.value = { ...titles.value, [to]: title }
       delete titles.value[from]
       const was = tabs.value[from]
       if (was) tabs.value = { [to]: was }
     },
     /** A tab of the window holds the note filed at a name. */
-    opens: (path: string, tab: string) => {
+    openNote: (path: string, tab: string) => {
       tabs.value = { ...tabs.value, [path]: tab }
     },
   }
@@ -301,8 +300,8 @@ describe('a command that needs nothing', () => {
   })
 
   it('carries the identity of the tab holding the note it is over', () => {
-    const { commands, opens } = createPalette()
-    opens('physics/Ontology.md', 'held')
+    const { commands, openNote } = createPalette()
+    openNote('physics/Ontology.md', 'held')
 
     expect(commands.chooseItem('read', 'read')?.note).toBe('held')
   })
@@ -451,8 +450,8 @@ describe('removing a note', () => {
   })
 
   it('carries the tab holding it, so the invocation reaches it wherever it went', () => {
-    const { commands, opens } = createPalette()
-    opens('physics/Ontology.md', 'held')
+    const { commands, openNote } = createPalette()
+    openNote('physics/Ontology.md', 'held')
 
     expect(commands.startCommand('remove', front())?.note).toBe('held')
   })
@@ -495,9 +494,9 @@ describe('destroying a note', () => {
  */
 describe('a note that moves under an open step', () => {
   it('is renamed where it now is, and never at the name it left', () => {
-    const { commands, moves } = createPalette()
+    const { commands, moveNote } = createPalette()
     commands.startCommand('title', front())
-    moves('physics/Ontology.md', 'physics/Being.md', 'Being')
+    moveNote('physics/Ontology.md', 'physics/Being.md', 'Being')
     commands.applyRenames([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
 
     void commands.setTyped('Substance')
@@ -506,9 +505,9 @@ describe('a note that moves under an open step', () => {
   })
 
   it('is not destroyed by the name it had, and is by the name it has', () => {
-    const { commands, moves } = createPalette()
+    const { commands, moveNote } = createPalette()
     commands.startCommand('destroy', front())
-    moves('physics/Ontology.md', 'physics/Being.md', 'Being')
+    moveNote('physics/Ontology.md', 'physics/Being.md', 'Being')
     commands.applyRenames([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
 
     void commands.setTyped('Ontology')
@@ -523,8 +522,8 @@ describe('a note that moves under an open step', () => {
   })
 
   it('carries the tab holding it, so the invocation reaches it wherever it went', () => {
-    const { commands, opens } = createPalette()
-    opens('physics/Ontology.md', 'held')
+    const { commands, openNote } = createPalette()
+    openNote('physics/Ontology.md', 'held')
     commands.startCommand('title', front())
 
     void commands.setTyped('Substance')

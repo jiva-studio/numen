@@ -78,7 +78,7 @@ export function arrangePlex(
   // arrangement itself, so a placement of any shape keeps the window.
   const lay = (spacing: Spacing) =>
     placement.place(seating, focus, { ...resolved, ...spacing }, limits, widthOf)
-  const spacing = spacingFor(resolved, (candidate) => within(lay(candidate), resolved))
+  const spacing = spacingFor(resolved, (candidate) => isInsideViewport(lay(candidate), resolved))
 
   const nodes = [focus, ...lay(spacing)]
 
@@ -111,7 +111,7 @@ function widthsFor(
 }
 
 /** Whether every node stays inside the window, the margin kept clear. */
-function within(nodes: readonly PlacedNode[], options: PlexOptions): boolean {
+function isInsideViewport(nodes: readonly PlacedNode[], options: PlexOptions): boolean {
   const { viewport, margin } = options
   if (!viewport) return true
 

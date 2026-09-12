@@ -320,10 +320,12 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 // sulking is the index, refusing to be told where a file went.
 type sulking struct {
 	port.SourceRepository
-	refuse error
+	moveError error
 }
 
-func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) error { return s.refuse }
+func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) error {
+	return s.moveError
+}
 
 // The answer says where the file is. A move that landed says so however the
 // rest of the work goes.
@@ -333,7 +335,7 @@ func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 
 	sulk := errors.New("the index would not have it")
 	rename := c.rename()
-	rename.Sources = sulking{SourceRepository: c.db.Sources(), refuse: sulk}
+	rename.Sources = sulking{SourceRepository: c.db.Sources(), moveError: sulk}
 
 	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if !errors.Is(err, sulk) {

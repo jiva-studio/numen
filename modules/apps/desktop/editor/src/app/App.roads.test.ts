@@ -25,17 +25,17 @@ import { DocumentTab } from '@/pages/document-viewer'
 import { NoteTab } from '@/pages/note-editor'
 import { RecordingTab } from '@/pages/media-recording'
 import {
-  asked,
+  requests,
   cards,
   DEBOUNCE,
   folders,
   layoutOf,
   mountWindow,
-  nameSaid,
+  nameAnswer,
   nodeInPlex,
   outside,
   paneKinds,
-  passageSaid,
+  passageAnswer,
   said,
   settle,
 } from '@/testing/window'
@@ -140,8 +140,8 @@ describe('every road to a file', () => {
   ): Promise<readonly string[]> => {
     said.types = { [path]: type }
     said.opening = path
-    said.names = [nameSaid(path, path, type)]
-    said.passages = [passageSaid(path, path, type)]
+    said.names = [nameAnswer(path, path, type)]
+    said.passages = [passageAnswer(path, path, type)]
 
     const window = await mountWindow()
     await road(window, path)
@@ -190,14 +190,14 @@ describe('every road to a file', () => {
 
       globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
 
-      expect(asked.pressed).toStrictEqual(['ArrowRight'])
+      expect(requests.pressed).toStrictEqual(['ArrowRight'])
     })
   }
 })
 
 describe('what the person has open, as whoever answers for them is told it', () => {
   /** The last the window said about it, and nothing where it has said nothing. */
-  const getLastReport = () => asked.openTabs.at(-1) ?? null
+  const getLastReport = () => requests.openTabs.at(-1) ?? null
 
   /** The tab the window said is in front, of the last it said. */
   const front = () => {
@@ -304,17 +304,17 @@ describe('a recording put in front', () => {
     const window = await openRecording()
 
     const state = window.findComponent(RecordingTab).props('state') as {
-      address: { value: string }
+      url: { value: string }
       prose: { value: string }
-      editable: { value: boolean }
+      isEditable: { value: boolean }
     }
-    expect(asked.listened).toStrictEqual([RECORDING])
-    expect(state.address.value).toBe(said.transcribed.mediaUrl)
+    expect(requests.listened).toStrictEqual([RECORDING])
+    expect(state.url.value).toBe(said.transcribed.mediaUrl)
     expect(state.prose.value).toBe(said.transcribed.cues[0]?.text)
-    expect(state.editable.value).toBe(true)
+    expect(state.isEditable.value).toBe(true)
     // How long it runs and how far the words reach are the application's
     // answer, and what the window says the person has open carries them.
-    expect(asked.openTabs.at(-1)?.tabs.at(-1)).toMatchObject({
+    expect(requests.openTabs.at(-1)?.tabs.at(-1)).toMatchObject({
       path: RECORDING,
       recording: {
         transcribedDurationMs: said.transcribed.cues[0]?.to,
@@ -331,7 +331,7 @@ describe('a recording put in front', () => {
 
     const window = await openRecording()
 
-    expect(asked.carried).toStrictEqual([RECORDING])
+    expect(requests.carried).toStrictEqual([RECORDING])
     expect(await runsOffered(window)).toStrictEqual(['transcribe'])
   })
 
@@ -340,7 +340,7 @@ describe('a recording put in front', () => {
 
     const window = await openRecording()
 
-    expect(asked.carried).toStrictEqual([RECORDING])
+    expect(requests.carried).toStrictEqual([RECORDING])
     expect(await runsOffered(window)).toStrictEqual(['proofread', 'deleteText'])
   })
 })
@@ -370,7 +370,7 @@ describe('a key struck while a book is in front', () => {
 
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
 
-    expect(asked.pressed).toStrictEqual(['ArrowRight'])
+    expect(requests.pressed).toStrictEqual(['ArrowRight'])
     window.unmount()
   })
 
@@ -380,7 +380,7 @@ describe('a key struck while a book is in front', () => {
 
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
 
-    expect(asked.pressed).toStrictEqual([])
+    expect(requests.pressed).toStrictEqual([])
     window.unmount()
   })
 })
@@ -394,7 +394,7 @@ describe('a book carried into another group of tabs', () => {
     outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
     await settle()
     await settle()
-    asked.pressed = []
+    requests.pressed = []
 
     const workspace = window.findComponent(WorkspaceLayout)
     const was = layoutOf(window)
@@ -407,7 +407,7 @@ describe('a book carried into another group of tabs', () => {
 
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
 
-    expect(asked.pressed).toStrictEqual(['ArrowRight'])
+    expect(requests.pressed).toStrictEqual(['ArrowRight'])
     window.unmount()
   })
 })
@@ -422,7 +422,7 @@ describe('a book beside the pane the person is in', () => {
     outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
     await settle()
     await settle()
-    asked.pressed = []
+    requests.pressed = []
 
     const workspace = window.findComponent(WorkspaceLayout)
     const was = layoutOf(window)
@@ -434,7 +434,7 @@ describe('a book beside the pane the person is in', () => {
       new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true, bubbles: true }),
     )
 
-    expect(asked.pressed).toStrictEqual(['ArrowRight'])
+    expect(requests.pressed).toStrictEqual(['ArrowRight'])
     window.unmount()
   })
 })

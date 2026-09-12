@@ -144,7 +144,7 @@ func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
 
 // A stretch that stands nowhere or twice is not a place, and drawing over a
 // guess is worse than drawing nothing.
-func TestAStretchThatIsNotOnePlaceIsNotDrawn(t *testing.T) {
+func TestASpanThatIsNotOnePlaceIsNotDrawn(t *testing.T) {
 	window := &drawn{found: true}
 	window.found = false
 	work := drafting(t, window, opens+"\n"+

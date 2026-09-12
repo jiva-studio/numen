@@ -13,10 +13,10 @@ import type { DocumentTabState } from './model/useDocumentTab'
  * The document tabs of a window. A document is its own tab, so the same one
  * opened again is the tab it is already read in.
  */
-export function documentKind(handle: WindowHandle, opens: (path: string) => DocumentTabState, tabOpeners: FileOpeners) {
+export function documentKind(handle: WindowHandle, open: (path: string) => DocumentTabState, tabOpeners: FileOpeners) {
   const kind: TabKind<DocumentTabState, typeof DOCUMENT> = {
     kind: DOCUMENT,
-    open: opens,
+    open,
     getTitle: (state) => fileOf(state.path),
     pane: DocumentTab,
     identity: (path) => path,

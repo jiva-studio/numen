@@ -3,18 +3,18 @@
 import { useTemplateRef } from 'vue'
 import { Book } from '@numen/ui'
 import { ListTree } from '@lucide/vue'
-import type { BookSpan } from '@numen/ui'
+import type { Span } from '@/shared/span'
 import type { BookHandle } from '../types'
 import { WORDS as words } from '../words'
 
 const props = defineProps<{
   markup: string
   path: string
-  reading: BookSpan
-  bookSpan: BookSpan
+  reading: Span
+  bookSpan: Span
   offset: number
-  highlights: readonly BookSpan[]
-  elsewhere: readonly BookSpan[]
+  highlights: readonly Span[]
+  otherHighlights: readonly Span[]
   chapter: string
   isListingOpen: boolean
 }>()
@@ -30,8 +30,8 @@ const book = useTemplateRef<BookHandle>('book')
 const way = useTemplateRef<HTMLElement>('way')
 
 // --- Handlers ---
-function onMoved(at: number) {
-  emit('moved', at)
+function onMoved(offset: number) {
+  emit('moved', offset)
 }
 
 function onFollowed(targetPath: string) {
@@ -71,7 +71,7 @@ defineExpose({
     :book="props.bookSpan"
     :at="props.offset"
     :highlights="props.highlights"
-    :elsewhere="props.elsewhere"
+    :otherHighlights="props.otherHighlights"
     :chapter="props.chapter"
     :words="words"
     @moved="onMoved"

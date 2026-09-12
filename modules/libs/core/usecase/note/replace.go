@@ -83,10 +83,6 @@ func (e AmbiguousSpan) Error() string {
 		"one of them to tell it from the others", e.Places)
 }
 
-// Backward-compatible type aliases for callers.
-type MissingStretch = MissingSpan
-type AmbiguousStretch = AmbiguousSpan
-
 // ErrAlreadyWritten is a replacement that is already in the note and an
 // original that is gone, which is the write having landed already.
 var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")

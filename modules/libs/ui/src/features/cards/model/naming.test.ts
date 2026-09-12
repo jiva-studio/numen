@@ -8,16 +8,21 @@
  */
 import { afterEach, describe, expect, it } from 'vitest'
 import { useNaming, type NamingState } from './naming'
-import { heading, objection, type Objection, type HeadingObjection } from '../lib/order'
+import {
+  checkFieldName,
+  checkHeadingName,
+  type Objection,
+  type HeadingObjection,
+} from '../lib/order'
 
 /** A naming of the fields a stencil declares, with what it renamed. */
 const overFields = (fields: readonly string[]) => {
   const renamed: (readonly [string, string])[] = []
   const naming = useNaming<Objection>({
-    carries: (field) => field,
-    taken: (field) => fields.filter((each) => each !== field),
-    amiss: objection,
-    renamed: (field, name) => {
+    getName: (field) => field,
+    getTakenNames: (field) => fields.filter((each) => each !== field),
+    checkName: checkFieldName,
+    rename: (field, name) => {
       renamed.push([field, name])
     },
   })
@@ -28,10 +33,10 @@ const overFields = (fields: readonly string[]) => {
 const overFaces = (faces: ReadonlyMap<string, string>) => {
   const renamed: (readonly [string, string])[] = []
   const naming = useNaming<HeadingObjection>({
-    carries: (id) => faces.get(id) ?? '',
-    taken: (id) => [...faces].filter(([each]) => each !== id).map(([, name]) => name),
-    amiss: heading,
-    renamed: (id, name) => {
+    getName: (id) => faces.get(id) ?? '',
+    getTakenNames: (id) => [...faces].filter(([each]) => each !== id).map(([, name]) => name),
+    checkName: checkHeadingName,
+    rename: (id, name) => {
       renamed.push([id, name])
     },
   })
@@ -39,7 +44,11 @@ const overFaces = (faces: ReadonlyMap<string, string>) => {
 }
 
 /** A key struck in the box a name is typed in, which is what a break blurs. */
-const press = <Why>(naming: NamingState<Why>, over: string, key: string): HTMLInputElement => {
+const press = <Why extends Objection>(
+  naming: NamingState<Why>,
+  over: string,
+  key: string,
+): HTMLInputElement => {
   const box = document.createElement('input')
   document.body.append(box)
   box.addEventListener('keydown', (event) => naming.onKey(event, over))

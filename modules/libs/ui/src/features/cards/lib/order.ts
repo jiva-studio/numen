@@ -81,28 +81,42 @@ export const reorderFields = (
 /** Why a name cannot be used, and nothing where it can. */
 export type Objection = 'blank' | 'taken' | 'braced'
 
+/** Why a name written as a heading and in no slot is refused. */
+export type HeadingObjection = 'blank' | 'taken'
+
+/** What checking a name came back with. */
+export interface NameCheckResult<Why extends Objection> {
+  /** The name as it would be written, without the space around it. */
+  readonly name: string
+  /** Why it cannot be used, and nothing where it can. */
+  readonly objection: Why | null
+}
+
 /**
  * What is wrong with a name. A name is what a slot is written by, so a name
  * carrying a brace cannot be written, and one already taken names two slots.
  */
-export function objection(name: string, names: readonly string[]): Objection | null {
+export function checkFieldName(
+  name: string,
+  names: readonly string[],
+): NameCheckResult<Objection> {
   const said = name.trim()
-  if (said.includes('{') || said.includes('}')) return 'braced'
-  return heading(name, names)
+  if (said.includes('{') || said.includes('}')) return { name: said, objection: 'braced' }
+  return checkHeadingName(name, names)
 }
-
-/** Why a name written as a heading and in no slot is refused. */
-export type HeadingObjection = 'blank' | 'taken'
 
 /**
  * What is wrong with a name that stands as a heading. It is written nowhere a
  * brace is read, so a brace in it is a character like any other.
  */
-export function heading(name: string, names: readonly string[]): HeadingObjection | null {
+export function checkHeadingName(
+  name: string,
+  names: readonly string[],
+): NameCheckResult<HeadingObjection> {
   const said = name.trim()
-  if (said === '') return 'blank'
-  if (names.some((each) => each.trim() === said)) return 'taken'
-  return null
+  if (said === '') return { name: said, objection: 'blank' }
+  if (names.some((each) => each.trim() === said)) return { name: said, objection: 'taken' }
+  return { name: said, objection: null }
 }
 
 /**

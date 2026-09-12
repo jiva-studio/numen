@@ -32,7 +32,7 @@ export interface CommandsDepsOptions {
   words: Words
   log: MessageLog
   held: ReturnType<typeof useWindowTabs>
-  where: () => CommandTarget
+  getTarget: () => CommandTarget
   knows: NoteLookup
   kept: PaletteLists
   runs: RunSupport
@@ -40,10 +40,10 @@ export interface CommandsDepsOptions {
   making: NoteCreator
   made: ReturnType<typeof createFileCreators>
   shown: Ref<VaultRef>
-  reloads: () => void
+  reload: () => void
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
-  opensPreset: (path: string) => Promise<void>
+  openPreset: (path: string) => Promise<void>
   dressed: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
   hungParts: { choose: (item: string) => Promise<void> | void; chooseCount: (item: string) => Promise<void> | void }
@@ -53,7 +53,7 @@ export interface CommandsDepsOptions {
   plexes: () => { travel: (path: string) => Promise<void> | void; leavePath: (from: string, to: string) => Promise<void> | void }
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   opening: () => string
-  told: MessageWriter
+  writeMessage: MessageWriter
 }
 
 export function useCommands(options: CommandsDepsOptions) {
@@ -61,18 +61,18 @@ export function useCommands(options: CommandsDepsOptions) {
     core,
     words,
     held,
-    where,
+    getTarget,
     knows,
     kept,
     runs,
     coverage,
-    told,
+    writeMessage,
   } = options
 
   const palette = useSearch(core, words, { coverage })
-  const commands = useCommandPalette(core, words, where, knows, kept, runs)
+  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs)
 
-  const doing: CommandDeps = createCommandDeps({
+  const commandDeps: CommandDeps = createCommandDeps({
     ...options,
     search: () => {
       ;commands.setOpen(false)
@@ -82,9 +82,9 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const runCommand = (id: string, at: CommandTarget) => {
     const invocation = commands.startCommand(id, at)
-    if (invocation) return void runInvocation(invocation, doing, words)
+    if (invocation) return void runInvocation(invocation, commandDeps, words)
     if (commands.open.value) return void palette.setOpen(false)
-    told(commands.getObjection(id, at), 'error')
+    writeMessage(commands.getObjection(id, at), 'error')
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -94,16 +94,14 @@ export function useCommands(options: CommandsDepsOptions) {
     const command = commandFor(event.key.toLowerCase(), event.shiftKey)
     if (!command) return
     event.preventDefault()
-    runCommand(command, where())
+    runCommand(command, getTarget())
   }
-  const asked = onKeyDown
 
   return {
     palette,
     commands,
-    doing,
+    commandDeps,
     runCommand,
-    asked,
     onKeyDown,
   }
 }

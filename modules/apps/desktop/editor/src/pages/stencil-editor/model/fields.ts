@@ -3,17 +3,17 @@
  */
 import type { Half } from '@numen/ui'
 import {
-  faceAdded,
-  faceDropped,
-  faceGone,
-  faceNamed,
-  faceWritten,
-  fieldAdded,
-  fieldDropped,
-  fieldGone,
+  addFace,
+  addField,
+  moveFace,
+  moveField,
+  removeFace,
+  removeField,
+  renameFace,
   sameStencil,
   stencilBodyOf,
   stencilIn,
+  writeFace,
   type BufferStencil,
 } from '../lib/stencil'
 import { createMarks, areMarksEqual, type Marks } from '@/entities/deck'
@@ -64,15 +64,16 @@ export function createStencilFields(
   }
 
   const actionsFor = (id: string) => ({
-    addField: (name: string) => applyStencil(id,fieldAdded(getStencil(id), name)),
+    addField: (name: string) => applyStencil(id, addField(getStencil(id), name)),
     renameField: (field: string, name: string) => void renameFieldOnWire(id, field, name),
-    removeField: (field: string) => applyStencil(id,fieldGone(getStencil(id), field)),
-    moveField: (field: string, at: string | null) => applyStencil(id,fieldDropped(getStencil(id), field, at)),
-    addFace: (name: string) => applyStencil(id,faceAdded(getStencil(id), name)),
-    renameFace: (face: string, name: string) => applyStencil(id,faceNamed(getStencil(id), face, name)),
-    removeFace: (face: string) => applyStencil(id,faceGone(getStencil(id), face)),
-    moveFace: (face: string, at: string | null) => applyStencil(id,faceDropped(getStencil(id), face, at)),
-    writeFaceHalf: (face: string, half: Half, text: string) => applyStencil(id,faceWritten(getStencil(id), face, half, text)),
+    removeField: (field: string) => applyStencil(id, removeField(getStencil(id), field)),
+    moveField: (field: string, at: string | null) => applyStencil(id, moveField(getStencil(id), field, at)),
+    addFace: (name: string) => applyStencil(id, addFace(getStencil(id), name)),
+    renameFace: (face: string, name: string) => applyStencil(id, renameFace(getStencil(id), face, name)),
+    removeFace: (face: string) => applyStencil(id, removeFace(getStencil(id), face)),
+    moveFace: (face: string, at: string | null) => applyStencil(id, moveFace(getStencil(id), face, at)),
+    writeFaceHalf: (face: string, half: Half, text: string) =>
+      applyStencil(id, writeFace(getStencil(id), face, half, text)),
   })
 
   return {

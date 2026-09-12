@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { days, getWeight, measureGrid, NOTHING, ROWS } from './heatmap'
-import { dayNamed } from '@/shared/lib/day'
+import { getDayName } from '@/shared/lib/day'
 import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
@@ -148,7 +148,7 @@ describe('the days a grid draws', () => {
   it('reads what was done on each day it draws', () => {
     const on = new Date('2026-08-29T12:00:00')
     const counted = createTallies([
-      [dayNamed(on), 12],
+      [getDayName(on), 12],
       ['2026-08-28', 60],
     ])
     const shown = days(4, on, counted)

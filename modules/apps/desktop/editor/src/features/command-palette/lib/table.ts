@@ -2,8 +2,8 @@
  * Construction of the full list of commands offered by the application.
  */
 import { keysOf } from './chords'
-import { isUnmade, onAnything, onEvidence, onNote, onVault } from './where'
-import type { Command } from '../target'
+import { getWhereOnEvidence, isOnAnything, isOnNote, isOnVault, isUnmade } from './where'
+import type { Command } from '../types'
 import type { Words } from '../words'
 
 /**
@@ -17,53 +17,53 @@ export const commandsOf = (
   words: Words,
   agent: string = navigator.userAgent,
 ): readonly Command[] => [
-  { id: 'read', text: words.read, group: 'note', where: onNote, also: 'beside' },
-  { id: 'beside', text: words.beside, group: 'note', where: onNote },
-  { id: 'travel', text: words.travel, ...keysOf('travel', agent), group: 'note', where: onNote },
+  { id: 'read', text: words.read, group: 'note', where: isOnNote, also: 'beside' },
+  { id: 'beside', text: words.beside, group: 'note', where: isOnNote },
+  { id: 'travel', text: words.travel, ...keysOf('travel', agent), group: 'note', where: isOnNote },
   {
     id: 'child',
     text: words.child,
     ...keysOf('child', agent),
     group: 'note',
     needs: 'naming',
-    where: onNote,
+    where: isOnNote,
   },
-  { id: 'parent', text: words.parent, group: 'note', needs: 'naming', where: onNote },
-  { id: 'jump', text: words.jump, group: 'note', needs: 'naming', where: onNote },
+  { id: 'parent', text: words.parent, group: 'note', needs: 'naming', where: isOnNote },
+  { id: 'jump', text: words.jump, group: 'note', needs: 'naming', where: isOnNote },
   {
     id: 'title',
     text: words.title,
     group: 'note',
     needs: 'naming',
-    where: onNote,
-    filled: (at) => at.title,
+    where: isOnNote,
+    getFieldText: (at) => at.title,
   },
   // The note goes to the vault's .trash folder, and putting it back is a move.
   // Destroy is the one that asks.
-  { id: 'remove', text: words.remove, group: 'note', where: onNote, also: 'destroy' },
+  { id: 'remove', text: words.remove, group: 'note', where: isOnNote, also: 'destroy' },
   {
     id: 'destroy',
     text: words.destroy,
     group: 'note',
     needs: 'exactly',
-    where: onNote,
-    warns: { does: words.destroys, then: words.forever, back: words.typeBack },
+    where: isOnNote,
+    warns: { action: words.destroys, then: words.forever, back: words.typeBack },
   },
-  { id: 'ask', text: words.ask, group: 'note', where: onNote },
-  { id: 'copy', text: words.copy, group: 'note', where: onNote },
-  { id: 'reveal', text: words.reveal, group: 'note', where: onNote },
-  { id: 'preset', text: words.preset, group: 'note', where: onNote },
+  { id: 'ask', text: words.ask, group: 'note', where: isOnNote },
+  { id: 'copy', text: words.copy, group: 'note', where: isOnNote },
+  { id: 'reveal', text: words.reveal, group: 'note', where: isOnNote },
+  { id: 'preset', text: words.preset, group: 'note', where: isOnNote },
   {
     id: 'transcribe',
     text: words.transcribe,
     group: 'file',
-    where: onEvidence('transcribe', 'recording', (made) => isUnmade(made.transcript)),
+    where: getWhereOnEvidence('transcribe', 'recording', (made) => isUnmade(made.transcript)),
   },
   {
     id: 'downloadText',
     text: words.downloadText,
     group: 'file',
-    where: onEvidence(
+    where: getWhereOnEvidence(
       'downloadText',
       'url',
       (made) => made.transcript !== undefined || made.article !== undefined,
@@ -88,7 +88,7 @@ export const commandsOf = (
     group: 'file',
     // There is nothing to put right until a model has heard something, and
     // nothing to put right again once it has been put right.
-    where: onEvidence(
+    where: getWhereOnEvidence(
       'proofread',
       'recording',
       (made) => made.transcript === 'done' && isUnmade(made['transcript.corrected']),
@@ -103,12 +103,12 @@ export const commandsOf = (
     // and a recording that gave no words are both taken away here. A url
     // carries a transcript the same way, and deletes it here.
     where: (at, runs) =>
-      onEvidence('deleteText', 'recording', (made) => made.transcript !== 'none')(at, runs) ||
-      onEvidence('deleteText', 'url', (made) => made.transcript !== 'none')(at, runs),
+      getWhereOnEvidence('deleteText', 'recording', (made) => made.transcript !== 'none')(at, runs) ||
+      getWhereOnEvidence('deleteText', 'url', (made) => made.transcript !== 'none')(at, runs),
     answers: {
       keeps: words.keepsTranscript,
       kept: words.kept,
-      does: words.deletes,
+      action: words.deletes,
       then: words.deleted,
     },
   },
@@ -118,11 +118,11 @@ export const commandsOf = (
     group: 'file',
     needs: 'asking',
     // Only a url carries a copy, and only one that stands has anything to take.
-    where: onEvidence('deleteCopy', 'url', (made) => made.copy === 'done'),
+    where: getWhereOnEvidence('deleteCopy', 'url', (made) => made.copy === 'done'),
     answers: {
       keeps: words.keepsCopy,
       kept: words.kept,
-      does: words.deletes,
+      action: words.deletes,
       then: words.deletedCopy,
     },
   },
@@ -130,7 +130,7 @@ export const commandsOf = (
     id: 'recognise',
     text: words.recognise,
     group: 'file',
-    where: onEvidence('recognise', 'book', (made) => isUnmade(made.ocr)),
+    where: getWhereOnEvidence('recognise', 'book', (made) => isUnmade(made.ocr)),
   },
   {
     id: 'note',
@@ -168,9 +168,9 @@ export const commandsOf = (
     needs: 'address',
     where: (at) => at.ready,
   },
-  { id: 'plex', text: words.newPlex, ...keysOf('plex', agent), group: 'window', where: onAnything },
-  { id: 'files', text: words.files, group: 'window', where: onAnything },
-  { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), group: 'window', where: onAnything },
+  { id: 'plex', text: words.newPlex, ...keysOf('plex', agent), group: 'window', where: isOnAnything },
+  { id: 'files', text: words.files, group: 'window', where: isOnAnything },
+  { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), group: 'window', where: isOnAnything },
   {
     id: 'close',
     text: words.close,
@@ -178,21 +178,21 @@ export const commandsOf = (
     group: 'window',
     where: (at) => at.tab !== '',
   },
-  { id: 'find', text: words.find, keys: words.findKeys, group: 'window', where: onAnything },
-  { id: 'appearance', text: words.appearance, group: 'window', needs: 'choosing', where: onAnything },
-  { id: 'mode', text: words.mode, group: 'window', needs: 'choosing', where: onAnything },
+  { id: 'find', text: words.find, keys: words.findKeys, group: 'window', where: isOnAnything },
+  { id: 'appearance', text: words.appearance, group: 'window', needs: 'choosing', where: isOnAnything },
+  { id: 'mode', text: words.mode, group: 'window', needs: 'choosing', where: isOnAnything },
   {
     id: 'interfaceScale',
     text: words.interfaceScale,
     group: 'window',
     needs: 'choosing',
-    where: onAnything,
+    where: isOnAnything,
   },
-  { id: 'textScale', text: words.textScale, group: 'window', needs: 'choosing', where: onAnything },
-  { id: 'syncing', text: words.syncing, group: 'window', needs: 'choosing', where: onAnything },
-  { id: 'hanging', text: words.hanging, group: 'window', needs: 'choosing', where: onAnything },
-  { id: 'parts', text: words.parts, group: 'window', needs: 'choosing', where: onAnything },
-  { id: 'settings', text: words.settings, group: 'window', where: onAnything },
+  { id: 'textScale', text: words.textScale, group: 'window', needs: 'choosing', where: isOnAnything },
+  { id: 'syncing', text: words.syncing, group: 'window', needs: 'choosing', where: isOnAnything },
+  { id: 'hanging', text: words.hanging, group: 'window', needs: 'choosing', where: isOnAnything },
+  { id: 'parts', text: words.parts, group: 'window', needs: 'choosing', where: isOnAnything },
+  { id: 'settings', text: words.settings, group: 'window', where: isOnAnything },
   { id: 'first', text: words.first, group: 'vault', where: (at) => at.ready },
   {
     id: 'goto',
@@ -202,21 +202,21 @@ export const commandsOf = (
     needs: 'picking',
     where: (at) => at.ready,
   },
-  { id: 'openVault', text: words.openVault, group: 'vault', needs: 'vaults', where: onAnything },
+  { id: 'openVault', text: words.openVault, group: 'vault', needs: 'vaults', where: isOnAnything },
   {
     id: 'newVault',
     text: words.newVault,
     ...keysOf('newVault', agent),
     group: 'vault',
-    where: onAnything,
+    where: isOnAnything,
   },
   {
     id: 'renameVault',
     text: words.renameVault,
     group: 'vault',
     needs: 'naming',
-    where: onVault,
-    filled: (at) => at.vault.name,
+    where: isOnVault,
+    getFieldText: (at) => at.vault.name,
   },
   {
     id: 'forgetVault',
@@ -224,11 +224,11 @@ export const commandsOf = (
     group: 'vault',
     needs: 'vaults',
     next: 'asking',
-    where: onAnything,
+    where: isOnAnything,
     answers: {
       keeps: words.keepsVault,
       kept: words.kept,
-      does: words.forgets,
+      action: words.forgets,
       then: words.stays,
     },
   },
@@ -238,7 +238,7 @@ export const commandsOf = (
     group: 'vault',
     needs: 'vaults',
     next: 'exactly',
-    where: onAnything,
-    warns: { does: words.erases, then: words.binned, back: words.typeVaultBack },
+    where: isOnAnything,
+    warns: { action: words.erases, then: words.binned, back: words.typeVaultBack },
   },
 ]

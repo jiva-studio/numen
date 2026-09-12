@@ -38,38 +38,38 @@ export function useNoteTab(
    * holding it.
    */
   const tabbed = computed<ReadonlyMap<string, string>>(
-    () => new Map(notes.all().map((id) => [notes.where(id), id])),
+    () => new Map(notes.getOpenIds().map((id) => [notes.getPath(id), id])),
   )
 
   /**
    * The identity minted for a note asked for by name, until its tab opens under
    * it. A note is named and shown in two steps, and both name the same tab.
    */
-  const minting = new Map<string, string>()
-  const minted = new Map<string, string>()
+  const pendingIds = new Map<string, string>()
+  const pendingPaths = new Map<string, string>()
 
   /** The identity of the tab standing at a file, minted where none stands there. */
   const getOrCreateTabId = (path: string): string => {
-    const open = tabbed.value.get(path) ?? minting.get(path)
+    const open = tabbed.value.get(path) ?? pendingIds.get(path)
     if (open) return open
     const id = crypto.randomUUID()
-    minting.set(path, id)
-    minted.set(id, path)
+    pendingIds.set(path, id)
+    pendingPaths.set(id, path)
     return id
   }
 
   /** The identity of the tab standing at a file, and the name itself where none does. */
-  const getTabId = (path: string): string => tabbed.value.get(path) ?? minting.get(path) ?? path
+  const getTabId = (path: string): string => tabbed.value.get(path) ?? pendingIds.get(path) ?? path
 
   /**
    * A note opened under the identity it was minted. It is owed its keyboard
    * from here until an editor has taken it, on the line it was told to stand on.
    */
   const openTab = (id: string, line = ITSELF) => {
-    const path = minted.get(id) ?? id
+    const path = pendingPaths.get(id) ?? id
     notes.open(id, path)
-    minting.delete(path)
-    minted.delete(id)
+    pendingIds.delete(path)
+    pendingPaths.delete(id)
     keyboard.requestFocus(id, line)
     return createNoteTabState(id)
   }
@@ -81,7 +81,7 @@ export function useNoteTab(
   const openNote = (path: string, title = '', how: PlexDestination = 'here') => {
     const id = getOrCreateTabId(path)
     if (title) names.setTitle(id, title)
-    void (how === 'beside' ? handle.beside(NOTE, id) : handle.openTab(NOTE, id))
+    void (how === 'beside' ? handle.openTabBeside(NOTE, id) : handle.openTab(NOTE, id))
     keyboard.requestFocus(id)
   }
 
@@ -118,7 +118,7 @@ export function useNoteTab(
    */
   /** The file this note stands at now, and nothing while the store has let it go. */
   const getPath = (state: NoteTabState): string =>
-    notes.has(state.id) ? notes.where(state.id) : ''
+    notes.has(state.id) ? notes.getPath(state.id) : ''
 
   const kind: TabKind<NoteTabState, typeof NOTE> = {
     kind: NOTE,
@@ -145,10 +145,10 @@ export function useNoteTab(
   /** The notes, as a command reaches the ones the window has open. */
   const kept: Store = {
     has: (id) => notes.has(id),
-    where: (id) => notes.where(id),
+    where: (id) => notes.getPath(id),
     getTitle: (id) => names.getTitle(id),
     asking: (id) => notes.stale(id) !== null,
-    settle: (id) => notes.settles(id),
+    settle: (id) => notes.settle(id),
     close: closeTab,
     holding: (path) => tabbed.value.get(path) ?? null,
   }

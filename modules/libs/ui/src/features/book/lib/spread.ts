@@ -6,12 +6,7 @@
  * of text falls in and how far into a run a byte offset reaches are arithmetic,
  * and a test asks them without a browser.
  */
-
-/** A stretch of the book's text, in bytes of it. */
-export interface Span {
-  readonly begins: number
-  readonly ends: number
-}
+import type { Span } from '@/shared/lib/span'
 
 /** Where one run of the text stands, once the document is laid out. */
 export interface Mark {
@@ -150,12 +145,12 @@ export function pagesOf(
 ): Pages {
   const here = columnsFilled(marks, flow)
   const first = spread * flow.columns + 1
-  const bytes = document.ends - document.begins
+  const bytes = document.to - document.from
   if (here <= 0 || bytes <= 0) return { page: Math.max(first, 1), pages: Math.max(here, 1) }
 
   const perColumn = bytes / here
-  const before = Math.round((document.begins - book.begins) / perColumn)
-  const all = Math.round((book.ends - book.begins) / perColumn)
+  const before = Math.round((document.from - book.from) / perColumn)
+  const all = Math.round((book.to - book.from) / perColumn)
   return {
     page: Math.max(before + first, 1),
     pages: Math.max(all, before + here, 1),

@@ -9,9 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Refusal is one file that stayed outside the vault, by the name it carries on
+// Error is one file that stayed outside the vault, by the name it carries on
 // this machine and by what stopped it.
-type Refusal struct {
+type Error struct {
 	Name string
 	Why  error
 }
@@ -22,8 +22,8 @@ type ImportResult struct {
 	// Landed is each file and folder that arrived, by the path the vault files
 	// it under.
 	Landed []string
-	// Refused is each file that stayed where it was.
-	Refused []Refusal
+	// Errors is each file that stayed where it was.
+	Errors []Error
 }
 
 // Import copies files from this machine into a folder of the vault.
@@ -50,8 +50,8 @@ func NewImport(writers port.VaultWriters, files port.ImportedFiles) Import {
 //
 // One file refused leaves the rest to arrive: a drop of twenty pictures is
 // nineteen pictures and a sentence. A name the folder already carries is one of
-// those refusals: what a person meant by a second file of that name is theirs
-// to say.
+// those errors: what a person meant by a second file of that name is theirs to
+// say.
 func (u Import) Execute(
 	ctx context.Context,
 	v domain.Vault,
@@ -73,7 +73,7 @@ func (u Import) Execute(
 		}
 		name := u.Files.Named(handle)
 		if err := u.bring(ctx, writer, v, handle, filed(into, name), &brought); err != nil {
-			brought.Refused = append(brought.Refused, Refusal{Name: name, Why: err})
+			brought.Errors = append(brought.Errors, Error{Name: name, Why: err})
 		}
 	}
 	return brought, nil
@@ -112,7 +112,7 @@ func (u Import) bring(
 		}
 		for _, one := range held {
 			if err := u.bring(ctx, writer, v, one.Handle, filed(to, one.Name), brought); err != nil {
-				brought.Refused = append(brought.Refused, Refusal{Name: one.Name, Why: err})
+				brought.Errors = append(brought.Errors, Error{Name: one.Name, Why: err})
 			}
 		}
 		return nil

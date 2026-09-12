@@ -25,7 +25,7 @@ const emit = defineEmits<{ (event: 'press'): void }>()
     :title="label"
     @click="emit('press')"
   >
-    <Icon shows="bin" />
+    <Icon name="bin" />
   </button>
 </template>
 

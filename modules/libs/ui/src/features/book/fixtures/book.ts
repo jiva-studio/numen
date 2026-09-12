@@ -8,7 +8,7 @@
  * furniture; it ships to nobody.
  */
 import { bytesIn } from '../lib/bytes'
-import type { Span } from '../lib/spread'
+import type { Span } from '@/shared/lib/span'
 
 /** One run of a document. */
 export interface Run {
@@ -34,8 +34,8 @@ const escapeHtml = (text: string): string =>
  * with no text of its own — a picture, a table — carries the offset the run
  * after it begins at and adds nothing to the stream.
  */
-export function chapterOf(runs: readonly Run[], begins = 0): Chapter {
-  let at = begins
+export function chapterOf(runs: readonly Run[], from = 0): Chapter {
+  let at = from
   const written: string[] = []
   for (const run of runs) {
     const text = run.text ?? ''
@@ -44,7 +44,7 @@ export function chapterOf(runs: readonly Run[], begins = 0): Chapter {
     )
     at += bytesIn(text)
   }
-  return { markup: written.join('\n'), span: { begins, ends: at } }
+  return { markup: written.join('\n'), span: { from, to: at } }
 }
 
 /** A page of Sanskrit in Devanagari, its transliteration and its rendering. */

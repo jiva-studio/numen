@@ -64,10 +64,10 @@ describe('activity', () => {
     })
   })
 
-  it('lets trouble outrank a count', () => {
+  it('lets a failure outrank a count', () => {
     expect(
-      activity({ says: 'reading', trouble: true, tally: { done: 2, total: 8 } }),
-    ).toEqual({ state: 'trouble', counts: false })
+      activity({ says: 'reading', hasFailed: true, tally: { done: 2, total: 8 } }),
+    ).toEqual({ state: 'failed', counts: false })
   })
 })
 

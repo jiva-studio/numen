@@ -38,7 +38,7 @@ const props = withDefaults(
 const shown = computed(() =>
   activity({
     says: props.says,
-    ...(props.tone === 'alarm' ? { trouble: true } : {}),
+    ...(props.tone === 'alarm' ? { hasFailed: true } : {}),
     ...(props.working ? { working: true } : {}),
     ...(props.tally ? { tally: props.tally } : {}),
   }),

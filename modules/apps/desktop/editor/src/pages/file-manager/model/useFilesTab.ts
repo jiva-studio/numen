@@ -26,7 +26,7 @@ import type {
   FileTree,
   MenuRequest,
 } from '../types'
-import { createFolder, createNote, createOne, getFolderFor } from './create'
+import * as create from './create'
 
 export type { DropPosition, FileMaker, FilesTabDeps, FilesTabState, MenuRequest }
 
@@ -100,23 +100,23 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     deps.runCommand('remove', paths, getNameOf(first), getSourceOf(first))
   }
 
-  const handleCreateFolder = async (path: string | null) => {
-    const made = await createFolder(list, deps, path)
+  const createFolder = async (path: string | null) => {
+    const made = await create.createFolder(list, deps, path)
     if (made) renamingPath.value = made
   }
 
-  const handleCreateNote = async (path: string | null) => {
-    const made = await createNote(list, deps, path)
+  const createNote = async (path: string | null) => {
+    const made = await create.createNote(list, deps, path)
     if (made) renamingPath.value = made
   }
 
-  const handleCreateOne = async (path: string | null, createEntry: FileMaker, name: string) => {
-    const made = await createOne(list, path, createEntry, name)
+  const createOne = async (path: string | null, createEntry: FileMaker, name: string) => {
+    const made = await create.createOne(list, path, createEntry, name)
     if (made) renamingPath.value = made
   }
 
-  const importAddress = (address: string) =>
-    deps.importAddress(getFolderFor(list, list.selectedPaths.value[0] ?? null), address)
+  const importUrl = (url: string) =>
+    deps.importUrl(create.getFolderFor(list, list.selectedPaths.value[0] ?? null), url)
 
   const setRenamingPath = (path: string | null) => {
     renamingPath.value = path
@@ -131,16 +131,16 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   }
 
   const chooseMenuItem = (id: string) => {
-    const asking = menu.value
+    const request = menu.value
     menu.value = null
-    if (!asking || !OFFERED.has(id)) return
-    if (id === NEW_NOTE) return void handleCreateNote(asking.path)
-    if (id === NEW_DECK) return void handleCreateOne(asking.path, deps.createDeck, words.newDeck)
-    if (id === NEW_STENCIL) return void handleCreateOne(asking.path, deps.createStencil, words.newStencil)
-    if (id === NEW_PRESET) return void handleCreateOne(asking.path, deps.createPreset, words.newPreset)
-    if (id === NEW_FOLDER) return void handleCreateFolder(asking.path)
+    if (!request || !OFFERED.has(id)) return
+    if (id === NEW_NOTE) return void createNote(request.path)
+    if (id === NEW_DECK) return void createOne(request.path, deps.createDeck, words.newDeck)
+    if (id === NEW_STENCIL) return void createOne(request.path, deps.createStencil, words.newStencil)
+    if (id === NEW_PRESET) return void createOne(request.path, deps.createPreset, words.newPreset)
+    if (id === NEW_FOLDER) return void createFolder(request.path)
 
-    const path = asking.path
+    const path = request.path
     if (path === null) return
     if (id === RENAME) {
       renamingPath.value = path
@@ -162,7 +162,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     renamingPath,
     setRenamingPath,
     getOverPaths,
-    getFolderFor: (path) => getFolderFor(list, path),
+    getFolderFor: (path) => create.getFolderFor(list, path),
     activate,
     open,
     close,
@@ -172,10 +172,10 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     drag,
     drop,
     remove,
-    createFolder: handleCreateFolder,
-    createNote: handleCreateNote,
-    createOne: handleCreateOne,
-    importAddress,
+    createFolder,
+    createNote,
+    createOne,
+    importUrl,
     openMenu,
     dismissMenu,
     chooseMenuItem,

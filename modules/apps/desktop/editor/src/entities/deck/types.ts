@@ -1,6 +1,6 @@
 import type { ErrorCode } from '@/shared/errors'
 import type { CreateResult } from '@/shared/file'
-import type { Surrounds } from './surrounds'
+import type { Surrounds } from './lib/surrounds'
 
 /** One stencil as the list of them names it. */
 export interface StencilSummary {

@@ -15,7 +15,7 @@ export function getDocumentAtOffset(
 ): SpineDocument | undefined {
   let found: SpineDocument | undefined
   for (const one of documents) {
-    if (one.span.begins > offset) break
+    if (one.span.from > offset) break
     found = one
   }
   return found
@@ -35,12 +35,12 @@ export function getContents(book: Book, words: BookWords): readonly ContentsEntr
       level: one.level,
     }))
   }
-  if (book.printed.length !== 0) {
-    return book.printed.map((one) => ({
+  if (book.printedPages.length !== 0) {
+    return book.printedPages.map((one) => ({
       title: `${words.page} ${one.label}`,
       at: one.offset,
       level: 0,
     }))
   }
-  return book.documents.map((one) => ({ title: getDocumentTitle(one), at: one.span.begins, level: 0 }))
+  return book.documents.map((one) => ({ title: getDocumentTitle(one), at: one.span.from, level: 0 }))
 }

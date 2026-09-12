@@ -13,11 +13,19 @@ import type { WindowKindsDeps } from './deps'
 export interface FilesKindDeps
   extends Pick<
     WindowKindsDeps,
-    'core' | 'tabOpeners' | 'held' | 'runs' | 'editing' | 'vaults' | 'where' | 'runCommand' | 'doing'
+    | 'core'
+    | 'tabOpeners'
+    | 'held'
+    | 'runs'
+    | 'editing'
+    | 'vaults'
+    | 'getTarget'
+    | 'runCommand'
+    | 'commandDeps'
   > {
   dragged: ShallowRef<readonly string[]>
-  told: MessageWriter
-  places: DestinationDeps
+  writeMessage: MessageWriter
+  destinations: DestinationDeps
 }
 
 export function createFilesKind({
@@ -27,18 +35,18 @@ export function createFilesKind({
   runs,
   editing,
   vaults,
-  where,
+  getTarget,
   runCommand,
-  doing,
+  commandDeps,
   dragged,
-  told,
-  places,
+  writeMessage,
+  destinations,
 }: FilesKindDeps) {
-  const fetches = async (path: string): Promise<void> => {
+  const fetchArtifact = async (path: string): Promise<void> => {
     try {
       await running.fetchArtifact(path)
     } catch (error) {
-      told(formatErrorMessage(error), 'error')
+      writeMessage(formatErrorMessage(error), 'error')
       return
     }
     editing.notes.changed([path])
@@ -51,21 +59,21 @@ export function createFilesKind({
       createPreset: (title, folder) => presets.createPreset(title, folder),
       createUrl: async (address, folder) => {
         const made = await core.createUrl(address, folder)
-        if (made.path) void fetches(made.path)
+        if (made.path) void fetchArtifact(made.path)
         return made
       },
     },
     tabOpeners,
     { errors: words.errors },
-    told,
+    writeMessage,
   )
 
   const files = filesKind(held.handle, () => useFileTree(core), {
-    openDestination: (landing) => void openDestination(landing, places),
+    openDestination: (landing) => void openDestination(landing, destinations),
     runCommand: (id, paths, name, source) => {
       const path = paths[0] ?? ''
       runCommand(id, {
-        ...where(),
+        ...getTarget(),
         path,
         title: name,
         file: path,
@@ -75,17 +83,18 @@ export function createFilesKind({
       })
     },
     movePath: (from, to) =>
-      runInvocation(invocationOf('move', { ...where(), path: from }, to), doing(), words),
+      runInvocation(invocationOf('move', { ...getTarget(), path: from }, to), commandDeps(), words),
     setDraggedPaths: (paths) => {
       dragged.value = paths
     },
-    createFolder: (path) => runInvocation(invocationOf('makeFolder', where(), path), doing(), words),
+    createFolder: (path) =>
+      runInvocation(invocationOf('createFolder', getTarget(), path), commandDeps(), words),
     createNote: async (folder) => (await editing.making.createUntitled(folder, []))?.path ?? '',
     createDeck: (folder, name) => made.createFile('deck', folder, name),
     createStencil: (folder, name) => made.createFile('stencil', folder, name, [cardWords.newField]),
     createPreset: (folder, name) => made.createFile('preset', folder, name),
-    importAddress: (folder, address) => made.imports(folder, address),
-    showError: (text) => told(text, 'error'),
+    importUrl: (folder, url) => made.imports(folder, url),
+    showError: (text) => writeMessage(text, 'error'),
     canRun: (run) => runs.canRun(run),
   })
 

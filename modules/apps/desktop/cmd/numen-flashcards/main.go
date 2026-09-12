@@ -55,7 +55,7 @@ func main() {
 // binary could not do is said.
 func configured(out io.Writer) container.Config {
 	return container.Config{
-		Trouble: func(err error) { fmt.Fprintln(out, "numen-flashcards:", err) },
+		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen-flashcards:", err) },
 	}
 }
 

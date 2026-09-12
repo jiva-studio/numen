@@ -174,7 +174,7 @@ export function grid(
  * stands moves nothing: the head of the deck is where the first card standing
  * under no section already is, and the end of a run is where its last card is.
  */
-export const doesMove = (runs: readonly Run[], dragCard: string, at: InsertionPoint): boolean => {
+export const isMoved = (runs: readonly Run[], dragCard: string, at: InsertionPoint): boolean => {
   if (at === dragCard) return false
   if (at === HEAD) return runs[0]?.tiles[0]?.id !== dragCard
 

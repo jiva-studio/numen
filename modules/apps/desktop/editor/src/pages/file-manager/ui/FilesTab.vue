@@ -10,7 +10,7 @@ import type { LucideIcon } from '@lucide/vue'
 import { iconFor } from '@/shared/icons'
 import { iconOfEntry } from '../lib/icons'
 import type { DropPosition, FilesTabState, ListingRow } from '../types'
-import { addressDropped, carriesAddress } from '../lib/drag'
+import { getDroppedUrl, hasUrl } from '../lib/drag'
 import { itemsFor } from '../lib/menu'
 import { WORDS as words } from '../words'
 
@@ -30,7 +30,7 @@ const dropTarget = computed<RowMarker>(() => ({
 const rows = computed(() => rowsOf(props.state.list.rows.value))
 
 /** The row whose name is in a field, which the tree opens and closes itself. */
-const renaming = computed({
+const renamingPath = computed({
   get: () => props.state.renamingPath.value,
   set: (row: string | null) => props.state.setRenamingPath(row),
 })
@@ -50,14 +50,14 @@ const items = computed(() => {
 
 // --- Handlers ---
 function onDrop(event: DragEvent) {
-  const address = addressDropped(event.dataTransfer)
-  if (!address) return
+  const url = getDroppedUrl(event.dataTransfer)
+  if (!url) return
   event.preventDefault()
-  void props.state.importAddress(address)
+  void props.state.importUrl(url)
 }
 
 function onDragOver(event: DragEvent) {
-  if (carriesAddress(event.dataTransfer?.types)) event.preventDefault()
+  if (hasUrl(event.dataTransfer?.types)) event.preventDefault()
 }
 
 function onOpenEntry(row: string) {
@@ -134,7 +134,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
     </p>
 
     <Tree
-      v-model:renaming="renaming"
+      v-model:renamingPath="renamingPath"
       class="files__tree"
       :rows="rows"
       :open="props.state.list.openRows.value"

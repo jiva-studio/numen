@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Plex } from '@numen/ui'
 import {
-  asked,
+  requests,
   cards,
   mountWindowWithPalette,
   nodeInPlex,
@@ -166,7 +166,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('ArrowDown')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
-      expect(asked.worn).toStrictEqual([])
+      expect(requests.worn).toStrictEqual([])
     })
 
     it('puts back the theme the settings name when the step is left', async () => {
@@ -176,7 +176,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Escape')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-      expect(asked.worn).toStrictEqual([])
+      expect(requests.worn).toStrictEqual([])
     })
 
     it('keeps wearing the theme that was chosen, and writes it down', async () => {
@@ -185,7 +185,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Enter')
 
-      expect(asked.worn).toStrictEqual(['mine:sea system 1/1'])
+      expect(requests.worn).toStrictEqual(['mine:sea system 1/1'])
       expect(getHeadStyles()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
     })
   })
@@ -205,7 +205,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('ArrowDown')
 
       expect(getHeadStyles()).toStrictEqual([':root { color-scheme: light; }', SERVED, SIZED])
-      expect(asked.worn).toStrictEqual([])
+      expect(requests.worn).toStrictEqual([])
     })
 
     it('puts back the half the settings name when the step is left', async () => {
@@ -215,7 +215,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Escape')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-      expect(asked.worn).toStrictEqual([])
+      expect(requests.worn).toStrictEqual([])
     })
 
     it('writes the half that was chosen, leaving the theme where it was', async () => {
@@ -224,7 +224,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Enter')
 
-      expect(asked.worn).toStrictEqual(['preset:numen dark 1/1'])
+      expect(requests.worn).toStrictEqual(['preset:numen dark 1/1'])
       expect(getHeadStyles()).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
     })
   })
@@ -256,7 +256,7 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(getStandingRow()).toBe('sea')
       expect(getHeadStyles()).toStrictEqual(was)
-      expect(asked.worn).toStrictEqual([])
+      expect(requests.worn).toStrictEqual([])
     })
 
     it('stands on the half the tokens are read as, and goes on reading them so', async () => {
@@ -339,7 +339,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Enter')
 
-      expect(asked.worn).toStrictEqual(['preset:numen system 1.37/1'])
+      expect(requests.worn).toStrictEqual(['preset:numen system 1.37/1'])
       expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }')
     })
 
@@ -369,7 +369,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await wait()
       expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
-      expect(asked.worn).toStrictEqual([])
+      expect(requests.worn).toStrictEqual([])
     })
 
     it('puts back the size the settings name when the step is left', async () => {
@@ -380,7 +380,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Escape')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-      expect(asked.worn).toStrictEqual([])
+      expect(requests.worn).toStrictEqual([])
     })
 
     it('keeps drawing at the size that was chosen, and writes it down', async () => {
@@ -389,7 +389,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Enter')
 
-      expect(asked.worn).toStrictEqual(['preset:numen system 2/1'])
+      expect(requests.worn).toStrictEqual(['preset:numen system 2/1'])
       expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
     })
 
@@ -412,7 +412,7 @@ describe('the four commands over how the window is drawn', () => {
       const window = await mountWindowWithPalette()
       window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
       await settle()
-      asked.measured = 0
+      requests.measured = 0
       globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
       await settle()
       return window
@@ -426,7 +426,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('End')
       await wait()
 
-      expect(asked.measured).toBe(1)
+      expect(requests.measured).toBe(1)
     })
 
     it('takes them again at the size that was chosen', async () => {
@@ -438,7 +438,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
       await settle()
 
-      expect(asked.measured).toBe(1)
+      expect(requests.measured).toBe(1)
     })
 
     it('is left alone while the keyboard is walking rows, and by a theme', async () => {
@@ -449,7 +449,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('ArrowDown')
       await waitUnderHold()
 
-      expect(asked.measured).toBe(0)
+      expect(requests.measured).toBe(0)
     })
   })
 
@@ -468,7 +468,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Enter')
 
-      expect(asked.worn).toStrictEqual(['preset:numen system 1/1.75'])
+      expect(requests.worn).toStrictEqual(['preset:numen system 1/1.75'])
       expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 1; --numen-text-scale: 1.75; }')
     })
   })

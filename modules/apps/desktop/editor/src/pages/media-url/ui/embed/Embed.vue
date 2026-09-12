@@ -122,7 +122,7 @@ function seek(ms: number): void {
   )
 }
 
-defineExpose({ seeks: seek, seek })
+defineExpose({ seek })
 </script>
 
 <template>

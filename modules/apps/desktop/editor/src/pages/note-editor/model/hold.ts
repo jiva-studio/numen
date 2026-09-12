@@ -29,7 +29,7 @@ export interface HoldLimits {
   readonly abandoned: number
 }
 
-export const holding: HoldLimits = { settle: 900, bound: 4000, abandoned: 15000 }
+export const HOLD_LIMITS: HoldLimits = { settle: 900, bound: 4000, abandoned: 15000 }
 
 /** What should be done: the interval for one note, armed again over the last. */
 export interface TimerRequest {
@@ -37,10 +37,10 @@ export interface TimerRequest {
   readonly after: number
 }
 
-export function holdChanges(limits: HoldLimits = holding) {
+export function holdChanges(limits: HoldLimits = HOLD_LIMITS) {
   const changes = new Map<string, Change>()
   /** The notes whose change is over and is being let go of. */
-  const ending = new Set<string>()
+  const donePaths = new Set<string>()
 
   /** A change was reported. */
   const reportChange = (edit: NoteEdit): TimerRequest | null => {
@@ -51,7 +51,7 @@ export function holdChanges(limits: HoldLimits = holding) {
         to: edit.span.to,
         text: edit.text,
       })
-      ending.delete(edit.path)
+      donePaths.delete(edit.path)
       // A change is drawn on the word of whoever is making it, and that word
       // stops arriving when an agent is stopped mid-call. The bound is what a
       // drawing nobody ends costs.
@@ -59,20 +59,20 @@ export function holdChanges(limits: HoldLimits = holding) {
     }
     // A change nobody is drawing ends nothing.
     if (!changes.has(edit.path)) return null
-    ending.add(edit.path)
+    donePaths.add(edit.path)
     return { path: edit.path, after: limits.bound }
   }
 
   /** The note changed under whatever is drawn over it. */
   const handleNoteChange = (path: string): TimerRequest | null => {
-    if (!ending.has(path)) return null
+    if (!donePaths.has(path)) return null
     return { path, after: limits.settle }
   }
 
   /** The interval for one note fired. */
   const handleTimeout = (path: string): void => {
     changes.delete(path)
-    ending.delete(path)
+    donePaths.delete(path)
   }
 
   /** A note the window is no longer showing. */

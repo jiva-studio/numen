@@ -4,7 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useSettingsTab } from './kind'
-import type { Installation } from './model/useSettingsTab'
+import type { Installation } from './types'
 import { WORDS as words } from './words'
 import { SETTINGS } from '@/entities/tab'
 import type { WindowHandle } from '@/entities/tab'
@@ -34,7 +34,7 @@ const installation = (): Installation =>
     }),
     choose: vi.fn(),
     syncing: ref(false),
-    hangs: ref(false),
+    isHanging: ref(false),
     parts: ref(0),
     partsBounds: ref({ least: 1, most: 12 }),
     chooseParts: vi.fn(),

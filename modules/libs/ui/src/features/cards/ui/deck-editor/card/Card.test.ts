@@ -95,13 +95,13 @@ describe('Card', () => {
   it('holds nothing against a card that names no stencil, having said so on its strip', () => {
     const bare: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
     const held = mountCard(tileOf('bare', bare), { words: WORDS })
-    expect(held.findAll('.card__objects')).toHaveLength(0)
+    expect(held.findAll('.card__objections')).toHaveLength(0)
   })
 
   it('says which stencil a card naming one is waiting for', () => {
     const gone: readonly DeckCard[] = [{ id: 'gone', section: null, stencil: 'Gone', filled: [] }]
     const held = mountCard(tileOf('gone', gone), { words: WORDS })
-    expect(held.get('.card__objects').text()).toContain('No stencil called Gone')
+    expect(held.get('.card__objections').text()).toContain('No stencil called Gone')
   })
 
   it('reads a value of a card no stencil cuts, and types into none of them', () => {

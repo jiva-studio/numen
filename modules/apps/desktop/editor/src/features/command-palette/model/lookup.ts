@@ -167,16 +167,16 @@ export function createPassageItem(group: string, one: Passage, words: Words): Se
 }
 
 export function resolveDestination(
-  stands: SearchHit | undefined,
+  hit: SearchHit | undefined,
   action: string,
 ): SearchDestination | null {
-  if (!stands || !stands.offers.includes(action)) return null
-  const named = { path: stands.path, title: stands.title }
+  if (!hit || !hit.offers.includes(action)) return null
+  const named = { path: hit.path, title: hit.title }
   if (action === PLEX) return { at: 'plex', ...named }
   if (action === DOCUMENT) {
-    return { at: 'document', ...named, start: stands.start, length: stands.length }
+    return { at: 'document', ...named, start: hit.start, length: hit.length }
   }
-  return stands.line >= 0
-    ? { at: 'file', ...named, line: stands.line }
+  return hit.line >= 0
+    ? { at: 'file', ...named, line: hit.line }
     : { at: 'file', ...named }
 }

@@ -67,13 +67,13 @@ func (d *Document) Locate(offset int) string {
 	return strings.Join(named, ", ")
 }
 
-// Opens are the parts that begin exactly at an offset: what a section starting
-// here is called.
+// NamesAt are the parts that begin exactly at an offset: what a section
+// starting here is called.
 //
 // A part and the first subsection inside it can begin at one place, and both
 // name it. What is answered is every name, outermost first, so a question about
 // either reaches the same place.
-func (d *Document) Opens(offset int) []string {
+func (d *Document) NamesAt(offset int) []string {
 	var names []string
 	for _, m := range d.named {
 		if m.Offset == offset {

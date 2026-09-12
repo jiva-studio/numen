@@ -34,7 +34,7 @@ export interface Documents {
   /** Retrieves document layout and dimensions. */
   getDocumentLayout(path: string): Promise<DocumentLayout>
   /** Returns the image URL for a rendered page at the given pixel width. */
-  getPageUrl(path: string, page: number, width: number, seen?: string): string
+  getPageUrl(path: string, pageNumber: number, width: number, fingerprint?: string): string
   /** Retrieves highlights for given text spans. */
   getHighlights(
     path: string,

@@ -63,7 +63,7 @@ export function usePresetTab(
 
   const openPreset = (path: string, title = '', how: PlexDestination = 'here'): void => {
     if (title) titles.set(path, title)
-    void (how === 'beside' ? handle.beside(PRESET, path) : handle.openTab(PRESET, path))
+    void (how === 'beside' ? handle.openTabBeside(PRESET, path) : handle.openTab(PRESET, path))
   }
 
   tabOpeners.registerEditor('preset', openPreset)

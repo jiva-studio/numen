@@ -2,16 +2,17 @@
  * Carrying out a command over a note, a file or a tab.
  *
  * Every command is one entry in the table below, under the identity
- * `table.ts` gives it, so a command that is offered and a command that
+ * `lib/table.ts` gives it, so a command that is offered and a command that
  * happens are the same list. What the window offers to do it with is
- * `deps.ts`; what a command does to the vaults is `vaults.ts`. Nothing here
+ * `types.ts`; what a command does to the vaults is `vaults.ts`. Nothing here
  * draws anything.
  */
 import { formatErrorMessage } from '@numen/wire'
-import type { CommandDeps, CommandHandler, RunContext } from '../deps'
-import { all, formatNames, type Voice, type Words } from '../voice'
+import type { CommandDeps, CommandHandler, RunContext, Voice } from './deps'
+import type { CommandInvocation } from '../types'
+import type { AnswerWords } from '../words'
+import { all, formatNames } from '../lib/voice'
 export type { CommandDeps }
-import type { CommandInvocation } from '../target'
 import {
   atItsFile,
   createNoteCommand,
@@ -26,7 +27,7 @@ import type { Outcome, ArtifactState } from '@/shared/artifacts'
 import { AGENT, FILES, PLEX, SETTINGS } from '@/entities/tab'
 
 /** What each command comes to. A command with no entry here does nothing. */
-const carried: Record<string, CommandHandler> = {
+const HANDLERS: Record<string, CommandHandler> = {
   read: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'here'),
   beside: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'beside'),
   travel: (invocation, on) => on.goes.travel(invocation.path),
@@ -47,8 +48,8 @@ const carried: Record<string, CommandHandler> = {
     if (invocation.name) await on.makers.imports('', invocation.name)
   },
   title: (invocation, on, words) => renameNoteCommand(invocation, on, words),
-  remove: (invocation, on, words) => removes(invocation, false, on, words),
-  destroy: (invocation, on, words) => removes(invocation, true, on, words),
+  remove: (invocation, on, words) => removeFiles(invocation, false, on, words),
+  destroy: (invocation, on, words) => removeFiles(invocation, true, on, words),
   transcribe: async (invocation, on, words) =>
     reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'transcript'), on, words),
   recognise: async (invocation, on, words) =>
@@ -62,12 +63,12 @@ const carried: Record<string, CommandHandler> = {
   deleteText: async (invocation, on, words) => {
     if (await on.runs.deleteTranscript(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
-    on.says(words.unrunnable, 'error')
+    on.writeMessage(words.unrunnable, 'error')
   },
   deleteCopy: async (invocation, on, words) => {
     if (await on.runs.deleteCopy(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
-    on.says(words.unrunnable, 'error')
+    on.writeMessage(words.unrunnable, 'error')
   },
   ask: (invocation, on) => on.goes.ask(`${invocation.path} — `),
   copy: (invocation, on) => on.copies(invocation.path),
@@ -75,7 +76,7 @@ const carried: Record<string, CommandHandler> = {
   preset: (invocation, on) => on.goes.preset(invocation.path),
   settings: (_, on) => on.goes.openTab(SETTINGS),
   move: (invocation, on, words) => moveFileCommand(invocation, on, words),
-  makeFolder: (invocation, on, words) => createFolderCommand(invocation, on, words),
+  createFolder: (invocation, on, words) => createFolderCommand(invocation, on, words),
   plex: (_, on) => on.goes.openTab(PLEX),
   files: (_, on) => on.goes.openTab(FILES),
   agent: (_, on) => on.goes.openTab(AGENT),
@@ -98,22 +99,22 @@ const carried: Record<string, CommandHandler> = {
 }
 
 /** A command carried out. Nothing chosen does nothing at all. */
-export async function runInvocation(invocation: CommandInvocation | null, on: CommandDeps, words: Words): Promise<void> {
+export async function runInvocation(invocation: CommandInvocation | null, on: CommandDeps, words: AnswerWords): Promise<void> {
   if (!invocation) return
-  const carry = carried[invocation.id]
-  if (!carry) return
-  on.says('')
+  const handler = HANDLERS[invocation.id]
+  if (!handler) return
+  on.writeMessage('')
   try {
-    await carry(atItsFile(invocation, on), on, words)
+    await handler(atItsFile(invocation, on), on, words)
   } catch (error) {
-    on.says(formatErrorMessage(error), 'error')
+    on.writeMessage(formatErrorMessage(error), 'error')
   }
 }
 
 
 
 /** What an artifact stands at when the ask did not come off, which is said as an error. */
-const WENT_WRONG: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'failed']
+const ERROR_STATES: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'failed']
 
 /**
  * An artifact asked for over a file. What it now stands at is one message,
@@ -121,10 +122,10 @@ const WENT_WRONG: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'faile
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
  */
-const reportOutcome = (invocation: CommandInvocation, outcome: Outcome, on: RunContext & Voice, words: Words): void => {
+const reportOutcome = (invocation: CommandInvocation, outcome: Outcome, on: RunContext & Voice, words: AnswerWords): void => {
   if (!outcome.able) {
     on.runSupport.cannotRun(invocation.id)
-    return on.says(words.unrunnable, 'error')
+    return on.writeMessage(words.unrunnable, 'error')
   }
   // A file nothing here could read carries what the run said about it, and that
   // stands after the message.
@@ -134,7 +135,7 @@ const reportOutcome = (invocation: CommandInvocation, outcome: Outcome, on: RunC
   const why =
     invocation.id === 'downloadText' ? words.fetched[outcome.made] : words.made[outcome.of][outcome.made]
   const said = outcome.error ? `${why} ${outcome.error}` : why
-  on.says(said, WENT_WRONG.includes(outcome.made) ? 'error' : 'report')
+  on.writeMessage(said, ERROR_STATES.includes(outcome.made) ? 'error' : 'report')
 }
 
 
@@ -142,7 +143,7 @@ const reportOutcome = (invocation: CommandInvocation, outcome: Outcome, on: RunC
  * The files one invocation is over: the one it names, and the rest of the selection it
  * was asked over.
  */
-const over = (invocation: CommandInvocation): readonly string[] => [invocation.path, ...invocation.others]
+const getInvocationPaths = (invocation: CommandInvocation): readonly string[] => [invocation.path, ...invocation.others]
 
 /**
  * Files taken out of the vault. A file that has gone is gone from the tree, so
@@ -150,13 +151,18 @@ const over = (invocation: CommandInvocation): readonly string[] => [invocation.p
  * vault refuses leaves the rest to go, and what was refused is what the person
  * is told.
  */
-const removes = async (invocation: CommandInvocation, destroy: boolean, on: CommandDeps, words: Words): Promise<void> => {
+const removeFiles = async (
+  invocation: CommandInvocation,
+  destroy: boolean,
+  on: CommandDeps,
+  words: AnswerWords,
+): Promise<void> => {
   const dangling: string[] = []
   const errors: string[] = []
   let waiting = false
   const opening = on.goes.opening()
 
-  for (const path of over(invocation)) {
+  for (const path of getInvocationPaths(invocation)) {
     const tab = await settleTab(path, on)
     if (tab.waiting) {
       waiting = true
@@ -173,9 +179,9 @@ const removes = async (invocation: CommandInvocation, destroy: boolean, on: Comm
     if (opening) await on.goes.leave(path, opening)
   }
 
-  if (errors.length > 0) return on.says(all(...errors), 'error')
-  if (waiting) return on.says(words.unanswered, 'caution')
-  on.says(formatNames(words.dangling, dangling))
+  if (errors.length > 0) return on.writeMessage(all(...errors), 'error')
+  if (waiting) return on.writeMessage(words.unanswered, 'caution')
+  on.writeMessage(formatNames(words.dangling, dangling))
 }
 
 export * from './noteHandlers'

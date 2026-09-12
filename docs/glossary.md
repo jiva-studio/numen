@@ -14,6 +14,7 @@ The ubiquitous language of the project: domain terms, storage entities, protocol
 | role | The structural classification of a link: `parent`, `child`, `jump`, `ref`, `attachment`. | seat |
 | identifier | The ULID assigned to a vault or note. | |
 | stale | A write conflict state (`port.ErrStale`) occurring when a file on disk changed after the client read it. | overtaken |
+| error code | The closed enum (`ErrorCode`) a successful call answers with when its answer is no: a name taken, a file that moved past the caller, a path the vault does not hold. | refusal, trouble |
 
 ## The index and search
 
@@ -64,7 +65,7 @@ The ubiquitous language of the project: domain terms, storage entities, protocol
 | plex | The focused interactive graph view visualizing a note's neighbourhood. | |
 | neighbourhood | A central note and all directly connected neighbour notes. | |
 | focus | The central note around which a neighbourhood graph is rendered. | |
-| ticket | An ephemeral identifier assigned to a node for canvas layout tracking. | |
+| node id | An ephemeral identifier assigned to a node for canvas layout tracking. | ticket |
 | seat | Relative topological position of a node to the focus: `parent`, `child`, `jump`, `sibling`. | role |
 | tab kind | An extension contract (`TabKind`) declaring lifecycle, title resolution, and view rendering for a tab type. | plugin, view |
 | invocation | Execution context of a command: active note, vault, selection, and typed argument. | |

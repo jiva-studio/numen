@@ -119,19 +119,17 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 			"not in here either; `link_list` answers that. The fingerprint that comes back is " +
 			"what `note_rewrite` wants: hand it back and the write is refused if the " +
 			"person changed the note in the meantime. A path that could not be read " +
-			"comes back under `refused` saying why, and the rest of the batch still " +
+			"comes back under `errors` saying why, and the rest of the batch still " +
 			"comes back.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Paths []string `json:"paths" jsonschema:"the paths to read"`
 	}) (*sdk.CallToolResult, struct {
-		Notes   []Contents `json:"notes"`
-		Missing []string   `json:"missing,omitempty"`
-		Refused []Refusal  `json:"refused,omitempty"`
+		Notes  []Contents `json:"notes"`
+		Errors []Error    `json:"errors,omitempty"`
 	}, error) {
 		type out = struct {
-			Notes   []Contents `json:"notes"`
-			Missing []string   `json:"missing,omitempty"`
-			Refused []Refusal  `json:"refused,omitempty"`
+			Notes  []Contents `json:"notes"`
+			Errors []Error    `json:"errors,omitempty"`
 		}
 		if len(in.Paths) > maxBodies {
 			return nil, out{}, fmt.Errorf("read at most %d notes at a time", maxBodies)
@@ -156,10 +154,8 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 					// makes this stale, and the next write is refused.
 					Fingerprint: fingerprintOf(contents.Fingerprint),
 				})
-			case note.Missing:
-				res.Missing = append(res.Missing, path)
 			default:
-				res.Refused = append(res.Refused, Refusal{Path: path, Why: why(contents)})
+				res.Errors = append(res.Errors, Error{Path: path, Why: why(contents)})
 			}
 		}
 		return nil, res, nil
@@ -454,9 +450,9 @@ type Contents struct {
 	Fingerprint string `json:"fingerprint" jsonschema:"hand this to note_rewrite to refuse a write over an edit you did not see"`
 }
 
-// Refusal is one path that came back with no prose behind it, and what stopped
+// Error is one path that came back with no prose behind it, and what stopped
 // it. A batch of ten notes with one export among them comes back with nine.
-type Refusal struct {
+type Error struct {
 	Path string `json:"path"`
 	Why  string `json:"why" jsonschema:"why this one was not read"`
 }

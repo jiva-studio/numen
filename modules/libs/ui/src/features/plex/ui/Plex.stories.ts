@@ -1330,18 +1330,18 @@ export const PartsInside: Story = {
     await userEvent.click(partsOf(focus)[1]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
 
-    // A note with more parts than stand at once is wound through them.
+    // A note with more parts than stand at once is scrolled through them.
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
     await waitFor(async () => await expect(partsOf(many)).toHaveLength(most), { timeout: 3000 })
 
     // A window on more than it holds carries an arrow at the edge it may be
-    // wound towards, and winding it moves it by whole parts.
+    // scrolled towards, and scrolling it moves it by whole parts.
     const arrows = () => [...many.querySelectorAll('.plex__more')]
     await expect(arrows()).toHaveLength(1)
 
     // Said in lines, which is one part the line. A hand on a trackpad speaks
-    // in pixels and winds when they come to a part's height.
+    // in pixels and scrolls when they come to a part's height.
     const wheel = (deltaY: number) =>
       many.querySelector('.plex__inside')!.dispatchEvent(
         new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),

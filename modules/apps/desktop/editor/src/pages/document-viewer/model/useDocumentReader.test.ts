@@ -163,11 +163,11 @@ describe('a document opened at a place in its text', () => {
   it('highlights the other places asked for where they fall, apart from the first', async () => {
     const here = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
     const there = { minX: 0.1, minY: 0.5, maxX: 0.4, maxY: 0.53 }
-    const alsoThere = { minX: 0.1, minY: 0.8, maxX: 0.4, maxY: 0.83 }
+    const onTheNextPage = { minX: 0.1, minY: 0.8, maxX: 0.4, maxY: 0.83 }
     const { documents, spans } = book(LAYOUT, [
       [{ page: 1, rects: [here] }],
       [{ page: 1, rects: [there] }],
-      [{ page: 2, rects: [alsoThere] }],
+      [{ page: 2, rects: [onTheNextPage] }],
     ])
     const read = useDocumentReader(documents, 'Book.pdf')
     read.widen(800)
@@ -185,8 +185,8 @@ describe('a document opened at a place in its text', () => {
     ])
     expect(read.pageNumber.value).toBe(1)
     expect(read.highlighted.value).toStrictEqual([here])
-    expect(read.also.value).toStrictEqual([there])
-    expect(read.alsoOn(2)).toStrictEqual([alsoThere])
+    expect(read.otherHighlighted.value).toStrictEqual([there])
+    expect(read.getOtherHighlightsOn(2)).toStrictEqual([onTheNextPage])
     expect(read.getHighlightsOn(2)).toStrictEqual([])
   })
 

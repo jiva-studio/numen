@@ -6,7 +6,7 @@ import { computed } from 'vue'
 import { NumberField, SegmentedControl, Select, Switch, TimeField } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
-import type { SettingsTabState } from '../model/useSettingsTab'
+import type { SettingsTabState } from '../types'
 import type { Mode } from '@/entities/settings'
 import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '@/features/settings-commands'
 import { WORDS as words } from '../words'
@@ -149,7 +149,7 @@ function onDayStartsChange(hour: string) {
       :name="words.hanging"
       :detail="words.hangingDetail"
     >
-      <Switch v-model="installation.hangs.value" :aria-labelledby="labelledBy" />
+      <Switch v-model="installation.isHanging.value" :aria-labelledby="labelledBy" />
     </SettingRow>
 
     <SettingRow

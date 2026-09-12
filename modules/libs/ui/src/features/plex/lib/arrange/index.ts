@@ -3,9 +3,9 @@ export { arrangePlex, type ArrangeInput } from './arrange'
 export { measureCrowding, packOptions, type SeatCounts } from './crowding'
 export { limitsFor, type Limits, type RoleLimits } from './limits'
 export {
+  getDropSeat,
   nodeAt,
   resolveDrop,
-  seatDropped,
   seatTowards,
   seatWithoutDirection,
   type Drop,

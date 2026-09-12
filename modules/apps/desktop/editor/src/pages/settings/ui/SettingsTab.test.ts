@@ -14,7 +14,7 @@ import { mount } from '@vue/test-utils'
 import type { Model, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import SettingsTab from './SettingsTab.vue'
-import type { Installation } from '../model/useSettingsTab'
+import type { Installation } from '../types'
 import { WORDS as words } from '../words'
 
 /** A model somebody typed into the file themselves, addressed and not named. */
@@ -69,7 +69,7 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
   const done: string[] = []
   const written: SettingEdit[] = []
   const syncing = ref(true)
-  const hangs = ref(true)
+  const isHanging = ref(true)
   const installation: Installation = {
     setting: (path) => at(file, path),
     models: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
@@ -96,10 +96,10 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
         done.push(`syncing ${on}`)
       },
     }),
-    hangs: computed({
-      get: () => hangs.value,
+    isHanging: computed({
+      get: () => isHanging.value,
       set: (on) => {
-        hangs.value = on
+        isHanging.value = on
         done.push(`hanging ${on}`)
       },
     }),

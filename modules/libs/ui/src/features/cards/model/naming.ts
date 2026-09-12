@@ -6,6 +6,7 @@
  * and that one value is what the box says and what the commit consults.
  */
 import { shallowRef } from 'vue'
+import type { NameCheckResult, Objection } from '../lib/order'
 
 /** A name being typed over the one something carries. */
 interface Draft {
@@ -15,27 +16,27 @@ interface Draft {
 }
 
 /**
- * What naming something takes. `Objection` is what may be wrong with a name,
- * which is the rule's to say: a field is written in a slot and a face in a
- * heading, and the two are not written under the same rules.
+ * What naming something takes. `Why` is the objections a name may draw, which
+ * is the rule's to say: a field is written in a slot and a face in a heading,
+ * and the two are not written under the same rules.
  */
-export interface NamingDeps<Objection> {
+export interface NamingDeps<Why extends Objection> {
   /** The name the thing being typed over carries. */
-  readonly carries: (over: string) => string
+  readonly getName: (over: string) => string
   /** The names already taken, which the one being typed is measured against. */
-  readonly taken: (over: string) => readonly string[]
-  /** Why a name cannot be used, and nothing where it can. */
-  readonly amiss: (name: string, taken: readonly string[]) => Objection | null
+  readonly getTakenNames: (over: string) => readonly string[]
+  /** The name as it would be written, and why it cannot be used. */
+  readonly checkName: (name: string, taken: readonly string[]) => NameCheckResult<Why>
   /** A name that may be used, committed. */
-  readonly renamed: (over: string, name: string) => void
+  readonly rename: (over: string, name: string) => void
 }
 
 /** What naming answers: what a box holds, what is wrong with it, and the gestures. */
-export interface NamingState<Objection> {
+export interface NamingState<Why extends Objection> {
   /** What is in the box: the name it carries, or what is being typed over it. */
   readonly text: (over: string) => string
   /** Why what is in the box cannot be used, and nothing while it can. */
-  readonly objection: (over: string) => Objection | null
+  readonly objection: (over: string) => Why | null
   /** Something was typed into the box. */
   readonly setDraft: (over: string, text: string) => void
   /** What was typed is committed, and nothing where it objects or says what it said. */
@@ -44,7 +45,7 @@ export interface NamingState<Objection> {
   readonly onKey: (press: KeyboardEvent, over: string) => void
 }
 
-export function useNaming<Objection>(deps: NamingDeps<Objection>): NamingState<Objection> {
+export function useNaming<Why extends Objection>(deps: NamingDeps<Why>): NamingState<Why> {
   /** What is being typed, over the thing it is being typed over. */
   const draft = shallowRef<Draft | null>(null)
 
@@ -54,28 +55,26 @@ export function useNaming<Objection>(deps: NamingDeps<Objection>): NamingState<O
     return held?.over === over ? held.text : null
   }
 
-  const text = (over: string): string => getDraft(over) ?? deps.carries(over)
+  const text = (over: string): string => getDraft(over) ?? deps.getName(over)
 
-  const objection = (over: string): Objection | null => {
+  const check = (over: string): NameCheckResult<Why> | null => {
     const said = getDraft(over)
-    return said === null ? null : deps.amiss(said, deps.taken(over))
+    return said === null ? null : deps.checkName(said, deps.getTakenNames(over))
   }
+
+  const objection = (over: string): Why | null => check(over)?.objection ?? null
 
   const setDraft = (over: string, text: string): void => {
     draft.value = { over, text }
   }
 
   const commit = (over: string): void => {
-    const said = getDraft(over)
-    // The objection stands on what is being typed, so it is read while it is.
-    const amiss = objection(over)
+    // The check stands on what is being typed, so it is read while it is.
+    const checked = check(over)
     draft.value = null
-    if (said === null) return
-
-    const name = said.trim()
-    if (name === deps.carries(over)) return
-    if (amiss !== null) return
-    deps.renamed(over, name)
+    if (checked === null || checked.objection !== null) return
+    if (checked.name === deps.getName(over)) return
+    deps.rename(over, checked.name)
   }
 
   const onKey = (press: KeyboardEvent, over: string): void => {

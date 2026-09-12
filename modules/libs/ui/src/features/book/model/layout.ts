@@ -190,7 +190,7 @@ export function useBookLayout(
   watch(
     () => props.at,
     (at) => {
-      if (at < props.span.begins || at >= props.span.ends) return
+      if (at < props.span.from || at >= props.span.to) return
       const want = findSpreadAt(marks.value, flow.value, at)
       if (want !== standing.value) stand(want, 'smooth')
     },

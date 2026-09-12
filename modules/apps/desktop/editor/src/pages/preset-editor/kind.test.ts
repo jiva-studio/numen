@@ -534,7 +534,7 @@ describe('what a tab still owes the file', () => {
     state.close('Steady.md')
     await after()
     expect(closed).toStrictEqual([])
-    expect(state.changed.value).toBe(true)
+    expect(state.hasChanged.value).toBe(true)
   })
 
   it('is written when the window goes', async () => {

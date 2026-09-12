@@ -10,11 +10,11 @@ import { WORDS as words } from '../words'
 export interface WriteFlight {
   at: string
   writing: boolean
-  wanted: boolean
+  isWriteQueued: boolean
   flight: Promise<void> | null
-  told: boolean
+  isWarned: boolean
   readonly theirs: Set<keyof Settings>
-  readonly changed: Ref<boolean>
+  readonly hasChanged: Ref<boolean>
   readonly errorMessage: Ref<string>
 }
 
@@ -22,11 +22,11 @@ export function createWriteFlight(): WriteFlight {
   return {
     at: '',
     writing: false,
-    wanted: false,
+    isWriteQueued: false,
     flight: null,
-    told: false,
+    isWarned: false,
     theirs: new Set<keyof Settings>(),
-    changed: ref(false),
+    hasChanged: ref(false),
     errorMessage: ref(''),
   }
 }
@@ -49,7 +49,7 @@ export const sendWrite = async (
     return
   }
   if (answer.changed) {
-    flight.changed.value = true
+    flight.hasChanged.value = true
     return
   }
   const writeError = answer.error
@@ -61,7 +61,7 @@ export const sendWrite = async (
   flight.errorMessage.value = ''
   flight.at = answer.at
   flight.theirs.clear()
-  flight.told = false
+  flight.isWarned = false
 }
 
 const executeFlight = async (
@@ -73,8 +73,8 @@ const executeFlight = async (
 ): Promise<void> => {
   await sendWrite(flight, path, settings, core, writeMessage)
   flight.writing = false
-  const again = flight.wanted && !flight.changed.value
-  flight.wanted = false
+  const again = flight.isWriteQueued && !flight.hasChanged.value
+  flight.isWriteQueued = false
   if (again) {
     await requestWrite(flight, path, settings, core, writeMessage)
     return
@@ -91,7 +91,7 @@ export const requestWrite = (
   writeMessage: MessageWriter,
 ): Promise<void> => {
   if (flight.writing) {
-    flight.wanted = true
+    flight.isWriteQueued = true
     return flight.flight ?? Promise.resolve()
   }
   flight.writing = true
@@ -108,7 +108,7 @@ export const flushWrites = async (
   core: Presets,
   writeMessage: MessageWriter,
 ): Promise<void> => {
-  if (flight.theirs.size > 0 && !flight.changed.value) {
+  if (flight.theirs.size > 0 && !flight.hasChanged.value) {
     await requestWrite(flight, path, settings, core, writeMessage)
   } else if (flight.flight) {
     await flight.flight
@@ -124,8 +124,8 @@ export const canCloseTab = async (
   writeMessage: MessageWriter,
 ): Promise<boolean> => {
   await flushWrites(flight, path, settings, core, writeMessage)
-  if (flight.theirs.size === 0 && !flight.changed.value) return true
-  if (flight.told) return true
-  flight.told = true
+  if (flight.theirs.size === 0 && !flight.hasChanged.value) return true
+  if (flight.isWarned) return true
+  flight.isWarned = true
   return false
 }

@@ -2,12 +2,13 @@
  * Reader state and controls for an open book.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { BookSpan, ContentsEntry } from '@numen/ui'
+import type { ContentsEntry } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '@/shared/span'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { resolveImageUrls } from '../lib/markup'
 import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
+import { useBookDocument } from './useBookDocument'
+import { useBookHighlights } from './useBookHighlights'
 import type {
   Book,
   BookHandle,
@@ -28,11 +29,8 @@ export type {
   SpineDocument,
 }
 export { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
-
-const spanOf = (span: Span): BookSpan => ({
-  begins: span.from,
-  ends: span.to,
-})
+export { useBookDocument } from './useBookDocument'
+export { useBookHighlights } from './useBookHighlights'
 
 export type BookReaderState = ReturnType<typeof useBookReader>
 
@@ -43,17 +41,16 @@ export function useBookReader(
   writeMessage: MessageWriter = () => {},
 ) {
   const title = ref('')
-  const span = ref<BookSpan>({ begins: 0, ends: 0 })
+  const span = ref<Span>({ from: 0, to: 0 })
   const documents = shallowRef<readonly SpineDocument[]>([])
   const contents = shallowRef<readonly ContentsEntry[]>([])
   const pages = ref(0)
   const pageBytes = ref(0)
   const offset = ref(0)
   const fingerprint = ref('')
-  const markup = ref('')
-  const activeDocument = shallowRef<SpineDocument | undefined>(undefined)
-  const highlights = shallowRef<readonly BookSpan[]>([])
-  const elsewhere = shallowRef<readonly BookSpan[]>([])
+  let open = true
+
+  const bookDocument = useBookDocument(books, path, fingerprint, writeMessage, () => open)
 
   const page = computed(() => getPageNumber(pageBytes.value, pages.value, offset.value))
 
@@ -66,25 +63,6 @@ export function useBookReader(
     return found
   })
 
-  const reading = computed<BookSpan>(() => activeDocument.value?.span ?? { begins: 0, ends: 0 })
-  const drawn = computed(() => activeDocument.value?.path ?? '')
-  let open = true
-  let wanted = 0
-
-  const draw = async (document: SpineDocument | undefined) => {
-    if (!document || document.path === activeDocument.value?.path) return
-    const asked = ++wanted
-    try {
-      const markupContent = await books.readMarkup(path, document.path, fingerprint.value)
-      if (!open || asked !== wanted) return
-      activeDocument.value = document
-      markup.value = resolveImageUrls(markupContent, (name) => books.getEntryUrl(path, name, fingerprint.value))
-    } catch (error) {
-      if (!open || asked !== wanted) return
-      writeMessage(formatErrorMessage(error), 'error')
-    }
-  }
-
   const loadBook = async () => {
     try {
       const book = await books.getBook(path)
@@ -96,8 +74,8 @@ export function useBookReader(
       pageBytes.value = book.pageBytes
       contents.value = getContents(book, words)
       fingerprint.value = book.fingerprint
-      offset.value = book.span.begins
-      await draw(getDocumentAtOffset(book.documents, book.span.begins))
+      offset.value = book.span.from
+      await bookDocument.draw(getDocumentAtOffset(book.documents, book.span.from))
     } catch (error) {
       if (!open) return
       writeMessage(formatErrorMessage(error), 'error')
@@ -109,9 +87,9 @@ export function useBookReader(
   const goToOffset = async (targetOffset: number) => {
     await shape
     if (!open || documents.value.length === 0) return
-    const last = Math.max(span.value.ends - 1, span.value.begins)
-    offset.value = Math.min(Math.max(Math.trunc(targetOffset), span.value.begins), last)
-    await draw(getDocumentAtOffset(documents.value, offset.value))
+    const last = Math.max(span.value.to - 1, span.value.from)
+    offset.value = Math.min(Math.max(Math.trunc(targetOffset), span.value.from), last)
+    await bookDocument.draw(getDocumentAtOffset(documents.value, offset.value))
   }
 
   const followLink = async (target: string) => {
@@ -119,22 +97,20 @@ export function useBookReader(
     if (!open) return
     const targetDoc = documents.value.find((one) => one.path === target)
     if (!targetDoc) return
-    await goToOffset(targetDoc.span.begins)
+    await goToOffset(targetDoc.span.from)
   }
+
+  const marks = useBookHighlights(goToOffset, () => open)
 
   const focusSpans = async (...spans: readonly Span[]) => {
     await shape
-    if (!open || spans.length === 0) return
-    const [front, ...rest] = spans
-    if (!front) return
-    highlights.value = [spanOf(front)]
-    elsewhere.value = rest.map(spanOf)
-    await goToOffset(front.from)
+    if (!open) return
+    await marks.focusSpans(...spans)
   }
 
   const close = () => {
     open = false
-    markup.value = ''
+    bookDocument.close()
     documents.value = []
     contents.value = []
     pages.value = 0
@@ -151,11 +127,11 @@ export function useBookReader(
     chapter,
     pageBytes,
     offset,
-    reading,
-    drawn,
-    markup,
-    highlights,
-    elsewhere,
+    reading: bookDocument.reading,
+    drawn: bookDocument.drawn,
+    markup: bookDocument.markup,
+    highlights: marks.highlights,
+    otherHighlights: marks.otherHighlights,
     goToOffset,
     followLink,
     focusSpans,

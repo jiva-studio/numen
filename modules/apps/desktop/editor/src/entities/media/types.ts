@@ -1,7 +1,7 @@
 /** What a recording tab asks of the application, and what comes back. */
 import type { ArtifactStates } from '@/shared/artifacts'
 import type { Span } from '@/shared/span'
-import type { Cue } from './cues'
+import type { Cue } from './lib/cues'
 
 /** The text fetched or heard, and whether it may be written over. */
 export interface Transcript {
@@ -10,8 +10,7 @@ export interface Transcript {
   /** The prose a page is written around, empty for words with times. */
   readonly prose: string
   /** False while a run writing the text holds it. */
-  readonly isEditable?: boolean
-  readonly editable: boolean
+  readonly isEditable: boolean
 }
 
 /**

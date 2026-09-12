@@ -47,7 +47,7 @@ class Time extends GutterMarker {
     readonly text: string,
     readonly at: number,
     readonly current: boolean,
-    readonly goes: (line: number) => void,
+    readonly goToLine: (line: number) => void,
   ) {
     super()
     this.elementClass = current ? 'cm-current' : ''
@@ -67,20 +67,20 @@ class Time extends GutterMarker {
     mark.textContent = this.text
     mark.addEventListener('mousedown', (event) => {
       event.preventDefault()
-      this.goes(this.at)
+      this.goToLine(this.at)
     })
     return mark
   }
 }
 
-const times = (goes: (line: number) => void): Extension =>
+const times = (goToLine: (line: number) => void): Extension =>
   gutter({
     class: 'cm-times',
     lineMarker: (view, line) => {
       const at = view.state.doc.lineAt(line.from).number - 1
       const { times: all, current } = view.state.field(held)
       const text = all[at]
-      return text === undefined ? null : new Time(text, at, at === current, goes)
+      return text === undefined ? null : new Time(text, at, at === current, goToLine)
     },
     lineMarkerChange: (update) => update.startState.field(held) !== update.state.field(held),
   })
@@ -137,7 +137,7 @@ const same = (one: TimingState, two: TimingState): boolean =>
     (one.times.length === two.times.length &&
       one.times.every((text, at) => text === two.times[at])))
 
-export function timing(goes: (line: number) => void): Timing {
+export function timing(goToLine: (line: number) => void): Timing {
   let view: EditorView | null = null
 
   // What was last shown. An editor drawn again — a tab moved, a pane split —
@@ -180,5 +180,5 @@ export function timing(goes: (line: number) => void): Timing {
 
   const show = (state: TimingState) => put(state, true)
 
-  return { extension: [held, marked, times(goes), painted, holding], show }
+  return { extension: [held, marked, times(goToLine), painted, holding], show }
 }

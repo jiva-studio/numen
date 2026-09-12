@@ -91,7 +91,7 @@ func (o *openVaults) of(v domain.Vault) *vaultOpening {
 func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	opening := o.cfg.VaultOpener(o.db)
 	opening.Told = func(container.VaultChanges) { o.record(v) }
-	opening.Trouble = func(err error) {
+	opening.ErrorHandler = func(err error) {
 		if err != nil {
 			fmt.Fprintf(o.out, "numen-flashcards: %s: %v\n", v.Name, err)
 		}

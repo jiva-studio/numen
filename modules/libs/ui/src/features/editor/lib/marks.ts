@@ -38,18 +38,18 @@ const mark = (name: string) => {
  * What is drawn between `from` and `to`.
  *
  * A widget standing for whole lines has to come from the state; everything
- * else is drawn for the lines on screen. `wants` says which of the two this
+ * else is drawn for the lines on screen. `pass` says which of the two this
  * pass is collecting.
  */
 const build = (
   state: EditorState,
   from: number,
   to: number,
-  wants: 'blocks' | 'marks',
+  pass: 'blocks' | 'marks',
 ): DecorationSet => {
   const found: Range<Decoration>[] = []
   const doc = state.doc
-  const blocks = wants === 'blocks'
+  const blocks = pass === 'blocks'
 
   const isSelected = (start: number, end: number) =>
     state.selection.ranges.some((range) => range.from <= end && range.to >= start)

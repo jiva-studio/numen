@@ -16,15 +16,15 @@ const titleOf = (note: string): string => note || words.plex
 /**
  * Manages window-level plex tab operations and navigation.
  */
-export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: PlexTabDeps) {
+export function plexKind(handle: WindowHandle, createView: () => PlexView, deps: PlexTabDeps) {
   const all = () => handle.each<PlexTabState>(PLEX)
   const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.state ?? null
 
   const kind: TabKind<PlexTabState, typeof PLEX> = {
     kind: PLEX,
     open: (at) => {
-      const state = usePlexTab(makes(), deps)
-      const from = at || getCurrentPath() || deps.opening.value
+      const state = usePlexTab(createView(), deps)
+      const from = at || getCurrentPath() || deps.openingPath.value
       if (from) void state.view.go(from)
       return state
     },
@@ -63,23 +63,23 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
     )
   }
 
-  const again = async (renames: readonly PathRename[] = []) => {
+  const refresh = async (renames: readonly PathRename[] = []) => {
     if (renames.length) for (const { state } of all()) state.followMoves(renames)
     if (all().some(({ state }) => !state.view.here.value)) {
       try {
-        await deps.first()
+        await deps.readOpeningPath()
       } catch {
         // The next change asks again.
       }
     }
     await Promise.all(
       all().map(async ({ state }) => {
-        const path = state.view.here.value || deps.opening.value
+        const path = state.view.here.value || deps.openingPath.value
         if (path) await state.view.go(path)
         await state.readParts()
       }),
     )
   }
 
-  return { kind, looking: getCurrentPath, getName, travel, leavePath, again }
+  return { kind, looking: getCurrentPath, getName, travel, leavePath, refresh }
 }

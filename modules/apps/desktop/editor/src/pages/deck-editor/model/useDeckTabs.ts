@@ -36,14 +36,14 @@ export function useDeckTabs(
   handle: WindowHandle,
   tabOpeners: FileOpeners,
 ) {
-  const said = answers()
+  const vaultAnswers = answers()
 
   const store = openNotes({
     read: async (path) => {
       const answer = await cards.readDeck(path)
       const deck = answer.deck ? deserializeVaultDeck(answer.deck) : null
       const error = answer.error
-      said.recordRead(path, {
+      vaultAnswers.recordRead(path, {
         problems: answer.deck?.problems ?? [],
         error,
         bound: answer.bound,
@@ -65,7 +65,7 @@ export function useDeckTabs(
         seen?.at ?? null,
       )
       const error = answer.error
-      said.recordWrite(path, { error, bound: answer.bound })
+      vaultAnswers.recordWrite(path, { error, bound: answer.bound })
       return {
         body: '',
         error,
@@ -75,7 +75,7 @@ export function useDeckTabs(
     },
   })
 
-  const read = reader(store, said.problemsAt)
+  const read = reader(store, vaultAnswers.problemsAt)
   const { deckAt, marksAt } = read
 
   const wiring = useDeckScheduleSync(cards, presets, store)
@@ -101,7 +101,7 @@ export function useDeckTabs(
       stencils,
       marks: computed(() => marksAt(id)),
       errorMessage: computed(() =>
-        said.getErrorMessage(store.where(id), store.getOpenNote(id).error !== null),
+        vaultAnswers.getErrorMessage(store.getPath(id), store.getOpenNote(id).error !== null),
       ),
       scheduled: computed(() => getDeckPreset(id)),
       choices,
@@ -110,8 +110,8 @@ export function useDeckTabs(
       keepMine: () => store.keep(id),
       takeFile: () => store.take(id),
       close: (tab) => {
-        const path = store.where(id)
-        void store.shut(id).then((gone) => {
+        const path = store.getPath(id)
+        void store.close(id).then((gone) => {
           if (!gone) return
           read.forgetTab(id)
           scheduled.forgetTab(id)
@@ -123,8 +123,8 @@ export function useDeckTabs(
   }
 
   const forgetPath = (path: string): void => {
-    if (store.all().some((one) => store.where(one) === path)) return
-    said.forgetFile(path)
+    if (store.getOpenIds().some((one) => store.getPath(one) === path)) return
+    vaultAnswers.forgetFile(path)
     scheduled.forgetFile(path)
   }
 
@@ -134,17 +134,17 @@ export function useDeckTabs(
   }
 
   const kept: Store = {
-    has: (id) => store.all().includes(id),
-    where: (id) => store.where(id),
-    getTitle: (id) => said.getTitle(store.where(id)),
+    has: (id) => store.getOpenIds().includes(id),
+    where: (id) => store.getPath(id),
+    getTitle: (id) => vaultAnswers.getTitle(store.getPath(id)),
     asking: (id) => store.stale(id) !== null,
-    settle: (id) => store.settles(id),
+    settle: (id) => store.settle(id),
     close: closeTabById,
-    holding: (path) => store.all().find((id) => store.where(id) === path) ?? null,
+    holding: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,
   }
 
   const tabbed = computed<ReadonlyMap<string, string>>(
-    () => new Map(store.all().map((one) => [store.where(one), one])),
+    () => new Map(store.getOpenIds().map((one) => [store.getPath(one), one])),
   )
 
   const pendingTabIds = new Map<string, string>()
@@ -163,7 +163,7 @@ export function useDeckTabs(
     cardTabPathMap,
     pendingTabIds,
     store,
-    said,
+    vaultAnswers,
     listStencils,
     listPresets,
     listStencilsAgain,
@@ -174,15 +174,15 @@ export function useDeckTabs(
 
   const openDeckTab = (path: string, title = '', how: PlexDestination = 'here'): void => {
     const id = getOrCreateTabId(path)
-    if (title) said.setTitle(path, title)
-    void (how === 'beside' ? handle.beside(DECK, id) : handle.openTab(DECK, id))
+    if (title) vaultAnswers.setTitle(path, title)
+    void (how === 'beside' ? handle.openTabBeside(DECK, id) : handle.openTab(DECK, id))
   }
 
   tabOpeners.registerEditor('deck', openDeckTab)
 
   const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[] = []): void => {
     for (const went of renames) {
-      said.moveFile(went.from, went.to)
+      vaultAnswers.moveFile(went.from, went.to)
     }
     store.changed(paths, renames)
     wiring.applyPathChanges(paths, renames)
@@ -190,12 +190,12 @@ export function useDeckTabs(
 
   return {
     kind,
-    held: createDeckTabState,
+    createDeckTabState,
     changed: applyPathChanges,
     listStencils,
-    getTitle: said.getTitle,
+    getTitle: vaultAnswers.getTitle,
     kept,
-    all: store.all,
+    getOpenIds: store.getOpenIds,
     getOpenNote: store.getOpenNote,
     keep: store.keep,
     take: store.take,

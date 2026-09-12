@@ -18,11 +18,11 @@ import type { MediaTabState } from '@/entities/media'
 const props = defineProps<{ state: MediaTabState }>()
 
 // --- State ---
-const { address, deletable, framing, playable } = props.state
+const { url, deletable, framing, playable } = props.state
 
 // What is at the address plays where it is drawn, so a moment chosen in the
 // words is seeked there and the line being said follows it.
-const player = useTemplateRef<{ seeks(ms: number): void }>('player')
+const player = useTemplateRef<{ seek(ms: number): void }>('player')
 watchPostEffect(() => props.state.setFramePlayer(player.value))
 
 const offered = computed(() =>
@@ -46,8 +46,8 @@ function onTimeUpdate(ms: number) {
     <template #player>
       <Embed
         ref="player"
-        :embed="framing ? address : ''"
-        :copy="playable ? address : ''"
+        :embed="framing ? url : ''"
+        :copy="playable ? url : ''"
         :words="words"
         @time-update="onTimeUpdate"
       />

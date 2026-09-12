@@ -10,8 +10,8 @@
 /** The entries, which `::highlight()` is written against. */
 export const HIGHLIGHT = 'numen-book'
 
-/** Where else the same search stands, drawn more faintly. */
-export const ELSEWHERE = 'numen-book-elsewhere'
+/** The other places named, drawn more faintly. */
+export const OTHER_HIGHLIGHT = 'numen-book-other-highlight'
 
 /** The ranges each book on screen has in each entry. */
 const held = new Map<string, Map<object, readonly Range[]>>()

@@ -18,8 +18,8 @@ describe('a note the core refused', () => {
     const sheet = mount(NoteSheet, { props: { core, path: 'Gone.md' }, attachTo: document.body })
     await flushPromises()
 
-    expect(sheet.emitted('trouble')).toStrictEqual([[formatErrorCodeMessage(ErrorCode.MISSING)]])
-    expect(sheet.emitted('trouble')![0]![0]).not.toMatch(/\d/)
+    expect(sheet.emitted('error')).toStrictEqual([[formatErrorCodeMessage(ErrorCode.MISSING)]])
+    expect(sheet.emitted('error')![0]![0]).not.toMatch(/\d/)
     expect(sheet.emitted('close')).toHaveLength(1)
 
     sheet.unmount()
@@ -36,8 +36,8 @@ describe('a note the core refused', () => {
     await sheet.get('[data-testid="keep"]').trigger('click')
     await flushPromises()
 
-    expect(sheet.emitted('trouble')).toStrictEqual([[formatErrorCodeMessage(ErrorCode.STALE)]])
-    expect(sheet.emitted('trouble')![0]![0]).not.toMatch(/\d/)
+    expect(sheet.emitted('error')).toStrictEqual([[formatErrorCodeMessage(ErrorCode.STALE)]])
+    expect(sheet.emitted('error')![0]![0]).not.toMatch(/\d/)
     expect(sheet.emitted('close')).toBeUndefined()
 
     sheet.unmount()

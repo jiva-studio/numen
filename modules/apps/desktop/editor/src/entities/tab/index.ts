@@ -1,11 +1,11 @@
 /** The tabs a window keeps: what kinds there are, what opens one, and what each is called. */
-export { iconOfKind } from './icons'
-export { createFileCreators } from './makers'
-export { fileOpeners } from './openers'
-export type { EditorKind, FileOpeners, SourceReader } from './openers'
-export type { OpenTabs, Tab } from './tab'
-export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './kinds'
-export { useWindowTabs } from './windowTabs'
+export { iconOfKind } from './lib/icons'
+export { createFileCreators } from './model/makers'
+export { fileOpeners } from './model/openers'
+export type { EditorKind, FileOpeners, SourceReader } from './model/openers'
+export type { OpenTabs, Tab } from './lib/tab'
+export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './lib/kinds'
+export { useWindowTabs } from './model/windowTabs'
 export {
   AGENT,
   BOOK,
@@ -23,4 +23,4 @@ export {
   SETTINGS_FILE,
   STENCIL,
   URL,
-} from './workspace'
+} from './lib/workspace'

@@ -21,7 +21,7 @@ export interface WindowKindsDeps {
   settings: ReturnType<typeof useSettings>
   vaults: ReturnType<typeof useVaults>
   window: ReturnType<typeof useWindowDisplay>
-  where: () => CommandTarget
+  getTarget: () => CommandTarget
   runCommand: (id: string, target: CommandTarget) => void
-  doing: () => CommandDeps
+  commandDeps: () => CommandDeps
 }

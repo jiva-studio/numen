@@ -332,12 +332,12 @@ export const AStraySlot: Story = {
     expect(found(canvasElement, '[data-preview="front"] mark').textContent).toBe('{{Colour}}')
     expect(found(canvasElement, '[data-preview="back"] mark').textContent).toBe('{{Weight}}')
     expect(
-      found(canvasElement, '[data-pane="front-written"] .face__objects').textContent?.trim(),
+      found(canvasElement, '[data-pane="front-written"] .face__objections').textContent?.trim(),
     ).toBe('Not a field: Colour')
     expect(
-      found(canvasElement, '[data-pane="back-written"] .face__objects').textContent?.trim(),
+      found(canvasElement, '[data-pane="back-written"] .face__objections').textContent?.trim(),
     ).toBe('Not a field: Weight')
-    expect(canvasElement.querySelector('header .face__objects')).toBeNull()
+    expect(canvasElement.querySelector('header .face__objections')).toBeNull()
 
     // It stands in the foot of the part, over what is written there: the box
     // still fills the part, and a press meant for the box reaches it.
@@ -348,7 +348,7 @@ export const AStraySlot: Story = {
     const layer = found(canvasElement, '[data-pane="front-written"] .face__amiss')
     expect(getComputedStyle(layer).pointerEvents).toBe('none')
 
-    const said = found(canvasElement, '[data-pane="front-written"] .face__objects')
+    const said = found(canvasElement, '[data-pane="front-written"] .face__objections')
     const over = said.getBoundingClientRect()
     expect(over.bottom).toBeLessThanOrEqual(pane.bottom + 1)
     expect(over.right).toBeLessThanOrEqual(pane.right + 1)
@@ -476,9 +476,9 @@ export const WhatIsWrongWithIt: Story = {
     await userEvent.clear(name)
     await userEvent.type(name, 'Recognise')
     await waitFor(() => {
-      const objects = found(canvasElement, 'header [role="alert"]')
-      expect(objects.textContent?.trim()).toBe('That name is taken')
-      expect(name.getAttribute('aria-describedby')).toBe(objects.id)
+      const objections = found(canvasElement, 'header [role="alert"]')
+      expect(objections.textContent?.trim()).toBe('That name is taken')
+      expect(name.getAttribute('aria-describedby')).toBe(objections.id)
     })
   },
 }

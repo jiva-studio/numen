@@ -233,7 +233,7 @@ func (u CountReviews) ahead(
 	}
 
 	now := u.Now()
-	ends := u.Day.Ends(now)
+	ends := u.Day.EndOf(now)
 	for _, s := range schedules {
 		if !s.Seen() || s.Due.Before(ends) {
 			continue

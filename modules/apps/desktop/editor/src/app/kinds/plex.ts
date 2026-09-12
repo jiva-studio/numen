@@ -8,10 +8,10 @@ import type { WindowKindsDeps } from './deps'
 export interface PlexKindDeps
   extends Pick<
     WindowKindsDeps,
-    'core' | 'tabOpeners' | 'held' | 'editing' | 'settings' | 'window' | 'where' | 'runCommand'
+    'core' | 'tabOpeners' | 'held' | 'editing' | 'settings' | 'window' | 'getTarget' | 'runCommand'
   > {
   dragged: ShallowRef<readonly string[]>
-  told: MessageWriter
+  writeMessage: MessageWriter
   askAgent: (text: string) => void
 }
 
@@ -22,25 +22,25 @@ export function createPlexKind({
   editing,
   settings,
   window,
-  where,
+  getTarget,
   runCommand,
   dragged,
-  told,
+  writeMessage,
   askAgent,
 }: PlexKindDeps) {
   return plexKind(held.handle, () => usePlexView(core), {
     editor: editing.making,
     ready: computed(() => !window.failure.value),
-    hangs: settings.hungParts.hangs,
+    isHanging: settings.hungParts.isHanging,
     parts: settings.hungParts.parts,
     openNote: (path, title, showing, line) => void tabOpeners.openFile(path, title, showing, line),
-    inside: (paths) => core.headings(paths),
+    readHeadings: (paths) => core.headings(paths),
     askAgent,
-    runCommand: (id, path, title) => runCommand(id, { ...where(), path, title }),
-    opening: window.opening,
-    first: () => window.first(),
+    runCommand: (id, path, title) => runCommand(id, { ...getTarget(), path, title }),
+    openingPath: window.opening,
+    readOpeningPath: () => window.readInitialNote(),
     dragged,
-    showMessage: (text) => told(text, 'error'),
+    showMessage: (text) => writeMessage(text, 'error'),
     createUntitledNote: async () => (await editing.making.createUntitled('', []))?.path ?? '',
     creatable: CREATABLE,
   })

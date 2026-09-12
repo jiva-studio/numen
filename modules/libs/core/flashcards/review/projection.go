@@ -180,7 +180,7 @@ func (p Projection) Session() (int, bool) {
 // this one. A card face nobody has answered is not overdue either, because it
 // has had no day.
 func Overdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
-	opened := d.Opens(now)
+	opened := d.StartOf(now)
 	out := 0
 	for _, s := range at {
 		if s.Seen() && s.Due.Before(opened) {
@@ -239,7 +239,7 @@ func (s Simulation) Run(
 	left := unseen
 	var spent time.Duration
 
-	open := s.Day.Opens(now)
+	open := s.Day.StartOf(now)
 	// Where the answers so far have left every card face is what the days
 	// ahead are loaded with, and which day of the run first asks for it. A card
 	// face falling due past the run is asked for on none of them.
@@ -279,7 +279,7 @@ func (s Simulation) Run(
 		if err := ctx.Err(); err != nil {
 			return Projection{}, err
 		}
-		ends := s.Day.Ends(open)
+		ends := s.Day.EndOf(open)
 		var used time.Duration
 
 		// What the day admits is the one answer, and it is the answer the

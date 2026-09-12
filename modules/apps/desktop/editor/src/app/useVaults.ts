@@ -19,10 +19,10 @@ export interface VaultsDeps {
   log: MessageLog
   chunks: Ref<number>
   embedded: Ref<number>
-  embedding: Ref<boolean>
+  isEmbedding: Ref<boolean>
 }
 
-export function useVaults({ core, words, log, chunks, embedded, embedding }: VaultsDeps) {
+export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: VaultsDeps) {
   const reload = () => globalThis.location.reload()
   const shown = ref<VaultRef>({ id: '', name: '' })
   const listed = ref<VaultList>({ vaults: [], showing: '' })
@@ -43,7 +43,7 @@ export function useVaults({ core, words, log, chunks, embedded, embedding }: Vau
   const coverage = (): IndexCoverage => ({
     chunks: chunks.value,
     embedded: embedded.value,
-    embedding: embedding.value,
+    embedding: isEmbedding.value,
   })
 
   const makes = shallowRef<ReadonlyMap<string, ArtifactStates>>(new Map())

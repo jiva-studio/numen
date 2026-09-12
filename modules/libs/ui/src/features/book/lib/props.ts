@@ -1,7 +1,7 @@
 /**
  * What the reader of a book that reflows is told, before it draws anything.
  */
-import type { Span } from './spread'
+import type { Span } from '@/shared/lib/span'
 import type { BookWords } from './words'
 
 /** What one document of a book reaches the reader as. */
@@ -22,8 +22,8 @@ export interface BookProps {
   at?: number
   /** The runs highlighted where they stand, in bytes of the book's text. */
   highlights?: readonly Span[]
-  /** The other runs asked about, each of them somewhere else to look. */
-  elsewhere?: readonly Span[]
+  /** The other runs named, apart from the one the reader was opened at. */
+  otherHighlights?: readonly Span[]
   /** How large the text is set, as a multiple of the size prose is read at. */
   textSize?: number
   /** What the book calls the place in front, drawn over the text it names. */
@@ -40,7 +40,7 @@ export interface SettledBookProps {
   readonly book: Span
   readonly at: number
   readonly highlights: readonly Span[]
-  readonly elsewhere: readonly Span[]
+  readonly otherHighlights: readonly Span[]
   readonly textSize: number
   readonly chapter: string
   readonly words: BookWords

@@ -19,11 +19,11 @@ func (s *Endpoint) serving() bool {
 // newEndpoint is a window on a vault, serving tools that do nothing.
 func newEndpoint() *Endpoint {
 	return &Endpoint{
-		Serve:       func() (func() error, error) { return func() error { return nil }, nil },
-		Showing:     func() domain.Vault { return domain.Vault{ID: "one"} },
-		Handler:     func(port.Agent) {},
-		Unreachable: func(string) {},
-		Trouble:     func(error) {},
+		Serve:        func() (func() error, error) { return func() error { return nil }, nil },
+		Showing:      func() domain.Vault { return domain.Vault{ID: "one"} },
+		Handler:      func(port.Agent) {},
+		Unreachable:  func(string) {},
+		ErrorHandler: func(error) {},
 	}
 }
 

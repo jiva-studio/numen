@@ -56,7 +56,7 @@ const props = withDefaults(
 )
 
 /** The row whose name is in a field. */
-const renaming = defineModel<RowId | null>('renaming', { default: null })
+const renamingPath = defineModel<RowId | null>('renamingPath', { default: null })
 
 const emit = defineEmits<{
   (event: 'open', row: RowId): void
@@ -139,7 +139,7 @@ const {
 } = useTreeGestures({
   shown: () => shown.value,
   selected: () => props.selected,
-  renaming,
+  renamingPath,
   rows,
   selection,
   drag,
@@ -178,7 +178,7 @@ const {
         :into="row.id === into"
         :before="row.id === before"
         :tabbed="row.id === tabbed"
-        :renaming="renaming === row.id"
+        :renaming="renamingPath === row.id"
         :mark="markOf(marking, row.id)"
         @focus="onRowFocus(row.id)"
         @pointerdown="onRowPointerDown(row.id, $event)"

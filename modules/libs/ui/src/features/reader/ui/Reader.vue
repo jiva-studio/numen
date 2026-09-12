@@ -34,8 +34,8 @@ const props = withDefaults(
     picture?: (page: number) => string
     /** What is highlighted on one page, in fractions of it. */
     highlights?: (page: number) => readonly Rect[]
-    /** The other places on one page, each of them somewhere else to look. */
-    also?: (page: number) => readonly Rect[]
+    /** The other places named on one page, apart from the one opened at. */
+    otherHighlights?: (page: number) => readonly Rect[]
     /** The words it is read with. */
     words?: ReaderWords
     /** What is said where a page would not come. */
@@ -46,7 +46,7 @@ const props = withDefaults(
     at: 0,
     picture: () => '',
     highlights: () => [],
-    also: () => [],
+    otherHighlights: () => [],
     words: () => READER_WORDS,
     undrawn: 'This page would not come.',
   },
@@ -176,7 +176,7 @@ defineExpose({
           :at="page"
           :picture="drawing(page)"
           :highlights="highlights(page)"
-          :also="also(page)"
+          :otherHighlights="otherHighlights(page)"
           :page="words.page"
           :undrawn="undrawn"
           :style="boxOf(page)"

@@ -26,7 +26,7 @@ const props = withDefaults(
     /** The name typed over the one it carries, held by the list it stands in. */
     naming: NamingState<Objection>
     /** What is wrong with its name is named by this, which is this field's alone. */
-    objectsId: string
+    objectionsId: string
     /** What the caller found wrong with this field. */
     wrong?: readonly string[]
     /** A field let go here would land before it. */
@@ -50,11 +50,11 @@ const emit = defineEmits<{
 }>()
 
 /** Why what is in the name box cannot be used, and nothing while it can. */
-const objects = computed(() => props.naming.objection(props.row.field))
+const objections = computed(() => props.naming.objection(props.row.field))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => {
-  const objection = objects.value
+  const objection = objections.value
   return objection === null ? null : props.words.objection(objection)
 })
 
@@ -75,7 +75,7 @@ const onGripKey = (event: KeyboardEvent): void => {
     @dragover.stop="emit('over', row.names ? undefined : row.field, $event)"
     @drop.stop="emit('drop')"
   >
-    <CardRow class="stencil__row" :data-objects="objects ?? undefined">
+    <CardRow class="stencil__row" :data-objections="objections ?? undefined">
       <!-- The first field names every card, so its handle is there and
            turned off, and the row keeps the shape every other row has. The
            handle is what a row is dragged by, by the pointer and by the
@@ -95,7 +95,7 @@ const onGripKey = (event: KeyboardEvent): void => {
         @dragend="emit('release')"
         @keydown="onGripKey"
       >
-        <Icon shows="grip" />
+        <Icon name="grip" />
       </span>
 
       <NameBox
@@ -103,7 +103,7 @@ const onGripKey = (event: KeyboardEvent): void => {
         :naming="naming"
         :over="row.field"
         :stem="`${words.fieldStem} ${row.at}`"
-        :described-by="objects ? objectsId : null"
+        :described-by="objections ? objectionsId : null"
       />
 
       <Button
@@ -115,21 +115,21 @@ const onGripKey = (event: KeyboardEvent): void => {
         :aria-label="`${words.remove}: ${row.field}`"
         @click="emit('remove')"
       >
-        <Icon shows="cross" />
+        <Icon name="cross" />
       </Button>
     </CardRow>
 
     <ErrorMessage
       v-if="says"
-      :id="objectsId"
-      class="stencil__objects"
+      :id="objectionsId"
+      class="stencil__objections"
       role="alert"
       :said="says"
     />
 
     <ErrorMessage
       v-if="wrong.length"
-      class="stencil__objects"
+      class="stencil__objections"
       data-wrong
       :said="wrong"
       :label="words.wrong"
@@ -186,7 +186,7 @@ const onGripKey = (event: KeyboardEvent): void => {
 }
 
 /* The line and the ground are the row's, so what is wrong is said by the row. */
-.stencil__row[data-objects] {
+.stencil__row[data-objections] {
   border-color: var(--numen-alarm);
 }
 

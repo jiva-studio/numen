@@ -23,12 +23,9 @@ export interface CurveState {
   readonly place: Ref<number>
   readonly waiting: Ref<boolean>
   isDrawing: boolean
-  drawing: boolean
   shouldDrawAgain: boolean
-  drawAgain: boolean
   shape: string
   isReal: boolean
-  real: boolean
   readonly asks: AnswerGuard
   readonly answers: Map<string, Curve>
 }
@@ -44,12 +41,9 @@ export function createCurveState(
     place: ref(0),
     waiting: ref(true),
     isDrawing: false,
-    drawing: false,
     shouldDrawAgain: false,
-    drawAgain: false,
     shape: '',
     isReal: false,
-    real: false,
     asks: answerGuard(),
     answers: new Map<string, Curve>(),
   }
@@ -75,7 +69,6 @@ export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {
     unbegun: curve.unbegun,
   }
   state.isReal = true
-  state.real = true
   state.waiting.value = false
 }
 
@@ -95,7 +88,7 @@ const fetchCurve = async (
   state.shape = shape
   const riding = state.curve.value.grid
 
-  const standsAlready = (state.isReal || state.real) && state.curve.value.goal === settings.goal
+  const standsAlready = state.isReal && state.curve.value.goal === settings.goal
   if (standsAlready) {
     state.curve.value = { ...state.curve.value, honest: false }
   } else {
@@ -104,7 +97,6 @@ const fetchCurve = async (
     state.place.value = Math.max(meanwhile.now.at, 0)
   }
   state.isReal = false
-  state.real = false
   state.waiting.value = true
 
   let answer: Curve
@@ -145,23 +137,19 @@ export const updateCurves = async (
     return
   }
 
-  if (state.isDrawing || state.drawing) {
+  if (state.isDrawing) {
     state.shouldDrawAgain = true
-    state.drawAgain = true
     return
   }
 
   state.isDrawing = true
-  state.drawing = true
   try {
     await fetchCurve(state, path, getSettings, core, bounds, today, setErrorMessage)
   } finally {
     state.isDrawing = false
-    state.drawing = false
   }
 
-  if (!state.shouldDrawAgain && !state.drawAgain) return
+  if (!state.shouldDrawAgain) return
   state.shouldDrawAgain = false
-  state.drawAgain = false
   await updateCurves(state, path, getSettings, core, bounds, today, setErrorMessage)
 }

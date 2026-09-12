@@ -2,18 +2,18 @@
 /** One of the icons a stencil and a deck are drawn with. */
 import { ICONS, type Icon } from './icons'
 
-defineProps<{ shows: Icon }>()
+defineProps<{ name: Icon }>()
 </script>
 
 <template>
   <svg
     class="icon"
     viewBox="0 0 12 12"
-    :data-filled="ICONS[shows].filled || undefined"
+    :data-filled="ICONS[name].filled || undefined"
     aria-hidden="true"
     focusable="false"
   >
-    <path :d="ICONS[shows].path" />
+    <path :d="ICONS[name].path" />
   </svg>
 </template>
 

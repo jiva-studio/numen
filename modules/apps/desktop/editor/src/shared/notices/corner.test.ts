@@ -24,7 +24,7 @@ const well = (over: Partial<State> = {}): State => ({
   unread: '',
   lost: '',
   reading: false,
-  holds: true,
+  hasNote: true,
   ...over,
 })
 
@@ -203,19 +203,19 @@ describe('what is so about the window', () => {
   })
 
   it('says nothing was read only once the reading is over', () => {
-    const drawn = corner([], [], well({ reading: true, holds: false, unread: 'no such folder' }))
+    const drawn = corner([], [], well({ reading: true, hasNote: false, unread: 'no such folder' }))
 
     expect(drawn.map((one) => one.says)).toStrictEqual([words.unread, words.reading])
   })
 
   it('says the vault could not be read, and that nothing was read from it', () => {
-    const drawn = corner([], [], well({ unread: 'the vault folder is not there', holds: false }))
+    const drawn = corner([], [], well({ unread: 'the vault folder is not there', hasNote: false }))
 
     expect(drawn.map((one) => one.says)).toStrictEqual([words.unread, words.nothingRead])
   })
 
   it('says nothing was read only where the vault could not be', () => {
-    const drawn = corner([], [], well({ holds: false }))
+    const drawn = corner([], [], well({ hasNote: false }))
 
     expect(drawn).toStrictEqual([])
   })

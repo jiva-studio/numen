@@ -46,7 +46,7 @@ func hearing(
 func heard(words []string) []transcript.Cue {
 	out := make([]transcript.Cue, 0, len(words))
 	for n, said := range words {
-		out = append(out, transcript.Cue{Text: said, From: stretch(n).From, To: stretch(n).To})
+		out = append(out, transcript.Cue{Text: said, From: getSpan(n).From, To: getSpan(n).To})
 	}
 	return out
 }
@@ -85,7 +85,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Lines != 3 || res.Read != 3 || res.Fixed != 1 || res.Left != 2 || res.Refused != 0 {
+	if res.Lines != 3 || res.Read != 3 || res.Fixed != 1 || res.Left != 2 || res.UncorrectedBatches != 0 {
 		t.Errorf("got %+v", res)
 	}
 
@@ -97,7 +97,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 		t.Errorf("the second line says %q", cues[1].Text)
 	}
 	for at, cue := range cues {
-		if cue.From != stretch(at).From || cue.To != stretch(at).To {
+		if cue.From != getSpan(at).From || cue.To != getSpan(at).To {
 			t.Errorf("line %d is now %d to %d", at, cue.From, cue.To)
 		}
 	}
@@ -109,7 +109,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	if err := json.Unmarshal(kept(t, shelved, text.Proofread(text.ASR, hash)), &stood); err != nil {
 		t.Fatal(err)
 	}
-	if stood.By != "a proofreader" || stood.At != stretch(2).To {
+	if stood.By != "a proofreader" || stood.At != getSpan(2).To {
 		t.Errorf("got %+v", stood)
 	}
 }
@@ -137,7 +137,7 @@ func TestAReplyThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Refused != 1 || res.Fixed != 0 || res.Left != 2 {
+	if res.UncorrectedBatches != 1 || res.Fixed != 0 || res.Left != 2 {
 		t.Errorf("got %+v", res)
 	}
 	if _, err := shelved.Read(t.Context(), text.Corrections(text.ASR, hash)); err == nil {
@@ -200,7 +200,7 @@ func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
 	if err := shelved.Write(t.Context(), text.Corrections(text.ASR, hash), transcript.Marshal(heard(words))); err != nil {
 		t.Fatal(err)
 	}
-	stood, err := json.Marshal(putting{By: "a proofreader", At: stretch(1).To})
+	stood, err := json.Marshal(putting{By: "a proofreader", At: getSpan(1).To})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,9 +256,9 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 		said  []byte
 		stood putting
 	}{
-		{"a person wrote it in the window", append(own, transcript.Hand()...), putting{By: "a proofreader", At: stretch(1).To}},
+		{"a person wrote it in the window", append(own, transcript.Hand()...), putting{By: "a proofreader", At: getSpan(1).To}},
 		{"nobody here wrote it", own, putting{}},
-		{"another proofreader wrote it", own, putting{By: "somebody else", At: stretch(1).To}},
+		{"another proofreader wrote it", own, putting{By: "somebody else", At: getSpan(1).To}},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			u, v, shelved, by, hash := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)
@@ -385,7 +385,7 @@ func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 
 	// The shelf as a run that ended between the two passes left it: every line
 	// asked about, and no seam.
-	stood, err := json.Marshal(putting{By: u.By.Name(), At: stretch(len(words) - 1).To})
+	stood, err := json.Marshal(putting{By: u.By.Name(), At: getSpan(len(words) - 1).To})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -23,12 +23,12 @@ func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts, In: in}
 
 	late := time.Date(2026, 3, 10, 1, 30, 0, 0, in)
-	if got, want := day.Ends(late), time.Date(2026, 3, 10, 4, 0, 0, 0, in); !got.Equal(want) {
+	if got, want := day.EndOf(late), time.Date(2026, 3, 10, 4, 0, 0, 0, in); !got.Equal(want) {
 		t.Errorf("the day holding %v ends at %v, want %v", late, got, want)
 	}
 
 	morning := time.Date(2026, 3, 10, 9, 0, 0, 0, in)
-	if got, want := day.Ends(morning), time.Date(2026, 3, 11, 4, 0, 0, 0, in); !got.Equal(want) {
+	if got, want := day.EndOf(morning), time.Date(2026, 3, 11, 4, 0, 0, 0, in); !got.Equal(want) {
 		t.Errorf("the day holding %v ends at %v, want %v", morning, got, want)
 	}
 }
@@ -41,7 +41,7 @@ func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 
 	// The clocks go forward at one in the morning on 29 March 2026.
 	before := time.Date(2026, 3, 28, 9, 0, 0, 0, in)
-	if got, want := day.Ends(before), time.Date(2026, 3, 29, 4, 0, 0, 0, in); !got.Equal(want) {
+	if got, want := day.EndOf(before), time.Date(2026, 3, 29, 4, 0, 0, 0, in); !got.Equal(want) {
 		t.Errorf("ends at %v, want %v", got, want)
 	}
 }
@@ -84,7 +84,7 @@ func TestACardNobodyAnsweredIsOwed(t *testing.T) {
 func TestADayWithNoZoneIsCountedInTheMachinesOwn(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts}
 	now := time.Date(2026, 3, 10, 9, 0, 0, 0, time.Local)
-	if got := day.Ends(now); got.Location() != time.Local {
+	if got := day.EndOf(now); got.Location() != time.Local {
 		t.Errorf("counted in %v, want the machine's own", got.Location())
 	}
 }
@@ -137,9 +137,9 @@ func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
 			day := review.Day{Starts: time.Duration(hour) * time.Hour, In: in}
 			on := review.Spreading(day)
 			days := make([]time.Time, 0, 800)
-			for at := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; at = day.Ends(at) {
+			for at := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; at = day.EndOf(at) {
 				days = append(days, at)
-				if next := day.Ends(at); !next.After(at) {
+				if next := day.EndOf(at); !next.After(at) {
 					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
 						"ends at %v", name, at, hour, next)
 				}

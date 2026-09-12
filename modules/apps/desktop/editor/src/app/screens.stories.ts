@@ -119,7 +119,7 @@ const INSTALLATION: Installation = {
   }),
   choose: () => {},
   syncing: ref(true),
-  hangs: ref(true),
+  isHanging: ref(true),
   parts: ref(6),
   partsBounds: ref({ least: 1, most: 12 }),
   chooseParts: () => {},
@@ -220,7 +220,7 @@ const PRESET_STATE: PresetTabState = {
   problems: shallowRef([]),
   stopped: ref(StopReason.NOTHING),
   errorMessage: ref(''),
-  changed: ref(false),
+  hasChanged: ref(false),
   again: () => {},
   chooseGoal: () => {},
   moveSlider: () => {},
@@ -487,8 +487,8 @@ const createRecordings = (cues: readonly Cue[]): Recordings => ({
     url: '',
   }),
   getTaskStates: async () => ({ transcript: 'done' }),
-  readTranscript: async () => ({ cues, editable: true, prose: '' }),
-  readArticle: async () => ({ cues: [], editable: true, prose: '' }),
+  readTranscript: async () => ({ cues, isEditable: true, prose: '' }),
+  readArticle: async () => ({ cues: [], isEditable: true, prose: '' }),
   writeTranscript: async () => {},
   findCueTime: async () => null,
 })
@@ -598,7 +598,7 @@ const files = (open: readonly string[]) => {
     createDeck: async () => '',
     createStencil: async () => '',
     createPreset: async () => '',
-    importAddress: async () => '',
+    importUrl: async () => '',
     showError: () => {},
   })
   const read = (async () => {
@@ -712,7 +712,7 @@ const BOOK: Documents = {
 const createMenuStory = (
   path: string,
   open: readonly string[],
-  file: { tab: string; pane: Component; state: unknown; opens?: () => Promise<void> },
+  file: { tab: string; pane: Component; state: unknown; open?: () => Promise<void> },
 ) => ({
   components: { WorkspaceLayout, FilesTab },
   setup() {
@@ -727,7 +727,7 @@ const createMenuStory = (
     // What the pane beside the tree is turned to settles first: a page turning
     // under an open menu is what takes the menu away again.
     onMounted(async () => {
-      await file.opens?.()
+      await file.open?.()
       await read
       await nextTick()
       await waitForFrame()
@@ -784,7 +784,7 @@ export const Recognised: Story = {
         state,
         // The reading a search sent a person into: the book turns to the page
         // the passage stands on, and the passage is highlighted where it stands.
-        opens: () => state.focusSpans({ from: 0, to: 1 }),
+        open: () => state.focusSpans({ from: 0, to: 1 }),
       },
     )
   },

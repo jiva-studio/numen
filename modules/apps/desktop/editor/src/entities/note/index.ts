@@ -1,5 +1,5 @@
 /** A note of the vault: what it holds, who it is joined to, and the tab it is open in. */
-export { iconOfNote } from './icons'
+export { iconOfNote } from './lib/icons'
 export type {
   Link,
   Neighbourhood,
@@ -11,9 +11,9 @@ export type {
   RenameResult,
   Role,
   Seat,
-} from './note'
-export { openNotes } from './notes'
-export type { Notes, OpenNote } from './noteTypes'
-export { markOf } from './tabState'
-export type { NoteBaseline, State } from './tabState'
+} from './lib/note'
+export { openNotes } from './model/notes'
+export type { Notes, OpenNote } from './lib/noteTypes'
+export { markOf } from './lib/tabState'
+export type { NoteBaseline, State } from './lib/tabState'
 export { WORDS } from './words'

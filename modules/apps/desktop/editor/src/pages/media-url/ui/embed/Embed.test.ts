@@ -60,7 +60,7 @@ describe('a moment chosen in the transcript', () => {
       value: { postMessage: (message: string, origin: string) => said.push([message, origin]) },
     })
 
-    drawn.vm.seeks(83_000)
+    drawn.vm.seek(83_000)
 
     expect(said).toHaveLength(1)
     expect(JSON.parse(said[0]![0])).toEqual({
@@ -82,7 +82,7 @@ describe('a moment chosen in the transcript', () => {
     const player = drawn.get('video').element as HTMLVideoElement
     player.play = () => Promise.resolve()
 
-    drawn.vm.seeks(1_500)
+    drawn.vm.seek(1_500)
 
     expect(player.currentTime).toBe(1.5)
   })

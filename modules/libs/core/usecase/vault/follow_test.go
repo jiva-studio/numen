@@ -204,13 +204,13 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	trouble := make(chan error, 8)
+	reported := make(chan error, 8)
 	readers := &sometimes{VaultReaders: filesystem.VaultReaders{}}
 	follow := vaults.Follow{
-		Watcher: watcher,
-		Refresh: vaults.Refresh{Readers: readers, Vaults: db.Vaults(), Notes: db.Notes()},
-		Scan:    scanner(filesystem.VaultReaders{}, db),
-		Trouble: func(err error) { trouble <- err },
+		Watcher:      watcher,
+		Refresh:      vaults.Refresh{Readers: readers, Vaults: db.Vaults(), Notes: db.Notes()},
+		Scan:         scanner(filesystem.VaultReaders{}, db),
+		ErrorHandler: func(err error) { reported <- err },
 	}
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {
@@ -220,13 +220,13 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 
 	readers.refuse.Store(true)
 	watcher.changes <- []string{"Note.md"}
-	if err := next(t, trouble); err == nil {
+	if err := next(t, reported); err == nil {
 		t.Fatal("a vault that could not be opened was reported as working")
 	}
 
 	readers.refuse.Store(false)
 	watcher.changes <- []string{"Note.md"}
-	if err := next(t, trouble); err != nil {
+	if err := next(t, reported); err != nil {
 		t.Errorf("still reporting %v after it worked", err)
 	}
 }

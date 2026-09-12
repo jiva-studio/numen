@@ -21,12 +21,12 @@ export function usePlexParts(
   const readParts = async () => {
     const notes = paths.value.filter((path) => (types.value.get(path) ?? 'note') === 'note')
     const mine = reading.ask()
-    if (!deps.hangs.value || notes.length === 0) {
+    if (!deps.isHanging.value || notes.length === 0) {
       parts.value = new Map()
       return
     }
     try {
-      const found = await deps.inside(notes)
+      const found = await deps.readHeadings(notes)
       if (!mine.current) return
       parts.value = new Map([...found].map(([path, held]) => [path, asParts(held)]))
     } catch {
@@ -36,10 +36,10 @@ export function usePlexParts(
   }
 
   watch(paths, () => void readParts(), { immediate: true })
-  watch(deps.hangs, () => void readParts())
+  watch(deps.isHanging, () => void readParts())
 
   const getParts = (node: string): readonly PlexPart[] =>
-    deps.hangs.value ? (parts.value.get(nodeIdMap.getNodePath(node) ?? '') ?? []) : []
+    deps.isHanging.value ? (parts.value.get(nodeIdMap.getNodePath(node) ?? '') ?? []) : []
 
   return { parts, readParts, getParts }
 }

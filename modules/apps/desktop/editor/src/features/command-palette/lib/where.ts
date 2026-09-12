@@ -7,20 +7,19 @@
  */
 import type { ArtifactState, ArtifactStates } from '@/shared/artifacts'
 import type { Source } from '@/shared/file'
-import type { RunSupport } from '../runs'
-import type { CommandTarget } from '../target'
+import type { CommandTarget, RunSupport } from '../types'
 
 /** A command over the note in front, which there has to be one of. */
-export const onNote = (at: CommandTarget): boolean => at.ready && at.path !== ''
+export const isOnNote = (at: CommandTarget): boolean => at.ready && at.path !== ''
 
 /** A command over the vault in front, which there has to be one of. */
-export const onVault = (at: CommandTarget): boolean => at.vault.id !== ''
+export const isOnVault = (at: CommandTarget): boolean => at.vault.id !== ''
 
 /**
  * A run over the file in front, which the vault has to hold that kind of and
  * this build has to be able to do.
  */
-export const onSource =
+export const getWhereOnSource =
   (run: string, source: Source) =>
   (at: CommandTarget, runs: RunSupport): boolean =>
     at.ready && at.file !== '' && at.source === source && runs.canRun(run)
@@ -30,10 +29,10 @@ export const onSource =
  * and not on its kind alone: a book already read is not offered to be read. A
  * file nothing has been asked about carries nothing, and is offered.
  */
-export const onEvidence =
+export const getWhereOnEvidence =
   (run: string, source: Source, isOffered: (states: ArtifactStates) => boolean) =>
   (at: CommandTarget, runs: RunSupport): boolean =>
-    onSource(run, source)(at, runs) && (isEmpty(at.made) || isOffered(at.made))
+    getWhereOnSource(run, source)(at, runs) && (isEmpty(at.made) || isOffered(at.made))
 
 const isEmpty = (states: ArtifactStates): boolean => Object.keys(states).length === 0
 
@@ -41,5 +40,5 @@ const isEmpty = (states: ArtifactStates): boolean => Object.keys(states).length 
 export const isUnmade = (state: ArtifactState | undefined): boolean =>
   state === undefined || state === 'none' || state === 'stopped'
 
-export const onAnything = (): boolean => true
+export const isOnAnything = (): boolean => true
 

@@ -15,8 +15,8 @@ const TEXT = 'A bell over the door.\nRain on the awning.\nSomeone counting chang
 
 const TIMED: TimingState = { times: ['0:01', '0:03', '0:06'], current: -1, following: false }
 
-const editor = (goes: (line: number) => void = () => {}) => {
-  const times = timing(goes)
+const editor = (goToLine: (line: number) => void = () => {}) => {
+  const times = timing(goToLine)
   return { times, view: drawing(times) }
 }
 

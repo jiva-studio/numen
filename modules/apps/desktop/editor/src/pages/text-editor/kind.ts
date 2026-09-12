@@ -36,7 +36,7 @@ export function createTextEditorTabKind(
   }
 
   /** The file put in front of the person, beside what they were looking at. */
-  const openSettingsFile = (): void => void handle.beside(SETTINGS_FILE)
+  const openSettingsFile = (): void => void handle.openTabBeside(SETTINGS_FILE)
 
   return { kind, openSettingsFile }
 }

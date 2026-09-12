@@ -13,22 +13,22 @@ import type { Span } from '@/shared/span'
 import { useWindowTabs } from '@/entities/tab'
 import { AGENT } from '@/entities/tab'
 
-/** A talk that records what it was asked, and the places its lines name. */
-const createTalk = (places: Record<string, { path: string; span: Span }> = {}) => {
+/** A conversation that records what it was asked, and where its lines point. */
+const createConversation = (locations: Record<string, { path: string; span: Span }> = {}) => {
   const asked: [string, string][] = []
   const stopped: string[] = []
   const said = ref<Turn[]>([])
-  const talk: Conversation = {
+  const conversation: Conversation = {
     turns: said,
     working: ref(false),
     ask: async (text, focus) => {
       asked.push([text, focus])
     },
-    place: (turn) => places[turn] ?? null,
+    getSourceLocation: (turn) => locations[turn] ?? null,
     stop: () => stopped.push('stop'),
     finish: () => stopped.push('finish'),
   }
-  return { talk, said, asked, stopped }
+  return { conversation, said, asked, stopped }
 }
 
 /**
@@ -36,31 +36,31 @@ const createTalk = (places: Record<string, { path: string; span: Span }> = {}) =
  * with the notes it was handed, and reaches nothing for every other address.
  */
 const tab = (
-  places: Record<string, { path: string; span: Span }> = {},
+  locations: Record<string, { path: string; span: Span }> = {},
   notes: Record<string, string> = {},
 ) => {
-  const talk = createTalk(places)
+  const fake = createConversation(locations)
   const opened: [string, readonly Span[]][] = []
   const beside: string[] = []
-  const state = useAgentConversation(talk.talk, {
+  const state = useAgentConversation(fake.conversation, {
     openFileAt: (path, ...spans) => opened.push([path, spans]),
-    beside: (path) => beside.push(path),
+    openFileBeside: (path) => beside.push(path),
     resolve: async (written) =>
       new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
     unreachable: () => '',
   })
-  return { state, opened, beside, ...talk }
+  return { state, opened, beside, ...fake }
 }
 
-/** A window of agent tabs, with a talk of its own for each. */
+/** A window of agent tabs, with a conversation of its own for each. */
 const tabs = (about = { path: '', title: '' }) => {
-  const talks: ReturnType<typeof tab>[] = []
+  const conversations: ReturnType<typeof tab>[] = []
   const held = useWindowTabs()
   const agents = agentKind(
     held.handle,
     () => {
       const one = tab()
-      talks.push(one)
+      conversations.push(one)
       return one.state
     },
     () => about,
@@ -74,10 +74,10 @@ const tabs = (about = { path: '', title: '' }) => {
   }
   /** The person is in this tab now. */
   const showTab = (id: string) => held.onTabShown(id)
-  const closeTab = (id: string) => held.shut(id)
+  const closeTab = (id: string) => held.releaseTab(id)
   /** Every agent tab on screen, the one in front last. */
   const open = () => held.tabs.value.map((one) => one.id)
-  return { ...agents, openTab, showTab, closeTab, open, talks }
+  return { ...agents, openTab, showTab, closeTab, open, conversations }
 }
 
 /** A line of an answer, as the panel hands one back. */
@@ -200,7 +200,7 @@ describe('something to ask about a note', () => {
     await window.askQuestion('Note.md — ')
 
     expect(window.open()).toHaveLength(1)
-    expect(window.talks[0]?.state.userQuestion.value).toBe('Note.md — ')
+    expect(window.conversations[0]?.state.userQuestion.value).toBe('Note.md — ')
   })
 
   it('goes to the agent the person was last in, and puts it in front', async () => {
@@ -226,18 +226,18 @@ describe('something to ask about a note', () => {
     await window.askQuestion('Note.md — ')
 
     expect(window.open()).toHaveLength(1)
-    expect(window.talks[1]?.state.userQuestion.value).toBe('Note.md — ')
+    expect(window.conversations[1]?.state.userQuestion.value).toBe('Note.md — ')
   })
 })
 
 describe('an agent tab that closes', () => {
-  it('tells the talk it is over, so the agent lets go of what it kept', async () => {
+  it('tells the conversation it is over, so the agent lets go of what it kept', async () => {
     const window = tabs()
     const one = await window.openTab()
 
     window.closeTab(one.id)
 
-    expect(window.talks[0]?.stopped).toEqual(['finish'])
+    expect(window.conversations[0]?.stopped).toEqual(['finish'])
   })
 })
 
@@ -245,7 +245,7 @@ describe('what an agent tab is called', () => {
   it('is the first thing asked of it, shortened', async () => {
     const window = tabs()
     const one = await window.openTab()
-    window.talks[0]!.said.value = [
+    window.conversations[0]!.said.value = [
       { id: 'a', voice: 'asked', text: 'what is this whole vault about', state: 'done' },
     ] as unknown as Turn[]
 
@@ -289,7 +289,7 @@ describe('what a tab is called by a question', () => {
 })
 
 describe('what a command asked over an agent tab is over', () => {
-  it('is the note the talk is about, which is no note of the tab itself', async () => {
+  it('is the note the conversation is about, which is no note of the tab itself', async () => {
     const window = tabs({ path: 'physics/Ontology.md', title: 'Ontology' })
     const one = await window.openTab()
 

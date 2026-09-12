@@ -113,10 +113,10 @@ func serveAgents(
 			api.Answers(served.Agent)
 			return served.Close, nil
 		},
-		Showing:     held.showing,
-		Handler:     api.Answers,
-		Unreachable: func(why string) { api.Unreachable.Store(why) },
-		Trouble:     func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
+		Showing:      held.showing,
+		Handler:      api.Answers,
+		Unreachable:  func(why string) { api.Unreachable.Store(why) },
+		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}
 
 	api.Opened = held.Opened

@@ -31,7 +31,11 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   })
 
   const empty = computed(
-    () => deps.ready.value && !view.here.value && !deps.opening.value && !view.neighbourhood.value,
+    () =>
+      deps.ready.value &&
+      !view.here.value &&
+      !deps.openingPath.value &&
+      !view.neighbourhood.value,
   )
 
   const dragged = computed<readonly string[]>(() => {

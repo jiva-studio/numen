@@ -31,8 +31,8 @@ type Endpoint struct {
 	// Unreachable is told why an agent cannot be reached, and an empty string
 	// while one can be.
 	Unreachable func(string)
-	// Trouble is told what went wrong serving the tools or taking them away.
-	Trouble func(error)
+	// ErrorHandler is told what went wrong serving the tools or taking them away.
+	ErrorHandler func(error)
 
 	// turn is one swap. It is held from the endpoint stopping to the endpoint
 	// being served again, so a second swap waits for the first.
@@ -69,7 +69,7 @@ func (s *Endpoint) On() {
 	shut, err := s.Serve()
 	if err != nil {
 		s.Unreachable(err.Error())
-		s.Trouble(fmt.Errorf("no agent: %w", err))
+		s.ErrorHandler(fmt.Errorf("no agent: %w", err))
 		return
 	}
 	s.close = shut
@@ -84,7 +84,7 @@ func (s *Endpoint) Off() {
 		return
 	}
 	if err := s.close(); err != nil {
-		s.Trouble(fmt.Errorf("agents: %w", err))
+		s.ErrorHandler(fmt.Errorf("agents: %w", err))
 	}
 	s.close = nil
 	s.Handler(nil)

@@ -49,8 +49,8 @@ interface Line {
 }
 
 /** The lines written out as one document, each carrying where it begins. */
-const documentOf = (lines: readonly Line[], begins: number) => {
-  let at = begins
+const documentOf = (lines: readonly Line[], from: number) => {
+  let at = from
   const written: string[] = []
   const offsets: number[] = []
   for (const line of lines) {
@@ -59,7 +59,7 @@ const documentOf = (lines: readonly Line[], begins: number) => {
     written.push(`<p${named} data-offset="${at}">${line.text}${line.inside ?? ''}</p>`)
     at += bytesIn(line.text)
   }
-  return { markup: written.join('\n'), offsets, ends: at }
+  return { markup: written.join('\n'), offsets, to: at }
 }
 
 /** The paragraphs written out as one document, each carrying where it begins. */
@@ -71,16 +71,16 @@ const document_ = documentOf(
 /** A book of one document, naming three places inside it. */
 const NAMED: Book = {
   title: 'Mahābhārata',
-  span: { begins: 0, ends: document_.ends },
-  documents: [{ path: 'OEBPS/part0001.xhtml', span: { begins: 0, ends: document_.ends } }],
+  span: { from: 0, to: document_.to },
+  documents: [{ path: 'OEBPS/part0001.xhtml', span: { from: 0, to: document_.to } }],
   parts: [
     { title: 'Ādi Parva', offset: document_.offsets[0]!, level: 0 },
     { title: 'Слово о свете', offset: document_.offsets[2]!, level: 1 },
     { title: 'The columns', offset: document_.offsets[6]!, level: 1 },
   ],
-  printed: [],
+  printedPages: [],
   pages: 12,
-  pageBytes: Math.ceil(document_.ends / 12),
+  pageBytes: Math.ceil(document_.to / 12),
   fingerprint: '20480 1700000000000000000 mahabharata.epub',
 }
 
@@ -124,21 +124,21 @@ const SECOND = documentOf(
     { text: 'The place the first parva points on to.', id: 'alpha' },
     ...PARAGRAPHS.slice(3, 14).map((text) => ({ text })),
   ],
-  FIRST.ends,
+  FIRST.to,
 )
 
 /** A book of two documents, its text pointing into both of them and out of itself. */
 const CROSSED: Book = {
   title: 'Mahābhārata',
-  span: { begins: 0, ends: SECOND.ends },
+  span: { from: 0, to: SECOND.to },
   documents: [
-    { path: FIRST_PATH, span: { begins: 0, ends: FIRST.ends } },
-    { path: SECOND_PATH, span: { begins: FIRST.ends, ends: SECOND.ends } },
+    { path: FIRST_PATH, span: { from: 0, to: FIRST.to } },
+    { path: SECOND_PATH, span: { from: FIRST.to, to: SECOND.to } },
   ],
   parts: [],
-  printed: [],
+  printedPages: [],
   pages: 24,
-  pageBytes: Math.ceil(SECOND.ends / 24),
+  pageBytes: Math.ceil(SECOND.to / 24),
   fingerprint: '20480 1700000000000000000 mahabharata.epub',
 }
 

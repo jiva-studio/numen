@@ -12,7 +12,7 @@ import type { Span } from '@/shared/lib/span'
  * named, counted in bytes. An empty span names the source and no place inside
  * it.
  */
-export interface Place {
+export interface SourceLocation {
   readonly path: string
   readonly span: Span
 }
@@ -27,7 +27,7 @@ export type AgentStep =
       /** How much of the call has been written. It arrives more than once. */
       readonly written: number
       /** Where it was working, for a call working on a source. */
-      readonly place?: Place
+      readonly place?: SourceLocation
     }
   /** The tool answered. Nothing of the application's is running from here. */
   | { readonly kind: 'answered' }
@@ -44,7 +44,7 @@ export interface AgentPort {
    * one conversation and is never given to a second.
    */
   readonly ask: (
-    asked: string,
+    question: string,
     focus: string,
     conversation: string,
     signal: AbortSignal,

@@ -56,9 +56,9 @@ type Agent struct {
 	ReadsHooksAndSkills bool
 	// Turns is how many times the agent may go to the model before it is stopped.
 	Turns int
-	// Trouble is told what the agent wrote to its error output when something
-	// went wrong.
-	Trouble func(error)
+	// ErrorHandler is told what the agent wrote to its error output when
+	// something went wrong.
+	ErrorHandler func(error)
 
 	// carried is the session each conversation is on so far, under the name the
 	// task gave its conversation. The next question of a conversation is asked
@@ -264,8 +264,8 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 		case w.steps <- port.Step{Kind: port.StepStopped, Detail: failed}:
 		case <-running.Done():
 		}
-		if err != nil && a.Trouble != nil {
-			a.Trouble(fmt.Errorf("%s: %w: %s", name, err, strings.TrimSpace(said.String())))
+		if err != nil && a.ErrorHandler != nil {
+			a.ErrorHandler(fmt.Errorf("%s: %w: %s", name, err, strings.TrimSpace(said.String())))
 		}
 	}()
 	return w, nil

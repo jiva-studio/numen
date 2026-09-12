@@ -15,17 +15,17 @@ beforeEach(() => {
 
 const BOOK: Book = {
   title: 'Mahābhārata',
-  span: { begins: 0, ends: 9_000 },
+  span: { from: 0, to: 9_000 },
   documents: [
-    { path: 'text/part0001.xhtml', span: { begins: 0, ends: 3_000 } },
-    { path: 'text/part0002.xhtml', span: { begins: 3_000, ends: 6_000 } },
-    { path: 'text/part0003.xhtml', span: { begins: 6_000, ends: 9_000 } },
+    { path: 'text/part0001.xhtml', span: { from: 0, to: 3_000 } },
+    { path: 'text/part0002.xhtml', span: { from: 3_000, to: 6_000 } },
+    { path: 'text/part0003.xhtml', span: { from: 6_000, to: 9_000 } },
   ],
   parts: [
     { title: 'Ādi Parva', offset: 0, level: 0 },
     { title: 'Сказание о сожжении леса', offset: 3_600, level: 1 },
   ],
-  printed: [],
+  printedPages: [],
   pages: 3,
   pageBytes: 3_000,
   fingerprint: '20480 1700000000000000000 mahabharata.epub',
@@ -35,7 +35,7 @@ const UNNAMED: Book = { ...BOOK, parts: [] }
 
 const PRINTED: Book = {
   ...UNNAMED,
-  printed: [
+  printedPages: [
     { label: 'i', offset: 0 },
     { label: '1', offset: 3_600 },
   ],
@@ -138,7 +138,7 @@ describe('a book opened', () => {
     expect(read.offset.value).toBe(0)
     expect(read.pages.value).toBe(3)
     expect(read.page.value).toBe(1)
-    expect(read.reading.value).toStrictEqual({ begins: 0, ends: 3_000 })
+    expect(read.reading.value).toStrictEqual({ from: 0, to: 3_000 })
     expect(drawn).toStrictEqual([
       'library/Mahabharata.epub text/part0001.xhtml 20480 1700000000000000000 mahabharata.epub',
     ])
@@ -162,7 +162,7 @@ describe('where the person is standing', () => {
     await read.goToOffset(6_500)
     await read.goToOffset(6_600)
 
-    expect(read.reading.value).toStrictEqual({ begins: 6_000, ends: 9_000 })
+    expect(read.reading.value).toStrictEqual({ from: 6_000, to: 9_000 })
     expect(drawn).toHaveLength(2)
     expect(drawn[1]).toContain('text/part0003.xhtml')
   })
@@ -206,8 +206,8 @@ describe('a passage reached', () => {
     await read.focusSpans({ from: 3_600, to: 3_642 })
 
     expect(read.offset.value).toBe(3_600)
-    expect(read.reading.value).toStrictEqual({ begins: 3_000, ends: 6_000 })
-    expect(read.highlights.value).toStrictEqual([{ begins: 3_600, ends: 3_642 }])
+    expect(read.reading.value).toStrictEqual({ from: 3_000, to: 6_000 })
+    expect(read.highlights.value).toStrictEqual([{ from: 3_600, to: 3_642 }])
   })
 
   it('leaves the other spans somewhere else to look', async () => {
@@ -217,7 +217,7 @@ describe('a passage reached', () => {
     await read.focusSpans({ from: 100, to: 110 }, { from: 6_500, to: 6_520 })
 
     expect(read.offset.value).toBe(100)
-    expect(read.elsewhere.value).toStrictEqual([{ begins: 6_500, ends: 6_520 }])
+    expect(read.otherHighlights.value).toStrictEqual([{ from: 6_500, to: 6_520 }])
   })
 
   it('is nowhere at all when nothing was asked about', async () => {

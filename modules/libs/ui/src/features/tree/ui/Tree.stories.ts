@@ -153,7 +153,7 @@ interface Knobs {
   threshold: number
   name: string
   /** The row whose name starts out in a field. */
-  renaming: RowId | null
+  renamingPath: RowId | null
   /** The rows the selection starts out on. */
   selected: readonly RowId[]
   /** Given by the story, and nothing a reader turns. */
@@ -175,21 +175,21 @@ const meta: Meta<Knobs> = {
     },
     threshold: { control: { type: 'range', min: 0, max: 24, step: 1 } },
     name: { control: 'text' },
-    renaming: { control: 'text' },
+    renamingPath: { control: 'text' },
     selected: { control: 'object' },
     rows: { table: { disable: true } },
     open: { table: { disable: true } },
     counted: { table: { disable: true } },
     clock: { table: { disable: true } },
   },
-  args: { corpus: 'a few', threshold: 4, name: 'Tree', renaming: null, selected: [] },
+  args: { corpus: 'a few', threshold: 4, name: 'Tree', renamingPath: null, selected: [] },
   render: (args) => ({
     components: { Tree },
     setup() {
       const rows = ref<readonly Row[]>(CORPORA[args.corpus].rows)
       const open = ref<readonly RowId[]>(CORPORA[args.corpus].open)
       const selected = ref<readonly RowId[]>(args.selected)
-      const renaming = ref<RowId | null>(args.renaming)
+      const renamingPath = ref<RowId | null>(args.renamingPath)
 
       watch(
         () => args.corpus,
@@ -205,7 +205,7 @@ const meta: Meta<Knobs> = {
         rows,
         open,
         selected,
-        renaming,
+        renamingPath,
         onOpen: (row: RowId) => {
           open.value = [...open.value, row]
         },
@@ -230,7 +230,7 @@ const meta: Meta<Knobs> = {
     template: `
       <div style="height: 100vh; width: 18rem">
         <Tree
-          v-model:renaming="renaming"
+          v-model:renamingPath="renamingPath"
           :rows="rows"
           :open="open"
           :selected="selected"
@@ -280,7 +280,7 @@ export const One: Story = { args: { corpus: 'one' } }
 export const Empty: Story = { args: { corpus: 'empty' } }
 
 /** A name in a field, over the row it belongs to. */
-export const Renaming: Story = { args: { renaming: 'notes' } }
+export const Renaming: Story = { args: { renamingPath: 'notes' } }
 
 /** Several rows selected at once. */
 export const Several: Story = { args: { selected: ['work', 'notes', 'loose'] } }
@@ -449,7 +449,7 @@ export const RefusesWhatItHolds: Story = {
 /** A name typed over a row, and taken. */
 export const TakesAName: Story = {
   tags: ['!dev'],
-  args: { renaming: 'notes' },
+  args: { renamingPath: 'notes' },
   play: async ({ canvasElement }) => {
     const field = canvasElement.querySelector<HTMLInputElement>('.tree__field')
     if (!field) throw new Error('no field')
@@ -465,7 +465,7 @@ export const TakesAName: Story = {
 /** A name typed over a row, and abandoned. */
 export const AbandonsAName: Story = {
   tags: ['!dev'],
-  args: { renaming: 'notes' },
+  args: { renamingPath: 'notes' },
   play: async ({ canvasElement }) => {
     const field = canvasElement.querySelector<HTMLInputElement>('.tree__field')
     if (!field) throw new Error('no field')

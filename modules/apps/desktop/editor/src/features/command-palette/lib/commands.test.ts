@@ -5,8 +5,7 @@
  * and which of them another command's row reaches.
  */
 import { describe, expect, it } from 'vitest'
-import { commandsOf, overNote } from './commands'
-import { isCommandsTyped } from '../target'
+import { commandsOf, isCommandsTyped, overNote } from './commands'
 import { WORDS as words } from '@/shared/words'
 
 describe('the character that means the commands', () => {

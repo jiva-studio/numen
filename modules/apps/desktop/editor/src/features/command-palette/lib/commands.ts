@@ -1,7 +1,7 @@
 /**
  * Command grouping and filtering.
  */
-import type { Command, CommandGroup } from '../target'
+import type { Command, CommandGroup } from '../types'
 
 export { commandsOf } from './table'
 
@@ -27,3 +27,9 @@ export const inGroup = (
 /** The commands over the note in front, in the order they are drawn. */
 export const overNote = (commands: readonly Command[]): readonly Command[] =>
   inGroup(commands, 'note')
+
+/**
+ * Whether what was typed asks for the commands: the field held nothing, and
+ * what went into it is the one character that means them.
+ */
+export const isCommandsTyped = (was: string, now: string): boolean => was === '' && now === '>'

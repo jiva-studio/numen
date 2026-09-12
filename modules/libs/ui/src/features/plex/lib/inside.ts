@@ -42,7 +42,7 @@ export interface HungParts {
   readonly partHeight: number
   /** Ground kept clear around them, so none stands flush against an edge. */
   readonly pad: number
-  /** How many stand in the window at once. The rest are wound to. */
+  /** How many stand in the window at once. The rest are scrolled to. */
   readonly shown: number
   /** As wide as the longest of them asks for, held inside the window. */
   readonly width: number
@@ -115,7 +115,7 @@ export function hangParts(
     partHeight,
     pad,
     shown,
-    ...across(node, hung, pad, deps),
+    ...getPartsWidth(node, hung, pad, deps),
     parts: hung,
     height: shown * partHeight + 2 * pad,
   }
@@ -127,7 +127,7 @@ export function hangParts(
  * than the window. It grows about the node's middle and slides back inside the
  * window where the middle leaves it no room to grow.
  */
-function across(
+function getPartsWidth(
   node: PlacedNode,
   hung: readonly HungPart[],
   pad: number,

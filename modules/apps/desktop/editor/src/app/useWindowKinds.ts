@@ -17,13 +17,13 @@ export type { WindowKindsDeps } from './kinds/deps'
  */
 export function useWindowKinds(deps: WindowKindsDeps) {
   const { log, tabOpeners, held, editing, settings } = deps
-  const told = log.under('command')
+  const writeMessage = log.under('command')
   const dragged = shallowRef<readonly string[]>([])
 
   const plexes = createPlexKind({
     ...deps,
     dragged,
-    told,
+    writeMessage,
     askAgent: (text) => void agents.askQuestion(text),
   })
 
@@ -39,13 +39,13 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   const { recorded, pointed } = createMediaKinds(deps)
 
-  const places: DestinationDeps = {
+  const destinations: DestinationDeps = {
     travel: (path) => plexes.travel(path),
     openFileAt: (path, run) => tabOpeners.openFileAt(path, [run]),
     openFile: (path, title, line) => void tabOpeners.openFile(path, title, 'here', line),
   }
 
-  const { files, made } = createFilesKind({ ...deps, dragged, told, places })
+  const { files, made } = createFilesKind({ ...deps, dragged, writeMessage, destinations })
 
   held.registerKinds([
     ...editing.kinds,
@@ -68,7 +68,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     pointed,
     files,
     made,
-    places,
+    destinations,
     dragged,
   }
 }

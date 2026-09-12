@@ -88,8 +88,8 @@ const {
 } = useDrag<InsertionPoint>({
   order: () => props.faces.map((each) => each.id),
   nowhere: null,
-  doesMove: (held, lands) => lands !== held,
-  moves: (held, lands) => emit('move-face', held, lands),
+  isMoved: (held, lands) => lands !== held,
+  move: (held, lands) => emit('move-face', held, lands),
 })
 
 /** What a preview stands in the slots, which is each field under its own name. */
@@ -155,7 +155,7 @@ const addFace = (): void => {
 
       <Divider>
         <Button variant="ghost" size="small" @click="addFace">
-          <Icon shows="plus" />
+          <Icon name="plus" />
           {{ words.addFace }}
         </Button>
       </Divider>

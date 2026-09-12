@@ -103,27 +103,27 @@ const tab = (at: string, neighbours: readonly string[] = [], takes = true, types
   /** What the vault says each note is divided into, which a test sets. */
   const divides = ref<ReadonlyMap<string, readonly NoteHeading[]>>(new Map())
   /** Whether a node hangs the parts of its note, which a test turns. */
-  const hangs = ref(true)
+  const isHanging = ref(true)
   /** Every question the vault was asked about what the notes hold. */
-  const insides: (readonly string[])[] = []
+  const headingsAsked: (readonly string[])[] = []
   const deps: PlexTabDeps = {
     editor: vault.editor,
     ready: ref(true),
-    hangs,
+    isHanging,
     parts: ref(6),
     openNote: (path, title, showing, line) => {
       opened.push([path, title, showing])
       if (line !== undefined) entered.push([path, line])
     },
     // The vault answers about the notes it was asked about and no others.
-    inside: async (paths) => {
-      insides.push(paths)
+    readHeadings: async (paths) => {
+      headingsAsked.push(paths)
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
     askAgent: (text) => asked.push(text),
     runCommand: (id, path, title) => ran.push([id, path, title]),
-    opening: ref('Opening.md'),
-    first: async () => 'Opening.md',
+    openingPath: ref('Opening.md'),
+    readOpeningPath: async () => 'Opening.md',
     dragged: dragging,
     showMessage: (text) => said.push(text),
     createUntitledNote: async () => {
@@ -146,8 +146,8 @@ const tab = (at: string, neighbours: readonly string[] = [], takes = true, types
     opened,
     entered,
     divides,
-    hangs,
-    insides,
+    isHanging,
+    headingsAsked,
     asked,
     ran,
     said,
@@ -271,14 +271,14 @@ describe('a plex drawing nothing', () => {
     return usePlexTab(view as unknown as PlexView, {
       editor: createVault().editor,
       ready: ref(true),
-      hangs: ref(true),
+      isHanging: ref(true),
       parts: ref(6),
       openNote: () => {},
-      inside: async () => new Map(),
+      readHeadings: async () => new Map(),
       askAgent: () => {},
       runCommand: () => {},
-      opening: ref(''),
-      first: async () => '',
+      openingPath: ref(''),
+      readOpeningPath: async () => '',
       dragged: ref([]),
       showMessage: () => {},
       createUntitledNote: async () => '',
@@ -296,7 +296,7 @@ describe('a plex drawing nothing', () => {
   })
 
   it('is not an empty vault while the first answer is on its way', () => {
-    expect(plex({ opening: ref('Opening.md') }).empty.value).toBe(false)
+    expect(plex({ openingPath: ref('Opening.md') }).empty.value).toBe(false)
   })
 
   it('is not an empty vault once the plex stands on a note', () => {
@@ -362,14 +362,14 @@ describe('the picture', () => {
     const state = usePlexTab(plex.view, {
       editor: createVault().editor,
       ready: ref(false),
-      hangs: ref(true),
+      isHanging: ref(true),
       parts: ref(6),
       openNote: () => {},
-      inside: async () => new Map(),
+      readHeadings: async () => new Map(),
       askAgent: () => {},
       runCommand: () => {},
-      opening: ref(''),
-      first: async () => '',
+      openingPath: ref(''),
+      readOpeningPath: async () => '',
       dragged: ref(['Entropy.md']),
       showMessage: () => {},
       createUntitledNote: async () => '',
@@ -537,14 +537,14 @@ describe('the parts a node hangs', () => {
     const plex = usePlexTab(one.state.view, {
       editor: createVault().editor,
       ready: ref(true),
-      hangs: ref(true),
+      isHanging: ref(true),
       parts: ref(6),
       openNote: () => {},
-      inside: () => new Promise((done) => answers.push(done)),
+      readHeadings: () => new Promise((done) => answers.push(done)),
       askAgent: () => {},
       runCommand: () => {},
-      opening: ref('Root.md'),
-      first: async () => 'Root.md',
+      openingPath: ref('Root.md'),
+      readOpeningPath: async () => 'Root.md',
       dragged: ref([]),
       showMessage: () => {},
       createUntitledNote: async () => '',
@@ -567,7 +567,7 @@ describe('the parts a node hangs', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
     await one.state.readParts()
-    one.hangs.value = false
+    one.isHanging.value = false
 
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([])
     expect(one.state.partsOf(one.node('Root.md'))).toStrictEqual([])
@@ -575,34 +575,34 @@ describe('the parts a node hangs', () => {
 
   it('are not asked of the vault at all while the setting is off', async () => {
     const one = tab('Root.md', ['Child.md'])
-    one.hangs.value = false
-    one.insides.length = 0
+    one.isHanging.value = false
+    one.headingsAsked.length = 0
 
     await one.state.readParts()
 
-    expect(one.insides).toStrictEqual([])
+    expect(one.headingsAsked).toStrictEqual([])
   })
 
   it('are none for a deck, whose cards stand on no line of prose', async () => {
     const one = tab('Root.md', ['Animals.md'], true, { 'Animals.md': 'deck' })
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
-    one.insides.length = 0
+    one.headingsAsked.length = 0
 
     await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Animals.md'))).toStrictEqual([])
-    expect(one.insides).toStrictEqual([['Root.md']])
+    expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
   it('are none for a stencil, whose faces stand on no line of prose', async () => {
     const one = tab('Root.md', ['Animal.md'], true, { 'Animal.md': 'stencil' })
     one.divides.value = new Map([['Animal.md', [heading('Front', 4)]]])
-    one.insides.length = 0
+    one.headingsAsked.length = 0
 
     await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Animal.md'))).toStrictEqual([])
-    expect(one.insides).toStrictEqual([['Root.md']])
+    expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
   it('are the headings of an ordinary note beside them', async () => {
@@ -621,12 +621,12 @@ describe('the parts a node hangs', () => {
   it('are none for a deck in focus, which is where the plex is standing', async () => {
     const one = tab('Animals.md', [], true, { 'Animals.md': 'deck' })
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
-    one.insides.length = 0
+    one.headingsAsked.length = 0
 
     await one.state.readParts()
 
     expect(one.state.partsOf(one.node('Animals.md'))).toStrictEqual([])
-    expect(one.insides).toStrictEqual([])
+    expect(one.headingsAsked).toStrictEqual([])
   })
 
   it('are hung again once the setting is turned back on', async () => {
@@ -634,11 +634,11 @@ describe('the parts a node hangs', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
-    one.hangs.value = false
+    one.isHanging.value = false
     await settle()
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([])
 
-    one.hangs.value = true
+    one.isHanging.value = true
     await settle()
 
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([
@@ -732,14 +732,14 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   const state = usePlexTab(view, {
     editor: vault.editor,
     ready: ref(true),
-    hangs: ref(true),
+    isHanging: ref(true),
     parts: ref(6),
     openNote: (path, title, showing) => opened.push([path, title, showing]),
-    inside: async () => new Map(),
+    readHeadings: async () => new Map(),
     askAgent: () => {},
     runCommand: (id, path, title) => ran.push([id, path, title]),
-    opening: ref(''),
-    first: async () => '',
+    openingPath: ref(''),
+    readOpeningPath: async () => '',
     dragged: ref([]),
     showMessage: () => {},
     createUntitledNote: async () => '',
@@ -1038,10 +1038,10 @@ const window = (opening = 'Opening.md') => {
   /** Every time the vault was asked where it opens, and what it answered then. */
   const asked: string[] = []
   /** Whether a node hangs the parts of its note, which a test turns. */
-  const hangs = ref(true)
+  const isHanging = ref(true)
   /** Every question the vault was asked about what the notes hold. */
-  const insides: (readonly string[])[] = []
-  const first = ref(opening)
+  const headingsAsked: (readonly string[])[] = []
+  const openingPath = ref(opening)
 
   const createView = () => {
     const view = viewOn('')
@@ -1052,19 +1052,19 @@ const window = (opening = 'Opening.md') => {
   const plexes = plexKind(held.handle, createView, {
     editor: createVault().editor,
     ready: ref(true),
-    hangs,
+    isHanging,
     parts: ref(6),
     openNote: () => {},
-    inside: async (paths) => {
-      insides.push(paths)
+    readHeadings: async (paths) => {
+      headingsAsked.push(paths)
       return new Map()
     },
     askAgent: () => {},
     runCommand: () => {},
-    opening: first,
-    first: async () => {
-      asked.push(first.value)
-      return first.value
+    openingPath,
+    readOpeningPath: async () => {
+      asked.push(openingPath.value)
+      return openingPath.value
     },
     dragged: ref([]),
     showMessage: () => {},
@@ -1081,10 +1081,10 @@ const window = (opening = 'Opening.md') => {
   /** The person is in this tab now. */
   const showTab = (id: string) => held.onTabShown(id)
   /** The tab closes, and the window lets go of what it held. */
-  const closeTab = (id: string) => held.shut(id)
+  const closeTab = (id: string) => held.releaseTab(id)
   /** The vault gained a note, which is what it opens with from now on. */
   const setOpeningNote = (path: string) => {
-    first.value = path
+    openingPath.value = path
   }
   const onScreen = () => panesOf(held.layout.value.root).flatMap((pane) => pane.tabs)
   /** The tab the person is in, which is the active tab of the pane they are in. */
@@ -1103,8 +1103,8 @@ const window = (opening = 'Opening.md') => {
     elsewhere,
     views,
     asked,
-    hangs,
-    insides,
+    isHanging,
+    headingsAsked,
   }
 }
 
@@ -1249,7 +1249,7 @@ describe('every plex asked for its picture again', () => {
     await one.openTab('One.md')
     const second = await one.openTab('Two.md')
 
-    await one.again()
+    await one.refresh()
 
     expect(one.views[0]?.went).toContain('One.md')
     expect(one.views[1]?.went).toContain('Two.md')
@@ -1260,7 +1260,7 @@ describe('every plex asked for its picture again', () => {
     const one = window()
     const plex = await one.openTab('One.md')
 
-    await one.again([{ from: 'One.md', to: 'Renamed.md' }])
+    await one.refresh([{ from: 'One.md', to: 'Renamed.md' }])
 
     expect(plex.state.view.here.value).toBe('Renamed.md')
     expect(one.views[0]?.went.at(-1)).toBe('Renamed.md')
@@ -1271,7 +1271,7 @@ describe('every plex asked for its picture again', () => {
     const plex = await one.openTab('One.md')
     const before = plex.state.picture.value?.nodes.map((node) => node.id)
 
-    await one.again([{ from: 'One.md', to: 'Renamed.md' }])
+    await one.refresh([{ from: 'One.md', to: 'Renamed.md' }])
 
     expect(plex.state.picture.value?.nodes.map((node) => node.id)).toStrictEqual(before)
   })
@@ -1280,7 +1280,7 @@ describe('every plex asked for its picture again', () => {
     const one = window()
     const plex = await one.openTab('One.md')
 
-    await one.again([{ from: 'Other.md', to: 'Renamed.md' }])
+    await one.refresh([{ from: 'Other.md', to: 'Renamed.md' }])
 
     expect(plex.state.view.here.value).toBe('One.md')
   })
@@ -1290,7 +1290,7 @@ describe('every plex asked for its picture again', () => {
     const { state } = await one.openTab()
     one.setOpeningNote('First.md')
 
-    await one.again()
+    await one.refresh()
 
     expect(state.view.here.value).toBe('First.md')
   })
@@ -1301,7 +1301,7 @@ describe('every plex asked for its picture again', () => {
     await one.openTab()
     await one.openTab()
 
-    await one.again()
+    await one.refresh()
 
     expect(one.asked).toHaveLength(1)
   })
@@ -1311,7 +1311,7 @@ describe('every plex asked for its picture again', () => {
     await one.openTab('One.md')
     await one.openTab('Two.md')
 
-    await one.again()
+    await one.refresh()
 
     expect(one.asked).toStrictEqual([])
   })
@@ -1322,7 +1322,7 @@ describe('every plex asked for its picture again', () => {
     const second = await one.openTab('Two.md')
     one.closeTab(second.id)
 
-    await one.again()
+    await one.refresh()
 
     expect(one.views[0]?.went).toContain('One.md')
     expect(one.views[1]?.went.filter((where) => where === 'Two.md')).toHaveLength(1)
@@ -1334,15 +1334,15 @@ describe('a plex tab the person has closed', () => {
   it('asks the vault nothing when a setting it once answered turns', async () => {
     const one = window()
     const plex = await one.openTab('One.md')
-    one.hangs.value = false
+    one.isHanging.value = false
     await settle()
 
     one.closeTab(plex.id)
-    one.insides.length = 0
-    one.hangs.value = true
+    one.headingsAsked.length = 0
+    one.isHanging.value = true
     await settle()
 
-    expect(one.insides).toStrictEqual([])
+    expect(one.headingsAsked).toStrictEqual([])
   })
 })
 

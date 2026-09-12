@@ -75,8 +75,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const texts = shallowRef<readonly Passage[]>([])
   const meanings = shallowRef<readonly Passage[]>([])
 
-  const working = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
-  const said = ref<Record<SearchGroup, string>>({ names: '', text: '', meaning: '' })
+  const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
+  const failureMessages = ref<Record<SearchGroup, string>>({ names: '', text: '', meaning: '' })
 
   const asks = answerGuard()
 
@@ -84,8 +84,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     names.value = []
     texts.value = []
     meanings.value = []
-    working.value = { names: false, text: false, meaning: false }
-    said.value = { names: '', text: '', meaning: '' }
+    isWorking.value = { names: false, text: false, meaning: false }
+    failureMessages.value = { names: '', text: '', meaning: '' }
   }
 
   const fill = async <T>(
@@ -102,15 +102,15 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       if (!mine.current) return
       into([])
       console.error(error)
-      said.value = { ...said.value, [group]: words.notAsked }
+      failureMessages.value = { ...failureMessages.value, [group]: words.notAsked }
     } finally {
-      if (mine.current) working.value = { ...working.value, [group]: false }
+      if (mine.current) isWorking.value = { ...isWorking.value, [group]: false }
     }
   }
 
   const ask = async (mine: Question, query: string) => {
-    working.value = { names: true, text: true, meaning: true }
-    said.value = { names: '', text: '', meaning: '' }
+    isWorking.value = { names: true, text: true, meaning: true }
+    failureMessages.value = { names: '', text: '', meaning: '' }
     await Promise.all([
       fill(mine, 'names', () => core.names(query, EACH), (found) => (names.value = found)),
       fill(mine, 'text', () => core.search(query, 'words', EACH), (found) => (texts.value = found)),
@@ -147,7 +147,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const nameItem = (one: NameMatch): SearchRow => createNameItem(one, words)
   const passageItem = (group: SearchGroup, one: Passage): SearchRow => createPassageItem(group, one, words)
 
-  const silenceOf = (id: SearchGroup): string => evaluateSilence(id, said.value[id], words, coverage)
+  const silenceOf = (id: SearchGroup): string => evaluateSilence(id, failureMessages.value[id], words, coverage)
 
   const built = computed(() => {
     const held = new Map<string, SearchHit>()
@@ -159,7 +159,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
         id,
         title,
         items: rows.map((one) => one.item),
-        working: working.value[id],
+        working: isWorking.value[id],
         silence: silenceOf(id),
       }
     }

@@ -24,7 +24,7 @@ const props = withDefaults(
 /** The hour in force, written as `04:00`. An empty field holds none. */
 const model = defineModel<string>({ default: '' })
 
-const raises = defineEmits<{
+const emit = defineEmits<{
   /** The field come to rest at an hour of the day. */
   settles: [value: string]
 }>()
@@ -38,7 +38,7 @@ const onChange = (event: Event) => {
   const said = (event.target as HTMLInputElement).value
   if (!onTheClock(said) || said === model.value) return
   model.value = said
-  raises('settles', said)
+  emit('settles', said)
 }
 
 defineExpose({

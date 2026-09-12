@@ -73,7 +73,7 @@ vi.mock('@/shared/clients', async (original) => ({
   },
   // Whether a card can be asked about is the agent's to answer, and the window
   // asks it as it opens.
-  agent: { getAgentState: async () => ({ unreachable: '' }) },
+  agentService: { getAgentState: async () => ({ unreachable: '' }) },
   itself: { watchTasks: () => waits() },
 }))
 

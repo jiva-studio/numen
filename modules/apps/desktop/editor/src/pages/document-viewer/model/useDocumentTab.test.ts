@@ -30,12 +30,12 @@ const createMockDocumentWindow = (tab: DocumentTabState | null = null) => {
 const openers = () => {
   let reader: SourceReader | null = null
   const tabOpeners = {
-    registerReader: (key: { format?: string }, opens: SourceReader) => {
+    registerReader: (key: { format?: string }, read: SourceReader) => {
       if (key.format) return
-      reader = opens
+      reader = read
     },
   } as unknown as FileOpeners
-  return { tabOpeners, opens: () => reader }
+  return { tabOpeners, getReader: () => reader }
 }
 
 const settle = () => new Promise((done) => setTimeout(done, 0))
@@ -119,14 +119,14 @@ describe('a search that landed in a document', () => {
     const focused = vi.fn()
     const held = { focusSpans: focused } as unknown as DocumentTabState
     const { handle, opened } = createMockDocumentWindow(held)
-    const { tabOpeners, opens } = openers()
+    const { tabOpeners, getReader } = openers()
     documentKind(handle, (path) => useDocumentTab(read(path)), tabOpeners)
 
     const spans: readonly Span[] = [
       { from: 0, to: 12 },
       { from: 400, to: 420 },
     ]
-    opens()?.('physics/Boltzmann.pdf', spans)
+    getReader()?.('physics/Boltzmann.pdf', spans)
     await settle()
 
     expect(opened).toEqual(['document physics/Boltzmann.pdf'])

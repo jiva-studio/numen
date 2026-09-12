@@ -144,12 +144,12 @@ func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch
 	// The batch goes on the input: --disallowed-tools takes as many names as
 	// follow it, and a batch is longer than a command line holds.
 	cmd.Stdin = strings.NewReader(proofread.Ask(batch))
-	var said, trouble bytes.Buffer
+	var said, stderr bytes.Buffer
 	cmd.Stdout = &said
-	cmd.Stderr = &trouble
+	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("batch %d: %w: %s", batch.Number, err, lastLine(trouble.String()))
+		return "", fmt.Errorf("batch %d: %w: %s", batch.Number, err, lastLine(stderr.String()))
 	}
 	return strings.TrimSpace(said.String()), nil
 }

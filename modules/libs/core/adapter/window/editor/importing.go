@@ -13,9 +13,9 @@ import (
 // importingFiles is what a drop is called in the list of what is being done.
 const importingFiles = "importing files"
 
-// namedInARefusal is how many of the files that stayed outside are named before
+// namedInAnError is how many of the files that stayed outside are named before
 // the rest are counted.
-const namedInARefusal = 3
+const namedInAnError = 3
 
 // Imports copies files a person let go of over the window into a folder of the
 // vault, the root being the empty path.
@@ -52,7 +52,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 		api.say(at)
 		return
 	}
-	if said := refusedIn(brought.Refused); said != "" {
+	if said := errorsIn(brought.Errors); said != "" {
 		at.Error = said
 		api.say(at)
 		return
@@ -73,17 +73,17 @@ func directlyIn(into string, landed []string) []string {
 	return shown
 }
 
-// refusedIn is what a drop could not bring in, in one sentence. Nothing is said
+// errorsIn is what a drop could not bring in, in one sentence. Nothing is said
 // where every file arrived.
-func refusedIn(refused []vaults.Refusal) string {
-	if len(refused) == 0 {
+func errorsIn(errs []vaults.Error) string {
+	if len(errs) == 0 {
 		return ""
 	}
-	said := make([]string, 0, namedInARefusal)
-	for _, one := range refused[:min(len(refused), namedInARefusal)] {
+	said := make([]string, 0, namedInAnError)
+	for _, one := range errs[:min(len(errs), namedInAnError)] {
 		said = append(said, fmt.Sprintf("%s: %v", one.Name, one.Why))
 	}
-	if rest := len(refused) - len(said); rest > 0 {
+	if rest := len(errs) - len(said); rest > 0 {
 		said = append(said, fmt.Sprintf("and %d more", rest))
 	}
 	return strings.Join(said, "; ")

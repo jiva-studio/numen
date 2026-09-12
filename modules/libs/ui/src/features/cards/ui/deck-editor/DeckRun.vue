@@ -128,7 +128,7 @@ const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
         :title="words.add"
         @click="emit('ask')"
       >
-        <Icon shows="plus" />
+        <Icon name="plus" />
       </Button>
 
       <div v-else class="deck__asking flex flex-col items-center">

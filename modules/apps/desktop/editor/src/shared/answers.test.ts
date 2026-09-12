@@ -13,9 +13,9 @@ import {
   errorIn,
   fingerprint,
   getBytesQuery,
+  retryWhileBusy,
   staleIn,
   stamp,
-  waiting,
 } from './answers'
 
 describe('the file an answer came out of', () => {
@@ -85,7 +85,7 @@ describe('how an address names the bytes of a file', () => {
 
 describe('waiting for an answer', () => {
   it('returns the answer when the call succeeds', async () => {
-    const answer = await waiting(async () => 'ok')
+    const answer = await retryWhileBusy(async () => 'ok')
     expect(answer).toBe('ok')
   })
 })

@@ -11,8 +11,8 @@ import type { DeckTabState } from './types'
 export interface DeckTabsInside {
   readonly cardTabPathMap: Map<string, string>
   readonly pendingTabIds: Map<string, string>
-  readonly store: { open(id: string, path?: string): void; where(id: string): string }
-  readonly said: { getTitle(path: string): string }
+  readonly store: { open(id: string, path?: string): void; getPath(id: string): string }
+  readonly vaultAnswers: { getTitle(path: string): string }
   listStencils(): Promise<void>
   listPresets(): Promise<void>
   listStencilsAgain(): void
@@ -25,7 +25,7 @@ export function deckKind({
   cardTabPathMap,
   pendingTabIds,
   store,
-  said,
+  vaultAnswers,
   listStencils,
   listPresets,
   listStencilsAgain,
@@ -45,7 +45,7 @@ export function deckKind({
       void refreshDeckPreset(path)
       return createDeckTabState(id)
     },
-    getTitle: (one) => said.getTitle(store.where(one.id)),
+    getTitle: (one) => vaultAnswers.getTitle(store.getPath(one.id)),
     getMark: (one) => markOf(one.note.value.state),
     pane: DeckTab,
     identity: (id) => id,

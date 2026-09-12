@@ -50,9 +50,9 @@ function createSession(how?: { answering?: Promise<{ answer: string }>; refuses?
       return {}
     },
   }
-  const trouble: unknown[] = []
-  const one = useReviewSession({ cards, reportError: (why) => trouble.push(why), now: () => 1000 })
-  return { one, asks, trouble }
+  const errors: unknown[] = []
+  const one = useReviewSession({ cards, reportError: (why) => errors.push(why), now: () => 1000 })
+  return { one, asks, errors }
 }
 
 // A session is opened over a deck, over the whole vault, or over one preset.
@@ -93,11 +93,11 @@ describe('what a session is opened over', () => {
       answerCard: () => Promise.reject(new Error('no')),
       takeBackAnswer: () => Promise.reject(new Error('no')),
     }
-    const trouble: unknown[] = []
-    const one = useReviewSession({ cards, reportError: (why) => trouble.push(why) })
+    const errors: unknown[] = []
+    const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
 
     expect(await one.start('01VAULT', '', 'Sanskrit.md')).toBeNull()
-    expect(String(trouble[0])).toContain('this preset schedules nothing today')
+    expect(String(errors[0])).toContain('this preset schedules nothing today')
     expect(one.run.value).toBe('')
     expect(one.card.value).toBeNull()
   })
@@ -150,12 +150,12 @@ describe('a session', () => {
   })
 
   it('leaves the card where it was when the answer could not be written', async () => {
-    const { one, asks, trouble } = createSession({ refuses: new Error('the disk is full') })
+    const { one, asks, errors } = createSession({ refuses: new Error('the disk is full') })
     await one.start('01VAULT', '')
     one.show()
     await one.answer('good')
 
-    expect(trouble).toHaveLength(1)
+    expect(errors).toHaveLength(1)
     expect(one.at.value).toBe(0)
     expect(one.card.value?.mark).toBe('one')
     expect(one.shown.value).toBe(true)
@@ -231,11 +231,11 @@ describe('a session', () => {
       answerCard: () => Promise.reject(new Error('no')),
       takeBackAnswer: () => Promise.reject(new Error('no')),
     }
-    const trouble: unknown[] = []
-    const one = useReviewSession({ cards, reportError: (why) => trouble.push(why) })
+    const errors: unknown[] = []
+    const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
 
     expect(await one.start('01VAULT', '')).toBeNull()
-    expect(trouble).toHaveLength(1)
+    expect(errors).toHaveLength(1)
     expect(one.card.value).toBeNull()
   })
 

@@ -1,17 +1,48 @@
 /**
  * The words the palette is drawn in: every command as it is offered, every
- * group it stands in, and what each step says while it asks.
+ * group it stands in, what each step says while it asks, and what a command
+ * that has been carried out answers in.
  *
- * Nothing here is a decision. `target.ts` says what a command is and `table.ts`
- * which commands there are; this is only what a person reads of them.
+ * Nothing here is a decision. `types.ts` says what a command is and
+ * `lib/table.ts` which commands there are; this is only what a person reads of
+ * them.
  */
 import type { PaletteKeys } from '@numen/ui'
+import type { Artifact, ArtifactState } from '@/shared/artifacts'
+import type { ErrorCode } from '@/shared/errors'
+import type { VaultErrorCode } from '@/shared/vaults'
 import type { EmptyWords } from './model/search'
+
+/** Everything carrying a command out says in the window's voice. */
+export interface AnswerWords {
+  /** What the vault reported as error, in words a person reads. */
+  readonly errors: Record<ErrorCode, string>
+  /** What the list of vaults reported as error, in words a person reads. */
+  readonly vaultErrors: Record<VaultErrorCode, string>
+  /** What the machine's own folder picker is titled. */
+  readonly folder: string
+  /** The links that reach nothing now, which nothing repairs. */
+  readonly dangling: string
+  /** The vault opens with no note at all. */
+  readonly nowhere: string
+  /** The note is waiting on the person, and its file stays where it is. */
+  readonly unanswered: string
+  /** The note holds prose nobody here has seen, so nothing was written. */
+  readonly stale: string
+  /** A name at the destination is taken, and the file stayed where it was. */
+  readonly occupied: string
+  /** This build cannot do the run at all, and stops offering it. */
+  readonly unrunnable: string
+  /** What an artifact of a file now stands at, in words a person reads. */
+  readonly made: Record<Artifact, Record<ArtifactState, string>>
+  /** What a run over the address a note points at came to. */
+  readonly fetched: Record<ArtifactState, string>
+}
 
 /** The words the step that asks for the name typed back is drawn in. */
 export interface RetypeWords {
   /** What it does, and what it leaves behind. */
-  readonly does: string
+  readonly action: string
   readonly then: string
   /** What stands in the field: the name of the thing, typed back. */
   readonly back: string
@@ -23,7 +54,7 @@ export interface ConfirmWords {
   readonly keeps: string
   readonly kept: string
   /** The answer that does it, and what it leaves. */
-  readonly does: string
+  readonly action: string
   readonly then: string
 }
 

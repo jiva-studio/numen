@@ -39,13 +39,13 @@ The review window is open on the installation rather than on any one vault — i
 
 Each service has a file of its own, and a file that has grown a second subject is split: each subject becomes a service in a file of its own. `WorkspaceService` came out of `VaultService` that way, because where the person stands is the window's and what the vault holds is not.
 
-`shared.proto` holds what three or more services use: `Refusal`, `NoteType`, `Fingerprint` and `Stretch`. It declares no service and imports nothing, and it is the base of the import graph.
+`shared.proto` holds what three or more services use: `ErrorCode`, `NoteType`, `Fingerprint` and `Span`. It declares no service and imports nothing, and it is the base of the import graph.
 
 **A type enters `shared.proto` only when three services already use it.** Two services holding one type is a coincidence; three is a shape. Everything else stays in the file of the service that answers with it, and the service that wants it imports that file. `Note` and `Heading` are `NoteService`'s and `SearchService` imports them; `SourceKind` and `MoveResult` are `FileService`'s, and `NoteService` and `SearchService` import them.
 
 Under any looser rule the shared file admits whatever might be wanted twice and fills with types nothing in particular owns, and a type that arrives there early is one every service is written around afterwards.
 
-The shared types are a file of their own and not a service's file, because a service's file is what that service answers with. `Refusal` is a note's, and `VaultService` never says one; a file whose contents the rule above describes exactly is the only file that can hold all four.
+The shared types are a file of their own and not a service's file, because a service's file is what that service answers with. `ErrorCode` is a note's, and `VaultService` never says one; a file whose contents the rule above describes exactly is the only file that can hold all four.
 
 ### The service's name in front of a message is a cost of the flat package, not a reason to move it
 
@@ -62,7 +62,7 @@ Every file is the one proto package, so a message name is unique across the whol
 
 ## Alternatives considered
 
-**A proto package per service.** Rejected: `Refusal` and `Fingerprint` would then be imported across packages, and every generated client would carry a path per service where it now carries one. The prefixed names are the whole of what the flat package costs.
+**A proto package per service.** Rejected: `ErrorCode` and `Fingerprint` would then be imported across packages, and every generated client would carry a path per service where it now carries one. The prefixed names are the whole of what the flat package costs.
 
 **A service per window.** Rejected: both windows ask about the agent, the theme and the window itself, so a service per window is those three written twice and drifting apart.
 

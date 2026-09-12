@@ -129,7 +129,7 @@ describe('panes', () => {
   }
 
   it('divides a face into four, the markup of each half before what it comes to', () => {
-    expect(getPanes(FULL).map((pane) => [pane.half, pane.shows])).toEqual([
+    expect(getPanes(FULL).map((pane) => [pane.half, pane.mode])).toEqual([
       ['front', 'written'],
       ['front', 'preview'],
       ['back', 'written'],

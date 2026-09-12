@@ -3,7 +3,7 @@
  */
 import { WINDOW } from './clients'
 import { agentService, vault, windowService, workspace } from '@/shared/clients'
-import { counted, owing } from './words'
+import { counted, flushResults } from './words'
 import type { VaultPort } from '@/app/ports/vault'
 
 export type SessionCore = Pick<
@@ -60,6 +60,6 @@ export const sessionCore: SessionCore = {
   },
   quitting: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
   flushed: async (token, owed) => {
-    await windowService.reportFlush({ window: WINDOW, token, result: owing[owed ?? 'nothing'] })
+    await windowService.reportFlush({ window: WINDOW, token, result: flushResults[owed ?? 'nothing'] })
   },
 }

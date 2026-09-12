@@ -99,12 +99,12 @@ export const stepTo = (items: readonly MenuItem[], from: number, by: number): nu
  */
 export interface MenuOpeningDescriptor {
   /** Whether the keyboard lands on an item as the menu appears. */
-  readonly lands: boolean
+  readonly isLanding: boolean
 }
 
 export const MENU_OPENINGS = {
-  pointer: { lands: false },
-  keyboard: { lands: true },
+  pointer: { isLanding: false },
+  keyboard: { isLanding: true },
 } as const satisfies Record<string, MenuOpeningDescriptor>
 
 /** What opened a menu: a hand, or the keyboard. */
@@ -123,7 +123,7 @@ export const getLandingIndex = (
   items: readonly MenuItem[],
   current: string | null = null,
 ): number => {
-  if (!MENU_OPENINGS[opening].lands) return -1
+  if (!MENU_OPENINGS[opening].isLanding) return -1
   const at = items.findIndex((item) => item.id === current && !item.disabled)
   return at >= 0 ? at : stepTo(items, -1, 1)
 }

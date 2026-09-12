@@ -1,5 +1,5 @@
 /** What a note tab says: the questions its file puts, and the two ways out. */
-import type { NoteErrorCode } from './tabState'
+import type { NoteErrorCode } from './lib/tabState'
 
 export const WORDS = {
   stale: 'The file changed on disk, so this note stopped saving.',

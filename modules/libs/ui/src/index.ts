@@ -44,7 +44,7 @@ export { Heatmap } from './features/heatmap'
 export { dayName as heatmapDayName } from './features/heatmap'
 export type { Words as HeatmapWords } from './features/heatmap'
 /** A day of the calendar, written down, read back and counted against another. */
-export { dayAfter, dayNamed, dayOf, daysBetween, isDay } from './shared/lib/day'
+export { dayAfter, dayOf, daysBetween, getDayName, isDay } from './shared/lib/day'
 export type { Tally as HeatmapTally } from './features/heatmap'
 export { WelcomePage } from './features/welcome'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
@@ -103,7 +103,7 @@ export { Reader } from './features/reader'
 /** A book made for a screen, set in columns and turned a page at a time. */
 export { Book } from './features/book'
 /** Where a person is reading, and what a book runs between: bytes of its text. */
-export type { Span as BookSpan } from './features/book'
+export type { Span } from './features/book'
 
 /** What a book divides into, as a list to reach any of it by. */
 export { BookContents } from './features/book'

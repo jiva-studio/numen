@@ -101,7 +101,7 @@ onBeforeUnmount(cleanupWindowListeners)
         :book-span="props.state.span.value"
         :offset="props.state.offset.value"
         :highlights="props.state.highlights.value"
-        :elsewhere="props.state.elsewhere.value"
+        :other-highlights="props.state.otherHighlights.value"
         :chapter="props.state.chapter.value"
         :is-listing-open="isListingOpen"
         @moved="onMoved"

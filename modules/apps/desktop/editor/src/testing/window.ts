@@ -9,17 +9,17 @@ import './moduleMocks'
 import { afterEach } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { panesOf, WorkspaceLayout, type Workspace } from '@numen/ui'
-import { asked, forgetAsked } from './asked'
+import { requests, forgetRequests } from './requests'
 import {
   folders,
   forgetAnswers,
   listed,
   maker,
-  nameSaid,
+  nameAnswer,
   outside,
-  passageSaid,
+  passageAnswer,
   said,
-  sourceSaid,
+  sourceAnswer,
 } from './answers'
 import { book, editor, reader } from './stubs'
 
@@ -40,7 +40,7 @@ const windows: { unmount(): void }[] = []
 afterEach(() => {
   for (const window of windows.splice(0)) window.unmount()
   forgetAnswers()
-  forgetAsked()
+  forgetRequests()
 })
 
 /**
@@ -121,7 +121,7 @@ const tabsOf = (window: VueWrapper): readonly { id: string; title: string }[] =>
   []
 
 export {
-  asked,
+  requests,
   cards,
   maker,
   DEBOUNCE,
@@ -131,14 +131,14 @@ export {
   folders,
   layoutOf,
   listed,
-  nameSaid,
+  nameAnswer,
   nodeInPlex,
   outside,
   paneKinds,
-  passageSaid,
+  passageAnswer,
   reader,
   said,
   settle,
-  sourceSaid,
+  sourceAnswer,
   tabsOf,
 }

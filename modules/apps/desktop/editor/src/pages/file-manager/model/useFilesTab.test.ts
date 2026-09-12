@@ -81,8 +81,8 @@ const tab = (fails = false) => {
       vault[folderPath] = [...(vault[folderPath] ?? []), file(made, { type: 'preset' })]
       return made
     },
-    importAddress: async (folderPath, address) => {
-      done.push(`imports ${folderPath === ROOT ? '/' : folderPath} ${address}`)
+    importUrl: async (folderPath, url) => {
+      done.push(`imports ${folderPath === ROOT ? '/' : folderPath} ${url}`)
       return fails ? '' : 'made.url'
     },
     showError: (text) => void done.push(`says ${text}`),
@@ -300,7 +300,7 @@ describe('rows let go of', () => {
       createDeck: async () => '',
       createStencil: async () => '',
       createPreset: async () => '',
-      importAddress: async () => '',
+      importUrl: async () => '',
       showError: () => {},
     })
     await list.openFolder(ROOT)

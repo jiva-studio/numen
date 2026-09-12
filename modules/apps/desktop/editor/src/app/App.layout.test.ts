@@ -15,7 +15,7 @@ import { NoteTab } from '@/pages/note-editor'
 import { PlexTab } from '@/pages/plex-graph'
 import { panesOf } from '@numen/ui'
 import {
-  asked,
+  requests,
   cards,
   layoutOf,
   listed,
@@ -125,7 +125,7 @@ describe('a letter pressed on the welcome screen', () => {
 
     await press('b')
 
-    expect(asked.opened).toStrictEqual(['heat'])
+    expect(requests.opened).toStrictEqual(['heat'])
   })
 
   it('shows the first of them for the first letter of the alphabet', async () => {
@@ -133,7 +133,7 @@ describe('a letter pressed on the welcome screen', () => {
 
     await press('a')
 
-    expect(asked.opened).toStrictEqual(['physics'])
+    expect(requests.opened).toStrictEqual(['physics'])
   })
 
   it('shows nothing where no vault stands at the letter', async () => {
@@ -141,7 +141,7 @@ describe('a letter pressed on the welcome screen', () => {
 
     await press('c')
 
-    expect(asked.opened).toStrictEqual([])
+    expect(requests.opened).toStrictEqual([])
   })
 
   it('shows nothing while the palette is up, where the letter is being typed', async () => {
@@ -150,7 +150,7 @@ describe('a letter pressed on the welcome screen', () => {
     await press('k', { ctrlKey: true })
     await press('a')
 
-    expect(asked.opened).toStrictEqual([])
+    expect(requests.opened).toStrictEqual([])
   })
 
   it('shows nothing while the window holds a tab, where the screen is not up', async () => {
@@ -158,7 +158,7 @@ describe('a letter pressed on the welcome screen', () => {
 
     await press('a')
 
-    expect(asked.opened).toStrictEqual([])
+    expect(requests.opened).toStrictEqual([])
   })
 })
 
@@ -182,7 +182,7 @@ describe('the vault offered below the list', () => {
     )
     await settle()
 
-    expect(asked.chose).toBe(1)
+    expect(requests.chose).toBe(1)
   })
 })
 

@@ -25,7 +25,7 @@ import (
 func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	// Every asking is turned down, which is what a model that is there and not
 	// answering looks like from here.
-	model := sulks(64, math.MaxInt)
+	model := newSulking(64, math.MaxInt)
 	cfg, db := reading(t)
 	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
 		t.Fatal(err)

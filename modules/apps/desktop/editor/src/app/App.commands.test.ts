@@ -21,19 +21,19 @@ import { FilesTab, NEW_DECK, NEW_STENCIL } from '@/pages/file-manager'
 import { NoteTab } from '@/pages/note-editor'
 import { PlexTab, WORDS as plexWords } from '@/pages/plex-graph'
 import {
-  asked,
+  requests,
   cards,
   maker,
   DEBOUNCE,
   mountWindow,
   mountWindowWithPalette,
-  nameSaid,
+  nameAnswer,
   nodeInPlex,
   paneKinds,
-  passageSaid,
+  passageAnswer,
   said,
   settle,
-  sourceSaid,
+  sourceAnswer,
 } from '@/testing/window'
 import { ERRORS, WORDS } from '@/shared/words'
 
@@ -99,9 +99,9 @@ describe('the palette', () => {
 
   it('draws every kind of note a name turned up as what it is', async () => {
     said.names = [
-      nameSaid('Ants.md', 'Ants'),
-      nameSaid('Animals.md', 'Animals', 'deck'),
-      nameSaid('Animal.md', 'Animal', 'stencil'),
+      nameAnswer('Ants.md', 'Ants'),
+      nameAnswer('Animals.md', 'Animals', 'deck'),
+      nameAnswer('Animal.md', 'Animal', 'stencil'),
     ]
     const window = await mountWindowWithPalette()
 
@@ -112,7 +112,7 @@ describe('the palette', () => {
 
   it('draws a passage as the note it was read out of', async () => {
     said.names = []
-    said.passages = [passageSaid('Animals.md', 'Animals', 'deck'), passageSaid('Ants.md', 'Ants')]
+    said.passages = [passageAnswer('Animals.md', 'Animals', 'deck'), passageAnswer('Ants.md', 'Ants')]
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
@@ -123,7 +123,7 @@ describe('the palette', () => {
 
   it('draws a passage out of a book and one out of a recording as what each is', async () => {
     said.names = []
-    said.passages = [sourceSaid('Ants.epub', 'book'), sourceSaid('730709BG.LON.mp3', 'recording')]
+    said.passages = [sourceAnswer('Ants.epub', 'book'), sourceAnswer('730709BG.LON.mp3', 'recording')]
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
@@ -160,7 +160,7 @@ describe('the palette', () => {
   })
 
   it('opens a deck it turned up in the editor of its cards', async () => {
-    said.names = [nameSaid('Animals.md', 'Animals', 'deck')]
+    said.names = [nameAnswer('Animals.md', 'Animals', 'deck')]
     said.types = { 'Animals.md': 'deck' }
     const window = await mountWindow()
 
@@ -171,7 +171,7 @@ describe('the palette', () => {
   })
 
   it('opens a stencil it turned up in the editor of its fields and faces', async () => {
-    said.names = [nameSaid('Animal.md', 'Animal', 'stencil')]
+    said.names = [nameAnswer('Animal.md', 'Animal', 'stencil')]
     said.types = { 'Animal.md': 'stencil' }
     const window = await mountWindow()
 
@@ -182,7 +182,7 @@ describe('the palette', () => {
   })
 
   it('opens an ordinary note the same search turned up in a note tab', async () => {
-    said.names = [nameSaid('Animals.md', 'Animals')]
+    said.names = [nameAnswer('Animals.md', 'Animals')]
     const window = await mountWindow()
 
     await openFromSearch(window,'Animals.md')
@@ -216,7 +216,7 @@ describe('the palette', () => {
       ?.id ?? ''
 
   it('is over the plex in the tab in front, not the plex last put in front', async () => {
-    said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
+    said.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
     const window = await mountWindow()
 
     // A second plex, standing on a note of its own, put in front last.
@@ -317,7 +317,7 @@ describe('a command reached by its own keystroke', () => {
     await settle()
 
     expect(event.defaultPrevented).toBe(true)
-    expect(asked.made).toStrictEqual(['Entropy'])
+    expect(requests.made).toStrictEqual(['Entropy'])
   })
 
   it('makes a deck under the name typed, and opens it in the editor of its cards', async () => {
@@ -331,7 +331,7 @@ describe('a command reached by its own keystroke', () => {
     await press('Enter')
     await settle()
 
-    expect(asked.cards).toStrictEqual(['deck / Animals'])
+    expect(requests.cards).toStrictEqual(['deck / Animals'])
     expect(paneKinds(window).flat()).toContain('deck')
   })
 
@@ -356,7 +356,7 @@ describe('a command reached by its own keystroke', () => {
   it('says the error and opens nothing where the name is taken already', async () => {
     const window = await mountWindowWithPalette()
 
-    const makeDeck = async () => {
+    const createDeck = async () => {
       globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
       await settle()
       await type('New deck')
@@ -365,8 +365,8 @@ describe('a command reached by its own keystroke', () => {
       await press('Enter')
       await settle()
     }
-    await makeDeck()
-    await makeDeck()
+    await createDeck()
+    await createDeck()
 
     expect(paneKinds(window).flat().filter((kind) => kind === 'deck')).toHaveLength(1)
     expect(window.text()).toContain(ERRORS.occupied)
@@ -383,7 +383,7 @@ describe('a command reached by its own keystroke', () => {
     await press('Enter')
     await settle()
 
-    expect(asked.cards).toStrictEqual(['stencil / Animal [Field 1]'])
+    expect(requests.cards).toStrictEqual(['stencil / Animal [Field 1]'])
     expect(paneKinds(window).flat()).not.toContain('deck')
   })
 
@@ -398,11 +398,11 @@ describe('a command reached by its own keystroke', () => {
     await press('Enter')
     await settle()
 
-    expect(asked.cards).not.toStrictEqual(['stencil / Animal []'])
+    expect(requests.cards).not.toStrictEqual(['stencil / Animal []'])
   })
 
   it('opens the step that picks a note, on the keystroke going to one draws', async () => {
-    said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
+    said.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
     const window = await mountWindowWithPalette()
 
     const event = pressKey('g')
@@ -413,7 +413,7 @@ describe('a command reached by its own keystroke', () => {
   })
 
   it('travels to the note picked on that step', async () => {
-    said.names = [nameSaid('physics/Entropy.md', 'Entropy')]
+    said.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
     const window = await mountWindowWithPalette()
 
     pressKey('g')
@@ -437,7 +437,7 @@ describe('a command reached by its own keystroke', () => {
 
     expect(event.defaultPrevented).toBe(false)
     expect(window.findComponent(Palette).props('open')).toBe(false)
-    expect(asked.made).toStrictEqual([])
+    expect(requests.made).toStrictEqual([])
   })
 
   it('leaves a keystroke a pane has already answered alone', async () => {
@@ -527,7 +527,7 @@ describe('a command reached by a keystroke holding Shift', () => {
     }
 
     expect(event.defaultPrevented).toBe(true)
-    expect(asked.made).toStrictEqual(['Entropy'])
+    expect(requests.made).toStrictEqual(['Entropy'])
   })
 
   it('shows the note in front in the plex', async () => {
@@ -629,7 +629,7 @@ describe('a command asked for while the vault is being read', () => {
     await type('Entropy')
     await press('Enter')
 
-    expect(asked.made).toStrictEqual(['Entropy'])
+    expect(requests.made).toStrictEqual(['Entropy'])
     expect(cards(window)).toStrictEqual(['reading the vault…'])
   })
 })
@@ -665,7 +665,7 @@ describe('the keyboard on the command that removes a note', () => {
   it('removes the note the moment the command is chosen', async () => {
     await overRemove()
 
-    expect(asked.removed).toStrictEqual(['Root.md false'])
+    expect(requests.removed).toStrictEqual(['Root.md false'])
   })
 
   it('stands on no step, and the palette goes with the choice', async () => {
@@ -719,7 +719,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
 
     await removeRow(window,'Animals.note')
 
-    expect(asked.removed).toStrictEqual(['Animals.note false'])
+    expect(requests.removed).toStrictEqual(['Animals.note false'])
     expect(paneKinds(window).flat()).not.toContain('deck')
   })
 
@@ -729,7 +729,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
 
     await removeRow(window,'Animal.note')
 
-    expect(asked.removed).toStrictEqual(['Animal.note false'])
+    expect(requests.removed).toStrictEqual(['Animal.note false'])
     expect(paneKinds(window).flat()).not.toContain('stencil')
   })
 
@@ -747,7 +747,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
     await removeRow(window,'Animals.note')
 
     // Making the deck is no write, so the only one is what the person added.
-    expect(asked.wrote).toStrictEqual(['Vicuña'])
+    expect(requests.wrote).toStrictEqual(['Vicuña'])
   })
 })
 

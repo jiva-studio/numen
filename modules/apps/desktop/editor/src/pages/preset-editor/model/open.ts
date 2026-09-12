@@ -58,7 +58,7 @@ export const readPreset = async (
   }
   const readError = answer.error
   one.flight.errorMessage.value = readError === null ? '' : words.notRead(readError)
-  one.flight.changed.value = false
+  one.flight.hasChanged.value = false
   one.flight.at = answer.at
   bounds.value = answer.bounds
   one.curves.answers.clear()
@@ -171,7 +171,7 @@ export const createPresetState = (
     problems: one.problems,
     stopped: one.stopped,
     errorMessage: one.flight.errorMessage,
-    changed: one.flight.changed,
+    hasChanged: one.flight.hasChanged,
     again: () => void readPreset(one, core, bounds, titles, today()),
     chooseGoal,
     moveSlider,

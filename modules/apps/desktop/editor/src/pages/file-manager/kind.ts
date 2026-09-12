@@ -10,11 +10,11 @@ import { ROOT } from './model/useFileTree'
 import { WORDS as words } from './words'
 import type { FilesTabDeps, FilesTabState, FileTree } from './types'
 
-export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: FilesTabDeps) {
+export function filesKind(handle: WindowHandle, createTree: () => FileTree, deps: FilesTabDeps) {
   const kind: TabKind<FilesTabState, typeof FILES> = {
     kind: FILES,
     open: () => {
-      const state = useFilesTab(makes(), deps)
+      const state = useFilesTab(createTree(), deps)
       void state.list.openFolder(ROOT)
       return state
     },

@@ -12,15 +12,16 @@ import { answerGuard as latest } from '@/shared/questions'
 import type { Vault } from '@/shared/vaults'
 import { commandsOf } from '../lib/commands'
 import { view } from './view'
-import type { RunSupport } from '../runs'
-import {
-  invocationOf,
-  type CommandsDeps,
-  type CommandTarget,
-  type CommandInvocation,
-} from '../target'
+import { invocationOf } from '../lib/invocation'
+import type {
+  CommandsDeps,
+  CommandTarget,
+  CommandInvocation,
+  NoteLookup,
+  PaletteLists,
+  RunSupport,
+} from '../types'
 import type { Words } from '../words'
-import type { NoteLookup, PaletteLists } from '../rows'
 import type { NameMatch } from './search'
 import { createPaletteSteps } from './navigation'
 
@@ -37,7 +38,7 @@ export function useCommandPalette(
   words: Words,
   at: () => CommandTarget,
   knows: NoteLookup,
-  holds: PaletteLists,
+  lists: PaletteLists,
   runs: RunSupport,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
@@ -51,7 +52,7 @@ export function useCommandPalette(
   const known = shallowRef<readonly Vault[]>([])
   const showing = ref('')
   const isWorking = ref(false)
-  const said = ref('')
+  const failureMessage = ref('')
 
   const asked = latest()
 
@@ -66,7 +67,7 @@ export function useCommandPalette(
     known.value = []
     showing.value = ''
     isWorking.value = false
-    said.value = ''
+    failureMessage.value = ''
   }
 
   const setOpen = (now: boolean) => {
@@ -79,13 +80,13 @@ export function useCommandPalette(
 
   const previewItem = (item: string) => {
     const step = steps.here.value
-    if (step?.step === 'choosing') holds.previewItem(step.command.id, item)
+    if (step?.step === 'choosing') lists.previewItem(step.command.id, item)
   }
 
   const loadVaults = async () => {
     const mine = asked.ask()
     isWorking.value = true
-    said.value = ''
+    failureMessage.value = ''
     try {
       const listed = await core.vaults()
       if (!mine.current) return
@@ -95,7 +96,7 @@ export function useCommandPalette(
       if (!mine.current) return
       known.value = []
       console.error(error)
-      said.value = words.notAsked
+      failureMessage.value = words.notAsked
     } finally {
       if (mine.current) isWorking.value = false
     }
@@ -103,7 +104,7 @@ export function useCommandPalette(
 
   const steps = createPaletteSteps(
     words,
-    holds,
+    lists,
     knows,
     typed,
     drop,
@@ -118,11 +119,11 @@ export function useCommandPalette(
     if (!query) {
       found.value = []
       isWorking.value = false
-      said.value = ''
+      failureMessage.value = ''
       return
     }
     isWorking.value = true
-    said.value = ''
+    failureMessage.value = ''
     await wait(HOLD)
     if (!mine.current) return
     try {
@@ -133,7 +134,7 @@ export function useCommandPalette(
       if (!mine.current) return
       found.value = []
       console.error(error)
-      said.value = words.notAsked
+      failureMessage.value = words.notAsked
     } finally {
       if (mine.current) isWorking.value = false
     }
@@ -149,12 +150,12 @@ export function useCommandPalette(
     commands,
     byId,
     runs,
-    holds,
+    lists,
     found,
     known,
     showing,
-    working: isWorking,
-    said,
+    isWorking,
+    failureMessage,
     getStepTitle: steps.getStepTitle,
     getStepLabel: steps.getStepLabel,
   })
@@ -182,7 +183,9 @@ export function useCommandPalette(
   const chooseItem = (item: string, action: string): CommandInvocation | null => {
     const step = steps.here.value
     if (!step) return startCommand(action, on.value)
-    return steps.chooseInStep(step, item, action, found.value, known.value, (one) => Boolean(draws.aside(one)))
+    return steps.chooseInStep(step, item, action, found.value, known.value, (one) =>
+      Boolean(draws.getVaultAside(one)),
+    )
   }
 
   return {

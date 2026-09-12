@@ -64,7 +64,7 @@ func proofreadTranscriptCommand(
 		fmt.Fprintf(out, "%s has no transcript to proofread\n", res.Path)
 	default:
 		fmt.Fprintf(out, "put %d lines of %s right over %d lines, %d batches left as transcribed, in %s\n",
-			res.Fixed, res.Path, res.Read, res.Refused, time.Since(started).Round(time.Second))
+			res.Fixed, res.Path, res.Read, res.UncorrectedBatches, time.Since(started).Round(time.Second))
 	}
 	return nil
 }

@@ -94,6 +94,11 @@ const past = new Set([
  * `onDropEntries` answers a drop; both end in a plural noun and neither is a
  * narrator. `carries` and `dressing` have nothing in front of the verb form,
  * so the verb form is the name.
+ *
+ * A verb form later in a name is not read here. `getRenamedPath` is a
+ * participle used as an adjective and is right; `faceAdded` is a narrator and
+ * is wrong, and telling them apart needs a list of every English verb. The
+ * `naming-reviewer` role is what stands there.
  */
 export function refused(name) {
   const first = words(name)[0] ?? ''

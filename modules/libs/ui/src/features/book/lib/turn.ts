@@ -6,6 +6,7 @@
  * and what a hand put down and lifted again means are decisions, and a test
  * asks them without a browser.
  */
+import type { Span } from '@/shared/lib/span'
 
 /** A turn of the page, and the two ends of the document. */
 export type PageTurn = 'back' | 'next' | 'first' | 'last'
@@ -88,8 +89,8 @@ export function turnTo(
   way: PageTurn,
   spread: number,
   count: number,
-  span: { begins: number; ends: number },
-  book: { begins: number; ends: number },
+  span: Span,
+  book: Span,
 ): Destination {
   if (way === 'first') return { spread: 0 }
   if (way === 'last') return { spread: count - 1 }
@@ -97,7 +98,7 @@ export function turnTo(
   const to = spread + (way === 'next' ? 1 : -1)
   if (to >= 0 && to < count) return { spread: to }
 
-  const offset = way === 'next' ? span.ends : span.begins - 1
-  if (offset >= book.begins && offset < book.ends) return { offset }
+  const offset = way === 'next' ? span.to : span.from - 1
+  if (offset >= book.from && offset < book.to) return { offset }
   return {}
 }

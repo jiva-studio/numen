@@ -29,10 +29,10 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     void conversation.ask(text, '')
   }
 
-  /** A line about work pressed: the place that call was on is put in front. */
+  /** A line about work pressed: where that call was working is put in front. */
   const openTurnSource = (turn: Turn) => {
-    const at = conversation.place(turn.id)
-    if (at) deps.openFileAt(at.path, at.span)
+    const location = conversation.getSourceLocation(turn.id)
+    if (location) deps.openFileAt(location.path, location.span)
   }
 
   /**
@@ -94,7 +94,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     }
     if (!isNoteAddress(href)) return
     const path = resolvedAddresses.value.get(href)
-    if (path) deps.beside(path)
+    if (path) deps.openFileBeside(path)
   }
 
   return {

@@ -67,7 +67,7 @@ describe('what is not sent', () => {
 
 describe('while an answer is being written', () => {
   it('gives the disc to stopping, under the name it was given', async () => {
-    const wrapper = composer({ modelValue: 'hello', working: true, stops: 'Give up' })
+    const wrapper = composer({ modelValue: 'hello', working: true, stopLabel: 'Give up' })
     const disc = wrapper.get('button')
     expect(disc.attributes('aria-label')).toBe('Give up')
     expect(disc.attributes('disabled')).toBeUndefined()
@@ -99,7 +99,7 @@ describe('while an answer is being written', () => {
   })
 
   it('sends again once the answer has arrived', async () => {
-    const wrapper = composer({ modelValue: 'hello', working: true, sends: 'Send it' })
+    const wrapper = composer({ modelValue: 'hello', working: true, sendLabel: 'Send it' })
     await wrapper.setProps({ working: false })
     expect(wrapper.get('button').attributes('aria-label')).toBe('Send it')
 

@@ -63,12 +63,12 @@ func proofreadReadingCommand(
 		// batch collects one before it.
 		fmt.Fprintf(out, "put %d lines right, %d pages left as they were read; "+
 			"%d of %d pages of %s are with the proofreader, ask again to collect them\n",
-			res.Fixed, res.Refused, res.Read, res.Pages, res.Path)
+			res.Fixed, res.UncorrectedPages, res.Read, res.Pages, res.Path)
 	case res.None:
 		fmt.Fprintf(out, "%s has no reading to proofread\n", res.Path)
 	default:
 		fmt.Fprintf(out, "put %d lines of %s right over %d pages, %d of them left as they were read, in %s\n",
-			res.Fixed, res.Path, res.Read, res.Refused, time.Since(started).Round(time.Second))
+			res.Fixed, res.Path, res.Read, res.UncorrectedPages, time.Since(started).Round(time.Second))
 	}
 	return nil
 }

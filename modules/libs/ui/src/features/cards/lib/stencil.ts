@@ -182,7 +182,7 @@ export type PaneMode = 'written' | 'preview'
 /** One part of the window a face is edited in. */
 export interface Pane {
   readonly half: Half
-  readonly shows: PaneMode
+  readonly mode: PaneMode
   /** What the part is called while nothing stands in it. */
   readonly said: string
   /** What the part is announced as. */
@@ -208,7 +208,7 @@ export function panes(face: FaceRow, words: StencilWords = STENCIL_WORDS): reado
     return [
       {
         half,
-        shows: 'written',
+        mode: 'written',
         said,
         named: said,
         text: written,
@@ -217,7 +217,7 @@ export function panes(face: FaceRow, words: StencilWords = STENCIL_WORDS): reado
       },
       {
         half,
-        shows: 'preview',
+        mode: 'preview',
         said: words.preview,
         named: `${words.preview}: ${face.name} ${said}`,
         text: shown,

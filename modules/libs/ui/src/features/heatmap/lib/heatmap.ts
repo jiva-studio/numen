@@ -5,7 +5,7 @@
  * how dark it is drawn are arithmetic, and arithmetic inside a component is
  * arithmetic nobody can check without a screen.
  */
-import { dayNamed, dayOf } from '@/shared/lib/day'
+import { dayOf, getDayName } from '@/shared/lib/day'
 
 /** How many days stand in one column. A column is a week. */
 export const ROWS = 7
@@ -103,7 +103,6 @@ export function days(
   now: Date,
   did: ReadonlyMap<string, Tally>,
   due: ReadonlyMap<string, number> = new Map(),
-  getDayName: (at: Date) => string = dayNamed,
 ): Day[] {
   const out: Day[] = []
   if (columns < 1) return out

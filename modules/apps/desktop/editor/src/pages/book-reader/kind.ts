@@ -14,12 +14,12 @@ import type { BookTabState } from './model/useBookTab'
  */
 export function bookKind(
   handle: WindowHandle,
-  opens: (path: string) => BookTabState,
+  open: (path: string) => BookTabState,
   tabOpeners: FileOpeners,
 ) {
   const kind: TabKind<BookTabState, typeof BOOK> = {
     kind: BOOK,
-    open: opens,
+    open,
     getTitle: (state) => state.title.value || (state.path.split('/').pop() ?? state.path),
     pane: BookTab,
     identity: (path) => path,

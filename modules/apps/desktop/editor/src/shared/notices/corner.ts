@@ -36,7 +36,7 @@ export interface State {
   /** The vault is still being read for the first time. */
   readonly reading: boolean
   /** Whether the vault holds a note to show at all. */
-  readonly holds: boolean
+  readonly hasNote: boolean
 }
 
 /** How each kind of word is drawn, and how long it stands. */
@@ -124,7 +124,7 @@ export const cornerOf = (
     // One at a time: a vault still being read has not finished reading nothing.
     ...soThat(
       'nothingRead',
-      !state.reading && !state.holds && state.unread ? words.nothingRead : '',
+      !state.reading && !state.hasNote && state.unread ? words.nothingRead : '',
     ),
     // Said once and quietly, and it is so whether or not anything is running.
     ...soThat('wordsOnly', wordsOnly(vault) ? words.wordsOnly : '', { isAsked: false }),

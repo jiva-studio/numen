@@ -5,5 +5,5 @@
  * the person through one, so the two entities meet. This is the whole of what
  * one says to the other.
  */
-export type { FileOpeners, SourceReader } from '../openers'
-export type { OpenTab, TabKind, WindowHandle } from '../kinds'
+export type { FileOpeners, SourceReader } from '../model/openers'
+export type { OpenTab, TabKind, WindowHandle } from '../lib/kinds'

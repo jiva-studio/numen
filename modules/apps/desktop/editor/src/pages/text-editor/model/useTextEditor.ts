@@ -90,7 +90,7 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
   }
 
   /** What was typed written into the file the tab read. */
-  const keeps = (): Promise<void> => writes(held.value)
+  const save = (): Promise<void> => writes(held.value)
 
   /** Keep: what is typed goes to the file, whatever the file now holds. */
   const keep = async (): Promise<void> => {
@@ -110,7 +110,7 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
     /** Whether the file moved past what was read. */
     isStale: readonly(isStale),
     again,
-    keeps,
+    save,
     keep,
     /** Take: the file is read again, and that read replaces what is typed. */
     take: again,

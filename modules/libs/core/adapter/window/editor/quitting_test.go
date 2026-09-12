@@ -552,7 +552,7 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 	// What the window does with a close it called off: it waits on a person,
 	// and that wait is not measured.
 	answered := make(chan bool, 1)
-	go func() { answered <- f.opened.Answered(t.Context()) }()
+	go func() { answered <- f.opened.WaitForAnswers(t.Context()) }()
 
 	select {
 	case <-answered:

@@ -19,13 +19,16 @@ export interface WindowStreamsDeps {
   readonly opening: Ref<string>
   readonly tasks: ShallowRef<readonly Task[]>
   readonly isVaultSwapped: () => Promise<boolean>
-  readonly reloads: () => void
-  readonly told: (paths: readonly string[], renamed: readonly PathRename[]) => Promise<void> | void
-  readonly first: () => Promise<string>
+  readonly reload: () => void
+  readonly onVaultChanged: (
+    paths: readonly string[],
+    renamed: readonly PathRename[],
+  ) => Promise<void> | void
+  readonly readInitialNote: () => Promise<string>
   readonly ask: () => Promise<unknown>
-  readonly drawing: (edit: NoteEdit) => void
-  readonly wanted: (path: string) => Promise<void> | void
-  readonly reads: (path: string, spans: readonly Span[]) => void
+  readonly reportChange: (edit: NoteEdit) => void
+  readonly travelTo: (path: string) => Promise<void> | void
+  readonly openFileAt: (path: string, spans: readonly Span[]) => void
 }
 
 export function useWindowStreams(deps: WindowStreamsDeps) {
@@ -38,13 +41,13 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
     opening,
     tasks,
     isVaultSwapped,
-    reloads,
-    told,
-    first,
+    reload,
+    onVaultChanged,
+    readInitialNote,
     ask,
-    drawing,
-    wanted,
-    reads,
+    reportChange,
+    travelTo,
+    openFileAt,
   } = deps
 
   /** Every stream is read the same way, and taken up again the same way. */
@@ -69,12 +72,12 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
         if (change.paths.length === 0 && !change.shouldReload && change.renamed.length === 0) return
         // A reload standing at another folder is another vault under this
         // window, and the page is drawn again on it.
-        if (change.shouldReload && (await isVaultSwapped())) return void reloads()
-        await told(change.shouldReload ? [] : change.paths, change.renamed)
+        if (change.shouldReload && (await isVaultSwapped())) return void reload()
+        await onVaultChanged(change.shouldReload ? [] : change.paths, change.renamed)
         // The note the vault opens with is asked for again when it moves.
         if (change.renamed.some((went) => went.from === opening.value)) {
           try {
-            await first()
+            await readInitialNote()
           } catch {
             // The next change asks again.
           }
@@ -95,7 +98,7 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
       (said) => {
         // The stream opens by saying nothing, which is how an open one is told
         // from one that never opened.
-        if (said.path) drawing(said)
+        if (said.path) reportChange(said)
       },
     )
 
@@ -112,8 +115,8 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
         const spans = asked.spans
           .map((one) => ({ from: one.from, to: one.to }))
           .filter((one) => one.to > one.from)
-        if (!spans.length) return void (await wanted(asked.path))
-        reads(asked.path, spans)
+        if (!spans.length) return void (await travelTo(asked.path))
+        openFileAt(asked.path, spans)
       },
     )
 
@@ -123,7 +126,7 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
    * Nothing is asked for on a timer. Work begins without the window: an agent
    * is told to read a document, and the list says so the moment it starts.
    */
-  const attend = () =>
+  const followTasks = () =>
     follows(
       () => core.tasks(listening.signal),
       async (list) => {
@@ -144,6 +147,6 @@ export function useWindowStreams(deps: WindowStreamsDeps) {
     follow,
     draw,
     watch,
-    attend,
+    followTasks,
   }
 }

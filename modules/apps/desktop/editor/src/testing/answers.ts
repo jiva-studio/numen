@@ -58,7 +58,7 @@ export const said = {
       to: number
     }[],
     /** False while a run writing the transcript holds it. */
-    editable: true,
+    isEditable: true,
   },
   /**
    * What the file at each path carries, as the application answers it. A path
@@ -173,7 +173,7 @@ export const maker = (() => {
 })()
 
 /** One name the vault answers a search with, of a note of some kind. */
-export const nameSaid = (path: string, title: string, type: 'note' | 'deck' | 'stencil' = 'note') => ({
+export const nameAnswer = (path: string, title: string, type: 'note' | 'deck' | 'stencil' = 'note') => ({
   path,
   title,
   heading: '',
@@ -183,7 +183,7 @@ export const nameSaid = (path: string, title: string, type: 'note' | 'deck' | 's
 })
 
 /** One passage the search answers with, read out of a note of some kind. */
-export const passageSaid = (
+export const passageAnswer = (
   path: string,
   title: string,
   type: 'note' | 'deck' | 'stencil' = 'note',
@@ -201,8 +201,8 @@ export const passageSaid = (
 })
 
 /** One passage read out of a source that is not a note. */
-export const sourceSaid = (path: string, kind: 'book' | 'recording') => ({
-  ...passageSaid(path, ''),
+export const sourceAnswer = (path: string, kind: 'book' | 'recording') => ({
+  ...passageAnswer(path, ''),
   isNote: false,
   kind,
 })
@@ -225,7 +225,7 @@ export const forgetAnswers = () => {
     mediaUrl: 'numen://recording/talk.mp3',
     mediaType: 'audio/mpeg',
     cues: [{ text: 'the first thing said', from: 0, to: 4000 }],
-    editable: true,
+    isEditable: true,
   }
   said.carries = {}
   said.carrying = true

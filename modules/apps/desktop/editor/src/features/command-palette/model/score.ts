@@ -18,11 +18,11 @@ export const HOLD = 120
  */
 export function evaluateSilence(
   id: SearchGroup,
-  failureSaid: string,
+  failureMessage: string,
   words: Words,
   coverage?: () => IndexCoverage,
 ): string {
-  if (failureSaid) return failureSaid
+  if (failureMessage) return failureMessage
   const read = id === 'meaning' ? coverage?.() : undefined
   if (!read) return ''
   if (wordsOnly(read)) return words.wordsOnly

@@ -45,7 +45,7 @@ export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
    */
   const refreshTitle = async (id: string): Promise<void> => {
     try {
-      const said = (await vault.neighbourhood(notes.where(id))).focus?.title
+      const said = (await vault.neighbourhood(notes.getPath(id))).focus?.title
       if (said) setTitle(id, said)
     } catch {
       // The tab keeps the name it had, and the next thing that moves the note
@@ -57,9 +57,9 @@ export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
   /** Every note that has settled, each with the file it settled at. */
   const getSettledNotes = (): readonly SettledNote[] =>
     notes
-      .all()
+      .getOpenIds()
       .filter((id) => notes.getOpenNote(id).state === 'clean')
-      .map((id) => ({ id, at: notes.where(id) }))
+      .map((id) => ({ id, at: notes.getPath(id) }))
 
   /**
    * A note is asked what it is called once what was typed into it has landed,
@@ -72,7 +72,7 @@ export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
   })
 
   /** What one note is called, and the file it stands at while nothing has named it. */
-  const getTitle = (id: string): string => titles.value.get(id) ?? notes.where(id)
+  const getTitle = (id: string): string => titles.value.get(id) ?? notes.getPath(id)
 
   return { titles, setTitle, forgetTab, getTitle }
 }

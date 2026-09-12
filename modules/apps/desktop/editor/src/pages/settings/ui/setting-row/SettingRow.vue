@@ -25,7 +25,7 @@ defineSlots<{
 }>()
 
 // --- State ---
-const labelling = computed(() => `settings-${props.at}`)
+const nameId = computed(() => `settings-${props.at}`)
 
 // --- Handlers ---
 
@@ -35,11 +35,11 @@ const labelling = computed(() => `settings-${props.at}`)
 <template>
   <div class="settings__row">
     <span class="settings__said">
-      <span :id="labelling" class="settings__name">{{ name }}</span>
+      <span :id="nameId" class="settings__name">{{ name }}</span>
       <span class="settings__detail">{{ detail }}</span>
     </span>
     <span class="settings__value">
-      <slot v-bind="{ labelledBy: labelling }" />
+      <slot v-bind="{ labelledBy: nameId }" />
     </span>
   </div>
 </template>

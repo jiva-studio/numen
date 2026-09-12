@@ -419,14 +419,14 @@ describe('DeckEditor', () => {
     const tile = tileFor(held, 'gone')
 
     // The stencil is named, so the person knows what the card is waiting for.
-    expect(tile.get('.card__objects').text()).toBe('No stencil called Missing')
+    expect(tile.get('.card__objections').text()).toBe('No stencil called Missing')
     // Nothing names the values, so nothing draws them. They stay in the file.
     expect(tile.findAll('.card__value')).toHaveLength(0)
     expect(tile.find('textarea').exists()).toBe(false)
   })
 
   it('says nothing about a card whose stencil was handed in', () => {
-    expect(mountDeck().find('.card__objects').exists()).toBe(false)
+    expect(mountDeck().find('.card__objections').exists()).toBe(false)
   })
 
   it('draws every value a card writes under one field, and hides none of them', () => {

@@ -78,7 +78,7 @@ const left: Record<FlushResult, 'nothing' | 'written' | 'asking' | null> = {
   [FlushResult.ASKING]: 'asking',
 }
 
-export const owing = namesOf<NonNullable<(typeof left)[FlushResult]>, FlushResult>(left)
+export const flushResults = namesOf<NonNullable<(typeof left)[FlushResult]>, FlushResult>(left)
 
 /** One vault of the list, kept as the plain value the window carries it as. */
 export const mapVault = (one: VaultMessage): Vault => ({

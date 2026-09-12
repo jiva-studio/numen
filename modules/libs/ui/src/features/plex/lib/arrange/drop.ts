@@ -149,7 +149,7 @@ export interface DroppedInput {
  * node the pointer crosses is not a landing: the seat is read off the
  * direction, and letting go anywhere in the window is answered the same way.
  */
-export function seatDropped({
+export function getDropSeat({
   frame,
   options,
   viewport,

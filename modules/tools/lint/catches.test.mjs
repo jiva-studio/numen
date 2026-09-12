@@ -42,8 +42,8 @@ test('a catch that discards the error says why', () => {
     'the walk did not read titles.ts, whose bare catch is what this rule was written for',
   )
   assert.ok(
-    read.some((at) => at.endsWith('apps/mobile/src/plex/following.ts')),
-    "the walk did not read the phone's following.ts, so the rule stops at the mobile border",
+    read.some((at) => at.endsWith('apps/mobile/src/plex/follow.ts')),
+    "the walk did not read the phone's follow.ts, so the rule stops at the mobile border",
   )
 })
 

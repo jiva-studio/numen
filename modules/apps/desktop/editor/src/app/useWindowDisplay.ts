@@ -27,18 +27,18 @@ export interface DisplayOptions {
    * What hears that the vault changed, and is waited for. A change carrying no
    * paths names nothing: everything showing the vault reads again.
    */
-  told?(paths: readonly string[], renamed?: readonly PathRename[]): void | Promise<void>
+  onVaultChanged?(paths: readonly string[], renamed?: readonly PathRename[]): void | Promise<void>
   /** What hears about a change to a note while it is being made. */
-  drawing?(said: NoteEdit): void
+  reportChange?(said: NoteEdit): void
   /** What puts a note in front of the person, asked for from outside the window. */
-  wanted?(path: string): void | Promise<void>
+  travelTo?(path: string): void | Promise<void>
   /**
    * What opens a document at spans of its own text, in the tab it is read
    * in. The person is taken to the first of them.
    */
-  reads?(path: string, spans: readonly Span[]): void
+  openFileAt?(path: string, spans: readonly Span[]): void
   /** What draws the page again, once another vault is under this window. */
-  reloads?(): void
+  reload?(): void
 }
 
 export function useWindowDisplay(
@@ -46,11 +46,11 @@ export function useWindowDisplay(
   how: DisplayOptions = {},
 ) {
   const wait = how.wait ?? sleep
-  const told = how.told ?? (() => {})
-  const drawing = how.drawing ?? (() => {})
-  const wanted = how.wanted ?? (() => {})
-  const reads = how.reads ?? (() => {})
-  const reloads = how.reloads ?? (() => {})
+  const onVaultChanged = how.onVaultChanged ?? (() => {})
+  const reportChange = how.reportChange ?? (() => {})
+  const travelTo = how.travelTo ?? (() => {})
+  const openFileAt = how.openFileAt ?? (() => {})
+  const reload = how.reload ?? (() => {})
   const name = ref('')
   /** The folder the vault the window is showing sat in when the page was drawn. */
   const at = ref('')
@@ -93,7 +93,7 @@ export function useWindowDisplay(
   const listening = new AbortController()
 
   /** The note the vault opens with, and whether it holds one at all. */
-  async function first() {
+  async function readInitialNote() {
     const note = await core.getInitialOpenPath()
     hasNote.value = note !== null
     opening.value = note?.path ?? ''
@@ -131,7 +131,7 @@ export function useWindowDisplay(
     }
   }
 
-  const { follow, draw, watch, attend } = useWindowStreams({
+  const { follow, draw, watch, followTasks } = useWindowStreams({
     core,
     listening,
     isOpen: () => open,
@@ -142,13 +142,13 @@ export function useWindowDisplay(
     opening,
     tasks,
     isVaultSwapped,
-    reloads,
-    told,
-    first,
+    reload,
+    onVaultChanged,
+    readInitialNote,
     ask,
-    drawing,
-    wanted,
-    reads,
+    reportChange,
+    travelTo,
+    openFileAt,
   })
 
   /** Waits for the scan to have stored something, then shows the first note. */
@@ -156,16 +156,16 @@ export function useWindowDisplay(
     try {
       while (open) {
         const state = await ask()
-        const note = await first()
+        const note = await readInitialNote()
         if (!open) return
         if (note) {
           isIndexing.value = false
           // The vault holds a note to show: everything showing it reads now.
-          await told([], [])
+          await onVaultChanged([], [])
           void follow()
           void watch()
           void draw()
-          void attend()
+          void followTasks()
           return
         }
         // A vault that could not be read is not an empty one, and neither is
@@ -175,7 +175,7 @@ export function useWindowDisplay(
           void follow()
           void watch()
           void draw()
-          void attend()
+          void followTasks()
           return
         }
         await wait(100)
@@ -189,20 +189,17 @@ export function useWindowDisplay(
   return {
     name,
     isIndexing,
-    indexing: isIndexing,
     failure,
     lost,
     error,
     unwatched,
     unreachable,
     hasNote,
-    holds: hasNote,
     opening,
-    first,
+    readInitialNote,
     chunks,
     embedded,
     isEmbedding,
-    embedding: isEmbedding,
     tasks,
     start,
     follow,

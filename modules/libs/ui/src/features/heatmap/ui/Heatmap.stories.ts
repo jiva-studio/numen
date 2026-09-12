@@ -10,7 +10,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import Heatmap from './Heatmap.vue'
 import { ROWS } from '../lib/heatmap'
-import { dayNamed } from '@/shared/lib/day'
+import { getDayName } from '@/shared/lib/day'
 import type { Tally } from '../lib/heatmap'
 import type { Words } from '../lib/words'
 import { lightness } from '@/shared/fixtures/colour'
@@ -50,7 +50,7 @@ function createYear(): Map<string, Tally> {
     if (on.getDay() === 0) continue
     const answered = ((back * 7) % 60) + 1
     const again = back % 5 === 0 ? 2 : 0
-    out.set(dayNamed(on), {
+    out.set(getDayName(on), {
       answered,
       again,
       hard: 1,
@@ -160,7 +160,7 @@ export const Nothing: Story = {
 }
 
 /** The day the accounts below are pointed at, which is the one holding now. */
-const TODAY = dayNamed(now)
+const TODAY = getDayName(now)
 
 /** A day drawn on its own, so the cell pointed at is the one holding now. */
 const alone = (tally: Tally): Map<string, Tally> => new Map([[TODAY, tally]])

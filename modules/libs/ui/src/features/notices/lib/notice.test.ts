@@ -207,8 +207,8 @@ describe('how many cards stand at once', () => {
   it('folds nothing that stopped badly, wherever it stands', () => {
     // Trouble is what a person has to see, and it arrives before the reports
     // that pile up behind it.
-    const trouble: Notice = { id: 'failed', says: 'Reading', tone: 'alarm', stay: 'kept' }
-    const drawn = [trouble, word('a'), word('b'), word('c')]
+    const failed: Notice = { id: 'failed', says: 'Reading', tone: 'alarm', stay: 'kept' }
+    const drawn = [failed, word('a'), word('b'), word('c')]
 
     const { shown, over } = foldNotices(drawn, 2)
 

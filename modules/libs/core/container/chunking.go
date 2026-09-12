@@ -77,7 +77,7 @@ func (c Config) ReadWholeVault(
 			// The rows are gone whether or not the file gives its pages back,
 			// so a vacuum that could not run is said and not waited for.
 			if err := db.Compact(ctx); err != nil {
-				c.trouble(err)
+				c.handleError(err)
 			}
 		}
 	}

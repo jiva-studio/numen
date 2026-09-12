@@ -29,7 +29,7 @@ const props = withDefaults(
   { disabled: false },
 )
 
-const raises = defineEmits<{
+const emit = defineEmits<{
   /** A day put at a level, which is the day as it was given and the level chosen. */
   chooses: [day: string, level: number]
 }>()
@@ -64,7 +64,7 @@ const onChoose = (id: string) => {
   const day = asking.value?.day
   const level = Number(id)
   if (day === undefined || Number.isNaN(level)) return
-  raises('chooses', day, level)
+  emit('chooses', day, level)
 }
 
 /**

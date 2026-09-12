@@ -29,8 +29,8 @@ export function createNoteTab(
 ): NoteTabState {
   const closeTab = (tab: string) => {
     keyboard.cancelFocusRequest(id)
-    changes.shut(notes.where(id))
-    void notes.shut(id).then((gone) => {
+    changes.shut(notes.getPath(id))
+    void notes.close(id).then((gone) => {
       if (!gone) return
       names.forgetTab(id)
       handle.closeTab(tab)
@@ -39,7 +39,7 @@ export function createNoteTab(
 
   const followLink = (url: string) => {
     if (!isNoteAddress(url)) return
-    const from = notes.where(id)
+    const from = notes.getPath(id)
     void vault.resolve(from, [url]).then((landed) => {
       const path = landed.get(url)
       if (path) void tabOpeners.openFile(path, '', 'beside')
@@ -50,7 +50,7 @@ export function createNoteTab(
     id,
     note: computed(() => notes.getOpenNote(id)),
     errorMessage: computed(() => notes.getErrorMessage(id)),
-    change: computed(() => changes.getChange(notes.where(id))),
+    change: computed(() => changes.getChange(notes.getPath(id))),
     updateBody: (body: string) => notes.setBody(id, body),
     save: () => notes.save(id),
     keepMine: () => notes.keep(id),

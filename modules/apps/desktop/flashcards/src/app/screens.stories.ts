@@ -6,7 +6,7 @@
  * taken from, so every piece is drawn in the state it settles in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { dayAfter, dayNamed, type HeatmapTally } from '@numen/ui'
+import { dayAfter, getDayName, type HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'
 import { Decks } from '@/pages/decks'
 import { Session } from '@/pages/session'
@@ -20,7 +20,7 @@ const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
  * The day this window is read on. The grid of weeks runs up to the week it is
  * in, so the day the picture is taken is the day it is taken of.
  */
-const TODAY = dayNamed(new Date())
+const TODAY = getDayName(new Date())
 
 /** One day's answers, as the grid above the decks counts them. */
 const tally = (answers: number, recalls: number): HeatmapTally => ({

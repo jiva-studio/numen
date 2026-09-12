@@ -42,28 +42,28 @@ const notes = (states: Record<string, State> = {}) => {
   const shut: string[] = []
   const said: string[] = []
   let goes = true
-  const where = (id: string) => at.value[id] ?? id
+  const getPath = (id: string) => at.value[id] ?? id
   const store = {
     open: (id: string, path: string = id) => {
       if (open.value.includes(id)) return
       open.value = [...open.value, id]
       at.value = { ...at.value, [id]: path }
     },
-    shut: async (id: string) => {
-      shut.push(where(id))
+    close: async (id: string) => {
+      shut.push(getPath(id))
       if (!goes) return false
       open.value = open.value.filter((one) => one !== id)
       return true
     },
-    all: () => open.value,
+    getOpenIds: () => open.value,
     has: (id: string) => open.value.includes(id),
     getOpenNote: (id: string) => ({
-      path: where(id),
+      path: getPath(id),
       body: '',
-      state: states[where(id)] ?? 'clean',
+      state: states[getPath(id)] ?? 'clean',
       error: null,
     }),
-    where,
+    getPath,
     address: () => null,
     cues: () => [],
     copy: () => '',
@@ -78,13 +78,13 @@ const notes = (states: Record<string, State> = {}) => {
     shut,
     said,
     /** The identity of the note standing at a file, for a test that has its name. */
-    idOf: (path: string) => open.value.find((id) => where(id) === path) ?? '',
+    idOf: (path: string) => open.value.find((id) => getPath(id) === path) ?? '',
     /** The note standing at a file moved to another, the way a rename moves one. */
-    moves: (path: string, to: string) => {
-      const id = open.value.find((one) => where(one) === path)
+    moveNote: (path: string, to: string) => {
+      const id = open.value.find((one) => getPath(one) === path)
       if (id) at.value = { ...at.value, [id]: to }
     },
-    holds: () => {
+    keepOpen: () => {
       goes = false
     },
   }
@@ -263,7 +263,7 @@ describe('a note that was renamed', () => {
     one.openNote('Note.md', 'A note')
     await nextTick()
     const [tab] = one.open()
-    one.moves('Note.md', 'Renamed.md')
+    one.moveNote('Note.md', 'Renamed.md')
     await nextTick()
 
     one.openNote('Renamed.md')
@@ -276,7 +276,7 @@ describe('a note that was renamed', () => {
     const one = window()
     one.openNote('Note.md', 'A note')
     await nextTick()
-    one.moves('Note.md', 'Renamed.md')
+    one.moveNote('Note.md', 'Renamed.md')
     await nextTick()
 
     one.noted.setTitle('Renamed.md', 'Renamed')
@@ -290,7 +290,7 @@ describe('a note that was renamed', () => {
     one.openNote('Foo.md', 'The first')
     await nextTick()
     const first = one.open()[0]
-    one.moves('Foo.md', 'Bar.md')
+    one.moveNote('Foo.md', 'Bar.md')
     await nextTick()
 
     one.noted.setTitle('Foo.md', 'The second')
@@ -310,7 +310,7 @@ describe('a note that was renamed', () => {
     one.openNote('Note.md')
     await nextTick()
     const id = one.noted.kept.holding('Note.md')
-    one.moves('Note.md', 'Renamed.md')
+    one.moveNote('Note.md', 'Renamed.md')
     await nextTick()
 
     expect(one.noted.kept.holding('Renamed.md')).toBe(id)
@@ -322,7 +322,7 @@ describe('a note that was renamed', () => {
     const one = window()
     one.openNote('Note.md')
     await nextTick()
-    one.moves('Note.md', 'Renamed.md')
+    one.moveNote('Note.md', 'Renamed.md')
     await nextTick()
 
     expect(one.held.tabs.value.map((tab) => tab.title)).toEqual(['Renamed.md'])
@@ -334,7 +334,7 @@ describe('a note that was renamed', () => {
     const drew = editor()
     state.setEditor(drew.drawn)
     await nextTick()
-    one.moves('Note.md', 'Renamed.md')
+    one.moveNote('Note.md', 'Renamed.md')
     await nextTick()
 
     one.noted.focusLine('Renamed.md', 4)
@@ -409,7 +409,7 @@ describe('a note tab closing', () => {
     await nextTick()
     const [id] = one.open()
 
-    one.held.shut(id ?? '')
+    one.held.releaseTab(id ?? '')
     await nextTick()
 
     expect(one.shut).toEqual(['Note.md'])
@@ -423,9 +423,9 @@ describe('a note tab closing', () => {
     one.openNote('Note.md', 'A note')
     await nextTick()
     const [id] = one.open()
-    one.holds()
+    one.keepOpen()
 
-    one.held.shut(id ?? '')
+    one.held.releaseTab(id ?? '')
     await nextTick()
     await nextTick()
 
@@ -452,7 +452,7 @@ describe('a note the window is told to let go of', () => {
     one.openNote('Note.md', 'A note')
     await nextTick()
     const id = one.idOf('Note.md')
-    one.moves('Note.md', 'Moved.md')
+    one.moveNote('Note.md', 'Moved.md')
     await nextTick()
 
     one.noted.closeTab(id)
@@ -480,7 +480,7 @@ describe('what a note is called under the identity it opened under', () => {
     one.openNote('Note.md', 'A note')
     await nextTick()
     const id = one.idOf('Note.md')
-    one.moves('Note.md', 'Moved.md')
+    one.moveNote('Note.md', 'Moved.md')
     await nextTick()
 
     expect(one.noted.kept.getTitle(id)).toBe('A note')
@@ -515,7 +515,7 @@ describe('what a command asked over a note tab is over', () => {
     const one = window()
     one.openNote('Note.md', 'A note')
     await nextTick()
-    one.moves('Note.md', 'Moved.md')
+    one.moveNote('Note.md', 'Moved.md')
     await nextTick()
 
     expect(one.noted.kind.over!(stateOf(one)).path).toBe('Moved.md')

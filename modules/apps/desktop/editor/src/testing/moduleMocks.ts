@@ -6,7 +6,7 @@
  * door is mocked too, over the rest of what it gives.
  */
 import { vi } from 'vitest'
-import { asked } from './asked'
+import { requests } from './requests'
 import { held, maker, said } from './answers'
 
 const documentsSaid = {
@@ -51,7 +51,7 @@ vi.mock('@/pages/book-reader', async (original) => ({
 const recordingsSaid = {
   recordings: {
     getSummary: async (path: string) => {
-      asked.listened.push(path)
+      requests.listened.push(path)
       const { duration, mediaUrl, mediaType } = said.transcribed
       return { duration, mediaUrl, mediaType, url: '' }
     },
@@ -59,18 +59,18 @@ const recordingsSaid = {
     readTranscript: async () => ({
       cues: said.transcribed.cues,
       prose: '',
-      editable: said.transcribed.editable,
+      isEditable: said.transcribed.isEditable,
     }),
-    readArticle: async () => ({ cues: [], prose: '', editable: said.transcribed.editable }),
+    readArticle: async () => ({ cues: [], prose: '', isEditable: said.transcribed.isEditable }),
     writeTranscript: async (path: string, cues: readonly { text: string }[]) => {
-      asked.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
+      requests.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
     },
     findCueTime: async (path: string, span: { from: number }) =>
       said.transcribed.cues.find((one) => one.from >= span.from)?.from ?? null,
   },
 }
 
-vi.mock('@/entities/media/wire', () => recordingsSaid)
+vi.mock('@/entities/media/api/wire', () => recordingsSaid)
 
 vi.mock('@/entities/media', async (original) => ({
   ...(await original<typeof import('@/entities/media')>()),
@@ -80,28 +80,28 @@ vi.mock('@/entities/media', async (original) => ({
 vi.mock('@/shared/artifacts', () => ({
   running: {
     getArtifactStates: async (path: string) => {
-      asked.carried.push(path)
+      requests.carried.push(path)
       if (!said.carrying) throw new Error('what the file carries cannot be asked')
       return said.carries[path] ?? {}
     },
     createArtifact: async (path: string, of: string) => {
-      asked.ran.push(`${of} ${path}`)
+      requests.ran.push(`${of} ${path}`)
       return { able: true, of, made: 'queued', error: '' }
     },
     correctArtifact: async (path: string) => {
-      asked.ran.push(`transcript.corrected ${path}`)
+      requests.ran.push(`transcript.corrected ${path}`)
       return { able: true, of: 'transcript.corrected' as const, made: 'queued' as const, error: '' }
     },
     fetchArtifact: async (path: string) => {
-      asked.ran.push(`transcript ${path}`)
+      requests.ran.push(`transcript ${path}`)
       return { able: true, of: 'transcript' as const, made: 'queued' as const, error: '' }
     },
     deleteTranscript: async (path: string) => {
-      asked.ran.push(`drop ${path}`)
+      requests.ran.push(`drop ${path}`)
       return true
     },
     deleteCopy: async (path: string) => {
-      asked.ran.push(`drop ${path}`)
+      requests.ran.push(`drop ${path}`)
       return true
     },
   },
@@ -116,23 +116,15 @@ const cardsSaid = {
       held: 1,
     }),
     createDeck: async (title: string, folder: string) => {
-      asked.cards.push(`deck ${folder || '/'} ${title}`)
-      return maker.createFile(title, folder)
-    },
-    makeDeck: async (title: string, folder: string) => {
-      asked.cards.push(`deck ${folder || '/'} ${title}`)
+      requests.cards.push(`deck ${folder || '/'} ${title}`)
       return maker.createFile(title, folder)
     },
     createStencil: async (title: string, folder: string, fields: readonly string[]) => {
-      asked.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
-      return maker.createFile(title, folder)
-    },
-    makeStencil: async (title: string, folder: string, fields: readonly string[]) => {
-      asked.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
+      requests.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
       return maker.createFile(title, folder)
     },
     renameField: async (path: string, from: string, to: string) => {
-      asked.renamedField.push(`${path} ${from} ${to}`)
+      requests.renamedField.push(`${path} ${from} ${to}`)
       return said.renaming
     },
     readDeck: async (path: string) => ({
@@ -153,8 +145,8 @@ const cardsSaid = {
       path: string,
       deck: { cards: readonly { values: readonly { text: string }[] }[] },
     ) => {
-      asked.cards.push(`deck ${path}`)
-      asked.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
+      requests.cards.push(`deck ${path}`)
+      requests.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
       return { error: null, changed: false, at: 'a2', bound: 0 }
     },
     readStencil: async (path: string) => ({
@@ -163,13 +155,13 @@ const cardsSaid = {
       at: 'a1',
     }),
     writeStencil: async (path: string) => {
-      asked.cards.push(`stencil ${path}`)
+      requests.cards.push(`stencil ${path}`)
       return { error: null, changed: false, at: 'a2' }
     },
   },
 }
 
-vi.mock('@/entities/deck/cards', () => cardsSaid)
+vi.mock('@/entities/deck/api/cards', () => cardsSaid)
 
 vi.mock('@/entities/deck', async (original) => ({
   ...(await original<typeof import('@/entities/deck')>()),
@@ -203,14 +195,14 @@ const themesSaid = {
       mode: string,
       sizes: { interfaceScale: number; textScale: number },
     ) => {
-      asked.worn.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
+      requests.worn.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
       return said.writeError
     },
     changed: held,
   },
 }
 
-vi.mock('@/entities/settings/theme', () => themesSaid)
+vi.mock('@/entities/settings/api/theme', () => themesSaid)
 
 vi.mock('@/entities/settings', async (original) => ({
   ...(await original<typeof import('@/entities/settings')>()),

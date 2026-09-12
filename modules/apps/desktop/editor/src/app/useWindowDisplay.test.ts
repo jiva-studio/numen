@@ -69,7 +69,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     createFolder: async () => null,
     createUrl: async () => ({ path: '', error: null }),
     getSyncEnabled: async () => true,
-    getHangingSettings: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
+    getHangingSettings: async () => ({ isHanging: true, parts: 6, least: 1, most: 12 }),
     setSyncEnabled: async () => null,
     setHangingSettings: async () => null,
     getReviewSettings: async () => ({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),
@@ -91,20 +91,20 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
  * note is wanted in front of the person. What each tab does about either is
  * asked where that tab is.
  */
-const createDisplay = (core: Core, reads?: (path: string, spans: readonly Span[]) => void) => {
+const createDisplay = (core: Core, openFileAt?: (path: string, spans: readonly Span[]) => void) => {
   const changed: string[] = []
-  const wanted: string[] = []
+  const travelled: string[] = []
   const showed = useWindowDisplay(core, {
     wait: async () => showed.close(),
-    told: async (paths, renamed) => {
+    onVaultChanged: async (paths, renamed) => {
       changed.push([...paths, ...(renamed ?? []).map((one) => `${one.from} → ${one.to}`)].join(' '))
     },
-    wanted: async (path) => {
-      wanted.push(path)
+    travelTo: async (path) => {
+      travelled.push(path)
     },
-    ...(reads ? { reads } : {}),
+    ...(openFileAt ? { openFileAt } : {}),
   })
-  return { window: showed, changed, wanted }
+  return { window: showed, changed, travelled }
 }
 
 describe('the stream of changes', () => {
@@ -199,7 +199,7 @@ describe('the stream of changes', () => {
       },
     })
     const one = createDisplay(core)
-    await one.window.first()
+    await one.window.readInitialNote()
 
     await one.window.follow()
 
@@ -218,7 +218,7 @@ describe('the stream of changes', () => {
       },
     })
     const one = createDisplay(core)
-    await one.window.first()
+    await one.window.readInitialNote()
 
     await one.window.follow()
 
@@ -238,8 +238,8 @@ describe('another vault under this window', () => {
     const drawn: string[] = []
     const window = useWindowDisplay(core, {
       wait: async () => {},
-      told: async (paths) => void drawn.push(`told ${paths.join(' ')}`),
-      reloads: () => void drawn.push('reloads'),
+      onVaultChanged: async (paths) => void drawn.push(`changed ${paths.join(' ')}`),
+      reload: () => void drawn.push('reloaded'),
     })
     return { window, drawn }
   }
@@ -275,7 +275,7 @@ describe('another vault under this window', () => {
     await nap()
     await nap()
 
-    expect(one.drawn.at(-1)).toBe('reloads')
+    expect(one.drawn.at(-1)).toBe('reloaded')
 
     one.window.close()
   })
@@ -299,8 +299,8 @@ describe('another vault under this window', () => {
     await nap()
     await nap()
 
-    expect(one.drawn).toContain('told Heat.md')
-    expect(one.drawn.at(-1)).toBe('reloads')
+    expect(one.drawn).toContain('changed Heat.md')
+    expect(one.drawn.at(-1)).toBe('reloaded')
 
     one.window.close()
   })
@@ -312,8 +312,8 @@ describe('another vault under this window', () => {
     await nap()
     await nap()
 
-    expect(one.drawn).not.toContain('reloads')
-    expect(one.drawn.at(-1)).toBe('told ')
+    expect(one.drawn).not.toContain('reloaded')
+    expect(one.drawn.at(-1)).toBe('changed ')
 
     one.window.close()
   })
@@ -330,7 +330,7 @@ describe('a note asked for from outside the window', () => {
 
     await one.window.watch()
 
-    expect(one.wanted).toStrictEqual(['Wanted.md'])
+    expect(one.travelled).toStrictEqual(['Wanted.md'])
   })
 })
 
@@ -341,7 +341,7 @@ describe('a place inside a source asked for from outside the window', () => {
     const one = createDisplay(core, (path, spans) =>
       opened.push(`${path} ${spans.map((one) => `${one.from} ${one.to}`).join(' ')}`),
     )
-    return { window: one.window, opened, wanted: one.wanted }
+    return { window: one.window, opened, travelled: one.travelled }
   }
 
   it('opens the document it stands in, and asks for no note at all', async () => {
@@ -350,12 +350,12 @@ describe('a place inside a source asked for from outside the window', () => {
         yield { path: 'library/mahabharata.epub', spans: [{ from: 40_512, to: 40_543 }] }
       },
     })
-    const { window, opened, wanted } = createRecordingWindow(core)
+    const { window, opened, travelled } = createRecordingWindow(core)
 
     await window.watch()
 
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 40543'])
-    expect(wanted).toStrictEqual([])
+    expect(travelled).toStrictEqual([])
   })
 
   it('opens the document at every place the focus names, the first of them first', async () => {
@@ -385,12 +385,12 @@ describe('a place inside a source asked for from outside the window', () => {
         yield { path: 'Wanted.md', spans: [{ from: 0, to: 0 }] }
       },
     })
-    const { window, opened, wanted } = createRecordingWindow(core)
+    const { window, opened, travelled } = createRecordingWindow(core)
 
     await window.watch()
 
     expect(opened).toStrictEqual([])
-    expect(wanted).toStrictEqual(['Wanted.md'])
+    expect(travelled).toStrictEqual(['Wanted.md'])
   })
 })
 
@@ -408,9 +408,9 @@ describe('a vault that could not be read', () => {
     await window.start()
     await nap()
 
-    expect(window.indexing.value).toBe(false)
+    expect(window.isIndexing.value).toBe(false)
     expect(window.error.value).toBe('permission denied')
-    expect(window.holds.value).toBe(false)
+    expect(window.hasNote.value).toBe(false)
   })
 })
 
@@ -421,7 +421,7 @@ describe('a vault with a note in it', () => {
     await window.start()
     await nap()
 
-    expect(window.holds.value).toBe(true)
+    expect(window.hasNote.value).toBe(true)
     expect(window.error.value).toBe('')
   })
 })
@@ -458,7 +458,7 @@ describe('chunks with nothing to embed them', () => {
 
     expect(window.chunks.value).toBe(4823)
     expect(window.embedded.value).toBe(0)
-    expect(window.embedding.value).toBe(false)
+    expect(window.isEmbedding.value).toBe(false)
   })
 })
 

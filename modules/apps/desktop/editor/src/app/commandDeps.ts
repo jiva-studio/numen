@@ -17,10 +17,10 @@ export interface CommandDepsOptions {
   making: NoteCreator
   made: ReturnType<typeof createFileCreators>
   shown: Ref<VaultRef>
-  reloads: () => void
+  reload: () => void
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
-  opensPreset: (path: string) => Promise<void>
+  openPreset: (path: string) => Promise<void>
   dressed: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
   hungParts: { choose: (item: string) => Promise<void> | void; chooseCount: (item: string) => Promise<void> | void }
@@ -31,7 +31,7 @@ export interface CommandDepsOptions {
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   opening: () => string
   runs: RunSupport
-  told: MessageWriter
+  writeMessage: MessageWriter
   search?: () => void
 }
 
@@ -42,10 +42,10 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     making,
     made,
     shown,
-    reloads,
+    reload,
     loadArtifactStates,
     reached,
-    opensPreset,
+    openPreset,
     dressed,
     oneName,
     hungParts,
@@ -56,7 +56,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     agents,
     opening,
     runs,
-    told,
+    writeMessage,
   } = options
 
   return {
@@ -108,7 +108,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     vaults: {
       ...vaults,
       calls: (vault) => (shown.value = vault),
-      reload: reloads,
+      reload,
     },
     goes: {
       revealPath: (path) => void files().revealPath(path),
@@ -120,7 +120,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
       },
       opening,
       openTab: (kind) => void held.openTabOfKind(kind),
-      preset: (path) => opensPreset(path),
+      preset: (path) => openPreset(path),
       closeTab: (tab) => held.requestClose(tab),
       ask: (text) => void agents().askQuestion(text),
       search: options.search ?? (() => {}),
@@ -142,6 +142,6 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     notes: reached,
     runSupport: runs,
     copies: (path) => void navigator.clipboard?.writeText(path),
-    says: told,
+    writeMessage,
   }
 }
