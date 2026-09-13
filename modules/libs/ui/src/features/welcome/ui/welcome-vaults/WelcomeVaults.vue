@@ -6,11 +6,9 @@
  * Each vault is opened by the letter at the end of its row, as far down the
  * list as the alphabet reaches.
  */
-import { FolderRoot } from '@lucide/vue'
 import { WelcomeRow } from '../welcome-row'
-import { vaultLetter } from '../../lib/letters'
+import { VaultList } from './vault-list'
 import type { Offer, VaultRow } from '../../lib/welcome'
-import type { PaletteKeys } from '@/shared/ui/key-cap'
 
 withDefaults(
   defineProps<{
@@ -37,16 +35,6 @@ defineSlots<{
   vault?(props: { vault: VaultRow }): unknown
 }>()
 
-/**
- * The letter a vault is opened by. Past the alphabet a vault is opened with the
- * hand and carries none, and a row still working is drawn without the letter it
- * will be opened by.
- */
-const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
-  const letter = vaultLetter(at)
-  if (!letter || vault.working) return undefined
-  return { icons: [], letter }
-}
 </script>
 
 <template>
@@ -57,25 +45,11 @@ const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
     <div v-if="!vaults.length && $slots.waiting" class="welcome-page__waiting">
       <slot name="waiting" />
     </div>
-    <ul v-else class="welcome-page__list">
-      <li v-for="(one, at) in vaults" :key="one.id">
-        <WelcomeRow
-          class="welcome-page__row--vault"
-          :icon="FolderRoot"
-          :text="one.name"
-          :aside="one.path"
-          :whole="one.path"
-          :keys="getVaultKeys(at, one)"
-          :disabled="one.working"
-          @click="$emit('open', one.id)"
-        >
-          <!-- What the window has to say about this one, drawn at the far
-               end of its row. What that is belongs to the window. -->
-          <slot name="vault" :vault="one" />
-          <span v-if="one.detail" class="welcome-page__state">{{ one.detail }}</span>
-        </WelcomeRow>
-      </li>
-    </ul>
+    <VaultList v-else :vaults="vaults" @open="$emit('open', $event)">
+      <template v-if="$slots.vault" #vault="{ vault }">
+        <slot name="vault" :vault="vault" />
+      </template>
+    </VaultList>
     <WelcomeRow
       v-if="offer"
       :icon="offer.icon"
@@ -98,15 +72,6 @@ const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
   text-transform: uppercase;
 }
 
-.welcome-page__list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 /* Where the rows will stand, so what is said while they are on their way is
    said in the middle of the room they will take. */
 .welcome-page__waiting {
@@ -114,14 +79,6 @@ const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
   align-items: center;
   justify-content: center;
   min-block-size: 4rem;
-}
-
-/* What is true of one row of the list and not of the ones beside it, said at
-   the far end of it. */
-.welcome-page__state {
-  flex: none;
-  color: var(--numen-edge-label);
-  font-size: var(--numen-text-1);
 }
 
 /* Where the screen stands as two columns, the heading holds its place at the
@@ -134,12 +91,6 @@ const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
     flex-direction: column;
     min-inline-size: 0;
     min-block-size: 0;
-  }
-
-  .welcome-page__list {
-    min-block-size: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
   }
 }
 </style>

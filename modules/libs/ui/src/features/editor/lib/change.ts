@@ -6,7 +6,14 @@
  * it is shown a word at a time from its start. Nothing here writes the text,
  * so a change that never lands leaves a dropped decoration and nothing else.
  */
-import { Facet, StateEffect, StateField, type EditorState, type Range } from '@codemirror/state'
+import {
+  Facet,
+  StateEffect,
+  StateField,
+  type EditorState,
+  type Range,
+  type Transaction,
+} from '@codemirror/state'
 import {
   Decoration,
   type DecorationSet,
@@ -137,6 +144,22 @@ const start = (state: EditorState): Mark => {
   return { change, from, to, reveal, decorations: getDecorations(change, from, to, reveal) }
 }
 
+/** How far a transaction says the showing has got, and nothing where it says nothing. */
+const getStepped = (transaction: Transaction): Reveal | null => {
+  let stepping: Reveal | null = null
+  for (const effect of transaction.effects) if (effect.is(stepped)) stepping = effect.value
+  return stepping
+}
+
+/** How much of the text is shown once the document has moved under it. */
+const getReveal = (
+  state: EditorState,
+  was: Mark,
+  change: EditorChange,
+  from: number,
+): Reveal | null =>
+  hasArrived(state, change, from) ? (was.reveal ?? revealOf(change.text, 0)) : null
+
 /**
  * What is drawn over the change.
  *
@@ -152,14 +175,11 @@ export const marked = StateField.define<Mark>({
     const change = was.change
     if (!change) return was
 
-    let stepping: Reveal | null = null
-    for (const effect of transaction.effects) if (effect.is(stepped)) stepping = effect.value
+    const stepping = getStepped(transaction)
     if (!stepping && !transaction.docChanged) return was
 
     const from = transaction.changes.mapPos(was.from, -1)
-    const reveal =
-      stepping ??
-      (hasArrived(transaction.state, change, from) ? (was.reveal ?? revealOf(change.text, 0)) : null)
+    const reveal = stepping ?? getReveal(transaction.state, was, change, from)
     const to = reveal
       ? from + change.text.length
       : Math.max(from, transaction.changes.mapPos(was.to, 1))

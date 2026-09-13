@@ -10,10 +10,8 @@
 import { computed } from 'vue'
 import { Face } from './face'
 import { Fields } from './fields'
-import { Icon } from '../icon'
-import { Divider } from '../divider'
+import { AddFace } from './add-face'
 import { useDrag } from '../../model/drag'
-import { Button } from '@/shared/ui/button'
 import { getDeclaredFields, getFreeName, type Half, type InsertionPoint } from '../../lib/order'
 import {
   faceRows,
@@ -153,12 +151,7 @@ const addFace = (): void => {
         @write="(half, text) => emit('write', one.id, half, text)"
       />
 
-      <Divider>
-        <Button variant="ghost" size="small" @click="addFace">
-          <Icon name="plus" />
-          {{ words.addFace }}
-        </Button>
-      </Divider>
+      <AddFace :label="words.addFace" @press="addFace" />
     </section>
   </div>
 </template>

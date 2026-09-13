@@ -124,6 +124,17 @@ const stripComments = (root: ParentNode & Node): void => {
   walk(root)
 }
 
+/** Whether a tag may carry an attribute of that name. */
+const canCarry = (tag: string, name: string): boolean =>
+  ANY.has(name) || (OWN[tag] ?? []).includes(name)
+
+/** Whether an address an attribute names is one a card may reach. */
+const canPointAt = (name: string, value: string): boolean => {
+  if (name === 'href') return canLinkTo(value)
+  if (name === 'src') return canShow(value)
+  return true
+}
+
 const strip = (element: Element): void => {
   const tag = element.tagName.toLowerCase()
   for (const attribute of [...element.attributes]) {
@@ -136,13 +147,9 @@ const strip = (element: Element): void => {
       continue
     }
 
-    if (!ANY.has(name) && !(OWN[tag] ?? []).includes(name)) {
+    if (!canCarry(tag, name) || !canPointAt(name, attribute.value)) {
       element.removeAttribute(attribute.name)
-      continue
     }
-
-    if (name === 'href' && !canLinkTo(attribute.value)) element.removeAttribute(attribute.name)
-    if (name === 'src' && !canShow(attribute.value)) element.removeAttribute(attribute.name)
   }
 }
 

@@ -179,12 +179,11 @@ onBeforeUnmount(leave)
         :item="item"
         :current="current"
         :named="groups && Boolean(item.group) && (item.rule || index === 0)"
+        :icons="Boolean($slots.icon)"
         @focus="here = index"
         @choose="choose(item)"
       >
-        <template v-if="$slots.icon" #icon>
-          <slot name="icon" :id="item.id" />
-        </template>
+        <slot name="icon" :id="item.id" />
       </MenuRow>
 
       <p v-if="!items.length" class="menu__silence px-2 py-1.5 text-hushed">

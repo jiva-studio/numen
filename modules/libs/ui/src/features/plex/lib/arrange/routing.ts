@@ -104,6 +104,77 @@ function isSeparated(a: PlacedNode, b: PlacedNode, vertical: boolean): boolean {
     : Math.abs(b.x - a.x) > (a.width + b.width) / 2
 }
 
+/** Which way an edge runs: down the picture, or across it. */
+function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): boolean {
+  const declared = [routing.axisOf(from), routing.axisOf(to)].find(
+    (axis) => axis !== 'auto',
+  )
+  const wanted =
+    declared === 'vertical' ||
+    (declared === undefined && Math.abs(to.y - from.y) >= Math.abs(to.x - from.x))
+
+  // Two nodes in the same row have no vertical room between their gates.
+  // Joining them bottom-to-top there loops down out of one box and back up.
+  return isSeparated(from, to, wanted) || !isSeparated(from, to, !wanted) ? wanted : !wanted
+}
+
+/** The control point standing out from a gate along the run. */
+function controlFrom(at: Position, vertical: boolean, reach: number): Position {
+  return vertical ? { x: at.x, y: at.y + reach } : { x: at.x + reach, y: at.y }
+}
+
+/** The same curve read from its other end. */
+function reverse(curve: EdgeCurve): EdgeCurve {
+  return {
+    fromPoint: curve.toPoint,
+    control1: curve.control2,
+    control2: curve.control1,
+    toPoint: curve.fromPoint,
+  }
+}
+
+/** A cubic leaving both boxes square-on, read from the caller's end. */
+function curveBetween(
+  from: PlacedNode,
+  to: PlacedNode,
+  vertical: boolean,
+  routing: Routing,
+): EdgeCurve {
+  const fromFirst = vertical ? from.y <= to.y : from.x <= to.x
+  const [first, second] = fromFirst ? [from, to] : [to, from]
+
+  const firstGate = gate(first, vertical ? 'bottom' : 'right')
+  const secondGate = gate(second, vertical ? 'top' : 'left')
+
+  const span = vertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
+  const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
+
+  const along: EdgeCurve = {
+    fromPoint: firstGate,
+    control1: controlFrom(firstGate, vertical, reach),
+    control2: controlFrom(secondGate, vertical, -reach),
+    toPoint: secondGate,
+  }
+
+  // The caller's from and to are kept, so the curve may run right to left or
+  // bottom to top.
+  return fromFirst ? along : reverse(along)
+}
+
+/**
+ * The words a curve carries. A title is set about the middle of its line and an
+ * arrowhead sits on one end, so a line carrying one has room for fewer words.
+ */
+function cutLabel(
+  edge: PlexEdge,
+  curve: EdgeCurve,
+  routing: Routing,
+): string | undefined {
+  if (edge.label === undefined || !routing.labelWidth) return edge.label
+  const room = lengthOf(curve) - (edge.arrow ? 2 * routing.arrowRoom : 0)
+  return cutToFit(edge.label, room, routing.labelWidth)
+}
+
 /**
  * Route an edge as a cubic curve leaving both boxes square-on. Dropped if
  * either endpoint is not on the canvas.
@@ -118,68 +189,16 @@ export function routeEdge(
   const to = byId.get(edge.to)
   if (!from || !to || from === to) return null
 
-  const declared = [routing.axisOf(from), routing.axisOf(to)].find(
-    (axis) => axis !== 'auto',
-  )
-  const wanted =
-    declared === 'vertical' ||
-    (declared === undefined && Math.abs(to.y - from.y) >= Math.abs(to.x - from.x))
-
-  // Two nodes in the same row have no vertical room between their gates.
-  // Joining them bottom-to-top there loops down out of one box and back up.
-  const vertical =
-    isSeparated(from, to, wanted) || !isSeparated(from, to, !wanted) ? wanted : !wanted
-
-  const fromFirst = vertical ? from.y <= to.y : from.x <= to.x
-  const [first, second] = fromFirst ? [from, to] : [to, from]
-
-  const firstGate = gate(first, vertical ? 'bottom' : 'right')
-  const secondGate = gate(second, vertical ? 'top' : 'left')
-
-  const span = vertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
-  const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
-
-  const firstControl: Position = vertical
-    ? { x: firstGate.x, y: firstGate.y + reach }
-    : { x: firstGate.x + reach, y: firstGate.y }
-  const secondControl: Position = vertical
-    ? { x: secondGate.x, y: secondGate.y - reach }
-    : { x: secondGate.x - reach, y: secondGate.y }
-
-  // The caller's from and to are kept, so the curve may run right to left or
-  // bottom to top.
-  const curve: EdgeCurve = fromFirst
-    ? {
-        fromPoint: firstGate,
-        control1: firstControl,
-        control2: secondControl,
-        toPoint: secondGate,
-      }
-    : {
-        fromPoint: secondGate,
-        control1: secondControl,
-        control2: firstControl,
-        toPoint: firstGate,
-      }
-
-  // A title is set about the middle of its line and an arrowhead sits on one
-  // end, so a line carrying one has room for fewer words.
-  const room = lengthOf(curve) - (edge.arrow ? 2 * routing.arrowRoom : 0)
-  const words =
-    edge.label !== undefined && routing.labelWidth
-      ? cutToFit(edge.label, room, routing.labelWidth)
-      : edge.label
-
-  const arrowhead = edge.arrow ? arrowOf(curve, edge.arrow) : undefined
+  const curve = curveBetween(from, to, isVerticalRun(from, to, routing), routing)
 
   return {
     ...edge,
     ...curve,
     opacity,
     heading: headingOf(curve, MIDDLE),
-    words,
+    words: cutLabel(edge, curve, routing),
     wordsAt: MIDDLE,
-    arrowhead,
+    arrowhead: edge.arrow ? arrowOf(curve, edge.arrow) : undefined,
   }
 }
 

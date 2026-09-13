@@ -10,6 +10,8 @@
 defineProps<{
   /** What the panel is announced as. */
   name: string
+  /** Where it is drawn. */
+  to: string | HTMLElement
 }>()
 
 defineEmits<{
@@ -23,25 +25,32 @@ defineSlots<{
   /** What the panel holds. */
   default(): unknown
 }>()
+
+// What it is drawn into stands between whatever draws it and the ground, so
+// what is handed down is put on the ground itself.
+defineOptions({ inheritAttrs: false })
 </script>
 
 <template>
-  <div
-    class="palette numen font-sans text-base text-ink"
-    data-palette="ground"
-    @pointerdown.self="$emit('ground')"
-  >
+  <Teleport :to="to">
     <div
-      class="palette__panel panel-numen relative flex min-h-0 flex-col"
-      data-palette="panel"
-      role="dialog"
-      aria-modal="true"
-      :aria-label="name"
-      @pointerdown="$emit('press')"
+      class="palette numen font-sans text-base text-ink"
+      data-palette="ground"
+      v-bind="$attrs"
+      @pointerdown.self="$emit('ground')"
     >
-      <slot />
+      <div
+        class="palette__panel panel-numen relative flex min-h-0 flex-col"
+        data-palette="panel"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="name"
+        @pointerdown="$emit('press')"
+      >
+        <slot />
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <style scoped>

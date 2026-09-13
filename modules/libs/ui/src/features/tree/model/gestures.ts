@@ -8,7 +8,7 @@ import type { Ref } from 'vue'
 import { getDraggedRows } from '../lib/drag'
 import type { RowId, ShownRow } from '../lib/row'
 import { PLAIN, type Press } from '../lib/select'
-import { isTreeKey, stepTo } from '../lib/step'
+import { isTreeKey, stepTo, type Step } from '../lib/step'
 import type { Position } from '@/shared/lib/geometry'
 import type { RowDragState } from './drag'
 import type { DrawnRowsState } from './rows'
@@ -127,52 +127,72 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     renamingPath.value = null
   }
 
-  function onKeyDown(event: KeyboardEvent): void {
+  /** The keys that act on the selection, told apart from the rows. Tells whether the key was taken. */
+  function takeSelectionKey(event: KeyboardEvent): boolean {
     const chorded = event.ctrlKey || event.metaKey
 
     if (chorded && event.key.toLowerCase() === 'a') {
       event.preventDefault()
       selection.selectEveryRow()
-      return
+      return true
     }
 
     if (event.key === 'Delete' || event.key === 'Backspace') {
       event.preventDefault()
       if (getSelected().length > 0) tell('remove', getSelected())
-      return
+      return true
     }
 
-    const on = getShownRows().find((row) => row.id === rows.tabbed.value)
-    if (!on) return
+    return false
+  }
 
+  /** The keys that act on the row the keyboard stands on. Tells whether the key was taken. */
+  function takeRowKey(event: KeyboardEvent, on: ShownRow): boolean {
     if (event.key === 'Enter') {
       event.preventDefault()
       activateRow(on)
-      return
+      return true
     }
 
     // The row the keyboard stands on joins the selection, or leaves it.
     if (event.key === ' ') {
       event.preventDefault()
       selection.selectRow(on.id, { joining: true, reaching: false })
-      return
+      return true
     }
 
     if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
       event.preventDefault()
       const at = options.getMenuAt(on.id)
       if (at) requestMenu(on, at)
-      return
+      return true
     }
+
+    return false
+  }
+
+  /** The turn a step asks for, and the row it lands on. */
+  function applyStep(step: Step, press: Press): void {
+    if (step.turn?.open) tell('open', step.turn.row)
+    else if (step.turn) tell('close', step.turn.row)
+    if (step.at !== null) selection.selectRow(step.at, press)
+    void rows.focusRow(step.at)
+  }
+
+  function onKeyDown(event: KeyboardEvent): void {
+    if (takeSelectionKey(event)) return
+
+    const on = getShownRows().find((row) => row.id === rows.tabbed.value)
+    if (!on) return
+    if (takeRowKey(event, on)) return
 
     if (!isTreeKey(event.key)) return
     event.preventDefault()
 
-    const step = stepTo(getShownRows(), rows.tabbed.value, event.key)
-    if (step.turn?.open) tell('open', step.turn.row)
-    else if (step.turn) tell('close', step.turn.row)
-    if (step.at !== null) selection.selectRow(step.at, { joining: false, reaching: event.shiftKey })
-    void rows.focusRow(step.at)
+    applyStep(stepTo(getShownRows(), rows.tabbed.value, event.key), {
+      joining: false,
+      reaching: event.shiftKey,
+    })
   }
 
   return {

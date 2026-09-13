@@ -42,6 +42,14 @@ export interface PaletteKeysState {
   readonly onKey: (event: KeyboardEvent) => void
 }
 
+/** How far each step key moves, and the place it counts from. */
+const STEPS: Readonly<Record<string, readonly [by: number, from?: number]>> = {
+  ArrowDown: [1],
+  ArrowUp: [-1],
+  Home: [1, -1],
+  End: [-1, 0],
+}
+
 export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   const { field, places, panel, typed } = options
 
@@ -53,33 +61,52 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
     field.value?.focus()
   })
 
+  /** The keyboard moved through the places, and what it lands on brought into sight. */
+  const stepBy = (by: number, from = places.here.value): void => {
+    places.goTo(stepTo(places.places.value, from, by))
+    options.reveal()
+  }
+
+  /** The action panel over the palette, when there is anything to put in it. */
+  const openActions = (event: KeyboardEvent): void => {
+    if (!options.getOfferedActions().length) return
+    event.preventDefault()
+    panel.value = true
+  }
+
   const onKey = (event: KeyboardEvent): void => {
-    const step = (by: number, from = places.here.value): void => {
-      event.preventDefault()
-      places.goTo(stepTo(places.places.value, from, by))
-      options.reveal()
-    }
-    // A chord that opens nothing is left to whoever else answers it.
     if (isActionsChord(event)) {
-      if (!options.getOfferedActions().length) return
+      openActions(event)
+      return
+    }
+
+    const step = STEPS[event.key]
+    if (step) {
       event.preventDefault()
-      panel.value = true
-    } else if (event.key === 'ArrowDown') step(1)
-    else if (event.key === 'ArrowUp') step(-1)
-    else if (event.key === 'Home') step(1, -1)
-    else if (event.key === 'End') step(-1, 0)
-    else if (event.key === 'Enter') {
+      stepBy(step[0], step[1])
+      return
+    }
+
+    if (event.key === 'Enter') {
       event.preventDefault()
       places.chooseAt(places.here.value, event.shiftKey)
-    } else if (event.key === 'Backspace' && typed.value === '') {
+      return
+    }
+
+    if (event.key === 'Backspace' && typed.value === '') {
       event.preventDefault()
       options.goBack()
-    } else if (event.key === 'Escape') {
+      return
+    }
+
+    if (event.key === 'Escape') {
       event.preventDefault()
       options.dismiss()
+      return
     }
+
     // The keyboard stays in the field for as long as the palette stands.
-    else if (event.key === 'Tab') event.preventDefault()
+    if (event.key === 'Tab') event.preventDefault()
   }
 
   /**

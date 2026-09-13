@@ -126,33 +126,48 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     if (!held) return null
 
     const outer = rectOf(held)
-    const inside =
-      x >= outer.x && x <= outer.x + outer.width && y >= outer.y && y <= outer.y + outer.height
-    if (!inside) return null
+    if (!isInside({ x, y }, outer)) return null
 
     const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
     const under = document.elementFromPoint(x, y)
 
-    const strip = under?.closest('[data-workspace-strip]')
-    const pane = under?.closest('[data-workspace-pane]')
+    const strip = getClosest(under, '[data-workspace-strip]')
+    const pane = getClosest(under, '[data-workspace-pane]')
     const id = pane?.getAttribute('data-workspace-pane')
 
-    if (strip && id) {
-      // A strip holds tabs and nothing else, in the order they are drawn.
-      const tabs = [...strip.children].map((tab) => rectOf(tab))
-      const slot = slotAt(x, tabs)
-      return { kind: 'strip', pane: id, slot, box: local(caretAt(slot, tabs, rectOf(strip))) }
-    }
+    if (strip && id) return landOnStrip(x, strip, id, local)
 
-    const side = edgeOf({ x, y }, rectOf(held), options.getEdge())
-    if (side) return { kind: 'edge', side, box: local(overlayFor(side, rectOf(held))) }
+    const side = edgeOf({ x, y }, outer, options.getEdge())
+    if (side) return { kind: 'edge', side, box: local(overlayFor(side, outer)) }
 
     if (!pane || !id) return null
 
-    const box = rectOf(pane)
-    const asked = sideAt({ x, y }, box)
-    return { kind: 'pane', pane: id, side: asked, box: local(overlayFor(asked, box)) }
+    return landOnPane({ x, y }, pane, id, local)
   }
 
   return { moved, overlay, label, position, landing, press }
+}
+
+/** A box put in the coordinates of the frame. */
+type ToLocal = (box: Rect) => Rect
+
+const isInside = (at: Position, box: Rect): boolean =>
+  at.x >= box.x && at.x <= box.x + box.width && at.y >= box.y && at.y <= box.y + box.height
+
+const getClosest = (under: Element | null, selector: string): Element | null =>
+  under?.closest(selector) ?? null
+
+/** A tab put in order among the tabs already drawn on a strip. */
+function landOnStrip(x: number, strip: Element, pane: NodeId, local: ToLocal): TabLanding {
+  // A strip holds tabs and nothing else, in the order they are drawn.
+  const tabs = [...strip.children].map((tab) => rectOf(tab))
+  const slot = slotAt(x, tabs)
+  return { kind: 'strip', pane, slot, box: local(caretAt(slot, tabs, rectOf(strip))) }
+}
+
+/** A pane divided along the side the pointer is nearest. */
+function landOnPane(at: Position, pane: Element, id: NodeId, local: ToLocal): TabLanding {
+  const box = rectOf(pane)
+  const side = sideAt(at, box)
+  return { kind: 'pane', pane: id, side, box: local(overlayFor(side, box)) }
 }

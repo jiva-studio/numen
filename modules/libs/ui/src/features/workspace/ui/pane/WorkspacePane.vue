@@ -5,10 +5,9 @@
  * The strip and the pane carry their identities on the element, so that a
  * drag can find out what the pointer is over by asking the document.
  */
-import { inject, onMounted, watch } from 'vue'
-import { WorkspaceTab } from '../tab'
-import { stepTo } from './keys'
-import { WORKSPACE_CONTEXT } from '../../model/context'
+import { onMounted, useTemplateRef, watch } from 'vue'
+import { PaneBody } from './body'
+import { PaneStrip } from './strip'
 import type { Pane, TabId } from '../../lib/node'
 
 const props = withDefaults(
@@ -37,17 +36,16 @@ defineSlots<{
   silence(): unknown
 }>()
 
-const workspace = inject(WORKSPACE_CONTEXT)
-
-/** What a tab is called. A tab with no title is shown by its identity. */
-const titleOf = (tab: TabId): string => workspace?.value.tabOf(tab)?.title ?? tab
-
-/** What a tab is carrying, and nothing for a tab carrying nothing. */
-const getMarkOf = (tab: TabId): string | undefined => workspace?.value.tabOf(tab)?.mark
+const strip = useTemplateRef<InstanceType<typeof PaneStrip>>('strip')
 
 /** A pane is claimed under the primary button and under no other. */
 function claim(event: PointerEvent): void {
   if (event.button === 0) emit('claim')
+}
+
+/** A panel let go of puts the keyboard back on the tab it is held under. */
+function onLeave(tab: TabId): void {
+  strip.value?.reach(tab)
 }
 
 /**
@@ -66,53 +64,6 @@ watch(
   },
   { flush: 'post' },
 )
-
-/**
- * A tab and the panel it stands over name each other, so the names are unique
- * to the document and not only to this pane.
- */
-const tabName = (at: number): string => `${props.pane.id}-tab-${at}`
-const panelName = (at: number): string => `${props.pane.id}-panel-${at}`
-
-/** The tabs as they are drawn, each under the tab it stands for. */
-const drawnTabs = new Map<TabId, { focus: () => void }>()
-
-const holdTab = (tab: TabId, element: unknown): void => {
-  if (element) drawnTabs.set(tab, element as { focus: () => void })
-  else drawnTabs.delete(tab)
-}
-
-function reach(tab: TabId): void {
-  drawnTabs.get(tab)?.focus()
-}
-
-/**
- * The strip is walked with the arrows, and what is reached is shown. The tabs
- * are what it walks; the way to a new tab is a stop of its own.
- */
-function onStripKey(at: number, event: KeyboardEvent): void {
-  const next = stepTo(event.key, at, props.pane.tabs.length)
-  const tab = next === null ? undefined : props.pane.tabs[next]
-  if (next === null || tab === undefined) return
-
-  event.preventDefault()
-  emit('choose', tab)
-  reach(tab)
-}
-
-/**
- * The way out of what a tab holds, back to the tab itself. A panel that acts
- * on Escape itself keeps it.
- */
-function onPanelEscape(event: KeyboardEvent): void {
-  if (event.defaultPrevented) return
-
-  const showing = props.pane.active
-  if (showing === null) return
-
-  event.preventDefault()
-  reach(showing)
-}
 </script>
 
 <template>
@@ -123,108 +74,38 @@ function onPanelEscape(event: KeyboardEvent): void {
     @pointerdown="claim"
   >
     <!-- The strip is the list of tabs. A pane holding no tabs has none. -->
-    <div
+    <PaneStrip
       v-if="pane.tabs.length > 0"
-      class="pane__strip flex min-w-0 shrink-0 items-stretch overflow-hidden"
-      role="tablist"
-      :data-workspace-strip="pane.id"
+      ref="strip"
+      :pane="pane"
+      :focused="focused"
+      @choose="emit('choose', $event)"
+      @close="emit('close', $event)"
+      @lift="(tab, at) => emit('lift', tab, at)"
     >
-      <WorkspaceTab
-        v-for="(tab, at) in pane.tabs"
-        :id="tabName(at)"
-        :ref="(element) => holdTab(tab, element)"
-        :key="tab"
-        :aria-controls="panelName(at)"
-        :tab="tab"
-        :title="titleOf(tab)"
-        :mark="getMarkOf(tab)"
-        :showing="tab === pane.active"
-        :focused="tab === pane.active && focused"
-        @lift="emit('lift', tab, $event)"
-        @close="emit('close', tab)"
-        @click="emit('choose', tab)"
-        @keydown="(event: KeyboardEvent) => onStripKey(at, event)"
-      >
-        <template v-if="$slots.icon" #icon>
-          <slot name="icon" :id="tab" />
-        </template>
+      <template v-if="$slots.icon" #icon="bound">
+        <slot name="icon" v-bind="bound" />
+      </template>
 
-        <template v-if="$slots.mark" #mark="bound">
-          <slot name="mark" :id="tab" v-bind="bound" />
-        </template>
-      </WorkspaceTab>
-    </div>
+      <template v-if="$slots.mark" #mark="bound">
+        <slot name="mark" v-bind="bound" />
+      </template>
+    </PaneStrip>
 
-    <div class="pane__body min-h-0 min-w-0 flex-1">
-      <div
-        v-for="(tab, at) in pane.tabs"
-        :id="panelName(at)"
-        :key="tab"
-        class="pane__held"
-        role="tabpanel"
-        tabindex="0"
-        :aria-labelledby="tabName(at)"
-        :data-showing="tab === pane.active || undefined"
-        @keydown.escape="onPanelEscape"
-      >
-        <slot name="tab" :id="tab" />
-      </div>
-      <div v-if="pane.tabs.length === 0" class="pane__silence">
-        <slot name="silence">
-          <p class="pane__nothing font-sans text-small text-hushed">Nothing open</p>
-        </slot>
-      </div>
-    </div>
+    <PaneBody :pane="pane" @leave="onLeave">
+      <template #tab="bound">
+        <slot name="tab" v-bind="bound" />
+      </template>
+
+      <template v-if="$slots.silence" #silence>
+        <slot name="silence" />
+      </template>
+    </PaneBody>
   </section>
 </template>
 
 <style scoped>
 .pane {
   block-size: 100%;
-}
-
-/* Sits on the same surface as what it stands over, told apart by one line. */
-.pane__strip {
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
-}
-
-.pane__body {
-  position: relative;
-  overflow: hidden;
-}
-
-/* Every tab of the pane is drawn; the ones not shown are held out of sight. What
-   a tab holds is alive for as long as the tab is: a caret, a scroll offset, an
-   undo history. */
-.pane__held {
-  display: none;
-  block-size: 100%;
-  min-block-size: 0;
-  min-inline-size: 0;
-}
-
-.pane__held[data-showing] {
-  display: block;
-}
-
-/* Drawn inside, because what a pane holds fills it to its edges. */
-.pane__held:focus-visible {
-  outline: none;
-}
-
-/* The whole of a pane holding no tabs. Its size is all it hands down. */
-.pane__silence {
-  block-size: 100%;
-}
-
-.pane__nothing {
-  /* How plainly what is said in place of a tab is drawn. */
-  --fade: 0.6;
-
-  display: grid;
-  place-items: center;
-  block-size: 100%;
-  margin: 0;
-  opacity: var(--fade);
 }
 </style>

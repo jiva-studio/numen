@@ -67,6 +67,12 @@ const isOffering = computed(
       (props.gestureRole === 'open' && hoverFocus.isOn.value)),
 )
 
+/** A node that is not there yet is announced as nothing; the focus is a picture. */
+const role = computed(() => {
+  if (isGhost.value) return undefined
+  return props.node.seat === 'focus' ? 'img' : 'button'
+})
+
 /** Whether there is anything to open: more of the title, or parts to hang. */
 const canOpen = computed(() => !!props.wide || !!props.hung)
 
@@ -113,7 +119,7 @@ const hue = computed(() => ({
     :opacity="node.opacity"
     :tabindex="canStop ? 0 : -1"
     :aria-hidden="isAnnounced ? undefined : 'true'"
-    :role="isGhost ? undefined : node.seat === 'focus' ? 'img' : 'button'"
+    :role="role"
     :class="[`plex__node--${node.seat}`, `plex__node--${gestureRole}`]"
     :aria-label="isGhost ? undefined : nameOf(node)"
     @click="press.onClick"

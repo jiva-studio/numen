@@ -12,7 +12,7 @@ import { onNextFrame } from '@/shared/lib/clock'
 import { createAnswer, type Paint } from './answer'
 import { createWorkLine } from './work'
 import type { Turn } from '../lib/turn'
-import type { AgentPort, SourceLocation } from '../lib/agent'
+import type { AgentPort, AgentStep, SourceLocation } from '../lib/agent'
 
 /** The words the panel puts up itself. */
 export interface ConversationStrings {
@@ -93,12 +93,13 @@ export function useConversation(
     const calls = new Set<string>()
 
     const answer = createAnswer(put, drop, () => `${next++}`, paint)
-    let error = ''
 
-    try {
-      for await (const step of agent.ask(question, focus, conversation, flight.signal)) {
-        if (flight.signal.aborted) break
+    /** The exchange, read to its end or until it is let go of, and the error it ended on. */
+    const readSteps = async (): Promise<string> => {
+      let error = ''
 
+      /** What one step does to the lines on screen. */
+      const takeStep = (step: AgentStep) => {
         switch (step.kind) {
           case 'said':
             // Words with none in them are not the answer beginning. Taking the
@@ -144,6 +145,18 @@ export function useConversation(
             break
         }
       }
+
+      for await (const step of agent.ask(question, focus, conversation, flight.signal)) {
+        if (flight.signal.aborted) break
+        takeStep(step)
+      }
+
+      return error
+    }
+
+    try {
+      const error = await readSteps()
+
       work.clear()
       const said = answer.isSaid()
       answer.settle()

@@ -168,73 +168,72 @@ const onOver = (at: number, event: PointerEvent) => {
 </script>
 
 <template>
-  <Teleport :to="to">
-    <PaletteFrame
-      v-if="open"
+  <PaletteFrame
+    v-if="open"
+    :name="name"
+    :to="to"
+    @keydown="onKey"
+    @ground="onGround"
+    @press="onPress"
+  >
+    <PaletteField
+      ref="field"
+      v-model="typed"
+      :uid="uid"
+      :here="panel ? -1 : here"
+      :expanded="placed.length !== 0"
+      :placeholder="placeholder"
       :name="name"
-      @keydown="onKey"
-      @ground="onGround"
-      @press="onPress"
+      :crumb="crumb"
+    />
+
+    <!-- What a search came back with, where it came back with nothing. It
+         stands here for as long as the palette does, so what lands in it is
+         read out. -->
+    <span class="sr-only" aria-live="polite" data-palette="said">{{ said }}</span>
+
+    <PaletteResults
+      v-if="placed.length"
+      ref="results"
+      :groups="placed"
+      :here="here"
+      :uid="uid"
+      :name="name"
+      @point-at="onOver"
+      @choose="chooseAt"
     >
-      <PaletteField
-        ref="field"
-        v-model="typed"
-        :uid="uid"
-        :here="panel ? -1 : here"
-        :expanded="placed.length !== 0"
-        :placeholder="placeholder"
-        :name="name"
-        :crumb="crumb"
-      />
+      <template v-if="$slots.icon" #icon="{ id }">
+        <slot name="icon" :id="id" />
+      </template>
+    </PaletteResults>
 
-      <!-- What a search came back with, where it came back with nothing. It
-           stands here for as long as the palette does, so what lands in it is
-           read out. -->
-      <span class="sr-only" aria-live="polite" data-palette="said">{{ said }}</span>
+    <p
+      v-else-if="$slots.silence"
+      class="palette__nothing px-2 py-1.5 text-hushed"
+      data-palette="nothing"
+    >
+      <slot name="silence" />
+    </p>
 
-      <PaletteResults
-        v-if="placed.length"
-        ref="results"
-        :groups="placed"
-        :here="here"
-        :uid="uid"
-        :name="name"
-        @point-at="onOver"
-        @choose="chooseAt"
-      >
-        <template v-if="$slots.icon" #icon="{ id }">
-          <slot name="icon" :id="id" />
-        </template>
-      </PaletteResults>
+    <!-- Everything the lit item offers, by name. It stands over the foot of
+         the palette, and the list underneath stays where it was. -->
+    <PaletteActions
+      v-if="panel"
+      v-model:open="panel"
+      :offered="offered"
+      :words="actionWords"
+      @choose="chooseAction"
+    />
 
-      <p
-        v-else-if="$slots.silence"
-        class="palette__nothing px-2 py-1.5 text-hushed"
-        data-palette="nothing"
-      >
-        <slot name="silence" />
-      </p>
-
-      <!-- Everything the lit item offers, by name. It stands over the foot of
-           the palette, and the list underneath stays where it was. -->
-      <PaletteActions
-        v-if="panel"
-        v-model:open="panel"
-        :offered="offered"
-        :words="actionWords"
-        @choose="chooseAction"
-      />
-
-      <!-- What the item now lit can be asked. An item offering one action says
-           one key, and the last word opens the rest. -->
-      <PaletteKeyHints
-        v-if="offered.length"
-        :hinted="hinted"
-        :action-key="actionKey"
-        :name="actionWords.name"
-      />
-    </PaletteFrame>
-  </Teleport>
+    <!-- What the item now lit can be asked. An item offering one action says
+         one key, and the last word opens the rest. -->
+    <PaletteKeyHints
+      v-if="offered.length"
+      :hinted="hinted"
+      :action-key="actionKey"
+      :name="actionWords.name"
+    />
+  </PaletteFrame>
 </template>
 
 <style scoped>

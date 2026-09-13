@@ -37,6 +37,29 @@ export interface StreamDeps {
 
 export function createFollower(deps: StreamDeps) {
   /**
+   * One reading of a stream, to its end or to the fault that ends it. It
+   * answers whether the window is still open.
+   */
+  const readStream = async <Said>(
+    stream: () => AsyncIterable<Said>,
+    each: (said: Said) => void | Promise<void>,
+  ): Promise<boolean> => {
+    try {
+      for await (const said of stream()) {
+        if (!deps.isOpen()) return false
+        await each(said)
+      }
+    } catch {
+      // Anything the reading throws ends this one and is said as losing
+      // touch, which is what all but one of them are. The exception is a
+      // fault in `each`, and this cannot tell the two apart.
+      if (!deps.isOpen()) return false
+      deps.setLost(LOST)
+    }
+    return true
+  }
+
+  /**
    * One stream, read for as long as the window is open. What arrives is
    * answered before the next of it is read, and what the answer throws ends
    * this reading of the stream and begins another.
@@ -47,18 +70,7 @@ export function createFollower(deps: StreamDeps) {
     again = AGAIN,
   ): Promise<void> {
     while (deps.isOpen()) {
-      try {
-        for await (const said of stream()) {
-          if (!deps.isOpen()) return
-          await each(said)
-        }
-      } catch {
-        // Anything the reading throws ends this one and is said as losing
-        // touch, which is what all but one of them are. The exception is a
-        // fault in `each`, and this cannot tell the two apart.
-        if (!deps.isOpen()) return
-        deps.setLost(LOST)
-      }
+      if (!(await readStream(stream, each))) return
       deps.reset?.()
       await deps.wait(again)
       // Taken up again, so what was said about losing it no longer holds.

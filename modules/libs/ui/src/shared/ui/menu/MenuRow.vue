@@ -15,6 +15,8 @@ defineProps<{
   current: string | null
   /** Whether the name of the group it begins is drawn over it. */
   named: boolean
+  /** Whether the menu draws icons, whose room is kept on every row. */
+  icons: boolean
 }>()
 
 defineEmits<{
@@ -26,7 +28,7 @@ defineEmits<{
 
 defineSlots<{
   /** What is drawn before the words. */
-  icon(): unknown
+  default(): unknown
 }>()
 
 const row = useTemplateRef<HTMLElement>('row')
@@ -55,8 +57,8 @@ defineExpose({ focus })
     @focus="$emit('focus')"
     @click="$emit('choose')"
   >
-    <span v-if="$slots.icon" class="menu__icon flex shrink-0 items-center">
-      <slot name="icon" />
+    <span v-if="icons" class="menu__icon flex shrink-0 items-center">
+      <slot />
     </span>
     <span class="flex min-w-0 flex-col">
       <span class="menu__text">{{ item.text }}</span>

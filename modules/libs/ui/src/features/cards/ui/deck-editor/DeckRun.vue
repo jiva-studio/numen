@@ -5,6 +5,7 @@
  */
 import { SectionHeading } from './section-heading'
 import { Card } from './card'
+import { CutChoice } from './cut-choice'
 import { Icon } from '../icon'
 import { Button } from '@/shared/ui/button'
 import { DECK_WORDS, endOf, type DeckWords, type Wrong } from '../../lib/deck'
@@ -12,7 +13,7 @@ import type { Run } from '../../lib/grid'
 import { createSealedMap, type InsertionPoint, type StepDirection } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     /** The run, as the grid lays it out. */
     run: Run
@@ -53,6 +54,18 @@ const NO_FIELDS: ReadonlyMap<string, readonly string[]> = createSealedMap()
 
 /** Where a card let go past the last of this run lands. */
 const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
+
+/** The section this run stands under, under a new name. */
+const renameSection = (name: string): void => {
+  const section = props.run.section
+  if (section) emit('rename-section', section.id, name)
+}
+
+/** The section this run stands under, gone. */
+const removeSection = (): void => {
+  const section = props.run.section
+  if (section) emit('remove-section', section.id)
+}
 </script>
 
 <template>
@@ -68,8 +81,8 @@ const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
     <SectionHeading
       :section="run.section"
       :words="words"
-      @rename="(name: string) => emit('rename-section', run.section?.id ?? '', name)"
-      @remove="emit('remove-section', run.section?.id ?? '')"
+      @rename="renameSection"
+      @remove="removeSection"
     />
   </div>
 
@@ -131,20 +144,12 @@ const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
         <Icon name="plus" />
       </Button>
 
-      <div v-else class="deck__asking flex flex-col items-center">
-        <p class="deck__silence caps-numen text-small text-hushed">{{ words.cut }}</p>
-        <div class="deck__cuts flex flex-wrap justify-center">
-          <Button
-            v-for="stencil in stencils"
-            :key="stencil.name"
-            variant="outline"
-            size="small"
-            :data-cut="stencil.name"
-            @click="emit('add', stencil)"
-            >{{ stencil.name }}</Button
-          >
-        </div>
-      </div>
+      <CutChoice
+        v-else
+        :stencils="stencils"
+        :words="words"
+        @choose="(stencil) => emit('add', stencil)"
+      />
     </article>
   </div>
 </template>
@@ -209,17 +214,5 @@ const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
   inline-size: auto;
   padding: var(--numen-inset);
   font-size: var(--plus);
-}
-
-.deck__asking {
-  gap: var(--numen-inset);
-}
-
-.deck__cuts {
-  gap: var(--numen-inset);
-}
-
-.deck__silence {
-  margin: 0;
 }
 </style>

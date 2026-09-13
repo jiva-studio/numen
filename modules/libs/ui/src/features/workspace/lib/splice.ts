@@ -5,6 +5,7 @@ import {
   orientationAt,
   orientationOf,
   pane,
+  type Branch,
   type NodeId,
   type Orientation,
   type Pane,
@@ -60,19 +61,19 @@ export function putBeside(
   const above = path.slice(0, -1)
 
   if (index === undefined) {
-    const pair = isLeading(side) ? [made, root] : [root, made]
-    return { root: branch(id(), pair, [0.5, 0.5]), axis: wanted, focus: made.id }
+    return {
+      root: branch(id(), orderPair(made, root, side), [0.5, 0.5]),
+      axis: wanted,
+      focus: made.id,
+    }
   }
 
   const parent = nodeAt(root, above)
   if (!parent || !isBranch(parent)) return { root, axis, focus: onto }
 
   if (orientationAt(axis, above.length) === wanted) {
-    const at = isLeading(side) ? index : index + 1
-    const children = [...parent.children.slice(0, at), made, ...parent.children.slice(at)]
-    const sizes = insert(parent.sizes, index, isLeading(side))
     return {
-      root: replaceAt(root, above, withChildren(parent, children, sizes)),
+      root: replaceAt(root, above, joinBeside(parent, made, index, side)),
       axis,
       focus: made.id,
     }
@@ -81,12 +82,28 @@ export function putBeside(
   const target = nodeAt(root, path)
   if (!target) return { root, axis, focus: onto }
 
-  const pair = isLeading(side) ? [made, target] : [target, made]
   return {
-    root: replaceAt(root, path, branch(id(), pair, [0.5, 0.5])),
+    root: replaceAt(root, path, branch(id(), orderPair(made, target, side), [0.5, 0.5])),
     axis,
     focus: made.id,
   }
+}
+
+/** The new pane and a node as a branch's two children, in the order the side asks. */
+function orderPair(newPane: Pane, node: WorkspaceNode, side: Side): WorkspaceNode[] {
+  return isLeading(side) ? [newPane, node] : [node, newPane]
+}
+
+/** The branch with the new pane among its children, taking half the share of the child at `index`. */
+function joinBeside(
+  parent: Branch,
+  newPane: Pane,
+  index: number,
+  side: Side,
+): WorkspaceNode {
+  const at = isLeading(side) ? index : index + 1
+  const children = [...parent.children.slice(0, at), newPane, ...parent.children.slice(at)]
+  return withChildren(parent, children, insert(parent.sizes, index, isLeading(side)))
 }
 
 /**

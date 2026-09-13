@@ -6,10 +6,19 @@
  * model holds, and a handle that moves reports shares back; the model is the
  * only place they are kept.
  */
-import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch, type Ref } from 'vue'
-import { SplitterGroup, SplitterPanel } from 'reka-ui'
-import { BranchHandle } from './handle'
-import { WorkspacePane } from '../pane'
+import {
+  computed,
+  inject,
+  onBeforeUnmount,
+  ref,
+  resolveComponent,
+  useTemplateRef,
+  watch,
+  type Component,
+  type Ref,
+} from 'vue'
+import { SplitterGroup } from 'reka-ui'
+import { BranchPanel } from './panel'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { orientationAt, type Branch, type Orientation, type TabId } from '../../lib/node'
 import { atLeast, fit } from '../../lib/shares'
@@ -28,6 +37,9 @@ const slots = defineSlots<{
 }>()
 
 defineOptions({ name: 'WorkspaceBranch' })
+
+/** A branch inside a branch is drawn by this same component, under its own name. */
+const branchView = resolveComponent('WorkspaceBranch') as Component
 
 /** What every branch and pane of one workspace is told once, at the top. */
 const workspace = inject(WORKSPACE_CONTEXT) as Ref<WorkspaceContext>
@@ -148,43 +160,23 @@ function setHolding(now: boolean): void {
     :direction="direction"
     @layout="onLayout"
   >
-    <template v-for="(child, index) in node.children" :key="child.id">
-      <BranchHandle v-if="index > 0" :direction="direction" @hold="setHolding" />
-
-      <SplitterPanel
-        :id="child.id"
-        :order="index"
-        :default-size="(sizes[index] ?? 0) * 100"
-        :min-size="floor"
-        class="min-h-0 min-w-0"
-      >
-        <WorkspaceBranch
-          v-if="child.kind === 'branch'"
-          :node="child"
-          :axis="axis"
-          :depth="depth + 1"
-        >
-          <template v-for="name in passed" #[name]="bound">
-            <slot :name="name" v-bind="getSlotProps(bound)" />
-          </template>
-        </WorkspaceBranch>
-
-        <WorkspacePane
-          v-else
-          :pane="child"
-          :focused="child.id === workspace.focus"
-          @choose="workspace.choose"
-          @close="workspace.close"
-          @lift="workspace.lift"
-          @show="workspace.show"
-          @claim="workspace.claim(child.id)"
-        >
-          <template v-for="name in passed" #[name]="bound">
-            <slot :name="name" v-bind="getSlotProps(bound)" />
-          </template>
-        </WorkspacePane>
-      </SplitterPanel>
-    </template>
+    <BranchPanel
+      v-for="(child, index) in node.children"
+      :key="child.id"
+      :node="child"
+      :index="index"
+      :share="(sizes[index] ?? 0) * 100"
+      :floor="floor"
+      :axis="axis"
+      :depth="depth"
+      :direction="direction"
+      :branch-view="branchView"
+      @hold="setHolding"
+    >
+      <template v-for="name in passed" #[name]="bound">
+        <slot :name="name" v-bind="getSlotProps(bound)" />
+      </template>
+    </BranchPanel>
   </SplitterGroup>
 </template>
 

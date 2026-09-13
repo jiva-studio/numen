@@ -11,8 +11,7 @@ import { computed, useId } from 'vue'
 import { ErrorMessage } from '../../error-message'
 import { CardHeader } from '../../card-header'
 import { RemoveButton } from '../../remove-button'
-import { AutosizeTextarea } from '../../autosize-textarea'
-import { Divider } from '../../divider'
+import { CardValue } from './card-value'
 import { DECK_WORDS, type CardWords } from '../../../lib/deck'
 import type { PlacedFieldValue, Tile } from '../../../lib/grid'
 import { createSealedMap, type StepDirection } from '../../../lib/order'
@@ -115,44 +114,15 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
         :label="words.wrong"
       />
 
-      <div v-for="value in tile.filled" :key="value.key" class="card__value">
-        <Divider at="start">
-          <label
-            v-if="value.declared"
-            class="card__field text-small text-hushed"
-            :for="boxId(value)"
-          >
-            {{ value.field }}
-          </label>
-          <span v-else class="card__field text-small text-hushed">{{ value.field }}</span>
-        </Divider>
-
-        <AutosizeTextarea
-          v-if="value.declared"
-          :id="boxId(value)"
-          :text="value.text"
-          :data-value="value.field"
-          @write="(text: string) => emit('write', value.field, value.nth, text)"
-        />
-
-        <!-- No stencil names a slot for this value, so what was written is read
-             where it would be typed. -->
-        <p
-          v-else
-          class="card__wrote"
-          role="group"
-          :aria-label="value.field"
-          :data-wrote="value.field"
-        >{{ value.text }}</p>
-
-        <ErrorMessage
-          v-if="wrongIn(value).length"
-          class="card__objections"
-          :data-wrong-value="value.field"
-          :said="wrongIn(value)"
-          :label="words.wrong"
-        />
-      </div>
+      <CardValue
+        v-for="value in tile.filled"
+        :key="value.key"
+        :value="value"
+        :box-id="boxId(value)"
+        :wrong="wrongIn(value)"
+        :words="words"
+        @write="(text: string) => emit('write', value.field, value.nth, text)"
+      />
 
       <p v-if="!tile.filled.length" class="card__silence caps-numen text-small text-hushed">
         {{ words.nothing }}
@@ -182,12 +152,6 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
   padding: var(--numen-box-air);
 }
 
-/* A divider divides the whole tile, so it runs to both edges of it. */
-.card__value > .divider {
-  inline-size: auto;
-  margin-inline: calc(-1 * var(--numen-box-air));
-}
-
 .card[data-dragged] {
   opacity: 0.5;
 }
@@ -204,19 +168,10 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
   pointer-events: none;
 }
 
-/* Everything the body holds stands over one edge: what is wrong with the card,
-   what each value is called, and the value itself. */
-.card__objections,
-.card__wrote {
+/* What is wrong with the card stands over the same edge as its values. */
+.card__objections {
   margin: 0;
   padding-inline: var(--box-pad-inline);
-}
-
-/* A value no stencil names is read where it would be typed, and keeps the
-   breaks it was written with. */
-.card__wrote {
-  padding-block: var(--box-air, 0.5rem);
-  white-space: pre-wrap;
 }
 
 /* A card holding nothing says so in the middle of the room it is given. */

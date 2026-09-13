@@ -57,23 +57,7 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
       continue
     }
 
-    switch (token.type) {
-      case 'inline':
-        top().children.push(...inline(token.children ?? [], deadAddresses, () => placed++))
-        break
-      case 'fence':
-      case 'code_block':
-        top().children.push(h('pre', attrs(token), [h('code', token.content)]))
-        break
-      case 'hr':
-        top().children.push(h('hr'))
-        break
-      case 'html_block':
-        top().children.push(token.content)
-        break
-      default:
-        if (token.content) top().children.push(token.content)
-    }
+    top().children.push(...block(token, deadAddresses, () => placed++))
   }
 
   // A stream stops mid-sentence, so elements are left open. They are closed
@@ -83,6 +67,27 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
     top().children.push(h(done.tag, done.attrs, done.children))
   }
   return root.children.filter((child): child is VNode => typeof child !== 'string')
+}
+
+/** What a block token stands for, once it has opened and closed nothing. */
+const block = (
+  token: Token,
+  deadAddresses: BrokenAddresses,
+  next: () => number,
+): (VNode | string)[] => {
+  switch (token.type) {
+    case 'inline':
+      return inline(token.children ?? [], deadAddresses, next)
+    case 'fence':
+    case 'code_block':
+      return [h('pre', attrs(token), [h('code', token.content)])]
+    case 'hr':
+      return [h('hr')]
+    case 'html_block':
+      return [token.content]
+    default:
+      return token.content ? [token.content] : []
+  }
 }
 
 /**
@@ -111,28 +116,7 @@ const inline = (
       continue
     }
 
-    switch (token.type) {
-      case 'text':
-        top().children.push(...words(token.content, next))
-        break
-      case 'code_inline':
-        top().children.push(h('code', { key: next() }, token.content))
-        break
-      case 'softbreak':
-        top().children.push(' ')
-        break
-      case 'hardbreak':
-        top().children.push(h('br'))
-        break
-      case 'image':
-        top().children.push(h('img', attrs(token)))
-        break
-      case 'html_inline':
-        top().children.push(token.content)
-        break
-      default:
-        if (token.content) top().children.push(token.content)
-    }
+    top().children.push(...mark(token, next))
   }
 
   while (stack.length > 1) {
@@ -140,6 +124,26 @@ const inline = (
     top().children.push(h(done.tag, done.attrs, done.children))
   }
   return root.children
+}
+
+/** What an inline token stands for, once it has opened and closed nothing. */
+const mark = (token: Token, next: () => number): (VNode | string)[] => {
+  switch (token.type) {
+    case 'text':
+      return words(token.content, next)
+    case 'code_inline':
+      return [h('code', { key: next() }, token.content)]
+    case 'softbreak':
+      return [' ']
+    case 'hardbreak':
+      return [h('br')]
+    case 'image':
+      return [h('img', attrs(token))]
+    case 'html_inline':
+      return [token.content]
+    default:
+      return token.content ? [token.content] : []
+  }
 }
 
 /** Text, cut into words with the spaces between them kept. */
