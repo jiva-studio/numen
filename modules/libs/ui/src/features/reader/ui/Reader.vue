@@ -11,6 +11,7 @@ import { ReaderToolbar } from './reader-toolbar'
 import { Sheet } from './sheet'
 import { usePageWidth } from '../model/width'
 import { useViewport } from '@/shared/lib/viewport'
+import { keyTurn } from '@/shared/lib/turn'
 import { useHandScroll } from '../model/scroll'
 import {
   GAP,
@@ -140,12 +141,34 @@ const boxOf = (page: number) => ({
   blockSize: `${laid.value.height}px`,
 })
 
+/**
+ * A key the tab caught: true where it turned the page. The page asked for is
+ * emitted, so whoever holds `at` is the one that moves it.
+ */
+const handleKey = (event: KeyboardEvent): boolean => {
+  const way = keyTurn(event.key)
+  if (!way || props.pages.length === 0) return false
+
+  const last = props.pages.length - 1
+  const to =
+    way === 'first' ? 0
+    : way === 'last' ? last
+    : props.at + (way === 'next' ? 1 : -1)
+
+  if (to < 0 || to > last) return false
+  emit('go', to)
+  return true
+}
+
 defineExpose({
   /**
    * Take the viewport again. A reader drawn out of sight has none, and the
    * caller says when it is on screen.
    */
   measure,
+  handleKey,
+  /** The pages take the keyboard, so that a key struck reaches them. */
+  focusPages: () => area.value?.focus(),
 })
 </script>
 

@@ -5,7 +5,8 @@
  */
 import type { ShallowRef } from 'vue'
 
-import { handTurn, type PageTurn } from '../lib/turn'
+import type { PageTurn } from '@/shared/lib/turn'
+import { handTurn } from '../lib/turn'
 
 /**
  * `turn` is what the reader does with the way the hand asked for, and `edgeOf`

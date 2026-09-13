@@ -150,3 +150,58 @@ describe('the page it says it stands on', () => {
     expect(sent[1]).toBe(0)
   })
 })
+
+/** What the reader exposes to whoever holds the page it stands on. */
+const handOf = (wrapper: ReturnType<typeof mount>) =>
+  wrapper.vm as unknown as { handleKey: (event: KeyboardEvent) => boolean }
+
+/** The pages the reader has asked to be turned to, in the order it asked. */
+const getTurns = (wrapper: ReturnType<typeof mount>) =>
+  (wrapper.emitted('go') ?? []).map((one) => (one as [number])[0])
+
+const press = (key: string) => new KeyboardEvent('keydown', { key })
+
+describe('a key struck over the pages', () => {
+  it('asks for the page after this one, and the one before it', async () => {
+    const held = mount(Reader, { props: { pages: PAGES, at: 3 } })
+
+    expect(handOf(held).handleKey(press('ArrowRight'))).toBe(true)
+    expect(handOf(held).handleKey(press('ArrowLeft'))).toBe(true)
+
+    expect(getTurns(held)).toStrictEqual([4, 2])
+    await held.vm.$nextTick()
+  })
+
+  it('asks for either end of the document', () => {
+    const held = mount(Reader, { props: { pages: PAGES, at: 3 } })
+
+    handOf(held).handleKey(press('Home'))
+    handOf(held).handleKey(press('End'))
+
+    expect(getTurns(held)).toStrictEqual([0, PAGES.length - 1])
+  })
+
+  it('takes no key that turns no page, and leaves it to whoever is behind', () => {
+    const held = mount(Reader, { props: { pages: PAGES, at: 3 } })
+
+    expect(handOf(held).handleKey(press('k'))).toBe(false)
+    expect(handOf(held).handleKey(press('Enter'))).toBe(false)
+    expect(getTurns(held)).toStrictEqual([])
+  })
+
+  it('turns past neither end, so the key is left to whoever is behind', () => {
+    const first = mount(Reader, { props: { pages: PAGES, at: 0 } })
+    const last = mount(Reader, { props: { pages: PAGES, at: PAGES.length - 1 } })
+
+    expect(handOf(first).handleKey(press('ArrowLeft'))).toBe(false)
+    expect(handOf(last).handleKey(press('ArrowRight'))).toBe(false)
+    expect(getTurns(first)).toStrictEqual([])
+    expect(getTurns(last)).toStrictEqual([])
+  })
+
+  it('turns nothing where no page has come', () => {
+    const held = mount(Reader, { props: { pages: [] } })
+
+    expect(handOf(held).handleKey(press('ArrowRight'))).toBe(false)
+  })
+})

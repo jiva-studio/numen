@@ -15,7 +15,8 @@ import { onNextFrame } from '@/shared/lib/clock'
 import { useBookMarks } from './marks'
 import type { BookLink } from '../lib/link'
 import { GAP, LARGEST, SMALLEST, columnHeight, clamp, columnWidth, columnsIn, findSpreadAt, getSpreadStart, inFront, leftInDocument, pagesOf, spreads, type Flow } from '../lib/spread'
-import { turnTo, type PageTurn } from '../lib/turn'
+import type { PageTurn } from '@/shared/lib/turn'
+import { turnTo } from '../lib/turn'
 import type { SettledBookProps } from '../lib/props'
 
 /**

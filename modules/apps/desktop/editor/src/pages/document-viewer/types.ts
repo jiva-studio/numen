@@ -42,8 +42,12 @@ export interface Documents {
   ): Promise<readonly (readonly PageHighlight[])[]>
 }
 
-/** Port for measuring an attached page view. */
+/** Port for measuring an attached page view, and for turning its pages. */
 export interface PageHandle {
   measure(): void
+  /** A key the tab caught: true where it turned the page. */
+  handleKey(event: KeyboardEvent): boolean
+  /** The pages take the keyboard, so that a key struck reaches them. */
+  focusPages(): void
 }
 

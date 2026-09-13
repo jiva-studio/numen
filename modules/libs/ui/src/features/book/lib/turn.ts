@@ -1,36 +1,13 @@
 /**
- * What turns a book from one spread to the next: the key it is read with, the
- * hand it is read by, and what each asks for at the ends of a document.
+ * What turns a book from one spread to the next by hand, and where a turn
+ * lands. Which key turns which way is settled for every reader in
+ * `shared/lib/turn.ts`.
  *
- * Apart from the component the way `spread.ts` is: which key turns which way
- * and what a hand put down and lifted again means are decisions, and a test
- * asks them without a browser.
+ * Apart from the component the way `spread.ts` is: what a hand put down and
+ * lifted again means is a decision, and a test asks it without a browser.
  */
 import type { Span } from '@/shared/lib/span'
-
-/** A turn of the page, and the two ends of the document. */
-export type PageTurn = 'back' | 'next' | 'first' | 'last'
-
-/** Which way a key turns the page, and nothing for a key that turns none. */
-export function keyTurn(key: string): PageTurn | undefined {
-  switch (key) {
-    case 'ArrowRight':
-    case 'ArrowDown':
-    case 'PageDown':
-    case ' ':
-      return 'next'
-    case 'ArrowLeft':
-    case 'ArrowUp':
-    case 'PageUp':
-      return 'back'
-    case 'Home':
-      return 'first'
-    case 'End':
-      return 'last'
-    default:
-      return undefined
-  }
-}
+import type { PageTurn } from '@/shared/lib/turn'
 
 /** How far a hand travels sideways before it is a swipe, in CSS pixels. */
 export const SWIPE = 40

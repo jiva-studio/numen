@@ -385,6 +385,24 @@ describe('a key struck while a book is in front', () => {
   })
 })
 
+describe('a key struck while a document is in front', () => {
+  it('reaches the document, which is turned by the arrows as a book is', async () => {
+    // A reader who opened a book and a reader who opened a document are one
+    // person, and neither is told which of the two they are looking at.
+    said.opening = 'Root.md'
+    const window = await mountWindow()
+
+    outside.ask({ path: 'Source.pdf', start: 0, length: 4 })
+    await settle()
+    await settle()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+    expect(requests.pressed).toStrictEqual(['ArrowRight'])
+    window.unmount()
+  })
+})
+
 describe('a book carried into another group of tabs', () => {
   it('keeps the keyboard, so the arrows still turn it', async () => {
     // A tab dragged into another pane is drawn again where it landed, and a

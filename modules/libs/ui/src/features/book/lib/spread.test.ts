@@ -19,7 +19,7 @@ import {
 } from './spread'
 import { bytesIn, unitsIn } from './bytes'
 import { BOOK_WORDS } from './words'
-import { EDGE, SWIPE, handTurn, keyTurn, pressTurn, swipeTurn, turnTo } from './turn'
+import { EDGE, SWIPE, handTurn, pressTurn, swipeTurn, turnTo } from './turn'
 
 /** A wide reading area, which takes two columns, and a narrow one, which takes one. */
 const WIDE = 800
@@ -287,22 +287,6 @@ describe('a byte offset read into a string', () => {
 })
 
 describe('what turns the page', () => {
-  it('turns on and back on the keys a book is read with', () => {
-    expect(keyTurn('ArrowRight')).toBe('next')
-    expect(keyTurn(' ')).toBe('next')
-    expect(keyTurn('PageDown')).toBe('next')
-    expect(keyTurn('ArrowLeft')).toBe('back')
-    expect(keyTurn('PageUp')).toBe('back')
-    expect(keyTurn('Home')).toBe('first')
-    expect(keyTurn('End')).toBe('last')
-  })
-
-  it('turns nothing on a key that is not one of them', () => {
-    expect(keyTurn('a')).toBeUndefined()
-    expect(keyTurn('Enter')).toBeUndefined()
-    expect(keyTurn('Tab')).toBeUndefined()
-  })
-
   it('follows the hand: a swipe leftward brings the page after this one', () => {
     expect(swipeTurn(-SWIPE)).toBe('next')
     expect(swipeTurn(SWIPE)).toBe('back')

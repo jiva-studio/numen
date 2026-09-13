@@ -68,7 +68,7 @@ describe('what a recording tab holds, as whoever answers for the person is told 
  * A recording as the tab reads it: what it was found to hold, and whether the
  * finding has landed.
  */
-const held = (how: { isLoading: boolean; times: readonly unknown[] }) =>
+const createReading = (how: { isLoading: boolean; times: readonly unknown[] }) =>
   ({
     path: 'talks/Ants.mp3',
     times: ref(how.times),
@@ -79,7 +79,9 @@ const held = (how: { isLoading: boolean; times: readonly unknown[] }) =>
 
 describe('a recording whose words have not been read yet', () => {
   it('offers none of the runs over them', () => {
-    const tab = useTranscriptTab(held({ isLoading: true, times: [] }), { runCommand: () => {} })
+    const tab = useTranscriptTab(createReading({ isLoading: true, times: [] }), {
+      runCommand: () => {},
+    })
 
     expect(tab.transcribable.value).toBe(false)
     expect(tab.proofreadable.value).toBe(false)
@@ -87,13 +89,17 @@ describe('a recording whose words have not been read yet', () => {
   })
 
   it('offers writing them down once the reading has landed and found none', () => {
-    const tab = useTranscriptTab(held({ isLoading: false, times: [] }), { runCommand: () => {} })
+    const tab = useTranscriptTab(createReading({ isLoading: false, times: [] }), {
+      runCommand: () => {},
+    })
 
     expect(tab.transcribable.value).toBe(true)
   })
 
   it('offers putting them right once the reading has landed and found some', () => {
-    const tab = useTranscriptTab(held({ isLoading: false, times: [{}] }), { runCommand: () => {} })
+    const tab = useTranscriptTab(createReading({ isLoading: false, times: [{}] }), {
+      runCommand: () => {},
+    })
 
     expect(tab.transcribable.value).toBe(false)
     expect(tab.proofreadable.value).toBe(true)

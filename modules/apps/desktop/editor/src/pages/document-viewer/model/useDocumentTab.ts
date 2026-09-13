@@ -19,10 +19,14 @@ export function useDocumentTab(read: DocumentReaderState) {
   }
 
   const measure = () => page.value?.measure()
+  const handleKeyPress = (event: KeyboardEvent) => page.value?.handleKey(event) ?? false
+  const focusTab = () => page.value?.focusPages()
 
   return {
     ...read,
     setPageHandle,
     measure,
+    handleKeyPress,
+    focusTab,
   }
 }

@@ -45,9 +45,16 @@ const createDocumentTabAt = (path: string, page: number, pageCount: number) =>
 
 const kindOver = (tab: DocumentTabState) => documentKind(createMockDocumentWindow(tab).handle, () => tab, openers().tabOpeners).kind
 
+/** The pages drawn in a tab, which record what was asked of them. */
+const createPages = (): PageHandle => ({
+  measure: vi.fn(),
+  handleKey: vi.fn(() => false),
+  focusPages: vi.fn(),
+})
+
 describe('what a document tab holds', () => {
   it('measures the page again once there is a page to measure', () => {
-    const page: PageHandle = { measure: vi.fn() }
+    const page = createPages()
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
 
     held.measure()
@@ -59,7 +66,7 @@ describe('what a document tab holds', () => {
   })
 
   it('measures nothing once the page it drew is gone', () => {
-    const page: PageHandle = { measure: vi.fn() }
+    const page = createPages()
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
     held.setPageHandle(page)
     held.setPageHandle(null)
@@ -96,7 +103,7 @@ describe('a document tab', () => {
 
   it('measures the page when the tab comes on screen', () => {
     const { kind } = kindOf()
-    const page: PageHandle = { measure: vi.fn() }
+    const page = createPages()
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
     held.setPageHandle(page)
 
@@ -150,5 +157,35 @@ describe('what a document tab holds, as whoever answers for the person is told i
       path: 'Ants.epub',
       document: { page: 4, pageCount: 40 },
     })
+  })
+})
+
+describe('a key struck while a document tab is the one the person is in', () => {
+  it('is offered to the pages, and the tab says whether they took it', () => {
+    const page = createPages()
+    page.handleKey = vi.fn((event: KeyboardEvent) => event.key === 'ArrowRight')
+    const held = useDocumentTab(read('physics/Boltzmann.pdf'))
+    held.setPageHandle(page)
+
+    expect(kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })))
+      .toBe(true)
+    expect(kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'k' }))).toBe(false)
+  })
+
+  it('is taken by nobody where the tab draws no pages yet', () => {
+    const held = useDocumentTab(read('physics/Boltzmann.pdf'))
+
+    expect(kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })))
+      .toBe(false)
+  })
+
+  it('reaches them, because the tab takes the keyboard as it comes on screen', () => {
+    const page = createPages()
+    const held = useDocumentTab(read('physics/Boltzmann.pdf'))
+    held.setPageHandle(page)
+
+    kindOver(held).onShow!(held, 'a tab')
+
+    expect(page.focusPages).toHaveBeenCalledTimes(1)
   })
 })

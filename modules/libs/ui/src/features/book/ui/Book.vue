@@ -10,7 +10,7 @@
  */
 import { useTemplateRef } from 'vue'
 
-import { keyTurn } from '../lib/turn'
+import { keyTurn } from '@/shared/lib/turn'
 import { useBookHand } from '../model/hand'
 import { useBookLayout } from '../model/layout'
 import { createBookLinks } from '../model/links'

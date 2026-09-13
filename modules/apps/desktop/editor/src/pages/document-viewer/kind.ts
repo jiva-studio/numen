@@ -20,7 +20,11 @@ export function documentKind(handle: WindowHandle, open: (path: string) => Docum
     getTitle: (state) => fileOf(state.path),
     pane: DocumentTab,
     identity: (path) => path,
-    onShow: (state) => state.measure(),
+    onShow: (state) => {
+      state.measure()
+      state.focusTab()
+    },
+    onKeyPress: (state, event) => state.handleKeyPress(event),
     onClose: (state) => {
       state.close()
       return true
