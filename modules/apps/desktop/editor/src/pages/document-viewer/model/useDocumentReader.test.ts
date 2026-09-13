@@ -34,6 +34,29 @@ function book(layout: DocumentLayout | Error = LAYOUT, where: readonly (readonly
   return { documents, asked, spans }
 }
 
+describe('a document still being read', () => {
+  it('says so until the layout lands, and no longer', async () => {
+    const { documents } = book()
+    const read = useDocumentReader(documents, 'Book.pdf')
+
+    expect(read.isLoading.value).toBe(true)
+
+    await read.goToPage(0)
+
+    expect(read.isLoading.value).toBe(false)
+  })
+
+  it('stops saying so even where the document could not be read', async () => {
+    const { documents } = book(new Error('no such document'))
+    const read = useDocumentReader(documents, 'Book.pdf')
+
+    await read.goToPage(0)
+
+    expect(read.isLoading.value).toBe(false)
+    expect(read.error.value).not.toBe('')
+  })
+})
+
 describe('a document opened', () => {
   it('asks what it is once, however much is read of it', async () => {
     const { documents, asked } = book()

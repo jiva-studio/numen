@@ -48,6 +48,13 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   /** What this recording could not do, in words the tab puts up for it. */
   const error = ref('')
 
+  /**
+   * Whether the first reading of the recording is still on its way. Until it
+   * lands nothing is known: no words is not the same as no words yet, and a tab
+   * that cannot tell them apart offers to write down what is already written.
+   */
+  const isLoading = ref(true)
+
   /** Whether the tab this recording stands in is still open. */
   let open = true
   const isOpen = () => open
@@ -118,6 +125,8 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     } catch (thrown) {
       if (!mine.claim()) return
       error.value = formatErrorMessage(thrown)
+    } finally {
+      if (mine.claim()) isLoading.value = false
     }
   }
 
@@ -215,6 +224,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     setFramePlayer,
     setFrameTime,
     isWorking,
+    isLoading,
     error,
     broken,
     go,

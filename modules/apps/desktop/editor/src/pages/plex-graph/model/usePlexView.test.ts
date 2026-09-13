@@ -24,6 +24,35 @@ const createEmptyNeighbourhood = (): Neighbourhood => ({
 /** A vault that answers whatever it is told to. */
 const fake = (neighbourhood: Neighbours['neighbourhood']): Neighbours => ({ neighbourhood })
 
+describe('a plex still being read', () => {
+  it('says so until the first answer lands, and no longer', async () => {
+    const plex = usePlexView(fake(async (path) => answer(path)))
+
+    expect(plex.isLoading.value).toBe(true)
+
+    await plex.go('Root.md')
+
+    expect(plex.isLoading.value).toBe(false)
+  })
+
+  it('goes on saying so while an older answer is let go of', async () => {
+    const delays: Record<string, number> = { Slow: 30, Fast: 0 }
+    const plex = usePlexView(
+      fake(async (path) => {
+        await new Promise((wake) => setTimeout(wake, delays[path] ?? 0))
+        return answer(path)
+      }),
+    )
+
+    const slow = plex.go('Slow')
+    await plex.go('Fast')
+
+    expect(plex.isLoading.value).toBe(false)
+
+    await slow
+  })
+})
+
 describe('two questions in flight', () => {
   it('keeps the answer to the last one asked, however they come back', async () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }

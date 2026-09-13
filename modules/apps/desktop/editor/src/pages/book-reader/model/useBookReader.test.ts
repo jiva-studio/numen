@@ -118,6 +118,28 @@ describe('what a book is reached by', () => {
   })
 })
 
+describe('a book still being read', () => {
+  it('says so until the book lands, and no longer', async () => {
+    const { books } = shelf()
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    expect(read.isLoading.value).toBe(true)
+
+    await read.goToOffset(0)
+
+    expect(read.isLoading.value).toBe(false)
+  })
+
+  it('stops saying so even where the book could not be read', async () => {
+    const { books } = shelf(new Error('no such book'))
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    await read.goToOffset(0)
+
+    expect(read.isLoading.value).toBe(false)
+  })
+})
+
 describe('a book opened', () => {
   it('asks what it is once, however much is read of it', async () => {
     const { books, asked } = shelf()

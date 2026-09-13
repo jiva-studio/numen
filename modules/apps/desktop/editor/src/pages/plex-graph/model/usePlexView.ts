@@ -27,6 +27,12 @@ export function usePlexView(core: Neighbours) {
   /** What this plex could not show, in words the window puts up for it. */
   const error = ref('')
 
+  /**
+   * Whether the first neighbourhood is still on its way. An empty plex and one
+   * nobody has answered for yet are drawn the same way.
+   */
+  const isLoading = ref(true)
+
   /** Two answers can be in flight — a click while a change is being followed. */
   const asks = answerGuard()
 
@@ -46,6 +52,8 @@ export function usePlexView(core: Neighbours) {
     } catch (thrown) {
       if (!mine.current) return
       error.value = formatErrorMessage(thrown)
+    } finally {
+      if (mine.current) isLoading.value = false
     }
   }
 
@@ -60,5 +68,5 @@ export function usePlexView(core: Neighbours) {
     asks.close()
   }
 
-  return { neighbourhood, here, error, go, followMoves, close }
+  return { neighbourhood, here, error, isLoading, go, followMoves, close }
 }

@@ -3,7 +3,7 @@
  * Displays the graph neighborhood of notes and handles graph interaction gestures.
  */
 import { computed, useTemplateRef } from 'vue'
-import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
+import { Menu, optionsForType, Plex, Spinner, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from '../lib/menu'
@@ -117,8 +117,15 @@ function closeMenu(id?: string) {
       {{ props.state.view.error.value }}
     </p>
 
+    <!-- Until the first neighbourhood lands, an empty plex and one nobody has
+         answered for yet are drawn the same way. -->
+    <p v-if="props.state.view.isLoading.value" class="plex__waiting" role="status">
+      <Spinner />
+      {{ words.reading }}
+    </p>
+
     <Plex
-      v-if="neighbourhood"
+      v-else-if="neighbourhood"
       ref="picture"
       class="plex__picture"
       :neighbourhood="neighbourhood!"
@@ -175,6 +182,16 @@ function closeMenu(id?: string) {
 .plex__picture {
   flex: 1;
   min-block-size: 0;
+}
+
+.plex__waiting {
+  display: flex;
+  flex: 1;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: var(--numen-hushed);
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units.

@@ -6,4 +6,6 @@ export const WORDS = {
   pages: 'Pages',
   closer: 'Closer',
   further: 'Further',
+  /** The document is being read, and how many pages it has is not known yet. */
+  reading: 'Reading…',
 }

@@ -48,6 +48,12 @@ export function useBookReader(
   const pageBytes = ref(0)
   const offset = ref(0)
   const fingerprint = ref('')
+
+  /**
+   * Whether the book and its first document are still on their way. No text is
+   * not the same as no text yet, and a blank page says the wrong one of the two.
+   */
+  const isLoading = ref(true)
   let open = true
 
   const bookDocument = useBookDocument(books, path, fingerprint, writeMessage, () => open)
@@ -79,6 +85,8 @@ export function useBookReader(
     } catch (error) {
       if (!open) return
       writeMessage(formatErrorMessage(error), 'error')
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -127,6 +135,7 @@ export function useBookReader(
     chapter,
     pageBytes,
     offset,
+    isLoading,
     reading: bookDocument.reading,
     drawn: bookDocument.drawn,
     markup: bookDocument.markup,

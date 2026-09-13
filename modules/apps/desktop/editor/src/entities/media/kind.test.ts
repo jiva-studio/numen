@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import { recordingKind, type MediaTabState, type Medium } from './kind'
+import { recordingKind, useTranscriptTab, type MediaTabState, type Medium } from './kind'
 import type { TranscriptState } from './model/transcript'
 import type { FileOpeners, WindowHandle } from '@/entities/tab/@x/media'
 
@@ -61,5 +61,42 @@ describe('what a recording tab holds, as whoever answers for the person is told 
       path: 'talks/Ants.mp3',
       recording: { transcribedDurationMs: 4000, durationMs: 9000 },
     })
+  })
+})
+
+/**
+ * A recording as the tab reads it: what it was found to hold, and whether the
+ * finding has landed.
+ */
+const held = (how: { isLoading: boolean; times: readonly unknown[] }) =>
+  ({
+    path: 'talks/Ants.mp3',
+    times: ref(how.times),
+    points: ref(false),
+    isWorking: ref(false),
+    isLoading: ref(how.isLoading),
+  }) as unknown as TranscriptState
+
+describe('a recording whose words have not been read yet', () => {
+  it('offers none of the runs over them', () => {
+    const tab = useTranscriptTab(held({ isLoading: true, times: [] }), { runCommand: () => {} })
+
+    expect(tab.transcribable.value).toBe(false)
+    expect(tab.proofreadable.value).toBe(false)
+    expect(tab.deletable.value).toBe(false)
+  })
+
+  it('offers writing them down once the reading has landed and found none', () => {
+    const tab = useTranscriptTab(held({ isLoading: false, times: [] }), { runCommand: () => {} })
+
+    expect(tab.transcribable.value).toBe(true)
+  })
+
+  it('offers putting them right once the reading has landed and found some', () => {
+    const tab = useTranscriptTab(held({ isLoading: false, times: [{}] }), { runCommand: () => {} })
+
+    expect(tab.transcribable.value).toBe(false)
+    expect(tab.proofreadable.value).toBe(true)
+    expect(tab.deletable.value).toBe(true)
   })
 })

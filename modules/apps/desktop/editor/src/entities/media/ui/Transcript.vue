@@ -8,7 +8,7 @@
  * nothing to seek.
  */
 import { computed, watchPostEffect } from 'vue'
-import { Editor, timing } from '@numen/ui'
+import { Editor, Spinner, timing } from '@numen/ui'
 import { WORDS as words } from '../words'
 import type { MediaTabState } from '../kind'
 
@@ -27,6 +27,7 @@ const {
   timed,
   times: cues,
   transcribable,
+  isLoading,
   error,
   typing,
   written,
@@ -70,9 +71,15 @@ function onSave() {
       {{ error }}
     </p>
 
-    <!-- The button says there is nothing here, so the note says it only where
-         there is no button. -->
-    <div v-if="!written" class="transcript__silence">
+    <!-- Until the recording has been read, no words is not the same as no words
+         yet. The button says there is nothing here, so the note says it only
+         where there is no button. -->
+    <div v-if="isLoading" class="transcript__silence" role="status">
+      <Spinner class="transcript__ring" />
+      <span>{{ words.reading }}</span>
+    </div>
+
+    <div v-else-if="!written" class="transcript__silence">
       <p v-if="!transcribable" class="transcript__note">
         {{ note }}
       </p>
@@ -115,6 +122,13 @@ function onSave() {
   margin: auto;
   padding: var(--numen-gutter);
   text-align: center;
+}
+
+/* The ring stands on the line of the word beside it, not over it. */
+.transcript__silence[role='status'] {
+  flex-direction: row;
+  gap: 0.5rem;
+  color: var(--numen-hushed);
 }
 
 .transcript__ask {

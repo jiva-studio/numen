@@ -33,6 +33,12 @@ export function useDocumentReader(documents: Documents, path: string) {
   const pages = shallowRef<readonly Page[]>([])
   const fingerprint = ref('')
   const error = ref('')
+
+  /**
+   * Whether the layout is still on its way. No pages is not the same as no
+   * pages yet, and the silence a reader puts up says the wrong one of the two.
+   */
+  const isLoading = ref(true)
   let open = true
 
   const navigation = useDocumentNavigation(pages)
@@ -54,6 +60,8 @@ export function useDocumentReader(documents: Documents, path: string) {
     } catch (thrown) {
       if (!open) return
       error.value = formatErrorMessage(thrown)
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -99,6 +107,7 @@ export function useDocumentReader(documents: Documents, path: string) {
     otherHighlighted: highlights.otherHighlighted,
     getOtherHighlightsOn: highlights.getOtherHighlightsOn,
     error,
+    isLoading,
     goToPage,
     nextPage,
     prevPage,

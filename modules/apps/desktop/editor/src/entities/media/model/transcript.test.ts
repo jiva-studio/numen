@@ -148,6 +148,31 @@ describe('a recording opened', () => {
   })
 })
 
+describe('a recording still being read', () => {
+  it('says so until the answer lands, and no longer', async () => {
+    const { recordings } = talk()
+
+    const heard = useTranscript(recordings, 'talks/Ants.mp3')
+
+    expect(heard.isLoading.value).toBe(true)
+
+    await flush()
+
+    expect(heard.isLoading.value).toBe(false)
+  })
+
+  it('stops saying so even where the recording could not be read', async () => {
+    const { recordings } = talk(CUES, new Error('no such recording'))
+
+    const heard = useTranscript(recordings, 'talks/Ants.mp3')
+
+    await flush()
+
+    expect(heard.isLoading.value).toBe(false)
+    expect(heard.error.value).not.toBe('')
+  })
+})
+
 describe('a recording nothing has listened to', () => {
   it('holds no words and says nothing went wrong', async () => {
     const { recordings } = talk([], { duration: 0, mediaUrl: '', mediaType: '', url: '' })

@@ -14,6 +14,8 @@ export const WORDS = {
   follow: 'Follow',
   /** The menu at the end of the strip, and what it is announced as. */
   more: 'More',
+  /** The recording is being read, and what it holds is not known yet. */
+  reading: 'Reading…',
   /** Nothing has transcribed this recording. */
   silence: 'No transcript yet.',
   /** Nothing has been fetched for a url, which is where its words come from. */

@@ -50,13 +50,17 @@ export function useTranscriptTab(read: TranscriptState, deps: MediaTabDeps) {
 
   const written = computed(() => read.times.value.length > 0)
 
+  // Every one of these reads what the recording turned out to hold, so none of
+  // them is answerable until the first reading has landed.
+  //
   // The words of a url are fetched from the address, so nothing here writes
   // them down.
+  const settled = computed(() => !read.isLoading.value && !read.isWorking.value)
   const transcribable = computed(
-    () => !read.points.value && !written.value && !read.isWorking.value && canRun(TRANSCRIBE),
+    () => settled.value && !read.points.value && !written.value && canRun(TRANSCRIBE),
   )
-  const proofreadable = computed(() => written.value && !read.isWorking.value && canRun(PROOFREAD))
-  const deletable = computed(() => written.value && !read.isWorking.value && canRun(DELETE_TEXT))
+  const proofreadable = computed(() => settled.value && written.value && canRun(PROOFREAD))
+  const deletable = computed(() => settled.value && written.value && canRun(DELETE_TEXT))
 
   const called = fileOf(read.path)
   const transcribe = () => deps.runCommand(TRANSCRIBE, read.path, called)
