@@ -406,3 +406,40 @@ export const TheRingStandsOnTheKnob: Story = {
     expect(getComputedStyle(picture).outlineStyle).toBe('none')
   },
 }
+
+/**
+ * The knob is dragged, not only walked with the arrows. The picture reads the
+ * pointer off its own element — where the pointer landed against the screen,
+ * and the capture that keeps the drag on it after the pointer has left. Only a
+ * browser has either, so only a browser can say the element is reached at all.
+ */
+export const TheKnobFollowsThePointer: Story = {
+  args: { place: 3 },
+  play: async ({ canvasElement }) => {
+    const picture = pictureIn(canvasElement)
+    const was = picture.getAttribute('aria-valuenow')
+    const box = picture.getBoundingClientRect()
+
+    // The element answers for the pointer: without a screen matrix nothing can
+    // be read off it, and without capture the drag is lost the moment the
+    // pointer leaves the knob.
+    expect(picture.getScreenCTM?.()).not.toBeNull()
+
+    const at = (share: number) => ({
+      clientX: box.left + box.width * share,
+      clientY: box.top + box.height / 2,
+      pointerId: 1,
+      isPrimary: true,
+      bubbles: true,
+      cancelable: true,
+    })
+
+    picture.dispatchEvent(new PointerEvent('pointerdown', { ...at(0.1), button: 0 }))
+    picture.dispatchEvent(new PointerEvent('pointermove', at(0.9)))
+    picture.dispatchEvent(new PointerEvent('pointerup', at(0.9)))
+
+    await waitFor(() =>
+      expect(picture.getAttribute('aria-valuenow')).not.toBe(was),
+    )
+  },
+}
