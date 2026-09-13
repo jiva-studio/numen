@@ -4,7 +4,7 @@
  * preset is the same thing in the tree that it is in the tab.
  */
 import { FileText, Gauge, Layers, LayoutTemplate, type LucideIcon } from '@lucide/vue'
-import type { NoteType } from '@/shared/file'
+import type { NoteType } from '@/entities/file/@x/note'
 
 const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
   ['note', FileText],

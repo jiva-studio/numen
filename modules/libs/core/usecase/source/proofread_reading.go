@@ -265,7 +265,7 @@ func (u ProofreadReading) readCheckpoint(
 		return checkpoint{}, err
 	}
 	var stood checkpoint
-	if err := json.Unmarshal(raw, &stood); err != nil || stood.By != u.By.Name() {
+	if err := json.Unmarshal(raw, &stood); err != nil || stood.By != u.By.GetName() {
 		if err := store.Remove(ctx, corrections); err != nil {
 			return checkpoint{}, err
 		}
@@ -385,7 +385,7 @@ func opening(pages []proofread.Batch, done int) (int, bool) {
 // writeCheckpoint writes down who put this reading right and how far they got.
 // It stands last and is what makes the batch before it count.
 func (u ProofreadReading) writeCheckpoint(ctx context.Context, store port.DerivedStore, far string, stood checkpoint) error {
-	stood.By = u.By.Name()
+	stood.By = u.By.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err

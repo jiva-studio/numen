@@ -107,7 +107,7 @@ type assignment struct {
 func (u Schedules) plain() assignment {
 	return assignment{
 		under: review.ScheduleBy(u.By),
-		mark:  getMark([]string{u.By.Name(), u.opening(), review.Defaults().GetPlacing()}),
+		mark:  getMark([]string{u.By.GetName(), u.opening(), review.Defaults().GetPlacing()}),
 	}
 }
 
@@ -170,9 +170,9 @@ func (u Schedules) getAssignmentFrom(
 	}
 
 	marks := make([]string, 0, len(under)+2)
-	marks = append(marks, u.By.Name(), u.opening())
+	marks = append(marks, u.By.GetName(), u.opening())
 	for face, one := range under {
-		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.Name()+"\t"+one.Preset.GetPlacing())
+		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.GetName()+"\t"+one.Preset.GetPlacing())
 	}
 	out.mark = getMark(marks)
 	out.under = func(face review.CardFaceID) review.SchedulingPolicy {

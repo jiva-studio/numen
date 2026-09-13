@@ -21,7 +21,7 @@ import {
   type SearchState,
   type VaultRef,
 } from '@/features/command-palette'
-import type { VaultList } from '@/shared/vaults'
+import type { VaultList } from '@/entities/vault'
 import { iconFor } from '@/shared/icons'
 import { VERSION } from '../lib/version'
 import { COMMANDS, vaultsOn, waysIn } from '../lib/screen'

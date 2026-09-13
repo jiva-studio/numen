@@ -13,8 +13,8 @@ import (
 // An installation that configured none has no proofreader, and a reading is
 // used exactly as it was read.
 type Proofreader interface {
-	// Name is what made a correction, recorded beside it.
-	Name() string
+	// GetName is what made a correction, recorded beside it.
+	GetName() string
 
 	// Proofread hands over the batches and answers with what came back about
 	// each, by the batch it is about. Whether a reply is an answer is decided

@@ -139,7 +139,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
 		},
 		Showing:      opened.GetShownVault,
-		Handler:      opened.API.Answers,
+		Handler:      opened.API.SetAgent,
 		Unreachable:  func(said string) { opened.API.Unreachable.Store(said) },
 		ErrorHandler: func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}

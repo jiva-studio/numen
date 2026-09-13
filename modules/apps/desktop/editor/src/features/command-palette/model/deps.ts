@@ -7,11 +7,11 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { ArtifactRunner } from '@/entities/artifact'
-import type { Movement } from '@/shared/file'
+import type { Movement } from '@/entities/file'
 import type { RemoveResult, RenameResult } from '@/entities/note'
+import type { Vaults } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { Vaults } from '@/shared/vaults'
 import type { CommandInvocation, Notes, RunSupport, VaultRef } from '../types'
 import type { AnswerWords } from '../words'
 

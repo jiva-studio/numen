@@ -341,7 +341,7 @@ func (s Simulation) Run(
 				} else {
 					at = due[take]
 				}
-				counted := p.Counts.Charges(shown[at] > 0)
+				counted := p.Counts.IsCharged(shown[at] > 0)
 				if counted && admits.Limits.Reviews != ClosedNothing && charged >= admits.Reviews {
 					closed = closed.add(admits.Limits.Reviews)
 					if repeat {
@@ -375,7 +375,7 @@ func (s Simulation) Run(
 					faced++
 				}
 				shown[at]++
-				cards[at] = s.answers(cards[at], open, ends, p, on)
+				cards[at] = s.getAfterShowing(cards[at], open, ends, p, on)
 				reckoned.countAnswer(at, cards[at], ends)
 				if s.Day.IsOwed(cards[at], open) && shown[at] < MostShowings {
 					again = append(again, at)
@@ -401,7 +401,7 @@ func (s Simulation) Run(
 			faced++
 			left--
 			out.Seen++
-			one := s.answers(Schedule{}, open, ends, p, on)
+			one := s.getAfterShowing(Schedule{}, open, ends, p, on)
 			cards = append(cards, one)
 			shown = append(shown, 1)
 			reckoned.countBegun(one, ends)

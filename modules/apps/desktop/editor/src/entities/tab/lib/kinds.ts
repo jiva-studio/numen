@@ -1,6 +1,6 @@
 /** A kind of tab: what one of its tabs holds, and what a kind may ask of the window. */
 import type { Component } from 'vue'
-import type { Source } from '@/shared/file'
+import type { Source } from '@/entities/file/@x/tab'
 import type { ProgressOf } from './tab'
 
 /**

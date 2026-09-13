@@ -122,7 +122,7 @@ func (h History) GetSpentUnder(
 			continue
 		}
 		one := out[path]
-		if counts[path].Charges(counted[a.CardFace]) {
+		if counts[path].IsCharged(counted[a.CardFace]) {
 			counted[a.CardFace] = true
 			one.Answered++
 			if first {

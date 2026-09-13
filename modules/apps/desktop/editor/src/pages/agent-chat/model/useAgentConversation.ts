@@ -3,7 +3,7 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { isNoteAddress, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
-import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/shared/links'
+import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/entities/note'
 import type { AgentTabDeps } from '../types'
 
 export { firstLine } from '../lib/title'

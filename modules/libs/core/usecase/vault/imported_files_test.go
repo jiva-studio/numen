@@ -52,7 +52,7 @@ func (h handedOver) Open(_ context.Context, handle string) (io.ReadCloser, error
 	return io.NopCloser(strings.NewReader(body)), nil
 }
 
-func (handedOver) Holds(string, string) bool { return false }
+func (handedOver) Contains(string, string) bool { return false }
 
 // What a person hands over is read through the port, so a machine that names
 // its files anything but paths can bring them in. A use case reaching the

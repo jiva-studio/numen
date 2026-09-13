@@ -59,7 +59,7 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name := record.Run.Name()
+	name := record.Run.GetName()
 	if !strings.HasSuffix(name, ".jsonl") {
 		t.Errorf("the run is known as %q", name)
 	}

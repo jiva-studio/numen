@@ -112,7 +112,7 @@ func TestTheInstructionIsTheCallersOwn(t *testing.T) {
 // What put a correction right stands beside every line it made, and a model is
 // what that is.
 func TestTheNameSaysWhichModelCorrected(t *testing.T) {
-	if got := (&Proofreader{Model: "haiku"}).Name(); !strings.Contains(got, "haiku") {
+	if got := (&Proofreader{Model: "haiku"}).GetName(); !strings.Contains(got, "haiku") {
 		t.Errorf("got %q", got)
 	}
 }

@@ -10,7 +10,7 @@ import type {
   RenameResult,
 } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
-import type { CreateResult } from '@/shared/file'
+import type { CreateResult } from '@/entities/file'
 
 export interface NotePort {
   neighbourhood(path: string): Promise<Neighbourhood>

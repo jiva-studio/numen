@@ -87,7 +87,7 @@ func newHaltedWorker(
 	if err := store.Append(t.Context(), text.Corrections("ocr", hash), correction.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
-	stood, err := json.Marshal(checkpoint{By: by.Name(), Pages: through})
+	stood, err := json.Marshal(checkpoint{By: by.GetName(), Pages: through})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func TestAReadingWithABatchOutIsLeftToTheCollection(t *testing.T) {
 // later.
 type leaves struct{}
 
-func (leaves) Name() string { return "a queue" }
+func (leaves) GetName() string { return "a queue" }
 
 func (leaves) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
 	return nil, nil

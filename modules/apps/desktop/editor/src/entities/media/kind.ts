@@ -7,7 +7,7 @@
  */
 import { computed, type Component } from 'vue'
 import type { TranscriptState } from './model/transcript'
-import type { Source } from '@/shared/file'
+import type { Source } from '@/entities/file/@x/media'
 import type { Span } from '@/shared/span'
 import type { Task } from '@/shared/notices/task'
 import type {

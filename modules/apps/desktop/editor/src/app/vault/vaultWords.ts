@@ -15,7 +15,7 @@ import type { TallyUnit } from '@numen/ui'
 import { namesOf } from '@numen/wire'
 import type { SearchMode } from '@/features/command-palette'
 import type { Presence } from '@/entities/settings'
-import type { Vault, VaultErrorCode, VaultResult } from '@/shared/vaults'
+import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
 
 /**
  * What a piece of work counts, in the words the window uses. One it has no word

@@ -4,7 +4,7 @@
 import { ref, shallowRef, type Ref } from 'vue'
 import { running } from '@/entities/artifact'
 import type { ArtifactStates } from '@/entities/artifact'
-import type { VaultList } from '@/shared/vaults'
+import type { VaultList } from '@/entities/vault'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { VaultRef } from '@/features/command-palette'

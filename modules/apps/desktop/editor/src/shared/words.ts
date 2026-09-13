@@ -6,9 +6,9 @@
  * the palette, the commands, the corner, and the quit.
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
-import { ERRORS, VAULT_ERRORS } from './words/errors'
+import { ERRORS } from './words/errors'
 
-export { ERRORS, VAULT_ERRORS }
+export { ERRORS }
 
 
 export const WORDS = {
@@ -174,7 +174,6 @@ export const WORDS = {
   asParent: 'Create it as a parent',
   asJump: 'Create it as a jump',
   errors: ERRORS,
-  vaultErrors: VAULT_ERRORS,
   dangling: 'These notes link to nothing now:',
   /** The vault opens with no note at all. */
   nowhere: 'The vault has no note to open with',

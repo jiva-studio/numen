@@ -11,7 +11,7 @@ import { ref } from 'vue'
 import { runSupport } from './runs'
 import type { CommandTarget, NoteLookup, PaletteLists, RunSupport, StepGroup } from '../types'
 import { useCommandPalette } from './palette'
-import type { VaultList, Vault } from '@/shared/vaults'
+import type { VaultList, Vault } from '@/entities/vault'
 import type { NameMatch } from './search'
 import { WORDS as words } from '@/shared/words'
 

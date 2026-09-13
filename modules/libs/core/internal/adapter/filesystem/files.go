@@ -49,7 +49,7 @@ func (ImportedFiles) Open(_ context.Context, handle string) (io.ReadCloser, erro
 	return os.Open(handle)
 }
 
-func (ImportedFiles) Holds(handle, vault string) bool {
+func (ImportedFiles) Contains(handle, vault string) bool {
 	from, err := filepath.Abs(handle)
 	if err != nil {
 		return false

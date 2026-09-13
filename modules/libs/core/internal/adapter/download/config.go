@@ -85,8 +85,8 @@ func Defaults() Config {
 // under it, and a film is not.
 const DefaultCopyMaxSizeMB = 500
 
-// AllowsAutomaticCaptions is whether words a machine wrote count.
-func (c Config) AllowsAutomaticCaptions() bool {
+// CanUseAutomaticCaptions is whether words a machine wrote count.
+func (c Config) CanUseAutomaticCaptions() bool {
 	return c.AutomaticCaptions == nil || *c.AutomaticCaptions
 }
 

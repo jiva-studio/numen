@@ -58,7 +58,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
 			api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
-			api.Answers(testsupport.SilentAgent{})
+			api.SetAgent(testsupport.SilentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()

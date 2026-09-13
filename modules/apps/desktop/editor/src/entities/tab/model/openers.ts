@@ -6,7 +6,7 @@
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */
 import type { PlexDestination } from '@numen/ui'
-import type { BookFormat, DocumentFormat, FileKind, NoteType } from '@/shared/file'
+import type { BookFormat, DocumentFormat, FileKind, NoteType } from '@/entities/file/@x/tab'
 import type { Span } from '@/shared/span'
 
 /**

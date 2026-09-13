@@ -14,7 +14,7 @@ import (
 // and the instruction it was opened under.
 type replying struct{ told string }
 
-func (r *replying) Name() string { return "replying" }
+func (r *replying) GetName() string { return "replying" }
 
 func (r *replying) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
 	return nil, nil

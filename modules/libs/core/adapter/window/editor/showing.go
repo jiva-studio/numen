@@ -117,7 +117,7 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 	if err := o.registry.RecordOpened(v.ID); err != nil {
 		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
-	on, err := o.begins(v, rebuild)
+	on, err := o.beginVault(v, rebuild)
 	if err != nil {
 		return err
 	}
@@ -127,10 +127,10 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 	return nil
 }
 
-// begins builds the half of the window that belongs to one vault: the scan and
-// the watch behind it, the reading of the documents it holds, and the batches
-// left with a proofreader.
-func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
+// beginVault builds the half of the window that belongs to one vault: the scan
+// and the watch behind it, the reading of the documents it holds, and the
+// batches left with a proofreader.
+func (o *Installation) beginVault(v domain.Vault, rebuild bool) (*passes, error) {
 	known, err := vaults.NewList(o.registry).Execute()
 	if err != nil {
 		return nil, err

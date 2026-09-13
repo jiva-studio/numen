@@ -15,7 +15,7 @@ import { itemsFor } from '@/pages/file-manager'
 import { ITEMS, NONE } from '@/pages/plex-graph'
 import { waysIn } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
-import type { NoteType, Source } from '@/shared/file'
+import type { NoteType, Source } from '@/entities/file'
 
 /** A window that has been told nothing, which can do every run. */
 const canRunAnything = () => true

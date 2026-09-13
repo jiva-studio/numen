@@ -1,5 +1,7 @@
 /** A note of the vault: what it holds, who it is joined to, and the tab it is open in. */
 export { iconOfNote } from './lib/icons'
+export { areLinkTargetsEqual, extractLinkTargets, parseLinkTarget } from './lib/links'
+export type { LinkTarget } from './lib/links'
 export type {
   Link,
   Neighbourhood,

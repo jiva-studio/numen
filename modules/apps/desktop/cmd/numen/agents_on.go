@@ -77,7 +77,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 	if served.Agent == nil {
 		opened.API.Unreachable.Store(unnamed)
 	} else {
-		opened.API.Answers(served.Agent)
+		opened.API.SetAgent(served.Agent)
 	}
 	return served.Close, nil
 }

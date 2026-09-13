@@ -87,7 +87,7 @@ func (w *Window) WatchTasks(
 	r *connect.Request[v1.WatchTasksRequest],
 	out *connect.ServerStream[v1.WatchTasksResponse],
 ) error {
-	if err := w.answers(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return err
 	}
 	if w.Tasking == nil {
@@ -130,7 +130,7 @@ func (w *Window) WatchQuit(
 	r *connect.Request[v1.WatchQuitRequest],
 	out *connect.ServerStream[v1.WatchQuitResponse],
 ) error {
-	if err := w.answers(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return err
 	}
 	token, told, done := w.clients.listen()
@@ -173,7 +173,7 @@ func (w *Window) ReportFlush(
 	_ context.Context,
 	r *connect.Request[v1.ReportFlushRequest],
 ) (*connect.Response[v1.ReportFlushResponse], error) {
-	if err := w.answers(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return nil, err
 	}
 	w.clients.recordFlush(r.Msg.GetToken(), left(r.Msg.GetResult()))
@@ -185,7 +185,7 @@ func (w *Window) GetShownVault(
 	_ context.Context,
 	r *connect.Request[v1.GetShownVaultRequest],
 ) (*connect.Response[v1.GetShownVaultResponse], error) {
-	if err := w.answers(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return nil, err
 	}
 	out := &v1.GetShownVaultResponse{}
@@ -195,8 +195,8 @@ func (w *Window) GetShownVault(
 	return connect.NewResponse(out), nil
 }
 
-// answers says whether a question reached the window it names.
-func (w *Window) answers(named string) error {
+// checkWindowName says whether a question reached the window it names.
+func (w *Window) checkWindowName(named string) error {
 	if named == w.Named {
 		return nil
 	}

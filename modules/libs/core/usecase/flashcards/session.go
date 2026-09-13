@@ -146,7 +146,7 @@ func (u Session) Execute(
 	if err != nil {
 		return SessionResult{}, err
 	}
-	holds := day.asks(faces, schedules, u.Day, now, over)
+	holds := day.getAsking(faces, schedules, u.Day, now, over)
 	if over.Named && len(holds.seen)+len(holds.fresh) == 0 {
 		return SessionResult{}, day.refuses(over.Preset)
 	}

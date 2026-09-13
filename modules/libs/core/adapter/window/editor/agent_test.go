@@ -53,7 +53,7 @@ func (a answering) Stop() error             { return nil }
 // newAgentAPI is a vault whose panel one agent answers.
 func newAgentAPI(taking port.Agent) *editor.API {
 	api := &editor.API{}
-	api.Answers(taking)
+	api.SetAgent(taking)
 	return api
 }
 

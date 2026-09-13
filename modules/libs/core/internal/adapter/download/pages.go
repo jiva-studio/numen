@@ -57,7 +57,7 @@ func newPages() *pages {
 // Supports anything published as a page, which is every address a site does not
 // publish as a video. It stands last, and it takes whatever the providers
 // before it did not.
-func (p *pages) Supports(at domain.URL) bool { return !carries(at) }
+func (p *pages) Supports(at domain.URL) bool { return !isVideoSite(at) }
 
 func (p *pages) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: readerName, Producer: text.Article}

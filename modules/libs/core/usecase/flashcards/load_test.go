@@ -109,7 +109,7 @@ type countingBy struct {
 	on    *loadCounts
 }
 
-func (b countingBy) Name() string { return b.inner.Name() }
+func (b countingBy) GetName() string { return b.inner.GetName() }
 
 func (b countingBy) Next(s review.Schedule, at time.Time, r review.Rating) review.Schedule {
 	b.on.Dated++
@@ -255,7 +255,7 @@ func loadAnswers(tb testing.TB, s vaulted, cards, days, perDay int) {
 			lines = append(lines, raw...)
 			card++
 		}
-		if err := store.Write(ctx, run.Name(), lines); err != nil {
+		if err := store.Write(ctx, run.GetName(), lines); err != nil {
 			tb.Fatal(err)
 		}
 	}

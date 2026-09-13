@@ -134,7 +134,7 @@ func getTextAround(text string, spans []domain.Span, from int) (string, []domain
 	// A window reaching past the end of the passage closes there and holds less
 	// than a glance.
 	to := min(opens+glancing, total)
-	first, last := begins(units, opens), ends(units, to)
+	first, last := getOpeningRune(units, opens), getClosingRune(units, to)
 	shift := units[first]
 
 	var kept []domain.Span
@@ -180,9 +180,9 @@ func getRunes(text string) ([]rune, []int) {
 	return runes, append(units, at)
 }
 
-// begins is the rune the window opens on: the last one beginning at or before
-// the offset given, so a cut never lands inside a character.
-func begins(units []int, at int) int {
+// getOpeningRune is the rune the window opens on: the last one beginning at or
+// before the offset given, so a cut never lands inside a character.
+func getOpeningRune(units []int, at int) int {
 	for i := 1; i < len(units); i++ {
 		if units[i] > at {
 			return i - 1
@@ -191,9 +191,9 @@ func begins(units []int, at int) int {
 	return len(units) - 1
 }
 
-// ends is the rune the window closes before: the first one beginning at or
-// after the offset given.
-func ends(units []int, at int) int {
+// getClosingRune is the rune the window closes before: the first one beginning
+// at or after the offset given.
+func getClosingRune(units []int, at int) int {
 	for i := range units {
 		if units[i] >= at {
 			return i

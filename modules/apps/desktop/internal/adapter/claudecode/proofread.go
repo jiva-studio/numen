@@ -58,8 +58,8 @@ var disallowed = []string{
 	"Glob", "Grep", "NotebookEdit", "Task", "TodoWrite",
 }
 
-// Name is what put a correction right, recorded beside every line it made.
-func (p *Proofreader) Name() string {
+// GetName is what put a correction right, recorded beside every line it made.
+func (p *Proofreader) GetName() string {
 	if p.Model == "" {
 		return "claude"
 	}

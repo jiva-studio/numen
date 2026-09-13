@@ -125,11 +125,11 @@ func run(cfg container.Config, noAgent bool) error {
 	//
 	// A vault that moved is counted again, and is one whose walk is worth trying
 	// again where the last one failed.
-	vaults.record = func(v domain.Vault) {
+	vaults.recordVault = func(v domain.Vault) {
 		api.Forget(v.ID)
 		api.ReportChange()
 	}
-	api.Reading(ctx, vaults.reads)
+	api.Reading(ctx, vaults.readVault)
 
 	// A card is asked about through tools on a port this window opens for
 	// itself. The agent works the vault the person sat down to, so it is

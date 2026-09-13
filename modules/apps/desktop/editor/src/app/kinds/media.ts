@@ -3,7 +3,7 @@ import { watch } from 'vue'
 import { recordingKind, recordings, useTranscript, type MediaTabDeps } from '@/entities/media'
 import { RECORDINGS } from '@/pages/media-recording'
 import { URLS } from '@/pages/media-url'
-import type { Source } from '@/shared/file'
+import type { Source } from '@/entities/file'
 import type { WindowKindsDeps } from './deps'
 
 export type MediaKindsDeps = Pick<

@@ -304,7 +304,7 @@ func checkBounds(p review.Preset) error {
 		{intervalKey, float64(p.Interval), review.IntervalBounds},
 		{backlogKey, float64(p.Backlog), review.BacklogBounds},
 	} {
-		if !one.bounds.Holds(one.value) {
+		if !one.bounds.Contains(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",
 				ErrOutOfBounds, one.key, one.value, one.bounds.Least, one.bounds.Most)
 		}
@@ -314,7 +314,7 @@ func checkBounds(p review.Preset) error {
 		if !named {
 			continue
 		}
-		if !review.LoadBounds.Holds(float64(share)) {
+		if !review.LoadBounds.Contains(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
 				ErrOutOfBounds, review.DayName(weekday), share,
 				review.LoadBounds.Least, review.LoadBounds.Most)

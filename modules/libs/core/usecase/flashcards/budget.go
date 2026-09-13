@@ -144,7 +144,7 @@ func (b *budgets) takes(share *allowance, face review.CardFaceID, fresh bool) bo
 	if !held || one.admits.IsPaused() {
 		return false
 	}
-	counted := one.counts.Charges(b.faced[face])
+	counted := one.counts.IsCharged(b.faced[face])
 	cost := one.cost.Review
 	if fresh {
 		cost = one.cost.New
@@ -217,8 +217,8 @@ func (b *budgets) refuses(preset string) error {
 	}
 }
 
-// asks is what the budgets leave of the cards standing, in the order they are
-// put to a person.
+// getAsking is what the budgets leave of the cards standing, in the order they
+// are put to a person.
 //
 // Each preset spends its day between the debt before it and the material it has
 // not begun, in the share it names. What is taken is then put in one order: the
@@ -229,7 +229,7 @@ func (b *budgets) refuses(preset string) error {
 // held back, and the session is then the slice of that division belonging to
 // what it was opened over. A deck's row on the front door and what pressing
 // that deck hands over are the one division.
-func (b *budgets) asks(
+func (b *budgets) getAsking(
 	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 	day review.Day, now time.Time, over Scope,
 ) asking {

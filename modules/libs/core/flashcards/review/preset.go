@@ -161,10 +161,10 @@ func (p Preset) getLearnedRule() (LearnedRule, int, float64) {
 	if !IsKnownRule(rule) {
 		rule = defaults.Rule
 	}
-	if !IntervalBounds.Holds(float64(interval)) {
+	if !IntervalBounds.Contains(float64(interval)) {
 		interval = defaults.Interval
 	}
-	if !RetentionBounds.Holds(retention) {
+	if !RetentionBounds.Contains(retention) {
 		retention = defaults.Retention
 	}
 	return rule, interval, retention
@@ -182,11 +182,11 @@ const (
 	BudgetUnitShows BudgetUnit = "shows"
 )
 
-// Charges reports whether a showing of a card face spends a slot of a day's
+// IsCharged reports whether a showing of a card face spends a slot of a day's
 // count, where shown is whether the day has asked that face already.
 //
 // It is the one place the counting is read.
-func (u BudgetUnit) Charges(shown bool) bool { return u == BudgetUnitShows || !shown }
+func (u BudgetUnit) IsCharged(shown bool) bool { return u == BudgetUnitShows || !shown }
 
 // IsKnownBudgetUnit reports whether a value is one of the two.
 func IsKnownBudgetUnit(u BudgetUnit) bool {
@@ -200,8 +200,8 @@ func IsKnownBudgetUnit(u BudgetUnit) bool {
 // Bounds is how far a setting goes, at each end.
 type Bounds struct{ Least, Most float64 }
 
-// Holds reports whether a value is within the bounds.
-func (b Bounds) Holds(value float64) bool { return value >= b.Least && value <= b.Most }
+// Contains reports whether a value is within the bounds.
+func (b Bounds) Contains(value float64) bool { return value >= b.Least && value <= b.Most }
 
 // What each setting of a preset may be. A day holds no more minutes than it
 // has, a retention target outside these is a scheduler asking for what memory
@@ -259,14 +259,14 @@ const (
 	StoppedNoWeek StopReason = "no_week"
 )
 
-// Stops is why this preset schedules nothing, and StoppedNothing where it
-// schedules something.
+// GetOverallStopReason is why this preset schedules nothing on any day, and
+// StoppedNothing where it schedules something.
 //
 // It is the one place the rule is read. A goal of a date is answered against the
 // day holding now, and stops once the day it names is behind that one. A week
 // every day of which carries none of the load is read whatever the goal, since
 // no budget is spent on a day that schedules nothing.
-func (p Preset) Stops(d Day, now time.Time) StopReason {
+func (p Preset) GetOverallStopReason(d Day, now time.Time) StopReason {
 	switch p.Goal {
 	case GoalRetention:
 		if p.NewADay == 0 && p.ReviewsADay == 0 {
@@ -305,7 +305,7 @@ func (p Preset) Week() float64 {
 // load. A week with no day carrying any stops the preset itself, so this day is
 // one of the quiet days of a week that has loud ones.
 func (p Preset) GetStopReason(d Day, now time.Time) StopReason {
-	if why := p.Stops(d, now); why != StoppedNothing {
+	if why := p.GetOverallStopReason(d, now); why != StoppedNothing {
 		return why
 	}
 	if p.GetShare(d.GetDate(now).Weekday()) == 0 {
@@ -315,7 +315,9 @@ func (p Preset) GetStopReason(d Day, now time.Time) StopReason {
 }
 
 // IsPaused reports whether the preset schedules nothing.
-func (p Preset) IsPaused(d Day, now time.Time) bool { return p.Stops(d, now) != StoppedNothing }
+func (p Preset) IsPaused(d Day, now time.Time) bool {
+	return p.GetOverallStopReason(d, now) != StoppedNothing
+}
 
 // getPace is how much of the material a day holds when a date sets the pace: what
 // is left to begin, over the days on which beginning a card still leaves it time
@@ -364,7 +366,7 @@ func (p Preset) getRoomToBegin(d Day, now time.Time, ripens int) float64 {
 			ripens--
 		}
 	}
-	return p.admits(from, span)
+	return p.getDaysOfReview(from, span)
 }
 
 // days is how many days of review there are from the day holding now through to
@@ -383,12 +385,12 @@ func (p Preset) days(d Day, now time.Time) float64 {
 	}
 	y, m, day := p.By.Date()
 	to := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
-	return p.admits(from, int(to.Sub(from).Hours()/24)+1)
+	return p.getDaysOfReview(from, int(to.Sub(from).Hours()/24)+1)
 }
 
-// admits is how many whole days of review the preset holds over the calendar
-// days from this one.
-func (p Preset) admits(from time.Time, days int) float64 {
+// getDaysOfReview is how many whole days of review the preset holds over the
+// calendar days from this one.
+func (p Preset) getDaysOfReview(from time.Time, days int) float64 {
 	if days <= 0 {
 		return 0
 	}

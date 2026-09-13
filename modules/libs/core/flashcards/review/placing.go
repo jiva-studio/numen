@@ -108,10 +108,10 @@ func (p Preset) lands(s *DueByDay, at, due time.Time) time.Time {
 	from, to := s.number(counted.AddDate(0, 0, first)), s.number(counted.AddDate(0, 0, last))
 	on, heaviest := stands, -1.0
 	if stands >= from && stands <= to {
-		heaviest = p.weighs(s, stands)
+		heaviest = p.getWeight(s, stands)
 	}
 	for day := from; day <= to; day++ {
-		if weight := p.weighs(s, day); weight > heaviest {
+		if weight := p.getWeight(s, day); weight > heaviest {
 			on, heaviest = day, weight
 		}
 	}
@@ -120,9 +120,9 @@ func (p Preset) lands(s *DueByDay, at, due time.Time) time.Time {
 	return due.In(in).AddDate(0, 0, on-stands).In(due.Location())
 }
 
-// weighs is how much a numbered day of review wants another card: the share of
-// the load its day of the week keeps, over what already falls on it.
-func (p Preset) weighs(s *DueByDay, day int) float64 {
+// getWeight is how much a numbered day of review wants another card: the share
+// of the load its day of the week keeps, over what already falls on it.
+func (p Preset) getWeight(s *DueByDay, day int) float64 {
 	return p.GetShare(weekday(day)) / float64(1+s.on[day])
 }
 

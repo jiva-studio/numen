@@ -79,10 +79,10 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 		if review.IsKnownRule(p.Rule) {
 			standard.Rule = p.Rule
 		}
-		if review.IntervalBounds.Holds(float64(p.Interval)) {
+		if review.IntervalBounds.Contains(float64(p.Interval)) {
 			standard.Interval = p.Interval
 		}
-		if review.RetentionBounds.Holds(p.Retention) {
+		if review.RetentionBounds.Contains(p.Retention) {
 			standard.Retention = p.Retention
 		}
 		if got, want := p.IsLearned(s, at), standard.IsLearned(s, at); got != want {

@@ -9,7 +9,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import { answerGuard as latest } from '@/shared/questions'
-import type { Vault } from '@/shared/vaults'
+import type { Vault } from '@/entities/vault'
 import { commandsOf } from '../lib/commands'
 import { view } from './view'
 import { invocationOf } from '../lib/invocation'

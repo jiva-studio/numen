@@ -243,7 +243,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Section     *int         `json:"section,omitempty" jsonschema:"which of the deck's sections to write it at the end of, counted from the first; left out, the card goes at the end of the deck"`
 		Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, WriteOutcome, error) {
-		if size := carries(in.Values); size > maxBytes {
+		if size := countBytes(in.Values); size > maxBytes {
 			return nil, WriteOutcome{}, fmt.Errorf(
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
@@ -291,7 +291,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Stencil     string       `json:"stencil,omitempty" jsonschema:"the stencil it is cut by from now on, by the name card_stencil_list gave under name; left out, the card keeps the one it names"`
 		Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, WriteOutcome, error) {
-		if size := carries(in.Values); size > maxBytes {
+		if size := countBytes(in.Values); size > maxBytes {
 			return nil, WriteOutcome{}, fmt.Errorf(
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
@@ -705,9 +705,9 @@ func faults(problems []format.Problem) []Fault {
 	return out
 }
 
-// carries is how many bytes a call will put in a deck. A field's name lands in
-// the file beside its value, so both are measured.
-func carries(vs []FieldValue) int {
+// countBytes is how many bytes a call will put in a deck. A field's name lands
+// in the file beside its value, so both are measured.
+func countBytes(vs []FieldValue) int {
 	size := 0
 	for _, v := range vs {
 		size += len(v.Field) + len(v.Text)

@@ -2,7 +2,7 @@
  * Type declarations for the files tab domain.
  */
 import type { Ref } from 'vue'
-import type { Entry, Source } from '@/shared/file'
+import type { Entry, Source } from '@/entities/file'
 import type { PathRename } from '@/shared/paths'
 import type { SearchDestination } from '@/features/command-palette'
 import type { RunGuard } from './lib/menu'

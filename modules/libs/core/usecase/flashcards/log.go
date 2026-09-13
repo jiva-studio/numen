@@ -179,8 +179,8 @@ type LogWriter struct {
 	stopped error
 }
 
-// Name is the file this run writes, as a name of the vault's own store.
-func (r *LogWriter) Name() string { return r.name }
+// GetName is the file this run writes, as a name of the vault's own store.
+func (r *LogWriter) GetName() string { return r.name }
 
 // Append writes one answer to the end of the run's file.
 //

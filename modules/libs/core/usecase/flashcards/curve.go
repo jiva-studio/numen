@@ -58,7 +58,7 @@ func checkGoal(p review.Preset) error {
 	default:
 		return nil
 	}
-	if bounds.Holds(value) {
+	if bounds.Contains(value) {
 		return nil
 	}
 	return fmt.Errorf("%w: %s %g is outside %g to %g",
@@ -148,7 +148,7 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return review.Curve{}, err
 	}
-	out.Stops = p.Stops(u.Day, now)
+	out.Stops = p.GetOverallStopReason(u.Day, now)
 	out.Decks = mine
 	out.Cards = len(under)
 	out.Overdue = review.Overdue(u.Day, at, now)

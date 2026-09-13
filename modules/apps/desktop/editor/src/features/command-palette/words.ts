@@ -10,17 +10,23 @@
 import type { PaletteKeys } from '@numen/ui'
 import { FETCHED, MADE } from '@/entities/artifact'
 import type { Artifact, ArtifactState } from '@/entities/artifact'
+import { VAULT_ERRORS } from '@/entities/vault'
+import type { VaultErrorCode } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
-import type { VaultErrorCode } from '@/shared/vaults'
 import { WORDS } from '@/shared/words'
 import type { EmptyWords } from './model/search'
 
 /**
- * What a command answers in: the window's own voice, and the words a run over a
- * file is spoken about in. Each is written where it belongs, and a command is
- * where the two meet.
+ * What a command answers in: the window's own voice, the words a run over a
+ * file is spoken about in, and the words the list of vaults reports in. Each is
+ * written where it belongs, and a command is where they meet.
  */
-export const ANSWER_WORDS: AnswerWords = { ...WORDS, made: MADE, fetched: FETCHED }
+export const ANSWER_WORDS: AnswerWords = {
+  ...WORDS,
+  made: MADE,
+  fetched: FETCHED,
+  vaultErrors: VAULT_ERRORS,
+}
 
 /** Everything carrying a command out says in the window's voice. */
 export interface AnswerWords {

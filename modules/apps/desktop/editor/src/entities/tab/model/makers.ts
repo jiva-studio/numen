@@ -6,7 +6,7 @@
 import { formatErrorMessage } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { CreateResult } from '@/shared/file'
+import type { CreateResult } from '@/entities/file/@x/tab'
 import type { FileOpeners } from './openers'
 
 /** Which of the four a file is created as. */

@@ -2,7 +2,7 @@
  * Tab state, tree interactions, and window tab registration for the files tab.
  */
 import { ref } from 'vue'
-import type { Entry, Source } from '@/shared/file'
+import type { Entry, Source } from '@/entities/file'
 import type { SearchDestination } from '@/features/command-palette'
 import { fileOf } from '@/shared/paths'
 import { resolveDropFolder, ROOT } from './useFileTree'

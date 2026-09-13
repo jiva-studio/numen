@@ -37,7 +37,7 @@ type ImportedFiles interface {
 	List(ctx context.Context, handle string) ([]ImportedFile, error)
 	// Open reads one file. Whoever opens it closes it.
 	Open(ctx context.Context, handle string) (io.ReadCloser, error)
-	// Holds reports whether a folder handed in is one a vault sits under. Such
-	// a folder would be copied into itself, and it does not come in.
-	Holds(handle, vault string) bool
+	// Contains reports whether a folder handed in is one a vault sits under.
+	// Such a folder would be copied into itself, and it does not come in.
+	Contains(handle, vault string) bool
 }

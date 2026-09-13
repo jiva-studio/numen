@@ -41,7 +41,7 @@ func newYtDLP(ctx context.Context, c Config) *ytDLP {
 }
 
 // Supports is a video, on a machine holding the tool that gets at one.
-func (v *ytDLP) Supports(at domain.URL) bool { return carries(at) && v.command.isPresent() }
+func (v *ytDLP) Supports(at domain.URL) bool { return isVideoSite(at) && v.command.isPresent() }
 
 func (v *ytDLP) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
@@ -274,9 +274,9 @@ var videoSites = map[string]bool{
 	"youtu.be":             true,
 }
 
-// carries says whether this provider answers for an address, which is whether
-// the site is one of its own and the address names something there.
-func carries(at domain.URL) bool {
+// isVideoSite says whether this provider answers for an address, which is
+// whether the site is one of its own and the address names something there.
+func isVideoSite(at domain.URL) bool {
 	address, err := url.Parse(string(at))
 	if err != nil {
 		return false

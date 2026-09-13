@@ -2,7 +2,7 @@
  * Unit tests for useFilesTab composable and file interactions.
  */
 import { describe, expect, it } from 'vitest'
-import type { Entry } from '@/shared/file'
+import type { Entry } from '@/entities/file'
 import { getLandingDestination, useFilesTab } from './useFilesTab'
 import { getFolderPath, ROOT, useFileTree } from './useFileTree'
 import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from '../lib/menu'

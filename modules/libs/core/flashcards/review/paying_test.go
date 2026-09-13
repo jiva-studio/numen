@@ -97,7 +97,7 @@ func TestWhatADayOfShowingsCosts(t *testing.T) {
 		faced := make(map[int]bool, len(shows))
 		var charged int
 		for _, face := range shows {
-			if counts.Charges(faced[face]) {
+			if counts.IsCharged(faced[face]) {
 				charged++
 			}
 			faced[face] = true

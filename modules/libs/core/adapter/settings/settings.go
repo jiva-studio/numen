@@ -228,7 +228,7 @@ func (c *Config) readInterfaceScale(path string, raw []byte) {
 	switch {
 	case zoom <= 0:
 		c.Appearance.InterfaceScale = fromDesktop()
-	case InterfaceScaleBounds.Holds(zoom):
+	case InterfaceScaleBounds.Contains(zoom):
 		c.Appearance.InterfaceScale = zoom
 		_ = rename(path, []string{"appearance", "zoom"}, "interface_scale")
 	default:

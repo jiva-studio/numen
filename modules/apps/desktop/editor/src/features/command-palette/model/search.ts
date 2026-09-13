@@ -4,7 +4,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/ui'
 import { answerGuard, type Question } from '@/shared/questions'
-import type { NoteType, Source } from '@/shared/file'
+import type { NoteType, Source } from '@/entities/file'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
   createNameItem,

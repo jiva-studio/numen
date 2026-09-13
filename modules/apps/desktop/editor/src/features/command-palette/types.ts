@@ -7,9 +7,9 @@
  */
 import type { PaletteKeys } from '@numen/ui'
 import type { ArtifactStates } from '@/entities/artifact'
+import type { Source } from '@/entities/file'
 import type { EditorKind } from '@/entities/tab'
-import type { Source } from '@/shared/file'
-import type { VaultList } from '@/shared/vaults'
+import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search'
 import type { ConfirmWords, RetypeWords } from './words'
 

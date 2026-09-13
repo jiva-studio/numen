@@ -2,7 +2,7 @@
  * Search hit lookup, item formatting, and navigation destination mapping.
  */
 import type { PaletteItem } from '@numen/ui'
-import type { NoteType, Source } from '@/shared/file'
+import type { NoteType, Source } from '@/entities/file'
 import type { Span } from '@/shared/span'
 import type { Words } from './search'
 

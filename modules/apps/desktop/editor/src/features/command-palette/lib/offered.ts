@@ -6,7 +6,7 @@
  * one such question, and the table in `table.ts` names which it asks.
  */
 import type { ArtifactState, ArtifactStates } from '@/entities/artifact'
-import type { Source } from '@/shared/file'
+import type { Source } from '@/entities/file'
 import type { CommandTarget, RunSupport } from '../types'
 
 /** A command over the note in front, which there has to be one of. */

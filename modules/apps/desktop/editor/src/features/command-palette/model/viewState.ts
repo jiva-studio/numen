@@ -5,7 +5,7 @@
  * under an open step is drawn as it is.
  */
 import type { Ref } from 'vue'
-import type { Vault } from '@/shared/vaults'
+import type { Vault } from '@/entities/vault'
 import type { PendingStep } from '../lib/step'
 import type { Command, PaletteLists, RunSupport } from '../types'
 import type { Words } from '../words'

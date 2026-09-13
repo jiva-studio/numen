@@ -54,11 +54,11 @@ type NoteQueries interface {
 	// find out what each note is.
 	OfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 
-	// Holds reports whether the index carries this vault at all. A vault it
-	// does not carry is one nothing has scanned yet, and a caller that only
-	// reads the index tells a person so rather than showing them a vault that
-	// looks empty.
-	Holds(ctx context.Context, vaultID domain.VaultID) (bool, error)
+	// Has reports whether the index carries this vault at all. A vault it does
+	// not carry is one nothing has scanned yet, and a caller that only reads
+	// the index tells a person so rather than showing them a vault that looks
+	// empty.
+	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 }
 
 // LinkQueries answers what points where. It is separate from NoteQueries

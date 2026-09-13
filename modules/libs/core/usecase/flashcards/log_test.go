@@ -297,7 +297,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	closed := filepath.Join(s.vault.Path, filesystem.DefaultServiceDir,
-		filepath.FromSlash(shut.Run.Name()))
+		filepath.FromSlash(shut.Run.GetName()))
 	testsupport.Shut(t, closed)
 
 	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)

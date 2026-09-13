@@ -151,7 +151,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	if err != nil {
 		return CardsDue{}, err
 	}
-	holds := day.asks(faces, schedules, u.Day, now, Scope{})
+	holds := day.getAsking(faces, schedules, u.Day, now, Scope{})
 
 	out := CardsDue{Faces: len(faces)}
 	decks := make(map[string]*DeckCardsDue)

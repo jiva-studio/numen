@@ -53,7 +53,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 				Now:      time.Now,
 				Window:   NewWindow(task.New()),
 			}
-			api.Answers(testsupport.SilentAgent{})
+			api.SetAgent(testsupport.SilentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()

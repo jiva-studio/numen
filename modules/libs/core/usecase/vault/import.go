@@ -99,7 +99,7 @@ func (u Import) bring(
 	case info.Folder:
 		// A folder the vault sits inside does not come in: the vault is where it
 		// would be copied to.
-		if u.Files.Holds(from, v.Path) {
+		if u.Files.Contains(from, v.Path) {
 			return errHoldsTheVault
 		}
 		if err := writer.MakeFolder(ctx, to); err != nil {

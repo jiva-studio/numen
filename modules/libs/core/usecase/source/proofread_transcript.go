@@ -150,7 +150,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	if err != nil {
 		return res, err
 	}
-	if beside && (transcript.IsWrittenByHand(whole) || stood.By != u.By.Name()) {
+	if beside && (transcript.IsWrittenByHand(whole) || stood.By != u.By.GetName()) {
 		// The words as they stand are somebody's own, and a model does not
 		// correct them. Deleting the file beside the artifact gives back what
 		// was heard.
@@ -330,7 +330,7 @@ func (u ProofreadTranscript) readCheckpoint(ctx context.Context, store port.Deri
 // writeCheckpoint writes down who is putting this transcript right and how far
 // they have got.
 func (u ProofreadTranscript) writeCheckpoint(ctx context.Context, store port.DerivedStore, far string, stood putting) error {
-	stood.By = u.By.Name()
+	stood.By = u.By.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err

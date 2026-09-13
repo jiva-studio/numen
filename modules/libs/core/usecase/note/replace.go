@@ -128,7 +128,7 @@ func (u Replace) Execute(
 
 		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
-		ends = u.Drawing.begins(ctx, u.Now, domain.Edit{
+		ends = u.Drawing.beginChange(ctx, u.Now, domain.Edit{
 			Path: path,
 			From: markdown.CountUTF16(body, span.From),
 			To:   markdown.CountUTF16(body, span.To),

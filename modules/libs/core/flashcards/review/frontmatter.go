@@ -84,7 +84,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		switch {
 		case !ok:
 			problems = append(problems, "retention is not a number")
-		case !RetentionBounds.Holds(value):
+		case !RetentionBounds.Contains(value):
 			problems = append(problems, fmt.Sprintf(
 				"retention %g is outside %g to %g", value, RetentionBounds.Least, RetentionBounds.Most))
 		default:
@@ -120,7 +120,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 					problems = append(problems, "the load of "+name+" is not a number")
 				case share != math.Trunc(share):
 					problems = append(problems, "the load of "+name+" is counted in whole per cent")
-				case !LoadBounds.Holds(share):
+				case !LoadBounds.Contains(share):
 					problems = append(problems, fmt.Sprintf("the load of %s, %g, is outside %g to %g",
 						name, share, LoadBounds.Least, LoadBounds.Most))
 				default:
@@ -173,7 +173,7 @@ func readWholeNumber(
 		*problems = append(*problems, key+" is not a number")
 	case value != math.Trunc(value):
 		*problems = append(*problems, key+" is counted in whole numbers")
-	case !bounds.Holds(value):
+	case !bounds.Contains(value):
 		*problems = append(*problems, fmt.Sprintf(
 			"%s %g is outside %g to %g", key, value, bounds.Least, bounds.Most))
 	default:

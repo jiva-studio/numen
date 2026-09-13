@@ -4,8 +4,8 @@
  * other file by the source the vault holds it as.
  */
 import { File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
-import type { Entry } from '@/shared/file'
-import { iconOfSource } from '@/shared/icons'
+import type { Entry } from '@/entities/file'
+import { iconOfSource } from '@/entities/file'
 import { iconOfNote } from '@/entities/note'
 
 export const iconOfEntry = (entry: Entry | null | undefined, open: boolean): LucideIcon => {

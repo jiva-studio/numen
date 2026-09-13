@@ -135,7 +135,7 @@ const DefaultTheme = "preset:numen"
 // InterfaceScaleBounds is not one the setting is seeded with.
 func fromDesktop() float64 {
 	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
-	if err != nil || !InterfaceScaleBounds.Holds(scale) {
+	if err != nil || !InterfaceScaleBounds.Contains(scale) {
 		return AsDesigned
 	}
 	return scale

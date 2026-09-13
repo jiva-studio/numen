@@ -108,7 +108,7 @@ func (u Write) Execute(
 			return err
 		}
 		if at.From != at.To || insert != "" {
-			ends = u.Drawing.begins(ctx, u.Now, domain.Edit{
+			ends = u.Drawing.beginChange(ctx, u.Now, domain.Edit{
 				Path: path,
 				From: markdown.CountUTF16(was, at.From),
 				To:   markdown.CountUTF16(was, at.To),

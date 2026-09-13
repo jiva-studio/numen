@@ -37,7 +37,7 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Downloader) so
 		ToVault:     c.Importing.KeepsCopiesInVault(),
 		Writers:     c.VaultWriters(),
 		Languages:   c.Importing.Captions,
-		Automatic:   c.Importing.AllowsAutomaticCaptions(),
+		Automatic:   c.Importing.CanUseAutomaticCaptions(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			return level(ctx, v, []string{path})
 		},

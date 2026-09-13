@@ -225,7 +225,7 @@ func (a *API) StartSession(
 	}
 
 	out := &v1.StartSessionResponse{
-		Run:       run.Name(),
+		Run:       run.GetName(),
 		Asked:     make([]*v1.Asked, 0, len(session.Queue)),
 		Unwritten: session.Unwritten,
 		Skipped:   int32(session.Skipped),

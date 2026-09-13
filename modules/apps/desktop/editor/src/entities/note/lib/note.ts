@@ -4,7 +4,7 @@
  */
 import type { ErrorCode } from '@/shared/errors'
 import type { Span } from '@/shared/span'
-import type { MoveResult, NoteType } from '@/shared/file'
+import type { MoveResult, NoteType } from '@/entities/file/@x/note'
 
 /**
  * One report of a change being made to the prose of a note, while it is being

@@ -116,9 +116,9 @@ func (s Simulation) ripens(p Preset, open time.Time) int {
 	return NeverRipens
 }
 
-// answers is where one showing leaves a card face, at the hour the day opens. A
-// card face the day is not asking for stands where it is.
-func (s Simulation) answers(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
+// getAfterShowing is where one showing leaves a card face, at the hour the day
+// opens. A card face the day is not asking for stands where it is.
+func (s Simulation) getAfterShowing(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
 	if c.IsSeen() && !c.Due.Before(ends) {
 		return c
 	}

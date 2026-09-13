@@ -385,7 +385,7 @@ func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 
 	// The shelf as a run that ended between the two passes left it: every line
 	// asked about, and no seam.
-	stood, err := json.Marshal(putting{By: u.By.Name(), At: getSpan(len(words) - 1).To})
+	stood, err := json.Marshal(putting{By: u.By.GetName(), At: getSpan(len(words) - 1).To})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -225,7 +225,7 @@ func IsWrittenByHand(raw []byte) bool {
 		if found < 0 {
 			return false
 		}
-		if found += at; begins(raw, found) {
+		if found += at; isBlockStart(raw, found) {
 			return true
 		}
 		at = found + 1
@@ -247,7 +247,7 @@ func ReadReached(raw []byte) (ms, end int) {
 		line := raw[at+len(note) : end]
 		end = at
 		stop := bytes.IndexByte(line, '\n')
-		if stop < 0 || !begins(raw, at) {
+		if stop < 0 || !isBlockStart(raw, at) {
 			continue
 		}
 		ms, err := strconv.Atoi(strings.TrimSpace(string(line[:stop])))
@@ -258,9 +258,10 @@ func ReadReached(raw []byte) (ms, end int) {
 	}
 }
 
-// begins says whether a byte is where a block of the file starts: the top of
-// it, or the line after a blank one. A note stands at the top of its own block.
-func begins(raw []byte, at int) bool {
+// isBlockStart says whether a byte is where a block of the file starts: the top
+// of it, or the line after a blank one. A note stands at the top of its own
+// block.
+func isBlockStart(raw []byte, at int) bool {
 	if at == 0 {
 		return true
 	}

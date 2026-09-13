@@ -120,7 +120,7 @@ func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWri
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	run, is := s.run[vault]
-	if !is || run.Name() != name {
+	if !is || run.GetName() != name {
 		return nil, fmt.Errorf("%w: %s", ErrNoRun, name)
 	}
 	return run, nil
@@ -152,9 +152,9 @@ func (a *API) GetAgent() port.Agent {
 	return nil
 }
 
-// Answers is who takes those questions from now on. Nothing leaves the window
-// with no agent.
-func (a *API) Answers(taking port.Agent) {
+// SetAgent names who takes those questions from now on. Nothing leaves the
+// window with no agent.
+func (a *API) SetAgent(taking port.Agent) {
 	if taking == nil {
 		a.agent.Store(nil)
 		return

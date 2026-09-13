@@ -51,7 +51,7 @@ func NewFSRSAt(retention float64) FSRS {
 	return FSRS{p: p, name: FSRSName + "." + hashParameters(p)}
 }
 
-func (f FSRS) Name() string { return f.name }
+func (f FSRS) GetName() string { return f.name }
 
 // hashParameters is the parameters as a short name. Every number the
 // arithmetic above reads goes into it under a name of its own, so a weight or a
@@ -93,7 +93,7 @@ func (FSRS) IsSpaced(s Schedule) bool {
 
 // Next is where an answer leaves a schedule.
 func (f FSRS) Next(s Schedule, at time.Time, r Rating) Schedule {
-	one := f.opens(s, at)
+	one := f.readAtAnswer(s, at)
 	switch one.phase {
 	case fsrs.New:
 		return f.getNextFromNew(one, at, fsrs.Rating(r))
@@ -110,7 +110,7 @@ func (f FSRS) Next(s Schedule, at time.Time, r Rating) Schedule {
 // one reckoning of how likely it was to come back, so both endings are worked
 // out from that one reckoning.
 func (f FSRS) Endings(s Schedule, at time.Time) (good, again Schedule) {
-	one := f.opens(s, at)
+	one := f.readAtAnswer(s, at)
 	switch one.phase {
 	case fsrs.New:
 		return f.getNextFromNew(one, at, fsrs.Good), f.getNextFromNew(one, at, fsrs.Again)
@@ -138,10 +138,10 @@ type atAnswer struct {
 	out  Schedule
 }
 
-// opens reads a card face at the instant it is answered. One nobody has
+// readAtAnswer reads a card face at the instant it is answered. One nobody has
 // answered opens at the phase the scheduler begins a card in, at no stability
 // and no difficulty.
-func (f FSRS) opens(s Schedule, at time.Time) atAnswer {
+func (f FSRS) readAtAnswer(s Schedule, at time.Time) atAnswer {
 	one := atAnswer{phase: fsrs.New}
 	if s.IsSeen() {
 		one.last, one.phase = s, fsrs.State(s.Phase)

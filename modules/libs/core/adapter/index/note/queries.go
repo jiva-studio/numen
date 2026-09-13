@@ -44,8 +44,8 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID) (map
 	return out, rows.Err()
 }
 
-// Holds reports whether the index carries this vault at all.
-func (q *Queries) Holds(ctx context.Context, vaultID domain.VaultID) (bool, error) {
+// Has reports whether the index carries this vault at all.
+func (q *Queries) Has(ctx context.Context, vaultID domain.VaultID) (bool, error) {
 	_, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return false, nil

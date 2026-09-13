@@ -932,4 +932,4 @@ type named struct {
 	name string
 }
 
-func (n named) Name() string { return n.name }
+func (n named) GetName() string { return n.name }

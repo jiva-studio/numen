@@ -6,7 +6,7 @@
  * says nothing about drawing.
  */
 import type { Neighbourhood, NoteHeading, Seat } from '@/entities/note'
-import type { NoteType } from '@/shared/file'
+import type { NoteType } from '@/entities/file'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexPart } from '@numen/ui'
 
 /**

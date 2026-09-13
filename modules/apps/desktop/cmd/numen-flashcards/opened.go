@@ -25,9 +25,10 @@ type openVaults struct {
 	// under is the life a vault stays open for. It outlives the question that
 	// first asked after the vault.
 	under context.Context
-	// record is called with the vault the index has just been brought level with.
-	record func(domain.Vault)
-	out    io.Writer
+	// recordVault is called with the vault the index has just been brought
+	// level with.
+	recordVault func(domain.Vault)
+	out         io.Writer
 
 	// running is every walk, every watch and every levelling this window has
 	// over a vault. They write to the index, so they are waited for before it
@@ -56,9 +57,9 @@ func (o *openVaults) wait() {
 	o.running.Wait()
 }
 
-// starts takes a piece of work on and says whether it may run. A window that is
-// going takes none, so nothing begins writing after the index is waited for.
-func (o *openVaults) starts() bool {
+// startWork takes a piece of work on and says whether it may run. A window that
+// is going takes none, so nothing begins writing after the index is waited for.
+func (o *openVaults) startWork() bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -84,14 +85,14 @@ func (o *openVaults) getOpening(v domain.Vault) *vaultOpening {
 	}
 	o.mu.Unlock()
 
-	one.once.Do(func() { o.opens(v, one) })
+	one.once.Do(func() { o.openVault(v, one) })
 	return one
 }
 
-// opens starts one vault's watch and leaves it running.
-func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
+// openVault starts one vault's watch and leaves it running.
+func (o *openVaults) openVault(v domain.Vault, one *vaultOpening) {
 	opening := o.cfg.VaultOpener(o.db)
-	opening.Told = func(container.VaultChanges) { o.record(v) }
+	opening.Told = func(container.VaultChanges) { o.recordVault(v) }
 	opening.ErrorHandler = func(err error) {
 		if err != nil {
 			fmt.Fprintf(o.out, "numen-flashcards: %s: %v\n", v.Name, err)
@@ -104,7 +105,7 @@ func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	}
 	one.opening, one.open = opening, open
 
-	if o.starts() {
+	if o.startWork() {
 		go func() {
 			defer o.running.Done()
 			open.Run(o.under)
@@ -112,9 +113,9 @@ func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	}
 }
 
-// reads walks a vault into the index.
-func (o *openVaults) reads(ctx context.Context, v domain.Vault) error {
-	if !o.starts() {
+// readVault walks a vault into the index.
+func (o *openVaults) readVault(ctx context.Context, v domain.Vault) error {
+	if !o.startWork() {
 		return errGoing
 	}
 	defer o.running.Done()
@@ -130,7 +131,7 @@ func (o *openVaults) reads(ctx context.Context, v domain.Vault) error {
 // prose is on disk either way, and a write into a database being closed is
 // worse than a search that has to be caught up on next time.
 func (o *openVaults) level(ctx context.Context, v domain.Vault, paths []string) error {
-	if !o.starts() {
+	if !o.startWork() {
 		return errGoing
 	}
 	defer o.running.Done()

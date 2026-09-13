@@ -1,6 +1,6 @@
 /** What the window asks of the vault about files and folders. */
 import type { ErrorCode } from '@/shared/errors'
-import type { CreateResult, Entry, FileKind, Movement } from '@/shared/file'
+import type { CreateResult, Entry, FileKind, Movement } from '@/entities/file'
 
 export interface FilePort {
   /**

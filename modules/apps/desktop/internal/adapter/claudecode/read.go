@@ -100,7 +100,7 @@ func (rd *parser) line(ctx context.Context, line string) {
 	case "user":
 		// The tool answered. Everything from here until the next block arrives
 		// is the model's, and the step says so.
-		if said.answers() {
+		if said.hasToolAnswer() {
 			rd.tell(ctx, port.Step{Kind: port.StepAnswered})
 		}
 	case "system":
@@ -380,8 +380,8 @@ func describeCollection(value []any, inside string) string {
 	return first
 }
 
-// answers reports whether this line carries the answer of a tool.
-func (e event) answers() bool {
+// hasToolAnswer reports whether this line carries the answer of a tool.
+func (e event) hasToolAnswer() bool {
 	for _, block := range e.blocks() {
 		if block.Type == "tool_result" {
 			return true

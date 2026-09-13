@@ -7,7 +7,7 @@ import type {
   PlexRelatedSeat,
   PlexDestination,
 } from '@numen/ui'
-import type { NoteType } from '@/shared/file'
+import type { NoteType } from '@/entities/file'
 import { fileOf, type PathRename } from '@/shared/paths'
 import { NEW_NOTE, OFFERED } from '../lib/menu'
 import { asPlex, typesIn } from '../lib/picture'

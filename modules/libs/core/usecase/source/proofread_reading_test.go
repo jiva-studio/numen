@@ -27,7 +27,7 @@ type corrector struct {
 	stop func(int)
 }
 
-func (c *corrector) Name() string {
+func (c *corrector) GetName() string {
 	if c.name == "" {
 		return "a proofreader"
 	}

@@ -39,7 +39,7 @@ import {
   type Documents,
 } from '@/pages/document-viewer'
 import { FilesTab, ROOT, useFilesTab, useFileTree } from '@/pages/file-manager'
-import type { Entry } from '@/shared/file'
+import type { Entry } from '@/entities/file'
 import { iconOfKind } from '@/entities/tab'
 import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '@/entities/tab'
 

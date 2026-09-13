@@ -1,5 +1,5 @@
 import type { ErrorCode } from '@/shared/errors'
-import type { CreateResult } from '@/shared/file'
+import type { CreateResult } from '@/entities/file/@x/deck'
 import type { Surrounds } from './lib/surrounds'
 
 /** One stencil as the list of them names it. */

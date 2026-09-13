@@ -86,7 +86,7 @@ type puts struct {
 	asked []int
 }
 
-func (p *puts) Name() string { return "a proofreader" }
+func (p *puts) GetName() string { return "a proofreader" }
 
 func (p *puts) Proofread(_ context.Context, batches []proofread.Batch) (map[int]string, error) {
 	p.mu.Lock()
@@ -167,7 +167,7 @@ func newStoppedWorker(
 	if err := store.Write(t.Context(), text.Corrections(text.ASR, hash), transcript.Marshal(spoken)); err != nil {
 		t.Fatal(err)
 	}
-	stood, err := json.Marshal(putting{By: by.Name(), At: spoken[through-1].To})
+	stood, err := json.Marshal(putting{By: by.GetName(), At: spoken[through-1].To})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +279,7 @@ func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 // refuses is a proofreader that will not answer about anything.
 type refuses struct{ why error }
 
-func (r *refuses) Name() string { return "a proofreader that will not answer" }
+func (r *refuses) GetName() string { return "a proofreader that will not answer" }
 
 func (r *refuses) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
 	return nil, r.why
@@ -332,7 +332,7 @@ type waits struct {
 	once  sync.Once
 }
 
-func (w *waits) Name() string { return "a proofreader that waits" }
+func (w *waits) GetName() string { return "a proofreader that waits" }
 
 func (w *waits) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
 	w.once.Do(func() { close(w.asked) })

@@ -110,11 +110,11 @@ func serveAgents(
 			if err != nil {
 				return nil, err
 			}
-			api.Answers(served.Agent)
+			api.SetAgent(served.Agent)
 			return served.Close, nil
 		},
 		Showing:      held.getVault,
-		Handler:      api.Answers,
+		Handler:      api.SetAgent,
 		Unreachable:  func(why string) { api.Unreachable.Store(why) },
 		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}

@@ -132,14 +132,14 @@ func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
 // A schedule says which scheduler filled it, because the numbers one carries
 // between answers are its own.
 func TestASchedulerSaysWhichItIs(t *testing.T) {
-	got := review.NewFSRS().Name()
+	got := review.NewFSRS().GetName()
 	if !strings.HasPrefix(got, review.FSRSName+".") {
 		t.Errorf("named itself %q, want the algorithm and what it is running on", got)
 	}
 	if got == review.FSRSName+"." {
 		t.Error("named itself the algorithm and nothing about its parameters")
 	}
-	if again := review.NewFSRS().Name(); again != got {
+	if again := review.NewFSRS().GetName(); again != got {
 		t.Errorf("named itself %q and then %q", got, again)
 	}
 }

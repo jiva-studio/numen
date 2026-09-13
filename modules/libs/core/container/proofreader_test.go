@@ -27,7 +27,7 @@ func TestAContainerNobodyGaveSettingsProofreadsWithNothing(t *testing.T) {
 		t.Fatalf("want no reason, got %v", why)
 	}
 	if proofreader != nil {
-		t.Errorf("got a proofreader: %v", proofreader.Name())
+		t.Errorf("got a proofreader: %v", proofreader.GetName())
 	}
 }
 
@@ -44,7 +44,7 @@ func TestAProfileNameNoProfileCarriesIsRefused(t *testing.T) {
 		t.Errorf("the reason does not name the profile asked for: %v", why)
 	}
 	if proofreader != nil {
-		t.Errorf("got a proofreader: %v", proofreader.Name())
+		t.Errorf("got a proofreader: %v", proofreader.GetName())
 	}
 }
 
@@ -77,7 +77,7 @@ func TestAModelWithoutAKeyGivesTheReasonAndNoProofreader(t *testing.T) {
 		t.Errorf("the reason does not say what is missing: %v", why)
 	}
 	if proofreader != nil {
-		t.Errorf("got a proofreader: %v", proofreader.Name())
+		t.Errorf("got a proofreader: %v", proofreader.GetName())
 	}
 }
 
@@ -96,7 +96,7 @@ func TestTheProofreadingSettingsGivenAreTheOnesUsed(t *testing.T) {
 	if proofreader == nil {
 		t.Fatal("no proofreader")
 	}
-	if got := proofreader.Name(); got != "some-model" {
+	if got := proofreader.GetName(); got != "some-model" {
 		t.Errorf("got %q", got)
 	}
 }
@@ -152,7 +152,7 @@ func TestAProofreaderWithAQueueLeavesPagesWithIt(t *testing.T) {
 	if why != nil {
 		t.Fatalf("want no reason, got %v", why)
 	}
-	if queue == nil || queue.Name() != "test-model" {
+	if queue == nil || queue.GetName() != "test-model" {
 		t.Fatalf("got %v", queue)
 	}
 }
@@ -170,7 +170,7 @@ func TestAServiceWithoutAQueueLeavesNothing(t *testing.T) {
 		t.Fatalf("want no reason, got %v", why)
 	}
 	if queue != nil {
-		t.Errorf("got a queue: %v", queue.Name())
+		t.Errorf("got a queue: %v", queue.GetName())
 	}
 }
 
@@ -184,14 +184,14 @@ func TestAnAgentProfileLeavesNothing(t *testing.T) {
 		t.Fatalf("want no reason, got %v", why)
 	}
 	if queue != nil {
-		t.Errorf("got a queue: %v", queue.Name())
+		t.Errorf("got a queue: %v", queue.GetName())
 	}
 }
 
 // spelling is a proofreader that is never asked anything.
 type spelling struct{}
 
-func (spelling) Name() string { return "a test" }
+func (spelling) GetName() string { return "a test" }
 
 func (spelling) Proofread(_ context.Context, _ []proofread.Batch) (map[int]string, error) {
 	return nil, errors.New("nothing here asks")
@@ -218,7 +218,7 @@ func TestAProfileReachedThroughNeitherIsRefused(t *testing.T) {
 			}
 		}
 		if proofreader != nil {
-			t.Errorf("got a proofreader: %v", proofreader.Name())
+			t.Errorf("got a proofreader: %v", proofreader.GetName())
 		}
 	}
 }

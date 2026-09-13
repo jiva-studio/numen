@@ -41,7 +41,7 @@ A layer that is cut into slices has them named for what they are about. What two
 
 Where two are bound by the domain rather than by convenience, the one asked of declares a public API for the one asking, under `@x` and named for the slice it is for: what the media entity may know about a tab is declared by the tab. A cross-import written down is a decision; one written as an import is not.
 
-### The rules are generated from one table, and the table is the decision
+### Every rule is generated from one table
 
 `modules/tools/depgraph/layers.cjs` holds the rank of each layer and whether it is cut into slices, and builds every rule from it. A layer added or moved is a line of that table, not a new rule, and there is one place a reader goes to learn the order.
 

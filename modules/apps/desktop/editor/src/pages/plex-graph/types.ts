@@ -10,7 +10,7 @@ import type {
   PlexDestination,
 } from '@numen/ui'
 import type { NoteHeading } from '@/entities/note'
-import type { NoteType } from '@/shared/file'
+import type { NoteType } from '@/entities/file'
 import type { PathRename } from '@/shared/paths'
 import type { PlexView } from './model/usePlexView'
 

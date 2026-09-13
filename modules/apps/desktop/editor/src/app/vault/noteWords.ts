@@ -20,7 +20,7 @@ import type {
   Role,
   Seat,
 } from '@/entities/note'
-import type { NoteType } from '@/shared/file'
+import type { NoteType } from '@/entities/file'
 
 /**
  * Whether a rename wrote the title into the note, by the namer it was named

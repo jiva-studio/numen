@@ -7,8 +7,8 @@
  * `palette.ts` holds the steps and does that.
  */
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
-import type { NoteType } from '@/shared/file'
-import type { Vault } from '@/shared/vaults'
+import type { NoteType } from '@/entities/file'
+import type { Vault } from '@/entities/vault'
 import { isWebUrl } from '../lib/url'
 import { CHOSEN, EXACT, NAME, NO, OPEN, PICK, YES, type PendingStep } from '../lib/step'
 import type { StepRow } from '../types'

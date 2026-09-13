@@ -116,7 +116,7 @@ func (a *API) hasVault(ctx context.Context, v domain.Vault) bool {
 	if a.Notes == nil {
 		return false
 	}
-	held, err := a.Notes.Holds(ctx, v.ID)
+	held, err := a.Notes.Has(ctx, v.ID)
 	return err == nil && held
 }
 
