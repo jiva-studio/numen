@@ -15,15 +15,15 @@ const props = defineProps<{
   hasMenu?: boolean
 }>()
 
-const emit = defineEmits<{ toggleFollow: []; openMenu: [event: Event] }>()
+const emit = defineEmits<{ 'toggle-follow': []; 'open-menu': [event: Event] }>()
 
 // --- Handlers ---
 function onToggleFollow() {
-  emit('toggleFollow')
+  emit('toggle-follow')
 }
 
 function onOpenMenu(event: Event) {
-  emit('openMenu', event)
+  emit('open-menu', event)
 }
 </script>
 

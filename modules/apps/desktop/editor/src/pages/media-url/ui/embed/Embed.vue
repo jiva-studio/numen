@@ -8,7 +8,7 @@
  * messages a player takes from the page holding it, so nothing that host serves
  * runs in this window.
  */
-import { onBeforeUnmount, ref, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue'
 
 // --- Props & Emits ---
 const props = defineProps<{
@@ -26,7 +26,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** Where the copy stands, in milliseconds, as it plays. A frame says nothing. */
-  timeUpdate: [ms: number]
+  'time-update': [ms: number]
 }>()
 
 // --- State ---
@@ -39,6 +39,7 @@ const LEAST = 120
 
 const tall = ref(readHeight())
 const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
+const frameStyle = computed(() => (tall.value === null ? undefined : { blockSize: `${tall.value}px` }))
 
 // --- Handlers ---
 /**
@@ -89,7 +90,7 @@ function onPointerUp(): void {
 
 function onVideoTimeUpdate(event: Event): void {
   const video = event.target as HTMLVideoElement
-  emit('timeUpdate', Math.round(video.currentTime * 1000))
+  emit('time-update', Math.round(video.currentTime * 1000))
 }
 
 onBeforeUnmount(onPointerUp)
@@ -132,7 +133,7 @@ defineExpose({ seek })
       ref="player"
       class="embed__frame"
       :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': drawn !== null }"
-      :style="tall === null ? undefined : { blockSize: `${tall}px` }"
+      :style="frameStyle"
       :src="props.copy"
       :title="props.words.playing"
       controls
@@ -146,7 +147,7 @@ defineExpose({ seek })
       ref="frame"
       class="embed__frame"
       :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': drawn !== null }"
-      :style="tall === null ? undefined : { blockSize: `${tall}px` }"
+      :style="frameStyle"
       :src="props.embed"
       :title="props.words.playing"
       scrolling="no"

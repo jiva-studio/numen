@@ -54,6 +54,7 @@ const standing = computed(() => props.entries[findLineAt(props.entries, props.at
 const DEEPEST = 4
 
 const depth = (level: number) => Math.min(Math.max(level, 0), DEEPEST)
+const lineStyle = (level: number) => ({ '--level': depth(level) })
 
 // The list follows the reading, so a person turning pages finds where they are
 // without looking for it.
@@ -85,7 +86,7 @@ watch(standing, (one) => {
           type="button"
           class="contents__line"
           :data-at="one.at"
-          :style="{ '--level': depth(one.level) }"
+          :style="lineStyle(one.level)"
           :aria-current="one.at === standing?.at ? 'true' : undefined"
           @click="emit('go', one.at)"
         >

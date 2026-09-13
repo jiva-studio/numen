@@ -72,7 +72,7 @@ function empty(stencil: string) {
 <template>
   <div class="deck-tab">
     <FileConflictPrompt
-      :errorMessage="errorMessage"
+      :error-message="errorMessage"
       :conflict="conflictIn(note.state)"
       :words="words"
       @keep="onKeep"

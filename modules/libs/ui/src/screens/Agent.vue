@@ -6,7 +6,7 @@
  * clear of however much room it takes, sitting at its foot when a question is
  * sent. It fills whatever it is put in, and says nothing about where that is.
  */
-import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { Thread } from '@/features/thread'
 import { MessageComposer } from './message-composer'
 import type { Turn } from '@/features/thread'
@@ -72,13 +72,15 @@ onMounted(() => {
   watching.observe(element)
 })
 
+const agentStyle = computed(() => ({ '--agent-room': room.value }))
+
 onBeforeUnmount(() => watching?.disconnect())
 </script>
 
 <template>
   <div
     class="agent numen flex min-h-0 flex-col font-sans text-base text-ink"
-    :style="{ '--agent-room': room }"
+    :style="agentStyle"
   >
     <Thread
       ref="thread"

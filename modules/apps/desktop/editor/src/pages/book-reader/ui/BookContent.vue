@@ -22,7 +22,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   move: [offset: number]
   follow: [path: string]
-  toggleListing: []
+  'toggle-listing': []
 }>()
 
 // --- State ---
@@ -39,7 +39,7 @@ function onFollow(targetPath: string) {
 }
 
 function onToggleListing() {
-  emit('toggleListing')
+  emit('toggle-listing')
 }
 
 // --- Helpers ---
@@ -71,7 +71,7 @@ defineExpose({
     :book="props.bookSpan"
     :at="props.offset"
     :highlights="props.highlights"
-    :otherHighlights="props.otherHighlights"
+    :other-highlights="props.otherHighlights"
     :chapter="props.chapter"
     :words="words"
     @move="onMove"

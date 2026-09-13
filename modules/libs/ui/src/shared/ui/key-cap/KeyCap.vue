@@ -22,6 +22,8 @@ const spoken = computed(() =>
     .filter((word) => word !== '')
     .join(' '),
 )
+
+const iconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills })
 </script>
 
 <template>
@@ -32,7 +34,7 @@ const spoken = computed(() =>
       v-for="icon in keys.icons"
       :key="icon"
       class="cap__icon"
-      :style="{ '--fills': ICONS[icon].fills }"
+      :style="iconStyle(icon)"
       :stroke-width="ICONS[icon].stroke"
       aria-hidden="true"
       focusable="false"

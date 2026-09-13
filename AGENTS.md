@@ -73,32 +73,42 @@ corresponding handler in `<script>` is `onItemSelected`.
 
 ## 4. Vue component structure (`<script setup>` / `<script>`)
 
-All Vue components organize their `<script>` block into four standard sections
-separated by comment section dividers:
+All Vue components organize their `<script>` block into standardized sections
+separated by 80-character comment banner dividers:
 
 ```vue
 <script setup lang="ts">
-// --- Props & Emits ---
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ ... }>()
+
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{ ... }>()
 
-// --- State ---
+// Or when combined:
+/* ----------------------------- Props & Emits ------------------------------ */
+
+/* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const title = computed(() => ...)
 
-// --- Handlers ---
+/* --------------------------------- Hooks ---------------------------------- */
+onMounted(() => { ... })
+
+/* -------------------------------- Handlers -------------------------------- */
 function onSubmit() { ... }
 function onClose() { ... }
 
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 function formatValue(val: string) { ... }
 </script>
 ```
 
 Rules:
-1. Always follow the order: **Props & Emits $\rightarrow$ State $\rightarrow$ Handlers $\rightarrow$ Helpers**.
-2. Large templates or sections with independent state must be extracted into separate child components.
-3. Complex business logic must not live in `.vue` files — extract it into composables or domain models.
+1. Always follow the order: **Props $\rightarrow$ Events (or Props & Emits) $\rightarrow$ State $\rightarrow$ Hooks $\rightarrow$ Handlers $\rightarrow$ Helpers**.
+2. Only include headers for sections that actually exist in the component.
+3. Maintain the standardized 80-char banner format: `/* --------------------------------- <Name> ---------------------------------- */`.
+4. Large templates or sections with independent state must be extracted into separate child components.
+5. Complex business logic must not live in `.vue` files — extract it into composables or domain models.
 
 ---
 

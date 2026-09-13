@@ -25,7 +25,7 @@ defineEmits<{
   /** A vault on the list chosen. */
   (event: 'open', id: string): void
   /** The row below the list pressed. */
-  (event: 'takeOffer'): void
+  (event: 'take-offer'): void
 }>()
 
 defineSlots<{
@@ -56,7 +56,7 @@ defineSlots<{
       :text="offer.text"
       :aside="offer.detail"
       :keys="offer.keys"
-      @click="$emit('takeOffer')"
+      @click="$emit('take-offer')"
     />
   </section>
 </template>

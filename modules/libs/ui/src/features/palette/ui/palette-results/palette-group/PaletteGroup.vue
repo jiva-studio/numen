@@ -22,7 +22,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** The pointer crossed a row: its number, and the move that took it there. */
-  (event: 'pointAt', at: number, moved: PointerEvent): void
+  (event: 'point-at', at: number, moved: PointerEvent): void
   /** A row was pressed: its number, and whether the second action was asked for. */
   (event: 'choose', at: number, second: boolean): void
 }>()
@@ -78,7 +78,7 @@ const rowId = (at: number): string => optionId(props.uid, at)
       :row="row"
       :id="rowId(row.at)"
       :here="row.at === here"
-      @point-at="(moved) => emit('pointAt', row.at, moved)"
+      @point-at="(moved) => emit('point-at', row.at, moved)"
       @choose="(second) => emit('choose', row.at, second)"
     >
       <template v-if="$slots.icon" #icon="{ id }">

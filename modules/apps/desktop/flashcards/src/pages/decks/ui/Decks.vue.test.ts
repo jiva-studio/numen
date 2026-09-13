@@ -216,7 +216,7 @@ describe('a preset pressed', () => {
 
     one.findComponent(Presets).vm.$emit('start', 'Sanskrit.md')
 
-    expect(one.emitted('startPreset')).toStrictEqual([['Sanskrit.md']])
+    expect(one.emitted('start-preset')).toStrictEqual([['Sanskrit.md']])
   })
 })
 

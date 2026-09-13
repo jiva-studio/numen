@@ -1,24 +1,27 @@
 <script setup lang="ts">
 /** Where a dragged tab would go, drawn over the panes. */
+import { computed } from 'vue'
 import type { Rect } from '../lib/rect'
 
-defineProps<{
+const props = defineProps<{
   box: Rect
   /** Drawn as a line between two tabs, for a place in a strip. */
   caret?: boolean
 }>()
+
+const overlayStyle = computed(() => ({
+  left: `${props.box.x}px`,
+  top: `${props.box.y}px`,
+  width: `${props.box.width}px`,
+  height: `${props.box.height}px`,
+}))
 </script>
 
 <template>
   <div
     class="workspace__overlay"
     :data-caret="caret || undefined"
-    :style="{
-      left: `${box.x}px`,
-      top: `${box.y}px`,
-      width: `${box.width}px`,
-      height: `${box.height}px`,
-    }"
+    :style="overlayStyle"
   />
 </template>
 

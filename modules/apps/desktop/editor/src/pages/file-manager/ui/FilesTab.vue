@@ -134,7 +134,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
     </p>
 
     <Tree
-      v-model:renamingPath="renamingPath"
+      v-model:renaming-path="renamingPath"
       class="files__tree"
       :rows="rows"
       :open="props.state.list.openRows.value"

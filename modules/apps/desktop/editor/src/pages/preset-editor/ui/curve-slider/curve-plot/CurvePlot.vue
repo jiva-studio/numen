@@ -25,6 +25,7 @@ const props = defineProps<{
 
 // --- State ---
 const { isHonest, named, heights } = props.state
+const roomStyle = { aspectRatio: `${WIDE} / ${HIGH}` }
 
 // --- Handlers ---
 
@@ -43,7 +44,7 @@ const { isHonest, named, heights } = props.state
       <div
         class="curve-slider__room"
         data-control="room"
-        :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
+        :style="roomStyle"
       >
         <CurveWaiting v-if="!isHonest && props.waiting" />
 

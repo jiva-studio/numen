@@ -123,6 +123,10 @@ const overflow = computed(
     ),
 )
 
+const frameStyle = computed(() => ({
+  '--numen-plex-move': `${props.duration}ms`,
+}))
+
 defineExpose({
   moving: toRef(moving),
   /** The keyboard put back on a node by whoever took it away. */
@@ -135,7 +139,7 @@ defineExpose({
     ref="frame"
     class="plex-frame numen"
     :data-moving="moving || undefined"
-    :style="{ '--numen-plex-move': `${duration}ms` }"
+    :style="frameStyle"
   >
     <PlexView
       ref="view"

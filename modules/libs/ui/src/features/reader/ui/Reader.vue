@@ -141,6 +141,11 @@ const boxOf = (page: number) => ({
   blockSize: `${laid.value.height}px`,
 })
 
+const rowStyle = computed(() => ({
+  inlineSize: `${laid.value.length}px`,
+  blockSize: `${laid.value.height + 2 * GAP}px`,
+}))
+
 /**
  * A key the tab caught: true where it turned the page. The page asked for is
  * emitted, so whoever holds `at` is the one that moves it.
@@ -191,7 +196,7 @@ defineExpose({
       <div
         v-if="pages.length > 0"
         class="reader__row relative"
-        :style="{ inlineSize: `${laid.length}px`, blockSize: `${laid.height + 2 * GAP}px` }"
+        :style="rowStyle"
       >
         <Sheet
           v-for="page in shown"
@@ -199,7 +204,7 @@ defineExpose({
           :at="page"
           :picture="drawing(page)"
           :highlights="highlights(page)"
-          :otherHighlights="otherHighlights(page)"
+          :other-highlights="otherHighlights(page)"
           :page="words.page"
           :undrawn="undrawn"
           :style="boxOf(page)"
@@ -213,7 +218,7 @@ defineExpose({
     <ReaderToolbar
       v-if="pages.length > 0"
       v-model:zoom="zoom"
-      :pageCount="pages.length"
+      :page-count="pages.length"
       :at="at"
       :words="words"
       @update:at="emit('go', $event)"

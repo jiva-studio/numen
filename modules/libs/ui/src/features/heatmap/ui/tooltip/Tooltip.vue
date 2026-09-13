@@ -59,6 +59,11 @@ const placed = computed(() => ({
   }),
 }))
 
+const tooltipStyle = computed(() => ({
+  insetInlineStart: `${placed.value.x}px`,
+  insetBlockStart: `${placed.value.y}px`,
+}))
+
 const measure = () => {
   const box = root.value?.getBoundingClientRect()
   if (box) size.value = { width: box.width, height: box.height }
@@ -85,7 +90,7 @@ watch(() => props.at, measure, { flush: 'post' })
     ref="root"
     class="tooltip"
     role="tooltip"
-    :style="{ insetInlineStart: `${placed.x}px`, insetBlockStart: `${placed.y}px` }"
+    :style="tooltipStyle"
   >
     <slot />
   </aside>

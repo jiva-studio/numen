@@ -3,10 +3,11 @@
  * One place inside a node, drawn in a box of its own on the ground the parts
  * stand on.
  */
+import { computed } from 'vue'
 import type { HungParts } from '../../../lib/inside'
 import type { DrawnPart } from '../../../lib/open'
 
-defineProps<{
+const props = defineProps<{
   /** The part, as far out from under the box as it has come. */
   part: DrawnPart
   /** The parts and the room they are given. */
@@ -17,6 +18,10 @@ const emit = defineEmits<{
   /** The part was chosen. The identifier is the caller's. */
   (event: 'enter'): void
 }>()
+
+const partStyle = computed(() => ({
+  paddingInlineStart: `calc(var(--numen-node-padding) + ${props.part.indent}px)`,
+}))
 </script>
 
 <template>
@@ -32,9 +37,7 @@ const emit = defineEmits<{
     >
       <div
         class="plex__part"
-        :style="{
-          paddingInlineStart: `calc(var(--numen-node-padding) + ${part.indent}px)`,
-        }"
+        :style="partStyle"
         @click.stop="emit('enter')"
         @dblclick.stop
       >

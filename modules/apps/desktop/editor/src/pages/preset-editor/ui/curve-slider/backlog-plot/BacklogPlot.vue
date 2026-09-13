@@ -78,6 +78,7 @@ const heights = computed(() => {
 
 /** The days at either end of the extent, which the grid says nothing about. */
 const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backlog.value.length)])
+const roomStyle = { aspectRatio: `${WIDE} / ${BACKLOG_HIGH}` }
 
 // --- Handlers ---
 
@@ -96,7 +97,7 @@ const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backl
       <div
         class="curve-slider__room"
         data-control="room"
-        :style="{ aspectRatio: `${WIDE} / ${BACKLOG_HIGH}` }"
+        :style="roomStyle"
       >
         <BacklogPicture v-if="drawn" :line="line" />
       </div>

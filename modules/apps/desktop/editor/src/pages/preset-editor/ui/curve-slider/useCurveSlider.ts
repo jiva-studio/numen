@@ -161,8 +161,13 @@ export function useCurveSlider(
     emit('settle')
   }
 
+  function setPicture(element: SVGSVGElement | null): void {
+    picture.value = element
+  }
+
   return {
     picture,
+    setPicture,
     line,
     short,
     places,

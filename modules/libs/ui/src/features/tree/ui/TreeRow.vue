@@ -4,7 +4,7 @@
  * new name is typed in. What the row stands for, and what a press on it means,
  * are the tree's.
  */
-import { nextTick, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import type { ShownRow } from '../lib/row'
 import { TreeField } from './tree-field'
 
@@ -45,6 +45,8 @@ defineSlots<{
 /** The field a name is typed in. */
 const field = useTemplateRef<InstanceType<typeof TreeField>>('field')
 
+const rowStyle = computed(() => ({ '--level': props.row.level }))
+
 /** The keyboard into the field once it is drawn. */
 watch(
   () => props.renaming,
@@ -70,7 +72,7 @@ watch(
     :data-into="into || undefined"
     :data-before="before || undefined"
     v-bind="mark"
-    :style="{ '--level': row.level }"
+    :style="rowStyle"
   >
     <span class="tree__icon flex shrink-0 items-center">
       <slot />

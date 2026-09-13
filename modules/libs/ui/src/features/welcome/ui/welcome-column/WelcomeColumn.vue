@@ -31,7 +31,7 @@ defineEmits<{
   /** A vault on the list chosen. */
   (event: 'open', id: string): void
   /** The row below the list pressed. */
-  (event: 'takeOffer'): void
+  (event: 'take-offer'): void
 }>()
 
 defineSlots<{
@@ -51,7 +51,7 @@ defineSlots<{
       :heading="heading"
       :offer="offer"
       @open="$emit('open', $event)"
-      @take-offer="$emit('takeOffer')"
+      @take-offer="$emit('take-offer')"
     >
       <template v-if="$slots.waiting" #waiting>
         <slot name="waiting" />

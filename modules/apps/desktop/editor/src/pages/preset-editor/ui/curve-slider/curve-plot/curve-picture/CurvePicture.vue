@@ -17,7 +17,8 @@ const props = defineProps<{
 
 // --- State ---
 const {
-  picture, line, short, knob, suggested, isDated, least, most, value,
+  line, short, knob, suggested, isDated, least, most, value,
+  setPicture,
   onPointerDown, onPointerMove, onPointerUp, onKeyDown, onKeyUp,
 } = props.state
 
@@ -28,7 +29,7 @@ const {
 
 <template>
   <svg
-    ref="picture"
+    :ref="(el: unknown) => { setPicture(el as SVGSVGElement | null) }"
     class="curve-slider__picture"
     data-control="picture"
     role="slider"

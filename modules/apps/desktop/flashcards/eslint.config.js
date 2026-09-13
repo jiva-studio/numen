@@ -35,7 +35,12 @@ export default tseslint.config(
       parserOptions: {
         // The files the build's tsconfig does not name.
         projectService: {
-          allowDefaultProject: ['eslint.config.js', 'vitest.config.ts', '.storybook/*.ts'],
+          allowDefaultProject: [
+            'eslint.config.js',
+            'vitest.config.ts',
+            '.storybook/main.ts',
+            '.storybook/preview.ts',
+          ],
         },
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],
@@ -82,6 +87,8 @@ export default tseslint.config(
       'vue/define-props-declaration': ['error', 'type-based'],
       'vue/require-explicit-emits': 'error',
       'vue/no-undef-components': 'error',
+      'vue/attribute-hyphenation': ['error', 'always'],
+      'vue/custom-event-name-casing': ['error', 'kebab-case'],
     },
   },
 
@@ -115,6 +122,12 @@ export default tseslint.config(
         {
           selector: 'VOnExpression LogicalExpression',
           message: 'a handler is a named function, and the guard goes inside it',
+        },
+        {
+          selector:
+            'VAttribute[directive=true][key.name.name="bind"][key.argument.name="style"] ObjectExpression',
+          message:
+            'an inline style object is a computed in <script>, not an object literal in the template',
         },
       ],
 

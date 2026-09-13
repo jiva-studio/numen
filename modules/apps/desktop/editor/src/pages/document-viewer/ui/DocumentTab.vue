@@ -30,7 +30,7 @@ function onWiden(wide: number) {
     :at="props.state.pageNumber.value"
     :picture="props.state.getPageImageUrl"
     :highlights="props.state.getHighlightsOn"
-    :otherHighlights="props.state.getOtherHighlightsOn"
+    :other-highlights="props.state.getOtherHighlightsOn"
     :words="words"
     @go="onGoToPage"
     @measure="onWiden"

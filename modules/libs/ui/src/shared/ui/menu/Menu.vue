@@ -152,6 +152,12 @@ watch(
   },
 )
 
+const menuStyle = computed(() => ({
+  left: `${placed.value.x}px`,
+  top: `${placed.value.y}px`,
+  '--asking': `${props.asking}px`,
+}))
+
 // A menu can go while it is still open, and what it left on the window with it.
 onBeforeUnmount(leave)
 </script>
@@ -165,11 +171,7 @@ onBeforeUnmount(leave)
       role="menu"
       tabindex="-1"
       :aria-label="name"
-      :style="{
-        left: `${placed.x}px`,
-        top: `${placed.y}px`,
-        '--asking': `${asking}px`,
-      }"
+      :style="menuStyle"
       @keydown="onKey"
     >
       <MenuRow

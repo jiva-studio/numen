@@ -32,7 +32,7 @@ const at = defineModel<PanelPlace>('at', { required: true })
 defineEmits<{
   (event: 'show'): void
   (event: 'answer', how: Grade): void
-  (event: 'takeBack'): void
+  (event: 'take-back'): void
   (event: 'leave'): void
   (event: 'ask'): void
   (event: 'read', note: string): void
@@ -55,7 +55,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
       <!-- What a person does beside answering, each one carrying the key it is
            done with. They stand at the end of the line that says where the card
            is from. -->
-      <Button variant="ghost" size="small" :disabled="!takenBack" @click="$emit('takeBack')">
+      <Button variant="ghost" size="small" :disabled="!takenBack" @click="$emit('take-back')">
         <KeyCap :keys="{ icons: [], letter: 'u' }" />
         Undo
       </Button>

@@ -19,7 +19,7 @@ defineProps<{
 
 const emit = defineEmits<{
   /** The pointer crossed the row, and the move that took it there. */
-  (event: 'pointAt', moved: PointerEvent): void
+  (event: 'point-at', moved: PointerEvent): void
   /** The row was pressed, and whether the second action was asked for. */
   (event: 'choose', second: boolean): void
 }>()
@@ -38,7 +38,7 @@ defineSlots<{
     :aria-disabled="row.item.disabled || undefined"
     :data-here="here || undefined"
     :data-disabled="row.item.disabled || undefined"
-    @pointermove="emit('pointAt', $event)"
+    @pointermove="emit('point-at', $event)"
     @pointerdown.prevent
     @click="emit('choose', $event.shiftKey)"
   >

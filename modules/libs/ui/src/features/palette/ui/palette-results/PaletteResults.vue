@@ -35,7 +35,7 @@ defineProps<{
 
 const emit = defineEmits<{
   /** The pointer crossed a row: its number, and the move that took it there. */
-  (event: 'pointAt', at: number, moved: PointerEvent): void
+  (event: 'point-at', at: number, moved: PointerEvent): void
   /** A row was pressed: its number, and whether the second action was asked for. */
   (event: 'choose', at: number, second: boolean): void
 }>()
@@ -76,7 +76,7 @@ defineExpose({ reveal })
       :placed="one"
       :here="here"
       :uid="uid"
-      @point-at="(at, moved) => emit('pointAt', at, moved)"
+      @point-at="(at, moved) => emit('point-at', at, moved)"
       @choose="(at, second) => emit('choose', at, second)"
     >
       <template v-if="$slots.icon" #icon="{ id }">
