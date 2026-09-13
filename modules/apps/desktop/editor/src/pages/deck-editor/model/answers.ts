@@ -36,7 +36,7 @@ export function answers() {
   const titles = new Map<string, string>()
 
   /** What was said about a file, and nothing said where nothing was. */
-  const at = (path: string): VaultAnswer => told.get(path) ?? NOTHING
+  const getAnswer = (path: string): VaultAnswer => told.get(path) ?? NOTHING
 
   /** What a read of a file came back with, under the title it came back as. */
   const recordRead = (
@@ -66,7 +66,7 @@ export function answers() {
       readonly bound: number
     },
   ): void => {
-    const said = at(path)
+    const said = getAnswer(path)
     told.set(path, {
       problems: said.problems,
       reading: said.reading,
@@ -76,7 +76,7 @@ export function answers() {
   }
 
   /** What is wrong with a file, as the marks against its cards are made from. */
-  const problemsAt = (path: string): readonly DeckProblem[] => at(path).problems
+  const problemsAt = (path: string): readonly DeckProblem[] => getAnswer(path).problems
 
   const whyOf = (errorCode: ErrorCode | null, bound: number): string | null => {
     if (errorCode === 'deckTooLarge') return words.tooLarge(bound)
@@ -90,7 +90,7 @@ export function answers() {
    */
   const getErrorMessage = (path: string, hasError: boolean): string => {
     if (!hasError) return ''
-    const said = at(path)
+    const said = getAnswer(path)
     if (said.reading !== null) return whyOf(said.reading, said.bound) ?? words.notRead
     if (said.writing !== null) return whyOf(said.writing, said.bound) ?? words.notSaved
     return words.unreachable

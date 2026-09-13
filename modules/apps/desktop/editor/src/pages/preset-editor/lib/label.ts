@@ -54,9 +54,9 @@ export const clearAt = (
   places: readonly Position[],
   marks: readonly (Position | null)[],
 ): boolean => {
-  const near = (at: Position): boolean => at.x <= LEFT + AXIS_WIDE && Math.abs(at.y - y) <= AXIS_HIGH
-  if (marks.some((at) => at !== null && near(at))) return false
-  return !places.some(near)
+  const isNear = (at: Position): boolean => at.x <= LEFT + AXIS_WIDE && Math.abs(at.y - y) <= AXIS_HIGH
+  if (marks.some((at) => at !== null && isNear(at))) return false
+  return !places.some(isNear)
 }
 
 /**

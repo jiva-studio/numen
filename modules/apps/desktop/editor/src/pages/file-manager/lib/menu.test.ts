@@ -22,7 +22,7 @@ import {
 const canRunAnything: RunGuard = () => true
 
 /** What a row of that kind offers, by the identity of each item. */
-const on = (source: Source, folder = false, canRun: RunGuard = canRunAnything): readonly string[] =>
+const getItemIds = (source: Source, folder = false, canRun: RunGuard = canRunAnything): readonly string[] =>
   itemsFor({ source, folder }, false, canRun).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
@@ -33,39 +33,39 @@ const getGroupedIds = (source: Source): readonly string[] =>
 
 describe('the menu on a row standing for a recording', () => {
   it('offers the recording to be transcribed', () => {
-    expect(on('recording')).toContain('transcribe')
+    expect(getItemIds('recording')).toContain('transcribe')
   })
 
   it('offers nothing to recognise, which is asked of a scan', () => {
-    expect(on('recording')).not.toContain('recognise')
+    expect(getItemIds('recording')).not.toContain('recognise')
   })
 })
 
 describe('the menu on a row standing for a scanned document', () => {
   it('offers the text of it to be recognised', () => {
-    expect(on('book')).toContain('recognise')
+    expect(getItemIds('book')).toContain('recognise')
   })
 
   it('offers nothing to transcribe, which is asked of a recording', () => {
-    expect(on('book')).not.toContain('transcribe')
+    expect(getItemIds('book')).not.toContain('transcribe')
   })
 })
 
 describe('the menu on a row standing for anything else', () => {
   it('offers neither run on a note', () => {
-    expect(on('note')).not.toContain('transcribe')
-    expect(on('note')).not.toContain('recognise')
+    expect(getItemIds('note')).not.toContain('transcribe')
+    expect(getItemIds('note')).not.toContain('recognise')
   })
 
   it('offers neither run on a file the vault holds no source for', () => {
-    expect(on('other')).not.toContain('transcribe')
-    expect(on('other')).not.toContain('recognise')
+    expect(getItemIds('other')).not.toContain('transcribe')
+    expect(getItemIds('other')).not.toContain('recognise')
   })
 
   // A folder of recordings is not a recording, and a run is over one file.
   it('offers neither run on a folder', () => {
-    expect(on('recording', true)).not.toContain('transcribe')
-    expect(on('book', true)).not.toContain('recognise')
+    expect(getItemIds('recording', true)).not.toContain('transcribe')
+    expect(getItemIds('book', true)).not.toContain('recognise')
   })
 
   it('offers neither off every row, where there is nothing to run it over', () => {
@@ -108,8 +108,8 @@ describe('the menu where this build cannot do a run at all', () => {
   it('offers the recording nothing, and leaves the scan its own run', () => {
     const but: RunGuard = (run) => run !== 'transcribe'
 
-    expect(on('recording', false, but)).not.toContain('transcribe')
-    expect(on('book', false, but)).toContain('recognise')
+    expect(getItemIds('recording', false, but)).not.toContain('transcribe')
+    expect(getItemIds('book', false, but)).toContain('recognise')
   })
 })
 
@@ -126,8 +126,8 @@ describe('the four files the menu makes', () => {
 
   it('offers a preset on a row of every kind', () => {
     for (const source of ['note', 'book', 'recording', 'other'] as Source[]) {
-      expect(on(source), source).toContain(NEW_PRESET)
-      expect(on(source, true), source).toContain(NEW_PRESET)
+      expect(getItemIds(source), source).toContain(NEW_PRESET)
+      expect(getItemIds(source, true), source).toContain(NEW_PRESET)
     }
   })
 

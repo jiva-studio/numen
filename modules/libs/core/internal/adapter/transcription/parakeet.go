@@ -92,7 +92,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	blank := said.at(blankPiece)
+	blank := said.getIndex(blankPiece)
 	if blank < 0 {
 		return nil, fmt.Errorf("%s names no %s", found.tokens, blankPiece)
 	}

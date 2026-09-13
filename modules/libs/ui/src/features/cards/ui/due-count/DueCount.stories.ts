@@ -21,7 +21,7 @@ interface Knobs {
 }
 
 /** The pill on the surface, and the same pill on a filled button. */
-const beside = (args: Knobs) => ({
+const renderPills = (args: Knobs) => ({
   components: { DueCount, Button },
   setup: () => ({ args }),
   template: `
@@ -58,7 +58,7 @@ const meta: Meta<Knobs> = {
     over: { control: 'boolean' },
   },
   args: { due: 12, bare: false, over: false },
-  render: beside,
+  render: renderPills,
 }
 
 export default meta

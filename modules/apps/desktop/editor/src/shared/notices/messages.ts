@@ -33,7 +33,7 @@ export type MessageWriter = (text: string, kind?: MessageKind) => void
 export interface MessageLog {
   readonly messages: Ref<readonly WindowMessage[]>
   /** A writer under a name of its own. */
-  under(name: string): MessageWriter
+  getWriter(name: string): MessageWriter
   /** A message the person is finished with, by the identity it was given. */
   dismiss(id: string): void
 }
@@ -49,7 +49,7 @@ export function messageLog(): MessageLog {
   const messages = shallowRef<readonly WindowMessage[]>([])
   let minted = 0
 
-  const under =
+  const getWriter =
     (name: string): MessageWriter =>
     (text, kind = 'report') => {
       // The same text written again is nothing new, and what stands keeps its
@@ -71,5 +71,5 @@ export function messageLog(): MessageLog {
     messages.value = messages.value.filter((one) => one.id !== id)
   }
 
-  return { messages, under, dismiss }
+  return { messages, getWriter, dismiss }
 }

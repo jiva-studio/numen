@@ -87,7 +87,7 @@ func Distinct(regions []Region, most float64) []Region {
 	for _, r := range byScore {
 		covered := false
 		for _, k := range kept {
-			if overlap(r.Rect, k.Rect) > most || inside(r.Rect, k.Rect) {
+			if overlap(r.Rect, k.Rect) > most || isInside(r.Rect, k.Rect) {
 				covered = true
 				break
 			}
@@ -114,8 +114,8 @@ func overlap(a, b image.Rectangle) float64 {
 	return common / either
 }
 
-// inside says whether almost all of one rectangle is within the other.
-func inside(a, b image.Rectangle) bool {
+// isInside says whether almost all of one rectangle is within the other.
+func isInside(a, b image.Rectangle) bool {
 	both := a.Intersect(b)
 	if both.Empty() {
 		return false

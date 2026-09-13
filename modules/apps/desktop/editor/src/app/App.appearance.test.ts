@@ -84,7 +84,7 @@ describe('the four commands over how the window is drawn', () => {
   ]
 
   /** The commands open, and the one the words typed name taken up. */
-  const over = async (words: string) => {
+  const runCommand = async (words: string) => {
     const window = await mountWindowWithPalette()
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
     await settle()
@@ -104,7 +104,7 @@ describe('the four commands over how the window is drawn', () => {
     [...document.body.querySelectorAll('[data-palette="title"]')].map((one) => one.textContent?.trim())
 
   /** The second line of every row drawn, and nothing for a row carrying none. */
-  const beside = () =>
+  const getDetails = () =>
     [...document.body.querySelectorAll('[data-palette="list"] [role="option"]')].map((one) =>
       one.querySelector('[data-palette="detail"]')?.textContent?.trim(),
     )
@@ -153,7 +153,7 @@ describe('the four commands over how the window is drawn', () => {
 
   describe('the step that offers the themes', () => {
     it('draws the shelves as groups, and opens on the theme the window wears', async () => {
-      await over('theme')
+      await runCommand('theme')
 
       expect(groups()).toStrictEqual(['Ships with numen', 'Your own themes'])
       expect(document.body.querySelector('[data-here]')?.textContent).toContain('numen')
@@ -161,7 +161,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('wears the theme the keyboard walks onto', async () => {
-      await over('theme')
+      await runCommand('theme')
 
       await press('ArrowDown')
 
@@ -170,7 +170,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('puts back the theme the settings name when the step is left', async () => {
-      await over('theme')
+      await runCommand('theme')
       await press('ArrowDown')
 
       await press('Escape')
@@ -180,7 +180,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('keeps wearing the theme that was chosen, and writes it down', async () => {
-      await over('theme')
+      await runCommand('theme')
       await press('ArrowDown')
 
       await press('Enter')
@@ -192,7 +192,7 @@ describe('the four commands over how the window is drawn', () => {
 
   describe('the step that offers light and dark', () => {
     it('opens on the half the tokens are read as, in a group of its own', async () => {
-      await over('light')
+      await runCommand('light')
 
       expect(groups()).toStrictEqual(['Light and dark'])
       expect(left()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
@@ -200,7 +200,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('reads the tokens as the half the keyboard walks onto', async () => {
-      await over('light')
+      await runCommand('light')
 
       await press('ArrowDown')
 
@@ -209,7 +209,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('puts back the half the settings name when the step is left', async () => {
-      await over('light')
+      await runCommand('light')
       await press('ArrowDown')
 
       await press('Escape')
@@ -219,7 +219,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('writes the half that was chosen, leaving the theme where it was', async () => {
-      await over('dark')
+      await runCommand('dark')
       await press('End')
 
       await press('Enter')
@@ -252,7 +252,7 @@ describe('the four commands over how the window is drawn', () => {
       said.applied = 'mine:sea'
       const was = applyServedStyles()
 
-      await over('theme')
+      await runCommand('theme')
 
       expect(getStandingRow()).toBe('sea')
       expect(getHeadStyles()).toStrictEqual(was)
@@ -263,7 +263,7 @@ describe('the four commands over how the window is drawn', () => {
       said.mode = 'dark'
       const was = applyServedStyles(':root { color-scheme: dark; }')
 
-      await over('light')
+      await runCommand('light')
 
       expect(getStandingRow()).toBe('Dark')
       expect(getHeadStyles()).toStrictEqual(was)
@@ -276,7 +276,7 @@ describe('the four commands over how the window is drawn', () => {
         ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }',
       )
 
-      await over('interface')
+      await runCommand('interface')
       await wait()
 
       expect(getStandingRow()).toBe('150%')
@@ -290,7 +290,7 @@ describe('the four commands over how the window is drawn', () => {
         ':root { --numen-interface-scale: 1; --numen-text-scale: 1.17; }',
       )
 
-      await over('reading')
+      await runCommand('reading')
       await wait()
 
       expect(getStandingRow()).toBe('117%')
@@ -300,7 +300,7 @@ describe('the four commands over how the window is drawn', () => {
     it('leaves the keyboard where typing puts it, and does not walk it back', async () => {
       said.sizes = { interfaceScale: 1.5, textScale: 1 }
       applyServedStyles(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
-      await over('interface')
+      await runCommand('interface')
 
       await type('137')
 
@@ -310,7 +310,7 @@ describe('the four commands over how the window is drawn', () => {
 
   describe('the step that offers how large the interface is drawn', () => {
     it('opens on the size the window is drawn at, in a group of its own', async () => {
-      await over('interface')
+      await runCommand('interface')
 
       expect(groups()).toStrictEqual(['How large the interface is drawn'])
       expect(left()).toStrictEqual(TENTHS)
@@ -318,15 +318,15 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('draws a second line on the one row the window is drawn at, and no other', async () => {
-      await over('interface')
+      await runCommand('interface')
 
-      expect(beside()).toStrictEqual(
+      expect(getDetails()).toStrictEqual(
         TENTHS.map((title) => (title === '100%' ? 'Current' : undefined)),
       )
     })
 
     it('offers a number typed into the field, and narrows to it alone', async () => {
-      await over('interface')
+      await runCommand('interface')
 
       await type('137')
 
@@ -334,7 +334,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('draws and writes a number typed, the way it does a step', async () => {
-      await over('interface')
+      await runCommand('interface')
       await type('137')
 
       await press('Enter')
@@ -344,7 +344,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('offers no row for a number the range does not reach, and says nothing', async () => {
-      await over('interface')
+      await runCommand('interface')
 
       await type('250')
 
@@ -353,7 +353,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('narrows the steps, and offers nothing of its own, for digits inside one', async () => {
-      await over('interface')
+      await runCommand('interface')
 
       await type('15')
 
@@ -361,7 +361,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('holds the size until the keyboard has stood on the row it walked to', async () => {
-      await over('interface')
+      await runCommand('interface')
       await press('End')
 
       await waitUnderHold()
@@ -373,7 +373,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('puts back the size the settings name when the step is left', async () => {
-      await over('interface')
+      await runCommand('interface')
       await press('End')
       await wait()
 
@@ -384,7 +384,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('keeps drawing at the size that was chosen, and writes it down', async () => {
-      await over('interface')
+      await runCommand('interface')
       await press('End')
 
       await press('Enter')
@@ -395,7 +395,7 @@ describe('the four commands over how the window is drawn', () => {
 
     it('says what the settings refused, where the window says what it could not do', async () => {
       said.writeError = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
-      const window = await over('interface')
+      const window = await runCommand('interface')
       await press('End')
 
       await press('Enter')
@@ -455,7 +455,7 @@ describe('the four commands over how the window is drawn', () => {
 
   describe('the step that offers how large the text is set', () => {
     it('opens on the sizes the reading text goes between', async () => {
-      await over('reading')
+      await runCommand('reading')
 
       expect(groups()).toStrictEqual(['How large the text is set'])
       // The far end of this one falls between two steps, and is offered there.
@@ -463,7 +463,7 @@ describe('the four commands over how the window is drawn', () => {
     })
 
     it('writes the size that was chosen beside the interface’s, which stands', async () => {
-      await over('reading')
+      await runCommand('reading')
       await press('End')
 
       await press('Enter')

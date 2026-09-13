@@ -36,7 +36,7 @@ export interface DragState<At extends InsertionPoint | undefined> {
   /** It was taken up. */
   readonly lift: (what: string, press: DragEvent) => void
   /** It is over a place that would take it. */
-  readonly over: (at: At, press: DragEvent) => void
+  readonly hover: (at: At, press: DragEvent) => void
   /** The drag is over, and nothing was let go. */
   readonly release: () => void
   /** It was let go where it stands. */
@@ -56,7 +56,7 @@ export function useDrag<At extends InsertionPoint | undefined>(
     press.dataTransfer?.setData('text/plain', what)
   }
 
-  const over = (lands: At, press: DragEvent): void => {
+  const hover = (lands: At, press: DragEvent): void => {
     if (dragged.value === null) return
     press.preventDefault()
     at.value = lands
@@ -82,5 +82,5 @@ export function useDrag<At extends InsertionPoint | undefined>(
     drag.move(what, lands)
   }
 
-  return { dragged, at, lift, over, release, drop, step }
+  return { dragged, at, lift, hover, release, drop, step }
 }

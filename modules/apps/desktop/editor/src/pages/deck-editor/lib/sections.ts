@@ -23,7 +23,7 @@ export const renameSection = (deck: BufferDeck, id: string, name: string): Buffe
 })
 
 /** One piece of a deck's prose after another, with a line between the two. */
-const after = (above: string, below: string): string =>
+const joinProse = (above: string, below: string): string =>
   above && below ? `${above.trimEnd()}\n\n${below}` : above || below
 
 /**
@@ -36,11 +36,11 @@ export const removeSection = (deck: BufferDeck, id: string): BufferDeck => {
   const above = deck.sections[at - 1]
   return {
     ...deck,
-    preamble: above ? deck.preamble : after(deck.preamble, going?.preamble ?? ''),
+    preamble: above ? deck.preamble : joinProse(deck.preamble, going?.preamble ?? ''),
     sections: deck.sections.flatMap((section) => {
       if (section.id === id) return []
       if (above && section.id === above.id) {
-        return [{ ...section, preamble: after(section.preamble, going?.preamble ?? '') }]
+        return [{ ...section, preamble: joinProse(section.preamble, going?.preamble ?? '') }]
       }
       return [section]
     }),

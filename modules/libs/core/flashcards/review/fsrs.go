@@ -172,7 +172,7 @@ func (f FSRS) getNextFromNew(one atAnswer, at time.Time, r fsrs.Rating) Schedule
 	case fsrs.Good:
 		out.Due = at.Add(10 * time.Minute)
 	case fsrs.Easy:
-		out.Due = at.Add(days(f.away(out.Stability)))
+		out.Due = at.Add(days(f.getInterval(out.Stability)))
 		out.Phase = uint8(fsrs.Review)
 	}
 	return out
@@ -192,11 +192,11 @@ func (f FSRS) getNextFromLearning(one atAnswer, at time.Time, r fsrs.Rating) Sch
 	case fsrs.Hard:
 		out.Due = at.Add(10 * time.Minute)
 	case fsrs.Good:
-		out.Due = at.Add(days(f.away(out.Stability)))
+		out.Due = at.Add(days(f.getInterval(out.Stability)))
 		out.Phase = uint8(fsrs.Review)
 	case fsrs.Easy:
-		good := f.away(f.shortly(one.last.Stability, fsrs.Good))
-		out.Due = at.Add(days(math.Max(f.away(out.Stability), good+1)))
+		good := f.getInterval(f.shortly(one.last.Stability, fsrs.Good))
+		out.Due = at.Add(days(math.Max(f.getInterval(out.Stability), good+1)))
 		out.Phase = uint8(fsrs.Review)
 	}
 	return out
@@ -223,15 +223,15 @@ func (f FSRS) getNextFromReview(one atAnswer, at time.Time, back float64, r fsrs
 	out.Stability = f.getStabilityOnRecall(d, s, back, r)
 	out.Phase = uint8(fsrs.Review)
 	hard := math.Min(
-		f.away(f.getStabilityOnRecall(d, s, back, fsrs.Hard)),
-		f.away(f.getStabilityOnRecall(d, s, back, fsrs.Good)),
+		f.getInterval(f.getStabilityOnRecall(d, s, back, fsrs.Hard)),
+		f.getInterval(f.getStabilityOnRecall(d, s, back, fsrs.Good)),
 	)
-	good := math.Max(f.away(f.getStabilityOnRecall(d, s, back, fsrs.Good)), hard+1)
+	good := math.Max(f.getInterval(f.getStabilityOnRecall(d, s, back, fsrs.Good)), hard+1)
 	switch r {
 	case fsrs.Hard:
 		out.Due = at.Add(days(hard))
 	case fsrs.Easy:
-		out.Due = at.Add(days(math.Max(f.away(out.Stability), good+1)))
+		out.Due = at.Add(days(math.Max(f.getInterval(out.Stability), good+1)))
 	default:
 		out.Due = at.Add(days(good))
 	}
@@ -244,13 +244,14 @@ func (f FSRS) getRecall(one atAnswer) float64 {
 	return math.Pow(1+f.p.Factor*one.away/one.last.Stability, f.p.Decay)
 }
 
-// away is how many days an answer sends a card face standing at this stability
-// away for, at the share of the cards this scheduler asks to bring back.
+// getInterval is how many days an answer sends a card face standing at this
+// stability away for, at the share of the cards this scheduler asks to bring
+// back.
 //
 // The parameters carry no fuzz, so the interval is the number this arithmetic
 // gives, and a card face answered the same way is sent away for the same day at
 // every launch.
-func (f FSRS) away(stability float64) float64 {
+func (f FSRS) getInterval(stability float64) float64 {
 	out := stability / f.p.Factor * (math.Pow(f.p.RequestRetention, 1/f.p.Decay) - 1)
 	return math.Max(math.Min(math.Round(out), f.p.MaximumInterval), 1)
 }

@@ -43,7 +43,7 @@ A chunk's score is the sum of `1 / (k + rank)` over the rankings that returned i
 
 ### How many passages one document answers with is the caller's
 
-`Each` says it; zero is one, and a document names itself once. A list a person runs their eye down wants one line per book, and a reader who cannot turn the page wants the several places a book speaks about a thing.
+The request says it; zero is one, and a document names itself once. A list a person runs their eye down wants one line per book, and a reader who cannot turn the page wants the several places a book speaks about a thing.
 
 Where a document has a section named what was asked for, that section stands as the first passage it answers with.
 

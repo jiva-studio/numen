@@ -69,10 +69,12 @@ export function isRefused(
   const lifted = new Set(dragIds)
   if (lifted.has(into)) return true
 
-  const below = (children: readonly Row[], within: boolean): boolean =>
+  const isInsideLifted = (children: readonly Row[], within: boolean): boolean =>
     children.some(
-      (row) => (within && row.id === into) || below(row.rows ?? [], within || lifted.has(row.id)),
+      (row) =>
+        (within && row.id === into) ||
+        isInsideLifted(row.rows ?? [], within || lifted.has(row.id)),
     )
 
-  return below(rows, false)
+  return isInsideLifted(rows, false)
 }

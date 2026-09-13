@@ -13,7 +13,7 @@ const clamp = (value: number, low: number, high: number) =>
   Math.max(low, Math.min(high, value))
 
 /** How many boxes of `size` fit end to end in `room`. */
-const along = (room: number, size: number, gap: number) =>
+const countAlong = (room: number, size: number, gap: number) =>
   Math.floor((room + gap) / (size + gap))
 
 /**
@@ -54,14 +54,14 @@ export function limitsFor(
   /** How many lines of a column stand beyond something of this half-width. */
   const columnsBeyond = (clear: number) =>
     clamp(
-      along(halfWidth - clear - options.focusGap, width, options.lineGap),
+      countAlong(halfWidth - clear - options.focusGap, width, options.lineGap),
       0,
       options.maxLines,
     )
 
   const columnsBeside = (perLine: number) => columnsBeyond(rowHalf(perLine))
 
-  const perColumn = Math.max(1, along(2 * halfHeight, height, options.gap))
+  const perColumn = Math.max(1, countAlong(2 * halfHeight, height, options.gap))
 
   // How far a column reaches from the axis, against where the nearest row
   // begins. A column is centred on the focus, so a short one stands level with
@@ -84,7 +84,7 @@ export function limitsFor(
   // The widest row that still leaves the window able to hold it — and, where a
   // column can be seated, room for one beyond it. It is measured from what the
   // window holds at the settings, which are the closest the gaps ever pack.
-  const row = widestRow(along(2 * halfWidth, width, options.gap), (perLine) => {
+  const row = widestRow(countAlong(2 * halfWidth, width, options.gap), (perLine) => {
     if (rowHalf(perLine) > halfWidth) return false
     return !seatsColumn || columnsBeside(perLine) >= 1
   })
@@ -94,7 +94,7 @@ export function limitsFor(
     () => ({
       perLine: row,
       lines: clamp(
-        along(
+        countAlong(
           halfHeight - options.focusSize.height / 2 - options.focusGap,
           height,
           options.lineGap,

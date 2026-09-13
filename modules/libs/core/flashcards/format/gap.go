@@ -6,10 +6,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
-// under is what stands beneath a heading: a blank line, the text, and a blank
-// line after it. The last section of a file ends with the one break every file
-// ends with.
-func under(value string, last bool) string {
+// formatSection is what stands beneath a heading: a blank line, the text, and a
+// blank line after it. The last section of a file ends with the one break every
+// file ends with.
+func formatSection(value string, last bool) string {
 	text := trimBlankLines(markdown.Normalise(value))
 	switch {
 	case text == "" && last:

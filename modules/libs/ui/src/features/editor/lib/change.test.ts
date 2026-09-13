@@ -42,7 +42,7 @@ const createMarkedState = (doc: string, change: EditorChange | null): EditorStat
   }).state
 
 /** The showing, moved on to `part` of the way through. */
-const at = (state: EditorState, change: EditorChange, part: number): EditorState =>
+const getStateAt = (state: EditorState, change: EditorChange, part: number): EditorState =>
   state.update({ effects: stepped.of(revealOf(change.text, part)) }).state
 
 describe('how much of a change is shown', () => {
@@ -127,14 +127,14 @@ describe('a change whose text has arrived', () => {
   })
 
   it('shows the words that have had their turn and covers the rest', () => {
-    expect(getDrawn(at(createMarkedState(DOC, CHANGE), CHANGE, 0.4))).toEqual([
+    expect(getDrawn(getStateAt(createMarkedState(DOC, CHANGE), CHANGE, 0.4))).toEqual([
       { from: 4, to: 8, mark: 'cm-arriving' },
       { from: 8, to: 15, mark: null },
     ])
   })
 
   it('draws nothing at all once every word is shown', () => {
-    expect(getDrawn(at(createMarkedState(DOC, CHANGE), CHANGE, 1))).toEqual([])
+    expect(getDrawn(getStateAt(createMarkedState(DOC, CHANGE), CHANGE, 1))).toEqual([])
   })
 
   it('takes over from the mark when the text lands in the document', () => {
@@ -146,7 +146,7 @@ describe('a change whose text has arrived', () => {
   })
 
   it('goes back to the mark when the text is typed away from under it', () => {
-    const shown = at(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
+    const shown = getStateAt(createMarkedState(DOC, CHANGE), CHANGE, 0.4)
     const typed = shown.update({ changes: { from: 5, to: 6, insert: 'i' } }).state
     expect(getDrawn(typed)).toEqual([{ from: 4, to: 15, mark: 'cm-changing' }])
   })

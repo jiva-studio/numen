@@ -157,7 +157,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 
 	// What is still to come, and how much came back, are both worked out from
 	// the answers in the order they were given, so they are asked for together.
-	due, retained, err := u.ahead(ctx, v, held)
+	due, retained, err := u.getDueAndRetained(ctx, v, held)
 	if err != nil {
 		return ReviewCounts{}, err
 	}
@@ -210,8 +210,8 @@ func getUncounted(answers []review.Answer, seen map[string]bool) []review.Answer
 	return out
 }
 
-// ahead is how much falls on each day still to come, and how much of what came
-// round in days came back on each day behind.
+// getDueAndRetained is how much falls on each day still to come, and how much
+// of what came round in days came back on each day behind.
 //
 // The answers are the reading the days were counted from, so the whole log is
 // opened once for the screen.
@@ -220,7 +220,7 @@ func getUncounted(answers []review.Answer, seen map[string]bool) []review.Answer
 // owes now is what the front door counts, and this says what is coming after
 // it. Where a card falls is worked out from the answers like everything else,
 // so the day it shows is the day it would be asked on.
-func (u CountReviews) ahead(
+func (u CountReviews) getDueAndRetained(
 	ctx context.Context, v domain.Vault, held ReviewLog,
 ) (map[string]int, map[string]review.RecallTally, error) {
 	falls := make(map[string]int)

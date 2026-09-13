@@ -215,7 +215,7 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
 		refuse(w, err)
 		return
 	}
-	//nolint:contextcheck // the page drawn ahead is nobody's request, and runs under a.behind()
+	//nolint:contextcheck // the page drawn ahead is nobody's request, and runs under a.getBackgroundContext()
 	a.readAhead(reader, key)
 
 	w.Header().Set("Content-Type", "image/jpeg")
@@ -321,7 +321,7 @@ func (a *API) readAhead(reader port.VaultReader, key pictureID) {
 	}
 	go func() {
 		defer a.Viewer.ahead.release()
-		ctx, cancel := context.WithTimeout(a.behind(), a.Viewer.ahead.within)
+		ctx, cancel := context.WithTimeout(a.getBackgroundContext(), a.Viewer.ahead.within)
 		defer cancel()
 		// Nobody asked for this page. One that would not draw is drawn again
 		// when somebody turns to it, and says so then.
@@ -329,11 +329,11 @@ func (a *API) readAhead(reader port.VaultReader, key pictureID) {
 	}()
 }
 
-// behind is what a drawing nobody asked for runs under: the context the passes
-// behind the vault in the window run under. The vault going ends it, so a
-// window that is closing is not held open by a page nobody has turned to. A
-// window standing on no vault has no passes, and nothing to end.
-func (a *API) behind() context.Context {
+// getBackgroundContext is what a drawing nobody asked for runs under: the
+// context the passes behind the vault in the window run under. The vault going
+// ends it, so a window that is closing is not held open by a page nobody has
+// turned to. A window standing on no vault has no passes, and nothing to end.
+func (a *API) getBackgroundContext() context.Context {
 	if on := a.showing.Load(); on != nil {
 		return on.under
 	}

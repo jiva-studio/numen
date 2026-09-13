@@ -446,7 +446,7 @@ func point(p Projection) Point {
 }
 
 // getSessionClosed is what closed the first day the preset admits. A preset
-// admession no day is closed by the pause.
+// admitting no day is closed by the pause.
 func getSessionClosed(p Projection) BudgetNames {
 	day, any := p.Session()
 	if !any {
@@ -460,7 +460,7 @@ func getSessionClosed(p Projection) BudgetNames {
 //
 // It is one real day of the run, worked out by the arithmetic the deck screen
 // runs, so the count here is the count that session hands a person. A preset
-// admession no day at all holds no session, and stands at nothing.
+// admitting no day at all holds no session, and stands at nothing.
 func session(p Projection) Point {
 	out := point(p)
 	day, any := p.Session()

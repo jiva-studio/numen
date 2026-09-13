@@ -108,13 +108,12 @@ func replace(path string, content []byte) error {
 
 // AnnouncementPath is where an agent a person configures themselves is told to
 // look, and TokenPath is where the token it presents is kept.
-func AnnouncementPath(cfg container.Config) (string, error) { return beside(cfg, "agents.json") }
-func TokenPath(cfg container.Config) (string, error)        { return beside(cfg, "agents.token") }
+func AnnouncementPath(cfg container.Config) (string, error) { return getStatePath(cfg, "agents.json") }
+func TokenPath(cfg container.Config) (string, error)        { return getStatePath(cfg, "agents.token") }
 
-// beside is where this installation keeps its own state. A registry pointed
-// somewhere chosen takes everything else with it, which is what a test and a
-// second installation both need.
-func beside(cfg container.Config, name string) (string, error) {
+// getStatePath is where this installation keeps its own state. A registry
+// pointed somewhere chosen takes everything else with it.
+func getStatePath(cfg container.Config, name string) (string, error) {
 	if cfg.RegistryPath != "" {
 		return filepath.Join(filepath.Dir(cfg.RegistryPath), name), nil
 	}

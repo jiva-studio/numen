@@ -55,7 +55,7 @@ func Write(pages []Page) ([]byte, []highlight.Box, []Part) {
 				out.WriteString(blockGap)
 				prose += len(blockGap)
 			}
-			boxes = append(boxes, within(page, block, prose)...)
+			boxes = append(boxes, getBoxesWithin(page, block, prose)...)
 			if block.Heading && block.Text != "" {
 				parts = append(parts, Part{Start: prose, Length: len(block.Text), Depth: block.Depth})
 			}
@@ -68,10 +68,10 @@ func Write(pages []Page) ([]byte, []highlight.Box, []Part) {
 	return []byte(out.String()), boxes, parts
 }
 
-// within is where each box of a block sits: at its offset from base in the
-// prose, and over the fraction of the page its rectangle covers. A page nothing
-// was measured on gives no boxes, having no size to take a fraction of.
-func within(page Page, block Block, base int) []highlight.Box {
+// getBoxesWithin is where each box of a block sits: at its offset from base in
+// the prose, and over the fraction of the page its rectangle covers. A page
+// nothing was measured on gives no boxes, having no size to take a fraction of.
+func getBoxesWithin(page Page, block Block, base int) []highlight.Box {
 	if page.Size.X <= 0 || page.Size.Y <= 0 {
 		return nil
 	}

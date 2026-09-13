@@ -26,7 +26,7 @@ const settle = () => new Promise((done) => setTimeout(done, 0))
 type Types = Record<string, NoteType>
 
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
-const around = (
+const createNeighbourhood = (
   focus: string,
   neighbours: readonly string[] = [],
   types: Types = {},
@@ -48,13 +48,13 @@ const around = (
 const viewOn = (at: string, neighbours: readonly string[] = [], types: Types = {}) => {
   const went: string[] = []
   const view = {
-    neighbourhood: ref(around(at, neighbours, types)),
+    neighbourhood: ref(createNeighbourhood(at, neighbours, types)),
     here: ref(at),
     error: ref(''),
     go: async (path: string) => {
       went.push(path)
       view.here.value = path
-      view.neighbourhood.value = around(path, [], types)
+      view.neighbourhood.value = createNeighbourhood(path, [], types)
     },
     followMoves: (renamed: readonly { from: string; to: string }[]) => {
       const one = renamed.find((went) => went.from === view.here.value)

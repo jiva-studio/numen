@@ -209,21 +209,29 @@ export const AFace: Story = {
     const body = found(canvasElement, '.face__body')
     expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(2)
 
-    const at = (pane: string): DOMRect => paneOf(canvasElement, pane).getBoundingClientRect()
+    const getPaneBox = (pane: string): DOMRect =>
+      paneOf(canvasElement, pane).getBoundingClientRect()
 
     // The writing stands beside its preview, on one line.
-    expect(Math.round(at('front-written').top)).toBe(Math.round(at('front-preview').top))
-    expect(at('front-written').right).toBeLessThanOrEqual(at('front-preview').left)
+    expect(Math.round(getPaneBox('front-written').top)).toBe(
+      Math.round(getPaneBox('front-preview').top),
+    )
+    expect(getPaneBox('front-written').right).toBeLessThanOrEqual(getPaneBox('front-preview').left)
 
     // The front stands above the back, and both halves are cut the same way.
-    expect(at('front-written').bottom).toBeLessThanOrEqual(at('back-written').top)
-    expect(Math.round(at('back-written').top)).toBe(Math.round(at('back-preview').top))
+    expect(getPaneBox('front-written').bottom).toBeLessThanOrEqual(getPaneBox('back-written').top)
+    expect(Math.round(getPaneBox('back-written').top)).toBe(
+      Math.round(getPaneBox('back-preview').top),
+    )
 
     // What divides them is one line, shared by the two it divides.
     const line = Number.parseFloat(getComputedStyle(body).columnGap)
     expect(line).toBeGreaterThan(0)
-    expect(at('front-preview').left - at('front-written').right).toBeCloseTo(line, 0)
-    expect(at('back-written').top - at('front-written').bottom).toBeCloseTo(line, 0)
+    expect(getPaneBox('front-preview').left - getPaneBox('front-written').right).toBeCloseTo(
+      line,
+      0,
+    )
+    expect(getPaneBox('back-written').top - getPaneBox('front-written').bottom).toBeCloseTo(line, 0)
 
     // A part is a box to write in, not a line: the box fills the part it stands
     // in, so every point of the part is a point to type at.

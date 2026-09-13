@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// under is the paths one vault holds at a path and beneath it.
-func under(t *testing.T, db *DB, vault domain.Vault, path string) []string {
+// getPathsUnder is the paths one vault holds at a path and beneath it.
+func getPathsUnder(t *testing.T, db *DB, vault domain.Vault, path string) []string {
 	t.Helper()
 
 	found, err := db.Sources().GetSourcesUnder(t.Context(), vault.ID, path)
@@ -33,7 +33,7 @@ func TestWhatIsUnderAFolderIsEverythingItHolds(t *testing.T) {
 	book(t, db, first, "physics/A Book.epub", 1)
 
 	want := []string{"physics/A Book.epub", "physics/Entropy.md", "physics/heat/Heat.md"}
-	if got := under(t, db, first, "physics"); !slices.Equal(got, want) {
+	if got := getPathsUnder(t, db, first, "physics"); !slices.Equal(got, want) {
 		t.Errorf("the folder holds %v, want %v", got, want)
 	}
 }
@@ -45,7 +45,7 @@ func TestWhatIsUnderAFileIsTheFile(t *testing.T) {
 	saveNamedNote(t, db, first, "physics/Entropy.md.bak.md", "A copy")
 
 	want := []string{"physics/Entropy.md"}
-	if got := under(t, db, first, "physics/Entropy.md"); !slices.Equal(got, want) {
+	if got := getPathsUnder(t, db, first, "physics/Entropy.md"); !slices.Equal(got, want) {
 		t.Errorf("the path holds %v, want %v", got, want)
 	}
 }
@@ -80,10 +80,10 @@ func TestWhatIsUnderAPathIsOneVaultsAlone(t *testing.T) {
 	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
 	saveNamedNote(t, db, second, "physics/Quasar.md", "Quasar")
 
-	if got := under(t, db, first, "physics"); !slices.Equal(got, []string{"physics/Entropy.md"}) {
+	if got := getPathsUnder(t, db, first, "physics"); !slices.Equal(got, []string{"physics/Entropy.md"}) {
 		t.Errorf("the first vault holds %v", got)
 	}
-	if got := under(t, db, second, "physics"); !slices.Equal(got, []string{"physics/Quasar.md"}) {
+	if got := getPathsUnder(t, db, second, "physics"); !slices.Equal(got, []string{"physics/Quasar.md"}) {
 		t.Errorf("the second vault holds %v", got)
 	}
 }

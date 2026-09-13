@@ -76,14 +76,14 @@ func FuzzInside(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, path string) {
-		asVault, vaultReal, vaultErr := within(root, path, DefaultServiceDir)
+		asVault, vaultReal, vaultErr := resolveVaultPath(root, path, DefaultServiceDir)
 		asOurs, oursReal, oursErr := service(root, path, DefaultServiceDir)
 
 		if vaultErr == nil && oursErr == nil {
 			t.Fatalf("%q is both the vault's (%s) and the application's (%s)",
 				path, asVault, asOurs)
 		}
-		checkRule(t, root, path, "within", false, asVault, vaultReal, vaultErr)
+		checkRule(t, root, path, "resolveVaultPath", false, asVault, vaultReal, vaultErr)
 		checkRule(t, root, path, "service", true, asOurs, oursReal, oursErr)
 
 		// A path that could not name anything inside a vault is refused before
@@ -96,11 +96,13 @@ func FuzzInside(f *testing.F) {
 
 		// The two pairs the package reads a vault through say the same thing as
 		// the rule underneath them.
-		if got, err := inside(root, path, DefaultServiceDir); err != nil != (vaultErr != nil) || got != asVault {
-			t.Fatalf("inside(%q) gave %q, %v and within gave %q, %v", path, got, err, asVault, vaultErr)
+		if got, err := getContainedPath(root, path, DefaultServiceDir); err != nil != (vaultErr != nil) || got != asVault {
+			t.Fatalf("getContainedPath(%q) gave %q, %v and resolveVaultPath gave %q, %v",
+				path, got, err, asVault, vaultErr)
 		}
 		if got, err := resolveLinks(root, path, DefaultServiceDir); err != nil != (vaultErr != nil) || got != vaultReal {
-			t.Fatalf("resolveLinks(%q) gave %q, %v and within gave %q, %v", path, got, err, vaultReal, vaultErr)
+			t.Fatalf("resolveLinks(%q) gave %q, %v and resolveVaultPath gave %q, %v",
+				path, got, err, vaultReal, vaultErr)
 		}
 	})
 }
@@ -112,7 +114,8 @@ func FuzzInside(f *testing.F) {
 // Where the path resolves to is what says which of the two rules was entitled
 // to answer. A link is a second spelling for a place, and it is the place the
 // two divide between them, so a path spelled as the vault's that lands in the
-// application's folder is the application's and within may not take it.
+// application's folder is the application's and resolveVaultPath may not take
+// it.
 func checkRule(t *testing.T, root, path, rule string, application bool, target, real string, err error) {
 	t.Helper()
 	if err != nil {
@@ -122,7 +125,7 @@ func checkRule(t *testing.T, root, path, rule string, application bool, target, 
 		return
 	}
 	for what, got := range map[string]string{"lands at": target, "resolves to": real} {
-		if !under(got, root) {
+		if !isUnderRoot(got, root) {
 			t.Fatalf("%s took %q, which %s %q, outside %q", rule, path, what, got, root)
 		}
 	}

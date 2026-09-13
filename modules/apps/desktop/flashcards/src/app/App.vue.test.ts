@@ -151,14 +151,14 @@ describe('a letter pressed on the vaults', () => {
 // owing nothing is an empty session, and it mints marks in the vault to hold it.
 describe('a letter pressed on the decks', () => {
   /** The window on the decks of the vault standing at this letter. */
-  const on = async (vault: string) => {
+  const openVault = async (vault: string) => {
     const window = await mountWindow()
     await press(vault)
     return window
   }
 
   it('sits down to the deck standing at it', async () => {
-    await on('b')
+    await openVault('b')
 
     await press('a')
 
@@ -166,7 +166,7 @@ describe('a letter pressed on the decks', () => {
   })
 
   it('sits down to nothing where that deck owes nothing', async () => {
-    await on('b')
+    await openVault('b')
 
     await press('b')
 
@@ -174,7 +174,7 @@ describe('a letter pressed on the decks', () => {
   })
 
   it('sits down to nothing where the whole vault owes nothing', async () => {
-    await on('a')
+    await openVault('a')
 
     await press('Enter')
 
@@ -182,7 +182,7 @@ describe('a letter pressed on the decks', () => {
   })
 
   it('sits down to the whole vault where it owes something', async () => {
-    await on('b')
+    await openVault('b')
 
     await press('Enter')
 

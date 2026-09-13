@@ -19,7 +19,7 @@ export function createReaderKinds({ log, tabOpeners, held }: ReaderKindsDeps) {
 
   const turned = bookKind(
     held.handle,
-    (path) => useBookTab(useBookReader(books, path, bookWords, log.under('book'))),
+    (path) => useBookTab(useBookReader(books, path, bookWords, log.getWriter('book'))),
     tabOpeners,
   )
 

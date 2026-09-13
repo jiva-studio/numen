@@ -102,7 +102,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 			case "rename", "rename apart":
 				renaming := c.rename()
 				if rapid.Bool().Draw(rt, "apart") {
-					renaming = c.apart()
+					renaming = c.renameApart()
 				}
 				out, err := renaming.Execute(rt.Context(), c.vault, path,
 					rapid.SampledFrom(titles).Draw(rt, "title"))

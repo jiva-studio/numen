@@ -68,7 +68,7 @@ An application serves the generated handler and the tool endpoint itself; both a
 
 The domain holds notes, vaults, the index model and the rules over them. It may not know that files exist, that SQLite exists, or what time it is. A filesystem, a database, a clock and an agent are each a port the core declares and an adapter that implements it.
 
-A port an adapter is bound to in `container` is declared in `port`, because that is where the composition root looks for it. A one-method interface a single use case needs is declared beside that use case, where its only consumer can see it whole. Adapters never name the interface they satisfy. Ports are named after the need, adapters after the technology: the core asks for a `VaultReader`, and that the answer is a filesystem is knowledge confined to `adapter/` and `container/`.
+A port an adapter is bound to at the composition root is declared with the ports, because that is where the composition root looks for it. A one-method interface a single use case needs is declared beside that use case, where its only consumer can see it whole. Adapters never name the interface they satisfy. Ports are named after the need, adapters after the technology: the core asks to read a vault, and that the answer is a filesystem is knowledge confined to the adapters and the composition root.
 
 Entry points are adapters. The command line, the window and the tool endpoint are three of them, and the core knows about none.
 
@@ -80,16 +80,16 @@ An application names a configuration, mounts the driving adapters it serves, and
 
 ### An implementation only one application can start lives in that application
 
-An adapter behind a port is the core's when every application can run it, and the application's when one can. The agent behind `port.Agent` starts a program on the machine, so it sits in the desktop application; a phone binds that port to nothing and the panel says there is no agent.
+An adapter behind a port is the core's when every application can run it, and the application's when one can. The adapter behind the agent port starts a program on the machine, so it sits in the desktop application; a phone binds that port to nothing and the panel says there is no agent.
 
 ### Layout
 
 ```
 modules/libs/core/
   go.mod
-  domain/                  one file per type: vault.go, note.go, link.go
-  port/                    one file per port: vault_reader.go, note_queries.go
-  usecase/<aggregate>/     one file per scenario: add.go, scan.go, rename.go
+  domain/                  one file per type
+  port/                    one file per port
+  usecase/<aggregate>/     one file per scenario, named after it
   container/               composition root: adapter to port
 
   <subject>/               one folder to a subject the core reasons about,
@@ -101,7 +101,7 @@ modules/libs/core/
     cli/                   driving: arguments in, text out
     mcp/                   driving: tools an agent calls
     index/                 driven: the cache, a folder per aggregate
-      <aggregate>/         repository.go, queries.go, sql/*.sql
+      <aggregate>/         its repository, its queries and their SQL
       migration/           numbered schema changes
     settings/              driven: what a person configured
     agent/                 driven: which agent answers
@@ -126,17 +126,17 @@ A repository is a collection of aggregates: put one in, take one out, remove one
 
 ### `internal/` marks what nothing outside composes
 
-An application reaches the core's own language, the driving adapters it serves, and `container`. An adapter it does not name sits under `internal/`, where the compiler holds it, so binding an adapter to a port stays one package's work.
+An application reaches the core's own language, the driving adapters it serves, and the composition root. An adapter it does not name sits under `internal/`, where the compiler holds it, so binding an adapter to a port stays one package's work.
 
-`internal/` is Go's visibility, and it says who may compose a thing — never which way a call goes through it. A driving adapter nothing outside composes belongs there as much as a driven one: `internal/adapter/theme` serves the schema and is mounted by two windows, and an application still reaches it through `container` rather than by naming it.
+`internal/` is Go's visibility, and it says who may compose a thing — never which way a call goes through it. A driving adapter nothing outside composes belongs there as much as a driven one: the theme adapter serves the schema and is mounted by two windows, and an application still reaches it through the composition root rather than by naming it.
 
 ### Infrastructure two adapters share sits beside them
 
-What two adapters both run on and neither owns — the ONNX Runtime a recognition and a transcription both load their models through — is its own package under `internal/`, outside `adapter/`. An adapter is given what it needs and reaches no other adapter, and that rule is what keeps the shared thing a package of its own.
+What two adapters both run on and neither owns — the ONNX Runtime a recognition and a transcription both load their models through — is a package of its own beside the adapters, held inside the module. An adapter is given what it needs and reaches no other adapter, and that rule is what keeps the shared thing a package of its own.
 
 ### The core has no logger
 
-The core writes to no stream of its own. What went wrong in work it carries on past — a watcher that lost the folder it was following, a queue that could not read a file — is said through `port.ErrorHandler`, and an installation that binds none is told nothing. What a call could not answer is that call's error, and goes back to whoever asked.
+The core writes to no stream of its own. What went wrong in work it carries on past — a watcher that lost the folder it was following, a queue that could not read a file — is said through the port that carries what went wrong, and an installation that binds none is told nothing. What a call could not answer is that call's error, and goes back to whoever asked.
 
 ### SQL lives in files
 

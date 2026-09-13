@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/libs/core` — `adapter/index`
+- **Applies to:** `modules/libs/core`
 - **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [What the index stores](0006-what-the-index-stores.md), [A schema change is a numbered migration](0007-a-schema-change-is-a-numbered-migration.md), [The vector index stays inside SQLite](0013-the-vector-index-stays-inside-sqlite.md), [How this application is tested](0025-how-this-application-is-tested.md)
 
 ## Context

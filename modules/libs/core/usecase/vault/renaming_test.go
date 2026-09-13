@@ -99,7 +99,7 @@ func TestARenamedFileLeavesTheNoteAloneWhereTheTwoAreToldApart(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			f := fileable(t, map[string]string{"Entropy.md": c.raw})
 
-			if _, err := f.apart().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md"); err != nil {
+			if _, err := f.moveApart().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md"); err != nil {
 				t.Fatal(err)
 			}
 			if got := f.read(t, "Disorder.md"); got != c.raw {
@@ -118,7 +118,7 @@ func TestAFileFiledUnderAnotherFolderKeepsTheNameItHad(t *testing.T) {
 	t.Parallel()
 	for name, moving := range map[string]func(filing) vaults.Move{
 		"one name":   filing.move,
-		"told apart": filing.apart,
+		"told apart": filing.moveApart,
 	} {
 		t.Run(name, func(t *testing.T) {
 			f := fileable(t, map[string]string{
@@ -145,7 +145,7 @@ func TestARenamedFolderWritesToNothingUnderIt(t *testing.T) {
 	t.Parallel()
 	for name, moving := range map[string]func(filing) vaults.Move{
 		"one name":   filing.move,
-		"told apart": filing.apart,
+		"told apart": filing.moveApart,
 	} {
 		t.Run(name, func(t *testing.T) {
 			notes := map[string]string{
@@ -226,7 +226,7 @@ func TestARenamedFileIsNotReadWhereTheTwoAreToldApart(t *testing.T) {
 	f := fileable(t, map[string]string{"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n"})
 	before := f.readers.reads
 
-	if _, err := f.apart().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md"); err != nil {
+	if _, err := f.moveApart().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md"); err != nil {
 		t.Fatal(err)
 	}
 	if got := f.readers.reads - before; got != 0 {

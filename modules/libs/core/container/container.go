@@ -287,16 +287,16 @@ func (c Config) settingsFile() (string, error) {
 	if c.SettingsPath != "" {
 		return c.SettingsPath, nil
 	}
-	if file, chosen := c.beside("numen.json"); chosen {
+	if file, chosen := c.getPathBeside("numen.json"); chosen {
 		return file, nil
 	}
 	return settings.Path()
 }
 
-// beside is where this installation keeps a file of its own. A registry pointed
-// somewhere chosen takes everything else with it, which is what a test and a
-// second installation both need.
-func (c Config) beside(name string) (string, bool) {
+// getPathBeside is where this installation keeps a file of its own. A registry
+// pointed somewhere chosen takes everything else with it, which is what a test
+// and a second installation both need.
+func (c Config) getPathBeside(name string) (string, bool) {
 	if c.RegistryPath == "" {
 		return "", false
 	}

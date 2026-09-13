@@ -7,7 +7,7 @@ import { createNodeIdMap } from './nodeIdMap'
  *  whether the other note names the relationship too. */
 type NeighbourRow = [string, Seat, string, string, boolean?]
 
-const around = (focus: string, rows: NeighbourRow[]): Neighbourhood => ({
+const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood => ({
   focus: { path: focus, title: focus },
   focusType: 'note',
   related: rows.map(([path, seat, label, through, mutual]) => ({
@@ -25,7 +25,7 @@ const around = (focus: string, rows: NeighbourRow[]): Neighbourhood => ({
  * The picture, and the note each node ID in it stands for. Every note here is
  * one carrying no identifier, which is the note the picture has to draw.
  */
-const drawing = (neighbourhood: ReturnType<typeof around>) => {
+const drawing = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const map = createNodeIdMap()
   return { plex: asPlex(neighbourhood, map.getNodeId), note: map.getNodePath }
 }
@@ -34,7 +34,7 @@ const drawing = (neighbourhood: ReturnType<typeof around>) => {
  * Every edge, as the notes at its two ends. A ticket no note holds reads as
  * nothing, so an edge drawn under anything else says so here.
  */
-const edgesOf = (neighbourhood: ReturnType<typeof around>) => {
+const edgesOf = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const { plex, note } = drawing(neighbourhood)
   return plex.edges.map(
     (edge) => `${note(edge.from)} -> ${note(edge.to)}${edge.label ? ` (${edge.label})` : ''}`,
@@ -45,7 +45,7 @@ describe('what the plex is handed', () => {
   it('runs an edge the way the relationship runs', () => {
     expect(
       edgesOf(
-        around('Here', [
+        createNeighbourhood('Here', [
           ['Above', 'parent', 'part of', ''],
           ['Below', 'child', '', ''],
           ['Across', 'jump', 'see also', ''],
@@ -56,14 +56,14 @@ describe('what the plex is handed', () => {
 
   it('writes nothing on a line the person wrote nothing on', () => {
     // A line carries only the word the person put on it.
-    const [line] = drawing(around('Here', [['Below', 'child', '', '']])).plex.edges
+    const [line] = drawing(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex.edges
     expect(line?.label).toBeUndefined()
   })
 
   it('hangs a sibling off the parent, not off the focus', () => {
     expect(
       edgesOf(
-        around('Here', [
+        createNeighbourhood('Here', [
           ['Above', 'parent', 'part of', ''],
           ['Beside', 'sibling', '', 'Above'],
         ]),
@@ -77,7 +77,7 @@ describe('what the plex is handed', () => {
     // something the vault never joined it to.
     expect(
       edgesOf(
-        around('Here', [
+        createNeighbourhood('Here', [
           ['Machine learning', 'parent', '', ''],
           ['Eigenvector', 'parent', 'needs', ''],
           ['Clustering', 'sibling', '', 'Machine learning'],
@@ -95,12 +95,12 @@ describe('what the plex is handed', () => {
   it('draws no sibling edge when no parent is shown', () => {
     // It would otherwise fall back to the focus, which says the wrong thing:
     // a sibling is not a child.
-    expect(edgesOf(around('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual([])
+    expect(edgesOf(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual([])
   })
 
   it('seats every note it was given', () => {
     const { plex, note } = drawing(
-      around('Here', [
+      createNeighbourhood('Here', [
         ['Above', 'parent', 'part of', ''],
         ['Below', 'child', '', ''],
         ['Beside', 'sibling', '', 'Above'],
@@ -116,7 +116,7 @@ describe('what the plex is handed', () => {
 })
 
 describe('what a note is drawn under', () => {
-  const held = around('Here', [
+  const held = createNeighbourhood('Here', [
     ['Above', 'parent', '', ''],
     ['Below', 'child', '', ''],
     ['Beside', 'sibling', '', 'Above'],
@@ -150,7 +150,7 @@ describe('what a note is drawn under', () => {
     // A sibling whose parent is off the screen hangs off nothing, and the note
     // it named is one this picture never drew.
     const asked: string[] = []
-    asPlex(around('Here', [['Beside', 'sibling', '', 'Missing']]), (path) => {
+    asPlex(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]), (path) => {
       asked.push(path)
       return `#${path}`
     })
@@ -160,7 +160,7 @@ describe('what a note is drawn under', () => {
 })
 
 /** Every edge as the end its arrow is drawn at, and the pair it joins. */
-const arrows = (neighbourhood: ReturnType<typeof around>) => {
+const arrows = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const { plex, note } = drawing(neighbourhood)
   return plex.edges.map(
     (edge) => `${note(edge.from)} -> ${note(edge.to)}: ${edge.arrow ?? 'no arrow'}`,
@@ -173,7 +173,7 @@ describe('whose wording is on the line', () => {
     // link; Alice Fenn names the same relationship back.
     expect(
       arrows(
-        around('Marrowfield allotments', [
+        createNeighbourhood('Marrowfield allotments', [
           ['Alice Fenn, The Chair', 'child', 'the chair since May', '', true],
         ]),
       ),
@@ -185,7 +185,7 @@ describe('whose wording is on the line', () => {
     // An arrow says who chose the wording, whether or not there is any.
     expect(
       arrows(
-        around('Alice Fenn, The Chair', [
+        createNeighbourhood('Alice Fenn, The Chair', [
           ['Marrowfield allotments', 'parent', '', '', true],
         ]),
       ),
@@ -195,7 +195,7 @@ describe('whose wording is on the line', () => {
   it('points it out of the focus on a jump each note wrote its own word on', () => {
     expect(
       arrows(
-        around('Alice Fenn, The Chair', [
+        createNeighbourhood('Alice Fenn, The Chair', [
           ['Bram Doyle', 'jump', 'the oldest tenant', '', true],
         ]),
       ),
@@ -207,7 +207,7 @@ describe('whose wording is on the line', () => {
     // wording, and nothing to choose between.
     expect(
       arrows(
-        around('Alice Fenn, The Chair', [
+        createNeighbourhood('Alice Fenn, The Chair', [
           ['Cora Hale', 'jump', 'keys, hoses, the gate', '', false],
         ]),
       ),
@@ -219,7 +219,7 @@ describe('whose wording is on the line', () => {
     // in focus and there is no end for an arrow to name.
     expect(
       arrows(
-        around('Alice Fenn, The Chair', [
+        createNeighbourhood('Alice Fenn, The Chair', [
           ['Marrowfield allotments', 'parent', '', '', true],
           ['The question of the rota', 'sibling', '', 'Marrowfield allotments', true],
         ]),

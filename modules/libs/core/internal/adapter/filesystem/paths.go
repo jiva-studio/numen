@@ -19,14 +19,14 @@ var ErrOutside = port.ErrOutside
 // answer reaches a use case whichever vault it came from.
 var ErrNotANote = port.ErrNotANote
 
-// inside turns a path from a vault root into a path on this machine, and
-// refuses one that leaves.
+// getContainedPath turns a path from a vault root into a path on this machine,
+// and refuses one that leaves.
 //
 // The check is on the cleaned path. `notes/../../etc` begins with neither a
 // slash nor a dot-dot and reaches outside all the same. Everything that
 // reaches a vault from outside the application arrives here first.
-func inside(root, path, serviceDir string) (string, error) {
-	target, _, err := within(root, path, serviceDir)
+func getContainedPath(root, path, serviceDir string) (string, error) {
+	target, _, err := resolveVaultPath(root, path, serviceDir)
 	return target, err
 }
 
@@ -34,18 +34,18 @@ func inside(root, path, serviceDir string) (string, error) {
 // way to it resolved. A write renames over this one, and a note kept as a link
 // to another file in the vault is a link afterwards.
 func resolveLinks(root, path, serviceDir string) (string, error) {
-	_, real, err := within(root, path, serviceDir)
+	_, real, err := resolveVaultPath(root, path, serviceDir)
 	return real, err
 }
 
-// within is the vault as the person's: a path that stays inside it, and that is
-// not in the folder belonging to the application — neither as it is spelled nor
-// where it lands.
+// resolveVaultPath is the vault as the person's: a path that stays inside it,
+// and that is not in the folder belonging to the application — neither as it is
+// spelled nor where it lands.
 //
 // A link is a second spelling for a place, so the folder is asked about both.
 // `link/ocr/abc.txt`, where `link` is a link to the service folder, reads as the
 // vault's and is the application's, and it is the second that decides.
-func within(root, path, serviceDir string) (target, real string, err error) {
+func resolveVaultPath(root, path, serviceDir string) (target, real string, err error) {
 	clean, err := cleanPath(path)
 	if err != nil {
 		return "", "", err
@@ -63,9 +63,9 @@ func within(root, path, serviceDir string) (target, real string, err error) {
 	return target, real, nil
 }
 
-// service is the complement of within: a path that stays inside the vault, and
-// that is in the folder belonging to the application by both of the same
-// measures.
+// service is the complement of resolveVaultPath: a path that stays inside the
+// vault, and that is in the folder belonging to the application by both of the
+// same measures.
 //
 // The two overlap nowhere, which is what lets one type write a derived file
 // where no writer of notes can reach, without making any note's refusal weaker.
@@ -139,7 +139,7 @@ func resolveContained(root, clean string) (target, real, landed string, err erro
 	if err != nil {
 		return "", "", "", err
 	}
-	if !under(real, root) {
+	if !isUnderRoot(real, root) {
 		return "", "", "", fmt.Errorf("%s: %w", clean, ErrOutside)
 	}
 	return target, real, landing(real, root), nil
@@ -154,8 +154,8 @@ func landing(real, root string) string {
 	return filepath.ToSlash(real[len(root)+1:])
 }
 
-// under says whether a resolved path is a root or lies inside it.
-func under(real, root string) bool {
+// isUnderRoot says whether a resolved path is a root or lies inside it.
+func isUnderRoot(real, root string) bool {
 	return real == root || strings.HasPrefix(real, root+string(filepath.Separator))
 }
 

@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// beside makes a settings file in a folder of this test's own.
-func beside(t *testing.T, written string) string {
+// writeSettingsFile makes a settings file in a folder of this test's own.
+func writeSettingsFile(t *testing.T, written string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if written != "" {
@@ -25,7 +25,7 @@ func beside(t *testing.T, written string) string {
 
 func TestReadHandsBackEveryByteAsItStands(t *testing.T) {
 	written := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
-	raw, err := settings.Read(beside(t, written))
+	raw, err := settings.Read(writeSettingsFile(t, written))
 	if err != nil {
 		t.Fatalf("reading: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestReadOfAFileThatIsNotThereIsAnEmptyObject(t *testing.T) {
 }
 
 func TestWriteKeepsTheBytesAsTheyWereTyped(t *testing.T) {
-	path := beside(t, "{}\n")
+	path := writeSettingsFile(t, "{}\n")
 	// Two spaces of indent, a section in an order of somebody's own, and a
 	// number written to two places.
 	written := "{\n  \"indexing\": {\n    \"proofreading\": { \"max_edit_distance\": 0.30 }\n  }\n}\n"
@@ -65,7 +65,7 @@ func TestWriteKeepsTheBytesAsTheyWereTyped(t *testing.T) {
 
 func TestWriteRefusesWhatIsNotJSONAndLeavesTheFileAsItWas(t *testing.T) {
 	held := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
-	path := beside(t, held)
+	path := writeSettingsFile(t, held)
 
 	err := settings.Write(path, []byte("{ \"agent\": { \"use\": \"claude\" } // a comment\n}"), nil)
 	if !errors.Is(err, port.ErrNotASetting) {
@@ -82,7 +82,7 @@ func TestWriteRefusesWhatIsNotJSONAndLeavesTheFileAsItWas(t *testing.T) {
 }
 
 func TestWriteRefusesAValueOfTheWrongKind(t *testing.T) {
-	path := beside(t, "{}\n")
+	path := writeSettingsFile(t, "{}\n")
 
 	err := settings.Write(path, []byte(`{"appearance": {"interface_scale": "large"}}`), nil)
 	if !errors.Is(err, port.ErrNotASetting) {
@@ -98,7 +98,7 @@ func TestWriteRefusesAValueOfTheWrongKind(t *testing.T) {
 func TestWriteRefusesWhatIsNotAnObject(t *testing.T) {
 	for _, written := range []string{"null", "42", `"hello"`, "[1,2]", "true"} {
 		held := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
-		path := beside(t, held)
+		path := writeSettingsFile(t, held)
 
 		err := settings.Write(path, []byte(written), nil)
 		if !errors.Is(err, port.ErrNotASetting) {
@@ -122,7 +122,7 @@ func TestWriteRefusesANameASectionHoldsTwice(t *testing.T) {
 		"a field far down": `{"indexing":{"embedding":{"indexing":{"use":"a","use":"b"}}}}`,
 	} {
 		held := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
-		path := beside(t, held)
+		path := writeSettingsFile(t, held)
 
 		err := settings.Write(path, []byte(written), nil)
 		if !errors.Is(err, port.ErrNotASetting) {
@@ -139,7 +139,7 @@ func TestWriteRefusesANameASectionHoldsTwice(t *testing.T) {
 }
 
 func TestWhatIsSaidDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
-	path := beside(t, "{}\n")
+	path := writeSettingsFile(t, "{}\n")
 	// A key is the one thing in a settings file worth keeping to itself.
 	secret := "sk-not-a-real-key-0000"
 
@@ -169,7 +169,7 @@ func newLastRead(written string) *string { return &written }
 func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
 	read := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 	held := "{\n  \"agent\": { \"use\": \"codex\" }\n}\n"
-	path := beside(t, held)
+	path := writeSettingsFile(t, held)
 
 	err := settings.Write(path, []byte(`{"agent": {"use": "gemini"}}`), newLastRead(read))
 	if !errors.Is(err, port.ErrStale) {
@@ -184,7 +184,7 @@ func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
 
 func TestWriteOverTheFileThatWasReadLands(t *testing.T) {
 	held := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
-	path := beside(t, held)
+	path := writeSettingsFile(t, held)
 	written := "{\n  \"agent\": { \"use\": \"gemini\" }\n}\n"
 
 	if err := settings.Write(path, []byte(written), newLastRead(held)); err != nil {

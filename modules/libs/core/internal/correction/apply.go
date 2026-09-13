@@ -65,15 +65,15 @@ func plan(boxes []highlight.Box, lines []Line) walk {
 	return w
 }
 
-// before is the growth of the prose before offset o: the corrections whose box
-// begins earlier.
-func (w walk) before(o int) int {
+// getGrowthBefore is the growth of the prose before offset o: the corrections
+// whose box begins earlier.
+func (w walk) getGrowthBefore(o int) int {
 	n := sort.Search(len(w.changes), func(i int) bool { return w.changes[i].start >= o })
 	return w.grown[n]
 }
 
-// inside is the growth of the corrections lying wholly within the run.
-func (w walk) inside(start, length int) int {
+// getGrowthInside is the growth of the corrections lying wholly within the run.
+func (w walk) getGrowthInside(start, length int) int {
 	end := start + length
 	from := sort.Search(len(w.changes), func(i int) bool { return w.changes[i].start >= start })
 	to := sort.Search(len(w.changes), func(i int) bool { return w.changes[i].start+w.changes[i].length > end })
@@ -118,7 +118,7 @@ func Prose(prose string, marks []ocr.PageStart, boxes []highlight.Box, parts []o
 	out.Grow(len(prose) + w.grown[len(w.grown)-1])
 	cursor := 0
 	for _, one := range w.changes {
-		start, end := within(one.start, cursor, len(prose)), within(one.start+one.length, cursor, len(prose))
+		start, end := clamp(one.start, cursor, len(prose)), clamp(one.start+one.length, cursor, len(prose))
 		out.WriteString(prose[cursor:start])
 		out.WriteString(one.text)
 		cursor = end
@@ -129,7 +129,7 @@ func Prose(prose string, marks []ocr.PageStart, boxes []highlight.Box, parts []o
 	if len(marks) > 0 {
 		pages = make([]ocr.PageStart, len(marks))
 		for i, mark := range marks {
-			pages[i] = ocr.PageStart{Offset: mark.Offset + w.before(mark.Offset)}
+			pages[i] = ocr.PageStart{Offset: mark.Offset + w.getGrowthBefore(mark.Offset)}
 		}
 	}
 	named := parts
@@ -137,8 +137,8 @@ func Prose(prose string, marks []ocr.PageStart, boxes []highlight.Box, parts []o
 		named = make([]ocr.Part, len(parts))
 		for i, part := range parts {
 			named[i] = ocr.Part{
-				Start:  part.Start + w.before(part.Start),
-				Length: part.Length + w.inside(part.Start, part.Length),
+				Start:  part.Start + w.getGrowthBefore(part.Start),
+				Length: part.Length + w.getGrowthInside(part.Start, part.Length),
 				Depth:  part.Depth,
 			}
 		}
@@ -146,8 +146,8 @@ func Prose(prose string, marks []ocr.PageStart, boxes []highlight.Box, parts []o
 	return out.String(), pages, named
 }
 
-// within is offset o held to the run [low, high].
-func within(o, low, high int) int {
+// clamp is offset o held to the run [low, high].
+func clamp(o, low, high int) int {
 	if o < low {
 		return low
 	}

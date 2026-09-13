@@ -42,7 +42,7 @@ const presenceIn = (presence: Presence, words: Words): string => {
 }
 
 /** The second line under a model's name: what it is, then where it is. */
-const under = (parts: readonly string[]): string => parts.filter(Boolean).join(' · ')
+const getDetail = (parts: readonly string[]): string => parts.filter(Boolean).join(' · ')
 
 /**
  * What a model is called on the row. A model the build names in words is called
@@ -57,7 +57,7 @@ const getModelChoice = (model: Model, words: Words): SelectChoice => {
   const name = getModelName(model)
   // A model addressed by a path, a repository or an address is named by its
   // own words and addressed under them.
-  const detail = under([
+  const detail = getDetail([
     presenceIn(model.presence, words),
     isAddress(model.name) ? model.name : '',
   ])

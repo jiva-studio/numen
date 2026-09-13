@@ -69,9 +69,10 @@ func (o *openVaults) starts() bool {
 	return true
 }
 
-// of is the vault opened, and opens it the first time it is asked for. Opening
-// one registers a watch over its whole tree, which is done outside the lock.
-func (o *openVaults) of(v domain.Vault) *vaultOpening {
+// getOpening is the vault opened, and opens it the first time it is asked for.
+// Opening one registers a watch over its whole tree, which is done outside the
+// lock.
+func (o *openVaults) getOpening(v domain.Vault) *vaultOpening {
 	o.mu.Lock()
 	one, there := o.openings[v.ID]
 	if !there {
@@ -118,7 +119,7 @@ func (o *openVaults) reads(ctx context.Context, v domain.Vault) error {
 	}
 	defer o.running.Done()
 
-	_, err := o.of(v).open.Read(ctx, nil)
+	_, err := o.getOpening(v).open.Read(ctx, nil)
 	return err
 }
 
@@ -134,5 +135,5 @@ func (o *openVaults) level(ctx context.Context, v domain.Vault, paths []string) 
 	}
 	defer o.running.Done()
 
-	return o.of(v).opening.Level(ctx, v, paths)
+	return o.getOpening(v).opening.Level(ctx, v, paths)
 }

@@ -47,7 +47,7 @@ func TestATranscriptNamesNoParts(t *testing.T) {
 
 // A transcript nothing put right is composed from its own bytes.
 func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
-	store := beside{text.Artifact(text.ASR, "abc123"): writeTranscript()}
+	store := shelf{text.Artifact(text.ASR, "abc123"): writeTranscript()}
 
 	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 	if err != nil {
@@ -109,7 +109,7 @@ func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
 		{Text: "The name and the Named are not two.", From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},
 	})
-	store := beside{
+	store := shelf{
 		text.Artifact(text.ASR, "abc123"):    writeTranscript(),
 		text.Corrections(text.ASR, "abc123"): append(put, transcript.Hand()...),
 	}
@@ -138,7 +138,7 @@ func TestATranscriptPutRightToNothingIsWhatWasHeard(t *testing.T) {
 		{"a file holding no cues", []byte(transcript.Head + "\n")},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			store := beside{
+			store := shelf{
 				text.Artifact(text.ASR, "abc123"):    writeTranscript(),
 				text.Corrections(text.ASR, "abc123"): one.put,
 			}
@@ -157,7 +157,7 @@ func TestATranscriptPutRightToNothingIsWhatWasHeard(t *testing.T) {
 // passed over, and the cues before it stand where they were said.
 func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
 	torn := append(writeTranscript(), "\n00:1"...)
-	store := beside{
+	store := shelf{
 		text.Artifact(text.ASR, "abc123"):    writeTranscript(),
 		text.Corrections(text.ASR, "abc123"): torn,
 	}

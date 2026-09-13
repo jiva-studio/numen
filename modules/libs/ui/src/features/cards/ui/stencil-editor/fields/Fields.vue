@@ -66,7 +66,7 @@ const naming = useNaming<Objection>({
  * a field, at the end, or nowhere. The first field names every card, so nothing
  * lands above it and it goes nowhere itself.
  */
-const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint | undefined>({
+const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
   isMoved: (held, lands) => landing(props.fields, held, lands),
@@ -90,7 +90,7 @@ const add = (): void => {
   <section
     class="stencil__part"
     :aria-label="words.fields"
-    @dragover="over(null, $event)"
+    @dragover="hover(null, $event)"
     @drop="drop"
   >
     <h2 class="stencil__heading caps-numen m-0 text-small text-hushed">{{ words.fields }}</h2>
@@ -105,7 +105,7 @@ const add = (): void => {
         :wrong="wrongWith(row.field)"
         :before="row.field === at"
         :words="words"
-        @drag-over="over"
+        @drag-over="hover"
         @drop="drop"
         @lift="(press) => lift(row.field, press)"
         @release="release"

@@ -134,7 +134,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	// One reading of this vault's presets answers the schedulers, the budgets
 	// and how many decks name each preset.
 	reading := u.Presets.Reading()
-	asks, err := u.Schedules.under(ctx, v, reading, faces)
+	asks, err := u.Schedules.getAssignmentFrom(ctx, v, reading, faces)
 	if err != nil {
 		return CardsDue{}, err
 	}
@@ -146,7 +146,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	now := u.Now()
 	day, err := getBudgets(
 		ctx, v, reading, u.Day, faces, schedules, log,
-		u.Schedules.By, u.Schedules.at, now,
+		u.Schedules.By, u.Schedules.getScheduler, now,
 	)
 	if err != nil {
 		return CardsDue{}, err

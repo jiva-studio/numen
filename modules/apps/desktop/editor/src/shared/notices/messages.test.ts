@@ -7,7 +7,7 @@ import { messageLog } from './messages'
 describe('a writer under a name', () => {
   it('holds one message at a time, and the second replaces the first', () => {
     const log = messageLog()
-    const command = log.under('command')
+    const command = log.getWriter('command')
 
     command('The note is in the trash')
     command('a note of that name is filed there', 'error')
@@ -22,7 +22,7 @@ describe('a writer under a name', () => {
 
   it('gives every message an identity of its own', () => {
     const log = messageLog()
-    const command = log.under('command')
+    const command = log.getWriter('command')
 
     command('One')
     const first = log.messages.value[0]?.id
@@ -35,7 +35,7 @@ describe('a writer under a name', () => {
     // A stream that is down says so every second, and a card that arrived
     // again is a card read out again.
     const log = messageLog()
-    const worn = log.under('worn')
+    const worn = log.getWriter('worn')
 
     worn('the themes stopped arriving', 'state')
     const first = log.messages.value[0]?.id
@@ -46,20 +46,20 @@ describe('a writer under a name', () => {
 
   it('clears what it wrote when it writes nothing', () => {
     const log = messageLog()
-    log.under('command')('Renamed')
-    log.under('made')('a note of that name is filed there', 'error')
+    log.getWriter('command')('Renamed')
+    log.getWriter('made')('a note of that name is filed there', 'error')
 
-    log.under('command')('')
+    log.getWriter('command')('')
 
     expect(log.messages.value.map((one) => one.name)).toStrictEqual(['made'])
   })
 
   it('leaves the list alone where it had nothing to clear', () => {
     const log = messageLog()
-    log.under('made')('Renamed')
+    log.getWriter('made')('Renamed')
     const was = log.messages.value
 
-    log.under('command')('')
+    log.getWriter('command')('')
 
     expect(log.messages.value).toBe(was)
   })
@@ -68,8 +68,8 @@ describe('a writer under a name', () => {
 describe('a message the person is finished with', () => {
   it('is dropped by the identity it was given, and nothing else is', () => {
     const log = messageLog()
-    log.under('command')('Renamed')
-    log.under('made')('Filed there already', 'error')
+    log.getWriter('command')('Renamed')
+    log.getWriter('made')('Filed there already', 'error')
     const first = log.messages.value[0]!
 
     log.dismiss(first.id)
@@ -79,7 +79,7 @@ describe('a message the person is finished with', () => {
 
   it('is nothing at all where no message carries that identity', () => {
     const log = messageLog()
-    log.under('command')('Renamed')
+    log.getWriter('command')('Renamed')
 
     log.dismiss('reading the books')
 

@@ -52,7 +52,7 @@ The schema carries questions and their answers. It is not a second model of the 
 
 ### A status code says the call could not be answered; an error code is an answer
 
-A status code is for a call that did not happen: nothing serves it, the window is going, the request is not a request. **An `ErrorCode` is a successful call whose answer is no** — a name taken, a file that moved past the caller, a vault the list does not hold — and it rides in the response as a value of a closed enum, with the field that would have carried the answer absent.
+A status code is for a call that did not happen: nothing serves it, the window is going, the request is not a request. **An error code is a successful call whose answer is no** — a name taken, a file that moved past the caller, a vault the list does not hold — and it rides in the response as a value of a closed enum, with the field that would have carried the answer absent.
 
 A client that must read a status code to tell one outcome from the other has two paths to one answer, and the one it takes depends on what the transport did on the way.
 
@@ -80,9 +80,9 @@ Buf's standard rules want a request and a response message of its own for every 
 
 A field carries the name it has in the core across the wire. A stretch and a span are not an exception to that: they are two things, they keep their own names on both sides, and the wire carries each under the name it has.
 
-A type's own name is another matter, because a proto package is one flat namespace where the core has packages. Only one enum in `numen.v1` may be called `Mode`; the theme's holds it, so the search's is `SearchMode`, while the core says `search.Mode` and `appearance.ColorScheme` under packages that already qualify them. Those two enums are where this bites, and the field is `mode` on both sides of both.
+A type's own name is another matter, because a proto package is one flat namespace where the core has packages that qualify a name for it. Two enums are where this bites — the theme's way of choosing light or dark, and the search's mode — and the second of them carries its subject in front of it on the wire. The field is named the same on both sides of both.
 
-The values of `SearchMode` are the one place a name is chosen twice over: the wire spells the question as a person asks it — `WORDS`, `MEANING`, `NAMES` — and the core spells the retrieval technique — `Lexical`, `Dense`, `ByName`. Every name that changes on the way across is written down where a reader meets it: beside the enum in the schema, and in [the glossary](../glossary.md).
+The search's modes are the one place a name is chosen twice over: the wire spells the question as a person asks it, and the core spells the retrieval technique it runs. Every name that changes on the way across is written down where a reader meets it: beside the enum in the schema, and in [the glossary](../glossary.md).
 
 ## Consequences
 

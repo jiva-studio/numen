@@ -46,7 +46,7 @@ func home() string {
 // trash and takes none has nowhere to put it.
 func sendTo(path, home string) error {
 	if home != "" {
-		if err := into(home, path, path); !errors.Is(err, syscall.EXDEV) {
+		if err := moveIntoTrash(home, path, path); !errors.Is(err, syscall.EXDEV) {
 			return err
 		}
 	}
@@ -62,7 +62,7 @@ func sendTo(path, home string) error {
 	if err != nil {
 		return err
 	}
-	return into(dir, path, from)
+	return moveIntoTrash(dir, path, from)
 }
 
 // topdir is the root of the volume the folder is on: the last directory on the
@@ -106,12 +106,12 @@ func volume(top string, uid int) (string, error) {
 	return mine, nil
 }
 
-// into moves the folder into one trash directory under a name nothing there
-// holds, and records where it came from beside it.
+// moveIntoTrash moves the folder into one trash directory under a name nothing
+// there holds, and records where it came from beside it.
 //
 // The note is written first: the name is this deletion's before anything moves
 // under it. A move that fails takes the note back with it.
-func into(dir, path, from string) error {
+func moveIntoTrash(dir, path, from string) error {
 	files := filepath.Join(dir, "files")
 	info := filepath.Join(dir, "info")
 	for _, at := range []string{files, info} {

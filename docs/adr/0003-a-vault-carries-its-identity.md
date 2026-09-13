@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/libs/core` — `usecase/vault`, `internal/adapter/appstate`, `adapter/settings`
+- **Applies to:** `modules/libs/core`
 - **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md)
 
 ## Context

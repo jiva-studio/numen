@@ -27,16 +27,16 @@ export interface NoteEditorsDeps {
 export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditorsDeps) {
   const changes = noteChanges()
   const notes = openNotes(core, { onReplaced: changes.handleNoteChange })
-  const making = noteCreator(core, log.under('made'))
+  const making = noteCreator(core, log.getWriter('made'))
 
   const noted = useNoteTab(core, notes, changes, held.handle, tabOpeners)
   const decks = useDeckTabs(cards, presets, held.handle, tabOpeners)
-  const stencils = useStencilTabs(cards, held.handle, tabOpeners, log.under('stencil'))
+  const stencils = useStencilTabs(cards, held.handle, tabOpeners, log.getWriter('stencil'))
   const schedules = usePresetTab(
     presets,
     held.handle,
     tabOpeners,
-    log.under('preset'),
+    log.getWriter('preset'),
     day,
   )
 

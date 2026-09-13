@@ -4,7 +4,7 @@ import { placeTurns, VOICES, type Turn } from './turn'
 const createAsked = (id: string, text = 'said', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
 
-const back = (id: string, text = 'back', state?: Turn['state']): Turn =>
+const createAnswered = (id: string, text = 'back', state?: Turn['state']): Turn =>
   state === undefined
     ? { id, voice: 'answered', text }
     : { id, voice: 'answered', text, state }
@@ -28,7 +28,7 @@ describe('placing the turns', () => {
   })
 
   it('carries each turn through untouched', () => {
-    const turns = [createAsked('1'), back('2')]
+    const turns = [createAsked('1'), createAnswered('2')]
     expect(placeTurns(turns).map((placed) => placed.turn)).toStrictEqual(turns)
   })
 
@@ -42,7 +42,7 @@ describe('placing the turns', () => {
 
   it('hands each turn the descriptor for its voice', () => {
     expect(placeTurns([createAsked('1')])[0]?.voice).toBe(VOICES.asked)
-    expect(placeTurns([back('1')])[0]?.voice).toBe(VOICES.answered)
+    expect(placeTurns([createAnswered('1')])[0]?.voice).toBe(VOICES.answered)
   })
 
   it('places a turn with no text at all', () => {

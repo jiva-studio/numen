@@ -24,7 +24,7 @@ type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
 const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
-const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
+const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
 
 /**
  * The thread takes what height is left and scrolls inside it; the composer
@@ -133,9 +133,9 @@ const expectFadeUnderComposer = async (canvasElement: HTMLElement) => {
 export const Playground: Story = {
   render: conversation([
     createAsked('1', 'What does a plex draw?'),
-    back('2', 'One node in focus, and everything else placed by its seat.'),
+    createAnswered('2', 'One node in focus, and everything else placed by its seat.'),
     createAsked('3', 'And where do the seats come from?'),
-    back('4', MULTILINE),
+    createAnswered('4', MULTILINE),
   ]),
 }
 
@@ -162,7 +162,7 @@ export const LongConversation: Story = {
     Array.from({ length: 60 }, (_, index) =>
       index % 2 === 0
         ? createAsked(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
-        : back(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
+        : createAnswered(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
     ),
   ),
   play: async ({ canvasElement }) => {

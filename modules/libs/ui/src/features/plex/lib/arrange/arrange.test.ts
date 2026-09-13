@@ -204,11 +204,11 @@ describe('a box is as wide as its title needs', () => {
     const lines = inLines(jumps, maxPerLine)
     expect(lines.length).toBeGreaterThan(1)
 
-    const near = (line: PlacedNode[]) => Math.abs(line[0]!.x) - line[0]!.width / 2
+    const getNearEdge = (line: PlacedNode[]) => Math.abs(line[0]!.x) - line[0]!.width / 2
     for (let i = 1; i < lines.length; i++) {
       const before = lines[i - 1]!
       const widest = Math.max(...before.map((node) => node.width))
-      expect(near(lines[i]!)).toBeCloseTo(near(before) + widest + lineGap)
+      expect(getNearEdge(lines[i]!)).toBeCloseTo(getNearEdge(before) + widest + lineGap)
     }
   })
 

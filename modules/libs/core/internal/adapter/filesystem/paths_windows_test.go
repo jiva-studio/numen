@@ -21,8 +21,8 @@ func TestAPathThatNamesWhereItStartsFromIsRefused(t *testing.T) {
 		`C:notes\a.md`,
 		`C:\Windows\System32\config\SAM`,
 	} {
-		if _, _, err := within(real, path, DefaultServiceDir); err == nil {
-			t.Errorf("within(%q) was accepted", path)
+		if _, _, err := resolveVaultPath(real, path, DefaultServiceDir); err == nil {
+			t.Errorf("resolveVaultPath(%q) was accepted", path)
 		}
 		if _, _, err := service(real, path, DefaultServiceDir); err == nil {
 			t.Errorf("service(%q) was accepted", path)

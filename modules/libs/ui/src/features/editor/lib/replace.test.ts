@@ -8,7 +8,7 @@ const DOC = 'one\ntwo\nthree\nfour'
 const SEVERAL = EditorState.allowMultipleSelections.of(true)
 
 /** Where every end of every range lands, as a line and a column. */
-const after = (doc: string, selection: EditorSelection, fresh: string) => {
+const replaceIn = (doc: string, selection: EditorSelection, fresh: string) => {
   const state = EditorState.create({ doc, selection, extensions: [SEVERAL] })
   const put = state.update(replace(state, fresh)).state
   const place = (at: number) => {
@@ -39,7 +39,7 @@ const applyChange = (doc: string, fresh: string) => {
 
 describe('a document put in over another', () => {
   it('is the text it was given', () => {
-    expect(after(DOC, caret(DOC, 1, 0), 'fresh\ntext').text).toBe('fresh\ntext')
+    expect(replaceIn(DOC, caret(DOC, 1, 0), 'fresh\ntext').text).toBe('fresh\ntext')
   })
 
   it('is no step to undo', () => {
@@ -73,7 +73,7 @@ describe('a document put in over another', () => {
 describe('the caret', () => {
   it('comes back at its line and column', () => {
     const fresh = 'one is longer now\ntwo\nthree\nfour'
-    expect(after(DOC, caret(DOC, 3, 4), fresh).ranges).toEqual([
+    expect(replaceIn(DOC, caret(DOC, 3, 4), fresh).ranges).toEqual([
       [
         [3, 4],
         [3, 4],
@@ -82,7 +82,7 @@ describe('the caret', () => {
   })
 
   it('stops at the end of a line that is now shorter', () => {
-    expect(after(DOC, caret(DOC, 3, 5), 'one\ntwo\nthr\nfour').ranges).toEqual([
+    expect(replaceIn(DOC, caret(DOC, 3, 5), 'one\ntwo\nthr\nfour').ranges).toEqual([
       [
         [3, 3],
         [3, 3],
@@ -91,7 +91,7 @@ describe('the caret', () => {
   })
 
   it('stops at the last line when the text lost the one it was on', () => {
-    expect(after(DOC, caret(DOC, 4, 2), 'one\ntwo').ranges).toEqual([
+    expect(replaceIn(DOC, caret(DOC, 4, 2), 'one\ntwo').ranges).toEqual([
       [
         [2, 2],
         [2, 2],
@@ -100,7 +100,7 @@ describe('the caret', () => {
   })
 
   it('stays at the start of the text it was at the start of', () => {
-    expect(after(DOC, caret(DOC, 1, 0), 'a whole other note').ranges).toEqual([
+    expect(replaceIn(DOC, caret(DOC, 1, 0), 'a whole other note').ranges).toEqual([
       [
         [1, 0],
         [1, 0],
@@ -117,7 +117,7 @@ describe('a selection', () => {
     const head = state.doc.line(4).from + 3
     const fresh = 'one\ntwo is longer now\nthree\nfour'
 
-    expect(after(doc, EditorSelection.single(anchor, head), fresh).ranges).toEqual([
+    expect(replaceIn(doc, EditorSelection.single(anchor, head), fresh).ranges).toEqual([
       [
         [2, 1],
         [4, 3],
@@ -127,17 +127,17 @@ describe('a selection', () => {
 
   it('keeps every range, and which of them is the main one', () => {
     const state = EditorState.create({ doc: DOC })
-    const at = (line: number, column: number) => state.doc.line(line).from + column
+    const getOffset = (line: number, column: number) => state.doc.line(line).from + column
     const selection = EditorSelection.create(
       [
-        EditorSelection.range(at(1, 1), at(1, 2)),
-        EditorSelection.range(at(3, 1), at(3, 3)),
-        EditorSelection.range(at(4, 0), at(4, 2)),
+        EditorSelection.range(getOffset(1, 1), getOffset(1, 2)),
+        EditorSelection.range(getOffset(3, 1), getOffset(3, 3)),
+        EditorSelection.range(getOffset(4, 0), getOffset(4, 2)),
       ],
       1,
     )
 
-    const put = after(DOC, selection, 'one and more\ntwo\nthree and more\nfour')
+    const put = replaceIn(DOC, selection, 'one and more\ntwo\nthree and more\nfour')
     expect(put.ranges).toEqual([
       [
         [1, 1],
@@ -157,13 +157,13 @@ describe('a selection', () => {
 
   it('holds ranges that fell together to one place', () => {
     const state = EditorState.create({ doc: DOC })
-    const at = (line: number, column: number) => state.doc.line(line).from + column
+    const getOffset = (line: number, column: number) => state.doc.line(line).from + column
     const selection = EditorSelection.create(
-      [EditorSelection.cursor(at(3, 4)), EditorSelection.cursor(at(3, 5))],
+      [EditorSelection.cursor(getOffset(3, 4)), EditorSelection.cursor(getOffset(3, 5))],
       0,
     )
 
-    expect(after(DOC, selection, 'one\ntwo\nthr\nfour').ranges).toEqual([
+    expect(replaceIn(DOC, selection, 'one\ntwo\nthr\nfour').ranges).toEqual([
       [
         [3, 3],
         [3, 3],

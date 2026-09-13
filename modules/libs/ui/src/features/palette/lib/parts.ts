@@ -65,11 +65,11 @@ const clampToText = (text: string, at: number): number =>
  */
 const whole = (text: string, at: number, by: 1 | -1): number => {
   let here = at
-  while (here > 0 && here < text.length && inside(text, here)) here += by
+  while (here > 0 && here < text.length && isInsideCharacter(text, here)) here += by
   return here
 }
 
-const inside = (text: string, at: number): boolean =>
+const isInsideCharacter = (text: string, at: number): boolean =>
   isTrailing(text.charCodeAt(at)) && isLeading(text.charCodeAt(at - 1))
 
 const isLeading = (unit: number): boolean => unit >= 0xd800 && unit <= 0xdbff

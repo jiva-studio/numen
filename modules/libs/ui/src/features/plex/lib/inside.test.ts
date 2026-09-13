@@ -282,22 +282,22 @@ describe('a node with little room under it', () => {
     y: DEPS.viewport.height / 2 - DEPS.margin - NODE.height / 2 - left,
   })
 
-  const under = (left: number, items = parts(MOST + 3)) =>
+  const hangWithRoom = (left: number, items = parts(MOST + 3)) =>
     hangParts(low(left), items, SIZES, DEPS)
 
   it('hangs nothing where there is depth for not one part', () => {
-    expect(under(SIZES.partHeight)).toBeNull()
+    expect(hangWithRoom(SIZES.partHeight)).toBeNull()
   })
 
   it('stands in its window only what the depth left under it holds', () => {
-    const settled = under(3 * SIZES.partHeight + 10)!
+    const settled = hangWithRoom(3 * SIZES.partHeight + 10)!
     expect(settled.shown).toBe(3)
     expect(furthest(settled)).toBe(MOST)
   })
 
   it('keeps every part it does hang inside the window', () => {
     for (const left of [60, 90, 140, 200, 400]) {
-      const settled = under(left)
+      const settled = hangWithRoom(left)
       if (!settled) continue
       const bottom = low(left).y + settled.top + settled.height
       expect(bottom).toBeLessThanOrEqual(DEPS.viewport.height / 2 - DEPS.margin)
@@ -360,14 +360,14 @@ describe('what a wheel scrolls', () => {
 
 describe('however many parts stand at once', () => {
   /** A node with depth under it for as many parts as the ceiling allows. */
-  const under = (most: number) =>
+  const hangWithCeiling = (most: number) =>
     hangParts(NODE, parts(most + 4), { ...SIZES, maxParts: most }, DEPS)!
 
   it('every one of them is up by the time it is all the way open', () => {
     // A lead that outran the opening left the last of them at nothing at all,
     // on a ground drawn deep enough to hold them.
     for (const ceiling of [1, 2, 6, 9, 12, 20]) {
-      const settled = under(ceiling)
+      const settled = hangWithCeiling(ceiling)
       const drawn = getOpenParts(settled, 1)!.parts
       expect(drawn).toHaveLength(settled.shown)
       for (const part of drawn) expect(part.opacity).toBe(1)
@@ -376,12 +376,12 @@ describe('however many parts stand at once', () => {
 
   it('the first of them is still ahead of the last partway through', () => {
     for (const ceiling of [2, 6, 12, 20]) {
-      const drawn = getOpenParts(under(ceiling), 0.5)!.parts
+      const drawn = getOpenParts(hangWithCeiling(ceiling), 0.5)!.parts
       expect(drawn[0]!.opacity).toBeGreaterThan(drawn.at(-1)!.opacity)
     }
   })
 
   it('one alone opens with the whole of the opening to itself', () => {
-    expect(getOpenParts(under(1), 0.5)!.parts[0]!.opacity).toBe(easeOut(0.5))
+    expect(getOpenParts(hangWithCeiling(1), 0.5)!.parts[0]!.opacity).toBe(easeOut(0.5))
   })
 })

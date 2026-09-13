@@ -146,7 +146,7 @@ func (a *API) SearchPassages(
 		// words about the first run that matched. A hit by meaning stands on no
 		// word, and the window opens where the chunk that matched begins.
 		read, hit := nearby(p.Text, p.HitAt)
-		text, at := around(read, spans(read, query), markdown.CountUTF16(read, hit))
+		text, at := getTextAround(read, spans(read, query), markdown.CountUTF16(read, hit))
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,

@@ -69,7 +69,7 @@ const nodeFrom = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
  * and letter, and the size of a node against the size of its text is most of
  * what there is to judge here.
  */
-const on =
+const renderScene =
   (scene: (args: Knobs) => readonly PlacedNode[], window = { width: 480, height: 200 }) =>
   (args: Knobs) => ({
     components: { PlexNodeView },
@@ -157,7 +157,7 @@ const meta: Meta<Knobs> = {
     onAsk: fn(),
   },
 
-  render: on((args) => [nodeFrom(args)]),
+  render: renderScene((args) => [nodeFrom(args)]),
 }
 
 export default meta
@@ -174,7 +174,7 @@ export const Playground: Story = {}
  * already is, and neither question can be asked of one node at a time.
  */
 export const EverySeat: Story = {
-  render: on(
+  render: renderScene(
     (args) => [
       nodeFrom(args, { id: 'focus', title: 'Where you are', seat: 'focus', width: 176, height: 44 }),
       nodeFrom(args, { id: 'parent', title: 'Above it', seat: 'parent', y: -72 }),
@@ -273,7 +273,7 @@ export const Reaching: Story = {
  * same size to it and one that overflows looks identical to one that fits.
  */
 export const AwkwardLabels: Story = {
-  render: on(
+  render: renderScene(
     (args) =>
       awkwardLabels.nodes.map((node, index) =>
         nodeFrom(args, {
@@ -312,7 +312,7 @@ export const AwkwardLabels: Story = {
  * the browser's answer and no test's.
  */
 export const TheCornersAreAsDesigned: Story = {
-  render: on(
+  render: renderScene(
     (args) => [
       nodeFrom(args, { id: 'child', title: 'Below it', seat: 'child', x: -130 }),
       nodeFrom(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: 130, width: 176 }),
@@ -338,7 +338,7 @@ export const TheCornersAreAsDesigned: Story = {
  * fails silently and looks right in every screenshot.
  */
 export const PartWayThere: Story = {
-  render: on((args) => [
+  render: renderScene((args) => [
     nodeFrom(args, { id: 'staying', title: 'Staying', x: -84 }),
     nodeFrom(args, { id: 'going', title: 'On its way out', x: 84, opacity: 0.35 }),
   ]),
@@ -354,7 +354,7 @@ export const PartWayThere: Story = {
  */
 export const Dark: Story = {
   globals: DARK,
-  render: on(
+  render: renderScene(
     (args) => [
       nodeFrom(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: -130, width: 176 }),
       nodeFrom(args, { id: 'child', title: 'Below it', seat: 'child', x: 130 }),

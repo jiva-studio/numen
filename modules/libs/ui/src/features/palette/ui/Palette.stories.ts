@@ -80,7 +80,7 @@ const createItem = (id: string, title: string, word: string) => ({
   actions: TRAVEL,
 })
 
-const inside = (id: string, title: string, heading: string, word: string) => ({
+const createDetailItem = (id: string, title: string, heading: string, word: string) => ({
   id,
   title,
   detail: heading,
@@ -103,8 +103,8 @@ const NAMES: PaletteGroup = {
   items: [
     createItem('entropy', 'Entropy', 'ent'),
     createItem('enthalpy', 'Enthalpy of formation', 'ent'),
-    inside('carnot', 'The Carnot cycle', 'Entropy over one cycle', 'ent'),
-    inside('gibbs', 'Gibbs free energy', 'Entropy and the second law', 'ent'),
+    createDetailItem('carnot', 'The Carnot cycle', 'Entropy over one cycle', 'ent'),
+    createDetailItem('gibbs', 'Gibbs free energy', 'Entropy and the second law', 'ent'),
   ],
 }
 
@@ -141,7 +141,7 @@ const NAMED: PaletteGroup = {
 }
 
 /** A window with something in it, and a palette standing over the lot. */
-const over = (args: Knobs) => ({
+const renderOverWindow = (args: Knobs) => ({
   components: { Palette },
   setup() {
     const open = ref(true)
@@ -217,7 +217,7 @@ const meta = {
     onDismiss: fn(),
     onBack: fn(),
   },
-  render: over,
+  render: renderOverWindow,
 } satisfies Meta<Knobs>
 
 export default meta
@@ -969,14 +969,14 @@ export const Steps: Story = {
         step.value = 'name'
       }
 
-      const back = () => {
+      const goBack = () => {
         args.onBack()
         crumb.value = ''
         typed.value = ''
         step.value = 'find'
       }
 
-      return { args, open, step, typed, crumb, choose, back, NAMED }
+      return { args, open, step, typed, crumb, choose, goBack, NAMED }
     },
     template: `
       <div class="numen" style="height:100vh;background:var(--numen-surface)">
@@ -988,7 +988,7 @@ export const Steps: Story = {
           :crumb="crumb"
           :placeholder="step === 'find' ? 'Search' : 'The new name'"
           @choose="choose"
-          @back="back"
+          @back="goBack"
           @dismiss="args.onDismiss"
         />
       </div>

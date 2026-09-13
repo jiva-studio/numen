@@ -38,7 +38,7 @@ const mark = (key: string, x: number, y: number, text = key): Mark => ({
 const box = (x: number, y: number, wide: number, high: number): Box => ({ x, y, wide, high })
 
 /** Whether a room is wholly inside the picture, which is what the viewBox holds. */
-const inside = (one: Box): boolean =>
+const isInside = (one: Box): boolean =>
   one.x >= 0 && one.y >= 0 && one.x + one.wide <= WIDE && one.y + one.high <= HIGH
 
 describe('where a name over a mark is set', () => {
@@ -141,7 +141,7 @@ describe('the bubble over the knob', () => {
     const callout = calloutOf(knob)
 
     expect(callout.at.translate).toBe(`${back} -100%`)
-    expect(inside(callout.box)).toBe(true)
+    expect(isInside(callout.box)).toBe(true)
   })
 
   it('anchors its tail on the knob, wherever the bubble was pulled to', () => {
@@ -206,7 +206,7 @@ describe('the names of the marks that fit', () => {
     const names = labelsOf([mark('suggested', at.x, at.y)], null)
 
     expect(names).toHaveLength(1)
-    expect(inside(names[0]!.box)).toBe(true)
+    expect(isInside(names[0]!.box)).toBe(true)
   })
 })
 
@@ -261,7 +261,7 @@ describe('the numbers read off the picture’s edges', () => {
   it('keeps every number it draws inside the picture', () => {
     const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, formatValue)
 
-    expect(numbers.every((one) => inside(one.box))).toBe(true)
+    expect(numbers.every((one) => isInside(one.box))).toBe(true)
   })
 })
 

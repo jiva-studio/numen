@@ -1040,7 +1040,7 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 		t.Errorf("a day with a minute of it spent draws %v cards and an unspent day %v",
 			after.Points[after.Now.Index].Reviews, fresh.Points[fresh.Now.Index].Reviews)
 	}
-	sat := s.under(t, today, noon, "Sanskrit.md")
+	sat := s.openSessionByPreset(t, today, noon, "Sanskrit.md")
 	if got := float64(len(sat.Queue)); got != after.Points[after.Now.Index].Reviews {
 		t.Errorf("the session offers %v card faces and the curve draws %v",
 			got, after.Points[after.Now.Index].Reviews)

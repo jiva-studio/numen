@@ -54,9 +54,9 @@ const build = (
   const isSelected = (start: number, end: number) =>
     state.selection.ranges.some((range) => range.from <= end && range.to >= start)
 
-  const away = (node: SyntaxNodeRef) => !isSelected(node.from, node.to)
+  const isOutsideSelection = (node: SyntaxNodeRef) => !isSelected(node.from, node.to)
 
-  const under = (node: SyntaxNodeRef) => {
+  const isParentSelected = (node: SyntaxNodeRef) => {
     const parent = node.node.parent
     return parent ? isSelected(parent.from, parent.to) : true
   }
@@ -94,11 +94,11 @@ const build = (
     enter: (node) => {
       switch (node.name) {
         case 'HorizontalRule':
-          if (blocks && away(node)) found.push(block(node, new Rule()))
+          if (blocks && isOutsideSelection(node)) found.push(block(node, new Rule()))
           return false
 
         case 'Table':
-          if (!away(node)) return !blocks
+          if (!isOutsideSelection(node)) return !blocks
           if (blocks) found.push(block(node, gridOf(state, node.node)))
           return false
       }
@@ -115,12 +115,12 @@ const build = (
         case 'HeaderMark': {
           const parent = node.node.parent
           if (!parent || parent.name.startsWith('Setext')) return false
-          if (!under(node)) hide(node.from, node.to)
+          if (!isParentSelected(node)) hide(node.from, node.to)
           return false
         }
 
         case 'QuoteMark':
-          if (!under(node)) hide(node.from, node.to)
+          if (!isParentSelected(node)) hide(node.from, node.to)
           return false
 
         case 'Blockquote':
@@ -154,7 +154,7 @@ const build = (
           return true
 
         case 'CodeMark':
-          if (node.node.parent?.name === 'InlineCode' && !under(node))
+          if (node.node.parent?.name === 'InlineCode' && !isParentSelected(node))
             found.push(hidden.range(node.from, node.to))
           return false
 
@@ -172,7 +172,7 @@ const build = (
 
         case 'EmphasisMark':
         case 'StrikethroughMark':
-          if (!under(node)) found.push(hidden.range(node.from, node.to))
+          if (!isParentSelected(node)) found.push(hidden.range(node.from, node.to))
           return false
 
         case 'Link':
@@ -184,12 +184,12 @@ const build = (
         case 'URL':
         case 'LinkTitle':
         case 'LinkLabel':
-          if (!under(node)) found.push(hidden.range(node.from, node.to))
+          if (!isParentSelected(node)) found.push(hidden.range(node.from, node.to))
           return false
 
         case 'Image': {
           const address = childOf(node.node, 'URL')
-          if (!address || !away(node)) return true
+          if (!address || !isOutsideSelection(node)) return true
           found.push(
             Decoration.replace({
               widget: new Picture(doc.sliceString(address.from, address.to)),

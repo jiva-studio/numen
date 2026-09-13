@@ -39,7 +39,7 @@ const caretOf = (view: EditorView) => {
 }
 
 /** What is drawn over a change, and nothing where nothing is. */
-const over = (view: EditorView) => {
+const getChangeMarks = (view: EditorView) => {
   const found: { from: number; to: number; mark: string | null }[] = []
   view.state.field(marked).decorations.between(0, view.state.doc.length, (from, to, deco) => {
     found.push({ from, to, mark: (deco.spec as { class?: string }).class ?? null })
@@ -182,30 +182,30 @@ describe('a change something other than the reader is making', () => {
   const CHANGE: EditorChange = { id: 'one', from: 4, to: 7, text: 'dog' }
 
   it('is drawn for nobody while the component is handed none', () => {
-    expect(over(editor({ modelValue: DOC }).view)).toEqual([])
+    expect(getChangeMarks(editor({ modelValue: DOC }).view)).toEqual([])
   })
 
   it('marks the stretch that is about to change', () => {
     const { view } = editor({ modelValue: DOC, change: CHANGE })
-    expect(over(view)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
+    expect(getChangeMarks(view)).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
   })
 
   it('is shown once the text arrives by the ordinary route', async () => {
     const { wrapper, view } = editor({ modelValue: DOC, change: CHANGE })
     await wrapper.setProps({ modelValue: 'the dog sat on the mat' })
-    expect(over(view)).toEqual([{ from: 4, to: 7, mark: null }])
+    expect(getChangeMarks(view)).toEqual([{ from: 4, to: 7, mark: null }])
   })
 
   it('is dropped whole when there is no longer a change', async () => {
     const { wrapper, view } = editor({ modelValue: DOC, change: CHANGE })
     await wrapper.setProps({ change: null })
-    expect(over(view)).toEqual([])
+    expect(getChangeMarks(view)).toEqual([])
   })
 
   it('is drawn where a second change stands instead of where the first did', async () => {
     const { wrapper, view } = editor({ modelValue: DOC, change: CHANGE })
     await wrapper.setProps({ change: { id: 'two', from: 12, to: 14, text: 'under' } })
-    expect(over(view)).toEqual([{ from: 12, to: 14, mark: 'cm-changing' }])
+    expect(getChangeMarks(view)).toEqual([{ from: 12, to: 14, mark: 'cm-changing' }])
   })
 
   it('writes none of the text itself', async () => {

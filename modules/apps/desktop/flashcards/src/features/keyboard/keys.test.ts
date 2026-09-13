@@ -14,8 +14,8 @@ const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
     ...more,
   }) as KeyboardEvent
 
-/** into is a keystroke that landed in something being written in. */
-const into = (tag: string, editable = false): Partial<KeyboardEvent> => ({
+/** The target of a keystroke that landed in something being written in. */
+const createTarget = (tag: string, editable = false): Partial<KeyboardEvent> => ({
   target: { tagName: tag, isContentEditable: editable } as unknown as EventTarget,
 })
 
@@ -67,8 +67,8 @@ describe('the keys a session is done with', () => {
   // is the one place in this window anything is written.
   it('leaves the overlay key to the field a question is written in', () => {
     for (const tag of ['INPUT', 'TEXTAREA']) {
-      expect(getSessionKeyIntent(createPress('a', { ...into(tag), ctrlKey: true }), { shown: true })).toBeNull()
-      expect(getSessionKeyIntent(createPress('r', { ...into(tag), metaKey: true }), { shown: true })).toBeNull()
+      expect(getSessionKeyIntent(createPress('a', { ...createTarget(tag), ctrlKey: true }), { shown: true })).toBeNull()
+      expect(getSessionKeyIntent(createPress('r', { ...createTarget(tag), metaKey: true }), { shown: true })).toBeNull()
     }
   })
 
@@ -118,14 +118,14 @@ describe('the keys a session is done with', () => {
   it('asks for nothing while a question is being written', () => {
     for (const tag of ['INPUT', 'TEXTAREA']) {
       for (const key of ['1', '2', '3', '4', 'u', 'a', ' ']) {
-        expect(getSessionKeyIntent(createPress(key, into(tag)), { shown: true })).toBeNull()
+        expect(getSessionKeyIntent(createPress(key, createTarget(tag)), { shown: true })).toBeNull()
       }
     }
-    expect(getSessionKeyIntent(createPress('1', into('DIV', true)), { shown: true })).toBeNull()
+    expect(getSessionKeyIntent(createPress('1', createTarget('DIV', true)), { shown: true })).toBeNull()
   })
 
   it('sends the panel away on escape from inside the field', () => {
-    expect(getSessionKeyIntent(createPress('Escape', into('TEXTAREA')), { shown: true })).toEqual({ does: 'shut' })
+    expect(getSessionKeyIntent(createPress('Escape', createTarget('TEXTAREA')), { shown: true })).toEqual({ does: 'shut' })
   })
 
   it('swallows only the keys the page would act on itself', () => {

@@ -91,11 +91,11 @@ describe('the two sides are read as a pair', () => {
       options: { viewport: { width: 1600, height: 1000 } },
     })
 
-    const near = (seat: string) =>
+    const getNearest = (seat: string) =>
       Math.min(
         ...frame.nodes.filter((n) => n.seat === seat).map((n) => Math.abs(n.x)),
       )
-    expect(near('jump')).toBe(near('sibling'))
+    expect(getNearest('jump')).toBe(getNearest('sibling'))
   })
 })
 

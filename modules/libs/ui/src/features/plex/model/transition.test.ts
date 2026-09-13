@@ -15,7 +15,7 @@ function inScope<T>(build: () => T): T {
   return value
 }
 
-const at = (nodes: readonly PlacedNode[], id: string) =>
+const getNode = (nodes: readonly PlacedNode[], id: string) =>
   nodes.find((node) => node.id === id)
 
 describe('a movement stepped by hand', () => {
@@ -28,7 +28,7 @@ describe('a movement stepped by hand', () => {
     )
 
     expect(moving.value).toBe(false)
-    expect(at(frame.value.nodes, 'child-0')).toBeDefined()
+    expect(getNode(frame.value.nodes, 'child-0')).toBeDefined()
 
     current.value = neighbourhoods.leaf
     await Promise.resolve()
@@ -36,15 +36,15 @@ describe('a movement stepped by hand', () => {
     world.tick(0)
     expect(moving.value).toBe(true)
     // The old picture is still on screen at the first frame.
-    expect(at(frame.value.nodes, 'child-0')).toBeDefined()
+    expect(getNode(frame.value.nodes, 'child-0')).toBeDefined()
 
     world.tick(200)
     expect(moving.value).toBe(true)
 
     world.tick(400)
     expect(moving.value).toBe(false)
-    expect(at(frame.value.nodes, 'child-0')).toBeUndefined()
-    expect(at(frame.value.nodes, 'parent-0')).toBeDefined()
+    expect(getNode(frame.value.nodes, 'child-0')).toBeUndefined()
+    expect(getNode(frame.value.nodes, 'parent-0')).toBeDefined()
   })
 
   it('measures from the first frame, not from when it was asked', async () => {
@@ -84,7 +84,7 @@ describe('a movement stepped by hand', () => {
 
     world.tick(200)
     world.tick(600)
-    expect(at(frame.value.nodes, 'focus')?.title).toBe('Recursive CTE')
+    expect(getNode(frame.value.nodes, 'focus')?.title).toBe('Recursive CTE')
   })
 })
 
@@ -101,7 +101,7 @@ describe('when nothing should move', () => {
 
     expect(world.pending).toBe(false)
     expect(moving.value).toBe(false)
-    expect(at(frame.value.nodes, 'child-0')).toBeUndefined()
+    expect(getNode(frame.value.nodes, 'child-0')).toBeUndefined()
   })
 
   it('arrives at once when given no time', async () => {
@@ -115,7 +115,7 @@ describe('when nothing should move', () => {
     await Promise.resolve()
 
     expect(world.pending).toBe(false)
-    expect(at(frame.value.nodes, 'child-0')).toBeUndefined()
+    expect(getNode(frame.value.nodes, 'child-0')).toBeUndefined()
   })
 })
 

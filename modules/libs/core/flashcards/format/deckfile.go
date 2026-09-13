@@ -102,7 +102,7 @@ func (f *DeckFile) SetValue(card domain.CardID, field, value string) error {
 	}
 	for _, v := range span.values {
 		if v.field == field {
-			return f.doc.SpliceBody(v.from, v.to, under(value, v.to == len(body)))
+			return f.doc.SpliceBody(v.from, v.to, formatSection(value, v.to == len(body)))
 		}
 	}
 	block := headingLine(FieldLevel, oneLine(field))

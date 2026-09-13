@@ -51,7 +51,7 @@ const roundToPlaces = (value: number, bounds: Bounds): number => {
  * How many steps a value stands above the floor. A value one step short of a
  * whole one by the width of a rounding error stands on that whole one.
  */
-const above = (value: number, bounds: Bounds): number => {
+const getStepsAbove = (value: number, bounds: Bounds): number => {
   const steps = (value - bounds.min) / bounds.step
   const whole = Math.round(steps)
   return Math.abs(steps - whole) < 1e-9 ? whole : steps
@@ -66,7 +66,7 @@ const above = (value: number, bounds: Bounds): number => {
 export const stepBy = (value: number, by: number, bounds: Bounds): number => {
   const from = clamp(value, bounds)
   if (bounds.step <= 0 || by === 0) return from
-  const at = above(from, bounds)
+  const at = getStepsAbove(from, bounds)
   const place = (by > 0 ? Math.floor(at) : Math.ceil(at)) + by
   return clamp(roundToPlaces(bounds.min + place * bounds.step, bounds), bounds)
 }

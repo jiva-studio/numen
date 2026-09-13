@@ -19,8 +19,8 @@ const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
     ...more,
   }) as KeyboardEvent
 
-/** into is a keystroke that landed in something being written in. */
-const into = (tag: string, isEditable = false): Partial<KeyboardEvent> => ({
+/** The target of a keystroke that landed in something being written in. */
+const createTarget = (tag: string, isEditable = false): Partial<KeyboardEvent> => ({
   target: { tagName: tag, isContentEditable: isEditable } as unknown as EventTarget,
 })
 
@@ -71,13 +71,13 @@ describe('a letter pressed over the list', () => {
   })
 
   it('opens nothing where the letter was typed into a field', () => {
-    expect(getVaultForKey(createPress('a', into('INPUT')), 2)).toBeNull()
-    expect(getVaultForKey(createPress('a', into('TEXTAREA')), 2)).toBeNull()
-    expect(getVaultForKey(createPress('a', into('DIV', true)), 2)).toBeNull()
+    expect(getVaultForKey(createPress('a', createTarget('INPUT')), 2)).toBeNull()
+    expect(getVaultForKey(createPress('a', createTarget('TEXTAREA')), 2)).toBeNull()
+    expect(getVaultForKey(createPress('a', createTarget('DIV', true)), 2)).toBeNull()
   })
 
   it('opens the vault where the letter landed on something written in nowhere', () => {
-    expect(getVaultForKey(createPress('a', into('DIV')), 2)).toBe(0)
+    expect(getVaultForKey(createPress('a', createTarget('DIV')), 2)).toBe(0)
     expect(getVaultForKey(createPress('a', { target: null }), 2)).toBe(0)
   })
 })

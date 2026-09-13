@@ -27,7 +27,7 @@ import { useAppBootstrap } from './useAppBootstrap'
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
   const log = messageLog()
-  const writeMessage = log.under('command')
+  const writeMessage = log.getWriter('command')
   const held = useWindowTabs()
   const { layout } = held
   const tabOpeners = fileOpeners(core)

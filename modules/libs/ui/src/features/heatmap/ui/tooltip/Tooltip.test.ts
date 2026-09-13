@@ -28,7 +28,7 @@ afterEach(() => {
 
 const ROOM = { width: 1000, height: 800 }
 
-const about = (overrides: Partial<Box> = {}): Box => ({
+const createBox = (overrides: Partial<Box> = {}): Box => ({
   x: 100,
   y: 200,
   width: 20,
@@ -40,7 +40,7 @@ const about = (overrides: Partial<Box> = {}): Box => ({
  *  frame after the one it was measured on. */
 const mountTooltip = async (props: Record<string, unknown> = {}) => {
   const tooltip = mount(Tooltip, {
-    props: { at: about(), viewport: ROOM, ...props },
+    props: { at: createBox(), viewport: ROOM, ...props },
     slots: { default: 'What this is' },
   })
   await nextTick()
@@ -68,12 +68,12 @@ describe('where it stands', () => {
 
   // The far side is off the edge, so it runs back from the near end instead.
   it('takes the near side where the far side has no room for it', async () => {
-    expect(getPlacement(await mountTooltip({ at: about({ x: 900 }) })).x).toBe('772px')
+    expect(getPlacement(await mountTooltip({ at: createBox({ x: 900 }) })).x).toBe('772px')
   })
 
   it('is brought inside the edge where neither side has room', async () => {
     const tooltip = await mountTooltip({
-      at: about({ x: 60, y: 10 }),
+      at: createBox({ x: 60, y: 10 }),
       viewport: { width: 200, height: 800 },
     })
     expect(getPlacement(tooltip).x).toBe('72px')
@@ -81,7 +81,7 @@ describe('where it stands', () => {
 
   it('folds up from the foot of the room rather than running past it', async () => {
     const tooltip = await mountTooltip({
-      at: about({ y: 90 }),
+      at: createBox({ y: 90 }),
       viewport: { width: 1000, height: 100 },
     })
     expect(getPlacement(tooltip).y).toBe('50px')
@@ -89,7 +89,7 @@ describe('where it stands', () => {
 
   it('stands clear of the edge it is against where it is larger than the room', async () => {
     const tooltip = await mountTooltip({
-      at: about({ x: 10, y: 10 }),
+      at: createBox({ x: 10, y: 10 }),
       viewport: { width: 60, height: 800 },
     })
     expect(getPlacement(tooltip).x).toBe('8px')
@@ -101,7 +101,7 @@ describe('the thing it is about moving', () => {
     const tooltip = await mountTooltip()
     expect(getPlacement(tooltip).x).toBe('128px')
 
-    await tooltip.setProps({ at: about({ x: 400 }) })
+    await tooltip.setProps({ at: createBox({ x: 400 }) })
     await nextTick()
     expect(getPlacement(tooltip)).toEqual({ x: '428px', y: '200px' })
   })
@@ -113,7 +113,7 @@ describe('the room it is placed in', () => {
   it('is the window where a caller measures none of its own', async () => {
     const was = window.innerWidth
     window.innerWidth = 2000
-    const tooltip = await mountTooltip({ at: about({ x: 900 }), viewport: null })
+    const tooltip = await mountTooltip({ at: createBox({ x: 900 }), viewport: null })
     expect(getPlacement(tooltip).x).toBe('928px')
 
     window.innerWidth = 1000

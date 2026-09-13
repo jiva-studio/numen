@@ -30,7 +30,7 @@ export interface Choice {
 /** The deck's own file, as the scheduler reaches it. */
 export interface ScheduledStore {
   getPath(id: string): string
-  at(id: string): string
+  getFilePath(id: string): string
   settle(id: string): Promise<void>
   applyPathChanges(paths: readonly string[]): void
 }
@@ -98,7 +98,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
     const path = store.getPath(id)
     await store.settle(id)
     try {
-      const answer = await presets.scheduleDeck(path, preset, store.at(id))
+      const answer = await presets.scheduleDeck(path, preset, store.getFilePath(id))
       if (answer.changed) setChoiceMessage(id, words.notScheduledChanged)
       else if (answer.error !== null) setChoiceMessage(id, words.notScheduled)
       else setChoiceMessage(id, '')

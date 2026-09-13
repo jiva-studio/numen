@@ -23,7 +23,7 @@ The walk is collected before anything is read, so the order can be chosen. Sourc
 
 ### Notes are written in groups
 
-A group is one transaction. Two constants in `usecase/vault/groups.go` close one, whichever is reached first: `notesPerWrite`, five hundred notes, and `bytesPerWrite`, eight megabytes of file content, which bounds what a vault of long files holds in memory before any of it is written.
+A group is one transaction. Two bounds close one, whichever is reached first: five hundred notes, and eight megabytes of file content, which bounds what a vault of long files holds in memory before any of it is written.
 
 A note and the fingerprint that dates it — its size and its modification time — go into the same transaction. An interrupted scan therefore leaves whole groups, and never a note the index believes is current.
 

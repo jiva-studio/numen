@@ -79,7 +79,7 @@ type places struct {
 // nothing.
 func (p *places) holds(real, area string) bool {
 	bound, named := p.areas[area]
-	return named && under(real, bound)
+	return named && isUnderRoot(real, bound)
 }
 
 // current says the store's folder still resolves to the place found.
@@ -182,11 +182,11 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore
 func (d *DerivedStore) Area() string { return d.areas[0] }
 
 func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
-	target, err := d.at(name)
+	target, err := d.getPath(name)
 	if err != nil {
 		return nil, err
 	}
-	root, at, err := d.beneath(target)
+	root, at, err := d.openRoot(target)
 	if err != nil {
 		return nil, err
 	}
@@ -198,11 +198,11 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 // A copy of a video is played from the middle, and holding an hour of it in
 // memory to answer for a second is what this is not.
 func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
-	target, err := d.at(name)
+	target, err := d.getPath(name)
 	if err != nil {
 		return nil, 0, err
 	}
-	root, at, err := d.beneath(target)
+	root, at, err := d.openRoot(target)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -223,7 +223,7 @@ func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, 
 // other write here lands by: what a fetch was still writing when a machine
 // stopped is not a file anything reads afterwards.
 func (d *DerivedStore) Take(_ context.Context, name string, from io.Reader) (int64, error) {
-	target, err := d.at(name)
+	target, err := d.getPath(name)
 	if err != nil {
 		return 0, err
 	}
@@ -243,7 +243,7 @@ func (d *DerivedStore) Take(_ context.Context, name string, from io.Reader) (int
 }
 
 func (d *DerivedStore) Write(_ context.Context, name string, content []byte) error {
-	target, err := d.at(name)
+	target, err := d.getPath(name)
 	if err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func (d *DerivedStore) Write(_ context.Context, name string, content []byte) err
 // A machine that stopped mid-write leaves a torn tail all the same, and what
 // reads the file back takes the whole pages and drops what follows them.
 func (d *DerivedStore) Append(_ context.Context, name string, content []byte) error {
-	target, err := d.at(name)
+	target, err := d.getPath(name)
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 		return err
 	}
 	if n, err := file.Write(content); err != nil || n != len(content) {
-		return errors.Join(short(name, n, len(content), err), back(root, file, at, n))
+		return errors.Join(short(name, n, len(content), err), closeAndCut(root, file, at, n))
 	}
 	if err := file.Sync(); err != nil {
 		file.Close()
@@ -305,14 +305,14 @@ func short(name string, written, wanted int, why error) error {
 	return fmt.Errorf("%s: %d of %d bytes: %w", name, written, wanted, why)
 }
 
-// back cuts the bytes an append left behind and closes the file. What it wrote
-// ends where the offset now stands, so the cut is that offset less what
+// closeAndCut cuts the bytes an append left behind and closes the file. What it
+// wrote ends where the offset now stands, so the cut is that offset less what
 // landed, and a write that landed nothing leaves the file as it found it.
 //
 // The cut is made by name, once the file is closed: a file opened to append
 // carries the right to add to the end and not the right to move it. The name is
 // the store's own, so the cut lands where the write did.
-func back(root *os.Root, file *os.File, name string, wrote int) error {
+func closeAndCut(root *os.Root, file *os.File, name string, wrote int) error {
 	if wrote <= 0 {
 		return file.Close()
 	}
@@ -354,7 +354,7 @@ const claimSuffix = ".claim"
 // name free. A claim file lying on disk with no lock on it is a name free to
 // take.
 func (d *DerivedStore) Claim(_ context.Context, name string) (func() error, error) {
-	target, err := d.at(name + claimSuffix)
+	target, err := d.getPath(name + claimSuffix)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +368,7 @@ func (d *DerivedStore) Claim(_ context.Context, name string) (func() error, erro
 // A folder among them is not one: what is kept here is files, and a caller
 // after them would have to be told which entries it may read.
 func (d *DerivedStore) List(_ context.Context, name string) ([]port.Entry, error) {
-	target, err := d.at(name)
+	target, err := d.getPath(name)
 	if err != nil {
 		return nil, err
 	}
@@ -406,11 +406,11 @@ func (d *DerivedStore) List(_ context.Context, name string) ([]port.Entry, error
 // away leaves none behind.
 func (d *DerivedStore) Remove(_ context.Context, name string) error {
 	for _, one := range []string{name, name + claimSuffix} {
-		target, err := d.at(one)
+		target, err := d.getPath(one)
 		if err != nil {
 			return err
 		}
-		root, at, err := d.beneath(target)
+		root, at, err := d.openRoot(target)
 		if errors.Is(err, fs.ErrNotExist) {
 			continue
 		}
@@ -482,11 +482,11 @@ func carried(root, serviceDir string) (string, *fileInfo, error) {
 	return cfg.ID, was, nil
 }
 
-// beneath is the store's folder as a handle, and a place in it as a name that
+// openRoot is the store's folder as a handle, and a place in it as a name that
 // handle takes. Every step of a write is made through the handle, so a folder
 // swapped for a link while the write is on its way is refused by the machine
 // itself and not by a rule read a moment before. The caller closes the handle.
-func (d *DerivedStore) beneath(target string) (*os.Root, string, error) {
+func (d *DerivedStore) openRoot(target string) (*os.Root, string, error) {
 	name, err := filepath.Rel(d.root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
 		return nil, "", fmt.Errorf("%s: %w", target, ErrOutside)
@@ -504,7 +504,7 @@ func (d *DerivedStore) making(target string) (*os.Root, string, error) {
 	if err := os.MkdirAll(d.root, 0o755); err != nil {
 		return nil, "", err
 	}
-	return d.beneath(target)
+	return d.openRoot(target)
 }
 
 // area is the one of this store's areas a cleaned name is in, and whether it is
@@ -518,9 +518,9 @@ func (d *DerivedStore) area(clean string) (string, bool) {
 	return "", false
 }
 
-// at is where one name lands on this machine. Every name is answered where the
-// vault still is, so nothing here reads or writes a folder that is no longer
-// the one this store was opened on.
+// getPath is where one name lands on this machine. Every name is answered where
+// the vault still is, so nothing here reads or writes a folder that is no
+// longer the one this store was opened on.
 //
 // The name is joined under the area it names and checked against it with every
 // link on the way resolved. Without that check a name stored here could be a
@@ -529,7 +529,7 @@ func (d *DerivedStore) area(clean string) (string, bool) {
 //
 // The store's folder need not exist: as much of each path as does exist is
 // resolved, which is the same rule a write into the vault is judged by.
-func (d *DerivedStore) at(name string) (string, error) {
+func (d *DerivedStore) getPath(name string) (string, error) {
 	clean, err := cleanPath(name)
 	if err != nil {
 		return "", err

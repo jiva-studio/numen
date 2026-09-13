@@ -183,7 +183,7 @@ func (v *ytDLP) Download(
 		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
 		"-o", filepath.Join(folder, "copy.%(ext)s"), string(at),
 	}
-	if where := v.sound.at(); where != "" {
+	if where := v.sound.getPath(); where != "" {
 		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
 	}
 	taking := v.command.buildCommand(ctx, arguments...)
@@ -241,7 +241,7 @@ func language(meta port.Metadata, languages []string, automatic bool) string {
 		return ""
 	}
 	for _, wanted := range append(append([]string(nil), languages...), meta.Language) {
-		if one := slices.IndexFunc(tracks, in(wanted)); one >= 0 {
+		if one := slices.IndexFunc(tracks, matchLanguage(wanted)); one >= 0 {
 			return tracks[one]
 		}
 	}
@@ -251,9 +251,10 @@ func language(meta port.Metadata, languages []string, automatic bool) string {
 	return tracks[0]
 }
 
-// in says whether a track is in one language. A machine's own is that language
-// with a word after it, and its translations of that one are other languages.
-func in(language string) func(string) bool {
+// matchLanguage says whether a track is in one language. A machine's own is that
+// language with a word after it, and its translations of that one are other
+// languages.
+func matchLanguage(language string) func(string) bool {
 	return func(track string) bool { return track == language || track == language+"-orig" }
 }
 

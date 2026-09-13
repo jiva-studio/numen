@@ -42,9 +42,9 @@ func (s *shutting) free() {
 	s.busy = false
 }
 
-// over gives the window back from the settling that ends it. gone is what that
-// settling came to.
-func (s *shutting) over(gone bool) {
+// finish gives the window back from the settling that ends it. gone is what
+// that settling came to.
+func (s *shutting) finish(gone bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.busy = false
@@ -75,7 +75,7 @@ func (o *Installation) Settle(ctx context.Context) bool {
 	}
 
 	settled := settle(ctx, o.API.Window, &o.API.Writing)
-	o.shutting.over(settled)
+	o.shutting.finish(settled)
 	return settled
 }
 

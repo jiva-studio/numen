@@ -158,7 +158,7 @@ func (p Projection) hasReached(day int) bool {
 }
 
 // Session is the first day of this run the preset admits: the next session a
-// person will actually sit down to. False is a run admession no day at all,
+// person will actually sit down to. False is a run admitting no day at all,
 // which holds no session.
 //
 // It is one real day of the run, so the count read off it is the count a
@@ -433,7 +433,7 @@ func (s Simulation) Run(
 		// is how far through it the day leaves a person, and how much of it
 		// comes back at that hour.
 		stands, back := reckoned.closes(cards, ends, out.Faces, answers[today])
-		out.Through = append(out.Through, through(stands, out.Faces))
+		out.Through = append(out.Through, getLearnedShare(stands, out.Faces))
 		if out.Learns == NeverLearns && stands == out.Faces {
 			out.Learns = len(out.Load)
 		}
@@ -600,9 +600,9 @@ func older(a, b Schedule) int {
 	return cmp.Compare(a.Difficulty, b.Difficulty)
 }
 
-// through is the share of the material learned. A preset scheduling nothing is
-// through all of it.
-func through(learned, faces int) float64 {
+// getLearnedShare is the share of the material learned. A preset scheduling
+// nothing is through all of it.
+func getLearnedShare(learned, faces int) float64 {
 	if faces == 0 {
 		return 1
 	}

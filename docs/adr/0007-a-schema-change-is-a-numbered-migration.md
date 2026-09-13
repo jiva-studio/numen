@@ -26,11 +26,11 @@ graph TD
 
 ### A change ships as a numbered file
 
-Migrations are `.sql` files under `adapter/index/migration/`, named `NNNN_description.sql`, applied in order, once each. A file that is not numbered is an error, and two files sharing a number are an error.
+Migrations are `.sql` files in a folder of their own beside the index adapter, named `NNNN_description.sql`, applied in order, once each. A file that is not numbered is an error, and two files sharing a number are an error.
 
 ### The sequence starts at the shape the first release ships
 
-The first release ships one file, `0001_index.sql`, and it is the whole schema. A sequence is collapsed only while every file in it is a file no released build has run: what nobody's index was brought through is not a step anybody's index has to be brought through again. Once a build carrying a numbered file is released, that file stays, and the schema moves by another number after it.
+The first release ships one file, numbered first, and it is the whole schema. A sequence is collapsed only while every file in it is a file no released build has run: what nobody's index was brought through is not a step anybody's index has to be brought through again. Once a build carrying a numbered file is released, that file stays, and the schema moves by another number after it.
 
 ### A migration and its version bump are one transaction
 

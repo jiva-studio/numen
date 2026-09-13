@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-09-05
-- **Applies to:** `modules/libs/core` — `internal/adapter/filesystem`
+- **Applies to:** `modules/libs/core`
 - **Related:** [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
 
 ## Context

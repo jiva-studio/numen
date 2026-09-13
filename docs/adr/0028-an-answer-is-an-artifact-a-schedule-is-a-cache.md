@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
-- **Applies to:** the vault format, and `modules/libs/core` — `flashcards/review`, `usecase/flashcards`
+- **Applies to:** the vault format, and `modules/libs/core`
 - **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [The stencil, the deck and the card](0026-the-stencil-and-the-deck.md), [Review is an application of its own](0027-review-is-an-application-of-its-own.md)
 
 ## Context
@@ -93,7 +93,7 @@ A mark in the log that no deck holds is not an error and is never removed. The c
 - **The order of the history is the order of the clocks that wrote it.** Two machines whose clocks disagree interleave their answers wrongly, and nothing here can tell.
 - **The mark the schedule cache is filed under carries the placement.** A preset's shares, whether its load is evened, the goal that decides whether it is evened at all, and the hour a day begins at all decide which day a card lands on, so all of them stand in the mark.
 - **The log grows, one small file to a run.** Daily review is on the order of a few hundred files a year, each a few kilobytes. Folding old ones together is a rewrite, and a rewrite is the thing that makes merging hard, so it is only ever done to months nothing writes to any more.
-- **A store of derived files has to be able to say what names it holds.** Reading the log means reading every file in one folder, which `DerivedStore` had no way to ask.
+- **A store of derived files has to be able to say what names it holds.** Reading the log means reading every file in one folder, which the store of derived files had no way to ask.
 - **A stencil's faces are renamed knowingly.** The editor is where a person is told what a rename costs.
 - **A launch that meets a run it has not counted reads the whole history.** That is every launch a person answered anything at, and it is a few hundred kilobytes of text a year.
 

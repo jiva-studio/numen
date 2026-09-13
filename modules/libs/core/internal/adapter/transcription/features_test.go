@@ -36,7 +36,7 @@ func TestLogMelMatchesReference(t *testing.T) {
 		t.Fatalf("%d values, and the reference has %d", len(got), bands*frames)
 	}
 	for i := range want {
-		if apart(float64(got[i]), float64(want[i])) > 1e-4 {
+		if getRelativeError(float64(got[i]), float64(want[i])) > 1e-4 {
 			t.Fatalf("band %d frame %d is %g, and the reference says %g",
 				i/frames, i%frames, got[i], want[i])
 		}
@@ -142,8 +142,9 @@ func reference(t *testing.T, path string) ([]float32, int, int) {
 	return out, bands, frames
 }
 
-// apart is how far two numbers are from each other, as a share of the larger.
-func apart(got, want float64) float64 {
+// getRelativeError is how far two numbers are from each other, as a share of
+// the larger.
+func getRelativeError(got, want float64) float64 {
 	scale := math.Max(math.Abs(want), 1)
 	return math.Abs(got-want) / scale
 }

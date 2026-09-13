@@ -876,10 +876,10 @@ describe('what the control stands at', () => {
 
   it('carries the value at the knob, and it follows the knob', async () => {
     const { tab } = mountPresetTab()
-    const at = () => tab.get('[data-control="number"][data-at-knob]')
-    expect(at().text()).toBe(words.widthAt('minutes', 20))
+    const getKnobNumber = () => tab.get('[data-control="number"][data-at-knob]')
+    expect(getKnobNumber().text()).toBe(words.widthAt('minutes', 20))
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
-    expect(at().text()).toBe(words.widthAt('minutes', 30))
+    expect(getKnobNumber().text()).toBe(words.widthAt('minutes', 30))
   })
 
   it('reads the numbers of each goal in that goal’s own units', () => {

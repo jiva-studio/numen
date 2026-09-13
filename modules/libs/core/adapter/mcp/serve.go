@@ -157,7 +157,7 @@ func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHan
 
 	endpoint.URL = "http://" + listener.Addr().String() + "/mcp"
 	endpoint.server = &http.Server{
-		Handler:           behind(token, handler),
+		Handler:           requireToken(token, handler),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	go func() {
@@ -214,11 +214,11 @@ func Local(addr string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-// behind refuses anything that does not present the token.
+// requireToken refuses anything that does not present the token.
 //
 // On the loopback interface this is the second line, behind a port nothing
 // outside the machine can reach. Anywhere else it is the only one.
-func behind(token string, next http.Handler) http.Handler {
+func requireToken(token string, next http.Handler) http.Handler {
 	want := []byte("Bearer " + token)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		got := r.Header.Get("Authorization")

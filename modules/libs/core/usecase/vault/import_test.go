@@ -12,8 +12,9 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// outside is a folder on this machine holding those files, and where it is.
-func outside(t *testing.T, files map[string]string) string {
+// createOutsideFolder is a folder on this machine holding those files, and
+// where it is.
+func createOutsideFolder(t *testing.T, files map[string]string) string {
 	t.Helper()
 	root := t.TempDir()
 	for name, body := range files {
@@ -44,7 +45,7 @@ func readArrived(t *testing.T, root, path string) string {
 func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
-	from := outside(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})
+	from := createOutsideFolder(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})
 	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
 
 	brought, err := bring.Execute(t.Context(), v, "physics", []string{
@@ -74,7 +75,7 @@ func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 func TestAFolderIsBroughtInWhole(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, nil)
-	from := outside(t, map[string]string{
+	from := createOutsideFolder(t, map[string]string{
 		"scans/Cover.png":       "PNG",
 		"scans/pages/One.png":   "ONE",
 		"scans/pages/Two.png":   "TWO",
@@ -111,7 +112,7 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Cover.png": "MINE"})
-	from := outside(t, map[string]string{"Cover.png": "THEIRS", "Kelvin.md": "# Kelvin\n"})
+	from := createOutsideFolder(t, map[string]string{"Cover.png": "THEIRS", "Kelvin.md": "# Kelvin\n"})
 	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{

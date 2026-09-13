@@ -104,8 +104,8 @@ const (
 	leading  = 60
 )
 
-// around is the part of a passage worth drawing: the words about the first span
-// that matched, or about the hit itself when no word matched at all.
+// getTextAround is the part of a passage worth drawing: the words about the
+// first span that matched, or about the hit itself when no word matched at all.
 //
 // A passage is the whole of the window enclosing its hit, which for a note is
 // the whole note. A hit by meaning stands on no word, so `from` is where the
@@ -113,7 +113,7 @@ const (
 //
 // The spans move with the text and the ones left outside are dropped, so what
 // comes back addresses what comes back.
-func around(text string, spans []domain.Span, from int) (string, []domain.Span) {
+func getTextAround(text string, spans []domain.Span, from int) (string, []domain.Span) {
 	runes, units := getRunes(text)
 	total := units[len(runes)]
 	if total <= glancing {

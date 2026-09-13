@@ -37,7 +37,7 @@ func NewShowNeighbourhood(links port.LinkQueries, notes RefQueries) ShowNeighbou
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
 	var out domain.Neighbourhood
 
-	around, err := u.around(ctx, v, path)
+	around, err := u.getSeats(ctx, v, path)
 	if err != nil {
 		return out, err
 	}
@@ -50,7 +50,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 		if parent.Seat != domain.SeatParent {
 			continue
 		}
-		theirs, err := u.around(ctx, v, parent.Path)
+		theirs, err := u.getSeats(ctx, v, parent.Path)
 		if err != nil {
 			return out, err
 		}
@@ -92,12 +92,12 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	return out, nil
 }
 
-// around seats everything one note is joined to, from both ends of its links.
+// getSeats seats everything one note is joined to, from both ends of its links.
 //
 // Which end a link was written at says nothing about the shape of the graph:
 // `parent: B` in A and `child: A` in B are the same edge, so the answer has to
 // read the role together with the direction it was found in.
-func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path string) (*seats, error) {
+func (u ShowNeighbourhood) getSeats(ctx context.Context, v domain.Vault, path string) (*seats, error) {
 	seats := &seats{}
 
 	links, err := u.Links.Links(ctx, v.ID, path)

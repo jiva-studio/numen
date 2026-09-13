@@ -17,10 +17,10 @@ import (
 // spelled it.
 const putRight = "The name and the named are not two, said Rupa."
 
-// beside is a store holding what a run left, by the name it left it under.
-type beside map[string][]byte
+// shelf is a store holding what a run left, by the name it left it under.
+type shelf map[string][]byte
 
-func (b beside) Read(_ context.Context, name string) ([]byte, error) {
+func (b shelf) Read(_ context.Context, name string) ([]byte, error) {
 	raw, held := b[name]
 	if !held {
 		return nil, fs.ErrNotExist
@@ -29,7 +29,7 @@ func (b beside) Read(_ context.Context, name string) ([]byte, error) {
 }
 
 // Open is one file of the store, which a copy of a video is played from.
-func (b beside) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+func (b shelf) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
 	raw, held := b[name]
 	if !held {
 		return nil, 0, fs.ErrNotExist
@@ -38,7 +38,7 @@ func (b beside) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, 
 }
 
 // Take puts what a reader gives under a name.
-func (b beside) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+func (b shelf) Take(_ context.Context, name string, from io.Reader) (int64, error) {
 	raw, err := io.ReadAll(from)
 	if err != nil {
 		return 0, err
@@ -52,24 +52,24 @@ type readingBytes struct{ *bytes.Reader }
 
 func (readingBytes) Close() error { return nil }
 
-func (b beside) Write(_ context.Context, name string, content []byte) error {
+func (b shelf) Write(_ context.Context, name string, content []byte) error {
 	b[name] = content
 	return nil
 }
 
-func (b beside) Append(_ context.Context, name string, content []byte) error {
+func (b shelf) Append(_ context.Context, name string, content []byte) error {
 	b[name] = append(b[name], content...)
 	return nil
 }
 
-func (b beside) Remove(_ context.Context, name string) error {
+func (b shelf) Remove(_ context.Context, name string) error {
 	delete(b, name)
 	return nil
 }
 
-func (b beside) List(context.Context, string) ([]port.Entry, error) { return nil, nil }
+func (b shelf) List(context.Context, string) ([]port.Entry, error) { return nil, nil }
 
-func (b beside) Claim(context.Context, string) (func() error, error) {
+func (b shelf) Claim(context.Context, string) (func() error, error) {
 	return func() error { return nil }, nil
 }
 
@@ -85,7 +85,7 @@ func writeCorrections() []byte {
 // The words a transcript was put right to are the words it reads as, and the
 // moments they were said at stand where they were.
 func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
-	store := beside{
+	store := shelf{
 		text.Artifact(text.ASR, "abc123"):    writeTranscript(),
 		text.Corrections(text.ASR, "abc123"): writeCorrections(),
 	}
@@ -102,7 +102,7 @@ func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
 
 // Taking away what a transcript was put right to gives back what was heard.
 func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
-	store := beside{text.Artifact(text.ASR, "abc123"): writeTranscript()}
+	store := shelf{text.Artifact(text.ASR, "abc123"): writeTranscript()}
 
 	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())
 	if err != nil {
@@ -119,7 +119,7 @@ func TestWhatATranscriptWasPutRightToIsSweptWithIt(t *testing.T) {
 		t.Errorf("a transcript put right is kept under %q", name)
 	}
 
-	store := beside{
+	store := shelf{
 		text.Artifact(text.ASR, "abc123"): writeTranscript(),
 		name:                              writeCorrections(),
 	}

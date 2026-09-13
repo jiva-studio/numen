@@ -123,7 +123,7 @@ func (a *API) ReadTranscript(
 	}
 	_, cues := transcript.Parse(raw)
 	if at := r.Msg.GetSpan(); at != nil {
-		if cues, err = within(at)(cues); err != nil {
+		if cues, err = cutToSpan(at)(cues); err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
@@ -309,12 +309,12 @@ func parseCues(cues []*v1.Cue) ([]transcript.Cue, error) {
 	return out, nil
 }
 
-// within cuts the cues down to the run of the words a request named.
+// cutToSpan cuts the cues down to the run of the words a request named.
 //
 // The run is a span of the words, which is how a passage is addressed
 // everywhere else, and what comes back is the speech those bytes were said in.
 // A search hit is played from the first of them.
-func within(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
+func cutToSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 	return func(cues []transcript.Cue) ([]transcript.Cue, error) {
 		span := domain.Span{From: int(at.GetFrom()), To: int(at.GetTo())}
 		if span.From < 0 {

@@ -75,7 +75,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
 
   const getPath = (id: string): string => tabs.value.get(id)?.path ?? id
   const has = (id: string): boolean => tabs.value.has(id)
-  const at = (id: string): string => tabs.value.get(id)?.filePath ?? ''
+  const getFilePath = (id: string): string => tabs.value.get(id)?.filePath ?? ''
 
   const setBody = (id: string, body: string): void => {
     bodies.value.set(id, body)
@@ -157,7 +157,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     settle: queue.settle,
     getPath,
     has,
-    at,
+    getFilePath,
     setBody,
     applyPathChanges: (paths: readonly string[], renamed: readonly Move[] = []) =>
       conflicts.notifyChanged(getOpenIds, paths, renamed),

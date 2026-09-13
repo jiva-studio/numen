@@ -27,8 +27,9 @@ type readings struct {
 	why      map[domain.VaultID]string
 }
 
-// on is how a vault is read from now on, and the life those readings run for.
-func (r *readings) on(ctx context.Context, read ReadVault) {
+// start is how a vault is read from now on, and the life those readings run
+// for.
+func (r *readings) start(ctx context.Context, read ReadVault) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.under, r.read = ctx, read
@@ -91,7 +92,7 @@ func (r *readings) finish(v domain.Vault, err error) {
 // readings run for. A window naming none counts a vault from the index as it
 // stands.
 func (a *API) Reading(ctx context.Context, read ReadVault) {
-	a.readings.on(ctx, read)
+	a.readings.start(ctx, read)
 }
 
 // reading brings a vault up to date in the index. It says whether a reading of

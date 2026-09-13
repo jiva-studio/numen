@@ -83,7 +83,7 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		from := within(root, path)
+		from := getPackage(root, path)
 		for _, one := range file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil || !strings.HasPrefix(to, module) {
@@ -125,7 +125,7 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, "_test.go") {
 			return err
 		}
-		pkg := within("..", path)
+		pkg := getPackage("..", path)
 		if !holds(pure, pkg) {
 			return nil
 		}
@@ -188,7 +188,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		pkg := within("..", path)
+		pkg := getPackage("..", path)
 		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) {
 			return nil
 		}
@@ -296,7 +296,7 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, "_test.go") {
 			return err
 		}
-		pkg := within("..", path)
+		pkg := getPackage("..", path)
 		if isAdapter(pkg) || pkg == "container" {
 			return nil
 		}
@@ -374,7 +374,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		pkg := within("..", path)
+		pkg := getPackage("..", path)
 		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || holds(machinery, pkg) {
 			return nil
 		}
@@ -513,7 +513,7 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		pkg := within("..", path)
+		pkg := getPackage("..", path)
 		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || holds(machinery, pkg) {
 			return nil
 		}
@@ -772,7 +772,7 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		pkg := within("..", path)
+		pkg := getPackage("..", path)
 		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) {
 			return nil
 		}
@@ -1002,7 +1002,7 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		if within(root, path) == "port" {
+		if getPackage(root, path) == "port" {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -1156,8 +1156,8 @@ import (
 	}
 }
 
-// within is the package a file belongs to, as the rules name it.
-func within(root, path string) string {
+// getPackage is the package a file belongs to, as the rules name it.
+func getPackage(root, path string) string {
 	held, err := filepath.Rel(root, filepath.Dir(path))
 	if err != nil {
 		return path

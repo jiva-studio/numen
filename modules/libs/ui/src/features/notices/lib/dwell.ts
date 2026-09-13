@@ -43,7 +43,7 @@ export const arrivals = (
   new Map(readable(notices).map((notice) => [notice.id, was.get(notice.id) ?? at]))
 
 /** Whether a notice has stood long enough to have been read. */
-const over = (
+const isRead = (
   notice: Notice,
   firstSeen: ReadonlyMap<string, number>,
   at: number,
@@ -59,7 +59,7 @@ export const getShownNotices = (
 ): readonly Notice[] =>
   readable(notices).filter((notice) => {
     if (away.has(notice.id)) return false
-    if (notice.stay === 'read') return !over(notice, firstSeen, at)
+    if (notice.stay === 'read') return !isRead(notice, firstSeen, at)
     return notice.isAsked || at - (firstSeen.get(notice.id) ?? at) >= wait
   })
 
@@ -70,5 +70,5 @@ export const getFinishedNotices = (
   at: number,
 ): readonly string[] =>
   readable(notices)
-    .filter((notice) => notice.stay === 'read' && over(notice, firstSeen, at))
+    .filter((notice) => notice.stay === 'read' && isRead(notice, firstSeen, at))
     .map((notice) => notice.id)

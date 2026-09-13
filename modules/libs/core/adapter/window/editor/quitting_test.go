@@ -51,7 +51,7 @@ type order struct {
 	said []string
 }
 
-func (o *order) at(what string) {
+func (o *order) record(what string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	o.said = append(o.said, what)
@@ -231,7 +231,7 @@ func (w records) Write(
 		}
 	}
 	written, err := w.VaultWriter.Write(ctx, path, content, ref)
-	w.order.at("wrote " + path)
+	w.order.record("wrote " + path)
 	return written, err
 }
 
@@ -268,7 +268,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 		if err := f.opened.Close(); err != nil {
 			t.Error(err)
 		}
-		f.order.at("closed")
+		f.order.record("closed")
 	}()
 
 	select {
@@ -353,7 +353,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	f.opened.Settle(ctx)
-	f.order.at("settled")
+	f.order.record("settled")
 
 	select {
 	case <-flushed:

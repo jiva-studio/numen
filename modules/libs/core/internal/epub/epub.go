@@ -188,7 +188,7 @@ func Read(raw []byte) (*Book, error) {
 		if left <= 0 {
 			break
 		}
-		markup, ok := within(files[item.path], min(int64(mostPerDocument), left))
+		markup, ok := readBounded(files[item.path], min(int64(mostPerDocument), left))
 		if !ok {
 			// A manifest may name a file the archive does not hold, and one it
 			// holds may be larger than a chapter can be.
@@ -236,7 +236,7 @@ func (b *Book) Entry(name string) ([]byte, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%w: the archive is not named", ErrNoEntry)
 	}
-	raw, ok := within(b.files[path.Clean(name)], mostPerDocument)
+	raw, ok := readBounded(b.files[path.Clean(name)], mostPerDocument)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrNoEntry, name)
 	}

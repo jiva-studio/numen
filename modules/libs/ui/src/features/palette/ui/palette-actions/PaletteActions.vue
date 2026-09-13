@@ -54,7 +54,7 @@ const goTo = (to: number) => {
  */
 let stood = { x: -1, y: -1 }
 
-const over = (to: number, event: PointerEvent) => {
+const onRowPointerMove = (to: number, event: PointerEvent) => {
   if (event.clientX === stood.x && event.clientY === stood.y) return
   stood = { x: event.clientX, y: event.clientY }
   goTo(to)
@@ -154,7 +154,7 @@ const onKey = (event: KeyboardEvent) => {
         :key="row.action.id"
         :row="row"
         :here="row.at === here"
-        @pointermove="over(row.at, $event)"
+        @pointermove="onRowPointerMove(row.at, $event)"
         @pointerdown.prevent
         @click="run(row.at)"
       />

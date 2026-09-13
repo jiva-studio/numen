@@ -13,7 +13,7 @@ import (
 // it comes round again: the better it came back, the longer it is left.
 func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 	by := review.NewFSRS()
-	when := at("2026-08-29T09:00:00Z")
+	when := parseTime("2026-08-29T09:00:00Z")
 
 	// A card already spaced, so that the four answers are told apart by what
 	// they do to it rather than by the first steps of learning.
@@ -34,7 +34,7 @@ func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 // A card that did not come back at all is a lapse, and it is counted.
 func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 	by := review.NewFSRS()
-	when := at("2026-08-29T09:00:00Z")
+	when := parseTime("2026-08-29T09:00:00Z")
 
 	learnt := by.Next(by.Next(review.Schedule{}, when, review.Good),
 		when.Add(10*24*time.Hour), review.Good)
@@ -55,7 +55,7 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 // reached yet.
 func TestAnAnsweredCardIsSeen(t *testing.T) {
 	by := review.NewFSRS()
-	when := at("2026-08-29T09:00:00Z")
+	when := parseTime("2026-08-29T09:00:00Z")
 
 	if by.Next(review.Schedule{}, when, review.Good).IsSeen() != true {
 		t.Error("a card answered once is not seen")
@@ -75,7 +75,7 @@ func TestAnAnsweredCardIsSeen(t *testing.T) {
 // place of a curve.
 func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
 	by := review.NewFSRS()
-	when := at("2026-08-29T09:00:00Z")
+	when := parseTime("2026-08-29T09:00:00Z")
 
 	// A spread of card faces: one nobody has answered, ones the scheduler is
 	// still putting into memory, and ones it has put into review.

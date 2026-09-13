@@ -39,11 +39,11 @@ export interface SettingsDeps {
 }
 
 export function useSettings({ core, words, log, held, onSizeChanged }: SettingsDeps) {
-  const dayBegins = reviewSetting(core, words, log.under('reviewed'))
-  const hungParts = useHangingSetting(core, words, log.under('hanging'))
-  const dressed = windowAppearance(themes, words, log.under('worn'))
-  const oneName = syncSetting(core, words, log.under('named'))
-  const rest = settingsStore(core, words, log.under('configured'))
+  const dayBegins = reviewSetting(core, words, log.getWriter('reviewed'))
+  const hungParts = useHangingSetting(core, words, log.getWriter('hanging'))
+  const dressed = windowAppearance(themes, words, log.getWriter('worn'))
+  const oneName = syncSetting(core, words, log.getWriter('named'))
+  const rest = settingsStore(core, words, log.getWriter('configured'))
 
   const file = createTextEditorTabKind(held.handle, core, () => void rest.start())
 
@@ -69,7 +69,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     dayStarts: dayBegins.starts,
     latestDayStarts: dayBegins.latest,
     chooseDayStarts: (hour) => void dayBegins.choose(hour),
-    getSetting: (at) => rest.at(at),
+    getSetting: (at) => rest.getSetting(at),
     getModels: (at) => rest.getModelsAt(at),
     write: (written) => void rest.writeSettings(written),
     file: rest.path,

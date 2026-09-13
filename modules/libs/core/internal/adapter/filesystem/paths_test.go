@@ -47,7 +47,7 @@ func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 
 	for _, path := range paths {
 		t.Run(path, func(t *testing.T) {
-			vault, _, vaultErr := within(real, path, DefaultServiceDir)
+			vault, _, vaultErr := resolveVaultPath(real, path, DefaultServiceDir)
 			ours, _, oursErr := service(real, path, DefaultServiceDir)
 
 			switch {
@@ -82,8 +82,8 @@ func TestALinkIsJudgedByWhereItLeads(t *testing.T) {
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			if _, _, err := within(root, c.path, DefaultServiceDir); (err == nil) != c.vault {
-				t.Errorf("within(%q) gave %v, want accepted=%v", c.path, err, c.vault)
+			if _, _, err := resolveVaultPath(root, c.path, DefaultServiceDir); (err == nil) != c.vault {
+				t.Errorf("resolveVaultPath(%q) gave %v, want accepted=%v", c.path, err, c.vault)
 			}
 			if _, _, err := service(root, c.path, DefaultServiceDir); (err == nil) != c.ours {
 				t.Errorf("service(%q) gave %v, want accepted=%v", c.path, err, c.ours)
@@ -102,9 +102,9 @@ func TestAWindowsDeviceNameIsNotAPathInTheVault(t *testing.T) {
 	}
 
 	for _, path := range []string{"NUL", "notes/con.md", "c:notes.md"} {
-		_, _, err := within(real, path, DefaultServiceDir)
+		_, _, err := resolveVaultPath(real, path, DefaultServiceDir)
 		if held := err == nil; held == (runtime.GOOS == "windows") {
-			t.Errorf("within(%q) gave %v on %s", path, err, runtime.GOOS)
+			t.Errorf("resolveVaultPath(%q) gave %v on %s", path, err, runtime.GOOS)
 		}
 	}
 }
@@ -119,7 +119,7 @@ func TestWhatEachRuleAnswersFor(t *testing.T) {
 	tests := []struct {
 		name  string
 		path  string
-		vault bool // within accepts it
+		vault bool // resolveVaultPath accepts it
 		ours  bool // service accepts it
 	}{
 		{name: "a note", path: "notes/Entropy.md", vault: true},
@@ -138,8 +138,8 @@ func TestWhatEachRuleAnswersFor(t *testing.T) {
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			if _, _, err := within(real, c.path, DefaultServiceDir); (err == nil) != c.vault {
-				t.Errorf("within(%q) gave %v, want accepted=%v", c.path, err, c.vault)
+			if _, _, err := resolveVaultPath(real, c.path, DefaultServiceDir); (err == nil) != c.vault {
+				t.Errorf("resolveVaultPath(%q) gave %v, want accepted=%v", c.path, err, c.vault)
 			}
 			if _, _, err := service(real, c.path, DefaultServiceDir); (err == nil) != c.ours {
 				t.Errorf("service(%q) gave %v, want accepted=%v", c.path, err, c.ours)

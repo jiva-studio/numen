@@ -851,7 +851,7 @@ func TestAWriteReachesTheCardItNamesAndNoOther(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			session, v := newSession(t, roughVault())
-			call[map[string]any](t, session, name, with(args, map[string]any{
+			call[map[string]any](t, session, name, mergeArgs(args, map[string]any{
 				"path": "Animals.md", "fingerprint": deckFingerprint(t, session, "Animals.md"),
 			}))
 			if written := readVaultFile(t, v, "Animals.md"); !strings.Contains(written, roughAlpaca) {
@@ -861,8 +861,8 @@ func TestAWriteReachesTheCardItNamesAndNoOther(t *testing.T) {
 	}
 }
 
-// with is one call's arguments beside the ones every call takes.
-func with(args, every map[string]any) map[string]any {
+// mergeArgs is one call's arguments beside the ones every call takes.
+func mergeArgs(args, every map[string]any) map[string]any {
 	out := make(map[string]any, len(args)+len(every))
 	for k, v := range args {
 		out[k] = v

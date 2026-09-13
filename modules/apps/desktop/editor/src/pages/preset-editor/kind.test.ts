@@ -138,7 +138,7 @@ const openPresetTab = async (
 }
 
 /** A moment for the read, the curve behind it and a write to land. */
-const after = async () => {
+const flushPromises = async () => {
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
 }
 
@@ -328,7 +328,7 @@ describe('the curve behind the knob', () => {
     const { state, applyPathChanges } = await openPresetTab()
     state.moveSlider(3)
     applyPathChanges(['Steady.md'])
-    await after()
+    await flushPromises()
     expect(state.place.value).toBe(3)
   })
 
@@ -340,7 +340,7 @@ describe('the curve behind the knob', () => {
     expect(state.curve.value.decks).toBe(0)
 
     applyPathChanges(['Steady.md'])
-    await after()
+    await flushPromises()
     expect(state.curve.value.decks).toBe(1)
   })
 
@@ -357,7 +357,7 @@ describe('the curve behind the knob', () => {
     expect(state.curve.value.grid.at(-1)).toBe(20)
 
     state.updateSetting('minutesADay', 120)
-    await after()
+    await flushPromises()
     expect(asked).toStrictEqual(['minutes', 'minutes'])
     expect(state.curve.value.grid.at(-1)).toBe(120)
   })
@@ -370,7 +370,7 @@ describe('the curve behind the knob', () => {
 
     state.updateSetting('newADay', 4)
     expect(state.curve.value.honest).toBe(false)
-    await after()
+    await flushPromises()
     expect(state.curve.value.honest).toBe(true)
   })
 })
@@ -381,14 +381,14 @@ describe('the goal chosen', () => {
   it('is written without waiting on the curve behind it', async () => {
     const { state, written } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
     state.chooseGoal('retention')
-    await after()
+    await flushPromises()
     expect(written.at(-1)?.goal).toBe('retention')
   })
 
   it('names a day where the file names none, since a date is aimed at one', async () => {
     const { state, written } = await openPresetTab({ byDate: '' }, dated)
     state.chooseGoal('date')
-    await after()
+    await flushPromises()
     expect(state.settings.value.byDate).toBe('2026-09-29')
     expect(written.at(-1)?.byDate).toBe('2026-09-29')
   })
@@ -397,7 +397,7 @@ describe('the goal chosen', () => {
     for (const day of ['2026-12-25', '2026-08-30', '2026-01-06']) {
       const { state, written } = await openPresetTab({ byDate: day }, dated)
       state.chooseGoal('date')
-      await after()
+      await flushPromises()
       expect(state.settings.value.byDate).toBe(day)
       expect(written.at(-1)?.byDate).toBe(day)
     }
@@ -416,7 +416,7 @@ describe('a preset no tab has open', () => {
   it('is what a preset becomes once its tab is shut', async () => {
     const { state, getState } = await openPresetTab()
     state.close('Steady.md')
-    await after()
+    await flushPromises()
     expect(getState('Steady.md')).toBeUndefined()
   })
 
@@ -424,7 +424,7 @@ describe('a preset no tab has open', () => {
     const { state, getState, applyPathChanges } = await openPresetTab()
     applyPathChanges([], [{ from: 'Steady.md', to: 'Slow.md' }])
     state.close('Slow.md')
-    await after()
+    await flushPromises()
     expect(getState('Slow.md')).toBeUndefined()
     expect(getState('Steady.md')).toBeUndefined()
   })
@@ -451,7 +451,7 @@ describe('what the tab says it encountered as an error', () => {
       const { state } = await openPresetTab({}, curve, () => ({}), () => ({ error }))
       state.updateSetting('newADay', 4)
       state.settle()
-      await after()
+      await flushPromises()
       said.push(state.errorMessage.value)
     }
     expect(said.every((one) => one !== '')).toBe(true)
@@ -491,7 +491,7 @@ describe('a curve nobody answers', () => {
   it('is waited on again where the goal is moved to one nobody has answered', async () => {
     const { state } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
     state.chooseGoal('retention')
-    await after()
+    await flushPromises()
     expect(state.waiting.value).toBe(true)
   })
 })
@@ -504,7 +504,7 @@ describe('what a tab still owes the file', () => {
     const { state, written, closed } = await openPresetTab()
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
-    await after()
+    await flushPromises()
     expect(written.at(-1)?.newADay).toBe(4)
     expect(closed).toStrictEqual(['Steady.md'])
   })
@@ -513,7 +513,7 @@ describe('what a tab still owes the file', () => {
     const { state, closed } = await openPresetTab({}, curve, () => ({}), () => ({ error: 'notAPreset' }))
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
-    await after()
+    await flushPromises()
     expect(closed).toStrictEqual([])
     expect(state.errorMessage.value).not.toBe('')
   })
@@ -522,9 +522,9 @@ describe('what a tab still owes the file', () => {
     const { state, closed } = await openPresetTab({}, curve, () => ({}), () => ({ error: 'notAPreset' }))
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
-    await after()
+    await flushPromises()
     state.close('Steady.md')
-    await after()
+    await flushPromises()
     expect(closed).toStrictEqual(['Steady.md'])
   })
 
@@ -532,7 +532,7 @@ describe('what a tab still owes the file', () => {
     const { state, closed } = await openPresetTab({}, curve, () => ({}), () => ({ changed: true }))
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
-    await after()
+    await flushPromises()
     expect(closed).toStrictEqual([])
     expect(state.hasChanged.value).toBe(true)
   })
@@ -555,13 +555,13 @@ describe('what a tab still owes the file', () => {
     )
     state.updateSetting('newADay', 4)
     state.settle()
-    await after()
+    await flushPromises()
 
     let gone = false
     const going = flush().then(() => {
       gone = true
     })
-    await after()
+    await flushPromises()
     expect(gone).toBe(false)
     resolveWrite()
     await going
@@ -574,14 +574,14 @@ describe('a file read again', () => {
     const { state, applyPathChanges } = await openPresetTab()
     state.updateSetting('newADay', 4)
     applyPathChanges(['Steady.md'])
-    await after()
+    await flushPromises()
     expect(state.settings.value.newADay).toBe(4)
   })
 
   it('takes the file up where nothing stands unwritten', async () => {
     const { state, applyPathChanges } = await openPresetTab()
     applyPathChanges(['Steady.md'])
-    await after()
+    await flushPromises()
     expect(state.settings.value.newADay).toBe(STEADY.newADay)
   })
 
@@ -604,7 +604,7 @@ describe('a file read again', () => {
     )
     state.updateSetting('newADay', 4)
     applyPathChanges(['Steady.md'])
-    await after()
+    await flushPromises()
 
     expect(state.settings.value.newADay).toBe(4)
     expect(state.settings.value.reviewsADay).toBe(33)
@@ -629,7 +629,7 @@ describe('a file read again', () => {
     expect(state.problems.value).toHaveLength(1)
 
     applyPathChanges(['Steady.md'])
-    await after()
+    await flushPromises()
     expect(state.problems.value).toStrictEqual([])
   })
 })
@@ -788,7 +788,7 @@ describe('a field moved before the first read lands', () => {
 
     tab.updateSetting('backlog', 55)
     resolveRead()
-    await after()
+    await flushPromises()
 
     expect(tab.settings.value.backlog).toBe(55)
     expect(tab.settings.value.retention).toBe(0.93)
@@ -796,7 +796,7 @@ describe('a field moved before the first read lands', () => {
     expect(tab.settings.value.interval).toBe(40)
 
     tab.settle()
-    await after()
+    await flushPromises()
     expect(written.at(-1)).toStrictEqual(tab.settings.value)
   })
 
@@ -804,7 +804,7 @@ describe('a field moved before the first read lands', () => {
     const { tab, resolveRead } = await opening({ backlog: 10 })
     tab.updateSetting('backlog', 55)
     resolveRead()
-    await after()
+    await flushPromises()
     expect(tab.settings.value.backlog).toBe(55)
   })
 })
@@ -856,11 +856,11 @@ describe('a control dragged across its range', () => {
     // The read's own curve is the one in the air; every step of the drag lands
     // on top of it.
     for (const share of [0.8, 0.82, 0.84, 0.86]) tab.updateSetting('retention', share)
-    await after()
+    await flushPromises()
     expect(asked).toHaveLength(1)
 
     waiting[0]?.(curve)
-    await after()
+    await flushPromises()
     expect(asked).toHaveLength(2)
   })
 })

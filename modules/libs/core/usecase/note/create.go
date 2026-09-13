@@ -110,7 +110,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if err != nil {
 		return made, err
 	}
-	made.Shares = without(shares, path)
+	made.Shares = removePath(shares, path)
 	return made, nil
 }
 
@@ -153,7 +153,7 @@ func (u Create) index(ctx context.Context, v domain.Vault, paths ...string) erro
 	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
 }
 
-func without(paths []string, path string) []string {
+func removePath(paths []string, path string) []string {
 	var out []string
 	for _, p := range paths {
 		if p != path {

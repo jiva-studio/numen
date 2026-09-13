@@ -90,7 +90,7 @@ function reach(tab: TabId): void {
  * The strip is walked with the arrows, and what is reached is shown. The tabs
  * are what it walks; the way to a new tab is a stop of its own.
  */
-function along(at: number, event: KeyboardEvent): void {
+function onStripKey(at: number, event: KeyboardEvent): void {
   const next = stepTo(event.key, at, props.pane.tabs.length)
   const tab = next === null ? undefined : props.pane.tabs[next]
   if (next === null || tab === undefined) return
@@ -104,7 +104,7 @@ function along(at: number, event: KeyboardEvent): void {
  * The way out of what a tab holds, back to the tab itself. A panel that acts
  * on Escape itself keeps it.
  */
-function out(event: KeyboardEvent): void {
+function onPanelEscape(event: KeyboardEvent): void {
   if (event.defaultPrevented) return
 
   const showing = props.pane.active
@@ -143,7 +143,7 @@ function out(event: KeyboardEvent): void {
         @lift="emit('lift', tab, $event)"
         @close="emit('close', tab)"
         @click="emit('choose', tab)"
-        @keydown="(event: KeyboardEvent) => along(at, event)"
+        @keydown="(event: KeyboardEvent) => onStripKey(at, event)"
       >
         <template v-if="$slots.icon" #icon>
           <slot name="icon" :id="tab" />
@@ -165,7 +165,7 @@ function out(event: KeyboardEvent): void {
         tabindex="0"
         :aria-labelledby="tabName(at)"
         :data-showing="tab === pane.active || undefined"
-        @keydown.escape="out"
+        @keydown.escape="onPanelEscape"
       >
         <slot name="tab" :id="tab" />
       </div>

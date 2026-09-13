@@ -81,7 +81,7 @@ const {
   dragged: face,
   at: faceAt,
   lift: liftFace,
-  over: overFace,
+  hover: hoverFace,
   release: releaseFace,
   drop: dropFace,
   step: stepFace,
@@ -125,7 +125,7 @@ const addFace = (): void => {
     <section
       class="stencil__part"
       :aria-label="words.faces"
-      @dragover="overFace(null, $event)"
+      @dragover="hoverFace(null, $event)"
       @drop="dropFace"
     >
       <h2 class="stencil__heading caps-numen m-0 text-small text-hushed">{{ words.faces }}</h2>
@@ -143,7 +143,7 @@ const addFace = (): void => {
         :words="words"
         :data-dragged="one.id === face || undefined"
         :data-before="one.id === faceAt || undefined"
-        @dragover.stop="overFace(one.id, $event)"
+        @dragover.stop="hoverFace(one.id, $event)"
         @drop.stop="dropFace"
         @rename="(name: string) => emit('rename-face', one.id, name)"
         @remove="emit('remove-face', one.id)"

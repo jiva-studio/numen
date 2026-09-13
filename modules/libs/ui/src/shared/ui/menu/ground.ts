@@ -23,7 +23,7 @@ export function useMenuGround(
    * A pointer, or a scroll, that did not happen inside the menu. A scroll of
    * the menu's own list is not the ground moving, and everything else is.
    */
-  const outside = (event: Event): void => {
+  const dismissOutside = (event: Event): void => {
     const target = event.target
     if (target instanceof Node && menu.value?.contains(target)) return
     dismiss()
@@ -40,14 +40,14 @@ export function useMenuGround(
 
   const listen = (): void => {
     if (detach) return
-    window.addEventListener('pointerdown', outside, true)
-    window.addEventListener('scroll', outside, true)
-    window.addEventListener('resize', outside)
+    window.addEventListener('pointerdown', dismissOutside, true)
+    window.addEventListener('scroll', dismissOutside, true)
+    window.addEventListener('resize', dismissOutside)
     window.addEventListener('keydown', onWindowKey)
     detach = () => {
-      window.removeEventListener('pointerdown', outside, true)
-      window.removeEventListener('scroll', outside, true)
-      window.removeEventListener('resize', outside)
+      window.removeEventListener('pointerdown', dismissOutside, true)
+      window.removeEventListener('scroll', dismissOutside, true)
+      window.removeEventListener('resize', dismissOutside)
       window.removeEventListener('keydown', onWindowKey)
     }
   }

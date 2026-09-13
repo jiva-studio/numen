@@ -155,7 +155,7 @@ export const Dark: Story = {
     await expectDark(canvasElement)
     const ground = getComputedStyle(canvasElement.querySelector('[data-ground]')!).backgroundColor
     const surface = lightness(ground)
-    const from = (colour: string) => Math.abs(lightness(colour, ground) - surface)
+    const getDistanceFrom = (colour: string) => Math.abs(lightness(colour, ground) - surface)
 
     const resting = partsOf(canvasElement, 'resting')
     const lifted = partsOf(canvasElement, 'lifted')
@@ -169,21 +169,21 @@ export const Dark: Story = {
     // The line and its head are one drawing, and lifting moves both further
     // from the ground they are read on. The curve is stroked and the head is
     // filled, so each is read off the property it is painted with.
-    await expect(from(getComputedStyle(lifted.curve).stroke)).toBeGreaterThan(
-      from(getComputedStyle(resting.curve).stroke) + 2,
+    await expect(getDistanceFrom(getComputedStyle(lifted.curve).stroke)).toBeGreaterThan(
+      getDistanceFrom(getComputedStyle(resting.curve).stroke) + 2,
     )
-    await expect(from(getComputedStyle(lifted.head).fill)).toBeGreaterThan(
-      from(getComputedStyle(resting.head).fill) + 2,
+    await expect(getDistanceFrom(getComputedStyle(lifted.head).fill)).toBeGreaterThan(
+      getDistanceFrom(getComputedStyle(resting.head).fill) + 2,
     )
 
     // The letters likewise, and the halo under them stays the surface, at a
     // weight that covers the line running through the words.
-    await expect(from(getComputedStyle(lifted.letters).fill)).toBeGreaterThan(
-      from(getComputedStyle(resting.letters).fill) + 2,
+    await expect(getDistanceFrom(getComputedStyle(lifted.letters).fill)).toBeGreaterThan(
+      getDistanceFrom(getComputedStyle(resting.letters).fill) + 2,
     )
     for (const halo of [resting.halo, lifted.halo]) {
       const drawn = getComputedStyle(halo)
-      await expect(from(drawn.stroke)).toBeLessThan(2)
+      await expect(getDistanceFrom(drawn.stroke)).toBeLessThan(2)
       await expect(Number.parseFloat(drawn.strokeWidth)).toBeGreaterThan(0)
     }
     await expect(Number.parseFloat(getComputedStyle(lifted.halo).strokeWidth)).toBeGreaterThan(

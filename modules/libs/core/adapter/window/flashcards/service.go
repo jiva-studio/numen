@@ -248,12 +248,12 @@ func newAsked(one flashcards.QueuedCardFace) *v1.Asked {
 		Back:    back,
 		Seen:    one.Schedule.IsSeen(),
 		Due:     stamp(one.Schedule.Due),
-		Ahead:   ahead(one.Ahead),
+		Ahead:   newAhead(one.Ahead),
 	}
 }
 
-// ahead is where each of the four would leave the card, in seconds.
-func ahead(said map[review.Rating]time.Duration) *v1.Ahead {
+// newAhead is where each of the four would leave the card, in seconds.
+func newAhead(said map[review.Rating]time.Duration) *v1.Ahead {
 	if said == nil {
 		return nil
 	}

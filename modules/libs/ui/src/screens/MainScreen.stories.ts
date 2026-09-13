@@ -37,11 +37,11 @@ interface Knobs {
 }
 
 const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
-const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
+const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
 
 const OPENING: readonly Turn[] = [
   createAsked('1', 'What is this note linked to?'),
-  back('2', MULTILINE),
+  createAnswered('2', MULTILINE),
 ]
 
 const meta: Meta<Knobs> = {

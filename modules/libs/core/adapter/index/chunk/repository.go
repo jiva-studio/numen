@@ -293,7 +293,7 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 	if err := rename(ctx, tx, vault, from, to); err != nil {
 		return err
 	}
-	first, past := under(from)
+	first, past := getRangeUnder(from)
 	// What a path keeps is counted off it in characters: that is what the
 	// statement cuts by, and a path is not Latin alone.
 	kept := utf8.RuneCountInString(from) + 1
@@ -316,14 +316,14 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 // The rows that are moving stand still: a folder moved inside itself holds
 // them, and they are the ones about to be filed.
 func displace(ctx context.Context, tx *writing.Transaction, vault int64, from, to string) error {
-	first, past := under(to)
+	first, past := getRangeUnder(to)
 	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, to, first, past)
 	if err != nil {
 		return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
 	}
 	defer rows.Close()
 
-	movingFirst, movingPast := under(from)
+	movingFirst, movingPast := getRangeUnder(from)
 	var displaced []int64
 	for rows.Next() {
 		var source int64
@@ -388,9 +388,9 @@ func rename(ctx context.Context, tx *writing.Transaction, vault int64, from, to 
 	return exec(ctx, tx, "rename_title", vault, from, shown)
 }
 
-// under is the range every path a folder holds falls in: from the folder's
-// slash to the byte after one.
-func under(folder string) (first, past string) {
+// getRangeUnder is the range every path a folder holds falls in: from the
+// folder's slash to the byte after one.
+func getRangeUnder(folder string) (first, past string) {
 	return folder + "/", folder + "0"
 }
 

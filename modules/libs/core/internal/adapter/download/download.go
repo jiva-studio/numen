@@ -144,9 +144,9 @@ type program struct {
 // isPresent says this machine has the tool.
 func (p program) isPresent() bool { return len(p.command) > 0 }
 
-// at is where the tool itself is, for another tool that runs it. A tool started
-// through something else is not somewhere one path names.
-func (p program) at() string {
+// getPath is where the tool itself is, for another tool that runs it. A tool
+// started through something else is not somewhere one path names.
+func (p program) getPath() string {
 	if len(p.command) != 1 {
 		return ""
 	}

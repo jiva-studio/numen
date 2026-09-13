@@ -245,7 +245,7 @@ func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 	}
 	argv := strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
 
-	allowed := strings.Split(after(t, argv, "--allowedTools"), ",")
+	allowed := strings.Split(getFlagValue(t, argv, "--allowedTools"), ",")
 	if slices.Contains(allowed, claudecode.Tool("*")) {
 		t.Fatalf("the allowance is %q", allowed)
 	}
@@ -270,8 +270,8 @@ func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 	}
 }
 
-// after is what one flag on a command line was given.
-func after(t *testing.T, argv []string, flag string) string {
+// getFlagValue is what one flag on a command line was given.
+func getFlagValue(t *testing.T, argv []string, flag string) string {
 	t.Helper()
 	for i := len(argv) - 2; i >= 0; i-- {
 		if argv[i] == flag {

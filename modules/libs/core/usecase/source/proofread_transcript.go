@@ -177,13 +177,13 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	res.Resumed = linesBefore(cues, from)
 	res.Read, res.Left = res.Resumed, 0
 
-	at := after(spoken, cues, stood.At)
+	at := getFirstUnaskedBatch(spoken, cues, stood.At)
 	if at >= len(spoken) {
 		// A run taking up after the first pass holds no reply saying which cuts
 		// a sentence was answered for past the end of, and asks about every
 		// seam standing past the count.
 		batches = slices.Concat(spoken, u.seams(asHeard, everyCut(len(spoken)), about))
-		at = len(spoken) + after(batches[len(spoken):], cues, stood.Seam)
+		at = len(spoken) + getFirstUnaskedBatch(batches[len(spoken):], cues, stood.Seam)
 	}
 	if at >= len(batches) {
 		// This proofreader has been over every line and every seam.
@@ -355,8 +355,8 @@ func countUncorrected(asked []proofread.Batch, replies map[int]string, apart flo
 	return out
 }
 
-// after is the first batch holding a line no run has asked about.
-func after(batches []proofread.Batch, cues []transcript.Cue, ms int) int {
+// getFirstUnaskedBatch is the first batch holding a line no run has asked about.
+func getFirstUnaskedBatch(batches []proofread.Batch, cues []transcript.Cue, ms int) int {
 	from := getFirstUnasked(cues, ms)
 	at := 0
 	for at < len(batches) && last(batches[at]) < from {

@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/libs/core` — `port`, `adapter/agent`; `modules/apps/desktop` — `internal/adapter/claudecode`
+- **Applies to:** `modules/libs/core`, `modules/apps/desktop`
 - **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
 
 ## Context

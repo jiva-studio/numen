@@ -28,7 +28,7 @@ func TestAFolderTheWalkCouldNotEnterIsTheWholeVault(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chmod(shut, 0o755) })
 
-	if _, whole := shape.inside(t.Context(), at); !whole {
+	if _, whole := shape.getPathsUnder(t.Context(), at); !whole {
 		t.Fatal("a folder the walk could not enter was not answered as the whole vault")
 	}
 	if shape.knows("library/shut/deep") {

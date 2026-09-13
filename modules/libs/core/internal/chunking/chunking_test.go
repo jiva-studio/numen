@@ -266,7 +266,7 @@ func assertCutRules(t *testing.T, text string, parts []PartStart, sizes Sizes, o
 		ascending = large.Start
 		wordBounded(t, text, large)
 		if s.Large != Whole {
-			inside(t, bounds, large)
+			assertWithinParts(t, bounds, large)
 			assertPartName(t, parts, large)
 			if words := len(strings.Fields(large.Slice(text))); words > s.Large {
 				t.Errorf("large chunk of %d words, bound %d", words, s.Large)
@@ -274,7 +274,7 @@ func assertCutRules(t *testing.T, text string, parts []PartStart, sizes Sizes, o
 		}
 		for _, small := range large.Small {
 			wordBounded(t, text, small)
-			inside(t, bounds, small)
+			assertWithinParts(t, bounds, small)
 			assertPartName(t, parts, small)
 			if words := len(strings.Fields(small.Slice(text))); words > s.Small {
 				t.Errorf("small chunk of %d words, bound %d", words, s.Small)
@@ -299,9 +299,9 @@ func wordBounded(t *testing.T, text string, c Chunk) {
 	}
 }
 
-// inside asserts that no chunk runs across a part: a boundary strictly inside a
-// chunk is structure the cut ignored.
-func inside(t *testing.T, bounds []int, c Chunk) {
+// assertWithinParts asserts that no chunk runs across a part: a boundary
+// strictly inside a chunk is structure the cut ignored.
+func assertWithinParts(t *testing.T, bounds []int, c Chunk) {
 	t.Helper()
 	for _, at := range bounds {
 		if c.Start < at && at < c.Start+c.Length {

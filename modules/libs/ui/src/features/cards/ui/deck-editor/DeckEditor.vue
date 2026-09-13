@@ -64,7 +64,7 @@ const asking = shallowRef<string | null>(null)
 /**
  * The card under the pointer's hand, and where letting go would put it.
  */
-const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint | undefined>({
+const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
   isMoved: (held: string, at: InsertionPoint): boolean => isMoved(shown.value.runs, held, at),
@@ -75,7 +75,7 @@ const shown = computed(() => getGrid(props.cards, props.sections, props.stencils
 
 // --- Handlers ---
 function onDragOver(targetAt: InsertionPoint | undefined, event: DragEvent): void {
-  over(targetAt, event)
+  hover(targetAt, event)
 }
 
 function onDrop(): void {

@@ -58,8 +58,8 @@ func fileable(t *testing.T, notes map[string]string) filing {
 // filename kept as one name.
 func (f filing) move() vaults.Move { return f.newMove(true) }
 
-// apart is the move an installation that has turned the two apart does.
-func (f filing) apart() vaults.Move { return f.newMove(false) }
+// moveApart is the move an installation that has turned the two apart does.
+func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
 func (f filing) newMove(kept note.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(

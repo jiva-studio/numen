@@ -155,22 +155,22 @@ const edgeFor = (neighbour: PlexNode): PlexEdge => {
   return { from: 'focus', to: neighbour.id, ...(label ? { label } : {}) }
 }
 
-const around = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
+const createNeighbourhood = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
   nodes: [node('focus', 'Entropy', 'focus'), ...neighbours],
   edges: neighbours.map(edgeFor),
 })
 
 /** What a pane of a divided window has the width for. */
-const NEIGHBOURHOOD = around(RELATED)
+const NEIGHBOURHOOD = createNeighbourhood(RELATED)
 
 /** What a pane sharing its column with a note has the width for. */
-const CLOSE = around(RELATED.slice(0, 6))
+const CLOSE = createNeighbourhood(RELATED.slice(0, 6))
 
 /**
  * What a pane with the window to itself has the room for: wider at the sides,
  * and no deeper, so nothing is left off the picture.
  */
-const WIDE = around([
+const WIDE = createNeighbourhood([
   ...RELATED,
   node('landauer', "Landauer's principle", 'jump'),
   node('carnot', 'Carnot cycle', 'jump'),
@@ -349,13 +349,13 @@ const did = (id: string, text: string, about: string, aside: string): Turn => ({
   opens: true,
 })
 
-const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
+const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
 
 /** A tool is named the way the panel says it: as a program is named, spoken. */
 const TURNS: readonly Turn[] = [
   createAsked('1', 'What does this note leave out?'),
   did('2', 'note neighbourhood', 'Entropy', '4 links'),
-  back(
+  createAnswered(
     '3',
     'Two things. The note says the demon has to pay, but not where the payment ' +
       'lands — that is Landauer, and you have no note for him. And the passage on ' +
@@ -366,7 +366,7 @@ const TURNS: readonly Turn[] = [
   ),
   createAsked('4', 'Then make the Landauer note and put it under Entropy.'),
   did('5', 'note create', "Landauer's principle", 'under Entropy'),
-  back(
+  createAnswered(
     '6',
     'Made and filed under Entropy, written from p. 373 and the 1961 paper: what ' +
       'clearing one bit costs, and why the sorting is what pays it. I linked it ' +
@@ -740,7 +740,7 @@ const paneOf = (canvas: HTMLElement, id: string): HTMLElement => {
 }
 
 /** Whether one pane stands entirely past another's trailing edge. */
-const past = (later: HTMLElement, earlier: HTMLElement): boolean =>
+const isPast = (later: HTMLElement, earlier: HTMLElement): boolean =>
   later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
 
 /** The map with the room, and the agent along the trailing edge. */
@@ -768,7 +768,7 @@ export const Map: Story = {
 
     // The agent is along the trailing edge, and is something to ask with.
     within(aside).getByPlaceholderText('Ask about the vault')
-    expect(past(aside, map)).toBe(true)
+    expect(isPast(aside, map)).toBe(true)
   },
 }
 
@@ -971,8 +971,8 @@ export const Asking: Story = {
     const aside = paneOf(canvasElement, 'aside')
 
     // The three stand in the order they were divided in, the agent last.
-    expect(past(note, source)).toBe(true)
-    expect(past(aside, note)).toBe(true)
+    expect(isPast(note, source)).toBe(true)
+    expect(isPast(aside, note)).toBe(true)
 
     // The agent is something to ask with, and it is already carrying the
     // asking it is beside the note about.

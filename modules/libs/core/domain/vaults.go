@@ -21,11 +21,11 @@ func (vs Vaults) Room(path string) error {
 		if other.Path == path {
 			continue
 		}
-		if within(path, other.Path) {
+		if isBelow(path, other.Path) {
 			return fmt.Errorf("%w: %s is inside the vault %s at %s",
 				ErrOverlaps, path, other.Name, other.Path)
 		}
-		if within(other.Path, path) {
+		if isBelow(other.Path, path) {
 			return fmt.Errorf("%w: %s holds the vault %s at %s",
 				ErrOverlaps, path, other.Name, other.Path)
 		}
@@ -61,8 +61,8 @@ func (vs Vaults) FreeName(name string, self VaultID) string {
 	}
 }
 
-// within reports whether path lies below root.
-func within(path, root string) bool {
+// isBelow reports whether path lies below root.
+func isBelow(path, root string) bool {
 	rel, err := filepath.Rel(root, path)
 	if err != nil || rel == "." {
 		return false

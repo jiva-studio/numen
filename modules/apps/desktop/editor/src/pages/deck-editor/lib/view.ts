@@ -75,13 +75,13 @@ export const applyName = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
         })
       : read.sections
 
-  const under = (section: string | null): string | null =>
+  const getSectionId = (section: string | null): string | null =>
     section === null ? null : (sections[seat(read, section)]?.id ?? null)
 
   const alongside = screen.cards.length === read.cards.length
 
   const cards = read.cards.map((card, at) => {
-    const withSection = { ...card, section: under(card.section) }
+    const withSection = { ...card, section: getSectionId(card.section) }
     const was = screen.cards[at]
     if (!alongside || !was || was.mark !== '' || card.mark === '') return withSection
     const same =

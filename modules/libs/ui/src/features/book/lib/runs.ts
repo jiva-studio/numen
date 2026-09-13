@@ -93,7 +93,10 @@ export function offsetAt(
  * into that node it reaches. The distance from the run's own offset is a number
  * of bytes, and only `unitsIn` turns one of those into a place in a string.
  */
-const inside = (run: HTMLElement, into: number): { node: Text; offset: number } | undefined => {
+const getPlaceInRun = (
+  run: HTMLElement,
+  into: number,
+): { node: Text; offset: number } | undefined => {
   const walk = document.createTreeWalker(run, NodeFilter.SHOW_TEXT)
   let counted = 0
   let node = walk.nextNode() as Text | null
@@ -111,8 +114,8 @@ const rangeOver = (runs: readonly Run[], span: Span): Range | undefined => {
   const opens = runAt(runs, span.from)
   const closes = runAt(runs, span.to)
   if (!opens || !closes) return undefined
-  const from = inside(opens.element, span.from - opens.at)
-  const to = inside(closes.element, span.to - closes.at)
+  const from = getPlaceInRun(opens.element, span.from - opens.at)
+  const to = getPlaceInRun(closes.element, span.to - closes.at)
   if (!from || !to) return undefined
   const range = document.createRange()
   range.setStart(from.node, from.offset)

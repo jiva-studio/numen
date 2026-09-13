@@ -80,7 +80,7 @@ const createFastClock = (times: number): (() => number) => {
 const AWHILE = 1200
 
 /** A window with something in it, and the cards over its corner. */
-const over = (args: Knobs) => ({
+const renderOverWindow = (args: Knobs) => ({
   components: { Notices },
   setup: () => ({ args }),
   template: `
@@ -136,7 +136,7 @@ const meta = {
     clock: () => Date.now(),
     hidden: () => false,
   },
-  render: over,
+  render: renderOverWindow,
 } satisfies Meta<Knobs>
 
 export default meta

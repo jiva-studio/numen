@@ -39,11 +39,12 @@ func TestOneModelToASettingIsTheDefault(t *testing.T) {
 	byDefault := map[string]int{}
 	for _, one := range append(Models(Defaults(), fetches), Agents()...) {
 		if one.Default {
-			byDefault[at(one.Path)]++
+			byDefault[formatPath(one.Path)]++
 		}
 	}
 	for _, setting := range []string{
-		at(EmbeddingModelAt), at(RecognitionModelAt), at(AgentModelAt), "agent.use",
+		formatPath(EmbeddingModelAt), formatPath(RecognitionModelAt),
+		formatPath(AgentModelAt), "agent.use",
 	} {
 		if byDefault[setting] != 1 {
 			t.Errorf("%s has %d models by default", setting, byDefault[setting])
@@ -60,7 +61,7 @@ func TestTheIndexingModelIsWrittenWithItsProvider(t *testing.T) {
 	}
 	written := []string{}
 	for _, one := range held[0].Writes {
-		written = append(written, at(one.Path))
+		written = append(written, formatPath(one.Path))
 	}
 	for _, want := range []string{
 		"indexing.embedding.model",
@@ -231,18 +232,18 @@ func models(t *testing.T, held Config, setting []string) []port.Model {
 	t.Helper()
 	found := []port.Model{}
 	for _, one := range append(Models(held, fetches), Agents()...) {
-		if at(one.Path) == at(setting) {
+		if formatPath(one.Path) == formatPath(setting) {
 			found = append(found, one)
 		}
 	}
 	if len(found) == 0 {
-		t.Fatalf("%s can be set to nothing", at(setting))
+		t.Fatalf("%s can be set to nothing", formatPath(setting))
 	}
 	return found
 }
 
-// at is a path through the file, as one word.
-func at(path []string) string { return strings.Join(path, ".") }
+// formatPath is a path through the file, as one word.
+func formatPath(path []string) string { return strings.Join(path, ".") }
 
 // A provider reaching a service fetches nothing, whichever model a row names.
 // The files of a model this machine once ran stay in the cache, and they say

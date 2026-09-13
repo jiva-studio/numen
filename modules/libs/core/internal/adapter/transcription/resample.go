@@ -37,7 +37,7 @@ func resample(ctx context.Context, in []float32, from, to int) ([]float32, error
 
 		var sum, weight float64
 		for j := first; j <= last; j++ {
-			w := kernel.at(centre - float64(j))
+			w := kernel.getValueAt(centre - float64(j))
 			sum += w * float64(in[j])
 			weight += w
 		}
@@ -70,9 +70,10 @@ func buildKernel(cutoff, reach float64) kernel {
 	return kernel{held: held, step: step}
 }
 
-// at is the kernel at a distance, between the two steps it falls between. The
-// kernel is even, so a distance either side of nothing reads the same.
-func (w kernel) at(d float64) float64 {
+// getValueAt is the kernel at a distance, between the two steps it falls
+// between. The kernel is even, so a distance either side of nothing reads the
+// same.
+func (w kernel) getValueAt(d float64) float64 {
 	at := math.Abs(d) * w.step
 	i := int(at)
 	if i+1 >= len(w.held) {

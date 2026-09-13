@@ -66,7 +66,7 @@ func archiveIndex(archive *zip.Reader) map[string]*zip.File {
 
 // contents reads one archive entry. A missing or unreadable entry is not there.
 func contents(f *zip.File) ([]byte, bool) {
-	return within(f, mostPerDocument)
+	return readBounded(f, mostPerDocument)
 }
 
 // mostPerDocument is how much of one document inside an archive is read, and
@@ -81,8 +81,8 @@ const (
 	mostPerBook     = 256 << 20
 )
 
-// within is the contents of one entry, up to the bound given.
-func within(f *zip.File, most int64) ([]byte, bool) {
+// readBounded is the contents of one entry, up to the bound given.
+func readBounded(f *zip.File, most int64) ([]byte, bool) {
 	if f == nil {
 		return nil, false
 	}

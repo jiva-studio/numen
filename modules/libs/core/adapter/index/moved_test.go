@@ -58,13 +58,13 @@ func TestAMovedFolderTakesEverythingUnderIt(t *testing.T) {
 		"science/physics/Entropy.md",
 		"science/physics/heat/Heat.md",
 	}
-	if got := under(t, db, first, "science/physics"); !slices.Equal(got, want) {
+	if got := getPathsUnder(t, db, first, "science/physics"); !slices.Equal(got, want) {
 		t.Errorf("the folder now holds %v, want %v", got, want)
 	}
-	if got := under(t, db, first, "physics"); len(got) != 0 {
+	if got := getPathsUnder(t, db, first, "physics"); len(got) != 0 {
 		t.Errorf("the folder it left still holds %v", got)
 	}
-	if got := under(t, db, first, "physics-old"); !slices.Equal(got, []string{"physics-old/Stray.md"}) {
+	if got := getPathsUnder(t, db, first, "physics-old"); !slices.Equal(got, []string{"physics-old/Stray.md"}) {
 		t.Errorf("a folder whose name begins with the one that moved travelled: %v", got)
 	}
 	if got := chunksOf(t, db, first, "science/physics/Entropy.md"); !slices.Equal(got, held) {
@@ -83,10 +83,10 @@ func TestAMovedFolderMovesInOneVaultAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := under(t, db, second, "physics"); !slices.Equal(got, []string{"physics/Quasar.md"}) {
+	if got := getPathsUnder(t, db, second, "physics"); !slices.Equal(got, []string{"physics/Quasar.md"}) {
 		t.Errorf("the other vault's folder holds %v", got)
 	}
-	if got := under(t, db, second, "science"); len(got) != 0 {
+	if got := getPathsUnder(t, db, second, "science"); len(got) != 0 {
 		t.Errorf("the other vault was given %v", got)
 	}
 }
@@ -102,7 +102,7 @@ func TestAMovedFolderCarriesANameThatIsNotLatin(t *testing.T) {
 	}
 
 	want := []string{"physics/Энтропия.md"}
-	if got := under(t, db, first, "physics"); !slices.Equal(got, want) {
+	if got := getPathsUnder(t, db, first, "physics"); !slices.Equal(got, want) {
 		t.Errorf("the folder now holds %v, want %v", got, want)
 	}
 }
@@ -123,10 +123,10 @@ func TestAMoveLandsWhereAScanHasAlreadyFiledTheFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := under(t, db, first, "Entropy.md"); !slices.Equal(got, []string{"Entropy.md"}) {
+	if got := getPathsUnder(t, db, first, "Entropy.md"); !slices.Equal(got, []string{"Entropy.md"}) {
 		t.Errorf("the vault holds %v where the move landed", got)
 	}
-	if got := under(t, db, first, "Old.md"); len(got) != 0 {
+	if got := getPathsUnder(t, db, first, "Old.md"); len(got) != 0 {
 		t.Errorf("the path it left still holds %v", got)
 	}
 	if got := chunksOf(t, db, first, "Entropy.md"); !slices.Equal(got, held) {
@@ -145,7 +145,7 @@ func TestAMoveOntoItsOwnPathKeepsTheNote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := under(t, db, first, "Entropy.md"); !slices.Equal(got, []string{"Entropy.md"}) {
+	if got := getPathsUnder(t, db, first, "Entropy.md"); !slices.Equal(got, []string{"Entropy.md"}) {
 		t.Errorf("the vault holds %v at the path", got)
 	}
 	if got := chunksOf(t, db, first, "Entropy.md"); !slices.Equal(got, held) {

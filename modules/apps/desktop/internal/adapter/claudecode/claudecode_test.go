@@ -360,10 +360,10 @@ func TestTheAllowanceNamesTheSearchAndThisVaultsTools(t *testing.T) {
 		a.Allowed = []string{claudecode.Tool("note_read"), claudecode.Tool("note_edit")}
 	})
 
-	if mode := after(t, argv, "--permission-mode"); mode != "dontAsk" {
+	if mode := getFlagValue(t, argv, "--permission-mode"); mode != "dontAsk" {
 		t.Fatalf("the run asks in %q, and the allowance is not the whole boundary", mode)
 	}
-	allowed := strings.Split(after(t, argv, "--allowedTools"), ",")
+	allowed := strings.Split(getFlagValue(t, argv, "--allowedTools"), ",")
 	if !slices.Equal(allowed, []string{"WebSearch", "mcp__numen__note_read", "mcp__numen__note_edit"}) {
 		t.Errorf("the allowance is %q", allowed)
 	}
@@ -374,13 +374,14 @@ func TestTheAllowanceNamesTheSearchAndThisVaultsTools(t *testing.T) {
 func TestTheSearchIsAllowedWithoutAnyVaultTool(t *testing.T) {
 	argv := getArgvWith(t, func(a *claudecode.Agent) { a.Allowed = nil })
 
-	if allowed := after(t, argv, "--allowedTools"); allowed != "WebSearch" {
+	if allowed := getFlagValue(t, argv, "--allowedTools"); allowed != "WebSearch" {
 		t.Errorf("the allowance is %q", allowed)
 	}
 }
 
-// after is what one flag on the command line was given, the last time it stands.
-func after(t *testing.T, argv []string, flag string) string {
+// getFlagValue is what one flag on the command line was given, the last time it
+// stands.
+func getFlagValue(t *testing.T, argv []string, flag string) string {
 	t.Helper()
 	for i := len(argv) - 2; i >= 0; i-- {
 		if argv[i] == flag {

@@ -44,14 +44,14 @@ describe('what stands at a setting', () => {
   it('is what the file holds, once the vault has answered', async () => {
     const { kept } = createStore('{"agent": {"claude": {"model": "opus"}}}')
     await kept.start()
-    expect(kept.at(['agent', 'claude', 'model'])).toBe('opus')
+    expect(kept.getSetting(['agent', 'claude', 'model'])).toBe('opus')
     expect(kept.path.value).toBe('/numen.json')
   })
 
   it('is nothing where the file names it nowhere', async () => {
     const { kept } = createStore('{}')
     await kept.start()
-    expect(kept.at(['agent', 'claude', 'model'])).toBeUndefined()
+    expect(kept.getSetting(['agent', 'claude', 'model'])).toBeUndefined()
   })
 
   it('is nothing where the vault cannot be asked', async () => {
@@ -67,14 +67,14 @@ describe('what stands at a setting', () => {
 
     await kept.start()
 
-    expect(kept.at(['agent'])).toBeUndefined()
+    expect(kept.getSetting(['agent'])).toBeUndefined()
     expect(kept.path.value).toBe('')
   })
 
   it('is nothing where the vault answers with what is not JSON, and is said', async () => {
     const { kept, said } = createStore('not JSON at all')
     await kept.start()
-    expect(kept.at(['agent'])).toBeUndefined()
+    expect(kept.getSetting(['agent'])).toBeUndefined()
     expect(said).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
   })
 })

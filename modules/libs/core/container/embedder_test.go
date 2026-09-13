@@ -34,13 +34,14 @@ const (
 func makeEmbedConfig(name string) embed.Config {
 	cfg := embed.Defaults()
 	cfg.Model.Name = name
-	cfg.Indexing = at(cfg.Indexing, name, nowhere)
+	cfg.Indexing = newServiceProvider(cfg.Indexing, name, nowhere)
 	return cfg
 }
 
-// at is a provider asking a service at a base URL for the model it calls name.
-// Everything else about the service is left as the settings hold it.
-func at(where embed.Provider, name, baseURL string) embed.Provider {
+// newServiceProvider is a provider asking a service at a base URL for the model
+// it calls name. Everything else about the service is left as the settings hold
+// it.
+func newServiceProvider(where embed.Provider, name, baseURL string) embed.Provider {
 	where.Use = embed.UseService
 	service, _ := where.Service()
 	service.Name, service.BaseURL = name, baseURL
@@ -87,7 +88,7 @@ func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 	cfg := makeEmbedConfig("bge-m3")
-	cfg.Query = at(cfg.Query, "reached-another-way", nowhere)
+	cfg.Query = newServiceProvider(cfg.Query, "reached-another-way", nowhere)
 
 	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why != nil {
@@ -131,7 +132,7 @@ func TestTwoServicesServingOneNameKeepTheirOwnVectors(t *testing.T) {
 
 	one := makeEmbedConfig("bge-m3")
 	other := makeEmbedConfig("bge-m3")
-	other.Indexing = at(other.Indexing, "bge-m3", elsewhere)
+	other.Indexing = newServiceProvider(other.Indexing, "bge-m3", elsewhere)
 
 	if a, b := recipe(t, one), recipe(t, other); a == b {
 		t.Errorf("two services keep their vectors under one key: %s", a)
@@ -151,7 +152,7 @@ func TestAModelRunHereAndOneServedKeepTheirOwnVectors(t *testing.T) {
 	local.Download = false
 	here.Indexing = here.Indexing.SetLocal(local)
 	served := makeEmbedConfig(here.Model.Name)
-	served.Indexing = at(served.Indexing, local.Name, nowhere)
+	served.Indexing = newServiceProvider(served.Indexing, local.Name, nowhere)
 
 	if a, b := recipe(t, here), recipe(t, served); a == b {
 		t.Errorf("a model run here and one served keep their vectors under one key: %s", a)
@@ -166,7 +167,7 @@ func TestARunThatOnlyAsksClaimsWhatTheIndexWasFilledWith(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
 	cfg := makeEmbedConfig("bge-m3")
-	cfg.Query = at(cfg.Query, "bge-m3", elsewhere)
+	cfg.Query = newServiceProvider(cfg.Query, "bge-m3", elsewhere)
 
 	asking, close, why := container.Config{Embedding: cfg}.OpenQuestionEmbedder(t.Context())
 	if why != nil {

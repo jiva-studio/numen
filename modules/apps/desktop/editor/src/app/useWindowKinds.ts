@@ -17,7 +17,7 @@ export type { WindowKindsDeps } from './kinds/deps'
  */
 export function useWindowKinds(deps: WindowKindsDeps) {
   const { log, tabOpeners, held, editing, settings } = deps
-  const writeMessage = log.under('command')
+  const writeMessage = log.getWriter('command')
   const dragged = shallowRef<readonly string[]>([])
 
   const plexes = createPlexKind({

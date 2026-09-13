@@ -246,7 +246,7 @@ export const HighlightedOver: Story = {
     )
 
     /** Every highlighted rectangle, as a share of the page it is drawn over. */
-    const over = async () => {
+    const expectHighlights = async () => {
       const picture = sheetAt(canvasElement, 0)!.getBoundingClientRect()
       const drawn = [
         ...canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
@@ -262,7 +262,7 @@ export const HighlightedOver: Story = {
       }
     }
 
-    await over()
+    await expectHighlights()
 
     const before = sheetAt(canvasElement, 0)!.getBoundingClientRect().width
     await userEvent.click(canvas.getByLabelText('Closer'))
@@ -272,7 +272,7 @@ export const HighlightedOver: Story = {
       ),
     )
 
-    await over()
+    await expectHighlights()
   },
 }
 

@@ -55,7 +55,7 @@ func (b *Book) Markup(docPath string) (*Markup, error) {
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrNoDocument, docPath)
 	}
-	raw, ok := within(b.files[docPath], mostPerDocument)
+	raw, ok := readBounded(b.files[docPath], mostPerDocument)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrNoDocument, docPath)
 	}

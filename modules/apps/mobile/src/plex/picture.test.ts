@@ -11,7 +11,7 @@ import { asPlex } from './picture'
  *  whether the other note names the relationship too. */
 type Neighbour = [string, Seat, string, string, boolean?]
 
-const around = (focus: string, neighbours: Neighbour[]) =>
+const createNeighbourhood = (focus: string, neighbours: Neighbour[]) =>
   create(GetNeighbourhoodResponseSchema, {
     focus: { path: focus, title: focus, identifier: '' },
     related: neighbours.map(([path, seat, label, through, mutual]) => ({
@@ -24,7 +24,7 @@ const around = (focus: string, neighbours: Neighbour[]) =>
   })
 
 /** Every edge, as the notes at its two ends and what is written on it. */
-const getEdges = (neighbourhood: ReturnType<typeof around>) =>
+const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) =>
   asPlex(neighbourhood).edges.map(
     (edge) =>
       `${edge.from} -> ${edge.to}${edge.label ? ` (${edge.label})` : ''}` +
@@ -35,7 +35,7 @@ describe('what the plex is handed', () => {
   it('runs an edge the way the relationship runs', () => {
     expect(
       getEdges(
-        around('Here', [
+        createNeighbourhood('Here', [
           ['Above', Seat.PARENT, 'part of', ''],
           ['Below', Seat.CHILD, '', ''],
           ['Across', Seat.JUMP, 'see also', ''],
@@ -46,7 +46,7 @@ describe('what the plex is handed', () => {
 
   it('draws the focus and everything seated around it, under the path each holds', () => {
     const { nodes } = asPlex(
-      around('Here', [
+      createNeighbourhood('Here', [
         ['Above', Seat.PARENT, '', ''],
         ['Below', Seat.CHILD, '', ''],
       ]),
@@ -59,7 +59,7 @@ describe('what the plex is handed', () => {
   })
 
   it('writes nothing on a line the person wrote nothing on', () => {
-    const [line] = asPlex(around('Here', [['Below', Seat.CHILD, '', '']])).edges
+    const [line] = asPlex(createNeighbourhood('Here', [['Below', Seat.CHILD, '', '']])).edges
     expect(line?.label).toBeUndefined()
   })
 
@@ -68,7 +68,7 @@ describe('what the plex is handed', () => {
   it('marks the end away from the focus where both notes named the link', () => {
     expect(
       getEdges(
-        around('Here', [
+        createNeighbourhood('Here', [
           ['Above', Seat.PARENT, '', '', true],
           ['Below', Seat.CHILD, '', '', true],
         ]),
@@ -77,13 +77,13 @@ describe('what the plex is handed', () => {
   })
 
   it('leaves a one-sided link without an arrow', () => {
-    expect(getEdges(around('Here', [['Below', Seat.CHILD, '', '']]))).toEqual(['Here -> Below'])
+    expect(getEdges(createNeighbourhood('Here', [['Below', Seat.CHILD, '', '']]))).toEqual(['Here -> Below'])
   })
 
   it('hangs a sibling off the parent the two share, not off the focus', () => {
     expect(
       getEdges(
-        around('Here', [
+        createNeighbourhood('Here', [
           ['Above', Seat.PARENT, 'part of', ''],
           ['Beside', Seat.SIBLING, '', 'Above'],
         ]),
@@ -94,7 +94,7 @@ describe('what the plex is handed', () => {
   it('hangs each sibling off its own parent when there are two', () => {
     expect(
       getEdges(
-        around('Here', [
+        createNeighbourhood('Here', [
           ['Above', Seat.PARENT, '', ''],
           ['Beyond', Seat.PARENT, '', ''],
           ['Beside', Seat.SIBLING, '', 'Beyond'],
@@ -105,13 +105,13 @@ describe('what the plex is handed', () => {
 
   // A line to a note nobody drew runs off the picture.
   it('drops a sibling whose parent is not drawn', () => {
-    const { nodes, edges } = asPlex(around('Here', [['Beside', Seat.SIBLING, '', 'Elsewhere']]))
+    const { nodes, edges } = asPlex(createNeighbourhood('Here', [['Beside', Seat.SIBLING, '', 'Elsewhere']]))
     expect(nodes.map((node) => node.id)).toEqual(['Here', 'Beside'])
     expect(edges).toEqual([])
   })
 
   it('draws nothing for a seat it does not know', () => {
-    const { nodes, edges } = asPlex(around('Here', [['Below', Seat.UNSPECIFIED, '', '']]))
+    const { nodes, edges } = asPlex(createNeighbourhood('Here', [['Below', Seat.UNSPECIFIED, '', '']]))
     expect(nodes.map((node) => node.id)).toEqual(['Here'])
     expect(edges).toEqual([])
   })

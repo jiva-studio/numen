@@ -64,8 +64,8 @@ func writeRecognition(t *testing.T) (raw []byte, parts []byte) {
 	return raw, ocr.Pack(found)
 }
 
-// at is where a passage begins in a document's text.
-func at(t *testing.T, doc *text.Document, passage string) int {
+// getOffset is where a passage begins in a document's text.
+func getOffset(t *testing.T, doc *text.Document, passage string) int {
 	t.Helper()
 	offset := strings.Index(doc.Text, passage)
 	if offset < 0 {
@@ -76,7 +76,7 @@ func at(t *testing.T, doc *text.Document, passage string) int {
 
 func checkLocation(t *testing.T, doc *text.Document, passage, want string) {
 	t.Helper()
-	if got := doc.Locate(at(t, doc, passage)); got != want {
+	if got := doc.Locate(getOffset(t, doc, passage)); got != want {
 		t.Errorf("%q is located at %q, want %q", passage, got, want)
 	}
 }
@@ -95,9 +95,9 @@ func TestAReadingWithPartsNamesThem(t *testing.T) {
 	doc := text.ReadRecognition(raw, parts, nil, nil)
 
 	want := []chunking.PartStart{
-		{Title: docTitle, Offset: at(t, doc, docTitle)},
-		{Title: sectionOne, Offset: at(t, doc, sectionOne)},
-		{Title: sectionTwo, Offset: at(t, doc, sectionTwo)},
+		{Title: docTitle, Offset: getOffset(t, doc, docTitle)},
+		{Title: sectionOne, Offset: getOffset(t, doc, sectionOne)},
+		{Title: sectionTwo, Offset: getOffset(t, doc, sectionTwo)},
 	}
 	if !slices.Equal(doc.Parts, want) {
 		t.Errorf("the document names %+v, want %+v", doc.Parts, want)

@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/libs/core` — `usecase/note`, `internal/adapter/filesystem`
+- **Applies to:** `modules/libs/core`
 - **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [What the index stores](0006-what-the-index-stores.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The note file](0018-the-note-file.md), [A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
 
 ## Context
@@ -89,11 +89,11 @@ Fifty renames are fifty renames, and the twenty-ninth fails on its own. An opera
 
 ### The rules live in the core writer
 
-`VaultWriter` takes a path and bytes; what belongs in a note is the core's business. Every caller reaches the same use cases, so the window, an agent and the command line hold these rules by using them.
+The vault's writer takes a path and bytes; what belongs in a note is the core's business. Every caller reaches the same use cases, so the window, an agent and the command line hold these rules by using them.
 
 ### What is derived goes through another port
 
-A file the application made and cannot make again is written through a separate port, into the application's own folder inside the vault. That port refuses every name outside its own area, and `VaultWriter` writes no note inside it.
+A file the application made and cannot make again is written through a separate port, into the application's own folder inside the vault. That port refuses every name outside its own area, and the vault's writer writes no note inside it.
 
 ## Consequences
 

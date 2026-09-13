@@ -6,7 +6,7 @@ import type { Turn } from '../lib/turn'
 const createAsked = (id: string, text = 'said', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
 
-const back = (id: string, text = 'back', state?: Turn['state']): Turn =>
+const createAnswered = (id: string, text = 'back', state?: Turn['state']): Turn =>
   state === undefined
     ? { id, voice: 'answered', text }
     : { id, voice: 'answered', text, state }
@@ -27,18 +27,18 @@ describe('what is drawn', () => {
   })
 
   it('draws one element per turn', () => {
-    expect(thread([createAsked('1'), back('2'), createAsked('3')]).findAll('.thread__turn')).toHaveLength(3)
+    expect(thread([createAsked('1'), createAnswered('2'), createAsked('3')]).findAll('.thread__turn')).toHaveLength(3)
   })
 
   it('keeps the turns in the order they were handed over', () => {
-    const wrapper = thread([createAsked('1', 'first'), back('2', 'second')])
+    const wrapper = thread([createAsked('1', 'first'), createAnswered('2', 'second')])
     const turns = wrapper.findAll('.thread__turn')
     expect(turns[0]?.text()).toContain('first')
     expect(turns[1]?.text()).toContain('second')
   })
 
   it('says which voice each turn is in', () => {
-    const turns = thread([createAsked('1'), back('2')]).findAll('.thread__turn')
+    const turns = thread([createAsked('1'), createAnswered('2')]).findAll('.thread__turn')
     expect(turns[0]?.attributes('data-voice')).toBe('asked')
     expect(turns[1]?.attributes('data-voice')).toBe('answered')
   })
@@ -81,7 +81,7 @@ describe('a line about work that opens something', () => {
 describe('what the caller decides', () => {
   it('renders the body of a turn its own way when it says how', () => {
     const wrapper = mount(Thread, {
-      props: { turns: [back('1', 'entropy.md')] },
+      props: { turns: [createAnswered('1', 'entropy.md')] },
       slots: { turn: '<code class="own">given</code>' },
     })
     expect(wrapper.find('code.own').exists()).toBe(true)
@@ -136,7 +136,7 @@ const createScrollingThread = (turns: readonly Turn[]) => {
 
 describe('following the foot', () => {
   it('brings a turn that arrives into view', async () => {
-    const one = createScrollingThread([createAsked('1'), back('2')])
+    const one = createScrollingThread([createAsked('1'), createAnswered('2')])
 
     await one.arrives(createAsked('3'))
 
@@ -144,34 +144,34 @@ describe('following the foot', () => {
   })
 
   it('follows an answer as it is written', async () => {
-    const one = createScrollingThread([createAsked('1'), back('2', '')])
+    const one = createScrollingThread([createAsked('1'), createAnswered('2', '')])
 
-    await one.wrapper.setProps({ turns: [createAsked('1'), back('2', 'a first word')] })
+    await one.wrapper.setProps({ turns: [createAsked('1'), createAnswered('2', 'a first word')] })
 
     expect(one.at()).toBe(SCREEN)
   })
 
   it('leaves a reader who scrolled up where they are reading', async () => {
-    const one = createScrollingThread([createAsked('1'), back('2'), createAsked('3')])
+    const one = createScrollingThread([createAsked('1'), createAnswered('2'), createAsked('3')])
     await one.reads(0)
 
-    await one.arrives(back('4'))
+    await one.arrives(createAnswered('4'))
 
     expect(one.at()).toBe(0)
   })
 
   it('takes the foot up again once it is read back down to', async () => {
-    const one = createScrollingThread([createAsked('1'), back('2'), createAsked('3')])
+    const one = createScrollingThread([createAsked('1'), createAnswered('2'), createAsked('3')])
     await one.reads(0)
     await one.reads(2 * SCREEN)
 
-    await one.arrives(back('4'))
+    await one.arrives(createAnswered('4'))
 
     expect(one.at()).toBe(3 * SCREEN)
   })
 
   it('is asked back to the foot, wherever it was left', async () => {
-    const one = createScrollingThread([createAsked('1'), back('2'), createAsked('3')])
+    const one = createScrollingThread([createAsked('1'), createAnswered('2'), createAsked('3')])
     await one.reads(0)
 
     ;(one.wrapper.vm as unknown as { toFoot: (again?: boolean) => void }).toFoot(true)

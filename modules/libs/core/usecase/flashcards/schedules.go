@@ -137,12 +137,12 @@ func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignmen
 	if err != nil {
 		return assignment{}, err
 	}
-	return u.under(ctx, v, u.Presets.Reading(), faces)
+	return u.getAssignmentFrom(ctx, v, u.Presets.Reading(), faces)
 }
 
-// under is the same, from the cards and the reading of the presets a caller
-// already holds.
-func (u Schedules) under(
+// getAssignmentFrom is the same, from the cards and the reading of the presets a
+// caller already holds.
+func (u Schedules) getAssignmentFrom(
 	ctx context.Context, v domain.Vault, reading *PresetReads, faces []CardFace,
 ) (assignment, error) {
 	out := u.plain()
@@ -163,7 +163,7 @@ func (u Schedules) under(
 			path = p.Path
 			asked[one.Deck] = path
 			if _, held := by[path]; !held {
-				by[path] = review.SchedulingPolicy{By: u.at(p.Settings.Retention), Preset: p.Settings}
+				by[path] = review.SchedulingPolicy{By: u.getScheduler(p.Settings.Retention), Preset: p.Settings}
 			}
 		}
 		under[one.ID] = by[path]
@@ -197,8 +197,8 @@ func getMark(lines []string) string {
 	return hex.EncodeToString(sum.Sum(nil))
 }
 
-// at is the scheduler asking for a share of the cards to come back.
-func (u Schedules) at(retention float64) review.Scheduler {
+// getScheduler is the scheduler asking for a share of the cards to come back.
+func (u Schedules) getScheduler(retention float64) review.Scheduler {
 	if u.At != nil {
 		return u.At(retention)
 	}

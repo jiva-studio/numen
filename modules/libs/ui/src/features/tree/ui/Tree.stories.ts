@@ -13,10 +13,10 @@ import type { Row, RowId } from '../lib/row'
 import type { RowLanding } from '../lib/drop'
 
 /** A row taken out of wherever it stands. */
-const without = (rows: readonly Row[], id: RowId): readonly Row[] =>
+const removeRow = (rows: readonly Row[], id: RowId): readonly Row[] =>
   rows
     .filter((row) => row.id !== id)
-    .map((row) => (row.rows ? { ...row, rows: without(row.rows, id) } : row))
+    .map((row) => (row.rows ? { ...row, rows: removeRow(row.rows, id) } : row))
 
 const found = (rows: readonly Row[], id: RowId): Row | null => {
   for (const row of rows) {
@@ -41,13 +41,13 @@ const put = (rows: readonly Row[], at: RowLanding, dragRows: readonly Row[]): re
 /** The application's part: what a move comes to, in the rows it holds. */
 const moveRows = (rows: readonly Row[], dragIds: readonly RowId[], at: RowLanding): readonly Row[] => {
   const held = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
-  const left = dragIds.reduce((rest, row) => without(rest, row), rows)
+  const left = dragIds.reduce((rest, row) => removeRow(rest, row), rows)
   return held.length ? put(left, at, held) : rows
 }
 
 /** The application's part again: rows taken out of the tree. */
 const removeRows = (rows: readonly Row[], dragIds: readonly RowId[]): readonly Row[] =>
-  dragIds.reduce((rest, row) => without(rest, row), rows)
+  dragIds.reduce((rest, row) => removeRow(rest, row), rows)
 
 /** The application's part again: a row under a new name. */
 const renameRow = (rows: readonly Row[], row: RowId, name: string): readonly Row[] =>
@@ -78,11 +78,18 @@ const FEW: readonly Row[] = [
 
 /** One row inside the next, as far down as it goes. */
 const deep = (levels: number): readonly Row[] => {
-  const at = (level: number): readonly Row[] =>
+  const createLevel = (level: number): readonly Row[] =>
     level > levels
       ? [{ id: 'bottom', name: 'The bottom', holds: false }]
-      : [{ id: `level-${level}`, name: `Level ${level}`, holds: true, rows: at(level + 1) }]
-  return at(1)
+      : [
+          {
+            id: `level-${level}`,
+            name: `Level ${level}`,
+            holds: true,
+            rows: createLevel(level + 1),
+          },
+        ]
+  return createLevel(1)
 }
 
 const DEEP_LEVELS = 14

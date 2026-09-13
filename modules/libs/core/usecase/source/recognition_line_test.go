@@ -29,9 +29,9 @@ type instant struct {
 
 func newInstant() *instant { return &instant{taken: make(chan port.StartOutcome, 1)} }
 
-// at names the source, once, and leaves the ask standing at the lock before the
-// run that called this carries on.
-func (c *instant) at(name func() port.StartOutcome) {
+// nameOnce names the source, once, and leaves the ask standing at the lock
+// before the run that called this carries on.
+func (c *instant) nameOnce(name func() port.StartOutcome) {
 	c.once.Do(func() {
 		go func() { c.taken <- name() }()
 		time.Sleep(20 * time.Millisecond)
@@ -128,7 +128,7 @@ func TestADocumentNamedAsTheLineEmptiesIsRead(t *testing.T) {
 	}
 
 	crossed := newInstant()
-	w.whenIdle(func() { crossed.at(func() port.StartOutcome { return w.Start(somewhere, "b.pdf") }) })
+	w.whenIdle(func() { crossed.nameOnce(func() port.StartOutcome { return w.Start(somewhere, "b.pdf") }) })
 
 	if got := w.Start(somewhere, "a.pdf"); got != port.Began {
 		t.Fatalf("the first document was not read: %v", got)

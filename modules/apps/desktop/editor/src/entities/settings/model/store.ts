@@ -74,7 +74,7 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, say: Messag
   }
 
   /** What stands at a setting, and nothing where the file names none. */
-  const at = (path: readonly string[]): unknown => getSettingAt(held.value, path)
+  const getSetting = (path: readonly string[]): unknown => getSettingAt(held.value, path)
 
   /** The models one setting can be set to, in the order they are offered. */
   const getModelsAt = (path: readonly string[]): readonly Model[] =>
@@ -101,5 +101,5 @@ export function settingsStore(core: SettingsStoreDeps, words: Words, say: Messag
   const writeSetting = (path: readonly string[], value: unknown): Promise<void> =>
     writeSettings([{ at: path, value: write(value) }])
 
-  return { held, path, models, start, at, getModelsAt, writeSettings, writeSetting }
+  return { held, path, models, start, getSetting, getModelsAt, writeSettings, writeSetting }
 }

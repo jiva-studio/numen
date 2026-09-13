@@ -129,17 +129,18 @@ export const TheThumbSlidesAndTheTrackFills: Story = {
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
     const thumb = control.firstElementChild as HTMLElement
-    const across = () => thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
+    const getAcross = () =>
+      thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
     const getFill = () => getComputedStyle(control).backgroundColor
 
-    const wasAcross = across()
+    const wasAcross = getAcross()
     const wasFilling = getFill()
 
     await userEvent.click(control)
     await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('true'))
 
     // The thumb has moved the width of a thumb, and it is still on the track.
-    await waitFor(() => expect(across()).toBeGreaterThan(wasAcross + thumb.offsetWidth / 2))
+    await waitFor(() => expect(getAcross()).toBeGreaterThan(wasAcross + thumb.offsetWidth / 2))
     const track = control.getBoundingClientRect()
     const box = thumb.getBoundingClientRect()
     expect(box.right).toBeLessThanOrEqual(track.right + 1)
@@ -149,7 +150,7 @@ export const TheThumbSlidesAndTheTrackFills: Story = {
     await waitFor(() => expect(getFill()).not.toBe(wasFilling))
 
     await userEvent.click(control)
-    await waitFor(() => expect(across()).toBeCloseTo(wasAcross, 0))
+    await waitFor(() => expect(getAcross()).toBeCloseTo(wasAcross, 0))
     await waitFor(() => expect(getFill()).toBe(wasFilling))
   },
 }

@@ -27,7 +27,7 @@ interface Knobs {
 /** What a node puts on itself, and the handle inherits. */
 const hue = (seat: PlexSeat) => ({ '--numen-seat-hue': `var(--numen-seat-${seat})` })
 
-const on =
+const renderScene =
   (scene: (args: Knobs) => readonly { id: string; x: number; y: number; seat: PlexSeat }[]) =>
   (args: Knobs) => ({
     components: { PlexNodeHandle },
@@ -71,7 +71,7 @@ const meta: Meta<Knobs> = {
 
   args: { x: 0, y: 0, seat: 'child', zoom: 6, onReach: fn(), onAsk: fn() },
 
-  render: on((args) => [{ id: 'one', x: args.x, y: args.y, seat: args.seat }]),
+  render: renderScene((args) => [{ id: 'one', x: args.x, y: args.y, seat: args.seat }]),
 }
 
 export default meta
@@ -84,7 +84,7 @@ export const Playground: Story = {}
  * it hangs off, and the focus supplies none at all.
  */
 export const EveryHue: Story = {
-  render: on((args) =>
+  render: renderScene((args) =>
     ['focus', ...RELATED_SEATS].map((seat, index) => ({
       id: seat,
       x: (index - 2) * (60 / args.zoom),

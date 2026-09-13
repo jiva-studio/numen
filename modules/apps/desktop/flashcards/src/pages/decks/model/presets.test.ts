@@ -293,23 +293,23 @@ describe('whether starting a session on a deck is offered', () => {
     learned: 0,
     unbegun: 0,
   })
-  const by = (one?: Preset) => new Map(one ? [['decks/Words.md', one]] : [])
+  const createPresets = (one?: Preset) => new Map(one ? [['decks/Words.md', one]] : [])
 
   it('is offered where the deck owes and its preset schedules something', () => {
-    expect(canStart(deck(3), by(preset()))).toBe(true)
-    expect(canStart(deck(0, 1), by(preset()))).toBe(true)
+    expect(canStart(deck(3), createPresets(preset()))).toBe(true)
+    expect(canStart(deck(0, 1), createPresets(preset()))).toBe(true)
   })
 
   it('is refused where the deck owes nothing', () => {
-    expect(canStart(deck(0), by(preset()))).toBe(false)
+    expect(canStart(deck(0), createPresets(preset()))).toBe(false)
   })
 
   it('is refused where the preset scheduling it schedules nothing', () => {
-    expect(canStart(deck(3), by(preset({ paused: 'no cards a day' })))).toBe(false)
+    expect(canStart(deck(3), createPresets(preset({ paused: 'no cards a day' })))).toBe(false)
   })
 
   it('is offered where nothing says which preset schedules the deck', () => {
-    expect(canStart(deck(3), by())).toBe(true)
+    expect(canStart(deck(3), createPresets())).toBe(true)
   })
 })
 

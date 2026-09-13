@@ -62,10 +62,10 @@ func kind(producer string) string {
 	return producer
 }
 
-// under is the name one of a producer's files stands under inside its kind: the
-// hash, then the producer where the kind has more than one, then what the file
-// is.
-func under(producer, hash, what string) string {
+// getName is the name one of a producer's files stands under inside its kind:
+// the hash, then the producer where the kind has more than one, then what the
+// file is.
+func getName(producer, hash, what string) string {
 	if isTimed(producer) {
 		return Transcript + "/" + hash + "." + producer + what
 	}
@@ -243,7 +243,7 @@ func ReadComposed(
 	raw []byte,
 ) (*Document, error) {
 	if isTimed(producer) {
-		put, err := beside(ctx, store, Corrections(producer, hash))
+		put, err := readOptional(ctx, store, Corrections(producer, hash))
 		if err != nil {
 			return nil, err
 		}
@@ -254,26 +254,26 @@ func ReadComposed(
 		}
 		return ReadTranscript(raw), nil
 	}
-	parts, err := beside(ctx, store, Parts(producer, hash))
+	parts, err := readOptional(ctx, store, Parts(producer, hash))
 	if err != nil {
 		return nil, err
 	}
-	corrections, err := beside(ctx, store, Corrections(producer, hash))
+	corrections, err := readOptional(ctx, store, Corrections(producer, hash))
 	if err != nil {
 		return nil, err
 	}
 	var boxes []byte
 	if len(corrections) > 0 {
-		if boxes, err = beside(ctx, store, Boxes(producer, hash)); err != nil {
+		if boxes, err = readOptional(ctx, store, Boxes(producer, hash)); err != nil {
 			return nil, err
 		}
 	}
 	return ReadRecognition(raw, parts, boxes, corrections), nil
 }
 
-// beside is what is kept under a name, and nothing where the store holds
+// readOptional is what is kept under a name, and nothing where the store holds
 // nothing.
-func beside(ctx context.Context, store port.DerivedStore, name string) ([]byte, error) {
+func readOptional(ctx context.Context, store port.DerivedStore, name string) ([]byte, error) {
 	raw, err := store.Read(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
@@ -364,18 +364,18 @@ func Fingerprint(raw []byte) string {
 // under the name a player knows it by.
 func Artifact(from, hash string) string {
 	if isTimed(from) {
-		return under(from, hash, ".vtt")
+		return getName(from, hash, ".vtt")
 	}
-	return under(from, hash, ".txt")
+	return getName(from, hash, ".txt")
 }
 
 // Partial is the name a producer's recognition still running is kept under. It
 // is not an artifact until it is complete, and nothing reads it back as one.
 func Partial(from, hash string) string {
 	if isTimed(from) {
-		return under(from, hash, ".partial.vtt")
+		return getName(from, hash, ".partial.vtt")
 	}
-	return under(from, hash, ".partial")
+	return getName(from, hash, ".partial")
 }
 
 // Corrections is the name what put a producer's text right is kept under. A
@@ -387,28 +387,28 @@ func Partial(from, hash string) string {
 // a line put right, keyed by the box the line was read from.
 func Corrections(from, hash string) string {
 	if isTimed(from) {
-		return under(from, hash, ".corrected.vtt")
+		return getName(from, hash, ".corrected.vtt")
 	}
-	return under(from, hash, ".corrected")
+	return getName(from, hash, ".corrected")
 }
 
 // Parts is the name the parts of a reading are kept under. A reading whose
 // layout model named none has no such file.
-func Parts(from, hash string) string { return under(from, hash, ".parts") }
+func Parts(from, hash string) string { return getName(from, hash, ".parts") }
 
 // Boxes is the name the coordinates a model produced are kept under. They are
 // kept because no machine here remakes them cheaply.
-func Boxes(from, hash string) string { return under(from, hash, ".boxes") }
+func Boxes(from, hash string) string { return getName(from, hash, ".boxes") }
 
 // Proofread is the name of what says who put a reading right and how far they
 // got. A run stopped part way is taken up again at the page it names.
-func Proofread(from, hash string) string { return under(from, hash, ".proofread") }
+func Proofread(from, hash string) string { return getName(from, hash, ".proofread") }
 
 // Answer is the name of what a recording gave where it gave no words: silence,
 // or bytes nothing here can open. It is not a transcript and nothing reads it as
 // one; it is there so that a recording nothing can be heard in is not listened
 // to again every time the vault is scanned.
-func Answer(from, hash string) string { return under(from, hash, ".answer") }
+func Answer(from, hash string) string { return getName(from, hash, ".answer") }
 
 // The two answers a recording gives that carry no words: it holds no speech, or
 // nothing here opens it. What is kept under Answer opens with one of them.
@@ -437,7 +437,7 @@ func ReadAnswer(raw []byte) (gave, said string) {
 // Nothing on any hot path reads it; it is there so a person can ask what read a
 // text they are looking at, and so a sweep can find everything a recogniser now
 // known to be bad produced.
-func GetProducerFile(from, hash string) string { return under(from, hash, ".json") }
+func GetProducerFile(from, hash string) string { return getName(from, hash, ".json") }
 
 // Names is every file one recognition of these bytes is kept under. One run
 // made them and none of them means anything without the others.

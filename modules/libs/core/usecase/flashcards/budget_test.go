@@ -1062,7 +1062,7 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 			}
 
 			drawn := curve.Points[curve.Now.Index].Reviews
-			faces := s.through(t, today, admession(read.Settings, today, saturday))
+			faces := s.countDayFaces(t, today, getNextAdmittedDay(read.Settings, today, saturday))
 			if drawn != float64(faces) {
 				t.Errorf("the curve draws %v and the day hands over %d", drawn, faces)
 			}
@@ -1070,10 +1070,10 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 	}
 }
 
-// admession is the next day of review this preset admits, counting from the day
-// holding now, which is the day the curve draws. A preset admession no day at
-// all is answered with the day it was asked about.
-func admession(p review.Preset, day review.Day, now time.Time) time.Time {
+// getNextAdmittedDay is the next day of review this preset admits, counting
+// from the day holding now, which is the day the curve draws. A preset admitting
+// no day at all is answered with the day it was asked about.
+func getNextAdmittedDay(p review.Preset, day review.Day, now time.Time) time.Time {
 	for range 8 {
 		if !p.GetAllowance(day, now, review.Spent{}, 0, 0).IsPaused() {
 			return now
@@ -1300,14 +1300,14 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 	}
 }
 
-// through is how many card faces one whole day of review hands over, driven the
-// way a person drives it: a session at a time until the day has nothing left to
-// ask, answering everything each of them holds.
+// countDayFaces is how many card faces one whole day of review hands over,
+// driven the way a person drives it: a session at a time until the day has
+// nothing left to ask, answering everything each of them holds.
 //
 // A card the day comes back to is the one card, so a face is counted once
 // however many sessions show it. Each answer takes what a projection costs its
 // kind at, so driving the day does not move the day's own arithmetic under it.
-func (s vaulted) through(t *testing.T, day review.Day, now time.Time) int {
+func (s vaulted) countDayFaces(t *testing.T, day review.Day, now time.Time) int {
 	t.Helper()
 	faces := make(map[review.CardFaceID]bool)
 	for range 100 {

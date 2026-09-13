@@ -40,7 +40,7 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 		answer(t, s.run(t, saturday.AddDate(0, 0, -10+i)), mark(4-i), 6*time.Second)
 	}
 
-	got := faces(s.under(t, today, saturday, "Two.md"))
+	got := faces(s.openSessionByPreset(t, today, saturday, "Two.md"))
 	want := []review.CardFaceID{says(4), says(3)}
 	if !slices.Equal(got, want) {
 		t.Errorf("a day of two reviews asked %v, want %v", got, want)

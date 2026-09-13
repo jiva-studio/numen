@@ -11,7 +11,7 @@ func makeAnswer(id, card, face, when string, r review.Rating) review.Answer {
 	return review.Answer{
 		ID:       id,
 		CardFace: review.CardFaceID{Card: card, Face: face},
-		At:       at(when),
+		At:       parseTime(when),
 		Rating:   r,
 	}
 }
@@ -53,7 +53,7 @@ func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
 // lines stay in the file.
 func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	given := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
-	back := review.Answer{ID: "01B", At: at("2026-08-20T09:00:04Z"), Undoes: "01A"}
+	back := review.Answer{ID: "01B", At: parseTime("2026-08-20T09:00:04Z"), Undoes: "01A"}
 
 	left := review.Replay(ahead, review.NewFSRS(), []review.Answer{given, back})
 	if len(left) != 0 {
@@ -81,7 +81,7 @@ func TestEachFaceOfACardIsScheduledOnItsOwn(t *testing.T) {
 // gives the same answer.
 func TestReplayingOneHistoryTwiceGivesOneSchedule(t *testing.T) {
 	var history []review.Answer
-	when := at("2026-01-01T09:00:00Z")
+	when := parseTime("2026-01-01T09:00:00Z")
 	for i, r := range []review.Rating{review.Good, review.Again, review.Hard, review.Good, review.Easy} {
 		history = append(history, review.Answer{
 			ID:       string(rune('A'+i)) + "01",
@@ -126,7 +126,7 @@ func TestALineThatStandsTwiceIsCountedOnce(t *testing.T) {
 func TestALineTakingAnAnswerBackTwiceTakesItBackOnce(t *testing.T) {
 	shown := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	given := makeAnswer("01A", shown.Card, shown.Face, "2026-08-20T09:00:00Z", review.Good)
-	back := review.Answer{ID: "01B", At: at("2026-08-20T09:01:00Z"), Undoes: given.ID}
+	back := review.Answer{ID: "01B", At: parseTime("2026-08-20T09:01:00Z"), Undoes: given.ID}
 
 	left := review.Replay(ahead, review.NewFSRS(), []review.Answer{given, back, given, back})
 	if _, held := left[shown]; held {

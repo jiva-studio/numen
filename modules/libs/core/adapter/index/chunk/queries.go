@@ -98,7 +98,7 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 		return nil, err
 	}
 
-	first, past := under(path)
+	first, past := getRangeUnder(path)
 	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints_under"), vault, path, vault, first, past)
 	if err != nil {
 		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)

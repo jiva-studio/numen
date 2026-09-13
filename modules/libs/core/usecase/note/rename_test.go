@@ -22,8 +22,8 @@ func (c changing) rename() note.Rename {
 	return note.Rename{Move: c.move()}
 }
 
-// apart is the rename an installation that has turned the two apart does.
-func (c changing) apart() note.Rename {
+// renameApart is the rename an installation that has turned the two apart does.
+func (c changing) renameApart() note.Rename {
 	moving := c.move()
 	moving.Sync = func() note.SyncTitleAndFilename { return false }
 	return note.Rename{Move: moving}
@@ -548,7 +548,7 @@ func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			v := changeable(t, map[string]string{"Old.md": c.raw})
 
-			renamed, err := v.apart().Execute(t.Context(), v.vault, "Old.md", c.title)
+			renamed, err := v.renameApart().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -580,7 +580,7 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 	t.Parallel()
 	for name, renaming := range map[string]func(changing) note.Rename{
 		"one name":   changing.rename,
-		"told apart": changing.apart,
+		"told apart": changing.renameApart,
 	} {
 		t.Run(name, func(t *testing.T) {
 			v := changeable(t, map[string]string{"Old.md": "A measure.\n"})

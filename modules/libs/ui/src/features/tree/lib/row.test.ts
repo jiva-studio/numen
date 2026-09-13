@@ -176,35 +176,35 @@ describe('where a drag lands', () => {
   // work, plans, notes, empty, loose — one row every 24.
   const shown = getShownRows('work')
   const HEIGHT = 24
-  const at = (y: number, ...dragging: readonly RowId[]) =>
+  const getLandingAt = (y: number, ...dragging: readonly RowId[]) =>
     landing(shown, dragging.length ? dragging : ['friday'], y, HEIGHT)
 
   it('goes into a row that holds, over the middle of it', () => {
-    expect(at(12)).toStrictEqual({ into: 'work' })
+    expect(getLandingAt(12)).toStrictEqual({ into: 'work' })
   })
 
   it('goes between, at either end of a row', () => {
-    expect(at(2)).toStrictEqual({ before: 'work' })
-    expect(at(20)).toStrictEqual({ before: 'plans' })
+    expect(getLandingAt(2)).toStrictEqual({ before: 'work' })
+    expect(getLandingAt(20)).toStrictEqual({ before: 'plans' })
   })
 
   it('has no middle over a row that cannot hold', () => {
-    expect(at(52)).toStrictEqual({ before: 'notes' })
-    expect(at(60)).toStrictEqual({ before: 'empty' })
-    expect(at(71)).toStrictEqual({ before: 'empty' })
+    expect(getLandingAt(52)).toStrictEqual({ before: 'notes' })
+    expect(getLandingAt(60)).toStrictEqual({ before: 'empty' })
+    expect(getLandingAt(71)).toStrictEqual({ before: 'empty' })
   })
 
   it('lands at the top level past the last row, which is the tree’s own area', () => {
-    expect(at(118)).toStrictEqual({ into: null })
-    expect(at(200)).toStrictEqual({ into: null })
+    expect(getLandingAt(118)).toStrictEqual({ into: null })
+    expect(getLandingAt(200)).toStrictEqual({ into: null })
   })
 
   it('lands at the top level under the last row, where nothing comes after it', () => {
-    expect(at(112)).toStrictEqual({ into: null })
+    expect(getLandingAt(112)).toStrictEqual({ into: null })
   })
 
   it('lands nowhere above the first row', () => {
-    expect(at(-4)).toBeNull()
+    expect(getLandingAt(-4)).toBeNull()
   })
 
   it('lands nowhere while the rows have no height', () => {
@@ -212,13 +212,13 @@ describe('where a drag lands', () => {
   })
 
   it('lands nowhere where it would name a row being dragged', () => {
-    expect(at(12, 'work')).toBeNull()
-    expect(at(20, 'plans')).toBeNull()
+    expect(getLandingAt(12, 'work')).toBeNull()
+    expect(getLandingAt(20, 'plans')).toBeNull()
   })
 
   it('lands nowhere where it would name any of several being dragged', () => {
-    expect(at(12, 'notes', 'work')).toBeNull()
-    expect(at(20, 'loose', 'plans')).toBeNull()
+    expect(getLandingAt(12, 'notes', 'work')).toBeNull()
+    expect(getLandingAt(20, 'loose', 'plans')).toBeNull()
   })
 })
 

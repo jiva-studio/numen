@@ -62,9 +62,9 @@ func FuzzCut(f *testing.F) {
 		// are all there is to hold a chunk to.
 		cuts := utf8.ValidString(text)
 		for _, one := range chunking.Cut(text, parts, sizes, chunking.Legibility{}) {
-			inside(t, text, one, cuts, "a large chunk")
+			assertChunkInText(t, text, one, cuts, "a large chunk")
 			for _, held := range one.Small {
-				inside(t, text, held, cuts, "a small chunk")
+				assertChunkInText(t, text, held, cuts, "a small chunk")
 				if middle := held.Start + held.Length/2; middle < one.Start ||
 					middle >= one.Start+max(one.Length, 1) {
 					t.Fatalf("a small chunk at %d+%d stands under a large one at %d+%d",
@@ -82,8 +82,9 @@ func FuzzCut(f *testing.F) {
 	})
 }
 
-// inside fails unless a chunk is a stretch of the text, cut at a character.
-func inside(t *testing.T, text string, c chunking.Chunk, cuts bool, what string) {
+// assertChunkInText fails unless a chunk is a stretch of the text, cut at a
+// character.
+func assertChunkInText(t *testing.T, text string, c chunking.Chunk, cuts bool, what string) {
 	t.Helper()
 	switch {
 	case c.Length < 0 || c.Start < 0 || c.Start+c.Length > len(text):

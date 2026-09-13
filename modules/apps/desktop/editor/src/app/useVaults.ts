@@ -26,7 +26,7 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
   const reload = () => globalThis.location.reload()
   const shown = ref<VaultRef>({ id: '', name: '' })
   const listed = ref<VaultList>({ vaults: [], showing: '' })
-  const unlisted = log.under('listed')
+  const unlisted = log.getWriter('listed')
 
   const loadVaults = async () => {
     try {

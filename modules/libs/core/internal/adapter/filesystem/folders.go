@@ -147,15 +147,15 @@ func (f *folders) concerns(absolute string) (paths []string, whole bool, walk st
 	return []string{path}, false, ""
 }
 
-// inside is what the vault holds under a folder new to the watch, and the
-// folders under it remembered as it goes.
+// getPathsUnder is what the vault holds under a folder new to the watch, and
+// the folders under it remembered as it goes.
 //
 // A folder holding more entries than Entries is answered as the whole vault:
 // the rest of the walk costs more than reading the vault again. So is a folder
 // the walk could not enter: what it holds is missing from the shape, and a
 // shape short of a folder cannot tell a folder that has gone from a file that
 // has — the index would go on answering with files that are not there.
-func (f *folders) inside(ctx context.Context, absolute string) (paths []string, whole bool) {
+func (f *folders) getPathsUnder(ctx context.Context, absolute string) (paths []string, whole bool) {
 	var held []string
 	seen, over, short := 0, false, false
 	_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {

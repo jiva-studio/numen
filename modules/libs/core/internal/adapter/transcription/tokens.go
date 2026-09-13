@@ -51,9 +51,9 @@ func tokens(path string) (pieces, error) {
 	return out, nil
 }
 
-// at is the number one piece answers to, and -1 for a piece the model does not
-// know.
-func (p pieces) at(piece string) int {
+// getIndex is the number one piece answers to, and -1 for a piece the model does
+// not know.
+func (p pieces) getIndex(piece string) int {
 	for i, one := range p {
 		if one == piece {
 			return i

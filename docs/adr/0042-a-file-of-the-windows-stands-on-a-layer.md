@@ -14,7 +14,7 @@ It stopped saying enough. A tab grew a store, an adapter to the vault, a dialog 
 
 ### Six layers, and a layer reaches only what stands below it
 
-Lowest first: `shared`, `entities`, `features`, `widgets`, `pages`, `app`. The component library says `screens` where the windows say `pages`, and its barrel stands where their `app` does; those are one layer under two words.
+A file of a window stands on one of six layers, and each holds one kind of thing. The component library says `screens` where the windows say `pages`, and its barrel stands where their topmost layer does; those are one layer under two words.
 
 | Layer | Holds |
 |---|---|
@@ -25,21 +25,21 @@ Lowest first: `shared`, `entities`, `features`, `widgets`, `pages`, `app`. The c
 | `pages` | one tab, whole |
 | `app` | mounting, wiring, providers |
 
-A window laid out flat is read as the same rule with one layer in it: a folder under `src/` naming no layer is a screen, and stands where the pages do. That is what `modules/apps/desktop/flashcards` is, and it is judged without being moved.
+A window laid out flat is read as the same rule with one layer in it: a folder under `src/` naming no layer is a screen, and stands where the pages do. The review window is laid out that way, and it is judged without being moved.
 
 ### A slice holding more than one kind of file is cut into the standard segments
 
 A slice's folders are `ui`, `api`, `model`, `lib`, `config` — the names the method already has, so nobody has to be told what ours mean.
 
-A segment tells one kind of file from another. A slice whose files are all one kind reads as well flat, and `features/player` — a component and its test — is one. A slice holding two kinds is cut, and cut for every kind in it at once: a component beside a wire mapper, a store beside a pure reducer.
+A segment tells one kind of file from another. A slice whose files are all one kind reads as well flat, and a slice that is a component and its test is one. A slice holding two kinds is cut, and cut for every kind in it at once: a component beside a wire mapper, a store beside a pure reducer.
 
-What says which component a tab draws stands at the top of the slice, in `kind.ts`. A segment naming another segment is a ring: the model would name the component it draws and the component would name the state the model makes, and neither could be read first. The slice root is what may name both.
+What says which component a tab draws stands at the root of the slice and in no segment. A segment naming another segment is a ring: the model would name the component it draws and the component would name the state the model makes, and neither could be read first. The slice root is what may name both.
 
 ### A slice reaches no sibling slice of its own layer
 
-`entities`, `features`, `widgets` and `pages` are each cut into slices named for what they are about. What two slices both need stands on a layer below.
+A layer that is cut into slices has them named for what they are about. What two slices both need stands on a layer below.
 
-Where two are bound by the domain rather than by convenience, the one asked of declares a public API for the one asking: `entities/tab/@x/media` is everything the media entity may know about a tab. A cross-import written down is a decision; one written as an import is not.
+Where two are bound by the domain rather than by convenience, the one asked of declares a public API for the one asking, under `@x` and named for the slice it is for: what the media entity may know about a tab is declared by the tab. A cross-import written down is a decision; one written as an import is not.
 
 ### The rules are generated from one table, and the table is the decision
 
@@ -47,7 +47,7 @@ Where two are bound by the domain rather than by convenience, the one asked of d
 
 ### The test harness stands on no layer
 
-What assembles a whole window so a test can ask what it drew is drawn by the tests of every layer and draws the window itself. It points both ways by the nature of what it is. It stands in `src/testing/`, outside the layers, and no rule reads it — including the ring rule, which would otherwise find a cycle through every folder there is.
+What assembles a whole window so a test can ask what it drew is drawn by the tests of every layer and draws the window itself. It points both ways by the nature of what it is. It stands outside the layers, and no rule reads it — the ring rule included, which would find a cycle through every folder there is.
 
 ### A slice that hands out a door is reached through it
 
@@ -63,6 +63,6 @@ Which slices have a door is read off the tree being cruised rather than written 
 
 A thing two slices need can no longer be left in the first slice that wanted it: it goes down a layer, or the slice that owns it says so through `@x`. That is more work at the moment of writing and it is the work that keeps `shared/` from filling again.
 
-`shared/` now holds what has no domain in it. The words the vault speaks about a file — which of four a note is, what creating one or moving one comes back with — are in `shared/file.ts`, because a deck and a stencil are created and moved exactly as a note is.
+`shared/` now holds what has no domain in it. The words the vault speaks about a file — which of four a note is, what creating one or moving one comes back with — stand on the lowest layer, because a deck and a stencil are created and moved exactly as a note is.
 
-The port the window asks the vault through stands in `app/ports/`, beside what answers it. Splitting it into a port for each entity would put a composed interface across four sibling slices, which this decision refuses; whoever needs less than the whole port declares the part they call.
+The port the window asks the vault through stands on the topmost layer, beside what answers it. Splitting it into a port for each entity would put a composed interface across four sibling slices, which this decision refuses; whoever needs less than the whole port declares the part they call.

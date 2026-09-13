@@ -1097,14 +1097,14 @@ describe('the open files a command reaches', () => {
     getTabAt: (one) => (one === path ? id : null),
   })
 
-  const over = () => {
+  const createStores = () => {
     const done: string[] = []
     const stores = [store('note', 'Ontology.md', done), store('Animals.md', 'Animals.md', done)]
     return { done, notes: createNotes(stores, { openFile: () => {}, openNewFile: () => {} }) }
   }
 
   it('is the tab of whichever store stands at the file', () => {
-    const one = over()
+    const one = createStores()
 
     expect(one.notes.getTabAt('Ontology.md')).toBe('note')
     expect(one.notes.getTabAt('Animals.md')).toBe('Animals.md')
@@ -1112,7 +1112,7 @@ describe('the open files a command reaches', () => {
   })
 
   it('settles and shuts the store holding the identity, and no other', async () => {
-    const one = over()
+    const one = createStores()
 
     await one.notes.settle('Animals.md')
     one.notes.close('Animals.md')
@@ -1121,7 +1121,7 @@ describe('the open files a command reaches', () => {
   })
 
   it('leaves an identity no store holds where it was, and does nothing to it', async () => {
-    const one = over()
+    const one = createStores()
 
     await one.notes.settle('Gone.md')
     one.notes.close('Gone.md')

@@ -27,7 +27,7 @@ type sequence struct {
 	said []string
 }
 
-func (s *sequence) at(what string) {
+func (s *sequence) record(what string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.said = append(s.said, what)
@@ -85,7 +85,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		if _, err := refresh.Execute(ctx, v, paths); err != nil {
 			return err
 		}
-		recorded.at("levelled")
+		recorded.record("levelled")
 		return nil
 	}
 
@@ -163,7 +163,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		defer cancel()
 		endpoint.Close(ctx)
 		db.Close()
-		recorded.at("closed")
+		recorded.record("closed")
 	}()
 
 	select {

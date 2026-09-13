@@ -91,7 +91,7 @@ func (u ProjectCurve) Execute(
 	// A deck is asked once which preset schedules it, however many card faces
 	// it holds, and a preset note is opened once however many decks name it.
 	reading := u.Presets.Reading()
-	asks, err := u.Schedules.under(ctx, v, reading, faces)
+	asks, err := u.Schedules.getAssignmentFrom(ctx, v, reading, faces)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -140,11 +140,11 @@ func (u ProjectCurve) Execute(
 	// one its cards are scheduled by, and it opens on the day a person is
 	// already partway through.
 	run := review.Simulation{
-		By: u.at(p.Retention), Day: u.Day, Cost: cost,
+		By: u.getScheduler(p.Retention), Day: u.Day, Cost: cost,
 		Spent: review.GetSpentUnder(u.Day, u.Day.GetName(now), held.Answers, under,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
-	out, err := run.Curve(ctx, now, p, at, unseen, u.at, u.places)
+	out, err := run.Curve(ctx, now, p, at, unseen, u.getScheduler, u.places)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -248,8 +248,8 @@ func (u ProjectCurve) places(count int, each func(at int) error) error {
 	return nil
 }
 
-// at is the scheduler asking for a share of the cards to come back.
-func (u ProjectCurve) at(retention float64) review.Scheduler {
+// getScheduler is the scheduler asking for a share of the cards to come back.
+func (u ProjectCurve) getScheduler(retention float64) review.Scheduler {
 	if u.By != nil {
 		return u.By(retention)
 	}

@@ -65,7 +65,7 @@ func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
 		t.Fatalf("the folder was not handed over to be walked: %q", walk)
 	}
 
-	held, whole := shape.inside(t.Context(), walk)
+	held, whole := shape.getPathsUnder(t.Context(), walk)
 	if whole {
 		t.Fatal("a folder of three notes was answered as the whole vault")
 	}
@@ -82,7 +82,7 @@ func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 
 	ctx, stop := context.WithCancel(t.Context())
 	stop()
-	if held, whole := shape.inside(ctx, at); whole || len(held) != 0 {
+	if held, whole := shape.getPathsUnder(ctx, at); whole || len(held) != 0 {
 		t.Errorf("a walk under a context that is done found %v (whole %v)", held, whole)
 	}
 }

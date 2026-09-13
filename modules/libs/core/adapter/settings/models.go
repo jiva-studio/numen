@@ -161,7 +161,7 @@ func getAgentModels(held Config) []port.Model {
 			Path: AgentModelAt, Name: one, Title: one, Shelf: shelfInFull,
 		})
 	}
-	if name := held.Agent.Claude.Model; name != "" && !among(models, name) {
+	if name := held.Agent.Claude.Model; name != "" && !hasModel(models, name) {
 		models = append(models, port.Model{
 			Path: AgentModelAt, Name: name, Title: name, Shelf: shelfConfigured,
 		})
@@ -172,8 +172,8 @@ func getAgentModels(held Config) []port.Model {
 	return models
 }
 
-// among says whether one of these models is already the name given.
-func among(models []port.Model, name string) bool {
+// hasModel says whether one of these models is already the name given.
+func hasModel(models []port.Model, name string) bool {
 	for _, one := range models {
 		if one.Name == name {
 			return true

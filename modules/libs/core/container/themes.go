@@ -56,8 +56,8 @@ type scales struct {
 	drawn, set float64
 }
 
-// over puts what was said this launch over what the file holds.
-func (l *scales) over(worn *theme.Appearance) {
+// apply puts what was said this launch over what the file holds.
+func (l *scales) apply(worn *theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.drawn > 0 {
@@ -85,7 +85,7 @@ func (c Config) catalogue() (theme.Catalogue, error) {
 	if c.ThemesPath != "" {
 		return theme.OpenAt(c.ThemesPath)
 	}
-	if folder, chosen := c.beside("themes"); chosen {
+	if folder, chosen := c.getPathBeside("themes"); chosen {
 		return theme.OpenAt(folder)
 	}
 	return theme.Open()
@@ -108,7 +108,7 @@ func (c Config) readAppearance(said *scales) (theme.Appearance, error) {
 		InterfaceScale: held.Appearance.InterfaceScale,
 		TextScale:      held.Appearance.TextScale,
 	}
-	said.over(&worn)
+	said.apply(&worn)
 	return worn, nil
 }
 

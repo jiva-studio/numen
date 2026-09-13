@@ -89,13 +89,13 @@ export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): Buff
     cards: [...left.slice(0, where), { ...held, section }, ...left.slice(where)],
   })
 
-  const under = (card: BufferCard): string | null =>
+  const getSection = (card: BufferCard): string | null =>
     deck.sections.some((each) => each.id === card.section) ? card.section : null
 
   const last = (section: string | null): number => {
     let seat = -1
     left.forEach((card, index) => {
-      if (under(card) === section) seat = index
+      if (getSection(card) === section) seat = index
     })
     return seat
   }

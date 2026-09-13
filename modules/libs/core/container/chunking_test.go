@@ -137,7 +137,7 @@ func (wide) Close() error { return nil }
 // second assembly is a second answer for one settings file.
 func TestNothingElseAssemblesACut(t *testing.T) {
 	root := ".."
-	within := func(path, dir string) bool {
+	isWithin := func(path, dir string) bool {
 		return strings.HasPrefix(filepath.ToSlash(path), filepath.ToSlash(filepath.Join(root, dir))+"/")
 	}
 	var built, sized, untold []string
@@ -145,7 +145,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		if strings.HasSuffix(path, "_test.go") || within(path, "container") {
+		if strings.HasSuffix(path, "_test.go") || isWithin(path, "container") {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -176,7 +176,8 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 				return true
 			}
 			switch {
-			case pkg.Name == "source" && named.Sel.Name == "Extract" && !within(path, "usecase/source"):
+			case pkg.Name == "source" && named.Sel.Name == "Extract" &&
+				!isWithin(path, "usecase/source"):
 				built = append(built, path)
 			case pkg.Name == "chunking" && (named.Sel.Name == "Sizes" || named.Sel.Name == "Legibility"):
 				sized = append(sized, path)

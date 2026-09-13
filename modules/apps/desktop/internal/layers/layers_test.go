@@ -91,7 +91,7 @@ func readSources(t *testing.T) []standing {
 		}
 		found = append(found, standing{
 			at:   filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
-			in:   within(root, path),
+			in:   getPackage(root, path),
 			file: file,
 		})
 		return nil
@@ -285,8 +285,8 @@ func mount() {
 	}
 }
 
-// within is the package a file belongs to, as the rules name it.
-func within(root, path string) string {
+// getPackage is the package a file belongs to, as the rules name it.
+func getPackage(root, path string) string {
 	held, err := filepath.Rel(root, filepath.Dir(path))
 	if err != nil {
 		return path

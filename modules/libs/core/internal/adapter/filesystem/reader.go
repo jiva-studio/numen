@@ -131,7 +131,7 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 	target := s.root
 	if folder != "" {
 		var err error
-		if target, err = inside(s.root, folder, s.opts.serviceDir()); err != nil {
+		if target, err = getContainedPath(s.root, folder, s.opts.serviceDir()); err != nil {
 			return nil, err
 		}
 		folder = pathpkg.Clean(filepath.ToSlash(folder))
@@ -207,7 +207,7 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-	target, err := inside(s.root, path, s.opts.serviceDir())
+	target, err := getContainedPath(s.root, path, s.opts.serviceDir())
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-	target, err := inside(s.root, path, s.opts.serviceDir())
+	target, err := getContainedPath(s.root, path, s.opts.serviceDir())
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.Fingerprint
 // It costs a look at the file's metadata and never its bytes, which is what a
 // caller deciding whether to open a 400 MB export has to be able to ask.
 func (s *VaultReader) leftAlone(path string) error {
-	target, err := inside(s.root, path, s.opts.serviceDir())
+	target, err := getContainedPath(s.root, path, s.opts.serviceDir())
 	if err != nil {
 		return fs.ErrNotExist
 	}
@@ -330,7 +330,7 @@ func (s *VaultReader) relative(absolute string) (path string, inside bool) {
 // walk would report it at all. The walk and the watcher both ask it, so the two
 // agree about what the vault holds.
 func (s *VaultReader) holds(path string) (domain.SourceKind, bool) {
-	if _, err := inside(s.root, path, s.opts.serviceDir()); err != nil {
+	if _, err := getContainedPath(s.root, path, s.opts.serviceDir()); err != nil {
 		return "", false
 	}
 	kind, ok := s.opts.kind(pathpkg.Base(path))

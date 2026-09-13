@@ -40,7 +40,7 @@ func editable(t *testing.T, notes map[string]string) *API {
 	return api
 }
 
-func at(t *testing.T, api *API, path string) *v1.LastRead {
+func readNote(t *testing.T, api *API, path string) *v1.LastRead {
 	t.Helper()
 	out, err := api.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: path}))
 	if err != nil {
@@ -57,7 +57,7 @@ func at(t *testing.T, api *API, path string) *v1.LastRead {
 // person.
 func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	api := editable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	seen := at(t, api, "Entropy.md")
+	seen := readNote(t, api, "Entropy.md")
 
 	theirs := "# Entropy\n\nTheirs.\n"
 	on := filepath.Join(api.GetShownVault().Path, "Entropy.md")
@@ -93,7 +93,7 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 // write, and it is what lets a session hold more than one save.
 func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	api := editable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	seen := at(t, api, "Entropy.md")
+	seen := readNote(t, api, "Entropy.md")
 
 	first, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Entropy.md",
