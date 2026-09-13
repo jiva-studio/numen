@@ -12,6 +12,7 @@ import { getPickerKeyIntent, getSessionKeyIntent, isSwallowed } from '@/features
 import { canStart } from '@/pages/decks'
 import type { Grade } from '@/entities/card'
 import type { VaultCardsDue } from '@/entities/vault'
+import type { SessionKeyIntent } from '@/features/keyboard'
 import type { Preset } from '@/pages/decks'
 
 /** The screens the window stands on, in the order a person goes through them. */
@@ -93,21 +94,20 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
     }
   }
 
-  const handleSessionKey = (press: KeyboardEvent) => {
-    const asked = getSessionKeyIntent(press, {
-      shown: deps.isShown(),
-      asking: deps.getShowing() === 'asking',
-      reading: deps.getShowing() === 'reading',
-    })
-    if (!asked) return
-    if (isSwallowed(asked)) press.preventDefault()
+  /** The panel that is up, put away. */
+  const closeShownPanel = () => {
+    if (deps.getShowing() === 'asking') deps.closeAgent()
+    else deps.closeNotes()
+  }
 
-    switch (asked.does) {
+  /** What the key asked of the session, done. */
+  const handleSessionIntent = (intent: SessionKeyIntent) => {
+    switch (intent.does) {
       case 'show':
         deps.show()
         break
       case 'answer':
-        deps.answer(asked.how)
+        deps.answer(intent.how)
         break
       case 'takeBack':
         deps.takeBack()
@@ -122,13 +122,23 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
         deps.toggleNotes()
         break
       case 'scroll':
-        deps.scrollPage(asked.back)
+        deps.scrollPage(intent.back)
         break
       case 'shut':
-        if (deps.getShowing() === 'asking') deps.closeAgent()
-        else deps.closeNotes()
+        closeShownPanel()
         break
     }
+  }
+
+  const handleSessionKey = (press: KeyboardEvent) => {
+    const asked = getSessionKeyIntent(press, {
+      shown: deps.isShown(),
+      asking: deps.getShowing() === 'asking',
+      reading: deps.getShowing() === 'reading',
+    })
+    if (!asked) return
+    if (isSwallowed(asked)) press.preventDefault()
+    handleSessionIntent(asked)
   }
 
   const handleKey = (press: KeyboardEvent) => {

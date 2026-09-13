@@ -8,6 +8,7 @@
 import { nextTick, useTemplateRef, watch } from 'vue'
 import { Prose } from '@numen/ui'
 
+import { NoteHead } from './note-head'
 import { WORDS as words } from '../lib/notesWords'
 import type { Neighbour } from '../api/notes'
 import type { NotesPanelState } from '../model/notes'
@@ -42,9 +43,6 @@ const scrollPage = (back = false) => {
 
 defineExpose({ scrollPage })
 
-/** A note is named by its title, and by how it was written where it has none. */
-const getNoteName = (one: Neighbour) => one.title || one.written
-
 // A link pressed in the card opens the panel on the note it names, so the
 // reading starts where the person was looking. The notes are waited for: the
 // panel comes in while they are still being asked for, and a note cannot be
@@ -76,15 +74,7 @@ watch(
         :ref="(element) => holdNote(one, element)"
         class="reading__note"
       >
-        <header class="reading__head">
-          <h2 class="reading__name">{{ getNoteName(one) }}</h2>
-          <!-- The path is here because two notes can be called the same thing. -->
-          <p class="reading__quiet">
-            <span v-if="one.path">{{ one.path }}</span>
-            <span v-if="!one.points">{{ words.pointsHere }}</span>
-            <span v-if="one.label">{{ one.label }}</span>
-          </p>
-        </header>
+        <NoteHead :note="one" />
 
         <p v-if="!one.path" class="reading__quiet">{{ words.dangling }}</p>
         <p v-else-if="one.ambiguous" class="reading__quiet">{{ words.ambiguous }}</p>
@@ -136,28 +126,10 @@ watch(
   margin-block-start: calc(var(--numen-inset-wide) * 2);
 }
 
-/* The name, ruled off from the prose under it. */
-.reading__head {
-  margin-block-end: var(--numen-inset);
-  padding-block-end: var(--numen-inset);
-  border-block-end: 1px solid var(--numen-rule);
-}
-
-.reading__name {
-  margin: 0;
-  overflow-wrap: anywhere;
-  font-size: var(--numen-title-size);
-}
-
 .reading__quiet {
   margin: 0.25rem 0 0;
   overflow-wrap: anywhere;
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
-}
-
-/* Two things said quietly about one note stand apart on the same line. */
-.reading__quiet > span + span {
-  margin-inline-start: var(--numen-inset);
 }
 </style>

@@ -7,3 +7,4 @@ export {
   letterOf,
   READS,
 } from './keys'
+export type { SessionKeyIntent } from './keys'

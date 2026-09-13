@@ -7,16 +7,9 @@
  * The editor stands in the page's own root, under the layer this draws.
  */
 import { onMounted, ref, useTemplateRef } from 'vue'
-import {
-  IonButton,
-  IonButtons,
-  IonHeader,
-  IonProgressBar,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/vue'
 import { Editor } from '@numen/ui'
 import { formatErrorCodeMessage } from '@numen/wire'
+import { NoteBar } from './note-bar'
 import type { ReadNoteResponse } from '@numen/protocol'
 import type { Core } from '../core'
 
@@ -63,18 +56,7 @@ async function keep() {
 
 <template>
   <div class="note">
-    <IonHeader>
-      <IonToolbar>
-        <IonButtons slot="start">
-          <IonButton data-testid="leave" @click="emit('close')">Back</IonButton>
-        </IonButtons>
-        <IonTitle size="small">{{ path }}</IonTitle>
-        <IonButtons slot="end">
-          <IonButton data-testid="keep" @click="keep">Keep</IonButton>
-        </IonButtons>
-      </IonToolbar>
-      <IonProgressBar v-if="reading" type="indeterminate" />
-    </IonHeader>
+    <NoteBar :path="path" :reading="reading" @close="emit('close')" @keep="keep" />
     <div class="note__prose">
       <Editor ref="editor" v-model="prose" data-testid="editor" />
     </div>

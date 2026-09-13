@@ -51,28 +51,44 @@ export function getSessionKeyIntent(
   if (isTyping(press)) return press.key === 'Escape' ? { does: 'shut' } : null
   // The panels are held with the overlay key, because the letters on their own
   // are what a card is answered by.
-  if (hasOverlayKey(press)) {
-    const letter = press.key.toLowerCase()
-    if (letter === ASKS) return { does: 'ask' }
-    if (letter === READS) return { does: 'read' }
-    return null
-  }
+  if (hasOverlayKey(press)) return getPanelKeyIntent(press)
   if (hasModifierOrRepeat(press)) return null
+  return getCardKeyIntent(press, screen)
+}
+
+/** The letters the two panels beside the card are brought in and taken away by. */
+const getPanelKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
+  const letter = press.key.toLowerCase()
+  if (letter === ASKS) return { does: 'ask' }
+  if (letter === READS) return { does: 'read' }
+  return null
+}
+
+/** The keys the card itself is turned over, answered and left by. */
+const getCardKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
   if (press.key === 'Escape') {
     return screen.asking || screen.reading ? { does: 'shut' } : { does: 'leave' }
   }
   if (press.key === 'u' || press.key === 'U') return { does: 'takeBack' }
-  // The reading is read down, and space is the key the hand is already on. The
-  // answer is still shown by the control standing under both panes.
-  if (press.key === ' ' && screen.reading) return { does: 'scroll', back: press.shiftKey }
-  if (press.key === ' ' && !screen.shown) return { does: 'show' }
+  if (press.key === ' ') return getSpaceKeyIntent(press, screen)
+  return getGradeKeyIntent(press)
+}
 
+/**
+ * The reading is read down, and space is the key the hand is already on. The
+ * answer is still shown by the control standing under both panes.
+ */
+const getSpaceKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
+  if (screen.reading) return { does: 'scroll', back: press.shiftKey }
+  return screen.shown ? null : { does: 'show' }
+}
+
+/** The number a card is answered with, one for each grade in the order they are listed. */
+const getGradeKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
   const which = Number(press.key)
-  if (Number.isInteger(which) && which >= 1 && which <= grades.length) {
-    const how = grades[which - 1]
-    if (how) return { does: 'answer', how }
-  }
-  return null
+  if (!Number.isInteger(which) || which < 1 || which > grades.length) return null
+  const how = grades[which - 1]
+  return how ? { does: 'answer', how } : null
 }
 
 /**

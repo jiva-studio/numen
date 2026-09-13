@@ -9,8 +9,9 @@ import { Button, KeyCap, keyChord } from '@numen/ui'
 
 import PanelCarousel from './PanelCarousel.vue'
 import Card from './Card.vue'
+import { AnswerButton } from './answer-button'
 import type { PanelPlace } from '../model/carousel'
-import { called, getTimeAhead, grades } from '@/entities/card'
+import { grades } from '@/entities/card'
 import { deckName } from '@/entities/vault'
 import { ASKS, READS } from '@/features/keyboard'
 import type { CardFace, Grade } from '@/entities/card'
@@ -95,23 +96,15 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
            keyboard reads down the row of keys, and one answering with the mouse
            reads the words either way. -->
       <template v-if="shown">
-        <Button
+        <AnswerButton
           v-for="(how, i) in grades"
           :key="how"
-          variant="outline"
           class="session__answer"
-          @click="$emit('answer', how)"
-        >
-          <KeyCap :keys="{ icons: [], letter: String(i + 1) }" />
-          {{ called[how] }}
-          <!-- What the answer does to the card, said where the answer is
-               chosen: a person picking between the four is picking between
-               these. It is read off the screen and not out of the button's own
-               name, which is the word a person means to press. -->
-          <span v-if="card.ahead" class="session__ahead" aria-hidden="true">{{
-            getTimeAhead(card.ahead[how])
-          }}</span>
-        </Button>
+          :how="how"
+          :at="i + 1"
+          :ahead="card.ahead"
+          @answer="$emit('answer', how)"
+        />
       </template>
       <Button v-else variant="outline" class="session__answer" @click="$emit('show')">
         <KeyCap :keys="{ icons: [], letter: 'space' }" />
@@ -171,14 +164,6 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
   display: flex;
   flex: none;
   gap: var(--numen-inset);
-}
-
-/* What the answer does, said quietly beside it: it is read once, when a person
-   is learning what the four mean, and glanced at after that. */
-.session__ahead {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-  font-variant-numeric: tabular-nums;
 }
 
 /* An answer is a target a person hits without looking, so it takes the whole

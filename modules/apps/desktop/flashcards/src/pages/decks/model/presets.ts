@@ -9,7 +9,7 @@ import { computed, ref, shallowRef } from 'vue'
 import type { StopReason } from '@numen/protocol'
 
 import { deckName } from '@/entities/vault'
-import type { VaultCardsDue } from '@/entities/vault'
+import type { DeckCardsDue, PresetCardsDue, VaultCardsDue } from '@/entities/vault'
 
 import { readDeckPreset, UNREAD } from '../api/presets'
 import type { DeckPresetResult, PresetsClient } from '../api/presets'
@@ -102,54 +102,9 @@ const budgetOf = (settings: Settings): Budget => ({
 const gather = (vault: VaultCardsDue, results: readonly DeckPresetResult[], today: string): Preset[] => {
   const owed = new Map(vault.decks.map((one) => [one.deck, one]))
   const came = new Map(vault.presets.map((one) => [one.preset, one]))
-  const at = new Map<string, PresetTally>()
+  const at = countDecksIntoPresets(results, owed)
 
-  for (const one of results) {
-    if (!one.held) continue
-    let into = at.get(one.held.path)
-    if (!into) {
-      into = {
-        path: one.held.path,
-        name: one.held.name || 'The defaults',
-        settings: one.held.settings,
-        stopsOn: one.held.stopsOn,
-        decks: [],
-        due: 0,
-        fresh: 0,
-        problems: new Set(),
-      }
-      at.set(one.held.path, into)
-    }
-    into.decks.push(one.deck)
-    for (const problem of one.held.problems) into.problems.add(problem)
-    const deck = owed.get(one.deck)
-    into.due += deck?.due ?? 0
-    into.fresh += deck?.new ?? 0
-  }
-
-  const out = [...at.values()].map((one): Preset => {
-    const day = came.get(one.path)
-    const budget = day ?? budgetOf(one.settings)
-    return {
-      path: one.path,
-      name: one.name,
-      settings: one.settings,
-      decks: one.decks,
-      named: day?.decks ?? one.decks.length,
-      faces: day?.cards ?? 0,
-      // What a session over it asks is the count's own figure, and a build that
-      // answered none falls back to what its decks owe between them.
-      cards: day?.owed ?? one.due + one.fresh,
-      budget: { new: budget.new, reviews: budget.reviews, minutes: budget.minutes },
-      closes: day?.closes ?? CLOSES_NOTHING,
-      answered: day?.answered ?? 0,
-      answeredNew: day?.answeredNew ?? 0,
-      answeredReviews: day?.answeredReviews ?? 0,
-      took: day?.took ?? 0,
-      paused: getStoppedWords(one.stopsOn, one.settings, today),
-      wrong: [...one.problems].join('; '),
-    }
-  })
+  const out = [...at.values()].map((one) => getPresetFromDecks(one, came.get(one.path), today))
 
   // A preset every one of whose decks is empty is answered for no deck, and so
   // is one whose settings could not be read, so both stand here on the count
@@ -157,29 +112,104 @@ const gather = (vault: VaultCardsDue, results: readonly DeckPresetResult[], toda
   const why = getCommonError(results)
   for (const one of vault.presets) {
     if (at.has(one.preset)) continue
-    out.push({
-      path: one.preset,
-      name: one.title || deckName(one.preset),
-      settings: null,
-      decks: [],
-      named: one.decks,
-      faces: one.cards,
-      // The count answered for this preset with its own figures, and the day is
-      // drawn from them.
-      cards: one.owed,
-      budget: { new: one.new, reviews: one.reviews, minutes: one.minutes },
-      closes: one.closes,
-      answered: one.answered,
-      answeredNew: one.answeredNew,
-      answeredReviews: one.answeredReviews,
-      took: one.took,
-      // The count answered for this preset, so its verdict is the count's.
-      paused: getStoppedWords(one.stopsOn, null, today),
-      wrong: one.decks > 0 ? why : '',
-    })
+    out.push(getPresetFromCount(one, why, today))
   }
   return out
 }
+
+/** The decks each preset schedules, counted into it, by the path it is filed under. */
+const countDecksIntoPresets = (
+  results: readonly DeckPresetResult[],
+  dueByDeck: ReadonlyMap<string, DeckCardsDue>,
+): Map<string, PresetTally> => {
+  const at = new Map<string, PresetTally>()
+  for (const one of results) {
+    if (!one.held) continue
+    let into = at.get(one.held.path)
+    if (!into) {
+      into = createTally(one.held)
+      at.set(one.held.path, into)
+    }
+    into.decks.push(one.deck)
+    for (const problem of one.held.problems) into.problems.add(problem)
+    const deck = dueByDeck.get(one.deck)
+    into.due += deck?.due ?? 0
+    into.fresh += deck?.new ?? 0
+  }
+  return at
+}
+
+/** One preset as it stands before a deck has been counted into it. */
+const createTally = (preset: NonNullable<DeckPresetResult['held']>): PresetTally => ({
+  path: preset.path,
+  name: preset.name || 'The defaults',
+  settings: preset.settings,
+  stopsOn: preset.stopsOn,
+  decks: [],
+  due: 0,
+  fresh: 0,
+  problems: new Set(),
+})
+
+/** A preset the decks answered for, standing on the day the count gave it. */
+const getPresetFromDecks = (
+  one: PresetTally,
+  day: PresetCardsDue | undefined,
+  today: string,
+): Preset => {
+  const budget = day ?? budgetOf(one.settings)
+  return {
+    path: one.path,
+    name: one.name,
+    settings: one.settings,
+    decks: one.decks,
+    ...getDayOwed(one, day),
+    ...getDayAnswered(day),
+    budget: { new: budget.new, reviews: budget.reviews, minutes: budget.minutes },
+    paused: getStoppedWords(one.stopsOn, one.settings, today),
+    wrong: [...one.problems].join('; '),
+  }
+}
+
+/** What is waiting under a preset today, and what its decks owe where the count answered nothing. */
+const getDayOwed = (one: PresetTally, day: PresetCardsDue | undefined) => ({
+  named: day?.decks ?? one.decks.length,
+  faces: day?.cards ?? 0,
+  // What a session over it asks is the count's own figure, and a build that
+  // answered none falls back to what its decks owe between them.
+  cards: day?.owed ?? one.due + one.fresh,
+  closes: day?.closes ?? CLOSES_NOTHING,
+})
+
+/** What has been answered under a preset since the day opened, and nothing where the count answered nothing. */
+const getDayAnswered = (day: PresetCardsDue | undefined) => ({
+  answered: day?.answered ?? 0,
+  answeredNew: day?.answeredNew ?? 0,
+  answeredReviews: day?.answeredReviews ?? 0,
+  took: day?.took ?? 0,
+})
+
+/** A preset no deck answered for, standing on the count alone. */
+const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Preset => ({
+  path: one.preset,
+  name: one.title || deckName(one.preset),
+  settings: null,
+  decks: [],
+  named: one.decks,
+  faces: one.cards,
+  // The count answered for this preset with its own figures, and the day is
+  // drawn from them.
+  cards: one.owed,
+  budget: { new: one.new, reviews: one.reviews, minutes: one.minutes },
+  closes: one.closes,
+  answered: one.answered,
+  answeredNew: one.answeredNew,
+  answeredReviews: one.answeredReviews,
+  took: one.took,
+  // The count answered for this preset, so its verdict is the count's.
+  paused: getStoppedWords(one.stopsOn, null, today),
+  wrong: one.decks > 0 ? why : '',
+})
 
 /**
  * What stopped the presets no deck answered for. Every deck of one preset fails
