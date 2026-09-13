@@ -14,16 +14,11 @@ import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { orientationAt, type Branch, type Orientation, type TabId } from '../../lib/node'
 import { atLeast, fit } from '../../lib/shares'
 
-defineOptions({ name: 'WorkspaceBranch' })
-
 const props = defineProps<{
   node: Branch
   axis: Orientation
   depth: number
 }>()
-
-/** What every branch and pane of one workspace is told once, at the top. */
-const workspace = inject(WORKSPACE_CONTEXT) as Ref<WorkspaceContext>
 
 const slots = defineSlots<{
   tab(props: { id: TabId }): unknown
@@ -31,6 +26,11 @@ const slots = defineSlots<{
   mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
 }>()
+
+defineOptions({ name: 'WorkspaceBranch' })
+
+/** What every branch and pane of one workspace is told once, at the top. */
+const workspace = inject(WORKSPACE_CONTEXT) as Ref<WorkspaceContext>
 
 /** Every slot handed down, under the name it arrived under. */
 const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])

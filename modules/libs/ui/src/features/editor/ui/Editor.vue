@@ -66,14 +66,14 @@ const props = withDefaults(
   },
 )
 
+const text = defineModel<string>({ default: '' })
+
 const emit = defineEmits<{
   /** A drawn link was followed. */
   (event: 'open', address: string): void
   /** The person asked, with `Ctrl+S`, for the text to be kept now. */
   (event: 'save'): void
 }>()
-
-const text = defineModel<string>({ default: '' })
 
 const host = useTemplateRef<HTMLElement>('host')
 let view: EditorView | null = null

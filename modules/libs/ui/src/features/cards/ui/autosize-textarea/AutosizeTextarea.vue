@@ -9,12 +9,17 @@
  */
 import { computed, useAttrs, useTemplateRef } from 'vue'
 
-defineOptions({ inheritAttrs: false })
-
 defineProps<{
   /** What the box holds, as it now reads. */
   text: string
 }>()
+
+const emit = defineEmits<{
+  /** The text as it now reads, after something was typed into the box. */
+  (event: 'write', text: string): void
+}>()
+
+defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
@@ -25,11 +30,6 @@ const handed = computed(() => {
   delete held['style']
   return held
 })
-
-const emit = defineEmits<{
-  /** The text as it now reads, after something was typed into the box. */
-  (event: 'write', text: string): void
-}>()
 
 const box = useTemplateRef<HTMLTextAreaElement>('box')
 

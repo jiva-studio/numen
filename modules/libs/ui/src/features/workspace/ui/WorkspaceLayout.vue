@@ -34,21 +34,6 @@ const props = withDefaults(
   { edge: 22, threshold: 4, minimum: 220, clock: () => browserClock },
 )
 
-const slots = defineSlots<{
-  tab(props: { id: TabId }): unknown
-  /** What is drawn before a tab's name, which says what kind of tab it is. */
-  icon(props: { id: TabId }): unknown
-  /** What a mark is drawn as. Given none, a tab carrying one draws a dot. */
-  mark(props: { id: TabId; mark: string }): unknown
-  silence(): unknown
-}>()
-
-/** Every slot the caller gave, handed down under the name it was given. */
-const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
-
-/** What a slot was given, handed on as it came. */
-const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
-
 const workspace = defineModel<Workspace>({ required: true })
 
 const emit = defineEmits<{
@@ -66,6 +51,21 @@ const emit = defineEmits<{
    */
   (event: 'show', tab: TabId): void
 }>()
+
+const slots = defineSlots<{
+  tab(props: { id: TabId }): unknown
+  /** What is drawn before a tab's name, which says what kind of tab it is. */
+  icon(props: { id: TabId }): unknown
+  /** What a mark is drawn as. Given none, a tab carrying one draws a dot. */
+  mark(props: { id: TabId; mark: string }): unknown
+  silence(): unknown
+}>()
+
+/** Every slot the caller gave, handed down under the name it was given. */
+const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
+
+/** What a slot was given, handed on as it came. */
+const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const tabOf = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)
 

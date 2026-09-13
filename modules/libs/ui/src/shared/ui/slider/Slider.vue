@@ -12,8 +12,6 @@ import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { cn } from '@/shared/lib/classes'
 import { clamp, isWalkingKey, stepForKey, type Bounds } from './track'
 
-defineOptions({ inheritAttrs: false })
-
 const props = withDefaults(
   defineProps<{
     /** How far the track runs, and what one step of it moves. */
@@ -33,6 +31,8 @@ const emit = defineEmits<{
   /** The handle let go of, at the end of a drag or of a walk with the keys. */
   settle: [value: number]
 }>()
+
+defineOptions({ inheritAttrs: false })
 
 /**
  * The last value handed on, so a value that arrives twice — once as the handle

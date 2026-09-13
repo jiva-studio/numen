@@ -29,17 +29,17 @@ const emit = defineEmits<{
   (event: 'close'): void
 }>()
 
-const root = useTemplateRef<HTMLElement>('root')
-
-/** The keyboard put on this tab by the strip it stands in. */
-defineExpose({ focus: () => root.value?.focus() })
-
 defineSlots<{
   /** What is drawn before the name, which says what kind of tab it is. */
   icon(): unknown
   /** What a mark is drawn as. Given one, the caller draws its own. */
   mark(props: { mark: string }): unknown
 }>()
+
+const root = useTemplateRef<HTMLElement>('root')
+
+/** The keyboard put on this tab by the strip it stands in. */
+defineExpose({ focus: () => root.value?.focus() })
 
 /**
  * A tab is lifted under the primary button and under no other. The press

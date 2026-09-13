@@ -28,9 +28,6 @@ defineProps<{
 /** Which of the card and the panels either side of it is in the window. */
 const at = defineModel<PanelPlace>('at', { required: true })
 
-/** The panels are held with the overlay key, drawn as this machine's own. */
-const chord = (letter: string) => keyChord(letter, navigator.userAgent)
-
 defineEmits<{
   (event: 'show'): void
   (event: 'answer', how: Grade): void
@@ -39,6 +36,10 @@ defineEmits<{
   (event: 'ask'): void
   (event: 'read', note: string): void
 }>()
+
+/** The panels are held with the overlay key, drawn as this machine's own. */
+const chord = (letter: string) => keyChord(letter, navigator.userAgent)
+
 </script>
 
 <template>

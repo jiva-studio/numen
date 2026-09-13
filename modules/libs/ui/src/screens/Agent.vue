@@ -32,6 +32,8 @@ withDefaults(
   },
 )
 
+const text = defineModel<string>({ default: '' })
+
 const emit = defineEmits<{
   (event: 'submit', text: string): void
   /** Give up on the answer on its way. */
@@ -41,8 +43,6 @@ const emit = defineEmits<{
   /** A link inside a turn was pressed, with the turn it stands in. */
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
 }>()
-
-const text = defineModel<string>({ default: '' })
 
 const composer = useTemplateRef<InstanceType<typeof MessageComposer>>('composer')
 const thread = useTemplateRef<InstanceType<typeof Thread>>('thread')

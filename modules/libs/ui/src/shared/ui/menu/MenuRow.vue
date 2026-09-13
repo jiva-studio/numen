@@ -24,6 +24,11 @@ defineEmits<{
   (event: 'focus'): void
 }>()
 
+defineSlots<{
+  /** What is drawn before the words. */
+  icon(): unknown
+}>()
+
 const row = useTemplateRef<HTMLElement>('row')
 
 /** The keyboard onto this row, which the menu asks for. */
@@ -31,10 +36,6 @@ const focus = (): void => row.value?.focus()
 
 defineExpose({ focus })
 
-defineSlots<{
-  /** What is drawn before the words. */
-  icon(): unknown
-}>()
 </script>
 
 <template>

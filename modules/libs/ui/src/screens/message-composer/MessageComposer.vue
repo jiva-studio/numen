@@ -31,14 +31,14 @@ const props = withDefaults(
   },
 )
 
+const text = defineModel<string>({ default: '' })
+
 const emit = defineEmits<{
   /** Sent. Carries what was written, with the whitespace around it gone. */
   (event: 'submit', text: string): void
   /** Give up on the answer on its way. */
   (event: 'stop'): void
 }>()
-
-const text = defineModel<string>({ default: '' })
 
 const field = useTemplateRef<InstanceType<typeof Textarea>>('field')
 

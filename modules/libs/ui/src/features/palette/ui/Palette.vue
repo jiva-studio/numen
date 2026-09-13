@@ -79,6 +79,8 @@ const props = withDefaults(
   },
 )
 
+const typed = defineModel<string>({ default: '' })
+
 const emit = defineEmits<{
   /**
    * An item was chosen, and what was asked of it. Both identifiers are the
@@ -109,8 +111,6 @@ defineSlots<{
   /** What is said while there is no group to draw. */
   silence(): unknown
 }>()
-
-const typed = defineModel<string>({ default: '' })
 
 const uid = useId()
 

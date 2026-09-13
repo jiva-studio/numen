@@ -27,10 +27,10 @@ const props = withDefaults(
   { placeholder: '', name: 'Choices', disabled: false },
 )
 
-defineOptions({ inheritAttrs: false })
-
 /** Which choice is in force, by the identifier the caller gave it. */
 const model = defineModel<string>({ default: '' })
+
+defineOptions({ inheritAttrs: false })
 
 const items = computed<readonly MenuItem[]>(() =>
   props.choices.map((one) => ({

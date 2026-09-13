@@ -13,10 +13,6 @@ import { Menu } from '../menu'
 import type { Position } from '@/shared/lib/geometry'
 import { getFill, getFillPercent, getOfferedLevels, type Day } from './week'
 
-// The row and the levels it offers are two things drawn, so what a caller
-// names the row by is put on the row itself.
-defineOptions({ inheritAttrs: false })
-
 const props = withDefaults(
   defineProps<{
     /** The days, in the order they are drawn, each at the level it stands at. */
@@ -33,6 +29,10 @@ const emit = defineEmits<{
   /** A day put at a level, which is the day as it was given and the level chosen. */
   choose: [day: string, level: number]
 }>()
+
+// The row and the levels it offers are two things drawn, so what a caller
+// names the row by is put on the row itself.
+defineOptions({ inheritAttrs: false })
 
 /** Which day is being given a level, what it stands at, and where its chip is. */
 const asking = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(null)

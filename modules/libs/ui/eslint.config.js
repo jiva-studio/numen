@@ -86,6 +86,64 @@ export default tseslint.config(
     },
   },
 
+  // A component draws one thing, and its size is where that is checked. A
+  // template past a hundred lines or four elements deep holds a second
+  // component nobody has named; a script past three hundred holds work that
+  // belongs in a `.ts` beside it, where a test reaches it without mounting
+  // anything.
+  //
+  // The order of the blocks and of the macros is the one every component here
+  // is already written in.
+  {
+    files: ['**/*.vue'],
+    rules: {
+      'vue/max-lines-per-block': ['error', { template: 100, script: 300, skipBlankLines: true }],
+      'vue/max-template-depth': ['error', { maxDepth: 4 }],
+      'vue/block-order': ['error', { order: ['script', 'template', 'style'] }],
+      'vue/define-macros-order': [
+        'error',
+        { order: ['defineProps', 'defineModel', 'defineEmits', 'defineSlots'] },
+      ],
+
+      // A template says what is drawn. Every decision behind it is made in a
+      // computed or in a named handler, which a test can call.
+      'vue/no-restricted-syntax': [
+        'error',
+        {
+          selector: 'VElement ConditionalExpression ConditionalExpression',
+          message: 'a choice between three things is a computed',
+        },
+        {
+          selector: 'VOnExpression LogicalExpression',
+          message: 'a handler is a named function, and the guard goes inside it',
+        },
+      ],
+
+      // A computed is a projection of what the component was given.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'CallExpression[callee.name="computed"] :matches(ForStatement, ForOfStatement, ForInStatement, WhileStatement)',
+          message: 'a loop over the domain is a pure function in a .ts, with a test of its own',
+        },
+      ],
+    },
+  },
+
+  // Two hundred and fifty lines in a handwritten file, and a function whose
+  // branches a reader cannot hold at once is two functions. A test and a story
+  // are shaped by what they are describing and are not held to either.
+  {
+    files: ['src/**/*.{ts,vue}'],
+    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
+    rules: {
+      'max-lines': ['error', { max: 250, skipBlankLines: false, skipComments: false }],
+      complexity: ['error', 10],
+      'max-depth': ['error', 3],
+    },
+  },
+
   // Nothing in this module imports anything that knows what a vault
   // is — not in the components, not in the stories, not in the fixtures. A
   // fixture taken from the domain is how the dependency comes back in through

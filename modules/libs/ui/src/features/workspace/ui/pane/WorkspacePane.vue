@@ -20,14 +20,6 @@ const props = withDefaults(
   { focused: false },
 )
 
-const workspace = inject(WORKSPACE_CONTEXT)
-
-/** What a tab is called. A tab with no title is shown by its identity. */
-const titleOf = (tab: TabId): string => workspace?.value.tabOf(tab)?.title ?? tab
-
-/** What a tab is carrying, and nothing for a tab carrying nothing. */
-const getMarkOf = (tab: TabId): string | undefined => workspace?.value.tabOf(tab)?.mark
-
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
@@ -44,6 +36,14 @@ defineSlots<{
   mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
 }>()
+
+const workspace = inject(WORKSPACE_CONTEXT)
+
+/** What a tab is called. A tab with no title is shown by its identity. */
+const titleOf = (tab: TabId): string => workspace?.value.tabOf(tab)?.title ?? tab
+
+/** What a tab is carrying, and nothing for a tab carrying nothing. */
+const getMarkOf = (tab: TabId): string | undefined => workspace?.value.tabOf(tab)?.mark
 
 /** A pane is claimed under the primary button and under no other. */
 function claim(event: PointerEvent): void {
