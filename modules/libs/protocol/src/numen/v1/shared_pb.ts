@@ -13,15 +13,18 @@
 // type that arrives here early is one every service is written around
 // afterwards. It imports nothing, and it is what every other file imports.
 
-import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Message } from "@bufbuild/protobuf";
+import type { GenEnum, GenFile, GenMessage } from '@bufbuild/protobuf/codegenv2'
+import { enumDesc, fileDesc, messageDesc } from '@bufbuild/protobuf/codegenv2'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file numen/v1/shared.proto.
  */
-export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUqhwMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASFgoSRVJST1JfQ09ERV9NSVNTSU5HEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIXChNFUlJPUl9DT0RFX09DQ1VQSUVEEAcSGQoVRVJST1JfQ09ERV9VTk5BTUVBQkxFEAgSHAoYRVJST1JfQ09ERV9OT1RfQV9TVEVOQ0lMEAkSGQoVRVJST1JfQ09ERV9OT1RfQV9ERUNLEAoSHQoZRVJST1JfQ09ERV9ERUNLX1RPT19MQVJHRRALEhsKF0VSUk9SX0NPREVfTk9UX0FfUFJFU0VUEAwSFAoQRVJST1JfQ09ERV9TVEFMRRANKmYKCE5vdGVUeXBlEhkKFU5PVEVfVFlQRV9VTlNQRUNJRklFRBAAEhIKDk5PVEVfVFlQRV9ERUNLEAESFQoRTk9URV9UWVBFX1NURU5DSUwQAhIUChBOT1RFX1RZUEVfUFJFU0VUEANCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+export const file_numen_v1_shared: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUqhwMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASFgoSRVJST1JfQ09ERV9NSVNTSU5HEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIXChNFUlJPUl9DT0RFX09DQ1VQSUVEEAcSGQoVRVJST1JfQ09ERV9VTk5BTUVBQkxFEAgSHAoYRVJST1JfQ09ERV9OT1RfQV9TVEVOQ0lMEAkSGQoVRVJST1JfQ09ERV9OT1RfQV9ERUNLEAoSHQoZRVJST1JfQ09ERV9ERUNLX1RPT19MQVJHRRALEhsKF0VSUk9SX0NPREVfTk9UX0FfUFJFU0VUEAwSFAoQRVJST1JfQ09ERV9TVEFMRRANKmYKCE5vdGVUeXBlEhkKFU5PVEVfVFlQRV9VTlNQRUNJRklFRBAAEhIKDk5PVEVfVFlQRV9ERUNLEAESFQoRTk9URV9UWVBFX1NURU5DSUwQAhIUChBOT1RFX1RZUEVfUFJFU0VUEANCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw',
+  )
 
 /**
  * Fingerprint is which file this is: where it is filed, how big it is, and when
@@ -29,31 +32,32 @@ export const file_numen_v1_shared: GenFile = /*@__PURE__*/
  *
  * @generated from message numen.v1.Fingerprint
  */
-export type Fingerprint = Message<"numen.v1.Fingerprint"> & {
+export type Fingerprint = Message<'numen.v1.Fingerprint'> & {
   /**
    * @generated from field: string path = 1;
    */
-  path: string;
+  path: string
 
   /**
    * @generated from field: int64 size = 2;
    */
-  size: bigint;
+  size: bigint
 
   /**
    * When the file last changed, in nanoseconds since the epoch.
    *
    * @generated from field: int64 mtime = 3;
    */
-  mtime: bigint;
-};
+  mtime: bigint
+}
 
 /**
  * Describes the message numen.v1.Fingerprint.
  * Use `create(FingerprintSchema)` to create a new message.
  */
-export const FingerprintSchema: GenMessage<Fingerprint> = /*@__PURE__*/
-  messageDesc(file_numen_v1_shared, 0);
+export const FingerprintSchema: GenMessage<Fingerprint> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_shared, 0)
 
 /**
  * A Span is a run of text, by where it begins and where it ends. What it counts
@@ -61,24 +65,23 @@ export const FingerprintSchema: GenMessage<Fingerprint> = /*@__PURE__*/
  *
  * @generated from message numen.v1.Span
  */
-export type Span = Message<"numen.v1.Span"> & {
+export type Span = Message<'numen.v1.Span'> & {
   /**
    * @generated from field: int32 from = 1;
    */
-  from: number;
+  from: number
 
   /**
    * @generated from field: int32 to = 2;
    */
-  to: number;
-};
+  to: number
+}
 
 /**
  * Describes the message numen.v1.Span.
  * Use `create(SpanSchema)` to create a new message.
  */
-export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
-  messageDesc(file_numen_v1_shared, 1);
+export const SpanSchema: GenMessage<Span> = /*@__PURE__*/ messageDesc(file_numen_v1_shared, 1)
 
 /**
  * ErrorCode is why a note could not be read or written.
@@ -193,8 +196,7 @@ export enum ErrorCode {
 /**
  * Describes the enum numen.v1.ErrorCode.
  */
-export const ErrorCodeSchema: GenEnum<ErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_shared, 0);
+export const ErrorCodeSchema: GenEnum<ErrorCode> = /*@__PURE__*/ enumDesc(file_numen_v1_shared, 0)
 
 /**
  * NoteType is what a note is: the `type` key of its frontmatter. It
@@ -237,6 +239,4 @@ export enum NoteType {
 /**
  * Describes the enum numen.v1.NoteType.
  */
-export const NoteTypeSchema: GenEnum<NoteType> = /*@__PURE__*/
-  enumDesc(file_numen_v1_shared, 1);
-
+export const NoteTypeSchema: GenEnum<NoteType> = /*@__PURE__*/ enumDesc(file_numen_v1_shared, 1)

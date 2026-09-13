@@ -3,7 +3,15 @@
  * The specific control for one preset setting row.
  */
 import { computed } from 'vue'
-import { NumberField, SegmentedControl, Select, Slider, Switch, WeekdayChips, WEEK } from '@numen/ui'
+import {
+  NumberField,
+  SegmentedControl,
+  Select,
+  Slider,
+  Switch,
+  WeekdayChips,
+  WEEK,
+} from '@numen/ui'
 import type { Day } from '@numen/ui'
 import type { PresetTabState, SettingValue } from '../../types'
 import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, loadOn, setLoadOn } from '../../types'
@@ -137,9 +145,9 @@ function getFieldCount(field: Field): number | null {
         @update:model-value="(share: number) => onUpdateSlider(field, share)"
         @settle="onFieldSettle"
       />
-      <span class="preset-settings__percent" data-preset="percent">{{
-        words.percent(settings.backlog)
-      }}</span>
+      <span class="preset-settings__percent" data-preset="percent">
+        {{ words.percent(settings.backlog) }}
+      </span>
     </template>
     <WeekdayChips
       v-else-if="field === 'load'"

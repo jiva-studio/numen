@@ -216,10 +216,7 @@ const vault = (
 }
 
 /** A window with one deck open on a file, and what that tab holds. */
-const open = async (
-  answers: Parameters<typeof vault>[0] = {},
-  path = 'Animals.md',
-) => {
+const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animals.md') => {
   const one = vault(answers)
   const held = useWindowTabs()
   const road = tabOpeners()
@@ -255,7 +252,9 @@ describe('a deck opened', () => {
   it('is called what the file is called', async () => {
     const { decks, id, held } = await open()
 
-    expect(decks.kind.getTitle?.(held.handle.getTabState<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
+    expect(
+      decks.kind.getTitle?.(held.handle.getTabState<DeckTabState>(DECK, id) as DeckTabState),
+    ).toBe('Animals')
   })
 
   it('offers every stencil the vault holds as a cut', async () => {
@@ -860,7 +859,6 @@ describe('the stencils a listing did not answer with', () => {
     expect(one.tab.stencils.value).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
   })
 })
-
 
 describe('the preset a deck is scheduled by', () => {
   it('is what the vault says the deck names', async () => {

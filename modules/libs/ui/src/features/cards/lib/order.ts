@@ -32,11 +32,7 @@ export function orderNames(
  * card the stencil cuts, so it stays first: it does not move, and nothing lands
  * above it. A field let go where it stands moves nothing either.
  */
-export function landing(
-  fields: readonly string[],
-  dragEntry: string,
-  at: InsertionPoint,
-): boolean {
+export function landing(fields: readonly string[], dragEntry: string, at: InsertionPoint): boolean {
   const first = fields[0]
   if (first === undefined) return false
   if (dragEntry === first || at === first) return false
@@ -96,10 +92,7 @@ export interface NameCheckResult<Why extends Objection> {
  * What is wrong with a name. A name is what a slot is written by, so a name
  * carrying a brace cannot be written, and one already taken names two slots.
  */
-export function checkFieldName(
-  name: string,
-  names: readonly string[],
-): NameCheckResult<Objection> {
+export function checkFieldName(name: string, names: readonly string[]): NameCheckResult<Objection> {
   const said = name.trim()
   if (said.includes('{') || said.includes('}')) return { name: said, objection: 'braced' }
   return checkHeadingName(name, names)

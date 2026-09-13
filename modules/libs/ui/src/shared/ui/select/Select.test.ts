@@ -197,7 +197,8 @@ describe('how wide the choices are drawn', () => {
       ({ left: 0, bottom: 32, width: 288 }) as DOMRect
     await openSelect(control)
 
-    expect(document.body.querySelector<HTMLElement>('.menu')?.style.getPropertyValue('--asking'))
-      .toBe('288px')
+    expect(
+      document.body.querySelector<HTMLElement>('.menu')?.style.getPropertyValue('--asking'),
+    ).toBe('288px')
   })
 })

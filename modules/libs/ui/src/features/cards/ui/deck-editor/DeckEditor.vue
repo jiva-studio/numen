@@ -120,13 +120,19 @@ function onAddCard(stencil: Stencil, run: Run): void {
 }
 
 function onAddSection(): void {
-  emit('add-section', getFreeName(props.sections.map((each) => each.name), props.words.sectionStem))
+  emit(
+    'add-section',
+    getFreeName(
+      props.sections.map((each) => each.name),
+      props.words.sectionStem,
+    ),
+  )
 }
 </script>
 
 <template>
   <div
-    class="deck numen bg-surface font-sans text-base text-ink"
+    class="deck numen bg-surface text-ink font-sans text-base"
     role="group"
     :aria-label="name"
     @dragover="onDragOver(undefined, $event)"

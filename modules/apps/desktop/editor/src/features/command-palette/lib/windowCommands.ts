@@ -88,8 +88,20 @@ export const windowCommandsOf = (words: Words, agent: string): readonly Command[
     needs: 'choosing',
     isOffered: isOnAnything,
   },
-  { id: 'syncing', text: words.syncing, group: 'window', needs: 'choosing', isOffered: isOnAnything },
-  { id: 'hanging', text: words.hanging, group: 'window', needs: 'choosing', isOffered: isOnAnything },
+  {
+    id: 'syncing',
+    text: words.syncing,
+    group: 'window',
+    needs: 'choosing',
+    isOffered: isOnAnything,
+  },
+  {
+    id: 'hanging',
+    text: words.hanging,
+    group: 'window',
+    needs: 'choosing',
+    isOffered: isOnAnything,
+  },
   { id: 'parts', text: words.parts, group: 'window', needs: 'choosing', isOffered: isOnAnything },
   { id: 'settings', text: words.settings, group: 'window', isOffered: isOnAnything },
 ]

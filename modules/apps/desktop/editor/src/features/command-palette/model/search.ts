@@ -17,12 +17,7 @@ import {
   type SearchRow,
 } from './lookup'
 import type { Span } from '@/shared/span'
-import {
-  evaluateSilence,
-  EACH,
-  HOLD,
-  type SearchGroup,
-} from './score'
+import { evaluateSilence, EACH, HOLD, type SearchGroup } from './score'
 
 export type { Span, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
 
@@ -112,8 +107,18 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     isWorking.value = { names: true, text: true, meaning: true }
     failureMessages.value = { names: '', text: '', meaning: '' }
     await Promise.all([
-      fill(mine, 'names', () => core.names(query, EACH), (found) => (names.value = found)),
-      fill(mine, 'text', () => core.search(query, 'words', EACH), (found) => (texts.value = found)),
+      fill(
+        mine,
+        'names',
+        () => core.names(query, EACH),
+        (found) => (names.value = found),
+      ),
+      fill(
+        mine,
+        'text',
+        () => core.search(query, 'words', EACH),
+        (found) => (texts.value = found),
+      ),
       fill(
         mine,
         'meaning',
@@ -145,9 +150,11 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   }
 
   const nameItem = (one: NameMatch): SearchRow => createNameItem(one, words)
-  const passageItem = (group: SearchGroup, one: Passage): SearchRow => createPassageItem(group, one, words)
+  const passageItem = (group: SearchGroup, one: Passage): SearchRow =>
+    createPassageItem(group, one, words)
 
-  const silenceOf = (id: SearchGroup): string => evaluateSilence(id, failureMessages.value[id], words, coverage)
+  const silenceOf = (id: SearchGroup): string =>
+    evaluateSilence(id, failureMessages.value[id], words, coverage)
 
   const built = computed(() => {
     const held = new Map<string, SearchHit>()

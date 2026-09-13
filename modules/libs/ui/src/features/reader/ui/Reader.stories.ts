@@ -192,11 +192,11 @@ export const Turning: Story = {
     // The row travels to the page turned to, and what the controls say is
     // where the row stands, so each is pressed once the last one has arrived.
     await userEvent.click(canvas.getByLabelText('Next page'))
-    await waitForPage(canvasElement,1)
+    await waitForPage(canvasElement, 1)
     await waitFor(async () => await expect(canvas.getByLabelText('Page')).toHaveValue(2))
 
     await userEvent.click(canvas.getByLabelText('Previous page'))
-    await waitForPage(canvasElement,0)
+    await waitForPage(canvasElement, 0)
     await waitFor(async () => await expect(canvas.getByLabelText('Page')).toHaveValue(1))
 
     // Nowhere to turn back to from the first page.
@@ -205,7 +205,7 @@ export const Turning: Story = {
     const field = canvas.getByLabelText('Page')
     await userEvent.clear(field)
     await userEvent.type(field, '5{Enter}')
-    await waitForPage(canvasElement,4)
+    await waitForPage(canvasElement, 4)
   },
 }
 
@@ -239,10 +239,11 @@ export const HighlightedOver: Story = {
   render: book(HIGHLIGHTS),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(async () =>
-      await expect(
-        canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
-      ).toHaveLength(HIGHLIGHTS.length),
+    await waitFor(
+      async () =>
+        await expect(
+          canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
+        ).toHaveLength(HIGHLIGHTS.length),
     )
 
     /** Every highlighted rectangle, as a share of the page it is drawn over. */
@@ -266,10 +267,11 @@ export const HighlightedOver: Story = {
 
     const before = sheetAt(canvasElement, 0)!.getBoundingClientRect().width
     await userEvent.click(canvas.getByLabelText('Closer'))
-    await waitFor(async () =>
-      await expect(sheetAt(canvasElement, 0)!.getBoundingClientRect().width).toBeGreaterThan(
-        before,
-      ),
+    await waitFor(
+      async () =>
+        await expect(sheetAt(canvasElement, 0)!.getBoundingClientRect().width).toBeGreaterThan(
+          before,
+        ),
     )
 
     await expectHighlights()
@@ -330,10 +332,11 @@ export const HighlightedOnlyOnceThePageIsThere: Story = {
       await expect(picture).toBeInTheDocument()
       await expect(picture!.complete).toBe(true)
     })
-    await waitFor(async () =>
-      await expect(
-        canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
-      ).toHaveLength(HIGHLIGHTS.length),
+    await waitFor(
+      async () =>
+        await expect(
+          canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
+        ).toHaveLength(HIGHLIGHTS.length),
     )
   },
 }
@@ -365,4 +368,3 @@ export const Pulled: Story = {
     await waitFor(async () => await expect(room.scrollLeft).toBeGreaterThan(0))
   },
 }
-

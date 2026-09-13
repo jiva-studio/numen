@@ -1,7 +1,6 @@
 import type { Extent } from '../frame'
 
-export const lerp = (from: number, to: number, t: number): number =>
-  from + (to - from) * t
+export const lerp = (from: number, to: number, t: number): number => from + (to - from) * t
 
 /**
  * A fraction of the way through, and never anything else.

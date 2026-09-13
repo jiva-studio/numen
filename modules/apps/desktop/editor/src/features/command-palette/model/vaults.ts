@@ -13,7 +13,11 @@ import type { AnswerWords } from '../words'
  * Another vault under this window. What the page holds belongs to the vault
  * that has gone, so the page is drawn again on the one that arrived.
  */
-export const showVault = async (id: string, on: VaultContext & Voice, words: AnswerWords): Promise<void> => {
+export const showVault = async (
+  id: string,
+  on: VaultContext & Voice,
+  words: AnswerWords,
+): Promise<void> => {
   if (!id) return
   const error = await on.vaults.open(id)
   if (error) return on.writeMessage(words.vaultErrors[error], 'error')
@@ -59,4 +63,3 @@ export const removeVault = async (
   const error = await on.vaults.remove(id, erase)
   if (error) on.writeMessage(words.vaultErrors[error], 'error')
 }
-

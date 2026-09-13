@@ -241,23 +241,36 @@ describe('what the window said', () => {
   it('draws a report to be read and then let go of', () => {
     const drawn = corner([], [createMessage()])
 
-    expect(drawn[0]).toMatchObject({ says: 'The note is in the trash', tone: 'plain', stay: 'read' })
+    expect(drawn[0]).toMatchObject({
+      says: 'The note is in the trash',
+      tone: 'plain',
+      stay: 'read',
+    })
   })
 
   it('draws a caution to be read and left standing', () => {
-    const drawn = corner([], [createMessage({ kind: 'caution', text: 'that note changed on disk' })])
+    const drawn = corner(
+      [],
+      [createMessage({ kind: 'caution', text: 'that note changed on disk' })],
+    )
 
     expect(drawn[0]).toMatchObject({ tone: 'caution', stay: 'kept' })
   })
 
   it('draws an error that stands until it is put away', () => {
-    const drawn = corner([], [createMessage({ kind: 'error', text: 'a note of that name is filed there' })])
+    const drawn = corner(
+      [],
+      [createMessage({ kind: 'error', text: 'a note of that name is filed there' })],
+    )
 
     expect(drawn[0]).toMatchObject({ tone: 'alarm', stay: 'kept' })
   })
 
   it('draws a state for as long as whoever said it keeps saying it', () => {
-    const drawn = corner([], [createMessage({ kind: 'state', text: 'the themes stopped arriving' })])
+    const drawn = corner(
+      [],
+      [createMessage({ kind: 'state', text: 'the themes stopped arriving' })],
+    )
 
     expect(drawn[0]).toMatchObject({ tone: 'plain', stay: 'holds' })
   })

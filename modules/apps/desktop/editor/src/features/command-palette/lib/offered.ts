@@ -41,4 +41,3 @@ export const isUnmade = (state: ArtifactState | undefined): boolean =>
   state === undefined || state === 'none' || state === 'stopped'
 
 export const isOnAnything = (): boolean => true
-

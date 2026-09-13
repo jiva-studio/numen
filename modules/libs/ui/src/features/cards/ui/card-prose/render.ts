@@ -13,19 +13,40 @@ import { safe } from '../../lib/safe'
 
 /** The tags whose own whitespace is the markup's, and no line of a card. */
 const BLOCKS = new Set([
-  'p', 'div', 'hr',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'blockquote', 'pre',
-  'ul', 'ol', 'li', 'dl', 'dt', 'dd',
-  'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
-  'colgroup', 'col',
-  'figure', 'figcaption',
+  'p',
+  'div',
+  'hr',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'blockquote',
+  'pre',
+  'ul',
+  'ol',
+  'li',
+  'dl',
+  'dt',
+  'dd',
+  'table',
+  'thead',
+  'tbody',
+  'tfoot',
+  'tr',
+  'th',
+  'td',
+  'caption',
+  'colgroup',
+  'col',
+  'figure',
+  'figcaption',
 ])
 
 /** Whether the whitespace beside this node stands between tags. The end of what holds it counts. */
 const isBlock = (node: Node | null): boolean =>
-  node === null ||
-  (node.nodeType === 1 && BLOCKS.has((node as Element).tagName.toLowerCase()))
+  node === null || (node.nodeType === 1 && BLOCKS.has((node as Element).tagName.toLowerCase()))
 
 const spacing = (node: Node): boolean =>
   node.nodeType === 3 &&

@@ -41,12 +41,7 @@ function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode
 }
 
 /** A node that was not there before, unfolding from the origin. */
-function openNode(
-  target: PlacedNode,
-  origin: Position,
-  t: number,
-  opacity: number,
-): PlacedNode {
+function openNode(target: PlacedNode, origin: Position, t: number, opacity: number): PlacedNode {
   return {
     ...target,
     x: lerp(origin.x, target.x, t),
@@ -71,9 +66,7 @@ function tweenNodes(
 
   for (const target of to.nodes) {
     const start = was.get(target.id)
-    nodes.push(
-      start ? tweenNode(start, target, t) : openNode(target, origin, t, entryOpacity),
-    )
+    nodes.push(start ? tweenNode(start, target, t) : openNode(target, origin, t, entryOpacity))
   }
 
   // Departures stay put and fade; moving them too would be a third thing

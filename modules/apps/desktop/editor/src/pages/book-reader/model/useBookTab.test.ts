@@ -41,7 +41,13 @@ const openers = () => {
 
 const settle = () => new Promise((done) => setTimeout(done, 0))
 
-const createBookTabAt = (path: string, offsetVal: number, page: number, pages: number, length = 5_120_000) =>
+const createBookTabAt = (
+  path: string,
+  offsetVal: number,
+  page: number,
+  pages: number,
+  length = 5_120_000,
+) =>
   ({
     path,
     title: ref(''),
@@ -51,7 +57,8 @@ const createBookTabAt = (path: string, offsetVal: number, page: number, pages: n
     pages: computed(() => pages),
   }) as unknown as BookTabState
 
-const kindOver = (tab: BookTabState) => bookKind(createMockWindow(tab).handle, () => tab, openers().tabOpeners).kind
+const kindOver = (tab: BookTabState) =>
+  bookKind(createMockWindow(tab).handle, () => tab, openers().tabOpeners).kind
 
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {

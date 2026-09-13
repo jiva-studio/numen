@@ -150,9 +150,7 @@ describe('a mark on a field', () => {
   it('is drawn inside the row of the field it names', async () => {
     const { window } = await mountStencil([twice])
 
-    expect(window.find('[data-field="Height"]').find('[data-wrong]').text()).toBe(
-      'declared twice',
-    )
+    expect(window.find('[data-field="Height"]').find('[data-wrong]').text()).toBe('declared twice')
   })
 
   it('is drawn on no other row', async () => {

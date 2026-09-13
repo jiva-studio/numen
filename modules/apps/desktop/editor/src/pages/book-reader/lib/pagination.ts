@@ -42,5 +42,9 @@ export function getContents(book: Book, words: BookWords): readonly ContentsEntr
       level: 0,
     }))
   }
-  return book.documents.map((one) => ({ title: getDocumentTitle(one), at: one.span.from, level: 0 }))
+  return book.documents.map((one) => ({
+    title: getDocumentTitle(one),
+    at: one.span.from,
+    level: 0,
+  }))
 }

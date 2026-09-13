@@ -26,10 +26,22 @@ describe('the keys a session is done with', () => {
   })
 
   it('says how the card went, by the number of the answer', () => {
-    expect(getSessionKeyIntent(createPress('1'), { shown: true })).toEqual({ does: 'answer', how: 'again' })
-    expect(getSessionKeyIntent(createPress('2'), { shown: true })).toEqual({ does: 'answer', how: 'hard' })
-    expect(getSessionKeyIntent(createPress('3'), { shown: true })).toEqual({ does: 'answer', how: 'good' })
-    expect(getSessionKeyIntent(createPress('4'), { shown: true })).toEqual({ does: 'answer', how: 'easy' })
+    expect(getSessionKeyIntent(createPress('1'), { shown: true })).toEqual({
+      does: 'answer',
+      how: 'again',
+    })
+    expect(getSessionKeyIntent(createPress('2'), { shown: true })).toEqual({
+      does: 'answer',
+      how: 'hard',
+    })
+    expect(getSessionKeyIntent(createPress('3'), { shown: true })).toEqual({
+      does: 'answer',
+      how: 'good',
+    })
+    expect(getSessionKeyIntent(createPress('4'), { shown: true })).toEqual({
+      does: 'answer',
+      how: 'easy',
+    })
   })
 
   it('is not answered by a number that names none of the four', () => {
@@ -51,10 +63,18 @@ describe('the keys a session is done with', () => {
   // held with the overlay key: control here, command on a Mac.
   it('brings the panels in on either side of the card, held with the overlay key', () => {
     for (const held of ['ctrlKey', 'metaKey'] as const) {
-      expect(getSessionKeyIntent(createPress('a', { [held]: true }), { shown: true })).toEqual({ does: 'ask' })
-      expect(getSessionKeyIntent(createPress('A', { [held]: true }), { shown: false })).toEqual({ does: 'ask' })
-      expect(getSessionKeyIntent(createPress('r', { [held]: true }), { shown: true })).toEqual({ does: 'read' })
-      expect(getSessionKeyIntent(createPress('R', { [held]: true }), { shown: false })).toEqual({ does: 'read' })
+      expect(getSessionKeyIntent(createPress('a', { [held]: true }), { shown: true })).toEqual({
+        does: 'ask',
+      })
+      expect(getSessionKeyIntent(createPress('A', { [held]: true }), { shown: false })).toEqual({
+        does: 'ask',
+      })
+      expect(getSessionKeyIntent(createPress('r', { [held]: true }), { shown: true })).toEqual({
+        does: 'read',
+      })
+      expect(getSessionKeyIntent(createPress('R', { [held]: true }), { shown: false })).toEqual({
+        does: 'read',
+      })
     }
   })
 
@@ -67,16 +87,30 @@ describe('the keys a session is done with', () => {
   // is the one place in this window anything is written.
   it('leaves the overlay key to the field a question is written in', () => {
     for (const tag of ['INPUT', 'TEXTAREA']) {
-      expect(getSessionKeyIntent(createPress('a', { ...createTarget(tag), ctrlKey: true }), { shown: true })).toBeNull()
-      expect(getSessionKeyIntent(createPress('r', { ...createTarget(tag), metaKey: true }), { shown: true })).toBeNull()
+      expect(
+        getSessionKeyIntent(createPress('a', { ...createTarget(tag), ctrlKey: true }), {
+          shown: true,
+        }),
+      ).toBeNull()
+      expect(
+        getSessionKeyIntent(createPress('r', { ...createTarget(tag), metaKey: true }), {
+          shown: true,
+        }),
+      ).toBeNull()
     }
   })
 
   // With a panel up, escape sends it away and the session stays where it is.
   it('sends the panel away on escape before it leaves the session', () => {
-    expect(getSessionKeyIntent(createPress('Escape'), { shown: true, asking: true })).toEqual({ does: 'shut' })
-    expect(getSessionKeyIntent(createPress('Escape'), { shown: true, reading: true })).toEqual({ does: 'shut' })
-    expect(getSessionKeyIntent(createPress('Escape'), { shown: true, asking: false })).toEqual({ does: 'leave' })
+    expect(getSessionKeyIntent(createPress('Escape'), { shown: true, asking: true })).toEqual({
+      does: 'shut',
+    })
+    expect(getSessionKeyIntent(createPress('Escape'), { shown: true, reading: true })).toEqual({
+      does: 'shut',
+    })
+    expect(getSessionKeyIntent(createPress('Escape'), { shown: true, asking: false })).toEqual({
+      does: 'leave',
+    })
   })
 
   // The reading is read down, and space is the key the hand is already on. The
@@ -86,7 +120,9 @@ describe('the keys a session is done with', () => {
       does: 'scroll',
       back: false,
     })
-    expect(getSessionKeyIntent(createPress(' ', { shiftKey: true }), { shown: true, reading: true })).toEqual({
+    expect(
+      getSessionKeyIntent(createPress(' ', { shiftKey: true }), { shown: true, reading: true }),
+    ).toEqual({
       does: 'scroll',
       back: true,
     })
@@ -121,17 +157,23 @@ describe('the keys a session is done with', () => {
         expect(getSessionKeyIntent(createPress(key, createTarget(tag)), { shown: true })).toBeNull()
       }
     }
-    expect(getSessionKeyIntent(createPress('1', createTarget('DIV', true)), { shown: true })).toBeNull()
+    expect(
+      getSessionKeyIntent(createPress('1', createTarget('DIV', true)), { shown: true }),
+    ).toBeNull()
   })
 
   it('sends the panel away on escape from inside the field', () => {
-    expect(getSessionKeyIntent(createPress('Escape', createTarget('TEXTAREA')), { shown: true })).toEqual({ does: 'shut' })
+    expect(
+      getSessionKeyIntent(createPress('Escape', createTarget('TEXTAREA')), { shown: true }),
+    ).toEqual({ does: 'shut' })
   })
 
   it('swallows only the keys the page would act on itself', () => {
     expect(isSwallowed(getSessionKeyIntent(createPress(' '), { shown: false }))).toBe(true)
     // The page scrolls itself on space, and the reading is what is scrolled.
-    expect(isSwallowed(getSessionKeyIntent(createPress(' '), { shown: true, reading: true }))).toBe(true)
+    expect(isSwallowed(getSessionKeyIntent(createPress(' '), { shown: true, reading: true }))).toBe(
+      true,
+    )
     expect(isSwallowed(getSessionKeyIntent(createPress('3'), { shown: true }))).toBe(false)
     expect(isSwallowed(null)).toBe(false)
   })

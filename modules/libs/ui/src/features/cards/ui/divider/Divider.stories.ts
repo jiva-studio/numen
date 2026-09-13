@@ -12,8 +12,7 @@ import Divider from './Divider.vue'
 import { Icon } from '../icon'
 import { Button } from '@/shared/ui/button'
 
-const UNBROKEN =
-  'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
+const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 interface Knobs {
   /** What the action the rule holds says. */
@@ -61,9 +60,7 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
 
 /** How wide each side of the line is drawn, which is the divider's own decoration. */
 const sides = (divider: HTMLElement): readonly number[] =>
-  ['::before', '::after'].map((side) =>
-    Number.parseFloat(getComputedStyle(divider, side).width),
-  )
+  ['::before', '::after'].map((side) => Number.parseFloat(getComputedStyle(divider, side).width))
 
 /** An action standing in the middle of a divider. */
 export const ADivider: Story = {}

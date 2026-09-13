@@ -47,28 +47,24 @@ export interface CommandsDepsOptions {
   openPreset: (path: string) => Promise<void>
   dressed: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
-  hungParts: { choose: (item: string) => Promise<void> | void; chooseCount: (item: string) => Promise<void> | void }
+  hungParts: {
+    choose: (item: string) => Promise<void> | void
+    chooseCount: (item: string) => Promise<void> | void
+  }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
-  plexes: () => { travel: (path: string) => Promise<void> | void; leavePath: (from: string, to: string) => Promise<void> | void }
+  plexes: () => {
+    travel: (path: string) => Promise<void> | void
+    leavePath: (from: string, to: string) => Promise<void> | void
+  }
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   getOpeningNote: () => string
   writeMessage: MessageWriter
 }
 
 export function useCommands(options: CommandsDepsOptions) {
-  const {
-    core,
-    words,
-    held,
-    getTarget,
-    knows,
-    kept,
-    runs,
-    coverage,
-    writeMessage,
-  } = options
+  const { core, words, held, getTarget, knows, kept, runs, coverage, writeMessage } = options
 
   const palette = useSearch(core, words, { coverage })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs)
@@ -76,8 +72,8 @@ export function useCommands(options: CommandsDepsOptions) {
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
     search: () => {
-      ;commands.setOpen(false)
-      ;palette.setOpen(true)
+      commands.setOpen(false)
+      palette.setOpen(true)
     },
   })
 

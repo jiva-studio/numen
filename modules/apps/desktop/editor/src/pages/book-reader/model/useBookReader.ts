@@ -19,15 +19,7 @@ import type {
   SpineDocument,
 } from '../types'
 
-export type {
-  Book,
-  BookHandle,
-  BookPart,
-  Books,
-  BookWords,
-  PrintedPage,
-  SpineDocument,
-}
+export type { Book, BookHandle, BookPart, Books, BookWords, PrintedPage, SpineDocument }
 export { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 export { useBookDocument } from './useBookDocument'
 export { useBookHighlights } from './useBookHighlights'

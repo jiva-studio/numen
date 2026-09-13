@@ -5,69 +5,7 @@
  * an attribute or a scheme that is not named here does not survive.
  */
 
-/** The tags a card is drawn with. */
-const DRAWN = new Set([
-  'p', 'br', 'hr', 'span', 'div',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'strong', 'b', 'em', 'i', 'u', 's', 'del', 'ins', 'mark', 'small',
-  'sub', 'sup', 'code', 'pre', 'kbd', 'samp', 'var', 'abbr', 'q', 'cite',
-  'dfn', 'time', 'bdi', 'bdo', 'ruby', 'rt', 'rp',
-  'blockquote',
-  'ul', 'ol', 'li', 'dl', 'dt', 'dd',
-  'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
-  'colgroup', 'col',
-  'a', 'img', 'figure', 'figcaption',
-])
-
-/** The tags that go, and everything they hold with them. */
-const STRUCK = new Set([
-  'script', 'style', 'iframe', 'object', 'embed', 'noscript', 'template',
-  'svg', 'math', 'link', 'meta', 'base', 'form', 'input', 'button',
-  'textarea', 'select', 'option', 'head', 'title', 'frame', 'frameset',
-  'applet', 'canvas', 'audio', 'video', 'source', 'track', 'portal',
-])
-
-/**
- * The attributes any tag may carry.
- *
- * A class is not among them. The window's own stylesheet is in the page a card
- * is drawn on, so a class names rules a deck's author never wrote and cannot
- * see: one from somebody else could stand a card over the window it is being
- * read in. How a card looks is the window's, and what a deck carries is what a
- * card says.
- */
-const ANY = new Set(['dir', 'lang', 'title'])
-
-/** What each tag may carry beyond those. */
-const OWN: Readonly<Record<string, readonly string[]>> = {
-  a: ['href'],
-  img: ['src', 'alt', 'width', 'height'],
-  td: ['colspan', 'rowspan'],
-  th: ['colspan', 'rowspan', 'scope'],
-  ol: ['start', 'reversed'],
-  time: ['datetime'],
-  col: ['span'],
-  colgroup: ['span'],
-}
-
-/**
- * The schemes a link may point at. An address naming none is the caller's to
- * resolve, and one leading outward opens in the person's own browser.
- */
-const SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
-
-/** The declarations a tag may be styled with. */
-const STYLED = new Set([
-  'color',
-  'background-color',
-  'font-family',
-  'font-size',
-  'font-style',
-  'font-weight',
-  'text-align',
-  'text-decoration',
-  'vertical-align',
-])
+import { ANY, DRAWN, OWN, SCHEMES, STRUCK, STYLED } from './tags'
 
 /** An image standing in the text itself. */
 const INLINE_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp|avif);base64,/i

@@ -81,7 +81,11 @@ describe('what the strip is', () => {
   })
 
   it('is not drawn at all where the pane holds none', () => {
-    expect(mountPane({ pane: pane('main', []) }).find('[data-workspace-strip]').exists()).toBe(false)
+    expect(
+      mountPane({ pane: pane('main', []) })
+        .find('[data-workspace-strip]')
+        .exists(),
+    ).toBe(false)
   })
 })
 

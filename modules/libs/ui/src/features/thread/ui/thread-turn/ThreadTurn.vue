@@ -54,7 +54,7 @@ const call = computed(() => ({
       class="thread__body min-w-0"
       :class="
         entry.voice.bubble
-          ? 'max-w-(--measure) rounded-bubble bg-bubble px-3 py-2 text-bubble-ink'
+          ? 'rounded-bubble bg-bubble text-bubble-ink max-w-(--measure) px-3 py-2'
           : 'text-answer-ink'
       "
     >
@@ -62,7 +62,7 @@ const call = computed(() => ({
       <button
         v-else-if="opens"
         type="button"
-        class="thread__opens block w-full cursor-pointer rounded-node text-start outline-none ring-numen"
+        class="thread__opens rounded-node ring-numen block w-full cursor-pointer text-start outline-none"
         @click="emit('open', entry.turn)"
       >
         <ToolCall v-bind="call" />
@@ -78,7 +78,7 @@ const call = computed(() => ({
       />
     </div>
 
-    <p v-if="entry.state === 'failed'" class="thread__failure mt-1 text-small text-alarm">
+    <p v-if="entry.state === 'failed'" class="thread__failure text-small text-alarm mt-1">
       <slot name="failure" :turn="entry.turn">Did not send</slot>
     </p>
   </div>

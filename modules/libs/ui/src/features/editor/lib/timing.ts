@@ -171,7 +171,13 @@ export function timing(goToLine: (line: number) => void): Timing {
     if (same(was, state)) return
     const effects: StateEffect<unknown>[] = [told.of(state)]
     const moved = state.current !== was.current || state.following !== was.following
-    if (may && state.following && moved && state.current >= 0 && state.current < view.state.doc.lines) {
+    if (
+      may &&
+      state.following &&
+      moved &&
+      state.current >= 0 &&
+      state.current < view.state.doc.lines
+    ) {
       const { from } = view.state.doc.line(state.current + 1)
       effects.push(EditorView.scrollIntoView(from, { y: 'nearest' }))
     }

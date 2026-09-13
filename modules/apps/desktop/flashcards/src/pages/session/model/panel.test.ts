@@ -41,7 +41,11 @@ const createAgent = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the 
  * test holds it the way the window does.
  */
 const panel = (
-  more: { card?: CardFace | null; unreachable?: string; showing?: 'reading' | 'here' | 'asking' } = {},
+  more: {
+    card?: CardFace | null
+    unreachable?: string
+    showing?: 'reading' | 'here' | 'asking'
+  } = {},
 ) => {
   const { agent, asked, over } = createAgent()
   const on = ref<CardFace | null>(more.card === undefined ? card() : more.card)

@@ -30,10 +30,7 @@ const modes = [
 
 const themes = computed<readonly SelectChoice[]>(() =>
   [...installation.value.themes.value]
-    .sort(
-      (one, other) =>
-        Number(other.isBuiltIn) - Number(one.isBuiltIn),
-    )
+    .sort((one, other) => Number(other.isBuiltIn) - Number(one.isBuiltIn))
     .map((one) => ({
       id: one.name,
       text: one.title,
@@ -77,12 +74,7 @@ function onPartsChange(count: number | null) {
   <section class="settings__group" :aria-label="words.window">
     <h2 class="settings__heading">{{ words.window }}</h2>
 
-    <SettingRow
-      v-slot="{ labelledBy }"
-      at="theme"
-      :name="words.theme"
-      :detail="words.themeDetail"
-    >
+    <SettingRow v-slot="{ labelledBy }" at="theme" :name="words.theme" :detail="words.themeDetail">
       <Select
         :model-value="installation.applied.value"
         :choices="themes"
@@ -151,12 +143,7 @@ function onPartsChange(count: number | null) {
       <Switch v-model="installation.isHanging.value" :aria-labelledby="labelledBy" />
     </SettingRow>
 
-    <SettingRow
-      v-slot="{ labelledBy }"
-      at="parts"
-      :name="words.parts"
-      :detail="words.partsDetail"
-    >
+    <SettingRow v-slot="{ labelledBy }" at="parts" :name="words.parts" :detail="words.partsDetail">
       <NumberField
         :model-value="installation.parts.value"
         :min="installation.partsBounds.value.least"

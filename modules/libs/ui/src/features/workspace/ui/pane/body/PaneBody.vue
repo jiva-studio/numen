@@ -57,7 +57,7 @@ function onPanelEscape(event: KeyboardEvent): void {
     </div>
     <div v-if="pane.tabs.length === 0" class="pane__silence">
       <slot name="silence">
-        <p class="pane__nothing font-sans text-small text-hushed">Nothing open</p>
+        <p class="pane__nothing text-small text-hushed font-sans">Nothing open</p>
       </slot>
     </div>
   </div>

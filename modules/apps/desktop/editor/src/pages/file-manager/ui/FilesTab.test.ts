@@ -152,10 +152,7 @@ describe('a row the tree reports', () => {
     await settle()
 
     expect(list.selectedPaths.value).toStrictEqual(['Entropy.md', 'Cover.png'])
-    expect(window.findComponent(Tree).props('selected')).toStrictEqual([
-      'Entropy.md',
-      'Cover.png',
-    ])
+    expect(window.findComponent(Tree).props('selected')).toStrictEqual(['Entropy.md', 'Cover.png'])
   })
 
   it('is one of the rows asked to go, handed to the window as one command', async () => {

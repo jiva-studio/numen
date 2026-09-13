@@ -266,7 +266,9 @@ export const PressingADayOffersTheLevels: Story = {
   args: { levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
-    await waitFor(() => expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']))
+    await waitFor(() =>
+      expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']),
+    )
 
     const quarter = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item')).find(
       (one) => one.textContent?.trim() === '25%',
@@ -304,8 +306,7 @@ export const TheKeyboardComesBack: Story = {
     expect(document.activeElement).toBe(chip)
 
     await userEvent.keyboard(' ')
-    const onOffer = () =>
-      Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
+    const onOffer = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
     await waitFor(() => expect(onOffer()).toHaveLength(7))
     // Open on the level the day stands at, said on the item itself.
     expect(document.activeElement).toBe(onOffer()[3])

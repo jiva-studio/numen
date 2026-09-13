@@ -72,7 +72,6 @@ describe('a right-click on a node', () => {
     expect(event.defaultPrevented).toBe(false)
     expect(plex.emitted('menu')).toBeUndefined()
   })
-
 })
 
 describe('a right-click on a node’s handle', () => {

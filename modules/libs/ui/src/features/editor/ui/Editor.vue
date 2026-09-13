@@ -191,7 +191,7 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="host" class="editor numen h-full min-h-0 overflow-auto font-sans text-base text-ink">
+  <div ref="host" class="editor numen text-ink h-full min-h-0 overflow-auto font-sans text-base">
     <!-- Read out as the keyboard arrives, which is the one moment a person
          needs to know how to get away again. -->
     <span :id="keysId" class="sr-only">{{ keys }}</span>

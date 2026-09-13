@@ -12,7 +12,6 @@ export type { AgentTabDeps, NoteRef } from '../types'
 /** What one agent tab holds. */
 export type AgentTabState = ReturnType<typeof useAgentConversation>
 
-
 export type ResolvedAddressMap = ReadonlyMap<string, string>
 
 export function useAgentConversation(conversation: Conversation, deps: AgentTabDeps) {

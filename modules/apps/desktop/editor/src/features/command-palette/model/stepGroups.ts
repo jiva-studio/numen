@@ -164,8 +164,12 @@ export function createStepGroups(state: ViewState) {
    */
   const getConfirmGroup = (step: PendingStep, text: string): PaletteGroup => {
     const word = text.trim().toLowerCase()
-    const { keeps = '', kept = '', action = '', then = '' }: Partial<ConfirmWords> =
-      step.command.answers ?? {}
+    const {
+      keeps = '',
+      kept = '',
+      action = '',
+      then = '',
+    }: Partial<ConfirmWords> = step.command.answers ?? {}
     const items: PaletteItem[] = [
       {
         id: NO,

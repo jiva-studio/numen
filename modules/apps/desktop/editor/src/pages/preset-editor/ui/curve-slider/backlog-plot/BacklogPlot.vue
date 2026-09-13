@@ -94,11 +94,7 @@ const roomStyle = { aspectRatio: `${WIDE} / ${BACKLOG_HIGH}` }
     </div>
 
     <div class="curve-slider__over" data-control="over">
-      <div
-        class="curve-slider__room"
-        data-control="room"
-        :style="roomStyle"
-      >
+      <div class="curve-slider__room" data-control="room" :style="roomStyle">
         <BacklogPicture v-if="drawn" :line="line" />
       </div>
 
@@ -108,8 +104,9 @@ const roomStyle = { aspectRatio: `${WIDE} / ${BACKLOG_HIGH}` }
         class="curve-slider__number"
         data-control="number"
         :style="one.at"
-        >{{ one.text }}</span
       >
+        {{ one.text }}
+      </span>
     </div>
   </div>
 

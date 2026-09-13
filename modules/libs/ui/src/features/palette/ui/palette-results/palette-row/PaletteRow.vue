@@ -32,7 +32,7 @@ defineSlots<{
 <template>
   <div
     :id="id"
-    class="palette__item flex items-center gap-2 rounded-node px-2 py-1.5"
+    class="palette__item rounded-node flex items-center gap-2 px-2 py-1.5"
     role="option"
     :aria-selected="here"
     :aria-disabled="row.item.disabled || undefined"
@@ -48,25 +48,19 @@ defineSlots<{
 
     <span class="palette__lines flex min-w-0 flex-1 flex-col">
       <span class="palette__name min-w-0" data-palette="name">
-        <span
-          v-for="(part, piece) in row.name"
-          :key="piece"
-          :data-hit="part.hit || undefined"
-          >{{ part.text }}</span
-        >
+        <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.hit || undefined">
+          {{ part.text }}
+        </span>
       </span>
 
       <span
         v-if="row.detail.length"
-        class="palette__detail min-w-0 text-small text-hushed"
+        class="palette__detail text-small text-hushed min-w-0"
         data-palette="detail"
       >
-        <span
-          v-for="(part, piece) in row.detail"
-          :key="piece"
-          :data-hit="part.hit || undefined"
-          >{{ part.text }}</span
-        >
+        <span v-for="(part, piece) in row.detail" :key="piece" :data-hit="part.hit || undefined">
+          {{ part.text }}
+        </span>
       </span>
     </span>
 

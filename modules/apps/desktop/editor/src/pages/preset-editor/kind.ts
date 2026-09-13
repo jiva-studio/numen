@@ -37,11 +37,13 @@ export function usePresetTab(
 
   const getState = (id: string): PresetTabState | undefined => {
     const one = open.get(id)
-    return one && createPresetState(one, id, handle, closePreset, core, bounds, writeMessage, today, titles)
+    return (
+      one &&
+      createPresetState(one, id, handle, closePreset, core, bounds, writeMessage, today, titles)
+    )
   }
 
-  const getTitle = (path: string): string =>
-    titles.get(path) || fileOf(path) || words.newPreset
+  const getTitle = (path: string): string => titles.get(path) || fileOf(path) || words.newPreset
 
   const kind: TabKind<PresetTabState, typeof PRESET> = {
     kind: PRESET,
@@ -49,7 +51,17 @@ export function usePresetTab(
       const one = createOpenPreset(path, today(), bounds.value)
       open.set(path, one)
       void readPreset(one, core, bounds, titles, today())
-      return createPresetState(one, path, handle, closePreset, core, bounds, writeMessage, today, titles)
+      return createPresetState(
+        one,
+        path,
+        handle,
+        closePreset,
+        core,
+        bounds,
+        writeMessage,
+        today,
+        titles,
+      )
     },
     getTitle: (one) => getTitle(one.id),
     pane: PresetTab,
@@ -68,7 +80,10 @@ export function usePresetTab(
 
   tabOpeners.registerEditor('preset', openPreset)
 
-  const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[] = []): void => {
+  const applyPathChanges = (
+    paths: readonly string[],
+    renames: readonly PathRename[] = [],
+  ): void => {
     for (const went of renames) {
       const title = titles.get(went.from)
       if (title !== undefined) titles.set(went.to, title)

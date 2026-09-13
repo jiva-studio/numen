@@ -117,7 +117,9 @@ describe('a note that moved while a question was in flight', () => {
 describe('the note in focus goes away', () => {
   it('says so, keeps what it is showing, and can come back to it', async () => {
     let holds = true
-    const plex = usePlexView(fake(async (path) => (holds ? answer(path) : createEmptyNeighbourhood())))
+    const plex = usePlexView(
+      fake(async (path) => (holds ? answer(path) : createEmptyNeighbourhood())),
+    )
 
     await plex.go('Note.md')
     expect(plex.here.value).toBe('Note.md')

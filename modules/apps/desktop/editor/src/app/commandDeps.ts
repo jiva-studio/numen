@@ -23,11 +23,17 @@ export interface CommandDepsOptions {
   openPreset: (path: string) => Promise<void>
   dressed: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
-  hungParts: { choose: (item: string) => Promise<void> | void; chooseCount: (item: string) => Promise<void> | void }
+  hungParts: {
+    choose: (item: string) => Promise<void> | void
+    chooseCount: (item: string) => Promise<void> | void
+  }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
-  plexes: () => { travel: (path: string) => Promise<void> | void; leavePath: (from: string, to: string) => Promise<void> | void }
+  plexes: () => {
+    travel: (path: string) => Promise<void> | void
+    leavePath: (from: string, to: string) => Promise<void> | void
+  }
   agents: () => { askQuestion: (text: string) => Promise<void> | void }
   getOpeningNote: () => string
   runs: RunSupport

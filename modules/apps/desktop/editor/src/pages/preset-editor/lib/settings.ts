@@ -55,8 +55,7 @@ const isNumberField = (field: Field): field is NumberField => field in NUMBER_FI
 const isBudgetUnit = (value: SettingValue): value is BudgetUnit =>
   value === 'cards' || value === 'shows'
 
-const isRule = (value: SettingValue): value is Rule =>
-  value === 'interval' || value === 'retention'
+const isRule = (value: SettingValue): value is Rule => value === 'interval' || value === 'retention'
 
 /** Clamps a number to the field's bounds, rounding where the field is whole. */
 const applyNumberSetting = (

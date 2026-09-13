@@ -45,20 +45,25 @@ const vault = (id: string, name: string, isMissing = false): Vault => ({
   missing: isMissing,
 })
 
-const createVaultList = (vaults: readonly Vault[], current: string): VaultList => ({ vaults, showing: current })
+const createVaultList = (vaults: readonly Vault[], current: string): VaultList => ({
+  vaults,
+  showing: current,
+})
 
 /** Two vaults, the first of them the one the window is showing. */
 const two = createVaultList([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
 
 describe('the ways into the vault', () => {
   it('are the settings alone where the window is showing no vault', () => {
-    expect(waysIn(createShownVault({ vault: '', ready: false }), words, APPLE).map((one) => one.id)).toStrictEqual(
-      [SETTINGS],
-    )
+    expect(
+      waysIn(createShownVault({ vault: '', ready: false }), words, APPLE).map((one) => one.id),
+    ).toStrictEqual([SETTINGS])
   })
 
   it('are the settings alone where a window showing no vault says it is ready', () => {
-    expect(waysIn(createShownVault({ vault: '' }), words, APPLE).map((one) => one.id)).toStrictEqual([SETTINGS])
+    expect(
+      waysIn(createShownVault({ vault: '' }), words, APPLE).map((one) => one.id),
+    ).toStrictEqual([SETTINGS])
   })
 
   it('are the six of a vault that has been read, in the order they are drawn', () => {
@@ -117,7 +122,6 @@ describe('the keystroke drawn on a way', () => {
     expect(keysOn('find')).toBe(words.findKeys)
     expect(keysOn(COMMANDS)).toBe(words.commandsKeys)
   })
-
 })
 
 describe('the vaults the screen lists', () => {

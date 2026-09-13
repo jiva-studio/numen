@@ -86,8 +86,7 @@ export const stepForKey = (key: string, value: number | null, bounds: Bounds): n
 }
 
 /** How a number is written into the field. */
-export const formatNumber = (value: number | null): string =>
-  value === null ? '' : String(value)
+export const formatNumber = (value: number | null): string => (value === null ? '' : String(value))
 
 /** Whether what is typed stands for the number in force. An empty field holds none. */
 export const isTextForValue = (text: string, value: number | null): boolean =>

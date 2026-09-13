@@ -97,7 +97,10 @@ const box = useTemplateRef<HTMLElement>('box')
 
 const shown = computed(() => flatten(props.rows, new Set(props.open)))
 
-const rows = useDrawnRows(() => shown.value, () => props.selected)
+const rows = useDrawnRows(
+  () => shown.value,
+  () => props.selected,
+)
 const { tabbed, setRowElement } = rows
 
 const selection = useRowSelection(
@@ -154,7 +157,7 @@ const {
 <template>
   <div
     ref="box"
-    class="tree numen min-h-0 bg-surface font-sans text-base text-ink"
+    class="tree numen bg-surface text-ink min-h-0 font-sans text-base"
     :data-into="at && 'into' in at && at.into === null ? '' : undefined"
     v-bind="getMarkOf(marking, null)"
     @contextmenu.prevent="onContextMenu"
@@ -197,12 +200,7 @@ const {
       <slot name="silence">Nothing here</slot>
     </p>
 
-    <DragPreview
-      v-if="label"
-      class="tree__dragged"
-      :at="label.at"
-      :says="label.says"
-    />
+    <DragPreview v-if="label" class="tree__dragged" :at="label.at" :says="label.says" />
   </div>
 </template>
 

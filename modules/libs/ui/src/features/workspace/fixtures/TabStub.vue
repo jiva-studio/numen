@@ -10,7 +10,7 @@ defineProps<{ name: string }>()
 
 <template>
   <div
-    class="tab-stub numen grid h-full place-items-center bg-surface font-sans text-base text-hushed"
+    class="tab-stub numen bg-surface text-hushed grid h-full place-items-center font-sans text-base"
   >
     {{ name }}
   </div>

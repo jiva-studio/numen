@@ -51,7 +51,7 @@ function onKey(event: KeyboardEvent): void {
 <template>
   <input
     ref="field"
-    class="tree__field min-w-0 grow rounded-node"
+    class="tree__field rounded-node min-w-0 grow"
     type="text"
     :value="value"
     :aria-label="name"

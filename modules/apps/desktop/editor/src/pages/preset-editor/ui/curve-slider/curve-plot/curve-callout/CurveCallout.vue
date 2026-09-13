@@ -24,7 +24,9 @@ const { callout } = props.state
       :key="one"
       class="curve-slider__bought"
       data-control="bought"
-    >{{ one }}</span>
+    >
+      {{ one }}
+    </span>
   </span>
 
   <span

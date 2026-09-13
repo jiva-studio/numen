@@ -20,18 +20,15 @@ defineExpose({ element })
 <template>
   <div
     ref="element"
-    class="actions__item flex items-center gap-3 rounded-node px-2 py-1.5"
+    class="actions__item rounded-node flex items-center gap-3 px-2 py-1.5"
     role="option"
     :aria-selected="here"
     :data-here="here || undefined"
   >
     <span class="actions__name min-w-0 flex-1" data-actions="name">
-      <span
-        v-for="(part, piece) in row.name"
-        :key="piece"
-        :data-hit="part.hit || undefined"
-        >{{ part.text }}</span
-      >
+      <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.hit || undefined">
+        {{ part.text }}
+      </span>
     </span>
     <KeyCap v-if="row.key" class="actions__hint" data-actions="hint" :keys="row.key" />
   </div>

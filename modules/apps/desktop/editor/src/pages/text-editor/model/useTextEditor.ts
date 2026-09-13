@@ -18,10 +18,7 @@ export interface TextEditorTabDeps {
    * file it cannot read is refused, and a file standing at anything else is
    * answered `changed` with nothing written.
    */
-  saveSettingsFile(
-    written: string,
-    seen: string | null,
-  ): Promise<{ readonly changed: boolean }>
+  saveSettingsFile(written: string, seen: string | null): Promise<{ readonly changed: boolean }>
 }
 
 /** What one tab of the settings file holds. */

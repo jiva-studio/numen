@@ -72,20 +72,27 @@ const says = computed(() => {
           :key="field"
           variant="ghost"
           size="small"
-          class="face__slot h-5 rounded-pill bg-bubble px-2 text-small"
+          class="face__slot rounded-pill bg-bubble text-small h-5 px-2"
           draggable="false"
           :data-insert="field"
           :aria-label="`${words.insert}: ${field}`"
           @click="emit('put', field)"
-          >{{ field }}</Button
         >
+          {{ field }}
+        </Button>
       </div>
     </div>
 
     <!-- What is wrong with the face stands at the end of the strip, over
          the window under it. -->
     <div v-if="says || wrong.length" class="face__amiss">
-      <ErrorMessage v-if="says" :id="objectionsId" class="face__objections" role="alert" :said="says" />
+      <ErrorMessage
+        v-if="says"
+        :id="objectionsId"
+        class="face__objections"
+        role="alert"
+        :said="says"
+      />
 
       <ErrorMessage
         v-if="wrong.length"

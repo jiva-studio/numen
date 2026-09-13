@@ -83,7 +83,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="book numen relative h-full min-h-0 font-sans text-base text-ink">
+  <div class="book numen text-ink relative h-full min-h-0 font-sans text-base">
     <BookHead :chapter="chapter" />
 
     <div class="book__margin h-full">

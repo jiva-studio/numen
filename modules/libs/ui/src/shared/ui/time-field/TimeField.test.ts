@@ -23,8 +23,9 @@ describe('the hour in force', () => {
   })
 
   it('stands at nothing where what was given is no hour of the day', () => {
-    expect((mountField({ modelValue: 'noon' }).get('input').element as HTMLInputElement).value)
-      .toBe('')
+    expect(
+      (mountField({ modelValue: 'noon' }).get('input').element as HTMLInputElement).value,
+    ).toBe('')
   })
 })
 

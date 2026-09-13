@@ -102,7 +102,10 @@ describe('the front door while the vaults are being counted', () => {
   })
 
   it('opens a vault as soon as that vault has been counted', async () => {
-    const one = mountVaults(true, [vault(), createUncountedVault({ vault: '01B', name: 'Sanskrit' })])
+    const one = mountVaults(true, [
+      vault(),
+      createUncountedVault({ vault: '01B', name: 'Sanskrit' }),
+    ])
 
     await one.findAll('.welcome-page__row--vault')[0]?.trigger('click')
 

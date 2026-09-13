@@ -20,10 +20,7 @@ const previewStyle = computed(() => ({
 </script>
 
 <template>
-  <p
-    class="drag-preview font-sans text-small"
-    :style="previewStyle"
-  >
+  <p class="drag-preview text-small font-sans" :style="previewStyle">
     {{ says }}
   </p>
 </template>

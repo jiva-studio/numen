@@ -21,9 +21,7 @@ describe('a line of work', () => {
     })
 
     expect(drawn.get('.activity__says').text()).toBe('Proofreading the transcript')
-    expect(drawn.get('.activity__about').text()).toBe(
-      'A Conversation in Vrindavan, 1972-11-04.md',
-    )
+    expect(drawn.get('.activity__about').text()).toBe('A Conversation in Vrindavan, 1972-11-04.md')
     expect(drawn.get('.activity__words').classes()).toContain('flex-col')
   })
 

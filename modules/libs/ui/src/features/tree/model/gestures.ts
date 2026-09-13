@@ -51,15 +51,7 @@ export interface TreeGesturesState {
 }
 
 export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState {
-  const {
-    getShownRows,
-    getSelected,
-    renamingPath,
-    rows,
-    selection,
-    drag,
-    tell,
-  } = options
+  const { getShownRows, getSelected, renamingPath, rows, selection, drag, tell } = options
 
   function toggleRow(row: ShownRow): void {
     if (row.open) tell('close', row.id)

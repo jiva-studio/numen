@@ -58,7 +58,11 @@ describe('the row a document makes', () => {
     // pages after it are still where they were. A page at no width at all is a
     // row that jumps once its size is known.
     const laid = row(
-      [{ width: 612, height: 792 }, { width: 0, height: 0 }, { width: 612, height: 792 }],
+      [
+        { width: 612, height: 792 },
+        { width: 0, height: 0 },
+        { width: 612, height: 792 },
+      ],
       VIEWPORT,
       1,
     )

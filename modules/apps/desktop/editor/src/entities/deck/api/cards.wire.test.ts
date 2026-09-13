@@ -252,7 +252,9 @@ describe('renaming a field', () => {
     replyWith({
       decks: ['Words.md', 'Roots.md'],
       cards: 12,
-      notWritten: [{ path: 'Old.md', problem: { fault: 'FAULT_FIELD_NOT_RENAMED', text: 'Front' } }],
+      notWritten: [
+        { path: 'Old.md', problem: { fault: 'FAULT_FIELD_NOT_RENAMED', text: 'Front' } },
+      ],
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })
 

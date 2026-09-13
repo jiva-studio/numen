@@ -4,7 +4,11 @@
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { SETTINGS_FILE } from '@/entities/tab'
 import TextEditorTab from './ui/TextEditorTab.vue'
-import { useTextEditor, type TextEditorTabDeps, type TextEditorTabState } from './model/useTextEditor'
+import {
+  useTextEditor,
+  type TextEditorTabDeps,
+  type TextEditorTabState,
+} from './model/useTextEditor'
 import { WORDS as words } from './words'
 
 /** What the tab carries beside its name, and nothing where there is nothing to say. */

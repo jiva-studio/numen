@@ -24,9 +24,7 @@ export function useDocumentHighlights(
     otherHighlights.value.flatMap((where) => where.find((one) => one.page === page)?.rects ?? [])
 
   const highlighted = computed<readonly Rect[]>(() => getHighlightsOn(pageNumber.value))
-  const otherHighlighted = computed<readonly Rect[]>(() =>
-    getOtherHighlightsOn(pageNumber.value),
-  )
+  const otherHighlighted = computed<readonly Rect[]>(() => getOtherHighlightsOn(pageNumber.value))
 
   const applyHighlights = async (where: readonly (readonly PageHighlight[])[]) => {
     const [front = [], ...rest] = where

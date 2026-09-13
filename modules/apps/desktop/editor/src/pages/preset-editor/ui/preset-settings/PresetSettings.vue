@@ -29,19 +29,14 @@ const fields = computed(() => fieldsUnder(settings.value.goal, settings.value.le
 
 <template>
   <section class="preset-settings" :aria-label="words.settings">
-    <div
-      v-for="field in fields"
-      :key="field"
-      class="preset-settings__row"
-      :data-preset-row="field"
-    >
+    <div v-for="field in fields" :key="field" class="preset-settings__row" :data-preset-row="field">
       <span class="preset-settings__said">
-        <span class="preset-settings__name" :id="`preset-${field}`" data-preset="name">{{
-          words.fieldName(field)
-        }}</span>
-        <span class="preset-settings__detail" data-preset="detail">{{
-          words.fieldDetail(field)
-        }}</span>
+        <span class="preset-settings__name" :id="`preset-${field}`" data-preset="name">
+          {{ words.fieldName(field) }}
+        </span>
+        <span class="preset-settings__detail" data-preset="detail">
+          {{ words.fieldDetail(field) }}
+        </span>
       </span>
 
       <PresetSettingControl :field="field" :state="props.state" />

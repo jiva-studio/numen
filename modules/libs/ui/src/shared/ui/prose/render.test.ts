@@ -63,7 +63,9 @@ describe('prose', () => {
   })
 
   it('draws a wikilink as a link to the note it names', () => {
-    expect(mountProse('Under [[Entropy]] it sits.').find('a').attributes('href')).toBe('name://Entropy')
+    expect(mountProse('Under [[Entropy]] it sits.').find('a').attributes('href')).toBe(
+      'name://Entropy',
+    )
   })
 
   it('holds a wikilink to what every other link is held to', () => {

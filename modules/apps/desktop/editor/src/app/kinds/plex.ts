@@ -5,11 +5,10 @@ import { CREATABLE } from '@/pages/note-editor'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { WindowKindsDeps } from './deps'
 
-export interface PlexKindDeps
-  extends Pick<
-    WindowKindsDeps,
-    'core' | 'tabOpeners' | 'held' | 'editing' | 'settings' | 'window' | 'getTarget' | 'runCommand'
-  > {
+export interface PlexKindDeps extends Pick<
+  WindowKindsDeps,
+  'core' | 'tabOpeners' | 'held' | 'editing' | 'settings' | 'window' | 'getTarget' | 'runCommand'
+> {
   dragged: ShallowRef<readonly string[]>
   writeMessage: MessageWriter
   askAgent: (text: string) => void

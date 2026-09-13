@@ -34,12 +34,7 @@ declare module 'vitest/browser' {
   }
 }
 
-const CANDIDATES = [
-  'google-chrome-stable',
-  'google-chrome',
-  'chromium',
-  'chromium-browser',
-]
+const CANDIDATES = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
 
 /**
  * A browser already on the machine; undefined uses Playwright's own.

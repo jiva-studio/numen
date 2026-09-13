@@ -81,8 +81,7 @@ export const extentOfBacklog = (backlog: readonly number[]): Extent => ({
 export const backlogPositionsOf = (
   values: readonly number[],
   extent: Extent,
-): readonly Position[] =>
-  seriesOf(values, extent, BACKLOG_PLOT)
+): readonly Position[] => seriesOf(values, extent, BACKLOG_PLOT)
 
 /**
  * Where every place of the curve is drawn, in the extent the picture is scaled

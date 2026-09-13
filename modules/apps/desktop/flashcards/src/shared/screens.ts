@@ -13,9 +13,7 @@ import type { Ref } from 'vue'
  * What each screen holds, by the screen it belongs to. A screen holding nothing
  * says nothing here.
  */
-export type Holdings<Name extends string> = Readonly<
-  Partial<Record<Name, readonly (() => void)[]>>
->
+export type Holdings<Name extends string> = Readonly<Partial<Record<Name, readonly (() => void)[]>>>
 
 /** Order is the screens from the first one in to the last, and never empty. */
 export function useScreens<Name extends string>(

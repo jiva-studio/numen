@@ -126,7 +126,9 @@ export const NoTitle: Story = {
 export const PartWayThere: Story = {
   args: { opacity: 0.3 },
   play: async ({ canvasElement }) => {
-    const drawn = canvasElement.querySelectorAll('[data-edge="resting"] path, [data-edge="resting"] text')
+    const drawn = canvasElement.querySelectorAll(
+      '[data-edge="resting"] path, [data-edge="resting"] text',
+    )
     expect(drawn).toHaveLength(4)
     for (const one of drawn) expect(one.getAttribute('opacity')).toBe('0.3')
   },

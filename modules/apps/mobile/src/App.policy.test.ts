@@ -21,9 +21,11 @@ const here = new URL('..', import.meta.url).pathname.replace(/^\/@fs/, '')
 
 /** The policy the page carries, directive by directive. */
 const policy: Record<string, string[]> = Object.fromEntries(
-  (/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/.exec(
-    readFileSync(join(here, 'index.html'), 'utf8'),
-  )?.[1] ?? '')
+  (
+    /http-equiv="Content-Security-Policy"\s+content="([^"]+)"/.exec(
+      readFileSync(join(here, 'index.html'), 'utf8'),
+    )?.[1] ?? ''
+  )
     .split(';')
     .map((one) => one.trim().split(/\s+/))
     .map(([named, ...sources]) => [named, sources]),
@@ -132,9 +134,10 @@ describe('what the page asks for', () => {
   it('asks for nothing from a stylesheet', () => {
     for (const sheet of STYLESHEETS) {
       const css = readFileSync(from.resolve(sheet), 'utf8')
-      expect([sheet, [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((at) => at[1])]).toStrictEqual(
-        [sheet, []],
-      )
+      expect([
+        sheet,
+        [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((at) => at[1]),
+      ]).toStrictEqual([sheet, []])
     }
   })
 

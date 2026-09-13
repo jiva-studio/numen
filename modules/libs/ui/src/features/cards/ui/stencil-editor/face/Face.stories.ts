@@ -191,7 +191,6 @@ const boxFor = (canvas: HTMLElement, half: Half): HTMLTextAreaElement => {
 const paneOf = (canvas: HTMLElement, pane: string): HTMLElement =>
   found(canvas, `[data-pane="${pane}"]`)
 
-
 /** The four parts of a face, in the order they are drawn. */
 const PANES = ['front-written', 'front-preview', 'back-written', 'back-preview'] as const
 
@@ -286,7 +285,9 @@ export const AFace: Story = {
     back.focus()
     back.setSelectionRange(0, 0)
     await userEvent.click(chip)
-    await waitFor(() => expect(boxFor(canvasElement, 'back').value.startsWith('{{Height}}')).toBe(true))
+    await waitFor(() =>
+      expect(boxFor(canvasElement, 'back').value.startsWith('{{Height}}')).toBe(true),
+    )
 
     // The keyboard landing in a box changes the face, the strip and the parts
     // in nothing.
@@ -395,9 +396,9 @@ export const NothingInIt: Story = {
     expect(written.getBoundingClientRect().top).toBeCloseTo(pane.getBoundingClientRect().top, 0)
 
     // The half nothing was written in still says what it is for.
-    expect(
-      paneOf(canvasElement, 'back-written').querySelector('.face__ghost')?.textContent,
-    ).toBe('Back')
+    expect(paneOf(canvasElement, 'back-written').querySelector('.face__ghost')?.textContent).toBe(
+      'Back',
+    )
   },
 }
 
@@ -474,9 +475,7 @@ export const WhatIsWrongWithIt: Story = {
     // It stays inside the face, and a press meant for the window reaches it.
     const face = found(canvasElement, '[data-face]').getBoundingClientRect()
     expect(over.right).toBeLessThanOrEqual(face.right + 1)
-    expect(getComputedStyle(found(canvasElement, 'header .face__amiss')).pointerEvents).toBe(
-      'none',
-    )
+    expect(getComputedStyle(found(canvasElement, 'header .face__amiss')).pointerEvents).toBe('none')
     expect(getComputedStyle(said).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
     // A name another face carries cannot be used, and the box says so.

@@ -114,9 +114,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
 
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
 
-    expect(asked).toStrictEqual([
-      { node: null, at: { x: 12, y: 34 }, opening: 'pointer' },
-    ])
+    expect(asked).toStrictEqual([{ node: null, at: { x: 12, y: 34 }, opening: 'pointer' }])
   })
 
   it('offers a note to be made', async () => {
@@ -134,7 +132,10 @@ describe('a menu asked for over a tab drawing no picture', () => {
   it('leaves a tab drawing a picture to answer for itself', async () => {
     drawing(13)
     const asked: MenuRequest[] = []
-    const tab = { ...createTabState(), openMenu: (one: MenuRequest) => void asked.push(one) } as PlexTabState
+    const tab = {
+      ...createTabState(),
+      openMenu: (one: MenuRequest) => void asked.push(one),
+    } as PlexTabState
     const view = mount(PlexTab, { props: { state: tab } })
 
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
@@ -146,7 +147,10 @@ describe('a menu asked for over a tab drawing no picture', () => {
 describe('what a node is drawn before its title', () => {
   /** A tab whose nodes are of the kinds a test names. */
   const createTypedTab = (types: Record<string, NoteType>) =>
-    ({ ...createTabState(), typeOf: (node: string) => types[node] ?? 'note' }) as unknown as PlexTabState
+    ({
+      ...createTabState(),
+      typeOf: (node: string) => types[node] ?? 'note',
+    }) as unknown as PlexTabState
 
   it('is the icon the tree draws a deck under', () => {
     drawing(13)
@@ -164,7 +168,7 @@ describe('what a node is drawn before its title', () => {
 
   it('is nothing at all for an ordinary note, which keeps no room for one', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { state: createTypedTab({})} })
+    const view = mount(PlexTab, { props: { state: createTypedTab({}) } })
 
     expect(view.find('.plex__icon').exists()).toBe(false)
   })

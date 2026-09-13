@@ -3,14 +3,7 @@
  * The bar above a note: the path it is filed under, the way back, and the way
  * to keep it. The progress bar is up while the note is still being read.
  */
-import {
-  IonButton,
-  IonButtons,
-  IonHeader,
-  IonProgressBar,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/vue'
+import { IonButton, IonButtons, IonHeader, IonProgressBar, IonTitle, IonToolbar } from '@ionic/vue'
 
 defineProps<{ path: string; reading: boolean }>()
 const emit = defineEmits<{

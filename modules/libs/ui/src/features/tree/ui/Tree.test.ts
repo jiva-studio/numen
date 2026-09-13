@@ -282,9 +282,7 @@ describe('the keyboard', () => {
     const held = mountTree()
     await types(held, 'notes', 'a', { ctrlKey: true })
 
-    expect(held.emitted('select')).toStrictEqual([
-      [['work', 'plans', 'notes', 'empty', 'loose']],
-    ])
+    expect(held.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
   })
 
   it('asks for the whole selection to go', async () => {

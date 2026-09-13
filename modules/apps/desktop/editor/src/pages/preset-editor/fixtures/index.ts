@@ -102,7 +102,9 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
 
 /** What an answer counted the material at, and nothing where none has landed. */
 const getCounts = (one: Curve): PresetCounts | null =>
-  one.honest ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun } : null
+  one.honest
+    ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun }
+    : null
 
 /** A tab standing at those settings, and everything it was asked to do. */
 const tabAt = (
@@ -147,6 +149,5 @@ const mountPresetTab = (
   const one = tabAt(over, settings, isWaiting, counts)
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
-
 
 export { getCounts, curve, mountPresetTab, heights, point, rows, tabAt }

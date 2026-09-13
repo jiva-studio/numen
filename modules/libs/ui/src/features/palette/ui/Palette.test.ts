@@ -460,9 +460,7 @@ describe('what a group says about itself', () => {
     })
     await settle()
 
-    expect(document.body.querySelector('.spinner')?.getAttribute('aria-hidden')).toBe(
-      'true',
-    )
+    expect(document.body.querySelector('.spinner')?.getAttribute('aria-hidden')).toBe('true')
   })
 
   it("says a group came back with nothing, in the group's own words", async () => {
@@ -525,10 +523,7 @@ describe('which group stands where', () => {
 
   it('draws a group that came back with nothing at the foot', async () => {
     mountPalette({
-      groups: [
-        { id: 'names', title: 'Names', items: [], silence: 'Nothing' },
-        SECTIONS[1]!,
-      ],
+      groups: [{ id: 'names', title: 'Names', items: [], silence: 'Nothing' }, SECTIONS[1]!],
     })
     await settle()
 
@@ -537,10 +532,7 @@ describe('which group stands where', () => {
 
   it('lights the first item there is, wherever its group was offered', async () => {
     mountPalette({
-      groups: [
-        { id: 'names', title: 'Names', items: [], silence: 'Nothing' },
-        SECTIONS[1]!,
-      ],
+      groups: [{ id: 'names', title: 'Names', items: [], silence: 'Nothing' }, SECTIONS[1]!],
     })
     await settle()
 
@@ -651,13 +643,9 @@ describe('the action panel', () => {
       'Rename',
       'Move to trash',
     ])
-    expect(actions().map((row) => getSpokenKey(row.querySelector('[data-actions="hint"]')))).toEqual([
-      'Return',
-      'Shift Return',
-      '',
-      '',
-      '',
-    ])
+    expect(
+      actions().map((row) => getSpokenKey(row.querySelector('[data-actions="hint"]'))),
+    ).toEqual(['Return', 'Shift Return', '', '', ''])
   })
 
   it('opens on the same chord held with the other key', async () => {
@@ -858,7 +846,9 @@ describe('the action panel', () => {
         {
           id: 'names',
           title: 'Names',
-          items: [{ id: 'entropy', title: 'Entropy', actions: [{ id: 'travel', text: 'Show in plex' }] }],
+          items: [
+            { id: 'entropy', title: 'Entropy', actions: [{ id: 'travel', text: 'Show in plex' }] },
+          ],
         },
       ],
     })

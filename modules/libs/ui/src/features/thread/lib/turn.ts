@@ -76,5 +76,3 @@ export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] =>
  */
 export const writeCharCount = (count: number): string =>
   count <= 0 ? '' : `${groupDigits(count)} characters`
-
-

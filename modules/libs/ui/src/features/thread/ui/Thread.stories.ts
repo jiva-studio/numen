@@ -5,7 +5,15 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import Thread from './Thread.vue'
 import type { Turn } from '../lib/turn'
-import { ARABIC, DEVANAGARI, LINK, LONG, MULTILINE, RUSSIAN, UNBREAKABLE } from '@/shared/fixtures/prose'
+import {
+  ARABIC,
+  DEVANAGARI,
+  LINK,
+  LONG,
+  MULTILINE,
+  RUSSIAN,
+  UNBREAKABLE,
+} from '@/shared/fixtures/prose'
 
 const meta = {
   title: 'Chat/Thread',
@@ -36,15 +44,17 @@ const createAsked = (id: string, text: string, state?: Turn['state']): Turn =>
 const createAnswered = (id: string, text: string, state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'answered', text } : { id, voice: 'answered', text, state }
 
-const renderThread = (turns: readonly Turn[]): Render => () => ({
-  components: { Thread },
-  setup: () => ({ turns }),
-  template: `
+const renderThread =
+  (turns: readonly Turn[]): Render =>
+  () => ({
+    components: { Thread },
+    setup: () => ({ turns }),
+    template: `
     <div class="numen h-[460px] w-[420px] max-w-[calc(100vw-2rem)] rounded-panel border border-rule bg-surface px-4 py-3">
       <Thread :turns="turns" class="h-full" />
     </div>
   `,
-})
+  })
 
 /** Nothing said yet. */
 export const Silent: Story = { render: renderThread([]) }
@@ -119,7 +129,10 @@ export const OwnTurn: Story = {
   render: () => ({
     components: { Thread },
     setup: () => ({
-      turns: [createAsked('1', 'Show me the note.'), createAnswered('2', 'entropy.md')] as readonly Turn[],
+      turns: [
+        createAsked('1', 'Show me the note.'),
+        createAnswered('2', 'entropy.md'),
+      ] as readonly Turn[],
     }),
     template: `
       <div class="numen h-[300px] w-[420px] rounded-panel border border-rule bg-surface px-4 py-3">

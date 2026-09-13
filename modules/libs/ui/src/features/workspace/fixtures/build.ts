@@ -55,7 +55,10 @@ export const deep = (): Workspace =>
       stack('a', 'one'),
       split('down', [
         stack('b', 'two'),
-        split('across', [stack('c', 'three'), split('again', [stack('d', 'four'), stack('e', 'five')])]),
+        split('across', [
+          stack('c', 'three'),
+          split('again', [stack('d', 'four'), stack('e', 'five')]),
+        ]),
       ]),
     ]),
   )

@@ -73,7 +73,11 @@ export interface HeatmapMetrics {
  * room. What is left over is spread between the cells, which keeps the grid
  * flush to both edges.
  */
-export function measureGrid(metrics: HeatmapMetrics): { columns: number; cell: number; gap: number } {
+export function measureGrid(metrics: HeatmapMetrics): {
+  columns: number
+  cell: number
+  gap: number
+} {
   const cell = Math.max(1, metrics.cell)
   const gap = Math.max(0, metrics.gap)
   const step = cell + gap
@@ -189,4 +193,3 @@ export function getWeight(did: number): Day['weight'] {
   if (did < 50) return 3
   return 4
 }
-

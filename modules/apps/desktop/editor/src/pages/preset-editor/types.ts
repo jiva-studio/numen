@@ -4,14 +4,7 @@
 import type { Ref } from 'vue'
 import type { StopReason } from '@numen/protocol'
 import type { Field } from './lib/fields'
-import type {
-  Curve,
-  Goal,
-  Load,
-  PresetCounts,
-  Settings,
-  SettingsBounds,
-} from '@/entities/deck'
+import type { Curve, Goal, Load, PresetCounts, Settings, SettingsBounds } from '@/entities/deck'
 
 export type {
   Goal,

@@ -198,9 +198,13 @@ export const ADayReviewed: Story = {
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
     await expect(said.querySelector('[data-day-summary="day"]')?.textContent).toBe(TODAY)
-    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe('26 answered')
+    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
+      '26 answered',
+    )
 
-    const four = [...said.querySelectorAll('[data-day-summary="four"] li')].map((one) => one.textContent)
+    const four = [...said.querySelectorAll('[data-day-summary="four"] li')].map(
+      (one) => one.textContent,
+    )
     await expect(four).toEqual(['Again2', 'Hard3', 'Good18', 'Easy3'])
 
     const came = said.querySelector('[data-day-summary="came"]') as HTMLElement
@@ -227,7 +231,9 @@ export const ADayOfNewCards: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe('12 answered')
+    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
+      '12 answered',
+    )
     await expect(said.querySelectorAll('[data-day-summary="four"] li')).toHaveLength(3)
     await expect(said.querySelector('[data-day-summary="came"]')).toBeNull()
   },
@@ -239,7 +245,9 @@ export const ADayOfNothing: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe('Nothing answered')
+    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
+      'Nothing answered',
+    )
     await expect(said.querySelector('[data-day-summary="four"]')).toBeNull()
     await expect(said.querySelector('[data-day-summary="came"]')).toBeNull()
   },

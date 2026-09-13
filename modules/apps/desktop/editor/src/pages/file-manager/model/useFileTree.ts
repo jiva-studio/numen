@@ -125,7 +125,9 @@ export function useFileTree(core: Folders): FileTree {
     }
     const named = [...paths, ...renames.flatMap((one) => [one.from, one.to])]
     if (named.length === 0) return void (await refresh())
-    const folders = new Set(named.map(getDrawnInFolder).filter((one): one is string => one !== null))
+    const folders = new Set(
+      named.map(getDrawnInFolder).filter((one): one is string => one !== null),
+    )
     await Promise.all([...folders].map(loadFolder))
   }
 

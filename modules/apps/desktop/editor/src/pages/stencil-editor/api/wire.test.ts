@@ -224,7 +224,11 @@ describe('renaming a field', () => {
   it('counts the cards it reached and names the decks it did not', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(
-      getRenameAnswer({ decks: ['Words.md'], cards: 3, notWritten: [{ path: 'Old.md', text: '' }] }),
+      getRenameAnswer({
+        decks: ['Words.md'],
+        cards: 3,
+        notWritten: [{ path: 'Old.md', text: '' }],
+      }),
     )
     const { wire, said } = wireOver(cards)
     const changed = vi.fn()

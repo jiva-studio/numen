@@ -67,7 +67,9 @@ export const live = ViewPlugin.fromClass(
 
     constructor(view: EditorView) {
       this.span = getDrawnRange(view)
-      this.decorations = this.span ? marks(view.state, this.span.from, this.span.to) : Decoration.none
+      this.decorations = this.span
+        ? marks(view.state, this.span.from, this.span.to)
+        : Decoration.none
     }
 
     update(update: ViewUpdate) {

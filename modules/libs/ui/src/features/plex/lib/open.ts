@@ -86,8 +86,7 @@ const LINES = 1
 const WINDOWS = 2
 
 /** The furthest the window on the parts may be scrolled down, counted in parts. */
-export const furthest = (hung: HungParts): number =>
-  Math.max(0, hung.parts.length - hung.shown)
+export const furthest = (hung: HungParts): number => Math.max(0, hung.parts.length - hung.shown)
 
 /**
  * What a node hangs at a moment of the opening.

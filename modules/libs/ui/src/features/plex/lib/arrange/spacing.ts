@@ -31,10 +31,7 @@ const HALVINGS = 8
  * inside the window. It is asked, not worked out here, so a placement of any
  * shape is measured by the arrangement it produces.
  */
-export function spacingFor(
-  options: PlexOptions,
-  canFit: (spacing: Spacing) => boolean,
-): Spacing {
+export function spacingFor(options: PlexOptions, canFit: (spacing: Spacing) => boolean): Spacing {
   const set = spacingAsSet(options)
   if (!options.viewport || options.spread <= 1 || !canFit(set)) return set
 

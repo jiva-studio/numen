@@ -200,7 +200,13 @@ describe('what a preset comes to over the range of its goal', () => {
 
     expect(curve.at.map((one) => one.learns)).toEqual([30, undefined])
     expect(curve.at[0]?.backlog).toEqual([4, 2])
-    expect(curve).toMatchObject({ goal: 'minutes', decks: 2, cards: 400, overdue: 12, honest: true })
+    expect(curve).toMatchObject({
+      goal: 'minutes',
+      decks: 2,
+      cards: 400,
+      overdue: 12,
+      honest: true,
+    })
   })
 
   it('stands nowhere where the answer suggests no place', async () => {

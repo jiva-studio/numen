@@ -66,12 +66,7 @@ const getFocusNode = (focus: GetNeighbourhoodResponse['focus']): PlexNode => ({
  * A parent and a jump run into the focus, and a child runs out of it. A
  * relationship both notes named carries an arrow at the end away from the focus.
  */
-const getEdge = (
-  id: string,
-  focus: string,
-  seat: PlexRelatedSeat,
-  note: RelatedNote,
-): PlexEdge => {
+const getEdge = (id: string, focus: string, seat: PlexRelatedSeat, note: RelatedNote): PlexEdge => {
   const line = note.label ? { label: note.label } : {}
   const getArrow = (end: EdgeArrow) => (note.mutual ? { arrow: end } : {})
   if (seat === 'child') return { from: focus, to: id, ...line, ...getArrow('to') }

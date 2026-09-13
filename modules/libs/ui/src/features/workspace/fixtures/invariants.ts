@@ -22,7 +22,8 @@ export function getFaults(workspace: Workspace): readonly string[] {
 
     const total = node.sizes.reduce((sum, size) => sum + size, 0)
     if (Math.abs(total - 1) > 1e-9) faults.push(`shares of ${node.id} come to ${total}`)
-    if (node.sizes.some((size) => !(size > 0))) faults.push(`branch ${node.id} gives a child nothing`)
+    if (node.sizes.some((size) => !(size > 0)))
+      faults.push(`branch ${node.id} gives a child nothing`)
 
     node.children.forEach(walk)
   }

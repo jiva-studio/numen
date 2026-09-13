@@ -78,4 +78,3 @@ describe('the layout the window opens with', () => {
     expect(panesOf(layout.root).find((one) => one.id === 'main')?.tabs).toStrictEqual(['plex:one'])
   })
 })
-

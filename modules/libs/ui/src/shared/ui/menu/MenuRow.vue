@@ -37,18 +37,17 @@ const row = useTemplateRef<HTMLElement>('row')
 const focus = (): void => row.value?.focus()
 
 defineExpose({ focus })
-
 </script>
 
 <template>
-  <p v-if="named" class="menu__group-name px-2 py-1 text-hushed" aria-hidden="true">
+  <p v-if="named" class="menu__group-name text-hushed px-2 py-1" aria-hidden="true">
     {{ item.group }}
   </p>
   <hr v-else-if="item.rule" class="menu__rule" role="separator" />
 
   <button
     ref="row"
-    class="menu__item flex w-full items-center rounded-node px-2 py-1.5 text-left"
+    class="menu__item rounded-node flex w-full items-center px-2 py-1.5 text-left"
     type="button"
     :role="current === null ? 'menuitem' : 'menuitemradio'"
     :aria-checked="current === null ? undefined : item.id === current"

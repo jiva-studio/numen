@@ -8,12 +8,17 @@ describe('an error code', () => {
   it.each(ErrorCodeSchema.values.map((value) => [value.name, value.number] as const))(
     'has words of its own for %s',
     (name, number) => {
-      expect(formatErrorCodeMessage(number as ProtoErrorCode), `${name} is drawn as nothing`).toMatch(/\S/)
+      expect(
+        formatErrorCodeMessage(number as ProtoErrorCode),
+        `${name} is drawn as nothing`,
+      ).toMatch(/\S/)
     },
   )
 
   it('says none of them the same way as another', () => {
-    const said = ErrorCodeSchema.values.map((value) => formatErrorCodeMessage(value.number as ProtoErrorCode))
+    const said = ErrorCodeSchema.values.map((value) =>
+      formatErrorCodeMessage(value.number as ProtoErrorCode),
+    )
     expect(new Set(said).size).toBe(said.length)
   })
 

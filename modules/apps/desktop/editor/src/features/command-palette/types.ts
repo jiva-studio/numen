@@ -30,14 +30,7 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'vault'
  * `choosing` offers a list the window holds already.
  */
 export type Step =
-  | 'commands'
-  | 'naming'
-  | 'address'
-  | 'picking'
-  | 'vaults'
-  | 'choosing'
-  | 'asking'
-  | 'exactly'
+  'commands' | 'naming' | 'address' | 'picking' | 'vaults' | 'choosing' | 'asking' | 'exactly'
 
 /** What a command wants before it can happen, which is the step that asks. */
 export type PromptStep = Exclude<Step, 'commands'>

@@ -172,15 +172,7 @@ describe('the commands as they open', () => {
         'parts',
         'settings',
       ],
-      vault: [
-        'first',
-        'goto',
-        'openVault',
-        'newVault',
-        'renameVault',
-        'forgetVault',
-        'eraseVault',
-      ],
+      vault: ['first', 'goto', 'openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
     })
   })
 
@@ -461,7 +453,11 @@ describe('removing a note', () => {
 
     commands.startCommand('remove', front())
 
-    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['note', 'window', 'vault'])
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
+      'note',
+      'window',
+      'vault',
+    ])
   })
 })
 
@@ -604,10 +600,12 @@ describe('the runs over the file in front', () => {
     runs.cannotRun('proofread')
     runs.cannotRun('deleteText')
 
-    expect(getItemIds(createPalette(recording, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
-    expect(getItemIds(createPalette(scanned, [], {}, undefined, runs).commands.groups).file).toStrictEqual([
-      'recognise',
-    ])
+    expect(
+      getItemIds(createPalette(recording, [], {}, undefined, runs).commands.groups).file,
+    ).toBeUndefined()
+    expect(
+      getItemIds(createPalette(scanned, [], {}, undefined, runs).commands.groups).file,
+    ).toStrictEqual(['recognise'])
   })
 
   // A run is offered on what has been made from the file and not on its kind.
@@ -625,7 +623,9 @@ describe('the runs over the file in front', () => {
     ] as const) {
       const { commands } = createPalette({ ...scanned, made: { ocr: made } })
 
-      expect(getItemIds(commands.groups).file, made).toStrictEqual(offered ? ['recognise'] : undefined)
+      expect(getItemIds(commands.groups).file, made).toStrictEqual(
+        offered ? ['recognise'] : undefined,
+      )
     }
   })
 
@@ -638,13 +638,21 @@ describe('the runs over the file in front', () => {
   // There is nothing to put right until a model has transcribed something, and
   // nothing to take away until it has.
   it('offers a transcript to be put right once one stands, and not before', () => {
-    expect(getItemIds(createPalette({ ...recording, made: { transcript: 'none' } }).commands.groups).file)
-      .toStrictEqual(['transcribe'])
-    expect(getItemIds(createPalette({ ...recording, made: { transcript: 'done' } }).commands.groups).file)
-      .toStrictEqual(['proofread', 'deleteText'])
     expect(
-      getItemIds(createPalette({ ...recording, made: { transcript: 'done', 'transcript.corrected': 'done' } }).commands.groups)
+      getItemIds(createPalette({ ...recording, made: { transcript: 'none' } }).commands.groups)
         .file,
+    ).toStrictEqual(['transcribe'])
+    expect(
+      getItemIds(createPalette({ ...recording, made: { transcript: 'done' } }).commands.groups)
+        .file,
+    ).toStrictEqual(['proofread', 'deleteText'])
+    expect(
+      getItemIds(
+        createPalette({
+          ...recording,
+          made: { transcript: 'done', 'transcript.corrected': 'done' },
+        }).commands.groups,
+      ).file,
     ).toStrictEqual(['deleteText'])
   })
 
@@ -667,7 +675,9 @@ describe('the runs over the file in front', () => {
     runs.cannotRun('proofread')
     runs.cannotRun('deleteText')
 
-    expect(getItemIds(createPalette(recording, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
+    expect(
+      getItemIds(createPalette(recording, [], {}, undefined, runs).commands.groups).file,
+    ).toBeUndefined()
     expect(getItemIds(createPalette(recording).commands.groups).file).toStrictEqual([
       'transcribe',
       'proofread',
@@ -924,7 +934,11 @@ describe('leaving a step', () => {
     commands.leaveStep()
 
     expect(commands.open.value).toBe(true)
-    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['note', 'window', 'vault'])
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
+      'note',
+      'window',
+      'vault',
+    ])
   })
 
   it('puts the commands away from the commands themselves', () => {
@@ -1009,7 +1023,10 @@ describe('a command that asks for a vault', () => {
 
     await settle()
 
-    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['physics', 'heat'])
+    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual([
+      'physics',
+      'heat',
+    ])
     expect(commands.groups.value[0]?.items[1]?.detail).toBe('/vaults/Heat')
   })
 

@@ -116,11 +116,10 @@ watch(
  * What did not fit, as `[seat, count]` pairs rather than a sentence — the
  * words belong to whoever renders the plex, through the `overflow` slot.
  */
-const overflow = computed(
-  () =>
-    (Object.entries(frame.value.overflow) as [PlexRelatedSeat, number][]).filter(
-      ([, count]) => count > 0,
-    ),
+const overflow = computed(() =>
+  (Object.entries(frame.value.overflow) as [PlexRelatedSeat, number][]).filter(
+    ([, count]) => count > 0,
+  ),
 )
 
 const frameStyle = computed(() => ({
@@ -135,12 +134,7 @@ defineExpose({
 </script>
 
 <template>
-  <div
-    ref="frame"
-    class="plex-frame numen"
-    :data-moving="moving || undefined"
-    :style="frameStyle"
-  >
+  <div ref="frame" class="plex-frame numen" :data-moving="moving || undefined" :style="frameStyle">
     <PlexView
       ref="view"
       :frame="frame"

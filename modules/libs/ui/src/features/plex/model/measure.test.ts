@@ -241,7 +241,7 @@ describe('what a label needs', () => {
 })
 
 describe('a theme changed under a plex already standing', () => {
-  const scoped = <T,>(run: () => T): { value: T; stop: () => void } => {
+  const scoped = <T>(run: () => T): { value: T; stop: () => void } => {
     const scope = effectScope()
     return { value: scope.run(run)!, stop: () => scope.stop() }
   }

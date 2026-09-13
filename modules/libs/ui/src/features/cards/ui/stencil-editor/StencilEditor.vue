@@ -100,13 +100,19 @@ const drawn = computed(() => faceRows(props.faces, asked.value, sample.value))
 const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
 
 const addFace = (): void => {
-  emit('add-face', getFreeName(props.faces.map((each) => each.name), props.words.faceStem))
+  emit(
+    'add-face',
+    getFreeName(
+      props.faces.map((each) => each.name),
+      props.words.faceStem,
+    ),
+  )
 }
 </script>
 
 <template>
   <div
-    class="stencil numen bg-surface font-sans text-base text-ink"
+    class="stencil numen bg-surface text-ink font-sans text-base"
     role="group"
     :aria-label="name"
   >
@@ -126,9 +132,9 @@ const addFace = (): void => {
       @dragover="hoverFace(null, $event)"
       @drop="dropFace"
     >
-      <h2 class="stencil__heading caps-numen m-0 text-small text-hushed">{{ words.faces }}</h2>
+      <h2 class="stencil__heading caps-numen text-small text-hushed m-0">{{ words.faces }}</h2>
 
-      <p v-if="!drawn.length" class="stencil__silence caps-numen m-0 text-small text-hushed">
+      <p v-if="!drawn.length" class="stencil__silence caps-numen text-small text-hushed m-0">
         {{ words.noFaces }}
       </p>
 

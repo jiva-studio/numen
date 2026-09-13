@@ -130,9 +130,7 @@ describe('asking for a node on its own', () => {
     const node = plex.get('[aria-label^="A node"]')
 
     node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
-    node.element.dispatchEvent(
-      pointer('pointerup', 600 + APART + 1, 400, { pointerType: 'touch' }),
-    )
+    node.element.dispatchEvent(pointer('pointerup', 600 + APART + 1, 400, { pointerType: 'touch' }))
     await plex.vm.$nextTick()
 
     expect(plex.emitted('show')).toBeUndefined()

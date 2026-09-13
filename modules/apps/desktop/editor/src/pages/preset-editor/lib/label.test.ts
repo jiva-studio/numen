@@ -115,7 +115,12 @@ describe('the bubble over the knob', () => {
 
     expect(callout.under).toBe(false)
     expect(callout.box).toStrictEqual(
-      box(WIDE / 2 - CALLOUT_WIDE / 2, 120 - CALLOUT_GAP - CALLOUT_HIGH, CALLOUT_WIDE, CALLOUT_HIGH),
+      box(
+        WIDE / 2 - CALLOUT_WIDE / 2,
+        120 - CALLOUT_GAP - CALLOUT_HIGH,
+        CALLOUT_WIDE,
+        CALLOUT_HIGH,
+      ),
     )
   })
 
@@ -185,7 +190,10 @@ describe('the names of the marks that fit', () => {
   })
 
   it('keeps two names at the same place where their heights stand clear', () => {
-    const names = labelsOf([mark('first', 200, 60), mark('second', 200, 60 + LIFT + AXIS_HIGH)], null)
+    const names = labelsOf(
+      [mark('first', 200, 60), mark('second', 200, 60 + LIFT + AXIS_HIGH)],
+      null,
+    )
 
     expect(names.map((one) => one.key)).toStrictEqual(['first', 'second'])
   })
@@ -246,7 +254,13 @@ describe('the numbers read off the picture’s edges', () => {
   })
 
   it('drops the number a mark stands on', () => {
-    const numbers = heightsOf({ least: 0, most: 10 }, clear, [{ x: LEFT, y: TOP }], null, formatValue)
+    const numbers = heightsOf(
+      { least: 0, most: 10 },
+      clear,
+      [{ x: LEFT, y: TOP }],
+      null,
+      formatValue,
+    )
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['0'])
   })

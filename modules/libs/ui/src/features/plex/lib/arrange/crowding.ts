@@ -58,7 +58,5 @@ export function measureCrowding(options: PlexOptions, counts: SeatCounts): PlexO
 /** Whether the window holds every node of every seat. */
 function canSeatAll(options: PlexOptions, counts: SeatCounts): boolean {
   const limits = limitsFor(options, counts)
-  return RELATED_SEATS.every(
-    (seat) => limits[seat].perLine * limits[seat].lines >= counts[seat],
-  )
+  return RELATED_SEATS.every((seat) => limits[seat].perLine * limits[seat].lines >= counts[seat])
 }

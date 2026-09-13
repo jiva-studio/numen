@@ -155,10 +155,7 @@ const handleKey = (event: KeyboardEvent): boolean => {
   if (!way || props.pages.length === 0) return false
 
   const last = props.pages.length - 1
-  const to =
-    way === 'first' ? 0
-    : way === 'last' ? last
-    : props.at + (way === 'next' ? 1 : -1)
+  const to = way === 'first' ? 0 : way === 'last' ? last : props.at + (way === 'next' ? 1 : -1)
 
   if (to < 0 || to > last) return false
   emit('go', to)
@@ -178,7 +175,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="reader numen relative h-full min-h-0 font-sans text-base text-ink">
+  <div class="reader numen text-ink relative h-full min-h-0 font-sans text-base">
     <div
       ref="area"
       class="reader__viewport h-full overflow-auto overscroll-x-contain"
@@ -193,11 +190,7 @@ defineExpose({
       @pointercancel="letGo"
       @wheel="onWheel"
     >
-      <div
-        v-if="pages.length > 0"
-        class="reader__row relative"
-        :style="rowStyle"
-      >
+      <div v-if="pages.length > 0" class="reader__row relative" :style="rowStyle">
         <Sheet
           v-for="page in shown"
           :key="page"
@@ -210,7 +203,7 @@ defineExpose({
           :style="boxOf(page)"
         />
       </div>
-      <p v-else class="grid h-full place-items-center text-small text-hushed">
+      <p v-else class="text-small text-hushed grid h-full place-items-center">
         <slot name="silence" />
       </p>
     </div>

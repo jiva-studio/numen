@@ -74,7 +74,9 @@ const segments = (canvas: HTMLElement): readonly HTMLElement[] =>
   Array.from(canvas.querySelectorAll<HTMLElement>('[role="radio"]'))
 
 const getChosen = (canvas: HTMLElement): string | undefined =>
-  segments(canvas).find((one) => one.getAttribute('aria-checked') === 'true')?.textContent?.trim()
+  segments(canvas)
+    .find((one) => one.getAttribute('aria-checked') === 'true')
+    ?.textContent?.trim()
 
 /**
  * One press of an arrow key: the choice follows the keyboard while the key is
@@ -102,8 +104,7 @@ export const Four: Story = {
 /** Words far longer than a segment is drawn for. */
 export const FarTooLong: Story = {
   args: {
-    words:
-      'As small as it will go\nSomewhere between the two of them\nAs large as the room allows',
+    words: 'As small as it will go\nSomewhere between the two of them\nAs large as the room allows',
     chosen: 'somewhere-between-the-two-of-them',
     width: '24rem',
   },
@@ -169,9 +170,11 @@ export const AValueNotAmongThem: Story = {
   args: { chosen: 'something-else' },
   play: async ({ canvasElement }) => {
     expect(getChosen(canvasElement)).toBeUndefined()
-    expect(
-      segments(canvasElement).map((one) => one.getAttribute('aria-checked')),
-    ).toEqual(['false', 'false', 'false'])
+    expect(segments(canvasElement).map((one) => one.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'false',
+      'false',
+    ])
 
     await userEvent.tab()
     expect(document.activeElement).toBe(segments(canvasElement)[0])

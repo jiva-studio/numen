@@ -66,7 +66,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
 
 <template>
   <div
-    class="composer numen rounded-field border border-panel-rule bg-panel shadow-panel backdrop-blur-panel font-sans text-base text-ink"
+    class="composer numen rounded-field border-panel-rule bg-panel shadow-panel backdrop-blur-panel text-ink border font-sans text-base"
   >
     <!-- The field, a copy of what is in it, and the words standing in for what
          is not typed, all in one grid cell. The copy is what has a height, so

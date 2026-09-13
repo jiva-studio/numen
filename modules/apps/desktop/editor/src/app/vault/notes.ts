@@ -2,7 +2,15 @@
  * Note domain methods for the window core.
  */
 import { notes } from '@/shared/clients'
-import { mapBaseline, mapLink, mapMoveResult, mapNeighbourhood, mapNoteResult, run, writes } from './words'
+import {
+  mapBaseline,
+  mapLink,
+  mapMoveResult,
+  mapNeighbourhood,
+  mapNoteResult,
+  run,
+  writes,
+} from './words'
 import { errorIn, staleIn } from '@/shared/answers'
 import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
@@ -37,7 +45,9 @@ export const notesCore: NoteOperations = {
   },
   read: async (path) => mapNoteResult(await notes.readNote({ path })),
   write: async (path, body, seen) =>
-    mapNoteResult(await notes.writeNote({ path, body, ...(seen ? { seen: mapBaseline(seen) } : {}) })),
+    mapNoteResult(
+      await notes.writeNote({ path, body, ...(seen ? { seen: mapBaseline(seen) } : {}) }),
+    ),
   create: async (note) => {
     const answer = await notes.createNote({
       title: note.title,

@@ -96,7 +96,9 @@ describe('making a note in a seat of another', () => {
 
   it('creates an untitled note in a folder with links', async () => {
     const { core, asked, write } = fake()
-    const made = await noteCreator(core, write).createUntitled('physics', [{ to: 'Ontology.md', role: 'parent' }])
+    const made = await noteCreator(core, write).createUntitled('physics', [
+      { to: 'Ontology.md', role: 'parent' },
+    ])
 
     expect(made).toStrictEqual({ path: `physics/${UNTITLED}.md`, title: UNTITLED })
     expect(asked).toStrictEqual([
@@ -132,11 +134,19 @@ describe('making a note in a seat of another', () => {
 describe('making a note under a name a person gave it', () => {
   it('files it beside the note it was made from, in that note’s seat', async () => {
     const { core, asked, write } = fake()
-    const made = await noteCreator(core, write).createWithTitle('Entropy', 'physics/Ontology.md', 'child')
+    const made = await noteCreator(core, write).createWithTitle(
+      'Entropy',
+      'physics/Ontology.md',
+      'child',
+    )
 
     expect(made).toStrictEqual({ path: 'physics/Entropy.md', title: 'Entropy' })
     expect(asked).toStrictEqual([
-      { title: 'Entropy', folder: 'physics', links: [{ to: 'physics/Ontology.md', role: 'parent' }] },
+      {
+        title: 'Entropy',
+        folder: 'physics',
+        links: [{ to: 'physics/Ontology.md', role: 'parent' }],
+      },
     ])
   })
 

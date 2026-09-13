@@ -79,7 +79,9 @@ async function mountWindow() {
  */
 async function mountWindowWithPalette() {
   const window = mount(App, {
-    global: { stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Book: book, Tree: true } },
+    global: {
+      stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Book: book, Tree: true },
+    },
     attachTo: document.body,
   })
   windows.push(window)
@@ -117,8 +119,10 @@ const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
 
 /** What each tab of the window is called, in the order the strip has them. */
 const tabsOf = (window: VueWrapper): readonly { id: string; title: string }[] =>
-  (window.findComponent(WorkspaceLayout).props('tabs') as readonly { id: string; title: string }[]) ??
-  []
+  (window.findComponent(WorkspaceLayout).props('tabs') as readonly {
+    id: string
+    title: string
+  }[]) ?? []
 
 export {
   requests,

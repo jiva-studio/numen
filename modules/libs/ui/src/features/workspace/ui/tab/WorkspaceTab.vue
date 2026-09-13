@@ -56,7 +56,7 @@ const onPointerDown = (event: PointerEvent) => {
 <template>
   <div
     ref="root"
-    class="tab numen flex min-w-0 shrink items-center font-sans text-small text-hushed"
+    class="tab numen text-small text-hushed flex min-w-0 shrink items-center font-sans"
     role="tab"
     :aria-selected="showing"
     :tabindex="showing ? 0 : -1"
@@ -79,7 +79,7 @@ const onPointerDown = (event: PointerEvent) => {
     <!-- Reached from the tab it stands on, and only from that one: a strip
          walked with the arrows is one stop, not two for every tab in it. -->
     <button
-      class="tab__close shrink-0 rounded-pill"
+      class="tab__close rounded-pill shrink-0"
       type="button"
       :tabindex="showing ? 0 : -1"
       :aria-label="`Close ${title}`"

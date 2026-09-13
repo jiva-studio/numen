@@ -9,21 +9,8 @@ import { computed, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import type { Clock } from '@/shared/lib/clock'
 import { usePressDrag } from '@/shared/ui/drag-preview'
 import type { Position } from '@/shared/lib/geometry'
-import {
-  caretAt,
-  edgeOf,
-  overlayFor,
-  rectOf,
-  sideAt,
-  slotAt,
-  type TabLanding,
-} from '../lib/drop'
-import {
-  dropOnEdge,
-  dropTab,
-  moveTabWithin,
-  type NodeIdFactory,
-} from '../lib/edit'
+import { caretAt, edgeOf, overlayFor, rectOf, sideAt, slotAt, type TabLanding } from '../lib/drop'
+import { dropOnEdge, dropTab, moveTabWithin, type NodeIdFactory } from '../lib/edit'
 import type { NodeId, Tab, TabId, Workspace } from '../lib/node'
 import type { Rect } from '../lib/rect'
 
@@ -65,7 +52,12 @@ export interface TabDragState {
 }
 
 export function useTabDrag(options: TabDragOptions): TabDragState {
-  const { dragging, at: landing, position, lift } = usePressDrag<Drag, TabLanding>({
+  const {
+    dragging,
+    at: landing,
+    position,
+    lift,
+  } = usePressDrag<Drag, TabLanding>({
     getThreshold: options.getThreshold,
     getClock: options.getClock,
     getLandingAt: (_item, at) => landingAt(at.x, at.y),
@@ -87,7 +79,9 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   function press(tab: TabId, at: PointerEvent): void {
     if (at.button !== 0) return
 
-    const holder = document.elementFromPoint(at.clientX, at.clientY)?.closest('[data-workspace-pane]')
+    const holder = document
+      .elementFromPoint(at.clientX, at.clientY)
+      ?.closest('[data-workspace-pane]')
     const from = holder?.getAttribute('data-workspace-pane') ?? options.workspace.value.focus
 
     lift({ tab, from }, at)
@@ -103,7 +97,11 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     }
 
     if (at.kind === 'pane') {
-      workspace.value = dropTab(workspace.value, { tab: drag.tab, onto: at.pane, side: at.side }, ids)
+      workspace.value = dropTab(
+        workspace.value,
+        { tab: drag.tab, onto: at.pane, side: at.side },
+        ids,
+      )
       return
     }
 

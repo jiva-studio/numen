@@ -13,9 +13,7 @@ describe('the address under a position in the text', () => {
   })
 
   it('is what a note in brackets points at', () => {
-    expect(getAddressIn('under [[Thermodynamics]] it sits', 'Thermo')).toBe(
-      'name://Thermodynamics',
-    )
+    expect(getAddressIn('under [[Thermodynamics]] it sits', 'Thermo')).toBe('name://Thermodynamics')
   })
 
   it('is the identifier where the brackets hold one', () => {

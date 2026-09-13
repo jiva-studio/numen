@@ -20,7 +20,9 @@ describe('a row divides the width', () => {
 
 describe('depth turns the orientation', () => {
   const boxes = arrangeWorkspace(
-    workspaceOf(split('root', [stack('a', 'one'), split('down', [stack('b', 'two'), stack('c', 'three')])])),
+    workspaceOf(
+      split('root', [stack('a', 'one'), split('down', [stack('b', 'two'), stack('c', 'three')])]),
+    ),
     SCREEN,
   )
 

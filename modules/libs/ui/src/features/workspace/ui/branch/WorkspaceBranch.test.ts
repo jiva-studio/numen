@@ -109,7 +109,9 @@ describe('what a branch draws', () => {
     expect(one.held.findAllComponents(WorkspaceBranch)).toHaveLength(1)
     expect(panes(one)).toHaveLength(3)
     expect(
-      one.held.findAll('[data-workspace-pane]').map((each) => each.attributes('data-workspace-pane')),
+      one.held
+        .findAll('[data-workspace-pane]')
+        .map((each) => each.attributes('data-workspace-pane')),
     ).toStrictEqual(['left', 'upper', 'lower'])
   })
 

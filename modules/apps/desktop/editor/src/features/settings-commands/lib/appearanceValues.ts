@@ -17,7 +17,12 @@ export const INTERFACE_SCALE = 'interfaceScale'
 export const TEXT_SCALE = 'textScale'
 
 /** The commands whose step offers a list the appearance holds. */
-export const APPEARANCE_COMMANDS: readonly string[] = [APPEARANCE, MODE, INTERFACE_SCALE, TEXT_SCALE]
+export const APPEARANCE_COMMANDS: readonly string[] = [
+  APPEARANCE,
+  MODE,
+  INTERFACE_SCALE,
+  TEXT_SCALE,
+]
 
 /** Which of the two sizes a row is one of. */
 export type ScaleKind = typeof INTERFACE_SCALE | typeof TEXT_SCALE
@@ -62,10 +67,10 @@ export const sizeOf = (item: string): ScaleChoice | null => {
 }
 
 /** What is said of one of the two sizes. */
-export const its = <T,>(both: Scales<T>, which: ScaleKind): T => both[which]
+export const its = <T>(both: Scales<T>, which: ScaleKind): T => both[which]
 
 /** The pair with what is said of one of the two put in its place. */
-export const onto = <T,>(both: Scales<T>, which: ScaleKind, one: T): Scales<T> => ({
+export const onto = <T>(both: Scales<T>, which: ScaleKind, one: T): Scales<T> => ({
   ...both,
   [which]: one,
 })

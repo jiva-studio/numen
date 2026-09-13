@@ -33,9 +33,7 @@ describe('the settings under the control', () => {
     const { tab, done } = mountPresetTab({ goal: 'retention' }, { goal: 'retention' })
     expect(tab.text()).toContain(words.fieldName('counts'))
 
-    const unit = tab
-      .findAll('button')
-      .find((one) => one.text() === words.budgetUnitName('shows'))
+    const unit = tab.findAll('button').find((one) => one.text() === words.budgetUnitName('shows'))
     await unit?.trigger('click')
     expect(done).toStrictEqual(['type counts shows', 'settle'])
   })
@@ -82,7 +80,10 @@ describe('the settings under the control', () => {
   // Under a goal of retention the target is the knob's own value and the rule
   // reads it too. It is one key, so the receipt draws it once.
   it('draws the target once where the goal and the rule both read it', () => {
-    const { tab } = mountPresetTab({ goal: 'retention' }, { goal: 'retention', learned: 'retention' })
+    const { tab } = mountPresetTab(
+      { goal: 'retention' },
+      { goal: 'retention', learned: 'retention' },
+    )
     const named = rows(tab).filter((one) => one === words.fieldName('retention'))
     expect(named).toHaveLength(1)
   })
@@ -317,7 +318,10 @@ describe('the row a chance of recall is typed into', () => {
   })
 
   it('hands a percentage back as the share the settings hold', async () => {
-    const { tab, done } = mountPresetTab({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
+    const { tab, done } = mountPresetTab(
+      { goal: 'retention' },
+      { goal: 'retention', retention: 0.87 },
+    )
     const field = tab
       .findAll('[role="spinbutton"]')
       .find((one) => one.attributes('aria-valuemax') === '99')

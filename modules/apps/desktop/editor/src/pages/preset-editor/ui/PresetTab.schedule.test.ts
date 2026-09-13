@@ -38,13 +38,17 @@ describe('a preset that schedules nothing', () => {
 
   it('says why, in the words that verdict has', () => {
     for (const why of STOPPING) {
-      expect(mountStoppedTab(why).get('[data-preset="stopped"]').text(), `${why}`).toBe(words.stopped(why))
+      expect(mountStoppedTab(why).get('[data-preset="stopped"]').text(), `${why}`).toBe(
+        words.stopped(why),
+      )
     }
   })
 
   it('says nothing at all of a preset that schedules', () => {
     expect(mountStoppedTab(StopReason.NOTHING).findAll('[data-preset="stopped"]')).toHaveLength(0)
-    expect(mountStoppedTab(StopReason.UNSPECIFIED).findAll('[data-preset="stopped"]')).toHaveLength(0)
+    expect(mountStoppedTab(StopReason.UNSPECIFIED).findAll('[data-preset="stopped"]')).toHaveLength(
+      0,
+    )
   })
 
   // A goal of a date reading no day, and a day of the week carrying none of the
@@ -71,7 +75,7 @@ describe('a goal with nothing to work on', () => {
     decks: 0,
     cards: 0,
     overdue: 0,
-  unbegun: 0,
+    unbegun: 0,
   }
 
   it('says no deck points here, and draws no curve and no figures of nothing', () => {
@@ -184,4 +188,3 @@ describe('the settings the chosen goal schedules by', () => {
     expect(done).toStrictEqual(['type byDate 2026-10-09', 'settle'])
   })
 })
-

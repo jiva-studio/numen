@@ -42,13 +42,7 @@ export interface ArrangeInput {
 
 export function arrangePlex(
   neighbourhood: PlexNeighbourhood,
-  {
-    options,
-    placement = rowsAndColumns,
-    measure,
-    measureLabel,
-    labelDepth,
-  }: ArrangeInput = {},
+  { options, placement = rowsAndColumns, measure, measureLabel, labelDepth }: ArrangeInput = {},
 ): PlexFrame {
   const asked = resolveOptions(options)
   const focusNode = assertNeighbourhood(neighbourhood)
@@ -84,11 +78,7 @@ export function arrangePlex(
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const routing = routingFor(resolved, measureLabel, labelDepth)
-  const edges = settleTitles(
-    routeEdges(neighbourhood.edges, byId, routing),
-    nodes,
-    routing,
-  )
+  const edges = settleTitles(routeEdges(neighbourhood.edges, byId, routing), nodes, routing)
 
   return { nodes, edges, extent: extentOf(nodes), overflow }
 }
@@ -103,8 +93,7 @@ function widthsFor(
   measure: ((node: PlexNode) => number) | undefined,
 ): Widths {
   return (node) => {
-    const widest =
-      node.seat === 'focus' ? options.focusSize.width : options.nodeSize.width
+    const widest = node.seat === 'focus' ? options.focusSize.width : options.nodeSize.width
     if (!measure) return widest
     return Math.min(widest, Math.max(options.minWidth, measure(node)))
   }

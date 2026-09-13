@@ -72,8 +72,11 @@ const WHY: Record<StopReason, (settings: Settings | null, today: string) => stri
  * The verdict is the core's: it is what the session hands its cards out by. Two
  * of the reasons name a day, and the settings carry the one a date aimed at.
  */
-export const getStoppedWords = (why: StopReason, settings: Settings | null, today: string): string =>
-  WHY[why](settings, today)
+export const getStoppedWords = (
+  why: StopReason,
+  settings: Settings | null,
+  today: string,
+): string => WHY[why](settings, today)
 
 /**
  * What the goal of a preset comes to, in the few words a person reads at a

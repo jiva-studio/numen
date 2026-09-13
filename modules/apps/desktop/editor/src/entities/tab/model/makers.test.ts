@@ -46,7 +46,12 @@ const MAKING = { errors: ERRORS }
 describe('a deck, a stencil or a preset made', () => {
   it('is asked of the vault under the name and the folder it was given', async () => {
     const vault = maker()
-    const made = createFileCreators(vault, fileOpeners({ fileKinds: async () => new Map() }), MAKING, () => {})
+    const made = createFileCreators(
+      vault,
+      fileOpeners({ fileKinds: async () => new Map() }),
+      MAKING,
+      () => {},
+    )
 
     await made.createFile('deck', 'zoology', 'Animals')
     await made.createFile('stencil', 'zoology', 'Words', ['Front'])
@@ -60,7 +65,12 @@ describe('a deck, a stencil or a preset made', () => {
   })
 
   it('answers where the vault filed it', async () => {
-    const made = createFileCreators(maker(), fileOpeners({ fileKinds: async () => new Map() }), MAKING, () => {})
+    const made = createFileCreators(
+      maker(),
+      fileOpeners({ fileKinds: async () => new Map() }),
+      MAKING,
+      () => {},
+    )
 
     expect(await made.createFile('deck', 'zoology', 'Animals')).toBe('zoology/Animals.md')
   })
@@ -95,7 +105,12 @@ describe('a deck, a stencil or a preset made', () => {
 
   it('says a vault that could not be asked at all', async () => {
     const told = writer()
-    const made = createFileCreators(maker(null, true), fileOpeners({ fileKinds: async () => new Map() }), MAKING, told.write)
+    const made = createFileCreators(
+      maker(null, true),
+      fileOpeners({ fileKinds: async () => new Map() }),
+      MAKING,
+      told.write,
+    )
 
     expect(await made.createDeck('zoology', 'Animals')).toBe('')
     expect(told.said.join(' ')).not.toContain('the vault is not there')

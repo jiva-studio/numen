@@ -54,12 +54,7 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
     :width="box.width"
     :height="node.height"
   />
-  <foreignObject
-    :x="startsAt"
-    :y="-node.height / 2"
-    :width="box.width"
-    :height="node.height"
-  >
+  <foreignObject :x="startsAt" :y="-node.height / 2" :width="box.width" :height="node.height">
     <div class="plex__title" :class="{ 'caps-numen': ghost }">
       <!-- Whatever stands for the thing a node addresses. The plex has no
            way to know what that is, so it is handed one. -->

@@ -24,10 +24,33 @@ const SEED = 0x9e3779b9
  * next as text. They are written out here, and never read out of the measuring.
  */
 const RUNS = [
-  'script', 'style', 'iframe', 'object', 'embed', 'noscript', 'template',
-  'svg', 'math', 'link', 'meta', 'base', 'form', 'input', 'button',
-  'textarea', 'select', 'option', 'frame', 'frameset', 'applet', 'canvas',
-  'audio', 'video', 'source', 'track', 'portal',
+  'script',
+  'style',
+  'iframe',
+  'object',
+  'embed',
+  'noscript',
+  'template',
+  'svg',
+  'math',
+  'link',
+  'meta',
+  'base',
+  'form',
+  'input',
+  'button',
+  'textarea',
+  'select',
+  'option',
+  'frame',
+  'frameset',
+  'applet',
+  'canvas',
+  'audio',
+  'video',
+  'source',
+  'track',
+  'portal',
 ]
 
 /** The schemes a link may lead to. */
@@ -35,8 +58,15 @@ const LEADS = ['http:', 'https:', 'mailto:', 'tel:']
 
 /** The declarations a card may be styled with. */
 const STYLED = [
-  'color', 'background-color', 'font-family', 'font-size', 'font-style',
-  'font-weight', 'text-align', 'text-decoration', 'vertical-align',
+  'color',
+  'background-color',
+  'font-family',
+  'font-size',
+  'font-style',
+  'font-weight',
+  'text-align',
+  'text-decoration',
+  'vertical-align',
 ]
 
 /** An image standing in the text itself, which is the one src that may name a scheme. */
@@ -68,36 +98,82 @@ const KNOWN = [
 
 /** The pieces an arrangement is assembled out of. */
 const PIECES = [
-  '<p>', '</p>', '<div>', '</div>', '<span>', '</span>', '<b>', '</b>',
-  '<a href="{url}">', '</a>', '<img src="{url}">', '<img src="{url}" {on}>',
-  '<{runs}>', '</{runs}>', '<{runs}/{on}>', '<{runs} {on}>',
-  '<p {on}>', '<p title="{quote}">', '<p style="{style}">',
-  '<!--', '-->', '<!--[if IE]>', '<![endif]-->', '<![CDATA[', ']]>',
-  '<', '>', '"', "'", '/', '=', '\t', '\n', ' ', '',
-  'a word', '&lt;', '&#x6a;', '&nope;',
+  '<p>',
+  '</p>',
+  '<div>',
+  '</div>',
+  '<span>',
+  '</span>',
+  '<b>',
+  '</b>',
+  '<a href="{url}">',
+  '</a>',
+  '<img src="{url}">',
+  '<img src="{url}" {on}>',
+  '<{runs}>',
+  '</{runs}>',
+  '<{runs}/{on}>',
+  '<{runs} {on}>',
+  '<p {on}>',
+  '<p title="{quote}">',
+  '<p style="{style}">',
+  '<!--',
+  '-->',
+  '<!--[if IE]>',
+  '<![endif]-->',
+  '<![CDATA[',
+  ']]>',
+  '<',
+  '>',
+  '"',
+  "'",
+  '/',
+  '=',
+  '\t',
+  '\n',
+  ' ',
+  '',
+  'a word',
+  '&lt;',
+  '&#x6a;',
+  '&nope;',
 ]
 
 /** The addresses a link or a picture is pointed at. */
 const URLS = [
-  'https://example.org/a', 'llama.md', '#one', 'mailto:someone@example.org',
-  'javascript:window.ran=1', 'java\tscript:window.ran=1', ' javascript:alert(1)',
+  'https://example.org/a',
+  'llama.md',
+  '#one',
+  'mailto:someone@example.org',
+  'javascript:window.ran=1',
+  'java\tscript:window.ran=1',
+  ' javascript:alert(1)',
   'data:text/html;base64,PHNjcmlwdD53aW5kb3cucmFuPTE8L3NjcmlwdD4=',
-  'data:image/png;base64,iVBORw0KGgo=', '//tracker.example/pixel.png',
-  '\\\\tracker.example/pixel.png', 'vbscript:window.ran=1', '',
+  'data:image/png;base64,iVBORw0KGgo=',
+  '//tracker.example/pixel.png',
+  '\\\\tracker.example/pixel.png',
+  'vbscript:window.ran=1',
+  '',
 ]
 
 /** The handlers a tag is given, written the several ways they are written. */
 const HANDLERS = [
-  'onerror=window.ran=1', 'onload="window.ran = 1"', 'ONMOUSEOVER=window.ran=1',
-  'onbegin=window.ran=1', 'onfocus=window.ran=1 autofocus',
+  'onerror=window.ran=1',
+  'onload="window.ran = 1"',
+  'ONMOUSEOVER=window.ran=1',
+  'onbegin=window.ran=1',
+  'onfocus=window.ran=1 autofocus',
 ]
 
 /** The styles a tag is given. */
 const STYLES = [
-  'color: red', 'position: fixed; color: red',
+  'color: red',
+  'position: fixed; color: red',
   'background-color: url(https://example.org/x)',
-  'font-size: 2em; behavior: url(#x)', 'color: expression(window.ran = 1)',
-  'text-align: right', 'color: \\72 ed',
+  'font-size: 2em; behavior: url(#x)',
+  'color: expression(window.ran = 1)',
+  'text-align: right',
+  'color: \\72 ed',
 ]
 
 /** What a title carries, which one parser reads as text and the next as markup. */
@@ -127,7 +203,7 @@ const numbers = (from: number): (() => number) => {
 const createArrangement = (next: () => number, at: number): string => {
   if (at < KNOWN.length) return KNOWN[at]!
 
-  const among = <T,>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
+  const among = <T>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
   const pieces = 1 + Math.floor(next() * 12)
   let out = ''
   for (let i = 0; i < pieces; i++) {

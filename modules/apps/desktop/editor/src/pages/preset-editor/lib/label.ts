@@ -54,7 +54,8 @@ export const clearAt = (
   places: readonly Position[],
   marks: readonly (Position | null)[],
 ): boolean => {
-  const isNear = (at: Position): boolean => at.x <= LEFT + AXIS_WIDE && Math.abs(at.y - y) <= AXIS_HIGH
+  const isNear = (at: Position): boolean =>
+    at.x <= LEFT + AXIS_WIDE && Math.abs(at.y - y) <= AXIS_HIGH
   if (marks.some((at) => at !== null && isNear(at))) return false
   return !places.some(isNear)
 }
@@ -202,9 +203,7 @@ export const heightsOf = (
   // over the line it names. That line is the foot, which is where a run with no
   // height is drawn.
   if (most === least) {
-    return [
-      { at: getAxisNumber(FOOT, '0'), box: getAxisNumberBox(FOOT, '0'), text: getText(most) },
-    ]
+    return [{ at: getAxisNumber(FOOT, '0'), box: getAxisNumberBox(FOOT, '0'), text: getText(most) }]
   }
   return [...measureHeightAt(TOP, '-100%', most), ...measureHeightAt(FOOT, '0', least)]
 }

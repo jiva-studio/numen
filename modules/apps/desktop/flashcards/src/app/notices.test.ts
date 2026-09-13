@@ -34,12 +34,13 @@ describe('what the window has to say', () => {
   it('says a refusal without the wire it came over', () => {
     const one = useNotices()
     one.reportError(
-      new ConnectError('this preset schedules nothing today: it is paused', Code.FailedPrecondition),
+      new ConnectError(
+        'this preset schedules nothing today: it is paused',
+        Code.FailedPrecondition,
+      ),
     )
 
-    expect(one.notices.value[0]!.says).toBe(
-      'This preset schedules nothing today: it is paused.',
-    )
+    expect(one.notices.value[0]!.says).toBe('This preset schedules nothing today: it is paused.')
   })
 
   it('leaves a sentence that already ends where it ends', () => {

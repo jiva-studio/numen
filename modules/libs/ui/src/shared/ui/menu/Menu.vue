@@ -103,7 +103,11 @@ const measure = () => {
 
 const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
 
-const { here, holdRow, goTo, onKey } = useMenuKeys(() => props.items, menu, () => Date.now())
+const { here, holdRow, goTo, onKey } = useMenuKeys(
+  () => props.items,
+  menu,
+  () => Date.now(),
+)
 
 const choose = (item: MenuItem) => {
   if (item.disabled) return
@@ -167,7 +171,7 @@ onBeforeUnmount(leave)
     <div
       v-if="open"
       ref="menu"
-      class="menu numen panel-numen flex flex-col p-1.5 font-sans text-base text-ink"
+      class="menu numen panel-numen text-ink flex flex-col p-1.5 font-sans text-base"
       role="menu"
       tabindex="-1"
       :aria-label="name"
@@ -188,7 +192,7 @@ onBeforeUnmount(leave)
         <slot name="icon" :id="item.id" />
       </MenuRow>
 
-      <p v-if="!items.length" class="menu__silence px-2 py-1.5 text-hushed">
+      <p v-if="!items.length" class="menu__silence text-hushed px-2 py-1.5">
         <slot name="silence">Nothing to do</slot>
       </p>
     </div>

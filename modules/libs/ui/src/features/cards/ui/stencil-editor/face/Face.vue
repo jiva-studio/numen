@@ -98,7 +98,7 @@ const put = async (field: string): Promise<void> => {
 </script>
 
 <template>
-  <article class="face flex flex-col rounded-node bg-raised" :data-face="face.id">
+  <article class="face rounded-node bg-raised flex flex-col" :data-face="face.id">
     <CardHeader
       :drag="`${words.drag}: ${face.name}`"
       @dragstart="emit('lift', $event)"

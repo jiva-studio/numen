@@ -34,11 +34,7 @@ export const DEFAULT_DROP: DropOptions = { share: 0.2, limit: 96 }
  * goes to whichever edge it is deeper inside. A place in no zone lands in the
  * middle, and the tab joins the stack.
  */
-export function sideAt(
-  at: Position,
-  box: Rect,
-  options: Partial<DropOptions> = {},
-): Side {
+export function sideAt(at: Position, box: Rect, options: Partial<DropOptions> = {}): Side {
   const { share, limit } = { ...DEFAULT_DROP, ...options }
   const { x, y } = getPlaceInBox(at, box)
 

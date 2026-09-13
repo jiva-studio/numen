@@ -46,14 +46,7 @@ export const rowsAndColumns: Placement = {
 
     for (const [seat, nodes] of rows) {
       placed.push(
-        ...line(
-          nodes,
-          options.direction[seat],
-          options,
-          limits[seat],
-          width,
-          focus.height / 2,
-        ),
+        ...line(nodes, options.direction[seat], options, limits[seat], width, focus.height / 2),
       )
     }
 
@@ -72,9 +65,7 @@ export const rowsAndColumns: Placement = {
     const clearance = widestWithin(rowsPlaced, reach)
 
     for (const [seat, nodes] of columns) {
-      placed.push(
-        ...line(nodes, options.direction[seat], options, limits[seat], width, clearance),
-      )
+      placed.push(...line(nodes, options.direction[seat], options, limits[seat], width, clearance))
     }
 
     return placed.slice(1)

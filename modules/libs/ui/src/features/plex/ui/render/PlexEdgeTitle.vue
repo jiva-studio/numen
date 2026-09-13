@@ -30,10 +30,11 @@ const LAYERS = ['halo', 'letters'] as const
       :opacity="line.edge.opacity"
       text-anchor="middle"
       dominant-baseline="middle"
-    ><textPath
-      :href="`#${line.titlePath}`"
-      :startOffset="line.titleAt"
-    >{{ line.edge.words }}</textPath></text>
+    >
+      <textPath :href="`#${line.titlePath}`" :startOffset="line.titleAt">
+        {{ line.edge.words }}
+      </textPath>
+    </text>
   </g>
 </template>
 

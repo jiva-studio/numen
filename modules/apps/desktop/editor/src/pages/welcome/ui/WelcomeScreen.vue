@@ -70,8 +70,8 @@ const welcoming = computed(
 // --- Handlers ---
 function onRun(id: string) {
   if (id !== COMMANDS) return props.runCommand(id, props.getTarget())
-  ;props.search.setOpen(false)
-  ;props.commands.setOpen(true)
+  props.search.setOpen(false)
+  props.commands.setOpen(true)
 }
 
 function onOpen(id: string) {

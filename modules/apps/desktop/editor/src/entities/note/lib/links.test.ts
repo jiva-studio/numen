@@ -56,8 +56,8 @@ describe('the targets a piece of prose links to', () => {
   })
 
   it('are what has been written so far while an answer is still arriving', () => {
-    expect(extractLinkTargets('He went to [Remuna](numen:book.pdf?start=100&length=20) and then')).toHaveLength(
-      1,
-    )
+    expect(
+      extractLinkTargets('He went to [Remuna](numen:book.pdf?start=100&length=20) and then'),
+    ).toHaveLength(1)
   })
 })

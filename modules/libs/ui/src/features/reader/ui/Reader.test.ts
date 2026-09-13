@@ -116,8 +116,8 @@ describe('the page it says it stands on', () => {
     const held = await reader(1000, 800)
     await held.setProps({ at: 4 })
 
-    await scrollTo(held,0)
-    await scrollTo(held,200)
+    await scrollTo(held, 0)
+    await scrollTo(held, 200)
 
     expect(getTurns(held)).toHaveLength(0)
   })
@@ -125,7 +125,7 @@ describe('the page it says it stands on', () => {
   it('says where the row stands once the hand has it', async () => {
     const held = await reader(1000, 800)
 
-    await scrollTo(held,4000)
+    await scrollTo(held, 4000)
 
     expect(getTurns(held).length).toBeGreaterThan(0)
     expect(getTurns(held).at(-1)).toBeGreaterThan(0)

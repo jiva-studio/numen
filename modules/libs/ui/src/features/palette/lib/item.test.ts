@@ -44,7 +44,11 @@ const item = (id: string, more: Partial<PaletteItem> = {}): PaletteItem => ({
   ...more,
 })
 
-const group = (id: string, items: PaletteItem[], more: Partial<PaletteGroup> = {}): PaletteGroup => ({
+const group = (
+  id: string,
+  items: PaletteItem[],
+  more: Partial<PaletteGroup> = {},
+): PaletteGroup => ({
   id,
   title: id,
   items,
@@ -59,12 +63,7 @@ const SECTIONS: PaletteGroup[] = [
 
 describe('one list drawn in groups', () => {
   it('numbers the items across the groups in the order they are drawn', () => {
-    expect(flatten(SECTIONS).map((place) => place.item.id)).toEqual([
-      'one',
-      'two',
-      'three',
-      'four',
-    ])
+    expect(flatten(SECTIONS).map((place) => place.item.id)).toEqual(['one', 'two', 'three', 'four'])
   })
 
   it('gives the drawing the same numbers the keyboard counts in', () => {
@@ -391,10 +390,12 @@ describe('marking why an item is here', () => {
   })
 
   it('draws two runs that do not touch as two', () => {
-    expect(partsOf('abcdef', [
-      { from: 0, to: 1 },
-      { from: 4, to: 5 },
-    ])).toEqual([
+    expect(
+      partsOf('abcdef', [
+        { from: 0, to: 1 },
+        { from: 4, to: 5 },
+      ]),
+    ).toEqual([
       { text: 'a', hit: true },
       { text: 'bcd', hit: false },
       { text: 'e', hit: true },
@@ -403,10 +404,12 @@ describe('marking why an item is here', () => {
   })
 
   it('reads the runs in whatever order they arrive', () => {
-    expect(partsOf('abcdef', [
-      { from: 4, to: 5 },
-      { from: 0, to: 1 },
-    ])).toEqual([
+    expect(
+      partsOf('abcdef', [
+        { from: 4, to: 5 },
+        { from: 0, to: 1 },
+      ]),
+    ).toEqual([
       { text: 'a', hit: true },
       { text: 'bcd', hit: false },
       { text: 'e', hit: true },
@@ -415,17 +418,21 @@ describe('marking why an item is here', () => {
   })
 
   it('folds runs that overlap or touch into one', () => {
-    expect(partsOf('abcdef', [
-      { from: 0, to: 3 },
-      { from: 2, to: 4 },
-    ])).toEqual([
+    expect(
+      partsOf('abcdef', [
+        { from: 0, to: 3 },
+        { from: 2, to: 4 },
+      ]),
+    ).toEqual([
       { text: 'abcd', hit: true },
       { text: 'ef', hit: false },
     ])
-    expect(partsOf('abcdef', [
-      { from: 0, to: 2 },
-      { from: 2, to: 4 },
-    ])).toEqual([
+    expect(
+      partsOf('abcdef', [
+        { from: 0, to: 2 },
+        { from: 2, to: 4 },
+      ]),
+    ).toEqual([
       { text: 'abcd', hit: true },
       { text: 'ef', hit: false },
     ])

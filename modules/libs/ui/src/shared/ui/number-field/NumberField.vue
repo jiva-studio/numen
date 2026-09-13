@@ -75,9 +75,7 @@ const refused = computed(() => {
 const saying = computed(() => (refused.value ? typed.value.trim() : undefined))
 
 /** The number in force, which is a number the bounds hold. */
-const inForce = computed(() =>
-  model.value === null ? null : clamp(model.value, bounds.value),
-)
+const inForce = computed(() => (model.value === null ? null : clamp(model.value, bounds.value)))
 
 /** A number the bounds no longer hold is brought in, and stands there written out. */
 watch(
@@ -171,11 +169,11 @@ defineExpose({
     :aria-invalid="refused || undefined"
     :class="
       cn(
-        'w-full rounded-tight border border-field-rule bg-field',
+        'rounded-tight border-field-rule bg-field w-full border',
         // One row tall, which every control standing on a row is drawn at.
         'h-action px-2',
-        'font-sans text-base leading-none text-ink tabular-nums placeholder:text-hushed',
-        'outline-none ring-numen',
+        'text-ink placeholder:text-hushed font-sans text-base leading-none tabular-nums',
+        'ring-numen outline-none',
         'aria-invalid:border-alarm aria-invalid:text-alarm',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,

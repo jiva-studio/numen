@@ -121,9 +121,11 @@ describe('a row too long for one line', () => {
 
   it('shares its nodes out evenly, every line within one of every other', () => {
     const row = of(place({ child: createNodes('child', 5) }, 3), 'child')
-    const counts = [...new Map<number, number>(
-      row.map((node) => [node.y, row.filter((each) => each.y === node.y).length]),
-    ).values()]
+    const counts = [
+      ...new Map<number, number>(
+        row.map((node) => [node.y, row.filter((each) => each.y === node.y).length]),
+      ).values(),
+    ]
 
     expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1)
   })

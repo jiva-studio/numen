@@ -17,9 +17,20 @@ const props = defineProps<{
 
 // --- State ---
 const {
-  line, short, knob, suggested, isDated, least, most, value,
+  line,
+  short,
+  knob,
+  suggested,
+  isDated,
+  least,
+  most,
+  value,
   setPicture,
-  onPointerDown, onPointerMove, onPointerUp, onKeyDown, onKeyUp,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onKeyDown,
+  onKeyUp,
 } = props.state
 
 // --- Handlers ---
@@ -29,7 +40,11 @@ const {
 
 <template>
   <svg
-    :ref="(el: unknown) => { setPicture(el as SVGSVGElement | null) }"
+    :ref="
+      (el: unknown) => {
+        setPicture(el as SVGSVGElement | null)
+      }
+    "
     class="curve-slider__picture"
     data-control="picture"
     role="slider"
@@ -57,8 +72,22 @@ const {
       :y2="yOfGridline(share)"
     />
 
-    <line class="curve-slider__rule" data-control="rule" :x1="LEFT" :x2="LEFT" :y1="TOP" :y2="FOOT" />
-    <line class="curve-slider__rule" data-control="rule" :x1="LEFT" :x2="RIGHT" :y1="FOOT" :y2="FOOT" />
+    <line
+      class="curve-slider__rule"
+      data-control="rule"
+      :x1="LEFT"
+      :x2="LEFT"
+      :y1="TOP"
+      :y2="FOOT"
+    />
+    <line
+      class="curve-slider__rule"
+      data-control="rule"
+      :x1="LEFT"
+      :x2="RIGHT"
+      :y1="FOOT"
+      :y2="FOOT"
+    />
 
     <path class="curve-slider__line" data-control="line" :d="line" />
     <path v-if="short" class="curve-slider__short" :d="short" />

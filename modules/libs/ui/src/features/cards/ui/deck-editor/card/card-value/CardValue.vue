@@ -48,13 +48,9 @@ const emit = defineEmits<{
 
     <!-- No stencil names a slot for this value, so what was written is read
          where it would be typed. -->
-    <p
-      v-else
-      class="card__wrote"
-      role="group"
-      :aria-label="value.field"
-      :data-wrote="value.field"
-    >{{ value.text }}</p>
+    <p v-else class="card__wrote" role="group" :aria-label="value.field" :data-wrote="value.field">
+      {{ value.text }}
+    </p>
 
     <ErrorMessage
       v-if="wrong.length"

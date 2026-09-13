@@ -177,10 +177,7 @@ describe('what a goal comes to in words', () => {
   })
 
   it('says the day, and how far off it is', () => {
-    const said = getGoalWords(
-      settings({ goal: 'date', byDate: '2026-09-30' }),
-      '2026-09-12',
-    )
+    const said = getGoalWords(settings({ goal: 'date', byDate: '2026-09-30' }), '2026-09-12')
     expect(said).toMatch(/^18 days to /)
   })
 })
@@ -599,7 +596,17 @@ describe('which preset schedules each deck', () => {
     await one.read(
       vault(
         [{ deck: 'decks/Words.md', due: 20, new: 2 }],
-        [presetDue({ cards: 40, owed: 22, answered: 6, took: 12, new: 0, reviews: 0, minutes: 20 })],
+        [
+          presetDue({
+            cards: 40,
+            owed: 22,
+            answered: 6,
+            took: 12,
+            new: 0,
+            reviews: 0,
+            minutes: 20,
+          }),
+        ],
       ),
       '2026-09-05',
     )
@@ -618,7 +625,10 @@ describe('which preset schedules each deck', () => {
       presets: { getVaultDeckPreset: async () => ({ error: ErrorCode.MISSING }) },
     })
 
-    await one.read(vault([{ deck: 'decks/Words.md', due: 20, new: 2 }], [presetDue()]), '2026-09-05')
+    await one.read(
+      vault([{ deck: 'decks/Words.md', due: 20, new: 2 }], [presetDue()]),
+      '2026-09-05',
+    )
 
     expect(one.presets.value[0]?.wrong).toBe('that note is not in the vault')
   })

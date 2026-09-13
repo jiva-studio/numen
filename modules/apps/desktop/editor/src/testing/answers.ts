@@ -173,7 +173,11 @@ export const maker = (() => {
 })()
 
 /** One name the vault answers a search with, of a note of some kind. */
-export const nameAnswer = (path: string, title: string, type: 'note' | 'deck' | 'stencil' = 'note') => ({
+export const nameAnswer = (
+  path: string,
+  title: string,
+  type: 'note' | 'deck' | 'stencil' = 'note',
+) => ({
   path,
   title,
   heading: '',

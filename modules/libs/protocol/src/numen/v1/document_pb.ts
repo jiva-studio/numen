@@ -9,41 +9,46 @@
 // browser's own elements speak bytes and not this. What a model read off them
 // is OcrService.
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Fingerprint } from "./shared_pb.js";
-import { file_numen_v1_shared } from "./shared_pb.js";
-import type { Message } from "@bufbuild/protobuf";
+import type { GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
+import { fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
+import type { Fingerprint } from './shared_pb.js'
+import { file_numen_v1_shared } from './shared_pb.js'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file numen/v1/document.proto.
  */
-export const file_numen_v1_document: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoATJdCg9Eb2N1bWVudFNlcnZpY2USSgoLR2V0RG9jdW1lbnQSHC5udW1lbi52MS5HZXREb2N1bWVudFJlcXVlc3QaHS5udW1lbi52MS5HZXREb2N1bWVudFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+export const file_numen_v1_document: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoATJdCg9Eb2N1bWVudFNlcnZpY2USSgoLR2V0RG9jdW1lbnQSHC5udW1lbi52MS5HZXREb2N1bWVudFJlcXVlc3QaHS5udW1lbi52MS5HZXREb2N1bWVudFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM',
+    [file_numen_v1_shared],
+  )
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
  */
-export type GetDocumentRequest = Message<"numen.v1.GetDocumentRequest"> & {
+export type GetDocumentRequest = Message<'numen.v1.GetDocumentRequest'> & {
   /**
    * The file, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string;
-};
+  path: string
+}
 
 /**
  * Describes the message numen.v1.GetDocumentRequest.
  * Use `create(GetDocumentRequestSchema)` to create a new message.
  */
-export const GetDocumentRequestSchema: GenMessage<GetDocumentRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_document, 0);
+export const GetDocumentRequestSchema: GenMessage<GetDocumentRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 0)
 
 /**
  * @generated from message numen.v1.GetDocumentResponse
  */
-export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
+export type GetDocumentResponse = Message<'numen.v1.GetDocumentResponse'> & {
   /**
    * Every page of the document in order, each as its size. How many there are
    * is how many stand here. A page whose size could not be read stands at
@@ -51,7 +56,7 @@ export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
    *
    * @generated from field: repeated numen.v1.Page pages = 1;
    */
-  pages: Page[];
+  pages: Page[]
 
   /**
    * Which bytes these pages were read from. It stands in the address a page is
@@ -60,15 +65,16 @@ export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
    *
    * @generated from field: numen.v1.Fingerprint fingerprint = 2;
    */
-  fingerprint?: Fingerprint | undefined;
-};
+  fingerprint?: Fingerprint | undefined
+}
 
 /**
  * Describes the message numen.v1.GetDocumentResponse.
  * Use `create(GetDocumentResponseSchema)` to create a new message.
  */
-export const GetDocumentResponseSchema: GenMessage<GetDocumentResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_document, 1);
+export const GetDocumentResponseSchema: GenMessage<GetDocumentResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 1)
 
 /**
  * A Page is one page of the document, in the document's own units. A client
@@ -76,24 +82,23 @@ export const GetDocumentResponseSchema: GenMessage<GetDocumentResponse> = /*@__P
  *
  * @generated from message numen.v1.Page
  */
-export type Page = Message<"numen.v1.Page"> & {
+export type Page = Message<'numen.v1.Page'> & {
   /**
    * @generated from field: double width = 1;
    */
-  width: number;
+  width: number
 
   /**
    * @generated from field: double height = 2;
    */
-  height: number;
-};
+  height: number
+}
 
 /**
  * Describes the message numen.v1.Page.
  * Use `create(PageSchema)` to create a new message.
  */
-export const PageSchema: GenMessage<Page> = /*@__PURE__*/
-  messageDesc(file_numen_v1_document, 2);
+export const PageSchema: GenMessage<Page> = /*@__PURE__*/ messageDesc(file_numen_v1_document, 2)
 
 /**
  * DocumentService answers what a document is, for whatever opens one.
@@ -117,10 +122,8 @@ export const DocumentService: GenService<{
    * @generated from rpc numen.v1.DocumentService.GetDocument
    */
   getDocument: {
-    methodKind: "unary";
-    input: typeof GetDocumentRequestSchema;
-    output: typeof GetDocumentResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_numen_v1_document, 0);
-
+    methodKind: 'unary'
+    input: typeof GetDocumentRequestSchema
+    output: typeof GetDocumentResponseSchema
+  }
+}> = /*@__PURE__*/ serviceDesc(file_numen_v1_document, 0)

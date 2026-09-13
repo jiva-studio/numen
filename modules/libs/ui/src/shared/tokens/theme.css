@@ -73,7 +73,7 @@
 
 /* The surface a panel is: a tinted, blurred box lifted off the window. */
 @utility panel-numen {
-  @apply rounded-panel border border-panel-rule bg-panel shadow-panel backdrop-blur-panel;
+  @apply rounded-panel border-panel-rule bg-panel shadow-panel backdrop-blur-panel border;
 }
 
 /* The way a few words are set in capitals: tracked wider than a sentence, so

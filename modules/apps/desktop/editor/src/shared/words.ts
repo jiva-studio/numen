@@ -10,7 +10,6 @@ import { ERRORS } from './words/errors'
 
 export { ERRORS }
 
-
 export const WORDS = {
   /** What the corner says while something about the vault is wrong. */
   unwatched: 'not following the vault',

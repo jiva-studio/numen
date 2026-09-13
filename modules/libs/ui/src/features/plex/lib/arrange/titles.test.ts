@@ -45,10 +45,7 @@ interface Box {
 }
 
 const isOverlapping = (one: Box, other: Box): boolean =>
-  one.minX < other.maxX &&
-  other.minX < one.maxX &&
-  one.minY < other.maxY &&
-  other.minY < one.maxY
+  one.minX < other.maxX && other.minX < one.maxX && one.minY < other.maxY && other.minY < one.maxY
 
 /**
  * Where a title's words lie in the picture: the run of them along the line,
@@ -289,8 +286,6 @@ describe('a title finds room on its line', () => {
     const crowd = build('A node', { child: 5 })
     const frame = arrangePlex(crowd, { options: { viewport: VIEWPORT } })
 
-    expect(frame.edges.map((edge) => edge.wordsAt)).toStrictEqual(
-      frame.edges.map(() => 0.5),
-    )
+    expect(frame.edges.map((edge) => edge.wordsAt)).toStrictEqual(frame.edges.map(() => 0.5))
   })
 })

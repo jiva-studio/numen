@@ -61,8 +61,7 @@ const iconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills 
   block-size: 1.6em;
   min-inline-size: 1.6em;
   padding-inline: 0.45em;
-  border: var(--numen-stroke) solid
-    color-mix(in oklab, var(--numen-raised), var(--numen-ink) 25%);
+  border: var(--numen-stroke) solid color-mix(in oklab, var(--numen-raised), var(--numen-ink) 25%);
   border-radius: var(--cap-radius);
   background: var(--numen-raised);
   color: var(--numen-ink);

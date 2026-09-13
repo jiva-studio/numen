@@ -4,7 +4,10 @@ import { agentKind, core as agent, useAgentConversation, WORDS as talk } from '@
 import { CONVERSATION, generateId } from '@/entities/tab'
 import type { WindowKindsDeps } from './deps'
 
-export interface AgentKindDeps extends Pick<WindowKindsDeps, 'core' | 'tabOpeners' | 'held' | 'window'> {
+export interface AgentKindDeps extends Pick<
+  WindowKindsDeps,
+  'core' | 'tabOpeners' | 'held' | 'window'
+> {
   about: () => { readonly path: string; readonly title: string }
 }
 

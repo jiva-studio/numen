@@ -12,61 +12,66 @@
 // are at an address of their own, because a browser's own elements speak bytes
 // and not this.
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Fingerprint } from "./shared_pb.js";
-import { file_numen_v1_shared } from "./shared_pb.js";
-import type { Message } from "@bufbuild/protobuf";
+import type { GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
+import { fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
+import type { Fingerprint } from './shared_pb.js'
+import { file_numen_v1_shared } from './shared_pb.js'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file numen/v1/book.proto.
  */
-export const file_numen_v1_book: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9ib29rLnByb3RvEghudW1lbi52MSIeCg5HZXRCb29rUmVxdWVzdBIMCgRwYXRoGAEgASgJIoUCCg9HZXRCb29rUmVzcG9uc2USDQoFdGl0bGUYASABKAkSKgoJZG9jdW1lbnRzGAIgAygLMhcubnVtZW4udjEuU3BpbmVEb2N1bWVudBIhCgVwYXJ0cxgDIAMoCzISLm51bWVuLnYxLkJvb2tQYXJ0EiwKDXByaW50ZWRfcGFnZXMYBCADKAsyFS5udW1lbi52MS5QcmludGVkUGFnZRISCgpwYWdlX2NvdW50GAUgASgFEhIKCnRleHRfYnl0ZXMYBiABKAUSEgoKcGFnZV9ieXRlcxgHIAEoBRIqCgtmaW5nZXJwcmludBgIIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50ImoKFVJlYWRCb29rTWFya3VwUmVxdWVzdBIMCgRwYXRoGAEgASgJEhAKCGRvY3VtZW50GAIgASgJEigKBHNlZW4YAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuIigKFlJlYWRCb29rTWFya3VwUmVzcG9uc2USDgoGbWFya3VwGAEgASgJIj0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUyogEKC0Jvb2tTZXJ2aWNlEj4KB0dldEJvb2sSGC5udW1lbi52MS5HZXRCb29rUmVxdWVzdBoZLm51bWVuLnYxLkdldEJvb2tSZXNwb25zZRJTCg5SZWFkQm9va01hcmt1cBIfLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVxdWVzdBogLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+export const file_numen_v1_book: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChNudW1lbi92MS9ib29rLnByb3RvEghudW1lbi52MSIeCg5HZXRCb29rUmVxdWVzdBIMCgRwYXRoGAEgASgJIoUCCg9HZXRCb29rUmVzcG9uc2USDQoFdGl0bGUYASABKAkSKgoJZG9jdW1lbnRzGAIgAygLMhcubnVtZW4udjEuU3BpbmVEb2N1bWVudBIhCgVwYXJ0cxgDIAMoCzISLm51bWVuLnYxLkJvb2tQYXJ0EiwKDXByaW50ZWRfcGFnZXMYBCADKAsyFS5udW1lbi52MS5QcmludGVkUGFnZRISCgpwYWdlX2NvdW50GAUgASgFEhIKCnRleHRfYnl0ZXMYBiABKAUSEgoKcGFnZV9ieXRlcxgHIAEoBRIqCgtmaW5nZXJwcmludBgIIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50ImoKFVJlYWRCb29rTWFya3VwUmVxdWVzdBIMCgRwYXRoGAEgASgJEhAKCGRvY3VtZW50GAIgASgJEigKBHNlZW4YAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuIigKFlJlYWRCb29rTWFya3VwUmVzcG9uc2USDgoGbWFya3VwGAEgASgJIj0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUyogEKC0Jvb2tTZXJ2aWNlEj4KB0dldEJvb2sSGC5udW1lbi52MS5HZXRCb29rUmVxdWVzdBoZLm51bWVuLnYxLkdldEJvb2tSZXNwb25zZRJTCg5SZWFkQm9va01hcmt1cBIfLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVxdWVzdBogLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw',
+    [file_numen_v1_shared],
+  )
 
 /**
  * @generated from message numen.v1.GetBookRequest
  */
-export type GetBookRequest = Message<"numen.v1.GetBookRequest"> & {
+export type GetBookRequest = Message<'numen.v1.GetBookRequest'> & {
   /**
    * The file, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string;
-};
+  path: string
+}
 
 /**
  * Describes the message numen.v1.GetBookRequest.
  * Use `create(GetBookRequestSchema)` to create a new message.
  */
-export const GetBookRequestSchema: GenMessage<GetBookRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 0);
+export const GetBookRequestSchema: GenMessage<GetBookRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_book, 0)
 
 /**
  * @generated from message numen.v1.GetBookResponse
  */
-export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
+export type GetBookResponse = Message<'numen.v1.GetBookResponse'> & {
   /**
    * What the package document calls the book.
    *
    * @generated from field: string title = 1;
    */
-  title: string;
+  title: string
 
   /**
    * The documents of the spine, in reading order.
    *
    * @generated from field: repeated numen.v1.SpineDocument documents = 2;
    */
-  documents: SpineDocument[];
+  documents: SpineDocument[]
 
   /**
    * What the book names, ascending by offset.
    *
    * @generated from field: repeated numen.v1.BookPart parts = 3;
    */
-  parts: BookPart[];
+  parts: BookPart[]
 
   /**
    * The pages of the printed book this file was made from, ascending by
@@ -75,7 +80,7 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
    *
    * @generated from field: repeated numen.v1.PrintedPage printed_pages = 4;
    */
-  printedPages: PrintedPage[];
+  printedPages: PrintedPage[]
 
   /**
    * How many pages the book is read in. A book that reflows has none of its
@@ -83,7 +88,7 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
    *
    * @generated from field: int32 page_count = 5;
    */
-  pageCount: number;
+  pageCount: number
 
   /**
    * How many bytes the book's text is, and how many of them stand on one page.
@@ -95,12 +100,12 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
    *
    * @generated from field: int32 text_bytes = 6;
    */
-  textBytes: number;
+  textBytes: number
 
   /**
    * @generated from field: int32 page_bytes = 7;
    */
-  pageBytes: number;
+  pageBytes: number
 
   /**
    * Which bytes the book was read from. It stands in the ask for the markup of
@@ -109,33 +114,34 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
    *
    * @generated from field: numen.v1.Fingerprint fingerprint = 8;
    */
-  fingerprint?: Fingerprint | undefined;
-};
+  fingerprint?: Fingerprint | undefined
+}
 
 /**
  * Describes the message numen.v1.GetBookResponse.
  * Use `create(GetBookResponseSchema)` to create a new message.
  */
-export const GetBookResponseSchema: GenMessage<GetBookResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 1);
+export const GetBookResponseSchema: GenMessage<GetBookResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_book, 1)
 
 /**
  * @generated from message numen.v1.ReadBookMarkupRequest
  */
-export type ReadBookMarkupRequest = Message<"numen.v1.ReadBookMarkupRequest"> & {
+export type ReadBookMarkupRequest = Message<'numen.v1.ReadBookMarkupRequest'> & {
   /**
    * The file, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string;
+  path: string
 
   /**
    * The document of the spine, as the archive names it.
    *
    * @generated from field: string document = 2;
    */
-  document: string;
+  document: string
 
   /**
    * Which bytes the ask was given out for. A file that is other bytes now is
@@ -144,35 +150,37 @@ export type ReadBookMarkupRequest = Message<"numen.v1.ReadBookMarkupRequest"> & 
    *
    * @generated from field: optional numen.v1.Fingerprint seen = 3;
    */
-  seen?: Fingerprint | undefined;
-};
+  seen?: Fingerprint | undefined
+}
 
 /**
  * Describes the message numen.v1.ReadBookMarkupRequest.
  * Use `create(ReadBookMarkupRequestSchema)` to create a new message.
  */
-export const ReadBookMarkupRequestSchema: GenMessage<ReadBookMarkupRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 2);
+export const ReadBookMarkupRequestSchema: GenMessage<ReadBookMarkupRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_book, 2)
 
 /**
  * @generated from message numen.v1.ReadBookMarkupResponse
  */
-export type ReadBookMarkupResponse = Message<"numen.v1.ReadBookMarkupResponse"> & {
+export type ReadBookMarkupResponse = Message<'numen.v1.ReadBookMarkupResponse'> & {
   /**
    * The markup of the document, carrying the offsets the book's text stands
    * at.
    *
    * @generated from field: string markup = 1;
    */
-  markup: string;
-};
+  markup: string
+}
 
 /**
  * Describes the message numen.v1.ReadBookMarkupResponse.
  * Use `create(ReadBookMarkupResponseSchema)` to create a new message.
  */
-export const ReadBookMarkupResponseSchema: GenMessage<ReadBookMarkupResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 3);
+export const ReadBookMarkupResponseSchema: GenMessage<ReadBookMarkupResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_book, 3)
 
 /**
  * SpineDocument is one document of the book, and where its text stands in the
@@ -180,14 +188,14 @@ export const ReadBookMarkupResponseSchema: GenMessage<ReadBookMarkupResponse> = 
  *
  * @generated from message numen.v1.SpineDocument
  */
-export type SpineDocument = Message<"numen.v1.SpineDocument"> & {
+export type SpineDocument = Message<'numen.v1.SpineDocument'> & {
   /**
    * Path is the document's name inside the archive, which the markup of it is
    * asked for by.
    *
    * @generated from field: string path = 1;
    */
-  path: string;
+  path: string
 
   /**
    * Where the document's text begins in the book's text, and how many bytes of
@@ -195,36 +203,37 @@ export type SpineDocument = Message<"numen.v1.SpineDocument"> & {
    *
    * @generated from field: int32 offset = 2;
    */
-  offset: number;
+  offset: number
 
   /**
    * @generated from field: int32 length = 3;
    */
-  length: number;
-};
+  length: number
+}
 
 /**
  * Describes the message numen.v1.SpineDocument.
  * Use `create(SpineDocumentSchema)` to create a new message.
  */
-export const SpineDocumentSchema: GenMessage<SpineDocument> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 4);
+export const SpineDocumentSchema: GenMessage<SpineDocument> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_book, 4)
 
 /**
  * BookPart is a named division of the book, at the offset its text begins.
  *
  * @generated from message numen.v1.BookPart
  */
-export type BookPart = Message<"numen.v1.BookPart"> & {
+export type BookPart = Message<'numen.v1.BookPart'> & {
   /**
    * @generated from field: string title = 1;
    */
-  title: string;
+  title: string
 
   /**
    * @generated from field: int32 offset = 2;
    */
-  offset: number;
+  offset: number
 
   /**
    * Level is the depth of the heading the part came from, and zero for one the
@@ -232,39 +241,39 @@ export type BookPart = Message<"numen.v1.BookPart"> & {
    *
    * @generated from field: int32 level = 3;
    */
-  level: number;
-};
+  level: number
+}
 
 /**
  * Describes the message numen.v1.BookPart.
  * Use `create(BookPartSchema)` to create a new message.
  */
-export const BookPartSchema: GenMessage<BookPart> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 5);
+export const BookPartSchema: GenMessage<BookPart> = /*@__PURE__*/ messageDesc(file_numen_v1_book, 5)
 
 /**
  * PrintedPage is one page of the printed book, at the offset it starts.
  *
  * @generated from message numen.v1.PrintedPage
  */
-export type PrintedPage = Message<"numen.v1.PrintedPage"> & {
+export type PrintedPage = Message<'numen.v1.PrintedPage'> & {
   /**
    * @generated from field: string label = 1;
    */
-  label: string;
+  label: string
 
   /**
    * @generated from field: int32 offset = 2;
    */
-  offset: number;
-};
+  offset: number
+}
 
 /**
  * Describes the message numen.v1.PrintedPage.
  * Use `create(PrintedPageSchema)` to create a new message.
  */
-export const PrintedPageSchema: GenMessage<PrintedPage> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 6);
+export const PrintedPageSchema: GenMessage<PrintedPage> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_book, 6)
 
 /**
  * BookService answers what a book that reflows is, for whatever opens one.
@@ -281,10 +290,10 @@ export const BookService: GenService<{
    * @generated from rpc numen.v1.BookService.GetBook
    */
   getBook: {
-    methodKind: "unary";
-    input: typeof GetBookRequestSchema;
-    output: typeof GetBookResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof GetBookRequestSchema
+    output: typeof GetBookResponseSchema
+  }
   /**
    * ReadBookMarkup is one document of the book, as the markup a window sets a
    * page from. It answers while the file is still the bytes the ask names, so
@@ -293,10 +302,8 @@ export const BookService: GenService<{
    * @generated from rpc numen.v1.BookService.ReadBookMarkup
    */
   readBookMarkup: {
-    methodKind: "unary";
-    input: typeof ReadBookMarkupRequestSchema;
-    output: typeof ReadBookMarkupResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_numen_v1_book, 0);
-
+    methodKind: 'unary'
+    input: typeof ReadBookMarkupRequestSchema
+    output: typeof ReadBookMarkupResponseSchema
+  }
+}> = /*@__PURE__*/ serviceDesc(file_numen_v1_book, 0)

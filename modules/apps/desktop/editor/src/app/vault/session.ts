@@ -74,6 +74,10 @@ export const sessionCore: SessionCore = {
   },
   watchQuit: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
   reportFlush: async (token, owed) => {
-    await windowService.reportFlush({ window: WINDOW, token, result: flushResults[owed ?? 'nothing'] })
+    await windowService.reportFlush({
+      window: WINDOW,
+      token,
+      result: flushResults[owed ?? 'nothing'],
+    })
   },
 }

@@ -14,10 +14,7 @@ export interface Box {
 const RUN_SAMPLES = 8
 
 export const isOverlapping = (one: Box, other: Box): boolean =>
-  one.minX < other.maxX &&
-  other.minX < one.maxX &&
-  one.minY < other.maxY &&
-  other.minY < one.maxY
+  one.minX < other.maxX && other.minX < one.maxX && one.minY < other.maxY && other.minY < one.maxY
 
 export const boxOf = (node: PlacedNode, apart: number): Box => ({
   minX: node.x - node.width / 2 - apart,

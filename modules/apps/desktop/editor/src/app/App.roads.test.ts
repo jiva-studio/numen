@@ -10,7 +10,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import {
   Agent,
-
   Editor,
   openTabBeside,
   Palette,
@@ -106,9 +105,7 @@ describe('every road to a file', () => {
 
   /** A keystroke the window answers, which the palette and the commands are. */
   const pressKey = (key: string) =>
-    globalThis.dispatchEvent(
-      new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true }),
-    )
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true }))
 
   /** The search open, with words typed into it and the answers back. */
   const typeInSearch = async (window: VueWrapper, words: string) => {
@@ -152,15 +149,15 @@ describe('every road to a file', () => {
 
   for (const [name, road] of Object.entries(ROADS)) {
     it(`opens a deck in the editor of its cards, reached by ${name}`, async () => {
-      expect(await openBy(road,'Animals.md', 'deck')).toContain('deck')
+      expect(await openBy(road, 'Animals.md', 'deck')).toContain('deck')
     })
 
     it(`opens a stencil in the editor of its fields and faces, reached by ${name}`, async () => {
-      expect(await openBy(road,'Animal.md', 'stencil')).toContain('stencil')
+      expect(await openBy(road, 'Animal.md', 'stencil')).toContain('stencil')
     })
 
     it(`opens an ordinary note in the editor of its prose, reached by ${name}`, async () => {
-      const drew = await openBy(road,'Ants.md', 'note')
+      const drew = await openBy(road, 'Ants.md', 'note')
 
       expect(drew).toContain('note')
       expect(drew).not.toContain('deck')
@@ -170,7 +167,7 @@ describe('every road to a file', () => {
     // The vault is never asked about the book by anything but the window, and
     // the palette is told it turned up a note: the path alone has to be enough.
     it(`opens a book in the reader, reached by ${name}`, async () => {
-      const drew = await openBy(road,'Ants.epub', 'note')
+      const drew = await openBy(road, 'Ants.epub', 'note')
 
       expect(drew).toContain('book')
       expect(drew).not.toContain('note')
@@ -180,15 +177,17 @@ describe('every road to a file', () => {
     // one and leaves the keyboard behind is a book nobody can read: whatever
     // holds it reads the arrows for itself, and the tree walks its rows by them.
     it(`hands the book the keyboard, reached by ${name}`, async () => {
-      await openBy(road,'Ants.epub', 'note')
+      await openBy(road, 'Ants.epub', 'note')
 
       expect(document.activeElement?.className).toContain('book-tab')
     })
 
     it(`turns the book by the arrows, reached by ${name}`, async () => {
-      await openBy(road,'Ants.epub', 'note')
+      await openBy(road, 'Ants.epub', 'note')
 
-      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+      globalThis.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }),
+      )
 
       expect(requests.pressed).toStrictEqual(['ArrowRight'])
     })
@@ -241,7 +240,9 @@ describe('what the person has open, as whoever answers for them is told it', () 
 
     expect(front()?.kind).toBe('book')
     expect(front()?.path).toBe('Ants.epub')
-    expect(getLastReport()?.tabs.some((one) => one.kind === 'plex' && one.path === 'Root.md')).toBe(true)
+    expect(getLastReport()?.tabs.some((one) => one.kind === 'plex' && one.path === 'Root.md')).toBe(
+      true,
+    )
   })
 })
 
@@ -347,7 +348,9 @@ describe('a recording put in front', () => {
 
 /** The runs the palette offers over the file in front, in the order it draws them. */
 const runsOffered = async (window: VueWrapper): Promise<readonly string[]> => {
-  globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }))
+  globalThis.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }),
+  )
   await settle()
   const groups = window.findComponent(Palette).props('groups') as readonly {
     id: string
@@ -355,7 +358,6 @@ const runsOffered = async (window: VueWrapper): Promise<readonly string[]> => {
   }[]
   return groups.find((one) => one.id === 'file')?.items.map((one) => one.id) ?? []
 }
-
 
 describe('a key struck while a book is in front', () => {
   it('reaches the book, whichever pane the person came to it from', async () => {
@@ -419,7 +421,10 @@ describe('a book carried into another group of tabs', () => {
     const book = panesOf(was.root)
       .flatMap((one) => one.tabs)
       .find((tab) => tab.startsWith('book:'))!
-    workspace.vm.$emit('update:modelValue', openTabBeside(was, book, 'right', () => 'landed'))
+    workspace.vm.$emit(
+      'update:modelValue',
+      openTabBeside(was, book, 'right', () => 'landed'),
+    )
     await settle()
     await settle()
 

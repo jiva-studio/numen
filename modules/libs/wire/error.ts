@@ -68,9 +68,11 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.NOT_A_NOTE]: 'that file is not a note',
   [ProtoErrorCode.NOT_TEXT]: 'that file is not text',
   [ProtoErrorCode.TOO_LARGE]: 'that note is longer than this reads',
-  [ProtoErrorCode.BODY_UNWRITABLE]: 'a note begins below its frontmatter, and that text begins with one',
+  [ProtoErrorCode.BODY_UNWRITABLE]:
+    'a note begins below its frontmatter, and that text begins with one',
   [ProtoErrorCode.UNREADABLE]: 'the frontmatter of that note cannot be read',
-  [ProtoErrorCode.OCCUPIED]: 'something of that name is filed there already, so nothing was written',
+  [ProtoErrorCode.OCCUPIED]:
+    'something of that name is filed there already, so nothing was written',
   [ProtoErrorCode.UNNAMEABLE]: 'a note cannot be called that',
   [ProtoErrorCode.NOT_A_STENCIL]: 'that note is not a stencil',
   [ProtoErrorCode.NOT_A_DECK]: 'that note is not a deck',

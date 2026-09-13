@@ -89,4 +89,3 @@ describe('waiting for an answer', () => {
     expect(answer).toBe('ok')
   })
 })
-

@@ -33,7 +33,6 @@ describe('how much of a year fits', () => {
     expect(measureGrid({ width: 0, cell: 10, gap: 2 }).columns).toBe(1)
     expect(measureGrid({ width: 4, cell: 10, gap: 2 }).columns).toBe(1)
   })
-
 })
 
 /** The days a person answered on, as many cards as each says. */

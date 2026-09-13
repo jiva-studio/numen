@@ -41,9 +41,14 @@ const openers = () => {
 const settle = () => new Promise((done) => setTimeout(done, 0))
 
 const createDocumentTabAt = (path: string, page: number, pageCount: number) =>
-  ({ path, pageNumber: ref(page), pages: ref(Array.from({ length: pageCount })) }) as unknown as DocumentTabState
+  ({
+    path,
+    pageNumber: ref(page),
+    pages: ref(Array.from({ length: pageCount })),
+  }) as unknown as DocumentTabState
 
-const kindOver = (tab: DocumentTabState) => documentKind(createMockDocumentWindow(tab).handle, () => tab, openers().tabOpeners).kind
+const kindOver = (tab: DocumentTabState) =>
+  documentKind(createMockDocumentWindow(tab).handle, () => tab, openers().tabOpeners).kind
 
 /** The pages drawn in a tab, which record what was asked of them. */
 const createPages = (): PageHandle => ({
@@ -167,16 +172,18 @@ describe('a key struck while a document tab is the one the person is in', () => 
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
     held.setPageHandle(page)
 
-    expect(kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })))
-      .toBe(true)
+    expect(
+      kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })),
+    ).toBe(true)
     expect(kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'k' }))).toBe(false)
   })
 
   it('is taken by nobody where the tab draws no pages yet', () => {
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
 
-    expect(kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })))
-      .toBe(false)
+    expect(
+      kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })),
+    ).toBe(false)
   })
 
   it('reaches them, because the tab takes the keyboard as it comes on screen', () => {

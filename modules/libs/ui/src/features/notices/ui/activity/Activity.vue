@@ -65,9 +65,7 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
  * A count keeps what it is about to one line too, and without one a path or a
  * reason is read over two.
  */
-const givesSays = computed(() =>
-  shown.value.counts || props.about ? 'truncate' : 'line-clamp-3',
-)
+const givesSays = computed(() => (shown.value.counts || props.about ? 'truncate' : 'line-clamp-3'))
 const givesAbout = computed(() => (shown.value.counts ? 'truncate' : 'line-clamp-2'))
 
 /**
@@ -80,7 +78,7 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
 <template>
   <p
     v-if="shown.state !== 'quiet'"
-    class="activity numen flex items-center gap-2 font-sans text-small"
+    class="activity numen text-small flex items-center gap-2 font-sans"
     :class="strength"
     :data-state="shown.state"
     :data-tone="tone"

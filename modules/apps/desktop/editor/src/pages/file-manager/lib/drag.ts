@@ -28,5 +28,3 @@ export const getFirstUrl = (text: string): string =>
 /** The url a drag let go over the tree carries, read out of what it holds. */
 export const getDroppedUrl = (transfer: DataTransfer | null | undefined): string =>
   getFirstUrl(transfer?.getData(URI_LIST) ?? '')
-
-

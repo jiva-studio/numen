@@ -41,11 +41,13 @@ const account = (overrides: Partial<Day> = {}) =>
 
 /** Each of the four that was said, and how many of it. */
 const four = (wrapper: ReturnType<typeof account>) =>
-  wrapper.findAll('[data-day-summary="four"] li').map((one) => [
-    one.attributes('data-tone'),
-    one.get('[data-day-summary="said"]').text(),
-    one.get('[data-day-summary="how-many"]').text(),
-  ])
+  wrapper
+    .findAll('[data-day-summary="four"] li')
+    .map((one) => [
+      one.attributes('data-tone'),
+      one.get('[data-day-summary="said"]').text(),
+      one.get('[data-day-summary="how-many"]').text(),
+    ])
 
 describe('a day that has been answered on', () => {
   it('names the day in the window’s own words', () => {
@@ -102,7 +104,9 @@ describe('a day nobody answered on', () => {
 
 describe('a day still to come', () => {
   it('says what falls on it rather than what was done on it', () => {
-    expect(account({ ahead: true, did: 7 }).get('[data-day-summary="count"]').text()).toBe('7 to come')
+    expect(account({ ahead: true, did: 7 }).get('[data-day-summary="count"]').text()).toBe(
+      '7 to come',
+    )
   })
 
   // A day ahead was not answered on, so the four and the share are about
@@ -114,6 +118,8 @@ describe('a day still to come', () => {
   })
 
   it('says nothing falls on a day nothing falls on', () => {
-    expect(account({ ahead: true }).get('[data-day-summary="count"]').text()).toBe('Nothing answered')
+    expect(account({ ahead: true }).get('[data-day-summary="count"]').text()).toBe(
+      'Nothing answered',
+    )
   })
 })

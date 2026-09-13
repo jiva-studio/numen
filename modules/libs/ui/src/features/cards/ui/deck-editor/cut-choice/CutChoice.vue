@@ -33,8 +33,9 @@ const emit = defineEmits<{
         size="small"
         :data-cut="stencil.name"
         @click="emit('choose', stencil)"
-        >{{ stencil.name }}</Button
       >
+        {{ stencil.name }}
+      </Button>
     </div>
   </div>
 </template>

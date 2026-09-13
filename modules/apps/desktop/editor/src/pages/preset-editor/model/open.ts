@@ -9,7 +9,15 @@ import { DEFAULTS } from '../types'
 import { produceSchedule } from '../lib/curve'
 import { shapeOf, steer } from '../lib/fields'
 import { WORDS as words } from '../words'
-import type { Field, Goal, Presets, PresetTabState, Settings, SettingsBounds, SettingValue } from '../types'
+import type {
+  Field,
+  Goal,
+  Presets,
+  PresetTabState,
+  Settings,
+  SettingsBounds,
+  SettingValue,
+} from '../types'
 import { aimGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
 import { createCurveState, updateCurves, type CurveState } from './curves'
 import { canCloseTab, createWriteFlight, requestWrite, type WriteFlight } from './flight'
@@ -24,11 +32,7 @@ export interface OpenPreset {
   readonly flight: WriteFlight
 }
 
-export function createOpenPreset(
-  path: string,
-  today: string,
-  bounds: SettingsBounds,
-): OpenPreset {
+export function createOpenPreset(path: string, today: string, bounds: SettingsBounds): OpenPreset {
   return {
     path: ref(path),
     settings: shallowRef<Settings>(DEFAULTS),
@@ -153,11 +157,13 @@ export const createPresetState = (
   }
 
   const closeTab = (tab: string) => {
-    void canCloseTab(one.flight, one.path.value, one.settings.value, core, writeMessage).then((gone) => {
-      if (!gone) return
-      onClosed(one.path.value)
-      handle.closeTab(tab)
-    })
+    void canCloseTab(one.flight, one.path.value, one.settings.value, core, writeMessage).then(
+      (gone) => {
+        if (!gone) return
+        onClosed(one.path.value)
+        handle.closeTab(tab)
+      },
+    )
   }
 
   return {
@@ -175,7 +181,8 @@ export const createPresetState = (
     reload: () => void readPreset(one, core, bounds, titles, today()),
     chooseGoal,
     moveSlider,
-    settle: () => void requestWrite(one.flight, one.path.value, one.settings.value, core, writeMessage),
+    settle: () =>
+      void requestWrite(one.flight, one.path.value, one.settings.value, core, writeMessage),
     updateSetting,
     close: closeTab,
   }

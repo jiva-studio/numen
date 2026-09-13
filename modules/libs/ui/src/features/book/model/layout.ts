@@ -14,7 +14,22 @@ import { useViewport } from '@/shared/lib/viewport'
 import { onNextFrame } from '@/shared/lib/clock'
 import { useBookMarks } from './marks'
 import type { BookLink } from '../lib/link'
-import { GAP, LARGEST, SMALLEST, columnHeight, clamp, columnWidth, columnsIn, findSpreadAt, getSpreadStart, inFront, leftInDocument, pagesOf, spreads, type Flow } from '../lib/spread'
+import {
+  GAP,
+  LARGEST,
+  SMALLEST,
+  columnHeight,
+  clamp,
+  columnWidth,
+  columnsIn,
+  findSpreadAt,
+  getSpreadStart,
+  inFront,
+  leftInDocument,
+  pagesOf,
+  spreads,
+  type Flow,
+} from '../lib/spread'
 import type { PageTurn } from '@/shared/lib/turn'
 import { turnTo } from '../lib/turn'
 import type { SettledBookProps } from '../lib/props'
@@ -65,7 +80,9 @@ export function useBookLayout(
   const spreadCount = computed(() => spreads(flow.value))
 
   /** The spread in front, as a page of the book, and how many there are. */
-  const front = computed(() => pagesOf(props.book, props.span, flow.value, standing.value, marks.value))
+  const front = computed(() =>
+    pagesOf(props.book, props.span, flow.value, standing.value, marks.value),
+  )
 
   /** How much of the chapter in front is still to come, which is measured exactly. */
   const leftInChapter = computed(() => leftInDocument(flow.value, standing.value, marks.value))

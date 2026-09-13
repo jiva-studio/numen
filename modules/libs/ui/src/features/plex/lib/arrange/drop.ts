@@ -28,9 +28,8 @@ export type Drop =
  * rather than a drag — from a trackpad, from a hand that cannot hold a button
  * down, or from the keyboard, where there is no direction to read at all.
  */
-export const seatWithoutDirection = (
-  seats: readonly PlexRelatedSeat[],
-): PlexRelatedSeat | null => (seats.includes('child') ? 'child' : (seats[0] ?? null))
+export const seatWithoutDirection = (seats: readonly PlexRelatedSeat[]): PlexRelatedSeat | null =>
+  seats.includes('child') ? 'child' : (seats[0] ?? null)
 
 /**
  * Which way a point lies from another.
@@ -43,13 +42,7 @@ export const seatWithoutDirection = (
  */
 function getDropDirection(dx: number, dy: number, bias: number): Direction | null {
   if (dx === 0 && dy === 0) return null
-  return Math.abs(dy) * bias >= Math.abs(dx)
-    ? dy < 0
-      ? 'up'
-      : 'down'
-    : dx < 0
-      ? 'left'
-      : 'right'
+  return Math.abs(dy) * bias >= Math.abs(dx) ? (dy < 0 ? 'up' : 'down') : dx < 0 ? 'left' : 'right'
 }
 
 /**
@@ -80,10 +73,7 @@ export function nodeAt(at: Position, frame: PlexFrame): PlacedNode | null {
   for (let i = frame.nodes.length - 1; i >= 0; i--) {
     const node = frame.nodes[i]
     if (!node || node.opacity < 1) continue
-    if (
-      Math.abs(at.x - node.x) <= node.width / 2 &&
-      Math.abs(at.y - node.y) <= node.height / 2
-    ) {
+    if (Math.abs(at.x - node.x) <= node.width / 2 && Math.abs(at.y - node.y) <= node.height / 2) {
       return node
     }
   }
@@ -107,13 +97,7 @@ export interface DropInput {
  * workable: the seats around a child overlap the rest of the picture, and
  * whatever the gesture crosses, only where it stops decides.
  */
-export function resolveDrop({
-  frame,
-  options,
-  from,
-  at,
-  seats,
-}: DropInput): Drop | null {
+export function resolveDrop({ frame, options, from, at, seats }: DropInput): Drop | null {
   const source = frame.nodes.find((node) => node.id === from)
   if (!source) return null
 
@@ -124,9 +108,7 @@ export function resolveDrop({
   const seat = seatTowards(source, target, options)
   if (!seat || !seats.includes(seat)) return null
 
-  return landedOn
-    ? { kind: 'link', from, to: landedOn.id, seat }
-    : { kind: 'create', from, seat }
+  return landedOn ? { kind: 'link', from, to: landedOn.id, seat } : { kind: 'create', from, seat }
 }
 
 export interface DroppedInput {

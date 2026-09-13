@@ -80,7 +80,8 @@ export function useDeckTabs(
 
   const wiring = useDeckScheduleSync(cards, presets, store)
   const { offers, stencils, listStencils, listStencilsAgain, scheduled } = wiring
-  const { choices, listPresets, listPresetsAgain, refreshDeckPreset, scheduleDeck, getDeckPreset } = scheduled
+  const { choices, listPresets, listPresetsAgain, refreshDeckPreset, scheduleDeck, getDeckPreset } =
+    scheduled
 
   const updateDeckState = (id: string, deck: BufferDeck): void => {
     const body = serializeBufferDeckToString(deck)
@@ -180,7 +181,10 @@ export function useDeckTabs(
 
   tabOpeners.registerEditor('deck', openDeckTab)
 
-  const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[] = []): void => {
+  const applyPathChanges = (
+    paths: readonly string[],
+    renames: readonly PathRename[] = [],
+  ): void => {
     for (const went of renames) {
       vaultAnswers.moveFile(went.from, went.to)
     }

@@ -37,8 +37,7 @@ export function useOpenTabs({ core, held }: OpenTabsDeps) {
     tabs: held.tabs.value.map(({ id, title }) => {
       const one = held.getTab(id)
       const said = one?.kind.getOpenTab?.(one.state) as
-        | OpenTab<'document' | 'recording' | 'book'>
-        | undefined
+        OpenTab<'document' | 'recording' | 'book'> | undefined
       return {
         id,
         kind: one?.kind.kind ?? '',

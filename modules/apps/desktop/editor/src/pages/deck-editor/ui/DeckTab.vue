@@ -63,9 +63,7 @@ function onTake() {
 // --- Helpers ---
 /** The untyped values a card cut by that stencil is made with. */
 function empty(stencil: string) {
-  return cardBlanks(
-    cardFields(stencils.value.find((one) => one.name === stencil)?.fields ?? []),
-  )
+  return cardBlanks(cardFields(stencils.value.find((one) => one.name === stencil)?.fields ?? []))
 }
 </script>
 
@@ -83,11 +81,7 @@ function empty(stencil: string) {
       <li v-for="(text, at) in marks.whole" :key="at">{{ text }}</li>
     </ul>
 
-    <DeckScheduleBar
-      :scheduled="scheduled"
-      :choices="choices"
-      @choose="onChooseSchedule"
-    />
+    <DeckScheduleBar :scheduled="scheduled" :choices="choices" @choose="onChooseSchedule" />
 
     <DeckEditor
       class="deck-tab__grid"

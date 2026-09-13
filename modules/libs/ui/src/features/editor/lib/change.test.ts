@@ -89,7 +89,9 @@ describe('a change on its way', () => {
   const CHANGE: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog' }
 
   it('marks the stretch it is about to replace', () => {
-    expect(getDrawn(createMarkedState(DOC, CHANGE))).toEqual([{ from: 4, to: 7, mark: 'cm-changing' }])
+    expect(getDrawn(createMarkedState(DOC, CHANGE))).toEqual([
+      { from: 4, to: 7, mark: 'cm-changing' },
+    ])
   })
 
   it('is drawn for nobody while there is no change', () => {
@@ -97,7 +99,9 @@ describe('a change on its way', () => {
   })
 
   it('moves with the text when something is typed before it', () => {
-    const typed = createMarkedState(DOC, CHANGE).update({ changes: { from: 0, insert: 'so ' } }).state
+    const typed = createMarkedState(DOC, CHANGE).update({
+      changes: { from: 0, insert: 'so ' },
+    }).state
     expect(getDrawn(typed)).toEqual([{ from: 7, to: 10, mark: 'cm-changing' }])
   })
 
@@ -114,7 +118,9 @@ describe('a change on its way', () => {
 describe('a change that puts nothing in', () => {
   it('marks the stretch it takes out, and there is nothing to show', () => {
     const gone: EditorChange = { id: 'a', from: 4, to: 8, text: '' }
-    expect(getDrawn(createMarkedState('the cat sat', gone))).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
+    expect(getDrawn(createMarkedState('the cat sat', gone))).toEqual([
+      { from: 4, to: 8, mark: 'cm-changing' },
+    ])
   })
 })
 

@@ -144,7 +144,13 @@ export const itemsFor = (
 
 /** What the menu offers anywhere. A choice outside this is not the menu's. */
 export const OFFERED: ReadonlySet<string> = new Set(
-  [...NOTE, ...getFileMenu(TRANSCRIBE, RECOGNISE), ...MADE, DOWNLOAD_TEXT, DOWNLOAD_COPY, DELETE_TEXT, DELETE_COPY].map(
-    (one) => one.id,
-  ),
+  [
+    ...NOTE,
+    ...getFileMenu(TRANSCRIBE, RECOGNISE),
+    ...MADE,
+    DOWNLOAD_TEXT,
+    DOWNLOAD_COPY,
+    DELETE_TEXT,
+    DELETE_COPY,
+  ].map((one) => one.id),
 )

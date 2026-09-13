@@ -23,7 +23,12 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
 
 describe('a search that turned up nothing', () => {
   const createGroups = (items: number, isWorking = false) => [
-    { id: 'names', title: 'Names', items: Array.from({ length: items }, (_, at) => ({ id: `${at}`, title: 'One' })), working: isWorking },
+    {
+      id: 'names',
+      title: 'Names',
+      items: Array.from({ length: items }, (_, at) => ({ id: `${at}`, title: 'One' })),
+      working: isWorking,
+    },
   ]
 
   it('offers to make the note that was looked for', () => {
@@ -63,19 +68,17 @@ describe('a search that turned up nothing', () => {
   it('offers the seats of the note in front, and says which note that is', () => {
     const item = appendCreateOffer(createGroups(0), 'Entropy', words, front()).at(-1)?.items[0]
 
-    expect(item?.actions?.map((one) => one.id)).toStrictEqual([
-      MAKING,
-      'child',
-      'parent',
-      'jump',
-    ])
+    expect(item?.actions?.map((one) => one.id)).toStrictEqual([MAKING, 'child', 'parent', 'jump'])
     expect(item?.detail).toBe(front().title)
   })
 
   it('offers no seat where nothing in front is a note', () => {
-    const item = appendCreateOffer(createGroups(0), 'Entropy', words, front({ path: '', title: '' })).at(
-      -1,
-    )?.items[0]
+    const item = appendCreateOffer(
+      createGroups(0),
+      'Entropy',
+      words,
+      front({ path: '', title: '' }),
+    ).at(-1)?.items[0]
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([MAKING])
     expect(item?.detail).toBeUndefined()

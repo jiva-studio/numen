@@ -59,10 +59,10 @@ defineExpose({
     :max="max || undefined"
     :class="
       cn(
-        'time-field w-full rounded-tight border border-field-rule bg-field',
+        'time-field rounded-tight border-field-rule bg-field w-full border',
         // One row tall, which every control standing on a row is drawn at.
         'h-action px-2',
-        'font-sans text-base leading-none text-ink tabular-nums',
+        'text-ink font-sans text-base leading-none tabular-nums',
         'outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,

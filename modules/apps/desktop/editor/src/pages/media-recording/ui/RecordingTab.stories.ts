@@ -64,9 +64,12 @@ const createPlayer = (): Player => {
 }
 
 const createTranscriptTab = (cues: readonly Cue[], plays: MediaTypeProbe = () => true) =>
-  useTranscriptTab(useTranscript(talk(cues), 'talks/Ants.mp3', { through: createPlayer(), plays }), {
-    runCommand: () => {},
-  })
+  useTranscriptTab(
+    useTranscript(talk(cues), 'talks/Ants.mp3', { through: createPlayer(), plays }),
+    {
+      runCommand: () => {},
+    },
+  )
 
 interface Knobs {
   /** What the recording was transcribed as. None is a tab with no words at all. */

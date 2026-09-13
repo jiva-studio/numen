@@ -28,10 +28,10 @@ const model = defineModel<boolean>({ default: false })
     :disabled="disabled"
     :class="
       cn(
-        'inline-flex h-5 w-9 shrink-0 items-center rounded-pill p-px',
-        'cursor-pointer transition-colors duration-hover ease-numen',
+        'rounded-pill inline-flex h-5 w-9 shrink-0 items-center p-px',
+        'duration-hover ease-numen cursor-pointer transition-colors',
         'bg-hushed data-[state=checked]:bg-accent',
-        'outline-none ring-numen',
+        'ring-numen outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )
@@ -40,8 +40,8 @@ const model = defineModel<boolean>({ default: false })
     <SwitchThumb
       :class="
         cn(
-          'block size-4 rounded-pill bg-raised',
-          'transition-transform duration-hover ease-numen',
+          'rounded-pill bg-raised block size-4',
+          'duration-hover ease-numen transition-transform',
           'data-[state=checked]:translate-x-4',
         )
       "

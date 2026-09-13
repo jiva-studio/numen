@@ -126,11 +126,7 @@ describe('DeckEditor', () => {
   it('draws the first field as it draws every other', () => {
     const held = mountDeck()
     const values = tileFor(held, 'llama').findAll('.card__value')
-    expect(values.map((each) => each.get('label').text())).toEqual([
-      'Name',
-      'Height',
-      'Life span',
-    ])
+    expect(values.map((each) => each.get('label').text())).toEqual(['Name', 'Height', 'Life span'])
     expect(values[0]?.attributes('data-names')).toBeUndefined()
   })
 
@@ -503,10 +499,7 @@ describe('DeckEditor', () => {
       const held = mountSectioned()
       expect(
         held.findAll('[data-section-head]').map((head) => head.attributes('data-section-head')),
-      ).toEqual([
-        'roots',
-        'leaves',
-      ])
+      ).toEqual(['roots', 'leaves'])
     })
 
     it('draws a heading for a section holding no card', () => {

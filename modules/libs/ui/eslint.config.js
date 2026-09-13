@@ -10,6 +10,7 @@ import js from '@eslint/js'
 import globals from 'globals'
 import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
+import prettier from 'eslint-config-prettier'
 
 /** The globals a pure core is not allowed to reach for, and the port for each. */
 const lifetimes = [
@@ -281,4 +282,6 @@ export default tseslint.config(
       'require-yield': 'off',
     },
   },
+
+  prettier,
 )

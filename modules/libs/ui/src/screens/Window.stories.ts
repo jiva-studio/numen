@@ -114,7 +114,9 @@ const OPEN = ['physics', 'computation', 'reading']
 
 /** What is drawn beside a row: a folder says whether what it holds is drawn. */
 const iconFor = (id: string, open: boolean) => {
-  const row = ROWS.find((one) => one.id === id) ?? ROWS.flatMap((one) => one.rows ?? []).find((one) => one.id === id)
+  const row =
+    ROWS.find((one) => one.id === id) ??
+    ROWS.flatMap((one) => one.rows ?? []).find((one) => one.id === id)
   if (row?.holds) return open ? FolderOpen : Folder
   if (row?.name.endsWith('.pdf')) return Book
   return FileText
@@ -443,15 +445,14 @@ const GROUPS: readonly PaletteGroup[] = [
       passage(
         't1',
         'Boltzmann 1877',
-        'the entropy of a state is the logarithm of the number of arrangements it '
-          + 'could have been made of',
+        'the entropy of a state is the logarithm of the number of arrangements it ' +
+          'could have been made of',
         [READ_DOCUMENT],
       ),
       passage(
         't2',
         'The second law',
-        'entropy never falls in a closed system, which is the whole of it stated '
-          + 'in one line',
+        'entropy never falls in a closed system, which is the whole of it stated ' + 'in one line',
         [READ, TRAVEL],
       ),
     ],
@@ -463,15 +464,15 @@ const GROUPS: readonly PaletteGroup[] = [
       passage(
         'm1',
         "Landauer's principle",
-        'clearing one bit of memory costs at least kT ln 2 of heat, which is what '
-          + 'the sorting has to pay for',
+        'clearing one bit of memory costs at least kT ln 2 of heat, which is what ' +
+          'the sorting has to pay for',
         [READ, TRAVEL],
       ),
       passage(
         'm2',
         "Maxwell's demon",
-        'a demon that sorts fast molecules from slow ones appears to lower the '
-          + 'disorder of a gas for nothing',
+        'a demon that sorts fast molecules from slow ones appears to lower the ' +
+          'disorder of a gas for nothing',
         [READ, TRAVEL],
       ),
     ],
@@ -761,10 +762,10 @@ export const Map: Story = {
     // The map is drawn around the note the window is focused on, and it has the
     // room: most of the width, and the whole neighbourhood in it.
     await waitFor(() => expect(within(map).getAllByLabelText(/, focus$/)).toHaveLength(1))
-    expect(within(map).getAllByLabelText(/, (parent|child|sibling|jump)$/).length).toBeGreaterThan(3)
-    expect(map.getBoundingClientRect().width).toBeGreaterThan(
-      aside.getBoundingClientRect().width,
+    expect(within(map).getAllByLabelText(/, (parent|child|sibling|jump)$/).length).toBeGreaterThan(
+      3,
     )
+    expect(map.getBoundingClientRect().width).toBeGreaterThan(aside.getBoundingClientRect().width)
 
     // The agent is along the trailing edge, and is something to ask with.
     within(aside).getByPlaceholderText('Ask about the vault')
@@ -791,9 +792,7 @@ export const Mapping: Story = {
   play: async ({ canvasElement }) => {
     // The map has the window: one pane, and no second one beside it.
     expect(canvasElement.querySelectorAll('[data-workspace-pane]')).toHaveLength(1)
-    await waitFor(() =>
-      expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1),
-    )
+    await waitFor(() => expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1))
 
     // The menu was asked for on a node, and every item of it is in the window
     // rather than off the edge it was asked near.
@@ -954,11 +953,7 @@ export const Asking: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [
-            pane('source', [BOOK], BOOK),
-            pane('middle', [NOTE], NOTE),
-            pane('aside', [AGENT]),
-          ],
+          [pane('source', [BOOK], BOOK), pane('middle', [NOTE], NOTE), pane('aside', [AGENT])],
           [0.4, 0.3, 0.3],
         ),
         axis: 'horizontal',

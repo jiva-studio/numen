@@ -16,7 +16,10 @@ import type { VaultCardsDue } from '../types'
 
 /** What the front door of the application answers. */
 export interface CardsDueClient {
-  watchCardsDue(said: Record<string, never>, how?: { signal?: AbortSignal }): AsyncIterable<DueCounts>
+  watchCardsDue(
+    said: Record<string, never>,
+    how?: { signal?: AbortSignal },
+  ): AsyncIterable<DueCounts>
 }
 
 /** One vault, as the count answers about it. */

@@ -28,7 +28,8 @@ const tally = (answers: number, recalls: number): HeatmapTally => ({
   again: Math.round(answers * 0.12),
   hard: Math.round(answers * 0.18),
   good: Math.round(answers * 0.52),
-  easy: answers - Math.round(answers * 0.12) - Math.round(answers * 0.18) - Math.round(answers * 0.52),
+  easy:
+    answers - Math.round(answers * 0.12) - Math.round(answers * 0.18) - Math.round(answers * 0.52),
   asked: Math.round(answers * 0.8),
   recalled: recalls,
 })
@@ -202,7 +203,8 @@ const CARD: CardFace = {
   mark: 'k7m2xq9fzp',
   face: 'Recognise',
   heading: 'gam',
-  front: '<p><strong>gam</strong> — गम्</p>\n<p>Which class does it take, and what is its present stem?</p>',
+  front:
+    '<p><strong>gam</strong> — गम्</p>\n<p>Which class does it take, and what is its present stem?</p>',
   back:
     '<p><strong>Meaning:</strong> to go, to move</p>\n' +
     '<p><strong>Class:</strong> 1, thematic</p>\n' +

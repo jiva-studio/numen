@@ -6,7 +6,8 @@ import type { Documents, Page } from '../types'
 describe('useDocumentViewport', () => {
   const documents: Documents = {
     getDocumentLayout: async () => ({ pages: [], fingerprint: '' }),
-    getPageUrl: (path, page, width, fingerprint) => `${path}/p${page}?w=${width}&s=${fingerprint ?? ''}`,
+    getPageUrl: (path, page, width, fingerprint) =>
+      `${path}/p${page}?w=${width}&s=${fingerprint ?? ''}`,
     getHighlights: async () => [],
   }
 
@@ -14,7 +15,14 @@ describe('useDocumentViewport', () => {
     const pages = shallowRef<readonly Page[]>([{ width: 100, height: 200 }])
     const pageNumber = ref(0)
     const fingerprint = ref('v1')
-    const viewport = useDocumentViewport(documents, 'doc.pdf', pages, pageNumber, fingerprint, () => true)
+    const viewport = useDocumentViewport(
+      documents,
+      'doc.pdf',
+      pages,
+      pageNumber,
+      fingerprint,
+      () => true,
+    )
 
     expect(viewport.wide.value).toBe(0)
     expect(viewport.getPageImageUrl(0)).toBe('')

@@ -128,8 +128,7 @@ const getDecorations = (
  * change that puts nothing in has no text to wait for.
  */
 const hasArrived = (state: EditorState, change: EditorChange, from: number) =>
-  change.text.length > 0 &&
-  state.doc.sliceString(from, from + change.text.length) === change.text
+  change.text.length > 0 && state.doc.sliceString(from, from + change.text.length) === change.text
 
 const start = (state: EditorState): Mark => {
   const change = state.facet(changing)

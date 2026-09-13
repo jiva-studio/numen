@@ -136,7 +136,8 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     if (!request || !OFFERED.has(id)) return
     if (id === NEW_NOTE) return void createNote(request.path)
     if (id === NEW_DECK) return void createOne(request.path, deps.createDeck, words.newDeck)
-    if (id === NEW_STENCIL) return void createOne(request.path, deps.createStencil, words.newStencil)
+    if (id === NEW_STENCIL)
+      return void createOne(request.path, deps.createStencil, words.newStencil)
     if (id === NEW_PRESET) return void createOne(request.path, deps.createPreset, words.newPreset)
     if (id === NEW_FOLDER) return void createFolder(request.path)
 
@@ -149,8 +150,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     deps.runCommand(id, getOverPaths(path), getNameOf(path), getSourceOf(path))
   }
 
-  const getNameOf = (path: string): string =>
-    list.getEntryAt(path)?.name ?? fileOf(path)
+  const getNameOf = (path: string): string => list.getEntryAt(path)?.name ?? fileOf(path)
 
   const getSourceOf = (path: string): Source => list.getEntryAt(path)?.kind ?? 'other'
 

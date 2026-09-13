@@ -145,7 +145,10 @@ describe('Stencil, the fields', () => {
 
   it('asks for a field under a name nothing has taken', async () => {
     const held = mountStencil({ fields: ['Field', 'Field 2'] })
-    await held.findAll('button').filter((each) => each.text() === 'Add a field')[0]?.trigger('click')
+    await held
+      .findAll('button')
+      .filter((each) => each.text() === 'Add a field')[0]
+      ?.trigger('click')
     expect(held.emitted('add-field')).toEqual([['Field 1']])
   })
 
@@ -414,9 +417,7 @@ describe('Stencil, the faces', () => {
     const box = held.get<HTMLInputElement>('[data-face="one"] header input')
     box.element.value = 'Two'
     await box.trigger('input')
-    expect(held.get('[data-face="one"] header [role="alert"]').text()).toBe(
-      'That name is taken',
-    )
+    expect(held.get('[data-face="one"] header [role="alert"]').text()).toBe('That name is taken')
   })
 
   it('emits the face and the half a box was typed into', async () => {
@@ -428,16 +429,16 @@ describe('Stencil, the faces', () => {
   it('stands the way to add a face on a rule of the same make', () => {
     const held = mountStencil()
     const rules = held.findAll('.divider')
-    expect(rules.map((rule) => rule.get('button').text())).toEqual([
-      'Add a field',
-      'Add a face',
-    ])
+    expect(rules.map((rule) => rule.get('button').text())).toEqual(['Add a field', 'Add a face'])
     for (const rule of rules) expect(rule.attributes('role')).toBe('presentation')
   })
 
   it('asks for a face under a name nothing has taken', async () => {
     const held = mountStencil({ faces: [{ id: 'a', name: 'Face', front: '', back: '' }] })
-    await held.findAll('button').filter((each) => each.text() === 'Add a face')[0]?.trigger('click')
+    await held
+      .findAll('button')
+      .filter((each) => each.text() === 'Add a face')[0]
+      ?.trigger('click')
     expect(held.emitted('add-face')).toEqual([['Face 1']])
   })
 
@@ -574,5 +575,4 @@ describe('Stencil, the faces', () => {
       expect(editor.emitted('move-field')).toBeUndefined()
     })
   })
-
 })

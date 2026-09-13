@@ -37,7 +37,8 @@ const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
   ...over,
 })
 
-const stencil = (over: Partial<VaultStencil> = {}): BufferStencil => stencilOf(cut(over), createIds())
+const stencil = (over: Partial<VaultStencil> = {}): BufferStencil =>
+  stencilOf(cut(over), createIds())
 
 describe('a stencil as the window holds it', () => {
   it('gives every face an identity of its own', () => {
@@ -65,11 +66,7 @@ describe('a stencil as the window holds it', () => {
 
 describe('a field of a stencil', () => {
   it('is added at the end of the order', () => {
-    expect(addField(stencil(), 'Weight').fields).toStrictEqual([
-      'Height',
-      'Life span',
-      'Weight',
-    ])
+    expect(addField(stencil(), 'Weight').fields).toStrictEqual(['Height', 'Life span', 'Weight'])
   })
 
   it('leaves the braces standing when the stencil no longer names it', () => {
@@ -79,8 +76,9 @@ describe('a field of a stencil', () => {
   })
 
   it('lands before the field it was let go on', () => {
-    expect(moveField(stencil({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height')
-      .fields).toStrictEqual(['Name', 'Life span', 'Height'])
+    expect(
+      moveField(stencil({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height').fields,
+    ).toStrictEqual(['Name', 'Life span', 'Height'])
   })
 
   it('leaves the first field first, wherever the move came from', () => {

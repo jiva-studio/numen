@@ -66,7 +66,8 @@ const read = (over: Partial<VaultDeck> = {}): VaultDeck => ({
 const LLAMA = 'k7m2xq9fzp'
 const ALPACA = '3n8vr4tqch'
 
-const deck = (over: Partial<VaultDeck> = {}): BufferDeck => deserializeVaultDeck(read(over), createIds())
+const deck = (over: Partial<VaultDeck> = {}): BufferDeck =>
+  deserializeVaultDeck(read(over), createIds())
 
 describe('a deck as the window holds it', () => {
   it('knows every card by the mark the file carries for it', () => {
@@ -76,7 +77,10 @@ describe('a deck as the window holds it', () => {
   it('mints an identity for a card carrying no mark, which the file cannot name', () => {
     const bare = read()
     const held = deck({
-      cards: [{ ...bare.cards[0]!, mark: '' }, { ...bare.cards[1]!, mark: '' }],
+      cards: [
+        { ...bare.cards[0]!, mark: '' },
+        { ...bare.cards[1]!, mark: '' },
+      ],
     })
     expect(held.cards.map((card) => card.id)).toStrictEqual(['c1', 'c2'])
   })
@@ -110,7 +114,10 @@ describe('a deck as the window holds it', () => {
       cards: [{ ...bare.cards[0]!, sectionIndex: 7 }, bare.cards[1]!],
     })
     expect(held.cards.map((card) => card.section)).toStrictEqual([null, null])
-    expect(serializeBufferCardsToVaultCards(held).map((card) => card.sectionIndex)).toStrictEqual([null, null])
+    expect(serializeBufferCardsToVaultCards(held).map((card) => card.sectionIndex)).toStrictEqual([
+      null,
+      null,
+    ])
   })
 
   it('keeps the preamble, the tail and each card’s preamble as the file had them', () => {
@@ -126,7 +133,12 @@ describe('a deck as the window holds it', () => {
   })
 
   it('is a deck of no cards where nothing has been read', () => {
-    expect(deserializeBufferDeckFromString('')).toStrictEqual({ preamble: '', cards: [], sections: [], tail: '' })
+    expect(deserializeBufferDeckFromString('')).toStrictEqual({
+      preamble: '',
+      cards: [],
+      sections: [],
+      tail: '',
+    })
   })
 
   it('hands the vault the cards without the identities it minted', () => {
@@ -148,22 +160,28 @@ describe('a deck as the window holds it', () => {
   it('hands the vault each card under where its section stands among them', () => {
     const bare = read()
     const held = deck({
-      sections: [{ name: 'Roots', preamble: '' }, { name: 'Leaves', preamble: '' }],
+      sections: [
+        { name: 'Roots', preamble: '' },
+        { name: 'Leaves', preamble: '' },
+      ],
       cards: [{ ...bare.cards[0]!, sectionIndex: 1 }, bare.cards[1]!],
     })
-    expect(serializeBufferCardsToVaultCards(held).map((card) => card.sectionIndex)).toStrictEqual([1, null])
+    expect(serializeBufferCardsToVaultCards(held).map((card) => card.sectionIndex)).toStrictEqual([
+      1,
+      null,
+    ])
   })
 
   it('hands the vault the sections without the identities it minted', () => {
     const held = deck({ sections: [{ name: 'Roots', preamble: 'about the roots\n' }] })
-    expect(serializeBufferSectionsToVaultSections(held)).toStrictEqual([{ name: 'Roots', preamble: 'about the roots\n' }])
+    expect(serializeBufferSectionsToVaultSections(held)).toStrictEqual([
+      { name: 'Roots', preamble: 'about the roots\n' },
+    ])
   })
 })
 
 describe('the cards as the grid draws them', () => {
-  const OFFERS = [
-    { path: 'stencils/Animal.md', title: 'Animal', fields: ['Height', 'Life span'] },
-  ]
+  const OFFERS = [{ path: 'stencils/Animal.md', title: 'Animal', fields: ['Height', 'Life span'] }]
 
   /** One card, under the wikilink it wrote and the stencil that link reached. */
   const cutBy = (stencil: string, stencilPath: string): BufferDeck =>
@@ -272,13 +290,30 @@ describe('a card added', () => {
   })
 
   it('stands under the section it was asked for, at the end of it', () => {
-    const start = deck({ sections: [{ name: 'Roots', preamble: '' }, { name: 'Leaves', preamble: '' }] })
-    const held = addCard(start, 'Animal', 'stencils/Animal.md', [], start.sections[1]!.id, () => 'c9')
+    const start = deck({
+      sections: [
+        { name: 'Roots', preamble: '' },
+        { name: 'Leaves', preamble: '' },
+      ],
+    })
+    const held = addCard(
+      start,
+      'Animal',
+      'stencils/Animal.md',
+      [],
+      start.sections[1]!.id,
+      () => 'c9',
+    )
     expect(held.cards[2]?.section).toBe(start.sections[1]?.id)
   })
 
   it('stands before the first section where it was asked for none', () => {
-    const start = deck({ sections: [{ name: 'Roots', preamble: '' }, { name: 'Leaves', preamble: '' }] })
+    const start = deck({
+      sections: [
+        { name: 'Roots', preamble: '' },
+        { name: 'Leaves', preamble: '' },
+      ],
+    })
     const held = addCard(start, 'Animal', 'stencils/Animal.md', [], null, () => 'c9')
     expect(held.cards.find((card) => card.id === 'c9')?.section).toBe(null)
   })
@@ -334,8 +369,11 @@ describe('a card dragged among the sections', () => {
   const createSectionedDeck = (): BufferDeck => {
     const bare = read()
     return deck({
-      sections: [{ name: 'Roots', preamble: '' }, { name: 'Leaves', preamble: '' }],
-      cards: [bare.cards[0]!, { ...bare.cards[1]!, sectionIndex:0 }],
+      sections: [
+        { name: 'Roots', preamble: '' },
+        { name: 'Leaves', preamble: '' },
+      ],
+      cards: [bare.cards[0]!, { ...bare.cards[1]!, sectionIndex: 0 }],
     })
   }
 
@@ -435,7 +473,12 @@ describe('a card dragged among the sections', () => {
 
 describe('a section of a deck', () => {
   const createSectionedDeck = (): BufferDeck =>
-    deck({ sections: [{ name: 'Roots', preamble: '' }, { name: 'Leaves', preamble: '' }] })
+    deck({
+      sections: [
+        { name: 'Roots', preamble: '' },
+        { name: 'Leaves', preamble: '' },
+      ],
+    })
 
   it('is made at the end of the deck, holding no card', () => {
     const held = addSection(createSectionedDeck(), 'Shoots', () => 'c9')
@@ -463,8 +506,14 @@ describe('a section of a deck', () => {
   it('leaves its cards under the section above it when it goes', () => {
     const bare = read()
     const held = deck({
-      sections: [{ name: 'Roots', preamble: '' }, { name: 'Leaves', preamble: '' }],
-      cards: [{ ...bare.cards[0]!, sectionIndex: 0 }, { ...bare.cards[1]!, sectionIndex: 1 }],
+      sections: [
+        { name: 'Roots', preamble: '' },
+        { name: 'Leaves', preamble: '' },
+      ],
+      cards: [
+        { ...bare.cards[0]!, sectionIndex: 0 },
+        { ...bare.cards[1]!, sectionIndex: 1 },
+      ],
     })
     const gone = removeSection(held, held.sections[1]?.id ?? '')
     expect(gone.sections.map((section) => section.name)).toStrictEqual(['Roots'])
@@ -497,7 +546,10 @@ describe('a section of a deck', () => {
 
   it('leaves the text above it alone where it stood on none of its own', () => {
     const held = deck({
-      sections: [{ name: 'Roots', preamble: 'about the roots\n' }, { name: 'Leaves', preamble: '' }],
+      sections: [
+        { name: 'Roots', preamble: 'about the roots\n' },
+        { name: 'Leaves', preamble: '' },
+      ],
     })
     const gone = removeSection(held, held.sections[1]?.id ?? '')
     expect(gone.sections.map((section) => section.preamble)).toStrictEqual(['about the roots\n'])
@@ -567,9 +619,7 @@ describe('a value written into a card', () => {
   })
 
   it('leaves every other card as it was', () => {
-    expect(fillCard(deck(), LLAMA, 'Height', 1, 'taller').cards[1]).toStrictEqual(
-      deck().cards[1],
-    )
+    expect(fillCard(deck(), LLAMA, 'Height', 1, 'taller').cards[1]).toStrictEqual(deck().cards[1])
   })
 })
 

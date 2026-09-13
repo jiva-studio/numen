@@ -34,7 +34,7 @@ const emit = defineEmits<{
       <!-- The box is as wide as the cell behind it comes to, and the cell
            is set to the text. -->
       <NameBox
-        class="section-heading__title min-w-0 rounded-node"
+        class="section-heading__title rounded-node min-w-0"
         :naming="naming"
         :over="over"
         :stem="stem"

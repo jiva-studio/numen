@@ -25,10 +25,10 @@ export function useWindowTabs() {
     openTabBeside: (kind, at) => openTabBesideOfKind(kind, at),
     show: (id) => show(id),
     closeTab: (id) => finishClose(id),
-    each: <TabState,>(kind: string) => each<TabState>(kind),
-    last: <TabState,>(kind: string) => each<TabState>(kind).at(-1) ?? null,
+    each: <TabState>(kind: string) => each<TabState>(kind),
+    last: <TabState>(kind: string) => each<TabState>(kind).at(-1) ?? null,
     front: () => front(),
-    getTabState: <TabState,>(kind: string, id: string) => getTabStateIn<TabState>(id, kind),
+    getTabState: <TabState>(kind: string, id: string) => getTabStateIn<TabState>(id, kind),
   }
 
   /** The kinds of tab this window draws, each under the word it is asked for by. */
@@ -82,7 +82,7 @@ export function useWindowTabs() {
    * What one tab of a kind holds, for a caller that knows the kind and what
    * its tabs hold. A tab of another kind is nothing to it.
    */
-  const getTabStateIn = <T,>(id: string, kind: string): T | null => {
+  const getTabStateIn = <T>(id: string, kind: string): T | null => {
     const one = open.value.get(id)
     return one && one.kind.kind === kind ? (one.state as T) : null
   }
@@ -100,7 +100,7 @@ export function useWindowTabs() {
   }
 
   /** Every tab of a kind, the one the person was last in last. */
-  const each = <T,>(kind: string): readonly KindTab<T>[] =>
+  const each = <T>(kind: string): readonly KindTab<T>[] =>
     [...open.value]
       .filter(([, one]) => one.kind.kind === kind)
       .map(([id, one]) => ({ id, state: one.state as T }))
@@ -234,7 +234,7 @@ export function useWindowTabs() {
 }
 
 /** One tab let go of, and the rest kept. */
-const without = <T,>(held: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
+const without = <T>(held: ReadonlyMap<string, T>, id: string): ReadonlyMap<string, T> => {
   const rest = new Map(held)
   rest.delete(id)
   return rest

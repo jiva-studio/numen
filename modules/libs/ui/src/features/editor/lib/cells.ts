@@ -8,8 +8,9 @@ const spanOf = (frame: HTMLElement) => {
   return Number.isNaN(from) || Number.isNaN(to) ? null : { from, to }
 }
 
-const cellsIn = (frame: HTMLElement) =>
-  [...frame.querySelectorAll<HTMLElement>('.cm-cell[data-from]')]
+const cellsIn = (frame: HTMLElement) => [
+  ...frame.querySelectorAll<HTMLElement>('.cm-cell[data-from]'),
+]
 
 const rangeOf = (element: HTMLElement) => {
   const from = Number(element.dataset['from'])

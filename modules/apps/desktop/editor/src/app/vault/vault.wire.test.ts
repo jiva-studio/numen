@@ -58,7 +58,12 @@ describe('a passage the vault answers with', () => {
   it('carries the kind of the note it was read out of', async () => {
     answerWith({
       found: [
-        { path: 'Daily.md', note: { path: 'Daily.md', title: 'Daily' }, at: [], type: 'NOTE_TYPE_PRESET' },
+        {
+          path: 'Daily.md',
+          note: { path: 'Daily.md', title: 'Daily' },
+          at: [],
+          type: 'NOTE_TYPE_PRESET',
+        },
         { path: 'Ants.md', note: { path: 'Ants.md', title: 'Ants' }, at: [] },
       ],
     })

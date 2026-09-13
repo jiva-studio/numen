@@ -1,10 +1,5 @@
 /** The document and book reader tab kinds of a window. */
-import {
-  documentKind,
-  documents,
-  useDocumentReader,
-  useDocumentTab,
-} from '@/pages/document-viewer'
+import { documentKind, documents, useDocumentReader, useDocumentTab } from '@/pages/document-viewer'
 import { bookKind, books, useBookReader, useBookTab, WORDS as bookWords } from '@/pages/book-reader'
 import type { WindowKindsDeps } from './deps'
 

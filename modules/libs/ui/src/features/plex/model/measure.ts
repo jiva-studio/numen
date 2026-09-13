@@ -176,10 +176,7 @@ function lineDepth(context: CanvasRenderingContext2D, font: string): number {
 }
 
 /** Text in one type, each distinct string measured once. */
-function textWidths(
-  context: CanvasRenderingContext2D,
-  font: string,
-): (text: string) => number {
+function textWidths(context: CanvasRenderingContext2D, font: string): (text: string) => number {
   const widths = new Map<string, number>()
 
   return (text) => {

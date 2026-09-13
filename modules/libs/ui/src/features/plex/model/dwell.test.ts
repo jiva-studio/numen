@@ -67,7 +67,6 @@ describe('a box with nothing more to show', () => {
   })
 })
 
-
 describe('a box opening under the attention', () => {
   const WAIT = 500
 

@@ -176,7 +176,13 @@ export const Playground: Story = {}
 export const EverySeat: Story = {
   render: renderScene(
     (args) => [
-      nodeFrom(args, { id: 'focus', title: 'Where you are', seat: 'focus', width: 176, height: 44 }),
+      nodeFrom(args, {
+        id: 'focus',
+        title: 'Where you are',
+        seat: 'focus',
+        width: 176,
+        height: 44,
+      }),
       nodeFrom(args, { id: 'parent', title: 'Above it', seat: 'parent', y: -72 }),
       nodeFrom(args, { id: 'child', title: 'Below it', seat: 'child', y: 72 }),
       nodeFrom(args, { id: 'jump', title: 'Off to the left', seat: 'jump', x: -190 }),
@@ -229,8 +235,9 @@ export const Reaching: Story = {
     // that never arrives is a handle of no size rather than a default one.
     const drawn = handle()!.getBoundingClientRect()
     await expect(drawn.width).toBeGreaterThan(0)
-    await expect(canvasElement.querySelector('.plex__handle-mark')!.getBoundingClientRect()
-      .width).toBeGreaterThan(0)
+    await expect(
+      canvasElement.querySelector('.plex__handle-mark')!.getBoundingClientRect().width,
+    ).toBeGreaterThan(0)
 
     // Pressing it: a gesture begins, and the node is neither chosen nor left
     // holding the focus a press would otherwise give it.

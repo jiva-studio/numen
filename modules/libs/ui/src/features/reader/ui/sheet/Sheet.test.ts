@@ -116,9 +116,7 @@ describe('a page pointed somewhere else', () => {
 
     await page.setProps({ picture: '/assets/book/pages/0?wide=800' })
 
-    expect(page.find('.reader__picture').attributes('src')).toBe(
-      '/assets/book/pages/0?wide=800',
-    )
+    expect(page.find('.reader__picture').attributes('src')).toBe('/assets/book/pages/0?wide=800')
     expect(page.find('.reader__picture').classes()).toContain('invisible')
   })
 })

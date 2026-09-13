@@ -8,29 +8,32 @@
 // the identity that folder carries. What is inside one is vault.proto, which
 // answers about the vault a client is looking at.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Message } from "@bufbuild/protobuf";
+import type { GenEnum, GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file numen/v1/vaults.proto.
  */
-export const file_numen_v1_vaults: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkAKBVZhdWx0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRIPCgdtaXNzaW5nGAQgASgIIhMKEUxpc3RWYXVsdHNSZXF1ZXN0IjUKEkxpc3RWYXVsdHNSZXNwb25zZRIfCgZ2YXVsdHMYASADKAsyDy5udW1lbi52MS5WYXVsdCI5ChNDaG9vc2VGb2xkZXJSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC3N0YXJ0aW5nX2F0GAIgASgJIjMKFENob29zZUZvbGRlclJlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFY2hvc2UYAiABKAgiLQoPQWRkVmF1bHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCSJ6ChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgVlcnJvchgCIAEoDjIZLm51bWVuLnYxLlZhdWx0c0Vycm9yQ29kZUgBiAEBQggKBl92YXVsdEIICgZfZXJyb3IiLgoSUmVuYW1lVmF1bHRSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkifQoTUmVuYW1lVmF1bHRSZXNwb25zZRIjCgV2YXVsdBgBIAEoCzIPLm51bWVuLnYxLlZhdWx0SACIAQESLQoFZXJyb3IYAiABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAYgBAUIICgZfdmF1bHRCCAoGX2Vycm9yIi8KElJlbW92ZVZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCRINCgV0cmFzaBgCIAEoCCJOChNSZW1vdmVWYXVsdFJlc3BvbnNlEi0KBWVycm9yGAEgASgOMhkubnVtZW4udjEuVmF1bHRzRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yIh4KEE9wZW5WYXVsdFJlcXVlc3QSCgoCaWQYASABKAkiTAoRT3BlblZhdWx0UmVzcG9uc2USLQoFZXJyb3IYASABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAIgBAUIICgZfZXJyb3Iq0gIKD1ZhdWx0c0Vycm9yQ29kZRIhCh1WQVVMVFNfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiAKHFZBVUxUU19FUlJPUl9DT0RFX1VOUkVBREFCTEUQARIaChZWQVVMVFNfRVJST1JfQ09ERV9DT1BZEAISHgoaVkFVTFRTX0VSUk9SX0NPREVfT1ZFUkxBUFMQAxIgChxWQVVMVFNfRVJST1JfQ09ERV9OQU1FX1RBS0VOEAQSIAocVkFVTFRTX0VSUk9SX0NPREVfTEFTVF9WQVVMVBAFEh0KGVZBVUxUU19FUlJPUl9DT0RFX1NIT1dJTkcQBhIdChlWQVVMVFNfRVJST1JfQ09ERV9VTktOT1dOEAcSHgoaVkFVTFRTX0VSUk9SX0NPREVfTk9fVFJBU0gQCBIcChhWQVVMVFNfRVJST1JfQ09ERV9BU0tJTkcQCTLIAwoNVmF1bHRzU2VydmljZRJHCgpMaXN0VmF1bHRzEhsubnVtZW4udjEuTGlzdFZhdWx0c1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VmF1bHRzUmVzcG9uc2USTQoMQ2hvb3NlRm9sZGVyEh0ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNob29zZUZvbGRlclJlc3BvbnNlEkEKCEFkZFZhdWx0EhkubnVtZW4udjEuQWRkVmF1bHRSZXF1ZXN0GhoubnVtZW4udjEuQWRkVmF1bHRSZXNwb25zZRJKCgtSZW5hbWVWYXVsdBIcLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVzcG9uc2USSgoLUmVtb3ZlVmF1bHQSHC5udW1lbi52MS5SZW1vdmVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW1vdmVWYXVsdFJlc3BvbnNlEkQKCU9wZW5WYXVsdBIaLm51bWVuLnYxLk9wZW5WYXVsdFJlcXVlc3QaGy5udW1lbi52MS5PcGVuVmF1bHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+export const file_numen_v1_vaults: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkAKBVZhdWx0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRIPCgdtaXNzaW5nGAQgASgIIhMKEUxpc3RWYXVsdHNSZXF1ZXN0IjUKEkxpc3RWYXVsdHNSZXNwb25zZRIfCgZ2YXVsdHMYASADKAsyDy5udW1lbi52MS5WYXVsdCI5ChNDaG9vc2VGb2xkZXJSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC3N0YXJ0aW5nX2F0GAIgASgJIjMKFENob29zZUZvbGRlclJlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFY2hvc2UYAiABKAgiLQoPQWRkVmF1bHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCSJ6ChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgVlcnJvchgCIAEoDjIZLm51bWVuLnYxLlZhdWx0c0Vycm9yQ29kZUgBiAEBQggKBl92YXVsdEIICgZfZXJyb3IiLgoSUmVuYW1lVmF1bHRSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkifQoTUmVuYW1lVmF1bHRSZXNwb25zZRIjCgV2YXVsdBgBIAEoCzIPLm51bWVuLnYxLlZhdWx0SACIAQESLQoFZXJyb3IYAiABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAYgBAUIICgZfdmF1bHRCCAoGX2Vycm9yIi8KElJlbW92ZVZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCRINCgV0cmFzaBgCIAEoCCJOChNSZW1vdmVWYXVsdFJlc3BvbnNlEi0KBWVycm9yGAEgASgOMhkubnVtZW4udjEuVmF1bHRzRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yIh4KEE9wZW5WYXVsdFJlcXVlc3QSCgoCaWQYASABKAkiTAoRT3BlblZhdWx0UmVzcG9uc2USLQoFZXJyb3IYASABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAIgBAUIICgZfZXJyb3Iq0gIKD1ZhdWx0c0Vycm9yQ29kZRIhCh1WQVVMVFNfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiAKHFZBVUxUU19FUlJPUl9DT0RFX1VOUkVBREFCTEUQARIaChZWQVVMVFNfRVJST1JfQ09ERV9DT1BZEAISHgoaVkFVTFRTX0VSUk9SX0NPREVfT1ZFUkxBUFMQAxIgChxWQVVMVFNfRVJST1JfQ09ERV9OQU1FX1RBS0VOEAQSIAocVkFVTFRTX0VSUk9SX0NPREVfTEFTVF9WQVVMVBAFEh0KGVZBVUxUU19FUlJPUl9DT0RFX1NIT1dJTkcQBhIdChlWQVVMVFNfRVJST1JfQ09ERV9VTktOT1dOEAcSHgoaVkFVTFRTX0VSUk9SX0NPREVfTk9fVFJBU0gQCBIcChhWQVVMVFNfRVJST1JfQ09ERV9BU0tJTkcQCTLIAwoNVmF1bHRzU2VydmljZRJHCgpMaXN0VmF1bHRzEhsubnVtZW4udjEuTGlzdFZhdWx0c1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VmF1bHRzUmVzcG9uc2USTQoMQ2hvb3NlRm9sZGVyEh0ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNob29zZUZvbGRlclJlc3BvbnNlEkEKCEFkZFZhdWx0EhkubnVtZW4udjEuQWRkVmF1bHRSZXF1ZXN0GhoubnVtZW4udjEuQWRkVmF1bHRSZXNwb25zZRJKCgtSZW5hbWVWYXVsdBIcLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVzcG9uc2USSgoLUmVtb3ZlVmF1bHQSHC5udW1lbi52MS5SZW1vdmVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW1vdmVWYXVsdFJlc3BvbnNlEkQKCU9wZW5WYXVsdBIaLm51bWVuLnYxLk9wZW5WYXVsdFJlcXVlc3QaGy5udW1lbi52MS5PcGVuVmF1bHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z',
+  )
 
 /**
  * Vault is one vault the installation holds, as the list has it.
  *
  * @generated from message numen.v1.Vault
  */
-export type Vault = Message<"numen.v1.Vault"> & {
+export type Vault = Message<'numen.v1.Vault'> & {
   /**
    * Id is the identity the folder carries, and how this vault is asked for
    * again. It survives the folder moving and the vault being renamed.
    *
    * @generated from field: string id = 1;
    */
-  id: string;
+  id: string
 
   /**
    * Name is what the person calls the collection. It lives on the list and not
@@ -38,14 +41,14 @@ export type Vault = Message<"numen.v1.Vault"> & {
    *
    * @generated from field: string name = 2;
    */
-  name: string;
+  name: string
 
   /**
    * Path is the folder, absolute on this machine.
    *
    * @generated from field: string path = 3;
    */
-  path: string;
+  path: string
 
   /**
    * Set when nothing is at the path. The vault stays on the list, and the
@@ -53,28 +56,27 @@ export type Vault = Message<"numen.v1.Vault"> & {
    *
    * @generated from field: bool missing = 4;
    */
-  missing: boolean;
-};
+  missing: boolean
+}
 
 /**
  * Describes the message numen.v1.Vault.
  * Use `create(VaultSchema)` to create a new message.
  */
-export const VaultSchema: GenMessage<Vault> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 0);
+export const VaultSchema: GenMessage<Vault> = /*@__PURE__*/ messageDesc(file_numen_v1_vaults, 0)
 
 /**
  * @generated from message numen.v1.ListVaultsRequest
  */
-export type ListVaultsRequest = Message<"numen.v1.ListVaultsRequest"> & {
-};
+export type ListVaultsRequest = Message<'numen.v1.ListVaultsRequest'> & {}
 
 /**
  * Describes the message numen.v1.ListVaultsRequest.
  * Use `create(ListVaultsRequestSchema)` to create a new message.
  */
-export const ListVaultsRequestSchema: GenMessage<ListVaultsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 1);
+export const ListVaultsRequestSchema: GenMessage<ListVaultsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 1)
 
 /**
  * ListVaultsResponse is the list itself, which is the same for every window.
@@ -82,32 +84,33 @@ export const ListVaultsRequestSchema: GenMessage<ListVaultsRequest> = /*@__PURE_
  *
  * @generated from message numen.v1.ListVaultsResponse
  */
-export type ListVaultsResponse = Message<"numen.v1.ListVaultsResponse"> & {
+export type ListVaultsResponse = Message<'numen.v1.ListVaultsResponse'> & {
   /**
    * Every vault the installation holds.
    *
    * @generated from field: repeated numen.v1.Vault vaults = 1;
    */
-  vaults: Vault[];
-};
+  vaults: Vault[]
+}
 
 /**
  * Describes the message numen.v1.ListVaultsResponse.
  * Use `create(ListVaultsResponseSchema)` to create a new message.
  */
-export const ListVaultsResponseSchema: GenMessage<ListVaultsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 2);
+export const ListVaultsResponseSchema: GenMessage<ListVaultsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 2)
 
 /**
  * @generated from message numen.v1.ChooseFolderRequest
  */
-export type ChooseFolderRequest = Message<"numen.v1.ChooseFolderRequest"> & {
+export type ChooseFolderRequest = Message<'numen.v1.ChooseFolderRequest'> & {
   /**
    * What the dialog is titled. Empty takes the words the application chooses.
    *
    * @generated from field: string title = 1;
    */
-  title: string;
+  title: string
 
   /**
    * The folder the dialog opens in. Empty opens wherever this machine opens a
@@ -115,26 +118,27 @@ export type ChooseFolderRequest = Message<"numen.v1.ChooseFolderRequest"> & {
    *
    * @generated from field: string starting_at = 2;
    */
-  startingAt: string;
-};
+  startingAt: string
+}
 
 /**
  * Describes the message numen.v1.ChooseFolderRequest.
  * Use `create(ChooseFolderRequestSchema)` to create a new message.
  */
-export const ChooseFolderRequestSchema: GenMessage<ChooseFolderRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 3);
+export const ChooseFolderRequestSchema: GenMessage<ChooseFolderRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 3)
 
 /**
  * @generated from message numen.v1.ChooseFolderResponse
  */
-export type ChooseFolderResponse = Message<"numen.v1.ChooseFolderResponse"> & {
+export type ChooseFolderResponse = Message<'numen.v1.ChooseFolderResponse'> & {
   /**
    * The folder that was chosen, empty when none was.
    *
    * @generated from field: string path = 1;
    */
-  path: string;
+  path: string
 
   /**
    * Set when the person chose a folder. False is a dialog they closed, which
@@ -142,26 +146,27 @@ export type ChooseFolderResponse = Message<"numen.v1.ChooseFolderResponse"> & {
    *
    * @generated from field: bool chose = 2;
    */
-  chose: boolean;
-};
+  chose: boolean
+}
 
 /**
  * Describes the message numen.v1.ChooseFolderResponse.
  * Use `create(ChooseFolderResponseSchema)` to create a new message.
  */
-export const ChooseFolderResponseSchema: GenMessage<ChooseFolderResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 4);
+export const ChooseFolderResponseSchema: GenMessage<ChooseFolderResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 4)
 
 /**
  * @generated from message numen.v1.AddVaultRequest
  */
-export type AddVaultRequest = Message<"numen.v1.AddVaultRequest"> & {
+export type AddVaultRequest = Message<'numen.v1.AddVaultRequest'> & {
   /**
    * The folder to add, absolute on this machine.
    *
    * @generated from field: string path = 1;
    */
-  path: string;
+  path: string
 
   /**
    * What to call the vault. Empty takes the folder's own name, and a name
@@ -169,105 +174,109 @@ export type AddVaultRequest = Message<"numen.v1.AddVaultRequest"> & {
    *
    * @generated from field: string name = 2;
    */
-  name: string;
-};
+  name: string
+}
 
 /**
  * Describes the message numen.v1.AddVaultRequest.
  * Use `create(AddVaultRequestSchema)` to create a new message.
  */
-export const AddVaultRequestSchema: GenMessage<AddVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 5);
+export const AddVaultRequestSchema: GenMessage<AddVaultRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 5)
 
 /**
  * @generated from message numen.v1.AddVaultResponse
  */
-export type AddVaultResponse = Message<"numen.v1.AddVaultResponse"> & {
+export type AddVaultResponse = Message<'numen.v1.AddVaultResponse'> & {
   /**
    * The vault that joined the list. Absent when nothing was added.
    *
    * @generated from field: optional numen.v1.Vault vault = 1;
    */
-  vault?: Vault | undefined;
+  vault?: Vault | undefined
 
   /**
    * Set when nothing was added, and why.
    *
    * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
    */
-  error?: VaultsErrorCode | undefined;
-};
+  error?: VaultsErrorCode | undefined
+}
 
 /**
  * Describes the message numen.v1.AddVaultResponse.
  * Use `create(AddVaultResponseSchema)` to create a new message.
  */
-export const AddVaultResponseSchema: GenMessage<AddVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 6);
+export const AddVaultResponseSchema: GenMessage<AddVaultResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 6)
 
 /**
  * @generated from message numen.v1.RenameVaultRequest
  */
-export type RenameVaultRequest = Message<"numen.v1.RenameVaultRequest"> & {
+export type RenameVaultRequest = Message<'numen.v1.RenameVaultRequest'> & {
   /**
    * The vault to rename, by its identity.
    *
    * @generated from field: string id = 1;
    */
-  id: string;
+  id: string
 
   /**
    * What the vault is called from now on.
    *
    * @generated from field: string name = 2;
    */
-  name: string;
-};
+  name: string
+}
 
 /**
  * Describes the message numen.v1.RenameVaultRequest.
  * Use `create(RenameVaultRequestSchema)` to create a new message.
  */
-export const RenameVaultRequestSchema: GenMessage<RenameVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 7);
+export const RenameVaultRequestSchema: GenMessage<RenameVaultRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 7)
 
 /**
  * @generated from message numen.v1.RenameVaultResponse
  */
-export type RenameVaultResponse = Message<"numen.v1.RenameVaultResponse"> & {
+export type RenameVaultResponse = Message<'numen.v1.RenameVaultResponse'> & {
   /**
    * The vault under its new name. Absent when it was not renamed. The name a
    * vault already has is not a change and answers with the vault as it stands.
    *
    * @generated from field: optional numen.v1.Vault vault = 1;
    */
-  vault?: Vault | undefined;
+  vault?: Vault | undefined
 
   /**
    * Set when the vault was not renamed, and why.
    *
    * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
    */
-  error?: VaultsErrorCode | undefined;
-};
+  error?: VaultsErrorCode | undefined
+}
 
 /**
  * Describes the message numen.v1.RenameVaultResponse.
  * Use `create(RenameVaultResponseSchema)` to create a new message.
  */
-export const RenameVaultResponseSchema: GenMessage<RenameVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 8);
+export const RenameVaultResponseSchema: GenMessage<RenameVaultResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 8)
 
 /**
  * @generated from message numen.v1.RemoveVaultRequest
  */
-export type RemoveVaultRequest = Message<"numen.v1.RemoveVaultRequest"> & {
+export type RemoveVaultRequest = Message<'numen.v1.RemoveVaultRequest'> & {
   /**
    * The vault to remove, by its identity.
    *
    * @generated from field: string id = 1;
    */
-  id: string;
+  id: string
 
   /**
    * Trash sends the folder to the place this machine keeps what a person
@@ -276,73 +285,77 @@ export type RemoveVaultRequest = Message<"numen.v1.RemoveVaultRequest"> & {
    *
    * @generated from field: bool trash = 2;
    */
-  trash: boolean;
-};
+  trash: boolean
+}
 
 /**
  * Describes the message numen.v1.RemoveVaultRequest.
  * Use `create(RemoveVaultRequestSchema)` to create a new message.
  */
-export const RemoveVaultRequestSchema: GenMessage<RemoveVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 9);
+export const RemoveVaultRequestSchema: GenMessage<RemoveVaultRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 9)
 
 /**
  * @generated from message numen.v1.RemoveVaultResponse
  */
-export type RemoveVaultResponse = Message<"numen.v1.RemoveVaultResponse"> & {
+export type RemoveVaultResponse = Message<'numen.v1.RemoveVaultResponse'> & {
   /**
    * Set when the vault is still on the list, and why. The folder is where it
    * was.
    *
    * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
    */
-  error?: VaultsErrorCode | undefined;
-};
+  error?: VaultsErrorCode | undefined
+}
 
 /**
  * Describes the message numen.v1.RemoveVaultResponse.
  * Use `create(RemoveVaultResponseSchema)` to create a new message.
  */
-export const RemoveVaultResponseSchema: GenMessage<RemoveVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 10);
+export const RemoveVaultResponseSchema: GenMessage<RemoveVaultResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 10)
 
 /**
  * @generated from message numen.v1.OpenVaultRequest
  */
-export type OpenVaultRequest = Message<"numen.v1.OpenVaultRequest"> & {
+export type OpenVaultRequest = Message<'numen.v1.OpenVaultRequest'> & {
   /**
    * The vault to show, by its identity.
    *
    * @generated from field: string id = 1;
    */
-  id: string;
-};
+  id: string
+}
 
 /**
  * Describes the message numen.v1.OpenVaultRequest.
  * Use `create(OpenVaultRequestSchema)` to create a new message.
  */
-export const OpenVaultRequestSchema: GenMessage<OpenVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 11);
+export const OpenVaultRequestSchema: GenMessage<OpenVaultRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 11)
 
 /**
  * @generated from message numen.v1.OpenVaultResponse
  */
-export type OpenVaultResponse = Message<"numen.v1.OpenVaultResponse"> & {
+export type OpenVaultResponse = Message<'numen.v1.OpenVaultResponse'> & {
   /**
    * Set when the window is showing what it was, and why.
    *
    * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
    */
-  error?: VaultsErrorCode | undefined;
-};
+  error?: VaultsErrorCode | undefined
+}
 
 /**
  * Describes the message numen.v1.OpenVaultResponse.
  * Use `create(OpenVaultResponseSchema)` to create a new message.
  */
-export const OpenVaultResponseSchema: GenMessage<OpenVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 12);
+export const OpenVaultResponseSchema: GenMessage<OpenVaultResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 12)
 
 /**
  * VaultsErrorCode is why the list is as it was, or why the window is still
@@ -428,8 +441,9 @@ export enum VaultsErrorCode {
 /**
  * Describes the enum numen.v1.VaultsErrorCode.
  */
-export const VaultsErrorCodeSchema: GenEnum<VaultsErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_vaults, 0);
+export const VaultsErrorCodeSchema: GenEnum<VaultsErrorCode> =
+  /*@__PURE__*/
+  enumDesc(file_numen_v1_vaults, 0)
 
 /**
  * VaultsService answers about the vaults this installation holds, and changes
@@ -445,10 +459,10 @@ export const VaultsService: GenService<{
    * @generated from rpc numen.v1.VaultsService.ListVaults
    */
   listVaults: {
-    methodKind: "unary";
-    input: typeof ListVaultsRequestSchema;
-    output: typeof ListVaultsResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof ListVaultsRequestSchema
+    output: typeof ListVaultsResponseSchema
+  }
   /**
    * ChooseFolder puts this machine's own folder dialog in front of the person
    * and answers with the folder they chose. A person who closes the dialog has
@@ -457,10 +471,10 @@ export const VaultsService: GenService<{
    * @generated from rpc numen.v1.VaultsService.ChooseFolder
    */
   chooseFolder: {
-    methodKind: "unary";
-    input: typeof ChooseFolderRequestSchema;
-    output: typeof ChooseFolderResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof ChooseFolderRequestSchema
+    output: typeof ChooseFolderResponseSchema
+  }
   /**
    * AddVault turns a folder into a vault and puts it on the list. The folder is
    * given an identity that stays with it, and is the same vault wherever it
@@ -469,10 +483,10 @@ export const VaultsService: GenService<{
    * @generated from rpc numen.v1.VaultsService.AddVault
    */
   addVault: {
-    methodKind: "unary";
-    input: typeof AddVaultRequestSchema;
-    output: typeof AddVaultResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof AddVaultRequestSchema
+    output: typeof AddVaultResponseSchema
+  }
   /**
    * RenameVault is what a person calls a vault. The folder keeps the name the
    * filesystem gives it.
@@ -480,10 +494,10 @@ export const VaultsService: GenService<{
    * @generated from rpc numen.v1.VaultsService.RenameVault
    */
   renameVault: {
-    methodKind: "unary";
-    input: typeof RenameVaultRequestSchema;
-    output: typeof RenameVaultResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof RenameVaultRequestSchema
+    output: typeof RenameVaultResponseSchema
+  }
   /**
    * RemoveVault takes a vault off the list and out of the index. The folder
    * stays where it is unless the request asks for it, and adding it back
@@ -492,10 +506,10 @@ export const VaultsService: GenService<{
    * @generated from rpc numen.v1.VaultsService.RemoveVault
    */
   removeVault: {
-    methodKind: "unary";
-    input: typeof RemoveVaultRequestSchema;
-    output: typeof RemoveVaultResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof RemoveVaultRequestSchema
+    output: typeof RemoveVaultResponseSchema
+  }
   /**
    * OpenVault shows another vault in this window. What the window was showing
    * is let go of, and everything a client asked about it is asked again of the
@@ -504,10 +518,8 @@ export const VaultsService: GenService<{
    * @generated from rpc numen.v1.VaultsService.OpenVault
    */
   openVault: {
-    methodKind: "unary";
-    input: typeof OpenVaultRequestSchema;
-    output: typeof OpenVaultResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_numen_v1_vaults, 0);
-
+    methodKind: 'unary'
+    input: typeof OpenVaultRequestSchema
+    output: typeof OpenVaultResponseSchema
+  }
+}> = /*@__PURE__*/ serviceDesc(file_numen_v1_vaults, 0)

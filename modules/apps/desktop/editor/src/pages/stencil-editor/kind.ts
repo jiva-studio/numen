@@ -45,7 +45,10 @@ export function useStencilTabs(
       void store.close(id).then((gone) => {
         if (!gone) return
         fields.forget(id)
-        wire.forget(path, store.getOpenIds().some((one) => store.getPath(one) === path))
+        wire.forget(
+          path,
+          store.getOpenIds().some((one) => store.getPath(one) === path),
+        )
         handle.closeTab(tab)
       })
     }
@@ -55,7 +58,9 @@ export function useStencilTabs(
       note: computed(() => store.getOpenNote(id)),
       stencil: computed(() => fields.getStencil(id)),
       marks: computed(() => fields.getMarks(id)),
-      errorMessage: computed(() => wire.getErrorMessage(store.getPath(id), store.getOpenNote(id).error)),
+      errorMessage: computed(() =>
+        wire.getErrorMessage(store.getPath(id), store.getOpenNote(id).error),
+      ),
       ...fields.actionsFor(id),
       keepMine: () => store.keep(id),
       takeFile: () => store.take(id),
@@ -127,7 +132,10 @@ export function useStencilTabs(
 
   tabOpeners.registerEditor('stencil', openStencil)
 
-  const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[] = []): void => {
+  const applyPathChanges = (
+    paths: readonly string[],
+    renames: readonly PathRename[] = [],
+  ): void => {
     wire.movePaths(renames)
     store.applyPathChanges(paths, renames)
   }

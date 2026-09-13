@@ -112,8 +112,7 @@ const WRITING: Record<ErrorCode, string | null> = {
   occupied:
     'A file stands where this note goes, so nothing was written. ' +
     'These settings are still here.',
-  notAPreset:
-    'That note is not a preset, so nothing was written. These settings are still here.',
+  notAPreset: 'That note is not a preset, so nothing was written. These settings are still here.',
   unnameable: null,
   notAStencil: null,
   notADeck: null,
@@ -310,8 +309,7 @@ export const WORDS = {
   /** The vault answered a read with neither settings nor a reason. */
   unreachable: 'The vault would not answer for this preset, and did not say why.',
   /** The vault answered a write with neither a file nor a reason. */
-  unwritten:
-    'The vault would not take these settings, and did not say why. They are still here.',
+  unwritten: 'The vault would not take these settings, and did not say why. They are still here.',
   /** The vault would not work the picture out. */
   noCurve: 'The vault would not work this picture out, and did not say why.',
 }

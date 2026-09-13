@@ -61,7 +61,9 @@ describe('what a goal of a date draws', () => {
   })
 
   it('draws every day of the run under the goals that name no day', () => {
-    const { tab } = mountPresetTab({ at: [point(), point(), point({ backlog: climbing }), point()] })
+    const { tab } = mountPresetTab({
+      at: [point(), point(), point({ backlog: climbing }), point()],
+    })
     expect(days(tab)).toBe(climbing.length)
   })
 })
@@ -82,8 +84,14 @@ describe('the plot of what stands overdue', () => {
   // A day too short to carry what falls due adds to the pile, and the climb is
   // what the picture is for. The extent is scaled to this one place's own run.
   it('draws a backlog that climbs as climbing, and not flat', () => {
-    const heights = (d: string) => d.split(/[ML]/).slice(1).map((one) => Number(one.split(' ')[1]))
-    const drawnAt = heights(createClimbingTab().tab.get('[data-backlog="line"]').attributes('d') ?? '')
+    const heights = (d: string) =>
+      d
+        .split(/[ML]/)
+        .slice(1)
+        .map((one) => Number(one.split(' ')[1]))
+    const drawnAt = heights(
+      createClimbingTab().tab.get('[data-backlog="line"]').attributes('d') ?? '',
+    )
     expect(drawnAt[0]).toBeGreaterThan(drawnAt[5] ?? 0)
     expect(drawnAt[2]).toBeLessThan(drawnAt[1] ?? 0)
     expect(new Set(drawnAt).size).toBeGreaterThan(4)
@@ -108,7 +116,9 @@ describe('the plot of what stands overdue', () => {
     const { tab } = createClimbingTab()
     const names = tab.findAll('[data-control="name"][data-axis="y"]').map((one) => one.text())
     expect(names).toStrictEqual([words.axisY('minutes'), words.backlogY])
-    expect(tab.findAll('[data-control="name"][data-axis="x"]').map((one) => one.text())).toContain(words.backlogX)
+    expect(tab.findAll('[data-control="name"][data-axis="x"]').map((one) => one.text())).toContain(
+      words.backlogX,
+    )
   })
 
   it('carries the days at either end, which the goal’s grid says nothing about', () => {
@@ -130,7 +140,9 @@ describe('the plot of what stands overdue', () => {
     const { tab } = mountPresetTab()
     expect(tab.findAll('[data-backlog="line"]')).toHaveLength(0)
     expect(tab.findAll('[data-control="room"]')).toHaveLength(2)
-    expect(tab.findAll('[data-control="name"][data-axis="y"]').map((one) => one.text())).toContain(words.backlogY)
+    expect(tab.findAll('[data-control="name"][data-axis="y"]').map((one) => one.text())).toContain(
+      words.backlogY,
+    )
   })
 
   // The room a plot is drawn in is the same box in every state it has, so

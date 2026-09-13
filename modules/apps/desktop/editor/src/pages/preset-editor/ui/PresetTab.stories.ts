@@ -318,8 +318,7 @@ export const TheBacklogKeepsItsRoom: Story = {
   render: bothWays,
   play: async ({ canvasElement }) => {
     const [answered, waiting] = tabsIn(canvasElement)
-    const backlogRoom = (tab: HTMLElement): DOMRect =>
-      roomsIn(tab)[1]!.getBoundingClientRect()
+    const backlogRoom = (tab: HTMLElement): DOMRect => roomsIn(tab)[1]!.getBoundingClientRect()
 
     // The backlog's own two axes are named, and it is drawn under the picture it
     // belongs to rather than beside it.
@@ -438,8 +437,6 @@ export const TheKnobFollowsThePointer: Story = {
     picture.dispatchEvent(new PointerEvent('pointermove', at(0.9)))
     picture.dispatchEvent(new PointerEvent('pointerup', at(0.9)))
 
-    await waitFor(() =>
-      expect(picture.getAttribute('aria-valuenow')).not.toBe(was),
-    )
+    await waitFor(() => expect(picture.getAttribute('aria-valuenow')).not.toBe(was))
   },
 }

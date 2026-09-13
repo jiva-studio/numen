@@ -120,5 +120,14 @@ export function answers() {
     titles.delete(from)
   }
 
-  return { recordRead, recordWrite, problemsAt, getErrorMessage, getTitle, setTitle, forgetFile, moveFile }
+  return {
+    recordRead,
+    recordWrite,
+    problemsAt,
+    getErrorMessage,
+    getTitle,
+    setTitle,
+    forgetFile,
+    moveFile,
+  }
 }

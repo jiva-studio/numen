@@ -39,9 +39,7 @@ describe('walking', () => {
     const next = step(start, child.id)
 
     expect(next.nodes.find((node) => node.seat === 'focus')?.id).toBe(child.id)
-    expect(next.nodes.some((node) => node.id === 'focus' && node.seat === 'parent')).toBe(
-      true,
-    )
+    expect(next.nodes.some((node) => node.id === 'focus' && node.seat === 'parent')).toBe(true)
   })
 
   it('gives every node a name from the pool rather than a number', () => {

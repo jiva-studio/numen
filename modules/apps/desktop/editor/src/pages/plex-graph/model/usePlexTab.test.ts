@@ -396,10 +396,7 @@ describe('what the picture draws a line to', () => {
     const one = tab('Root.md')
     one.dragging.value = ['physics/Entropy.md', 'physics/Kelvin.md']
 
-    expect(one.state.dragged.value).toStrictEqual([
-      'physics/Entropy.md',
-      'physics/Kelvin.md',
-    ])
+    expect(one.state.dragged.value).toStrictEqual(['physics/Entropy.md', 'physics/Kelvin.md'])
   })
 
   it('is nothing while the window is dragging none', () => {
@@ -962,4 +959,3 @@ describe('what a node stands for', () => {
     expect(one.state.typeOf(one.node('Root.md'))).toBe('note')
   })
 })
-

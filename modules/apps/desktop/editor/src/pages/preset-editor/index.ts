@@ -2,11 +2,4 @@
 export { default as PresetTab } from './ui/PresetTab.vue'
 export { usePresetTab } from './kind'
 export { DEFAULTS } from './types'
-export type {
-  Curve,
-  Point,
-  PresetCounts,
-  PresetTabState,
-  Settings,
-  SettingsBounds,
-} from './types'
+export type { Curve, Point, PresetCounts, PresetTabState, Settings, SettingsBounds } from './types'

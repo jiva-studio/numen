@@ -91,15 +91,39 @@ describe('how many columns the text of a document fills', () => {
 
   it('is counted off the run standing furthest along them', () => {
     expect(columnsFilled([{ at: 0, x: 0 }], flow)).toBe(1)
-    expect(columnsFilled([{ at: 0, x: 0 }, { at: 40, x: second }], flow)).toBe(2)
+    expect(
+      columnsFilled(
+        [
+          { at: 0, x: 0 },
+          { at: 40, x: second },
+        ],
+        flow,
+      ),
+    ).toBe(2)
   })
 
   it('counts a run measured a fraction of a pixel short of its column into it', () => {
     // The browser lays the columns out in whole device pixels, so the run at
     // the head of the second column was measured at 654.8125 where the column
     // was reckoned to begin at 655, and the whole of it went uncounted.
-    expect(columnsFilled([{ at: 0, x: 0 }, { at: 40, x: second - 0.1875 }], flow)).toBe(2)
-    expect(columnsFilled([{ at: 0, x: 0 }, { at: 40, x: second + 0.1875 }], flow)).toBe(2)
+    expect(
+      columnsFilled(
+        [
+          { at: 0, x: 0 },
+          { at: 40, x: second - 0.1875 },
+        ],
+        flow,
+      ),
+    ).toBe(2)
+    expect(
+      columnsFilled(
+        [
+          { at: 0, x: 0 },
+          { at: 40, x: second + 0.1875 },
+        ],
+        flow,
+      ),
+    ).toBe(2)
   })
 
   it('counts a run standing at the foot of a column into that column', () => {
@@ -209,7 +233,10 @@ describe('which run of the text is in front', () => {
   it('is nothing where no run stands in the spread', () => {
     const flow = createFlow(WIDE, 2, 10)
     // A picture filling the third spread on its own, with no run of text in it.
-    const marks: Mark[] = [{ at: 0, x: 0 }, { at: 500, x: getSpreadStart(flow, 3) }]
+    const marks: Mark[] = [
+      { at: 0, x: 0 },
+      { at: 500, x: getSpreadStart(flow, 3) },
+    ]
 
     expect(inFront(marks, flow, 2)).toBeUndefined()
   })
@@ -330,8 +357,6 @@ describe('a hand put down and lifted', () => {
     expect(handTurn(10, 10, WIDE, true)).toBeUndefined()
   })
 })
-
-
 
 describe('the page a person is looking at', () => {
   const flow = { along: 10 * WIDE, width: WIDE, gap: GAP, columns: 2 }

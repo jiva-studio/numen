@@ -138,9 +138,7 @@ describe('scrolling the window over the parts', () => {
 describe('how far in a part is set', () => {
   const setIn = (levels: readonly number[]) =>
     (
-      hung(
-        levels.map((level, at) => ({ id: `${at}`, text: `Part ${at}`, level })),
-      )?.parts ?? []
+      hung(levels.map((level, at) => ({ id: `${at}`, text: `Part ${at}`, level })))?.parts ?? []
     ).map((part) => part.indent)
 
   it('is by where its level stands among the others, not by the number it carries', () => {
@@ -198,9 +196,7 @@ describe('the opening', () => {
     for (const open of [0.05, 0.2, 0.4, 0.6, 0.8, 1]) {
       for (const part of getOpenParts(settled, open)!.parts) {
         expect(part.y).toBeGreaterThanOrEqual(0)
-        expect(part.y + settled.partHeight).toBeLessThanOrEqual(
-          settled.height - 2 * settled.pad,
-        )
+        expect(part.y + settled.partHeight).toBeLessThanOrEqual(settled.height - 2 * settled.pad)
       }
     }
   })

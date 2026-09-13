@@ -1,14 +1,8 @@
 /**
  * File domain conversions between schema representations and window models.
  */
-import {
-  BookFormat as BookFormats,
-  SourceKind,
-} from '@numen/protocol'
-import type {
-  Entry as EntryMessage,
-  MoveResult as MoveResultMessage,
-} from '@numen/protocol'
+import { BookFormat as BookFormats, SourceKind } from '@numen/protocol'
+import type { Entry as EntryMessage, MoveResult as MoveResultMessage } from '@numen/protocol'
 import type { BookFormat, DocumentFormat, Entry, MoveResult, Source } from '@/entities/file'
 import { noteType } from './noteWords'
 

@@ -110,10 +110,9 @@ describe('opening a tab in a pane of its own', () => {
 
     expect(ids(after)).toStrictEqual(['made-2', 'aside'])
     const wrapper = isBranch(after.root) ? after.root.children[0] : undefined
-    expect(wrapper && isBranch(wrapper) && wrapper.children.map((child) => child.id)).toStrictEqual([
-      'main',
-      'made-1',
-    ])
+    expect(wrapper && isBranch(wrapper) && wrapper.children.map((child) => child.id)).toStrictEqual(
+      ['main', 'made-1'],
+    )
     expect(getFaults(after)).toStrictEqual([])
   })
 
@@ -167,7 +166,11 @@ describe('opening a tab in a pane of its own', () => {
 
 describe('a tab let go beside a pane', () => {
   it('joins the parent when the parent already divides that way', () => {
-    const after = dropTab(sideBySide(), { tab: 'chat', onto: 'main', side: 'left' }, createIdFactory())
+    const after = dropTab(
+      sideBySide(),
+      { tab: 'chat', onto: 'main', side: 'left' },
+      createIdFactory(),
+    )
 
     expect(ids(after)).toStrictEqual(['made-1', 'main'])
     expect(after.axis).toBe('horizontal')
@@ -176,19 +179,26 @@ describe('a tab let go beside a pane', () => {
   })
 
   it('wraps the pane when the parent divides the other way', () => {
-    const after = dropTab(withSpare(), { tab: 'notes', onto: 'main', side: 'bottom' }, createIdFactory())
+    const after = dropTab(
+      withSpare(),
+      { tab: 'notes', onto: 'main', side: 'bottom' },
+      createIdFactory(),
+    )
 
     expect(ids(after)).toStrictEqual(['made-2', 'aside'])
     const wrapper = isBranch(after.root) ? after.root.children[0] : undefined
-    expect(wrapper && isBranch(wrapper) && wrapper.children.map((child) => child.id)).toStrictEqual([
-      'main',
-      'made-1',
-    ])
+    expect(wrapper && isBranch(wrapper) && wrapper.children.map((child) => child.id)).toStrictEqual(
+      ['main', 'made-1'],
+    )
     expect(getFaults(after)).toStrictEqual([])
   })
 
   it('takes half of what it landed beside', () => {
-    const after = dropTab(oneStack(), { tab: 'chat', onto: 'main', side: 'right' }, createIdFactory())
+    const after = dropTab(
+      oneStack(),
+      { tab: 'chat', onto: 'main', side: 'right' },
+      createIdFactory(),
+    )
     const boxes = arrangeWorkspace(after, SCREEN)
 
     expect(boxes.get('main')?.width).toBeCloseTo(500)
@@ -214,7 +224,11 @@ describe('a tab let go beside a pane', () => {
 
 describe('a tab let go in the middle of a pane', () => {
   it('joins the stack and is shown', () => {
-    const after = dropTab(sideBySide(), { tab: 'chat', onto: 'main', side: 'center' }, createIdFactory())
+    const after = dropTab(
+      sideBySide(),
+      { tab: 'chat', onto: 'main', side: 'center' },
+      createIdFactory(),
+    )
 
     expect(tabsOf(after, 'main')).toStrictEqual(['plex', 'chat'])
     expect(panesOf(after.root)).toHaveLength(1)
@@ -223,7 +237,11 @@ describe('a tab let go in the middle of a pane', () => {
   })
 
   it('clears away the pane it came from', () => {
-    const after = dropTab(sideBySide(), { tab: 'plex', onto: 'aside', side: 'center' }, createIdFactory())
+    const after = dropTab(
+      sideBySide(),
+      { tab: 'plex', onto: 'aside', side: 'center' },
+      createIdFactory(),
+    )
     expect(panesOf(after.root).map((each) => each.id)).toStrictEqual(['aside'])
   })
 })
@@ -238,7 +256,11 @@ describe('a tab let go where it started', () => {
   })
 
   it('splits its own pane when there are others with it', () => {
-    const after = dropTab(oneStack(), { tab: 'chat', onto: 'main', side: 'right' }, createIdFactory())
+    const after = dropTab(
+      oneStack(),
+      { tab: 'chat', onto: 'main', side: 'right' },
+      createIdFactory(),
+    )
 
     expect(tabsOf(after, 'main')).toStrictEqual(['plex'])
     expect(panesOf(after.root)).toHaveLength(2)
@@ -325,7 +347,10 @@ describe('resizing', () => {
 })
 
 describe('every gesture keeps the tree canonical', () => {
-  const start = split('root', [stack('a', 'one', 'two'), split('down', [stack('b', 'three'), stack('c', 'four')])])
+  const start = split('root', [
+    stack('a', 'one', 'two'),
+    split('down', [stack('b', 'three'), stack('c', 'four')]),
+  ])
 
   it('through a run of them', () => {
     const made = createIdFactory()

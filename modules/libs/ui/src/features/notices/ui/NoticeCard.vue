@@ -38,7 +38,7 @@ defineExpose({ way })
     <button
       ref="way"
       type="button"
-      class="notice__away outline-none ring-numen"
+      class="notice__away ring-numen outline-none"
       :aria-label="`${dismiss}: ${one.says}`"
       @click="emit('dismiss')"
     >

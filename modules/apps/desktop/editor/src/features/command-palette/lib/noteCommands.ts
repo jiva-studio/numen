@@ -9,7 +9,13 @@ import type { Words } from '../words'
 export const noteCommandsOf = (words: Words, agent: string): readonly Command[] => [
   { id: 'read', text: words.read, group: 'note', isOffered: isOnNote, also: 'beside' },
   { id: 'beside', text: words.beside, group: 'note', isOffered: isOnNote },
-  { id: 'travel', text: words.travel, ...keysOf('travel', agent), group: 'note', isOffered: isOnNote },
+  {
+    id: 'travel',
+    text: words.travel,
+    ...keysOf('travel', agent),
+    group: 'note',
+    isOffered: isOnNote,
+  },
   {
     id: 'child',
     text: words.child,

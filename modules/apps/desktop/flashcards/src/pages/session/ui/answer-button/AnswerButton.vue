@@ -29,7 +29,9 @@ defineEmits<{
          person picking between the four is picking between these. It is read off
          the screen and not out of the button's own name, which is the word a
          person means to press. -->
-    <span v-if="ahead" class="answer__ahead" aria-hidden="true">{{ getTimeAhead(ahead[how]) }}</span>
+    <span v-if="ahead" class="answer__ahead" aria-hidden="true">
+      {{ getTimeAhead(ahead[how]) }}
+    </span>
   </Button>
 </template>
 

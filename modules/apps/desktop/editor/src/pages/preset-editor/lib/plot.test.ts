@@ -107,7 +107,11 @@ describe('the curve as it is drawn', () => {
 
   // Whatever the run holds, the height read as nothing is the foot line.
   it('draws nothing on the foot under every run', () => {
-    for (const run of [[0, 0, 0], [0, 20, 5], [40, 45, 41]]) {
+    for (const run of [
+      [0, 0, 0],
+      [0, 20, 5],
+      [40, 45, 41],
+    ]) {
       const one = curve(run)
       const positions = positionsOf(one, extentOf(one))
       for (const [at, value] of run.entries()) {

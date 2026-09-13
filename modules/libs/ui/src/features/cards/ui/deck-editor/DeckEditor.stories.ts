@@ -39,8 +39,7 @@ const ANIMAL: Stencil = { name: 'Animal', fields: ['Name', 'Height', 'Weight', '
 const WORD: Stencil = { name: 'Word', fields: ['Word', 'Meaning', 'Example'] }
 const ASKED: Stencil = { name: 'Basic', fields: ['Question', 'Answer'] }
 
-const UNBROKEN =
-  'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
+const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 /**
  * Cards cut by two stencils of different sizes, which is where the tiles differ
@@ -177,7 +176,10 @@ const CORPORA = {
   /* Values that are not Latin, beside a field name and a value with nothing in
      them to break at. */
   'awkward text': {
-    cuts: [{ name: 'Слово', fields: ['Слово', 'Перевод', 'Пример'] }, { name: UNBROKEN, fields: [UNBROKEN, 'Long'] }],
+    cuts: [
+      { name: 'Слово', fields: ['Слово', 'Перевод', 'Пример'] },
+      { name: UNBROKEN, fields: [UNBROKEN, 'Long'] },
+    ],
     cards: [
       {
         id: 'j2b6t8n4vw',
@@ -496,7 +498,9 @@ export const InSections: Story = {
     // The heading is a rule with the name typed on it, and the way to be rid of
     // it at the end.
     expect(found(canvasElement, '[data-section-head="roots"] .divider')).toBeTruthy()
-    expect(found(canvasElement, '[data-section-head="roots"] input').getAttribute('value')).toBe('Roots')
+    expect(found(canvasElement, '[data-section-head="roots"] input').getAttribute('value')).toBe(
+      'Roots',
+    )
 
     // What a person reaches for is the name and the way to be rid of it. It is
     // as wide as the two of them, and the line either side is the rule's.
@@ -512,8 +516,14 @@ export const InSections: Story = {
     expect(actions.getBoundingClientRect().width).toBe(0)
 
     found(canvasElement, '[data-section-head="roots"] input').focus()
-    const drawn = found(canvasElement, '[data-section-head="roots"] .remove-button').getBoundingClientRect()
-    const rule = found(canvasElement, '[data-section-head="roots"] .divider__held').getBoundingClientRect()
+    const drawn = found(
+      canvasElement,
+      '[data-section-head="roots"] .remove-button',
+    ).getBoundingClientRect()
+    const rule = found(
+      canvasElement,
+      '[data-section-head="roots"] .divider__held',
+    ).getBoundingClientRect()
     expect(actions.getBoundingClientRect().width).toBeGreaterThan(0)
     expect(drawn.right).toBeLessThanOrEqual(Math.ceil(rule.right))
     expect(drawn.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
@@ -521,9 +531,7 @@ export const InSections: Story = {
     // Each card stands under the section it is in, and the ones before the
     // first stand under none.
     expect(canvasElement.querySelectorAll('[data-section="roots"]')).toHaveLength(2)
-    expect(
-      found(canvasElement, '[data-card="p4h6c8vzn2"]').getAttribute('data-section'),
-    ).toBeNull()
+    expect(found(canvasElement, '[data-card="p4h6c8vzn2"]').getAttribute('data-section')).toBeNull()
 
     // A section made at the end, under a name nothing has taken.
     await userEvent.click(found(canvasElement, '[data-add-section]'))
@@ -536,9 +544,7 @@ export const InSections: Story = {
     await userEvent.click(found(canvasElement, '[data-section-head="roots"] .remove-button'))
     expect(canvasElement.querySelectorAll('[data-section-head="roots"]')).toHaveLength(0)
     expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(3)
-    expect(
-      found(canvasElement, '[data-card="z3f1m6b4dt"]').getAttribute('data-section'),
-    ).toBeNull()
+    expect(found(canvasElement, '[data-card="z3f1m6b4dt"]').getAttribute('data-section')).toBeNull()
   },
 }
 

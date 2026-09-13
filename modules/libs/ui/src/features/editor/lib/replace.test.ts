@@ -31,8 +31,8 @@ const applyChange = (doc: string, fresh: string) => {
   const found: [number, number, string][] = []
   state
     .update(replace(state, fresh))
-    .changes.iterChanges((from, to, _at, _to, insert) =>
-      void found.push([from, to, insert.toString()]),
+    .changes.iterChanges(
+      (from, to, _at, _to, insert) => void found.push([from, to, insert.toString()]),
     )
   return found
 }

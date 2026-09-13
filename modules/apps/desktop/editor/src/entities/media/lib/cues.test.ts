@@ -56,7 +56,10 @@ describe('a line whose words changed', () => {
   })
 
   it('keeps it wherever the line stands', () => {
-    const kept = applyText(CUES, 'A bell over the door.\nRain on the roof.\nSomeone counting change.')
+    const kept = applyText(
+      CUES,
+      'A bell over the door.\nRain on the roof.\nSomeone counting change.',
+    )
 
     expect(kept[1]).toStrictEqual({ text: 'Rain on the roof.', from: 3_000, to: 6_000 })
   })
@@ -74,7 +77,10 @@ describe('a line whose words changed', () => {
 
 describe('lines joined into one', () => {
   it('run from the first of them to the last, where two are joined', () => {
-    const kept = applyText(CUES, 'A bell over the door. Rain on the awning.\nSomeone counting change.')
+    const kept = applyText(
+      CUES,
+      'A bell over the door. Rain on the awning.\nSomeone counting change.',
+    )
 
     expect(kept).toStrictEqual([
       { text: 'A bell over the door. Rain on the awning.', from: 1_000, to: 6_000 },
@@ -83,7 +89,10 @@ describe('lines joined into one', () => {
   })
 
   it('run from the first to the last, where three are joined', () => {
-    const kept = applyText(CUES, 'A bell over the door. Rain on the awning. Someone counting change.')
+    const kept = applyText(
+      CUES,
+      'A bell over the door. Rain on the awning. Someone counting change.',
+    )
 
     expect(kept).toStrictEqual([
       {
@@ -124,13 +133,17 @@ describe('a line split in two', () => {
   it('gives the whole span to the second where the split fell at the very start', () => {
     const was: readonly Cue[] = [{ text: 'abcdefgh', from: 1_000, to: 9_000 }]
 
-    expect(applyText(was, '\nabcdefgh')).toStrictEqual([{ text: 'abcdefgh', from: 1_000, to: 9_000 }])
+    expect(applyText(was, '\nabcdefgh')).toStrictEqual([
+      { text: 'abcdefgh', from: 1_000, to: 9_000 },
+    ])
   })
 
   it('gives the whole span to the first where the split fell at the very end', () => {
     const was: readonly Cue[] = [{ text: 'abcdefgh', from: 1_000, to: 9_000 }]
 
-    expect(applyText(was, 'abcdefgh\n')).toStrictEqual([{ text: 'abcdefgh', from: 1_000, to: 9_000 }])
+    expect(applyText(was, 'abcdefgh\n')).toStrictEqual([
+      { text: 'abcdefgh', from: 1_000, to: 9_000 },
+    ])
   })
 
   it('divides the span of the line it fell in and leaves the others alone', () => {
@@ -243,11 +256,7 @@ describe('a line of nothing but spaces', () => {
   it('is a cue like any other, and is not dropped', () => {
     const kept = applyText(CUES, 'A bell over the door.\n   \nSomeone counting change.')
 
-    expect(kept).toStrictEqual([
-      CUES[0],
-      { text: '   ', from: 3_000, to: 6_000 },
-      CUES[2],
-    ])
+    expect(kept).toStrictEqual([CUES[0], { text: '   ', from: 3_000, to: 6_000 }, CUES[2]])
   })
 })
 

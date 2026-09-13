@@ -59,10 +59,7 @@ export function renderPreview(
  * The slots a face names that the fields do not, each said once, in the order
  * they stand.
  */
-export function strayIn(
-  template: string,
-  fields: readonly string[],
-): readonly string[] {
+export function strayIn(template: string, fields: readonly string[]): readonly string[] {
   const said = new Set<string>()
   for (const slot of slotsIn(template)) {
     if (fields.includes(slot.field)) continue

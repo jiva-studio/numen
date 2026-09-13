@@ -115,7 +115,7 @@ const onCommit = (value: number[]) => {
     :disabled="disabled"
     :class="
       cn(
-        'relative flex w-full touch-none select-none items-center',
+        'relative flex w-full touch-none items-center select-none',
         'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
         props.class,
       )
@@ -123,16 +123,16 @@ const onCommit = (value: number[]) => {
     @update:model-value="onMove"
     @value-commit="onCommit"
   >
-    <SliderTrack class="relative h-1 w-full grow rounded-pill bg-hushed">
-      <SliderRange class="absolute h-full rounded-pill bg-accent" />
+    <SliderTrack class="rounded-pill bg-hushed relative h-1 w-full grow">
+      <SliderRange class="rounded-pill bg-accent absolute h-full" />
     </SliderTrack>
     <SliderThumb
       v-bind="$attrs"
       :class="
         cn(
-          'block size-4 shrink-0 rounded-pill border border-rule bg-raised',
-          'cursor-pointer transition-colors duration-hover ease-numen',
-          'outline-none ring-numen',
+          'rounded-pill border-rule bg-raised block size-4 shrink-0 border',
+          'duration-hover ease-numen cursor-pointer transition-colors',
+          'ring-numen outline-none',
           'data-[disabled]:cursor-not-allowed',
         )
       "

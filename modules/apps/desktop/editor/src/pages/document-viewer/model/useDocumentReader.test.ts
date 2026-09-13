@@ -14,7 +14,10 @@ const LAYOUT: DocumentLayout = {
   fingerprint: '1024 1700000000000000000 book.pdf',
 }
 
-function book(layout: DocumentLayout | Error = LAYOUT, where: readonly (readonly PageHighlight[])[] = []) {
+function book(
+  layout: DocumentLayout | Error = LAYOUT,
+  where: readonly (readonly PageHighlight[])[] = [],
+) {
   const asked: string[] = []
   const spans: string[] = []
 

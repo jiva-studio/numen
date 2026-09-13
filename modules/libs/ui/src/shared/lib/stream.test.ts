@@ -24,7 +24,7 @@ const window = (streams = 3) => {
 }
 
 /** A stream that says what it was given and ends. */
-const createStream = <T,>(...said: readonly T[]) =>
+const createStream = <T>(...said: readonly T[]) =>
   async function* () {
     for (const one of said) yield one
   }

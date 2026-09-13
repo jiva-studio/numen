@@ -91,7 +91,8 @@ const UNNAMED: Book = { ...NAMED, parts: [] }
 const shelf = (book: Book): Books => ({
   getBook: async () => book,
   readMarkup: async () => document_.markup,
-  getEntryUrl: (_path, name) => `/assets/book.epub/${name.split('/').map(encodeURIComponent).join('/')}`,
+  getEntryUrl: (_path, name) =>
+    `/assets/book.epub/${name.split('/').map(encodeURIComponent).join('/')}`,
 })
 
 /** The two documents of a book whose text points about inside itself. */
@@ -146,7 +147,8 @@ const CROSSED: Book = {
 const crossed: Books = {
   getBook: async () => CROSSED,
   readMarkup: async (_path, document) => (document === SECOND_PATH ? SECOND.markup : FIRST.markup),
-  getEntryUrl: (_path, name) => `/assets/book.epub/${name.split('/').map(encodeURIComponent).join('/')}`,
+  getEntryUrl: (_path, name) =>
+    `/assets/book.epub/${name.split('/').map(encodeURIComponent).join('/')}`,
 }
 
 interface Knobs {
@@ -158,7 +160,10 @@ interface Knobs {
 
 const room = (args: Knobs) => ({
   components: { BookTab },
-  setup: () => ({ args, state: useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {})) }),
+  setup: () => ({
+    args,
+    state: useBookTab(useBookReader(shelf(args.book), 'library/mbh.epub', words, () => {})),
+  }),
   template: `
     <div class="numen" :style="{ height: '100vh', width: args.width, background: 'var(--numen-surface)' }">
       <BookTab :state="state" />
@@ -389,9 +394,12 @@ export const ALinkIntoTheSameDocument: Story = {
     await expect(press?.defaultPrevented).toBe(true)
 
     const note = FIRST.offsets[FIRST.offsets.length - 1]!
-    await waitFor(async () => await expect(inFront(canvasElement, runAt(canvasElement, note)!)).toBe(true), {
-      timeout: ITS_OWN_PACE,
-    })
+    await waitFor(
+      async () => await expect(inFront(canvasElement, runAt(canvasElement, note)!)).toBe(true),
+      {
+        timeout: ITS_OWN_PACE,
+      },
+    )
   },
 }
 

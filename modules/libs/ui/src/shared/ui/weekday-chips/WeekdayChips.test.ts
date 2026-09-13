@@ -140,9 +140,7 @@ describe('the keyboard while the levels are offered', () => {
     const row = mountChips()
     await openMenu(row, 5)
     expect(document.activeElement).toBe(items()[3])
-    expect(items().map((one) => one.getAttribute('role'))).toEqual(
-      Array(7).fill('menuitemradio'),
-    )
+    expect(items().map((one) => one.getAttribute('role'))).toEqual(Array(7).fill('menuitemradio'))
     expect(items().map((one) => one.getAttribute('aria-checked'))).toEqual([
       'false',
       'false',
@@ -206,12 +204,8 @@ describe('giving a day a level', () => {
   it('offers nothing while nobody may turn them, and says so on every chip', async () => {
     const row = mountChips({ disabled: true })
     const chips = row.findAll('button')
-    expect(chips.map((chip) => chip.attributes('aria-disabled'))).toEqual(
-      Array(7).fill('true'),
-    )
-    expect(chips.map((chip) => chip.attributes('disabled'))).toEqual(
-      Array(7).fill(undefined),
-    )
+    expect(chips.map((chip) => chip.attributes('aria-disabled'))).toEqual(Array(7).fill('true'))
+    expect(chips.map((chip) => chip.attributes('disabled'))).toEqual(Array(7).fill(undefined))
 
     await chips[1]?.trigger('click')
     expect(getOfferedLabels()).toEqual([])

@@ -59,7 +59,10 @@ describe('a change that is over', () => {
     const drawn = holdChanges()
     drawn.reportChange(createEdit())
     drawn.reportChange(createEdit({ isComplete: true }))
-    expect(drawn.handleNoteChange('Note.md')).toEqual({ path: 'Note.md', after: HOLD_LIMITS.settle })
+    expect(drawn.handleNoteChange('Note.md')).toEqual({
+      path: 'Note.md',
+      after: HOLD_LIMITS.settle,
+    })
   })
 
   it('is gone once the interval fires', () => {
@@ -103,7 +106,10 @@ describe('a note the window closed', () => {
 describe('a change nobody says any more about', () => {
   it('is let go of on a bound of its own, so no drawing outlives its agent', () => {
     const drawn = holdChanges()
-    expect(drawn.reportChange(createEdit())).toEqual({ path: 'Note.md', after: HOLD_LIMITS.abandoned })
+    expect(drawn.reportChange(createEdit())).toEqual({
+      path: 'Note.md',
+      after: HOLD_LIMITS.abandoned,
+    })
   })
 
   it('has that bound put off again by every report of itself', () => {

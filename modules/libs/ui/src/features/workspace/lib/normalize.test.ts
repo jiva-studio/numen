@@ -57,7 +57,10 @@ describe('a branch that keeps one child hands its grandchildren up', () => {
       'root',
       [
         stack('a', 'one'),
-        split('down', [pane('gone', []), split('across', [stack('c', 'three'), stack('d', 'four')])]),
+        split('down', [
+          pane('gone', []),
+          split('across', [stack('c', 'three'), stack('d', 'four')]),
+        ]),
       ],
       [0.5, 0.5],
     ),

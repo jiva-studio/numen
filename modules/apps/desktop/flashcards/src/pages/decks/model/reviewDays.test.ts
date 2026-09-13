@@ -91,7 +91,9 @@ describe('what a vault was answered on', () => {
   })
 
   it('is nothing for no vault at all', async () => {
-    const cards: ReviewDaysClient = { listReviewDays: () => Promise.reject(new Error('never asked')) }
+    const cards: ReviewDaysClient = {
+      listReviewDays: () => Promise.reject(new Error('never asked')),
+    }
     const one = useReviewDays({ cards, reportError: () => {} })
 
     await one.read('')
@@ -102,7 +104,9 @@ describe('what a vault was answered on', () => {
 
   it('says what went wrong and holds nothing', async () => {
     const errors: unknown[] = []
-    const cards: ReviewDaysClient = { listReviewDays: () => Promise.reject(new Error('no such vault')) }
+    const cards: ReviewDaysClient = {
+      listReviewDays: () => Promise.reject(new Error('no such vault')),
+    }
     const one = useReviewDays({ cards, reportError: (why) => errors.push(why) })
 
     await one.read('01VAULT')

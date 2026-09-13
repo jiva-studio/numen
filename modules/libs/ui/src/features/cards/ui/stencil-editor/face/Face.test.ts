@@ -151,7 +151,12 @@ describe('Face, the window', () => {
 
   it('follows no link a preview draws: the window stays where it is', () => {
     const held = mountFace(
-      faceOf({ id: 'one', name: 'One', front: '<a href="https://example.org">there</a>', back: '' }),
+      faceOf({
+        id: 'one',
+        name: 'One',
+        front: '<a href="https://example.org">there</a>',
+        back: '',
+      }),
     )
     const press = new MouseEvent('click', { bubbles: true, cancelable: true })
     held.get('[data-preview="front"] a').element.dispatchEvent(press)
@@ -245,7 +250,9 @@ describe('Face, the fields it is written with', () => {
 
 describe('Face, what is wrong with it', () => {
   it('says a stray slot over the markup naming it, and nowhere else', () => {
-    const held = mountFace(faceOf({ id: 'one', name: 'One', front: '{{Name}}', back: '{{Colour}}' }))
+    const held = mountFace(
+      faceOf({ id: 'one', name: 'One', front: '{{Name}}', back: '{{Colour}}' }),
+    )
 
     expect(held.get('[data-pane="back-written"] .face__objections').text()).toBe(
       'Not a field: Colour',

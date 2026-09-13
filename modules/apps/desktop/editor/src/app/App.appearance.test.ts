@@ -8,14 +8,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Plex } from '@numen/ui'
-import {
-  requests,
-  cards,
-  mountWindowWithPalette,
-  nodeInPlex,
-  said,
-  settle,
-} from '@/testing/window'
+import { requests, cards, mountWindowWithPalette, nodeInPlex, said, settle } from '@/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
 
 describe('the four commands over how the window is drawn', () => {
@@ -101,7 +94,9 @@ describe('the four commands over how the window is drawn', () => {
 
   /** The groups standing, by the name each carries. */
   const groups = () =>
-    [...document.body.querySelectorAll('[data-palette="title"]')].map((one) => one.textContent?.trim())
+    [...document.body.querySelectorAll('[data-palette="title"]')].map((one) =>
+      one.textContent?.trim(),
+    )
 
   /** The second line of every row drawn, and nothing for a row carrying none. */
   const getDetails = () =>
@@ -340,7 +335,9 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(requests.worn).toStrictEqual(['preset:numen system 1.37/1'])
-      expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }')
+      expect(getHeadStyles().at(-1)).toBe(
+        ':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }',
+      )
     })
 
     it('offers no row for a number the range does not reach, and says nothing', async () => {
@@ -349,7 +346,9 @@ describe('the four commands over how the window is drawn', () => {
       await type('250')
 
       expect(left()).toStrictEqual([])
-      expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe('Nothing')
+      expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
+        'Nothing',
+      )
     })
 
     it('narrows the steps, and offers nothing of its own, for digits inside one', async () => {
@@ -368,7 +367,9 @@ describe('the four commands over how the window is drawn', () => {
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
 
       await wait()
-      expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
+      expect(getHeadStyles().at(-1)).toBe(
+        ':root { --numen-interface-scale: 2; --numen-text-scale: 1; }',
+      )
       expect(requests.worn).toStrictEqual([])
     })
 
@@ -390,7 +391,9 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(requests.worn).toStrictEqual(['preset:numen system 2/1'])
-      expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 2; --numen-text-scale: 1; }')
+      expect(getHeadStyles().at(-1)).toBe(
+        ':root { --numen-interface-scale: 2; --numen-text-scale: 1; }',
+      )
     })
 
     it('says what the settings refused, where the window says what it could not do', async () => {
@@ -469,8 +472,9 @@ describe('the four commands over how the window is drawn', () => {
       await press('Enter')
 
       expect(requests.worn).toStrictEqual(['preset:numen system 1/1.75'])
-      expect(getHeadStyles().at(-1)).toBe(':root { --numen-interface-scale: 1; --numen-text-scale: 1.75; }')
+      expect(getHeadStyles().at(-1)).toBe(
+        ':root { --numen-interface-scale: 1; --numen-text-scale: 1.75; }',
+      )
     })
   })
 })
-

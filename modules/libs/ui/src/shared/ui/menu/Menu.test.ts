@@ -147,8 +147,7 @@ describe('being put away', () => {
 
 describe('where the keyboard is while it is open', () => {
   /** Opened from the keyboard, which is the opening that lands on an item. */
-  const openMenu = (props: Partial<MenuProps> = {}) =>
-    mountMenu({ opening: 'keyboard', ...props })
+  const openMenu = (props: Partial<MenuProps> = {}) => mountMenu({ opening: 'keyboard', ...props })
 
   it('is on the first item that can be chosen', async () => {
     openMenu({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })
@@ -297,7 +296,9 @@ describe('when there is nothing to choose', () => {
   it('says so rather than drawing an empty box', async () => {
     mountMenu({ items: [] })
     await settle()
-    expect(getDrawnMenu()?.querySelector('.menu__silence')?.textContent?.trim()).toBe('Nothing to do')
+    expect(getDrawnMenu()?.querySelector('.menu__silence')?.textContent?.trim()).toBe(
+      'Nothing to do',
+    )
   })
 
   it('says it in the words it was given', async () => {

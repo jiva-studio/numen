@@ -8,12 +8,7 @@ import type { Cards, DeckProblem } from '@/entities/deck'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'
 import { WORDS as words } from '@/entities/deck'
-import {
-  facesOf,
-  stencilBodyOf,
-  stencilIn,
-  stencilOf,
-} from '../lib/stencil'
+import { facesOf, stencilBodyOf, stencilIn, stencilOf } from '../lib/stencil'
 
 /** What the vault said about one file the last time it was read or written. */
 export interface VaultAnswer {
@@ -25,10 +20,7 @@ export interface VaultAnswer {
 
 export const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, at: '' }
 
-export function createStencilWire(
-  cards: Cards,
-  say: MessageWriter = () => {},
-) {
+export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
   const told = new Map<string, VaultAnswer>()
   const titles = new Map<string, string>()
 
@@ -71,7 +63,12 @@ export function createStencilWire(
     onChanged: (paths: readonly string[]) => void,
   ): Promise<void> => {
     if (!name || name === field) return
-    const answer = await cards.renameField(path, field, name, (told.get(path) ?? NOTHING).at || null)
+    const answer = await cards.renameField(
+      path,
+      field,
+      name,
+      (told.get(path) ?? NOTHING).at || null,
+    )
     if (answer.error !== null) return say(ERRORS[answer.error], 'error')
     if (answer.changed) {
       say(words.notRenamed, 'error')

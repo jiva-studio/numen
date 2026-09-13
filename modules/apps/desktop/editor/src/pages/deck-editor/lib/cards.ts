@@ -1,11 +1,7 @@
 /**
  * Pure mutation operations for deck cards.
  */
-import {
-  CARD_HEAD,
-  getRunEnd,
-  type InsertionPoint,
-} from '@numen/ui'
+import { CARD_HEAD, getRunEnd, type InsertionPoint } from '@numen/ui'
 import type { Value } from '@/entities/deck'
 import { generateId, type IdMaker } from '@/entities/deck'
 import { nameOf } from '@/shared/paths'

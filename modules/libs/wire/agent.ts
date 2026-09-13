@@ -35,9 +35,7 @@ export const agentPort = (agent: AgentClient): AgentPort => ({
             tool: said.tool,
             about: said.about,
             written: said.written,
-            ...(said.path
-              ? { place: { path: said.path, span: spanOf(said.span) } }
-              : {}),
+            ...(said.path ? { place: { path: said.path, span: spanOf(said.span) } } : {}),
           }
           break
         }

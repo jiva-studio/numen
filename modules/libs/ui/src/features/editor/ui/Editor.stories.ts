@@ -247,8 +247,9 @@ const source = (canvas: HTMLElement) =>
   canvas.querySelector<HTMLElement>('[data-source]')?.textContent ?? ''
 
 /** The cells of the one table drawn, head row first. */
-const cells = (canvas: HTMLElement) =>
-  [...canvas.querySelectorAll<HTMLElement>('.cm-table .cm-cell')]
+const cells = (canvas: HTMLElement) => [
+  ...canvas.querySelectorAll<HTMLElement>('.cm-table .cm-cell'),
+]
 
 /** A table with somewhere to put the caret that is not in it. */
 const TABLED = `${TABLE}\nSomething well away from the table.\n`
@@ -484,7 +485,6 @@ export const ReadAgain: Story = {
   },
 }
 
-
 /**
  * What a tab costs while it is open.
  *
@@ -526,7 +526,9 @@ export const TenOpenTabs: Story = {
     await expect(room.querySelectorAll('.cm-editor').length).toBe(10)
     const ten = heap()
 
-    console.info(`one open tab: ${mb(one)} MB; ten: ${mb(ten)} MB; each further: ${mb((ten - one) / 9)} MB`)
+    console.info(
+      `one open tab: ${mb(one)} MB; ten: ${mb(ten)} MB; each further: ${mb((ten - one) / 9)} MB`,
+    )
     more.forEach((app) => app.unmount())
   },
 }
@@ -854,7 +856,11 @@ const SCRIPTS = `# ${RUSSIAN}\n\n${ARABIC}\n\n${DEVANAGARI}\n`
 /** A change written in a script that is not Latin, over one that runs the
  *  other way. */
 export const ChangedInAnotherScript: Story = {
-  render: renderWithChange(SCRIPTS, { id: 'script', ...findSpan(SCRIPTS, ARABIC), text: DEVANAGARI }),
+  render: renderWithChange(SCRIPTS, {
+    id: 'script',
+    ...findSpan(SCRIPTS, ARABIC),
+    text: DEVANAGARI,
+  }),
 }
 
 const SETTINGS = `{

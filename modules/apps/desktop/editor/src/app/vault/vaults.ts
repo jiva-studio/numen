@@ -21,7 +21,8 @@ export const vaults: Vaults = {
     return answer.chose ? answer.path : ''
   },
   add: async (path, called) => mapVaultResult(await vaultsService.addVault({ path, name: called })),
-  rename: async (id, called) => mapVaultResult(await vaultsService.renameVault({ id, name: called })),
+  rename: async (id, called) =>
+    mapVaultResult(await vaultsService.renameVault({ id, name: called })),
   remove: async (id, trash) => getVaultError(await vaultsService.removeVault({ id, trash })),
   open: async (id) => getVaultError(await vaultsService.openVault({ id })),
 }

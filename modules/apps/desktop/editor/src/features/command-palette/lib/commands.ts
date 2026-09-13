@@ -16,10 +16,7 @@ const secondary = (commands: readonly Command[]): ReadonlySet<string> =>
  * The commands of one group, in the order they are drawn, less the ones
  * another command's row reaches.
  */
-export const inGroup = (
-  commands: readonly Command[],
-  group: CommandGroup,
-): readonly Command[] => {
+export const inGroup = (commands: readonly Command[], group: CommandGroup): readonly Command[] => {
   const second = secondary(commands)
   return commands.filter((one) => one.group === group && !second.has(one.id))
 }

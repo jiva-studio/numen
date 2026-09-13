@@ -38,9 +38,7 @@ describe('pagination and document lookup', () => {
       fingerprint: 'f1',
     }
 
-    expect(getContents(bookWithParts, words)).toEqual([
-      { title: 'Chapter 1', at: 0, level: 0 },
-    ])
+    expect(getContents(bookWithParts, words)).toEqual([{ title: 'Chapter 1', at: 0, level: 0 }])
 
     const bookWithPrinted: Book = {
       title: 'T',
@@ -53,8 +51,6 @@ describe('pagination and document lookup', () => {
       fingerprint: 'f1',
     }
 
-    expect(getContents(bookWithPrinted, words)).toEqual([
-      { title: 'Page iv', at: 50, level: 0 },
-    ])
+    expect(getContents(bookWithPrinted, words)).toEqual([{ title: 'Page iv', at: 50, level: 0 }])
   })
 })

@@ -91,7 +91,13 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
   }
   const handle = { closeTab: () => {} } as unknown as WindowHandle
   const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
-  const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => DAY)
+  const kind = usePresetTab(
+    core,
+    handle,
+    tabOpeners,
+    () => {},
+    () => DAY,
+  )
   const state = await kind.kind.open('Sanskrit.md')
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
   return { state, written }

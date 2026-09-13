@@ -23,8 +23,7 @@ interface Corpus {
 
 const ANIMAL: Stencil = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
 
-const UNBROKEN =
-  'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
+const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 const CORPORA = {
   'a card': {

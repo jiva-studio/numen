@@ -17,9 +17,7 @@ export const addSection = (
 /** A section under another name. */
 export const renameSection = (deck: BufferDeck, id: string, name: string): BufferDeck => ({
   ...deck,
-  sections: deck.sections.map((section) =>
-    section.id === id ? { ...section, name } : section,
-  ),
+  sections: deck.sections.map((section) => (section.id === id ? { ...section, name } : section)),
 })
 
 /** One piece of a deck's prose after another, with a line between the two. */

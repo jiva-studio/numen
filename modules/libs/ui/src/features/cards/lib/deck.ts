@@ -5,12 +5,7 @@
  */
 
 import type { FieldValue } from './card'
-import {
-  getDeclaredFields,
-  createSealedMap,
-  type Problems,
-  type InsertionPoint,
-} from './order'
+import { getDeclaredFields, createSealedMap, type Problems, type InsertionPoint } from './order'
 
 /**
  * Where a card let go at the head of the deck lands: before the first section,

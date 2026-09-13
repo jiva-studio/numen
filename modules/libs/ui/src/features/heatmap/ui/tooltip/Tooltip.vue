@@ -86,12 +86,7 @@ watch(() => props.at, measure, { flush: 'post' })
 </script>
 
 <template>
-  <aside
-    ref="root"
-    class="tooltip"
-    role="tooltip"
-    :style="tooltipStyle"
-  >
+  <aside ref="root" class="tooltip" role="tooltip" :style="tooltipStyle">
     <slot />
   </aside>
 </template>

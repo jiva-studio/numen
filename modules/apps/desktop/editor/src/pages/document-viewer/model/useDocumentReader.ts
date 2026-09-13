@@ -7,21 +7,9 @@ import type { Span } from '@/shared/span'
 import { useDocumentNavigation } from './useDocumentNavigation'
 import { useDocumentViewport } from './useDocumentViewport'
 import { useDocumentHighlights } from './useDocumentHighlights'
-import type {
-  DocumentLayout,
-  Documents,
-  Page,
-  PageHighlight,
-  Rect,
-} from '../types'
+import type { DocumentLayout, Documents, Page, PageHighlight, Rect } from '../types'
 
-export type {
-  DocumentLayout,
-  Documents,
-  Page,
-  PageHighlight,
-  Rect,
-}
+export type { DocumentLayout, Documents, Page, PageHighlight, Rect }
 export { useDocumentNavigation } from './useDocumentNavigation'
 export { useDocumentViewport } from './useDocumentViewport'
 export { useDocumentHighlights } from './useDocumentHighlights'

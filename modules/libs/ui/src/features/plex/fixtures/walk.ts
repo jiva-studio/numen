@@ -62,9 +62,7 @@ const siblingsOf = (id: string): string[] => {
 /** Everything that points at me by association, and everything I point at. */
 const jumpsOf = (id: string): string[] => {
   const mine = GRAPH[id]?.jumps ?? []
-  const theirs = Object.keys(GRAPH).filter((other) =>
-    (GRAPH[other]?.jumps ?? []).includes(id),
-  )
+  const theirs = Object.keys(GRAPH).filter((other) => (GRAPH[other]?.jumps ?? []).includes(id))
   return [...new Set([...mine, ...theirs])]
 }
 
@@ -106,9 +104,7 @@ export function neighbourhoodOf(id: string): PlexNeighbourhood {
       // A sibling hangs off the parent it shares with the focus, not off the
       // focus. Working out which parent is a question about relationships, so
       // it belongs here rather than in the plex.
-      const shared = parentsOf(id).find((parent) =>
-        parentsOf(node.id).includes(parent),
-      )
+      const shared = parentsOf(id).find((parent) => parentsOf(node.id).includes(parent))
       return shared ? [{ from: shared, to: node.id, label: 'contains' }] : []
     }),
   }

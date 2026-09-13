@@ -17,8 +17,7 @@ export const foldNotices = (
 ): { shown: readonly Notice[]; over: number } => {
   if (notices.length <= room) return { shown: notices, over: 0 }
   const spare = notices.filter(
-    (notice) =>
-      notice.stay !== undefined && notice.stay !== 'holds' && notice.tone !== 'alarm',
+    (notice) => notice.stay !== undefined && notice.stay !== 'holds' && notice.tone !== 'alarm',
   )
   const away = new Set(spare.slice(0, notices.length - room).map((notice) => notice.id))
   return { shown: notices.filter((notice) => !away.has(notice.id)), over: away.size }

@@ -38,7 +38,8 @@ const session = (more: { at?: PanelPlace; shown?: boolean } = {}) =>
 const wayIn = (one: VueWrapper) => one.findAll('button').filter((it) => it.text().includes('Ask'))
 
 /** The way into the reading, wherever it stands. */
-const wayBack = (one: VueWrapper) => one.findAll('button').filter((it) => it.text().includes('Read'))
+const wayBack = (one: VueWrapper) =>
+  one.findAll('button').filter((it) => it.text().includes('Read'))
 
 describe('the way into the panel', () => {
   // A person asks about the card they are on, turned or not.

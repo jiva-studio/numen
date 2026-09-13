@@ -65,7 +65,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
 
 <template>
   <article
-    class="card flex flex-col rounded-node bg-raised"
+    class="card rounded-node bg-raised flex flex-col"
     :aria-label="called"
     :aria-posinset="tile.at"
     :aria-setsize="tile.of"
@@ -84,7 +84,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
            is exposed by nothing standing on a paragraph, so the text takes a
            role that carries one. -->
       <p
-        class="card__cut truncate text-small text-hushed"
+        class="card__cut text-small text-hushed truncate"
         role="group"
         :aria-label="words.cut"
         data-cut-of

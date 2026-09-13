@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+storybook-static
+.vite
+android
+gen
+tools
+*.pb.ts
+package-lock.json

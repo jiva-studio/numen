@@ -56,7 +56,11 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
     // and a recording that gave no words are both taken away here. A url
     // carries a transcript the same way, and deletes it here.
     isOffered: (at, runs) =>
-      getOfferOnEvidence('deleteText', 'recording', (made) => made.transcript !== 'none')(at, runs) ||
+      getOfferOnEvidence(
+        'deleteText',
+        'recording',
+        (made) => made.transcript !== 'none',
+      )(at, runs) ||
       getOfferOnEvidence('deleteText', 'url', (made) => made.transcript !== 'none')(at, runs),
     answers: {
       keeps: words.keepsTranscript,

@@ -9,7 +9,4 @@ export { goalNames, goalOf } from './goal'
 export type { Goal } from './goal'
 export { namesOf } from './naming'
 export { transport } from './transport'
-export {
-  formatErrorMessage,
-  formatErrorCodeMessage,
-} from './error'
+export { formatErrorMessage, formatErrorCodeMessage } from './error'

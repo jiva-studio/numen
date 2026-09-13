@@ -127,7 +127,13 @@ const window = (
     fileKinds: async (paths) =>
       new Map(paths.map((path) => [path, { kind: 'note' as const, type: 'note' as const }])),
   })
-  const noted = useNoteTab(vault(titles, reaches), store.store, drawing.store, held.handle, tabOpeners)
+  const noted = useNoteTab(
+    vault(titles, reaches),
+    store.store,
+    drawing.store,
+    held.handle,
+    tabOpeners,
+  )
   held.registerKinds([noted.kind])
   /** Every note tab the window holds now. */
   const open = () => held.tabs.value.map((tab) => tab.id)
@@ -282,7 +288,9 @@ describe('a note that was renamed', () => {
     one.noted.setTitle('Renamed.md', 'Renamed')
 
     expect(one.noted.getTitle('Renamed.md')).toBe('Renamed')
-    expect(one.noted.kind.getTitle?.(one.noted.createNoteTabState(one.idOf('Renamed.md')))).toBe('Renamed')
+    expect(one.noted.kind.getTitle?.(one.noted.createNoteTabState(one.idOf('Renamed.md')))).toBe(
+      'Renamed',
+    )
   })
 
   it('leaves the name it had free, so a note made under it opens a tab of its own', async () => {

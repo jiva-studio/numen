@@ -78,18 +78,13 @@ onBeforeUnmount(() => watching?.disconnect())
 </script>
 
 <template>
-  <div
-    class="agent numen flex min-h-0 flex-col font-sans text-base text-ink"
-    :style="agentStyle"
-  >
+  <div class="agent numen text-ink flex min-h-0 flex-col font-sans text-base" :style="agentStyle">
     <Thread
       ref="thread"
       class="agent__thread"
       :turns="turns"
       @open="emit('open', $event)"
-      @follow="
-        (turn: Turn, href: string, press: MouseEvent) => emit('follow', turn, href, press)
-      "
+      @follow="(turn: Turn, href: string, press: MouseEvent) => emit('follow', turn, href, press)"
     >
       <template #silence><slot name="silence">Nothing said yet</slot></template>
       <template v-if="$slots.turn" #turn="bound"><slot name="turn" v-bind="bound" /></template>

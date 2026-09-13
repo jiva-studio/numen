@@ -18,7 +18,9 @@ export const namesOf = <W extends string, E extends number>(
   // here checks that. Two values sharing a word leave one of them with no key,
   // and reading it back gives undefined wearing the enum's type.
   if (Object.keys(reversed).length !== named.length) {
-    throw new Error(`two values of this enum answer to one word: ${named.map(([w]) => w).join(', ')}`)
+    throw new Error(
+      `two values of this enum answer to one word: ${named.map(([w]) => w).join(', ')}`,
+    )
   }
   return reversed
 }

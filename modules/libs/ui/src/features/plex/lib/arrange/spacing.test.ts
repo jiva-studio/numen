@@ -125,9 +125,7 @@ describe('spacingFor', () => {
   })
 
   it('gives the settings when the window is not known', () => {
-    expect(spacingFor(DEFAULT_OPTIONS, () => true)).toStrictEqual(
-      spacingAsSet(DEFAULT_OPTIONS),
-    )
+    expect(spacingFor(DEFAULT_OPTIONS, () => true)).toStrictEqual(spacingAsSet(DEFAULT_OPTIONS))
   })
 
   it('opens every gap to the spread when everything fits', () => {

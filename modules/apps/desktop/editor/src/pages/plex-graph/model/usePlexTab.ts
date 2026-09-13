@@ -2,11 +2,7 @@
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
 import { computed, ref } from 'vue'
-import type {
-  PlexNeighbourhood,
-  PlexRelatedSeat,
-  PlexDestination,
-} from '@numen/ui'
+import type { PlexNeighbourhood, PlexRelatedSeat, PlexDestination } from '@numen/ui'
 import type { NoteType } from '@/entities/file'
 import { fileOf, type PathRename } from '@/shared/paths'
 import { NEW_NOTE, OFFERED } from '../lib/menu'
@@ -32,10 +28,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const empty = computed(
     () =>
-      deps.ready.value &&
-      !view.here.value &&
-      !deps.openingPath.value &&
-      !view.neighbourhood.value,
+      deps.ready.value && !view.here.value && !deps.openingPath.value && !view.neighbourhood.value,
   )
 
   const dragged = computed<readonly string[]>(() => {

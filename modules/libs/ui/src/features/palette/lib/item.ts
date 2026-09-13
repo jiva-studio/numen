@@ -59,7 +59,6 @@ export interface PalettePlace {
   readonly item: PaletteItem
 }
 
-
 /**
  * The groups in the order they are drawn: as they were offered, and the ones
  * holding nothing after the ones holding something.
@@ -91,11 +90,7 @@ export const choosable = (item: PaletteItem): boolean =>
  * Counting from -1 by one is how the first is asked for, and from 0 by minus
  * one is how the last is.
  */
-export const stepTo = (
-  places: readonly PalettePlace[],
-  from: number,
-  by: number,
-): number => {
+export const stepTo = (places: readonly PalettePlace[], from: number, by: number): number => {
   const total = places.length
   for (let step = 1; step <= total; step += 1) {
     const at = (((from + by * step) % total) + total) % total

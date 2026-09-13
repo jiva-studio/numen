@@ -1,12 +1,6 @@
 /** The curves as they are written down, read back out of the strings. */
 import { describe, expect, it } from 'vitest'
-import {
-  arrowTransformOf,
-  pathOf,
-  readingPathOf,
-  threadOf,
-  ARROWHEAD_PATH,
-} from './paths'
+import { arrowTransformOf, pathOf, readingPathOf, threadOf, ARROWHEAD_PATH } from './paths'
 import { ARROW_LENGTH, type EdgeCurve, type PlacedEdge } from '../edge'
 
 const CURVE: EdgeCurve = {
@@ -64,9 +58,7 @@ describe('the arrowhead', () => {
   })
 
   it('is moved onto its point and turned along the line there', () => {
-    expect(arrowTransformOf({ at: { x: 7, y: -3 }, angle: 45 })).toBe(
-      'translate(7 -3) rotate(45)',
-    )
+    expect(arrowTransformOf({ at: { x: 7, y: -3 }, angle: 45 })).toBe('translate(7 -3) rotate(45)')
   })
 })
 

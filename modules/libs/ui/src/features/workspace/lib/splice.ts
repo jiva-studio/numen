@@ -95,12 +95,7 @@ function orderPair(newPane: Pane, node: WorkspaceNode, side: Side): WorkspaceNod
 }
 
 /** The branch with the new pane among its children, taking half the share of the child at `index`. */
-function joinBeside(
-  parent: Branch,
-  newPane: Pane,
-  index: number,
-  side: Side,
-): WorkspaceNode {
+function joinBeside(parent: Branch, newPane: Pane, index: number, side: Side): WorkspaceNode {
   const at = isLeading(side) ? index : index + 1
   const children = [...parent.children.slice(0, at), newPane, ...parent.children.slice(at)]
   return withChildren(parent, children, insert(parent.sizes, index, isLeading(side)))

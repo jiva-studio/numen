@@ -32,7 +32,6 @@ type Render = NonNullable<Story['render']>
  */
 const ITS_OWN_PACE = 10_000
 
-
 /** A room of a fixed width, so a story is read at the measure it is judged at. */
 const room =
   (wide: number): Decorator =>
@@ -486,8 +485,7 @@ export const SetLarger: Story = {
     const set = getComputedStyle(runsOf(canvasElement)[0]!).fontSize
     await userEvent.click(canvas.getByLabelText('Larger'))
     await waitFor(
-      async () =>
-        await expect(getComputedStyle(runsOf(canvasElement)[0]!).fontSize).not.toBe(set),
+      async () => await expect(getComputedStyle(runsOf(canvasElement)[0]!).fontSize).not.toBe(set),
       { timeout: ITS_OWN_PACE },
     )
 
@@ -536,10 +534,9 @@ export const TurnedByHand: Story = {
     const turned = inFrontOf(canvasElement)
 
     await userEvent.keyboard('{ArrowLeft}')
-    await waitFor(
-      async () => await expect(inFrontOf(canvasElement)).toBeLessThan(turned),
-      { timeout: ITS_OWN_PACE },
-    )
+    await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeLessThan(turned), {
+      timeout: ITS_OWN_PACE,
+    })
 
     // A press within a sixth of the far edge turns the page on.
     const box = area.getBoundingClientRect()

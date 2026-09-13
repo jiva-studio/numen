@@ -2,7 +2,14 @@
  * One book as its tab reads it.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
-import { getContents, getDocumentAtOffset, useBookReader, getPageNumber, type Book, type Books } from './useBookReader'
+import {
+  getContents,
+  getDocumentAtOffset,
+  useBookReader,
+  getPageNumber,
+  type Book,
+  type Books,
+} from './useBookReader'
 
 const WORDS = { page: 'Page' }
 

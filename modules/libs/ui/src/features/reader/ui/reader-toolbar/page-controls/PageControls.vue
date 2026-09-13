@@ -97,7 +97,7 @@ const turn = () => {
 
     <input
       v-model="typed"
-      class="reader__at w-10 rounded-node border border-field-rule bg-field px-1 text-center text-small text-ink outline-none ring-numen"
+      class="reader__at rounded-node border-field-rule bg-field text-small text-ink ring-numen w-10 border px-1 text-center outline-none"
       type="number"
       min="1"
       :max="pageCount"
@@ -105,7 +105,7 @@ const turn = () => {
       @change="turn"
       @keydown.enter="turn"
     />
-    <span class="pe-1 text-small text-hushed">/ {{ pageCount }}</span>
+    <span class="text-small text-hushed pe-1">/ {{ pageCount }}</span>
   </div>
 </template>
 

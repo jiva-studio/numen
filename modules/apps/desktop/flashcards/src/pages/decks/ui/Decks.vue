@@ -130,5 +130,4 @@ const allDue = computed(() => props.vault.due + props.vault.new)
   gap: var(--numen-inset);
   list-style: none;
 }
-
 </style>

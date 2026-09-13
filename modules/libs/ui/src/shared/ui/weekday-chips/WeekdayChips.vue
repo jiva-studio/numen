@@ -99,10 +99,10 @@ const getFillStyle = (level: number) => {
         :style="getFillStyle(day.level)"
         :class="
           cn(
-            'inline-flex size-7 shrink-0 items-center justify-center rounded-pill',
-            'border border-rule font-sans text-base font-medium',
-            'cursor-pointer transition-[background-color,color] duration-hover ease-numen',
-            'outline-none ring-numen',
+            'rounded-pill inline-flex size-7 shrink-0 items-center justify-center',
+            'border-rule border font-sans text-base font-medium',
+            'duration-hover ease-numen cursor-pointer transition-[background-color,color]',
+            'ring-numen outline-none',
             'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
           )
         "

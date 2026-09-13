@@ -40,7 +40,9 @@ describe('a card', () => {
   })
 
   it('draws what a card is written with', () => {
-    const face = mountCard('<p><strong>bold</strong> and <em>italic</em></p><ul><li>a list</li></ul>')
+    const face = mountCard(
+      '<p><strong>bold</strong> and <em>italic</em></p><ul><li>a list</li></ul>',
+    )
     expect(face.find('strong').exists()).toBe(true)
     expect(face.find('em').exists()).toBe(true)
     expect(face.find('li').exists()).toBe(true)

@@ -18,11 +18,7 @@ const overlayStyle = computed(() => ({
 </script>
 
 <template>
-  <div
-    class="workspace__overlay"
-    :data-caret="caret || undefined"
-    :style="overlayStyle"
-  />
+  <div class="workspace__overlay" :data-caret="caret || undefined" :style="overlayStyle" />
 </template>
 
 <style scoped>

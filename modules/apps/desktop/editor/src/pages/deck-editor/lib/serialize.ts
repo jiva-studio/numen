@@ -8,7 +8,10 @@ import { NO_DECK, type BufferDeck } from '../types'
 /**
  * A deck as the vault read it.
  */
-export const deserializeVaultDeck = (read: VaultDeck, generateBufferId: IdMaker = generateId): BufferDeck => {
+export const deserializeVaultDeck = (
+  read: VaultDeck,
+  generateBufferId: IdMaker = generateId,
+): BufferDeck => {
   const held = new Map<string, number>()
   for (const card of read.cards) held.set(card.mark, (held.get(card.mark) ?? 0) + 1)
   const sections = read.sections.map((section) => ({
@@ -66,15 +69,17 @@ export const deserializeBufferDeckFromString = (body: string): BufferDeck =>
  */
 export const serializeBufferCardsToVaultCards = (deck: BufferDeck): readonly VaultCard[] => {
   const at = new Map(deck.sections.map((section, index) => [section.id, index]))
-  return deck.cards.map(({ mark, section, heading, stencilLink, stencilPath, preamble, values }) => ({
-    mark,
-    sectionIndex: section === null ? null : (at.get(section) ?? null),
-    heading,
-    stencilLink,
-    stencilPath,
-    preamble,
-    values,
-  }))
+  return deck.cards.map(
+    ({ mark, section, heading, stencilLink, stencilPath, preamble, values }) => ({
+      mark,
+      sectionIndex: section === null ? null : (at.get(section) ?? null),
+      heading,
+      stencilLink,
+      stencilPath,
+      preamble,
+      values,
+    }),
+  )
 }
 
 /** The sections of a deck, in the shape the vault takes them. */

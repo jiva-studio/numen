@@ -127,11 +127,10 @@ provide(
     show: (tab: TabId) => emit('show', tab),
   })),
 )
-
 </script>
 
 <template>
-  <div ref="frame" class="workspace numen relative min-h-0 min-w-0 bg-surface text-ink">
+  <div ref="frame" class="workspace numen bg-surface text-ink relative min-h-0 min-w-0">
     <WorkspaceBranch
       v-if="workspace.root.kind === 'branch'"
       :node="workspace.root"
@@ -160,12 +159,7 @@ provide(
 
     <WorkspaceOverlay v-if="overlay" :box="overlay" :caret="landing?.kind === 'strip'" />
 
-    <DragPreview
-      v-if="label && position"
-      class="workspace__dragged"
-      :at="position"
-      :says="label"
-    />
+    <DragPreview v-if="label && position" class="workspace__dragged" :at="position" :says="label" />
   </div>
 </template>
 

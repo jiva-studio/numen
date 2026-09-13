@@ -63,7 +63,7 @@ const rowId = (at: number): string => optionId(props.uid, at)
   >
     <p
       :id="titleId"
-      class="palette__title caps-numen flex items-center gap-1.5 text-small text-hushed"
+      class="palette__title caps-numen text-small text-hushed flex items-center gap-1.5"
       data-palette="title"
     >
       <span>{{ placed.group.title }}</span>
@@ -88,7 +88,7 @@ const rowId = (at: number): string => optionId(props.uid, at)
 
     <p
       v-if="!placed.items.length && placed.group.silence"
-      class="palette__silence px-2 py-1.5 text-hushed"
+      class="palette__silence text-hushed px-2 py-1.5"
       data-palette="silence"
     >
       {{ placed.group.silence }}

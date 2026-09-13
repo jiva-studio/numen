@@ -54,7 +54,11 @@ const cellsOf = (state: EditorState, row: SyntaxNode): Cell[] => {
 
   for (let child = row.firstChild; child; child = child.nextSibling) {
     if (child.name === 'TableCell') {
-      cells.push({ from: child.from, to: child.to, text: state.doc.sliceString(child.from, child.to) })
+      cells.push({
+        from: child.from,
+        to: child.to,
+        text: state.doc.sliceString(child.from, child.to),
+      })
       written = true
       continue
     }
@@ -99,8 +103,7 @@ export const widthOf = (table: Table): number =>
 /** Every row, head first, each as wide as the table. */
 export const rowsOf = (table: Table): Row[] => {
   const width = widthOf(table)
-  const pad = (row: Row): Row =>
-    Array.from({ length: width }, (_, column) => row[column] ?? null)
+  const pad = (row: Row): Row => Array.from({ length: width }, (_, column) => row[column] ?? null)
   return [pad(table.head), ...table.body.map(pad)]
 }
 
@@ -109,7 +112,10 @@ export const readCell = (text: string): string => text.replace(/\\\|/g, '|').tri
 
 /** What typing in a cell writes. */
 export const writeCell = (text: string): string =>
-  text.replace(/\s*\n\s*/g, ' ').replace(/\|/g, '\\|').trim()
+  text
+    .replace(/\s*\n\s*/g, ' ')
+    .replace(/\|/g, '\\|')
+    .trim()
 
 /** A row of empty cells, written under the table. */
 export const emptyRow = (width: number): string => `\n|${' |'.repeat(width)}`

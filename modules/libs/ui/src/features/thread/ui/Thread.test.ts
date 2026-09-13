@@ -7,9 +7,7 @@ const createAsked = (id: string, text = 'said', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
 
 const createAnswered = (id: string, text = 'back', state?: Turn['state']): Turn =>
-  state === undefined
-    ? { id, voice: 'answered', text }
-    : { id, voice: 'answered', text, state }
+  state === undefined ? { id, voice: 'answered', text } : { id, voice: 'answered', text, state }
 
 const thread = (turns: readonly Turn[]) => mount(Thread, { props: { turns } })
 
@@ -27,7 +25,9 @@ describe('what is drawn', () => {
   })
 
   it('draws one element per turn', () => {
-    expect(thread([createAsked('1'), createAnswered('2'), createAsked('3')]).findAll('.thread__turn')).toHaveLength(3)
+    expect(
+      thread([createAsked('1'), createAnswered('2'), createAsked('3')]).findAll('.thread__turn'),
+    ).toHaveLength(3)
   })
 
   it('keeps the turns in the order they were handed over', () => {
@@ -47,7 +47,6 @@ describe('what is drawn', () => {
     expect(thread([createAsked('1', '')]).findAll('.thread__turn')).toHaveLength(1)
   })
 })
-
 
 describe('a turn that failed', () => {
   it('says so', () => {
@@ -74,7 +73,11 @@ describe('a line about work that opens something', () => {
   })
 
   it('is a line and nothing to press where the turn opens nothing', () => {
-    expect(thread([createDoing('1')]).find('.thread__opens').exists()).toBe(false)
+    expect(
+      thread([createDoing('1')])
+        .find('.thread__opens')
+        .exists(),
+    ).toBe(false)
   })
 })
 
@@ -195,16 +198,26 @@ describe('the step each part is set at', () => {
   })
 
   it('leaves what was said at the step the thread is set in', () => {
-    expect(thread([createAsked('1')]).find('.thread__body').classes()).not.toContain('text-small')
+    expect(
+      thread([createAsked('1')])
+        .find('.thread__body')
+        .classes(),
+    ).not.toContain('text-small')
   })
 
   it('sets a line about work at that step as well', () => {
-    expect(thread([createDoing('1')]).find('.tool-call').classes()).toContain('text-base')
+    expect(
+      thread([createDoing('1')])
+        .find('.tool-call')
+        .classes(),
+    ).toContain('text-base')
   })
 
   it('says a turn did not send in the quiet step', () => {
-    expect(thread([createAsked('1', 'gone', 'failed')]).find('.thread__failure').classes()).toContain(
-      'text-small',
-    )
+    expect(
+      thread([createAsked('1', 'gone', 'failed')])
+        .find('.thread__failure')
+        .classes(),
+    ).toContain('text-small')
   })
 })

@@ -39,7 +39,9 @@ const LEAST = 120
 
 const tall = ref(readHeight())
 const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
-const frameStyle = computed(() => (tall.value === null ? undefined : { blockSize: `${tall.value}px` }))
+const frameStyle = computed(() =>
+  tall.value === null ? undefined : { blockSize: `${tall.value}px` },
+)
 
 // --- Handlers ---
 /**

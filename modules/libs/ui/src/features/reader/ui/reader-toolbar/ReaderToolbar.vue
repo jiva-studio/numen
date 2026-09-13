@@ -30,11 +30,11 @@ const zoom = defineModel<number>('zoom', { default: 1, set: clampZoom })
 </script>
 
 <template>
-  <div class="pointer-events-none absolute inset-x-0 bottom-inset flex justify-center">
+  <div class="bottom-inset pointer-events-none absolute inset-x-0 flex justify-center">
     <!-- Standing over the page, so it carries a panel's own ground and lets
          what is behind it through. -->
     <div
-      class="pointer-events-auto flex items-center gap-1 rounded-pill border border-panel-rule bg-panel p-1 shadow-panel backdrop-blur-panel"
+      class="rounded-pill border-panel-rule bg-panel shadow-panel backdrop-blur-panel pointer-events-auto flex items-center gap-1 border p-1"
     >
       <PageControls v-model:at="at" :page-count="pageCount" :words="words" />
       <ZoomControls v-model:zoom="zoom" :words="words" />

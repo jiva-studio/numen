@@ -98,5 +98,4 @@ defineExpose({ reveal })
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-
 </style>

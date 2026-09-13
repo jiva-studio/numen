@@ -1,10 +1,3 @@
 /** What a keystroke asks for, on each screen it may be pressed at. */
-export {
-  ASKS,
-  getPickerKeyIntent,
-  getSessionKeyIntent,
-  isSwallowed,
-  letterOf,
-  READS,
-} from './keys'
+export { ASKS, getPickerKeyIntent, getSessionKeyIntent, isSwallowed, letterOf, READS } from './keys'
 export type { SessionKeyIntent } from './keys'

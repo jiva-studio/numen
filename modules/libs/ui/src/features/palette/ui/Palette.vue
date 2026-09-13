@@ -209,7 +209,7 @@ const onOver = (at: number, event: PointerEvent) => {
 
     <p
       v-else-if="$slots.silence"
-      class="palette__nothing px-2 py-1.5 text-hushed"
+      class="palette__nothing text-hushed px-2 py-1.5"
       data-palette="nothing"
     >
       <slot name="silence" />

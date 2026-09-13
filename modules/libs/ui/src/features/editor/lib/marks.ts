@@ -209,7 +209,8 @@ const build = (
 }
 
 /** What is drawn inside the lines: the marks, and what stands for them. */
-export const marks = (state: EditorState, from: number, to: number) => build(state, from, to, 'marks')
+export const marks = (state: EditorState, from: number, to: number) =>
+  build(state, from, to, 'marks')
 
 /** What is drawn in place of whole lines: a rule, a table. */
 export const blockMarks = (state: EditorState) => build(state, 0, state.doc.length, 'blocks')

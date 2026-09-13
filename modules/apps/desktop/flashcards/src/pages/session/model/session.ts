@@ -114,16 +114,10 @@ export function useReviewSession(deps: SessionDeps) {
    * Preset is the note one preset stands in, and the empty path is the preset
    * that schedules the decks naming none. Naming none at all sits to the deck.
    */
-  const start = async (
-    id: string,
-    deck: string,
-    preset?: string,
-  ): Promise<Report | null> => {
+  const start = async (id: string, deck: string, preset?: string): Promise<Report | null> => {
     try {
       const opened = await deps.cards.startSession(
-        preset === undefined
-          ? { vault: id, deck }
-          : { vault: id, deck, preset },
+        preset === undefined ? { vault: id, deck } : { vault: id, deck, preset },
       )
       vault.value = id
       run.value = opened.run

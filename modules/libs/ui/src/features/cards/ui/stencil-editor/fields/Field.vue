@@ -81,7 +81,7 @@ const onGripKey = (event: KeyboardEvent): void => {
            handle is what a row is dragged by, by the pointer and by the
            arrows along the order alike. -->
       <span
-        class="stencil__grip flex shrink-0 items-center text-hushed"
+        class="stencil__grip text-hushed flex shrink-0 items-center"
         data-grip
         role="button"
         :tabindex="row.names ? -1 : 0"

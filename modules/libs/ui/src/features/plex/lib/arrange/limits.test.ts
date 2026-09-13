@@ -63,9 +63,7 @@ describe('the space above and below is used before anything is dropped', () => {
     const frame = arrangePlex(many, { options: { viewport, maxPerLine: 9 } })
 
     expect(frame.overflow.child).toBeUndefined()
-    const rows = new Set(
-      frame.nodes.filter((n) => n.seat === 'child').map((n) => n.y),
-    )
+    const rows = new Set(frame.nodes.filter((n) => n.seat === 'child').map((n) => n.y))
     expect(rows.size).toBeGreaterThan(1)
   })
 
@@ -92,9 +90,7 @@ describe('the two sides are read as a pair', () => {
     })
 
     const getNearest = (seat: string) =>
-      Math.min(
-        ...frame.nodes.filter((n) => n.seat === seat).map((n) => Math.abs(n.x)),
-      )
+      Math.min(...frame.nodes.filter((n) => n.seat === seat).map((n) => Math.abs(n.x)))
     expect(getNearest('jump')).toBe(getNearest('sibling'))
   })
 })
@@ -111,7 +107,6 @@ describe('the row is measured against the window either way', () => {
     })
     expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
-
 })
 
 describe('the rows keep the room when it runs out', () => {

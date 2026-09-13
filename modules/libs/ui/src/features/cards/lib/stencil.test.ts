@@ -84,9 +84,7 @@ describe('faceRows', () => {
     const faces: readonly StencilFace[] = [
       { id: 'one', name: 'One', front: '{{Name}} {{Colour}}', back: '' },
     ]
-    expect(faceRows(faces, FIELDS, SAMPLE)[0]?.frontPreview).toBe(
-      'Llama <mark>{{Colour}}</mark>',
-    )
+    expect(faceRows(faces, FIELDS, SAMPLE)[0]?.frontPreview).toBe('Llama <mark>{{Colour}}</mark>')
   })
 
   it('says nothing stray of a face naming only declared fields', () => {

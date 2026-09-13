@@ -16,19 +16,18 @@ import { WORDS as words } from '@/shared/words'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { WindowKindsDeps } from './deps'
 
-export interface FilesKindDeps
-  extends Pick<
-    WindowKindsDeps,
-    | 'core'
-    | 'tabOpeners'
-    | 'held'
-    | 'runs'
-    | 'editing'
-    | 'vaults'
-    | 'getTarget'
-    | 'runCommand'
-    | 'commandDeps'
-  > {
+export interface FilesKindDeps extends Pick<
+  WindowKindsDeps,
+  | 'core'
+  | 'tabOpeners'
+  | 'held'
+  | 'runs'
+  | 'editing'
+  | 'vaults'
+  | 'getTarget'
+  | 'runCommand'
+  | 'commandDeps'
+> {
   dragged: ShallowRef<readonly string[]>
   writeMessage: MessageWriter
   destinations: DestinationDeps

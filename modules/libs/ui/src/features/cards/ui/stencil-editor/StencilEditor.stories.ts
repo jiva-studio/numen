@@ -17,8 +17,7 @@ interface Corpus {
   readonly faces: readonly StencilFace[]
 }
 
-const UNBROKEN =
-  'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
+const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 const many = (count: number): readonly string[] =>
   Array.from({ length: count }, (_, at) => `Field ${at + 1}`)
@@ -178,7 +177,10 @@ const meta: Meta<Knobs> = {
           fields.value = reorderFields(fields.value, field, at)
         },
         onAddFace: (name: string) => {
-          faces.value = [...faces.value, { id: `face-${faces.value.length}`, name, front: '', back: '' }]
+          faces.value = [
+            ...faces.value,
+            { id: `face-${faces.value.length}`, name, front: '', back: '' },
+          ]
         },
         onRenameFace: (id: string, name: string) => {
           faces.value = faces.value.map((face) => (face.id === id ? { ...face, name } : face))
@@ -188,7 +190,11 @@ const meta: Meta<Knobs> = {
         },
         /* Nothing among the faces is fixed, so any of them lands anywhere. */
         onMoveFace: (id: string, at: InsertionPoint) => {
-          const order = orderNames(faces.value.map((face) => face.id), id, at)
+          const order = orderNames(
+            faces.value.map((face) => face.id),
+            id,
+            at,
+          )
           faces.value = order.flatMap((each) => faces.value.filter((face) => face.id === each))
         },
         onWrite: (id: string, half: Half, text: string) => {
@@ -221,9 +227,7 @@ export default meta
 type Story = StoryObj<Knobs>
 
 const boxFor = (canvas: HTMLElement, id: string, half: Half) => {
-  const box = canvas.querySelector<HTMLTextAreaElement>(
-    `[data-face="${id}"] [data-half="${half}"]`,
-  )
+  const box = canvas.querySelector<HTMLTextAreaElement>(`[data-face="${id}"] [data-half="${half}"]`)
   if (!box) throw new Error(`no ${half} of ${id}`)
   return box
 }
@@ -293,7 +297,9 @@ export const AStencil: Story = {
     expect(Math.round(edge(first))).toBe(Math.round(edge(second)))
 
     // Letting a field go on the first row lands it nowhere.
-    second.querySelector('[data-grip]')?.dispatchEvent(new DragEvent('dragstart', { bubbles: true }))
+    second
+      .querySelector('[data-grip]')
+      ?.dispatchEvent(new DragEvent('dragstart', { bubbles: true }))
     first.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }))
     first.dispatchEvent(new DragEvent('drop', { bubbles: true }))
     await new Promise((settled) => {
@@ -330,9 +336,7 @@ export const WhatAPersonDoesToIt: Story = {
     front.focus()
     front.setSelectionRange(front.value.length, front.value.length)
 
-    await userEvent.click(
-      found(canvasElement, '[data-face="recognise"] [data-insert="Weight"]'),
-    )
+    await userEvent.click(found(canvasElement, '[data-face="recognise"] [data-insert="Weight"]'))
     expect(boxFor(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
     expect(boxFor(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
 
@@ -411,8 +415,7 @@ export const WhatIsWrong: Story = {
     // What the caller found wrong with one face stands under that face's name,
     // and under no other's.
     expect(
-      found(canvasElement, '[data-face="stray"] [data-pane="front-written"]')
-        .textContent?.trim(),
+      found(canvasElement, '[data-face="stray"] [data-pane="front-written"]').textContent?.trim(),
     ).toContain('Not a field: Colour')
     expect(
       canvasElement.querySelector('[data-face="tagged"] [data-pane] [role="alert"]'),

@@ -301,7 +301,11 @@ describe('grid', () => {
 
     it('stands no plus before the first section where no card stands there', () => {
       const under = SECTIONED.filter((card) => card.section !== null)
-      expect(getGrid(under, SECTIONS, CUTS, null).runs.map((run) => run.plusAt)).toEqual([null, 3, 4])
+      expect(getGrid(under, SECTIONS, CUTS, null).runs.map((run) => run.plusAt)).toEqual([
+        null,
+        3,
+        4,
+      ])
     })
 
     it('stands one run, holding every card, where the deck has no section', () => {

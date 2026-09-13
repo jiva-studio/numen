@@ -640,7 +640,10 @@ describe('what the tab says where the words would stand', () => {
 
   it('says what went wrong even where the words are on screen', async () => {
     const { recordings } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     recordings.writeTranscript = async () => {
@@ -711,7 +714,10 @@ describe('the moments in the editor gutter', () => {
 
   it('are the one line a person typed into a recording nothing was heard in', async () => {
     const { recordings } = talk([])
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 10_000 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 10_000,
+    })
     await flush()
 
     heard.setProse('The first thing I heard.')
@@ -750,7 +756,10 @@ describe('the words as a person edits them', () => {
 
   it('are written once they have been still', async () => {
     const { recordings, written } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     heard.setProse('The first thing said.\nThe second thing heard.\nThe third thing said.')
@@ -759,17 +768,16 @@ describe('the words as a person edits them', () => {
     await still()
 
     expect(written).toStrictEqual([
-      [
-        CUES[0],
-        { text: 'The second thing heard.', from: 2_500, to: 5_000 },
-        CUES[2],
-      ],
+      [CUES[0], { text: 'The second thing heard.', from: 2_500, to: 5_000 }, CUES[2]],
     ])
   })
 
   it('are written once for a run of typing', async () => {
     const { recordings, written } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     heard.setProse('The first thing said.\nThe second thing h\nThe third thing said.')
@@ -782,7 +790,10 @@ describe('the words as a person edits them', () => {
 
   it('are the cues the tab then holds', async () => {
     const { recordings } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     heard.setProse('The first thing said.\n\nThe third thing said.')
@@ -793,7 +804,10 @@ describe('the words as a person edits them', () => {
 
   it('stay on screen while a transcript arriving beside them is read', async () => {
     const { recordings } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 200 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 200,
+    })
     await flush()
 
     heard.setProse('Mine.\nThe second thing said.\nThe third thing said.')
@@ -808,7 +822,10 @@ describe('the words as a person edits them', () => {
     recordings.writeTranscript = async () => {
       throw new Error('the transcript is held')
     }
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     heard.setProse('Mine.\nThe second thing said.\nThe third thing said.')
@@ -820,7 +837,10 @@ describe('the words as a person edits them', () => {
 
   it('reach the file as the tab closes', async () => {
     const { recordings, written } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 10_000 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 10_000,
+    })
     await flush()
 
     heard.setProse('Mine.\nThe second thing said.\nThe third thing said.')
@@ -921,7 +941,10 @@ describe('typing that lands while a write is in the air', () => {
         held.answer = done
       })
     }
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     heard.setProse('One.\nThe second thing said.\nThe third thing said.')
@@ -940,7 +963,10 @@ describe('typing that lands while a write is in the air', () => {
 describe('a transcript nobody edited', () => {
   it('is not written down when the editor hands back what it was given', async () => {
     const { recordings, written } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     // The editor hands the document back carrying a newline of its own.
@@ -952,7 +978,10 @@ describe('a transcript nobody edited', () => {
 
   it('is written down once a word actually changes', async () => {
     const { recordings, written } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     heard.setProse('The first thing Rupa said.\nThe second thing said.\nThe third thing said.')
@@ -967,7 +996,10 @@ describe('a transcript nobody edited', () => {
 describe('the view going after the words', () => {
   it('stops while a person is typing, and starts again once they stop', async () => {
     const { recordings } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     expect(heard.typing.value).toBe(false)
@@ -981,7 +1013,10 @@ describe('the view going after the words', () => {
 
   it('is not stopped by the words arriving from the application', async () => {
     const { recordings } = talk()
-    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player, quiet: 5 })
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
     await flush()
 
     heard.setWorking(true)

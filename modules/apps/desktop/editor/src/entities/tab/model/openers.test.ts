@@ -54,17 +54,13 @@ const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
     )
   }
   tabOpeners.registerReader({ kind: 'book' }, (path, runs) =>
-    opened.push(
-      `document ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
-    ),
+    opened.push(`document ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`),
   )
   tabOpeners.registerReader({ kind: 'book', format: 'epub' }, (path, runs) =>
     opened.push(`book ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`),
   )
   tabOpeners.registerReader({ kind: 'recording' }, (path, runs) =>
-    opened.push(
-      `recording ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
-    ),
+    opened.push(`recording ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`),
   )
   return opened
 }

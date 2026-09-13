@@ -172,7 +172,14 @@ describe('a box is as wide as its title needs', () => {
   })
 
   it('leaves a row packed to one gap between boxes, and centred on the focus', () => {
-    const mixed = createNeighbourhood('child', 'A', 'Domain', 'Composition root', 'Port', 'Use case')
+    const mixed = createNeighbourhood(
+      'child',
+      'A',
+      'Domain',
+      'Composition root',
+      'Port',
+      'Use case',
+    )
     const children = withSeat(arrangePlex(mixed, { measure: byTitle }), 'child')
 
     expect(new Set(children.map((node) => node.width)).size).toBeGreaterThan(1)
@@ -197,10 +204,7 @@ describe('a box is as wide as its title needs', () => {
   })
 
   it('starts each further column beyond the widest of the one before it', () => {
-    const jumps = withSeat(
-      arrangePlex(neighbourhoods.overcrowded, { measure: byTitle }),
-      'jump',
-    )
+    const jumps = withSeat(arrangePlex(neighbourhoods.overcrowded, { measure: byTitle }), 'jump')
     const lines = inLines(jumps, maxPerLine)
     expect(lines.length).toBeGreaterThan(1)
 
@@ -219,9 +223,7 @@ describe('a box is as wide as its title needs', () => {
     const plain = arrangePlex(neighbourhoods.overcrowded)
 
     expect(measured.overflow).toStrictEqual(plain.overflow)
-    expect(measured.nodes.map((node) => node.id)).toStrictEqual(
-      plain.nodes.map((node) => node.id),
-    )
+    expect(measured.nodes.map((node) => node.id)).toStrictEqual(plain.nodes.map((node) => node.id))
   })
 })
 
@@ -248,10 +250,7 @@ describe('a label is as long as its words', () => {
     })
 
     // Once to cut the words to the line, and once to find them room along it.
-    expect(asked).toStrictEqual([
-      'the scene in the assembly',
-      'the scene in the assembly',
-    ])
+    expect(asked).toStrictEqual(['the scene in the assembly', 'the scene in the assembly'])
   })
 
   it('cuts words too long for their line', () => {
@@ -309,7 +308,9 @@ describe('the same input gives the same numbers', () => {
       nodes: [...neighbourhoods.typical.nodes].reverse(),
     }
     const bySeat = (n: PlexNeighbourhood) =>
-      arrangePlex(n).nodes.filter((node) => node.seat === 'child').map((node) => node.id)
+      arrangePlex(n)
+        .nodes.filter((node) => node.seat === 'child')
+        .map((node) => node.id)
     // Order follows the input rather than a sort; the set of seats is equal.
     expect(bySeat(shuffled)).toHaveLength(bySeat(neighbourhoods.typical).length)
     expect([...bySeat(shuffled)].sort()).toStrictEqual([...bySeat(neighbourhoods.typical)].sort())
@@ -345,9 +346,7 @@ describe('the lines of a seat are shared out evenly', () => {
 describe('order along a line follows the order given', () => {
   it('numbers each seat outward from the focus', () => {
     const children = withSeat(arrangePlex(neighbourhoods.crowded), 'child')
-    expect(children.map((node) => node.order)).toStrictEqual(
-      children.map((_, index) => index),
-    )
+    expect(children.map((node) => node.order)).toStrictEqual(children.map((_, index) => index))
   })
 
   it('lays a row out left to right', () => {
@@ -377,8 +376,7 @@ describe('order along a line follows the order given', () => {
       nodes: [...before.nodes, { id: 'child-6', title: 'One more', seat: 'child' }],
       edges: [...before.edges, { from: 'focus', to: 'child-6' }],
     }
-    const ids = (n: PlexNeighbourhood) =>
-      withSeat(arrangePlex(n), 'child').map((node) => node.id)
+    const ids = (n: PlexNeighbourhood) => withSeat(arrangePlex(n), 'child').map((node) => node.id)
     expect(ids(after).slice(0, ids(before).length)).toStrictEqual(ids(before))
   })
 })
@@ -517,15 +515,18 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     // whichever arrangement drew it.
     const counting: Placement = {
       name: 'counting',
-      place: (seating) => Object.values(seating).flat().map((node, index) => ({
-        ...node,
-        x: index * 200,
-        y: 100,
-        width: 144,
-        height: 36,
-        order: index,
-        opacity: 1,
-      })),
+      place: (seating) =>
+        Object.values(seating)
+          .flat()
+          .map((node, index) => ({
+            ...node,
+            x: index * 200,
+            y: 100,
+            width: 144,
+            height: 36,
+            order: index,
+            opacity: 1,
+          })),
     }
 
     const { maxPerLine, maxLines } = DEFAULT_OPTIONS

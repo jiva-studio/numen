@@ -8,68 +8,74 @@
 // things: SearchNames answers with names, and SearchPassages with the passages
 // of text a vault holds. A client drawing them apart asks each of them.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { SourceKind } from "./file_pb.js";
-import { file_numen_v1_file } from "./file_pb.js";
-import type { Heading, Note } from "./note_pb.js";
-import { file_numen_v1_note } from "./note_pb.js";
-import type { NoteType, Span } from "./shared_pb.js";
-import { file_numen_v1_shared } from "./shared_pb.js";
-import type { Message } from "@bufbuild/protobuf";
+import type { GenEnum, GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
+import type { SourceKind } from './file_pb.js'
+import { file_numen_v1_file } from './file_pb.js'
+import type { Heading, Note } from './note_pb.js'
+import { file_numen_v1_note } from './note_pb.js'
+import type { NoteType, Span } from './shared_pb.js'
+import { file_numen_v1_shared } from './shared_pb.js'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file numen/v1/search.proto.
  */
-export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIp8BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIdCgVzcGFucxgDIAMoCzIOLm51bWVuLnYxLlNwYW4SIAoEdHlwZRgEIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSL0AQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIdCgVzcGFucxgEIAMoCzIOLm51bWVuLnYxLlNwYW4SEAoIbG9jYXRpb24YBSABKAkSHAoEc3BhbhgGIAEoCzIOLm51bWVuLnYxLlNwYW4SDAoEbGluZRgHIAEoBRIgCgR0eXBlGAggASgOMhIubnVtZW4udjEuTm90ZVR5cGUSIgoEa2luZBgJIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmRCBwoFX25vdGUqiAEKClNlYXJjaE1vZGUSGwoXU0VBUkNIX01PREVfVU5TUEVDSUZJRUQQABIVChFTRUFSQ0hfTU9ERV9XT1JEUxABEhcKE1NFQVJDSF9NT0RFX01FQU5JTkcQAhIVChFTRUFSQ0hfTU9ERV9OQU1FUxADEhYKElNFQVJDSF9NT0RFX0hZQlJJRBAEMrABCg1TZWFyY2hTZXJ2aWNlEkoKC1NlYXJjaE5hbWVzEhwubnVtZW4udjEuU2VhcmNoTmFtZXNSZXF1ZXN0Gh0ubnVtZW4udjEuU2VhcmNoTmFtZXNSZXNwb25zZRJTCg5TZWFyY2hQYXNzYWdlcxIfLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVxdWVzdBogLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
+export const file_numen_v1_search: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIp8BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIdCgVzcGFucxgDIAMoCzIOLm51bWVuLnYxLlNwYW4SIAoEdHlwZRgEIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSL0AQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIdCgVzcGFucxgEIAMoCzIOLm51bWVuLnYxLlNwYW4SEAoIbG9jYXRpb24YBSABKAkSHAoEc3BhbhgGIAEoCzIOLm51bWVuLnYxLlNwYW4SDAoEbGluZRgHIAEoBRIgCgR0eXBlGAggASgOMhIubnVtZW4udjEuTm90ZVR5cGUSIgoEa2luZBgJIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmRCBwoFX25vdGUqiAEKClNlYXJjaE1vZGUSGwoXU0VBUkNIX01PREVfVU5TUEVDSUZJRUQQABIVChFTRUFSQ0hfTU9ERV9XT1JEUxABEhcKE1NFQVJDSF9NT0RFX01FQU5JTkcQAhIVChFTRUFSQ0hfTU9ERV9OQU1FUxADEhYKElNFQVJDSF9NT0RFX0hZQlJJRBAEMrABCg1TZWFyY2hTZXJ2aWNlEkoKC1NlYXJjaE5hbWVzEhwubnVtZW4udjEuU2VhcmNoTmFtZXNSZXF1ZXN0Gh0ubnVtZW4udjEuU2VhcmNoTmFtZXNSZXNwb25zZRJTCg5TZWFyY2hQYXNzYWdlcxIfLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVxdWVzdBogLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw',
+    [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared],
+  )
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
  */
-export type SearchNamesRequest = Message<"numen.v1.SearchNamesRequest"> & {
+export type SearchNamesRequest = Message<'numen.v1.SearchNamesRequest'> & {
   /**
    * What was typed, as it was typed. Words are matched together, and the last
    * of them on its prefix.
    *
    * @generated from field: string query = 1;
    */
-  query: string;
+  query: string
 
   /**
    * How many names to answer with. Zero takes the number the vault chooses.
    *
    * @generated from field: int32 limit = 2;
    */
-  limit: number;
-};
+  limit: number
+}
 
 /**
  * Describes the message numen.v1.SearchNamesRequest.
  * Use `create(SearchNamesRequestSchema)` to create a new message.
  */
-export const SearchNamesRequestSchema: GenMessage<SearchNamesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search, 0);
+export const SearchNamesRequestSchema: GenMessage<SearchNamesRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 0)
 
 /**
  * @generated from message numen.v1.SearchNamesResponse
  */
-export type SearchNamesResponse = Message<"numen.v1.SearchNamesResponse"> & {
+export type SearchNamesResponse = Message<'numen.v1.SearchNamesResponse'> & {
   /**
    * The names that matched, best first, with a note's own title before a
    * heading inside one.
    *
    * @generated from field: repeated numen.v1.NameMatch found = 1;
    */
-  found: NameMatch[];
-};
+  found: NameMatch[]
+}
 
 /**
  * Describes the message numen.v1.SearchNamesResponse.
  * Use `create(SearchNamesResponseSchema)` to create a new message.
  */
-export const SearchNamesResponseSchema: GenMessage<SearchNamesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search, 1);
+export const SearchNamesResponseSchema: GenMessage<SearchNamesResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 1)
 
 /**
  * NameMatch is one name that matched, and the note it stands for. A note's own
@@ -78,18 +84,18 @@ export const SearchNamesResponseSchema: GenMessage<SearchNamesResponse> = /*@__P
  *
  * @generated from message numen.v1.NameMatch
  */
-export type NameMatch = Message<"numen.v1.NameMatch"> & {
+export type NameMatch = Message<'numen.v1.NameMatch'> & {
   /**
    * @generated from field: numen.v1.Note note = 1;
    */
-  note?: Note | undefined;
+  note?: Note | undefined
 
   /**
    * The heading that matched, absent when the note's own title did.
    *
    * @generated from field: optional numen.v1.Heading heading = 2;
    */
-  heading?: Heading | undefined;
+  heading?: Heading | undefined
 
   /**
    * Where in that name the words stand, counted the way a client counts text:
@@ -98,7 +104,7 @@ export type NameMatch = Message<"numen.v1.NameMatch"> & {
    *
    * @generated from field: repeated numen.v1.Span spans = 3;
    */
-  spans: Span[];
+  spans: Span[]
 
   /**
    * Which of three the note is, so a client draws a deck and a stencil as what
@@ -106,65 +112,68 @@ export type NameMatch = Message<"numen.v1.NameMatch"> & {
    *
    * @generated from field: numen.v1.NoteType type = 4;
    */
-  type: NoteType;
-};
+  type: NoteType
+}
 
 /**
  * Describes the message numen.v1.NameMatch.
  * Use `create(NameMatchSchema)` to create a new message.
  */
-export const NameMatchSchema: GenMessage<NameMatch> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search, 2);
+export const NameMatchSchema: GenMessage<NameMatch> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 2)
 
 /**
  * @generated from message numen.v1.SearchPassagesRequest
  */
-export type SearchPassagesRequest = Message<"numen.v1.SearchPassagesRequest"> & {
+export type SearchPassagesRequest = Message<'numen.v1.SearchPassagesRequest'> & {
   /**
    * @generated from field: string query = 1;
    */
-  query: string;
+  query: string
 
   /**
    * How many passages to answer with. Zero takes the number the vault chooses.
    *
    * @generated from field: int32 limit = 2;
    */
-  limit: number;
+  limit: number
 
   /**
    * How the search is asked. A request naming no mode is refused.
    *
    * @generated from field: numen.v1.SearchMode mode = 3;
    */
-  mode: SearchMode;
-};
+  mode: SearchMode
+}
 
 /**
  * Describes the message numen.v1.SearchPassagesRequest.
  * Use `create(SearchPassagesRequestSchema)` to create a new message.
  */
-export const SearchPassagesRequestSchema: GenMessage<SearchPassagesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search, 3);
+export const SearchPassagesRequestSchema: GenMessage<SearchPassagesRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 3)
 
 /**
  * @generated from message numen.v1.SearchPassagesResponse
  */
-export type SearchPassagesResponse = Message<"numen.v1.SearchPassagesResponse"> & {
+export type SearchPassagesResponse = Message<'numen.v1.SearchPassagesResponse'> & {
   /**
    * The passages that answer, best first, one per source.
    *
    * @generated from field: repeated numen.v1.Passage found = 1;
    */
-  found: Passage[];
-};
+  found: Passage[]
+}
 
 /**
  * Describes the message numen.v1.SearchPassagesResponse.
  * Use `create(SearchPassagesResponseSchema)` to create a new message.
  */
-export const SearchPassagesResponseSchema: GenMessage<SearchPassagesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search, 4);
+export const SearchPassagesResponseSchema: GenMessage<SearchPassagesResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 4)
 
 /**
  * Passage is what a search returns: the text around a hit, and where it came
@@ -172,13 +181,13 @@ export const SearchPassagesResponseSchema: GenMessage<SearchPassagesResponse> = 
  *
  * @generated from message numen.v1.Passage
  */
-export type Passage = Message<"numen.v1.Passage"> & {
+export type Passage = Message<'numen.v1.Passage'> & {
   /**
    * The file the text was read out of, as the vault calls it.
    *
    * @generated from field: string path = 1;
    */
-  path: string;
+  path: string
 
   /**
    * The note the text was read out of, absent for a source that is not one.
@@ -186,14 +195,14 @@ export type Passage = Message<"numen.v1.Passage"> & {
    *
    * @generated from field: optional numen.v1.Note note = 2;
    */
-  note?: Note | undefined;
+  note?: Note | undefined
 
   /**
    * The stretch of the source that matched, as it reads.
    *
    * @generated from field: string text = 3;
    */
-  text: string;
+  text: string
 
   /**
    * Where in that text the words typed stand, counted the way a client counts
@@ -202,7 +211,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
    *
    * @generated from field: repeated numen.v1.Span spans = 4;
    */
-  spans: Span[];
+  spans: Span[]
 
   /**
    * What the source's own numbering calls the place, empty when the format
@@ -210,7 +219,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
    *
    * @generated from field: string location = 5;
    */
-  location: string;
+  location: string
 
   /**
    * Where the passage stands in the text of the source it was read out of,
@@ -219,7 +228,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
    *
    * @generated from field: numen.v1.Span span = 6;
    */
-  span?: Span | undefined;
+  span?: Span | undefined
 
   /**
    * Where the chunk that matched stands, counted from the first line of the
@@ -227,7 +236,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
    *
    * @generated from field: int32 line = 7;
    */
-  line: number;
+  line: number
 
   /**
    * Which of three the note is, so a client draws a deck and a stencil as what
@@ -235,7 +244,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
    *
    * @generated from field: numen.v1.NoteType type = 8;
    */
-  type: NoteType;
+  type: NoteType
 
   /**
    * What the vault holds at that path, so a client draws a book and a
@@ -243,15 +252,14 @@ export type Passage = Message<"numen.v1.Passage"> & {
    *
    * @generated from field: numen.v1.SourceKind kind = 9;
    */
-  kind: SourceKind;
-};
+  kind: SourceKind
+}
 
 /**
  * Describes the message numen.v1.Passage.
  * Use `create(PassageSchema)` to create a new message.
  */
-export const PassageSchema: GenMessage<Passage> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search, 5);
+export const PassageSchema: GenMessage<Passage> = /*@__PURE__*/ messageDesc(file_numen_v1_search, 5)
 
 /**
  * SearchMode is how a search is asked. Each mode is an order of its own, and a
@@ -302,8 +310,7 @@ export enum SearchMode {
 /**
  * Describes the enum numen.v1.SearchMode.
  */
-export const SearchModeSchema: GenEnum<SearchMode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_search, 0);
+export const SearchModeSchema: GenEnum<SearchMode> = /*@__PURE__*/ enumDesc(file_numen_v1_search, 0)
 
 /**
  * SearchService answers what a vault holds that matches what was typed.
@@ -322,10 +329,10 @@ export const SearchService: GenService<{
    * @generated from rpc numen.v1.SearchService.SearchNames
    */
   searchNames: {
-    methodKind: "unary";
-    input: typeof SearchNamesRequestSchema;
-    output: typeof SearchNamesResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof SearchNamesRequestSchema
+    output: typeof SearchNamesResponseSchema
+  }
   /**
    * SearchPassages is the text a vault holds that answers what was typed, by
    * the words in it or by what it means or by what a section is called. The
@@ -335,10 +342,8 @@ export const SearchService: GenService<{
    * @generated from rpc numen.v1.SearchService.SearchPassages
    */
   searchPassages: {
-    methodKind: "unary";
-    input: typeof SearchPassagesRequestSchema;
-    output: typeof SearchPassagesResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_numen_v1_search, 0);
-
+    methodKind: 'unary'
+    input: typeof SearchPassagesRequestSchema
+    output: typeof SearchPassagesResponseSchema
+  }
+}> = /*@__PURE__*/ serviceDesc(file_numen_v1_search, 0)

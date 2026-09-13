@@ -29,13 +29,16 @@ export interface CreateWords {
 /** What creating each of the four asks of the vault, each entry naming its own. */
 const createByKind: Record<
   CreateKind,
-  (vault: VaultCreator, folder: string, name: string, fields: readonly string[]) => Promise<CreateResult>
+  (
+    vault: VaultCreator,
+    folder: string,
+    name: string,
+    fields: readonly string[],
+  ) => Promise<CreateResult>
 > = {
   deck: (vault, folder, name) => vault.createDeck!.call(vault, name, folder),
-  stencil: (vault, folder, name, fields) =>
-    vault.createStencil!.call(vault, name, folder, fields),
-  preset: (vault, folder, name) =>
-    vault.createPreset!.call(vault, name, folder),
+  stencil: (vault, folder, name, fields) => vault.createStencil!.call(vault, name, folder, fields),
+  preset: (vault, folder, name) => vault.createPreset!.call(vault, name, folder),
   url: (vault, folder, name) => vault.createUrl!.call(vault, name, folder),
 }
 
@@ -45,7 +48,12 @@ const createByKind: Record<
  * answers where it stands. A vault that answers nothing at all is said here,
  * because the roads that ask for one carry no word of their own.
  */
-export function createFileCreators(vault: VaultCreator, tabOpeners: FileOpeners, words: CreateWords, write: MessageWriter) {
+export function createFileCreators(
+  vault: VaultCreator,
+  tabOpeners: FileOpeners,
+  words: CreateWords,
+  write: MessageWriter,
+) {
   const createFile = async (
     what: CreateKind,
     folder: string,

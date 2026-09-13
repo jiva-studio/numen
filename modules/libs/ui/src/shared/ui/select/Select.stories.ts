@@ -107,8 +107,7 @@ export const OnShelves: Story = {
 /** Words far longer than the box drawing them. */
 export const FarTooLong: Story = {
   args: {
-    words:
-      'As small as it will go\nSomewhere between the two of them\nAs large as the room allows',
+    words: 'As small as it will go\nSomewhere between the two of them\nAs large as the room allows',
     chosen: 'somewhere-between-the-two-of-them',
     width: '10rem',
   },

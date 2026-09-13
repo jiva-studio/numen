@@ -42,14 +42,35 @@ vi.mock('@/shared/clients', async (original) => ({
     },
     watchReloads: () => waits(),
     listReviewDays: async () => ({
-      days: [{ day: '2026-04-01', answered: 3, again: 1, hard: 0, good: 2, easy: 0, asked: 3, recalled: 2 }],
+      days: [
+        {
+          day: '2026-04-01',
+          answered: 3,
+          again: 1,
+          hard: 0,
+          good: 2,
+          easy: 0,
+          asked: 3,
+          recalled: 2,
+        },
+      ],
       due: [{ day: '2026-04-03', answered: 1 }],
       streak: 4,
       answered: 3,
     }),
     getVaultDeckPreset: async () => ({ preset: undefined }),
     getDeckNeighbourhood: async () => ({
-      notes: [{ written: 'Prefixes', path: 'notes/Prefixes.md', title: 'Prefixes', body: 'A word before the word.', label: '', points: true, ambiguous: false }],
+      notes: [
+        {
+          written: 'Prefixes',
+          path: 'notes/Prefixes.md',
+          title: 'Prefixes',
+          body: 'A word before the word.',
+          label: '',
+          points: true,
+          ambiguous: false,
+        },
+      ],
       unread: 0,
     }),
     startSession: async () => ({

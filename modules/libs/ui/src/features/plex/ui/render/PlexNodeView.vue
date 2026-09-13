@@ -63,8 +63,7 @@ const isOffering = computed(
   () =>
     props.reaching.handle &&
     props.node.opacity >= 1 &&
-    (props.gestureRole === 'source' ||
-      (props.gestureRole === 'open' && hoverFocus.isOn.value)),
+    (props.gestureRole === 'source' || (props.gestureRole === 'open' && hoverFocus.isOn.value)),
 )
 
 /** A node that is not there yet is announced as nothing; the focus is a picture. */
@@ -80,10 +79,7 @@ const canOpen = computed(() => !!props.wide || !!props.hung)
  * What is hovered or focused, and where that stands.
  */
 const under = computed(() =>
-  canOpen.value &&
-  props.node.opacity >= 1 &&
-  props.gestureRole === 'open' &&
-  hoverFocus.isOn.value
+  canOpen.value && props.node.opacity >= 1 && props.gestureRole === 'open' && hoverFocus.isOn.value
     ? `${props.node.x} ${props.node.y}`
     : null,
 )
@@ -138,12 +134,7 @@ const hue = computed(() => ({
       </template>
     </PlexNodeBox>
 
-    <PlexNodeParts
-      v-if="hung"
-      :hung="hung"
-      :open="open"
-      @enter="(part) => emit('enter', part)"
-    />
+    <PlexNodeParts v-if="hung" :hung="hung" :open="open" @enter="(part) => emit('enter', part)" />
 
     <!-- Reach out from here to make something. Under the hand or under the
          keyboard, so it is there when wanted and out of the way when not. -->

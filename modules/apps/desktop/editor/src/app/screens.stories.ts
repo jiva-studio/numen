@@ -62,7 +62,11 @@ const window = (tab: string, tabPane: Component, state: unknown) => ({
   components: { WorkspaceLayout },
   setup() {
     const layout = ref<Workspace>({
-      root: pane('main', TABS.map((one) => one.id), tab),
+      root: pane(
+        'main',
+        TABS.map((one) => one.id),
+        tab,
+      ),
       axis: 'horizontal',
       focus: 'main',
     })
@@ -163,7 +167,9 @@ const GRID = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
  * pays the debt off sooner, and a day too short never pays it off at all.
  */
 const backlogAt = (rate: number): readonly number[] =>
-  Array.from({ length: 60 }, (_, day) => Math.max(0, Math.round(96 - day * rate + day * day * rate * 0.004)))
+  Array.from({ length: 60 }, (_, day) =>
+    Math.max(0, Math.round(96 - day * rate + day * day * rate * 0.004)),
+  )
 
 const AT: readonly Point[] = GRID.map((minutes, at) =>
   point({
@@ -500,7 +506,10 @@ export const Recording: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      useTranscriptTab(useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runCommand: () => {} }),
+      useTranscriptTab(
+        useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
+        { runCommand: () => {} },
+      ),
     ),
 }
 
@@ -510,7 +519,10 @@ export const NoTranscript: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      useTranscriptTab(useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runCommand: () => {} }),
+      useTranscriptTab(
+        useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
+        { runCommand: () => {} },
+      ),
     ),
 }
 
@@ -520,9 +532,12 @@ export const NoTranscript: Story = {
  */
 export const Transcribing: Story = {
   render: () => {
-    const state = useTranscriptTab(useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
-      runCommand: () => {},
-    })
+    const state = useTranscriptTab(
+      useTranscript(createRecordings([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
+      {
+        runCommand: () => {},
+      },
+    )
     state.setWorking(true)
     return window(`${RECORDING}:lecture`, RecordingTab, state)
   },
@@ -539,8 +554,7 @@ const entry = (path: string, over: Partial<Entry> = {}): Entry => ({
   ...over,
 })
 
-const other = (path: string, kind: Entry['kind']): Entry =>
-  entry(path, { kind, type: 'note' })
+const other = (path: string, kind: Entry['kind']): Entry => entry(path, { kind, type: 'note' })
 
 /** The folders of the vault the pictures in this file are taken of. */
 const VAULT: Record<string, readonly Entry[]> = {
@@ -765,9 +779,12 @@ export const Transcribed: Story = {
     createMenuStory('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
       pane: RecordingTab,
-      state: useTranscriptTab(useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
-        runCommand: () => {},
-      }),
+      state: useTranscriptTab(
+        useTranscript(createRecordings(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }),
+        {
+          runCommand: () => {},
+        },
+      ),
     }),
 }
 

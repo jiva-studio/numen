@@ -22,10 +22,7 @@ function neighbourhood(
   neighbours: readonly PlexNode[],
   extra: readonly PlexEdge[] = [],
 ): PlexNeighbourhood {
-  const nodes: PlexNode[] = [
-    { id: 'focus', title: focus, seat: 'focus' },
-    ...neighbours,
-  ]
+  const nodes: PlexNode[] = [{ id: 'focus', title: focus, seat: 'focus' }, ...neighbours]
   const parent = neighbours.find((node) => node.seat === 'parent')
   const edges: PlexEdge[] = neighbours.flatMap((node) => {
     if (node.seat === 'parent' || node.seat === 'jump') {
@@ -39,11 +36,7 @@ function neighbourhood(
   return { nodes, edges: [...edges, ...extra] }
 }
 
-function run(
-  seat: PlexSeat,
-  count: number,
-  title: (index: number) => string,
-): PlexNode[] {
+function run(seat: PlexSeat, count: number, title: (index: number) => string): PlexNode[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `${seat}-${index}`,
     title: title(index),

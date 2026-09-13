@@ -162,7 +162,7 @@ const onKey = (event: KeyboardEvent) => {
 
     <p
       v-if="!actions.length"
-      class="actions__silence px-2 py-1.5 text-hushed"
+      class="actions__silence text-hushed px-2 py-1.5"
       data-actions="silence"
     >
       {{ words.silence }}

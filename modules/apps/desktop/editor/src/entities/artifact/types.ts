@@ -15,12 +15,7 @@
  * model here wrote it down or a site published it with a video.
  */
 export type Artifact =
-  | 'ocr'
-  | 'ocr.corrected'
-  | 'transcript'
-  | 'transcript.corrected'
-  | 'article'
-  | 'copy'
+  'ocr' | 'ocr.corrected' | 'transcript' | 'transcript.corrected' | 'article' | 'copy'
 
 /**
  * What has become of one artifact: nothing has been made, a run over it waits
@@ -31,14 +26,7 @@ export type Artifact =
  * The last two are what a run answered, and asking again gets the same until
  * the artifact is taken away.
  */
-export type ArtifactState =
-  | 'none'
-  | 'queued'
-  | 'running'
-  | 'stopped'
-  | 'done'
-  | 'empty'
-  | 'failed'
+export type ArtifactState = 'none' | 'queued' | 'running' | 'stopped' | 'done' | 'empty' | 'failed'
 
 /**
  * What a file carries, and what has become of each. Partial because which
@@ -90,7 +78,8 @@ export interface ArtifactDeleter {
 
 /** Everything a caller asks of the runs, for a caller that asks all of it. */
 export interface ArtifactRunner
-  extends ArtifactInspector,
+  extends
+    ArtifactInspector,
     ArtifactProducer,
     ArtifactCorrector,
     ArtifactFetcher,

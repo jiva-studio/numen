@@ -99,12 +99,20 @@ describe('getStepLanding', () => {
 
   it('lands what is dragged up before the one above it', () => {
     expect(getStepLanding(NAMES, 'c', 'up')).toBe('b')
-    expect(orderNames(NAMES, 'c', getStepLanding(NAMES, 'c', 'up') ?? null)).toEqual(['a', 'c', 'b'])
+    expect(orderNames(NAMES, 'c', getStepLanding(NAMES, 'c', 'up') ?? null)).toEqual([
+      'a',
+      'c',
+      'b',
+    ])
   })
 
   it('lands what is dragged down before the one below the one below it', () => {
     expect(getStepLanding(NAMES, 'a', 'down')).toBe('c')
-    expect(orderNames(NAMES, 'a', getStepLanding(NAMES, 'a', 'down') ?? null)).toEqual(['b', 'a', 'c'])
+    expect(orderNames(NAMES, 'a', getStepLanding(NAMES, 'a', 'down') ?? null)).toEqual([
+      'b',
+      'a',
+      'c',
+    ])
   })
 
   it('lands the last but one at the end', () => {

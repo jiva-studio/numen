@@ -148,9 +148,7 @@ describe('renderPreview', () => {
   })
 
   it('stands a marked slot as text, so its braces draw no tags', () => {
-    expect(renderPreview('{{<img src=x>}}', [], [])).toBe(
-      '<mark>{{&lt;img src=x&gt;}}</mark>',
-    )
+    expect(renderPreview('{{<img src=x>}}', [], [])).toBe('<mark>{{&lt;img src=x&gt;}}</mark>')
   })
 
   it('marks a slot whose name is written with space around it', () => {

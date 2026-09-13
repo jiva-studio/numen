@@ -40,7 +40,6 @@ defineEmits<{
 
 /** The panels are held with the overlay key, drawn as this machine's own. */
 const chord = (letter: string) => keyChord(letter, navigator.userAgent)
-
 </script>
 
 <template>

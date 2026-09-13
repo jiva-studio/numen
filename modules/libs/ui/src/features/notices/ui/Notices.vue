@@ -78,11 +78,10 @@ const {
 
 /** What the corner is read out through. */
 const { told, cried } = useAnnouncer(() => drawn.value)
-
 </script>
 
 <template>
-  <div class="notices numen font-sans text-small">
+  <div class="notices numen text-small font-sans">
     <LiveRegions :told="told" :cried="cried" />
 
     <aside

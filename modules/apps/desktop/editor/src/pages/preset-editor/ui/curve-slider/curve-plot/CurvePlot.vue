@@ -41,11 +41,7 @@ const roomStyle = { aspectRatio: `${WIDE} / ${HIGH}` }
     </div>
 
     <div class="curve-slider__over" data-control="over">
-      <div
-        class="curve-slider__room"
-        data-control="room"
-        :style="roomStyle"
-      >
+      <div class="curve-slider__room" data-control="room" :style="roomStyle">
         <CurveWaiting v-if="!isHonest && props.waiting" />
 
         <CurvePicture v-else-if="isHonest" :state="props.state" :value-text="props.valueText" />

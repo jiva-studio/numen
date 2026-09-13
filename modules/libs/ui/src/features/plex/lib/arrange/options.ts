@@ -108,10 +108,9 @@ export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly viewport?: Size | undefined
 }
 
-export const DEFAULT_DIRECTION: Readonly<Record<PlexRelatedSeat, Direction>> =
-  Object.fromEntries(
-    Object.entries(SEATS).map(([seat, descriptor]) => [seat, descriptor.grows]),
-  ) as Record<PlexRelatedSeat, Direction>
+export const DEFAULT_DIRECTION: Readonly<Record<PlexRelatedSeat, Direction>> = Object.fromEntries(
+  Object.entries(SEATS).map(([seat, descriptor]) => [seat, descriptor.grows]),
+) as Record<PlexRelatedSeat, Direction>
 
 export const DEFAULT_OPTIONS: PlexOptions = {
   focusSize: { width: 176, height: 44 },

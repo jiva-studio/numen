@@ -76,7 +76,7 @@ const boxOf = (one: Rect) => ({
 </script>
 
 <template>
-  <figure class="reader__page absolute top-0 overflow-hidden rounded-node" :data-page="at">
+  <figure class="reader__page rounded-node absolute top-0 overflow-hidden" :data-page="at">
     <img
       v-if="drawing"
       class="reader__picture block size-full object-contain"
@@ -88,7 +88,7 @@ const boxOf = (one: Rect) => ({
       @load="arrived = true"
     />
     <div v-if="!arrived" class="reader__spinner absolute inset-0 grid place-items-center">
-      <span v-if="givenUp" class="px-inset text-center text-small text-hushed">
+      <span v-if="givenUp" class="px-inset text-small text-hushed text-center">
         {{ undrawn }}
       </span>
       <Spinner v-else class="text-hushed" />
@@ -97,13 +97,13 @@ const boxOf = (one: Rect) => ({
       <div
         v-for="(one, index) in otherHighlights"
         :key="`other-highlight-${index}`"
-        class="reader__other-highlight pointer-events-none absolute rounded-tight bg-(--numen-highlight)"
+        class="reader__other-highlight rounded-tight pointer-events-none absolute bg-(--numen-highlight)"
         :style="boxOf(one)"
       />
       <div
         v-for="(one, index) in highlights"
         :key="index"
-        class="reader__highlight pointer-events-none absolute rounded-tight bg-(--numen-highlight)"
+        class="reader__highlight rounded-tight pointer-events-none absolute bg-(--numen-highlight)"
         :style="boxOf(one)"
       />
     </template>

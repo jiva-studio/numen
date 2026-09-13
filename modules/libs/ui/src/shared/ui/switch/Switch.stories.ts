@@ -12,8 +12,7 @@ import Switch from './Switch.vue'
 import { lightness } from '@/shared/fixtures/colour'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 
-const UNBROKEN =
-  'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
+const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 interface Knobs {
   on: boolean

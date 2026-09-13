@@ -91,7 +91,12 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
 /** The group under one identity, from what the palette is drawing now. */
 const groupOf = (groups: readonly { id: string }[], id: string) =>
   groups.find((one) => one.id === id) as
-    | { id: string; items: readonly { id: string; title: string }[]; working?: boolean; silence?: string }
+    | {
+        id: string
+        items: readonly { id: string; title: string }[]
+        working?: boolean
+        silence?: string
+      }
     | undefined
 
 describe('asking', () => {
@@ -262,7 +267,12 @@ describe('where a thing found takes the person', () => {
 
     vault.names[0]?.answer([
       createNameMatch(),
-      createNameMatch({ path: 'notes/carnot.md', title: 'The Carnot cycle', heading: 'Entropy here', line: 12 }),
+      createNameMatch({
+        path: 'notes/carnot.md',
+        title: 'The Carnot cycle',
+        heading: 'Entropy here',
+        line: 12,
+      }),
     ])
     vault.mode('words')?.answer([passage()])
     await flushPromises()
@@ -335,14 +345,17 @@ describe('what a key reaches, per kind of thing found', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.names[0]?.answer([createNameMatch(), createNameMatch({ heading: 'Entropy here', line: 12 })])
+    vault.names[0]?.answer([
+      createNameMatch(),
+      createNameMatch({ heading: 'Entropy here', line: 12 }),
+    ])
     vault.mode('words')?.answer([passage()])
     await flushPromises()
 
     const getActions = (group: string, at: number) =>
-      (
-        palette.groups.value.find((one) => one.id === group)?.items[at]?.actions ?? []
-      ).map((one) => one.id)
+      (palette.groups.value.find((one) => one.id === group)?.items[at]?.actions ?? []).map(
+        (one) => one.id,
+      )
 
     expect(getActions('names', 0)).toEqual(['plex', 'note'])
     expect(getActions('names', 1)).toEqual(['note', 'plex'])
@@ -422,7 +435,13 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     vault.names[0]?.answer([
-      createNameMatch({ path: 'decks/words.md', title: 'Words to learn', heading: 'Entropy', line: 12, type: 'deck' }),
+      createNameMatch({
+        path: 'decks/words.md',
+        title: 'Words to learn',
+        heading: 'Entropy',
+        line: 12,
+        type: 'deck',
+      }),
     ])
     await flushPromises()
 
@@ -458,11 +477,13 @@ describe('what a row is drawn as', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.mode('words')?.answer([
-      passage({ path: 'notes/heat.md' }),
-      passage({ path: 'library/mahabharata.epub', isNote: false, kind: 'book', start: 40_512 }),
-      passage({ path: 'talks/730709BG.LON.mp3', isNote: false, kind: 'recording', start: 12 }),
-    ])
+    vault
+      .mode('words')
+      ?.answer([
+        passage({ path: 'notes/heat.md' }),
+        passage({ path: 'library/mahabharata.epub', isNote: false, kind: 'book', start: 40_512 }),
+        passage({ path: 'talks/730709BG.LON.mp3', isNote: false, kind: 'recording', start: 12 }),
+      ])
     await flushPromises()
 
     const items = groupOf(palette.groups.value, 'text')!.items
@@ -475,7 +496,10 @@ describe('what a row is drawn as', () => {
     void palette.setTyped('ent')
     await flushPromises()
 
-    vault.names[0]?.answer([createNameMatch(), createNameMatch({ path: 'decks/words.md', type: 'deck' })])
+    vault.names[0]?.answer([
+      createNameMatch(),
+      createNameMatch({ path: 'decks/words.md', type: 'deck' }),
+    ])
     await flushPromises()
 
     const items = groupOf(palette.groups.value, 'names')!.items

@@ -25,22 +25,14 @@ const partStyle = computed(() => ({
 </script>
 
 <template>
-  <g
-    :opacity="part.opacity"
-    :transform="`translate(0 ${hung.top + hung.pad + part.y})`"
-  >
+  <g :opacity="part.opacity" :transform="`translate(0 ${hung.top + hung.pad + part.y})`">
     <foreignObject
       :x="hung.offset - hung.width / 2 + hung.pad"
       y="0"
       :width="hung.width - 2 * hung.pad"
       :height="hung.partHeight"
     >
-      <div
-        class="plex__part"
-        :style="partStyle"
-        @click.stop="emit('enter')"
-        @dblclick.stop
-      >
+      <div class="plex__part" :style="partStyle" @click.stop="emit('enter')" @dblclick.stop>
         <span class="plex__part-text">{{ part.text }}</span>
       </div>
     </foreignObject>

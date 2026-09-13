@@ -77,7 +77,10 @@ describe('the one slider', () => {
     const { tab } = mountPresetTab({ decks: 4, cards: 160, overdue: 45, unbegun: 30 })
     const tiles = tab
       .findAll('[data-control="material"] [data-control="tile"]')
-      .map((one) => [one.get('[data-control="figure"]').text(), one.get('[data-control="word"]').text()])
+      .map((one) => [
+        one.get('[data-control="figure"]').text(),
+        one.get('[data-control="word"]').text(),
+      ])
     expect(tiles).toStrictEqual([
       ['4', 'decks'],
       ['160', 'cards'],
@@ -136,13 +139,11 @@ describe('the one slider', () => {
       .get('[data-control="callout"]')
       .findAll('[data-control="bought"]')
       .map((one) => one.text())
-    expect(said).toStrictEqual([
-      '20 minutes a day',
-      '80 cards a session',
-      'overdue gone in 3 days',
-    ])
+    expect(said).toStrictEqual(['20 minutes a day', '80 cards a session', 'overdue gone in 3 days'])
     // Its own value on the width stays on its own line under the picture.
-    expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(words.widthAt('minutes', 20))
+    expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
+      words.widthAt('minutes', 20),
+    )
     // The tail is on the knob, so the numbers belong to that place and not to
     // the picture as a whole.
     expect(tab.findAll('[data-control="tail"]')).toHaveLength(1)
@@ -209,10 +210,14 @@ describe('the one slider', () => {
     const { tab } = mountPresetTab({ grid: [0, 10, 20, 30], now: { at: 2, value: 23, day: '' } })
     const first = () => tab.findAll('[data-control="bought"]')[0]?.text()
     expect(first()).toBe('23 minutes a day')
-    expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(words.widthAt('minutes', 23))
+    expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
+      words.widthAt('minutes', 23),
+    )
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
     expect(first()).toBe('30 minutes a day')
-    expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(words.widthAt('minutes', 30))
+    expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
+      words.widthAt('minutes', 30),
+    )
   })
 
   // The figure is read off the very run the backlog is drawn from, so the picture
@@ -284,8 +289,12 @@ describe('the one slider', () => {
       expect(tab.text()).not.toContain(words.markName(goal))
     }
     // The knob and its number are the person's own and stand either way.
-    expect(mountPresetTab({ suggested: NOWHERE }).tab.findAll('[data-control="knob"]')).toHaveLength(1)
-    expect(mountPresetTab({ suggested: NOWHERE }).tab.findAll('[data-control="number"][data-at-knob]')).toHaveLength(1)
+    expect(
+      mountPresetTab({ suggested: NOWHERE }).tab.findAll('[data-control="knob"]'),
+    ).toHaveLength(1)
+    expect(
+      mountPresetTab({ suggested: NOWHERE }).tab.findAll('[data-control="number"][data-at-knob]'),
+    ).toHaveLength(1)
   })
 })
 
@@ -336,7 +345,9 @@ describe('what a day cannot reach', () => {
   it('follows the day, since each day leaves its own cards short', async () => {
     const { tab } = createDatedTab()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
-    await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'ArrowRight' })
+    await tab
+      .get('[data-control="picture"][role="slider"]')
+      .trigger('keydown', { key: 'ArrowRight' })
     expect(getBoughtTexts(tab)).toContain('11 of 79 cannot get there')
   })
 
@@ -355,7 +366,9 @@ describe('what the control stands at', () => {
   it('is read out in the units of its goal, with what it buys over the knob', () => {
     const { tab } = mountPresetTab()
     expect(tab.text()).toContain(words.value('minutes', 20, ''))
-    expect(tab.findAll('[data-control="bought"]').map((one) => one.text())).toContain('80 cards a session')
+    expect(tab.findAll('[data-control="bought"]').map((one) => one.text())).toContain(
+      '80 cards a session',
+    )
   })
 
   // Nobody reads under the picture while dragging, so what a place buys is
@@ -363,7 +376,9 @@ describe('what the control stands at', () => {
   it('leaves the axis and what belongs to it under the picture', () => {
     const { tab } = mountPresetTab()
     const foot = tab.findAll('[data-control="foot"]')[0]
-    expect(foot?.get('[data-control="number"][data-at-knob]').text()).toBe(words.widthAt('minutes', 20))
+    expect(foot?.get('[data-control="number"][data-at-knob]').text()).toBe(
+      words.widthAt('minutes', 20),
+    )
     expect(foot?.get('[data-control="name"][data-axis="x"]').text()).toBe(words.axisX('minutes'))
     // Nothing under the picture but the axis: what a place buys is said in the
     // bubble over the knob, and nowhere else.
@@ -386,15 +401,17 @@ describe('what the control stands at', () => {
     expect(words.fieldDetail('retention')).toContain('remember')
     for (const said of [
       words.value('retention', 0.9, ''),
-      words.buys('retention', {
-        value: 0.9,
-        reviews: 48,
-        minutes: 14,
-        horizon: 0,
-        clears: null,
-        short: 0,
-        cards: 160,
-      }).join(' '),
+      words
+        .buys('retention', {
+          value: 0.9,
+          reviews: 48,
+          minutes: 14,
+          horizon: 0,
+          clears: null,
+          short: 0,
+          cards: 160,
+        })
+        .join(' '),
       words.fieldDetail('retention'),
     ]) {
       expect(said).not.toContain('0.9')
@@ -408,7 +425,9 @@ describe('what the control stands at', () => {
     expect(tab.get('[data-control="name"][data-axis="y"]').text()).toBe(words.axisY('minutes'))
     expect(tab.get('[data-control="name"][data-axis="y"]').text()).toContain('session')
     expect(tab.text()).toContain(words.heightAt('minutes', 120))
-    expect(tab.findAll('[data-control="bought"]').map((one) => one.text())).toContain('80 cards a session')
+    expect(tab.findAll('[data-control="bought"]').map((one) => one.text())).toContain(
+      '80 cards a session',
+    )
   })
 
   // The window's own arithmetic never reaches the eye as a figure now: until
@@ -434,7 +453,10 @@ describe('what the control stands at', () => {
     })
     const tiles = tab
       .findAll('[data-control="material"] [data-control="tile"]')
-      .map((one) => [one.get('[data-control="figure"]').text(), one.get('[data-control="word"]').text()])
+      .map((one) => [
+        one.get('[data-control="figure"]').text(),
+        one.get('[data-control="word"]').text(),
+      ])
     expect(tiles).toStrictEqual([
       ['4', 'decks'],
       ['160', 'cards'],
@@ -500,7 +522,9 @@ describe('what the control stands at', () => {
   // The words say which way is better and the numbers say how much, so a
   // height can be read off the picture and a place along it can be told.
   it('carries the ends of the backlog, against the lines they are the height of', () => {
-    const numbers = mountPresetTab().tab.findAll('[data-control="number"]').map((one) => one.text())
+    const numbers = mountPresetTab()
+      .tab.findAll('[data-control="number"]')
+      .map((one) => one.text())
     // The extent of the fixture runs from no cards a day to a hundred and twenty.
     expect(numbers).toContain(words.heightAt('minutes', 120))
   })
@@ -510,7 +534,9 @@ describe('what the control stands at', () => {
   it('drops an axis number the drawing stands on rather than print over it', () => {
     // The fixture's curve leaves the foot at the left edge, where the low
     // number would be set.
-    const numbers = mountPresetTab().tab.findAll('[data-control="number"]').map((one) => one.text())
+    const numbers = mountPresetTab()
+      .tab.findAll('[data-control="number"]')
+      .map((one) => one.text())
     expect(numbers).not.toContain(words.heightAt('minutes', 0))
   })
 
@@ -561,9 +587,13 @@ describe('what the control stands at', () => {
     // At either end the knob's value is pulled back inside the picture's width.
     const slider = tab.get('[data-control="picture"][role="slider"]')
     await slider.trigger('keydown', { key: 'Home' })
-    expect(tab.get('[data-control="number"][data-at-knob]').attributes('style')).toContain('translate: 0 0')
+    expect(tab.get('[data-control="number"][data-at-knob]').attributes('style')).toContain(
+      'translate: 0 0',
+    )
     await slider.trigger('keydown', { key: 'End' })
-    expect(tab.get('[data-control="number"][data-at-knob]').attributes('style')).toContain('translate: -100% 0')
+    expect(tab.get('[data-control="number"][data-at-knob]').attributes('style')).toContain(
+      'translate: -100% 0',
+    )
   })
 
   it('carries the value at either end of the range, and no words beside them', () => {
@@ -601,7 +631,6 @@ describe('what the control stands at', () => {
     expect(words.heightAt('date', 45)).toBe('45 min')
     expect(words.heightAt('minutes', 80)).toBe('80 cards')
   })
-
 })
 
 // The verdict is the vault's, so the tab draws what it was handed and works

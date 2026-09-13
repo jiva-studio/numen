@@ -8,28 +8,32 @@
 // The text is what the index counts in and what a person reads; the boxes are
 // an overlay on it, and a reader draws them over the page it is showing.
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Span } from "./shared_pb.js";
-import { file_numen_v1_shared } from "./shared_pb.js";
-import type { Message } from "@bufbuild/protobuf";
+import type { GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
+import { fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
+import type { Span } from './shared_pb.js'
+import { file_numen_v1_shared } from './shared_pb.js'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file numen/v1/ocr.proto.
  */
-export const file_numen_v1_ocr: GenFile = /*@__PURE__*/
-  fileDesc("ChJudW1lbi92MS9vY3IucHJvdG8SCG51bWVuLnYxIj0KDlJlYWRPY3JSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoFc3BhbnMYAiADKAsyDi5udW1lbi52MS5TcGFuIi4KD1JlYWRPY3JSZXNwb25zZRIbCgRydW5zGAEgAygLMg0ubnVtZW4udjEuUnVuIjEKA1J1bhIMCgR0ZXh0GAEgASgJEhwKBWJveGVzGAIgAygLMg0ubnVtZW4udjEuQm94Ik8KA0JveBIcCgRzcGFuGAEgASgLMg4ubnVtZW4udjEuU3BhbhIMCgRwYWdlGAIgASgFEhwKBHJlY3QYAyABKAsyDi5udW1lbi52MS5SZWN0IkIKBFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIyTAoKT2NyU2VydmljZRI+CgdSZWFkT2NyEhgubnVtZW4udjEuUmVhZE9jclJlcXVlc3QaGS5udW1lbi52MS5SZWFkT2NyUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+export const file_numen_v1_ocr: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChJudW1lbi92MS9vY3IucHJvdG8SCG51bWVuLnYxIj0KDlJlYWRPY3JSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoFc3BhbnMYAiADKAsyDi5udW1lbi52MS5TcGFuIi4KD1JlYWRPY3JSZXNwb25zZRIbCgRydW5zGAEgAygLMg0ubnVtZW4udjEuUnVuIjEKA1J1bhIMCgR0ZXh0GAEgASgJEhwKBWJveGVzGAIgAygLMg0ubnVtZW4udjEuQm94Ik8KA0JveBIcCgRzcGFuGAEgASgLMg4ubnVtZW4udjEuU3BhbhIMCgRwYWdlGAIgASgFEhwKBHJlY3QYAyABKAsyDi5udW1lbi52MS5SZWN0IkIKBFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIyTAoKT2NyU2VydmljZRI+CgdSZWFkT2NyEhgubnVtZW4udjEuUmVhZE9jclJlcXVlc3QaGS5udW1lbi52MS5SZWFkT2NyUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw',
+    [file_numen_v1_shared],
+  )
 
 /**
  * @generated from message numen.v1.ReadOcrRequest
  */
-export type ReadOcrRequest = Message<"numen.v1.ReadOcrRequest"> & {
+export type ReadOcrRequest = Message<'numen.v1.ReadOcrRequest'> & {
   /**
    * The file, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string;
+  path: string
 
   /**
    * The runs of its text to answer about, counted in bytes over the text the
@@ -37,34 +41,36 @@ export type ReadOcrRequest = Message<"numen.v1.ReadOcrRequest"> & {
    *
    * @generated from field: repeated numen.v1.Span spans = 2;
    */
-  spans: Span[];
-};
+  spans: Span[]
+}
 
 /**
  * Describes the message numen.v1.ReadOcrRequest.
  * Use `create(ReadOcrRequestSchema)` to create a new message.
  */
-export const ReadOcrRequestSchema: GenMessage<ReadOcrRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_ocr, 0);
+export const ReadOcrRequestSchema: GenMessage<ReadOcrRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_ocr, 0)
 
 /**
  * @generated from message numen.v1.ReadOcrResponse
  */
-export type ReadOcrResponse = Message<"numen.v1.ReadOcrResponse"> & {
+export type ReadOcrResponse = Message<'numen.v1.ReadOcrResponse'> & {
   /**
    * One answer per run asked about, in that order.
    *
    * @generated from field: repeated numen.v1.Run runs = 1;
    */
-  runs: Run[];
-};
+  runs: Run[]
+}
 
 /**
  * Describes the message numen.v1.ReadOcrResponse.
  * Use `create(ReadOcrResponseSchema)` to create a new message.
  */
-export const ReadOcrResponseSchema: GenMessage<ReadOcrResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_ocr, 1);
+export const ReadOcrResponseSchema: GenMessage<ReadOcrResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_ocr, 1)
 
 /**
  * A Run is one run of the text: what it says, and where it stands on the pages
@@ -72,24 +78,23 @@ export const ReadOcrResponseSchema: GenMessage<ReadOcrResponse> = /*@__PURE__*/
  *
  * @generated from message numen.v1.Run
  */
-export type Run = Message<"numen.v1.Run"> & {
+export type Run = Message<'numen.v1.Run'> & {
   /**
    * @generated from field: string text = 1;
    */
-  text: string;
+  text: string
 
   /**
    * @generated from field: repeated numen.v1.Box boxes = 2;
    */
-  boxes: Box[];
-};
+  boxes: Box[]
+}
 
 /**
  * Describes the message numen.v1.Run.
  * Use `create(RunSchema)` to create a new message.
  */
-export const RunSchema: GenMessage<Run> = /*@__PURE__*/
-  messageDesc(file_numen_v1_ocr, 2);
+export const RunSchema: GenMessage<Run> = /*@__PURE__*/ messageDesc(file_numen_v1_ocr, 2)
 
 /**
  * A Box is a part of a run and where it was read: the page it is on, the piece
@@ -97,33 +102,32 @@ export const RunSchema: GenMessage<Run> = /*@__PURE__*/
  *
  * @generated from message numen.v1.Box
  */
-export type Box = Message<"numen.v1.Box"> & {
+export type Box = Message<'numen.v1.Box'> & {
   /**
    * Which bytes of the document's text this covers.
    *
    * @generated from field: numen.v1.Span span = 1;
    */
-  span?: Span | undefined;
+  span?: Span | undefined
 
   /**
    * Where the page stands in the document, counted from the first.
    *
    * @generated from field: int32 page = 2;
    */
-  page: number;
+  page: number
 
   /**
    * @generated from field: numen.v1.Rect rect = 3;
    */
-  rect?: Rect | undefined;
-};
+  rect?: Rect | undefined
+}
 
 /**
  * Describes the message numen.v1.Box.
  * Use `create(BoxSchema)` to create a new message.
  */
-export const BoxSchema: GenMessage<Box> = /*@__PURE__*/
-  messageDesc(file_numen_v1_ocr, 3);
+export const BoxSchema: GenMessage<Box> = /*@__PURE__*/ messageDesc(file_numen_v1_ocr, 3)
 
 /**
  * A Rect is a place on a page, in fractions of it, so a page drawn at any size
@@ -131,34 +135,33 @@ export const BoxSchema: GenMessage<Box> = /*@__PURE__*/
  *
  * @generated from message numen.v1.Rect
  */
-export type Rect = Message<"numen.v1.Rect"> & {
+export type Rect = Message<'numen.v1.Rect'> & {
   /**
    * @generated from field: float min_x = 1;
    */
-  minX: number;
+  minX: number
 
   /**
    * @generated from field: float min_y = 2;
    */
-  minY: number;
+  minY: number
 
   /**
    * @generated from field: float max_x = 3;
    */
-  maxX: number;
+  maxX: number
 
   /**
    * @generated from field: float max_y = 4;
    */
-  maxY: number;
-};
+  maxY: number
+}
 
 /**
  * Describes the message numen.v1.Rect.
  * Use `create(RectSchema)` to create a new message.
  */
-export const RectSchema: GenMessage<Rect> = /*@__PURE__*/
-  messageDesc(file_numen_v1_ocr, 4);
+export const RectSchema: GenMessage<Rect> = /*@__PURE__*/ messageDesc(file_numen_v1_ocr, 4)
 
 /**
  * OcrService reads what was read off a document's pages.
@@ -177,10 +180,8 @@ export const OcrService: GenService<{
    * @generated from rpc numen.v1.OcrService.ReadOcr
    */
   readOcr: {
-    methodKind: "unary";
-    input: typeof ReadOcrRequestSchema;
-    output: typeof ReadOcrResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_numen_v1_ocr, 0);
-
+    methodKind: 'unary'
+    input: typeof ReadOcrRequestSchema
+    output: typeof ReadOcrResponseSchema
+  }
+}> = /*@__PURE__*/ serviceDesc(file_numen_v1_ocr, 0)

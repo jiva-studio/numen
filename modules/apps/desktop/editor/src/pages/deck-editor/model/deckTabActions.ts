@@ -22,7 +22,10 @@ export function createDeckTabActions(
 ) {
   return {
     addCard: (stencil: string, values: readonly Value[], section: string | null = null) =>
-      updateDeck(id, addCard(deckAt(id), stencil, pathOfCut(getOffers(), stencil), values, section)),
+      updateDeck(
+        id,
+        addCard(deckAt(id), stencil, pathOfCut(getOffers(), stencil), values, section),
+      ),
     removeCard: (card: string) => updateDeck(id, removeCard(deckAt(id), card)),
     moveCard: (card: string, at: string | null) => updateDeck(id, dropCard(deckAt(id), card, at)),
     writeCardField: (card: string, field: string, nth: number, text: string) =>

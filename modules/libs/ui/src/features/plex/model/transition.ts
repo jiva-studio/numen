@@ -74,7 +74,11 @@ export function usePlexTransition(
 
   // A change to the arrangement is a move too: the reader still has to be able
   // to follow what became of what.
-  watch(() => input(), () => run(target()), { deep: true })
+  watch(
+    () => input(),
+    () => run(target()),
+    { deep: true },
+  )
 
   onScopeDispose(stop)
 

@@ -65,12 +65,11 @@ export function createNoteQueue(
     turn(id, {
       kind: 'read',
       generation,
-      answer:
-        !answered.error
-          ? { kind: 'body', body: answered.body, at: answered.at ?? '' }
-          : answered.error === 'missing'
-            ? { kind: 'missing' }
-            : { kind: 'error', error: errorOf(answered.error) },
+      answer: !answered.error
+        ? { kind: 'body', body: answered.body, at: answered.at ?? '' }
+        : answered.error === 'missing'
+          ? { kind: 'missing' }
+          : { kind: 'error', error: errorOf(answered.error) },
     })
   }
 

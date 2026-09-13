@@ -68,11 +68,13 @@ export default meta
 type Story = StoryObj
 
 /** The tab, drawn in the column a window gives it. */
-const room = (open: readonly string[] = []) => () => ({
-  components: { FilesTab },
-  setup: () => ({ state: createFilesTab(open) }),
-  template: `<div class="numen h-screen w-80 bg-surface"><FilesTab :state="state" /></div>`,
-})
+const room =
+  (open: readonly string[] = []) =>
+  () => ({
+    components: { FilesTab },
+    setup: () => ({ state: createFilesTab(open) }),
+    template: `<div class="numen h-screen w-80 bg-surface"><FilesTab :state="state" /></div>`,
+  })
 
 const rows = (canvas: HTMLElement) => [...canvas.querySelectorAll<HTMLElement>('[role="treeitem"]')]
 
@@ -132,9 +134,7 @@ export const TheMenuOnARow: Story = {
     await expect(said).toContain('Remove note')
 
     // The whole of it is on the screen, on every side.
-    const menu = document.body
-      .querySelector<HTMLElement>('[role="menu"]')!
-      .getBoundingClientRect()
+    const menu = document.body.querySelector<HTMLElement>('[role="menu"]')!.getBoundingClientRect()
     await expect(menu.left).toBeGreaterThanOrEqual(0)
     await expect(menu.top).toBeGreaterThanOrEqual(0)
     await expect(menu.right).toBeLessThanOrEqual(window.innerWidth)

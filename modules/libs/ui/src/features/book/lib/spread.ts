@@ -183,11 +183,7 @@ export function spreadAt(flow: Flow, x: number): number {
  * The offset of the first run standing in a spread, and nothing where no run
  * stands there. The marks are in the order the text is.
  */
-export function inFront(
-  marks: readonly Mark[],
-  flow: Flow,
-  spread: number,
-): number | undefined {
+export function inFront(marks: readonly Mark[], flow: Flow, spread: number): number | undefined {
   for (const mark of marks) {
     if (spreadAt(flow, mark.x) === spread) return mark.at
   }

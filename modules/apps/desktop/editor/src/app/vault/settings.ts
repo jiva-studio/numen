@@ -24,8 +24,7 @@ const readSettings = async (): Promise<unknown> =>
   JSON.parse((await settingsService.getSettings({})).written)
 
 /** How many parts a node hangs, and the default where the settings name none. */
-const partsIn = (value: unknown): number =>
-  typeof value === 'number' ? value : DEFAULT_PARTS
+const partsIn = (value: unknown): number => (typeof value === 'number' ? value : DEFAULT_PARTS)
 
 /**
  * Settings written into the file, together or not at all. What could not be

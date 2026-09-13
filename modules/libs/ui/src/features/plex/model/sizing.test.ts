@@ -58,13 +58,10 @@ describe('a label half again as large', () => {
         )
         .filter(([name, value]) => typeof value === 'number' && name !== 'curvature')
         .filter(
-          ([name]) =>
-            !['maxPerLine', 'maxLines', 'maxParts', 'spread', 'squeeze'].includes(name),
+          ([name]) => !['maxPerLine', 'maxLines', 'maxParts', 'spread', 'squeeze'].includes(name),
         )
         .map(([, value]) => value as number)
-        .concat(
-          [options.nodeSize, options.focusSize].flatMap((size) => [size.width, size.height]),
-        )
+        .concat([options.nodeSize, options.focusSize].flatMap((size) => [size.width, size.height]))
 
     const was = lengths(DEFAULT_OPTIONS)
     const now = lengths(larger)

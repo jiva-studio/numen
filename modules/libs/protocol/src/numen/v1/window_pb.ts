@@ -9,40 +9,44 @@
 // each is doing behind itself, and what has to land before it goes, are its
 // own. Every question here names the window it is about.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Message } from "@bufbuild/protobuf";
+import type { GenEnum, GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file numen/v1/window.proto.
  */
-export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIokBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSDQoFYXNrZWQYByABKAgSHAoEdW5pdBgIIAEoDjIOLm51bWVuLnYxLlVuaXQiIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiWgoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIlCgZyZXN1bHQYAyABKA4yFS5udW1lbi52MS5GbHVzaFJlc3VsdCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIiYKFEdldFNob3duVmF1bHRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSImChVHZXRTaG93blZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkqTwoEVW5pdBIUChBVTklUX1VOU1BFQ0lGSUVEEAASDwoLVU5JVF9USElOR1MQARIOCgpVTklUX0JZVEVTEAISEAoMVU5JVF9TRUNPTkRTEAMqeAoLRmx1c2hSZXN1bHQSHAoYRkxVU0hfUkVTVUxUX1VOU1BFQ0lGSUVEEAASGAoURkxVU0hfUkVTVUxUX05PVEhJTkcQARIYChRGTFVTSF9SRVNVTFRfV1JJVFRFThACEhcKE0ZMVVNIX1JFU1VMVF9BU0tJTkcQAzLAAgoNV2luZG93U2VydmljZRJJCgpXYXRjaFRhc2tzEhsubnVtZW4udjEuV2F0Y2hUYXNrc1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaFRhc2tzUmVzcG9uc2UwARJGCglXYXRjaFF1aXQSGi5udW1lbi52MS5XYXRjaFF1aXRSZXF1ZXN0GhsubnVtZW4udjEuV2F0Y2hRdWl0UmVzcG9uc2UwARJKCgtSZXBvcnRGbHVzaBIcLm51bWVuLnYxLlJlcG9ydEZsdXNoUmVxdWVzdBodLm51bWVuLnYxLlJlcG9ydEZsdXNoUmVzcG9uc2USUAoNR2V0U2hvd25WYXVsdBIeLm51bWVuLnYxLkdldFNob3duVmF1bHRSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0U2hvd25WYXVsdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+export const file_numen_v1_window: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIokBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSDQoFYXNrZWQYByABKAgSHAoEdW5pdBgIIAEoDjIOLm51bWVuLnYxLlVuaXQiIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiWgoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIlCgZyZXN1bHQYAyABKA4yFS5udW1lbi52MS5GbHVzaFJlc3VsdCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIiYKFEdldFNob3duVmF1bHRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSImChVHZXRTaG93blZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkqTwoEVW5pdBIUChBVTklUX1VOU1BFQ0lGSUVEEAASDwoLVU5JVF9USElOR1MQARIOCgpVTklUX0JZVEVTEAISEAoMVU5JVF9TRUNPTkRTEAMqeAoLRmx1c2hSZXN1bHQSHAoYRkxVU0hfUkVTVUxUX1VOU1BFQ0lGSUVEEAASGAoURkxVU0hfUkVTVUxUX05PVEhJTkcQARIYChRGTFVTSF9SRVNVTFRfV1JJVFRFThACEhcKE0ZMVVNIX1JFU1VMVF9BU0tJTkcQAzLAAgoNV2luZG93U2VydmljZRJJCgpXYXRjaFRhc2tzEhsubnVtZW4udjEuV2F0Y2hUYXNrc1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaFRhc2tzUmVzcG9uc2UwARJGCglXYXRjaFF1aXQSGi5udW1lbi52MS5XYXRjaFF1aXRSZXF1ZXN0GhsubnVtZW4udjEuV2F0Y2hRdWl0UmVzcG9uc2UwARJKCgtSZXBvcnRGbHVzaBIcLm51bWVuLnYxLlJlcG9ydEZsdXNoUmVxdWVzdBodLm51bWVuLnYxLlJlcG9ydEZsdXNoUmVzcG9uc2USUAoNR2V0U2hvd25WYXVsdBIeLm51bWVuLnYxLkdldFNob3duVmF1bHRSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0U2hvd25WYXVsdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM',
+  )
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
  */
-export type WatchTasksRequest = Message<"numen.v1.WatchTasksRequest"> & {
+export type WatchTasksRequest = Message<'numen.v1.WatchTasksRequest'> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
    * @generated from field: string window = 1;
    */
-  window: string;
-};
+  window: string
+}
 
 /**
  * Describes the message numen.v1.WatchTasksRequest.
  * Use `create(WatchTasksRequestSchema)` to create a new message.
  */
-export const WatchTasksRequestSchema: GenMessage<WatchTasksRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_window, 0);
+export const WatchTasksRequestSchema: GenMessage<WatchTasksRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 0)
 
 /**
  * @generated from message numen.v1.WatchTasksResponse
  */
-export type WatchTasksResponse = Message<"numen.v1.WatchTasksResponse"> & {
+export type WatchTasksResponse = Message<'numen.v1.WatchTasksResponse'> & {
   /**
    * Everything being done now, in the order the work began. The list arrives
    * whole, because what is being done is a list and not a set of differences to
@@ -50,15 +54,16 @@ export type WatchTasksResponse = Message<"numen.v1.WatchTasksResponse"> & {
    *
    * @generated from field: repeated numen.v1.Task tasks = 1;
    */
-  tasks: Task[];
-};
+  tasks: Task[]
+}
 
 /**
  * Describes the message numen.v1.WatchTasksResponse.
  * Use `create(WatchTasksResponseSchema)` to create a new message.
  */
-export const WatchTasksResponseSchema: GenMessage<WatchTasksResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_window, 1);
+export const WatchTasksResponseSchema: GenMessage<WatchTasksResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 1)
 
 /**
  * A Task is one piece of work the application is doing behind the window.
@@ -69,14 +74,14 @@ export const WatchTasksResponseSchema: GenMessage<WatchTasksResponse> = /*@__PUR
  *
  * @generated from message numen.v1.Task
  */
-export type Task = Message<"numen.v1.Task"> & {
+export type Task = Message<'numen.v1.Task'> & {
   /**
    * Id is what this work is called, so that the same work reported again
    * replaces itself rather than appearing twice.
    *
    * @generated from field: string id = 1;
    */
-  id: string;
+  id: string
 
   /**
    * Doing is the work, in the words to show. About is what it is on, and is
@@ -84,12 +89,12 @@ export type Task = Message<"numen.v1.Task"> & {
    *
    * @generated from field: string doing = 2;
    */
-  doing: string;
+  doing: string
 
   /**
    * @generated from field: string about = 3;
    */
-  about: string;
+  about: string
 
   /**
    * Done and total are how far it has got, when there is a total to count
@@ -98,19 +103,19 @@ export type Task = Message<"numen.v1.Task"> & {
    *
    * @generated from field: int64 done = 4;
    */
-  done: bigint;
+  done: bigint
 
   /**
    * @generated from field: int64 total = 5;
    */
-  total: bigint;
+  total: bigint
 
   /**
    * Error is why the work stopped, when it stopped badly.
    *
    * @generated from field: string error = 6;
    */
-  error: string;
+  error: string
 
   /**
    * Asked is set for work a person started and is waiting to be told about.
@@ -119,88 +124,89 @@ export type Task = Message<"numen.v1.Task"> & {
    *
    * @generated from field: bool asked = 7;
    */
-  asked: boolean;
+  asked: boolean
 
   /**
    * Unit is what done and total are counted in.
    *
    * @generated from field: numen.v1.Unit unit = 8;
    */
-  unit: Unit;
-};
+  unit: Unit
+}
 
 /**
  * Describes the message numen.v1.Task.
  * Use `create(TaskSchema)` to create a new message.
  */
-export const TaskSchema: GenMessage<Task> = /*@__PURE__*/
-  messageDesc(file_numen_v1_window, 2);
+export const TaskSchema: GenMessage<Task> = /*@__PURE__*/ messageDesc(file_numen_v1_window, 2)
 
 /**
  * @generated from message numen.v1.WatchQuitRequest
  */
-export type WatchQuitRequest = Message<"numen.v1.WatchQuitRequest"> & {
+export type WatchQuitRequest = Message<'numen.v1.WatchQuitRequest'> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
    * @generated from field: string window = 1;
    */
-  window: string;
-};
+  window: string
+}
 
 /**
  * Describes the message numen.v1.WatchQuitRequest.
  * Use `create(WatchQuitRequestSchema)` to create a new message.
  */
-export const WatchQuitRequestSchema: GenMessage<WatchQuitRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_window, 3);
+export const WatchQuitRequestSchema: GenMessage<WatchQuitRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 3)
 
 /**
  * @generated from message numen.v1.WatchQuitResponse
  */
-export type WatchQuitResponse = Message<"numen.v1.WatchQuitResponse"> & {
+export type WatchQuitResponse = Message<'numen.v1.WatchQuitResponse'> & {
   /**
    * What this caller answers ReportFlush with. The stream opens by saying it, so
    * a caller knows it is listening before anything is asked of it.
    *
    * @generated from field: string token = 1;
    */
-  token: string;
+  token: string
 
   /**
    * Set when the window is going and this caller's unwritten work has to land.
    *
    * @generated from field: bool flush = 2;
    */
-  flush: boolean;
-};
+  flush: boolean
+}
 
 /**
  * Describes the message numen.v1.WatchQuitResponse.
  * Use `create(WatchQuitResponseSchema)` to create a new message.
  */
-export const WatchQuitResponseSchema: GenMessage<WatchQuitResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_window, 4);
+export const WatchQuitResponseSchema: GenMessage<WatchQuitResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 4)
 
 /**
  * @generated from message numen.v1.ReportFlushRequest
  */
-export type ReportFlushRequest = Message<"numen.v1.ReportFlushRequest"> & {
+export type ReportFlushRequest = Message<'numen.v1.ReportFlushRequest'> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
    * @generated from field: string window = 1;
    */
-  window: string;
+  window: string
 
   /**
    * The token this caller was given when it began listening.
    *
    * @generated from field: string token = 2;
    */
-  token: string;
+  token: string
 
   /**
    * What this caller has left. A request naming none has said nothing, and is
@@ -208,53 +214,55 @@ export type ReportFlushRequest = Message<"numen.v1.ReportFlushRequest"> & {
    *
    * @generated from field: numen.v1.FlushResult result = 3;
    */
-  result: FlushResult;
-};
+  result: FlushResult
+}
 
 /**
  * Describes the message numen.v1.ReportFlushRequest.
  * Use `create(ReportFlushRequestSchema)` to create a new message.
  */
-export const ReportFlushRequestSchema: GenMessage<ReportFlushRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_window, 5);
+export const ReportFlushRequestSchema: GenMessage<ReportFlushRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 5)
 
 /**
  * @generated from message numen.v1.ReportFlushResponse
  */
-export type ReportFlushResponse = Message<"numen.v1.ReportFlushResponse"> & {
-};
+export type ReportFlushResponse = Message<'numen.v1.ReportFlushResponse'> & {}
 
 /**
  * Describes the message numen.v1.ReportFlushResponse.
  * Use `create(ReportFlushResponseSchema)` to create a new message.
  */
-export const ReportFlushResponseSchema: GenMessage<ReportFlushResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_window, 6);
+export const ReportFlushResponseSchema: GenMessage<ReportFlushResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 6)
 
 /**
  * @generated from message numen.v1.GetShownVaultRequest
  */
-export type GetShownVaultRequest = Message<"numen.v1.GetShownVaultRequest"> & {
+export type GetShownVaultRequest = Message<'numen.v1.GetShownVaultRequest'> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
    * @generated from field: string window = 1;
    */
-  window: string;
-};
+  window: string
+}
 
 /**
  * Describes the message numen.v1.GetShownVaultRequest.
  * Use `create(GetShownVaultRequestSchema)` to create a new message.
  */
-export const GetShownVaultRequestSchema: GenMessage<GetShownVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_window, 7);
+export const GetShownVaultRequestSchema: GenMessage<GetShownVaultRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 7)
 
 /**
  * @generated from message numen.v1.GetShownVaultResponse
  */
-export type GetShownVaultResponse = Message<"numen.v1.GetShownVaultResponse"> & {
+export type GetShownVaultResponse = Message<'numen.v1.GetShownVaultResponse'> & {
   /**
    * The identity the list of vaults holds that vault under. Empty in a window
    * showing none, and in one that is open on the installation rather than on
@@ -262,15 +270,16 @@ export type GetShownVaultResponse = Message<"numen.v1.GetShownVaultResponse"> & 
    *
    * @generated from field: string vault = 1;
    */
-  vault: string;
-};
+  vault: string
+}
 
 /**
  * Describes the message numen.v1.GetShownVaultResponse.
  * Use `create(GetShownVaultResponseSchema)` to create a new message.
  */
-export const GetShownVaultResponseSchema: GenMessage<GetShownVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_window, 8);
+export const GetShownVaultResponseSchema: GenMessage<GetShownVaultResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 8)
 
 /**
  * Unit is what a piece of work counts. Bytes are read out in the sizes a
@@ -306,8 +315,7 @@ export enum Unit {
 /**
  * Describes the enum numen.v1.Unit.
  */
-export const UnitSchema: GenEnum<Unit> = /*@__PURE__*/
-  enumDesc(file_numen_v1_window, 0);
+export const UnitSchema: GenEnum<Unit> = /*@__PURE__*/ enumDesc(file_numen_v1_window, 0)
 
 /**
  * FlushResult is what a caller has left when it answers.
@@ -346,8 +354,9 @@ export enum FlushResult {
 /**
  * Describes the enum numen.v1.FlushResult.
  */
-export const FlushResultSchema: GenEnum<FlushResult> = /*@__PURE__*/
-  enumDesc(file_numen_v1_window, 1);
+export const FlushResultSchema: GenEnum<FlushResult> =
+  /*@__PURE__*/
+  enumDesc(file_numen_v1_window, 1)
 
 /**
  * WindowService answers about one window: what it has in front of the person,
@@ -370,10 +379,10 @@ export const WindowService: GenService<{
    * @generated from rpc numen.v1.WindowService.WatchTasks
    */
   watchTasks: {
-    methodKind: "server_streaming";
-    input: typeof WatchTasksRequestSchema;
-    output: typeof WatchTasksResponseSchema;
-  },
+    methodKind: 'server_streaming'
+    input: typeof WatchTasksRequestSchema
+    output: typeof WatchTasksResponseSchema
+  }
   /**
    * WatchQuit says the window is going, for as long as the caller listens. A
    * caller holding work that is only in its own memory writes it now and
@@ -382,10 +391,10 @@ export const WindowService: GenService<{
    * @generated from rpc numen.v1.WindowService.WatchQuit
    */
   watchQuit: {
-    methodKind: "server_streaming";
-    input: typeof WatchQuitRequestSchema;
-    output: typeof WatchQuitResponseSchema;
-  },
+    methodKind: 'server_streaming'
+    input: typeof WatchQuitRequestSchema
+    output: typeof WatchQuitResponseSchema
+  }
   /**
    * ReportFlush says what a caller has left. Nothing left lets the window go;
    * work a person is being asked about keeps it open. A caller that never says
@@ -394,10 +403,10 @@ export const WindowService: GenService<{
    * @generated from rpc numen.v1.WindowService.ReportFlush
    */
   reportFlush: {
-    methodKind: "unary";
-    input: typeof ReportFlushRequestSchema;
-    output: typeof ReportFlushResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof ReportFlushRequestSchema
+    output: typeof ReportFlushResponseSchema
+  }
   /**
    * GetShownVault is which vault this window has in front of the person. Two
    * windows are open on one installation and each shows what it shows, so it is
@@ -406,10 +415,8 @@ export const WindowService: GenService<{
    * @generated from rpc numen.v1.WindowService.GetShownVault
    */
   getShownVault: {
-    methodKind: "unary";
-    input: typeof GetShownVaultRequestSchema;
-    output: typeof GetShownVaultResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_numen_v1_window, 0);
-
+    methodKind: 'unary'
+    input: typeof GetShownVaultRequestSchema
+    output: typeof GetShownVaultResponseSchema
+  }
+}> = /*@__PURE__*/ serviceDesc(file_numen_v1_window, 0)

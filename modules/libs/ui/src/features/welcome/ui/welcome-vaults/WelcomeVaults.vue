@@ -34,7 +34,6 @@ defineSlots<{
   /** How a vault on the list is drawn. */
   vault?(props: { vault: VaultRow }): unknown
 }>()
-
 </script>
 
 <template>

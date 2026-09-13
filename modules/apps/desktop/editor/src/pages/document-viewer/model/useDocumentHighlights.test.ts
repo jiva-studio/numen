@@ -19,7 +19,14 @@ describe('useDocumentHighlights', () => {
       pageNumber.value = page
     })
 
-    const hl = useDocumentHighlights(documents, 'doc.pdf', pageNumber, error, onGoToPage, () => true)
+    const hl = useDocumentHighlights(
+      documents,
+      'doc.pdf',
+      pageNumber,
+      error,
+      onGoToPage,
+      () => true,
+    )
 
     await hl.applyHighlights([pageHighlights])
     expect(onGoToPage).toHaveBeenCalledWith(1)

@@ -141,7 +141,8 @@ export const BroughtToWhereTheReadingIs: Story = {
 
     await userEvent.click(within(canvasElement).getByText('Read on'))
     await waitFor(
-      async () => await expect(getStandingLine(canvasElement)?.textContent?.trim()).toBe('Page 1201'),
+      async () =>
+        await expect(getStandingLine(canvasElement)?.textContent?.trim()).toBe('Page 1201'),
       { timeout: ITS_OWN_PACE },
     )
 

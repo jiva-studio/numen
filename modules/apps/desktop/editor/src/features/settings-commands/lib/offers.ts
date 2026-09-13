@@ -75,7 +75,12 @@ export const getThemeGroups = (
 }
 
 /** What is said about a mode: why it cannot be chosen, or that it is the one. */
-const getModeDetail = (one: Mode, mode: Mode, isPinned: boolean, words: AppearanceWords): string => {
+const getModeDetail = (
+  one: Mode,
+  mode: Mode,
+  isPinned: boolean,
+  words: AppearanceWords,
+): string => {
   if (isPinned) return words.pinned
   return one === mode ? words.current : ''
 }

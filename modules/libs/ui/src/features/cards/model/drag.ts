@@ -45,9 +45,7 @@ export interface DragState<At extends InsertionPoint | undefined> {
   readonly step: (what: string, direction: StepDirection, press: KeyboardEvent) => void
 }
 
-export function useDrag<At extends InsertionPoint | undefined>(
-  drag: DragDeps<At>,
-): DragState<At> {
+export function useDrag<At extends InsertionPoint | undefined>(drag: DragDeps<At>): DragState<At> {
   const dragged = shallowRef<string | null>(null)
   const at: ShallowRef<At> = shallowRef(drag.nowhere)
 

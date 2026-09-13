@@ -99,7 +99,11 @@ const budgetOf = (settings: Settings): Budget => ({
  * Every preset the vault holds gets a row. The ones whose decks hold cards are
  * gathered from what each deck answered, and the rest stand on the count alone.
  */
-const gather = (vault: VaultCardsDue, results: readonly DeckPresetResult[], today: string): Preset[] => {
+const gather = (
+  vault: VaultCardsDue,
+  results: readonly DeckPresetResult[],
+  today: string,
+): Preset[] => {
   const owed = new Map(vault.decks.map((one) => [one.deck, one]))
   const came = new Map(vault.presets.map((one) => [one.preset, one]))
   const at = countDecksIntoPresets(results, owed)

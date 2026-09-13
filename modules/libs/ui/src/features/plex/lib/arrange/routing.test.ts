@@ -76,9 +76,7 @@ describe('edges', () => {
         const touchesSide = Math.abs(dx - node.width / 2) < 1e-9
         const touchesTop = Math.abs(dy - node.height / 2) < 1e-9
         return (
-          (touchesSide || touchesTop) &&
-          dx <= node.width / 2 + 1e-9 &&
-          dy <= node.height / 2 + 1e-9
+          (touchesSide || touchesTop) && dx <= node.width / 2 + 1e-9 && dy <= node.height / 2 + 1e-9
         )
       }
       expect(onBorder(edge.fromPoint, from), `from ${edge.from}`).toBe(true)
@@ -89,9 +87,7 @@ describe('edges', () => {
   it('joins two nodes on the same line side to side, not under and back', () => {
     // The seat says vertical, but there is no vertical room between them.
     const layout = arrangePlex(neighbourhoods.diamond)
-    const edge = layout.edges.find(
-      (e) => e.from === 'parent-0' && e.to === 'parent-1',
-    )
+    const edge = layout.edges.find((e) => e.from === 'parent-0' && e.to === 'parent-1')
     expect(edge).toBeDefined()
     expect(edge!.label).toBe('contains')
 
@@ -252,7 +248,6 @@ describe('a title cut to the line it is set on', () => {
   })
 })
 
-
 /**
  * An arrowhead is drawn at one end of the line and aimed out of it. Which end
  * comes down with the edge; where and which way round is worked out here.
@@ -339,9 +334,7 @@ describe('the arrowhead a line carries', () => {
 
   it('leaves the title of its line short of the head', () => {
     const measure = (words: string) => 4 * [...words].length
-    const byId = new Map(
-      arrangePlex({ nodes, edges: [] }).nodes.map((node) => [node.id, node]),
-    )
+    const byId = new Map(arrangePlex({ nodes, edges: [] }).nodes.map((node) => [node.id, node]))
     const words = (arrow?: EdgeArrow) =>
       routeEdges(
         [

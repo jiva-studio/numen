@@ -36,12 +36,7 @@ const label = computed(() => {
 <template>
   <!-- A generic element carries no name, so the pill takes a role and is read
        out while the figure is still coming. -->
-  <span
-    class="due-count"
-    role="status"
-    :class="{ 'due-count--over': over }"
-    :aria-label="label"
-  >
+  <span class="due-count" role="status" :class="{ 'due-count--over': over }" :aria-label="label">
     <!-- Narrower than the pill's own least width, so the box is the same width
          whether the figure has landed or not. -->
     <Skeleton v-if="due === null" wide="0.8rem" high="0.7em" pill />

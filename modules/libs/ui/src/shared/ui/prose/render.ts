@@ -151,9 +151,7 @@ const words = (text: string, next: () => number): (VNode | string)[] =>
   text
     .split(/(\s+)/)
     .filter((piece) => piece !== '')
-    .map((piece) =>
-      /^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece),
-    )
+    .map((piece) => (/^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece)))
 
 const attrs = (token: Token, deadAddresses: BrokenAddresses = NONE): Record<string, string> => {
   const written: Record<string, string> = Object.fromEntries(

@@ -9,8 +9,7 @@ export interface RoleLimits {
 
 export type Limits = Readonly<Record<PlexRelatedSeat, RoleLimits>>
 
-const clamp = (value: number, low: number, high: number) =>
-  Math.max(low, Math.min(high, value))
+const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value))
 
 /** How many boxes of `size` fit end to end in `room`. */
 const countAlong = (room: number, size: number, gap: number) =>
@@ -30,7 +29,12 @@ export function limitsFor(
 ): Limits {
   const asked: RoleLimits = { perLine: options.maxPerLine, lines: options.maxLines }
   const { viewport } = options
-  if (!viewport) return everySeat(options, () => asked, () => asked)
+  if (!viewport)
+    return everySeat(
+      options,
+      () => asked,
+      () => asked,
+    )
 
   const halfWidth = viewport.width / 2 - options.margin
   const halfHeight = viewport.height / 2 - options.margin
@@ -47,10 +51,7 @@ export function limitsFor(
   // the arrangement clears the wider of the two — so modelling the row alone
   // promises room that is not there and the column is drawn past the edge.
   const rowHalf = (perLine: number) =>
-    Math.max(
-      options.focusSize.width / 2,
-      (perLine * width + (perLine - 1) * options.gap) / 2,
-    )
+    Math.max(options.focusSize.width / 2, (perLine * width + (perLine - 1) * options.gap) / 2)
   /** How many lines of a column stand beyond something of this half-width. */
   const columnsBeyond = (clear: number) =>
     clamp(

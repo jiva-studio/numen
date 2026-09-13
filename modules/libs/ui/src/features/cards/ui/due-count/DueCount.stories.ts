@@ -113,11 +113,10 @@ export const Dark: Story = {
     // apart: its ground is thin, so it is read over the surface behind it, and
     // on the dark set the figure stands above that ground.
     const alone = getComputedStyle(plain!)
-    const behind = getComputedStyle(canvasElement.querySelector('.numen') as HTMLElement)
-      .backgroundColor
-    expect(lightness(alone.color)).toBeGreaterThan(
-      lightness(alone.backgroundColor, behind) + 24,
-    )
+    const behind = getComputedStyle(
+      canvasElement.querySelector('.numen') as HTMLElement,
+    ).backgroundColor
+    expect(lightness(alone.color)).toBeGreaterThan(lightness(alone.backgroundColor, behind) + 24)
 
     // On the button it carries neither: the ink is the button's, and the
     // ground is that ink laid thinly over the button's own.

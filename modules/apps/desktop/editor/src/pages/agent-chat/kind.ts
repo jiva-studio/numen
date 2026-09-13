@@ -20,8 +20,7 @@ import type { NoteRef } from './types'
  */
 export function agentKind(handle: WindowHandle, open: () => AgentTabState, about: () => NoteRef) {
   const getTitle = (state: AgentTabState) =>
-    firstLine(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') ||
-    words.agent
+    firstLine(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') || words.agent
 
   const kind: TabKind<AgentTabState, typeof AGENT> = {
     kind: AGENT,

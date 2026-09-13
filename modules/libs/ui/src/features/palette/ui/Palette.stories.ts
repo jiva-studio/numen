@@ -440,10 +440,7 @@ export const Filling: Story = {
     setup() {
       const open = ref(true)
       const typed = ref('ent')
-      const groups = ref<PaletteGroup[]>([
-        { ...NAMES, items: [], working: true },
-        TEXT,
-      ])
+      const groups = ref<PaletteGroup[]>([{ ...NAMES, items: [], working: true }, TEXT])
 
       let waiting: ReturnType<typeof setTimeout> | undefined
       onMounted(() => {
@@ -519,7 +516,9 @@ export const NothingHeard: Story = {
     await expect(region()).toHaveAttribute('aria-live', 'polite')
     await expect(getText(region())).toBe('')
 
-    await waitFor(() => expect(getText(region())).toBe('No note answers to that'), { timeout: 3000 })
+    await waitFor(() => expect(getText(region())).toBe('No note answers to that'), {
+      timeout: 3000,
+    })
   },
 }
 
@@ -565,7 +564,9 @@ export const CouldNotBeAsked: Story = {
         group.textContent?.trim(),
       )
     await waitFor(() => expect(getDrawnTitles()).toEqual(['Meaning']))
-    await expect(getText(document.body.querySelector('[data-palette="silence"]'))).toBe('No model is set')
+    await expect(getText(document.body.querySelector('[data-palette="silence"]'))).toBe(
+      'No model is set',
+    )
   },
 }
 
@@ -858,8 +859,8 @@ export const SomeCameBackEmpty: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const drawn = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((group) =>
-      group.textContent?.trim(),
+    const drawn = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map(
+      (group) => group.textContent?.trim(),
     )
     await expect(drawn).toEqual(['Text', 'Meaning', 'Names'])
     await expect(lit()?.textContent).toContain('Heat engines')
@@ -885,7 +886,9 @@ export const FiveActions: Story = {
 
     const reach = Array.from(document.body.querySelectorAll('[data-palette="key"]')).map(getText)
     await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open the note'])
-    await expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain('Actions')
+    await expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain(
+      'Actions',
+    )
 
     await userEvent.keyboard('{Enter}')
     await expect(args.onChoose).toHaveBeenCalledWith('entropy', 'travel')
@@ -927,7 +930,9 @@ export const ActionPanel: Story = {
     await userEvent.keyboard('{ArrowUp}')
     const last = actions().at(-1)!
     const inside = last.getBoundingClientRect()
-    const room = document.body.querySelector<HTMLElement>('[data-actions="list"]')!.getBoundingClientRect()
+    const room = document.body
+      .querySelector<HTMLElement>('[data-actions="list"]')!
+      .getBoundingClientRect()
     await expect(inside.bottom).toBeLessThanOrEqual(Math.ceil(room.bottom))
     await expect(inside.top).toBeGreaterThanOrEqual(Math.floor(room.top))
 
@@ -958,8 +963,7 @@ export const Steps: Story = {
       const typed = ref('')
       const crumb = ref('')
 
-      const titleOf = (id: string) =>
-        NAMED.items.find((one) => one.id === id)?.title ?? ''
+      const titleOf = (id: string) => NAMED.items.find((one) => one.id === id)?.title ?? ''
 
       const choose = (item: string, action: string) => {
         args.onChoose(item, action)

@@ -93,7 +93,7 @@ const add = (): void => {
     @dragover="hover(null, $event)"
     @drop="drop"
   >
-    <h2 class="stencil__heading caps-numen m-0 text-small text-hushed">{{ words.fields }}</h2>
+    <h2 class="stencil__heading caps-numen text-small text-hushed m-0">{{ words.fields }}</h2>
 
     <ul v-if="rows.length" class="stencil__fields">
       <Field
@@ -114,7 +114,9 @@ const add = (): void => {
       />
     </ul>
 
-    <p v-else class="stencil__silence caps-numen m-0 text-small text-hushed">{{ words.noFields }}</p>
+    <p v-else class="stencil__silence caps-numen text-small text-hushed m-0">
+      {{ words.noFields }}
+    </p>
 
     <Divider>
       <Button variant="ghost" size="small" @click="add">

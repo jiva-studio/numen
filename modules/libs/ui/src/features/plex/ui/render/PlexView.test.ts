@@ -176,9 +176,7 @@ describe('what the drawing does with an opacity', () => {
 
   it('fades the line along with the node it belongs to', () => {
     const view = mountView()
-    const faded = view
-      .findAll('path.plex__edge')
-      .map((path) => Number(path.attributes('opacity')))
+    const faded = view.findAll('path.plex__edge').map((path) => Number(path.attributes('opacity')))
     expect(faded.some((value) => value > 0 && value < 1)).toBe(true)
   })
 })
@@ -329,7 +327,10 @@ describe('the line under the hand', () => {
 
     const href = title(view, across)[0]!.get('textPath').attributes('href')!
     const line = view.get(`defs path[id="${href.slice(1)}"]`)
-    const numbers = line.attributes('d')!.match(/-?\d+(?:\.\d+)?/g)!.map(Number)
+    const numbers = line
+      .attributes('d')!
+      .match(/-?\d+(?:\.\d+)?/g)!
+      .map(Number)
 
     // Taken the other way round, so the words are not upside down.
     expect(numbers[0]).toBe(edge.toPoint.x)

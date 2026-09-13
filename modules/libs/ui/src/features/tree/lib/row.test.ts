@@ -108,8 +108,7 @@ describe('the keys a tree answers', () => {
 
 describe('where a key takes the keyboard', () => {
   const shown = getShownRows('work')
-  const step = (from: RowId | null, key: Parameters<typeof stepTo>[2]) =>
-    stepTo(shown, from, key)
+  const step = (from: RowId | null, key: Parameters<typeof stepTo>[2]) => stepTo(shown, from, key)
 
   it('moves a row down and a row up', () => {
     expect(step('work', 'ArrowDown')).toStrictEqual({ at: 'plans', turn: null })
@@ -273,27 +272,32 @@ describe('the rows between two rows', () => {
   const shown = getShownRows('work')
 
   it('are the ones drawn from the first to the second, both among them', () => {
-    expect(getRowsBetween(shown,'work', 'notes')).toStrictEqual(['work', 'plans', 'notes'])
+    expect(getRowsBetween(shown, 'work', 'notes')).toStrictEqual(['work', 'plans', 'notes'])
   })
 
   it('are the same rows in the same order the other way round', () => {
-    expect(getRowsBetween(shown,'notes', 'work')).toStrictEqual(['work', 'plans', 'notes'])
+    expect(getRowsBetween(shown, 'notes', 'work')).toStrictEqual(['work', 'plans', 'notes'])
   })
 
   it('are the one row where both ends are it', () => {
-    expect(getRowsBetween(shown,'plans', 'plans')).toStrictEqual(['plans'])
+    expect(getRowsBetween(shown, 'plans', 'plans')).toStrictEqual(['plans'])
   })
 
   it('span whatever a folder boundary puts between them', () => {
-    expect(getRowsBetween(shown,'plans', 'loose')).toStrictEqual(['plans', 'notes', 'empty', 'loose'])
+    expect(getRowsBetween(shown, 'plans', 'loose')).toStrictEqual([
+      'plans',
+      'notes',
+      'empty',
+      'loose',
+    ])
   })
 
   it('are the row reached alone, measured from a row that is not drawn', () => {
-    expect(getRowsBetween(shown,'friday', 'notes')).toStrictEqual(['notes'])
+    expect(getRowsBetween(shown, 'friday', 'notes')).toStrictEqual(['notes'])
   })
 
   it('are none at all where the row reached is not drawn', () => {
-    expect(getRowsBetween(shown,'work', 'friday')).toStrictEqual([])
+    expect(getRowsBetween(shown, 'work', 'friday')).toStrictEqual([])
   })
 })
 
@@ -324,11 +328,9 @@ describe('what a press makes the selection', () => {
   })
 
   it('draws what it joined in the order the rows are drawn', () => {
-    expect(resolveSelection(shown, ['loose', 'notes'], 'loose', 'work', JOINING).rows).toStrictEqual([
-      'work',
-      'notes',
-      'loose',
-    ])
+    expect(
+      resolveSelection(shown, ['loose', 'notes'], 'loose', 'work', JOINING).rows,
+    ).toStrictEqual(['work', 'notes', 'loose'])
   })
 
   it('reaches from the anchor to the row, in the order they are drawn', () => {
@@ -362,7 +364,9 @@ describe('what a press makes the selection', () => {
   })
 
   it('drops a row that is not drawn', () => {
-    expect(resolveSelection(getShownRows(), ['plans'], 'plans', 'loose', JOINING).rows).toStrictEqual(['loose'])
+    expect(
+      resolveSelection(getShownRows(), ['plans'], 'plans', 'loose', JOINING).rows,
+    ).toStrictEqual(['loose'])
   })
 })
 

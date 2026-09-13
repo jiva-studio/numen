@@ -80,7 +80,7 @@ const step = (event: KeyboardEvent): void => {
     <!-- The handle is what the keyboard takes hold of. The pointer has the
          whole strip, so it takes no drag of its own. -->
     <span
-      class="card-header__grip flex shrink-0 items-center text-hushed"
+      class="card-header__grip text-hushed flex shrink-0 items-center"
       role="button"
       tabindex="0"
       :aria-label="drag"

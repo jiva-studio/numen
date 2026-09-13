@@ -55,7 +55,13 @@ defineExpose({
       @write="(text: string) => emit('write', text)"
     />
 
-    <div v-else class="face__preview" :data-preview="pane.half" :aria-label="pane.named" role="group">
+    <div
+      v-else
+      class="face__preview"
+      :data-preview="pane.half"
+      :aria-label="pane.named"
+      role="group"
+    >
       <!-- A preview is a face read, not a face followed: a link in it stays
            where it is pressed. -->
       <CardProse :text="pane.text" @follow="(_href, press) => press.preventDefault()" />

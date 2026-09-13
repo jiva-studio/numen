@@ -85,7 +85,9 @@ function setSetting(at: readonly string[], value: unknown): void {
         :step="1"
         :aria-labelledby="labelledBy"
         class="settings__number"
-        @settle="(size: number | null) => size !== null && onSettingChange(AT.transcribeUnder, size)"
+        @settle="
+          (size: number | null) => size !== null && onSettingChange(AT.transcribeUnder, size)
+        "
       />
     </SettingRow>
 

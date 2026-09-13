@@ -103,5 +103,4 @@ function onLater(conflict: ConflictPrompt) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 </style>

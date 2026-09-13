@@ -60,7 +60,10 @@ describe('the file drawn', () => {
     const { tab, state } = await mountTextEditor({
       saveSettingsFile: () =>
         Promise.reject(
-          new ConnectError('not a setting: it does not read as JSON, at byte 12', Code.InvalidArgument),
+          new ConnectError(
+            'not a setting: it does not read as JSON, at byte 12',
+            Code.InvalidArgument,
+          ),
         ),
     })
     state.type('{ "agent": ')

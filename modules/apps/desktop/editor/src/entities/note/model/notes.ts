@@ -52,10 +52,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     },
   )
 
-  const conflicts = createConflictCoordinator(
-    turn,
-    (id) => tabs.value.get(id),
-  )
+  const conflicts = createConflictCoordinator(turn, (id) => tabs.value.get(id))
 
   const open = (id: string, path: string = id): void => {
     if (tabs.value.has(id)) return

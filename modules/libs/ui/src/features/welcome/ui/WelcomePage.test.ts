@@ -203,10 +203,10 @@ describe('the screen drawn short', () => {
   it('holds the ways in and the vaults in regions of their own', () => {
     const screen = drawBoth()
 
-    expect(screen.get('.welcome-page__lead').findAll('.welcome-page__row')).toHaveLength(WAYS.length)
-    expect(
-      screen.get('.welcome-page__vaults').findAll('.welcome-page__row--vault'),
-    ).toHaveLength(3)
+    expect(screen.get('.welcome-page__lead').findAll('.welcome-page__row')).toHaveLength(
+      WAYS.length,
+    )
+    expect(screen.get('.welcome-page__vaults').findAll('.welcome-page__row--vault')).toHaveLength(3)
   })
 
   it('keeps the glyph and the name with the ways in', () => {

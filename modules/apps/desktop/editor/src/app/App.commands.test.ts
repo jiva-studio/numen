@@ -7,14 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
-import {
-  branch,
-  pane,
-  Palette,
-  Tree,
-  WorkspaceLayout,
-  type PaletteGroup,
-} from '@numen/ui'
+import { branch, pane, Palette, Tree, WorkspaceLayout, type PaletteGroup } from '@numen/ui'
 import { AgentTab } from '@/pages/agent-chat'
 import { DeckTab } from '@/pages/deck-editor'
 import { FilesTab, NEW_DECK, NEW_STENCIL } from '@/pages/file-manager'
@@ -46,7 +39,9 @@ describe('the palette', () => {
   }
 
   const groupsOf = (window: Awaited<ReturnType<typeof mountWindow>>) =>
-    (window.findComponent(Palette).props('groups') as readonly { id: string }[]).map((one) => one.id)
+    (window.findComponent(Palette).props('groups') as readonly { id: string }[]).map(
+      (one) => one.id,
+    )
 
   it('opens on the commands for what is in front, and prints nothing', async () => {
     const window = await mountWindow()
@@ -112,7 +107,10 @@ describe('the palette', () => {
 
   it('draws a passage as the note it was read out of', async () => {
     said.names = []
-    said.passages = [passageAnswer('Animals.md', 'Animals', 'deck'), passageAnswer('Ants.md', 'Ants')]
+    said.passages = [
+      passageAnswer('Animals.md', 'Animals', 'deck'),
+      passageAnswer('Ants.md', 'Ants'),
+    ]
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
@@ -123,7 +121,10 @@ describe('the palette', () => {
 
   it('draws a passage out of a book and one out of a recording as what each is', async () => {
     said.names = []
-    said.passages = [sourceAnswer('Ants.epub', 'book'), sourceAnswer('730709BG.LON.mp3', 'recording')]
+    said.passages = [
+      sourceAnswer('Ants.epub', 'book'),
+      sourceAnswer('730709BG.LON.mp3', 'recording'),
+    ]
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
@@ -135,7 +136,9 @@ describe('the palette', () => {
 
   /** The groups standing, by the name each carries. */
   const groupTitles = () =>
-    [...document.body.querySelectorAll('[data-palette="title"]')].map((one) => one.textContent?.trim())
+    [...document.body.querySelectorAll('[data-palette="title"]')].map((one) =>
+      one.textContent?.trim(),
+    )
 
   it('draws no group for a search that answered with nothing, and says so once', async () => {
     said.embedded = 4
@@ -164,7 +167,7 @@ describe('the palette', () => {
     said.types = { 'Animals.md': 'deck' }
     const window = await mountWindow()
 
-    await openFromSearch(window,'Animals.md')
+    await openFromSearch(window, 'Animals.md')
 
     expect(paneKinds(window).flat()).toContain('deck')
     expect(window.findComponent(NoteTab).exists()).toBe(false)
@@ -175,7 +178,7 @@ describe('the palette', () => {
     said.types = { 'Animal.md': 'stencil' }
     const window = await mountWindow()
 
-    await openFromSearch(window,'Animal.md')
+    await openFromSearch(window, 'Animal.md')
 
     expect(paneKinds(window).flat()).toContain('stencil')
     expect(window.findComponent(NoteTab).exists()).toBe(false)
@@ -185,7 +188,7 @@ describe('the palette', () => {
     said.names = [nameAnswer('Animals.md', 'Animals')]
     const window = await mountWindow()
 
-    await openFromSearch(window,'Animals.md')
+    await openFromSearch(window, 'Animals.md')
 
     expect(paneKinds(window).flat()).not.toContain('deck')
     expect(window.findComponent(NoteTab).exists()).toBe(true)
@@ -211,9 +214,12 @@ describe('the palette', () => {
 
   /** The tab of the plex standing on that note, as the window calls it. */
   const plexTab = (window: Awaited<ReturnType<typeof mountWindow>>, note: string): string =>
-    (window.findComponent(WorkspaceLayout).props('tabs') as readonly { id: string; title: string }[])
-      .find((one) => one.title === (note || plexWords.plex))
-      ?.id ?? ''
+    (
+      window.findComponent(WorkspaceLayout).props('tabs') as readonly {
+        id: string
+        title: string
+      }[]
+    ).find((one) => one.title === (note || plexWords.plex))?.id ?? ''
 
   it('is over the plex in the tab in front, not the plex last put in front', async () => {
     said.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
@@ -368,7 +374,11 @@ describe('a command reached by its own keystroke', () => {
     await createDeck()
     await createDeck()
 
-    expect(paneKinds(window).flat().filter((kind) => kind === 'deck')).toHaveLength(1)
+    expect(
+      paneKinds(window)
+        .flat()
+        .filter((kind) => kind === 'deck'),
+    ).toHaveLength(1)
     expect(window.text()).toContain(ERRORS.occupied)
   })
 
@@ -717,7 +727,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
     const window = await makeFile('New deck', 'Animals')
     expect(paneKinds(window).flat()).toContain('deck')
 
-    await removeRow(window,'Animals.note')
+    await removeRow(window, 'Animals.note')
 
     expect(requests.removed).toStrictEqual(['Animals.note false'])
     expect(paneKinds(window).flat()).not.toContain('deck')
@@ -727,7 +737,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
     const window = await makeFile('New stencil', 'Animal')
     expect(paneKinds(window).flat()).toContain('stencil')
 
-    await removeRow(window,'Animal.note')
+    await removeRow(window, 'Animal.note')
 
     expect(requests.removed).toStrictEqual(['Animal.note false'])
     expect(paneKinds(window).flat()).not.toContain('stencil')
@@ -744,7 +754,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
     }
 
     state.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
-    await removeRow(window,'Animals.note')
+    await removeRow(window, 'Animals.note')
 
     // Making the deck is no write, so the only one is what the person added.
     expect(requests.wrote).toStrictEqual(['Vicuña'])

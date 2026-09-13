@@ -27,7 +27,13 @@ export const useWindow = () => {
   const vault = ref('')
 
   const { notices, showNotice, reportError, setTasks, dismissNotice } = useNotices()
-  const { vaults, counting: busy, day: today, count, stop } = useReviewCounter({ cards, reportError })
+  const {
+    vaults,
+    counting: busy,
+    day: today,
+    count,
+    stop,
+  } = useReviewCounter({ cards, reportError })
   const state = useReviewSession({ cards, reportError })
   const done = useReviewDays({ cards, reportError })
   const schedules = useVaultPresets({ presets: cards })

@@ -114,7 +114,10 @@ onMounted(async () => {
       v-if="core && writing"
       :core="core"
       :path="writing"
-      @close="writing = null; void draw(at)"
+      @close="
+        writing = null
+        void draw(at)
+      "
       @error="(message: string) => (errorMessage = message)"
     />
   </Teleport>

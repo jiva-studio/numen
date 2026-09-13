@@ -120,12 +120,18 @@ describe('the rest of what is asked', () => {
   it('says why a choice was refused, and says nothing where it was not', async () => {
     asked.writeAppearance.mockResolvedValue({ error: 'that size is outside its bounds' })
     expect(
-      await themes.writeAppearance('preset/Numen.css', 'light', { interfaceScale: 9, textScale: 1 }),
+      await themes.writeAppearance('preset/Numen.css', 'light', {
+        interfaceScale: 9,
+        textScale: 1,
+      }),
     ).toBe('that size is outside its bounds')
 
     asked.writeAppearance.mockResolvedValue({ error: '' })
     expect(
-      await themes.writeAppearance('preset/Numen.css', 'light', { interfaceScale: 1, textScale: 1 }),
+      await themes.writeAppearance('preset/Numen.css', 'light', {
+        interfaceScale: 1,
+        textScale: 1,
+      }),
     ).toBe('')
   })
 

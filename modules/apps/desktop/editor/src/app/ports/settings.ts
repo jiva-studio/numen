@@ -54,8 +54,5 @@ export interface SettingsPort {
    * is answered `changed` with nothing written. Nothing seen writes over
    * whatever the file holds.
    */
-  saveSettingsFile(
-    written: string,
-    seen: string | null,
-  ): Promise<{ readonly changed: boolean }>
+  saveSettingsFile(written: string, seen: string | null): Promise<{ readonly changed: boolean }>
 }

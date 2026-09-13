@@ -46,61 +46,63 @@ const TEMPLATE = `
  * A live one. Sending adds the turn, the disc becomes the one that stops it,
  * and the answer arrives a few characters at a time.
  */
-const conversation = (start: readonly Turn[]): Render => () => ({
-  components: { Agent },
-  setup() {
-    const turns = ref<Turn[]>([...start])
-    const text = ref('')
-    const working = ref(false)
-    let next = start.length
-    let tick: ReturnType<typeof setInterval> | undefined
+const conversation =
+  (start: readonly Turn[]): Render =>
+  () => ({
+    components: { Agent },
+    setup() {
+      const turns = ref<Turn[]>([...start])
+      const text = ref('')
+      const working = ref(false)
+      let next = start.length
+      let tick: ReturnType<typeof setInterval> | undefined
 
-    /** What has arrived so far, put back in place of what was there. */
-    const putTurn = (id: string, soFar: string, isDone: boolean) => {
-      const index = turns.value.findIndex((turn) => turn.id === id)
-      if (index < 0) return
-      turns.value[index] = isDone
-        ? { id, voice: 'answered', text: soFar }
-        : { id, voice: 'answered', text: soFar, state: 'arriving' }
-    }
+      /** What has arrived so far, put back in place of what was there. */
+      const putTurn = (id: string, soFar: string, isDone: boolean) => {
+        const index = turns.value.findIndex((turn) => turn.id === id)
+        if (index < 0) return
+        turns.value[index] = isDone
+          ? { id, voice: 'answered', text: soFar }
+          : { id, voice: 'answered', text: soFar, state: 'arriving' }
+      }
 
-    const settle = () => {
-      clearInterval(tick)
-      tick = undefined
-      working.value = false
-    }
+      const settle = () => {
+        clearInterval(tick)
+        tick = undefined
+        working.value = false
+      }
 
-    const onSubmit = (message: string) => {
-      turns.value.push(createAsked(`${next++}`, message))
-      text.value = ''
-      working.value = true
+      const onSubmit = (message: string) => {
+        turns.value.push(createAsked(`${next++}`, message))
+        text.value = ''
+        working.value = true
 
-      const id = `${next++}`
-      turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
+        const id = `${next++}`
+        turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
 
-      const reply = `You asked about “${message}”. ${LONG}`
-      let at = 0
-      tick = setInterval(() => {
-        at = Math.min(reply.length, at + 3)
-        const done = at === reply.length
-        putTurn(id, reply.slice(0, at), done)
-        if (done) settle()
-      }, 16)
-    }
+        const reply = `You asked about “${message}”. ${LONG}`
+        let at = 0
+        tick = setInterval(() => {
+          at = Math.min(reply.length, at + 3)
+          const done = at === reply.length
+          putTurn(id, reply.slice(0, at), done)
+          if (done) settle()
+        }, 16)
+      }
 
-    /** Given up on: what had arrived stays, and nothing more comes. */
-    const onStop = () => {
-      const last = turns.value.at(-1)
-      if (last?.state === 'arriving') putTurn(last.id, last.text, true)
-      settle()
-    }
+      /** Given up on: what had arrived stays, and nothing more comes. */
+      const onStop = () => {
+        const last = turns.value.at(-1)
+        if (last?.state === 'arriving') putTurn(last.id, last.text, true)
+        settle()
+      }
 
-    onScopeDispose(settle)
+      onScopeDispose(settle)
 
-    return { turns, text, working, onSubmit, onStop }
-  },
-  template: TEMPLATE,
-})
+      return { turns, text, working, onSubmit, onStop }
+    },
+    template: TEMPLATE,
+  })
 
 /**
  * Where the thread's mask turns opaque and where it turns clear, in the
@@ -109,9 +111,9 @@ const conversation = (start: readonly Turn[]): Render => () => ({
  */
 const getFadeStops = (thread: HTMLElement): readonly number[] => {
   const foot = thread.getBoundingClientRect().bottom
-  return [
-    ...getComputedStyle(thread).maskImage.matchAll(/calc\(100% ([+-]) ([\d.]+)px\)/g),
-  ].map(([, sign, size]) => foot + (sign === '+' ? Number(size) : -Number(size)))
+  return [...getComputedStyle(thread).maskImage.matchAll(/calc\(100% ([+-]) ([\d.]+)px\)/g)].map(
+    ([, sign, size]) => foot + (sign === '+' ? Number(size) : -Number(size)),
+  )
 }
 
 /** The words go as the composer's top edge does, and are gone a fade later. */

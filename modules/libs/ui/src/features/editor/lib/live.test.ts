@@ -18,8 +18,10 @@ const getDrawn = (doc: string, caret?: number): Drawn[] => {
   const state: EditorState = createState(text, caret ?? text.length)
   const found: Drawn[] = []
   const collect = (set: ReturnType<typeof marks>) =>
-    set.between(0, state.doc.length, (from, to, deco) =>
-      void found.push({ from, to, spec: deco.spec ?? {} }),
+    set.between(
+      0,
+      state.doc.length,
+      (from, to, deco) => void found.push({ from, to, spec: deco.spec ?? {} }),
     )
 
   collect(marks(state, 0, state.doc.length))

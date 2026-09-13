@@ -11,7 +11,10 @@ const entry = (name: string) =>
 
 describe('a picture in a book', () => {
   it('is pointed at the address its entry of the archive is served from', () => {
-    const drawn = resolveImageUrls('<p><img src="OEBPS/pictures/plate.png" alt="A plate"></p>', entry)
+    const drawn = resolveImageUrls(
+      '<p><img src="OEBPS/pictures/plate.png" alt="A plate"></p>',
+      entry,
+    )
 
     expect(drawn).toContain('src="/assets/book.epub/OEBPS/pictures/plate.png?size=1"')
     expect(drawn).toContain('alt="A plate"')
@@ -26,7 +29,10 @@ describe('a picture in a book', () => {
 
 describe('the runs of the text', () => {
   it('carry the offsets they arrived with', () => {
-    const drawn = resolveImageUrls('<span data-offset="1200">सत्यं</span><span data-offset="1215">Слово</span>', entry)
+    const drawn = resolveImageUrls(
+      '<span data-offset="1200">सत्यं</span><span data-offset="1215">Слово</span>',
+      entry,
+    )
 
     expect(drawn).toContain('data-offset="1200"')
     expect(drawn).toContain('data-offset="1215"')
@@ -50,8 +56,11 @@ describe('a document of a book as it arrives', () => {
 
   it('leaves every offset the application counted where it stands', () => {
     const offsets = (markup: string) =>
-      [...new DOMParser().parseFromString(markup, 'text/html').body.querySelectorAll('[data-offset]')]
-        .map((one) => one.getAttribute('data-offset'))
+      [
+        ...new DOMParser()
+          .parseFromString(markup, 'text/html')
+          .body.querySelectorAll('[data-offset]'),
+      ].map((one) => one.getAttribute('data-offset'))
 
     expect(offsets(spine)).not.toHaveLength(0)
     expect(offsets(resolveImageUrls(spine, entry))).toEqual(offsets(spine))

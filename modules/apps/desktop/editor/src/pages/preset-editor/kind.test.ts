@@ -120,7 +120,13 @@ const openPresetTab = async (
   }
   const handle = { closeTab: (tab: string) => void closed.push(tab) } as unknown as WindowHandle
   const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
-  const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => NOW)
+  const kind = usePresetTab(
+    core,
+    handle,
+    tabOpeners,
+    () => {},
+    () => NOW,
+  )
   const state = await kind.kind.open('Steady.md')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
@@ -181,7 +187,13 @@ const opening = async (file: Partial<Settings>) => {
   }
   const handle = { closeTab: () => {} } as unknown as WindowHandle
   const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
-  const kind = usePresetTab(core, handle, tabOpeners, () => {}, () => NOW)
+  const kind = usePresetTab(
+    core,
+    handle,
+    tabOpeners,
+    () => {},
+    () => NOW,
+  )
   return { tab: await kind.kind.open('Steady.md'), written, resolveRead }
 }
 
@@ -336,7 +348,10 @@ describe('the curve behind the knob', () => {
   // again is a curve to ask for again however little the settings moved.
   it('is asked afresh on a re-read, so a deck pointed here since is seen', async () => {
     let decks = 0
-    const { state, applyPathChanges } = await openPresetTab({}, () => ({ ...curve, decks: decks++ }))
+    const { state, applyPathChanges } = await openPresetTab({}, () => ({
+      ...curve,
+      decks: decks++,
+    }))
     expect(state.curve.value.decks).toBe(0)
 
     applyPathChanges(['Steady.md'])
@@ -448,7 +463,12 @@ describe('what the tab says it encountered as an error', () => {
   it('is a sentence of its own for each error a write answers', async () => {
     const said: string[] = []
     for (const error of errors) {
-      const { state } = await openPresetTab({}, curve, () => ({}), () => ({ error }))
+      const { state } = await openPresetTab(
+        {},
+        curve,
+        () => ({}),
+        () => ({ error }),
+      )
       state.updateSetting('newADay', 4)
       state.settle()
       await flushPromises()
@@ -510,7 +530,12 @@ describe('what a tab still owes the file', () => {
   })
 
   it('keeps the tab open where the write was refused, and says why', async () => {
-    const { state, closed } = await openPresetTab({}, curve, () => ({}), () => ({ error: 'notAPreset' }))
+    const { state, closed } = await openPresetTab(
+      {},
+      curve,
+      () => ({}),
+      () => ({ error: 'notAPreset' }),
+    )
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
     await flushPromises()
@@ -519,7 +544,12 @@ describe('what a tab still owes the file', () => {
   })
 
   it('lets the tab go the second time it is asked, the person having been told', async () => {
-    const { state, closed } = await openPresetTab({}, curve, () => ({}), () => ({ error: 'notAPreset' }))
+    const { state, closed } = await openPresetTab(
+      {},
+      curve,
+      () => ({}),
+      () => ({ error: 'notAPreset' }),
+    )
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
     await flushPromises()
@@ -529,7 +559,12 @@ describe('what a tab still owes the file', () => {
   })
 
   it('keeps the tab open where the file moved under it and nothing was written', async () => {
-    const { state, closed } = await openPresetTab({}, curve, () => ({}), () => ({ changed: true }))
+    const { state, closed } = await openPresetTab(
+      {},
+      curve,
+      () => ({}),
+      () => ({ changed: true }),
+    )
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
     await flushPromises()
@@ -546,12 +581,16 @@ describe('what a tab still owes the file', () => {
 
   it('is waited for by the window going, where a write is already out', async () => {
     let resolveWrite = () => {}
-    const { state, flush } = await openPresetTab({}, curve, () => ({}), (time) =>
-      time === 0
-        ? new Promise<Partial<WriteResult>>((done) => {
-            resolveWrite = () => done({})
-          })
-        : {},
+    const { state, flush } = await openPresetTab(
+      {},
+      curve,
+      () => ({}),
+      (time) =>
+        time === 0
+          ? new Promise<Partial<WriteResult>>((done) => {
+              resolveWrite = () => done({})
+            })
+          : {},
     )
     state.updateSetting('newADay', 4)
     state.settle()
@@ -669,7 +708,9 @@ describe('what the control writes', () => {
 describe('a setting the goal on screen does not name', () => {
   it('is not drawn, and keeps its value in the file across a write', async () => {
     const { state, written } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
-    expect(fieldsUnder(state.settings.value.goal, state.settings.value.learned)).not.toContain('reviewsADay')
+    expect(fieldsUnder(state.settings.value.goal, state.settings.value.learned)).not.toContain(
+      'reviewsADay',
+    )
 
     state.moveSlider(1)
     state.settle()
@@ -841,7 +882,6 @@ describe('how far each setting goes', () => {
     })
   })
 })
-
 
 // A hand on a track moves through every value between where it started and
 // where it stops, and each of those is a curve nobody asked to see.

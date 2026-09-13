@@ -34,7 +34,7 @@ defineOptions({ inheritAttrs: false })
 <template>
   <Teleport :to="to">
     <div
-      class="palette numen font-sans text-base text-ink"
+      class="palette numen text-ink font-sans text-base"
       data-palette="ground"
       v-bind="$attrs"
       @pointerdown.self="$emit('ground')"

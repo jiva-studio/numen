@@ -34,7 +34,10 @@ export const presets: Presets = {
   read: async (path) => parseRead(await presetsService.readPreset({ path })),
   getDeckPreset: async (deck) => parseRead(await presetsService.getDeckPreset({ deck })),
   list: async () =>
-    (await presetsService.listPresets({})).presets.map((one) => ({ path: one.path, title: one.title })),
+    (await presetsService.listPresets({})).presets.map((one) => ({
+      path: one.path,
+      title: one.title,
+    })),
   createPreset: async (title, folder) => {
     const answer = await presetsService.createPreset({ title, path: folder })
     return { path: answer.path, error: errorIn(answer) }
@@ -56,7 +59,10 @@ export const presets: Presets = {
     return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   curve: async (path, settings) => {
-    const answer = await presetsService.computeCurve({ path, settings: toSettingsMessage(settings) })
+    const answer = await presetsService.computeCurve({
+      path,
+      settings: toSettingsMessage(settings),
+    })
     return parseCurve(answer.curve)
   },
 }

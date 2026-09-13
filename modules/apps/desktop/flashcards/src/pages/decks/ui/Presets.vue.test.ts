@@ -217,7 +217,13 @@ describe('what the goals come to today', () => {
   // the same. The day is drawn from what it gave.
   it('draws a preset whose settings could not be read from what the count gave', () => {
     const one = mountPresets([
-      preset({ settings: null, cards: 22, answered: 6, took: 4, wrong: 'that note is not in the vault' }),
+      preset({
+        settings: null,
+        cards: 22,
+        answered: 6,
+        took: 4,
+        wrong: 'that note is not in the vault',
+      }),
     ])
 
     expect(one.find('.presets__done').text()).toBe('20%')
@@ -296,7 +302,9 @@ describe('the tiles read aloud', () => {
   })
 
   it('says the figures again as they change', () => {
-    expect(mountPresets([preset()]).find('.presets__figures').attributes('aria-live')).toBe('polite')
+    expect(mountPresets([preset()]).find('.presets__figures').attributes('aria-live')).toBe(
+      'polite',
+    )
   })
 })
 
@@ -320,17 +328,25 @@ describe('what pressing a preset would ask', () => {
   })
 
   it('says one card as one', () => {
-    expect(mountPresets([preset({ cards: 1 })]).find('.presets__left').text()).toBe('1 card')
+    expect(
+      mountPresets([preset({ cards: 1 })])
+        .find('.presets__left')
+        .text(),
+    ).toBe('1 card')
   })
 
   // A tile that cannot be pressed says why, as the deck rows under it do.
   it('says why in its place where there is nothing to ask', () => {
-    expect(mountPresets([preset({ cards: 0, answered: 55, took: 20 })]).find('.presets__left').text()).toBe(
-      'the day is full',
-    )
-    expect(mountPresets([preset({ cards: 0, answered: 0, took: 0 })]).find('.presets__left').text()).toBe(
-      'nothing today',
-    )
+    expect(
+      mountPresets([preset({ cards: 0, answered: 55, took: 20 })])
+        .find('.presets__left')
+        .text(),
+    ).toBe('the day is full')
+    expect(
+      mountPresets([preset({ cards: 0, answered: 0, took: 0 })])
+        .find('.presets__left')
+        .text(),
+    ).toBe('nothing today')
   })
 
   it('says nothing of a count where the preset schedules nothing today', () => {
@@ -346,7 +362,10 @@ describe('starting a session on a preset', () => {
     one.findAll('.presets__preset').map((tile) => tile.attributes('disabled') === undefined)
 
   it('is offered by a preset with cards to ask, and names the preset pressed', async () => {
-    const one = mountPresets([preset({ path: 'Sanskrit.md' }), preset({ path: 'Pali.md', name: 'Pali' })])
+    const one = mountPresets([
+      preset({ path: 'Sanskrit.md' }),
+      preset({ path: 'Pali.md', name: 'Pali' }),
+    ])
     const tiles = one.findAll('.presets__preset')
 
     expect(pressable(one)).toStrictEqual([true, true])
@@ -378,8 +397,8 @@ describe('starting a session on a preset', () => {
   })
 
   it('offers no session where the preset schedules nothing today', () => {
-    expect(pressable(mountPresets([preset({ cards: 0, paused: 'no cards a day' })]))).toStrictEqual([
-      false,
-    ])
+    expect(pressable(mountPresets([preset({ cards: 0, paused: 'no cards a day' })]))).toStrictEqual(
+      [false],
+    )
   })
 })

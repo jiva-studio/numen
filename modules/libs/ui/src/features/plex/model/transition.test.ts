@@ -15,8 +15,7 @@ function inScope<T>(build: () => T): T {
   return value
 }
 
-const getNode = (nodes: readonly PlacedNode[], id: string) =>
-  nodes.find((node) => node.id === id)
+const getNode = (nodes: readonly PlacedNode[], id: string) => nodes.find((node) => node.id === id)
 
 describe('a movement stepped by hand', () => {
   it('starts where it was and arrives where it was sent', async () => {
@@ -24,7 +23,12 @@ describe('a movement stepped by hand', () => {
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
 
     const { frame, moving } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 400, world.clock),
+      usePlexTransition(
+        () => current.value,
+        () => undefined,
+        () => 400,
+        world.clock,
+      ),
     )
 
     expect(moving.value).toBe(false)
@@ -52,7 +56,12 @@ describe('a movement stepped by hand', () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { moving } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 400, world.clock),
+      usePlexTransition(
+        () => current.value,
+        () => undefined,
+        () => 400,
+        world.clock,
+      ),
     )
 
     current.value = neighbourhoods.leaf
@@ -70,7 +79,12 @@ describe('a movement stepped by hand', () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { frame } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 400, world.clock),
+      usePlexTransition(
+        () => current.value,
+        () => undefined,
+        () => 400,
+        world.clock,
+      ),
     )
 
     current.value = neighbourhoods.leaf
@@ -93,7 +107,12 @@ describe('when nothing should move', () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { frame, moving } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 0, world.clock),
+      usePlexTransition(
+        () => current.value,
+        () => undefined,
+        () => 0,
+        world.clock,
+      ),
     )
 
     current.value = neighbourhoods.leaf
@@ -108,7 +127,12 @@ describe('when nothing should move', () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { frame } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 0, world.clock),
+      usePlexTransition(
+        () => current.value,
+        () => undefined,
+        () => 0,
+        world.clock,
+      ),
     )
 
     current.value = neighbourhoods.leaf
@@ -145,7 +169,12 @@ describe('when the component goes away', () => {
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const scope = effectScope()
     scope.run(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 400, world.clock),
+      usePlexTransition(
+        () => current.value,
+        () => undefined,
+        () => 400,
+        world.clock,
+      ),
     )
 
     current.value = neighbourhoods.leaf

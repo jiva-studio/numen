@@ -5,7 +5,13 @@ import { computed, shallowRef, type Ref } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/entities/vault'
 import { EXACT, NO, YES, type PendingStep } from '../lib/step'
-import type { CommandInvocation, CommandTarget, NoteLookup, PaletteLists, PromptStep } from '../types'
+import type {
+  CommandInvocation,
+  CommandTarget,
+  NoteLookup,
+  PaletteLists,
+  PromptStep,
+} from '../types'
 import type { Words } from '../words'
 import type { NameMatch } from './search'
 import { isWebUrl } from '../lib/url'

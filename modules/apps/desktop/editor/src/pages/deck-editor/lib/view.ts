@@ -4,7 +4,10 @@
 import type { DeckCard, DeckSection, Stencil } from '@numen/ui'
 import type { StencilSummary, VaultCard } from '@/entities/deck'
 import type { BufferDeck } from '../types'
-import { serializeBufferCardsToVaultCards, serializeBufferSectionsToVaultSections } from './serialize'
+import {
+  serializeBufferCardsToVaultCards,
+  serializeBufferSectionsToVaultSections,
+} from './serialize'
 
 export const sectionsOf = (deck: BufferDeck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
@@ -12,7 +15,10 @@ export const sectionsOf = (deck: BufferDeck): readonly DeckSection[] =>
 /**
  * The cards as the grid draws them, each under the stencil its wikilink resolves to.
  */
-export const cardsOf = (deck: BufferDeck, offers: readonly StencilSummary[]): readonly DeckCard[] => {
+export const cardsOf = (
+  deck: BufferDeck,
+  offers: readonly StencilSummary[],
+): readonly DeckCard[] => {
   const titles = new Map(offers.map((offer) => [offer.path, offer.title]))
   return deck.cards.map((card) => ({
     id: card.id,
@@ -46,7 +52,8 @@ const getWrittenCards = (deck: BufferDeck): readonly Omit<VaultCard, 'heading'>[
 export const sameDeck = (one: BufferDeck, other: BufferDeck): boolean =>
   one.preamble === other.preamble &&
   one.tail === other.tail &&
-  JSON.stringify(serializeBufferSectionsToVaultSections(one)) === JSON.stringify(serializeBufferSectionsToVaultSections(other)) &&
+  JSON.stringify(serializeBufferSectionsToVaultSections(one)) ===
+    JSON.stringify(serializeBufferSectionsToVaultSections(other)) &&
   JSON.stringify(getWrittenCards(one)) === JSON.stringify(getWrittenCards(other))
 
 /**
@@ -55,7 +62,10 @@ export const sameDeck = (one: BufferDeck, other: BufferDeck): boolean =>
 export const applyHead = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
   const getHeading = (at: number): string => read.cards[at]?.heading ?? ''
   if (screen.cards.every((card, at) => card.heading === getHeading(at))) return screen
-  return { ...screen, cards: screen.cards.map((card, at) => ({ ...card, heading: getHeading(at) })) }
+  return {
+    ...screen,
+    cards: screen.cards.map((card, at) => ({ ...card, heading: getHeading(at) })),
+  }
 }
 
 /**
@@ -99,7 +109,10 @@ export const applyName = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
  * Whether two listings name the same stencils, in the same order and with the
  * same fields.
  */
-export const sameOffers = (one: readonly StencilSummary[], other: readonly StencilSummary[]): boolean =>
+export const sameOffers = (
+  one: readonly StencilSummary[],
+  other: readonly StencilSummary[],
+): boolean =>
   one.length === other.length &&
   one.every((offer, at) => {
     const against = other[at]

@@ -39,7 +39,11 @@ const put = (rows: readonly Row[], at: RowLanding, dragRows: readonly Row[]): re
   })
 
 /** The application's part: what a move comes to, in the rows it holds. */
-const moveRows = (rows: readonly Row[], dragIds: readonly RowId[], at: RowLanding): readonly Row[] => {
+const moveRows = (
+  rows: readonly Row[],
+  dragIds: readonly RowId[],
+  at: RowLanding,
+): readonly Row[] => {
   const held = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
   const left = dragIds.reduce((rest, row) => removeRow(rest, row), rows)
   return held.length ? put(left, at, held) : rows
@@ -353,7 +357,13 @@ export const DragsIntoARow: Story = {
     await dragTo(rowIn(canvasElement, 'loose'), middleOf(rowIn(canvasElement, 'work')))
 
     await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
-    await expect(getDrawnRows(canvasElement)).toStrictEqual(['work', 'plans', 'notes', 'loose', 'empty'])
+    await expect(getDrawnRows(canvasElement)).toStrictEqual([
+      'work',
+      'plans',
+      'notes',
+      'loose',
+      'empty',
+    ])
   },
 }
 
@@ -368,7 +378,13 @@ export const DragsBetweenRows: Story = {
       clientY: first.y + 1,
     })
 
-    await expect(getDrawnRows(canvasElement)).toStrictEqual(['loose', 'work', 'plans', 'notes', 'empty'])
+    await expect(getDrawnRows(canvasElement)).toStrictEqual([
+      'loose',
+      'work',
+      'plans',
+      'notes',
+      'empty',
+    ])
     await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('1')
   },
 }
@@ -434,7 +450,13 @@ export const DragsSeveralIntoARow: Story = {
   play: async ({ canvasElement }) => {
     await dragTo(rowIn(canvasElement, 'loose'), middleOf(rowIn(canvasElement, 'work')))
 
-    await expect(getDrawnRows(canvasElement)).toStrictEqual(['work', 'plans', 'notes', 'loose', 'empty'])
+    await expect(getDrawnRows(canvasElement)).toStrictEqual([
+      'work',
+      'plans',
+      'notes',
+      'loose',
+      'empty',
+    ])
     await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
     await expect(canvasElement.querySelector('.tree__dragged')).toBeNull()
   },

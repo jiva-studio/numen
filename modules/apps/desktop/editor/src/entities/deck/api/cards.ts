@@ -36,7 +36,10 @@ export const deckService: DeckService = {
       path,
       preamble: deck.preamble,
       cards: deck.cards.map(serializeCardToWire),
-      sections: deck.sections.map((section) => ({ name: section.name, preamble: section.preamble })),
+      sections: deck.sections.map((section) => ({
+        name: section.name,
+        preamble: section.preamble,
+      })),
       tail: deck.tail,
       ...(seen === null ? {} : { seen: fingerprint(seen) }),
     })

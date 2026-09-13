@@ -96,9 +96,9 @@ defineExpose({
     :class="
       cn(
         'flex w-full items-center justify-between gap-2',
-        'h-action rounded-tight border border-field-rule bg-field px-2',
-        'font-sans text-base leading-none text-ink text-left',
-        'cursor-pointer outline-none transition-colors duration-100 ease-numen',
+        'h-action rounded-tight border-field-rule bg-field border px-2',
+        'text-ink text-left font-sans text-base leading-none',
+        'ease-numen cursor-pointer transition-colors duration-100 outline-none',
         'hover:border-rule',
         'focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',

@@ -49,10 +49,12 @@ type Render = NonNullable<Story['render']>
  * Every story holds its own text, as the application would: the composer says
  * what was written and leaves clearing it to whoever answers.
  */
-const renderComposers = (...starts: string[]): Render => (args) => ({
-  components: { MessageComposer },
-  setup: () => ({ args, texts: starts.map((start) => ref(start)) }),
-  template: `
+const renderComposers =
+  (...starts: string[]): Render =>
+  (args) => ({
+    components: { MessageComposer },
+    setup: () => ({ args, texts: starts.map((start) => ref(start)) }),
+    template: `
     <div class="numen flex w-[420px] max-w-[calc(100vw-2rem)] flex-col gap-4">
       <MessageComposer
         v-for="(text, index) in texts"
@@ -62,7 +64,7 @@ const renderComposers = (...starts: string[]): Render => (args) => ({
       />
     </div>
   `,
-})
+  })
 
 /** Empty, and with a line in it. Turn `working` on for the disc that stops. */
 export const Playground: Story = {

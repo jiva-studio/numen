@@ -12,7 +12,8 @@ import { WORDS as words } from '@/entities/media'
 
 // The player is framed from the socket this run opened, which is the address a
 // host is told is holding it.
-const EMBED = 'http://127.0.0.1:9/token/embed/https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ'
+const EMBED =
+  'http://127.0.0.1:9/token/embed/https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ'
 
 describe('an address something plays', () => {
   // The address is composed where the socket that serves the player is open,

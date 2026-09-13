@@ -278,9 +278,7 @@ describe('the title a line carries while the picture moves', () => {
     const marked: PlexFrame = {
       ...from,
       edges: from.edges.map((edge) =>
-        edge.to === 'b'
-          ? { ...edge, heading: 'against' as const, words: 'went that way…' }
-          : edge,
+        edge.to === 'b' ? { ...edge, heading: 'against' as const, words: 'went that way…' } : edge,
       ),
     }
     const going = interpolatePlex(marked, to, 0.5).edges.find((e) => e.to === 'b')!
@@ -332,9 +330,7 @@ describe('the frame the viewport is fitted to', () => {
 
 describe('a frame is decided by its inputs and nothing else', () => {
   it('gives the same numbers for the same moment', () => {
-    expect(interpolatePlex(from, to, 0.37)).toStrictEqual(
-      interpolatePlex(from, to, 0.37),
-    )
+    expect(interpolatePlex(from, to, 0.37)).toStrictEqual(interpolatePlex(from, to, 0.37))
   })
 
   it('reports what the new arrangement left out, not the old one', () => {

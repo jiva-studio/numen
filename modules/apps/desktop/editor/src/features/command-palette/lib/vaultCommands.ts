@@ -16,7 +16,13 @@ export const vaultCommandsOf = (words: Words, agent: string): readonly Command[]
     needs: 'picking',
     isOffered: (at) => at.ready,
   },
-  { id: 'openVault', text: words.openVault, group: 'vault', needs: 'vaults', isOffered: isOnAnything },
+  {
+    id: 'openVault',
+    text: words.openVault,
+    group: 'vault',
+    needs: 'vaults',
+    isOffered: isOnAnything,
+  },
   {
     id: 'newVault',
     text: words.newVault,

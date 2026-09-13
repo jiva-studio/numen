@@ -292,11 +292,7 @@ describe('which half of a pair the tokens are read as', () => {
     one.worn.previewItem('mode:dark')
     await settle()
 
-    expect(getHeadStyles(one.sheet)).toStrictEqual([
-      ':root { color-scheme: dark; }',
-      SERVED,
-      SIZED,
-    ])
+    expect(getHeadStyles(one.sheet)).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
   })
 
   it('goes back to what the settings say once the keyboard stands nowhere', async () => {
@@ -333,7 +329,10 @@ describe('the themes the step offers', () => {
       shipping: ['preset:dracula', 'preset:numen'],
       owned: ['mine:sea'],
     })
-    expect(other.worn.getThemeGroups().map((group) => group.id)).toStrictEqual(['owned', 'shipping'])
+    expect(other.worn.getThemeGroups().map((group) => group.id)).toStrictEqual([
+      'owned',
+      'shipping',
+    ])
   })
 
   it('says on a row only what is true of that row: that it is the one worn', async () => {
@@ -408,8 +407,12 @@ describe('the sizes the two steps offer', () => {
   it('draws each in a group of its own, named for what that size moves', async () => {
     const one = await startWindow()
 
-    expect(one.worn.getSizeGroups(INTERFACE_SCALE).map((group) => group.title)).toStrictEqual([words.drawing])
-    expect(one.worn.getSizeGroups(TEXT_SCALE).map((group) => group.title)).toStrictEqual([words.setting])
+    expect(one.worn.getSizeGroups(INTERFACE_SCALE).map((group) => group.title)).toStrictEqual([
+      words.drawing,
+    ])
+    expect(one.worn.getSizeGroups(TEXT_SCALE).map((group) => group.title)).toStrictEqual([
+      words.setting,
+    ])
   })
 
   it('offers nothing at all until the application has said how far a size goes', async () => {
@@ -588,7 +591,9 @@ describe('the size that was chosen', () => {
     await one.worn.chooseItem('textScale:1.75')
 
     expect(one.chosen).toStrictEqual(['preset:numen system 1.25/1.75'])
-    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.25; --numen-text-scale: 1.75; }')
+    expect(sizes(one.sheet)).toBe(
+      ':root { --numen-interface-scale: 1.25; --numen-text-scale: 1.75; }',
+    )
   })
 
   it('says what the settings refused, and goes back to the size they hold', async () => {
@@ -635,11 +640,7 @@ describe('the row that was chosen', () => {
 
     expect(one.chosen).toStrictEqual(['preset:numen dark 1/1'])
     expect(one.worn.mode.value).toBe('dark')
-    expect(getHeadStyles(one.sheet)).toStrictEqual([
-      ':root { color-scheme: dark; }',
-      SERVED,
-      SIZED,
-    ])
+    expect(getHeadStyles(one.sheet)).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
   })
 
   it('says what the settings could not be written, and puts back what they hold', async () => {
@@ -706,9 +707,8 @@ describe('the person editing their own theme file', () => {
     await one.changeThemes('mine:sea')
 
     expect(one.listed()).toBe(2)
-    expect(one.worn.getThemeGroups().flatMap((group) => group.items.map((row) => row.id))).toStrictEqual([
-      'preset:numen',
-      'preset:dracula',
-    ])
+    expect(
+      one.worn.getThemeGroups().flatMap((group) => group.items.map((row) => row.id)),
+    ).toStrictEqual(['preset:numen', 'preset:dracula'])
   })
 })

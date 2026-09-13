@@ -56,8 +56,7 @@ export const ghostNode = (
  * A node that is not fully there is on its way in or out, and choosing it
  * would pick something the reader never saw.
  */
-export const isReachable = (node: PlacedNode): boolean =>
-  node.seat !== 'focus' && node.opacity >= 1
+export const isReachable = (node: PlacedNode): boolean => node.seat !== 'focus' && node.opacity >= 1
 
 /**
  * Whether the keyboard stops on a node.
@@ -83,8 +82,7 @@ export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
 export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 
 /** A title may be empty; an accessible name may not. */
-export const nameOf = (node: PlexNode): string =>
-  `${node.title || 'Untitled'}, ${node.seat}`
+export const nameOf = (node: PlexNode): string => `${node.title || 'Untitled'}, ${node.seat}`
 
 /**
  * Where the handle sits within a node: on its trailing edge, halfway down.

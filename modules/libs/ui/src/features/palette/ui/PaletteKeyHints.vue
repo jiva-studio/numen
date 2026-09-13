@@ -15,7 +15,7 @@ defineProps<{
 </script>
 
 <template>
-  <footer class="palette__keys flex items-center gap-3 text-small text-hushed">
+  <footer class="palette__keys text-small text-hushed flex items-center gap-3">
     <span v-for="one in hinted" :key="one.action.id" class="palette__key" data-palette="key">
       <KeyCap v-if="one.key" :keys="one.key" />
       {{ one.action.text }}

@@ -68,7 +68,7 @@ watch(
 
 <template>
   <section
-    class="pane numen flex min-h-0 min-w-0 flex-col bg-surface text-ink"
+    class="pane numen bg-surface text-ink flex min-h-0 min-w-0 flex-col"
     :data-workspace-pane="pane.id"
     :data-focused="focused || undefined"
     @pointerdown="claim"

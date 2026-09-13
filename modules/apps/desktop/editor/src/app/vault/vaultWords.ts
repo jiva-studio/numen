@@ -8,9 +8,7 @@ import {
   Unit as Units,
   VaultsErrorCode,
 } from '@numen/protocol'
-import type {
-  Vault as VaultMessage,
-} from '@numen/protocol'
+import type { Vault as VaultMessage } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
 import { namesOf } from '@numen/wire'
 import type { SearchMode } from '@/features/command-palette'
@@ -65,8 +63,7 @@ const unvaulted: Record<VaultsErrorCode, VaultErrorCode> = {
 
 export const getVaultError = (from: {
   error?: VaultsErrorCode | undefined
-}): VaultErrorCode | null =>
-  from.error === undefined ? null : (unvaulted[from.error] ?? null)
+}): VaultErrorCode | null => (from.error === undefined ? null : (unvaulted[from.error] ?? null))
 
 /**
  * What a client has left, in the words the window uses.

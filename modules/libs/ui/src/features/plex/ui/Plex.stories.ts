@@ -9,7 +9,12 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Plex from './Plex.vue'
-import { resolveOptions, rowsAndColumns, type Placement, type PlexOptionsInput } from '../lib/arrange'
+import {
+  resolveOptions,
+  rowsAndColumns,
+  type Placement,
+  type PlexOptionsInput,
+} from '../lib/arrange'
 import { optionsForType, useTypeSize } from '../model/sizing'
 import { DWELL } from '../model/dwell'
 import { type PlexPart } from '../lib/inside'
@@ -487,9 +492,7 @@ export const MakingOne: Story = {
 
     // Let go by hand: a second `userEvent.pointer` call does not know a button
     // is still down from the first, so its release is a no-op.
-    surface.dispatchEvent(
-      new PointerEvent('pointerup', { ...above, pointerId: 1, bubbles: true }),
-    )
+    surface.dispatchEvent(new PointerEvent('pointerup', { ...above, pointerId: 1, bubbles: true }))
     await expect(args.onCreate).toHaveBeenCalledWith(expect.any(String), 'parent')
 
     // No handle is left behind on the node it came from. Only a browser can
@@ -767,9 +770,7 @@ export const TitledLines: Story = {
     /** The line a title is set along, by the path it names. */
     const lineOf = (text: SVGTextElement) => {
       const href = text.querySelector('textPath')!.getAttribute('href')!
-      return canvasElement.querySelector<SVGPathElement>(
-        `defs path[id="${href.slice(1)}"]`,
-      )!
+      return canvasElement.querySelector<SVGPathElement>(`defs path[id="${href.slice(1)}"]`)!
     }
 
     // The window is measured after the first drawing, so the plex settles on
@@ -780,24 +781,20 @@ export const TitledLines: Story = {
 
     // Every title is set along the line it belongs to, and none of them is
     // drawn wider than the curve it is set on.
-    const titles = [
-      ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label'),
-    ]
+    const titles = [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')]
     await expect(titles.length).toBeGreaterThan(0)
     for (const text of titles) {
       await expect(text.querySelector('textPath')).not.toBeNull()
-      await expect(text.getComputedTextLength()).toBeLessThanOrEqual(
-        lineOf(text).getTotalLength(),
-      )
+      await expect(text.getComputedTextLength()).toBeLessThanOrEqual(lineOf(text).getTotalLength())
     }
 
     // Words longer than their curve are cut to it and end in an ellipsis.
     await expect(title('the minutes of the meeting')).toHaveLength(0)
     const cut = titles.filter((text) => text.textContent!.endsWith('…'))
     await expect(cut).toHaveLength(2)
-    await expect(
-      'the minutes of the meeting'.startsWith(cut[0]!.textContent!.slice(0, -1)),
-    ).toBe(true)
+    await expect('the minutes of the meeting'.startsWith(cut[0]!.textContent!.slice(0, -1))).toBe(
+      true,
+    )
 
     // A title is painted in two layers that land on one another.
     const [halo, letters] = title('contains')
@@ -813,32 +810,24 @@ export const TitledLines: Story = {
     const drawn = canvasElement
       .querySelector(`defs path[id="${along.slice(1)}"]`)!
       .getAttribute('d')
-    const band = [
-      ...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit'),
-    ].find((line) => line.getAttribute('d') === drawn)
+    const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
+      (line) => line.getAttribute('d') === drawn,
+    )
     await userEvent.hover(band!)
 
-    const lifted = canvasElement.querySelectorAll<SVGTextElement>(
-      '.plex__lift .plex__edge-label',
-    )
+    const lifted = canvasElement.querySelectorAll<SVGTextElement>('.plex__lift .plex__edge-label')
     await expect(lifted).toHaveLength(2)
     await expect(getComputedStyle(lifted[0]!).fill).toBe('none')
     await expect(getComputedStyle(lifted[1]!).stroke).toBe('none')
-    await expect(parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(
-      haloAtRest,
-    )
-    await expect(lifted[0]!.getComputedTextLength()).toBe(
-      lifted[1]!.getComputedTextLength(),
-    )
+    await expect(parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(haloAtRest)
+    await expect(lifted[0]!.getComputedTextLength()).toBe(lifted[1]!.getComputedTextLength())
     await userEvent.unhover(band!)
 
     // A jump that leaves its column and comes round is set along its line like
     // any other, and its words are short enough to stay whole.
     const loop = title('see also')[0]!
     await expect(loop.querySelector('textPath')).not.toBeNull()
-    await expect(loop.getComputedTextLength()).toBeLessThan(
-      lineOf(loop).getTotalLength(),
-    )
+    await expect(loop.getComputedTextLength()).toBeLessThan(lineOf(loop).getTotalLength())
   },
 }
 
@@ -911,8 +900,8 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     words: text.textContent,
     letters: lettersOf(text),
   }))
-  const boxes = [...canvasElement.querySelectorAll<SVGRectElement>('.plex__box')].map(
-    (box) => box.getBoundingClientRect(),
+  const boxes = [...canvasElement.querySelectorAll<SVGRectElement>('.plex__box')].map((box) =>
+    box.getBoundingClientRect(),
   )
 
   const piled: string[] = []
@@ -1006,23 +995,17 @@ export const ArrowedLines: Story = {
 
     /** Whether a box holds a point, give or take a pixel. */
     const hasPoint = (box: DOMRect, at: DOMPoint) =>
-      at.x >= box.left - 1 &&
-      at.x <= box.right + 1 &&
-      at.y >= box.top - 1 &&
-      at.y <= box.bottom + 1
+      at.x >= box.left - 1 && at.x <= box.right + 1 && at.y >= box.top - 1 && at.y <= box.bottom + 1
 
     /** Every line drawn, with both its ends where they land on the screen. */
     const lines = () => {
       const onScreen = svg.getScreenCTM()!
-      return [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge')].map(
-        (line) => ({
-          line,
-          ends: [
-            line.getPointAtLength(0),
-            line.getPointAtLength(line.getTotalLength()),
-          ].map((point) => point.matrixTransform(onScreen)),
-        }),
-      )
+      return [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge')].map((line) => ({
+        line,
+        ends: [line.getPointAtLength(0), line.getPointAtLength(line.getTotalLength())].map(
+          (point) => point.matrixTransform(onScreen),
+        ),
+      }))
     }
 
     /** The line that touches a node's box, and the end of it that does. */
@@ -1037,9 +1020,7 @@ export const ArrowedLines: Story = {
 
     const endAt = (name: string) => lineAt(name).end
 
-    const heads = () => [
-      ...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-arrow'),
-    ]
+    const heads = () => [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-arrow')]
 
     /** Whether an arrowhead was drawn on a given end of a line. */
     const headAt = (end: DOMPoint) =>
@@ -1095,9 +1076,9 @@ export const ArrowedLines: Story = {
     // The title on that line is cut short of the head, at either end of the
     // words: neither the letters nor the halo under them reach it.
     const clear = Math.max(drawn.width, drawn.height)
-    const title = [
-      ...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label'),
-    ].find((text) => text.textContent!.startsWith('the oldest'))!
+    const title = [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].find(
+      (text) => text.textContent!.startsWith('the oldest'),
+    )!
     const letters = title.getNumberOfChars()
     const onScreen = svg.getScreenCTM()!
     for (const glyph of [
@@ -1110,14 +1091,12 @@ export const ArrowedLines: Story = {
 
     // The hand on that line lifts it, and the head is brightened with it.
     const resting = getComputedStyle(head).fill
-    const band = [
-      ...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit'),
-    ].find((line) => line.getAttribute('d') === jump.line.getAttribute('d'))!
+    const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
+      (line) => line.getAttribute('d') === jump.line.getAttribute('d'),
+    )!
     await userEvent.hover(band)
 
-    const lifted = canvasElement.querySelector<SVGPathElement>(
-      '.plex__lift .plex__edge-arrow',
-    )!
+    const lifted = canvasElement.querySelector<SVGPathElement>('.plex__lift .plex__edge-arrow')!
     await expect(lifted).not.toBeNull()
     await expect(getComputedStyle(lifted).fill).not.toBe(resting)
   },
@@ -1163,7 +1142,9 @@ export const RestingOnATitle: Story = {
     await waitFor(async () => await expect(widthOf(node)).toBeGreaterThan(placed), {
       timeout: 3000,
     })
-    await waitFor(async () => await expect(words.scrollWidth).toBeLessThanOrEqual(words.clientWidth))
+    await waitFor(
+      async () => await expect(words.scrollWidth).toBeLessThanOrEqual(words.clientWidth),
+    )
 
     // Nothing else moved for it, and it stands over what it now covers.
     await expect(beside.getBoundingClientRect().x).toBe(nextDoor)
@@ -1183,7 +1164,7 @@ export const RestingOnATitle: Story = {
 export const Walk: Story = {
   args: {
     neighbourhood: neighbourhoodOf(walkStart),
-    gap: 18
+    gap: 18,
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
@@ -1314,8 +1295,7 @@ export const PartsInside: Story = {
 
     // The nesting is drawn by setting a part in, and the deeper of them stands
     // further in than the one it sits under.
-    const setIn = (part: Element) =>
-      Number.parseFloat(getComputedStyle(part).paddingInlineStart)
+    const setIn = (part: Element) => Number.parseFloat(getComputedStyle(part).paddingInlineStart)
     const [first, second, third] = partsOf(focus)
     await expect(setIn(second!)).toBeGreaterThan(setIn(first!))
     await expect(setIn(third!)).toBeGreaterThan(setIn(second!))
@@ -1343,19 +1323,17 @@ export const PartsInside: Story = {
     // Said in lines, which is one part the line. A hand on a trackpad speaks
     // in pixels and scrolls when they come to a part's height.
     const wheel = (deltaY: number) =>
-      many.querySelector('.plex__inside')!.dispatchEvent(
-        new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
-      )
+      many
+        .querySelector('.plex__inside')!
+        .dispatchEvent(
+          new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
+        )
     wheel(1)
-    await waitFor(async () =>
-      await expect(partsOf(many)[0]!.textContent?.trim()).toBe('Section 2'),
-    )
+    await waitFor(async () => await expect(partsOf(many)[0]!.textContent?.trim()).toBe('Section 2'))
     await expect(arrows()).toHaveLength(2)
 
     wheel(-1)
-    await waitFor(async () =>
-      await expect(partsOf(many)[0]!.textContent?.trim()).toBe('Section 1'),
-    )
+    await waitFor(async () => await expect(partsOf(many)[0]!.textContent?.trim()).toBe('Section 1'))
 
     // Choosing a part is not choosing the node it hangs from: the plex stays
     // where it is standing.

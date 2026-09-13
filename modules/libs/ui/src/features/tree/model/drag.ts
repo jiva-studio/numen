@@ -16,7 +16,12 @@ import type { Row, RowId, ShownRow } from '../lib/row'
 /** The tree as it stands on screen, which only the drawing knows. */
 export interface TreeMetrics {
   /** What the tree takes up: a drop lands only over it. */
-  readonly over: { readonly left: number; readonly right: number; readonly top: number; readonly bottom: number }
+  readonly over: {
+    readonly left: number
+    readonly right: number
+    readonly top: number
+    readonly bottom: number
+  }
   /** Where the rows begin, down the window. */
   readonly top: number
   /** How tall one row stands. */
@@ -95,10 +100,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     // A pointer that has left the tree is taking what it holds somewhere else.
     const { over } = drawn
     const inside =
-      where.x >= over.left &&
-      where.x <= over.right &&
-      where.y >= over.top &&
-      where.y <= over.bottom
+      where.x >= over.left && where.x <= over.right && where.y >= over.top && where.y <= over.bottom
     if (!inside) return null
 
     const shown = options.getShownRows()

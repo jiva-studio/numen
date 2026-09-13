@@ -2,14 +2,7 @@
  * What the notices in the corner decide, as plain values.
  */
 import { describe, expect, it } from 'vitest'
-import {
-  PER_WORD,
-  SETTLE,
-  arrivals,
-  dwellOf,
-  getFinishedNotices,
-  getShownNotices,
-} from './dwell'
+import { PER_WORD, SETTLE, arrivals, dwellOf, getFinishedNotices, getShownNotices } from './dwell'
 import { foldNotices } from './fold'
 import { measureMovement, type Movement } from './movement'
 import { getStillAway, readable, tallyOf, type Notice } from './notice'
@@ -95,9 +88,9 @@ describe('how long work runs before it is worth a card', () => {
 
   it('draws it once the work has lasted', () => {
     const arrived = arrivals(new Map(), embedding, 1000)
-    expect(getShownNotices(embedding, arrived, new Set(), 11_000, 10_000).map((each) => each.id)).toEqual([
-      'embedding',
-    ])
+    expect(
+      getShownNotices(embedding, arrived, new Set(), 11_000, 10_000).map((each) => each.id),
+    ).toEqual(['embedding'])
   })
 
   it('draws nothing it was never told the arrival of', () => {
@@ -115,7 +108,9 @@ describe('a notice somebody asked for', () => {
     // not hear them.
     const arrived = arrivals(new Map(), [asked, behind], 0)
 
-    expect(getShownNotices([asked, behind], arrived, new Set(), 0).map((one) => one.id)).toEqual(['reading'])
+    expect(getShownNotices([asked, behind], arrived, new Set(), 0).map((one) => one.id)).toEqual([
+      'reading',
+    ])
   })
 
   it('is put away like any other', () => {
@@ -141,13 +136,21 @@ describe('how long something said stands to be read', () => {
     const said: Notice = { id: 'renamed', says: 'Renamed', stay: 'read' }
     const arrived = arrivals(new Map(), [said], 1000)
 
-    expect(getShownNotices([said], arrived, new Set(), 1000).map((each) => each.id)).toEqual(['renamed'])
-    expect(getShownNotices([said], arrived, new Set(), 1000 + SETTLE + PER_WORD - 1)).toHaveLength(1)
+    expect(getShownNotices([said], arrived, new Set(), 1000).map((each) => each.id)).toEqual([
+      'renamed',
+    ])
+    expect(getShownNotices([said], arrived, new Set(), 1000 + SETTLE + PER_WORD - 1)).toHaveLength(
+      1,
+    )
     expect(getShownNotices([said], arrived, new Set(), 1000 + SETTLE + PER_WORD)).toEqual([])
   })
 
   it('stands until it is put away where it was not asked to be read in passing', () => {
-    const kept: Notice = { id: 'occupied', says: 'A note of that name is filed there', stay: 'kept' }
+    const kept: Notice = {
+      id: 'occupied',
+      says: 'A note of that name is filed there',
+      stay: 'kept',
+    }
     const arrived = arrivals(new Map(), [kept], 0)
 
     expect(getShownNotices([kept], arrived, new Set(), 10_000_000).map((each) => each.id)).toEqual([
@@ -183,7 +186,10 @@ describe('how many cards stand at once', () => {
   const word = (id: string): Notice => ({ id, says: 'Renamed', stay: 'read' })
 
   it('folds nothing while there is room', () => {
-    expect(foldNotices([work('a'), word('b')], 4)).toEqual({ shown: [work('a'), word('b')], over: 0 })
+    expect(foldNotices([work('a'), word('b')], 4)).toEqual({
+      shown: [work('a'), word('b')],
+      over: 0,
+    })
   })
 
   it('folds the oldest of what has been said, and counts them', () => {

@@ -32,7 +32,10 @@ export interface BufferStencil extends Surrounds {
 export const NO_STENCIL: BufferStencil = { fields: [], preamble: '', faces: [], tail: '' }
 
 /** A stencil as the vault read it, each face under an identity this window mints. */
-export const stencilOf = (read: VaultStencil, generateFaceId: IdMaker = generateId): BufferStencil => ({
+export const stencilOf = (
+  read: VaultStencil,
+  generateFaceId: IdMaker = generateId,
+): BufferStencil => ({
   fields: read.fields,
   preamble: read.preamble,
   faces: read.faces.map((face) => ({
@@ -65,7 +68,8 @@ export const stencilBodyOf = (stencil: BufferStencil): string =>
   })
 
 /** The stencil a string stands for. A string holding nothing names no field. */
-export const stencilIn = (body: string): BufferStencil => (body ? (JSON.parse(body) as BufferStencil) : NO_STENCIL)
+export const stencilIn = (body: string): BufferStencil =>
+  body ? (JSON.parse(body) as BufferStencil) : NO_STENCIL
 
 /** The faces of a stencil, in the shape the vault takes them. */
 export const facesOf = (stencil: BufferStencil): readonly VaultFace[] =>
@@ -94,7 +98,11 @@ export const removeField = (stencil: BufferStencil, field: string): BufferStenci
  * Move a field to another place in the order. The first field names every card
  * the stencil cuts, so it stays first and nothing lands above it.
  */
-export const moveField = (stencil: BufferStencil, field: string, at: InsertionPoint): BufferStencil => ({
+export const moveField = (
+  stencil: BufferStencil,
+  field: string,
+  at: InsertionPoint,
+): BufferStencil => ({
   ...stencil,
   fields: reorderFields(stencil.fields, field, at),
 })

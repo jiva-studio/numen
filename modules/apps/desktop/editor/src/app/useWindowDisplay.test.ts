@@ -195,7 +195,11 @@ describe('the stream of changes', () => {
       getInitialOpenPath: async () => ({ path: opens }),
       watchVaultChanges: async function* () {
         opens = 'Renamed.md'
-        yield { paths: [], shouldReload: false, renamed: [{ from: 'Opening.md', to: 'Renamed.md' }] }
+        yield {
+          paths: [],
+          shouldReload: false,
+          renamed: [{ from: 'Opening.md', to: 'Renamed.md' }],
+        }
       },
     })
     const one = createDisplay(core)
@@ -289,9 +293,10 @@ describe('another vault under this window', () => {
     /** The folder the vault stands at: the first read is the page's own. */
     const folders = ['/vaults/Physics']
     const one = createWindow(
-      createReloadingCore(async () => ({ ...settled, path: folders.shift() ?? '/vaults/Heat' }), [
-        'Heat.md',
-      ]),
+      createReloadingCore(
+        async () => ({ ...settled, path: folders.shift() ?? '/vaults/Heat' }),
+        ['Heat.md'],
+      ),
     )
 
     await one.window.start()

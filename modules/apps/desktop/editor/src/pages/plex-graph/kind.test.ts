@@ -78,8 +78,7 @@ const window = (opening = 'Opening.md') => {
   }
   const onScreen = () => panesOf(held.layout.value.root).flatMap((pane) => pane.tabs)
   /** The tab the person is in, which is the active tab of the pane they are in. */
-  const active = () =>
-    paneById(held.layout.value.root, held.layout.value.focus)?.active ?? ''
+  const active = () => paneById(held.layout.value.root, held.layout.value.focus)?.active ?? ''
   /** A tab holding no plex, opened in front of the person. */
   const elsewhere = () => held.openTabOfKind(other.kind)
   return {

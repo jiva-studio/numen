@@ -244,7 +244,8 @@ const window = (
 }
 
 /** One command carried out over the note in front. */
-const carry = async (invocation: CommandInvocation, on: CommandDeps) => runInvocation(invocation, on, words)
+const carry = async (invocation: CommandInvocation, on: CommandDeps) =>
+  runInvocation(invocation, on, words)
 
 describe('every command that is offered', () => {
   it('is carried out by something', async () => {

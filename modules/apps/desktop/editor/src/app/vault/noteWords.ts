@@ -1,25 +1,14 @@
 /**
  * Note domain conversions between schema representations and window models.
  */
-import {
-  NamedBy,
-  NoteType as NoteTypes,
-  Role as Roles,
-  Seat as Seats,
-} from '@numen/protocol'
+import { NamedBy, NoteType as NoteTypes, Role as Roles, Seat as Seats } from '@numen/protocol'
 import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
 } from '@numen/protocol'
 import { namesOf } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
-import type {
-  Link,
-  Neighbourhood,
-  NoteResult,
-  Role,
-  Seat,
-} from '@/entities/note'
+import type { Link, Neighbourhood, NoteResult, Role, Seat } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 
 /**

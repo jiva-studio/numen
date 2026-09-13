@@ -111,7 +111,7 @@ function onDismiss() {
 
 function onBack() {
   if (props.commands.open.value && props.commands.goBack()) {
-    ;props.search.setOpen(true)
+    props.search.setOpen(true)
   }
 }
 

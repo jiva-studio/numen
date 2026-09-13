@@ -20,7 +20,11 @@ export type NoteErrorCode =
 /**
  * The errors a keystroke is worth trying again after.
  */
-export const MENDABLE_ERRORS: readonly NoteErrorCode[] = ['tooLarge', 'bodyUnwritable', 'unreachable']
+export const MENDABLE_ERRORS: readonly NoteErrorCode[] = [
+  'tooLarge',
+  'bodyUnwritable',
+  'unreachable',
+]
 
 /** A note that moved to a new path. */
 export interface Move {

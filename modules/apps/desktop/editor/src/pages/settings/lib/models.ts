@@ -25,7 +25,10 @@ export interface Words {
  */
 export const nameOf = (value: string): string => {
   const said = value.split(/[?#]/, 1)[0] ?? ''
-  const last = said.split('/').filter((one) => one.length > 0).at(-1)
+  const last = said
+    .split('/')
+    .filter((one) => one.length > 0)
+    .at(-1)
   return last ?? value
 }
 

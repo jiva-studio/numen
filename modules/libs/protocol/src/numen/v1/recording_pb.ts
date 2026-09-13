@@ -8,46 +8,50 @@
 // A recording of the vault and a video copied from an address are both played,
 // so both are answered here. The words heard in one are TranscriptService.
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Message } from "@bufbuild/protobuf";
+import type { GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
+import { fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file numen/v1/recording.proto.
  */
-export const file_numen_v1_recording: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9yZWNvcmRpbmcucHJvdG8SCG51bWVuLnYxIiMKE0dldFJlY29yZGluZ1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJfChRHZXRSZWNvcmRpbmdSZXNwb25zZRITCgtkdXJhdGlvbl9tcxgBIAEoBRIRCgltZWRpYV91cmwYAiABKAkSEgoKbWVkaWFfdHlwZRgDIAEoCRILCgN1cmwYBCABKAkyYQoQUmVjb3JkaW5nU2VydmljZRJNCgxHZXRSZWNvcmRpbmcSHS5udW1lbi52MS5HZXRSZWNvcmRpbmdSZXF1ZXN0Gh4ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+export const file_numen_v1_recording: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChhudW1lbi92MS9yZWNvcmRpbmcucHJvdG8SCG51bWVuLnYxIiMKE0dldFJlY29yZGluZ1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJfChRHZXRSZWNvcmRpbmdSZXNwb25zZRITCgtkdXJhdGlvbl9tcxgBIAEoBRIRCgltZWRpYV91cmwYAiABKAkSEgoKbWVkaWFfdHlwZRgDIAEoCRILCgN1cmwYBCABKAkyYQoQUmVjb3JkaW5nU2VydmljZRJNCgxHZXRSZWNvcmRpbmcSHS5udW1lbi52MS5HZXRSZWNvcmRpbmdSZXF1ZXN0Gh4ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw',
+  )
 
 /**
  * @generated from message numen.v1.GetRecordingRequest
  */
-export type GetRecordingRequest = Message<"numen.v1.GetRecordingRequest"> & {
+export type GetRecordingRequest = Message<'numen.v1.GetRecordingRequest'> & {
   /**
    * The file, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string;
-};
+  path: string
+}
 
 /**
  * Describes the message numen.v1.GetRecordingRequest.
  * Use `create(GetRecordingRequestSchema)` to create a new message.
  */
-export const GetRecordingRequestSchema: GenMessage<GetRecordingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_recording, 0);
+export const GetRecordingRequestSchema: GenMessage<GetRecordingRequest> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_recording, 0)
 
 /**
  * @generated from message numen.v1.GetRecordingResponse
  */
-export type GetRecordingResponse = Message<"numen.v1.GetRecordingResponse"> & {
+export type GetRecordingResponse = Message<'numen.v1.GetRecordingResponse'> & {
   /**
    * How long it runs. A recording nothing has transcribed runs nowhere, and the
    * player it is loaded into is what then says.
    *
    * @generated from field: int32 duration_ms = 1;
    */
-  durationMs: number;
+  durationMs: number
 
   /**
    * Where it is played from, and what it is played as. A media element speaks
@@ -58,27 +62,28 @@ export type GetRecordingResponse = Message<"numen.v1.GetRecordingResponse"> & {
    *
    * @generated from field: string media_url = 2;
    */
-  mediaUrl: string;
+  mediaUrl: string
 
   /**
    * @generated from field: string media_type = 3;
    */
-  mediaType: string;
+  mediaType: string
 
   /**
    * The web address a url points at. Empty on every other source.
    *
    * @generated from field: string url = 4;
    */
-  url: string;
-};
+  url: string
+}
 
 /**
  * Describes the message numen.v1.GetRecordingResponse.
  * Use `create(GetRecordingResponseSchema)` to create a new message.
  */
-export const GetRecordingResponseSchema: GenMessage<GetRecordingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_recording, 1);
+export const GetRecordingResponseSchema: GenMessage<GetRecordingResponse> =
+  /*@__PURE__*/
+  messageDesc(file_numen_v1_recording, 1)
 
 /**
  * RecordingService answers what a recording is, for whatever plays one.
@@ -97,10 +102,8 @@ export const RecordingService: GenService<{
    * @generated from rpc numen.v1.RecordingService.GetRecording
    */
   getRecording: {
-    methodKind: "unary";
-    input: typeof GetRecordingRequestSchema;
-    output: typeof GetRecordingResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_numen_v1_recording, 0);
-
+    methodKind: 'unary'
+    input: typeof GetRecordingRequestSchema
+    output: typeof GetRecordingResponseSchema
+  }
+}> = /*@__PURE__*/ serviceDesc(file_numen_v1_recording, 0)

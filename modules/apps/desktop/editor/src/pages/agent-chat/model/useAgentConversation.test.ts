@@ -152,7 +152,11 @@ describe('a link inside an answer', () => {
     const one = tab()
     const press = createPress()
 
-    one.state.followLink(turn('said', 'read https://example.com'), 'https://example.com', press.press)
+    one.state.followLink(
+      turn('said', 'read https://example.com'),
+      'https://example.com',
+      press.press,
+    )
 
     expect(press.was()).toBe(false)
     expect(one.opened).toEqual([])

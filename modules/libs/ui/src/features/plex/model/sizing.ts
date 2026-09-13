@@ -47,10 +47,8 @@ export const scaleOptions = (options: PlexOptions, by: number): PlexOptions => (
 })
 
 /** A plex drawn to hold a label set at this size. */
-export const optionsForType = (
-  type: number,
-  options: PlexOptions = DEFAULT_OPTIONS,
-): PlexOptions => scaleOptions(options, type > 0 ? type / DESIGNED_TYPE : 1)
+export const optionsForType = (type: number, options: PlexOptions = DEFAULT_OPTIONS): PlexOptions =>
+  scaleOptions(options, type > 0 ? type / DESIGNED_TYPE : 1)
 
 /** A box one em on a side, set in the type a node's label is set in. */
 const PROBE =

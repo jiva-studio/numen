@@ -36,7 +36,6 @@ describe('what state a composer is in', () => {
     expect(COMPOSER_STATES.ready.action).toBe('send')
     expect(COMPOSER_STATES.writing.action).toBe('stop')
   })
-
 })
 
 describe('what was said', () => {

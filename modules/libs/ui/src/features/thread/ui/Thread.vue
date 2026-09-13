@@ -50,7 +50,11 @@ const toFoot = (again = false) => {
   area.value.scrollTop = footOf(area.value)
 }
 
-watch(() => props.turns, () => toFoot(), { deep: true, flush: 'post' })
+watch(
+  () => props.turns,
+  () => toFoot(),
+  { deep: true, flush: 'post' },
+)
 
 onMounted(() => toFoot())
 
@@ -60,10 +64,10 @@ defineExpose({ toFoot })
 <template>
   <div
     ref="area"
-    class="thread numen flex min-h-0 flex-col gap-turn overflow-y-auto overscroll-contain font-sans text-base"
+    class="thread numen gap-turn flex min-h-0 flex-col overflow-y-auto overscroll-contain font-sans text-base"
     @scroll="onScroll"
   >
-    <p v-if="!placed.length" class="m-auto text-hushed">
+    <p v-if="!placed.length" class="text-hushed m-auto">
       <slot name="silence">Nothing said yet</slot>
     </p>
 

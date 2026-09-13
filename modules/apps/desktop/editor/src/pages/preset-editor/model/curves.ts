@@ -55,9 +55,7 @@ export const isSameGrid = (one: readonly number[], two: readonly number[]): bool
 
 /** Where the knob stands on a curve: the preset's own place, or the nearest. */
 export const getKnobPosition = (curve: Curve, settings: Settings, today: string): number =>
-  curve.now.at >= 0
-    ? curve.now.at
-    : Math.max(nearest(curve.grid, goalValue(settings, today)), 0)
+  curve.now.at >= 0 ? curve.now.at : Math.max(nearest(curve.grid, goalValue(settings, today)), 0)
 
 /** Applies a landed curve and updates the material counts. */
 export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {

@@ -97,5 +97,4 @@ defineSlots<{
   color: var(--numen-edge-label);
   font-size: var(--numen-text-1);
 }
-
 </style>

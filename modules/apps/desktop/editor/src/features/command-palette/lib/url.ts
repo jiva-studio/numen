@@ -9,10 +9,11 @@
 export const isWebUrl = (text: string): boolean => {
   try {
     const address = new URL(text.trim())
-    return (address.protocol === 'http:' || address.protocol === 'https:') && address.hostname !== ''
+    return (
+      (address.protocol === 'http:' || address.protocol === 'https:') && address.hostname !== ''
+    )
   } catch {
     // A string a URL cannot be constructed from is not a web url.
     return false
   }
 }
-

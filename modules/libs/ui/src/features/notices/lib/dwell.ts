@@ -43,11 +43,8 @@ export const arrivals = (
   new Map(readable(notices).map((notice) => [notice.id, was.get(notice.id) ?? at]))
 
 /** Whether a notice has stood long enough to have been read. */
-const isRead = (
-  notice: Notice,
-  firstSeen: ReadonlyMap<string, number>,
-  at: number,
-): boolean => at - (firstSeen.get(notice.id) ?? at) >= dwellOf(notice.says, notice.about)
+const isRead = (notice: Notice, firstSeen: ReadonlyMap<string, number>, at: number): boolean =>
+  at - (firstSeen.get(notice.id) ?? at) >= dwellOf(notice.says, notice.about)
 
 /** The notices drawn: the ones that have lasted, less the ones put away. */
 export const getShownNotices = (

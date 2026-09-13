@@ -230,9 +230,7 @@ describe('a file dragged out of the tree', () => {
   const getDragged = (window: VueWrapper) => window.findComponent(Plex).props('dragged')
 
   it('is what the plex draws a line to, though neither knows the other is there', async () => {
-    expect(getDragged(await dragRows(['physics/Entropy.md']))).toStrictEqual([
-      'physics/Entropy.md',
-    ])
+    expect(getDragged(await dragRows(['physics/Entropy.md']))).toStrictEqual(['physics/Entropy.md'])
   })
 
   it('is every note of the selection, all of them at once', async () => {
@@ -266,4 +264,3 @@ describe('a file dragged out of the tree', () => {
     expect(getDragged(await dragRows(['Cover.png', 'physics']))).toStrictEqual([])
   })
 })
-

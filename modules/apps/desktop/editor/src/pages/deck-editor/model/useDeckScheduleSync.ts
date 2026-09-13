@@ -36,7 +36,10 @@ export function useDeckScheduleSync(
 
   const scheduled = useDeckSchedule(presets, store)
 
-  const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[] = []): void => {
+  const applyPathChanges = (
+    paths: readonly string[],
+    renames: readonly PathRename[] = [],
+  ): void => {
     for (const went of renames) {
       scheduled.moveFile(went.from, went.to)
     }

@@ -176,7 +176,5 @@ export function resolveDestination(
   if (action === DOCUMENT) {
     return { at: 'document', ...named, start: hit.start, length: hit.length }
   }
-  return hit.line >= 0
-    ? { at: 'file', ...named, line: hit.line }
-    : { at: 'file', ...named }
+  return hit.line >= 0 ? { at: 'file', ...named, line: hit.line } : { at: 'file', ...named }
 }

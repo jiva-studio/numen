@@ -7,7 +7,13 @@
  * drawn again under a fresh identity.
  */
 import type { DeckProblem } from '@/entities/deck'
-import { deserializeBufferDeckFromString, applyHead, applyName, sameDeck, type BufferDeck } from '../lib/deck'
+import {
+  deserializeBufferDeckFromString,
+  applyHead,
+  applyName,
+  sameDeck,
+  type BufferDeck,
+} from '../lib/deck'
 import { createMarks, areMarksEqual, type Marks } from '@/entities/deck'
 
 /** The string a tab holds, and the file it stands at. */

@@ -44,7 +44,8 @@ const steps = async (says: AskAgentResponse[]): Promise<AgentStep[]> => {
   const read: AgentStep[] = []
   const port = agentPort(agent)
   const abort = new AbortController()
-  for await (const step of port.ask('why?', 'notes/Leaf mould.md', 'one', abort.signal)) read.push(step)
+  for await (const step of port.ask('why?', 'notes/Leaf mould.md', 'one', abort.signal))
+    read.push(step)
   return read
 }
 
@@ -52,7 +53,12 @@ describe('agentPort', () => {
   it('hands the question, the focus and the conversation to the service', async () => {
     const { agent, asked } = service([])
     const abort = new AbortController()
-    for await (const _ of agentPort(agent).ask('why?', 'notes/Leaf mould.md', 'one', abort.signal)) {
+    for await (const _ of agentPort(agent).ask(
+      'why?',
+      'notes/Leaf mould.md',
+      'one',
+      abort.signal,
+    )) {
       // The port is read to the end; what it yields is checked below.
     }
     expect(asked).toEqual([

@@ -68,7 +68,7 @@ describe('turning past the end of a document', () => {
   it('asks for the offset the next document begins at', async () => {
     const held = await reader()
 
-    expect(pressKey(held,'ArrowRight')).toBe(true)
+    expect(pressKey(held, 'ArrowRight')).toBe(true)
 
     expect(getMoves(held)).toEqual([CHAPTER.span.to])
   })
@@ -76,7 +76,7 @@ describe('turning past the end of a document', () => {
   it('asks for the offset before this document, turning back', async () => {
     const held = await reader()
 
-    expect(pressKey(held,'ArrowLeft')).toBe(true)
+    expect(pressKey(held, 'ArrowLeft')).toBe(true)
 
     expect(getMoves(held)).toEqual([CHAPTER.span.from - 1])
   })
@@ -95,8 +95,8 @@ describe('turning past the end of a document', () => {
     // key the book does not read is left to whatever else is listening.
     const held = await reader()
 
-    expect(pressKey(held,'Enter')).toBe(false)
-    expect(pressKey(held,'a')).toBe(false)
+    expect(pressKey(held, 'Enter')).toBe(false)
+    expect(pressKey(held, 'a')).toBe(false)
 
     expect(getMoves(held)).toHaveLength(0)
   })
@@ -195,7 +195,11 @@ describe('a link inside a book', () => {
 
 /** A document of three runs, the middle of them a spread along from the first. */
 const LAID = chapterOf(
-  [{ tag: 'p', text: 'Первая строка.' }, { tag: 'p', text: 'Вторая.' }, { tag: 'p', text: 'Третья.' }],
+  [
+    { tag: 'p', text: 'Первая строка.' },
+    { tag: 'p', text: 'Вторая.' },
+    { tag: 'p', text: 'Третья.' },
+  ],
   400,
 )
 
@@ -278,7 +282,7 @@ describe('a document the browser has laid out', () => {
   it('turns a spread at a time while spreads are left', async () => {
     const held = await mountBook()
 
-    expect(pressKey(held,'ArrowRight')).toBe(true)
+    expect(pressKey(held, 'ArrowRight')).toBe(true)
 
     expect(getTranslate(held)).toBe('-1100px 0')
     expect(getMoves(held)).toEqual([LAID.span.from + bytesIn('Первая строка.')])

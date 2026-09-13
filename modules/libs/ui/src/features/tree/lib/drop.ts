@@ -72,8 +72,7 @@ export function isRefused(
   const isInsideLifted = (children: readonly Row[], within: boolean): boolean =>
     children.some(
       (row) =>
-        (within && row.id === into) ||
-        isInsideLifted(row.rows ?? [], within || lifted.has(row.id)),
+        (within && row.id === into) || isInsideLifted(row.rows ?? [], within || lifted.has(row.id)),
     )
 
   return isInsideLifted(rows, false)

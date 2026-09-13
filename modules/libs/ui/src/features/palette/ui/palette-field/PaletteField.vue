@@ -49,10 +49,11 @@ defineExpose({ focus, select })
     <span
       v-if="crumb"
       :id="`${uid}-crumb`"
-      class="palette__crumb rounded-pill bg-bubble px-2 py-0.5 text-small"
+      class="palette__crumb rounded-pill bg-bubble text-small px-2 py-0.5"
       data-palette="crumb"
-      >{{ crumb }}</span
     >
+      {{ crumb }}
+    </span>
     <input
       ref="field"
       v-model="typed"

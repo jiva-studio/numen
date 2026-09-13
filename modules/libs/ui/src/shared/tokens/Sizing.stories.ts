@@ -36,11 +36,7 @@ const CHROME = [
 const READING = ['--numen-reading-size', '--numen-prose-size'] as const
 
 /** What follows neither: one line, whatever it separates. */
-const NEITHER = [
-  '--numen-stroke',
-  '--numen-ring-width',
-  '--numen-edge-width',
-] as const
+const NEITHER = ['--numen-stroke', '--numen-ring-width', '--numen-edge-width'] as const
 
 type Token = (typeof CHROME)[number] | (typeof READING)[number] | (typeof NEITHER)[number]
 

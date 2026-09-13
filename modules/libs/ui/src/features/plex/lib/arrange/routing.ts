@@ -62,16 +62,11 @@ export const MIDDLE = 0.5
  * the ellipsis included. The prefix is found by halving, and a curve with room
  * for nothing carries the ellipsis alone.
  */
-export function cutToFit(
-  label: string,
-  room: number,
-  width: (label: string) => number,
-): string {
+export function cutToFit(label: string, room: number, width: (label: string) => number): string {
   if (width(label) <= room) return label
 
   const letters = [...label]
-  const truncateTo = (count: number) =>
-    `${letters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
+  const truncateTo = (count: number) => `${letters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
 
   let fits = 0
   let over = letters.length
@@ -106,9 +101,7 @@ function isSeparated(a: PlacedNode, b: PlacedNode, vertical: boolean): boolean {
 
 /** Which way an edge runs: down the picture, or across it. */
 function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): boolean {
-  const declared = [routing.axisOf(from), routing.axisOf(to)].find(
-    (axis) => axis !== 'auto',
-  )
+  const declared = [routing.axisOf(from), routing.axisOf(to)].find((axis) => axis !== 'auto')
   const wanted =
     declared === 'vertical' ||
     (declared === undefined && Math.abs(to.y - from.y) >= Math.abs(to.x - from.x))
@@ -165,11 +158,7 @@ function curveBetween(
  * The words a curve carries. A title is set about the middle of its line and an
  * arrowhead sits on one end, so a line carrying one has room for fewer words.
  */
-function cutLabel(
-  edge: PlexEdge,
-  curve: EdgeCurve,
-  routing: Routing,
-): string | undefined {
+function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | undefined {
   if (edge.label === undefined || !routing.labelWidth) return edge.label
   const room = lengthOf(curve) - (edge.arrow ? 2 * routing.arrowRoom : 0)
   return cutToFit(edge.label, room, routing.labelWidth)

@@ -51,7 +51,12 @@ const HANDLERS: Record<string, CommandHandler> = {
   remove: (invocation, on, words) => removeFiles(invocation, false, on, words),
   destroy: (invocation, on, words) => removeFiles(invocation, true, on, words),
   transcribe: async (invocation, on, words) =>
-    reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'transcript'), on, words),
+    reportOutcome(
+      invocation,
+      await on.runs.createArtifact(invocation.file, 'transcript'),
+      on,
+      words,
+    ),
   recognise: async (invocation, on, words) =>
     reportOutcome(invocation, await on.runs.createArtifact(invocation.file, 'ocr'), on, words),
   downloadText: async (invocation, on, words) =>
@@ -99,7 +104,11 @@ const HANDLERS: Record<string, CommandHandler> = {
 }
 
 /** A command carried out. Nothing chosen does nothing at all. */
-export async function runInvocation(invocation: CommandInvocation | null, on: CommandDeps, words: AnswerWords): Promise<void> {
+export async function runInvocation(
+  invocation: CommandInvocation | null,
+  on: CommandDeps,
+  words: AnswerWords,
+): Promise<void> {
   if (!invocation) return
   const handler = HANDLERS[invocation.id]
   if (!handler) return
@@ -111,8 +120,6 @@ export async function runInvocation(invocation: CommandInvocation | null, on: Co
   }
 }
 
-
-
 /** What an artifact stands at when the ask did not come off, which is said as an error. */
 const ERROR_STATES: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'failed']
 
@@ -122,7 +129,12 @@ const ERROR_STATES: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'fai
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
  */
-const reportOutcome = (invocation: CommandInvocation, outcome: Outcome, on: RunContext & Voice, words: AnswerWords): void => {
+const reportOutcome = (
+  invocation: CommandInvocation,
+  outcome: Outcome,
+  on: RunContext & Voice,
+  words: AnswerWords,
+): void => {
   if (!outcome.able) {
     on.runSupport.cannotRun(invocation.id)
     return on.writeMessage(words.unrunnable, 'error')
@@ -133,17 +145,21 @@ const reportOutcome = (invocation: CommandInvocation, outcome: Outcome, on: RunC
   // A run over an address is its own answer: it fetches whenever it is asked,
   // and what it fetched is not what a model heard in a recording.
   const why =
-    invocation.id === 'downloadText' ? words.fetched[outcome.made] : words.made[outcome.of][outcome.made]
+    invocation.id === 'downloadText'
+      ? words.fetched[outcome.made]
+      : words.made[outcome.of][outcome.made]
   const said = outcome.error ? `${why} ${outcome.error}` : why
   on.writeMessage(said, ERROR_STATES.includes(outcome.made) ? 'error' : 'report')
 }
-
 
 /**
  * The files one invocation is over: the one it names, and the rest of the selection it
  * was asked over.
  */
-const getInvocationPaths = (invocation: CommandInvocation): readonly string[] => [invocation.path, ...invocation.others]
+const getInvocationPaths = (invocation: CommandInvocation): readonly string[] => [
+  invocation.path,
+  ...invocation.others,
+]
 
 /**
  * Files taken out of the vault. A file that has gone is gone from the tree, so
@@ -185,5 +201,3 @@ const removeFiles = async (
 }
 
 export * from './noteHandlers'
-
-

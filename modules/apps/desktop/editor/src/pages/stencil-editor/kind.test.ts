@@ -342,9 +342,7 @@ describe('a stencil the vault refused', () => {
 describe('what is wrong with a stencil', () => {
   it('stands against the face it was read against', async () => {
     const { tab } = await open({
-      problems: [
-        { fault: 'faceMissingASide', card: null, face: 0, field: '', text: 'no back' },
-      ],
+      problems: [{ fault: 'faceMissingASide', card: null, face: 0, field: '', text: 'no back' }],
     })
 
     const face = tab.stencil.value.faces[0]?.id ?? ''

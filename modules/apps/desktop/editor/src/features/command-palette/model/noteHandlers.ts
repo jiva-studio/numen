@@ -33,7 +33,11 @@ export const settleTab = async (path: string, on: TabContext): Promise<SettleRes
 }
 
 /** A note travelled to, and a vault with none to travel to said. */
-export const navigateToPath = async (path: string, on: TabContext & Voice, words: AnswerWords): Promise<void> => {
+export const navigateToPath = async (
+  path: string,
+  on: TabContext & Voice,
+  words: AnswerWords,
+): Promise<void> => {
   if (!path) return on.writeMessage(words.nowhere, 'caution')
   await on.goes.travel(path)
 }
@@ -59,7 +63,11 @@ export const createNoteCommand = async (
  * A note given a different name, and its file renamed with it where the two are
  * one name. Prose on disk that nobody here has seen leaves the note as it is.
  */
-export const renameNoteCommand = async (invocation: CommandInvocation, on: CommandDeps, words: AnswerWords): Promise<void> => {
+export const renameNoteCommand = async (
+  invocation: CommandInvocation,
+  on: CommandDeps,
+  words: AnswerWords,
+): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.title) return
   const tab = await settleTab(invocation.path, on)
   if (tab.waiting) return on.writeMessage(words.unanswered, 'caution')
@@ -73,7 +81,11 @@ export const renameNoteCommand = async (invocation: CommandInvocation, on: Comma
  * A file or a folder filed somewhere else, carrying the name the path ends in.
  * A destination that is taken leaves it where it was.
  */
-export const moveFileCommand = async (invocation: CommandInvocation, on: CommandDeps, words: AnswerWords): Promise<void> => {
+export const moveFileCommand = async (
+  invocation: CommandInvocation,
+  on: CommandDeps,
+  words: AnswerWords,
+): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.path) return
   const tab = await settleTab(invocation.path, on)
   if (tab.waiting) return on.writeMessage(words.unanswered, 'caution')
@@ -84,7 +96,11 @@ export const moveFileCommand = async (invocation: CommandInvocation, on: Command
 }
 
 /** An empty folder, made under the path that was typed. */
-export const createFolderCommand = async (invocation: CommandInvocation, on: VaultContext & Voice, words: AnswerWords): Promise<void> => {
+export const createFolderCommand = async (
+  invocation: CommandInvocation,
+  on: VaultContext & Voice,
+  words: AnswerWords,
+): Promise<void> => {
   if (!invocation.name) return
   const error = await on.files.createFolder(invocation.name)
   if (error === 'occupied') return on.writeMessage(words.occupied, 'error')

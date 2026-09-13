@@ -11,9 +11,7 @@ export interface PlexNeighbourhood {
  * Check the two invariants and return the focus. Throws: a neighbourhood that
  * breaks either is a caller with a bug, not a state to be rendered.
  */
-export function assertNeighbourhood(
-  neighbourhood: PlexNeighbourhood,
-): PlexNode {
+export function assertNeighbourhood(neighbourhood: PlexNeighbourhood): PlexNode {
   const focused = neighbourhood.nodes.filter((node) => node.seat === 'focus')
   const focus = focused[0]
 
@@ -38,9 +36,7 @@ export function assertNeighbourhood(
     seen.add(node.id)
   }
   if (repeated.size > 0) {
-    throw new Error(
-      `A plex node appears more than once: ${[...repeated].join(', ')}`,
-    )
+    throw new Error(`A plex node appears more than once: ${[...repeated].join(', ')}`)
   }
 
   return focus

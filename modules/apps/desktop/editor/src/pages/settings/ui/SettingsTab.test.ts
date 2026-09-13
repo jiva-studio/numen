@@ -173,13 +173,13 @@ describe('the settings tab', () => {
     const { tab } = createTab()
     expect(tab.get(control('settings-theme')).text()).toContain('numen')
 
-    await openMenu(tab,'settings-theme')
+    await openMenu(tab, 'settings-theme')
     expect(getMenuGroups()).toStrictEqual([words.shipped, words.owned])
   })
 
   it('writes a theme the way the command of that name writes it', async () => {
     const { tab, done } = createTab()
-    await openMenu(tab,'settings-theme')
+    await openMenu(tab, 'settings-theme')
     await chooseItem('sea')
     expect(done).toStrictEqual(['choose mine:sea'])
   })
@@ -252,7 +252,7 @@ describe('the settings tab', () => {
     const { tab, written } = createTab(false, {
       indexing: { proofreading: { profiles: { careful: {} } } },
     })
-    await openMenu(tab,'settings-transcript-proofread')
+    await openMenu(tab, 'settings-transcript-proofread')
     await chooseItem('careful')
     expect(written).toStrictEqual([
       { at: ['indexing', 'transcription', 'proofread', 'with'], value: '"careful"' },
@@ -273,13 +273,13 @@ describe('the settings tab', () => {
     const { tab } = createTab(false, { agent: { claude: { model: 'opus' } } })
     expect(tab.get(control('settings-agent-model')).text()).toContain('opus')
 
-    await openMenu(tab,'settings-agent-model')
+    await openMenu(tab, 'settings-agent-model')
     expect(getMenuItems()).toContain(`Whatever this machine answers with — ${words.byDefault}`)
   })
 
   it('names a model by its own words, and addresses it underneath', async () => {
     const { tab } = createTab()
-    await openMenu(tab,'settings-ocr')
+    await openMenu(tab, 'settings-ocr')
     expect(getMenuItems()).toStrictEqual([
       `Tiny, small — ${words.byDefault}`,
       'eslav_rec_mobile.onnx',
@@ -307,7 +307,7 @@ describe('the settings tab', () => {
     expect(tab.get(control('settings-ocr')).text()).toContain('Other_rec.onnx')
     expect(tab.text()).not.toMatch(/not found/i)
 
-    await openMenu(tab,'settings-ocr')
+    await openMenu(tab, 'settings-ocr')
     expect(getMenuItems()[0]).toBe('Other_rec.onnx')
     expect(getMenuGroups()[0]).toBe(words.owned)
   })
@@ -317,7 +317,7 @@ describe('the settings tab', () => {
     const { tab, written } = createTab(false, {
       indexing: { recognition: { recognise: { name: own } } },
     })
-    await openMenu(tab,'settings-ocr')
+    await openMenu(tab, 'settings-ocr')
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await nextTick()
 
@@ -327,7 +327,7 @@ describe('the settings tab', () => {
 
   it('writes everything a model decides, not its name alone', async () => {
     const { tab, written } = createTab()
-    await openMenu(tab,'settings-agent-model')
+    await openMenu(tab, 'settings-agent-model')
     await chooseItem('opus')
     expect(written).toStrictEqual([{ at: ['agent', 'claude', 'model'], value: '"opus"' }])
   })
@@ -342,7 +342,7 @@ describe('the settings tab', () => {
     const { tab } = createTab(false, {
       indexing: { proofreading: { profiles: { careful: {}, quick: {} } } },
     })
-    await openMenu(tab,'settings-ocr-proofread')
+    await openMenu(tab, 'settings-ocr-proofread')
     expect(getMenuItems()).toStrictEqual([words.proofreadingNone, 'careful', 'quick'])
   })
 

@@ -32,7 +32,10 @@ describe('when the material is learned', () => {
   const getLearnedTiles = (tab: ReturnType<typeof mount>) =>
     tab
       .findAll('[data-control="learned"] [data-control="tile"]')
-      .map((one) => [one.get('[data-control="figure"]').text(), one.get('[data-control="word"]').text()])
+      .map((one) => [
+        one.get('[data-control="figure"]').text(),
+        one.get('[data-control="word"]').text(),
+      ])
 
   it('says the days it takes and how much of it stands learned today', () => {
     const { tab } = mountPresetTab({

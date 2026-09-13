@@ -50,4 +50,3 @@ export interface PageHandle {
   /** The pages take the keyboard, so that a key struck reaches them. */
   focusPages(): void
 }
-

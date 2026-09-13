@@ -43,7 +43,8 @@ export const WORDS = {
     'An answer given before this hour is written into the day before. Noon at the latest.',
   /** Transcribing a recording, and putting the transcript right. */
   transcribing: 'Transcribe recordings',
-  transcribingDetail: 'Whether a recording the vault holds no transcript for is listened to unasked.',
+  transcribingDetail:
+    'Whether a recording the vault holds no transcript for is listened to unasked.',
   transcribeUnder: 'Largest recording transcribed',
   transcribeUnderDetail:
     'How large a recording may be, in megabytes, and still be listened to unasked. Below nothing is no limit.',
