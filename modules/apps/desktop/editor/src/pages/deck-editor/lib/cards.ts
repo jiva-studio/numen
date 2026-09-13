@@ -58,6 +58,9 @@ export const removeCard = (deck: BufferDeck, id: string): BufferDeck => ({
   cards: deck.cards.filter((card) => card.id !== id),
 })
 
+/** The section the cards at the end of the deck stand under. */
+const getLastSection = (deck: BufferDeck): string | null => deck.sections.at(-1)?.id ?? null
+
 /**
  * A card let go somewhere in the deck.
  */
@@ -75,27 +78,40 @@ export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): Buff
   }
 
   if (at === null) {
-    return { ...deck, cards: [...left, { ...held, section: deck.sections.at(-1)?.id ?? null }] }
+    return { ...deck, cards: [...left, { ...held, section: getLastSection(deck) }] }
   }
 
+  return dropOnSection(deck, held, left, at)
+}
+
+/**
+ * A card let go on a section: after the last card standing under it, and where
+ * the section begins while it holds none.
+ */
+const dropOnSection = (
+  deck: BufferDeck,
+  card: BufferCard,
+  left: readonly BufferCard[],
+  at: string,
+): BufferDeck => {
   const rank = (section: string | null): number =>
     section === null ? 0 : deck.sections.findIndex((each) => each.id === section) + 1
   const head = (section: string | null): number => {
-    const seat = left.findIndex((card) => rank(card.section) >= rank(section))
+    const seat = left.findIndex((each) => rank(each.section) >= rank(section))
     return seat === -1 ? left.length : seat
   }
   const put = (section: string | null, where: number): BufferDeck => ({
     ...deck,
-    cards: [...left.slice(0, where), { ...held, section }, ...left.slice(where)],
+    cards: [...left.slice(0, where), { ...card, section }, ...left.slice(where)],
   })
 
-  const getSection = (card: BufferCard): string | null =>
-    deck.sections.some((each) => each.id === card.section) ? card.section : null
+  const getSection = (each: BufferCard): string | null =>
+    deck.sections.some((section) => section.id === each.section) ? each.section : null
 
   const last = (section: string | null): number => {
     let seat = -1
-    left.forEach((card, index) => {
-      if (getSection(card) === section) seat = index
+    left.forEach((each, index) => {
+      if (getSection(each) === section) seat = index
     })
     return seat
   }

@@ -39,6 +39,9 @@ export function useTranscriptDraft(how: DraftOptions) {
   /** The wait after which the view may go after the words again. */
   let stilling: ReturnType<typeof setTimeout> | undefined
 
+  /** Whether the words on screen have somewhere to go now. */
+  const canWrite = (): boolean => isOpen() && owed && !writing && isEditable.value
+
   /**
    * The words as they now read, kept against the recording. A write that is
    * refused leaves them owed, so the next stillness offers them again.
@@ -46,7 +49,7 @@ export function useTranscriptDraft(how: DraftOptions) {
   const keep = async () => {
     clearTimeout(settling)
     settling = undefined
-    if (!isOpen() || !owed || writing || !isEditable.value) return
+    if (!canWrite()) return
     const body = prose.value
     const next = applyCues(cues.value, body)
     owed = false

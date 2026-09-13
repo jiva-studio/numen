@@ -2,7 +2,7 @@
  * Settings calculation, bound clamping, and reconciliation for preset tabs.
  */
 import { dayAfter, daysBetween, isDay } from '@numen/ui'
-import type { Bounds, Goal, Load, Settings, SettingsBounds } from '../types'
+import type { Bounds, BudgetUnit, Goal, Load, Rule, Settings, SettingsBounds } from '../types'
 import { clamp, nearest } from './curve'
 import type { Field } from './fields'
 import type { SettingValue } from '../types'
@@ -38,6 +38,51 @@ export const reconcileSettings = (
   return out
 }
 
+/** The fields holding a number, and whether the field counts in whole ones. */
+const NUMBER_FIELDS = {
+  retention: false,
+  newADay: false,
+  reviewsADay: false,
+  minutesADay: false,
+  backlog: true,
+  interval: true,
+} as const
+
+type NumberField = keyof typeof NUMBER_FIELDS
+
+const isNumberField = (field: Field): field is NumberField => field in NUMBER_FIELDS
+
+const isBudgetUnit = (value: SettingValue): value is BudgetUnit =>
+  value === 'cards' || value === 'shows'
+
+const isRule = (value: SettingValue): value is Rule =>
+  value === 'interval' || value === 'retention'
+
+/** Clamps a number to the field's bounds, rounding where the field is whole. */
+const applyNumberSetting = (
+  settings: Settings,
+  field: NumberField,
+  value: number,
+  bounds: SettingsBounds,
+): Settings => {
+  const out: MutableSettings = { ...settings }
+  out[field] = clamp(NUMBER_FIELDS[field] ? Math.round(value) : value, bounds[field])
+  return out
+}
+
+/** Sets a field that takes no bounds, or nothing where the value is not its own. */
+const applyChoiceSetting = (
+  settings: Settings,
+  field: Field,
+  value: SettingValue,
+): Settings | undefined => {
+  if (field === 'byDate' && typeof value === 'string') return { ...settings, byDate: value }
+  if (field === 'counts' && isBudgetUnit(value)) return { ...settings, counts: value }
+  if (field === 'learned' && isRule(value)) return { ...settings, learned: value }
+  if (field === 'evenLoad' && typeof value === 'boolean') return { ...settings, evenLoad: value }
+  return undefined
+}
+
 /** Clamps a typed value to bounds and updates the settings. */
 export const applyTypedSetting = (
   settings: Settings,
@@ -45,24 +90,14 @@ export const applyTypedSetting = (
   value: SettingValue,
   bounds: SettingsBounds,
 ): Settings => {
-  if (field === 'byDate' && typeof value === 'string') return { ...settings, byDate: value }
-  if (field === 'counts' && (value === 'cards' || value === 'shows')) {
-    return { ...settings, counts: value }
-  }
-  if (field === 'learned' && (value === 'interval' || value === 'retention')) {
-    return { ...settings, learned: value }
-  }
+  const chosen = applyChoiceSetting(settings, field, value)
+  if (chosen !== undefined) return chosen
   if (field === 'load' && isLoad(value)) {
     return { ...settings, load: clampShares(value, bounds.load) }
   }
-  if (field === 'evenLoad' && typeof value === 'boolean') return { ...settings, evenLoad: value }
-  if (typeof value !== 'number') return settings
-  if (field === 'retention') return { ...settings, retention: clamp(value, bounds.retention) }
-  if (field === 'newADay') return { ...settings, newADay: clamp(value, bounds.newADay) }
-  if (field === 'reviewsADay') return { ...settings, reviewsADay: clamp(value, bounds.reviewsADay) }
-  if (field === 'minutesADay') return { ...settings, minutesADay: clamp(value, bounds.minutesADay) }
-  if (field === 'backlog') return { ...settings, backlog: clamp(Math.round(value), bounds.backlog) }
-  if (field === 'interval') return { ...settings, interval: clamp(Math.round(value), bounds.interval) }
+  if (isNumberField(field) && typeof value === 'number') {
+    return applyNumberSetting(settings, field, value, bounds)
+  }
   return settings
 }
 

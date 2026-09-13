@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import tabSource from './PresetTab.vue?raw'
+import goalSource from './preset-goal/PresetGoal.vue?raw'
 import rowsSource from './preset-settings/PresetSettings.vue?raw'
 import sliderSource from './curve-slider/CurveSlider.vue?raw'
 import tilesSource from './curve-slider/CurveTiles.vue?raw'
@@ -280,11 +280,11 @@ describe('the line the tab is read against', () => {
   const BOXED = [
     [tilesSource, '.curve-slider__material'],
     [sliderSource, '.curve-slider__island'],
-    [tabSource, '.preset__stopped'],
+    [goalSource, '.preset__stopped'],
   ] as const
   const BARE = [
-    [tabSource, '.preset__label'],
-    [tabSource, '.preset__unpointed'],
+    [goalSource, '.preset__label'],
+    [goalSource, '.preset__unpointed'],
     [rowsSource, '.preset-settings__row'],
   ] as const
 

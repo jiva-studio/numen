@@ -1,11 +1,14 @@
 <script setup lang="ts">
 /**
- * Settings for the window appearance, naming/syncing, and day schedule.
+ * Settings for the window appearance, the naming of notes, and the day a
+ * review stands in.
  */
 import { computed } from 'vue'
-import { NumberField, SegmentedControl, Select, Switch, TimeField } from '@numen/ui'
+import { NumberField, SegmentedControl, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
+import { NamingSettings } from './naming-settings'
+import { ReviewSettings } from './review-settings'
 import type { SettingsTabState } from '../types'
 import type { Mode } from '@/entities/settings'
 import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '@/features/settings-commands'
@@ -65,10 +68,6 @@ function onPartsChange(count: number | null) {
   if (count !== null) {
     installation.value.chooseParts(count)
   }
-}
-
-function onDayStartsChange(hour: string) {
-  installation.value.chooseDayStarts(hour)
 }
 
 // --- Helpers ---
@@ -170,37 +169,9 @@ function onDayStartsChange(hour: string) {
     </SettingRow>
   </section>
 
-  <section class="settings__group" :aria-label="words.naming">
-    <h2 class="settings__heading">{{ words.naming }}</h2>
+  <NamingSettings :state="props.state" />
 
-    <SettingRow
-      v-slot="{ labelledBy }"
-      at="syncing"
-      :name="words.syncing"
-      :detail="words.syncingDetail"
-    >
-      <Switch v-model="installation.syncing.value" :aria-labelledby="labelledBy" />
-    </SettingRow>
-  </section>
-
-  <section class="settings__group" :aria-label="words.review">
-    <h2 class="settings__heading">{{ words.review }}</h2>
-
-    <SettingRow
-      v-slot="{ labelledBy }"
-      at="day-starts"
-      :name="words.dayStarts"
-      :detail="words.dayStartsDetail"
-    >
-      <TimeField
-        :model-value="installation.dayStarts.value"
-        :max="installation.latestDayStarts.value"
-        :aria-labelledby="labelledBy"
-        class="settings__number"
-        @settle="onDayStartsChange"
-      />
-    </SettingRow>
-  </section>
+  <ReviewSettings :state="props.state" />
 </template>
 
 <style scoped>

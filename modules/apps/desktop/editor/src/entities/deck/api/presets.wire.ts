@@ -6,6 +6,7 @@ import {
   type Curve as CurveMessage,
   type ErrorCode as ProtoErrorCode,
   type Place as PlaceMessage,
+  type Point as PointMessage,
   type Preset as PresetMessage,
   type Settings as SettingsMessage,
   type SettingsBounds as SettingsBoundsMessage,
@@ -19,6 +20,7 @@ import type {
   BudgetUnit,
   Curve,
   Place,
+  Point,
   Preset,
   Presets,
   ReadResult,
@@ -137,34 +139,56 @@ const toSettingsMessage = (settings: Settings) => ({
   interval: settings.interval,
 })
 
-/** A curve as the window carries it. An answer holding none is an empty one. */
-const parseCurve = (curve: CurveMessage | undefined): Curve => ({
-  goal: (curve && goalOf[curve.goal]) ?? DEFAULTS.goal,
-  grid: curve?.grid ?? [],
-  days: curve?.days ?? [],
-  at: (curve?.at ?? []).map((one) => ({
-    reviews: one.reviews,
-    minutes: one.minutes,
-    retained: one.retained,
-    owed: one.owed,
-    through: one.through,
-    enough: one.enough,
-    closed: one.closed,
-    clears: one.clears,
-    learned: one.learned,
-    ...(one.learns === undefined ? {} : { learns: one.learns }),
-    short: one.short,
-    backlog: one.backlog,
-  })),
-  now: parsePlace(curve?.now),
-  suggested: parsePlace(curve?.suggested),
-  decks: curve?.decks ?? 0,
-  cards: curve?.cards ?? 0,
-  overdue: curve?.overdue ?? 0,
-  unbegun: curve?.unbegun ?? 0,
+/** One place of the grid, as the window carries what the preset comes to there. */
+const parsePoint = (one: PointMessage): Point => ({
+  reviews: one.reviews,
+  minutes: one.minutes,
+  retained: one.retained,
+  owed: one.owed,
+  through: one.through,
+  enough: one.enough,
+  closed: one.closed,
+  clears: one.clears,
+  learned: one.learned,
+  ...(one.learns === undefined ? {} : { learns: one.learns }),
+  short: one.short,
+  backlog: one.backlog,
+})
+
+/** The curve of an answer that carries none: nothing drawn, over nothing. */
+const NO_CURVE: Curve = {
+  goal: DEFAULTS.goal,
+  grid: [],
+  days: [],
+  at: [],
+  now: NOWHERE,
+  suggested: NOWHERE,
+  decks: 0,
+  cards: 0,
+  overdue: 0,
+  unbegun: 0,
   isValid: true,
   honest: true,
-})
+}
+
+/** A curve as the window carries it. An answer holding none is an empty one. */
+const parseCurve = (curve: CurveMessage | undefined): Curve =>
+  curve === undefined
+    ? NO_CURVE
+    : {
+        goal: goalOf[curve.goal] ?? DEFAULTS.goal,
+        grid: curve.grid,
+        days: curve.days,
+        at: curve.at.map(parsePoint),
+        now: parsePlace(curve.now),
+        suggested: parsePlace(curve.suggested),
+        decks: curve.decks,
+        cards: curve.cards,
+        overdue: curve.overdue,
+        unbegun: curve.unbegun,
+        isValid: true,
+        honest: true,
+      }
 
 const parsePlace = (place: PlaceMessage | undefined): Place =>
   place === undefined ? NOWHERE : { at: place.at, value: place.value, day: place.day }

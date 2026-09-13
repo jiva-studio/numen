@@ -22,6 +22,9 @@ export interface CurveSliderProps {
   waiting: boolean
 }
 
+/** Everything the slider draws itself from, as its parts read it. */
+export type CurveSliderState = ReturnType<typeof useCurveSlider>
+
 export function useCurveSlider(
   props: CurveSliderProps,
   emit: {

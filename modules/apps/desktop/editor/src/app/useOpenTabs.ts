@@ -14,6 +14,13 @@ export interface OpenTabsDeps {
   held: ReturnType<typeof useWindowTabs>
 }
 
+/** What a tab points at, where what it holds is kept in the vault. */
+const getTabSource = (tab: OpenTab<'document' | 'recording' | 'book'> | undefined) => ({
+  ...(tab?.document ? { document: tab.document } : {}),
+  ...(tab?.recording ? { recording: tab.recording } : {}),
+  ...(tab?.book ? { book: tab.book } : {}),
+})
+
 export function useOpenTabs({ core, held }: OpenTabsDeps) {
   /** Returns the ID of the front/active tab. */
   const getActiveTabId = (): string => {
@@ -37,9 +44,7 @@ export function useOpenTabs({ core, held }: OpenTabsDeps) {
         kind: one?.kind.kind ?? '',
         title,
         path: said?.path ?? '',
-        ...(said?.document ? { document: said.document } : {}),
-        ...(said?.recording ? { recording: said.recording } : {}),
-        ...(said?.book ? { book: said.book } : {}),
+        ...getTabSource(said),
       }
     }),
   })

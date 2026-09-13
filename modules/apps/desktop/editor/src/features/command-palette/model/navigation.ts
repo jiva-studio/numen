@@ -5,10 +5,20 @@ import { computed, shallowRef, type Ref } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/entities/vault'
 import { EXACT, NO, YES, type PendingStep } from '../lib/step'
-import type { CommandInvocation, CommandTarget, NoteLookup, PaletteLists } from '../types'
+import type { CommandInvocation, CommandTarget, NoteLookup, PaletteLists, PromptStep } from '../types'
 import type { Words } from '../words'
 import type { NameMatch } from './search'
 import { isWebUrl } from '../lib/url'
+
+/** What the field asks for on each step that asks for one thing. */
+const getPrompts = (words: Words): Partial<Record<PromptStep, string>> => ({
+  naming: words.typeName,
+  address: words.typeAddress,
+  picking: words.typeNote,
+  choosing: words.typeChoice,
+  vaults: words.typeVault,
+  asking: words.answer,
+})
 
 export function createPaletteSteps(
   words: Words,
@@ -41,26 +51,13 @@ export function createPaletteSteps(
 
   const crumb = computed(() => here.value?.command.text ?? words.command)
 
+  const prompts = getPrompts(words)
+
   const placeholder = computed(() => {
     const step = here.value
-    switch (step?.step) {
-      case 'naming':
-        return words.typeName
-      case 'address':
-        return words.typeAddress
-      case 'picking':
-        return words.typeNote
-      case 'choosing':
-        return words.typeChoice
-      case 'vaults':
-        return words.typeVault
-      case 'asking':
-        return words.answer
-      case 'exactly':
-        return step.command.warns?.back ?? words.typeBack
-      default:
-        return words.typeCommand
-    }
+    if (!step) return words.typeCommand
+    if (step.step === 'exactly') return step.command.warns?.back ?? words.typeBack
+    return prompts[step.step] ?? words.typeCommand
   })
 
   const step = computed(
@@ -119,6 +116,61 @@ export function createPaletteSteps(
     return true
   }
 
+  const chooseNote = (
+    step: PendingStep,
+    item: string,
+    found: readonly NameMatch[],
+  ): CommandInvocation | null => {
+    const one = found.find((match) => match.path === item)
+    if (!one) return null
+    return invocation(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
+  }
+
+  const chooseVault = (
+    step: PendingStep,
+    item: string,
+    vaults: readonly Vault[],
+    isAside: (vault: Vault) => boolean,
+  ): CommandInvocation | null => {
+    const one = vaults.find((vault) => vault.id === item)
+    if (!one || isAside(one)) return null
+    const on = { ...step.on, vault: { id: one.id, name: one.name } }
+    if (!step.command.next) return invocation(step.command.id, on)
+    pushStep({ step: step.command.next, command: step.command, on })
+    return null
+  }
+
+  const chooseName = (step: PendingStep, name: string): CommandInvocation | null =>
+    name ? invocation(step.command.id, step.on, name) : null
+
+  const chooseAddress = (step: PendingStep, name: string): CommandInvocation | null =>
+    isWebUrl(name) ? invocation(step.command.id, step.on, name) : null
+
+  const chooseListItem = (step: PendingStep, item: string): CommandInvocation | null => {
+    const rows = lists.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
+    const one = rows.find((row) => row.id === item)
+    if (!one || one.disabled) return null
+    return invocation(step.command.id, step.on, one.id)
+  }
+
+  const answerStep = (step: PendingStep, action: string): CommandInvocation | null => {
+    if (action === NO) {
+      popStep()
+      return null
+    }
+    if (action !== YES) return null
+    return invocation(step.command.id, step.on)
+  }
+
+  const retypeTitle = (
+    step: PendingStep,
+    action: string,
+    name: string,
+  ): CommandInvocation | null => {
+    if (action !== EXACT || name !== getStepTitle(step)) return null
+    return invocation(step.command.id, step.on, name)
+  }
+
   const chooseInStep = (
     step: PendingStep,
     item: string,
@@ -128,43 +180,22 @@ export function createPaletteSteps(
     isAside: (vault: Vault) => boolean,
   ): CommandInvocation | null => {
     const name = text.value.trim()
-    if (step.step === 'picking') {
-      const one = found.find((match) => match.path === item)
-      if (!one) return null
-      return invocation(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
+    switch (step.step) {
+      case 'picking':
+        return chooseNote(step, item, found)
+      case 'vaults':
+        return chooseVault(step, item, vaults, isAside)
+      case 'naming':
+        return chooseName(step, name)
+      case 'address':
+        return chooseAddress(step, name)
+      case 'choosing':
+        return chooseListItem(step, item)
+      case 'asking':
+        return answerStep(step, action)
+      default:
+        return retypeTitle(step, action, name)
     }
-    if (step.step === 'vaults') {
-      const one = vaults.find((vault) => vault.id === item)
-      if (!one || isAside(one)) return null
-      const on = { ...step.on, vault: { id: one.id, name: one.name } }
-      if (!step.command.next) return invocation(step.command.id, on)
-      pushStep({ step: step.command.next, command: step.command, on })
-      return null
-    }
-    if (step.step === 'naming') {
-      if (!name) return null
-      return invocation(step.command.id, step.on, name)
-    }
-    if (step.step === 'address') {
-      if (!isWebUrl(name)) return null
-      return invocation(step.command.id, step.on, name)
-    }
-    if (step.step === 'choosing') {
-      const rows = lists.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
-      const one = rows.find((row) => row.id === item)
-      if (!one || one.disabled) return null
-      return invocation(step.command.id, step.on, one.id)
-    }
-    if (step.step === 'asking') {
-      if (action === NO) {
-        popStep()
-        return null
-      }
-      if (action !== YES) return null
-      return invocation(step.command.id, step.on)
-    }
-    if (action !== EXACT || name !== getStepTitle(step)) return null
-    return invocation(step.command.id, step.on, name)
   }
 
   return {

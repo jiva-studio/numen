@@ -5,7 +5,7 @@
  * whether or not there is a backlog to draw.
  *
  * It carries the slider's `data-control` for the parts it shares with the plot
- * above, and `data-backlog` for the two of its own: `picture` and `line`.
+ * above; the run itself is drawn by `BacklogPicture`.
  */
 import { computed } from 'vue'
 import { clearAt, getAxisNumber } from '../../../lib/label'
@@ -14,15 +14,14 @@ import {
   BACKLOG_PLOT,
   backlogPositionsOf,
   extentOfBacklog,
-  LEFT,
   lineOf,
-  RIGHT,
   runAt,
   WIDE,
   type Extent,
 } from '../../../lib/plot'
 import type { Curve } from '../../../types'
 import { WORDS as words } from '../../../words'
+import { BacklogPicture } from './backlog-picture'
 import '../curve-slider.css'
 
 // --- Props & Emits ---
@@ -99,33 +98,7 @@ const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backl
         data-control="room"
         :style="{ aspectRatio: `${WIDE} / ${BACKLOG_HIGH}` }"
       >
-        <svg
-          v-if="drawn"
-          class="curve-slider__picture backlog__picture"
-          data-backlog="picture"
-          aria-hidden="true"
-          :viewBox="`0 0 ${WIDE} ${BACKLOG_HIGH}`"
-        >
-          <!-- The foot is nothing overdue, which is what the extent is read up from. -->
-          <line
-            class="curve-slider__rule"
-            data-control="rule"
-            :x1="LEFT"
-            :x2="LEFT"
-            :y1="BACKLOG_PLOT.top"
-            :y2="BACKLOG_PLOT.foot"
-          />
-          <line
-            class="curve-slider__rule"
-            data-control="rule"
-            :x1="LEFT"
-            :x2="RIGHT"
-            :y1="BACKLOG_PLOT.foot"
-            :y2="BACKLOG_PLOT.foot"
-          />
-
-          <path class="backlog__line" data-backlog="line" :d="line" />
-        </svg>
+        <BacklogPicture v-if="drawn" :line="line" />
       </div>
 
       <span
@@ -150,18 +123,3 @@ const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backl
     </p>
   </div>
 </template>
-
-<style scoped>
-/* The backlog is read and not dragged, so no pointer is offered over it. */
-.backlog__picture {
-  cursor: default;
-}
-
-.backlog__line {
-  fill: none;
-  stroke: var(--numen-caution-fg);
-  stroke-width: 1.75;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-</style>

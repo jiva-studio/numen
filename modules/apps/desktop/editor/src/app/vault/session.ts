@@ -1,10 +1,25 @@
 /**
  * Session, lifecycle, and workspace domain methods for the window core.
  */
+import type { IndexCoverage, Scan } from '@numen/protocol'
 import { WINDOW } from './clients'
 import { agentService, vault, windowService, workspace } from '@/shared/clients'
 import { counted, flushResults } from './words'
 import type { VaultPort } from '@/app/ports/vault'
+
+/** How far the scan of the vault has got. */
+const parseScan = (scan: Scan | undefined) => ({
+  isReady: scan?.ready ?? false,
+  error: scan?.error ?? '',
+  unwatchedPath: scan?.unwatched ?? '',
+})
+
+/** How much of the vault the index holds. */
+const parseCoverage = (coverage: IndexCoverage | undefined) => ({
+  chunkCount: coverage?.chunkCount ?? 0n,
+  embeddedCount: coverage?.embeddedCount ?? 0n,
+  isEmbedding: coverage?.embedding ?? false,
+})
 
 export type SessionCore = Pick<
   VaultPort,
@@ -25,16 +40,8 @@ export const sessionCore: SessionCore = {
       id: said.id,
       name: said.name,
       path: said.path,
-      scan: {
-        isReady: said.scan?.ready ?? false,
-        error: said.scan?.error ?? '',
-        unwatchedPath: said.scan?.unwatched ?? '',
-      },
-      coverage: {
-        chunkCount: said.coverage?.chunkCount ?? 0n,
-        embeddedCount: said.coverage?.embeddedCount ?? 0n,
-        isEmbedding: said.coverage?.embedding ?? false,
-      },
+      scan: parseScan(said.scan),
+      coverage: parseCoverage(said.coverage),
     }
   },
   agentUnreachable: async () => (await agentService.getAgentState({})).unreachable,

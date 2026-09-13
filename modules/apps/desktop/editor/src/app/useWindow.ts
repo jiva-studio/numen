@@ -82,19 +82,28 @@ export const useWindow = () => {
     vaults: vaultsModule,
   })
 
-  const getTarget = (): CommandTarget => {
+  /** The tab in front, and what its kind says it stands over. */
+  const getFront = () => {
     const front = held.handle.front()
     const tab = front?.id ?? ''
     const on = front && held.getTab(tab)?.kind.getTarget?.(front.state)
+    return { tab, kind: front?.kind ?? null, on }
+  }
+
+  /** What has been made from the file in front, and nothing where none has. */
+  const getMade = (file: string) => (file && vaultsModule.makes.value.get(file)) || {}
+
+  const getTarget = (): CommandTarget => {
+    const { tab, kind, on } = getFront()
     const file = on?.file ?? ''
     return {
       tab,
-      kind: front?.kind ?? null,
+      kind,
       path: on?.path ?? '',
       title: on?.title ?? '',
       file,
       source: on?.source ?? null,
-      made: (file && vaultsModule.makes.value.get(file)) || {},
+      made: getMade(file),
       vault: vaultsModule.shown.value,
       ready: !window.failure.value,
     }

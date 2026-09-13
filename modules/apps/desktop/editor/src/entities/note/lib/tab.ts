@@ -18,18 +18,28 @@ import {
 
 export * from './tabState'
 
+/** An event that asks for something and carries nothing with it. */
+type AskedKind = Exclude<Event['kind'], 'read' | 'typed' | 'written' | 'changed'>
+
 export const tabAfter = (tab: Tab, event: Event, limits: WriteLimits = waiting): Transition => {
   switch (event.kind) {
     case 'read':
       return applyRead(tab, event.generation, event.answer)
     case 'typed':
       return applyEdit(tab, event.body, event.at, limits)
-    case 'fired':
-      return applyTimer(tab)
     case 'written':
       return applyWrite(tab, event.answer)
     case 'changed':
       return applyChange(tab, event.paths, event.renamed)
+    default:
+      return applyAsked(tab, event.kind)
+  }
+}
+
+const applyAsked = (tab: Tab, kind: AskedKind): Transition => {
+  switch (kind) {
+    case 'fired':
+      return applyTimer(tab)
     case 'saving':
       return applySave(tab)
     case 'settling':
@@ -67,8 +77,7 @@ const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
  * A read is applied to a tab with nothing unsaved and only for the generation asked for last.
  */
 const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition => {
-  const state = stateOf(tab)
-  const loading = state === 'loading'
+  const loading = stateOf(tab) === 'loading'
   const stale = generation !== tab.reading
   if (answer.kind === 'error') {
     return loading && !stale ? { tab: { ...tab, error: answer.error }, effects: [] } : keepTab(tab)
@@ -77,12 +86,18 @@ const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition
     if (stale) return keepTab(tab)
     return loading ? applyBody(tab, '', null) : keepTab({ ...tab, isDeleted: true })
   }
-  if (loading) return applyBody(tab, answer.body, answer.at)
-  if (state === 'gone') return applyBody({ ...tab, isDeleted: false }, answer.body, answer.at)
+  return applyReadBody(tab, stale, answer.body, answer.at)
+}
+
+/** The text the file holds, taken where the tab holds nothing unsaved of its own. */
+const applyReadBody = (tab: Tab, stale: boolean, body: string, at: string): Transition => {
+  const state = stateOf(tab)
+  if (state === 'loading') return applyBody(tab, body, at)
+  if (state === 'gone') return applyBody({ ...tab, isDeleted: false }, body, at)
   if (stale) return keepTab(tab)
-  if (state === 'stale') return applyBody({ ...tab, isStale: false }, answer.body, answer.at)
+  if (state === 'stale') return applyBody({ ...tab, isStale: false }, body, at)
   if (isDirty(tab)) return keepTab(tab)
-  return applyBody(tab, answer.body, answer.at)
+  return applyBody(tab, body, at)
 }
 
 /**

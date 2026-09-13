@@ -40,11 +40,14 @@ export const same = (a: readonly Cue[], b: readonly Cue[]): boolean =>
  * for each line, in the order they are read, and an emptied line as the empty
  * span it now covers.
  */
-export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
-  const lines = text.split('\n')
-
-  // The lines that read as they did, from either end. What is left between
-  // them is what the person changed.
+/**
+ * How many lines at either end read as they did. What is left between them is
+ * what the person changed.
+ */
+const countSame = (
+  lines: readonly string[],
+  was: readonly Cue[],
+): { head: number; tail: number } => {
   let head = 0
   while (head < lines.length && head < was.length && lines[head] === was[head]!.text) head++
   let tail = 0
@@ -55,6 +58,12 @@ export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
   ) {
     tail++
   }
+  return { head, tail }
+}
+
+export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
+  const lines = text.split('\n')
+  const { head, tail } = countSame(lines, was)
 
   const kept = was.slice(0, head)
   const rest = was.slice(was.length - tail)

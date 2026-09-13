@@ -8,10 +8,10 @@
  * through the slot, and so does whatever the tab lets a person ask over it.
  */
 import { computed, ref } from 'vue'
-import { Ellipsis, LocateFixed } from '@lucide/vue'
 import { Menu } from '@numen/ui'
 import type { MenuItem, Position } from '@numen/ui'
 import { iconFor } from '@/shared/icons'
+import { MediaActions } from './media-actions'
 import Transcript from './Transcript.vue'
 import { WORDS as words } from '../words'
 import type { MediaTabState } from '../kind'
@@ -70,33 +70,16 @@ function onToggleFollow() {
     <div class="media__head" :data-framed="props.framed ? '' : undefined">
       <slot name="player" />
 
-      <!-- The controls over the text, standing together at the end of the
-           strip. Following is only for text that carries times, and a framed
-           media is the whole strip and carries no controls at all. -->
-      <div v-if="!props.framed && (timed || offered.length)" class="media__actions">
-        <button
-          v-if="timed"
-          type="button"
-          class="media__follow"
-          :aria-label="words.follow"
-          :title="words.follow"
-          :aria-pressed="follows ? 'true' : 'false'"
-          @click="onToggleFollow"
-        >
-          <LocateFixed class="media__icon" />
-        </button>
-        <button
-          v-if="offered.length"
-          type="button"
-          class="media__more"
-          :aria-label="words.more"
-          :title="words.more"
-          aria-haspopup="menu"
-          @click="onOpenMenu"
-        >
-          <Ellipsis class="media__icon" />
-        </button>
-      </div>
+      <!-- Following is only for text that carries times, and a framed media is
+           the whole strip and carries no controls at all. -->
+      <MediaActions
+        v-if="!props.framed && (timed || offered.length)"
+        :timed="timed"
+        :follows="follows"
+        :has-menu="offered.length > 0"
+        @toggle-follow="onToggleFollow"
+        @open-menu="onOpenMenu"
+      />
     </div>
 
     <Transcript :state="props.state" />
@@ -154,42 +137,6 @@ function onToggleFollow() {
   overflow: hidden;
   padding-inline: 0;
   border-block-end: 0;
-}
-
-.media__actions {
-  display: flex;
-  align-items: center;
-  flex: none;
-  gap: var(--media-close);
-}
-
-.media__follow,
-.media__more {
-  display: grid;
-  place-items: center;
-  flex: none;
-  inline-size: var(--numen-action-size);
-  block-size: var(--numen-action-size);
-  padding: 0;
-  border: 0;
-  border-radius: var(--numen-radius-pill);
-  background: none;
-  color: var(--numen-hushed);
-  cursor: pointer;
-}
-
-.media__follow:hover,
-.media__more:hover {
-  background: var(--numen-field-bg);
-}
-
-.media__follow[aria-pressed='true'] {
-  color: var(--numen-accent);
-}
-
-.media__icon {
-  inline-size: 1rem;
-  block-size: 1rem;
 }
 
 /* The room the menu keeps beside an item for the mark of what it asks for. */
