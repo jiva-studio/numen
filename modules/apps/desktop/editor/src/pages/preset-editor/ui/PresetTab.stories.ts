@@ -168,8 +168,9 @@ type Story = StoryObj<Knobs>
 export const APreset: Story = {}
 
 /** The picture, which is the control the knob is walked along. */
-const pictureIn = (canvas: HTMLElement): HTMLElement =>
-  within(canvas).getByRole('slider', { name: words.knob })
+const pictureIn = (canvas: HTMLElement): SVGSVGElement =>
+  within(canvas).getByRole('slider', { name: words.knob }) as unknown as SVGSVGElement
+
 
 /** The first line of the bubble over the knob, which is the value being held. */
 const getBubbleLine = (value: number): string =>

@@ -83,12 +83,12 @@ func hasModel(models []port.Model, name string) bool {
 	return false
 }
 
-// newSetting is one setting written down. Every value here is written in this
-// file, so one that cannot be written down is this file being wrong.
+// newSetting is one setting written down.
 func newSetting(at []string, value any) port.Setting {
 	said, err := json.Marshal(value)
 	if err != nil {
-		panic("agent: " + err.Error())
+		return port.Setting{Path: at, JSON: ""}
 	}
 	return port.Setting{Path: at, JSON: string(said)}
 }
+

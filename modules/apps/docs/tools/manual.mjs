@@ -169,17 +169,14 @@ const keyboard = async () => {
     `| ${chordOf({ letter: 'k' })} | ${await said(words, 'find')} |`,
     `| ${chordOf({ letter: 'p' })} | Commands |`,
   ]
+  const declared = await readCommands()
   for (const chord of chords(keys)) {
-    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(await read(PALETTE, 'lib/table.ts'), chord.command))} |`)
+    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(declared, chord.command))} |`)
   }
   return ['| | |', '| --- | --- |', ...rows].join('\n')
 }
 
 /* -------------------------------------------------------------- commands */
-
-/** The one list of commands, from where it opens to where it closes. */
-const listing = (source) =>
-  declaring(source, 'commandsOf', 'table.ts no longer lists its commands')
 
 /**
  * Where each row of the list begins, so that what one row says is read out of
@@ -189,10 +186,10 @@ const listing = (source) =>
  * Every command the list holds is a command read here. One written in a shape
  * this cannot find an id in stops the build.
  */
-const rowsOf = ({ text, entries }) => {
+const rowsOf = ({ text, entries }, path = 'table.ts') => {
   const found = [...text.matchAll(/\bid:\s*'([A-Za-z]+)'/g)]
   if (found.length !== entries) {
-    die(`table.ts lists ${entries} commands and this reads ${found.length}`)
+    die(`${path} lists ${entries} commands and this reads ${found.length}`)
   }
   return found.map((one, i) => ({
     id: one[1],
@@ -200,23 +197,50 @@ const rowsOf = ({ text, entries }) => {
   }))
 }
 
+/**
+ * Every command declared across the palette, read from table.ts and any slice
+ * it composes.
+ */
+const readCommands = async () => {
+  const source = await read(PALETTE, 'lib/table.ts')
+  const calls = [...source.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].map((m) => m[1])
+  if (calls.length === 0) {
+    return rowsOf(declaring(source, 'commandsOf', 'table.ts no longer lists its commands'), 'table.ts')
+  }
+  const imports = new Map(
+    [...source.matchAll(/import\s*\{([^}]+)\}\s*from\s*'([^']+)'/g)].flatMap(([, names, specifier]) =>
+      names.split(',').map((n) => [n.trim(), specifier]),
+    ),
+  )
+  const rows = []
+  for (const fn of calls) {
+    const specifier = imports.get(fn)
+    if (!specifier) die(`table.ts calls '${fn}' without importing it`)
+    const path = `lib/${specifier.replace(/^\.\//, '')}.ts`
+    const partSource = await read(PALETTE, path)
+    const part = declaring(partSource, fn, `${path} no longer lists its commands`)
+    rows.push(...rowsOf(part, path))
+  }
+  return rows
+}
+
 /** Which entry of the words a command is drawn with. */
-const spoken = (source, command) => {
-  const row = rowsOf(listing(source)).find((one) => one.id === command)
+const spoken = (declared, command) => {
+  const row = declared.find((one) => one.id === command)
   const found = row?.said.match(/text:\s*words\.([A-Za-z]+)/)
-  if (!found) die(`no row in table.ts draws the command '${command}'`)
+  if (!found) die(`no command draws '${command}'`)
   return found[1]
 }
 
 /** Every command the palette offers, in the order it draws them. */
 const commands = async () => {
-  const source = await read(PALETTE, 'lib/table.ts')
   const words = await read(UI, 'words.ts')
   const keys = await read(PALETTE, 'lib/chords.ts')
   const table = chords(keys)
 
-  const declared = rowsOf(listing(source))
+  const declared = await readCommands()
   if (declared.length === 0) die('no commands are declared in table.ts')
+
 
   // Every command declared is a command the page carries. One the words or the
   // groups say nothing about stops the build.

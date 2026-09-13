@@ -35,7 +35,7 @@ export function quoted(source) {
  * do without — so a pattern matching an HTML attribute reads as two strings.
  * Single-quoting those would make the pattern match nothing.
  */
-export const baseline = ['modules/apps/mobile/src/App.policy.test.ts:24']
+export const baseline = ['modules/apps/mobile/src/App.policy.test.ts:25']
 
 /** Whether a string had to be written in double quotes: it holds the other one. */
 export const forced = (text) => text.includes("'")
