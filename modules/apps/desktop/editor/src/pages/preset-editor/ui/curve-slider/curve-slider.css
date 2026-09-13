@@ -159,22 +159,6 @@
   overflow-wrap: break-word;
 }
 
-.curve-slider__waiting {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--numen-node-gap);
-  inline-size: 100%;
-  block-size: 100%;
-  color: var(--numen-hushed);
-  font-family: var(--numen-font-sans);
-  font-size: var(--numen-text-1);
-}
-
-.curve-slider__ring {
-  --spinner-size: 1em;
-}
-
 .curve-slider__under {
   position: relative;
   margin: 0;

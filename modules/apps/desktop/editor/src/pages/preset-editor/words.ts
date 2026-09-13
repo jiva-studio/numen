@@ -265,7 +265,7 @@ export const WORDS = {
   /** The knob, and what it is announced as while it is moved. */
   knob: 'The goal of this preset',
   /** Said in the picture's place while the application works the curve out. */
-  waiting: 'Reading the vault…',
+  waiting: 'Loading…',
   /**
    * The suggested mark, named for what it is under each goal. Under minutes it
    * is where the clock stops being the limit.

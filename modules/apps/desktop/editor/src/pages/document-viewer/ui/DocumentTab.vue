@@ -2,7 +2,7 @@
 /**
  * Document tab view rendering reader pages and highlights.
  */
-import { Reader, Spinner } from '@numen/ui'
+import { Reader, Waiting } from '@numen/ui'
 import { WORDS as words } from '../words'
 import type { DocumentTabState } from '../model/useDocumentTab'
 
@@ -38,19 +38,8 @@ function onWiden(wide: number) {
     <!-- Until the layout has been read, no pages is not the same as no pages
          yet. -->
     <template #silence>
-      <span v-if="props.state.isLoading.value" class="document-tab__waiting" role="status">
-        <Spinner />
-        {{ words.reading }}
-      </span>
+      <Waiting v-if="props.state.isLoading.value" :label="words.loading" />
       <template v-else>{{ props.state.error.value }}</template>
     </template>
   </Reader>
 </template>
-
-<style scoped>
-.document-tab__waiting {
-  display: inline-flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-</style>

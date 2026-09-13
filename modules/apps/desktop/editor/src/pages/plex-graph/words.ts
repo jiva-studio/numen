@@ -5,7 +5,7 @@ import type { PlexRelatedSeat } from '@numen/ui'
 export const WORDS = {
   plex: 'Plex',
   /** The neighbourhood is being read, and what stands around is not known yet. */
-  reading: 'Reading…',
+  loading: 'Loading…',
   /** What the menu offers where the picture stands on nothing. */
   newNote: 'New note',
   /** What the shape under the pointer says while notes are dragged over the picture. */

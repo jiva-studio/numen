@@ -72,6 +72,7 @@ export { clock } from './shared/lib/duration'
 export { createFollower } from './shared/lib/stream'
 
 export { Spinner } from './shared/ui/spinner'
+export { Waiting } from './shared/ui/waiting'
 export { Skeleton } from './shared/ui/skeleton'
 
 export type { Turn } from './features/thread'

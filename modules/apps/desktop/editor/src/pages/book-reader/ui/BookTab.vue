@@ -3,7 +3,7 @@
  * Book tab view rendering reflowable book text and contents navigation.
  */
 import { ref, useTemplateRef, watchEffect } from 'vue'
-import { Spinner } from '@numen/ui'
+import { Waiting } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-listing'
 import { WORDS as words } from '../words'
@@ -58,10 +58,7 @@ function onFollow(targetPath: string) {
   >
     <!-- Until the book has been read, a blank page and a book with no text in
          it are drawn the same way. -->
-    <div v-if="props.state.isLoading.value" class="book-tab__waiting" role="status">
-      <Spinner />
-      {{ words.reading }}
-    </div>
+    <Waiting v-if="props.state.isLoading.value" :label="words.loading" />
 
     <div v-else class="book-tab__reading">
       <BookListing
@@ -101,15 +98,6 @@ function onFollow(targetPath: string) {
 .book-tab:focus,
 .book-tab:focus-visible {
   outline: none;
-}
-
-.book-tab__waiting {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: center;
-  block-size: 100%;
-  color: var(--numen-hushed);
 }
 
 .book-tab__reading {

@@ -7,7 +7,7 @@ export const WORDS = {
   /** What was typed is not settings this build can read. */
   unwritten: 'The file was not written:',
   /** What stands over the editor while the file has not been read yet. */
-  reading: 'Reading the file',
+  loading: 'Loading…',
   /** The file moved past what this tab read, and the two ways out. */
   stale: 'This file changed on disk, so it stopped saving.',
   keep: 'Keep mine',

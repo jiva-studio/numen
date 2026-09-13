@@ -7,7 +7,7 @@
  * cannot be read out of is refused with what is wrong with it. A file that
  * moved past what was read puts the person the two answers a note puts.
  */
-import { Editor } from '@numen/ui'
+import { Editor, Waiting } from '@numen/ui'
 import type { TextEditorTabState } from '../model/useTextEditor'
 import { WORDS as words } from '../words'
 
@@ -61,7 +61,7 @@ function onSave() {
       @update:model-value="onUpdateModelValue"
       @save="onSave"
     />
-    <p v-else class="settings-file__waiting">{{ words.reading }}</p>
+    <Waiting v-else :label="words.loading" />
   </div>
 </template>
 
@@ -94,9 +94,4 @@ function onSave() {
   overflow: auto;
 }
 
-.settings-file__waiting {
-  margin: 0;
-  padding: var(--numen-gutter);
-  color: var(--numen-hushed);
-}
 </style>

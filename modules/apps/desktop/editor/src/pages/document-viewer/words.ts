@@ -7,5 +7,5 @@ export const WORDS = {
   closer: 'Closer',
   further: 'Further',
   /** The document is being read, and how many pages it has is not known yet. */
-  reading: 'Reading…',
+  loading: 'Loading…',
 }
