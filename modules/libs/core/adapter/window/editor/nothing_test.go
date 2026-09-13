@@ -50,7 +50,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 	}
-	opened, err := editor.Open(t.Context(), cfg, "", os.Stderr)
+	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatalf("an installation holding no vault would not open: %v", err)
 	}

@@ -11,7 +11,7 @@ import { useTranscript } from './transcript'
 import type { Recordings, RecordingSummary, Transcript } from '../types'
 import type { ArtifactStates } from '@/entities/artifact/@x/media'
 import type { Cue } from '../lib/cues'
-import { createMediaTypeProbe, type Player } from './player'
+import type { Player } from './player'
 import { WORDS } from '../words'
 
 const CUES: readonly Cue[] = [
@@ -540,32 +540,6 @@ describe('how long the recording runs, as the controls read it', () => {
     duration.value = 400_000
 
     expect(heard.runs.value).toBe(9_000)
-  })
-})
-
-describe('what this window can play', () => {
-  it('asks the window once, however many recordings are open', () => {
-    let asks = 0
-    const plays = createMediaTypeProbe((type) => {
-      asks++
-      return type === 'audio/mpeg'
-    })
-
-    expect(plays('audio/mpeg')).toBe(true)
-    expect(plays('audio/mpeg')).toBe(true)
-    expect(plays('audio/mpeg')).toBe(true)
-    expect(asks).toBe(1)
-
-    expect(plays('audio/wav')).toBe(false)
-    expect(asks).toBe(2)
-  })
-
-  it('plays nothing where the application named no type', () => {
-    expect(createMediaTypeProbe(() => true)('')).toBe(false)
-  })
-
-  it('plays nothing where the window answers for nothing', () => {
-    expect(createMediaTypeProbe(() => false)('audio/mpeg')).toBe(false)
   })
 })
 

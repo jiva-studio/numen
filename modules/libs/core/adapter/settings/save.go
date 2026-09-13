@@ -36,7 +36,9 @@ type Setting struct {
 // A file the settings could not be read out of again is not written either: a
 // value of the wrong shape, and a number past what its setting goes to, are
 // refused where they are handed in.
-func Save(path string, settings ...Setting) error {
+// into says what shape the whole file takes, so a value written into any
+// section of it is read back before it lands.
+func Save(path string, into Document, settings ...Setting) error {
 	return runOnFile(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if errors.Is(err, fs.ErrNotExist) {
@@ -60,7 +62,7 @@ func Save(path string, settings ...Setting) error {
 			raw = patched
 		}
 
-		if err := takes(raw, settings); err != nil {
+		if err := takes(raw, settings, into); err != nil {
 			return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
 		}
 		return replace(path, raw)
@@ -69,12 +71,11 @@ func Save(path string, settings ...Setting) error {
 
 // holds says what is wrong with the settings these bytes make, and nothing
 // where they read out as settings this build can work with.
-func holds(raw []byte) error {
-	held := Defaults()
-	if err := json.Unmarshal(raw, &held); err != nil {
+func holds(raw []byte, into Document) error {
+	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
-	return held.Appearance.Check()
+	return into.GetAppearance().Check()
 }
 
 // takes says what is wrong with the settings this call wrote, and nothing where
@@ -82,12 +83,11 @@ func holds(raw []byte) error {
 //
 // A value outside its setting that the file already held is one the person
 // typed and one they can still reach: what is refused is what was handed in.
-func takes(raw []byte, wrote []Setting) error {
-	held := Defaults()
-	if err := json.Unmarshal(raw, &held); err != nil {
+func takes(raw []byte, wrote []Setting, into Document) error {
+	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
-	for _, outside := range held.Appearance.Outsides() {
+	for _, outside := range into.GetAppearance().Outsides() {
 		for _, setting := range wrote {
 			if covers(setting.At, outside.At) {
 				return outside
@@ -98,7 +98,7 @@ func takes(raw []byte, wrote []Setting) error {
 		if !covers(setting.At, dayStartsAt) {
 			continue
 		}
-		if _, err := ReadDayStart(held.Review.DayStarts); err != nil {
+		if _, err := ReadDayStart(into.GetReview().DayStarts); err != nil {
 			return err
 		}
 	}

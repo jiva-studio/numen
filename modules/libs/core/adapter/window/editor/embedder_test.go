@@ -54,7 +54,8 @@ func TestTheEmbedderConfiguredIsTheOneOnHand(t *testing.T) {
 	embedding.Indexing = embedding.Indexing.SetService(service)
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	opened, err := editor.Open(t.Context(), vault(t, embedding), "", os.Stderr)
+	opened, err := editor.Open(
+		t.Context(), editor.NewAssembly(t, vault(t, embedding)), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +71,8 @@ func TestTheEmbedderConfiguredIsTheOneOnHand(t *testing.T) {
 
 // An installation with no model opens, and says so by having none.
 func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
-	opened, err := editor.Open(t.Context(), vault(t, embed.Config{}), "", os.Stderr)
+	opened, err := editor.Open(
+		t.Context(), editor.NewAssembly(t, vault(t, embed.Config{})), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +89,7 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 func TestAVaultSaysWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	cfg := vault(t, embed.Config{})
 
-	opened, err := editor.Open(t.Context(), cfg, "", os.Stderr)
+	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

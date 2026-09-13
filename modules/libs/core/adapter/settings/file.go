@@ -34,14 +34,16 @@ func Read(path string) ([]byte, error) {
 // is left alone and port.ErrStale comes back: someone turning a setting in
 // their own window outranks a caller that read the file, thought about it, and
 // arrived late. Nil is a caller that compares nothing, and its bytes land.
-func Write(path string, raw []byte, seen *string) error {
+// into says what shape the whole file takes, so bytes the settings cannot be
+// read out of are refused before any of them land.
+func Write(path string, raw []byte, seen *string, into Document) error {
 	if err := object(raw); err != nil {
 		return err
 	}
 	if err := distinct(raw); err != nil {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
 	}
-	if err := holds(raw); err != nil {
+	if err := holds(raw, into); err != nil {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
 	}
 

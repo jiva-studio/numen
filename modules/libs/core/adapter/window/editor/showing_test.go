@@ -64,7 +64,7 @@ func openTwoVaults(t *testing.T) *showing {
 	first := newListedVault(t, cfg, registry, "one", map[string]string{entropy: noteNamed("Entropy")})
 	second := newListedVault(t, cfg, registry, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
 
-	opened, err := editor.Open(t.Context(), cfg, "one", os.Stderr)
+	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "one", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,7 +289,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	again, err := editor.Open(t.Context(), f.cfg, "", os.Stderr)
+	again, err := editor.Open(t.Context(), editor.NewAssembly(t, f.cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

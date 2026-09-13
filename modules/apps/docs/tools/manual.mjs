@@ -372,10 +372,11 @@ const meaning = (doc, name, keys) => {
 
 /**
  * Where each package's settings are declared, so the walk crosses from one to
- * the next by itself. The walk runs from `settings.Config` down, and a package
+ * the next by itself. The walk runs from the document down, and a package
  * nobody listed here stops the build.
  */
 const PACKAGES = {
+  container: 'container',
   settings: 'adapter/settings',
   download: 'internal/adapter/download',
   embed: 'internal/adapter/embed',
@@ -496,9 +497,11 @@ const sectioned = (keys) => {
 }
 
 const settings = async () => {
-  // The whole package, walked from the top: a section nobody thought to list is
-  // still walked into, and a key added to one turns up here.
-  const keys = await keysOf(PACKAGES.settings, 'Config', '')
+  // The document, walked from the top: a section nobody thought to list is
+  // still walked into, and a key added to one turns up here. It is declared
+  // where every adapter is bound, because the file is the union of their
+  // sections and the sections about the window.
+  const keys = await keysOf(PACKAGES.container, 'Settings', '')
 
   const row = (key, section) =>
     `| \`${section ? key.path.slice(section.length + 1) : key.path}\` | ${key.kind} | ${key.meaning} |`

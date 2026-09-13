@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
@@ -19,7 +18,9 @@ import (
 //
 // It is published as one, through API.showing, and every request reads it there.
 type passes struct {
-	opening      *container.VaultOpener
+	// refresh brings a note of this vault up to date through the opening it is
+	// being followed by.
+	refresh      vaults.Refresh
 	recognising  *source.RecognitionWorker
 	transcribing *source.TranscriptionWorker
 
@@ -59,7 +60,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if v.ID == o.API.GetShownVault().ID {
 		return nil
 	}
-	if err := readable(o.cfg, v); err != nil {
+	if err := readable(o.made.GetVaultIdentity(), v); err != nil {
 		return err
 	}
 	if err := o.shutting.alone(); err != nil {
@@ -137,7 +138,8 @@ func (o *Installation) beginVault(v domain.Vault, rebuild bool) (*passes, error)
 	}
 
 	watching, stop := context.WithCancel(o.under)
-	recognising := o.cfg.OpenRecognitionWorker(watching, o.Index.Sources(), o.tasks, o.models)
+	recognising := o.made.OpenRecognitionWorker(watching, o.tasks, o.models)
+	sources := o.made.GetSourceQueries()
 
 	// What a recognition writes down is cut where every other cut happens. A
 	// document being read and a vault being scanned are then never two passes
@@ -152,41 +154,32 @@ func (o *Installation) beginVault(v domain.Vault, rebuild bool) (*passes, error)
 	// A batch left with a proofreader outlives the run that left it, so one
 	// left before the application closed is collected when it opens. Every
 	// vault this installation holds is asked after.
-	recognising.CollectBatches(watching, o.Index.SourcesKnown(), collectedEvery, known...)
+	recognising.CollectBatches(watching, sources, collectedEvery, known...)
 
 	// A proofreading stands at the page it reached, so one that ended among the
 	// batches is taken up when the application opens.
-	recognising.TakeUp(watching, o.Index.SourcesKnown(), known...)
+	recognising.TakeUp(watching, sources, known...)
 
 	// A recording says nothing until a model has listened to it, so the ones
 	// this vault holds no transcript for are work whether or not anybody asks.
 	// What it writes is cut where every other cut happens.
-	transcribing := o.cfg.OpenTranscriptionWorker(watching, o.Index.Sources(), o.tasks, o.models)
+	transcribing := o.made.OpenTranscriptionWorker(watching, o.tasks, o.models)
 	transcribing.Cut = recognising.Cut
-	if o.cfg.Transcribes {
-		transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
+	if o.made.IsTranscribingUnasked() {
+		transcribing.Queue(watching, sources, heardEvery, v)
 	}
 
 	// A transcript's proofreading stands at the line it reached, and is taken up
 	// here whether or not this installation listens to recordings on its own.
 	// Every vault this installation holds is asked after.
-	transcribing.TakeUp(watching, o.Index.SourcesKnown(), known...)
+	transcribing.TakeUp(watching, sources, known...)
 
 	// Reading every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
-	cfg := o.cfg
-	cfg.RebuildIndex = rebuild
-
-	// Opening a vault is the same act in both windows, so it is one thing in the
-	// container. What this window says about it while it runs is below.
-	opening := cfg.VaultOpener(o.Index)
-	opening.Rebuild = rebuild
-
-	ended := begin(watching, v, cfg, o.Index, o.API, opening,
-		cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
+	refresh, ended := begin(watching, v, o.made, o.API, rebuild, o.Embedder, o.wake, owed, o.out)
 
 	return &passes{
-		opening:      opening,
+		refresh:      refresh,
 		recognising:  recognising,
 		transcribing: transcribing,
 		// The window asks for a scan to be read through the same job an agent
@@ -276,8 +269,7 @@ func chooseVault(registry port.VaultRegistry, asked string) (domain.Vault, error
 
 // readable is the vault being one this window can show: the folder reads as a
 // vault, and it carries the identity the list has for it.
-func readable(cfg container.Config, v domain.Vault) error {
-	identity := cfg.VaultIdentity()
+func readable(identity port.VaultIdentity, v domain.Vault) error {
 	if err := identity.Readable(v.Path); err != nil {
 		return fmt.Errorf("%w: %w", vaults.ErrUnreadable, err)
 	}

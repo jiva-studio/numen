@@ -81,8 +81,7 @@ func run(cfg container.Config, noAgent bool) error {
 	if err != nil {
 		return err
 	}
-	cfg = cfg.SetIndexing(chosen.Indexing)
-	cfg.Agent = chosen.Agent
+	cfg = cfg.SetSettings(chosen)
 
 	registry, err := cfg.Registry()
 	if err != nil {

@@ -75,11 +75,25 @@ func Start(dir string) (int, error) {
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := editor.Open(ctx, cfg, filed, os.Stderr)
+	made, err := cfg.GetEditorAssembly(ctx)
 	if err != nil {
 		stop()
 		return 0, err
 	}
+	opened, err := editor.Open(ctx, made, filed, os.Stderr)
+	if err != nil {
+		stop()
+		return 0, err
+	}
+
+	// The themes are the installation's, and a folder that could not be made
+	// leaves the ones this binary ships. A theme the settings name that the
+	// catalogue has not is said where the person is.
+	themes, wrong := cfg.Themes(opened.SayTheme)
+	if wrong != nil {
+		fmt.Fprintln(os.Stderr, "themes:", wrong)
+	}
+	opened.API.Themes = themes
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		stop()

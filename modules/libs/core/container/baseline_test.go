@@ -92,7 +92,7 @@ func TestWhatTheBaselineShrinkRuleRefuses(t *testing.T) {
 		from, to string
 		admits   bool
 	}{
-		{"adapter/window/editor", "container", true},
+		{"container", "internal/chunking", true},
 		{"container", "task", true},
 		{"adapter/cli", "internal/adapter/trash", false},
 		{"adapter/settings", "port", false},

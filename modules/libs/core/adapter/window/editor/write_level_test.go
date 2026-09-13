@@ -1,4 +1,4 @@
-package editor
+package editor_test
 
 import (
 	"io"
@@ -10,15 +10,16 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// openInstallation is a window put together the way a person's window is: through
-// Open, on a vault of this test's own.
-func openInstallation(t *testing.T) *Installation {
+// openInstallation is a window put together the way a person's window is:
+// through the composition root, on a vault of this test's own.
+func openInstallation(t *testing.T) *editor.Installation {
 	t.Helper()
 
 	cfg := container.Config{
@@ -38,7 +39,7 @@ func openInstallation(t *testing.T) *Installation {
 		t.Fatal(err)
 	}
 
-	opened, err := Open(t.Context(), cfg, "one", io.Discard)
+	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +69,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save was refused: %v", refused)
 	}
 
-	found, err := opened.Index.Passages().Lexical(
+	found, err := opened.Passages().Lexical(
 		t.Context(), opened.GetShownVault().ID, "tetragrammaton",
 		[]domain.SourceKind{domain.KindNote}, 10, false,
 	)

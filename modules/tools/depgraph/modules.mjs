@@ -54,17 +54,6 @@ export const unlayered = {
  */
 export const baseline = new Map([
   [
-    '@numen/editor',
-    [
-      // The media entity is exercised against a real window of tabs, which is
-      // the only thing that can say what opening one does. What media is built
-      // on is `entities/tab/@x/media`; this is what its test mounts.
-      'no-entities-slice-reaches-a-slice: src/entities/media/kind.test.ts → src/entities/tab/model/openers.ts',
-      'no-entities-slice-reaches-a-slice: src/entities/media/kind.test.ts → src/entities/tab/model/windowTabs.ts',
-      'no-entities-slice-reaches-a-slice: src/entities/media/kind.test.ts → src/entities/tab/lib/workspace.ts',
-    ],
-  ],
-  [
     '@numen/ui',
     [
       // An editor is drawn in a pane of the workspace, and a tab switched away

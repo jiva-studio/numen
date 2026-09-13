@@ -136,7 +136,7 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 		},
 
 		Sources: mcp.Sources{
-			Queries:    opened.Index.SourcesKnown(),
+			Queries:    opened.SourcesKnown(),
 			Recognise:  recogniser(opened),
 			Transcribe: opened.GetTranscriptionWorker(),
 			Derived:    cfg.GetDerivedStores(),
@@ -157,13 +157,13 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 		},
 
 		Notes: mcp.Notes{
-			Queries: opened.Index.Queries(),
+			Queries: opened.Queries(),
 			// The one search the window offers. A model that could not be
 			// fitted is said where the person is, and not twice.
 			Search:        *opened.API.Finds,
 			Neighbourhood: notes.Neighbourhood,
 			Links:         notes.Links,
-			Problems:      check.Standard(opened.Index.Problems()),
+			Problems:      check.Standard(opened.Problems()),
 
 			Create:  notes.Create,
 			Write:   notes.Write,

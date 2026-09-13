@@ -10,7 +10,7 @@ import (
 
 // The hour a day of review begins at is read from the file.
 func TestTheHourADayBeginsAt(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"review": {"day_starts": "03:30"}}`))
+	cfg, err := openAt(write(t, `{"review": {"day_starts": "03:30"}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func TestTheHourADayBeginsAt(t *testing.T) {
 // An installation nobody has configured begins the day where this application
 // begins it.
 func TestAFileNamingNoHour(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"appearance": {"text_scale": 1}}`))
+	cfg, err := openAt(write(t, `{"appearance": {"text_scale": 1}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestAnHourTheDayDoesNotBeginAt(t *testing.T) {
 		`{"review": {"day_starts": "18:00"}}`,
 		`{"review": {"day_starts": "4"}}`,
 	} {
-		cfg, err := settings.OpenAt(write(t, written))
+		cfg, err := openAt(write(t, written))
 		if err != nil {
 			t.Fatal(err)
 		}

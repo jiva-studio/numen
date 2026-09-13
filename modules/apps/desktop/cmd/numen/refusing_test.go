@@ -142,7 +142,8 @@ func openIndex(t *testing.T, path string) error {
 // read is the trouble a settings file comes back with.
 func read(t *testing.T, path string) error {
 	t.Helper()
-	_, err := settings.OpenAt(path)
+	held := container.DefaultSettings()
+	err := settings.OpenAt(path, &held)
 	if err == nil {
 		t.Fatalf("%s was read as settings", path)
 	}

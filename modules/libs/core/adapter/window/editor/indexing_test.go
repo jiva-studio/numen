@@ -26,7 +26,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	// Every asking is turned down, which is what a model that is there and not
 	// answering looks like from here.
 	model := newSulking(64, math.MaxInt)
-	cfg, db := reading(t)
+	made, db := reading(t)
 	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model, nil)
+	embedSources(t.Context(), made, api, v, model, nil)
 
 	at := findTask(t, api, makingVectors)
 	if at == nil {
@@ -53,7 +53,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 // a list a finished pass stays in is a list nobody reads.
 func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	model := &asked{dims: 64}
-	cfg, db := reading(t)
+	made, db := reading(t)
 	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model, nil)
+	embedSources(t.Context(), made, api, v, model, nil)
 
 	if at := findTask(t, api, makingVectors); at != nil {
 		t.Errorf("a pass that embedded what was owed is still being done: %+v", *at)
@@ -77,7 +77,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	model := &asked{dims: 64}
 	watching := &peeking{asked: model}
-	cfg, db := reading(t)
+	made, db := reading(t)
 	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	cut(t, db, api)
 	watching.tasks = api.Window.Tasking
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, watching, nil)
+	embedSources(t.Context(), made, api, v, watching, nil)
 
 	at, held := watching.opening(makingVectors)
 	if !held {
@@ -107,7 +107,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 // that goroutine for nothing.
 func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	model := &asked{dims: 64}
-	cfg, db := reading(t)
+	made, db := reading(t)
 
 	// The notes are on disk and nothing has cut them, so the index holds no
 	// chunk and owes no vector.
@@ -123,7 +123,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	over := make(chan struct{})
 	go func() {
 		defer close(over)
-		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.GetWaitingEmbedder(), nil)
+		embedSources(t.Context(), made, api, v, arriving.GetWaitingEmbedder(), nil)
 	}()
 
 	select {
@@ -138,7 +138,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 // share of nothing while the weights come down.
 func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	model := &asked{dims: 64}
-	cfg, db := reading(t)
+	made, db := reading(t)
 	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	over := make(chan struct{})
 	go func() {
 		defer close(over)
-		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.GetWaitingEmbedder(), nil)
+		embedSources(t.Context(), made, api, v, arriving.GetWaitingEmbedder(), nil)
 	}()
 
 	for range 20 {
@@ -210,7 +210,7 @@ func (p *peeking) opening(id string) (task.Task, bool) {
 // a vault searching less than it holds, and the pass is left standing under
 // what stopped it.
 func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
-	cfg, db := reading(t)
+	made, db := reading(t)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.show(v)
@@ -220,7 +220,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, nil, nil, io.Discard)
+	readSources(t.Context(), made, api, v, nil, false, nil, io.Discard)
 
 	at := findTask(t, api, readingBooks)
 	if at == nil {
@@ -231,9 +231,9 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	}
 }
 
-// reading is an index and the settings it was opened from, for a pass driven
+// reading is an index and the window's assembly over it, for a pass driven
 // without a window in front of it.
-func reading(t *testing.T) (container.Config, *container.Index) {
+func reading(t *testing.T) (Assembly, *container.Index) {
 	t.Helper()
 
 	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
@@ -242,7 +242,7 @@ func reading(t *testing.T) (container.Config, *container.Index) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	return cfg, db
+	return container.NewEditorAssembly(cfg, nil, db), db
 }
 
 // cut reads the vault's notes, so that its chunks are in the index owing their
@@ -281,7 +281,7 @@ func findTask(t *testing.T, api *API, id string) *task.Task {
 // share of nothing, for as long as the first vectors take to come back.
 func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	model := &asked{dims: 64}
-	cfg, db := reading(t)
+	made, db := reading(t)
 	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
@@ -299,7 +299,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	held := embedding.NewArriving(model.Model())
 	held.ReportArrival(over, nil)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, held.GetWaitingEmbedder(), nil)
+	embedSources(t.Context(), made, api, v, held.GetWaitingEmbedder(), nil)
 
 	for _, list := range over.lists() {
 		for _, at := range list {
@@ -356,7 +356,7 @@ func (o *overheard) lists() [][]task.Task {
 func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	nudge := make(chan struct{}, 1)
 	model := &nudging{asked: &asked{dims: 64}, nudge: nudge}
-	cfg, db := reading(t)
+	made, db := reading(t)
 	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +368,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model, nudge)
+	embedSources(t.Context(), made, api, v, model, nudge)
 
 	held, embedded, err := db.Progress().Progress(t.Context(), v.ID, model.Model().Recipe())
 	if err != nil {
@@ -394,7 +394,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	}
 
 	// Taken up again, the pass asks the index what still owes a vector.
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model.asked, nil)
+	embedSources(t.Context(), made, api, v, model.asked, nil)
 
 	held, embedded, err = db.Progress().Progress(t.Context(), v.ID, model.Model().Recipe())
 	if err != nil {

@@ -61,10 +61,10 @@ func TestEditLoad(t *testing.T) {
 	}
 	api.Indexing.Progress = db.Progress()
 	api.show(v)
-	opened := cfg.VaultOpener(db)
 
 	reading := time.Now()
-	wait := begin(t.Context(), v, cfg, db, api, opened, filesystem.VaultReaders{}, nil, newNudges(time.Hour), &pending{}, io.Discard)
+	_, wait := begin(t.Context(), v, container.NewEditorAssembly(cfg, nil, db),
+		api, false, nil, newNudges(time.Hour), &pending{}, io.Discard)
 	t.Cleanup(wait)
 	for !api.Ready.Load() && api.Error.Why() == "" {
 		time.Sleep(50 * time.Millisecond)

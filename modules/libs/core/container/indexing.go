@@ -1,4 +1,4 @@
-package settings
+package container
 
 import (
 	"math"
@@ -9,7 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 )
 
-// Indexing is how a vault is made searchable.
+// Indexing is how a vault is made searchable. It is one section of the settings
+// file and the union of what four adapters are configured with, which is why it
+// stands where every adapter is bound.
 type Indexing struct {
 	// Embedding is which model turns text into vectors, and how it is reached.
 	Embedding embed.Config `json:"embedding"`
@@ -63,6 +65,19 @@ type Transcription struct {
 	// without anybody asking; whether a recording nobody asked about is
 	// listened to at all is TranscribeRecordings.
 	Proofread proofreading.Proofread `json:"proofread"`
+}
+
+// DefaultIndexing is what an installation nobody has configured makes a vault
+// searchable with.
+func DefaultIndexing() Indexing {
+	set := true
+	return Indexing{
+		Embedding:            embed.Defaults(),
+		Recognition:          Recognition{Config: recognition.Defaults()},
+		Proofreading:         proofreading.Defaults(),
+		Transcription:        Transcription{Config: transcription.Defaults()},
+		TranscribeRecordings: &set,
+	}
 }
 
 // DefaultTranscribeUnderMB is how large a recording listened to unasked may be.

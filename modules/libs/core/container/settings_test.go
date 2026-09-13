@@ -35,7 +35,7 @@ func TestTheSettingsReadOutHoldWhatTheFileLeavesOut(t *testing.T) {
 		t.Errorf("the settings stand at %q, not %q", said, path)
 	}
 
-	var held settings.Config
+	var held Settings
 	if err := json.Unmarshal([]byte(written), &held); err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
 		t.Errorf("the file came back as %s", after)
 	}
 
-	held, err := settings.OpenAt(path)
+	held, err := cfg.getSettingsAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := settings.OpenAt(path)
+	held, err := cfg.getSettingsAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}

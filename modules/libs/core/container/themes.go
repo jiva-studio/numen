@@ -98,7 +98,7 @@ func (c Config) readAppearance(said *scales) (theme.Appearance, error) {
 	if err != nil {
 		return theme.Appearance{}, err
 	}
-	held, err := settings.OpenAt(path)
+	held, err := c.getSettingsAt(path)
 	if err != nil {
 		return theme.Appearance{}, err
 	}
@@ -139,7 +139,8 @@ func (c Config) wear(chosen theme.Appearance, said *scales) error {
 		writing = append(writing,
 			settings.Setting{At: []string{"appearance", "text_scale"}, Written: chosen.TextScale})
 	}
-	if err := settings.Save(path, writing...); err != nil {
+	into := DefaultSettings()
+	if err := settings.Save(path, &into, writing...); err != nil {
 		return err
 	}
 	said.clearSizes(chosen)

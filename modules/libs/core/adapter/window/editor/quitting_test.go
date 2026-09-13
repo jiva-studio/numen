@@ -120,7 +120,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 		t.Fatal(err)
 	}
 
-	opened, err := editor.Open(t.Context(), cfg, "", os.Stderr)
+	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -107,9 +107,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	if err != nil {
 		return err
 	}
-	cfg = cfg.SetIndexing(chosen.Indexing)
-	cfg.Agent = chosen.Agent
-	cfg.Importing = chosen.Importing
+	cfg = cfg.SetSettings(chosen)
 	cfg.InterfaceScale, cfg.TextScale = sizes.interfaceScale, sizes.textScale
 
 	// Before the window: every page this process reads is read through the
@@ -123,10 +121,23 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		return err
 	}
 
-	opened, err := editor.Open(ctx, cfg, vault, os.Stdout)
+	made, err := cfg.GetEditorAssembly(ctx)
 	if err != nil {
 		return err
 	}
+	opened, err := editor.Open(ctx, made, vault, os.Stdout)
+	if err != nil {
+		return err
+	}
+
+	// The themes are the installation's, and a folder that could not be made
+	// leaves the ones this binary ships. A theme the settings name that the
+	// catalogue has not is said where the person is.
+	themes, wrong := cfg.Themes(opened.SayTheme)
+	if wrong != nil {
+		fmt.Fprintf(os.Stdout, "themes: %v\n", wrong)
+	}
+	opened.API.Themes = themes
 
 	// What reading the settings had to tell a person goes where they are: a
 	// window opened from a desktop entry has no terminal to write to.

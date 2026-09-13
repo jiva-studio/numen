@@ -83,8 +83,8 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 		t.Fatalf("refused: %s", reason)
 	}
 
-	said, err := settings.OpenAt(file)
-	if err != nil {
+	said := container.DefaultSettings()
+	if err := settings.OpenAt(file, &said); err != nil {
 		t.Fatal(err)
 	}
 	if said.Appearance.Theme != "preset:nord" || said.Appearance.Mode != settings.ModeDark {
@@ -128,8 +128,8 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 		t.Fatalf("refused: %s", reason)
 	}
 
-	said, err := settings.OpenAt(file)
-	if err != nil {
+	said := container.DefaultSettings()
+	if err := settings.OpenAt(file, &said); err != nil {
 		t.Fatal(err)
 	}
 	if said.Appearance.InterfaceScale != 1.5 || said.Appearance.TextScale != 1 {

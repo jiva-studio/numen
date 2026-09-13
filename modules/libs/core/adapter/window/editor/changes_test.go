@@ -71,7 +71,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		t.Fatal(err)
 	}
 
-	opened, err := editor.Open(t.Context(), settings, "", os.Stderr)
+	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, settings), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

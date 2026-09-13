@@ -130,35 +130,12 @@ func (c Config) handleError(err error) {
 	}
 }
 
-// SetIndexing is this configuration carrying what a settings file says about
-// making a vault searchable.
-//
-// Every section of it is carried here, in one place both entry points use. A
-// section an entry point leaves behind is a part of the application that does
-// nothing and says nothing, since naming no model is how a person turns one
-// off.
-func (c Config) SetIndexing(said settings.Indexing) Config {
-	c.Embedding = said.Embedding
-	c.Recognition = said.Recognition.Config
-	c.Proofreading = said.Proofreading
-	c.ScanProofreading = said.Recognition.Proofread
-	c.TranscriptProofreading = said.Transcription.Proofread
-	c.Transcription = said.Transcription.Config
-	c.Transcribes = said.Transcribes()
-	c.TranscribesUnder = said.TranscribesUnder()
-	return c
-}
-
 // SyncSetting reads, as each rename is made, whether a note's title and its
 // filename are kept as one name. A file that cannot be read keeps them one
 // name, which is what an installation nobody has configured does.
 func (c Config) SyncSetting() note.SyncSetting {
 	return func() note.SyncTitleAndFilename {
-		path, err := c.settingsFile()
-		if err != nil {
-			return true
-		}
-		held, err := settings.OpenAt(path)
+		held, err := c.Settings()
 		if err != nil {
 			return true
 		}
@@ -174,11 +151,11 @@ func (c Config) ReadSettings() func() (string, string, error) {
 		if err != nil {
 			return "", "", err
 		}
-		held, err := settings.OpenAt(path)
+		held, err := c.getSettingsAt(path)
 		if err != nil {
 			return "", path, err
 		}
-		written, err := settings.WriteJSON(held)
+		written, err := held.WriteJSON()
 		return written, path, err
 	}
 }
@@ -211,30 +188,8 @@ func (c Config) WritesConfiguredFile() func(written string, seen *string) error 
 		if err != nil {
 			return err
 		}
-		return settings.Write(path, []byte(written), seen)
-	}
-}
-
-// Models reads, as the window asks, the models each setting that names one can
-// be set to, and the programs the agent setting can name. The settings are read
-// with them, so every row is answered against what is in force; a file that
-// cannot be read is answered against the defaults.
-//
-// Whether a model's files are on this machine is looked for by the adapter that
-// would fetch them, bound here as every other adapter is.
-func (c Config) Models() func() []port.Model {
-	return func() []port.Model {
-		held := settings.Defaults()
-		if path, err := c.settingsFile(); err == nil {
-			if read, err := settings.OpenAt(path); err == nil {
-				held = read
-			}
-		}
-		fetched := settings.Fetches{
-			Embedding:   embed.IsFetched,
-			Recognising: recognition.IsFetched,
-		}
-		return append(settings.Models(held, fetched), settings.Agents()...)
+		held := DefaultSettings()
+		return settings.Write(path, []byte(written), seen, &held)
 	}
 }
 
@@ -268,18 +223,9 @@ func (c Config) TurnsSetting() func(written []port.Setting) error {
 		if err != nil {
 			return err
 		}
-		return settings.Save(path, held...)
+		into := DefaultSettings()
+		return settings.Save(path, &into, held...)
 	}
-}
-
-// Settings are what a person has configured this installation to do. An
-// installation nobody has configured is written down as what it is doing.
-func (c Config) Settings() (settings.Config, error) {
-	path, err := c.settingsFile()
-	if err != nil {
-		return settings.Config{}, err
-	}
-	return settings.OpenAt(path)
 }
 
 // settingsFile is the file a person configures this installation in.

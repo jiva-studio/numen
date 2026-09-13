@@ -5,7 +5,7 @@
  * what it does is asked of it here through a stand-in element.
  */
 import { describe, expect, it } from 'vitest'
-import { audio, type AudioFactory } from './player'
+import { audio, createMediaTypeProbe, type AudioFactory } from './player'
 import { WORDS } from '../words'
 
 const TALK = 'http://127.0.0.1:1/files/w/v/talk.mp3'
@@ -326,5 +326,31 @@ describe('the element a window plays through', () => {
     expect(plays.url.value).toBe('')
     expect(plays.playing.value).toBe(false)
     expect(plays.error.value).toBe(WORDS.unreadable)
+  })
+})
+
+describe('what this window can play', () => {
+  it('asks the window once, however many recordings are open', () => {
+    let asks = 0
+    const plays = createMediaTypeProbe((type) => {
+      asks++
+      return type === 'audio/mpeg'
+    })
+
+    expect(plays('audio/mpeg')).toBe(true)
+    expect(plays('audio/mpeg')).toBe(true)
+    expect(plays('audio/mpeg')).toBe(true)
+    expect(asks).toBe(1)
+
+    expect(plays('audio/wav')).toBe(false)
+    expect(asks).toBe(2)
+  })
+
+  it('plays nothing where the application named no type', () => {
+    expect(createMediaTypeProbe(() => true)('')).toBe(false)
+  })
+
+  it('plays nothing where the window answers for nothing', () => {
+    expect(createMediaTypeProbe(() => false)('audio/mpeg')).toBe(false)
   })
 })

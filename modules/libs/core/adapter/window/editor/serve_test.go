@@ -195,8 +195,6 @@ func openingWith(
 		api.Indexing.Model.Store(embedder.Model().String())
 		api.Indexing.Progress = db.Progress()
 	}
-	opened := cfg.VaultOpenerWith(db, readers, watcher)
-
 	line, done := api.Listeners.listen()
 	t.Cleanup(done)
 
@@ -204,7 +202,8 @@ func openingWith(
 	api.Wrote = func() { raise(wake.notes) }
 
 	ctx, stop := context.WithCancel(t.Context())
-	wait := begin(ctx, v, cfg, db, api, opened, readers, embedder, wake, &pending{}, io.Discard)
+	_, wait := begin(ctx, v, newWatched(cfg, db, readers, watcher),
+		api, false, embedder, wake, &pending{}, io.Discard)
 	t.Cleanup(func() {
 		stop()
 		wait()
@@ -525,8 +524,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 
 	out := &saying{}
 	ctx, stop := context.WithCancel(t.Context())
-	wait := begin(ctx, v, cfg, db, api, cfg.VaultOpenerWith(db, readers, watcher),
-		readers, nil, newNudges(settled), &pending{}, out)
+	_, wait := begin(ctx, v, newWatched(cfg, db, readers, watcher),
+		api, true, nil, newNudges(settled), &pending{}, out)
 	t.Cleanup(func() {
 		stop()
 		wait()

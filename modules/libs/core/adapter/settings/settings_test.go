@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
@@ -31,8 +32,22 @@ func write(t *testing.T, body string) string {
 	return path
 }
 
+// openAt is the file as the installation reads it: the sections this adapter
+// owns, and the section each adapter is configured by, which is read into that
+// adapter's own shape where every adapter is bound.
+func openAt(path string) (container.Settings, error) {
+	return container.Config{SettingsPath: path}.Settings()
+}
+
+// newDocument is the whole file as the installation declares it, holding what
+// an installation nobody has configured does.
+func newDocument() *container.Settings {
+	held := container.DefaultSettings()
+	return &held
+}
+
 func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) {
-	cfg, err := settings.OpenAt(filepath.Join(t.TempDir(), "numen.json"))
+	cfg, err := openAt(filepath.Join(t.TempDir(), "numen.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +77,7 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 // The window's settings are four fields of one section, and a file writing one
 // of them says nothing about the rest.
 func TestAFileNamingTheTextSizeStillWearsTheDefaultTheme(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"appearance":{"text_scale":1.5}}`))
+	cfg, err := openAt(write(t, `{"appearance":{"text_scale":1.5}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,12 +99,12 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 		`{"appearance":{"text_scale":1.9}}`,
 		`{"appearance":{"text_scale":0}}`,
 	} {
-		if _, err := settings.OpenAt(write(t, body)); err == nil {
+		if _, err := openAt(write(t, body)); err == nil {
 			t.Errorf("%s was read", body)
 		}
 	}
 
-	_, err := settings.OpenAt(write(t, `{"appearance":{"text_scale":3}}`))
+	_, err := openAt(write(t, `{"appearance":{"text_scale":3}}`))
 	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
 		t.Fatalf("refused with %v", err)
@@ -108,7 +123,7 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 }
 
 func TestASizeAtEitherEndIsTaken(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"appearance":{"interface_scale":0.8,"text_scale":1.75}}`))
+	cfg, err := openAt(write(t, `{"appearance":{"interface_scale":0.8,"text_scale":1.75}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +136,7 @@ func TestASizeAtEitherEndIsTaken(t *testing.T) {
 // setting, and the field is given the name this build reads.
 func TestAFileNamingTheZoomIsGivenTheNameThatReplacedIt(t *testing.T) {
 	path := write(t, `{"appearance":{"zoom":1.5}}`)
-	cfg, err := settings.OpenAt(path)
+	cfg, err := openAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +166,7 @@ func TestAFileNamingTheZoomIsGivenTheNameThatReplacedIt(t *testing.T) {
 // changed, down to the blank lines and a number written to two places.
 func TestTheRenamingLeavesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
 	path := write(t, arranged)
-	if _, err := settings.OpenAt(path); err != nil {
+	if _, err := openAt(path); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -169,7 +184,7 @@ func TestTheRenamingLeavesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
 // setting, so there is nothing to carry and nothing to say, ever again.
 func TestASecondLaunchRenamesNothingAndSaysNothing(t *testing.T) {
 	path := write(t, arranged)
-	if _, err := settings.OpenAt(path); err != nil {
+	if _, err := openAt(path); err != nil {
 		t.Fatal(err)
 	}
 	renamed, err := os.ReadFile(path)
@@ -181,7 +196,7 @@ func TestASecondLaunchRenamesNothingAndSaysNothing(t *testing.T) {
 	}
 
 	for launch := range 3 {
-		cfg, err := settings.OpenAt(path)
+		cfg, err := openAt(path)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -206,7 +221,7 @@ func TestASecondLaunchRenamesNothingAndSaysNothing(t *testing.T) {
 func TestAFileNamingBothIsDrawnAtTheOneThisBuildReads(t *testing.T) {
 	const both = `{"appearance":{"zoom":1.5,"interface_scale":1.25}}`
 	path := write(t, both)
-	cfg, err := settings.OpenAt(path)
+	cfg, err := openAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +251,7 @@ func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
 	testsupport.Unwritable(t, path)
 
 	for launch := range 2 {
-		cfg, err := settings.OpenAt(path)
+		cfg, err := openAt(path)
 		if err != nil {
 			t.Fatalf("launch %d: %v", launch, err)
 		}
@@ -260,7 +275,7 @@ func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
 // Zero named no size, and every file this application has ever written for
 // itself holds one.
 func TestAZoomNamingNoSizeCarriesNothingAndSaysNothing(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"appearance":{"zoom":0}}`))
+	cfg, err := openAt(write(t, `{"appearance":{"zoom":0}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +292,7 @@ func TestAZoomNamingNoSizeCarriesNothingAndSaysNothing(t *testing.T) {
 func TestAFileNamingNoSizeIsDrawnAtWhatTheDesktopAsksFor(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
 	for _, body := range []string{`{}`, `{"appearance":{"zoom":0}}`, `{"appearance":{"text_scale":1.25}}`} {
-		cfg, err := settings.OpenAt(write(t, body))
+		cfg, err := openAt(write(t, body))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -294,7 +309,7 @@ func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 		`{"appearance":{"interface_scale":1.25}}`: 1.25,
 		`{"appearance":{"zoom":1.25}}`:            1.25,
 	} {
-		cfg, err := settings.OpenAt(write(t, body))
+		cfg, err := openAt(write(t, body))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -307,7 +322,7 @@ func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 // A number the setting does not take is not one it is seeded with.
 func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "3")
-	cfg, err := settings.OpenAt(write(t, `{}`))
+	cfg, err := openAt(write(t, `{}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -323,7 +338,7 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 	const held = `{"appearance":{"zoom":3}}`
 	path := write(t, held)
-	cfg, err := settings.OpenAt(path)
+	cfg, err := openAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -369,7 +384,7 @@ func TestWhatIsSaidFitsTheLineItIsShownOn(t *testing.T) {
 		"0.0000000000000000000000001",
 		"12345678901234567890123456789",
 	} {
-		cfg, err := settings.OpenAt(write(t, `{"appearance":{"zoom":`+zoom+`}}`))
+		cfg, err := openAt(write(t, `{"appearance":{"zoom":`+zoom+`}}`))
 		if err != nil {
 			t.Fatalf("%s: %v", zoom, err)
 		}
@@ -385,7 +400,7 @@ func TestWhatIsSaidFitsTheLineItIsShownOn(t *testing.T) {
 // What the file holds is what is written back, and the two names are not both
 // written.
 func TestWhatIsWrittenBackNamesTheSettingThisBuildReads(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"appearance":{"zoom":1.5}}`))
+	cfg, err := openAt(write(t, `{"appearance":{"zoom":1.5}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -403,7 +418,7 @@ func TestWhatIsWrittenBackNamesTheSettingThisBuildReads(t *testing.T) {
 }
 
 func TestAWindowIsDressedByWhatTheFileNames(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"appearance":{"mode":"dark","theme":"mine:dracula"}}`))
+	cfg, err := openAt(write(t, `{"appearance":{"mode":"dark","theme":"mine:dracula"}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -416,7 +431,7 @@ func TestAWindowIsDressedByWhatTheFileNames(t *testing.T) {
 // change, holding what the application is doing.
 func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen", "numen.json")
-	cfg, err := settings.OpenAt(path)
+	cfg, err := openAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -424,13 +439,14 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var back settings.Config
+	var back container.Settings
 	if err := json.Unmarshal(raw, &back); err != nil {
 		t.Fatal(err)
 	}
 	// Read back, the file says what the run it was written by was doing.
 	if back.Indexing.Embedding.Model != cfg.Indexing.Embedding.Model {
-		t.Errorf("the model is %+v, was %+v", back.Indexing.Embedding.Model, cfg.Indexing.Embedding.Model)
+		t.Errorf("the model is %+v, was %+v",
+			back.Indexing.Embedding.Model, cfg.Indexing.Embedding.Model)
 	}
 	local, ok := back.Indexing.Embedding.Indexing.Local()
 	if !ok || !local.Download {
@@ -443,7 +459,7 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 }
 
 func TestOneSettingIsAValidFile(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"appearance":{"interface_scale":1.5}}`))
+	cfg, err := openAt(write(t, `{"appearance":{"interface_scale":1.5}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -479,7 +495,7 @@ func asService(where embed.Provider) embed.ServiceModel {
 
 // A file naming one field of one section leaves everything else alone.
 func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t,
+	cfg, err := openAt(write(t,
 		`{"indexing":{"embedding":{"model":{"name":"text-embedding-3-large","dimensions":3072},
 		 "indexing":{"use":"service","service":{"name":"text-embedding-3-large"}}}}}`))
 	if err != nil {
@@ -515,7 +531,7 @@ func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 // leaves it out: two words for one pooling are two keys over one set of
 // vectors.
 func TestAPoolingLeftOutIsTheOneEveryModelHas(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t,
+	cfg, err := openAt(write(t,
 		`{"indexing":{"embedding":{"model":{"name":"e5","dimensions":384}}}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -526,7 +542,7 @@ func TestAPoolingLeftOutIsTheOneEveryModelHas(t *testing.T) {
 }
 
 func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{"embedding":{
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{
 		"model": {"name":"bge-m3","dimensions":1024,"max_tokens":512,"pooling":"head"},
 		"indexing": {"use":"service","service":{"base_url":"https://openrouter.ai/api/v1","name":"baai/bge-m3"}},
 		"query":    {"use":"local","local":{"name":"BAAI/bge-m3","download":true}}
@@ -554,7 +570,7 @@ func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
 
 // A vault searched by its words: nothing fetched, nothing asked of a network.
 func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{"embedding":{"indexing":{"use":""}}}}`))
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"indexing":{"use":""}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -569,7 +585,7 @@ func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
 func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "from-the-environment")
 
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"from-the-file"}}}}}`))
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"from-the-file"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -577,7 +593,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 
-	cfg, err = settings.OpenAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{}}}}}`))
+	cfg, err = openAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -588,7 +604,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 
 func TestAnInstallationMayNameItsOwnEnvironmentVariable(t *testing.T) {
 	t.Setenv("OPENROUTER_API_KEY", "from-openrouter")
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key_env":"OPENROUTER_API_KEY"}}}}}`))
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key_env":"OPENROUTER_API_KEY"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -598,7 +614,7 @@ func TestAnInstallationMayNameItsOwnEnvironmentVariable(t *testing.T) {
 }
 
 func TestWritingTheSettingsBackDoesNotCarryTheKey(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"sk-secret"}}}}}`))
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"sk-secret"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -612,7 +628,7 @@ func TestWritingTheSettingsBackDoesNotCarryTheKey(t *testing.T) {
 }
 
 func TestBrokenJSONIsAnError(t *testing.T) {
-	if _, err := settings.OpenAt(write(t, `{"appearance":`)); err == nil {
+	if _, err := openAt(write(t, `{"appearance":`)); err == nil {
 		t.Error("want an error")
 	}
 }
@@ -632,7 +648,7 @@ func TestThereIsOneFileAndItIsNamedForWhatItIs(t *testing.T) {
 // A section is kept whether it is the one in use or not, so trying another agent
 // for an afternoon does not cost the settings of the one before.
 func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"agent":{"use":"","claude":{"model":"opus","max_steps":12}}}`))
+	cfg, err := openAt(write(t, `{"agent":{"use":"","claude":{"model":"opus","max_steps":12}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -647,7 +663,7 @@ func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
 // The number in the file is the number of steps. Nothing writes a nought there
 // and calls it a ceiling.
 func TestAnUntouchedInstallationCarriesAStepCount(t *testing.T) {
-	cfg, err := settings.OpenAt(filepath.Join(t.TempDir(), "numen.json"))
+	cfg, err := openAt(filepath.Join(t.TempDir(), "numen.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -665,7 +681,7 @@ func TestAnUntouchedInstallationCarriesAStepCount(t *testing.T) {
 // An installation the folders looked in do not cover names the command line
 // itself, and it is started as written.
 func TestTheCommandLineCanBeNamed(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}`))
+	cfg, err := openAt(write(t, `{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -676,8 +692,8 @@ func TestTheCommandLineCanBeNamed(t *testing.T) {
 
 // One field named leaves the rest of its section alone.
 func TestOneAgentFieldKeepsTheRest(t *testing.T) {
-	was := settings.Defaults().Agent.Claude.MaxSteps
-	cfg, err := settings.OpenAt(write(t, `{"agent":{"claude":{"reads_hooks_and_skills":true}}}`))
+	was := agent.Defaults().Claude.MaxSteps
+	cfg, err := openAt(write(t, `{"agent":{"claude":{"reads_hooks_and_skills":true}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -693,7 +709,7 @@ func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 // with. This is what an untouched installation does, and a model that rewrites
 // a person's books does not arrive by default.
 func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
-	cfg, err := settings.OpenAt(filepath.Join(t.TempDir(), "numen.json"))
+	cfg, err := openAt(filepath.Join(t.TempDir(), "numen.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -704,7 +720,7 @@ func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
 
 // A profile named without a model is a profile naming nothing.
 func TestAProofreadingProfileWithoutAModelNamesNothing(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t,
+	cfg, err := openAt(write(t,
 		`{"indexing":{"proofreading":{"profiles":{"openrouter":{"use":"service"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -717,7 +733,7 @@ func TestAProofreadingProfileWithoutAModelNamesNothing(t *testing.T) {
 // A profile is flat: every key stands at its own level, and `use` says which of
 // them apply.
 func TestEachKindOfProofreadingProfileIsRead(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{"proofreading":{"profiles":{
+	cfg, err := openAt(write(t, `{"indexing":{"proofreading":{"profiles":{
 		"openrouter": {"use":"service","name":"google/gemini-2.5-flash","batch_size":25},
 		"agent":      {"use":"agent","model":"haiku","batch_size":20,"overlap":2}
 	}}}}`))
@@ -746,7 +762,7 @@ func TestEachKindOfProofreadingProfileIsRead(t *testing.T) {
 // A profile may name the command line it is reached through, for an
 // installation whose own is not `claude` from the path.
 func TestAnAgentProfileMayNameItsCommand(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{"proofreading":{"profiles":{
+	cfg, err := openAt(write(t, `{"indexing":{"proofreading":{"profiles":{
 		"agent": {"use":"agent","model":"haiku","command":["/opt/claude","--quiet"]}
 	}}}}`))
 	if err != nil {
@@ -762,7 +778,7 @@ func TestAnAgentProfileMayNameItsCommand(t *testing.T) {
 // profiles: it is a property of the text, and one threshold holds for the
 // installation.
 func TestTheEditDistanceIsReadFromAboveTheProfiles(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{"proofreading":{
+	cfg, err := openAt(write(t, `{"indexing":{"proofreading":{
 		"max_edit_distance": 0.5,
 		"profiles":{"openrouter":{"use":"service","name":"a-model"}}
 	}}}`))
@@ -773,7 +789,7 @@ func TestTheEditDistanceIsReadFromAboveTheProfiles(t *testing.T) {
 		t.Errorf("a correction may stand %v from the line", got)
 	}
 
-	silent, err := settings.OpenAt(write(t,
+	silent, err := openAt(write(t,
 		`{"indexing":{"proofreading":{"profiles":{"openrouter":{"use":"service","name":"a-model"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -786,7 +802,7 @@ func TestTheEditDistanceIsReadFromAboveTheProfiles(t *testing.T) {
 // Which profile puts each kind of reading right, and whether it happens without
 // anybody asking, is said where the reading is configured.
 func TestEachReadingNamesTheProfileThatPutsItRight(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{
+	cfg, err := openAt(write(t, `{"indexing":{
 		"recognition":   {"proofread":{"with":"openrouter","automatically":true}},
 		"transcription": {"proofread":{"with":"agent","automatically":false}}
 	}}`))
@@ -802,7 +818,7 @@ func TestEachReadingNamesTheProfileThatPutsItRight(t *testing.T) {
 }
 
 func TestTheProofreadersKeyStaysOutOfWhatIsWrittenBack(t *testing.T) {
-	cfg, err := settings.OpenAt(write(t, `{"indexing":{"proofreading":{"profiles":{
+	cfg, err := openAt(write(t, `{"indexing":{"proofreading":{"profiles":{
 		"openrouter": {"use":"service","name":"a-model","key":"sk-proof"}
 	}}}}`))
 	if err != nil {
@@ -854,7 +870,7 @@ func TestATitleAndAFilenameAreOneNameUntilTheFileSaysOtherwise(t *testing.T) {
 			if c.wrote {
 				path = write(t, c.file)
 			}
-			cfg, err := settings.OpenAt(path)
+			cfg, err := openAt(path)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -869,7 +885,7 @@ func TestATitleAndAFilenameAreOneNameUntilTheFileSaysOtherwise(t *testing.T) {
 // the setting a person turns off is in front of them.
 func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
-	if _, err := settings.OpenAt(path); err != nil {
+	if _, err := openAt(path); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -911,7 +927,7 @@ func TestANodeHangsThePartsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
 			if c.wrote {
 				path = write(t, c.file)
 			}
-			cfg, err := settings.OpenAt(path)
+			cfg, err := openAt(path)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -926,7 +942,7 @@ func TestANodeHangsThePartsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
 // the setting a person turns off is in front of them.
 func TestAnUntouchedInstallationWritesTheHangingDown(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
-	if _, err := settings.OpenAt(path); err != nil {
+	if _, err := openAt(path); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -966,7 +982,7 @@ func TestANodeStandsAsManyPartsAsTheFileNames(t *testing.T) {
 			if c.wrote {
 				path = write(t, c.file)
 			}
-			cfg, err := settings.OpenAt(path)
+			cfg, err := openAt(path)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -985,12 +1001,12 @@ func TestACountOfPartsOutsideWhatItGoesToIsRefused(t *testing.T) {
 		`{"appearance":{"parts_under_a_node":-1}}`,
 		`{"appearance":{"parts_under_a_node":13}}`,
 	} {
-		if _, err := settings.OpenAt(write(t, body)); err == nil {
+		if _, err := openAt(write(t, body)); err == nil {
 			t.Errorf("%s was read", body)
 		}
 	}
 
-	_, err := settings.OpenAt(write(t, `{"appearance":{"parts_under_a_node":20}}`))
+	_, err := openAt(write(t, `{"appearance":{"parts_under_a_node":20}}`))
 	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
 		t.Fatalf("refused with %v", err)
