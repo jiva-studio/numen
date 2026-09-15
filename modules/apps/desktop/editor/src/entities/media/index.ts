@@ -1,6 +1,6 @@
 /** A recording the vault holds, the transcript written down from it, and the tab it plays in. */
 export type { Cue } from './lib/cues'
-export { recordingKind, useTranscriptTab } from './kind'
+export { createRecordingKind, useTranscriptTab } from './kind'
 export type { MediaTabDeps, MediaTabState, Medium } from './kind'
 export { default as MediaLayout } from './ui/MediaLayout.vue'
 export { createMediaTypeProbe } from './model/player'

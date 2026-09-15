@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useDocumentTab, type DocumentTabState, type PageHandle } from './useDocumentTab'
-import { documentKind } from '../kind'
+import { createDocumentKind } from '../kind'
 import { DOCUMENT } from '@/entities/tab'
 import type { DocumentReaderState } from './useDocumentReader'
 import type { FileOpeners, SourceReader } from '@/entities/tab'
@@ -48,7 +48,7 @@ const createDocumentTabAt = (path: string, page: number, pageCount: number) =>
   }) as unknown as DocumentTabState
 
 const kindOver = (tab: DocumentTabState) =>
-  documentKind(createMockDocumentWindow(tab).handle, () => tab, openers().tabOpeners).kind
+  createDocumentKind(createMockDocumentWindow(tab).handle, () => tab, openers().tabOpeners).kind
 
 /** The pages drawn in a tab, which record what was asked of them. */
 const createPages = (): PageHandle => ({
@@ -89,7 +89,7 @@ describe('a document tab', () => {
   const kindOf = () => {
     const { handle } = createMockDocumentWindow()
     const { tabOpeners } = openers()
-    return documentKind(handle, (path) => useDocumentTab(read(path)), tabOpeners)
+    return createDocumentKind(handle, (path) => useDocumentTab(read(path)), tabOpeners)
   }
 
   it('is called by the file and not by the folders above it', () => {
@@ -132,7 +132,7 @@ describe('a search that landed in a document', () => {
     const held = { focusSpans: focused } as unknown as DocumentTabState
     const { handle, opened } = createMockDocumentWindow(held)
     const { tabOpeners, getReader } = openers()
-    documentKind(handle, (path) => useDocumentTab(read(path)), tabOpeners)
+    createDocumentKind(handle, (path) => useDocumentTab(read(path)), tabOpeners)
 
     const spans: readonly Span[] = [
       { from: 0, to: 12 },

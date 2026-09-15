@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import { recordingKind, useTranscriptTab, type MediaTabState, type Medium } from './kind'
+import { createRecordingKind, useTranscriptTab, type MediaTabState, type Medium } from './kind'
 import type { TranscriptState } from './model/transcript'
 import type { FileOpeners, WindowHandle } from '@/entities/tab/@x/media'
 
@@ -34,7 +34,7 @@ const recording = (path: string, transcript: number, duration: number) =>
 
 /** The kind, made over the one recording tab this test hands it. */
 const kind = (state: MediaTabState) =>
-  recordingKind(
+  createRecordingKind(
     tabs,
     () => state as unknown as TranscriptState,
     { runCommand: () => {} },

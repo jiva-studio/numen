@@ -7,10 +7,10 @@ import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import { BookContents, type ContentsEntry } from '@numen/ui'
 import { WORDS as words } from '../../words'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   /** Whether the contents stand over the page. */
-  open: boolean
+  isOpen: boolean
   /** The places in the book worth jumping to. */
   entries: readonly ContentsEntry[]
   /** Where in the book the page being read begins. */
@@ -19,11 +19,27 @@ const props = defineProps<{
 
 const emit = defineEmits<{ go: [offset: number]; dismiss: []; escape: [] }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const panel = useTemplateRef<HTMLElement>('panel')
 let detach: (() => void) | null = null
 
-// --- Handlers ---
+/* --------------------------------- Hooks ---------------------------------- */
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (!isOpen) return cleanupWindowListeners()
+    window.addEventListener('pointerdown', onOutsidePointerDown, true)
+    window.addEventListener('keydown', onWindowKey, true)
+    detach = () => {
+      window.removeEventListener('pointerdown', onOutsidePointerDown, true)
+      window.removeEventListener('keydown', onWindowKey, true)
+    }
+  },
+)
+
+onBeforeUnmount(cleanupWindowListeners)
+
+/* -------------------------------- Handlers -------------------------------- */
 function onSelectEntry(offset: number) {
   emit('go', offset)
 }
@@ -41,31 +57,16 @@ function onWindowKey(event: KeyboardEvent) {
   emit('escape')
 }
 
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 function cleanupWindowListeners() {
   detach?.()
   detach = null
 }
-
-watch(
-  () => props.open,
-  (open) => {
-    if (!open) return cleanupWindowListeners()
-    window.addEventListener('pointerdown', onOutsidePointerDown, true)
-    window.addEventListener('keydown', onWindowKey, true)
-    detach = () => {
-      window.removeEventListener('pointerdown', onOutsidePointerDown, true)
-      window.removeEventListener('keydown', onWindowKey, true)
-    }
-  },
-)
-
-onBeforeUnmount(cleanupWindowListeners)
 </script>
 
 <template>
   <Transition name="book-tab__over">
-    <aside v-if="props.open" ref="panel" class="book-tab__contents">
+    <aside v-if="props.isOpen" ref="panel" class="book-tab__contents">
       <BookContents :entries="props.entries" :at="props.at" :words="words" @go="onSelectEntry" />
     </aside>
   </Transition>

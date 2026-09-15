@@ -1,6 +1,6 @@
 /** The agent conversation tab kind of a window. */
 import { useConversation } from '@numen/ui'
-import { agentKind, core as agent, useAgentConversation, WORDS as talk } from '@/pages/agent-chat'
+import { createAgentKind as buildAgentKind, core as agent, useAgentConversation, WORDS as talk } from '@/pages/agent-chat'
 import { CONVERSATION, generateId } from '@/entities/tab'
 import type { WindowKindsDeps } from './deps'
 
@@ -12,7 +12,7 @@ export interface AgentKindDeps extends Pick<
 }
 
 export function createAgentKind({ core, tabOpeners, held, window, about }: AgentKindDeps) {
-  return agentKind(
+  return buildAgentKind(
     held.handle,
     () =>
       useAgentConversation(useConversation(agent, talk, generateId(CONVERSATION)), {

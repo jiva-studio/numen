@@ -13,7 +13,7 @@ import type { DocumentTabState } from './model/useDocumentTab'
  * The document tabs of a window. A document is its own tab, so the same one
  * opened again is the tab it is already read in.
  */
-export function documentKind(
+export function createDocumentKind(
   handle: WindowHandle,
   open: (path: string) => DocumentTabState,
   tabOpeners: FileOpeners,

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// --- Props & Emits ---
 import { useTemplateRef } from 'vue'
 import { Book } from '@numen/ui'
 import { ListTree } from '@lucide/vue'
@@ -7,6 +6,7 @@ import type { Span } from '@/shared/span'
 import type { BookHandle } from '../types'
 import { WORDS as words } from '../words'
 
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   markup: string
   path: string
@@ -25,11 +25,11 @@ const emit = defineEmits<{
   'toggle-listing': []
 }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const book = useTemplateRef<BookHandle>('book')
 const way = useTemplateRef<HTMLElement>('way')
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onMove(offset: number) {
   emit('move', offset)
 }
@@ -42,7 +42,7 @@ function onToggleListing() {
   emit('toggle-listing')
 }
 
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 function measure() {
   book.value?.measure()
 }
@@ -82,7 +82,7 @@ defineExpose({
         ref="way"
         type="button"
         class="book-tab__list"
-        :aria-label="props.isListingOpen ? words.hides : words.shows"
+        :aria-label="props.isListingOpen ? words.hideContents : words.showContents"
         :aria-pressed="props.isListingOpen"
         :aria-expanded="props.isListingOpen"
         @click="onToggleListing"

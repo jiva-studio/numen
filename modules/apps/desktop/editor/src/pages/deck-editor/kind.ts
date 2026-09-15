@@ -21,7 +21,7 @@ export interface DeckTabsInside {
   createDeckTabState(id: string): DeckTabState
 }
 
-export function deckKind({
+export function createDeckKind({
   cardTabPathMap,
   pendingTabIds,
   store,

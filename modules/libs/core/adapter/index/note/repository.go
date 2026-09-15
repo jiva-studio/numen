@@ -246,9 +246,6 @@ func parts(headings []domain.Heading) []chunking.PartStart {
 // The two levels a deck spends on what a person writes: a section, and a card
 // under it. Below them stand the stencil's field names, written out under every
 // card.
-//
-// TODO: which level a deck spends on what is the format package's answer, and
-// it is where the format is read. Take these from there once it names them.
 const (
 	sectionLevel = 1
 	cardLevel    = 2

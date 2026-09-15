@@ -11,7 +11,7 @@ import { answers } from './answers'
 import { reader } from './reader'
 import { useDeckScheduleSync } from './useDeckScheduleSync'
 import { createDeckTabActions } from './deckTabActions'
-import { deckKind } from '../kind'
+import { createDeckKind } from '../kind'
 import { openNotes } from '@/entities/note'
 import type { WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
@@ -160,7 +160,7 @@ export function useDeckTabs(
     return one
   }
 
-  const kind = deckKind({
+  const kind = createDeckKind({
     cardTabPathMap,
     pendingTabIds,
     store,

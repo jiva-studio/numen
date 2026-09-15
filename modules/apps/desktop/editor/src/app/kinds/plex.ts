@@ -1,6 +1,6 @@
 /** The plex tab kind of a window. */
 import { computed, type ShallowRef } from 'vue'
-import { plexKind, usePlexView } from '@/pages/plex-graph'
+import { createPlexKind as buildPlexKind, usePlexView } from '@/pages/plex-graph'
 import { CREATABLE } from '@/pages/note-editor'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { WindowKindsDeps } from './deps'
@@ -27,7 +27,7 @@ export function createPlexKind({
   writeMessage,
   askAgent,
 }: PlexKindDeps) {
-  return plexKind(held.handle, () => usePlexView(core), {
+  return buildPlexKind(held.handle, () => usePlexView(core), {
     editor: editing.making,
     ready: computed(() => !window.failure.value),
     isHanging: settings.hungParts.isHanging,

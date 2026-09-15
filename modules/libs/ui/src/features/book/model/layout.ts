@@ -65,7 +65,7 @@ export function useBookLayout(
    * Whether the reading area has been measured. A book is turned and never
    * scrolled, so its text is drawn only against an area of a known size.
    */
-  const measured = computed(() => viewport.value.width > 0 && viewport.value.height > 0)
+  const isMeasured = computed(() => viewport.value.width > 0 && viewport.value.height > 0)
 
   const columns = computed(() => columnsIn(viewport.value.width, textSize.value))
 
@@ -160,7 +160,7 @@ export function useBookLayout(
    */
   const settle = (keep: number, led?: BookLink) => {
     measure()
-    if (!measured.value) return
+    if (!isMeasured.value) return
     onNextFrame(() => {
       const box = area.value
       const text = paper.value
@@ -223,7 +223,7 @@ export function useBookLayout(
 
   return {
     textSize,
-    measured,
+    isMeasured,
     flow,
     spreadCount,
     front,

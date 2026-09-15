@@ -2,6 +2,7 @@
 /**
  * The line over a book's text: what the book calls the place in front.
  */
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{
   /** What the book calls the place in front. */
   chapter: string

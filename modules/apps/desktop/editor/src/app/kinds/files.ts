@@ -11,7 +11,7 @@ import {
   runInvocation,
   type DestinationDeps,
 } from '@/features/command-palette'
-import { filesKind, useFileTree } from '@/pages/file-manager'
+import { createFilesKind as buildFilesKind, useFileTree } from '@/pages/file-manager'
 import { WORDS as words } from '@/shared/words'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { WindowKindsDeps } from './deps'
@@ -73,7 +73,7 @@ export function createFilesKind({
     writeMessage,
   )
 
-  const files = filesKind(held.handle, () => useFileTree(core), {
+  const files = buildFilesKind(held.handle, () => useFileTree(core), {
     openDestination: (landing) => void openDestination(landing, destinations),
     runCommand: (id, paths, name, source) => {
       const path = paths[0] ?? ''

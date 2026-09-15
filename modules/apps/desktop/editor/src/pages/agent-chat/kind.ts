@@ -18,7 +18,7 @@ import type { NoteRef } from './types'
  * A talk is about no note of its own, so a command asked from one is asked over
  * the note the plex the person was last in is standing on.
  */
-export function agentKind(handle: WindowHandle, open: () => AgentTabState, about: () => NoteRef) {
+export function createAgentKind(handle: WindowHandle, open: () => AgentTabState, about: () => NoteRef) {
   const getTitle = (state: AgentTabState) =>
     firstLine(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') || words.agent
 

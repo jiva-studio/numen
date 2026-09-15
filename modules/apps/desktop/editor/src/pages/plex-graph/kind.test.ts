@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { paneById, panesOf } from '@numen/ui'
-import { plexKind } from './kind'
+import { createPlexKind } from './kind'
 import type { PlexTabState } from './model/usePlexTab'
 import { createVault, settle, viewOn } from './fixtures'
 import { useWindowTabs, type AnyTabKind } from '@/entities/tab'
@@ -39,7 +39,7 @@ const window = (opening = 'Opening.md') => {
     return view.view
   }
   const held = useWindowTabs()
-  const plexes = plexKind(held.handle, createView, {
+  const plexes = createPlexKind(held.handle, createView, {
     editor: createVault().editor,
     ready: ref(true),
     isHanging,

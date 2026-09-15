@@ -6,6 +6,7 @@
 import type { Pages } from '../lib/spread'
 import type { BookWords } from '../lib/words'
 
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{
   /** The words it is read with. */
   words: BookWords

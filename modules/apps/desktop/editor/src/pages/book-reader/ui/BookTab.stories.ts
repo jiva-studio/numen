@@ -223,7 +223,7 @@ export const TheListComesOverTheText: Story = {
     const before = areaOf(canvasElement).getBoundingClientRect()
     const spreads = spreadsIn(canvasElement)
 
-    await userEvent.click(canvas.getByLabelText(words.shows))
+    await userEvent.click(canvas.getByLabelText(words.showContents))
     const list = await canvas.findByRole('navigation')
 
     await waitFor(
@@ -247,7 +247,7 @@ export const TheListIsPutAway: Story = {
     const canvas = within(canvasElement)
     await waitForLayout(canvasElement)
 
-    const way = canvas.getByLabelText(words.shows)
+    const way = canvas.getByLabelText(words.showContents)
     await userEvent.click(way)
     await expect(await canvas.findByRole('navigation')).toBeInTheDocument()
 
@@ -256,7 +256,7 @@ export const TheListIsPutAway: Story = {
       async () => await expect(canvas.queryByRole('navigation')).not.toBeInTheDocument(),
       { timeout: ITS_OWN_PACE },
     )
-    await expect(canvas.getByLabelText(words.shows)).toHaveFocus()
+    await expect(canvas.getByLabelText(words.showContents)).toHaveFocus()
   },
 }
 
@@ -268,7 +268,7 @@ export const APlaceChosenIsTurnedTo: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitForLayout(canvasElement)
-    await userEvent.click(canvas.getByLabelText(words.shows))
+    await userEvent.click(canvas.getByLabelText(words.showContents))
 
     const wanted = NAMED.parts[2]!
     await userEvent.click(await canvas.findByText(wanted.title))
@@ -298,7 +298,7 @@ export const ABookThatNamesNothing: Story = {
     const canvas = within(canvasElement)
     await waitForLayout(canvasElement)
 
-    await userEvent.click(canvas.getByLabelText(words.shows))
+    await userEvent.click(canvas.getByLabelText(words.showContents))
 
     // The document names the place in front as well, so what is asked of the
     // list is asked inside it.

@@ -19,6 +19,7 @@ import type { BookProps } from '../lib/props'
 import BookFoot from './BookFoot.vue'
 import BookHead from './BookHead.vue'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<BookProps>(), {
   markup: '',
   path: '',
@@ -32,6 +33,7 @@ const props = withDefaults(defineProps<BookProps>(), {
   words: () => BOOK_WORDS,
 })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The offset now in front, in bytes of the book's text. */
   (event: 'move', at: number): void
@@ -42,6 +44,7 @@ const emit = defineEmits<{
   (event: 'follow', path: string): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 const area = useTemplateRef<HTMLElement>('area')
 const paper = useTemplateRef<HTMLElement>('paper')
 
@@ -54,10 +57,11 @@ const links = createBookLinks(props, {
 })
 
 const layout = useBookLayout(area, paper, props, (at) => emit('move', at), links.takeLed, edgeOf)
-const { measured, setting, spreadCount, front, leftInChapter } = layout
+const { isMeasured, setting, spreadCount, front, leftInChapter } = layout
 
 const hand = useBookHand(area, paper, layout.turn, edgeOf)
 
+/* -------------------------------- Handlers -------------------------------- */
 const follow = (press: MouseEvent) => links.follow(press, layout.placeAt)
 
 /**
@@ -71,6 +75,7 @@ const handleKey = (event: KeyboardEvent): boolean => {
   return true
 }
 
+/* -------------------------------- Helpers --------------------------------- */
 defineExpose({
   /**
    * Set the text again. A reader drawn out of sight has no reading area, and
@@ -99,7 +104,7 @@ defineExpose({
              be drawn. -->
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div
-          v-show="measured"
+          v-show="isMeasured"
           ref="paper"
           class="book__paper prose prose-sm prose-numen max-w-none"
           :style="setting"

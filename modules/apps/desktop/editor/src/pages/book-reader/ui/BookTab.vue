@@ -9,15 +9,15 @@ import { BookListing } from './book-listing'
 import { WORDS as words } from '../words'
 import type { BookTabState } from '../model/useBookTab'
 
-// --- Props & Emits ---
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: BookTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const isListingOpen = ref(false)
 const bookContent = useTemplateRef<InstanceType<typeof BookContent>>('bookContent')
 watchEffect(() => props.state.setBookHandle(bookContent.value ?? null))
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onDismissListing() {
   isListingOpen.value = false
 }
@@ -62,7 +62,7 @@ function onFollow(targetPath: string) {
 
     <div v-else class="book-tab__reading">
       <BookListing
-        :open="isListingOpen"
+        :is-open="isListingOpen"
         :entries="props.state.contents.value"
         :at="props.state.offset.value"
         @go="onSelectEntry"

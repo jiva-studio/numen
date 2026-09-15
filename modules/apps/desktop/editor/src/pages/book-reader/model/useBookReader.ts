@@ -46,9 +46,9 @@ export function useBookReader(
    * not the same as no text yet, and a blank page says the wrong one of the two.
    */
   const isLoading = ref(true)
-  let open = true
+  let isOpen = true
 
-  const bookDocument = useBookDocument(books, path, fingerprint, writeMessage, () => open)
+  const bookDocument = useBookDocument(books, path, fingerprint, writeMessage, () => isOpen)
 
   const page = computed(() => getPageNumber(pageBytes.value, pages.value, offset.value))
 
@@ -64,7 +64,7 @@ export function useBookReader(
   const loadBook = async () => {
     try {
       const book = await books.getBook(path)
-      if (!open) return
+      if (!isOpen) return
       title.value = book.title
       span.value = book.span
       documents.value = book.documents
@@ -75,7 +75,7 @@ export function useBookReader(
       offset.value = book.span.from
       await bookDocument.draw(getDocumentAtOffset(book.documents, book.span.from))
     } catch (error) {
-      if (!open) return
+      if (!isOpen) return
       writeMessage(formatErrorMessage(error), 'error')
     } finally {
       isLoading.value = false
@@ -86,7 +86,7 @@ export function useBookReader(
 
   const goToOffset = async (targetOffset: number) => {
     await shape
-    if (!open || documents.value.length === 0) return
+    if (!isOpen || documents.value.length === 0) return
     const last = Math.max(span.value.to - 1, span.value.from)
     offset.value = Math.min(Math.max(Math.trunc(targetOffset), span.value.from), last)
     await bookDocument.draw(getDocumentAtOffset(documents.value, offset.value))
@@ -94,22 +94,22 @@ export function useBookReader(
 
   const followLink = async (target: string) => {
     await shape
-    if (!open) return
+    if (!isOpen) return
     const targetDoc = documents.value.find((one) => one.path === target)
     if (!targetDoc) return
     await goToOffset(targetDoc.span.from)
   }
 
-  const marks = useBookHighlights(goToOffset, () => open)
+  const marks = useBookHighlights(goToOffset, () => isOpen)
 
   const focusSpans = async (...spans: readonly Span[]) => {
     await shape
-    if (!open) return
+    if (!isOpen) return
     await marks.focusSpans(...spans)
   }
 
   const close = () => {
-    open = false
+    isOpen = false
     bookDocument.close()
     documents.value = []
     contents.value = []

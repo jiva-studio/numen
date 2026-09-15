@@ -96,7 +96,7 @@ export interface Medium<K extends string = string> {
  * The recording tabs of a window, or its url tabs. A file is its own tab, so
  * the same one opened again is the tab it is already played in.
  */
-export function recordingKind<K extends string>(
+export function createRecordingKind<K extends string>(
   handle: WindowHandle,
   createState: (path: string) => TranscriptState,
   deps: MediaTabDeps,

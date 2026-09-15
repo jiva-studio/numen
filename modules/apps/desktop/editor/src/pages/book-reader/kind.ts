@@ -12,7 +12,7 @@ import type { BookTabState } from './model/useBookTab'
  * The book tabs of a window. A book is its own tab, so the same one opened
  * again is the tab it is already read in.
  */
-export function bookKind(
+export function createBookKind(
   handle: WindowHandle,
   open: (path: string) => BookTabState,
   tabOpeners: FileOpeners,

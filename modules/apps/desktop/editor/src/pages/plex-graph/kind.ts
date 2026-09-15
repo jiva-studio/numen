@@ -16,7 +16,7 @@ const titleOf = (note: string): string => note || words.plex
 /**
  * Manages window-level plex tab operations and navigation.
  */
-export function plexKind(handle: WindowHandle, createView: () => PlexView, deps: PlexTabDeps) {
+export function createPlexKind(handle: WindowHandle, createView: () => PlexView, deps: PlexTabDeps) {
   const all = () => handle.each<PlexTabState>(PLEX)
   const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.state ?? null
 

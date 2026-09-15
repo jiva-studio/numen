@@ -15,6 +15,7 @@ import {
   type ContentsWords,
 } from './contents'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** What the book divides into, ascending by offset. */
@@ -31,11 +32,13 @@ const props = withDefaults(
   },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The offset the person chose, in bytes of the book's text. */
   (event: 'go', at: number): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 /** What is typed into the field, which the list is narrowed by. */
 const typed = ref('')
 
@@ -53,9 +56,7 @@ const standing = computed(() => props.entries[findLineAt(props.entries, props.at
  */
 const DEEPEST = 4
 
-const depth = (level: number) => Math.min(Math.max(level, 0), DEEPEST)
-const lineStyle = (level: number) => ({ '--level': depth(level) })
-
+/* --------------------------------- Hooks ---------------------------------- */
 // The list follows the reading, so a person turning pages finds where they are
 // without looking for it.
 watch(standing, (one) => {
@@ -63,6 +64,10 @@ watch(standing, (one) => {
   const line = lines.value?.find((drawn) => drawn.dataset['at'] === String(one.at))
   line?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
 })
+
+/* -------------------------------- Helpers --------------------------------- */
+const depth = (level: number) => Math.min(Math.max(level, 0), DEEPEST)
+const lineStyle = (level: number) => ({ '--level': depth(level) })
 </script>
 
 <template>

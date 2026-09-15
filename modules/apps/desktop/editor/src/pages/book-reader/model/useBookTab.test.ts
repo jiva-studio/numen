@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
 import { useBookTab, type BookHandle, type BookTabState } from './useBookTab'
-import { bookKind } from '../kind'
+import { createBookKind } from '../kind'
 import { BOOK } from '@/entities/tab'
 import type { BookReaderState } from './useBookReader'
 import type { FileOpeners, SourceReader } from '@/entities/tab'
@@ -58,7 +58,7 @@ const createBookTabAt = (
   }) as unknown as BookTabState
 
 const kindOver = (tab: BookTabState) =>
-  bookKind(createMockWindow(tab).handle, () => tab, openers().tabOpeners).kind
+  createBookKind(createMockWindow(tab).handle, () => tab, openers().tabOpeners).kind
 
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {
@@ -149,7 +149,7 @@ describe('a passage of a book reached', () => {
     const held = { focusSpans } as unknown as BookTabState
     const { handle, opened } = createMockWindow(held)
     const { tabOpeners, getReader } = openers()
-    bookKind(handle, () => held, tabOpeners)
+    createBookKind(handle, () => held, tabOpeners)
 
     const spans: readonly Span[] = [{ from: 3_600, to: 3_642 }]
     getReader()?.('library/Mahabharata.epub', spans)

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
 import { firstLine, useAgentConversation, type AgentTabState } from './useAgentConversation'
-import { agentKind } from '../kind'
+import { createAgentKind } from '../kind'
 import type { Span } from '@/shared/span'
 import { useWindowTabs } from '@/entities/tab'
 import { AGENT } from '@/entities/tab'
@@ -56,7 +56,7 @@ const tab = (
 const tabs = (about = { path: '', title: '' }) => {
   const conversations: ReturnType<typeof tab>[] = []
   const held = useWindowTabs()
-  const agents = agentKind(
+  const agents = createAgentKind(
     held.handle,
     () => {
       const one = tab()

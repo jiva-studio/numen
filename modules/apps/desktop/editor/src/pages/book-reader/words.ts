@@ -16,6 +16,6 @@ export const WORDS = {
   find: 'Find in contents',
   nothing: 'This book names nothing.',
   /** What showing and hiding the list of what the book divides into is called. */
-  shows: 'Show contents',
-  hides: 'Hide contents',
+  showContents: 'Show contents',
+  hideContents: 'Hide contents',
 }
