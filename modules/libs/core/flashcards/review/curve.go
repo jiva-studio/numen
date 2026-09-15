@@ -192,7 +192,7 @@ func (d drawing) minutes(ctx context.Context) (Curve, error) {
 	snap(out.Grid, float64(p.MinutesADay), 0, len(out.Grid)-1)
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
-	run.Retains = []int{run.Covers() - 1}
+	run.Retains = []int{run.GetDurationDays() - 1}
 	out.Points = make([]Point, len(out.Grid))
 	if err := d.places(len(out.Grid), func(i int) error {
 		one := p
@@ -248,7 +248,7 @@ func (d drawing) retention(ctx context.Context) (Curve, error) {
 
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
-	run.Retains = []int{run.Covers() - 1}
+	run.Retains = []int{run.GetDurationDays() - 1}
 	out.Points = make([]Point, len(out.Grid))
 	if err := d.places(len(out.Grid), func(i int) error {
 		one, asks := p, run

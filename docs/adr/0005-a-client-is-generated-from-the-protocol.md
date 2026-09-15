@@ -82,7 +82,7 @@ A field carries the name it has in the core across the wire. A stretch and a spa
 
 A type's own name is another matter, because a proto package is one flat namespace where the core has packages that qualify a name for it. Two enums are where this bites — the theme's way of choosing light or dark, and the search's mode — and the second of them carries its subject in front of it on the wire. The field is named the same on both sides of both.
 
-The search's modes are the one place a name is chosen twice over: the wire spells the question as a person asks it, and the core spells the retrieval technique it runs. Every name that changes on the way across is written down where a reader meets it: beside the enum in the schema, and in [the glossary](../glossary.md).
+The search's modes are the one place a name is chosen twice over: the wire spells the question as a person asks it, and the core spells the retrieval technique it runs. Every name that changes on the way across is written down beside the enum in the schema.
 
 ## Consequences
 

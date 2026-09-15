@@ -202,7 +202,7 @@ func Overdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
 func (s Simulation) Run(
 	ctx context.Context, now time.Time, p Preset, at map[CardFaceID]Schedule, unseen int,
 ) (Projection, error) {
-	days := s.Covers()
+	days := s.GetDurationDays()
 	// The days this run answers the returning share for.
 	answers := make(map[int]bool, len(s.Retains))
 	for _, day := range s.Retains {

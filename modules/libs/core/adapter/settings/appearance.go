@@ -41,9 +41,9 @@ type Appearance struct {
 	PartsUnderANode int `json:"parts_under_a_node"`
 }
 
-// Hangs is whether a node hangs the headings of its note under it. A section
+// HasPartsUnderNode is whether a node hangs the headings of its note under it. A section
 // naming nothing hangs them.
-func (a Appearance) Hangs() bool {
+func (a Appearance) HasPartsUnderNode() bool {
 	return a.HangPartsUnderANode == nil || *a.HangPartsUnderANode
 }
 

@@ -85,9 +85,9 @@ func DefaultIndexing() Indexing {
 // anything a person speaks into a phone.
 const DefaultTranscribeUnderMB = 300
 
-// Transcribes is whether a recording is listened to without being asked. A
+// CanTranscribe is whether a recording is listened to without being asked. A
 // section naming nothing listens to them.
-func (i Indexing) Transcribes() bool {
+func (i Indexing) CanTranscribe() bool {
 	return i.TranscribeRecordings == nil || *i.TranscribeRecordings
 }
 

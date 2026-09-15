@@ -3,6 +3,10 @@
 These rules apply to all code in the numen repository. Every agent (Claude,
 Gemini, or any other) must follow them.
 
+## Canonical guides
+
+- **Architecture decisions**: [`docs/adr/README.md`](docs/adr/README.md) — the rules live here, not in this file's memory.
+
 ---
 
 ## 1. Comments state the rule, and stop
@@ -46,12 +50,6 @@ Forbidden patterns:
 A method states **what operation is performed** using standard engineering
 terms, never literary third-person narrative.
 
-`node modules/tools/lint/refused.mjs` lists what the rule refuses right now, and
-`node --test modules/tools/lint/verbs.test.mjs` holds the repository to it. The
-preposition line is read only where a name travels — an exported Go declaration,
-or a TypeScript one carrying `export` — because a name read beside its one use
-stands in the sentence that explains it.
-
 ---
 
 ## 3. Event handler naming (frontend — TypeScript / Vue)
@@ -73,8 +71,8 @@ corresponding handler in `<script>` is `onItemSelected`.
 
 ## 4. Vue component structure (`<script setup>` / `<script>`)
 
-All Vue components organize their `<script>` block into standardized sections
-separated by 80-character comment banner dividers:
+All Vue components organize their `<script>` block into sections separated by
+80-character comment banners:
 
 ```vue
 <script setup lang="ts">
@@ -104,11 +102,11 @@ function formatValue(val: string) { ... }
 ```
 
 Rules:
-1. Always follow the order: **Props $\rightarrow$ Events (or Props & Emits) $\rightarrow$ State $\rightarrow$ Hooks $\rightarrow$ Handlers $\rightarrow$ Helpers**.
+1. Always follow the order: **Props → Events (or Props & Emits) → State → Hooks → Handlers → Helpers**.
 2. Only include headers for sections that actually exist in the component.
-3. Maintain the standardized 80-char banner format: `/* --------------------------------- <Name> ---------------------------------- */`.
-4. Large templates or sections with independent state must be extracted into separate child components.
-5. Complex business logic must not live in `.vue` files — extract it into composables or domain models.
+3. The banner is the 80-character form: `/* --------------------------------- <Name> ---------------------------------- */`.
+4. A section with independent state, or a part rendered on its own elsewhere, is extracted into its own component.
+5. Business logic does not live in a `.vue` file — it is a composable or a domain model.
 
 ---
 
@@ -174,7 +172,7 @@ Factory functions use `create…`:
 
 ```ts
 // ✅
-createTab, createBookKind, createConfiguration
+createTab, createBookKind, createDocumentTab
 
 // ❌
 makeTab, bookKind, newTab
@@ -194,73 +192,64 @@ NewServer(), NewReading(), make(map[string]string)
 
 ---
 
-## 8. One word for a failure (frontend)
+## 8. Result pattern for fallible operations (frontend)
 
-What comes back from something that can fail carries its failure under
-`error`, and never under `refusal`, `reason` or `refusalReason`:
+Functions that can fail return a **discriminated result**, never a bare value,
+implicit `null`, or custom `refusal`:
 
 ```ts
-// ✅
-interface CreateResult { path: string; error?: ErrorCode | null }
+type Result<T, E = ErrorCode> = { ok: true; value: T } | { ok: false; error: E }
 
-// ❌ a second word for the same thing
-interface CreateResult { path: string; refusal?: RefusalReason }
+// ✅
+function openVault(id: string): Result<Vault, ErrorCode>
+
+// ❌ caller cannot tell success from failure, or uses custom discriminant
+function openVault(id: string): Vault | ErrorCode | undefined
+function openVault(id: string): { ok: boolean; refusal?: RefusalReason }
 ```
 
-A caller can always tell that it failed from that one field.
+Pick **one** word for the failure discriminant: **`error`** (never `refusal`, `reason`, or `refusalReason`).
 
 ---
 
 ## 9. Domain terminology
 
-Use the **project glossary** (`docs/glossary.md`) as the single source of
-truth for domain terms. When the glossary and code disagree, fix the code.
+Follow standard domain terms consistently across models, storage entities, and protocols.
 
 Specific term rules:
 
 | Wrong | Correct | Context |
 |---|---|---|
 | `refusal`, `refused` | `error`, `errorCode` | operation error discriminants |
-| `readings`, `reading` | `recognition`, `recognizedText` | OCR extraction output |
-| `stretch` | `span` (`{ from, to }`) | text ranges (unify on Span) |
-| `address` (for link destination) | `link` (`note:...`, `asset:...`) | links between files |
-| `overtaken` | `stale` | file modified externally on disk |
+| `readings` | `recognition` | OCR output — the core's word is `Recognition` |
 | `spoken`, `spokenBy` | `transcript` | audio/video transcription output |
 | `reflow` for EPUB | `book` | EPUB = book; PDF = document |
 | `make` (frontend) | `create` | factory functions in TS/Vue |
 
-The glossary itself must contain **only project-specific terms** — terms that
-have a meaning in this project different from or more specific than their
-general meaning. Obvious industry terms (tree, drag, chunk, window, theme) do not belong.
+Domain distinctions:
+- **`stretch`** is a run of a source's text where it stands, in bytes. **`span`**
+  is that same run as a client counts it, `from` and `to` in UTF-16 code units.
+- **`address`** is scheme and value, the only thing that says where a link goes (`domain.Address`).
+  **`link`** is the relationship as written in a file.
+- **`overtaken`** is the tab state where a file no longer holds
+  the prose the tab read. `stale` is the backend write conflict state (`port.ErrStale`).
 
 ---
 
-## 10. The roles, and where each tree's own rules are written
+## 10. File placement — domain code stays in its domain
 
-This file holds what every language here shares. What is true of one tree only
-— its layers, what each layer holds, which way an import may point, the checks
-that prove it — is written in the role for that tree. Read the role before
-touching the tree.
+Code that serves one domain lives inside that domain's folder under
+`modules/apps/desktop/editor/src/` or `modules/apps/desktop/flashcards/src/`:
 
-| Role | Covers | File |
-|---|---|---|
-| frontend-engineer | writes TypeScript and Vue: `modules/apps/desktop/**`, `modules/libs/ui` | [`.claude/agents/frontend-engineer.md`](.claude/agents/frontend-engineer.md) |
-| go-engineer | writes Go: `modules/libs/core`, `modules/apps/**` | [`.claude/agents/go-engineer.md`](.claude/agents/go-engineer.md) |
-| architecture-reviewer | reviews where code stands and which way it reaches, both languages | [`.claude/agents/architecture-reviewer.md`](.claude/agents/architecture-reviewer.md) |
-| frontend-reviewer | reviews TypeScript and Vue against these conventions | [`.claude/agents/frontend-reviewer.md`](.claude/agents/frontend-reviewer.md) |
-| go-reviewer | reviews Go against the decision records and Go practice | [`.claude/agents/go-reviewer.md`](.claude/agents/go-reviewer.md) |
-| naming-reviewer | reviews the names of functions, types, files and folders | [`.claude/agents/naming-reviewer.md`](.claude/agents/naming-reviewer.md) |
+| File | Belongs in |
+|---|---|
+| Note-specific types (`Move`, `Focus`, `Enabler`) | `note/` |
+| File-manager entries (`FileEntry`, `MoveResult`) | `files/` |
+| Flashcard review settings | `cards/` |
 
-The two engineer roles are where the layers are written down. The four reviewer
-roles judge against them and change nothing.
-
-A rule that stands in the way is not worked around. The edge goes into the
-`baseline` of the check that refused it, with a line saying why. Those lists
-only shrink.
-
-What checks all of it: `npm run check --prefix modules/tools/depgraph`,
-`node --test modules/tools/lint/*.test.mjs`, and `go test ./container/...` in
-`modules/libs/core`.
+There is no `tabs/` folder and no `shared/`. What two or more domains genuinely
+use sits at the top of `src/` under the word for what it is — `transport.ts`,
+`theme.ts`, `words.ts` — and a type only one domain reads never moves there.
 
 ---
 
@@ -278,19 +267,31 @@ interface Transcribable { getTranscript(): Transcript }
 interface Correctable  { applyCorrection(c: Correction): void }
 ```
 
-When a file exceeds ~200 lines or accumulates more than ~8 imports, consider
-splitting it into smaller focused modules.
+A file is split when it holds a second responsibility. The unit of organisation
+is the thing, not the kind of thing: a folder collecting every type, every
+handler or every use case is a heap at fifty entries and was already one at
+five.
 
 ---
 
-## 12. Known gotchas
+## 12. File and directory naming (frontend — TypeScript / Vue)
+
+Directories and files follow strict casing rules:
+
+1. **Directories**: always `kebab-case` (`status-corner/`, `command-palette/`, `file-routing/`, `tabs/`).
+2. **Vue components**: always `PascalCase` (`App.vue`, `NoteTab.vue`, `Field.vue`).
+3. **TypeScript / JavaScript files**: always `camelCase` (`useWorkspaceTabs.ts`, `useFileRouter.ts`, `transport.ts`, `words.ts`, `answers.ts`).
+
+---
+
+## 13. Known gotchas
 
 - **Every worktree shares one `git stash` stack.** Two agents stashing at once
   cross: one `pop` takes the other's entry into the wrong tree. For a clean
   tree, commit first and `git checkout HEAD~1 -- <path>`, or copy the file
   aside.
 - **The windows reach `@numen/ui` through its build.** Run `npm run build` in
-  `modules/libs/ui` before the suites in `modules/apps/desktop/ui` and
+  `modules/libs/ui` before the suites in `modules/apps/desktop/editor` and
   `flashcards`, or they fail on `Cannot find module '@numen/ui'`.
 - **`node_modules` symlinked from the primary checkout resolves
   `@numen/protocol` to whatever branch that checkout is parked on.** A

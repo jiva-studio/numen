@@ -93,13 +93,18 @@ The numbers run without gaps, and the whole corpus is renumbered when one closes
 ### The interface
 
 - [How an interface component is built](0023-how-an-interface-component-is-built.md)
-- [The component library is shadcn-vue on Tailwind](0024-the-component-library-is-shadcn-vue.md)
+- [The component library is built on Reka UI and Tailwind tokens](0024-the-component-library-is-shadcn-vue.md)
+
+### Architecture, layers and formatting
+
+- [A file of the windows stands on a layer](0042-a-file-of-the-windows-stands-on-a-layer.md)
+- [An import says which layer it reaches](0043-an-import-says-which-layer-it-reaches.md)
+- [Code formatting with Prettier and gofmt](0044-typescript-and-vue-are-formatted-by-hand.md)
 
 ## The specifications
 
 What the product does, and what its words mean.
 
-- [glossary.md](../glossary.md) — the ubiquitous language, term by term
 - [note-format.md](../note-format.md) — the note file, key by key
 - [links.md](../links.md) — the link record, and how a name resolves
 - [cards.md](../cards.md) — the stencil and the deck, field by field

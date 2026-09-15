@@ -931,8 +931,8 @@ func TestANodeHangsThePartsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if cfg.Hangs() != c.hangs {
-				t.Errorf("a node hangs the parts of its note: %v", cfg.Hangs())
+			if cfg.HasPartsUnderNode() != c.hangs {
+				t.Errorf("a node hangs the parts of its note: %v", cfg.HasPartsUnderNode())
 			}
 		})
 	}

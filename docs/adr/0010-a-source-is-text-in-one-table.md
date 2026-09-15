@@ -13,17 +13,15 @@ A vault holds notes and books together, and the index answers over both at once.
 
 ### One table holds everything with text, and `kind` says which
 
-A note and a book are kinds of source. Every file with text is a `sources` row, and `kind` says which sort it is.
+A note, a book, a document, a recording, and a url are kinds of source. Every indexable file or address is a `sources` row, and `kind` says which sort it is (`note`, `book`, `document`, `recording`, `url`).
 
 What only a note has — its title, its identifier, its frontmatter and the basename a link reaches it by — sits beside the source in a table of its own, under the same row number. Chunks and vectors hang on the source.
 
-No ranking asks what kind a source is. A question may name the kinds it is about, and that is the only place on the search path the kind is read.
-
-Source, note, book and chunk are named in [the glossary](../glossary.md), and the columns they occupy are [What the index stores](0006-what-the-index-stores.md).
+The columns that sources, notes and chunks occupy are defined in [What the index stores](0006-what-the-index-stores.md).
 
 ### Nothing stores the text
 
-The index keeps where a passage is. Showing one re-reads the file.
+The index keeps where a passage is. Showing one re-reads the file (or the cached text artifact in the service folder for URL sources).
 
 The full-text index over chunks is contentless and keeps no copy of what it indexed. It does keep term positions, so the sequence of words in a chunk is recovered from it without opening the file, lowercased and without punctuation.
 

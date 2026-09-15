@@ -34,7 +34,7 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Downloader) so
 		Derived:     c.GetDerivedStores(),
 		By:          by,
 		CopyMaxSize: c.Importing.CopyBytes(),
-		ToVault:     c.Importing.KeepsCopiesInVault(),
+		ToVault:     c.Importing.HasCopiesInVault(),
 		Writers:     c.VaultWriters(),
 		Languages:   c.Importing.Captions,
 		Automatic:   c.Importing.CanUseAutomaticCaptions(),

@@ -95,7 +95,7 @@ func (p Preset) lands(s *DueByDay, at, due time.Time) time.Time {
 		return due
 	}
 	first, last, opens := window(due.Sub(at))
-	if !p.Evens() || !opens {
+	if !p.CanEvenLoad() || !opens {
 		return due
 	}
 

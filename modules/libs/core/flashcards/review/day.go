@@ -47,20 +47,20 @@ func (d Day) zone() *time.Location {
 func (d Day) GetEnd(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
-	if opened := d.opens(y, m, day); local.Before(opened) {
+	if opened := d.getStartTime(y, m, day); local.Before(opened) {
 		return opened
 	}
-	return d.opens(y, m, day+1)
+	return d.getStartTime(y, m, day+1)
 }
 
 // GetStart is the instant the day holding at began.
 func (d Day) GetStart(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
-	if opened := d.opens(y, m, day); !local.Before(opened) {
+	if opened := d.getStartTime(y, m, day); !local.Before(opened) {
 		return opened
 	}
-	return d.opens(y, m, day-1)
+	return d.getStartTime(y, m, day-1)
 }
 
 // GetDate is the date the day holding at began on, as a plain date. A day is
@@ -77,10 +77,10 @@ func (d Day) GetDate(at time.Time) time.Time {
 	return date
 }
 
-// opens is the instant the day of this date began. The boundary is an hour of
+// getStartTime is the instant the day of this date began. The boundary is an hour of
 // the clock on the wall, so the day an hour was put into or taken out of begins
 // and ends at the hour a person reads.
-func (d Day) opens(y int, m time.Month, day int) time.Time {
+func (d Day) getStartTime(y int, m time.Month, day int) time.Time {
 	h, min := d.boundary()
 	open := time.Date(y, m, day, h, min, 0, 0, d.zone())
 	// An hour the clock skips over is read by no instant, and the day begins
@@ -108,7 +108,7 @@ func wall(at time.Time) time.Time {
 // are counted in.
 func (d Day) GetEndOfDate(named time.Time) time.Time {
 	y, m, day := named.Date()
-	return d.opens(y, m, day+1)
+	return d.getStartTime(y, m, day+1)
 }
 
 // IsOwed reports whether a card is to be answered on this face in the day

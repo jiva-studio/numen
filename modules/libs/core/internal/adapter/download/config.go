@@ -90,8 +90,8 @@ func (c Config) CanUseAutomaticCaptions() bool {
 	return c.AutomaticCaptions == nil || *c.AutomaticCaptions
 }
 
-// KeepsCopiesInVault is whether a copy is kept beside the note.
-func (c Config) KeepsCopiesInVault() bool { return c.CopiesToVault != nil && *c.CopiesToVault }
+// HasCopiesInVault is whether a copy is kept beside the note.
+func (c Config) HasCopiesInVault() bool { return c.CopiesToVault != nil && *c.CopiesToVault }
 
 // CopyBytes is how large a copy may be, in bytes. Nothing is no limit.
 func (c Config) CopyBytes() int64 {

@@ -139,13 +139,13 @@ func plainly(r rune) rune {
 	return r
 }
 
-// Differs is the span of `was` that `now` does not have, and the text that
+// Diff is the span of `was` that `now` does not have, and the text that
 // stands there instead.
 //
 // What the two share at either end is left out, so replacing one whole note's
 // prose with another names the sentence that changed. The span is widened to
 // whole words, and two texts that are the same name no span at all.
-func Differs(was, now string) (Span, string) {
+func Diff(was, now string) (Span, string) {
 	if was == now {
 		return Span{From: len(was), To: len(was)}, ""
 	}

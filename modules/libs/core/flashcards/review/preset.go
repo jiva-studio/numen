@@ -73,19 +73,19 @@ func (p Preset) GetShare(day time.Weekday) float64 {
 	return float64(per) / FullLoad
 }
 
-// Evens reports whether this preset moves a card face off the day the scheduler
+// CanEvenLoad reports whether this preset moves a card face off the day the scheduler
 // chose.
 //
 // A preset aiming at a day does not. The pace is what spreads a date's material
 // over its days, and the days it has are the days it needs.
-func (p Preset) Evens() bool { return p.EvenLoad && p.Goal != GoalDate }
+func (p Preset) CanEvenLoad() bool { return p.EvenLoad && p.Goal != GoalDate }
 
 // GetPlacing is how this preset puts a card on a day, as a short name: whether
 // it evens the days out, and the share each day of the week carries. A schedule
 // worked out under one placing is not read back under another.
 func (p Preset) GetPlacing() string {
 	var out strings.Builder
-	fmt.Fprintf(&out, "even=%t", p.Evens())
+	fmt.Fprintf(&out, "even=%t", p.CanEvenLoad())
 	for day := time.Sunday; day <= time.Saturday; day++ {
 		fmt.Fprintf(&out, " %s=%d", DayName(day), int(math.Round(p.GetShare(day)*FullLoad)))
 	}
@@ -284,15 +284,15 @@ func (p Preset) GetOverallStopReason(d Day, now time.Time) StopReason {
 			return StoppedNoMinutes
 		}
 	}
-	if p.Week() == 0 {
+	if p.GetWeeklyShare() == 0 {
 		return StoppedNoWeek
 	}
 	return StoppedNothing
 }
 
-// Week is how many whole days of review a week of this preset holds, counting
+// GetWeeklyShare is how many whole days of review a week of this preset holds, counting
 // each day of it for the share of the load it carries.
-func (p Preset) Week() float64 {
+func (p Preset) GetWeeklyShare() float64 {
 	out := 0.0
 	for day := time.Sunday; day <= time.Saturday; day++ {
 		out += p.GetShare(day)
@@ -395,7 +395,7 @@ func (p Preset) getDaysOfReview(from time.Time, days int) float64 {
 		return 0
 	}
 	whole := days / 7
-	out := p.Week() * float64(whole)
+	out := p.GetWeeklyShare() * float64(whole)
 	for i := range days % 7 {
 		out += p.GetShare(from.AddDate(0, 0, whole*7+i).Weekday())
 	}

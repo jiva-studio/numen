@@ -1,54 +1,40 @@
-# TypeScript and Vue are formatted by hand
+# Code formatting with Prettier and gofmt
 
 - **Status:** Accepted
 - **Date:** 2026-09-12
-- **Applies to:** `modules/apps/desktop`, `modules/apps/mobile`, `modules/libs/ui`, `modules/tools`
+- **Applies to:** `modules/apps/desktop`, `modules/apps/mobile`, `modules/libs/ui`, `modules/tools`, `modules/libs/core`
 - **Related:** [How this application is tested](0025-how-this-application-is-tested.md), [A file of the windows stands on a layer](0042-a-file-of-the-windows-stands-on-a-layer.md)
 
 ## Context
 
-No formatter runs over the TypeScript and Vue here. There is no Prettier, no `.prettierrc`, no `format` script, and no formatting step in the hook or the workflow. What holds the files to one shape is `.editorconfig` for the bytes every editor agrees on, ESLint for what is an error, and the hand of whoever wrote the line.
+Code layout and formatting should be deterministic, fast, and automated across all modules so developers and agents focus entirely on logic, architecture, and correctness rather than cosmetic trivia.
 
-Go is the other half of this repository and is not in the same position: `gofmt` is the language's own formatter, it ships with the toolchain, every Go reader expects its output, and `gofmt -l` is run as a check. The question this record settles is why the other half is not treated the same way.
-
-The reason is what these files are. A line here is written to be read: a signature broken where the argument list stops being one thought, a table of words laid out as a table, a `computed` kept on one line because it is one idea. A formatter is a function of the token stream and cannot see any of that, so it rewrites those lines into its own shape — and the shape it picks is right often enough that the places it is wrong are the places a reader was being helped.
-
-The second reason is the diff. Every change here is read by a person before it lands, and a formatter run turns a two-line change into a two-hundred-line one. That cost is paid once on adoption and then again, quietly, every time a tool's minor version moves its own defaults.
+The repository spans two main language ecosystems: Go for backend services and core logic, and TypeScript/Vue/CSS for frontend interfaces.
 
 ## Decision
 
-### Prettier is not installed, and no formatter is run over TypeScript, Vue or Markdown
+### TypeScript, Vue, CSS, JSON, and Markdown are formatted with Prettier
 
-No package here depends on Prettier, and none declares a `format` script. A pull request that adds one is a change to this record.
+Prettier is configured at the root repository level with `prettier-plugin-tailwindcss` to guarantee consistent code layout, HTML/Vue template formatting, and automatic Tailwind CSS utility class ordering.
 
-### What holds a file to a shape
+All frontend packages declare a standard format check:
+```bash
+npm run format       # format all files
+npm run format:check # verify formatting in CI
+```
 
-- `.editorconfig` — encoding, line endings, the final newline, trailing whitespace, and the indent. Every editor reads it, and it settles the things nobody has an opinion about.
-- ESLint, with the house rules in `modules/tools/lint` beside it — what is wrong, not what is pretty. A rule there refuses a thing a reader would trip over; it never restates a preference about where a line breaks.
-- The reviewer. Layout is read like the rest of the code.
+### Protocol-generated files are strictly ignored by Prettier
 
-### Go is formatted by `gofmt`, and that is not an exception to this
+Code generated from Protobuf schemas (`modules/libs/protocol/src/numen/v1/**` and Go protobuf bindings) is owned strictly by `buf generate` / `protoc-gen-es` / `protoc-gen-go`.
 
-`gofmt` is part of the language rather than a choice made about it: there is one output, it has never moved, and Go source that has not been through it reads as wrong to every Go reader. Nothing above applies to it. `gofmt -l` printing a name is a failure.
+These paths are declared in `.prettierignore` to prevent formatters from modifying machine-generated output or interfering with `buf generate` consistency checks.
 
-### Generated files are whatever generated them
+### Go is formatted by `gofmt`
 
-`protoc-gen-go`, `protoc-gen-connect-go` and `protoc-gen-es` write their own shape, and nothing here touches it. A generated file is not hand-formatted, not linted for layout, and not read for style.
+Go source is formatted with the standard Go toolchain via `gofmt`. Every Go file must match `gofmt -s` output, verified by `gofmt -l` in CI workflows.
 
 ## Consequences
 
-- **Layout is a reviewer's business.** A line laid out badly is raised the way a name chosen badly is raised.
-- **A diff is what changed.** Nothing lands carrying lines nobody edited, and `git blame` reaches the person who wrote a line rather than the run that reflowed it.
-- **A new file is written in the shape of the files beside it.** There is no command that will do it afterwards.
-- **An editor with format-on-save configured for this repository will fight it**, and the fault will read as a large unrelated diff. Turn it off for these trees.
-- **An agent working here formats by hand too**, and a wholesale reformat is a change nobody asked for.
-
-## Alternatives considered
-
-**Prettier with a shared config.** Rejected. It is the thing this record is about: it cannot see why a line was broken where it was, and adopting it rewrites every file once and then again on each of its own default changes.
-
-**Prettier for new files only.** Rejected. Two shapes in one tree is worse than either, and "new" is not a property a check can read off a file.
-
-**ESLint's own layout rules, or `@stylistic`.** Rejected for the same reason, at lower value: it is a formatter with a longer config, and every rule added is a preference argued over in a config file rather than in review.
-
-**`dprint` or Biome.** Rejected. The objection is to a formatter, not to Prettier's implementation of one.
+- Automated formatters run across all files before committing and in CI.
+- Diffs remain focused strictly on semantic changes and feature logic.
+- Generated protocol files remain untouched and strictly reproducible from schemas.

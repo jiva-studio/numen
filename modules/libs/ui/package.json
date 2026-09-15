@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Shared interface components, and the link grammar a note is written in. Knows nothing about vaults or how one is asked.",
+  "description": "Shared interface components and design tokens for desktop and mobile clients.",
   "files": [
     "dist"
   ],

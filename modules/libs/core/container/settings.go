@@ -74,10 +74,10 @@ func (s *Settings) Say(said string) { s.Said = append(s.Said, said) }
 // Sync is whether a note's title and its filename are kept as one name.
 func (s Settings) Sync() bool { return s.Titles.Sync() }
 
-// Hangs is whether a node hangs the headings of its note under it, and Parts is
+// HasPartsUnderNode is whether a node hangs the headings of its note under it, and Parts is
 // how many of those headings stand under it at once.
-func (s Settings) Hangs() bool { return s.Appearance.Hangs() }
-func (s Settings) Parts() int  { return s.Appearance.PartsUnderANode }
+func (s Settings) HasPartsUnderNode() bool { return s.Appearance.HasPartsUnderNode() }
+func (s Settings) Parts() int              { return s.Appearance.PartsUnderANode }
 
 // DayStarts is how long past midnight a day of review begins.
 func (s Settings) DayStarts() time.Duration {
@@ -151,7 +151,7 @@ func (c Config) SetSettings(said Settings) Config {
 	c.ScanProofreading = said.Indexing.Recognition.Proofread
 	c.TranscriptProofreading = said.Indexing.Transcription.Proofread
 	c.Transcription = said.Indexing.Transcription.Config
-	c.Transcribes = said.Indexing.Transcribes()
+	c.Transcribes = said.Indexing.CanTranscribe()
 	c.TranscribesUnder = said.Indexing.TranscribesUnder()
 	c.Agent = said.Agent
 	c.Importing = said.Importing
