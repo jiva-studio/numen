@@ -8,62 +8,58 @@
 // The settings belong to the installation and not to a vault: the same file
 // answers whichever vault a window is showing, and every window reads it.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
-import type { ErrorCode } from './shared_pb.js'
-import { file_numen_v1_shared } from './shared_pb.js'
-import type { Bounds } from './theme_pb.js'
-import { file_numen_v1_theme } from './theme_pb.js'
-import type { Message } from '@bufbuild/protobuf'
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
+import type { Bounds } from "./theme_pb.js";
+import { file_numen_v1_theme } from "./theme_pb.js";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/settings.proto.
  */
-export const file_numen_v1_settings: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    'ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IrIBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIzChlwYXJ0c191bmRlcl9hX25vZGVfYm91bmRzGAQgASgLMhAubnVtZW4udjEuQm91bmRzEhkKEWxhdGVzdF9kYXlfc3RhcnRzGAUgASgJEgsKA2RheRgGIAEoCSKiAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVzaGVsZhgEIAEoCRISCgpieV9kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIjsKFFdyaXRlU2V0dGluZ3NSZXF1ZXN0EiMKCHNldHRpbmdzGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyIXChVXcml0ZVNldHRpbmdzUmVzcG9uc2UiGQoXUmVhZFNldHRpbmdzRmlsZVJlcXVlc3QiOQoYUmVhZFNldHRpbmdzRmlsZVJlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCSJHChhXcml0ZVNldHRpbmdzRmlsZVJlcXVlc3QSDwoHd3JpdHRlbhgBIAEoCRIRCgRzZWVuGAIgASgJSACIAQFCBwoFX3NlZW4iTgoZV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvcipzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzLoAgoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USWQoQUmVhZFNldHRpbmdzRmlsZRIhLm51bWVuLnYxLlJlYWRTZXR0aW5nc0ZpbGVSZXF1ZXN0GiIubnVtZW4udjEuUmVhZFNldHRpbmdzRmlsZVJlc3BvbnNlElwKEVdyaXRlU2V0dGluZ3NGaWxlEiIubnVtZW4udjEuV3JpdGVTZXR0aW5nc0ZpbGVSZXF1ZXN0GiMubnVtZW4udjEuV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z',
-    [file_numen_v1_shared, file_numen_v1_theme],
-  )
+export const file_numen_v1_settings: GenFile = /*@__PURE__*/
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IrIBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIzChlwYXJ0c191bmRlcl9hX25vZGVfYm91bmRzGAQgASgLMhAubnVtZW4udjEuQm91bmRzEhkKEWxhdGVzdF9kYXlfc3RhcnRzGAUgASgJEgsKA2RheRgGIAEoCSKiAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVzaGVsZhgEIAEoCRISCgpieV9kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIjsKFFdyaXRlU2V0dGluZ3NSZXF1ZXN0EiMKCHNldHRpbmdzGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyIXChVXcml0ZVNldHRpbmdzUmVzcG9uc2UiGQoXUmVhZFNldHRpbmdzRmlsZVJlcXVlc3QiOQoYUmVhZFNldHRpbmdzRmlsZVJlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCSJHChhXcml0ZVNldHRpbmdzRmlsZVJlcXVlc3QSDwoHd3JpdHRlbhgBIAEoCRIRCgRzZWVuGAIgASgJSACIAQFCBwoFX3NlZW4iTgoZV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvcipzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzLoAgoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USWQoQUmVhZFNldHRpbmdzRmlsZRIhLm51bWVuLnYxLlJlYWRTZXR0aW5nc0ZpbGVSZXF1ZXN0GiIubnVtZW4udjEuUmVhZFNldHRpbmdzRmlsZVJlc3BvbnNlElwKEVdyaXRlU2V0dGluZ3NGaWxlEiIubnVtZW4udjEuV3JpdGVTZXR0aW5nc0ZpbGVSZXF1ZXN0GiMubnVtZW4udjEuV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared, file_numen_v1_theme]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
  */
-export type GetSettingsRequest = Message<'numen.v1.GetSettingsRequest'> & {}
+export type GetSettingsRequest = Message<"numen.v1.GetSettingsRequest"> & {
+};
 
 /**
  * Describes the message numen.v1.GetSettingsRequest.
  * Use `create(GetSettingsRequestSchema)` to create a new message.
  */
-export const GetSettingsRequestSchema: GenMessage<GetSettingsRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 0)
+export const GetSettingsRequestSchema: GenMessage<GetSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 0);
 
 /**
  * @generated from message numen.v1.GetSettingsResponse
  */
-export type GetSettingsResponse = Message<'numen.v1.GetSettingsResponse'> & {
+export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   /**
    * Every setting as it stands, as JSON: what the file says, and what an
    * installation nobody has configured does under everything it does not.
    *
    * @generated from field: string written = 1;
    */
-  written: string
+  written: string;
 
   /**
    * The file itself, absolute on this machine.
    *
    * @generated from field: string path = 2;
    */
-  path: string
+  path: string;
 
   /**
    * The models the settings that name one can be set to.
    *
    * @generated from field: repeated numen.v1.Model models = 3;
    */
-  models: Model[]
+  models: Model[];
 
   /**
    * How many parts a node may be asked to hang, at each end. A number outside
@@ -71,7 +67,7 @@ export type GetSettingsResponse = Message<'numen.v1.GetSettingsResponse'> & {
    *
    * @generated from field: numen.v1.Bounds parts_under_a_node_bounds = 4;
    */
-  partsUnderANodeBounds?: Bounds | undefined
+  partsUnderANodeBounds?: Bounds | undefined;
 
   /**
    * How late in the day a day of review may be made to begin, on the clock on
@@ -80,7 +76,7 @@ export type GetSettingsResponse = Message<'numen.v1.GetSettingsResponse'> & {
    *
    * @generated from field: string latest_day_starts = 5;
    */
-  latestDayStarts: string
+  latestDayStarts: string;
 
   /**
    * Day is the review day now standing, written as the year, the month and the
@@ -89,56 +85,55 @@ export type GetSettingsResponse = Message<'numen.v1.GetSettingsResponse'> & {
    *
    * @generated from field: string day = 6;
    */
-  day: string
-}
+  day: string;
+};
 
 /**
  * Describes the message numen.v1.GetSettingsResponse.
  * Use `create(GetSettingsResponseSchema)` to create a new message.
  */
-export const GetSettingsResponseSchema: GenMessage<GetSettingsResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 1)
+export const GetSettingsResponseSchema: GenMessage<GetSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 1);
 
 /**
  * Model is one model a setting that names a model can be set to.
  *
  * @generated from message numen.v1.Model
  */
-export type Model = Message<'numen.v1.Model'> & {
+export type Model = Message<"numen.v1.Model"> & {
   /**
    * The setting the model is read from, as a path through the file. The model
    * in force is the one whose name stands there.
    *
    * @generated from field: repeated string named_at = 1;
    */
-  namedAt: string[]
+  namedAt: string[];
 
   /**
    * What stands there while this model is the one in force.
    *
    * @generated from field: string name = 2;
    */
-  name: string
+  name: string;
 
   /**
    * What is drawn on the row, and the shelf the rows around it stand under.
    *
    * @generated from field: string title = 3;
    */
-  title: string
+  title: string;
 
   /**
    * @generated from field: string shelf = 4;
    */
-  shelf: string
+  shelf: string;
 
   /**
    * Set on the model an installation nobody has configured runs on.
    *
    * @generated from field: bool by_default = 5;
    */
-  byDefault: boolean
+  byDefault: boolean;
 
   /**
    * What choosing it writes. One model is several keys where the model decides
@@ -146,34 +141,35 @@ export type Model = Message<'numen.v1.Model'> & {
    *
    * @generated from field: repeated numen.v1.Setting writes = 6;
    */
-  writes: Setting[]
+  writes: Setting[];
 
   /**
    * What this model's files are on this machine.
    *
    * @generated from field: numen.v1.Presence presence = 7;
    */
-  presence: Presence
-}
+  presence: Presence;
+};
 
 /**
  * Describes the message numen.v1.Model.
  * Use `create(ModelSchema)` to create a new message.
  */
-export const ModelSchema: GenMessage<Model> = /*@__PURE__*/ messageDesc(file_numen_v1_settings, 2)
+export const ModelSchema: GenMessage<Model> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 2);
 
 /**
  * Setting is one setting of the file and what to put there.
  *
  * @generated from message numen.v1.Setting
  */
-export type Setting = Message<'numen.v1.Setting'> & {
+export type Setting = Message<"numen.v1.Setting"> & {
   /**
    * The setting, as a path through the file.
    *
    * @generated from field: repeated string at = 1;
    */
-  at: string[]
+  at: string[];
 
   /**
    * What to write there, as JSON. A value the settings cannot be read out of
@@ -181,101 +177,98 @@ export type Setting = Message<'numen.v1.Setting'> & {
    *
    * @generated from field: string value = 2;
    */
-  value: string
-}
+  value: string;
+};
 
 /**
  * Describes the message numen.v1.Setting.
  * Use `create(SettingSchema)` to create a new message.
  */
-export const SettingSchema: GenMessage<Setting> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 3)
+export const SettingSchema: GenMessage<Setting> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 3);
 
 /**
  * @generated from message numen.v1.WriteSettingsRequest
  */
-export type WriteSettingsRequest = Message<'numen.v1.WriteSettingsRequest'> & {
+export type WriteSettingsRequest = Message<"numen.v1.WriteSettingsRequest"> & {
   /**
    * The settings to write. They are written together, or none of them is.
    *
    * @generated from field: repeated numen.v1.Setting settings = 1;
    */
-  settings: Setting[]
-}
+  settings: Setting[];
+};
 
 /**
  * Describes the message numen.v1.WriteSettingsRequest.
  * Use `create(WriteSettingsRequestSchema)` to create a new message.
  */
-export const WriteSettingsRequestSchema: GenMessage<WriteSettingsRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 4)
+export const WriteSettingsRequestSchema: GenMessage<WriteSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 4);
 
 /**
  * @generated from message numen.v1.WriteSettingsResponse
  */
-export type WriteSettingsResponse = Message<'numen.v1.WriteSettingsResponse'> & {}
+export type WriteSettingsResponse = Message<"numen.v1.WriteSettingsResponse"> & {
+};
 
 /**
  * Describes the message numen.v1.WriteSettingsResponse.
  * Use `create(WriteSettingsResponseSchema)` to create a new message.
  */
-export const WriteSettingsResponseSchema: GenMessage<WriteSettingsResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 5)
+export const WriteSettingsResponseSchema: GenMessage<WriteSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 5);
 
 /**
  * @generated from message numen.v1.ReadSettingsFileRequest
  */
-export type ReadSettingsFileRequest = Message<'numen.v1.ReadSettingsFileRequest'> & {}
+export type ReadSettingsFileRequest = Message<"numen.v1.ReadSettingsFileRequest"> & {
+};
 
 /**
  * Describes the message numen.v1.ReadSettingsFileRequest.
  * Use `create(ReadSettingsFileRequestSchema)` to create a new message.
  */
-export const ReadSettingsFileRequestSchema: GenMessage<ReadSettingsFileRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 6)
+export const ReadSettingsFileRequestSchema: GenMessage<ReadSettingsFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 6);
 
 /**
  * @generated from message numen.v1.ReadSettingsFileResponse
  */
-export type ReadSettingsFileResponse = Message<'numen.v1.ReadSettingsFileResponse'> & {
+export type ReadSettingsFileResponse = Message<"numen.v1.ReadSettingsFileResponse"> & {
   /**
    * The file as its person wrote it. A file that is not there is an empty
    * object, which is what an installation nobody has configured runs on.
    *
    * @generated from field: string written = 1;
    */
-  written: string
+  written: string;
 
   /**
    * The file itself, absolute on this machine.
    *
    * @generated from field: string path = 2;
    */
-  path: string
-}
+  path: string;
+};
 
 /**
  * Describes the message numen.v1.ReadSettingsFileResponse.
  * Use `create(ReadSettingsFileResponseSchema)` to create a new message.
  */
-export const ReadSettingsFileResponseSchema: GenMessage<ReadSettingsFileResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 7)
+export const ReadSettingsFileResponseSchema: GenMessage<ReadSettingsFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 7);
 
 /**
  * @generated from message numen.v1.WriteSettingsFileRequest
  */
-export type WriteSettingsFileRequest = Message<'numen.v1.WriteSettingsFileRequest'> & {
+export type WriteSettingsFileRequest = Message<"numen.v1.WriteSettingsFileRequest"> & {
   /**
    * What is to stand in the file, written as it was typed.
    *
    * @generated from field: string written = 1;
    */
-  written: string
+  written: string;
 
   /**
    * The file as this caller last read it. Absent for a write that lands on
@@ -283,21 +276,20 @@ export type WriteSettingsFileRequest = Message<'numen.v1.WriteSettingsFileReques
    *
    * @generated from field: optional string seen = 2;
    */
-  seen?: string | undefined
-}
+  seen?: string | undefined;
+};
 
 /**
  * Describes the message numen.v1.WriteSettingsFileRequest.
  * Use `create(WriteSettingsFileRequestSchema)` to create a new message.
  */
-export const WriteSettingsFileRequestSchema: GenMessage<WriteSettingsFileRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 8)
+export const WriteSettingsFileRequestSchema: GenMessage<WriteSettingsFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 8);
 
 /**
  * @generated from message numen.v1.WriteSettingsFileResponse
  */
-export type WriteSettingsFileResponse = Message<'numen.v1.WriteSettingsFileResponse'> & {
+export type WriteSettingsFileResponse = Message<"numen.v1.WriteSettingsFileResponse"> & {
   /**
    * Set when nothing was written, and why. A file holding bytes this caller
    * has not read is ERROR_CODE_STALE, and the person chooses what happens to
@@ -305,16 +297,15 @@ export type WriteSettingsFileResponse = Message<'numen.v1.WriteSettingsFileRespo
    *
    * @generated from field: optional numen.v1.ErrorCode error = 1;
    */
-  error?: ErrorCode | undefined
-}
+  error?: ErrorCode | undefined;
+};
 
 /**
  * Describes the message numen.v1.WriteSettingsFileResponse.
  * Use `create(WriteSettingsFileResponseSchema)` to create a new message.
  */
-export const WriteSettingsFileResponseSchema: GenMessage<WriteSettingsFileResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 9)
+export const WriteSettingsFileResponseSchema: GenMessage<WriteSettingsFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 9);
 
 /**
  * Presence is what a model's files are on this machine. It says where files
@@ -356,7 +347,8 @@ export enum Presence {
 /**
  * Describes the enum numen.v1.Presence.
  */
-export const PresenceSchema: GenEnum<Presence> = /*@__PURE__*/ enumDesc(file_numen_v1_settings, 0)
+export const PresenceSchema: GenEnum<Presence> = /*@__PURE__*/
+  enumDesc(file_numen_v1_settings, 0);
 
 /**
  * SettingsService answers about that file, one setting at a time and whole.
@@ -371,10 +363,10 @@ export const SettingsService: GenService<{
    * @generated from rpc numen.v1.SettingsService.GetSettings
    */
   getSettings: {
-    methodKind: 'unary'
-    input: typeof GetSettingsRequestSchema
-    output: typeof GetSettingsResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof GetSettingsRequestSchema;
+    output: typeof GetSettingsResponseSchema;
+  },
   /**
    * WriteSettings writes settings into that file. The file is patched as an
    * object, so every key a person typed stays where it was, and a file the
@@ -383,20 +375,20 @@ export const SettingsService: GenService<{
    * @generated from rpc numen.v1.SettingsService.WriteSettings
    */
   writeSettings: {
-    methodKind: 'unary'
-    input: typeof WriteSettingsRequestSchema
-    output: typeof WriteSettingsResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof WriteSettingsRequestSchema;
+    output: typeof WriteSettingsResponseSchema;
+  },
   /**
    * ReadSettingsFile is that file as its person wrote it, byte for byte.
    *
    * @generated from rpc numen.v1.SettingsService.ReadSettingsFile
    */
   readSettingsFile: {
-    methodKind: 'unary'
-    input: typeof ReadSettingsFileRequestSchema
-    output: typeof ReadSettingsFileResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof ReadSettingsFileRequestSchema;
+    output: typeof ReadSettingsFileResponseSchema;
+  },
   /**
    * WriteSettingsFile replaces that file whole, with the bytes as they were
    * typed. A file the settings cannot be read out of is refused and the file is
@@ -407,8 +399,10 @@ export const SettingsService: GenService<{
    * @generated from rpc numen.v1.SettingsService.WriteSettingsFile
    */
   writeSettingsFile: {
-    methodKind: 'unary'
-    input: typeof WriteSettingsFileRequestSchema
-    output: typeof WriteSettingsFileResponseSchema
-  }
-}> = /*@__PURE__*/ serviceDesc(file_numen_v1_settings, 0)
+    methodKind: "unary";
+    input: typeof WriteSettingsFileRequestSchema;
+    output: typeof WriteSettingsFileResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_numen_v1_settings, 0);
+

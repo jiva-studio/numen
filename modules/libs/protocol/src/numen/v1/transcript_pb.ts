@@ -8,21 +8,17 @@
 // words with a video. A transcript is a transcript either way, so one service
 // answers for both.
 
-import type { GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
-import { fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
-import type { Span } from './shared_pb.js'
-import { file_numen_v1_shared } from './shared_pb.js'
-import type { Message } from '@bufbuild/protobuf'
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Span } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/transcript.proto.
  */
-export const file_numen_v1_transcript: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    'ChludW1lbi92MS90cmFuc2NyaXB0LnByb3RvEghudW1lbi52MSItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkMKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhwKBHNwYW4YAiABKAsyDi5udW1lbi52MS5TcGFuIjUKFlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZSJDChZXcml0ZVRyYW5zY3JpcHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSGwoEY3VlcxgCIAMoCzINLm51bWVuLnYxLkN1ZSI2ChdXcml0ZVRyYW5zY3JpcHRSZXNwb25zZRIbCgRjdWVzGAEgAygLMg0ubnVtZW4udjEuQ3VlMsABChFUcmFuc2NyaXB0U2VydmljZRJTCg5SZWFkVHJhbnNjcmlwdBIfLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVxdWVzdBogLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USVgoPV3JpdGVUcmFuc2NyaXB0EiAubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBohLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM',
-    [file_numen_v1_shared],
-  )
+export const file_numen_v1_transcript: GenFile = /*@__PURE__*/
+  fileDesc("ChludW1lbi92MS90cmFuc2NyaXB0LnByb3RvEghudW1lbi52MSItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkMKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhwKBHNwYW4YAiABKAsyDi5udW1lbi52MS5TcGFuIjUKFlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZSJDChZXcml0ZVRyYW5zY3JpcHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSGwoEY3VlcxgCIAMoCzINLm51bWVuLnYxLkN1ZSI2ChdXcml0ZVRyYW5zY3JpcHRSZXNwb25zZRIbCgRjdWVzGAEgAygLMg0ubnVtZW4udjEuQ3VlMsABChFUcmFuc2NyaXB0U2VydmljZRJTCg5SZWFkVHJhbnNjcmlwdBIfLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVxdWVzdBogLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USVgoPV3JpdGVUcmFuc2NyaXB0EiAubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBohLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * A Cue is one stretch of speech: what was said, and the milliseconds of the
@@ -33,39 +29,40 @@ export const file_numen_v1_transcript: GenFile =
  *
  * @generated from message numen.v1.Cue
  */
-export type Cue = Message<'numen.v1.Cue'> & {
+export type Cue = Message<"numen.v1.Cue"> & {
   /**
    * @generated from field: string text = 1;
    */
-  text: string
+  text: string;
 
   /**
    * @generated from field: int32 from = 2;
    */
-  from: number
+  from: number;
 
   /**
    * @generated from field: int32 to = 3;
    */
-  to: number
-}
+  to: number;
+};
 
 /**
  * Describes the message numen.v1.Cue.
  * Use `create(CueSchema)` to create a new message.
  */
-export const CueSchema: GenMessage<Cue> = /*@__PURE__*/ messageDesc(file_numen_v1_transcript, 0)
+export const CueSchema: GenMessage<Cue> = /*@__PURE__*/
+  messageDesc(file_numen_v1_transcript, 0);
 
 /**
  * @generated from message numen.v1.ReadTranscriptRequest
  */
-export type ReadTranscriptRequest = Message<'numen.v1.ReadTranscriptRequest'> & {
+export type ReadTranscriptRequest = Message<"numen.v1.ReadTranscriptRequest"> & {
   /**
    * The file, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * The run of the file's text to answer about, counted in bytes, and nothing
@@ -74,48 +71,46 @@ export type ReadTranscriptRequest = Message<'numen.v1.ReadTranscriptRequest'> & 
    *
    * @generated from field: numen.v1.Span span = 2;
    */
-  span?: Span | undefined
-}
+  span?: Span | undefined;
+};
 
 /**
  * Describes the message numen.v1.ReadTranscriptRequest.
  * Use `create(ReadTranscriptRequestSchema)` to create a new message.
  */
-export const ReadTranscriptRequestSchema: GenMessage<ReadTranscriptRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_transcript, 1)
+export const ReadTranscriptRequestSchema: GenMessage<ReadTranscriptRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_transcript, 1);
 
 /**
  * @generated from message numen.v1.ReadTranscriptResponse
  */
-export type ReadTranscriptResponse = Message<'numen.v1.ReadTranscriptResponse'> & {
+export type ReadTranscriptResponse = Message<"numen.v1.ReadTranscriptResponse"> & {
   /**
    * The words with the times each of them was said at. A file nothing has been
    * heard for carries none.
    *
    * @generated from field: repeated numen.v1.Cue cues = 1;
    */
-  cues: Cue[]
-}
+  cues: Cue[];
+};
 
 /**
  * Describes the message numen.v1.ReadTranscriptResponse.
  * Use `create(ReadTranscriptResponseSchema)` to create a new message.
  */
-export const ReadTranscriptResponseSchema: GenMessage<ReadTranscriptResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_transcript, 2)
+export const ReadTranscriptResponseSchema: GenMessage<ReadTranscriptResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_transcript, 2);
 
 /**
  * @generated from message numen.v1.WriteTranscriptRequest
  */
-export type WriteTranscriptRequest = Message<'numen.v1.WriteTranscriptRequest'> & {
+export type WriteTranscriptRequest = Message<"numen.v1.WriteTranscriptRequest"> & {
   /**
    * The file, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * The words as the person left them, against the milliseconds they were said
@@ -130,36 +125,34 @@ export type WriteTranscriptRequest = Message<'numen.v1.WriteTranscriptRequest'> 
    *
    * @generated from field: repeated numen.v1.Cue cues = 2;
    */
-  cues: Cue[]
-}
+  cues: Cue[];
+};
 
 /**
  * Describes the message numen.v1.WriteTranscriptRequest.
  * Use `create(WriteTranscriptRequestSchema)` to create a new message.
  */
-export const WriteTranscriptRequestSchema: GenMessage<WriteTranscriptRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_transcript, 3)
+export const WriteTranscriptRequestSchema: GenMessage<WriteTranscriptRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_transcript, 3);
 
 /**
  * @generated from message numen.v1.WriteTranscriptResponse
  */
-export type WriteTranscriptResponse = Message<'numen.v1.WriteTranscriptResponse'> & {
+export type WriteTranscriptResponse = Message<"numen.v1.WriteTranscriptResponse"> & {
   /**
    * The words as they now stand.
    *
    * @generated from field: repeated numen.v1.Cue cues = 1;
    */
-  cues: Cue[]
-}
+  cues: Cue[];
+};
 
 /**
  * Describes the message numen.v1.WriteTranscriptResponse.
  * Use `create(WriteTranscriptResponseSchema)` to create a new message.
  */
-export const WriteTranscriptResponseSchema: GenMessage<WriteTranscriptResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_transcript, 4)
+export const WriteTranscriptResponseSchema: GenMessage<WriteTranscriptResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_transcript, 4);
 
 /**
  * TranscriptService reads and writes the words of a file that carries times.
@@ -176,10 +169,10 @@ export const TranscriptService: GenService<{
    * @generated from rpc numen.v1.TranscriptService.ReadTranscript
    */
   readTranscript: {
-    methodKind: 'unary'
-    input: typeof ReadTranscriptRequestSchema
-    output: typeof ReadTranscriptResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof ReadTranscriptRequestSchema;
+    output: typeof ReadTranscriptResponseSchema;
+  },
   /**
    * WriteTranscript writes the words as a person left them.
    *
@@ -190,8 +183,10 @@ export const TranscriptService: GenService<{
    * @generated from rpc numen.v1.TranscriptService.WriteTranscript
    */
   writeTranscript: {
-    methodKind: 'unary'
-    input: typeof WriteTranscriptRequestSchema
-    output: typeof WriteTranscriptResponseSchema
-  }
-}> = /*@__PURE__*/ serviceDesc(file_numen_v1_transcript, 0)
+    methodKind: "unary";
+    input: typeof WriteTranscriptRequestSchema;
+    output: typeof WriteTranscriptResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_numen_v1_transcript, 0);
+

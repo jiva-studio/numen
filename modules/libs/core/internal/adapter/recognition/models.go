@@ -64,4 +64,3 @@ func newSetting(at []string, value any) port.Setting {
 	}
 	return port.Setting{Path: at, JSON: string(said)}
 }
-

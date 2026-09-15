@@ -8,66 +8,61 @@
 // time. What the agent is and how it reaches the vault is the application's
 // business and is said nowhere here.
 
-import type { GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
-import { fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
-import type { Span } from './shared_pb.js'
-import { file_numen_v1_shared } from './shared_pb.js'
-import type { Message } from '@bufbuild/protobuf'
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Span } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/agent.proto.
  */
-export const file_numen_v1_agent: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    'ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJImEKD0Fza0FnZW50UmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkSDAoEbWFyaxgEIAEoCRIMCgRmYWNlGAUgASgJIjEKGUZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QSFAoMY29udmVyc2F0aW9uGAEgASgJIhwKGkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlIrYBChBBc2tBZ2VudFJlc3BvbnNlEg4KBHNhaWQYASABKAlIABInCgl0b29sX2NhbGwYAiABKAsyEi5udW1lbi52MS5Ub29sQ2FsbEgAEhEKB3N0b3BwZWQYAyABKAlIABImCghhbnN3ZXJlZBgEIAEoCzISLm51bWVuLnYxLkFuc3dlcmVkSAASJgoIdGhpbmtpbmcYBSABKAsyEi5udW1lbi52MS5UaGlua2luZ0gAQgYKBHN0ZXAiCgoIQW5zd2VyZWQiCgoIVGhpbmtpbmciZAoIVG9vbENhbGwSDAoEdG9vbBgBIAEoCRINCgVhYm91dBgCIAEoCRIPCgd3cml0dGVuGAMgASgFEgwKBHBhdGgYBCABKAkSHAoEc3BhbhgFIAEoCzIOLm51bWVuLnYxLlNwYW4yhgIKDEFnZW50U2VydmljZRJDCghBc2tBZ2VudBIZLm51bWVuLnYxLkFza0FnZW50UmVxdWVzdBoaLm51bWVuLnYxLkFza0FnZW50UmVzcG9uc2UwARJfChJGaW5pc2hDb252ZXJzYXRpb24SIy5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXF1ZXN0GiQubnVtZW4udjEuRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2USUAoNR2V0QWdlbnRTdGF0ZRIeLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM',
-    [file_numen_v1_shared],
-  )
+export const file_numen_v1_agent: GenFile = /*@__PURE__*/
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJImEKD0Fza0FnZW50UmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkSDAoEbWFyaxgEIAEoCRIMCgRmYWNlGAUgASgJIjEKGUZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QSFAoMY29udmVyc2F0aW9uGAEgASgJIhwKGkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlIrYBChBBc2tBZ2VudFJlc3BvbnNlEg4KBHNhaWQYASABKAlIABInCgl0b29sX2NhbGwYAiABKAsyEi5udW1lbi52MS5Ub29sQ2FsbEgAEhEKB3N0b3BwZWQYAyABKAlIABImCghhbnN3ZXJlZBgEIAEoCzISLm51bWVuLnYxLkFuc3dlcmVkSAASJgoIdGhpbmtpbmcYBSABKAsyEi5udW1lbi52MS5UaGlua2luZ0gAQgYKBHN0ZXAiCgoIQW5zd2VyZWQiCgoIVGhpbmtpbmciZAoIVG9vbENhbGwSDAoEdG9vbBgBIAEoCRINCgVhYm91dBgCIAEoCRIPCgd3cml0dGVuGAMgASgFEgwKBHBhdGgYBCABKAkSHAoEc3BhbhgFIAEoCzIOLm51bWVuLnYxLlNwYW4yhgIKDEFnZW50U2VydmljZRJDCghBc2tBZ2VudBIZLm51bWVuLnYxLkFza0FnZW50UmVxdWVzdBoaLm51bWVuLnYxLkFza0FnZW50UmVzcG9uc2UwARJfChJGaW5pc2hDb252ZXJzYXRpb24SIy5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXF1ZXN0GiQubnVtZW4udjEuRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2USUAoNR2V0QWdlbnRTdGF0ZRIeLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetAgentStateRequest
  */
-export type GetAgentStateRequest = Message<'numen.v1.GetAgentStateRequest'> & {}
+export type GetAgentStateRequest = Message<"numen.v1.GetAgentStateRequest"> & {
+};
 
 /**
  * Describes the message numen.v1.GetAgentStateRequest.
  * Use `create(GetAgentStateRequestSchema)` to create a new message.
  */
-export const GetAgentStateRequestSchema: GenMessage<GetAgentStateRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 0)
+export const GetAgentStateRequestSchema: GenMessage<GetAgentStateRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 0);
 
 /**
  * @generated from message numen.v1.GetAgentStateResponse
  */
-export type GetAgentStateResponse = Message<'numen.v1.GetAgentStateResponse'> & {
+export type GetAgentStateResponse = Message<"numen.v1.GetAgentStateResponse"> & {
   /**
    * Set when no agent can be reached, and then nothing can be asked of one. It
    * says why, in the person's own words.
    *
    * @generated from field: string unreachable = 1;
    */
-  unreachable: string
-}
+  unreachable: string;
+};
 
 /**
  * Describes the message numen.v1.GetAgentStateResponse.
  * Use `create(GetAgentStateResponseSchema)` to create a new message.
  */
-export const GetAgentStateResponseSchema: GenMessage<GetAgentStateResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 1)
+export const GetAgentStateResponseSchema: GenMessage<GetAgentStateResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 1);
 
 /**
  * @generated from message numen.v1.AskAgentRequest
  */
-export type AskAgentRequest = Message<'numen.v1.AskAgentRequest'> & {
+export type AskAgentRequest = Message<"numen.v1.AskAgentRequest"> & {
   /**
    * What the person wrote.
    *
    * @generated from field: string asked = 1;
    */
-  asked: string
+  asked: string;
 
   /**
    * The note in focus, for a task that says "this note". Empty when nothing
@@ -75,7 +70,7 @@ export type AskAgentRequest = Message<'numen.v1.AskAgentRequest'> & {
    *
    * @generated from field: string focus = 2;
    */
-  focus: string
+  focus: string;
 
   /**
    * Which thread of talk this question belongs to. Questions carrying one name
@@ -86,7 +81,7 @@ export type AskAgentRequest = Message<'numen.v1.AskAgentRequest'> & {
    *
    * @generated from field: string conversation = 3;
    */
-  conversation: string
+  conversation: string;
 
   /**
    * The card in focus, for a window that asks about one: the mark its deck
@@ -95,55 +90,53 @@ export type AskAgentRequest = Message<'numen.v1.AskAgentRequest'> & {
    *
    * @generated from field: string mark = 4;
    */
-  mark: string
+  mark: string;
 
   /**
    * @generated from field: string face = 5;
    */
-  face: string
-}
+  face: string;
+};
 
 /**
  * Describes the message numen.v1.AskAgentRequest.
  * Use `create(AskAgentRequestSchema)` to create a new message.
  */
-export const AskAgentRequestSchema: GenMessage<AskAgentRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 2)
+export const AskAgentRequestSchema: GenMessage<AskAgentRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 2);
 
 /**
  * @generated from message numen.v1.FinishConversationRequest
  */
-export type FinishConversationRequest = Message<'numen.v1.FinishConversationRequest'> & {
+export type FinishConversationRequest = Message<"numen.v1.FinishConversationRequest"> & {
   /**
    * Which thread of talk is over, by the name its questions carried. Empty is
    * no conversation, and there is nothing to finish.
    *
    * @generated from field: string conversation = 1;
    */
-  conversation: string
-}
+  conversation: string;
+};
 
 /**
  * Describes the message numen.v1.FinishConversationRequest.
  * Use `create(FinishConversationRequestSchema)` to create a new message.
  */
-export const FinishConversationRequestSchema: GenMessage<FinishConversationRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 3)
+export const FinishConversationRequestSchema: GenMessage<FinishConversationRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 3);
 
 /**
  * @generated from message numen.v1.FinishConversationResponse
  */
-export type FinishConversationResponse = Message<'numen.v1.FinishConversationResponse'> & {}
+export type FinishConversationResponse = Message<"numen.v1.FinishConversationResponse"> & {
+};
 
 /**
  * Describes the message numen.v1.FinishConversationResponse.
  * Use `create(FinishConversationResponseSchema)` to create a new message.
  */
-export const FinishConversationResponseSchema: GenMessage<FinishConversationResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 4)
+export const FinishConversationResponseSchema: GenMessage<FinishConversationResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 4);
 
 /**
  * AskAgentResponse is one step of the work: one thing the agent said, did, or
@@ -151,69 +144,62 @@ export const FinishConversationResponseSchema: GenMessage<FinishConversationResp
  *
  * @generated from message numen.v1.AskAgentResponse
  */
-export type AskAgentResponse = Message<'numen.v1.AskAgentResponse'> & {
+export type AskAgentResponse = Message<"numen.v1.AskAgentResponse"> & {
   /**
    * @generated from oneof numen.v1.AskAgentResponse.step
    */
-  step:
-    | {
-        /**
-         * A piece of what the agent is saying, appended in the order it arrives.
-         *
-         * @generated from field: string said = 1;
-         */
-        value: string
-        case: 'said'
-      }
-    | {
-        /**
-         * A tool the agent is using.
-         *
-         * @generated from field: numen.v1.ToolCall tool_call = 2;
-         */
-        value: ToolCall
-        case: 'toolCall'
-      }
-    | {
-        /**
-         * The agent has finished, and this is why it stopped. Empty when it
-         * stopped because it was done.
-         *
-         * @generated from field: string stopped = 3;
-         */
-        value: string
-        case: 'stopped'
-      }
-    | {
-        /**
-         * The tool the agent was using has answered. Nothing of this application's
-         * is running from here until the next step arrives.
-         *
-         * @generated from field: numen.v1.Answered answered = 4;
-         */
-        value: Answered
-        case: 'answered'
-      }
-    | {
-        /**
-         * A request to the model has begun. This is where a wait starts, and the
-         * agent says so itself.
-         *
-         * @generated from field: numen.v1.Thinking thinking = 5;
-         */
-        value: Thinking
-        case: 'thinking'
-      }
-    | { case: undefined; value?: undefined }
-}
+  step: {
+    /**
+     * A piece of what the agent is saying, appended in the order it arrives.
+     *
+     * @generated from field: string said = 1;
+     */
+    value: string;
+    case: "said";
+  } | {
+    /**
+     * A tool the agent is using.
+     *
+     * @generated from field: numen.v1.ToolCall tool_call = 2;
+     */
+    value: ToolCall;
+    case: "toolCall";
+  } | {
+    /**
+     * The agent has finished, and this is why it stopped. Empty when it
+     * stopped because it was done.
+     *
+     * @generated from field: string stopped = 3;
+     */
+    value: string;
+    case: "stopped";
+  } | {
+    /**
+     * The tool the agent was using has answered. Nothing of this application's
+     * is running from here until the next step arrives.
+     *
+     * @generated from field: numen.v1.Answered answered = 4;
+     */
+    value: Answered;
+    case: "answered";
+  } | {
+    /**
+     * A request to the model has begun. This is where a wait starts, and the
+     * agent says so itself.
+     *
+     * @generated from field: numen.v1.Thinking thinking = 5;
+     */
+    value: Thinking;
+    case: "thinking";
+  } | { case: undefined; value?: undefined };
+};
 
 /**
  * Describes the message numen.v1.AskAgentResponse.
  * Use `create(AskAgentResponseSchema)` to create a new message.
  */
-export const AskAgentResponseSchema: GenMessage<AskAgentResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 5)
+export const AskAgentResponseSchema: GenMessage<AskAgentResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 5);
 
 /**
  * Answered and Thinking carry nothing: each is a moment, and what it means is
@@ -221,28 +207,28 @@ export const AskAgentResponseSchema: GenMessage<AskAgentResponse> =
  *
  * @generated from message numen.v1.Answered
  */
-export type Answered = Message<'numen.v1.Answered'> & {}
+export type Answered = Message<"numen.v1.Answered"> & {
+};
 
 /**
  * Describes the message numen.v1.Answered.
  * Use `create(AnsweredSchema)` to create a new message.
  */
-export const AnsweredSchema: GenMessage<Answered> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 6)
+export const AnsweredSchema: GenMessage<Answered> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 6);
 
 /**
  * @generated from message numen.v1.Thinking
  */
-export type Thinking = Message<'numen.v1.Thinking'> & {}
+export type Thinking = Message<"numen.v1.Thinking"> & {
+};
 
 /**
  * Describes the message numen.v1.Thinking.
  * Use `create(ThinkingSchema)` to create a new message.
  */
-export const ThinkingSchema: GenMessage<Thinking> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 7)
+export const ThinkingSchema: GenMessage<Thinking> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 7);
 
 /**
  * ToolCall is a tool in the agent's hands.
@@ -252,13 +238,13 @@ export const ThinkingSchema: GenMessage<Thinking> =
  *
  * @generated from message numen.v1.ToolCall
  */
-export type ToolCall = Message<'numen.v1.ToolCall'> & {
+export type ToolCall = Message<"numen.v1.ToolCall"> & {
   /**
    * The tool, by the name it is called by whoever serves it.
    *
    * @generated from field: string tool = 1;
    */
-  tool: string
+  tool: string;
 
   /**
    * What it was called about — a note, a query — empty when the call says
@@ -267,7 +253,7 @@ export type ToolCall = Message<'numen.v1.ToolCall'> & {
    *
    * @generated from field: string about = 2;
    */
-  about: string
+  about: string;
 
   /**
    * How much of the call has been written, in characters. The only thing that
@@ -275,7 +261,7 @@ export type ToolCall = Message<'numen.v1.ToolCall'> & {
    *
    * @generated from field: int32 written = 3;
    */
-  written: number
+  written: number;
 
   /**
    * Where the call is working: the source it names, by the path the vault
@@ -283,7 +269,7 @@ export type ToolCall = Message<'numen.v1.ToolCall'> & {
    *
    * @generated from field: string path = 4;
    */
-  path: string
+  path: string;
 
   /**
    * The run of that source's text the call names, counted in bytes. An empty
@@ -291,16 +277,15 @@ export type ToolCall = Message<'numen.v1.ToolCall'> & {
    *
    * @generated from field: numen.v1.Span span = 5;
    */
-  span?: Span | undefined
-}
+  span?: Span | undefined;
+};
 
 /**
  * Describes the message numen.v1.ToolCall.
  * Use `create(ToolCallSchema)` to create a new message.
  */
-export const ToolCallSchema: GenMessage<ToolCall> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 8)
+export const ToolCallSchema: GenMessage<ToolCall> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 8);
 
 /**
  * AgentService gives a task to the agent working this vault.
@@ -315,10 +300,10 @@ export const AgentService: GenService<{
    * @generated from rpc numen.v1.AgentService.AskAgent
    */
   askAgent: {
-    methodKind: 'server_streaming'
-    input: typeof AskAgentRequestSchema
-    output: typeof AskAgentResponseSchema
-  }
+    methodKind: "server_streaming";
+    input: typeof AskAgentRequestSchema;
+    output: typeof AskAgentResponseSchema;
+  },
   /**
    * FinishConversation says a conversation is over. What the agent kept of it
    * is let go of, and whatever is still being answered in it stops.
@@ -326,10 +311,10 @@ export const AgentService: GenService<{
    * @generated from rpc numen.v1.AgentService.FinishConversation
    */
   finishConversation: {
-    methodKind: 'unary'
-    input: typeof FinishConversationRequestSchema
-    output: typeof FinishConversationResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof FinishConversationRequestSchema;
+    output: typeof FinishConversationResponseSchema;
+  },
   /**
    * GetAgentState is whether an agent can be reached at all. Which agent
    * answers is the installation's, not the vault's, so every window asks the
@@ -338,8 +323,10 @@ export const AgentService: GenService<{
    * @generated from rpc numen.v1.AgentService.GetAgentState
    */
   getAgentState: {
-    methodKind: 'unary'
-    input: typeof GetAgentStateRequestSchema
-    output: typeof GetAgentStateResponseSchema
-  }
-}> = /*@__PURE__*/ serviceDesc(file_numen_v1_agent, 0)
+    methodKind: "unary";
+    input: typeof GetAgentStateRequestSchema;
+    output: typeof GetAgentStateResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_numen_v1_agent, 0);
+

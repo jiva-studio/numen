@@ -9,31 +9,28 @@
 // file.proto, its notes note.proto and its text search.proto, and where the
 // person stands in it is workspace.proto.
 
-import type { GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
-import { fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
-import type { Message } from '@bufbuild/protobuf'
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/vault.proto.
  */
-export const file_numen_v1_vault: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    'ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjcKBFNjYW4SDQoFcmVhZHkYASABKAgSDQoFZXJyb3IYAiABKAkSEQoJdW53YXRjaGVkGAMgASgJIk8KDUluZGV4Q292ZXJhZ2USEwoLY2h1bmtfY291bnQYASABKAMSFgoOZW1iZWRkZWRfY291bnQYAiABKAMSEQoJZW1iZWRkaW5nGAMgASgIIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZSIgCgRNb3ZlEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkywAEKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw',
-  )
+export const file_numen_v1_vault: GenFile = /*@__PURE__*/
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjcKBFNjYW4SDQoFcmVhZHkYASABKAgSDQoFZXJyb3IYAiABKAkSEQoJdW53YXRjaGVkGAMgASgJIk8KDUluZGV4Q292ZXJhZ2USEwoLY2h1bmtfY291bnQYASABKAMSFgoOZW1iZWRkZWRfY291bnQYAiABKAMSEQoJZW1iZWRkaW5nGAMgASgIIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZSIgCgRNb3ZlEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkywAEKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
  */
-export type GetVaultStateRequest = Message<'numen.v1.GetVaultStateRequest'> & {}
+export type GetVaultStateRequest = Message<"numen.v1.GetVaultStateRequest"> & {
+};
 
 /**
  * Describes the message numen.v1.GetVaultStateRequest.
  * Use `create(GetVaultStateRequestSchema)` to create a new message.
  */
-export const GetVaultStateRequestSchema: GenMessage<GetVaultStateRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 0)
+export const GetVaultStateRequestSchema: GenMessage<GetVaultStateRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 0);
 
 /**
  * GetVaultStateResponse is what the vault the window is showing IS. What is
@@ -41,7 +38,7 @@ export const GetVaultStateRequestSchema: GenMessage<GetVaultStateRequest> =
  *
  * @generated from message numen.v1.GetVaultStateResponse
  */
-export type GetVaultStateResponse = Message<'numen.v1.GetVaultStateResponse'> & {
+export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & {
   /**
    * Id is the identity the folder carries, and how this vault is asked for
    * again. Name is what the person calls it, which is what a window titles
@@ -49,62 +46,61 @@ export type GetVaultStateResponse = Message<'numen.v1.GetVaultStateResponse'> & 
    *
    * @generated from field: string id = 1;
    */
-  id: string
+  id: string;
 
   /**
    * @generated from field: string name = 2;
    */
-  name: string
+  name: string;
 
   /**
    * Where the vault stands on this disk.
    *
    * @generated from field: string path = 3;
    */
-  path: string
+  path: string;
 
   /**
    * How far reading the vault has got.
    *
    * @generated from field: numen.v1.Scan scan = 4;
    */
-  scan?: Scan | undefined
+  scan?: Scan | undefined;
 
   /**
    * How far searching it by meaning has got.
    *
    * @generated from field: numen.v1.IndexCoverage coverage = 5;
    */
-  coverage?: IndexCoverage | undefined
-}
+  coverage?: IndexCoverage | undefined;
+};
 
 /**
  * Describes the message numen.v1.GetVaultStateResponse.
  * Use `create(GetVaultStateResponseSchema)` to create a new message.
  */
-export const GetVaultStateResponseSchema: GenMessage<GetVaultStateResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 1)
+export const GetVaultStateResponseSchema: GenMessage<GetVaultStateResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 1);
 
 /**
  * Scan is how far reading a vault has got, and what stopped it.
  *
  * @generated from message numen.v1.Scan
  */
-export type Scan = Message<'numen.v1.Scan'> & {
+export type Scan = Message<"numen.v1.Scan"> & {
   /**
    * Ready is set when the scan has finished.
    *
    * @generated from field: bool ready = 1;
    */
-  ready: boolean
+  ready: boolean;
 
   /**
    * Error is why the scan stopped, when it stopped for a reason.
    *
    * @generated from field: string error = 2;
    */
-  error: string
+  error: string;
 
   /**
    * Why the vault is not being followed, when it is not. Changes will only
@@ -112,14 +108,15 @@ export type Scan = Message<'numen.v1.Scan'> & {
    *
    * @generated from field: string unwatched = 3;
    */
-  unwatched: string
-}
+  unwatched: string;
+};
 
 /**
  * Describes the message numen.v1.Scan.
  * Use `create(ScanSchema)` to create a new message.
  */
-export const ScanSchema: GenMessage<Scan> = /*@__PURE__*/ messageDesc(file_numen_v1_vault, 2)
+export const ScanSchema: GenMessage<Scan> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 2);
 
 /**
  * IndexCoverage is how far searching a vault by meaning has got.
@@ -131,7 +128,7 @@ export const ScanSchema: GenMessage<Scan> = /*@__PURE__*/ messageDesc(file_numen
  *
  * @generated from message numen.v1.IndexCoverage
  */
-export type IndexCoverage = Message<'numen.v1.IndexCoverage'> & {
+export type IndexCoverage = Message<"numen.v1.IndexCoverage"> & {
   /**
    * ChunkCount is how many spans of text the index holds, and EmbeddedCount how
    * many of those carry a vector. Cutting finishes long before embedding does.
@@ -139,12 +136,12 @@ export type IndexCoverage = Message<'numen.v1.IndexCoverage'> & {
    *
    * @generated from field: int64 chunk_count = 1;
    */
-  chunkCount: bigint
+  chunkCount: bigint;
 
   /**
    * @generated from field: int64 embedded_count = 2;
    */
-  embeddedCount: bigint
+  embeddedCount: bigint;
 
   /**
    * Embedding says whether anything is going to turn the spans into vectors.
@@ -153,41 +150,40 @@ export type IndexCoverage = Message<'numen.v1.IndexCoverage'> & {
    *
    * @generated from field: bool embedding = 3;
    */
-  embedding: boolean
-}
+  embedding: boolean;
+};
 
 /**
  * Describes the message numen.v1.IndexCoverage.
  * Use `create(IndexCoverageSchema)` to create a new message.
  */
-export const IndexCoverageSchema: GenMessage<IndexCoverage> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 3)
+export const IndexCoverageSchema: GenMessage<IndexCoverage> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 3);
 
 /**
  * @generated from message numen.v1.WatchVaultChangesRequest
  */
-export type WatchVaultChangesRequest = Message<'numen.v1.WatchVaultChangesRequest'> & {}
+export type WatchVaultChangesRequest = Message<"numen.v1.WatchVaultChangesRequest"> & {
+};
 
 /**
  * Describes the message numen.v1.WatchVaultChangesRequest.
  * Use `create(WatchVaultChangesRequestSchema)` to create a new message.
  */
-export const WatchVaultChangesRequestSchema: GenMessage<WatchVaultChangesRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 4)
+export const WatchVaultChangesRequestSchema: GenMessage<WatchVaultChangesRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 4);
 
 /**
  * @generated from message numen.v1.WatchVaultChangesResponse
  */
-export type WatchVaultChangesResponse = Message<'numen.v1.WatchVaultChangesResponse'> & {
+export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesResponse"> & {
   /**
    * Paths of the files that changed, notes and assets alike. One that was
    * removed is named here too: what changed about it is that it is gone.
    *
    * @generated from field: repeated string paths = 1;
    */
-  paths: string[]
+  paths: string[];
 
   /**
    * Set when the vault has to be read again rather than followed — more
@@ -195,7 +191,7 @@ export type WatchVaultChangesResponse = Message<'numen.v1.WatchVaultChangesRespo
    *
    * @generated from field: bool reload = 2;
    */
-  reload: boolean
+  reload: boolean;
 
   /**
    * The notes that were renamed by this application, each by where it was and
@@ -203,16 +199,15 @@ export type WatchVaultChangesResponse = Message<'numen.v1.WatchVaultChangesRespo
    *
    * @generated from field: repeated numen.v1.Move renamed = 3;
    */
-  renamed: Move[]
-}
+  renamed: Move[];
+};
 
 /**
  * Describes the message numen.v1.WatchVaultChangesResponse.
  * Use `create(WatchVaultChangesResponseSchema)` to create a new message.
  */
-export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 5)
+export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 5);
 
 /**
  * Move is a note that is no longer where it was. The bytes do not change on the
@@ -220,27 +215,28 @@ export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesRespon
  *
  * @generated from message numen.v1.Move
  */
-export type Move = Message<'numen.v1.Move'> & {
+export type Move = Message<"numen.v1.Move"> & {
   /**
    * Where the note was filed.
    *
    * @generated from field: string from = 1;
    */
-  from: string
+  from: string;
 
   /**
    * Where it is filed now.
    *
    * @generated from field: string to = 2;
    */
-  to: string
-}
+  to: string;
+};
 
 /**
  * Describes the message numen.v1.Move.
  * Use `create(MoveSchema)` to create a new message.
  */
-export const MoveSchema: GenMessage<Move> = /*@__PURE__*/ messageDesc(file_numen_v1_vault, 6)
+export const MoveSchema: GenMessage<Move> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 6);
 
 /**
  * VaultService answers what the one vault a client is looking at is, and what
@@ -255,10 +251,10 @@ export const VaultService: GenService<{
    * @generated from rpc numen.v1.VaultService.GetVaultState
    */
   getVaultState: {
-    methodKind: 'unary'
-    input: typeof GetVaultStateRequestSchema
-    output: typeof GetVaultStateResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof GetVaultStateRequestSchema;
+    output: typeof GetVaultStateResponseSchema;
+  },
   /**
    * WatchVaultChanges reports the notes that changed on disk, for as long as
    * the caller listens. It says which notes, and nothing about them: the caller
@@ -267,8 +263,10 @@ export const VaultService: GenService<{
    * @generated from rpc numen.v1.VaultService.WatchVaultChanges
    */
   watchVaultChanges: {
-    methodKind: 'server_streaming'
-    input: typeof WatchVaultChangesRequestSchema
-    output: typeof WatchVaultChangesResponseSchema
-  }
-}> = /*@__PURE__*/ serviceDesc(file_numen_v1_vault, 0)
+    methodKind: "server_streaming";
+    input: typeof WatchVaultChangesRequestSchema;
+    output: typeof WatchVaultChangesResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_numen_v1_vault, 0);
+

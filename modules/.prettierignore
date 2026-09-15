@@ -1,10 +1,6 @@
-node_modules
-dist
-coverage
-storybook-static
-.vite
-android
-gen
-tools
-*.pb.ts
-package-lock.json
+# Generated protobuf files
+libs/protocol/src/numen/v1/**
+
+# Build outputs and dependencies
+**/dist/**
+**/node_modules/**

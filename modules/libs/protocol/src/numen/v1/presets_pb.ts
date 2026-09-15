@@ -14,23 +14,19 @@
 // the settings a person is moving and has not written yet, and asking for one
 // writes nothing.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
-import type { ErrorCode, Fingerprint } from './shared_pb.js'
-import { file_numen_v1_shared } from './shared_pb.js'
-import type { Bounds } from './theme_pb.js'
-import { file_numen_v1_theme } from './theme_pb.js'
-import type { Message } from '@bufbuild/protobuf'
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode, Fingerprint } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
+import type { Bounds } from "./theme_pb.js";
+import { file_numen_v1_theme } from "./theme_pb.js";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/presets.proto.
  */
-export const file_numen_v1_presets: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    'ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLjAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYByABKAgSJAoGY291bnRzGAggASgOMhQubnVtZW4udjEuQnVkZ2V0VW5pdBIPCgdiYWNrbG9nGAkgASgFEioKBGxvYWQYCiADKAsyHC5udW1lbi52MS5TZXR0aW5ncy5Mb2FkRW50cnkSHwoHbGVhcm5lZBgLIAEoDjIOLm51bWVuLnYxLlJ1bGUSEAoIaW50ZXJ2YWwYDCABKAUaKwoJTG9hZEVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAEiqgEKBlByZXNldBIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEiQKCHNldHRpbmdzGAMgASgLMhIubnVtZW4udjEuU2V0dGluZ3MSEAoIcHJvYmxlbXMYBCADKAkSIwoFc3RvcHMYBSABKA4yFC5udW1lbi52MS5TdG9wUmVhc29uEiYKCHN0b3BzX29uGAYgASgOMhQubnVtZW4udjEuU3RvcFJlYXNvbiLgAQoFQ3VydmUSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDAoEZ3JpZBgCIAMoARIMCgRkYXlzGAMgAygJEhsKAmF0GAQgAygLMg8ubnVtZW4udjEuUG9pbnQSHAoDbm93GAUgASgLMg8ubnVtZW4udjEuUGxhY2USIgoJc3VnZ2VzdGVkGAYgASgLMg8ubnVtZW4udjEuUGxhY2USDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFIvEBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBIkCgZjbG9zZWQYByADKA4yFC5udW1lbi52MS5CdWRnZXROYW1lEg4KBmNsZWFycxgIIAEoBRIPCgdiYWNrbG9nGAkgAygFEg8KB2xlYXJuZWQYCiABKAUSEwoGbGVhcm5zGAsgASgFSACIAQESDQoFc2hvcnQYDCABKAVCCQoHX2xlYXJucyIvCgVQbGFjZRIKCgJhdBgBIAEoBRINCgV2YWx1ZRgCIAEoARILCgNkYXkYAyABKAkiJAoUR2V0RGVja1ByZXNldFJlcXVlc3QSDAoEZGVjaxgBIAEoCSLVAQoVR2V0RGVja1ByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBEigKBmJvdW5kcxgEIAEoCzIYLm51bWVuLnYxLlNldHRpbmdzQm91bmRzQgkKB19wcmVzZXRCCAoGX2Vycm9yQgUKA19hdCIUChJMaXN0UHJlc2V0c1JlcXVlc3QiPwoTTGlzdFByZXNldHNSZXNwb25zZRIoCgdwcmVzZXRzGAEgAygLMhcubnVtZW4udjEuUHJlc2V0U3VtbWFyeSIsCg1QcmVzZXRTdW1tYXJ5EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiMgoTQ3JlYXRlUHJlc2V0UmVxdWVzdBINCgV0aXRsZRgBIAEoCRIMCgRwYXRoGAIgASgJImsKFENyZWF0ZVByZXNldFJlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBARISCgp1bmxldmVsbGVkGAMgASgIQggKBl9lcnJvciJmChNTY2hlZHVsZURlY2tSZXF1ZXN0EgwKBGRlY2sYASABKAkSDgoGcHJlc2V0GAIgASgJEigKBHNlZW4YAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuIowBChRTY2hlZHVsZURlY2tSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEiYKAmF0GAIgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBARISCgp1bmxldmVsbGVkGAMgASgIQggKBl9lcnJvckIFCgNfYXQiIQoRUmVhZFByZXNldFJlcXVlc3QSDAoEcGF0aBgBIAEoCSLSAQoSUmVhZFByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBEigKBmJvdW5kcxgEIAEoCzIYLm51bWVuLnYxLlNldHRpbmdzQm91bmRzQgkKB19wcmVzZXRCCAoGX2Vycm9yQgUKA19hdCKTAgoOU2V0dGluZ3NCb3VuZHMSJwoNbWludXRlc19hX2RheRgBIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIjCgluZXdfYV9kYXkYAiABKAsyEC5udW1lbi52MS5Cb3VuZHMSJwoNcmV2aWV3c19hX2RheRgDIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIjCglyZXRlbnRpb24YBCABKAsyEC5udW1lbi52MS5Cb3VuZHMSIQoHYmFja2xvZxgFIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIiCghpbnRlcnZhbBgGIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIeCgRsb2FkGAcgASgLMhAubnVtZW4udjEuQm91bmRzInsKEldyaXRlUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKCHNldHRpbmdzGAIgASgLMhIubnVtZW4udjEuU2V0dGluZ3MSKAoEc2VlbhgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCBwoFX3NlZW4iiwEKE1dyaXRlUHJlc2V0UmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBARImCgJhdBgCIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESEgoKdW5sZXZlbGxlZBgDIAEoCEIICgZfZXJyb3JCBQoDX2F0IkkKE0NvbXB1dGVDdXJ2ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCghzZXR0aW5ncxgCIAEoCzISLm51bWVuLnYxLlNldHRpbmdzIjYKFENvbXB1dGVDdXJ2ZVJlc3BvbnNlEh4KBWN1cnZlGAEgASgLMg8ubnVtZW4udjEuQ3VydmUqWgoER29hbBIUChBHT0FMX1VOU1BFQ0lGSUVEEAASFgoSR09BTF9NSU5VVEVTX0FfREFZEAESEgoOR09BTF9SRVRFTlRJT04QAhIQCgxHT0FMX0JZX0RBVEUQAypDCgRSdWxlEhQKEFJVTEVfVU5TUEVDSUZJRUQQABIRCg1SVUxFX0lOVEVSVkFMEAESEgoOUlVMRV9SRVRFTlRJT04QAipXCgpCdWRnZXRVbml0EhsKF0JVREdFVF9VTklUX1VOU1BFQ0lGSUVEEAASFQoRQlVER0VUX1VOSVRfQ0FSRFMQARIVChFCVURHRVRfVU5JVF9TSE9XUxACKtwBCgpTdG9wUmVhc29uEhsKF1NUT1BfUkVBU09OX1VOU1BFQ0lGSUVEEAASFwoTU1RPUF9SRUFTT05fTk9USElORxABEhoKFlNUT1BfUkVBU09OX05PX01JTlVURVMQAhIYChRTVE9QX1JFQVNPTl9OT19DQVJEUxADEhYKElNUT1BfUkVBU09OX05PX0RBWRAEEhgKFFNUT1BfUkVBU09OX1BBU1RfREFZEAUSFwoTU1RPUF9SRUFTT05fTk9fTE9BRBAGEhcKE1NUT1BfUkVBU09OX05PX1dFRUsQByrMAQoKQnVkZ2V0TmFtZRIbChdCVURHRVRfTkFNRV9VTlNQRUNJRklFRBAAEh0KGUJVREdFVF9OQU1FX01JTlVURVNfQV9EQVkQARIZChVCVURHRVRfTkFNRV9ORVdfQV9EQVkQAhIdChlCVURHRVRfTkFNRV9SRVZJRVdTX0FfREFZEAMSFwoTQlVER0VUX05BTUVfQllfREFURRAEEhcKE0JVREdFVF9OQU1FX0JBQ0tMT0cQBRIWChJCVURHRVRfTkFNRV9QQVVTRUQQBjKwBAoOUHJlc2V0c1NlcnZpY2USUAoNR2V0RGVja1ByZXNldBIeLm51bWVuLnYxLkdldERlY2tQcmVzZXRSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0RGVja1ByZXNldFJlc3BvbnNlEkoKC0xpc3RQcmVzZXRzEhwubnVtZW4udjEuTGlzdFByZXNldHNSZXF1ZXN0Gh0ubnVtZW4udjEuTGlzdFByZXNldHNSZXNwb25zZRJNCgxDcmVhdGVQcmVzZXQSHS5udW1lbi52MS5DcmVhdGVQcmVzZXRSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlUHJlc2V0UmVzcG9uc2USTQoMU2NoZWR1bGVEZWNrEh0ubnVtZW4udjEuU2NoZWR1bGVEZWNrUmVxdWVzdBoeLm51bWVuLnYxLlNjaGVkdWxlRGVja1Jlc3BvbnNlEkcKClJlYWRQcmVzZXQSGy5udW1lbi52MS5SZWFkUHJlc2V0UmVxdWVzdBocLm51bWVuLnYxLlJlYWRQcmVzZXRSZXNwb25zZRJKCgtXcml0ZVByZXNldBIcLm51bWVuLnYxLldyaXRlUHJlc2V0UmVxdWVzdBodLm51bWVuLnYxLldyaXRlUHJlc2V0UmVzcG9uc2USTQoMQ29tcHV0ZUN1cnZlEh0ubnVtZW4udjEuQ29tcHV0ZUN1cnZlUmVxdWVzdBoeLm51bWVuLnYxLkNvbXB1dGVDdXJ2ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM',
-    [file_numen_v1_shared, file_numen_v1_theme],
-  )
+export const file_numen_v1_presets: GenFile = /*@__PURE__*/
+  fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLjAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYByABKAgSJAoGY291bnRzGAggASgOMhQubnVtZW4udjEuQnVkZ2V0VW5pdBIPCgdiYWNrbG9nGAkgASgFEioKBGxvYWQYCiADKAsyHC5udW1lbi52MS5TZXR0aW5ncy5Mb2FkRW50cnkSHwoHbGVhcm5lZBgLIAEoDjIOLm51bWVuLnYxLlJ1bGUSEAoIaW50ZXJ2YWwYDCABKAUaKwoJTG9hZEVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAEiqgEKBlByZXNldBIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEiQKCHNldHRpbmdzGAMgASgLMhIubnVtZW4udjEuU2V0dGluZ3MSEAoIcHJvYmxlbXMYBCADKAkSIwoFc3RvcHMYBSABKA4yFC5udW1lbi52MS5TdG9wUmVhc29uEiYKCHN0b3BzX29uGAYgASgOMhQubnVtZW4udjEuU3RvcFJlYXNvbiLgAQoFQ3VydmUSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDAoEZ3JpZBgCIAMoARIMCgRkYXlzGAMgAygJEhsKAmF0GAQgAygLMg8ubnVtZW4udjEuUG9pbnQSHAoDbm93GAUgASgLMg8ubnVtZW4udjEuUGxhY2USIgoJc3VnZ2VzdGVkGAYgASgLMg8ubnVtZW4udjEuUGxhY2USDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFIvEBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBIkCgZjbG9zZWQYByADKA4yFC5udW1lbi52MS5CdWRnZXROYW1lEg4KBmNsZWFycxgIIAEoBRIPCgdiYWNrbG9nGAkgAygFEg8KB2xlYXJuZWQYCiABKAUSEwoGbGVhcm5zGAsgASgFSACIAQESDQoFc2hvcnQYDCABKAVCCQoHX2xlYXJucyIvCgVQbGFjZRIKCgJhdBgBIAEoBRINCgV2YWx1ZRgCIAEoARILCgNkYXkYAyABKAkiJAoUR2V0RGVja1ByZXNldFJlcXVlc3QSDAoEZGVjaxgBIAEoCSLVAQoVR2V0RGVja1ByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBEigKBmJvdW5kcxgEIAEoCzIYLm51bWVuLnYxLlNldHRpbmdzQm91bmRzQgkKB19wcmVzZXRCCAoGX2Vycm9yQgUKA19hdCIUChJMaXN0UHJlc2V0c1JlcXVlc3QiPwoTTGlzdFByZXNldHNSZXNwb25zZRIoCgdwcmVzZXRzGAEgAygLMhcubnVtZW4udjEuUHJlc2V0U3VtbWFyeSIsCg1QcmVzZXRTdW1tYXJ5EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiMgoTQ3JlYXRlUHJlc2V0UmVxdWVzdBINCgV0aXRsZRgBIAEoCRIMCgRwYXRoGAIgASgJImsKFENyZWF0ZVByZXNldFJlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBARISCgp1bmxldmVsbGVkGAMgASgIQggKBl9lcnJvciJmChNTY2hlZHVsZURlY2tSZXF1ZXN0EgwKBGRlY2sYASABKAkSDgoGcHJlc2V0GAIgASgJEigKBHNlZW4YAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuIowBChRTY2hlZHVsZURlY2tSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEiYKAmF0GAIgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBARISCgp1bmxldmVsbGVkGAMgASgIQggKBl9lcnJvckIFCgNfYXQiIQoRUmVhZFByZXNldFJlcXVlc3QSDAoEcGF0aBgBIAEoCSLSAQoSUmVhZFByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBEigKBmJvdW5kcxgEIAEoCzIYLm51bWVuLnYxLlNldHRpbmdzQm91bmRzQgkKB19wcmVzZXRCCAoGX2Vycm9yQgUKA19hdCKTAgoOU2V0dGluZ3NCb3VuZHMSJwoNbWludXRlc19hX2RheRgBIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIjCgluZXdfYV9kYXkYAiABKAsyEC5udW1lbi52MS5Cb3VuZHMSJwoNcmV2aWV3c19hX2RheRgDIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIjCglyZXRlbnRpb24YBCABKAsyEC5udW1lbi52MS5Cb3VuZHMSIQoHYmFja2xvZxgFIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIiCghpbnRlcnZhbBgGIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIeCgRsb2FkGAcgASgLMhAubnVtZW4udjEuQm91bmRzInsKEldyaXRlUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKCHNldHRpbmdzGAIgASgLMhIubnVtZW4udjEuU2V0dGluZ3MSKAoEc2VlbhgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCBwoFX3NlZW4iiwEKE1dyaXRlUHJlc2V0UmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBARImCgJhdBgCIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESEgoKdW5sZXZlbGxlZBgDIAEoCEIICgZfZXJyb3JCBQoDX2F0IkkKE0NvbXB1dGVDdXJ2ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCghzZXR0aW5ncxgCIAEoCzISLm51bWVuLnYxLlNldHRpbmdzIjYKFENvbXB1dGVDdXJ2ZVJlc3BvbnNlEh4KBWN1cnZlGAEgASgLMg8ubnVtZW4udjEuQ3VydmUqWgoER29hbBIUChBHT0FMX1VOU1BFQ0lGSUVEEAASFgoSR09BTF9NSU5VVEVTX0FfREFZEAESEgoOR09BTF9SRVRFTlRJT04QAhIQCgxHT0FMX0JZX0RBVEUQAypDCgRSdWxlEhQKEFJVTEVfVU5TUEVDSUZJRUQQABIRCg1SVUxFX0lOVEVSVkFMEAESEgoOUlVMRV9SRVRFTlRJT04QAipXCgpCdWRnZXRVbml0EhsKF0JVREdFVF9VTklUX1VOU1BFQ0lGSUVEEAASFQoRQlVER0VUX1VOSVRfQ0FSRFMQARIVChFCVURHRVRfVU5JVF9TSE9XUxACKtwBCgpTdG9wUmVhc29uEhsKF1NUT1BfUkVBU09OX1VOU1BFQ0lGSUVEEAASFwoTU1RPUF9SRUFTT05fTk9USElORxABEhoKFlNUT1BfUkVBU09OX05PX01JTlVURVMQAhIYChRTVE9QX1JFQVNPTl9OT19DQVJEUxADEhYKElNUT1BfUkVBU09OX05PX0RBWRAEEhgKFFNUT1BfUkVBU09OX1BBU1RfREFZEAUSFwoTU1RPUF9SRUFTT05fTk9fTE9BRBAGEhcKE1NUT1BfUkVBU09OX05PX1dFRUsQByrMAQoKQnVkZ2V0TmFtZRIbChdCVURHRVRfTkFNRV9VTlNQRUNJRklFRBAAEh0KGUJVREdFVF9OQU1FX01JTlVURVNfQV9EQVkQARIZChVCVURHRVRfTkFNRV9ORVdfQV9EQVkQAhIdChlCVURHRVRfTkFNRV9SRVZJRVdTX0FfREFZEAMSFwoTQlVER0VUX05BTUVfQllfREFURRAEEhcKE0JVREdFVF9OQU1FX0JBQ0tMT0cQBRIWChJCVURHRVRfTkFNRV9QQVVTRUQQBjKwBAoOUHJlc2V0c1NlcnZpY2USUAoNR2V0RGVja1ByZXNldBIeLm51bWVuLnYxLkdldERlY2tQcmVzZXRSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0RGVja1ByZXNldFJlc3BvbnNlEkoKC0xpc3RQcmVzZXRzEhwubnVtZW4udjEuTGlzdFByZXNldHNSZXF1ZXN0Gh0ubnVtZW4udjEuTGlzdFByZXNldHNSZXNwb25zZRJNCgxDcmVhdGVQcmVzZXQSHS5udW1lbi52MS5DcmVhdGVQcmVzZXRSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlUHJlc2V0UmVzcG9uc2USTQoMU2NoZWR1bGVEZWNrEh0ubnVtZW4udjEuU2NoZWR1bGVEZWNrUmVxdWVzdBoeLm51bWVuLnYxLlNjaGVkdWxlRGVja1Jlc3BvbnNlEkcKClJlYWRQcmVzZXQSGy5udW1lbi52MS5SZWFkUHJlc2V0UmVxdWVzdBocLm51bWVuLnYxLlJlYWRQcmVzZXRSZXNwb25zZRJKCgtXcml0ZVByZXNldBIcLm51bWVuLnYxLldyaXRlUHJlc2V0UmVxdWVzdBodLm51bWVuLnYxLldyaXRlUHJlc2V0UmVzcG9uc2USTQoMQ29tcHV0ZUN1cnZlEh0ubnVtZW4udjEuQ29tcHV0ZUN1cnZlUmVxdWVzdBoeLm51bWVuLnYxLkNvbXB1dGVDdXJ2ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared, file_numen_v1_theme]);
 
 /**
  * Settings are how the decks pointing at one preset are scheduled. A preset
@@ -38,11 +34,11 @@ export const file_numen_v1_presets: GenFile =
  *
  * @generated from message numen.v1.Settings
  */
-export type Settings = Message<'numen.v1.Settings'> & {
+export type Settings = Message<"numen.v1.Settings"> & {
   /**
    * @generated from field: numen.v1.Goal goal = 1;
    */
-  goal: Goal
+  goal: Goal;
 
   /**
    * The day the material is to be in the head, as the year, the month and the
@@ -50,7 +46,7 @@ export type Settings = Message<'numen.v1.Settings'> & {
    *
    * @generated from field: string by_date = 2;
    */
-  byDate: string
+  byDate: string;
 
   /**
    * How long a day of review runs, spent against the time each answer took. It
@@ -59,33 +55,33 @@ export type Settings = Message<'numen.v1.Settings'> & {
    *
    * @generated from field: int32 minutes_a_day = 3;
    */
-  minutesADay: number
+  minutesADay: number;
 
   /**
    * How many cards of each kind a day holds.
    *
    * @generated from field: int32 new_a_day = 4;
    */
-  newADay: number
+  newADay: number;
 
   /**
    * @generated from field: int32 reviews_a_day = 5;
    */
-  reviewsADay: number
+  reviewsADay: number;
 
   /**
    * The share of cards recalled when they come round again.
    *
    * @generated from field: double retention = 6;
    */
-  retention: number
+  retention: number;
 
   /**
    * Whether days are made to resemble each other.
    *
    * @generated from field: bool even_load = 7;
    */
-  evenLoad: boolean
+  evenLoad: boolean;
 
   /**
    * What a day's budget is counted in. Unspecified is the default, which
@@ -93,7 +89,7 @@ export type Settings = Message<'numen.v1.Settings'> & {
    *
    * @generated from field: numen.v1.BudgetUnit counts = 8;
    */
-  counts: BudgetUnit
+  counts: BudgetUnit;
 
   /**
    * How much of a day goes to what is overdue before anything unbegun is
@@ -106,7 +102,7 @@ export type Settings = Message<'numen.v1.Settings'> & {
    *
    * @generated from field: int32 backlog = 9;
    */
-  backlog: number
+  backlog: number;
 
   /**
    * How much of a day's load each day of the week carries, in per cent, under
@@ -115,7 +111,7 @@ export type Settings = Message<'numen.v1.Settings'> & {
    *
    * @generated from field: map<string, int32> load = 10;
    */
-  load: { [key: string]: number }
+  load: { [key: string]: number };
 
   /**
    * What counts as a card face the person has learned. The value the rule reads
@@ -124,51 +120,50 @@ export type Settings = Message<'numen.v1.Settings'> & {
    *
    * @generated from field: numen.v1.Rule learned = 11;
    */
-  learned: Rule
+  learned: Rule;
 
   /**
    * How long a card face is sent away for before it is learned, in days.
    *
    * @generated from field: int32 interval = 12;
    */
-  interval: number
-}
+  interval: number;
+};
 
 /**
  * Describes the message numen.v1.Settings.
  * Use `create(SettingsSchema)` to create a new message.
  */
-export const SettingsSchema: GenMessage<Settings> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 0)
+export const SettingsSchema: GenMessage<Settings> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 0);
 
 /**
  * Preset is one preset as a read hands it over.
  *
  * @generated from message numen.v1.Preset
  */
-export type Preset = Message<'numen.v1.Preset'> & {
+export type Preset = Message<"numen.v1.Preset"> & {
   /**
    * Path is the note the settings were read from, and is empty for a deck
    * naming no preset.
    *
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * Title is what the preset is called.
    *
    * @generated from field: string title = 2;
    */
-  title: string
+  title: string;
 
   /**
    * The settings themselves, as the preset names them.
    *
    * @generated from field: numen.v1.Settings settings = 3;
    */
-  settings?: Settings | undefined
+  settings?: Settings | undefined;
 
   /**
    * What was wrong in the file and was not guessed at, in the words to show.
@@ -177,7 +172,7 @@ export type Preset = Message<'numen.v1.Preset'> & {
    *
    * @generated from field: repeated string problems = 4;
    */
-  problems: string[]
+  problems: string[];
 
   /**
    * Why the preset schedules nothing, asked against the day holding now: a goal
@@ -186,7 +181,7 @@ export type Preset = Message<'numen.v1.Preset'> & {
    *
    * @generated from field: numen.v1.StopReason stops = 5;
    */
-  stops: StopReason
+  stops: StopReason;
 
   /**
    * The same asked of the day holding now: whatever stops the preset at all,
@@ -195,25 +190,26 @@ export type Preset = Message<'numen.v1.Preset'> & {
    *
    * @generated from field: numen.v1.StopReason stops_on = 6;
    */
-  stopsOn: StopReason
-}
+  stopsOn: StopReason;
+};
 
 /**
  * Describes the message numen.v1.Preset.
  * Use `create(PresetSchema)` to create a new message.
  */
-export const PresetSchema: GenMessage<Preset> = /*@__PURE__*/ messageDesc(file_numen_v1_presets, 1)
+export const PresetSchema: GenMessage<Preset> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 1);
 
 /**
  * Curve is what the one control comes to over the whole range of its goal.
  *
  * @generated from message numen.v1.Curve
  */
-export type Curve = Message<'numen.v1.Curve'> & {
+export type Curve = Message<"numen.v1.Curve"> & {
   /**
    * @generated from field: numen.v1.Goal goal = 1;
    */
-  goal: Goal
+  goal: Goal;
 
   /**
    * The value of the goal at each place: minutes for `minutes_a_day`, a share
@@ -221,33 +217,33 @@ export type Curve = Message<'numen.v1.Curve'> & {
    *
    * @generated from field: repeated double grid = 2;
    */
-  grid: number[]
+  grid: number[];
 
   /**
    * The day of each place, filled for a goal of a date.
    *
    * @generated from field: repeated string days = 3;
    */
-  days: string[]
+  days: string[];
 
   /**
    * What the preset comes to at each place of the grid, one for one with it.
    *
    * @generated from field: repeated numen.v1.Point at = 4;
    */
-  at: Point[]
+  at: Point[];
 
   /**
    * Where the preset stands, and what is suggested.
    *
    * @generated from field: numen.v1.Place now = 5;
    */
-  now?: Place | undefined
+  now?: Place | undefined;
 
   /**
    * @generated from field: numen.v1.Place suggested = 6;
    */
-  suggested?: Place | undefined
+  suggested?: Place | undefined;
 
   /**
    * How many decks are scheduled by this preset. Zero is a preset no deck
@@ -255,7 +251,7 @@ export type Curve = Message<'numen.v1.Curve'> & {
    *
    * @generated from field: int32 decks = 7;
    */
-  decks: number
+  decks: number;
 
   /**
    * How many card faces stand in those decks. Zero is a preset with nothing to
@@ -263,7 +259,7 @@ export type Curve = Message<'numen.v1.Curve'> & {
    *
    * @generated from field: int32 cards = 8;
    */
-  cards: number
+  cards: number;
 
   /**
    * How many of those card faces have had their day and were not answered on
@@ -273,7 +269,7 @@ export type Curve = Message<'numen.v1.Curve'> & {
    *
    * @generated from field: int32 overdue = 9;
    */
-  overdue: number
+  overdue: number;
 
   /**
    * How many of those card faces nobody has answered at all, so they have had
@@ -282,21 +278,22 @@ export type Curve = Message<'numen.v1.Curve'> & {
    *
    * @generated from field: int32 unbegun = 10;
    */
-  unbegun: number
-}
+  unbegun: number;
+};
 
 /**
  * Describes the message numen.v1.Curve.
  * Use `create(CurveSchema)` to create a new message.
  */
-export const CurveSchema: GenMessage<Curve> = /*@__PURE__*/ messageDesc(file_numen_v1_presets, 2)
+export const CurveSchema: GenMessage<Curve> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 2);
 
 /**
  * Point is what a preset comes to at one place of the grid.
  *
  * @generated from message numen.v1.Point
  */
-export type Point = Message<'numen.v1.Point'> & {
+export type Point = Message<"numen.v1.Point"> & {
   /**
    * `reviews` is counted in card faces and `minutes` in the showings they take,
    * so a face the day comes back to costs its minutes and is the one card.
@@ -312,19 +309,19 @@ export type Point = Message<'numen.v1.Point'> & {
    *
    * @generated from field: double reviews = 1;
    */
-  reviews: number
+  reviews: number;
 
   /**
    * @generated from field: double minutes = 2;
    */
-  minutes: number
+  minutes: number;
 
   /**
    * The share of the material that comes back.
    *
    * @generated from field: double retained = 3;
    */
-  retained: number
+  retained: number;
 
   /**
    * The card faces standing owed on the last day the projection ran. Read
@@ -332,7 +329,7 @@ export type Point = Message<'numen.v1.Point'> & {
    *
    * @generated from field: int32 owed = 4;
    */
-  owed: number
+  owed: number;
 
   /**
    * The share of the material learned by this day under the rule the settings
@@ -341,12 +338,12 @@ export type Point = Message<'numen.v1.Point'> & {
    *
    * @generated from field: double through = 5;
    */
-  through: number
+  through: number;
 
   /**
    * @generated from field: bool enough = 6;
    */
-  enough: boolean
+  enough: boolean;
 
   /**
    * Every budget that closed the day here. An empty list is a day that asked
@@ -359,7 +356,7 @@ export type Point = Message<'numen.v1.Point'> & {
    *
    * @generated from field: repeated numen.v1.BudgetName closed = 7;
    */
-  closed: BudgetName[]
+  closed: BudgetName[];
 
   /**
    * How many days of review at this place it takes before nothing is overdue.
@@ -368,7 +365,7 @@ export type Point = Message<'numen.v1.Point'> & {
    *
    * @generated from field: int32 clears = 8;
    */
-  clears: number
+  clears: number;
 
   /**
    * How many card faces stand overdue at the end of each day projected at this
@@ -377,14 +374,14 @@ export type Point = Message<'numen.v1.Point'> & {
    *
    * @generated from field: repeated int32 backlog = 9;
    */
-  backlog: number[]
+  backlog: number[];
 
   /**
    * How many card faces stand learned today under the rule the settings name.
    *
    * @generated from field: int32 learned = 10;
    */
-  learned: number
+  learned: number;
 
   /**
    * How many days of review at this place it takes before every card face the
@@ -403,7 +400,7 @@ export type Point = Message<'numen.v1.Point'> & {
    *
    * @generated from field: optional int32 learns = 11;
    */
-  learns?: number | undefined
+  learns?: number | undefined;
 
   /**
    * How many card faces cannot be learned by this day whatever the pace: the
@@ -412,27 +409,28 @@ export type Point = Message<'numen.v1.Point'> & {
    *
    * @generated from field: int32 short = 12;
    */
-  short: number
-}
+  short: number;
+};
 
 /**
  * Describes the message numen.v1.Point.
  * Use `create(PointSchema)` to create a new message.
  */
-export const PointSchema: GenMessage<Point> = /*@__PURE__*/ messageDesc(file_numen_v1_presets, 3)
+export const PointSchema: GenMessage<Point> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 3);
 
 /**
  * Place is one place on the curve worth pointing at.
  *
  * @generated from message numen.v1.Place
  */
-export type Place = Message<'numen.v1.Place'> & {
+export type Place = Message<"numen.v1.Place"> & {
   /**
    * Where on the grid it stands, and -1 for a value that falls outside it.
    *
    * @generated from field: int32 at = 1;
    */
-  at: number
+  at: number;
 
   /**
    * The goal's value at the place, in the units of the grid. What the preset
@@ -440,59 +438,59 @@ export type Place = Message<'numen.v1.Place'> & {
    *
    * @generated from field: double value = 2;
    */
-  value: number
+  value: number;
 
   /**
    * The day at the place, filled for a goal of a date.
    *
    * @generated from field: string day = 3;
    */
-  day: string
-}
+  day: string;
+};
 
 /**
  * Describes the message numen.v1.Place.
  * Use `create(PlaceSchema)` to create a new message.
  */
-export const PlaceSchema: GenMessage<Place> = /*@__PURE__*/ messageDesc(file_numen_v1_presets, 4)
+export const PlaceSchema: GenMessage<Place> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 4);
 
 /**
  * @generated from message numen.v1.GetDeckPresetRequest
  */
-export type GetDeckPresetRequest = Message<'numen.v1.GetDeckPresetRequest'> & {
+export type GetDeckPresetRequest = Message<"numen.v1.GetDeckPresetRequest"> & {
   /**
    * The deck whose preset this is, by the path it is filed under.
    *
    * @generated from field: string deck = 1;
    */
-  deck: string
-}
+  deck: string;
+};
 
 /**
  * Describes the message numen.v1.GetDeckPresetRequest.
  * Use `create(GetDeckPresetRequestSchema)` to create a new message.
  */
-export const GetDeckPresetRequestSchema: GenMessage<GetDeckPresetRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 5)
+export const GetDeckPresetRequestSchema: GenMessage<GetDeckPresetRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 5);
 
 /**
  * @generated from message numen.v1.GetDeckPresetResponse
  */
-export type GetDeckPresetResponse = Message<'numen.v1.GetDeckPresetResponse'> & {
+export type GetDeckPresetResponse = Message<"numen.v1.GetDeckPresetResponse"> & {
   /**
    * Absent when the preset was refused.
    *
    * @generated from field: optional numen.v1.Preset preset = 1;
    */
-  preset?: Preset | undefined
+  preset?: Preset | undefined;
 
   /**
    * Set when the preset was not read, and why.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 2;
    */
-  error?: ErrorCode | undefined
+  error?: ErrorCode | undefined;
 
   /**
    * The file the settings came out of, for the caller to present at its next
@@ -501,7 +499,7 @@ export type GetDeckPresetResponse = Message<'numen.v1.GetDeckPresetResponse'> & 
    *
    * @generated from field: optional numen.v1.Fingerprint at = 3;
    */
-  at?: Fingerprint | undefined
+  at?: Fingerprint | undefined;
 
   /**
    * How far each setting goes. A client asking a person for a number says
@@ -509,47 +507,45 @@ export type GetDeckPresetResponse = Message<'numen.v1.GetDeckPresetResponse'> & 
    *
    * @generated from field: numen.v1.SettingsBounds bounds = 4;
    */
-  bounds?: SettingsBounds | undefined
-}
+  bounds?: SettingsBounds | undefined;
+};
 
 /**
  * Describes the message numen.v1.GetDeckPresetResponse.
  * Use `create(GetDeckPresetResponseSchema)` to create a new message.
  */
-export const GetDeckPresetResponseSchema: GenMessage<GetDeckPresetResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 6)
+export const GetDeckPresetResponseSchema: GenMessage<GetDeckPresetResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 6);
 
 /**
  * @generated from message numen.v1.ListPresetsRequest
  */
-export type ListPresetsRequest = Message<'numen.v1.ListPresetsRequest'> & {}
+export type ListPresetsRequest = Message<"numen.v1.ListPresetsRequest"> & {
+};
 
 /**
  * Describes the message numen.v1.ListPresetsRequest.
  * Use `create(ListPresetsRequestSchema)` to create a new message.
  */
-export const ListPresetsRequestSchema: GenMessage<ListPresetsRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 7)
+export const ListPresetsRequestSchema: GenMessage<ListPresetsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 7);
 
 /**
  * @generated from message numen.v1.ListPresetsResponse
  */
-export type ListPresetsResponse = Message<'numen.v1.ListPresetsResponse'> & {
+export type ListPresetsResponse = Message<"numen.v1.ListPresetsResponse"> & {
   /**
    * @generated from field: repeated numen.v1.PresetSummary presets = 1;
    */
-  presets: PresetSummary[]
-}
+  presets: PresetSummary[];
+};
 
 /**
  * Describes the message numen.v1.ListPresetsResponse.
  * Use `create(ListPresetsResponseSchema)` to create a new message.
  */
-export const ListPresetsResponseSchema: GenMessage<ListPresetsResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 8)
+export const ListPresetsResponseSchema: GenMessage<ListPresetsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 8);
 
 /**
  * PresetSummary is one preset as a person choosing between them sees it: where
@@ -557,72 +553,70 @@ export const ListPresetsResponseSchema: GenMessage<ListPresetsResponse> =
  *
  * @generated from message numen.v1.PresetSummary
  */
-export type PresetSummary = Message<'numen.v1.PresetSummary'> & {
+export type PresetSummary = Message<"numen.v1.PresetSummary"> & {
   /**
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * What the preset is called. Empty where nothing names the note.
    *
    * @generated from field: string title = 2;
    */
-  title: string
-}
+  title: string;
+};
 
 /**
  * Describes the message numen.v1.PresetSummary.
  * Use `create(PresetSummarySchema)` to create a new message.
  */
-export const PresetSummarySchema: GenMessage<PresetSummary> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 9)
+export const PresetSummarySchema: GenMessage<PresetSummary> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 9);
 
 /**
  * @generated from message numen.v1.CreatePresetRequest
  */
-export type CreatePresetRequest = Message<'numen.v1.CreatePresetRequest'> & {
+export type CreatePresetRequest = Message<"numen.v1.CreatePresetRequest"> & {
   /**
    * What the preset is called. The file is named after it.
    *
    * @generated from field: string title = 1;
    */
-  title: string
+  title: string;
 
   /**
    * The folder it goes in, as a path relative to the root. Empty is the root.
    *
    * @generated from field: string path = 2;
    */
-  path: string
-}
+  path: string;
+};
 
 /**
  * Describes the message numen.v1.CreatePresetRequest.
  * Use `create(CreatePresetRequestSchema)` to create a new message.
  */
-export const CreatePresetRequestSchema: GenMessage<CreatePresetRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 10)
+export const CreatePresetRequestSchema: GenMessage<CreatePresetRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 10);
 
 /**
  * @generated from message numen.v1.CreatePresetResponse
  */
-export type CreatePresetResponse = Message<'numen.v1.CreatePresetResponse'> & {
+export type CreatePresetResponse = Message<"numen.v1.CreatePresetResponse"> & {
   /**
    * Where the preset is filed. Empty when nothing was made.
    *
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * Set when nothing was made, and why.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 2;
    */
-  error?: ErrorCode | undefined
+  error?: ErrorCode | undefined;
 
   /**
    * Set when the preset is on disk and the index would not come level with it.
@@ -631,27 +625,26 @@ export type CreatePresetResponse = Message<'numen.v1.CreatePresetResponse'> & {
    *
    * @generated from field: bool unlevelled = 3;
    */
-  unlevelled: boolean
-}
+  unlevelled: boolean;
+};
 
 /**
  * Describes the message numen.v1.CreatePresetResponse.
  * Use `create(CreatePresetResponseSchema)` to create a new message.
  */
-export const CreatePresetResponseSchema: GenMessage<CreatePresetResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 11)
+export const CreatePresetResponseSchema: GenMessage<CreatePresetResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 11);
 
 /**
  * @generated from message numen.v1.ScheduleDeckRequest
  */
-export type ScheduleDeckRequest = Message<'numen.v1.ScheduleDeckRequest'> & {
+export type ScheduleDeckRequest = Message<"numen.v1.ScheduleDeckRequest"> & {
   /**
    * The deck to schedule, by the path it is filed under.
    *
    * @generated from field: string deck = 1;
    */
-  deck: string
+  deck: string;
 
   /**
    * The preset that schedules it. Empty takes the deck off the preset it names,
@@ -659,7 +652,7 @@ export type ScheduleDeckRequest = Message<'numen.v1.ScheduleDeckRequest'> & {
    *
    * @generated from field: string preset = 2;
    */
-  preset: string
+  preset: string;
 
   /**
    * The file this caller last read. Absent for a write that lands on whatever
@@ -667,21 +660,20 @@ export type ScheduleDeckRequest = Message<'numen.v1.ScheduleDeckRequest'> & {
    *
    * @generated from field: optional numen.v1.Fingerprint seen = 3;
    */
-  seen?: Fingerprint | undefined
-}
+  seen?: Fingerprint | undefined;
+};
 
 /**
  * Describes the message numen.v1.ScheduleDeckRequest.
  * Use `create(ScheduleDeckRequestSchema)` to create a new message.
  */
-export const ScheduleDeckRequestSchema: GenMessage<ScheduleDeckRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 12)
+export const ScheduleDeckRequestSchema: GenMessage<ScheduleDeckRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 12);
 
 /**
  * @generated from message numen.v1.ScheduleDeckResponse
  */
-export type ScheduleDeckResponse = Message<'numen.v1.ScheduleDeckResponse'> & {
+export type ScheduleDeckResponse = Message<"numen.v1.ScheduleDeckResponse"> & {
   /**
    * Set when nothing was written, and why. A deck that is no longer the one
    * this caller read is ERROR_CODE_STALE, and the person chooses what happens
@@ -689,7 +681,7 @@ export type ScheduleDeckResponse = Message<'numen.v1.ScheduleDeckResponse'> & {
    *
    * @generated from field: optional numen.v1.ErrorCode error = 1;
    */
-  error?: ErrorCode | undefined
+  error?: ErrorCode | undefined;
 
   /**
    * The file the write produced, for the caller to present at its next write.
@@ -697,7 +689,7 @@ export type ScheduleDeckResponse = Message<'numen.v1.ScheduleDeckResponse'> & {
    *
    * @generated from field: optional numen.v1.Fingerprint at = 2;
    */
-  at?: Fingerprint | undefined
+  at?: Fingerprint | undefined;
 
   /**
    * Set when the deck is on disk and the index would not come level with it.
@@ -706,52 +698,50 @@ export type ScheduleDeckResponse = Message<'numen.v1.ScheduleDeckResponse'> & {
    *
    * @generated from field: bool unlevelled = 3;
    */
-  unlevelled: boolean
-}
+  unlevelled: boolean;
+};
 
 /**
  * Describes the message numen.v1.ScheduleDeckResponse.
  * Use `create(ScheduleDeckResponseSchema)` to create a new message.
  */
-export const ScheduleDeckResponseSchema: GenMessage<ScheduleDeckResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 13)
+export const ScheduleDeckResponseSchema: GenMessage<ScheduleDeckResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 13);
 
 /**
  * @generated from message numen.v1.ReadPresetRequest
  */
-export type ReadPresetRequest = Message<'numen.v1.ReadPresetRequest'> & {
+export type ReadPresetRequest = Message<"numen.v1.ReadPresetRequest"> & {
   /**
    * @generated from field: string path = 1;
    */
-  path: string
-}
+  path: string;
+};
 
 /**
  * Describes the message numen.v1.ReadPresetRequest.
  * Use `create(ReadPresetRequestSchema)` to create a new message.
  */
-export const ReadPresetRequestSchema: GenMessage<ReadPresetRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 14)
+export const ReadPresetRequestSchema: GenMessage<ReadPresetRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 14);
 
 /**
  * @generated from message numen.v1.ReadPresetResponse
  */
-export type ReadPresetResponse = Message<'numen.v1.ReadPresetResponse'> & {
+export type ReadPresetResponse = Message<"numen.v1.ReadPresetResponse"> & {
   /**
    * Absent when the preset was refused.
    *
    * @generated from field: optional numen.v1.Preset preset = 1;
    */
-  preset?: Preset | undefined
+  preset?: Preset | undefined;
 
   /**
    * Set when the preset was not read, and why.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 2;
    */
-  error?: ErrorCode | undefined
+  error?: ErrorCode | undefined;
 
   /**
    * The file the settings came out of, for the caller to present at its next
@@ -759,7 +749,7 @@ export type ReadPresetResponse = Message<'numen.v1.ReadPresetResponse'> & {
    *
    * @generated from field: optional numen.v1.Fingerprint at = 3;
    */
-  at?: Fingerprint | undefined
+  at?: Fingerprint | undefined;
 
   /**
    * How far each setting goes. A client asking a person for a number says
@@ -767,16 +757,15 @@ export type ReadPresetResponse = Message<'numen.v1.ReadPresetResponse'> & {
    *
    * @generated from field: numen.v1.SettingsBounds bounds = 4;
    */
-  bounds?: SettingsBounds | undefined
-}
+  bounds?: SettingsBounds | undefined;
+};
 
 /**
  * Describes the message numen.v1.ReadPresetResponse.
  * Use `create(ReadPresetResponseSchema)` to create a new message.
  */
-export const ReadPresetResponseSchema: GenMessage<ReadPresetResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 15)
+export const ReadPresetResponseSchema: GenMessage<ReadPresetResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 15);
 
 /**
  * SettingsBounds is how far each setting of a preset may go. They are the
@@ -787,61 +776,60 @@ export const ReadPresetResponseSchema: GenMessage<ReadPresetResponse> =
  *
  * @generated from message numen.v1.SettingsBounds
  */
-export type SettingsBounds = Message<'numen.v1.SettingsBounds'> & {
+export type SettingsBounds = Message<"numen.v1.SettingsBounds"> & {
   /**
    * @generated from field: numen.v1.Bounds minutes_a_day = 1;
    */
-  minutesADay?: Bounds | undefined
+  minutesADay?: Bounds | undefined;
 
   /**
    * @generated from field: numen.v1.Bounds new_a_day = 2;
    */
-  newADay?: Bounds | undefined
+  newADay?: Bounds | undefined;
 
   /**
    * @generated from field: numen.v1.Bounds reviews_a_day = 3;
    */
-  reviewsADay?: Bounds | undefined
+  reviewsADay?: Bounds | undefined;
 
   /**
    * @generated from field: numen.v1.Bounds retention = 4;
    */
-  retention?: Bounds | undefined
+  retention?: Bounds | undefined;
 
   /**
    * @generated from field: numen.v1.Bounds backlog = 5;
    */
-  backlog?: Bounds | undefined
+  backlog?: Bounds | undefined;
 
   /**
    * @generated from field: numen.v1.Bounds interval = 6;
    */
-  interval?: Bounds | undefined
+  interval?: Bounds | undefined;
 
   /**
    * How much of a day's load one day of the week may carry, in per cent.
    *
    * @generated from field: numen.v1.Bounds load = 7;
    */
-  load?: Bounds | undefined
-}
+  load?: Bounds | undefined;
+};
 
 /**
  * Describes the message numen.v1.SettingsBounds.
  * Use `create(SettingsBoundsSchema)` to create a new message.
  */
-export const SettingsBoundsSchema: GenMessage<SettingsBounds> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 16)
+export const SettingsBoundsSchema: GenMessage<SettingsBounds> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 16);
 
 /**
  * @generated from message numen.v1.WritePresetRequest
  */
-export type WritePresetRequest = Message<'numen.v1.WritePresetRequest'> & {
+export type WritePresetRequest = Message<"numen.v1.WritePresetRequest"> & {
   /**
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * The settings to write. A value outside what a preset may hold is the
@@ -849,7 +837,7 @@ export type WritePresetRequest = Message<'numen.v1.WritePresetRequest'> & {
    *
    * @generated from field: numen.v1.Settings settings = 2;
    */
-  settings?: Settings | undefined
+  settings?: Settings | undefined;
 
   /**
    * The file this caller last read. Absent for a write that lands on whatever
@@ -857,21 +845,20 @@ export type WritePresetRequest = Message<'numen.v1.WritePresetRequest'> & {
    *
    * @generated from field: optional numen.v1.Fingerprint seen = 3;
    */
-  seen?: Fingerprint | undefined
-}
+  seen?: Fingerprint | undefined;
+};
 
 /**
  * Describes the message numen.v1.WritePresetRequest.
  * Use `create(WritePresetRequestSchema)` to create a new message.
  */
-export const WritePresetRequestSchema: GenMessage<WritePresetRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 17)
+export const WritePresetRequestSchema: GenMessage<WritePresetRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 17);
 
 /**
  * @generated from message numen.v1.WritePresetResponse
  */
-export type WritePresetResponse = Message<'numen.v1.WritePresetResponse'> & {
+export type WritePresetResponse = Message<"numen.v1.WritePresetResponse"> & {
   /**
    * Set when nothing was written, and why. A file that is no longer the one
    * this caller read is ERROR_CODE_STALE, and the person chooses what happens to
@@ -879,7 +866,7 @@ export type WritePresetResponse = Message<'numen.v1.WritePresetResponse'> & {
    *
    * @generated from field: optional numen.v1.ErrorCode error = 1;
    */
-  error?: ErrorCode | undefined
+  error?: ErrorCode | undefined;
 
   /**
    * The file the write produced, for the caller to present at its next write.
@@ -887,7 +874,7 @@ export type WritePresetResponse = Message<'numen.v1.WritePresetResponse'> & {
    *
    * @generated from field: optional numen.v1.Fingerprint at = 2;
    */
-  at?: Fingerprint | undefined
+  at?: Fingerprint | undefined;
 
   /**
    * Set when the preset is on disk and the index would not come level with it.
@@ -896,28 +883,27 @@ export type WritePresetResponse = Message<'numen.v1.WritePresetResponse'> & {
    *
    * @generated from field: bool unlevelled = 3;
    */
-  unlevelled: boolean
-}
+  unlevelled: boolean;
+};
 
 /**
  * Describes the message numen.v1.WritePresetResponse.
  * Use `create(WritePresetResponseSchema)` to create a new message.
  */
-export const WritePresetResponseSchema: GenMessage<WritePresetResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 18)
+export const WritePresetResponseSchema: GenMessage<WritePresetResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 18);
 
 /**
  * @generated from message numen.v1.ComputeCurveRequest
  */
-export type ComputeCurveRequest = Message<'numen.v1.ComputeCurveRequest'> & {
+export type ComputeCurveRequest = Message<"numen.v1.ComputeCurveRequest"> & {
   /**
    * The note the preset stands in, which names the decks it schedules. Empty
    * is the preset that schedules the decks naming none.
    *
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * The settings a curve is wanted for. They are what a person is moving and
@@ -925,34 +911,32 @@ export type ComputeCurveRequest = Message<'numen.v1.ComputeCurveRequest'> & {
    *
    * @generated from field: numen.v1.Settings settings = 2;
    */
-  settings?: Settings | undefined
-}
+  settings?: Settings | undefined;
+};
 
 /**
  * Describes the message numen.v1.ComputeCurveRequest.
  * Use `create(ComputeCurveRequestSchema)` to create a new message.
  */
-export const ComputeCurveRequestSchema: GenMessage<ComputeCurveRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 19)
+export const ComputeCurveRequestSchema: GenMessage<ComputeCurveRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 19);
 
 /**
  * @generated from message numen.v1.ComputeCurveResponse
  */
-export type ComputeCurveResponse = Message<'numen.v1.ComputeCurveResponse'> & {
+export type ComputeCurveResponse = Message<"numen.v1.ComputeCurveResponse"> & {
   /**
    * @generated from field: numen.v1.Curve curve = 1;
    */
-  curve?: Curve | undefined
-}
+  curve?: Curve | undefined;
+};
 
 /**
  * Describes the message numen.v1.ComputeCurveResponse.
  * Use `create(ComputeCurveResponseSchema)` to create a new message.
  */
-export const ComputeCurveResponseSchema: GenMessage<ComputeCurveResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 20)
+export const ComputeCurveResponseSchema: GenMessage<ComputeCurveResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 20);
 
 /**
  * Goal is which value the one control steers. The value itself stands in the
@@ -991,7 +975,8 @@ export enum Goal {
 /**
  * Describes the enum numen.v1.Goal.
  */
-export const GoalSchema: GenEnum<Goal> = /*@__PURE__*/ enumDesc(file_numen_v1_presets, 0)
+export const GoalSchema: GenEnum<Goal> = /*@__PURE__*/
+  enumDesc(file_numen_v1_presets, 0);
 
 /**
  * Rule is what a preset counts as learned, and stands under `learned`. The
@@ -1025,7 +1010,8 @@ export enum Rule {
 /**
  * Describes the enum numen.v1.Rule.
  */
-export const RuleSchema: GenEnum<Rule> = /*@__PURE__*/ enumDesc(file_numen_v1_presets, 1)
+export const RuleSchema: GenEnum<Rule> = /*@__PURE__*/
+  enumDesc(file_numen_v1_presets, 1);
 
 /**
  * BudgetUnit is what a day's budget is counted in, and stands under `counts`.
@@ -1057,9 +1043,8 @@ export enum BudgetUnit {
 /**
  * Describes the enum numen.v1.BudgetUnit.
  */
-export const BudgetUnitSchema: GenEnum<BudgetUnit> =
-  /*@__PURE__*/
-  enumDesc(file_numen_v1_presets, 2)
+export const BudgetUnitSchema: GenEnum<BudgetUnit> = /*@__PURE__*/
+  enumDesc(file_numen_v1_presets, 2);
 
 /**
  * StopReason is why a preset schedules nothing. The list is closed, and a
@@ -1129,9 +1114,8 @@ export enum StopReason {
 /**
  * Describes the enum numen.v1.StopReason.
  */
-export const StopReasonSchema: GenEnum<StopReason> =
-  /*@__PURE__*/
-  enumDesc(file_numen_v1_presets, 3)
+export const StopReasonSchema: GenEnum<StopReason> = /*@__PURE__*/
+  enumDesc(file_numen_v1_presets, 3);
 
 /**
  * BudgetName is one budget of a preset, named after the key the preset writes
@@ -1194,9 +1178,8 @@ export enum BudgetName {
 /**
  * Describes the enum numen.v1.BudgetName.
  */
-export const BudgetNameSchema: GenEnum<BudgetName> =
-  /*@__PURE__*/
-  enumDesc(file_numen_v1_presets, 4)
+export const BudgetNameSchema: GenEnum<BudgetName> = /*@__PURE__*/
+  enumDesc(file_numen_v1_presets, 4);
 
 /**
  * PresetsService answers about the presets of the one vault a client is looking
@@ -1213,10 +1196,10 @@ export const PresetsService: GenService<{
    * @generated from rpc numen.v1.PresetsService.GetDeckPreset
    */
   getDeckPreset: {
-    methodKind: 'unary'
-    input: typeof GetDeckPresetRequestSchema
-    output: typeof GetDeckPresetResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof GetDeckPresetRequestSchema;
+    output: typeof GetDeckPresetResponseSchema;
+  },
   /**
    * ListPresets is every preset the vault holds, by path and by what it is
    * called. It is the list a deck's preset is chosen from, and the defaults are
@@ -1226,10 +1209,10 @@ export const PresetsService: GenService<{
    * @generated from rpc numen.v1.PresetsService.ListPresets
    */
   listPresets: {
-    methodKind: 'unary'
-    input: typeof ListPresetsRequestSchema
-    output: typeof ListPresetsResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof ListPresetsRequestSchema;
+    output: typeof ListPresetsResponseSchema;
+  },
   /**
    * CreatePreset puts a preset naming none of its settings in the vault. The
    * file says it is a preset from the moment it exists, so it is one to
@@ -1241,10 +1224,10 @@ export const PresetsService: GenService<{
    * @generated from rpc numen.v1.PresetsService.CreatePreset
    */
   createPreset: {
-    methodKind: 'unary'
-    input: typeof CreatePresetRequestSchema
-    output: typeof CreatePresetResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof CreatePresetRequestSchema;
+    output: typeof CreatePresetResponseSchema;
+  },
   /**
    * ScheduleDeck puts a deck on a preset, by writing the entry of its `links:`
    * block that carries `type: preset`. The entry keeps the role and the words
@@ -1259,10 +1242,10 @@ export const PresetsService: GenService<{
    * @generated from rpc numen.v1.PresetsService.ScheduleDeck
    */
   scheduleDeck: {
-    methodKind: 'unary'
-    input: typeof ScheduleDeckRequestSchema
-    output: typeof ScheduleDeckResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof ScheduleDeckRequestSchema;
+    output: typeof ScheduleDeckResponseSchema;
+  },
   /**
    * ReadPreset is the settings of one preset. A note that is not a preset is
    * answered with the defaults and a problem: what is wrong with the file is
@@ -1271,10 +1254,10 @@ export const PresetsService: GenService<{
    * @generated from rpc numen.v1.PresetsService.ReadPreset
    */
   readPreset: {
-    methodKind: 'unary'
-    input: typeof ReadPresetRequestSchema
-    output: typeof ReadPresetResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof ReadPresetRequestSchema;
+    output: typeof ReadPresetResponseSchema;
+  },
   /**
    * WritePreset puts settings into a preset. Each key the application owns is
    * replaced on its own, and every other key, the order they stand in and the
@@ -1287,10 +1270,10 @@ export const PresetsService: GenService<{
    * @generated from rpc numen.v1.PresetsService.WritePreset
    */
   writePreset: {
-    methodKind: 'unary'
-    input: typeof WritePresetRequestSchema
-    output: typeof WritePresetResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof WritePresetRequestSchema;
+    output: typeof WritePresetResponseSchema;
+  },
   /**
    * ComputeCurve is what the settings come to over the whole range of the goal
    * they name. The whole range is worked out in one pass.
@@ -1298,8 +1281,10 @@ export const PresetsService: GenService<{
    * @generated from rpc numen.v1.PresetsService.ComputeCurve
    */
   computeCurve: {
-    methodKind: 'unary'
-    input: typeof ComputeCurveRequestSchema
-    output: typeof ComputeCurveResponseSchema
-  }
-}> = /*@__PURE__*/ serviceDesc(file_numen_v1_presets, 0)
+    methodKind: "unary";
+    input: typeof ComputeCurveRequestSchema;
+    output: typeof ComputeCurveResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_numen_v1_presets, 0);
+

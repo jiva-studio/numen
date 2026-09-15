@@ -68,6 +68,11 @@ async function linkNotes(from: string, to: string, seat: PlexRelatedSeat) {
   await draw(at.value)
 }
 
+function onClose() {
+  writing.value = null
+  void draw(at.value)
+}
+
 onMounted(async () => {
   try {
     core.value = await reach()
@@ -114,10 +119,7 @@ onMounted(async () => {
       v-if="core && writing"
       :core="core"
       :path="writing"
-      @close="
-        writing = null
-        void draw(at)
-      "
+      @close="onClose"
       @error="(message: string) => (errorMessage = message)"
     />
   </Teleport>

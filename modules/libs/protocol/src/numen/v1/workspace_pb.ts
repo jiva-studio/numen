@@ -9,46 +9,42 @@
 // front of the person are the window's. What the vault is and what has changed
 // in it is vault.proto.
 
-import type { GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
-import { fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
-import type { Span } from './shared_pb.js'
-import { file_numen_v1_shared } from './shared_pb.js'
-import type { Message } from '@bufbuild/protobuf'
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Span } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/workspace.proto.
  */
-export const file_numen_v1_workspace: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    'ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIhMKEVdhdGNoRm9jdXNSZXF1ZXN0IkEKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEh0KBXNwYW5zGAIgAygLMg4ubnVtZW4udjEuU3BhbiJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSLAAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIsCghkb2N1bWVudBgFIAEoCzIaLm51bWVuLnYxLkRvY3VtZW50UHJvZ3Jlc3MSLgoJcmVjb3JkaW5nGAYgASgLMhsubnVtZW4udjEuUmVjb3JkaW5nUHJvZ3Jlc3MSJAoEYm9vaxgHIAEoCzIWLm51bWVuLnYxLkJvb2tQcm9ncmVzcyI0ChBEb2N1bWVudFByb2dyZXNzEgwKBHBhZ2UYASABKAUSEgoKcGFnZV9jb3VudBgCIAEoBSJACgxCb29rUHJvZ3Jlc3MSDgoGb2Zmc2V0GAEgASgFEgwKBHBhZ2UYAiABKAUSEgoKcGFnZV9jb3VudBgDIAEoBSJJChFSZWNvcmRpbmdQcm9ncmVzcxIfChd0cmFuc2NyaWJlZF9kdXJhdGlvbl9tcxgBIAEoBRITCgtkdXJhdGlvbl9tcxgCIAEoBTKvAQoQV29ya3NwYWNlU2VydmljZRJJCgpXYXRjaEZvY3VzEhsubnVtZW4udjEuV2F0Y2hGb2N1c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEZvY3VzUmVzcG9uc2UwARJQCg1Xcml0ZU9wZW5UYWJzEh4ubnVtZW4udjEuV3JpdGVPcGVuVGFic1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw',
-    [file_numen_v1_shared],
-  )
+export const file_numen_v1_workspace: GenFile = /*@__PURE__*/
+  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIhMKEVdhdGNoRm9jdXNSZXF1ZXN0IkEKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEh0KBXNwYW5zGAIgAygLMg4ubnVtZW4udjEuU3BhbiJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSLAAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIsCghkb2N1bWVudBgFIAEoCzIaLm51bWVuLnYxLkRvY3VtZW50UHJvZ3Jlc3MSLgoJcmVjb3JkaW5nGAYgASgLMhsubnVtZW4udjEuUmVjb3JkaW5nUHJvZ3Jlc3MSJAoEYm9vaxgHIAEoCzIWLm51bWVuLnYxLkJvb2tQcm9ncmVzcyI0ChBEb2N1bWVudFByb2dyZXNzEgwKBHBhZ2UYASABKAUSEgoKcGFnZV9jb3VudBgCIAEoBSJACgxCb29rUHJvZ3Jlc3MSDgoGb2Zmc2V0GAEgASgFEgwKBHBhZ2UYAiABKAUSEgoKcGFnZV9jb3VudBgDIAEoBSJJChFSZWNvcmRpbmdQcm9ncmVzcxIfChd0cmFuc2NyaWJlZF9kdXJhdGlvbl9tcxgBIAEoBRITCgtkdXJhdGlvbl9tcxgCIAEoBTKvAQoQV29ya3NwYWNlU2VydmljZRJJCgpXYXRjaEZvY3VzEhsubnVtZW4udjEuV2F0Y2hGb2N1c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEZvY3VzUmVzcG9uc2UwARJQCg1Xcml0ZU9wZW5UYWJzEh4ubnVtZW4udjEuV3JpdGVPcGVuVGFic1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.WatchFocusRequest
  */
-export type WatchFocusRequest = Message<'numen.v1.WatchFocusRequest'> & {}
+export type WatchFocusRequest = Message<"numen.v1.WatchFocusRequest"> & {
+};
 
 /**
  * Describes the message numen.v1.WatchFocusRequest.
  * Use `create(WatchFocusRequestSchema)` to create a new message.
  */
-export const WatchFocusRequestSchema: GenMessage<WatchFocusRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 0)
+export const WatchFocusRequestSchema: GenMessage<WatchFocusRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 0);
 
 /**
  * @generated from message numen.v1.WatchFocusResponse
  */
-export type WatchFocusResponse = Message<'numen.v1.WatchFocusResponse'> & {
+export type WatchFocusResponse = Message<"numen.v1.WatchFocusResponse"> & {
   /**
    * The source to put in front of the person: a note to see the neighbourhood
    * from, or a document to open.
    *
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * The runs of that source's text to open on, counted in bytes. The person is
@@ -57,27 +53,26 @@ export type WatchFocusResponse = Message<'numen.v1.WatchFocusResponse'> & {
    *
    * @generated from field: repeated numen.v1.Span spans = 2;
    */
-  spans: Span[]
-}
+  spans: Span[];
+};
 
 /**
  * Describes the message numen.v1.WatchFocusResponse.
  * Use `create(WatchFocusResponseSchema)` to create a new message.
  */
-export const WatchFocusResponseSchema: GenMessage<WatchFocusResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 1)
+export const WatchFocusResponseSchema: GenMessage<WatchFocusResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 1);
 
 /**
  * @generated from message numen.v1.WriteOpenTabsRequest
  */
-export type WriteOpenTabsRequest = Message<'numen.v1.WriteOpenTabsRequest'> & {
+export type WriteOpenTabsRequest = Message<"numen.v1.WriteOpenTabsRequest"> & {
   /**
    * Every tab the window has open, in the order the person was last in them.
    *
    * @generated from field: repeated numen.v1.Tab tabs = 1;
    */
-  tabs: Tab[]
+  tabs: Tab[];
 
   /**
    * Which of them the person is looking at, by its id. Empty where the window
@@ -85,29 +80,28 @@ export type WriteOpenTabsRequest = Message<'numen.v1.WriteOpenTabsRequest'> & {
    *
    * @generated from field: string front = 2;
    */
-  front: string
-}
+  front: string;
+};
 
 /**
  * Describes the message numen.v1.WriteOpenTabsRequest.
  * Use `create(WriteOpenTabsRequestSchema)` to create a new message.
  */
-export const WriteOpenTabsRequestSchema: GenMessage<WriteOpenTabsRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 2)
+export const WriteOpenTabsRequestSchema: GenMessage<WriteOpenTabsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 2);
 
 /**
  * @generated from message numen.v1.WriteOpenTabsResponse
  */
-export type WriteOpenTabsResponse = Message<'numen.v1.WriteOpenTabsResponse'> & {}
+export type WriteOpenTabsResponse = Message<"numen.v1.WriteOpenTabsResponse"> & {
+};
 
 /**
  * Describes the message numen.v1.WriteOpenTabsResponse.
  * Use `create(WriteOpenTabsResponseSchema)` to create a new message.
  */
-export const WriteOpenTabsResponseSchema: GenMessage<WriteOpenTabsResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 3)
+export const WriteOpenTabsResponseSchema: GenMessage<WriteOpenTabsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 3);
 
 /**
  * A Tab is one tab of the window: what kind it is, and what it holds.
@@ -117,20 +111,20 @@ export const WriteOpenTabsResponseSchema: GenMessage<WriteOpenTabsResponse> =
  *
  * @generated from message numen.v1.Tab
  */
-export type Tab = Message<'numen.v1.Tab'> & {
+export type Tab = Message<"numen.v1.Tab"> & {
   /**
    * Id is what the window calls this tab, which the front is named by.
    *
    * @generated from field: string id = 1;
    */
-  id: string
+  id: string;
 
   /**
    * Kind is what sort of tab it is.
    *
    * @generated from field: string kind = 2;
    */
-  kind: string
+  kind: string;
 
   /**
    * Path is the file it holds, by the path the vault files it under, and empty
@@ -138,14 +132,14 @@ export type Tab = Message<'numen.v1.Tab'> & {
    *
    * @generated from field: string path = 3;
    */
-  path: string
+  path: string;
 
   /**
    * Title is what the tab is called, as the person reads it.
    *
    * @generated from field: string title = 4;
    */
-  title: string
+  title: string;
 
   /**
    * How far the person has got through what the tab holds. A tab holding a
@@ -155,53 +149,53 @@ export type Tab = Message<'numen.v1.Tab'> & {
    *
    * @generated from field: numen.v1.DocumentProgress document = 5;
    */
-  document?: DocumentProgress | undefined
+  document?: DocumentProgress | undefined;
 
   /**
    * @generated from field: numen.v1.RecordingProgress recording = 6;
    */
-  recording?: RecordingProgress | undefined
+  recording?: RecordingProgress | undefined;
 
   /**
    * @generated from field: numen.v1.BookProgress book = 7;
    */
-  book?: BookProgress | undefined
-}
+  book?: BookProgress | undefined;
+};
 
 /**
  * Describes the message numen.v1.Tab.
  * Use `create(TabSchema)` to create a new message.
  */
-export const TabSchema: GenMessage<Tab> = /*@__PURE__*/ messageDesc(file_numen_v1_workspace, 4)
+export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 4);
 
 /**
  * A DocumentProgress is how far through a document the person reading it is.
  *
  * @generated from message numen.v1.DocumentProgress
  */
-export type DocumentProgress = Message<'numen.v1.DocumentProgress'> & {
+export type DocumentProgress = Message<"numen.v1.DocumentProgress"> & {
   /**
    * Page is the page in front of them, counted from one.
    *
    * @generated from field: int32 page = 1;
    */
-  page: number
+  page: number;
 
   /**
    * PageCount is how many pages the document has.
    *
    * @generated from field: int32 page_count = 2;
    */
-  pageCount: number
-}
+  pageCount: number;
+};
 
 /**
  * Describes the message numen.v1.DocumentProgress.
  * Use `create(DocumentProgressSchema)` to create a new message.
  */
-export const DocumentProgressSchema: GenMessage<DocumentProgress> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 5)
+export const DocumentProgressSchema: GenMessage<DocumentProgress> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 5);
 
 /**
  * A BookProgress is how far through a book that reflows the person reading it
@@ -210,13 +204,13 @@ export const DocumentProgressSchema: GenMessage<DocumentProgress> =
  *
  * @generated from message numen.v1.BookProgress
  */
-export type BookProgress = Message<'numen.v1.BookProgress'> & {
+export type BookProgress = Message<"numen.v1.BookProgress"> & {
   /**
    * Offset is where they are reading, in bytes of the book's text.
    *
    * @generated from field: int32 offset = 1;
    */
-  offset: number
+  offset: number;
 
   /**
    * Page is the page the offset falls on, counted from one, and PageCount how
@@ -225,28 +219,27 @@ export type BookProgress = Message<'numen.v1.BookProgress'> & {
    *
    * @generated from field: int32 page = 2;
    */
-  page: number
+  page: number;
 
   /**
    * @generated from field: int32 page_count = 3;
    */
-  pageCount: number
-}
+  pageCount: number;
+};
 
 /**
  * Describes the message numen.v1.BookProgress.
  * Use `create(BookProgressSchema)` to create a new message.
  */
-export const BookProgressSchema: GenMessage<BookProgress> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 6)
+export const BookProgressSchema: GenMessage<BookProgress> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 6);
 
 /**
  * A RecordingProgress is how far into a recording the words written down reach.
  *
  * @generated from message numen.v1.RecordingProgress
  */
-export type RecordingProgress = Message<'numen.v1.RecordingProgress'> & {
+export type RecordingProgress = Message<"numen.v1.RecordingProgress"> & {
   /**
    * TranscribedDurationMs is how far into the recording the words written down
    * reach. It is short of the duration while a run is still going, and the two
@@ -254,23 +247,22 @@ export type RecordingProgress = Message<'numen.v1.RecordingProgress'> & {
    *
    * @generated from field: int32 transcribed_duration_ms = 1;
    */
-  transcribedDurationMs: number
+  transcribedDurationMs: number;
 
   /**
    * DurationMs is how long the recording is.
    *
    * @generated from field: int32 duration_ms = 2;
    */
-  durationMs: number
-}
+  durationMs: number;
+};
 
 /**
  * Describes the message numen.v1.RecordingProgress.
  * Use `create(RecordingProgressSchema)` to create a new message.
  */
-export const RecordingProgressSchema: GenMessage<RecordingProgress> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 7)
+export const RecordingProgressSchema: GenMessage<RecordingProgress> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 7);
 
 /**
  * WorkspaceService answers where in the vault the person stands, and takes what
@@ -287,10 +279,10 @@ export const WorkspaceService: GenService<{
    * @generated from rpc numen.v1.WorkspaceService.WatchFocus
    */
   watchFocus: {
-    methodKind: 'server_streaming'
-    input: typeof WatchFocusRequestSchema
-    output: typeof WatchFocusResponseSchema
-  }
+    methodKind: "server_streaming";
+    input: typeof WatchFocusRequestSchema;
+    output: typeof WatchFocusResponseSchema;
+  },
   /**
    * WriteOpenTabs says what the person has open — every tab of the window, and
    * which of them is in front. The client says so again whenever any of it
@@ -300,8 +292,10 @@ export const WorkspaceService: GenService<{
    * @generated from rpc numen.v1.WorkspaceService.WriteOpenTabs
    */
   writeOpenTabs: {
-    methodKind: 'unary'
-    input: typeof WriteOpenTabsRequestSchema
-    output: typeof WriteOpenTabsResponseSchema
-  }
-}> = /*@__PURE__*/ serviceDesc(file_numen_v1_workspace, 0)
+    methodKind: "unary";
+    input: typeof WriteOpenTabsRequestSchema;
+    output: typeof WriteOpenTabsResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_numen_v1_workspace, 0);
+

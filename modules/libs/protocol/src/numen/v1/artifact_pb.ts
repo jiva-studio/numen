@@ -9,18 +9,15 @@
 // itself is the person's and is never touched; an artifact stands beside it,
 // under a name of the application's own.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from '@bufbuild/protobuf/codegenv2'
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from '@bufbuild/protobuf/codegenv2'
-import type { Message } from '@bufbuild/protobuf'
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/artifact.proto.
  */
-export const file_numen_v1_artifact: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    'ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEibgoIQXJ0aWZhY3QSJAoEa2luZBgBIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZBIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEg0KBWJ5dGVzGAQgASgDIiQKFExpc3RBcnRpZmFjdHNSZXF1ZXN0EgwKBHBhdGgYASABKAkiPgoVTGlzdEFydGlmYWN0c1Jlc3BvbnNlEiUKCWFydGlmYWN0cxgBIAMoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFUNyZWF0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiPgoWQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFURlbGV0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiGAoWRGVsZXRlQXJ0aWZhY3RSZXNwb25zZSreAQoMQXJ0aWZhY3RLaW5kEh0KGUFSVElGQUNUX0tJTkRfVU5TUEVDSUZJRUQQABIVChFBUlRJRkFDVF9LSU5EX09DUhABEh8KG0FSVElGQUNUX0tJTkRfT0NSX0NPUlJFQ1RFRBACEhwKGEFSVElGQUNUX0tJTkRfVFJBTlNDUklQVBADEiYKIkFSVElGQUNUX0tJTkRfVFJBTlNDUklQVF9DT1JSRUNURUQQBBIZChVBUlRJRkFDVF9LSU5EX0FSVElDTEUQBRIWChJBUlRJRkFDVF9LSU5EX0NPUFkQBiqZAQoFU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIOCgpTVEFURV9OT05FEAESEAoMU1RBVEVfUVVFVUVEEAISEQoNU1RBVEVfUlVOTklORxADEhEKDVNUQVRFX1NUT1BQRUQQBBIOCgpTVEFURV9ET05FEAUSDwoLU1RBVEVfRU1QVFkQBhIQCgxTVEFURV9GQUlMRUQQBzKNAgoPQXJ0aWZhY3RTZXJ2aWNlElAKDUxpc3RBcnRpZmFjdHMSHi5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXNwb25zZRJTCg5DcmVhdGVBcnRpZmFjdBIfLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVzcG9uc2USUwoORGVsZXRlQXJ0aWZhY3QSHy5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM',
-  )
+export const file_numen_v1_artifact: GenFile = /*@__PURE__*/
+  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEibgoIQXJ0aWZhY3QSJAoEa2luZBgBIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZBIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEg0KBWJ5dGVzGAQgASgDIiQKFExpc3RBcnRpZmFjdHNSZXF1ZXN0EgwKBHBhdGgYASABKAkiPgoVTGlzdEFydGlmYWN0c1Jlc3BvbnNlEiUKCWFydGlmYWN0cxgBIAMoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFUNyZWF0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiPgoWQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFURlbGV0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiGAoWRGVsZXRlQXJ0aWZhY3RSZXNwb25zZSreAQoMQXJ0aWZhY3RLaW5kEh0KGUFSVElGQUNUX0tJTkRfVU5TUEVDSUZJRUQQABIVChFBUlRJRkFDVF9LSU5EX09DUhABEh8KG0FSVElGQUNUX0tJTkRfT0NSX0NPUlJFQ1RFRBACEhwKGEFSVElGQUNUX0tJTkRfVFJBTlNDUklQVBADEiYKIkFSVElGQUNUX0tJTkRfVFJBTlNDUklQVF9DT1JSRUNURUQQBBIZChVBUlRJRkFDVF9LSU5EX0FSVElDTEUQBRIWChJBUlRJRkFDVF9LSU5EX0NPUFkQBiqZAQoFU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIOCgpTVEFURV9OT05FEAESEAoMU1RBVEVfUVVFVUVEEAISEQoNU1RBVEVfUlVOTklORxADEhEKDVNUQVRFX1NUT1BQRUQQBBIOCgpTVEFURV9ET05FEAUSDwoLU1RBVEVfRU1QVFkQBhIQCgxTVEFURV9GQUlMRUQQBzKNAgoPQXJ0aWZhY3RTZXJ2aWNlElAKDUxpc3RBcnRpZmFjdHMSHi5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXNwb25zZRJTCg5DcmVhdGVBcnRpZmFjdBIfLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVzcG9uc2USUwoORGVsZXRlQXJ0aWZhY3QSHy5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * An Artifact is one thing a model wrote about one file of the vault.
@@ -31,27 +28,27 @@ export const file_numen_v1_artifact: GenFile =
  *
  * @generated from message numen.v1.Artifact
  */
-export type Artifact = Message<'numen.v1.Artifact'> & {
+export type Artifact = Message<"numen.v1.Artifact"> & {
   /**
    * Which of them this is.
    *
    * @generated from field: numen.v1.ArtifactKind kind = 1;
    */
-  kind: ArtifactKind
+  kind: ArtifactKind;
 
   /**
    * State is what has become of it.
    *
    * @generated from field: numen.v1.State state = 2;
    */
-  state: State
+  state: State;
 
   /**
    * Error is why it stopped.
    *
    * @generated from field: string error = 3;
    */
-  error: string
+  error: string;
 
   /**
    * How many bytes stand under it. A caller reading a long text in windows
@@ -59,41 +56,39 @@ export type Artifact = Message<'numen.v1.Artifact'> & {
    *
    * @generated from field: int64 bytes = 4;
    */
-  bytes: bigint
-}
+  bytes: bigint;
+};
 
 /**
  * Describes the message numen.v1.Artifact.
  * Use `create(ArtifactSchema)` to create a new message.
  */
-export const ArtifactSchema: GenMessage<Artifact> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_artifact, 0)
+export const ArtifactSchema: GenMessage<Artifact> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 0);
 
 /**
  * @generated from message numen.v1.ListArtifactsRequest
  */
-export type ListArtifactsRequest = Message<'numen.v1.ListArtifactsRequest'> & {
+export type ListArtifactsRequest = Message<"numen.v1.ListArtifactsRequest"> & {
   /**
    * The file of the vault, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string
-}
+  path: string;
+};
 
 /**
  * Describes the message numen.v1.ListArtifactsRequest.
  * Use `create(ListArtifactsRequestSchema)` to create a new message.
  */
-export const ListArtifactsRequestSchema: GenMessage<ListArtifactsRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_artifact, 1)
+export const ListArtifactsRequestSchema: GenMessage<ListArtifactsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 1);
 
 /**
  * @generated from message numen.v1.ListArtifactsResponse
  */
-export type ListArtifactsResponse = Message<'numen.v1.ListArtifactsResponse'> & {
+export type ListArtifactsResponse = Message<"numen.v1.ListArtifactsResponse"> & {
   /**
    * Every artifact this file can carry, whether or not any of it stands. A row
    * is how a client is told that nothing has been made, which is an answer and
@@ -101,27 +96,26 @@ export type ListArtifactsResponse = Message<'numen.v1.ListArtifactsResponse'> & 
    *
    * @generated from field: repeated numen.v1.Artifact artifacts = 1;
    */
-  artifacts: Artifact[]
-}
+  artifacts: Artifact[];
+};
 
 /**
  * Describes the message numen.v1.ListArtifactsResponse.
  * Use `create(ListArtifactsResponseSchema)` to create a new message.
  */
-export const ListArtifactsResponseSchema: GenMessage<ListArtifactsResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_artifact, 2)
+export const ListArtifactsResponseSchema: GenMessage<ListArtifactsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 2);
 
 /**
  * @generated from message numen.v1.CreateArtifactRequest
  */
-export type CreateArtifactRequest = Message<'numen.v1.CreateArtifactRequest'> & {
+export type CreateArtifactRequest = Message<"numen.v1.CreateArtifactRequest"> & {
   /**
    * The file of the vault, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * Which artifact of it to make. Which model does the work follows from the
@@ -129,45 +123,43 @@ export type CreateArtifactRequest = Message<'numen.v1.CreateArtifactRequest'> & 
    *
    * @generated from field: numen.v1.ArtifactKind kind = 2;
    */
-  kind: ArtifactKind
-}
+  kind: ArtifactKind;
+};
 
 /**
  * Describes the message numen.v1.CreateArtifactRequest.
  * Use `create(CreateArtifactRequestSchema)` to create a new message.
  */
-export const CreateArtifactRequestSchema: GenMessage<CreateArtifactRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_artifact, 3)
+export const CreateArtifactRequestSchema: GenMessage<CreateArtifactRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 3);
 
 /**
  * @generated from message numen.v1.CreateArtifactResponse
  */
-export type CreateArtifactResponse = Message<'numen.v1.CreateArtifactResponse'> & {
+export type CreateArtifactResponse = Message<"numen.v1.CreateArtifactResponse"> & {
   /**
    * @generated from field: numen.v1.Artifact artifact = 1;
    */
-  artifact?: Artifact | undefined
-}
+  artifact?: Artifact | undefined;
+};
 
 /**
  * Describes the message numen.v1.CreateArtifactResponse.
  * Use `create(CreateArtifactResponseSchema)` to create a new message.
  */
-export const CreateArtifactResponseSchema: GenMessage<CreateArtifactResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_artifact, 4)
+export const CreateArtifactResponseSchema: GenMessage<CreateArtifactResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 4);
 
 /**
  * @generated from message numen.v1.DeleteArtifactRequest
  */
-export type DeleteArtifactRequest = Message<'numen.v1.DeleteArtifactRequest'> & {
+export type DeleteArtifactRequest = Message<"numen.v1.DeleteArtifactRequest"> & {
   /**
    * The file of the vault, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
-  path: string
+  path: string;
 
   /**
    * Which of what the file carries to take away, which a caller names: a url
@@ -178,29 +170,28 @@ export type DeleteArtifactRequest = Message<'numen.v1.DeleteArtifactRequest'> & 
    *
    * @generated from field: numen.v1.ArtifactKind kind = 2;
    */
-  kind: ArtifactKind
-}
+  kind: ArtifactKind;
+};
 
 /**
  * Describes the message numen.v1.DeleteArtifactRequest.
  * Use `create(DeleteArtifactRequestSchema)` to create a new message.
  */
-export const DeleteArtifactRequestSchema: GenMessage<DeleteArtifactRequest> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_artifact, 5)
+export const DeleteArtifactRequestSchema: GenMessage<DeleteArtifactRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 5);
 
 /**
  * @generated from message numen.v1.DeleteArtifactResponse
  */
-export type DeleteArtifactResponse = Message<'numen.v1.DeleteArtifactResponse'> & {}
+export type DeleteArtifactResponse = Message<"numen.v1.DeleteArtifactResponse"> & {
+};
 
 /**
  * Describes the message numen.v1.DeleteArtifactResponse.
  * Use `create(DeleteArtifactResponseSchema)` to create a new message.
  */
-export const DeleteArtifactResponseSchema: GenMessage<DeleteArtifactResponse> =
-  /*@__PURE__*/
-  messageDesc(file_numen_v1_artifact, 6)
+export const DeleteArtifactResponseSchema: GenMessage<DeleteArtifactResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 6);
 
 /**
  * ArtifactKind is what a thing made from a file is. The list is closed: a
@@ -273,9 +264,8 @@ export enum ArtifactKind {
 /**
  * Describes the enum numen.v1.ArtifactKind.
  */
-export const ArtifactKindSchema: GenEnum<ArtifactKind> =
-  /*@__PURE__*/
-  enumDesc(file_numen_v1_artifact, 0)
+export const ArtifactKindSchema: GenEnum<ArtifactKind> = /*@__PURE__*/
+  enumDesc(file_numen_v1_artifact, 0);
 
 /**
  * State is what has become of one artifact.
@@ -347,7 +337,8 @@ export enum State {
 /**
  * Describes the enum numen.v1.State.
  */
-export const StateSchema: GenEnum<State> = /*@__PURE__*/ enumDesc(file_numen_v1_artifact, 1)
+export const StateSchema: GenEnum<State> = /*@__PURE__*/
+  enumDesc(file_numen_v1_artifact, 1);
 
 /**
  * ArtifactService answers what has been made from a file of the vault, makes
@@ -367,10 +358,10 @@ export const ArtifactService: GenService<{
    * @generated from rpc numen.v1.ArtifactService.ListArtifacts
    */
   listArtifacts: {
-    methodKind: 'unary'
-    input: typeof ListArtifactsRequestSchema
-    output: typeof ListArtifactsResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof ListArtifactsRequestSchema;
+    output: typeof ListArtifactsResponseSchema;
+  },
   /**
    * CreateArtifact asks for one to be made, and answers at once with what
    * became of the ask. The work carries on behind the answer, and how far it
@@ -383,10 +374,10 @@ export const ArtifactService: GenService<{
    * @generated from rpc numen.v1.ArtifactService.CreateArtifact
    */
   createArtifact: {
-    methodKind: 'unary'
-    input: typeof CreateArtifactRequestSchema
-    output: typeof CreateArtifactResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof CreateArtifactRequestSchema;
+    output: typeof CreateArtifactResponseSchema;
+  },
   /**
    * DeleteArtifact takes one away, with everything cut from it. The file stands
    * as it did before anything was made from it, and it is offered again.
@@ -394,8 +385,10 @@ export const ArtifactService: GenService<{
    * @generated from rpc numen.v1.ArtifactService.DeleteArtifact
    */
   deleteArtifact: {
-    methodKind: 'unary'
-    input: typeof DeleteArtifactRequestSchema
-    output: typeof DeleteArtifactResponseSchema
-  }
-}> = /*@__PURE__*/ serviceDesc(file_numen_v1_artifact, 0)
+    methodKind: "unary";
+    input: typeof DeleteArtifactRequestSchema;
+    output: typeof DeleteArtifactResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_numen_v1_artifact, 0);
+

@@ -171,7 +171,6 @@ export const APreset: Story = {}
 const pictureIn = (canvas: HTMLElement): SVGSVGElement =>
   within(canvas).getByRole('slider', { name: words.knob }) as unknown as SVGSVGElement
 
-
 /** The first line of the bubble over the knob, which is the value being held. */
 const getBubbleLine = (value: number): string =>
   words.buys('minutes', {
