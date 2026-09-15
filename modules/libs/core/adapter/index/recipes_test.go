@@ -11,7 +11,7 @@ import (
 // the model back finds them. What they cost is a store carrying both, and this
 // is the one thing that takes the old ones out.
 func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
-	db := opened(t)
+	db := openDB(t)
 	ctx := t.Context()
 
 	before := atScale(t, quantising, 0.3)
@@ -33,7 +33,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, first.ID, before, 0, 100)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Errorf("%d vectors went, want %d", gone, len(hashes))
 	}
 
-	kept, err := db.ChunkQueries().Kept(ctx, now, hashes)
+	kept, err := db.ChunkQueries().GetKeptVectors(ctx, now, hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 			t.Errorf("the vector under the recipe in use went with the rest: %x", hash)
 		}
 	}
-	under, err := db.ChunkQueries().Kept(ctx, before, hashes)
+	under, err := db.ChunkQueries().GetKeptVectors(ctx, before, hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	if err := db.Compact(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if held, err := db.ChunkQueries().Kept(ctx, now, hashes); err != nil || len(held) != len(hashes) {
+	if held, err := db.ChunkQueries().GetKeptVectors(ctx, now, hashes); err != nil || len(held) != len(hashes) {
 		t.Errorf("%d vectors survived the vacuum, want %d: %v", len(held), len(hashes), err)
 	}
 }

@@ -26,10 +26,10 @@ func (stuck) MoveSources(context.Context, domain.VaultID, string, string) error 
 }
 
 func TestAMoveThatCameApartAfterTheFileLandedSaysWhereItWent(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
-	scanned(t, f)
+	waitForScan(t, f)
 	f.opened.API.Files.Move.Sources = stuck{f.opened.API.Files.Move.Sources}
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
@@ -48,10 +48,10 @@ func TestAMoveThatCameApartAfterTheFileLandedSaysWhereItWent(t *testing.T) {
 }
 
 func TestARenameThatCameApartAfterTheFileLandedSaysWhatTheNoteIsCalled(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
-	scanned(t, f)
+	waitForScan(t, f)
 	f.opened.API.Notes.Rename.Sources = stuck{f.opened.API.Notes.Rename.Sources}
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{

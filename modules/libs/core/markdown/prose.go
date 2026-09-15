@@ -37,7 +37,7 @@ func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
 			end = at + next
 		}
 		line := strings.TrimRight(body[at:end], "\r")
-		if f.Crosses(line) || f.Inside() {
+		if f.Crosses(line) || f.IsInside() {
 			at = end + 1
 			continue
 		}
@@ -48,7 +48,7 @@ func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
 			// The brackets stay where they were: only the target between them
 			// moves, and each of them is two bytes.
 			out.WriteString(body[last : at+found.At+2])
-			out.WriteString(to + keptAfterTarget(found.Inside))
+			out.WriteString(to + getAfterTarget(found.Inside))
 			last = at + found.To - 2
 			moved++
 		}
@@ -62,9 +62,9 @@ func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
 	return moved, nil
 }
 
-// keptAfterTarget is the part of a wikilink that is not the address: the
+// getAfterTarget is the part of a wikilink that is not the address: the
 // fragment and the alias, in the order they were written.
-func keptAfterTarget(inside string) string {
+func getAfterTarget(inside string) string {
 	target := inside
 	if alias := strings.IndexByte(target, '|'); alias >= 0 {
 		target = target[:alias]

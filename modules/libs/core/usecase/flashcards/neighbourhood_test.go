@@ -52,14 +52,15 @@ func reading(
 	}, add
 }
 
-// around is one vault of notes, and what its deck turns out to be joined to.
-func around(t *testing.T, notes map[string]string, deck string) flashcards.Neighbourhood {
+// readNeighbourhood is one vault of notes, and what its deck turns out to be
+// joined to.
+func readNeighbourhood(t *testing.T, notes map[string]string, deck string) flashcards.Neighbourhood {
 	t.Helper()
 	u, add := reading(t)
-	return joined(t, u, add(notes), deck)
+	return getNeighbourhood(t, u, add(notes), deck)
 }
 
-func joined(
+func getNeighbourhood(
 	t *testing.T, u flashcards.ShowNeighbourhood, v domain.Vault, deck string,
 ) flashcards.Neighbourhood {
 	t.Helper()
@@ -70,9 +71,9 @@ func joined(
 	return out
 }
 
-// written is how each entry was addressed, which is all a link that reached no
-// note ever has.
-func written(j flashcards.Neighbourhood) []string {
+// getWrittenLinks is how each entry was addressed, which is all a link that
+// reached no note ever has.
+func getWrittenLinks(j flashcards.Neighbourhood) []string {
 	out := make([]string, 0, len(j.Notes))
 	for _, one := range j.Notes {
 		out = append(out, one.Written)
@@ -90,7 +91,7 @@ func paths(j flashcards.Neighbourhood) []string {
 
 func TestALinkWrittenInsideACardArrivesWithItsText(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nSwift\n" +
 			"\n### Meaning\n\nA bird that sleeps flying. See [[Migration]].\n",
@@ -119,7 +120,7 @@ func TestALinkWrittenInsideACardArrivesWithItsText(t *testing.T) {
 // A stencil is how a card is laid out and not what it was written from.
 func TestTheStencilACardIsCutByIsNotSomethingToRead(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"stencils/Word.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
@@ -139,7 +140,7 @@ func TestTheStencilACardIsCutByIsNotSomethingToRead(t *testing.T) {
 // at this one is a deck all the same.
 func TestOnlyTheNotesADeckWasWrittenFromAreRead(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n" +
 			"\n# Sanskrit\n\nTwenty minutes a day.\n",
 		"decks/Roots.md": "---\ntype: deck\n---\n\n# Roots\n\nThe verbs.\n",
@@ -172,7 +173,7 @@ func TestOnlyTheNotesADeckWasWrittenFromAreRead(t *testing.T) {
 
 func TestANotePointingAtTheDeckIsNotOneTheDeckPointsAt(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\n# The ones with feathers\n",
 		"Migration.md":   "# Migration\n\nWorked at with [[decks/Birds]].\n",
 	}, "decks/Birds.md")
@@ -193,7 +194,7 @@ func TestANotePointingAtTheDeckIsNotOneTheDeckPointsAt(t *testing.T) {
 
 func TestANoteOnBothSidesIsNamedOnce(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nCut from [[Migration]].\n",
 		"Migration.md":   "# Migration\n\nDrilled in [[decks/Birds]].\n",
 	}, "decks/Birds.md")
@@ -208,7 +209,7 @@ func TestANoteOnBothSidesIsNamedOnce(t *testing.T) {
 
 func TestTheDeckDoesNotStandInItsOwnList(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\nGathered in [[decks/Birds]] itself.\n" +
 			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nFiled under [[decks/Birds]].\n" +
@@ -223,7 +224,7 @@ func TestTheDeckDoesNotStandInItsOwnList(t *testing.T) {
 
 func TestADanglingLinkKeepsTheNameItWasWrittenBy(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nSee [[Nowhere At All]].\n",
 	}, "decks/Birds.md")
 
@@ -241,13 +242,13 @@ func TestADanglingLinkKeepsTheNameItWasWrittenBy(t *testing.T) {
 
 func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nSee [[Nowhere At All]].\n" +
 			"\n## Swallow ^3dkmf936tb\n\n### Word\n\nSee [[Nowhere At All]] again.\n",
 	}, "decks/Birds.md")
 
-	if got := written(j); len(got) != 1 || got[0] != "Nowhere At All" {
+	if got := getWrittenLinks(j); len(got) != 1 || got[0] != "Nowhere At All" {
 		t.Fatalf("joined to %v", got)
 	}
 }
@@ -256,7 +257,7 @@ func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
 // the wrong note has no other way to find out.
 func TestANameSeveralNotesAnswerToIsSaidToBeAmbiguous(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md":     "---\ntype: deck\n---\n\nCut from [[Migration]].\n",
 		"north/Migration.md": "# Migration\n\nOne of the two.\n",
 		"south/Migration.md": "# Migration\n\nThe other, answering to the same name.\n",
@@ -291,7 +292,7 @@ func TestAVaultOutOfReachIsAnError(t *testing.T) {
 
 func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\n![[asset://diagram.png]]\n\nSee [[Migration]].\n",
 		"diagram.png":  "not really a picture",
@@ -309,7 +310,7 @@ func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 // where it has none.
 func TestAnAddressThatNamesNoNoteIsNotADanglingNote(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\nlinks:\n" +
 			"  - to: \"https://example.org/birds\"\n    role: ref\n---\n" +
 			"\n![[asset://diagram.png]]\n\nSee [[Migration]].\n",
@@ -322,7 +323,7 @@ func TestAnAddressThatNamesNoNoteIsNotADanglingNote(t *testing.T) {
 		}
 	}
 	if len(j.Notes) != 1 {
-		t.Fatalf("joined to %v", written(j))
+		t.Fatalf("joined to %v", getWrittenLinks(j))
 	}
 }
 
@@ -343,7 +344,7 @@ func TestALinkIntoAnotherVaultIsNotSomethingToRead(t *testing.T) {
 		"elsewhere.md": "---\nid: " + id + "\n---\n\n# In the other vault\n",
 	})
 
-	j := joined(t, u, v, "decks/Birds.md")
+	j := getNeighbourhood(t, u, v, "decks/Birds.md")
 	if len(j.Notes) != 0 {
 		t.Fatalf("joined to %v", paths(j))
 	}
@@ -361,7 +362,7 @@ func TestANoteDeletedAfterTheScanDoesNotSinkTheOthers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	j := joined(t, u, v, "decks/Birds.md")
+	j := getNeighbourhood(t, u, v, "decks/Birds.md")
 	if len(j.Notes) != 2 {
 		t.Fatalf("joined to %v", paths(j))
 	}
@@ -388,7 +389,7 @@ func TestPastTheThirtiethNoteTheTextIsLeftUnread(t *testing.T) {
 		name := fmt.Sprintf("Note %02d", i)
 		notes[name+".md"] = "# " + name + "\n\nDrilled in [[decks/Birds]].\n"
 	}
-	j := around(t, notes, "decks/Birds.md")
+	j := readNeighbourhood(t, notes, "decks/Birds.md")
 
 	if len(j.Notes) != pointing {
 		t.Fatalf("joined to %d notes", len(j.Notes))
@@ -409,7 +410,7 @@ func TestPastTheThirtiethNoteTheTextIsLeftUnread(t *testing.T) {
 
 func TestADeckJoinedToNothingIsAnEmptyAnswer(t *testing.T) {
 	t.Parallel()
-	j := around(t, map[string]string{
+	j := readNeighbourhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\n# The ones with feathers\n",
 	}, "decks/Birds.md")
 
@@ -432,7 +433,7 @@ func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 		"Arithmetic.md": "# Arithmetic\n\nRemainders divide integers evenly.\n",
 	})
 
-	first := joined(t, u, feathers, "decks/Deck.md")
+	first := getNeighbourhood(t, u, feathers, "decks/Deck.md")
 	if len(first.Notes) != 1 || first.Notes[0].Path != "Migration.md" {
 		t.Fatalf("the first vault is joined to %v", paths(first))
 	}
@@ -440,7 +441,7 @@ func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 		t.Errorf("the first vault read the second's note: %q", first.Notes[0].Body)
 	}
 
-	second := joined(t, u, sums, "decks/Deck.md")
+	second := getNeighbourhood(t, u, sums, "decks/Deck.md")
 	if len(second.Notes) != 1 || second.Notes[0].Path != "Arithmetic.md" {
 		t.Fatalf("the second vault is joined to %v", paths(second))
 	}

@@ -6,7 +6,7 @@
  * neither is a zone that is not Greenwich.
  */
 import { describe, expect, it } from 'vitest'
-import { dayAfter, dayNamed, dayOf, daysBetween, isDay } from './day'
+import { dayAfter, dayOf, daysBetween, getDayName, isDay } from './day'
 
 /**
  * The zone the machine stands in, as vitest moves it. A test that moves it puts
@@ -25,8 +25,8 @@ const inZone = (zone: string, run: () => void) => {
 
 describe('a day as it is written down', () => {
   it('is the year, the month and the day, each at its width', () => {
-    expect(dayNamed(new Date(2026, 0, 5))).toBe('2026-01-05')
-    expect(dayNamed(new Date(2026, 11, 31))).toBe('2026-12-31')
+    expect(getDayName(new Date(2026, 0, 5))).toBe('2026-01-05')
+    expect(getDayName(new Date(2026, 11, 31))).toBe('2026-12-31')
   })
 
   // A machine east or west of Greenwich reads a different date from the one in
@@ -34,10 +34,10 @@ describe('a day as it is written down', () => {
   // their own.
   it('is the day on the person’s own calendar, not the day at Greenwich', () => {
     inZone('America/New_York', () => {
-      expect(dayNamed(new Date(2026, 8, 5, 23, 30))).toBe('2026-09-05')
+      expect(getDayName(new Date(2026, 8, 5, 23, 30))).toBe('2026-09-05')
     })
     inZone('Pacific/Auckland', () => {
-      expect(dayNamed(new Date(2026, 8, 5, 0, 30))).toBe('2026-09-05')
+      expect(getDayName(new Date(2026, 8, 5, 0, 30))).toBe('2026-09-05')
     })
   })
 })

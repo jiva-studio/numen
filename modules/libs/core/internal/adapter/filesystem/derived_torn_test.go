@@ -17,9 +17,9 @@ import (
 // torn append is made. It stands above anything else the run has open.
 const fileCap = 1 << 20
 
-// capped holds every file this process writes to a length, and hands back what
+// capFileSize holds every file this process writes to a length, and hands back what
 // lifts it again. It is what a full disk and a quota both do to one append.
-func capped(t *testing.T, to int64) func() {
+func capFileSize(t *testing.T, to int64) func() {
 	t.Helper()
 
 	// A write that reaches the cap raises SIGXFSZ, and what the write itself
@@ -64,7 +64,7 @@ func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	// The one call has to ask for more than the cap allows. Darwin weighs the
 	// cap against the offset the file was opened at, so the length of the
 	// append is what reaches past it.
-	lift := capped(t, fileCap)
+	lift := capFileSize(t, fileCap)
 	torn := strings.Repeat("b", 4*fileCap) + "\n"
 	err := derived.Append(ctx, "ocr/run.txt", []byte(torn))
 	if err == nil {

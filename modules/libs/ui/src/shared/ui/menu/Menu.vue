@@ -7,9 +7,12 @@
  * point and says which item was chosen; what the items are and what choosing
  * one does are the caller's.
  */
-import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
-import { grouped, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './item'
-import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from './typeahead'
+import { computed, nextTick, onBeforeUnmount, useTemplateRef, watch } from 'vue'
+import MenuRow from './MenuRow.vue'
+import { groupItems, getLandingIndex, type MenuItem, type MenuOpening } from './item'
+import { useMenuGround } from './ground'
+import { useMenuKeys } from './keys'
+import { useMenuPlacement } from './place'
 import type { Position, Size } from '@/shared/lib/geometry'
 
 const props = withDefaults(
@@ -83,52 +86,28 @@ defineSlots<{
 
 const menu = useTemplateRef<HTMLElement>('menu')
 
-/** Its own size, which only the drawing knows. Placement is worked out from it. */
-const size = ref<Size>({ width: 0, height: 0 })
-
-/** Which item the keyboard is on, or -1 when it is on none. */
-const here = ref(-1)
-
 /** The items with the rules that stand between their groups. */
-const rows = computed(() => grouped(props.items))
+const rows = computed(() => groupItems(props.items))
 
-/** The area to stay inside. The browser's, unless a caller measures its own. */
-const room = computed<Size>(
-  () => props.viewport ?? { width: window.innerWidth, height: window.innerHeight },
-)
+const { placed, setSize } = useMenuPlacement({
+  at: () => props.at,
+  viewport: () => props.viewport,
+  margin: () => props.margin,
+})
 
-const placed = computed(() =>
-  placeMenu({
-    at: props.at,
-    size: size.value,
-    viewport: room.value,
-    margin: props.margin,
-  }),
-)
-
-/** Each item as it is drawn, each under the item it stands for. */
-const drawn = new Map<string, HTMLElement>()
-
-const holdRow = (item: string, row: unknown): void => {
-  if (row) drawn.set(item, row as HTMLElement)
-  else drawn.delete(item)
-}
-
+/** Its own size, which only the drawing knows. */
 const measure = () => {
-  const element = menu.value
-  if (!element) return
-  const box = element.getBoundingClientRect()
-  size.value = { width: box.width, height: box.height }
+  const box = menu.value?.getBoundingClientRect()
+  if (box) setSize({ width: box.width, height: box.height })
 }
 
-/** The keyboard onto an item, or onto the menu itself where there is none. */
-const goTo = (index: number) => {
-  here.value = index
-  const item = props.items[index]
-  const chosen = item ? drawn.get(item.id) : undefined
-  if (chosen) chosen.focus()
-  else menu.value?.focus()
-}
+const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
+
+const { here, holdRow, goTo, onKey } = useMenuKeys(
+  () => props.items,
+  menu,
+  () => Date.now(),
+)
 
 const choose = (item: MenuItem) => {
   if (item.disabled) return
@@ -136,78 +115,23 @@ const choose = (item: MenuItem) => {
   emit('dismiss')
 }
 
-/**
- * A pointer, or a scroll, that did not happen inside the menu. A scroll of the
- * menu's own list is not the ground moving, and everything else is.
- */
-const outside = (event: Event) => {
-  const target = event.target
-  if (target instanceof Node && menu.value?.contains(target)) return
-  emit('dismiss')
-}
-
-const onWindowKey = (event: KeyboardEvent) => {
-  if (event.key !== 'Escape') return
-  event.preventDefault()
-  emit('dismiss')
-}
-
-/** The word being typed to jump by, which the next letter carries on. */
-let typed: Typeahead = NOTHING_TYPED
-
-/** The keyboard onto the item a letter names, and nowhere where it names none. */
-const jump = (letter: string) => {
-  const jumped = jumpTo(props.items, typed, letter, here.value, Date.now())
-  typed = jumped.typed
-  if (jumped.at !== null) goTo(jumped.at)
-}
-
-/**
- * The keyboard, while the menu is open. Tab moves within the items and wraps,
- * which is what keeps the keyboard inside a menu that stands over the page.
- */
-const onKey = (event: KeyboardEvent) => {
-  // Counting back from no item is counting back from the first.
-  const step = (by: number, from = by < 0 ? Math.max(here.value, 0) : here.value) => {
-    event.preventDefault()
-    goTo(stepTo(props.items, from, by))
-  }
-  if (event.key === 'ArrowDown') step(1)
-  else if (event.key === 'ArrowUp') step(-1)
-  else if (event.key === 'Home') step(1, -1)
-  else if (event.key === 'End') step(-1, 0)
-  else if (event.key === 'Tab') step(event.shiftKey ? -1 : 1)
-  else if (isLetter(event)) {
-    event.preventDefault()
-    jump(event.key)
-  }
-}
-
-/** What the open menu installed on the window, if anything. */
-let detach: (() => void) | null = null
+/** Whether the menu stands: what entering put in place, leaving takes away. */
+let standing = false
 
 const enter = async () => {
-  if (detach) return
-  window.addEventListener('pointerdown', outside, true)
-  window.addEventListener('scroll', outside, true)
-  window.addEventListener('resize', outside)
-  window.addEventListener('keydown', onWindowKey)
-  detach = () => {
-    window.removeEventListener('pointerdown', outside, true)
-    window.removeEventListener('scroll', outside, true)
-    window.removeEventListener('resize', outside)
-    window.removeEventListener('keydown', onWindowKey)
-  }
+  if (standing) return
+  standing = true
+  listen()
 
   await nextTick()
   measure()
-  goTo(landsOn(props.opening, props.items, props.current))
+  goTo(getLandingIndex(props.opening, props.items, props.current))
 }
 
 const leave = () => {
-  if (!detach) return
-  detach()
-  detach = null
+  if (!standing) return
+  standing = false
+  release()
   here.value = -1
   const back = props.from
   if (back?.isConnected) back.focus()
@@ -232,6 +156,12 @@ watch(
   },
 )
 
+const menuStyle = computed(() => ({
+  left: `${placed.value.x}px`,
+  top: `${placed.value.y}px`,
+  '--asking': `${props.asking}px`,
+}))
+
 // A menu can go while it is still open, and what it left on the window with it.
 onBeforeUnmount(leave)
 </script>
@@ -241,49 +171,28 @@ onBeforeUnmount(leave)
     <div
       v-if="open"
       ref="menu"
-      class="menu numen panel-numen flex flex-col p-1.5 font-sans text-base text-ink"
+      class="menu numen panel-numen text-ink flex flex-col p-1.5 font-sans text-base"
       role="menu"
       tabindex="-1"
       :aria-label="name"
-      :style="{
-        left: `${placed.x}px`,
-        top: `${placed.y}px`,
-        '--asking': `${asking}px`,
-      }"
+      :style="menuStyle"
       @keydown="onKey"
     >
-      <template v-for="(item, index) in rows" :key="item.id">
-        <p
-          v-if="groups && item.group && (item.rule || index === 0)"
-          class="menu__group-name px-2 py-1 text-hushed"
-          aria-hidden="true"
-        >
-          {{ item.group }}
-        </p>
-        <hr v-else-if="item.rule" class="menu__rule" role="separator" />
+      <MenuRow
+        v-for="(item, index) in rows"
+        :ref="(row) => holdRow(item.id, row)"
+        :key="item.id"
+        :item="item"
+        :current="current"
+        :named="groups && Boolean(item.group) && (item.rule || index === 0)"
+        :icons="Boolean($slots.icon)"
+        @focus="here = index"
+        @choose="choose(item)"
+      >
+        <slot name="icon" :id="item.id" />
+      </MenuRow>
 
-        <button
-          :ref="(row) => holdRow(item.id, row)"
-          class="menu__item flex w-full items-center rounded-node px-2 py-1.5 text-left"
-          type="button"
-          :role="current === null ? 'menuitem' : 'menuitemradio'"
-          :aria-checked="current === null ? undefined : item.id === current"
-          tabindex="-1"
-          :disabled="item.disabled"
-          @focus="here = index"
-          @click="choose(item)"
-        >
-          <span v-if="$slots.icon" class="menu__icon flex shrink-0 items-center">
-            <slot name="icon" :id="item.id" />
-          </span>
-          <span class="flex min-w-0 flex-col">
-            <span class="menu__text">{{ item.text }}</span>
-            <span v-if="item.detail" class="menu__detail">{{ item.detail }}</span>
-          </span>
-        </button>
-      </template>
-
-      <p v-if="!items.length" class="menu__silence px-2 py-1.5 text-hushed">
+      <p v-if="!items.length" class="menu__silence text-hushed px-2 py-1.5">
         <slot name="silence">Nothing to do</slot>
       </p>
     </div>
@@ -305,11 +214,6 @@ onBeforeUnmount(leave)
      itself cannot hold it. */
   --tallest: calc(100vh - 1rem);
   --lift: var(--numen-lift-menu);
-  /* The room a rule keeps on each side of itself. */
-  --parting: 0.25rem;
-  /* How large an icon is drawn, and the room between it and the words. */
-  --icon: 0.875rem;
-  --icon-gap: 0.5rem;
 
   position: fixed;
   z-index: var(--lift);
@@ -325,63 +229,6 @@ onBeforeUnmount(leave)
 
 .menu:focus-visible {
   outline: none;
-}
-
-/* One physical line, so it stays a hairline however large the interface is
-   drawn. */
-.menu__rule {
-  block-size: 0;
-  margin-block: var(--parting);
-  border: 0;
-  border-block-start: 1px solid var(--numen-panel-border);
-}
-
-.menu__item {
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.menu__item:hover:not(:disabled),
-.menu__item:focus-visible {
-  outline: none;
-  background: var(--numen-bubble-bg);
-}
-
-.menu__item:disabled {
-  color: var(--numen-edge-label);
-}
-
-/* The room an icon takes, kept whether or not the item draws one, so the words
-   line up down the menu. What is drawn in it is the caller's. */
-.menu__icon {
-  inline-size: var(--icon);
-  block-size: var(--icon);
-  margin-inline-end: var(--icon-gap);
-}
-
-/* One line, then an ellipsis. A menu is read down its leading edge. */
-.menu__text,
-.menu__detail {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* What an item is beside its words: the address a model is fetched from, the
-   place a file stands. */
-.menu__detail {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-
-/* The name of a group, set as this product sets a label over what it names. */
-.menu__group-name {
-  margin: 0;
-  font-size: var(--numen-text-1);
-  font-weight: 600;
-  letter-spacing: var(--numen-caps-tracking);
-  text-transform: uppercase;
 }
 
 .menu__silence {

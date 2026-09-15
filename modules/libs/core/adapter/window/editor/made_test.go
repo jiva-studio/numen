@@ -22,9 +22,9 @@ import (
 func unmade(t *testing.T, notes map[string]string) *cutting {
 	t.Helper()
 
-	f := quitting(t, nil, notes)
-	scanned(t, f)
-	f.opened.API.Cards.Create.Index = jammed
+	f := openWindow(t, nil, notes)
+	waitForScan(t, f)
+	f.opened.API.Cards.Create.Index = refuseToLevel
 
 	route, handler := numenv1connect.NewCardsServiceHandler(f.opened.API)
 	mux := http.NewServeMux()
@@ -52,8 +52,8 @@ func TestAStencilTheIndexWouldNotComeLevelWithIsAnsweredWithItsPath(t *testing.T
 	if err != nil {
 		t.Fatalf("the stencil is on disk and the client was told %v", err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the stencil was made and answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the stencil was made and answered %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "cards/Animal.md" {
 		t.Fatalf("the stencil is filed at %q", path)
@@ -75,8 +75,8 @@ func TestADeckTheIndexWouldNotComeLevelWithIsAnsweredWithItsPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the deck is on disk and the client was told %v", err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the deck was made and answered %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the deck was made and answered %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "Animals.md" {
 		t.Fatalf("the deck is filed at %q", path)
@@ -89,9 +89,9 @@ func TestADeckTheIndexWouldNotComeLevelWithIsAnsweredWithItsPath(t *testing.T) {
 // TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered. A note is made through
 // its own use case, and it says the same thing a stencil does.
 func TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
-	f := quitting(t, nil, nil)
-	scanned(t, f)
-	f.opened.API.Notes.Create.Index = jammed
+	f := openWindow(t, nil, nil)
+	waitForScan(t, f)
+	f.opened.API.Notes.Create.Index = refuseToLevel
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -111,13 +111,13 @@ func TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 // trash and search still answers about it, and what its links now reach is
 // reported all the same.
 func TestAFileRemovedWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Ontology\n    role: parent\n---\n\n" +
 			"# Entropy\n",
 	})
-	scanned(t, f)
-	f.opened.API.Notes.Remove.Index = jammed
+	waitForScan(t, f)
+	f.opened.API.Notes.Remove.Index = refuseToLevel
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -153,7 +153,7 @@ func TestAStencilTheIndexWouldNotComeLevelWithCannotBeMadeAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := again.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_OCCUPIED {
-		t.Fatalf("making the stencil a second time answered %v", refusal)
+	if code := again.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+		t.Fatalf("making the stencil a second time answered %v", code)
 	}
 }

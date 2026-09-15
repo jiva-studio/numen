@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
-import { holdsTheWindow } from '@numen/ui'
-import App from './App.vue'
-import './app.css'
+import { holdWindow } from '@numen/ui'
+import App from './app/App.vue'
+import './app/app.css'
 
 // The menu the webview draws carries a browser's idea of what is here —
 // inspect, reload, view source — and none of it belongs in an application. Over
@@ -18,7 +18,7 @@ document.addEventListener('contextmenu', (event) => {
 // through the runtime the window serves beside the page.
 const runtime = '/wails/runtime.js'
 const wails = import(/* @vite-ignore */ runtime).catch(() => undefined)
-holdsTheWindow((href) => {
+holdWindow((href) => {
   void wails.then((it) => it?.Browser.OpenURL(href))
 })
 

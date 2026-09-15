@@ -5,11 +5,11 @@ import (
 	"unicode/utf8"
 )
 
-// Normalised is text with every line break written as one \n.
+// Normalise is text with every line break written as one \n.
 //
 // It is what a person is handed and what they hand back. An offset into a chunk
 // is an offset into the file, so what Parse is given is the file as it stands.
-func Normalised(text string) string {
+func Normalise(text string) string {
 	if !strings.ContainsRune(text, '\r') {
 		return text
 	}
@@ -110,7 +110,7 @@ func columnOffset(block []byte, lines []int, line, column int) int {
 	return at
 }
 
-func leading(line string) string {
+func getIndent(line string) string {
 	return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
 }
 

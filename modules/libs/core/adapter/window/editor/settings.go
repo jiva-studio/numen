@@ -29,10 +29,10 @@ func (a *API) GetSettings(
 	return connect.NewResponse(&v1.GetSettingsResponse{
 		Written:               written,
 		Path:                  path,
-		Models:                offered(models),
+		Models:                newWireModels(models),
 		PartsUnderANodeBounds: &v1.Bounds{Least: held.Least, Most: held.Most},
 		LatestDayStarts:       a.Configuring.LatestDayStarts,
-		Day:                   a.Configuring.Day.Names(a.Configuring.now()),
+		Day:                   a.Configuring.Day.GetName(a.Configuring.now()),
 	}), nil
 }
 
@@ -85,8 +85,8 @@ func (a *API) WriteSettingsFile(
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
 	if err := a.Configuring.WritesFile(r.Msg.GetWritten(), r.Msg.Seen); err != nil {
 		if errors.Is(err, port.ErrStale) {
-			stale := v1.Refusal_REFUSAL_STALE
-			return connect.NewResponse(&v1.WriteSettingsFileResponse{Refusal: &stale}), nil
+			stale := v1.ErrorCode_ERROR_CODE_STALE
+			return connect.NewResponse(&v1.WriteSettingsFileResponse{Error: &stale}), nil
 		}
 		if errors.Is(err, port.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -96,8 +96,8 @@ func (a *API) WriteSettingsFile(
 	return connect.NewResponse(&v1.WriteSettingsFileResponse{}), nil
 }
 
-// offered is the models as the wire carries them.
-func offered(held []port.Model) []*v1.Model {
+// newWireModels is the models as the wire carries them.
+func newWireModels(held []port.Model) []*v1.Model {
 	models := make([]*v1.Model, 0, len(held))
 	for _, one := range held {
 		models = append(models, &v1.Model{

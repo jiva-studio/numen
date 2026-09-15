@@ -137,8 +137,9 @@ func AgentDefaults() Profile {
 	}
 }
 
-// Named says whether this installation asked for anything to proofread with.
-func (c Config) Named() bool { return len(c.Profiles) > 0 }
+// HasProfiles says whether this installation asked for anything to proofread
+// with.
+func (c Config) HasProfiles() bool { return len(c.Profiles) > 0 }
 
 // Distance is how far a correction may stand from the line as read. A file
 // naming nothing takes what was measured.
@@ -149,8 +150,8 @@ func (c Config) Distance() float64 {
 	return c.MaxEditDistance
 }
 
-// Named says whether this profile carries a model to correct a reading with.
-func (p Profile) Named() bool {
+// HasModel says whether this profile carries a model to correct a reading with.
+func (p Profile) HasModel() bool {
 	switch p.Use {
 	case UseService:
 		return p.Name != ""

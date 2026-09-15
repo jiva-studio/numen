@@ -27,13 +27,13 @@ type sequence struct {
 	said []string
 }
 
-func (s *sequence) at(what string) {
+func (s *sequence) record(what string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.said = append(s.said, what)
 }
 
-func (s *sequence) taken() []string {
+func (s *sequence) getAll() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]string(nil), s.said...)
@@ -85,14 +85,14 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		if _, err := refresh.Execute(ctx, v, paths); err != nil {
 			return err
 		}
-		recorded.at("levelled")
+		recorded.record("levelled")
 		return nil
 	}
 
 	queries := db.Queries()
 	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 	core := mcp.Core{
-		Showing: mcp.ShowingOne(v, v.Path), Readers: readers,
+		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
@@ -163,7 +163,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		defer cancel()
 		endpoint.Close(ctx)
 		db.Close()
-		recorded.at("closed")
+		recorded.record("closed")
 	}()
 
 	select {
@@ -183,7 +183,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		t.Fatalf("the agent's write was refused: %v", err)
 	}
 
-	if got := recorded.taken(); len(got) != 2 || got[0] != "levelled" || got[1] != "closed" {
+	if got := recorded.getAll(); len(got) != 2 || got[0] != "levelled" || got[1] != "closed" {
 		t.Errorf("the quit went %v", got)
 	}
 }

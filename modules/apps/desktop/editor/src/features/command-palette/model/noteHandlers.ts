@@ -1,0 +1,108 @@
+/**
+ * Note and file creation and mutation helpers for command execution.
+ */
+import type { PlexRelatedSeat } from '@numen/ui'
+import type { CommandDeps, TabContext, VaultContext, Voice } from './deps'
+import type { CommandInvocation } from '../types'
+import type { AnswerWords } from '../words'
+import { NOTE } from '@/entities/tab'
+
+/** A tab asked to settle: which one it was, and whether it is still waiting. */
+export interface SettleResult {
+  readonly held: string | null
+  readonly waiting: boolean
+}
+
+/**
+ * The invocation at the file its note stands at now. One over a note no tab of the
+ * window holds is at the name it was made over.
+ */
+export const atItsFile = (invocation: CommandInvocation, on: TabContext): CommandInvocation =>
+  invocation.note ? { ...invocation, path: on.notes.getPath(invocation.note) } : invocation
+
+/**
+ * The tab holding a note, once nothing of the note is on its way to its file.
+ * A tab waiting on the person to answer for it settles nothing and says so.
+ */
+export const settleTab = async (path: string, on: TabContext): Promise<SettleResult> => {
+  const held = on.notes.getTabAt(path)
+  if (held === null) return { held, waiting: false }
+  if (on.notes.isAsking(held)) return { held, waiting: true }
+  await on.notes.settle(held)
+  return { held, waiting: false }
+}
+
+/** A note travelled to, and a vault with none to travel to said. */
+export const navigateToPath = async (
+  path: string,
+  on: TabContext & Voice,
+  words: AnswerWords,
+): Promise<void> => {
+  if (!path) return on.writeMessage(words.nowhere, 'caution')
+  await on.goes.travel(path)
+}
+
+/**
+ * A note made under the name that was typed. From a note tab it opens in a tab
+ * beside; anywhere else the plex the person is looking at travels to it.
+ */
+export const createNoteCommand = async (
+  invocation: CommandInvocation,
+  seat: PlexRelatedSeat | null,
+  on: CommandDeps,
+  words: AnswerWords,
+): Promise<void> => {
+  if (!invocation.name) return
+  const made = await on.files.createNote(invocation.name, seat ? invocation.path : '', seat)
+  if (!made) return
+  if (invocation.kind === NOTE) return on.notes.openNewFile(made.path, made.title, 'note', 'beside')
+  await navigateToPath(made.path, on, words)
+}
+
+/**
+ * A note given a different name, and its file renamed with it where the two are
+ * one name. Prose on disk that nobody here has seen leaves the note as it is.
+ */
+export const renameNoteCommand = async (
+  invocation: CommandInvocation,
+  on: CommandDeps,
+  words: AnswerWords,
+): Promise<void> => {
+  if (!invocation.name || invocation.name === invocation.title) return
+  const tab = await settleTab(invocation.path, on)
+  if (tab.waiting) return on.writeMessage(words.unanswered, 'caution')
+  const answer = await on.files.rename(invocation.path, invocation.name)
+  if (answer.hasChanged) return on.writeMessage(words.stale, 'caution')
+  const error = answer.error
+  if (error) on.writeMessage(words.errors[error], 'error')
+}
+
+/**
+ * A file or a folder filed somewhere else, carrying the name the path ends in.
+ * A destination that is taken leaves it where it was.
+ */
+export const moveFileCommand = async (
+  invocation: CommandInvocation,
+  on: CommandDeps,
+  words: AnswerWords,
+): Promise<void> => {
+  if (!invocation.name || invocation.name === invocation.path) return
+  const tab = await settleTab(invocation.path, on)
+  if (tab.waiting) return on.writeMessage(words.unanswered, 'caution')
+  const answer = await on.files.move(invocation.path, invocation.name)
+  const error = answer.error
+  if (error === 'occupied') return on.writeMessage(words.occupied, 'error')
+  if (error) on.writeMessage(words.errors[error], 'error')
+}
+
+/** An empty folder, made under the path that was typed. */
+export const createFolderCommand = async (
+  invocation: CommandInvocation,
+  on: VaultContext & Voice,
+  words: AnswerWords,
+): Promise<void> => {
+  if (!invocation.name) return
+  const error = await on.files.createFolder(invocation.name)
+  if (error === 'occupied') return on.writeMessage(words.occupied, 'error')
+  if (error) on.writeMessage(words.errors[error], 'error')
+}

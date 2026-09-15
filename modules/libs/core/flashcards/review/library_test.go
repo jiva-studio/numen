@@ -53,7 +53,7 @@ var libraryRetentions = []float64{0, 0.7, 0.85, 0.87, 0.9, 0.97, 0.99}
 // seven answers reaches, so that every clamp is asked about too.
 func TestASchedulerWorksOutWhatTheLibraryWorksOut(t *testing.T) {
 	for _, retention := range libraryRetentions {
-		by, engine := scheduling(retention)
+		by, engine := makeSchedulers(retention)
 		for _, s := range libraryWalked(engine) {
 			libraryAgrees(t, retention, by, engine, s)
 		}
@@ -63,10 +63,10 @@ func TestASchedulerWorksOutWhatTheLibraryWorksOut(t *testing.T) {
 	}
 }
 
-// scheduling is the scheduler and the library it takes its parameters from, both
-// asking for the same share of the cards. A retention of nothing is the
+// makeSchedulers is the scheduler and the library it takes its parameters from,
+// both asking for the same share of the cards. A retention of nothing is the
 // scheduler on its published parameters.
-func scheduling(retention float64) (review.FSRS, *fsrs.FSRS) {
+func makeSchedulers(retention float64) (review.FSRS, *fsrs.FSRS) {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false
 	if retention == 0 {
@@ -90,7 +90,7 @@ func libraryAgrees(
 	s review.Schedule,
 ) {
 	t.Helper()
-	stood := standingAway(s)
+	stood := clampLastAnswer(s)
 	for _, r := range libraryRatings {
 		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
 		got := by.Next(s, libraryNow, review.Rating(r))
@@ -103,10 +103,10 @@ func libraryAgrees(
 		again, asSchedule(engine.Next(asCard(stood), libraryNow, fsrs.Again).Card))
 }
 
-// standingAway is a card face at the days it stood away. One answered no later
-// than the answer it already carries stood none of them.
-func standingAway(s review.Schedule) review.Schedule {
-	if s.Seen() && libraryNow.Before(s.Last) {
+// clampLastAnswer is a card face at the days it stood away. One answered no
+// later than the answer it already carries stood none of them.
+func clampLastAnswer(s review.Schedule) review.Schedule {
+	if s.IsSeen() && libraryNow.Before(s.Last) {
 		s.Last = libraryNow
 	}
 	return s
@@ -119,7 +119,7 @@ func standingAway(s review.Schedule) review.Schedule {
 // is answered the same, and answered as the library answers one whose last
 // answer falls at that instant.
 func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) {
-	by, engine := scheduling(0)
+	by, engine := makeSchedulers(0)
 
 	// A card face the scheduler has put into review, carrying an answer given
 	// after the instant it is asked about.
@@ -256,7 +256,7 @@ func sameSchedule(t *testing.T, what string, got, want review.Schedule) {
 // asCard is a schedule as the library reads a card, which is how the scheduler
 // reads one. A card face nobody has answered is the card the library opens with.
 func asCard(s review.Schedule) fsrs.Card {
-	if !s.Seen() {
+	if !s.IsSeen() {
 		return fsrs.NewCard()
 	}
 	return fsrs.Card{

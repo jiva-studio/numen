@@ -21,10 +21,10 @@ import (
 // back as; those are named in driving and are not this rule's business.
 const compilerHolds = module + "internal/adapter/"
 
-// heldAdapters is every place src answers with an adapter the compiler holds,
-// said in full. A method on an unexported receiver is left out: it is not the
-// root's answer to anybody outside.
-func heldAdapters(name, src string) []string {
+// getHeldAdapters is every place src answers with an adapter the compiler
+// holds, said in full. A method on an unexported receiver is left out: it is
+// not the root's answer to anybody outside.
+func getHeldAdapters(name, src string) []string {
 	f, err := parser.ParseFile(token.NewFileSet(), name, src, 0)
 	if err != nil {
 		return []string{name + " does not parse: " + err.Error()}
@@ -104,7 +104,7 @@ func TestTheRootHandsOutNoAdapterTheCompilerHolds(t *testing.T) {
 			t.Fatal(err)
 		}
 		read++
-		for _, why := range heldAdapters(name, string(src)) {
+		for _, why := range getHeldAdapters(name, string(src)) {
 			t.Errorf("%s: %s", name, why)
 		}
 	}
@@ -116,7 +116,7 @@ func TestTheRootHandsOutNoAdapterTheCompilerHolds(t *testing.T) {
 	}
 	// The rule is about what the root answers with, so it is worth nothing where
 	// the root answers nothing. Trash is a port handed out under its own name.
-	if len(heldAdapters("probe.go", `package container
+	if len(getHeldAdapters("probe.go", `package container
 
 import "`+module+`port"
 
@@ -194,7 +194,7 @@ func (c Config) Options(held filesystem.Options) error { return nil }`,
 			refuses: false,
 		},
 	} {
-		said := heldAdapters("probe.go", one.src)
+		said := getHeldAdapters("probe.go", one.src)
 		if one.refuses && len(said) == 0 {
 			t.Errorf("%s is not refused", one.what)
 		}

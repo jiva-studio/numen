@@ -47,11 +47,11 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 	return embedder, close, nil
 }
 
-// Asking is what embeds a question, for a run that fills no index. Only the
-// provider that answers questions is opened, and it answers under the identity
-// the index is filled with.
-func (c Config) Asking(ctx context.Context) (port.Embedder, func() error, error) {
-	held, err := c.provider(c.Embedding.Asking())
+// OpenQuestionEmbedder is what embeds a question, for a run that fills no
+// index. Only the provider that answers questions is opened, and it answers
+// under the identity the index is filled with.
+func (c Config) OpenQuestionEmbedder(ctx context.Context) (port.Embedder, func() error, error) {
+	held, err := c.provider(c.Embedding.GetQueryProvider())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -59,21 +59,21 @@ func (c Config) Asking(ctx context.Context) (port.Embedder, func() error, error)
 	return embedder, close, nil
 }
 
-// Searching is the search a question is answered by, put together the one way:
+// NewSearch is the search a question is answered by, put together the one way:
 // the passages, the vault's files, the text read out of books, and the model a
 // question is embedded by.
 //
-// trouble is where a half that could not run is said. A search short of the
-// half that asks by meaning is a search the words answer.
-func (c Config) Searching(db *Index, asking port.Embedder, trouble func(error)) search.Search {
-	return c.SearchingOver(db.Passages(), asking, trouble)
+// errorHandler is where a half that could not run is said. A search short of
+// the half that asks by meaning is a search the words answer.
+func (c Config) NewSearch(db *Index, asking port.Embedder, errorHandler func(error)) search.Search {
+	return c.NewSearchOver(db.Passages(), asking, errorHandler)
 }
 
-// SearchingOver is that search over the passages given, for a run that holds
+// NewSearchOver is that search over the passages given, for a run that holds
 // the index open for asking alone.
-func (c Config) SearchingOver(passages port.PassageQueries, asking port.Embedder, trouble func(error)) search.Search {
-	return search.New(passages, c.VaultReaders(), c.DerivedStores(), c.TextExtractor(),
-		asking, c.Embedding.Floor, trouble)
+func (c Config) NewSearchOver(passages port.PassageQueries, asking port.Embedder, errorHandler func(error)) search.Search {
+	return search.New(passages, c.VaultReaders(), c.GetDerivedStores(), c.TextExtractor(),
+		asking, c.Embedding.Floor, errorHandler)
 }
 
 // provider is which adapter answers for one half of the work, under the
@@ -83,7 +83,7 @@ func (c Config) SearchingOver(passages port.PassageQueries, asking port.Embedder
 // word nobody implements: left to mean nothing, it is a vault searched by its
 // words and no reason given.
 func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
-	is := c.Embedding.Stored()
+	is := c.Embedding.GetStoredModel()
 	switch where.Use {
 	case embed.UseService:
 		service, _ := where.Service()
@@ -91,7 +91,7 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 		if err != nil {
 			return embedders.Provider{}, err
 		}
-		return embedders.Reached(is, service.Name, client), nil
+		return embedders.NewReached(is, service.Name, client), nil
 
 	case embed.UseLocal:
 		local, _ := where.Local()
@@ -102,7 +102,7 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 			}
 			return model, nil
 		}
-		return embedders.Fetched(is, local.Name, open), nil
+		return embedders.NewFetched(is, local.Name, open), nil
 
 	case "":
 		return embedders.Provider{}, nil

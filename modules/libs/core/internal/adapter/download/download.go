@@ -41,7 +41,7 @@ type provider interface {
 	// in turn, and the first that says so is the one that answers.
 	Supports(at domain.URL) bool
 
-	Downloading(at domain.URL) port.DownloadModel
+	GetDownloadModel(at domain.URL) port.DownloadModel
 	Metadata(ctx context.Context, at domain.URL) (port.Metadata, error)
 	Text(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error)
 }
@@ -77,14 +77,14 @@ func (f *Downloader) providerFor(at domain.URL) (provider, error) {
 	return nil, fmt.Errorf("%s: %w", string(at), ErrNoTool)
 }
 
-// Downloading is what this address is downloaded by, and nothing where nothing
-// reaches it.
-func (f *Downloader) Downloading(at domain.URL) port.DownloadModel {
+// GetDownloadModel is what this address is downloaded by, and nothing where
+// nothing reaches it.
+func (f *Downloader) GetDownloadModel(at domain.URL) port.DownloadModel {
 	by, err := f.providerFor(at)
 	if err != nil {
 		return port.DownloadModel{}
 	}
-	return by.Downloading(at)
+	return by.GetDownloadModel(at)
 }
 
 // Metadata is what stands at the address, taking none of it.
@@ -134,37 +134,37 @@ func (f *Downloader) playerFor(at domain.URL) (player, error) {
 }
 
 // A program is a tool as it is started: the command, and the environment the
-// settings name for it. Every run goes through started, so what a setting says
-// about the environment cannot be forgotten at one of them.
+// settings name for it. Every run goes through buildCommand, so what a setting
+// says about the environment cannot be forgotten at one of them.
 type program struct {
 	command []string
 	env     []string
 }
 
-// held says this machine has the tool.
-func (p program) held() bool { return len(p.command) > 0 }
+// isPresent says this machine has the tool.
+func (p program) isPresent() bool { return len(p.command) > 0 }
 
-// at is where the tool itself is, for another tool that runs it. A tool started
-// through something else is not somewhere one path names.
-func (p program) at() string {
+// getPath is where the tool itself is, for another tool that runs it. A tool
+// started through something else is not somewhere one path names.
+func (p program) getPath() string {
 	if len(p.command) != 1 {
 		return ""
 	}
 	return p.command[0]
 }
 
-// started is one run of it, with the arguments of that run after its own.
-func (p program) started(ctx context.Context, arguments ...string) *exec.Cmd {
+// buildCommand is one run of it, with the arguments of that run after its own.
+func (p program) buildCommand(ctx context.Context, arguments ...string) *exec.Cmd {
 	running := exec.CommandContext(ctx, p.command[0],
 		append(append([]string(nil), p.command[1:]...), arguments...)...)
 	running.Env = p.env
 	return running
 }
 
-// resolved is the program to run, and nothing where this machine has no such
-// tool. A named command is taken as it stands: a machine that writes the path
-// afresh at every build names whatever does know where the tool is.
-func resolved(named Tool, tool string) program {
+// resolveProgram is the program to run, and nothing where this machine has no
+// such tool. A named command is taken as it stands: a machine that writes the
+// path afresh at every build names whatever does know where the tool is.
+func resolveProgram(named Tool, tool string) program {
 	if len(named.Command) > 0 {
 		return program{
 			command: append(append([]string(nil), named.Command...), named.Arguments...),
@@ -182,7 +182,7 @@ func resolved(named Tool, tool string) program {
 // person is shown when it failed: the tool knows why, and nothing here is going
 // to say it better.
 func run(ctx context.Context, tool program, into io.Writer, arguments ...string) ([]byte, error) {
-	running := tool.started(ctx, arguments...)
+	running := tool.buildCommand(ctx, arguments...)
 	var out, said bytes.Buffer
 	running.Stdout, running.Stderr = &out, &said
 	if into != nil {

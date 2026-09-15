@@ -42,9 +42,9 @@ func (s *shutting) free() {
 	s.busy = false
 }
 
-// over gives the window back from the settling that ends it. gone is what that
-// settling came to.
-func (s *shutting) over(gone bool) {
+// finish gives the window back from the settling that ends it. gone is what
+// that settling came to.
+func (s *shutting) finish(gone bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.busy = false
@@ -74,26 +74,28 @@ func (o *Installation) Settle(ctx context.Context) bool {
 		return false
 	}
 
-	settled := settling(ctx, o.API.Window, &o.API.Writing)
-	o.shutting.over(settled)
+	settled := settle(ctx, o.API.Window, &o.API.Writing)
+	o.shutting.finish(settled)
 	return settled
 }
 
-// Answered is every page having written what it owes. It is what the window
-// waits on while a person answers a question, and that wait is on a person and
-// is not measured. It answers false where ctx ended or the vault was asked
-// again.
-func (o *Installation) Answered(ctx context.Context) bool { return o.API.Window.Answered(ctx) }
+// WaitForAnswers waits for every page to write what it owes. It is what the
+// window waits on while a person answers a question, and that wait is on a
+// person and is not measured. It answers false where ctx ended or the vault was
+// asked again.
+func (o *Installation) WaitForAnswers(ctx context.Context) bool {
+	return o.API.Window.WaitForAnswers(ctx)
+}
 
-// settling is everything owed landing: every client writes what only it holds,
+// settle is everything owed landing: every client writes what only it holds,
 // and then the writes already taken finish. It answers with whether the vault
 // settled.
 //
 // A client that says nothing is bounded by ctx. A client raising a question
 // ends the round: the vault and the door stay open, and the wait from there is
 // on a person. The writes are not bounded.
-func settling(ctx context.Context, pages *wire.Window, writes *inflight) bool {
-	if !pages.Settling(ctx) {
+func settle(ctx context.Context, pages *wire.Window, writes *inflight) bool {
+	if !pages.Settle(ctx) {
 		return false
 	}
 	<-writes.seal()

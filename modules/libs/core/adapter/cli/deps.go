@@ -37,9 +37,9 @@ type Deps struct {
 	// file, whatever the index remembers.
 	Scan func(ctx context.Context, v domain.Vault, rebuild bool) (Scan, error)
 
-	// Search opens the search a question is answered by. trouble is where a
+	// Search opens the search a question is answered by. errorHandler is where a
 	// half of it that could not run says so.
-	Search func(ctx context.Context, trouble port.Trouble) (Search, error)
+	Search func(ctx context.Context, errorHandler port.ErrorHandler) (Search, error)
 
 	// Links opens what a note points at and what points at it.
 	Links func(ctx context.Context) (Links, error)
@@ -180,9 +180,9 @@ type ProofreadTranscript struct {
 	Close     func() error
 }
 
-// closing gives back what an opener opened, and does nothing where it opened
-// nothing.
-func closing(close func() error) {
+// closeIfOpen gives back what an opener opened, and does nothing where it
+// opened nothing.
+func closeIfOpen(close func() error) {
 	if close != nil {
 		_ = close()
 	}

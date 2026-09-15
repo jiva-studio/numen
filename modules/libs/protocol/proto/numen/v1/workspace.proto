@@ -70,10 +70,12 @@ message Tab {
   string title = 4;
 
   // How far the person has got through what the tab holds. A tab holding a
-  // document sets document, a tab holding a recording sets recording, and a tab
-  // of any other kind sets neither.
+  // document sets document, a tab holding a recording sets recording, a tab
+  // holding a book that reflows sets book, and a tab of any other kind sets
+  // none of them.
   DocumentProgress document = 5;
   RecordingProgress recording = 6;
+  BookProgress book = 7;
 }
 
 // A DocumentProgress is how far through a document the person reading it is.
@@ -83,6 +85,20 @@ message DocumentProgress {
 
   // PageCount is how many pages the document has.
   int32 page_count = 2;
+}
+
+// A BookProgress is how far through a book that reflows the person reading it
+// is. Such a book has no pages of its own, so where they stand is an offset
+// into its text and the page is counted from that.
+message BookProgress {
+  // Offset is where they are reading, in bytes of the book's text.
+  int32 offset = 1;
+
+  // Page is the page the offset falls on, counted from one, and PageCount how
+  // many the book is read in. Both are counted over the text by the size of a
+  // page the book was answered with, which is not here.
+  int32 page = 2;
+  int32 page_count = 3;
 }
 
 // A RecordingProgress is how far into a recording the words written down reach.

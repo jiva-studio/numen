@@ -56,12 +56,12 @@ func fileable(t *testing.T, notes map[string]string) filing {
 
 // move is the move an installation nobody has configured does: a title and a
 // filename kept as one name.
-func (f filing) move() vaults.Move { return f.moving(true) }
+func (f filing) move() vaults.Move { return f.newMove(true) }
 
-// apart is the move an installation that has turned the two apart does.
-func (f filing) apart() vaults.Move { return f.moving(false) }
+// moveApart is the move an installation that has turned the two apart does.
+func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
-func (f filing) moving(kept note.SyncTitleAndFilename) vaults.Move {
+func (f filing) newMove(kept note.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(
 		f.readers, filesystem.VaultWriters{},
 		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, time.Now,
@@ -144,7 +144,7 @@ func TestAFolderMovesWithTheNotesUnderIt(t *testing.T) {
 // sources is what the index holds at a path and beneath it, by path.
 func (f filing) sources(t *testing.T, path string) []string {
 	t.Helper()
-	found, err := f.db.SourcesKnown().Under(t.Context(), f.vault.ID, path)
+	found, err := f.db.SourcesKnown().GetSourcesUnder(t.Context(), f.vault.ID, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,16 +176,16 @@ func TestWhatIsUnderAPathIsWhatAWalkFinds(t *testing.T) {
 		t.Fatalf("the folder holds %v, and this test compares what is in it", got)
 	}
 	for _, path := range []string{"physics", "physics/heat", "physics/Entropy.md", "chemistry"} {
-		want := walked(t, f, path)
+		want := walkSources(t, f, path)
 		if got := f.sources(t, path); !slices.Equal(got, want) {
 			t.Errorf("the index holds %v under %s, and a walk finds %v", got, path, want)
 		}
 	}
 }
 
-// walked is every source a walk of the vault reports at a path and beneath it,
-// by path.
-func walked(t *testing.T, f filing, path string) []string {
+// walkSources is every source a walk of the vault reports at a path and beneath
+// it, by path.
+func walkSources(t *testing.T, f filing, path string) []string {
 	t.Helper()
 	reader, err := filesystem.VaultReaders{}.Open(f.vault)
 	if err != nil {

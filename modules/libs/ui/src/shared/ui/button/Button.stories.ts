@@ -10,8 +10,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { Button } from '.'
 import type { ButtonVariants } from '.'
-import { hovered, lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { hoverOver, lightness } from '@/shared/fixtures/colour'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 type Variant = NonNullable<ButtonVariants['variant']>
 
@@ -95,7 +95,7 @@ export const Disabled: Story = {
 export const Dark: Story = {
   globals: DARK,
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const canvas = within(canvasElement)
 
     // The way round the dark set is written: a filled button is dark on light
@@ -114,7 +114,7 @@ export const Dark: Story = {
       // anything.
       expect(Math.abs(ink - resting)).toBeGreaterThan(24)
 
-      await hovered(button)
+      await hoverOver(button)
       await waitFor(() => {
         const moved = lightness(getComputedStyle(button).backgroundColor) - resting
         expect(Math.abs(moved)).toBeGreaterThan(2)
@@ -126,7 +126,7 @@ export const Dark: Story = {
     // the hand.
     const ghost = canvas.getByRole('button', { name: 'ghost' })
     expect(getComputedStyle(ghost).backgroundColor).toBe('rgba(0, 0, 0, 0)')
-    await hovered(ghost)
+    await hoverOver(ghost)
     await waitFor(() =>
       expect(getComputedStyle(ghost).backgroundColor).not.toBe('rgba(0, 0, 0, 0)'),
     )

@@ -7,7 +7,6 @@ export { modules, root } from '../modules.mjs'
 
 export const here = dirname(fileURLToPath(import.meta.url))
 export const config = join(here, 'rules.cjs')
-export const screens = join(here, 'screens.cjs')
 export const layers = join(here, 'layers.cjs')
 
 /**
@@ -25,21 +24,16 @@ function installed(path) {
 export const depcruise = installed('.bin/depcruise')
 
 /**
- * The modules whose folders are read as screens and shared folders, each with
- * one file under a screen the cruise has to have reached. A cruise that read
- * only a module's root would find no screen to judge and pass.
+ * The modules whose folders are read as layers, each with one file standing
+ * under a layer the cruise has to have reached. A cruise that read only a
+ * module's root would find no layer to judge and pass. What each layer may
+ * reach is `layers.cjs`.
  */
-export const screened = new Map([
-  ['@numen/editor', 'src/flashcards-deck-tab/deck.ts'],
-  ['@numen/flashcards', 'src/decks/presets.ts'],
+export const layered = new Map([
+  ['@numen/ui', 'src/features/cards/lib/deck.ts'],
+  ['@numen/editor', 'src/pages/deck-editor/model/useDeckTabs.ts'],
+  ['@numen/flashcards', 'src/pages/decks/model/presets.ts'],
 ])
-
-/**
- * The modules whose folders are read as layers, each with one file under a
- * feature the cruise has to have reached. What each layer may reach is
- * `layers.cjs`.
- */
-export const layered = new Map([['@numen/ui', 'src/features/cards/deck.ts']])
 
 /**
  * The modules no boundary rule reads, each with the reason. A module is here or
@@ -47,7 +41,7 @@ export const layered = new Map([['@numen/ui', 'src/features/cards/deck.ts']])
  * outside a check is the same fault as a screen quietly reaching a screen, one
  * level up.
  */
-export const unscreened = {
+export const unlayered = {
   '@numen/wire': 'one file, with no folders to divide',
   '@numen/mobile':
     'one screen — App.vue mounts PlexPage alone, and note/ is the sheet that page draws over itself',
@@ -60,31 +54,13 @@ export const unscreened = {
  */
 export const baseline = new Map([
   [
-    '@numen/editor',
-    [
-      // A deck and a stencil are edited as a note is, and a deck is scheduled
-      // by a preset. What the card tabs take is the note's editing and its tab
-      // state, and the preset's core; another screen appearing here is a
-      // change.
-      'no-screen-reaches-a-screen: src/flashcards-deck-tab/deckTabs.ts → src/note-tab/notes.ts',
-      'no-screen-reaches-a-screen: src/flashcards-deck-tab/deckTabs.ts → src/note-tab/tab.ts',
-      'no-screen-reaches-a-screen: src/flashcards-deck-tab/deckTabs.ts → src/flashcards-preset-tab/core.ts',
-      'no-screen-reaches-a-screen: src/flashcards-deck-tab/scheduler.ts → src/flashcards-preset-tab/core.ts',
-      'no-screen-reaches-a-screen: src/flashcards-deck-tab/deckTabs.test.ts → src/flashcards-preset-tab/core.ts',
-      'no-screen-reaches-a-screen: src/flashcards-deck-tab/DeckTab.test.ts → src/flashcards-preset-tab/core.ts',
-      'no-screen-reaches-a-screen: src/flashcards-stencil-tab/stencilTabs.ts → src/note-tab/notes.ts',
-      'no-screen-reaches-a-screen: src/flashcards-stencil-tab/stencilTabs.ts → src/note-tab/tab.ts',
-    ],
-  ],
-  [
     '@numen/ui',
     [
       // An editor is drawn in a pane of the workspace, and a tab switched away
       // from and come back to measures its text again. That is the contract
       // between the two features, and the story is where it is held. The
       // editor itself reaches nothing of the workspace.
-      'no-feature-reaches-a-feature: src/features/editor/Editor.stories.ts → src/features/workspace/node.ts',
-      'no-feature-reaches-a-feature: src/features/editor/Editor.stories.ts → src/features/workspace/pane/index.ts',
+      'no-features-slice-reaches-a-slice: src/features/editor/ui/Editor.stories.ts → src/features/workspace/index.ts',
     ],
   ],
 ])

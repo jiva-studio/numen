@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// serving says whether the tools are in front of the agents.
-func (s *Endpoint) serving() bool {
+// isServing says whether the tools are in front of the agents.
+func (s *Endpoint) isServing() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.close != nil
@@ -19,11 +19,11 @@ func (s *Endpoint) serving() bool {
 // newEndpoint is a window on a vault, serving tools that do nothing.
 func newEndpoint() *Endpoint {
 	return &Endpoint{
-		Serve:       func() (func() error, error) { return func() error { return nil }, nil },
-		Showing:     func() domain.Vault { return domain.Vault{ID: "one"} },
-		Handler:     func(port.Agent) {},
-		Unreachable: func(string) {},
-		Trouble:     func(error) {},
+		Serve:        func() (func() error, error) { return func() error { return nil }, nil },
+		Showing:      func() domain.Vault { return domain.Vault{ID: "one"} },
+		Handler:      func(port.Agent) {},
+		Unreachable:  func(string) {},
+		ErrorHandler: func(error) {},
 	}
 }
 
@@ -32,8 +32,8 @@ func newEndpoint() *Endpoint {
 // in front of the agents on the vault that is going.
 func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	s := newEndpoint()
-	s.On()
-	if !s.serving() {
+	s.Start()
+	if !s.isServing() {
 		t.Fatal("the tools were never served")
 	}
 
@@ -44,7 +44,7 @@ func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	swaps.Add(1)
 	go func() {
 		defer swaps.Done()
-		_ = s.Around(func() error {
+		_ = s.RunSwap(func() error {
 			close(running)
 			<-release
 			return nil
@@ -57,14 +57,14 @@ func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	go func() {
 		defer swaps.Done()
 		defer close(second)
-		_ = s.Around(func() error { return nil })
+		_ = s.RunSwap(func() error { return nil })
 	}()
 	// The second swap has this long to reach the endpoint the first is holding.
 	select {
 	case <-second:
 	case <-time.After(time.Second):
 	}
-	served := s.serving()
+	served := s.isServing()
 
 	close(release)
 	swaps.Wait()
@@ -72,7 +72,7 @@ func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	if served {
 		t.Error("the tools were served again while a swap was running")
 	}
-	if !s.serving() {
+	if !s.isServing() {
 		t.Error("the tools were not served again once the swap was over")
 	}
 }

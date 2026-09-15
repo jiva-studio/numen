@@ -92,7 +92,7 @@ func (u Read) Execute(
 	defer file.Close()
 
 	// A listing of the folder above is the vault saying what it holds there.
-	held, err := reported(ctx, reader, path)
+	held, err := getReadOutcome(ctx, reader, path)
 	if err != nil {
 		return ReadResult{}, err
 	}
@@ -131,10 +131,10 @@ func (u Read) Execute(
 	return out, nil
 }
 
-// reported is what the vault names at this path among the entries of the folder
-// above it: Ok for a file, AFolder for a folder, LeftAlone for a path it does
-// not report at all.
-func reported(ctx context.Context, reader port.VaultReader, path string) (ReadOutcome, error) {
+// getReadOutcome is what the vault names at this path among the entries of the
+// folder above it: Ok for a file, AFolder for a folder, LeftAlone for a path it
+// does not report at all.
+func getReadOutcome(ctx context.Context, reader port.VaultReader, path string) (ReadOutcome, error) {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	folder := pathpkg.Dir(clean)
 	if folder == "." {

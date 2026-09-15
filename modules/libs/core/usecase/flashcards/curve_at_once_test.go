@@ -17,7 +17,7 @@ import (
 // has.
 func TestACurveIsTheSameCurveEveryTimeItIsAsked(t *testing.T) {
 	t.Parallel()
-	s := answering(t, 200)
+	s := newAnsweredVault(t, 200)
 	curves := s.curves(noon)
 	for _, one := range atOnceGoals() {
 		t.Run(one.name, func(t *testing.T) {
@@ -25,15 +25,15 @@ func TestACurveIsTheSameCurveEveryTimeItIsAsked(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := drawn(first)
+			want := describeCurve(first)
 			for again := range 8 {
 				got, err := curves.Execute(t.Context(), s.vault, "Sanskrit.md", one.preset)
 				if err != nil {
 					t.Fatal(err)
 				}
-				if drawn(got) != want {
+				if describeCurve(got) != want {
 					t.Fatalf("asking %d times over gives\n%s\nand the first asking gave\n%s",
-						again+2, drawn(got), want)
+						again+2, describeCurve(got), want)
 				}
 			}
 		})
@@ -69,8 +69,9 @@ func atOnceGoals() []struct {
 	}
 }
 
-// drawn is a whole curve written out, every scalar and every series of it, so
-// that two of them are compared by what they say and not by what they point at.
-func drawn(c review.Curve) string {
+// describeCurve is a whole curve written out, every scalar and every series of
+// it, so that two of them are compared by what they say and not by what they
+// point at.
+func describeCurve(c review.Curve) string {
 	return fmt.Sprintf("%v", c)
 }

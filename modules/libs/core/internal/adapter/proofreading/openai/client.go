@@ -55,8 +55,8 @@ func New(cfg proofreading.Profile, instruction string) (*Client, error) {
 	}, nil
 }
 
-// Name is the model, recorded beside every correction it made.
-func (c *Client) Name() string { return c.service.Name }
+// GetName is the model, recorded beside every correction it made.
+func (c *Client) GetName() string { return c.service.Name }
 
 // inFlight is how many batches this service is asked about at once.
 func (c *Client) inFlight() int {

@@ -77,16 +77,16 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		return CreateResult{}, err
 	}
 
-	content, err := titled(markdown.Create(identifier, in.Body), title, exact)
+	content, err := writeTitle(markdown.Create(identifier, in.Body), title, exact)
 	if err != nil {
 		return CreateResult{}, err
 	}
-	content, err = joined(content, in.Links)
+	content, err = writeLinks(content, in.Links)
 	if err != nil {
 		return CreateResult{}, err
 	}
 
-	if err := Bounded(path, len(content), MaxBytes); err != nil {
+	if err := CheckSize(path, len(content), MaxBytes); err != nil {
 		return CreateResult{}, err
 	}
 
@@ -106,18 +106,18 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if err := u.index(ctx, v, path); err != nil {
 		return made, err
 	}
-	shares, err := u.Names.Named(ctx, v.ID, domain.Basename(path))
+	shares, err := u.Names.GetNamedPaths(ctx, v.ID, domain.Basename(path))
 	if err != nil {
 		return made, err
 	}
-	made.Shares = without(shares, path)
+	made.Shares = removePath(shares, path)
 	return made, nil
 }
 
-// titled writes the note's name into its frontmatter, where the filename
+// writeTitle writes the note's name into its frontmatter, where the filename
 // cannot carry the whole of it. A filename that carries it names the note, and
 // nothing is written.
-func titled(content []byte, title string, exact bool) ([]byte, error) {
+func writeTitle(content []byte, title string, exact bool) ([]byte, error) {
 	if exact {
 		return content, nil
 	}
@@ -131,9 +131,9 @@ func titled(content []byte, title string, exact bool) ([]byte, error) {
 	return doc.Bytes(), nil
 }
 
-// joined writes relationships into frontmatter that has just been made, through
-// the splicing every other link goes through: one set of quoting rules, not two.
-func joined(content []byte, links []domain.Link) ([]byte, error) {
+// writeLinks writes relationships into frontmatter that has just been made,
+// through the splicing every other link goes through: one set of quoting rules.
+func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
 	if len(links) == 0 {
 		return content, nil
 	}
@@ -150,10 +150,10 @@ func joined(content []byte, links []domain.Link) ([]byte, error) {
 }
 
 func (u Create) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return Levelled(u.Index(ctx, v, paths), paths...)
+	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
 }
 
-func without(paths []string, path string) []string {
+func removePath(paths []string, path string) []string {
 	var out []string
 	for _, p := range paths {
 		if p != path {

@@ -44,7 +44,7 @@ export type Artifact = Message<"numen.v1.Artifact"> & {
   state: State;
 
   /**
-   * Error is what stopped it, and is set when it failed.
+   * Error is why it stopped.
    *
    * @generated from field: string error = 3;
    */

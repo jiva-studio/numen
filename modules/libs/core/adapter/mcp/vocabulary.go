@@ -25,13 +25,13 @@ type Tool struct {
 	Kind port.StepKind
 	// Match and Text name the arguments carrying the text a call replaces and
 	// what it puts in that text's place. Both are empty for a call that
-	// replaces no stretch.
+	// replaces no span.
 	Match string
 	Text  string
 }
 
 // doing is what each tool this vault serves does, and the arguments a call
-// naming a stretch of a note carries it in.
+// naming a span of a note carries it in.
 //
 // The tools are written out by hand and so is this. A schema says what a call
 // takes and cannot say what taking it means.
@@ -102,8 +102,8 @@ func ReadingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) 
 	return vocabulary(ctx, NewReading(core))
 }
 
-// ReviewingVocabulary is the same, for the window a person runs their cards in.
-func ReviewingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
+// GetReviewVocabulary is the same, for the window a person runs their cards in.
+func GetReviewVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, NewReviewing(core))
 }
 

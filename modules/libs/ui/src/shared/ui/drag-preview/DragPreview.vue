@@ -3,21 +3,24 @@
  * What is being dragged, said beside the pointer and catching nothing. One
  * line, then an ellipsis.
  */
+import { computed } from 'vue'
 import type { Position } from '@/shared/lib/geometry'
 
-defineProps<{
+const props = defineProps<{
   /** Where the pointer is, in pixels from the top left of the window. */
   at: Position
   /** What is being dragged, in the caller's own words. */
   says: string
 }>()
+
+const previewStyle = computed(() => ({
+  left: `${props.at.x}px`,
+  top: `${props.at.y}px`,
+}))
 </script>
 
 <template>
-  <p
-    class="drag-preview font-sans text-small"
-    :style="{ left: `${at.x}px`, top: `${at.y}px` }"
-  >
+  <p class="drag-preview text-small font-sans" :style="previewStyle">
     {{ says }}
   </p>
 </template>

@@ -10,9 +10,7 @@
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { cn } from '@/shared/lib/classes'
-import { clamped, walked, walks, type Bounds } from './track'
-
-defineOptions({ inheritAttrs: false })
+import { clamp, isWalkingKey, stepForKey, type Bounds } from './track'
 
 const props = withDefaults(
   defineProps<{
@@ -29,10 +27,12 @@ const props = withDefaults(
 /** Where the handle stands. */
 const model = defineModel<number>({ default: 0 })
 
-const raises = defineEmits<{
+const emit = defineEmits<{
   /** The handle let go of, at the end of a drag or of a walk with the keys. */
-  settles: [value: number]
+  settle: [value: number]
 }>()
+
+defineOptions({ inheritAttrs: false })
 
 /**
  * The last value handed on, so a value that arrives twice — once as the handle
@@ -44,22 +44,22 @@ watch(model, (now) => {
   handed = now
 })
 
-const hands = (said: number) => {
-  if (said === handed) return
-  handed = said
-  model.value = said
+const setValue = (value: number) => {
+  if (value === handed) return
+  handed = value
+  model.value = value
 }
 
 const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: props.step }))
 
 /** Where the handle stands, which is inside the ends whatever it was given. */
-const inForce = computed(() => clamped(model.value, bounds.value))
+const inForce = computed(() => clamp(model.value, bounds.value))
 
-watch(inForce, hands, { immediate: true })
+watch(inForce, setValue, { immediate: true })
 
-const moved = (value: number[] | undefined) => {
+const onMove = (value: number[] | undefined) => {
   const said = value?.[0]
-  if (typeof said === 'number') hands(said)
+  if (typeof said === 'number') setValue(said)
 }
 
 /** Whether a key is down, and where the handle stood when it went down. */
@@ -71,8 +71,8 @@ let began = 0
  * key held down and a key struck again are one walk, which is over when the key
  * is let go of.
  */
-const takes = (event: KeyboardEvent) => {
-  if (!walks(event.key)) return
+const onKeyDown = (event: KeyboardEvent) => {
+  if (!isWalkingKey(event.key)) return
   event.preventDefault()
   event.stopPropagation()
   if (props.disabled) return
@@ -80,15 +80,15 @@ const takes = (event: KeyboardEvent) => {
     walking = true
     began = handed
   }
-  const said = walked(event.key, inForce.value, bounds.value, event.shiftKey)
-  if (said !== null) hands(said)
+  const said = stepForKey(event.key, inForce.value, bounds.value, event.shiftKey)
+  if (said !== null) setValue(said)
 }
 
 /** The handle let go of, at what the walk left it standing at. */
-const rests = () => {
+const onRelease = () => {
   if (!walking) return
   walking = false
-  if (handed !== began) raises('settles', handed)
+  if (handed !== began) emit('settle', handed)
 }
 
 /**
@@ -96,11 +96,11 @@ const rests = () => {
  * on before it is said to have settled, so a caller acting on the second has
  * the first.
  */
-const settled = (value: number[]) => {
+const onCommit = (value: number[]) => {
   const said = value[0]
   if (typeof said !== 'number') return
-  hands(said)
-  raises('settles', said)
+  setValue(said)
+  emit('settle', said)
 }
 </script>
 
@@ -115,30 +115,30 @@ const settled = (value: number[]) => {
     :disabled="disabled"
     :class="
       cn(
-        'relative flex w-full touch-none select-none items-center',
+        'relative flex w-full touch-none items-center select-none',
         'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
         props.class,
       )
     "
-    @update:model-value="moved"
-    @value-commit="settled"
+    @update:model-value="onMove"
+    @value-commit="onCommit"
   >
-    <SliderTrack class="relative h-1 w-full grow rounded-pill bg-hushed">
-      <SliderRange class="absolute h-full rounded-pill bg-accent" />
+    <SliderTrack class="rounded-pill bg-hushed relative h-1 w-full grow">
+      <SliderRange class="rounded-pill bg-accent absolute h-full" />
     </SliderTrack>
     <SliderThumb
       v-bind="$attrs"
       :class="
         cn(
-          'block size-4 shrink-0 rounded-pill border border-rule bg-raised',
-          'cursor-pointer transition-colors duration-hover ease-numen',
-          'outline-none ring-numen',
+          'rounded-pill border-rule bg-raised block size-4 shrink-0 border',
+          'duration-hover ease-numen cursor-pointer transition-colors',
+          'ring-numen outline-none',
           'data-[disabled]:cursor-not-allowed',
         )
       "
-      @keydown="takes"
-      @keyup="rests"
-      @blur="rests"
+      @keydown="onKeyDown"
+      @keyup="onRelease"
+      @blur="onRelease"
     />
   </SliderRoot>
 </template>

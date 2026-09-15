@@ -14,7 +14,7 @@ import (
 // is written rather than left in the log for every later reading to skip.
 func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	record := s.run(t, time.Now())
 
 	for _, on := range []review.CardFaceID{
@@ -40,7 +40,7 @@ func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
 // of a session's answers a person meant.
 func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 
 	if _, err := s.run(t, time.Now()).TakeBack(t.Context(), ""); err == nil {
 		t.Error("an answer taken back without naming one was written")
@@ -51,7 +51,7 @@ func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
 // against: a run of the same name and length holds the same answers.
 func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	record := s.run(t, time.Now())
@@ -59,7 +59,7 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name := record.Run.Name()
+	name := record.Run.GetName()
 	if !strings.HasSuffix(name, ".jsonl") {
 		t.Errorf("the run is known as %q", name)
 	}

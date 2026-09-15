@@ -56,7 +56,7 @@ func TestACardFaceNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
 		s := whereItStands(t)
 		s.Last = time.Time{}
 		at := lastAnswer.Add(time.Duration(rapid.IntRange(-1000, 1000).Draw(t, "days")) * 24 * time.Hour)
-		if p.Learned(s, at) {
+		if p.IsLearned(s, at) {
 			t.Fatalf("a card face nobody has answered counts learned under %+v "+
 				"at %v, standing at %+v", p, at, s)
 		}
@@ -76,16 +76,16 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 		at := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
 
 		standard := review.Defaults()
-		if review.KnownRule(p.Rule) {
+		if review.IsKnownRule(p.Rule) {
 			standard.Rule = p.Rule
 		}
-		if review.IntervalBounds.Holds(float64(p.Interval)) {
+		if review.IntervalBounds.Contains(float64(p.Interval)) {
 			standard.Interval = p.Interval
 		}
-		if review.RetentionBounds.Holds(p.Retention) {
+		if review.RetentionBounds.Contains(p.Retention) {
 			standard.Retention = p.Retention
 		}
-		if got, want := p.Learned(s, at), standard.Learned(s, at); got != want {
+		if got, want := p.IsLearned(s, at), standard.IsLearned(s, at); got != want {
 			t.Fatalf("%+v counts %+v learned as %v at %v, where the rule in "+
 				"force is %+v and counts it %v", p, s, got, at, standard, want)
 		}
@@ -110,7 +110,7 @@ func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 		by := func(days int) review.Preset {
 			return review.Preset{Rule: review.RuleInterval, Interval: days}
 		}
-		if by(long).Learned(s, at) && !by(short).Learned(s, at) {
+		if by(long).IsLearned(s, at) && !by(short).IsLearned(s, at) {
 			t.Fatalf("a card face sent away %v counts learned at an interval of "+
 				"%d days and not at one of %d", s.Due.Sub(s.Last), long, short)
 		}
@@ -128,7 +128,7 @@ func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		s := whereItStands(t)
-		if !s.Seen() {
+		if !s.IsSeen() {
 			return
 		}
 		p := review.Preset{
@@ -140,14 +140,14 @@ func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
 		day := func(days int) time.Time {
 			return lastAnswer.Add(time.Duration(days) * 24 * time.Hour)
 		}
-		if p.Learned(s, day(late)) && !p.Learned(s, day(soon)) {
+		if p.IsLearned(s, day(late)) && !p.IsLearned(s, day(soon)) {
 			t.Fatalf("a card face at a stability of %v counts learned %d days "+
 				"out and not %d days out", s.Stability, late, soon)
 		}
 
 		lapsed := s
 		lapsed.Stability = 0
-		if p.Learned(lapsed, day(soon)) {
+		if p.IsLearned(lapsed, day(soon)) {
 			t.Fatalf("a card face nothing is known about counts learned at %v", p.Retention)
 		}
 	})

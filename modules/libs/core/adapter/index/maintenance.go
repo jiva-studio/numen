@@ -24,8 +24,8 @@ type DatabaseMaintenance struct{ db *sql.DB }
 // db.go.
 const measure = "PRAGMA optimize = 0x10012"
 
-// Changed says what the database knows about itself is out of date.
-func (m DatabaseMaintenance) Changed(ctx context.Context) error {
+// ReportChanges says what the database knows about itself is out of date.
+func (m DatabaseMaintenance) ReportChanges(ctx context.Context) error {
 	_, err := writing.Exec(ctx, m.db, measure)
 	return err
 }

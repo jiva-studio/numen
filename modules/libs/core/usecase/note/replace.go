@@ -55,31 +55,31 @@ type ReplaceResult struct {
 	Plainly bool
 }
 
-// MissingStretch is a stretch that is not in the note, and where a copy of it stopped
+// MissingSpan is a span that is not in the note, and where a copy of it stopped
 // agreeing with what is there.
-type MissingStretch struct {
+type MissingSpan struct {
 	// Matched is the longest opening of what was asked for that does stand in
 	// the note, and Instead is what stands in the note from there.
 	Matched string
 	Instead string
 }
 
-func (e MissingStretch) Error() string {
+func (e MissingSpan) Error() string {
 	if e.Matched == "" {
-		return "no part of this stretch is in the note"
+		return "no part of this span is in the note"
 	}
-	return fmt.Sprintf("this stretch is not in the note; it holds %q where the stretch has %q",
+	return fmt.Sprintf("this span is not in the note; it holds %q where the span has %q",
 		e.Instead, e.Matched+"…")
 }
 
-// AmbiguousStretch is a stretch standing in more than one place, which is a
-// stretch that does not say which of them was meant.
-type AmbiguousStretch struct {
+// AmbiguousSpan is a span standing in more than one place, which is a
+// span that does not say which of them was meant.
+type AmbiguousSpan struct {
 	Places int
 }
 
-func (e AmbiguousStretch) Error() string {
-	return fmt.Sprintf("this stretch stands in %d places; take in enough of what is around "+
+func (e AmbiguousSpan) Error() string {
+	return fmt.Sprintf("this span stands in %d places; take in enough of what is around "+
 		"one of them to tell it from the others", e.Places)
 }
 
@@ -107,13 +107,13 @@ func (u Replace) Execute(
 		Fingerprint: fingerprint, Bound: MaxBytes,
 	}
 	at, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		body := markdown.Normalised(doc.Body())
+		body := markdown.Normalise(doc.Body())
 
 		where, plainly := markdown.Where(body, stood)
 		switch {
 		case len(where) == 1:
 		case len(where) > 1:
-			return AmbiguousStretch{Places: len(where)}
+			return AmbiguousSpan{Places: len(where)}
 		case becomes != "" && strings.Contains(body, becomes):
 			return ErrAlreadyWritten
 		default:
@@ -128,10 +128,10 @@ func (u Replace) Execute(
 
 		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
-		ends = u.Drawing.begins(ctx, u.Now, domain.Edit{
+		ends = u.Drawing.beginChange(ctx, u.Now, domain.Edit{
 			Path: path,
-			From: markdown.Counted(body, span.From),
-			To:   markdown.Counted(body, span.To),
+			From: markdown.CountUTF16(body, span.From),
+			To:   markdown.CountUTF16(body, span.To),
 			Text: becomes,
 		})
 
@@ -147,12 +147,12 @@ func (u Replace) Execute(
 	return done, nil
 }
 
-// nowhere is what to say about a stretch that is not in the note: how much of
+// nowhere is what to say about a span that is not in the note: how much of
 // its opening does stand there, and what stands in its place.
 //
 // The opening is found by halving, which the text being present for every
 // shorter opening allows.
-func nowhere(body, stood string) MissingStretch {
+func nowhere(body, stood string) MissingSpan {
 	low, high := 0, len(stood)
 	for low < high {
 		middle := low + (high-low+1)/2
@@ -172,16 +172,16 @@ func nowhere(body, stood string) MissingStretch {
 		}
 	}
 	if low == 0 {
-		return MissingStretch{}
+		return MissingSpan{}
 	}
 	matched := stood[:low]
 	at, _ := markdown.Where(body, matched)
 	if len(at) == 0 {
-		return MissingStretch{}
+		return MissingSpan{}
 	}
 	end := min(at[0].From+len(stood), len(body))
 	for end < len(body) && !utf8.RuneStart(body[end]) {
 		end++
 	}
-	return MissingStretch{Matched: matched, Instead: body[at[0].From:end]}
+	return MissingSpan{Matched: matched, Instead: body[at[0].From:end]}
 }

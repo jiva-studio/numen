@@ -30,7 +30,7 @@ export const many = (count: number, one: string): string =>
   `${Math.round(count)} ${plural(count, one)}`
 
 /** A whole number, grouped in thousands. */
-export const grouped = (n: number): string => {
+export const groupDigits = (n: number): string => {
   const digits = String(Math.max(0, Math.floor(n)))
   let out = ''
   for (let i = 0; i < digits.length; i++) {

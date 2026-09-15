@@ -87,9 +87,9 @@ func (s tallyingStmt) QueryContext(ctx context.Context, args []driver.NamedValue
 	return queries.QueryContext(ctx, args)
 }
 
-// tallied is an index whose questions are counted: the database itself, and
-// the note queries over a pool of its own that does the counting.
-func tallied(t *testing.T) (*DB, *note.Queries) {
+// openCountedDB is an index whose questions are counted: the database itself,
+// and the note queries over a pool of its own that does the counting.
+func openCountedDB(t *testing.T) (*DB, *note.Queries) {
 	t.Helper()
 	if err := tallyingDriver(); err != nil {
 		t.Fatal(err)
@@ -130,13 +130,13 @@ func questions(t *testing.T, ask func() error) int64 {
 // question per entry is a folder of five hundred notes asking five hundred
 // times. What it costs to open a folder does not grow with the folder.
 func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
-	db, queries := tallied(t)
+	db, queries := openCountedDB(t)
 	ctx := t.Context()
 
 	paths := make([]string, 0, 6)
 	for i := range 6 {
 		path := fmt.Sprintf("cards/deck-%d.md", i)
-		typed(t, db, first, path, fmt.Sprintf("Deck %d", i), domain.TypeDeck)
+		saveTypedNote(t, db, first, path, fmt.Sprintf("Deck %d", i), domain.TypeDeck)
 		paths = append(paths, path)
 	}
 
@@ -161,14 +161,14 @@ func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
 // A rename reads every deck of the vault, and the index says which notes those
 // are. Asking for them by type is one question whatever the vault holds.
 func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
-	db, queries := tallied(t)
+	db, queries := openCountedDB(t)
 	ctx := t.Context()
 
-	typed(t, db, first, "decks/mammals.md", "Mammals", domain.TypeDeck)
-	typed(t, db, first, "decks/birds.md", "Birds", domain.TypeDeck)
-	typed(t, db, first, "stencils/animal.md", "Animal", domain.TypeStencil)
-	typed(t, db, first, "notes/entropy.md", "Entropy", domain.TypeNote)
-	typed(t, db, second, "decks/quasars.md", "Quasars", domain.TypeDeck)
+	saveTypedNote(t, db, first, "decks/mammals.md", "Mammals", domain.TypeDeck)
+	saveTypedNote(t, db, first, "decks/birds.md", "Birds", domain.TypeDeck)
+	saveTypedNote(t, db, first, "stencils/animal.md", "Animal", domain.TypeStencil)
+	saveTypedNote(t, db, first, "notes/entropy.md", "Entropy", domain.TypeNote)
+	saveTypedNote(t, db, second, "decks/quasars.md", "Quasars", domain.TypeDeck)
 
 	if _, err := queries.OfType(ctx, first.ID, domain.TypeDeck); err != nil {
 		t.Fatal(err)

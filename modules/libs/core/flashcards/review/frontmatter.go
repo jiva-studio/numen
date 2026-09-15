@@ -23,7 +23,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		switch {
 		case !isText:
 			problems = append(problems, "goal is not text")
-		case KnownGoal(Goal(name)):
+		case IsKnownGoal(Goal(name)):
 			p.Goal = Goal(name)
 		default:
 			problems = append(problems, "goal "+name+" is not minutes_a_day, retention or by_date")
@@ -35,7 +35,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		switch {
 		case !isText:
 			problems = append(problems, "learned is not text")
-		case KnownRule(LearnedRule(name)):
+		case IsKnownRule(LearnedRule(name)):
 			p.Rule = LearnedRule(name)
 		default:
 			problems = append(problems, "learned "+name+" is not interval or retention")
@@ -47,7 +47,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		switch {
 		case !isText:
 			problems = append(problems, "counts is not text")
-		case KnownBudgetUnit(BudgetUnit(name)):
+		case IsKnownBudgetUnit(BudgetUnit(name)):
 			p.Counts = BudgetUnit(name)
 		default:
 			problems = append(problems, "counts "+name+" is not cards or shows")
@@ -73,18 +73,18 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		problems = append(problems, "a preset aiming at a day says which day, under by_date")
 	}
 
-	p.MinutesADay = counted(front, "minutes_a_day", MinutesADayBounds, p.MinutesADay, &problems)
-	p.NewADay = counted(front, "new_a_day", NewADayBounds, p.NewADay, &problems)
-	p.ReviewsADay = counted(front, "reviews_a_day", ReviewsADayBounds, p.ReviewsADay, &problems)
-	p.Backlog = counted(front, "backlog", BacklogBounds, p.Backlog, &problems)
-	p.Interval = counted(front, "interval", IntervalBounds, p.Interval, &problems)
+	p.MinutesADay = readWholeNumber(front, "minutes_a_day", MinutesADayBounds, p.MinutesADay, &problems)
+	p.NewADay = readWholeNumber(front, "new_a_day", NewADayBounds, p.NewADay, &problems)
+	p.ReviewsADay = readWholeNumber(front, "reviews_a_day", ReviewsADayBounds, p.ReviewsADay, &problems)
+	p.Backlog = readWholeNumber(front, "backlog", BacklogBounds, p.Backlog, &problems)
+	p.Interval = readWholeNumber(front, "interval", IntervalBounds, p.Interval, &problems)
 
 	if raw, present := front["retention"]; present && raw != nil {
 		value, ok := number(raw)
 		switch {
 		case !ok:
 			problems = append(problems, "retention is not a number")
-		case !RetentionBounds.Holds(value):
+		case !RetentionBounds.Contains(value):
 			problems = append(problems, fmt.Sprintf(
 				"retention %g is outside %g to %g", value, RetentionBounds.Least, RetentionBounds.Most))
 		default:
@@ -120,7 +120,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 					problems = append(problems, "the load of "+name+" is not a number")
 				case share != math.Trunc(share):
 					problems = append(problems, "the load of "+name+" is counted in whole per cent")
-				case !LoadBounds.Holds(share):
+				case !LoadBounds.Contains(share):
 					problems = append(problems, fmt.Sprintf("the load of %s, %g, is outside %g to %g",
 						name, share, LoadBounds.Least, LoadBounds.Most))
 				default:
@@ -158,9 +158,9 @@ func DayName(day time.Weekday) string {
 	return strings.ToLower(day.String()[:3])
 }
 
-// counted is one setting written in whole numbers, and what the note said
-// about it.
-func counted(
+// readWholeNumber is one setting written in whole numbers, and what the note
+// said about it.
+func readWholeNumber(
 	front map[string]any, key string, bounds Bounds, fallback int, problems *[]string,
 ) int {
 	raw, present := front[key]
@@ -173,7 +173,7 @@ func counted(
 		*problems = append(*problems, key+" is not a number")
 	case value != math.Trunc(value):
 		*problems = append(*problems, key+" is counted in whole numbers")
-	case !bounds.Holds(value):
+	case !bounds.Contains(value):
 		*problems = append(*problems, fmt.Sprintf(
 			"%s %g is outside %g to %g", key, value, bounds.Least, bounds.Most))
 	default:

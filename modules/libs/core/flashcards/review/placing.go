@@ -23,18 +23,19 @@ type DueByDay struct {
 	on  map[int]int
 }
 
-// Spreading opens a table counting the days as this day of review divides them.
-func Spreading(d Day) *DueByDay { return &DueByDay{day: d, on: make(map[int]int)} }
+// NewDueByDay opens a table counting the days as this day of review divides
+// them.
+func NewDueByDay(d Day) *DueByDay { return &DueByDay{day: d, on: make(map[int]int)} }
 
-// Holds counts one card face against the day its schedule falls in.
-func (s *DueByDay) Holds(due time.Time) {
+// Add counts one card face against the day its schedule falls in.
+func (s *DueByDay) Add(due time.Time) {
 	if s != nil {
 		s.on[s.number(due)]++
 	}
 }
 
-// On is how many card faces fall on the day of review holding this instant.
-func (s *DueByDay) On(at time.Time) int {
+// CountOn is how many card faces fall on the day of review holding this instant.
+func (s *DueByDay) CountOn(at time.Time) int {
 	if s == nil {
 		return 0
 	}
@@ -45,7 +46,7 @@ func (s *DueByDay) On(at time.Time) int {
 // from the day the clock is counted from. The same answers name the same days
 // in every process.
 func (s *DueByDay) number(at time.Time) int {
-	return int(s.day.Opened(at).Unix() / int64(24*time.Hour/time.Second))
+	return int(s.day.GetDate(at).Unix() / int64(24*time.Hour/time.Second))
 }
 
 // weekday is the day of the week a numbered day of review falls on. The day the
@@ -74,7 +75,7 @@ func weekday(number int) time.Weekday {
 // come here.
 func (p Preset) Places(s *DueByDay, at, due time.Time) time.Time {
 	out := p.lands(s, at, due)
-	s.Holds(out)
+	s.Add(out)
 	return out
 }
 
@@ -94,7 +95,7 @@ func (p Preset) lands(s *DueByDay, at, due time.Time) time.Time {
 		return due
 	}
 	first, last, opens := window(due.Sub(at))
-	if !p.Evens() || !opens {
+	if !p.CanEvenLoad() || !opens {
 		return due
 	}
 
@@ -107,10 +108,10 @@ func (p Preset) lands(s *DueByDay, at, due time.Time) time.Time {
 	from, to := s.number(counted.AddDate(0, 0, first)), s.number(counted.AddDate(0, 0, last))
 	on, heaviest := stands, -1.0
 	if stands >= from && stands <= to {
-		heaviest = p.weighs(s, stands)
+		heaviest = p.getWeight(s, stands)
 	}
 	for day := from; day <= to; day++ {
-		if weight := p.weighs(s, day); weight > heaviest {
+		if weight := p.getWeight(s, day); weight > heaviest {
 			on, heaviest = day, weight
 		}
 	}
@@ -119,10 +120,10 @@ func (p Preset) lands(s *DueByDay, at, due time.Time) time.Time {
 	return due.In(in).AddDate(0, 0, on-stands).In(due.Location())
 }
 
-// weighs is how much a numbered day of review wants another card: the share of
-// the load its day of the week keeps, over what already falls on it.
-func (p Preset) weighs(s *DueByDay, day int) float64 {
-	return p.Share(weekday(day)) / float64(1+s.on[day])
+// getWeight is how much a numbered day of review wants another card: the share
+// of the load its day of the week keeps, over what already falls on it.
+func (p Preset) getWeight(s *DueByDay, day int) float64 {
+	return p.GetShare(weekday(day)) / float64(1+s.on[day])
 }
 
 // slacks is how far either side of an interval a card may be put, by how long

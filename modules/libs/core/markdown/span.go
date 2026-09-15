@@ -139,13 +139,13 @@ func plainly(r rune) rune {
 	return r
 }
 
-// Differs is the span of `was` that `now` does not have, and the text that
+// Diff is the span of `was` that `now` does not have, and the text that
 // stands there instead.
 //
 // What the two share at either end is left out, so replacing one whole note's
 // prose with another names the sentence that changed. The span is widened to
 // whole words, and two texts that are the same name no span at all.
-func Differs(was, now string) (Span, string) {
+func Diff(was, now string) (Span, string) {
 	if was == now {
 		return Span{From: len(was), To: len(was)}, ""
 	}
@@ -198,12 +198,12 @@ func spacing(b byte) bool {
 	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }
 
-// Counted is `at`, a byte offset into text, as a client counts text: in UTF-16
-// code units.
+// CountUTF16 is `at`, a byte offset into text, as a client counts text: in
+// UTF-16 code units.
 //
 // A note is read by something that counts its own way, and a span named in
 // bytes lands somewhere else in prose that is not ASCII.
-func Counted(text string, at int) int {
+func CountUTF16(text string, at int) int {
 	if at > len(text) {
 		at = len(text)
 	}

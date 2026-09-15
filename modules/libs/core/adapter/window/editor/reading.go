@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // settled is how long the vault has to have been still before the notes written
@@ -37,7 +37,7 @@ type nudges struct {
 	still time.Duration
 }
 
-func waking(still time.Duration) nudges {
+func newNudges(still time.Duration) nudges {
 	return nudges{
 		sources: make(chan struct{}, 1),
 		notes:   make(chan struct{}, 1),
@@ -94,33 +94,30 @@ func (p *pending) take() map[string]domain.Vault {
 func begin(
 	ctx context.Context,
 	v domain.Vault,
-	cfg container.Config,
-	db *container.Index,
+	made Assembly,
 	api *API,
-	opening *container.VaultOpener,
-	readers port.VaultReaders,
+	rebuild bool,
 	embedder port.Embedder,
 	wake nudges,
 	owed *pending,
 	out io.Writer,
-) func() {
-	trouble := func(err error) {
+) (vaults.Refresh, func()) {
+	handleError := func(err error) {
 		if err == nil {
-			api.Failed.Store("")
+			api.Error.Store("")
 			return
 		}
-		api.Failed.Store(err.Error())
+		api.Error.Store(err.Error())
 	}
-	opening.Trouble = trouble
-	opening.Told = func(m container.VaultChanges) {
+	told := func(paths, assets []string, reload bool) {
 		// A client draws every file the vault holds, so an asset is named to it
 		// the way a note is.
-		api.Listeners.tell(change{paths: slices.Concat(m.Paths, m.Assets), reload: m.Reload})
-		if m.Reading() {
+		api.Listeners.tell(change{paths: slices.Concat(paths, assets), reload: reload})
+		if reload || len(assets) > 0 {
 			// A book dropped into an open vault is read without anybody asking.
 			raise(wake.sources)
 		}
-		if len(m.Paths) > 0 {
+		if len(paths) > 0 {
 			// A note written is a note cut again, and its chunks owe their
 			// vectors. Which ones is not carried: the debt is in the index.
 			raise(wake.notes)
@@ -133,19 +130,19 @@ func begin(
 
 	var running sync.WaitGroup
 
-	open := opening.Begin(ctx, v)
-	if why := open.Unwatched(); why != nil {
-		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, why)
-		api.Unwatched.Store(why.Error())
+	read, run, refresh, unwatched := made.StartVault(ctx, v, rebuild, told, handleError)
+	if unwatched != nil {
+		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, unwatched)
+		api.Unwatched.Store(unwatched.Error())
 	}
 	running.Add(1)
 	go func() {
 		defer running.Done()
 
-		open.Run(ctx)
+		run(ctx)
 		// Nothing reaches the window once the watch stops, so from here on the
 		// vault is one that is not being followed.
-		if open.Unwatched() == nil && ctx.Err() == nil {
+		if unwatched == nil && ctx.Err() == nil {
 			api.Unwatched.Store("the watch stopped")
 		}
 	}()
@@ -153,13 +150,13 @@ func begin(
 	// first is the vault's first reading: the walk, and the notes written while
 	// it ran read once more. It answers whether the vault was read.
 	first := func() bool {
-		defer api.finished(walkingNotes)
+		defer api.finishTask(walkingNotes)
 
 		// The walk runs behind the window, which answers from what it has
 		// reached. A later one is the index being brought level with a vault
 		// that moved under it.
 		api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault"})
-		notes, err := open.Read(ctx, nil)
+		notes, err := read(ctx, nil)
 
 		switch {
 		case err == nil:
@@ -168,7 +165,7 @@ func begin(
 			// there is nothing to report.
 			return false
 		default:
-			api.Failed.Store(err.Error())
+			api.Error.Store(err.Error())
 			return false
 		}
 
@@ -180,12 +177,11 @@ func begin(
 	// Reading every file again is what this launch was asked for, and one pass
 	// makes it. Every pass after it reads what changed. The ask is spent on the
 	// one goroutine below, so it is read and written in one place.
-	rebuild := cfg.RebuildIndex
-	cfg.RebuildIndex = false
+	owes := rebuild
 	reading := func() {
-		asked := cfg
-		asked.RebuildIndex, rebuild = rebuild, false
-		readSources(ctx, asked, db, api, v, readers, embedder, wake.read, out)
+		asked := owes
+		owes = false
+		readSources(ctx, made, api, v, embedder, asked, wake.read, out)
 	}
 
 	running.Add(1)
@@ -217,9 +213,9 @@ func begin(
 				// being read.
 				if held := owed.take(); len(held) > 0 {
 					for path, of := range held {
-						cutSource(ctx, cfg, db, api, embedder, of, path)
+						cutSource(ctx, made, api, embedder, of, path)
 					}
-					embedSources(ctx, cfg, db, api, v, readers, embedder, wake.read)
+					embedSources(ctx, made, api, v, embedder, wake.read)
 				}
 			case <-wake.notes:
 				// Every write puts the pass off again: what was typed is
@@ -227,12 +223,12 @@ func begin(
 				quiet = time.After(wake.still)
 			case <-quiet:
 				quiet = nil
-				embedSources(ctx, cfg, db, api, v, readers, embedder, wake.read)
+				embedSources(ctx, made, api, v, embedder, wake.read)
 			}
 		}
 	}()
 
-	return running.Wait
+	return refresh, running.Wait
 }
 
 // readSources takes the text out of every book in the vault and then embeds what
@@ -243,18 +239,17 @@ func begin(
 // and search answers on words alone until one is.
 func readSources(
 	ctx context.Context,
-	cfg container.Config,
-	db *container.Index,
+	made Assembly,
 	api *API,
 	v domain.Vault,
-	readers port.VaultReaders,
 	embedder port.Embedder,
+	rebuild bool,
 	nudge chan struct{},
 	out io.Writer,
 ) {
-	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
+	making, err := made.ReadWholeVault(ctx, embedder, v, rebuild)
 	if err != nil {
-		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: err.Error()})
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Error: err.Error()})
 		return
 	}
 	making.Books.OnProgress = func(res source.ExtractResult) {
@@ -274,17 +269,17 @@ func readSources(
 		if res.Extracted > 0 {
 			fmt.Fprintf(out, "%s: %d books, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 		}
-		api.finished(readingBooks)
+		api.finishTask(readingBooks)
 	case errors.Is(read, context.Canceled):
 		// Asked to stop. What it cut is correct as far as it got.
-		api.finished(readingBooks)
+		api.finishTask(readingBooks)
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it
 		// out.
-		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: read.Error()})
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Error: read.Error()})
 	}
 
-	embedSources(ctx, cfg, db, api, v, readers, embedder, nudge)
+	embedSources(ctx, made, api, v, embedder, nudge)
 }
 
 // cutSource cuts one source again from whatever its text now says.
@@ -294,18 +289,17 @@ func readSources(
 // the next batch asks again.
 func cutSource(
 	ctx context.Context,
-	cfg container.Config,
-	db *container.Index,
+	made Assembly,
 	api *API,
 	embedder port.Embedder,
 	v domain.Vault,
 	path string,
 ) {
 	cut := func(err error) {
-		api.say(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Failed: err.Error()})
+		api.say(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Error: err.Error()})
 	}
 
-	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
+	making, err := made.ReadWholeVault(ctx, embedder, v, false)
 	if err != nil {
 		cut(err)
 		return
@@ -314,7 +308,7 @@ func cutSource(
 	case err == nil:
 		// The pages that were read are cut, and a cut that failed before this
 		// one is over.
-		api.finished(readingBooks)
+		api.finishTask(readingBooks)
 	case !errors.Is(err, context.Canceled):
 		cut(err)
 	}
@@ -330,11 +324,9 @@ func cutSource(
 // made are kept, and taken up again it asks the index what still owes one.
 func embedSources(
 	ctx context.Context,
-	cfg container.Config,
-	db *container.Index,
+	made Assembly,
 	api *API,
 	v domain.Vault,
-	readers port.VaultReaders,
 	embedder port.Embedder,
 	nudge chan struct{},
 ) {
@@ -389,10 +381,10 @@ func embedSources(
 	}
 
 	indexing := func(err error) {
-		api.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: err.Error()})
+		api.say(task.Task{ID: makingVectors, Doing: "Indexing", Error: err.Error()})
 	}
 
-	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
+	making, err := made.ReadWholeVault(ctx, embedder, v, false)
 	if err != nil {
 		indexing(err)
 		return
@@ -411,7 +403,7 @@ func embedSources(
 
 	switch _, err := making.MakeVectors(under, v); {
 	case err == nil, errors.Is(err, context.Canceled):
-		api.finished(makingVectors)
+		api.finishTask(makingVectors)
 	default:
 		// A vault short of the vectors it owes is searched by its words alone,
 		// and the reason for it stands in the list.

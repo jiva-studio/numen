@@ -17,30 +17,30 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
-// themed is a window's themes as a client reaches them: through the handler
+// newThemeClient is a window's themes as a client reaches them: through the handler
 // that answers everything else the window asks.
-func themed(t *testing.T, cfg container.Config) numenv1connect.ThemeServiceClient {
+func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServiceClient {
 	t.Helper()
 
 	themes, err := cfg.Themes(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := httptest.NewServer((&API{Themes: themes}).Serving(http.NotFoundHandler()))
+	server := httptest.NewServer((&API{Themes: themes}).NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	return numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
 }
 
-// installed is a configuration whose files are all in one folder of a test's
+// newConfig is a configuration whose files are all in one folder of a test's
 // own, which is what pointing the registry somewhere does.
-func installed(t *testing.T) container.Config {
+func newConfig(t *testing.T) container.Config {
 	t.Helper()
 	return container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")}
 }
 
 func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
-	client := themed(t, installed(t))
+	client := newThemeClient(t, newConfig(t))
 
 	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
@@ -66,25 +66,25 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 // The choice lands in the settings file, and the keys a person typed into it
 // are still there afterwards.
 func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
-	cfg := installed(t)
+	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	if err := os.WriteFile(file, []byte(
 		`{"indexing":{"embedding":{"indexing":{"service":{"key":"sk-the-persons-own"}}}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	client := themed(t, cfg)
+	client := newThemeClient(t, cfg)
 	chosen, err := client.WriteAppearance(t.Context(),
 		connect.NewRequest(&v1.WriteAppearanceRequest{Name: "preset:nord", Mode: v1.Mode_MODE_DARK}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failed := chosen.Msg.GetFailed(); failed != "" {
-		t.Fatalf("refused: %s", failed)
+	if reason := chosen.Msg.GetError(); reason != "" {
+		t.Fatalf("refused: %s", reason)
 	}
 
-	said, err := settings.At(file)
-	if err != nil {
+	said := container.DefaultSettings()
+	if err := settings.OpenAt(file, &said); err != nil {
 		t.Fatal(err)
 	}
 	if said.Appearance.Theme != "preset:nord" || said.Appearance.Mode != settings.ModeDark {
@@ -111,9 +111,9 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 
 // The two sizes land in the settings file, and each is written on its own.
 func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
-	cfg := installed(t)
+	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
-	client := themed(t, cfg)
+	client := newThemeClient(t, cfg)
 
 	drawn := 1.5
 	chosen, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
@@ -124,12 +124,12 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failed := chosen.Msg.GetFailed(); failed != "" {
-		t.Fatalf("refused: %s", failed)
+	if reason := chosen.Msg.GetError(); reason != "" {
+		t.Fatalf("refused: %s", reason)
 	}
 
-	said, err := settings.At(file)
-	if err != nil {
+	said := container.DefaultSettings()
+	if err := settings.OpenAt(file, &said); err != nil {
 		t.Fatal(err)
 	}
 	if said.Appearance.InterfaceScale != 1.5 || said.Appearance.TextScale != 1 {
@@ -148,13 +148,13 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 // A window can be made hard to read only as far as the bounds go, and the file
 // is left as it stands.
 func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
-	cfg := installed(t)
+	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	if err := os.WriteFile(file, []byte(`{"appearance":{"theme":"preset:nord"}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	client := themed(t, cfg)
+	client := newThemeClient(t, cfg)
 	set := 4.0
 	chosen, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:      settings.DefaultTheme,
@@ -164,8 +164,8 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failed := chosen.Msg.GetFailed(); !strings.Contains(failed, "appearance.text_scale") {
-		t.Errorf("refused with %q", failed)
+	if reason := chosen.Msg.GetError(); !strings.Contains(reason, "appearance.text_scale") {
+		t.Errorf("refused with %q", reason)
 	}
 
 	held, err := os.ReadFile(file)
@@ -180,9 +180,9 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 // What the command line said stands over the file, and a person choosing that
 // size for themselves is what it is let go of for.
 func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
-	cfg := installed(t)
+	cfg := newConfig(t)
 	cfg.InterfaceScale = 1.25
-	client := themed(t, cfg)
+	client := newThemeClient(t, cfg)
 
 	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
@@ -213,7 +213,7 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 // A build put together without a catalogue answers that it has none, and the
 // rest of the window is as it was.
 func TestAWindowWithNoCatalogueAnswersThatItHasNone(t *testing.T) {
-	server := httptest.NewServer((&API{}).Serving(http.NotFoundHandler()))
+	server := httptest.NewServer((&API{}).NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)

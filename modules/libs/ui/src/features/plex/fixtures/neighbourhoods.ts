@@ -4,10 +4,10 @@
  * None of this comes from a vault: a fixture taken from the domain is how the
  * dependency gets back in through the door marked "tests".
  */
-import type { PlexEdge } from '../edge'
-import type { PlexNeighbourhood } from '../neighbourhood'
-import type { PlexNode } from '../node'
-import type { PlexSeat } from '../seat'
+import type { PlexEdge } from '../lib/edge'
+import type { PlexNeighbourhood } from '../lib/neighbourhood'
+import type { PlexNode } from '../lib/node'
+import type { PlexSeat } from '../lib/seat'
 
 /**
  * Focus in, everything else out — the shape every fixture below is built as.
@@ -19,15 +19,12 @@ import type { PlexSeat } from '../seat'
  */
 function neighbourhood(
   focus: string,
-  related: readonly PlexNode[],
+  neighbours: readonly PlexNode[],
   extra: readonly PlexEdge[] = [],
 ): PlexNeighbourhood {
-  const nodes: PlexNode[] = [
-    { id: 'focus', title: focus, seat: 'focus' },
-    ...related,
-  ]
-  const parent = related.find((node) => node.seat === 'parent')
-  const edges: PlexEdge[] = related.flatMap((node) => {
+  const nodes: PlexNode[] = [{ id: 'focus', title: focus, seat: 'focus' }, ...neighbours]
+  const parent = neighbours.find((node) => node.seat === 'parent')
+  const edges: PlexEdge[] = neighbours.flatMap((node) => {
     if (node.seat === 'parent' || node.seat === 'jump') {
       return [{ from: node.id, to: 'focus' }]
     }
@@ -39,11 +36,7 @@ function neighbourhood(
   return { nodes, edges: [...edges, ...extra] }
 }
 
-function run(
-  seat: PlexSeat,
-  count: number,
-  title: (index: number) => string,
-): PlexNode[] {
+function run(seat: PlexSeat, count: number, title: (index: number) => string): PlexNode[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `${seat}-${index}`,
     title: title(index),

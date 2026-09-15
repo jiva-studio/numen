@@ -6,8 +6,8 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // A source carrying no text a person typed is put through a run: a scan is
@@ -65,14 +65,14 @@ func (a *API) far(
 	path string,
 	kind domain.SourceKind,
 ) (reached, error) {
-	said, store, produced, err := a.made(ctx, v, path)
+	said, store, produced, err := a.getSourceText(ctx, v, path)
 	if err != nil {
 		return reached{}, err
 	}
 	if produced {
 		return farUnder(ctx, store, said.Producer, said.Hash)
 	}
-	return a.byBytes(ctx, v, path, unnamed(kind))
+	return a.byBytes(ctx, v, path, getDefaultProducer(kind))
 }
 
 // farUnder says how far the run keeping its files under a name has got.
@@ -98,7 +98,7 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 	// asks for the source to be tried afresh.
 	switch held, err := store.Read(ctx, derived.Answer(from, hash)); {
 	case err == nil:
-		switch answer, why := derived.Answered(held); answer {
+		switch answer, why := derived.ReadAnswer(held); answer {
 		case derived.Silent:
 			got.stands = silent
 		case derived.Unopened:
@@ -135,7 +135,7 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 // The file is read and fingerprinted here, which is what a run does before
 // anything else.
 func (a *API) byBytes(ctx context.Context, v domain.Vault, path, from string) (reached, error) {
-	_, stores, ok := a.transcribing()
+	_, stores, ok := a.getSourceStores()
 	if !ok || from == "" {
 		return reached{}, nil
 	}
@@ -154,10 +154,10 @@ func (a *API) byBytes(ctx context.Context, v domain.Vault, path, from string) (r
 	return farUnder(ctx, store, from, derived.Fingerprint(raw))
 }
 
-// unnamed is the producer whose files stand for a source the index names none
+// getDefaultProducer is the producer whose files stand for a source the index names none
 // for: a recording is listened to. Nothing produces a scan's text without the
 // index saying what did.
-func unnamed(kind domain.SourceKind) string {
+func getDefaultProducer(kind domain.SourceKind) string {
 	if kind == domain.KindRecording {
 		return derived.ASR
 	}

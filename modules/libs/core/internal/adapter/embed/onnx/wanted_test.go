@@ -28,7 +28,7 @@ var e5 = []string{
 }
 
 func TestAModelInSeveralFilesComesWithAllOfThem(t *testing.T) {
-	got := wanted(bge, "model.onnx")
+	got := selectModelFiles(bge, "model.onnx")
 	want := []string{
 		"model.onnx",
 		"Constant_7_attr__value",
@@ -44,7 +44,7 @@ func TestAModelInSeveralFilesComesWithAllOfThem(t *testing.T) {
 
 func TestAQuantisedBuildDoesNotDragDownTheFullOne(t *testing.T) {
 	// The weights beside model.onnx belong to a model nobody asked for.
-	got := wanted(e5, "model_qint8_avx512_vnni.onnx")
+	got := selectModelFiles(e5, "model_qint8_avx512_vnni.onnx")
 	want := []string{"model_qint8_avx512_vnni.onnx", "config.json", "tokenizer.json"}
 	if !slices.Equal(got, want) {
 		t.Errorf("got %v", got)
@@ -52,7 +52,7 @@ func TestAQuantisedBuildDoesNotDragDownTheFullOne(t *testing.T) {
 }
 
 func TestTheFullBuildComesWithItsOwnWeightsAndNoOtherBuild(t *testing.T) {
-	got := wanted(e5, "model.onnx")
+	got := selectModelFiles(e5, "model.onnx")
 	want := []string{"model.onnx", "config.json", "model.onnx_data", "tokenizer.json"}
 	if !slices.Equal(got, want) {
 		t.Errorf("got %v", got)

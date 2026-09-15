@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
 )
 
 // Appearance is how the window is drawn.
@@ -41,9 +41,9 @@ type Appearance struct {
 	PartsUnderANode int `json:"parts_under_a_node"`
 }
 
-// Hangs is whether a node hangs the headings of its note under it. A section
+// HasPartsUnderNode is whether a node hangs the headings of its note under it. A section
 // naming nothing hangs them.
-func (a Appearance) Hangs() bool {
+func (a Appearance) HasPartsUnderNode() bool {
 	return a.HangPartsUnderANode == nil || *a.HangPartsUnderANode
 }
 
@@ -135,7 +135,7 @@ const DefaultTheme = "preset:numen"
 // InterfaceScaleBounds is not one the setting is seeded with.
 func fromDesktop() float64 {
 	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
-	if err != nil || !InterfaceScaleBounds.Holds(scale) {
+	if err != nil || !InterfaceScaleBounds.Contains(scale) {
 		return AsDesigned
 	}
 	return scale

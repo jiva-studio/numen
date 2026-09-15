@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	derived "github.com/jiva-studio/numen/modules/libs/core/text"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -53,7 +53,7 @@ func Listen(api *API, stopped func(error)) (*Loopback, error) {
 	if err != nil {
 		return nil, err
 	}
-	back, err := answering(held, api, stopped)
+	back, err := newLoopback(held, api, stopped)
 	if err != nil {
 		held.Close()
 		return nil, err
@@ -61,8 +61,8 @@ func Listen(api *API, stopped func(error)) (*Loopback, error) {
 	return back, nil
 }
 
-// answering is the socket answering, whichever socket it is.
-func answering(held net.Listener, api *API, stopped func(error)) (*Loopback, error) {
+// newLoopback is the socket answering, whichever socket it is.
+func newLoopback(held net.Listener, api *API, stopped func(error)) (*Loopback, error) {
 	word := make([]byte, 24)
 	if _, err := rand.Read(word); err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func answering(held net.Listener, api *API, stopped func(error)) (*Loopback, err
 		token:   base64.RawURLEncoding.EncodeToString(word),
 	}
 	back.server = &http.Server{
-		Handler:           back.serving(),
+		Handler:           back.getHandler(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	go func() {
@@ -90,7 +90,7 @@ func answering(held net.Listener, api *API, stopped func(error)) (*Loopback, err
 	return back, nil
 }
 
-// serving answers for one file of one vault.
+// getHandler answers for one file of one vault.
 //
 // The vault is named in the address and not taken from the window: a tab plays
 // on while the person moves the window to another vault, and what it plays is
@@ -99,7 +99,7 @@ func answering(held net.Listener, api *API, stopped func(error)) (*Loopback, err
 // A path leaving the vault, and a file the vault leaves alone, are refused by
 // the vault's own reader. That is the boundary, and it is the same one every
 // other question crosses.
-func (l *Loopback) serving() http.Handler {
+func (l *Loopback) getHandler() http.Handler {
 	held := "/" + l.token + "/"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		escaped := r.URL.EscapedPath()
@@ -115,7 +115,7 @@ func (l *Loopback) serving() http.Handler {
 		// The page holding a video's player is served here and names no vault:
 		// it is a page of this application's own, and what it frames is a host.
 		if id == embedRoute {
-			l.framing(w, r, rest)
+			l.serveFrame(w, r, rest)
 			return
 		}
 		path, err := url.PathUnescape(rest)
@@ -140,7 +140,7 @@ func (l *Loopback) Address(vault domain.Vault, ref domain.Fingerprint) string {
 	}
 	return l.address + "/" + l.token + "/" + url.PathEscape(string(vault.ID)) +
 		"/" + url.PathEscape(ref.Path) +
-		"?" + printing(fingerprint{size: ref.Size, mtime: stamp(ref.ModTime)})
+		"?" + formatFingerprint(fingerprint{size: ref.Size, mtime: stamp(ref.ModTime)})
 }
 
 // Close stops answering.
@@ -162,7 +162,7 @@ const errNoVaultNamed = "no vault of that name"
 // A range is answered as a range, so a player seeks in an hour of speech and
 // holds the second it is on. The whole file is never in memory.
 func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
-	named, err := printed(r.URL.Query())
+	named, err := parseFingerprint(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -180,7 +180,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 	// which the vault's reader is refused, so it is served from the store it
 	// was written to. Every other file of the vault is
 	// served as the file it is.
-	if strings.HasSuffix(at, domain.URLExtension) && a.served(w, r, held, at, named) {
+	if strings.HasSuffix(at, domain.URLExtension) && a.serveCopy(w, r, held, at, named) {
 		return
 	}
 	reader, err := a.Readers.Open(held)
@@ -211,21 +211,21 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 	http.ServeContent(w, r, ref.Path, ref.ModTime, file)
 }
 
-// served answers with the copy fetched for a url, and says whether it
+// serveCopy answers with the copy fetched for a url, and says whether it
 // answered at all. One with no copy on this disk is a file like any other,
 // and is served as one.
 //
 // The size the address carries is the copy's own: a copy fetched again under
 // the same name is a different address.
-func (a *API) served(
+func (a *API) serveCopy(
 	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named fingerprint,
 ) bool {
-	_, stores, ready := a.transcribing()
+	_, stores, ready := a.getSourceStores()
 	if !ready {
 		return false
 	}
 	points := a.points(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
-	if playing(points) == "" {
+	if getPlayerURL(points) == "" {
 		return false
 	}
 	store, err := stores.Open(held)
@@ -251,7 +251,7 @@ func (a *API) served(
 // vaultOf is the vault an address names. The one the window shows is answered
 // without asking the list, which is every question but the first.
 func (a *API) vaultOf(id string) (domain.Vault, bool) {
-	if showing := a.Showing(); string(showing.ID) == id {
+	if showing := a.GetShownVault(); string(showing.ID) == id {
 		return showing, true
 	}
 	if a.Vaults.Registry == nil {
@@ -264,9 +264,9 @@ func (a *API) vaultOf(id string) (domain.Vault, bool) {
 	return one, true
 }
 
-// named is where the window may play from, for the policy the page is served
+// getPlayOrigins is where the window may play from, for the policy the page is served
 // under. A build that opened no socket names nowhere.
-func (l *Loopback) named() []string {
+func (l *Loopback) getPlayOrigins() []string {
 	if l == nil {
 		return nil
 	}

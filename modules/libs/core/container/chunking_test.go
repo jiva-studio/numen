@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -29,15 +29,15 @@ func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cut.Sizes != held.Chunking() {
-		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.Chunking())
+	if cut.Sizes != held.GetChunkSizes() {
+		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.GetChunkSizes())
 	}
 }
 
 func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Indexing.Use = ""
-	if got := (container.Config{Embedding: cfg}).Chunking(); got != (chunking.Sizes{}) {
+	if got := (container.Config{Embedding: cfg}).GetChunkSizes(); got != (chunking.Sizes{}) {
 		t.Errorf("got %+v", got)
 	}
 }
@@ -45,8 +45,8 @@ func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 func TestTheModelSaidIsWhatAChunkIsCutUnder(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.MaxTokens = 512
-	if got := (container.Config{Embedding: cfg}).Chunking().Limit; got != chunking.Under(512) {
-		t.Errorf("cut at %d, under %d", got, chunking.Under(512))
+	if got := (container.Config{Embedding: cfg}).GetChunkSizes().Limit; got != chunking.GetCharacterBound(512) {
+		t.Errorf("cut at %d, under %d", got, chunking.GetCharacterBound(512))
 	}
 }
 
@@ -83,14 +83,14 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, _, err := db.VectorsOwing().Unembedded(t.Context(), v.ID, wide{384}.Model(), "", 1000)
+	owing, _, err := db.VectorsOwing().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.Model(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(owing) == 0 {
 		t.Fatal("a note of a hundred lines owes no vector")
 	}
-	limit := chunking.Under(cfg.Model.MaxTokens)
+	limit := chunking.GetCharacterBound(cfg.Model.MaxTokens)
 	for _, p := range owing {
 		if p.Length > limit {
 			t.Errorf("a chunk of %d characters is embedded by a model that reads %d", p.Length, limit)
@@ -137,7 +137,7 @@ func (wide) Close() error { return nil }
 // second assembly is a second answer for one settings file.
 func TestNothingElseAssemblesACut(t *testing.T) {
 	root := ".."
-	within := func(path, dir string) bool {
+	isWithin := func(path, dir string) bool {
 		return strings.HasPrefix(filepath.ToSlash(path), filepath.ToSlash(filepath.Join(root, dir))+"/")
 	}
 	var built, sized, untold []string
@@ -145,7 +145,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		if strings.HasSuffix(path, "_test.go") || within(path, "container") {
+		if strings.HasSuffix(path, "_test.go") || isWithin(path, "container") {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -176,7 +176,8 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 				return true
 			}
 			switch {
-			case pkg.Name == "source" && named.Sel.Name == "Extract" && !within(path, "usecase/source"):
+			case pkg.Name == "source" && named.Sel.Name == "Extract" &&
+				!isWithin(path, "usecase/source"):
 				built = append(built, path)
 			case pkg.Name == "chunking" && (named.Sel.Name == "Sizes" || named.Sel.Name == "Legibility"):
 				sized = append(sized, path)

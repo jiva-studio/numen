@@ -24,10 +24,11 @@ import (
 // filesystem a vault is kept on.
 const nameMax = 255
 
-// beside is the pattern a temporary file next to a target is created under. The
-// name is cut on a rune boundary, leaving room for the leading dot and for the
-// digits that go where the star is; the rename lands on the full name.
-func beside(name string) string {
+// getTempPattern is the pattern a temporary file next to a target is created
+// under. The name is cut on a rune boundary, leaving room for the leading dot
+// and for the digits that go where the star is; the rename lands on the full
+// name.
+func getTempPattern(name string) string {
 	const room = len(".") + len(".") + 10
 	for len(name)+room > nameMax {
 		_, size := utf8.DecodeLastRuneInString(name)
@@ -76,7 +77,7 @@ func temporary(root *os.Root, dir, pattern string) (*os.File, string, error) {
 // ones at the target from the moment the rename lands.
 func replace(root *os.Root, target string, from io.Reader, mode fs.FileMode) (domain.Fingerprint, error) {
 	dir := filepath.Dir(target)
-	tmp, at, err := temporary(root, dir, beside(filepath.Base(target)))
+	tmp, at, err := temporary(root, dir, getTempPattern(filepath.Base(target)))
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}

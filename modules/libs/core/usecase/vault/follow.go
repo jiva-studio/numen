@@ -21,10 +21,10 @@ type Follow struct {
 	// Changed, if set, is called each time the index and the vault are level
 	// again. What is done with that is the caller's business.
 	Changed func(VaultChanges)
-	// Trouble, if set, is called with what went wrong, and with nil when a
+	// ErrorHandler, if set, is called with what went wrong, and with nil when a
 	// later attempt succeeds. Both, so what is reported is the state of things
 	// now.
-	Trouble func(error)
+	ErrorHandler func(error)
 }
 
 // NewFollow is what keeps the index level with a vault being edited: what says
@@ -87,36 +87,36 @@ func (f *Watch) Run(ctx context.Context) {
 			}
 			res, err := f.follow.Refresh.Execute(ctx, f.vault, paths)
 			if err != nil {
-				f.trouble(err)
+				f.handleError(err)
 				continue
 			}
-			f.trouble(nil)
-			f.changed(VaultChanges{Paths: res.Changed(), Assets: res.Assets})
+			f.handleError(nil)
+			f.reportChanges(VaultChanges{Paths: res.GetChangedPaths(), Assets: res.Assets})
 
 		case <-f.lost:
 			// More changed at once than could be followed, or something went
 			// that cannot be asked what it held. Reading the vault again is the
 			// answer, and whoever is listening is told to ask again.
 			if _, err := f.follow.Scan.Execute(ctx, f.vault); err != nil {
-				f.trouble(err)
+				f.handleError(err)
 				continue
 			}
-			f.trouble(nil)
+			f.handleError(nil)
 			// Read again from the top, so whatever changed is among what the
 			// walk finds.
-			f.changed(VaultChanges{Reload: true})
+			f.reportChanges(VaultChanges{Reload: true})
 		}
 	}
 }
 
-func (f *Watch) changed(m VaultChanges) {
+func (f *Watch) reportChanges(m VaultChanges) {
 	if f.follow.Changed != nil {
 		f.follow.Changed(m)
 	}
 }
 
-func (f *Watch) trouble(err error) {
-	if f.follow.Trouble != nil {
-		f.follow.Trouble(err)
+func (f *Watch) handleError(err error) {
+	if f.follow.ErrorHandler != nil {
+		f.follow.ErrorHandler(err)
 	}
 }

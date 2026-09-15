@@ -12,7 +12,7 @@ import (
 // settings name, so between midnight and that hour the calendar has turned and
 // the day has not.
 func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
-	api, _ := windowed(t, deck)
+	api, _ := newAPI(t, deck)
 	api.Day = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 
 	for name, c := range map[string]struct {

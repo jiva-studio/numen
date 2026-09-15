@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // Recognise reads a scanned document with a model and writes down what it saw.
@@ -132,16 +132,16 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	defer scan.Close()
 	res.Pages = scan.Pages()
 
-	done, prose, err := resumed(ctx, store, partial)
+	done, prose, err := readResumePoint(ctx, store, partial)
 	if err != nil {
 		return res, err
 	}
 	// The files are written one after the other, so a run that died between them
 	// left coordinates and parts the count does not claim.
-	if err := trimmed(ctx, store, boxes, done); err != nil {
+	if err := dropBoxes(ctx, store, boxes, done); err != nil {
 		return res, err
 	}
-	if err := shortened(ctx, store, parts, prose); err != nil {
+	if err := dropParts(ctx, store, parts, prose); err != nil {
 		return res, err
 	}
 	res.Resumed, res.Read = done, done
@@ -175,7 +175,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 				return err
 			}
 		}
-		if err := store.Append(ctx, partial, marked(written, res.Read)); err != nil {
+		if err := store.Append(ctx, partial, appendCount(written, res.Read)); err != nil {
 			return err
 		}
 		said, _ := ocr.Read(written)
@@ -287,8 +287,8 @@ func (u Recognise) cut(ctx context.Context, v domain.Vault, path string) error {
 	return u.Cut(ctx, v, path)
 }
 
-// trimmed drops the coordinates of pages no count claims.
-func trimmed(ctx context.Context, store port.DerivedStore, name string, done int) error {
+// dropBoxes drops the coordinates of pages no count claims.
+func dropBoxes(ctx context.Context, store port.DerivedStore, name string, done int) error {
 	raw, err := store.Read(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
@@ -309,9 +309,9 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	return store.Write(ctx, name, highlight.Pack(kept))
 }
 
-// shortened drops the parts no count claims: those opening past the prose the
+// dropParts drops the parts no count claims: those opening past the prose the
 // pages before the count came to.
-func shortened(ctx context.Context, store port.DerivedStore, name string, prose int) error {
+func dropParts(ctx context.Context, store port.DerivedStore, name string, prose int) error {
 	raw, err := store.Read(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
@@ -353,11 +353,11 @@ func (u Recognise) record(ctx context.Context, store port.DerivedStore, area, ha
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, text.Beside(area, hash), append(raw, '\n'))
+	return store.Write(ctx, text.GetProducerFile(area, hash), append(raw, '\n'))
 }
 
-// marked is a run of pages and, after them, how many of the document have been
-// read, so that a run stopped part way can be taken up again.
+// appendCount is a run of pages and, after them, how many of the document have
+// been read, so that a run stopped part way can be taken up again.
 //
 // The count stands last and is what makes the batch before it count. A batch
 // that did not land whole is one no count claims, and the next run reads those
@@ -365,22 +365,22 @@ func (u Recognise) record(ctx context.Context, store port.DerivedStore, area, ha
 //
 // The count is a comment: it is a line the artifact's own reader passes over,
 // because a page mark is what it looks for.
-func marked(raw []byte, read int) []byte {
+func appendCount(raw []byte, read int) []byte {
 	return append(raw, fmt.Sprintf("%s%d\n", resumeMark, read)...)
 }
 
 // resumeMark begins the line that says how much of a document has been read.
 const resumeMark = ocr.Note + "pages "
 
-// resumed is how many pages of a document a run before this one read and how
-// many bytes of prose those pages came to, with anything past the last count cut
-// away.
+// readResumePoint is how many pages of a document a run before this one read
+// and how many bytes of prose those pages came to, with anything past the last
+// count cut away.
 //
 // A count stands after the pages it claims, so what follows the last one is a
 // batch that did not land whole. The two numbers come from the same stretch of
 // the file, which is what makes a coordinate written next land where its words
 // are.
-func resumed(ctx context.Context, store port.DerivedStore, partial string) (int, int, error) {
+func readResumePoint(ctx context.Context, store port.DerivedStore, partial string) (int, int, error) {
 	raw, err := store.Read(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {
 		return 0, 0, nil

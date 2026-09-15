@@ -17,7 +17,7 @@ import (
 func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 	api := &API{}
 
-	if open := api.Attended(); len(open.Tabs) != 0 || open.FrontID != "" {
+	if open := api.GetOpenTabs(); len(open.Tabs) != 0 || open.FrontID != "" {
 		t.Fatalf("a window that has said nothing has %+v open", open)
 	}
 
@@ -27,6 +27,8 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 			{Id: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{Id: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
 				Recording: &v1.RecordingProgress{TranscribedDurationMs: 1000, DurationMs: 4000}},
+			{Id: "three", Kind: "book", Path: "Adi.epub", Title: "The Adi Parva",
+				Book: &v1.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
 		},
 	}))
 	if err != nil {
@@ -39,9 +41,11 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 			{ID: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{ID: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
 				Recording: &domain.RecordingProgress{TranscribedDuration: 1000, Duration: 4000}},
+			{ID: "three", Kind: domain.TabBook, Path: "Adi.epub", Title: "The Adi Parva",
+				Book: &domain.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
 		},
 	}
-	if got := api.Attended(); !reflect.DeepEqual(got, want) {
+	if got := api.GetOpenTabs(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window has %+v open", got)
 	}
 }
@@ -61,7 +65,7 @@ func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	if len(heard) != 1 {
 		t.Fatalf("what the window has open was said %d times", len(heard))
 	}
-	front, held := heard[0].Fronted()
+	front, held := heard[0].GetFrontTab()
 	if !held || front.Path != "Entropy.md" {
 		t.Errorf("the tab in front is %+v", front)
 	}
@@ -86,7 +90,7 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			front, held := c.open.Fronted()
+			front, held := c.open.GetFrontTab()
 			if held != (c.want != "") {
 				t.Fatalf("a tab in front is %v", held)
 			}

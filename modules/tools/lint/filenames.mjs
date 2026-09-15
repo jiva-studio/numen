@@ -6,12 +6,10 @@
  * comment and a string answer for nothing, and neither does a name the file
  * took from its own title.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { basename, dirname, extname, join, relative } from 'node:path'
-import { blocks, code, root, sources } from './source.mjs'
+import { basename, dirname, extname } from 'node:path'
+import { blocks, code, goModules, goSources, sources } from './source.mjs'
 
-/** The one Go module whose files nobody wrote. */
-const generated = new Set(['modules/libs/protocol'])
+export { goModules as modules, goSources }
 
 /**
  * baseline are the files whose name is answered only by a word taken from that
@@ -19,47 +17,7 @@ const generated = new Set(['modules/libs/protocol'])
  * module called after the doing of a thing and holding a factory called the
  * same, which is the dialect this rule was written to find.
  */
-export const baseline = [
-  'modules/apps/desktop/editor/src/note-tab/drawing.ts',
-  'modules/apps/desktop/editor/src/window/showing.ts',
-]
-
-/** Every Go module of the repository, found by its go.mod. */
-export function modules() {
-  const found = []
-  for (const under of ['modules/libs', 'modules/apps']) {
-    for (const one of readdirSync(join(root, under), { withFileTypes: true })) {
-      if (!one.isDirectory()) continue
-      const at = `${under}/${one.name}`
-      if (existsSync(join(root, at, 'go.mod')) && !generated.has(at)) found.push({ at })
-    }
-  }
-  return found
-}
-
-/** What is nobody's writing: a dependency, a fixture, a generated schema. */
-const skipped = new Set(['node_modules', 'dist', 'gen', 'testdata', 'frontend'])
-
-function walk(at, found) {
-  for (const name of readdirSync(at)) {
-    if (skipped.has(name)) continue
-    const path = join(at, name)
-    if (statSync(path).isDirectory()) walk(path, found)
-    else if (name.endsWith('.go') && !name.endsWith('.pb.go')) found.push(path)
-  }
-  return found
-}
-
-/** Every hand-written Go file of the modules above, and the text in it. */
-export function goSources() {
-  const found = []
-  for (const one of modules()) {
-    for (const path of walk(join(root, one.at), [])) {
-      found.push({ at: relative(root, path), text: readFileSync(path, 'utf8') })
-    }
-  }
-  return found
-}
+export const baseline = []
 
 /** The words of one name, as a reader says them. */
 export const words = (name) =>
@@ -100,7 +58,7 @@ function nounStem(word) {
 }
 
 /** Whether a word of a file's name is carried by a word a declaration says. */
-export const carries = (said, declared) =>
+export const isCarriedBy = (said, declared) =>
   said === declared || verbStem(said) === nounStem(declared)
 
 /** The shapes a type takes its suffix from, each named after what it belongs to. */
@@ -115,7 +73,7 @@ const ROLES = new Set(['deps', 'props', 'options', 'state', 'ref', 'handle', 'ev
  * A name saying anything of its own is not this: `commandsOf` says commands
  * whatever the file is called.
  */
-export function echoes(stem, name) {
+export function isEchoOf(stem, name) {
   const own = new Set(words(stem))
   const said = words(name)
   return said.every(
@@ -221,9 +179,9 @@ export function given({ at, text }) {
 export function refused(stem, names, given = []) {
   const verbs = words(stem).filter(verbal)
   if (verbs.length === 0) return []
-  const chosen = names.filter((one) => !echoes(stem, one))
+  const chosen = names.filter((one) => !isEchoOf(stem, one))
   const said = new Set([...chosen, ...given].flatMap(words))
-  return verbs.filter((verb) => ![...said].some((one) => carries(verb, one)))
+  return verbs.filter((verb) => ![...said].some((one) => isCarriedBy(verb, one)))
 }
 
 /** Every file the rule reads: the Go of the modules, and the interfaces'. */

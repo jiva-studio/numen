@@ -25,11 +25,11 @@ type scheduling struct {
 	root   string
 }
 
-func steering(t *testing.T, notes map[string]string) *scheduling {
+func newScheduling(t *testing.T, notes map[string]string) *scheduling {
 	t.Helper()
 
-	f := quitting(t, nil, notes)
-	scanned(t, f)
+	f := openWindow(t, nil, notes)
+	waitForScan(t, f)
 
 	route, handler := numenv1connect.NewPresetsServiceHandler(f.opened.API)
 	mux := http.NewServeMux()
@@ -83,7 +83,7 @@ func settings() *v1.Settings {
 // TestASettingOutsideItsBoundsIsNotWritten. A retention target outside what
 // memory does is a number to correct, and the file is not opened to find out.
 func TestASettingOutsideItsBoundsIsNotWritten(t *testing.T) {
-	f := steering(t, pointed)
+	f := newScheduling(t, pointed)
 
 	asked := settings()
 	asked.Retention = 1.5
@@ -102,7 +102,7 @@ func TestASettingOutsideItsBoundsIsNotWritten(t *testing.T) {
 // their own preset outranks a client that read it, thought about it and arrived
 // late.
 func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
-	f := steering(t, pointed)
+	f := newScheduling(t, pointed)
 
 	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&v1.ReadPresetRequest{
 		Path: "Sanskrit.md",
@@ -125,7 +125,7 @@ func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a write over a preset the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "Sanskrit.md"); held != theirs {
@@ -135,9 +135,9 @@ func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 
 // TestADeckNamingNoPresetIsScheduledByTheDefaults. A vault holding no preset at
 // all schedules every deck, so a deck pointing at nothing is answered with
-// settings and not with a refusal.
+// settings and not with an error.
 func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
-	f := steering(t, pointed)
+	f := newScheduling(t, pointed)
 
 	answer, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&v1.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
@@ -145,8 +145,8 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("a deck naming no preset was refused %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("a deck naming no preset was refused %v", code)
 	}
 	if path := answer.Msg.GetPreset().GetPath(); path != "" {
 		t.Errorf("a deck naming no preset was answered from %q", path)
@@ -167,7 +167,7 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 // written with no role is not read, so a preset named in one schedules nothing
 // and the window says why the deck is on the defaults.
 func TestADeckWhosePresetLinkHasNoRoleIsToldSo(t *testing.T) {
-	f := steering(t, map[string]string{
+	f := newScheduling(t, map[string]string{
 		"Sanskrit.md": sanskrit,
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    type: preset\n---\n\n" +
 			"## Root ^k7m2xq9fzp\n",
@@ -195,7 +195,7 @@ const counting = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 // TestWhatABudgetCountsSurvivesAReadAndAWrite. A preset spending its budget per
 // showing is read, written back as it was read, and still says so.
 func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
-	f := steering(t, map[string]string{"Shows.md": counting})
+	f := newScheduling(t, map[string]string{"Shows.md": counting})
 
 	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&v1.ReadPresetRequest{
 		Path: "Shows.md",
@@ -222,7 +222,7 @@ func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 // every save, so a preset moved from one to the other holds what was settled.
 func TestChangingWhatABudgetCountsIsWritten(t *testing.T) {
 	cards := strings.Replace(counting, "counts: shows", "counts: cards", 1)
-	f := steering(t, map[string]string{"Shows.md": cards})
+	f := newScheduling(t, map[string]string{"Shows.md": cards})
 
 	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&v1.ReadPresetRequest{
 		Path: "Shows.md",
@@ -257,7 +257,7 @@ func TestChangingWhatABudgetCountsIsWritten(t *testing.T) {
 // save, so a save that named none would move a preset off what the person set
 // it to.
 func TestAClientNamingNoCountsIsRefused(t *testing.T) {
-	f := steering(t, map[string]string{"Shows.md": counting})
+	f := newScheduling(t, map[string]string{"Shows.md": counting})
 
 	asked := settings()
 	asked.Counts = v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED
@@ -276,7 +276,7 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 // preset stands to what is suggested, so a curve that came back without both
 // places is a control with nothing to point at.
 func TestACurveComesBackWithItsTwoPlaces(t *testing.T) {
-	f := steering(t, pointed)
+	f := newScheduling(t, pointed)
 
 	answer, err := f.client.ComputeCurve(t.Context(), connect.NewRequest(&v1.ComputeCurveRequest{
 		Path: "Sanskrit.md", Settings: settings(),
@@ -312,7 +312,7 @@ func TestACurveComesBackWithItsTwoPlaces(t *testing.T) {
 // TestThePresetsOfTheVaultAreListed. The list a deck's preset is chosen from is
 // every preset the vault holds, and the defaults are no note.
 func TestThePresetsOfTheVaultAreListed(t *testing.T) {
-	f := steering(t, map[string]string{
+	f := newScheduling(t, map[string]string{
 		"Sanskrit.md":     sanskrit,
 		"presets/Slow.md": "---\ntype: preset\ntitle: Slow going\n---\n\n# Slow going\n",
 		"decks/Roots.md":  roots,
@@ -338,7 +338,7 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 // it says it is a preset from the moment it exists. It names none of its
 // settings, so the read that follows stands at the defaults.
 func TestAPresetMadeIsAPresetToRead(t *testing.T) {
-	f := steering(t, pointed)
+	f := newScheduling(t, pointed)
 
 	made, err := f.client.CreatePreset(t.Context(), connect.NewRequest(&v1.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
@@ -346,8 +346,8 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := made.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("making a preset answered %v", refusal)
+	if code := made.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("making a preset answered %v", code)
 	}
 	if path := made.Msg.GetPath(); path != "presets/Prosody.md" {
 		t.Fatalf("the preset was filed at %q", path)
@@ -368,8 +368,8 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := read.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the preset just made was refused with %v", refusal)
+	if code := read.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the preset just made was refused with %v", code)
 	}
 	if problems := read.Msg.GetPreset().GetProblems(); len(problems) != 0 {
 		t.Errorf("the preset just made stands against %v", problems)
@@ -401,7 +401,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 // TestAPresetMadeIsOneTheVaultLists. The list a deck's preset is chosen from
 // holds a preset the moment it is made.
 func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
-	f := steering(t, pointed)
+	f := newScheduling(t, pointed)
 
 	if _, err := f.client.CreatePreset(t.Context(), connect.NewRequest(&v1.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
@@ -425,7 +425,7 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 // TestADeckIsPutOnAPresetAndTakenOffAgain. Choosing a preset writes the deck's
 // one entry, and choosing the defaults takes it out.
 func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
-	f := steering(t, pointed)
+	f := newScheduling(t, pointed)
 
 	put, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Sanskrit.md",
@@ -433,7 +433,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if put.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if put.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the write was refused: %+v", put.Msg)
 	}
 	if put.Msg.GetAt() == nil {
@@ -460,7 +460,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if off.Msg.GetRefusal() == v1.Refusal_REFUSAL_STALE {
+	if off.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
 		t.Fatal("the deck this caller had just written was answered as changed")
 	}
 	if held := onDisk(t, f.root, "decks/Terms.md"); strings.Contains(held, "preset") {
@@ -481,7 +481,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 // TestADeckIsNotScheduledByANoteThatIsNotAPreset. A note that is not a preset
 // schedules nothing, so the client is told and the deck is left alone.
 func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
-	f := steering(t, map[string]string{
+	f := newScheduling(t, map[string]string{
 		"Sanskrit.md":    sanskrit,
 		"Grammar.md":     "---\ntype: note\n---\n\n# Grammar\n",
 		"decks/Terms.md": terms,
@@ -493,8 +493,8 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_NOT_A_PRESET {
-		t.Errorf("the write was answered %v", answer.Msg.GetRefusal())
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_A_PRESET {
+		t.Errorf("the write was answered %v", answer.Msg.GetError())
 	}
 	if held := onDisk(t, f.root, "decks/Terms.md"); held != terms {
 		t.Errorf("the deck on disk is now %q", held)
@@ -504,7 +504,7 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 // TestSchedulingAPresetThatIsNotThere. A path the vault holds no note at is
 // refused, and nothing is written.
 func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
-	f := steering(t, pointed)
+	f := newScheduling(t, pointed)
 
 	answer, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Pali.md",
@@ -512,8 +512,8 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_MISSING {
-		t.Errorf("the write was answered %v", answer.Msg.GetRefusal())
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_MISSING {
+		t.Errorf("the write was answered %v", answer.Msg.GetError())
 	}
 	if held := onDisk(t, f.root, "decks/Terms.md"); held != terms {
 		t.Errorf("the deck on disk is now %q", held)
@@ -523,7 +523,7 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 // TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead. Somebody editing
 // their own deck outranks a client that read it and arrived late.
 func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
-	f := steering(t, pointed)
+	f := newScheduling(t, pointed)
 
 	read, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Roots.md", Preset: "Sanskrit.md",
@@ -543,7 +543,7 @@ func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a write over a deck the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "decks/Roots.md"); held != theirs {

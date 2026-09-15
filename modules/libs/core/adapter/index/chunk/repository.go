@@ -293,7 +293,7 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 	if err := rename(ctx, tx, vault, from, to); err != nil {
 		return err
 	}
-	first, past := under(from)
+	first, past := getRangeUnder(from)
 	// What a path keeps is counted off it in characters: that is what the
 	// statement cuts by, and a path is not Latin alone.
 	kept := utf8.RuneCountInString(from) + 1
@@ -316,14 +316,14 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 // The rows that are moving stand still: a folder moved inside itself holds
 // them, and they are the ones about to be filed.
 func displace(ctx context.Context, tx *writing.Transaction, vault int64, from, to string) error {
-	first, past := under(to)
+	first, past := getRangeUnder(to)
 	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, to, first, past)
 	if err != nil {
 		return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
 	}
 	defer rows.Close()
 
-	movingFirst, movingPast := under(from)
+	movingFirst, movingPast := getRangeUnder(from)
 	var displaced []int64
 	for rows.Next() {
 		var source int64
@@ -379,7 +379,7 @@ func rename(ctx context.Context, tx *writing.Transaction, vault int64, from, to 
 	shown := title
 	if !named {
 		shown = name
-	} else if filed, _ := domain.ReducedFilename(title); domain.FoldName(filed) != domain.FoldName(name) {
+	} else if filed, _ := domain.GetReducedFilename(title); domain.FoldName(filed) != domain.FoldName(name) {
 		return nil
 	}
 	if err := exec(ctx, tx, "rename_note", domain.FoldName(name), shown, vault, from); err != nil {
@@ -388,9 +388,9 @@ func rename(ctx context.Context, tx *writing.Transaction, vault int64, from, to 
 	return exec(ctx, tx, "rename_title", vault, from, shown)
 }
 
-// under is the range every path a folder holds falls in: from the folder's
-// slash to the byte after one.
-func under(folder string) (first, past string) {
+// getRangeUnder is the range every path a folder holds falls in: from the
+// folder's slash to the byte after one.
+func getRangeUnder(folder string) (first, past string) {
 	return folder + "/", folder + "0"
 }
 
@@ -446,10 +446,10 @@ func Replace(ctx context.Context, tx *writing.Transaction, source, vault int64, 
 			}
 		}
 	}
-	if err := remove(ctx, tx, held.unclaimed()); err != nil {
+	if err := remove(ctx, tx, held.getUnclaimedRows()); err != nil {
 		return err
 	}
-	return forget(ctx, tx, held.forgotten())
+	return forget(ctx, tx, held.getForgottenHashes())
 }
 
 // put is the row one chunk is held on, and moves or writes it.
@@ -550,9 +550,9 @@ func (h *rows) claim(key textID) (int64, bool) {
 	return row, true
 }
 
-// unclaimed is the rows of the source no chunk holds, in order, so that a cut
-// writes the same thing twice running.
-func (h *rows) unclaimed() []int64 {
+// getUnclaimedRows is the rows of the source no chunk holds, in order, so that
+// a cut writes the same thing twice running.
+func (h *rows) getUnclaimedRows() []int64 {
 	out := make([]int64, 0, len(h.left))
 	for row := range h.left {
 		out = append(out, row)
@@ -627,9 +627,9 @@ func nullable(s string) any {
 	return s
 }
 
-// forgotten is the text of the rows no chunk holds: what this source used to
-// hold and does not any more.
-func (h *rows) forgotten() []string {
+// getForgottenHashes is the text of the rows no chunk holds: what this source
+// used to hold and does not any more.
+func (h *rows) getForgottenHashes() []string {
 	out := make([]string, 0, len(h.left))
 	for row := range h.left {
 		if hash := h.hash[row]; hash != "" {

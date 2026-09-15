@@ -50,16 +50,16 @@ type answering struct{ steps chan port.Step }
 func (a answering) Steps() <-chan port.Step { return a.steps }
 func (a answering) Stop() error             { return nil }
 
-// panelling is a vault whose panel one agent answers.
-func panelling(taking port.Agent) *editor.API {
+// newAgentAPI is a vault whose panel one agent answers.
+func newAgentAPI(taking port.Agent) *editor.API {
 	api := &editor.API{}
-	api.Answers(taking)
+	api.SetAgent(taking)
 	return api
 }
 
-// panelled is one vault's panel and a client talking to it the way the window
+// newAgentClient is one vault's panel and a client talking to it the way the window
 // does.
-func panelled(t *testing.T, api *editor.API) numenv1connect.AgentServiceClient {
+func newAgentClient(t *testing.T, api *editor.API) numenv1connect.AgentServiceClient {
 	t.Helper()
 
 	route, handler := numenv1connect.NewAgentServiceHandler(api)
@@ -74,8 +74,8 @@ func panelled(t *testing.T, api *editor.API) numenv1connect.AgentServiceClient {
 	return numenv1connect.NewAgentServiceClient(server.Client(), server.URL)
 }
 
-// heard is every step a client is sent, in order.
-func heard(t *testing.T, client numenv1connect.AgentServiceClient, ask *v1.AskAgentRequest) []*v1.AskAgentResponse {
+// getSteps is every step a client is sent, in order.
+func getSteps(t *testing.T, client numenv1connect.AgentServiceClient, ask *v1.AskAgentRequest) []*v1.AskAgentResponse {
 	t.Helper()
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(ask))
@@ -99,9 +99,9 @@ func heard(t *testing.T, client numenv1connect.AgentServiceClient, ask *v1.AskAg
 // asked it in.
 func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{{Kind: port.StepStopped}}}
-	client := panelled(t, panelling(taking))
+	client := newAgentClient(t, newAgentAPI(taking))
 
-	heard(t, client, &v1.AskAgentRequest{
+	getSteps(t, client, &v1.AskAgentRequest{
 		Asked:        "rewrite this note",
 		Focus:        "notes/Fugue.md",
 		Conversation: "8f2c1e",
@@ -129,9 +129,9 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 		{Kind: port.StepSaying, Text: "Rewritten."},
 		{Kind: port.StepStopped, Detail: "out of turns"},
 	}}
-	client := panelled(t, panelling(taking))
+	client := newAgentClient(t, newAgentAPI(taking))
 
-	steps := heard(t, client, &v1.AskAgentRequest{Asked: "rewrite this note"})
+	steps := getSteps(t, client, &v1.AskAgentRequest{Asked: "rewrite this note"})
 	if len(steps) != 5 {
 		t.Fatalf("got %d steps, want 5: %+v", len(steps), steps)
 	}
@@ -165,9 +165,9 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 		},
 		{Kind: port.StepStopped},
 	}}
-	client := panelled(t, panelling(taking))
+	client := newAgentClient(t, newAgentAPI(taking))
 
-	steps := heard(t, client, &v1.AskAgentRequest{Asked: "show me where that is"})
+	steps := getSteps(t, client, &v1.AskAgentRequest{Asked: "show me where that is"})
 	doing := steps[0].GetToolCall()
 	if doing.GetPath() != "library/A Book.epub" ||
 		doing.GetSpan().GetFrom() != 1200 || doing.GetSpan().GetTo() != 1280 {
@@ -179,7 +179,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 // carried. A tab closes, and what was kept for it is let go of.
 func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 	taking := &asking{over: make(chan string, 1)}
-	client := panelled(t, panelling(taking))
+	client := newAgentClient(t, newAgentAPI(taking))
 
 	if _, err := client.FinishConversation(t.Context(),
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "8f2c1e"})); err != nil {
@@ -195,7 +195,7 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 // agent is the one that could not let go.
 func TestAConversationThatCouldNotBeFinishedSaysSo(t *testing.T) {
 	taking := &asking{over: make(chan string, 1), refuses: errors.New("the child would not go")}
-	client := panelled(t, panelling(taking))
+	client := newAgentClient(t, newAgentAPI(taking))
 
 	_, err := client.FinishConversation(t.Context(),
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "8f2c1e"}))
@@ -208,7 +208,7 @@ func TestAConversationThatCouldNotBeFinishedSaysSo(t *testing.T) {
 // TestAVaultWithNoAgentHasNoConversationToFinish. Nothing is kept for one, and
 // the panel is told there is nobody to ask.
 func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
-	client := panelled(t, &editor.API{})
+	client := newAgentClient(t, &editor.API{})
 
 	_, err := client.FinishConversation(t.Context(),
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "8f2c1e"}))
@@ -220,7 +220,7 @@ func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
 // TestAVaultWithNoAgentSaysSo. The rest of the window works as it did, and the
 // panel is told there is nobody to ask.
 func TestAVaultWithNoAgentSaysSo(t *testing.T) {
-	client := panelled(t, &editor.API{})
+	client := newAgentClient(t, &editor.API{})
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{Asked: "anyone?"}))
 	if err != nil {

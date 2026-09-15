@@ -11,7 +11,7 @@ import (
 // The port is open on this machine, so what stands in front of it is the whole
 // of who may reach somebody's notes.
 func TestNothingReachesTheVaultWithoutTheToken(t *testing.T) {
-	_, core := served(t)
+	_, core := newCore(t)
 	endpoint, err := mcp.ServeHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -36,7 +36,7 @@ func TestNothingReachesTheVaultWithoutTheToken(t *testing.T) {
 // An agent that presents the token is answered, on the loopback port and
 // nowhere else. A path outside the endpoint's own is not served.
 func TestAnAgentPresentingTheTokenIsAnswered(t *testing.T) {
-	_, core := served(t)
+	_, core := newCore(t)
 	endpoint, err := mcp.ServeHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -61,7 +61,7 @@ func TestAnAgentPresentingTheTokenIsAnswered(t *testing.T) {
 // A page open in a browser can reach a port on this machine, and is the one
 // caller that arrives without being invited.
 func TestAPageInABrowserIsTurnedAway(t *testing.T) {
-	_, core := served(t)
+	_, core := newCore(t)
 	endpoint, err := mcp.ServeHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -90,7 +90,7 @@ func TestLocalKnowsWhichAddressesLeaveTheMachine(t *testing.T) {
 }
 
 func TestAServerNeedsSomethingToAskFor(t *testing.T) {
-	_, core := served(t)
+	_, core := newCore(t)
 	if _, err := mcp.ServeHTTP(t.Context(), "127.0.0.1:0", "", core, nil); err == nil {
 		t.Fatal("a server with no token is open to everything on the machine")
 	}

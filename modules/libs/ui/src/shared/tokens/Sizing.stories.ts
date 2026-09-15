@@ -36,11 +36,7 @@ const CHROME = [
 const READING = ['--numen-reading-size', '--numen-prose-size'] as const
 
 /** What follows neither: one line, whatever it separates. */
-const NEITHER = [
-  '--numen-stroke',
-  '--numen-ring-width',
-  '--numen-edge-width',
-] as const
+const NEITHER = ['--numen-stroke', '--numen-ring-width', '--numen-edge-width'] as const
 
 type Token = (typeof CHROME)[number] | (typeof READING)[number] | (typeof NEITHER)[number]
 
@@ -132,7 +128,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /** One token's length, in the pixels the page draws it at. */
-const drawn = (token: Token): number => {
+const measureToken = (token: Token): number => {
   const probe = document.createElement('div')
   probe.style.position = 'fixed'
   probe.style.visibility = 'hidden'
@@ -147,17 +143,17 @@ const drawn = (token: Token): number => {
 const root = () => parseFloat(getComputedStyle(document.documentElement).fontSize)
 
 /** Both multipliers as the page is wearing them. An empty string is neither. */
-const wearing = () => ({
-  drawnAt: document.documentElement.style.getPropertyValue('--numen-interface-scale'),
-  setAt: document.documentElement.style.getPropertyValue('--numen-text-scale'),
+const getScales = () => ({
+  interfaceScale: document.documentElement.style.getPropertyValue('--numen-interface-scale'),
+  textScale: document.documentElement.style.getPropertyValue('--numen-text-scale'),
 })
 
 /** Put the two on the page, the way the served page carries them. */
-const wear = (drawnAt: string, setAt: string) => {
+const wear = (interfaceScale: string, textScale: string) => {
   const style = document.documentElement.style
   for (const [name, size] of [
-    ['--numen-interface-scale', drawnAt],
-    ['--numen-text-scale', setAt],
+    ['--numen-interface-scale', interfaceScale],
+    ['--numen-text-scale', textScale],
   ] as const) {
     if (size) style.setProperty(name, size)
     else style.removeProperty(name)
@@ -171,7 +167,7 @@ const wear = (drawnAt: string, setAt: string) => {
  */
 const each = async (tokens: readonly Token[], times: number) => {
   for (const token of tokens) {
-    await expect(drawn(token), token).toBeCloseTo(AS_DESIGNED[token] * times, 1)
+    await expect(measureToken(token), token).toBeCloseTo(AS_DESIGNED[token] * times, 1)
   }
 }
 
@@ -183,15 +179,15 @@ const each = async (tokens: readonly Token[], times: number) => {
  */
 export const Playground: Story = {
   play: async () => {
-    const held = wearing()
+    const held = getScales()
     try {
       // Nothing asked for, and 1: the pixel every length resolves to today.
       const asDesigned: readonly (readonly [string, string])[] = [
         ['', ''],
         ['1', '1'],
       ]
-      for (const [drawnAt, setAt] of asDesigned) {
-        wear(drawnAt, setAt)
+      for (const [interfaceScale, textScale] of asDesigned) {
+        wear(interfaceScale, textScale)
         await expect(root()).toBe(ROOT_AS_DESIGNED)
         await each(CHROME, 1)
         await each(READING, 1)
@@ -223,14 +219,14 @@ export const Playground: Story = {
         [2, 0.8],
         [1.5, 1.5],
       ]
-      for (const [drawnAt, setAt] of ends) {
-        wear(String(drawnAt), String(setAt))
+      for (const [interfaceScale, textScale] of ends) {
+        wear(String(interfaceScale), String(textScale))
         await each(NEITHER, 1)
-        await each(CHROME, drawnAt)
-        await each(READING, drawnAt * setAt)
+        await each(CHROME, interfaceScale)
+        await each(READING, interfaceScale * textScale)
       }
     } finally {
-      wear(held.drawnAt, held.setAt)
+      wear(held.interfaceScale, held.textScale)
     }
   },
 }

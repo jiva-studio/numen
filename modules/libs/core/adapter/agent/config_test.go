@@ -46,7 +46,7 @@ func TestWhatOpensThePort(t *testing.T) {
 			if err := json.Unmarshal([]byte(said.file), &held); err != nil {
 				t.Fatal(err)
 			}
-			if got := held.Serving(); got != said.serving {
+			if got := held.IsServingTools(); got != said.serving {
 				t.Errorf("the tools are served: %v", got)
 			}
 		})

@@ -13,7 +13,7 @@ import (
 // folder is a themes folder of a person's, made the way the first run makes it.
 func folder(t *testing.T) theme.Catalogue {
 	t.Helper()
-	catalogue, err := theme.At(filepath.Join(t.TempDir(), "numen", "themes"))
+	catalogue, err := theme.OpenAt(filepath.Join(t.TempDir(), "numen", "themes"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +27,7 @@ func put(t *testing.T, catalogue theme.Catalogue, name, body string) {
 	}
 }
 
-func named(themes []theme.Theme) []string {
+func getNames(themes []theme.Theme) []string {
 	names := make([]string, 0, len(themes))
 	for _, one := range themes {
 		names = append(names, one.Name)
@@ -78,7 +78,7 @@ func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
 		"preset:cobalt2",
 	} {
 		if !holds(themes, name) {
-			t.Errorf("no %s among %v", name, named(themes))
+			t.Errorf("no %s among %v", name, getNames(themes))
 		}
 	}
 }
@@ -119,7 +119,7 @@ func TestAPersonsThemeStandsBesideThePresetItsNameIsShared(t *testing.T) {
 
 	themes := catalogue.Themes()
 	if !holds(themes, "preset:dracula") || !holds(themes, "mine:dracula") {
-		t.Fatalf("one hides the other: %v", named(themes))
+		t.Fatalf("one hides the other: %v", getNames(themes))
 	}
 	text, err := catalogue.Text("mine:dracula")
 	if err != nil {
@@ -184,7 +184,7 @@ func TestAFileTooLargeToSpliceIntoThePageIsNoTheme(t *testing.T) {
 		t.Error("a file past the bound is offered")
 	}
 	if !holds(themes, "mine:small") {
-		t.Errorf("a file at the bound is not offered: %v", named(themes))
+		t.Errorf("a file at the bound is not offered: %v", getNames(themes))
 	}
 	if _, err := catalogue.Text("mine:vast"); err == nil {
 		t.Error("a file past the bound was read")
@@ -193,7 +193,7 @@ func TestAFileTooLargeToSpliceIntoThePageIsNoTheme(t *testing.T) {
 
 func TestANameMatchingNothingWearsThisProductsPaletteAndSaysWhichNameItWas(t *testing.T) {
 	catalogue := folder(t)
-	applied, missing := catalogue.Applied("mine:the-one-i-deleted")
+	applied, missing := catalogue.GetApplied("mine:the-one-i-deleted")
 	if applied != theme.Default {
 		t.Errorf("wears %q", applied)
 	}
@@ -202,10 +202,10 @@ func TestANameMatchingNothingWearsThisProductsPaletteAndSaysWhichNameItWas(t *te
 	}
 
 	put(t, catalogue, "kept.css", ":root {}")
-	if applied, missing := catalogue.Applied("mine:kept"); applied != "mine:kept" || missing != "" {
+	if applied, missing := catalogue.GetApplied("mine:kept"); applied != "mine:kept" || missing != "" {
 		t.Errorf("wears %q, missing %q", applied, missing)
 	}
-	if applied, missing := catalogue.Applied(""); applied != theme.Default || missing != "" {
+	if applied, missing := catalogue.GetApplied(""); applied != theme.Default || missing != "" {
 		t.Errorf("an installation nobody dressed wears %q, missing %q", applied, missing)
 	}
 }
@@ -223,14 +223,14 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 
 	themes := catalogue.Themes()
 	if !holds(themes, theme.Default) {
-		t.Errorf("nothing to wear: %v", named(themes))
+		t.Errorf("nothing to wear: %v", getNames(themes))
 	}
 	for _, one := range themes {
 		if one.Shelf == theme.Mine {
 			t.Errorf("a folder that cannot be read offered %q", one.Name)
 		}
 	}
-	if applied, _ := catalogue.Applied("mine:dracula"); applied != theme.Default {
+	if applied, _ := catalogue.GetApplied("mine:dracula"); applied != theme.Default {
 		t.Errorf("wears %q", applied)
 	}
 }
@@ -240,7 +240,7 @@ func TestACatalogueWithNoFolderOffersWhatShips(t *testing.T) {
 	var catalogue theme.Catalogue
 	themes := catalogue.Themes()
 	if !holds(themes, theme.Default) {
-		t.Errorf("nothing to wear: %v", named(themes))
+		t.Errorf("nothing to wear: %v", getNames(themes))
 	}
 	if _, err := catalogue.Text("mine:dracula"); err == nil {
 		t.Error("a theme was read out of a folder that is not there")

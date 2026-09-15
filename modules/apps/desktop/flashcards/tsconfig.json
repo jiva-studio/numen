@@ -10,7 +10,9 @@
     "noEmit": true,
     "skipLibCheck": true,
     "jsx": "preserve",
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]
 }

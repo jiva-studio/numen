@@ -37,15 +37,17 @@ func OpenStencil(raw []byte) (*StencilFile, error) {
 // Bytes is the stencil as it now stands.
 func (f *StencilFile) Bytes() []byte { return f.doc.Bytes() }
 
-// Stamped writes the identifier a file carrying none is to carry, and reports
-// whether it wrote one.
-func (f *StencilFile) Stamped(identifier string) (bool, error) { return stamped(f.doc, identifier) }
+// WriteIdentifier writes the identifier a file carrying none is to carry, and
+// reports whether it wrote one.
+func (f *StencilFile) WriteIdentifier(identifier string) (bool, error) {
+	return writeIdentifier(f.doc, identifier)
+}
 
 // Stencil is what the file now says: the fields of the frontmatter in front of
 // the writer, and the faces of the body in front of it.
 func (f *StencilFile) Stencil(n domain.Note) Stencil {
 	n.Body = f.doc.Body()
-	n.Frontmatter = map[string]any{fieldsKey: declared(f.doc)}
+	n.Frontmatter = map[string]any{fieldsKey: readFieldNames(f.doc)}
 	return ReadStencil(n)
 }
 
@@ -105,9 +107,9 @@ func (f *StencilFile) places(from, to string) error {
 	return nil
 }
 
-// declared is the list of names under `fields` in the shape reading a stencil
-// takes it.
-func declared(doc *markdown.Document) []any {
+// readFieldNames is the list of names under `fields` in the shape reading a
+// stencil takes it.
+func readFieldNames(doc *markdown.Document) []any {
 	names, _ := doc.List(fieldsKey)
 	out := make([]any, 0, len(names))
 	for _, name := range names {
@@ -121,22 +123,23 @@ func declared(doc *markdown.Document) []any {
 func (f *StencilFile) AddFace(face FaceTemplate) error {
 	body := []byte(f.doc.Body())
 	at := len(body)
-	return f.doc.SpliceBody(at, at, insert(body, at, laid(face)))
+	return f.doc.SpliceBody(at, at, insert(body, at, formatFace(face)))
 }
 
-// laid is the markdown one face is written as: its heading, the lead beneath
-// it, and each side the face has under a heading of its name. A face missing a
-// side is written missing it, and it is the face that lays out nothing.
-func laid(face FaceTemplate) string {
+// formatFace is the markdown one face is written as: its heading, the lead
+// beneath it, and each side the face has under a heading of its name. A face
+// missing a side is written missing it, and it is the face that lays out
+// nothing.
+func formatFace(face FaceTemplate) string {
 	blocks := []string{headingLine(2, face.Name)}
-	if lead := trimBlankLines(markdown.Normalised(face.Preamble)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalise(face.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	for _, side := range []struct{ heading, text string }{
 		{frontHeading, face.Front},
 		{backHeading, face.Back},
 	} {
-		text := trimBlankLines(markdown.Normalised(side.text))
+		text := trimBlankLines(markdown.Normalise(side.text))
 		if text == "" {
 			continue
 		}

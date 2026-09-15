@@ -1576,7 +1576,7 @@ type DeckNeighbour struct {
 	// here is only the first of them.
 	Ambiguous bool `protobuf:"varint,7,opt,name=ambiguous,proto3" json:"ambiguous,omitempty"`
 	// Set when the note is there and its text could not be had, and says why.
-	Refusal       *Refusal `protobuf:"varint,8,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error         *ErrorCode `protobuf:"varint,8,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1660,11 +1660,11 @@ func (x *DeckNeighbour) GetAmbiguous() bool {
 	return false
 }
 
-func (x *DeckNeighbour) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *DeckNeighbour) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 type WatchReloadsRequest struct {
@@ -1807,7 +1807,7 @@ type GetVaultDeckPresetResponse struct {
 	// Absent when the preset was refused.
 	Preset *Preset `protobuf:"bytes,1,opt,name=preset,proto3,oneof" json:"preset,omitempty"`
 	// Set when the preset was not read, and why.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error         *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1849,11 +1849,11 @@ func (x *GetVaultDeckPresetResponse) GetPreset() *Preset {
 	return nil
 }
 
-func (x *GetVaultDeckPresetResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *GetVaultDeckPresetResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 var File_numen_v1_flashcards_proto protoreflect.FileDescriptor
@@ -1969,7 +1969,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\"e\n" +
 	"\x1cGetDeckNeighbourhoodResponse\x12-\n" +
 	"\x05notes\x18\x01 \x03(\v2\x17.numen.v1.DeckNeighbourR\x05notes\x12\x16\n" +
-	"\x06unread\x18\x02 \x01(\x05R\x06unread\"\xf1\x01\n" +
+	"\x06unread\x18\x02 \x01(\x05R\x06unread\"\xed\x01\n" +
 	"\rDeckNeighbour\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
@@ -1977,22 +1977,20 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x04body\x18\x04 \x01(\tR\x04body\x12\x14\n" +
 	"\x05label\x18\x05 \x01(\tR\x05label\x12\x16\n" +
 	"\x06points\x18\x06 \x01(\bR\x06points\x12\x1c\n" +
-	"\tambiguous\x18\a \x01(\bR\tambiguous\x120\n" +
-	"\arefusal\x18\b \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal\"\x15\n" +
+	"\tambiguous\x18\a \x01(\bR\tambiguous\x12.\n" +
+	"\x05error\x18\b \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error\"\x15\n" +
 	"\x13WatchReloadsRequest\".\n" +
 	"\x14WatchReloadsResponse\x12\x16\n" +
 	"\x06reload\x18\x01 \x01(\bR\x06reload\"E\n" +
 	"\x19GetVaultDeckPresetRequest\x12\x14\n" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
-	"\x04deck\x18\x02 \x01(\tR\x04deck\"\x94\x01\n" +
+	"\x04deck\x18\x02 \x01(\tR\x04deck\"\x90\x01\n" +
 	"\x1aGetVaultDeckPresetResponse\x12-\n" +
-	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01B\t\n" +
-	"\a_presetB\n" +
-	"\n" +
-	"\b_refusal*e\n" +
+	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01B\t\n" +
+	"\a_presetB\b\n" +
+	"\x06_error*e\n" +
 	"\x06Rating\x12\x16\n" +
 	"\x12RATING_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fRATING_AGAIN\x10\x01\x12\x0f\n" +
@@ -2050,7 +2048,7 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*GetVaultDeckPresetRequest)(nil),    // 22: numen.v1.GetVaultDeckPresetRequest
 	(*GetVaultDeckPresetResponse)(nil),   // 23: numen.v1.GetVaultDeckPresetResponse
 	(StopReason)(0),                      // 24: numen.v1.StopReason
-	(Refusal)(0),                         // 25: numen.v1.Refusal
+	(ErrorCode)(0),                       // 25: numen.v1.ErrorCode
 	(*Preset)(nil),                       // 26: numen.v1.Preset
 }
 var file_numen_v1_flashcards_proto_depIdxs = []int32{
@@ -2065,9 +2063,9 @@ var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	16, // 8: numen.v1.ListReviewDaysResponse.days:type_name -> numen.v1.ReviewDay
 	16, // 9: numen.v1.ListReviewDaysResponse.due:type_name -> numen.v1.ReviewDay
 	19, // 10: numen.v1.GetDeckNeighbourhoodResponse.notes:type_name -> numen.v1.DeckNeighbour
-	25, // 11: numen.v1.DeckNeighbour.refusal:type_name -> numen.v1.Refusal
+	25, // 11: numen.v1.DeckNeighbour.error:type_name -> numen.v1.ErrorCode
 	26, // 12: numen.v1.GetVaultDeckPresetResponse.preset:type_name -> numen.v1.Preset
-	25, // 13: numen.v1.GetVaultDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
+	25, // 13: numen.v1.GetVaultDeckPresetResponse.error:type_name -> numen.v1.ErrorCode
 	6,  // 14: numen.v1.FlashcardsService.WatchCardsDue:input_type -> numen.v1.WatchCardsDueRequest
 	8,  // 15: numen.v1.FlashcardsService.StartSession:input_type -> numen.v1.StartSessionRequest
 	10, // 16: numen.v1.FlashcardsService.AnswerCard:input_type -> numen.v1.AnswerCardRequest

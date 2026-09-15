@@ -39,11 +39,11 @@ func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
 			return 0, 0, false
 		}
 	case node.Style&yaml.SingleQuotedStyle != 0:
-		if end, ok = quotedEnd(d.front, start, '\''); !ok {
+		if end, ok = findQuotedEnd(d.front, start, '\''); !ok {
 			return 0, 0, false
 		}
 	case node.Style&yaml.DoubleQuotedStyle != 0:
-		if end, ok = quotedEnd(d.front, start, '"'); !ok {
+		if end, ok = findQuotedEnd(d.front, start, '"'); !ok {
 			return 0, 0, false
 		}
 	default:
@@ -59,10 +59,10 @@ func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
 	return start, end, true
 }
 
-// quotedEnd is where a quoted scalar ends, counting from the quote it opens
+// findQuotedEnd is where a quoted scalar ends, counting from the quote it opens
 // with. Inside a single-quoted one a doubled quote is a quote; inside a
 // double-quoted one a backslash escapes what follows.
-func quotedEnd(front []byte, start int, quote byte) (int, bool) {
+func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 	if front[start] != quote {
 		return 0, false
 	}

@@ -65,10 +65,10 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 		case !isText:
 			problems = append(problems, "type is not text")
 		case strings.TrimSpace(name) == "":
-		case domain.KnownNoteType(domain.NoteType(name)):
+		case domain.IsKnownNoteType(domain.NoteType(name)):
 			n.Type = domain.NoteType(name)
 		default:
-			problems = append(problems, "type "+name+" is not one of "+knownTypes())
+			problems = append(problems, "type "+name+" is not one of "+describeNoteTypes())
 		}
 	}
 
@@ -126,7 +126,7 @@ func headings(body []byte) []domain.Heading {
 			end = at + next
 		}
 		text := strings.TrimRight(string(body[at:end]), "\r")
-		if !f.Crosses(text) && !f.Inside() {
+		if !f.Crosses(text) && !f.IsInside() {
 			if m := headingRe.FindStringSubmatch(text); m != nil {
 				out = append(out, domain.Heading{Level: len(m[1]), Text: m[2], Line: line, Offset: at})
 			}
@@ -174,13 +174,13 @@ func (f *Fence) Crosses(line string) bool {
 	return true
 }
 
-// Inside reports whether the walk stands within a fence.
-func (f *Fence) Inside() bool { return f.mark != 0 }
+// IsInside reports whether the walk stands within a fence.
+func (f *Fence) IsInside() bool { return f.mark != 0 }
 
-// knownTypes names every type a note may carry, as a person reads them. It is
-// built from the types themselves, so a type added to the domain is named here
-// without anything being edited.
-func knownTypes() string {
+// describeNoteTypes names every type a note may carry, as a person reads them.
+// It is built from the types themselves, so a type added to the domain is named
+// here without anything being edited.
+func describeNoteTypes() string {
 	names := make([]string, 0, len(domain.NoteTypes()))
 	for _, one := range domain.NoteTypes() {
 		names = append(names, string(one))

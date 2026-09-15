@@ -15,17 +15,17 @@ import {
   type PlexNeighbourhood,
   type PlexRelatedSeat,
 } from '@numen/ui'
-import { refusalWords, troubleWords } from '@numen/wire'
+import { formatErrorCodeMessage, formatErrorMessage } from '@numen/wire'
 import NoteSheet from '../note/NoteSheet.vue'
 import { reach, type Core } from '../core'
-import { follow } from './following'
+import { follow } from './follow'
 import { asPlex } from './picture'
 import { CREATABLE, isCreatable, ROLES, SEEDED } from './seats'
 
 const core = ref<Core | null>(null)
 const picture = ref<PlexNeighbourhood | null>(null)
 const at = ref(SEEDED)
-const trouble = ref('')
+const errorMessage = ref('')
 
 /** A finger has no hover, so a node is reached out of by resting on it. */
 const reaching = byHolding()
@@ -38,34 +38,39 @@ const writing = ref<string | null>(null)
 
 async function draw(path: string) {
   if (!core.value) return
-  const said = await core.value.notes.getNeighbourhood({ path })
+  const answer = await core.value.notes.getNeighbourhood({ path })
   at.value = path
-  picture.value = asPlex(said)
+  picture.value = asPlex(answer)
 }
 
-async function made(from: string, seat: PlexRelatedSeat) {
+async function createRelatedNote(from: string, seat: PlexRelatedSeat) {
   if (!core.value) return
   const title = window.prompt(`A new ${seat}`)
   if (!title?.trim()) return
   const created = await core.value.notes.createNote({ title: title.trim(), path: '' })
   if (!created.path) {
-    trouble.value = refusalWords(created.refusal)
+    errorMessage.value = formatErrorCodeMessage(created.error)
     return
   }
-  await joined(from, created.path, seat)
+  await linkNotes(from, created.path, seat)
 }
 
-async function joined(from: string, to: string, seat: PlexRelatedSeat) {
+async function linkNotes(from: string, to: string, seat: PlexRelatedSeat) {
   if (!core.value) return
   // The picture is only ever asked for a seat it offers, and it offers no
   // sibling: no link writes one.
   if (!isCreatable(seat)) return
-  const said = await core.value.notes.writeLink({ path: from, link: { to, role: ROLES[seat] } })
-  if (said.refusal) {
-    trouble.value = refusalWords(said.refusal)
+  const answer = await core.value.notes.writeLink({ path: from, link: { to, role: ROLES[seat] } })
+  if (answer.error) {
+    errorMessage.value = formatErrorCodeMessage(answer.error)
     return
   }
   await draw(at.value)
+}
+
+function onClose() {
+  writing.value = null
+  void draw(at.value)
 }
 
 onMounted(async () => {
@@ -75,7 +80,7 @@ onMounted(async () => {
     // The vault is still being read; the picture is drawn again as it lands.
     follow(core.value, () => void draw(at.value))
   } catch (why) {
-    trouble.value = troubleWords(why)
+    errorMessage.value = formatErrorMessage(why)
   }
 })
 </script>
@@ -83,7 +88,7 @@ onMounted(async () => {
 <template>
   <IonPage>
     <IonContent :fullscreen="true" :scroll-y="false">
-      <IonProgressBar v-if="!picture && !trouble" type="indeterminate" />
+      <IonProgressBar v-if="!picture && !errorMessage" type="indeterminate" />
       <Plex
         v-if="picture"
         class="plex"
@@ -94,16 +99,16 @@ onMounted(async () => {
         :showing="showing"
         @activate="(node: string) => void draw(node)"
         @show="(node: string) => (writing = node)"
-        @create="(from: string, seat: PlexRelatedSeat) => void made(from, seat)"
-        @link="(from: string, to: string, seat: PlexRelatedSeat) => void joined(from, to, seat)"
+        @create="(from: string, seat: PlexRelatedSeat) => void createRelatedNote(from, seat)"
+        @link="(from: string, to: string, seat: PlexRelatedSeat) => void linkNotes(from, to, seat)"
       />
       <IonToast
-        :is-open="!!trouble"
-        :message="trouble"
+        :is-open="!!errorMessage"
+        :message="errorMessage"
         color="danger"
         :duration="6000"
-        data-testid="trouble"
-        @did-dismiss="trouble = ''"
+        data-testid="error"
+        @did-dismiss="errorMessage = ''"
       />
     </IonContent>
   </IonPage>
@@ -114,8 +119,8 @@ onMounted(async () => {
       v-if="core && writing"
       :core="core"
       :path="writing"
-      @close="writing = null; void draw(at)"
-      @trouble="(said: string) => (trouble = said)"
+      @close="onClose"
+      @error="(message: string) => (errorMessage = message)"
     />
   </Teleport>
 </template>

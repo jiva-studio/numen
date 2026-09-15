@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -46,16 +46,16 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*API, *noting
 		},
 	}
 	api.show(vault)
-	return api, index, api.Serving(http.NotFoundHandler())
+	return api, index, api.NewHandler(http.NotFoundHandler())
 }
 
-// heardBy is what the index says a recording a model listened to stands on.
-func heardBy() indexed {
+// newTranscriptIndex is what the index says a recording a model listened to stands on.
+func newTranscriptIndex() indexed {
 	return indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}}
 }
 
-// dropping asks for what a recording was heard as to be taken away.
-func dropping(api *API) error {
+// deleteTranscript asks for what a recording was heard as to be taken away.
+func deleteTranscript(api *API) error {
 	_, err := api.DeleteArtifact(context.Background(), connect.NewRequest(&v1.DeleteArtifactRequest{
 		Path: talk, Kind: v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 	}))
@@ -65,12 +65,12 @@ func dropping(api *API) error {
 // Everything one run of listening produced goes, and the recording is left
 // owing its text.
 func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
-	held := whole(spoke())
+	held := whole(newCues())
 	held[derived.Corrections(asr, hashed)] = held[derived.Artifact(asr, hashed)]
-	held[derived.Beside(asr, hashed)] = []byte(`{"model":"parakeet"}`)
-	api, index, _ := dropper(t, held, heardBy())
+	held[derived.GetProducerFile(asr, hashed)] = []byte(`{"model":"parakeet"}`)
+	api, index, _ := dropper(t, held, newTranscriptIndex())
 
-	if err := dropping(api); err != nil {
+	if err := deleteTranscript(api); err != nil {
 		t.Fatalf("dropped the transcript and was refused: %v", err)
 	}
 	if len(held) != 0 {
@@ -90,7 +90,7 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 		t.Errorf("the source was left with %d chunks of the words", len(wrote.Chunks))
 	}
 
-	if told := heard(t, api); len(told.GetCues()) != 0 {
+	if told := readTranscript(t, api); len(told.GetCues()) != 0 {
 		t.Errorf("the recording still says %+v", told.GetCues())
 	}
 }
@@ -98,10 +98,10 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 // A run appends to the transcript, and what is being appended to is not taken
 // out from under it.
 func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
-	held := heldBy{stored: whole(spoke()), name: derived.Partial(asr, hashed)}
-	api, index, _ := dropper(t, held, heardBy())
+	held := heldBy{stored: whole(newCues()), name: derived.Partial(asr, hashed)}
+	api, index, _ := dropper(t, held, newTranscriptIndex())
 
-	if err := dropping(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
+	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("dropped a transcript being written and was refused %v", err)
 	}
 	if _, kept := held.stored[derived.Artifact(asr, hashed)]; !kept {
@@ -116,7 +116,7 @@ func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T)
 func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	api, index, _ := dropper(t, stored{}, indexed{})
 
-	if err := dropping(api); connect.CodeOf(err) != connect.CodeNotFound {
+	if err := deleteTranscript(api); connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("dropped the transcript of a recording nothing heard and was refused %v", err)
 	}
 	if len(index.written) != 0 {

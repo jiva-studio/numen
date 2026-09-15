@@ -53,7 +53,7 @@ func (r *indexRows) Forget(_ context.Context, vaultID domain.VaultID) error {
 // knows them through.
 func twoVaults(t *testing.T) (domain.Vault, domain.Vault, *appstate.VaultRegistry) {
 	t.Helper()
-	add, registry := adding(t)
+	add, registry := newAdd(t)
 	first, err := add.Execute(folder(t, "personal"), "")
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +101,7 @@ func TestForgetLeavesTheFolderWhereItIs(t *testing.T) {
 
 func TestForgetRefusesTheOnlyVault(t *testing.T) {
 	t.Parallel()
-	add, registry := adding(t)
+	add, registry := newAdd(t)
 	only, err := add.Execute(folder(t, "personal"), "")
 	if err != nil {
 		t.Fatal(err)

@@ -53,12 +53,12 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 		if core.Sources.Queries == nil {
 			return nil, out{}, fmt.Errorf("this vault's sources are not open")
 		}
-		shown := core.shown()
+		shown := core.getShownVault()
 		known, err := core.Sources.Queries.Fingerprints(ctx, shown.Vault.ID, domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
-		read, err := core.Sources.Queries.Recognised(ctx, shown.Vault.ID, domain.KindBook)
+		read, err := core.Sources.Queries.GetRecognisedSources(ctx, shown.Vault.ID, domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -73,7 +73,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 		reading := ""
 		if core.Sources.Recognise != nil {
 			switch {
-			case core.Sources.Recognise.Running():
+			case core.Sources.Recognise.IsRunning():
 				reading = "one document is being read now"
 			case !core.Sources.Recognise.Ready():
 				reading = "what is needed to read scans is not here yet, and is fetched when one is asked for"
@@ -85,7 +85,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_read",
 		Title: "Read a range of a document",
-		Description: "Read a stretch of one document's own text, in the offsets a search's " +
+		Description: "Read a span of one document's own text, in the offsets a search's " +
 			"passage carries. A passage is a window cut to a size and it ends where it " +
 			"was cut, so what answers the question often stands just past it: ask for " +
 			"the run beginning at the passage's start plus its length to read on, or " +
@@ -118,7 +118,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 			Sources:   core.Sources.Queries,
 			Derived:   core.Sources.Derived,
 			Documents: core.Sources.Documents,
-		}.Execute(ctx, core.shown().Vault, in.Path, in.Start, in.Length)
+		}.Execute(ctx, core.getShownVault().Vault, in.Path, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -166,7 +166,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		// among everything else the window shows being done.
 		doing := "started; it runs in the background, the pages it has read are searchable " +
 			"as it goes, and the window shows how far it has got"
-		switch core.Sources.Recognise.Start(core.shown().Vault, in.Path) {
+		switch core.Sources.Recognise.Start(core.getShownVault().Vault, in.Path) {
 		case port.Queued:
 			doing = "queued; another document is being read and this one is in line behind " +
 				"it — nothing more is needed, it begins when that reading is over"
@@ -211,7 +211,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		// is among everything else the window shows being done.
 		doing := "started; it runs in the background, and what has been transcribed is " +
 			"searchable as it goes"
-		switch core.Sources.Transcribe.Start(core.shown().Vault, in.Path) {
+		switch core.Sources.Transcribe.Start(core.getShownVault().Vault, in.Path) {
 		case port.Queued:
 			doing = "queued; another recording is being transcribed and this one is in line " +
 				"behind it — nothing more is needed, it begins when that one is over"
@@ -233,8 +233,8 @@ type Recogniser interface {
 	// Ready says whether reading could begin now without waiting for anything
 	// to arrive.
 	Ready() bool
-	// Running says whether a document is being read.
-	Running() bool
+	// IsRunning says whether a document is being read.
+	IsRunning() bool
 	// Start reads one document behind whoever asked, and says whether it began
 	// now or waits behind the reading already going. A document is never
 	// refused, and it runs under the application rather than under the call

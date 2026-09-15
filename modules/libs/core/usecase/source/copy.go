@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // Downloading the media a url points at, so a person plays it from this disk.
@@ -40,7 +40,7 @@ func (r CopyResult) TooLarge() bool { return r.Limit > 0 && r.Bytes > r.Limit }
 // own.
 func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyResult, error) {
 	res := CopyResult{Path: path, Limit: u.CopyMaxSize}
-	at, _, store, err := u.pointed(ctx, v, path)
+	at, _, store, err := u.readURLFile(ctx, v, path)
 	if err != nil {
 		return res, err
 	}
@@ -84,7 +84,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 		_ = write.CloseWithError(err)
 		going <- err
 	}()
-	arriving := capped(read, u.CopyMaxSize)
+	arriving := limitReader(read, u.CopyMaxSize)
 	if u.Progress != nil {
 		u.Progress(0, meta.Bytes)
 		arriving = &passing{from: arriving, total: meta.Bytes, report: u.Progress}

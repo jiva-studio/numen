@@ -22,8 +22,8 @@ func (c changing) rename() note.Rename {
 	return note.Rename{Move: c.move()}
 }
 
-// apart is the rename an installation that has turned the two apart does.
-func (c changing) apart() note.Rename {
+// renameApart is the rename an installation that has turned the two apart does.
+func (c changing) renameApart() note.Rename {
 	moving := c.move()
 	moving.Sync = func() note.SyncTitleAndFilename { return false }
 	return note.Rename{Move: moving}
@@ -282,7 +282,7 @@ func TestAFileRenamedUnderFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T
 		t.Run(name, func(t *testing.T) {
 			c := changeable(t, map[string]string{"Entropy.md": raw})
 
-			if err := c.move().Called(t.Context(), c.vault, "Entropy.md"); err != nil {
+			if err := c.move().WriteFilenameAsTitle(t.Context(), c.vault, "Entropy.md"); err != nil {
 				t.Fatalf("the file had already landed: %v", err)
 			}
 			if got := c.read(t, "Entropy.md"); got != raw {
@@ -320,10 +320,12 @@ func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 // sulking is the index, refusing to be told where a file went.
 type sulking struct {
 	port.SourceRepository
-	refuse error
+	moveError error
 }
 
-func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) error { return s.refuse }
+func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) error {
+	return s.moveError
+}
 
 // The answer says where the file is. A move that landed says so however the
 // rest of the work goes.
@@ -333,7 +335,7 @@ func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 
 	sulk := errors.New("the index would not have it")
 	rename := c.rename()
-	rename.Sources = sulking{SourceRepository: c.db.Sources(), refuse: sulk}
+	rename.Sources = sulking{SourceRepository: c.db.Sources(), moveError: sulk}
 
 	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if !errors.Is(err, sulk) {
@@ -509,7 +511,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 				t.Errorf("the vault shows the note as %q", got)
 			}
 
-			found, err := c.db.Queries().Named(t.Context(), c.vault.ID, "Entropy")
+			found, err := c.db.Queries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -546,7 +548,7 @@ func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			v := changeable(t, map[string]string{"Old.md": c.raw})
 
-			renamed, err := v.apart().Execute(t.Context(), v.vault, "Old.md", c.title)
+			renamed, err := v.renameApart().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -565,7 +567,7 @@ func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 			if got := v.title(t, "Old.md"); got != c.title {
 				t.Errorf("the vault shows it as %q", got)
 			}
-			if !gone(t, v, "Entropy.md") {
+			if !isGone(t, v, "Entropy.md") {
 				t.Error("the file is at Entropy.md")
 			}
 		})
@@ -578,7 +580,7 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 	t.Parallel()
 	for name, renaming := range map[string]func(changing) note.Rename{
 		"one name":   changing.rename,
-		"told apart": changing.apart,
+		"told apart": changing.renameApart,
 	} {
 		t.Run(name, func(t *testing.T) {
 			v := changeable(t, map[string]string{"Old.md": "A measure.\n"})
@@ -603,8 +605,8 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 	}
 }
 
-// gone says whether the vault holds nothing at a path.
-func gone(t *testing.T, c changing, path string) bool {
+// isGone says whether the vault holds nothing at a path.
+func isGone(t *testing.T, c changing, path string) bool {
 	t.Helper()
 	_, err := os.Stat(filepath.Join(c.vault.Path, filepath.FromSlash(path)))
 	return errors.Is(err, fs.ErrNotExist)

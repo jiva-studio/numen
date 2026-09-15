@@ -5,7 +5,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 // How much of a transcript the digest carries: the words of its opening it
@@ -16,11 +16,11 @@ const (
 	recurs = 2
 )
 
-// About is what a recording holds, in the words of its own transcript: how the
-// speech opens, and the words that recur through it.
+// Describe is what a recording holds, in the words of its own transcript: how
+// the speech opens, and the words that recur through it.
 //
 // A transcript saying nothing is described as nothing.
-func About(cues []transcript.Cue) string {
+func Describe(cues []transcript.Cue) string {
 	var said []string
 	for _, cue := range cues {
 		said = append(said, strings.Fields(cue.Text)...)
@@ -63,7 +63,7 @@ func names(said []string) []string {
 		bare := strings.TrimFunc(word, func(r rune) bool {
 			return !unicode.IsLetter(r) && !unicode.IsMark(r)
 		})
-		if bare == "" || here || !named(bare) {
+		if bare == "" || here || !isName(bare) {
 			continue
 		}
 		key := strings.ToLower(bare)
@@ -87,10 +87,10 @@ func names(said []string) []string {
 	return out
 }
 
-// named says whether a word is written the way a name is: a capital, and either
-// more than one letter before whatever is stuck to it with an apostrophe or more
-// than two after it, so that O'Brien is a name and I'm is not.
-func named(bare string) bool {
+// isName says whether a word is written the way a name is: a capital, and
+// either more than one letter before whatever is stuck to it with an apostrophe
+// or more than two after it, so that O'Brien is a name and I'm is not.
+func isName(bare string) bool {
 	if letter, _ := utf8.DecodeRuneInString(bare); !unicode.IsUpper(letter) {
 		return false
 	}
@@ -109,12 +109,12 @@ func closes(word string) bool {
 		return unicode.In(r, unicode.Pe, unicode.Pf) || r == '"' || r == '\''
 	})
 	last, _ := utf8.DecodeLastRuneInString(word)
-	return strings.ContainsRune(".!?…", last) && !shortened(word)
+	return strings.ContainsRune(".!?…", last) && !isShortening(word)
 }
 
-// shortened says whether a word ending in a stop is a shortening: a capital and
-// no more than two letters before the stop, or a stop standing inside it.
-func shortened(word string) bool {
+// isShortening says whether a word ending in a stop is a shortening: a capital
+// and no more than two letters before the stop, or a stop standing inside it.
+func isShortening(word string) bool {
 	body := strings.TrimRight(word, ".")
 	if body == "" {
 		return false

@@ -51,7 +51,7 @@ func OpenForWriting(root string, opts Options) (*VaultWriter, error) {
 	if cfg, err := ReadConfig(abs, opts.ServiceDir); err == nil && len(cfg.Ignore) > 0 {
 		opts.Ignore = cfg.Ignore
 	}
-	return &VaultWriter{root: abs, opts: opts, ignored: opts.ignored()}, nil
+	return &VaultWriter{root: abs, opts: opts, ignored: opts.compileIgnoring()}, nil
 }
 
 // newFileMode is what a note is created with. An existing note keeps the mode
@@ -66,7 +66,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	root, name, err := w.beneath(target)
+	root, name, err := w.openRoot(target)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -127,12 +127,12 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	if strings.HasPrefix(target, source+string(filepath.Separator)) {
 		return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
 	}
-	root, arrives, err := w.beneath(target)
+	root, arrives, err := w.openRoot(target)
 	if err != nil {
 		return err
 	}
 	defer root.Close()
-	leaves, err := w.named(source)
+	leaves, err := w.getRelativeName(source)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	root, name, err := w.beneath(target)
+	root, name, err := w.openRoot(target)
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	root, name, err := w.beneath(target)
+	root, name, err := w.openRoot(target)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) error {
 	return nil
 }
 
-// inside is where a note goes on this machine, and refuses a path this vault
+// note is where a note goes on this machine, and refuses a path this vault
 // does not hold as a note.
 //
 // A writer driven by an agent is why the second half is here. Containment alone
@@ -209,7 +209,7 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) error {
 // repository the vault is kept in — writable and removable by whatever asks,
 // while the reader is already saying those paths do not exist.
 func (w *VaultWriter) note(path string) (string, error) {
-	target, err := w.inside(path)
+	target, err := w.getContainedPath(path)
 	if err != nil {
 		return "", err
 	}
@@ -222,7 +222,7 @@ func (w *VaultWriter) note(path string) (string, error) {
 // reach is where a path is on this machine, for work that takes a file of any
 // kind and a folder alike.
 func (w *VaultWriter) reach(path string) (string, error) {
-	target, err := w.inside(path)
+	target, err := w.getContainedPath(path)
 	if err != nil {
 		return "", err
 	}
@@ -236,7 +236,7 @@ func (w *VaultWriter) reach(path string) (string, error) {
 // kept as a link to another file in the vault has its bytes at the other end,
 // and that is what a rename replaces.
 func (w *VaultWriter) file(path string) (string, error) {
-	real, err := followed(w.root, path, w.opts.serviceDir())
+	real, err := resolveLinks(w.root, path, w.opts.serviceDir())
 	if err != nil {
 		return "", err
 	}
@@ -256,18 +256,19 @@ func (w *VaultWriter) file(path string) (string, error) {
 	return real, nil
 }
 
-// inside is only that: somewhere in this vault. Where a note goes when it is
-// taken out of the vault's sight is such a place and is deliberately not a note.
-func (w *VaultWriter) inside(path string) (string, error) {
-	return inside(w.root, path, w.opts.serviceDir())
+// getContainedPath is only that: somewhere in this vault. Where a note goes when
+// it is taken out of the vault's sight is such a place and is deliberately not a
+// note.
+func (w *VaultWriter) getContainedPath(path string) (string, error) {
+	return getContainedPath(w.root, path, w.opts.serviceDir())
 }
 
-// beneath is the vault as a handle, and a place in it as a name that handle
+// openRoot is the vault as a handle, and a place in it as a name that handle
 // takes. Every step of a write is made through the handle, so a folder swapped
 // for a link while the write is on its way is refused by the machine itself and
 // not by a rule read a moment before. The caller closes the handle.
-func (w *VaultWriter) beneath(target string) (*os.Root, string, error) {
-	name, err := w.named(target)
+func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
+	name, err := w.getRelativeName(target)
 	if err != nil {
 		return nil, "", err
 	}
@@ -278,8 +279,8 @@ func (w *VaultWriter) beneath(target string) (*os.Root, string, error) {
 	return root, name, nil
 }
 
-// named is a place on this machine as a name under the vault's root.
-func (w *VaultWriter) named(target string) (string, error) {
+// getRelativeName is a place on this machine as a name under the vault's root.
+func (w *VaultWriter) getRelativeName(target string) (string, error) {
 	name, err := filepath.Rel(w.root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
 		return "", fmt.Errorf("%s: %w", target, ErrOutside)
@@ -366,7 +367,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 	if err != nil {
 		return err
 	}
-	root, name, err := w.beneath(target)
+	root, name, err := w.openRoot(target)
 	if err != nil {
 		return err
 	}
@@ -409,7 +410,7 @@ func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader)
 	if err != nil {
 		return err
 	}
-	root, name, err := w.beneath(target)
+	root, name, err := w.openRoot(target)
 	if err != nil {
 		return err
 	}
@@ -430,7 +431,7 @@ func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader)
 // same rules replace writes bytes it already holds.
 func arrive(root *os.Root, target string, content io.Reader) error {
 	dir := filepath.Dir(target)
-	tmp, at, err := temporary(root, dir, beside(filepath.Base(target)))
+	tmp, at, err := temporary(root, dir, getTempPattern(filepath.Base(target)))
 	if err != nil {
 		return err
 	}

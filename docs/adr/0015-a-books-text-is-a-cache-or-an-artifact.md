@@ -73,7 +73,7 @@ An extractor cutting a source, a search showing a passage and an embedder re-sli
 
 ### The artifact lives in the service folder
 
-A recognition goes under the application's own folder inside the vault. The walk skips that folder and every path in it is refused to the vault's own writer; containment splits into two complements, the vault as the person's and the folder as the application's, and a path belongs to exactly one of them. A separate port and a separate type write there, and `VaultWriter`, which an agent can reach, cannot.
+A recognition goes under the application's own folder inside the vault. The walk skips that folder and every path in it is refused to the vault's own writer; containment splits into two complements, the vault as the person's and the folder as the application's, and a path belongs to exactly one of them. A separate port and a separate type write there, and the vault's own writer, which an agent can reach, cannot.
 
 One run makes the prose, the coordinates it was read from, the parts it divides into, the corrections a proofreader made, how far that proofreader got, and the record of which models produced it. None of them means anything without the others, and a sweep takes them together.
 

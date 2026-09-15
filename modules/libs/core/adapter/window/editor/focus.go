@@ -13,9 +13,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Viewing is this window, for whatever asks for a place to be put in front of
+// GetWindow is this window, for whatever asks for a place to be put in front of
 // the person.
-func (a *API) Viewing() port.Window { return view{a} }
+func (a *API) GetWindow() port.Window { return view{a} }
 
 // view tells the clients and nothing more. What travelling there looks
 // like is theirs, and a place asked for while nobody is drawing is a place
@@ -64,12 +64,12 @@ func (a *API) WatchFocus(
 	}
 }
 
-func (v view) Moved(_ context.Context, went domain.Move) error {
+func (v view) ShowMove(_ context.Context, went domain.Move) error {
 	v.Listeners.tell(change{renamed: []domain.Move{went}})
 	return nil
 }
 
-func (v view) Editing(_ context.Context, said domain.Edit) error {
+func (v view) ShowEdit(_ context.Context, said domain.Edit) error {
 	v.Edits.tell(said)
 	return nil
 }

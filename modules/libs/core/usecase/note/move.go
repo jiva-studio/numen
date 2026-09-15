@@ -95,18 +95,18 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 		return res, err
 	}
 	if err := writer.Move(ctx, from, to); err != nil {
-		return res, missing(err)
+		return res, mapMissingNote(err)
 	}
 	res.Landed = true
-	if err := u.filed(ctx, v, from, to); err != nil {
+	if err := u.moveInIndex(ctx, v, from, to); err != nil {
 		return res, err
 	}
 	return u.Settle(ctx, v, from, to, pointing)
 }
 
-// filed tells the index that what was at one path is at another. The bytes do
-// not change, so nothing is read.
-func (u Move) filed(ctx context.Context, v domain.Vault, from, to string) error {
+// moveInIndex tells the index that what was at one path is at another. The
+// bytes do not change, so nothing is read.
+func (u Move) moveInIndex(ctx context.Context, v domain.Vault, from, to string) error {
 	return u.Sources.MoveSources(ctx, v.ID, from, to)
 }
 
@@ -130,7 +130,7 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 	var address string
 	if len(pointing) > 0 {
 		var err error
-		if address, err = u.addressed(ctx, v, to); err != nil {
+		if address, err = u.getAddress(ctx, v, to); err != nil {
 			return res, err
 		}
 	}
@@ -170,11 +170,11 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 	return res, nil
 }
 
-// addressed is how a link reaches the note at this path, asked of the vault
+// getAddress is how a link reaches the note at this path, asked of the vault
 // now that the file is there. A name no link reaches comes back as it stands,
 // and the repair that writes it changes nothing.
-func (u Move) addressed(ctx context.Context, v domain.Vault, path string) (string, error) {
-	to, err := Addressed(ctx, u.Names, v.ID, path)
+func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (string, error) {
+	to, err := GetAddress(ctx, u.Names, v.ID, path)
 	if errors.Is(err, ErrUnaddressable) {
 		return domain.Basename(path), nil
 	}
@@ -262,10 +262,11 @@ func (u Move) repair(
 }
 
 func (u Move) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return Levelled(u.Index(ctx, v, paths), paths...)
+	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
 }
 
-// Into is where a note lands when it is filed under a folder, keeping its name.
-func Into(folder, path string) string {
+// GetPathUnder is where a note lands when it is filed under a folder, keeping
+// its name.
+func GetPathUnder(folder, path string) string {
 	return pathpkg.Join(folder, pathpkg.Base(path))
 }

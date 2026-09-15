@@ -1,0 +1,6 @@
+# Generated protobuf files
+libs/protocol/src/numen/v1/**
+
+# Build outputs and dependencies
+**/dist/**
+**/node_modules/**

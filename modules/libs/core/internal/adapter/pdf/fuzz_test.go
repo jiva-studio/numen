@@ -35,7 +35,7 @@ func FuzzRead(f *testing.F) {
 		// written over. Both are what a vault holds after a sync was
 		// interrupted, and neither announces itself.
 		f.Add(raw[:len(raw)/2])
-		f.Add(flipped(raw, len(raw)/3))
+		f.Add(flipByte(raw, len(raw)/3))
 	}
 	// A header and nothing behind it, a header naming a version there is not,
 	// a body with no header, and nothing at all.
@@ -118,7 +118,7 @@ func FuzzRead(f *testing.F) {
 					t.Fatalf("offset %d was put under %q, which begins at %d",
 						offset, where.Part, where.PartOffset)
 				}
-				if !named(book.Parts, where.Part, where.PartOffset) {
+				if !hasPart(book.Parts, where.Part, where.PartOffset) {
 					t.Fatalf("offset %d was put under %q at %d, which the outline does not name",
 						offset, where.Part, where.PartOffset)
 				}
@@ -127,8 +127,8 @@ func FuzzRead(f *testing.F) {
 	})
 }
 
-// named is whether the outline holds this part, at this offset.
-func named(parts []pdf.Part, title string, offset int) bool {
+// hasPart is whether the outline holds this part, at this offset.
+func hasPart(parts []pdf.Part, title string, offset int) bool {
 	for _, part := range parts {
 		if part.Title == title && part.Offset == offset {
 			return true
@@ -137,8 +137,8 @@ func named(parts []pdf.Part, title string, offset int) bool {
 	return false
 }
 
-// flipped is the file with one byte of it written over by another.
-func flipped(raw []byte, at int) []byte {
+// flipByte is the file with one byte of it written over by another.
+func flipByte(raw []byte, at int) []byte {
 	if len(raw) == 0 {
 		return raw
 	}

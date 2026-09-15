@@ -102,7 +102,7 @@ func open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	archive, err := Fetched(ctx, s, found.address())
+	archive, err := Fetch(ctx, s, found.address())
 	if err != nil {
 		return nil, "", fmt.Errorf("the onnx runtime: %w", err)
 	}
@@ -130,14 +130,14 @@ var held struct {
 	opening chan struct{}
 }
 
-// Alongside is a library that makes an engine of its own, made where this
-// process settles its runtime and given the library it opened. It is registered
+// Register takes a library that makes an engine of its own, made where this
+// process settles its runtime and given the library it opened. It is called
 // from an init, so that it stands before anything opens one.
 //
 // The binding gives every tensor to the engine made last and stamps it on for
 // that tensor's life, so one made on a library's first use moves what everything
 // already running was building its tensors through.
-func Alongside(also func(at string)) {
+func Register(also func(at string)) {
 	held.mu.Lock()
 	defer held.mu.Unlock()
 	held.also = append(held.also, also)

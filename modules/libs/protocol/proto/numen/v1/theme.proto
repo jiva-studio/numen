@@ -137,8 +137,8 @@ message WriteAppearanceRequest {
 }
 
 message WriteAppearanceResponse {
-  // Why the settings were not written, when they were not.
-  string failed = 1;
+  // Error is why the settings were not written, when they were not.
+  string error = 1;
 }
 
 message WatchThemesRequest {}

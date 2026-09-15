@@ -24,9 +24,9 @@ type Schedule struct {
 	Phase uint8
 }
 
-// Seen reports whether this card face has ever been answered. One that has not
-// is what a person means by a new card.
-func (s Schedule) Seen() bool { return !s.Last.IsZero() }
+// IsSeen reports whether this card face has ever been answered. One that has
+// not is what a person means by a new card.
+func (s Schedule) IsSeen() bool { return !s.Last.IsZero() }
 
 // Scheduler works out where an answer leaves a card face.
 //
@@ -34,11 +34,11 @@ func (s Schedule) Seen() bool { return !s.Last.IsZero() }
 // be able to change — how cards are spaced — is changed by putting another
 // implementation behind it and reading the answers again.
 type Scheduler interface {
-	// Name says which scheduler this is, and which version of it. A schedule
+	// GetName says which scheduler this is, and which version of it. A schedule
 	// worked out by one name is not read by another: the numbers a scheduler
 	// carries between answers are its own, and one of them read as another's is
 	// a wrong answer given confidently.
-	Name() string
+	GetName() string
 
 	// Next is where an answer leaves a schedule.
 	Next(s Schedule, at time.Time, r Rating) Schedule
@@ -56,5 +56,5 @@ type Scheduler interface {
 	// Retention is measured over the answers given to spaced card faces and no
 	// others: what a card comes back as after ten minutes says nothing about
 	// memory.
-	Spaced(s Schedule) bool
+	IsSpaced(s Schedule) bool
 }

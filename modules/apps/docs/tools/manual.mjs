@@ -16,8 +16,10 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 // and a package name is a link `npm ci` makes.
 import { faults, proves, stories } from '../../../tools/stories/stories.mjs'
 
-// The window's shared layer, which is where the commands and the words stand.
+// The window's shared layer, which is where the words stand.
 const UI = new URL('../../desktop/editor/src/shared/', import.meta.url)
+// The slice the commands and their keystrokes stand in.
+const PALETTE = new URL('../../desktop/editor/src/features/command-palette/', import.meta.url)
 const GO = new URL('../../../libs/core/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
@@ -151,12 +153,12 @@ const said = async (whole, name, at = UI, seen = new Set()) => {
 }
 
 const keyboard = async () => {
-  const keys = await read(UI, 'command/chords.ts')
+  const keys = await read(PALETTE, 'lib/chords.ts')
   const words = await read(UI, 'words.ts')
 
   // The two the window keeps for itself are not in that table: they put the
   // palette up, and the palette answers them.
-  const palette = await read(UI, 'command/CommandPalette.vue')
+  const palette = await read(PALETTE, 'ui/CommandPalette.vue')
   for (const letter of ['k', 'p']) {
     if (!palette.includes(`key === '${letter}'`)) {
       die(`the palette no longer answers '${letter}' itself`)
@@ -167,17 +169,14 @@ const keyboard = async () => {
     `| ${chordOf({ letter: 'k' })} | ${await said(words, 'find')} |`,
     `| ${chordOf({ letter: 'p' })} | Commands |`,
   ]
+  const declared = await readCommands()
   for (const chord of chords(keys)) {
-    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(await read(UI, 'command/commands.ts'), chord.command))} |`)
+    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(declared, chord.command))} |`)
   }
   return ['| | |', '| --- | --- |', ...rows].join('\n')
 }
 
 /* -------------------------------------------------------------- commands */
-
-/** The one list of commands, from where it opens to where it closes. */
-const listing = (source) =>
-  declaring(source, 'commandsOf', 'commands.ts no longer lists its commands')
 
 /**
  * Where each row of the list begins, so that what one row says is read out of
@@ -187,10 +186,10 @@ const listing = (source) =>
  * Every command the list holds is a command read here. One written in a shape
  * this cannot find an id in stops the build.
  */
-const rowsOf = ({ text, entries }) => {
+const rowsOf = ({ text, entries }, path = 'table.ts') => {
   const found = [...text.matchAll(/\bid:\s*'([A-Za-z]+)'/g)]
   if (found.length !== entries) {
-    die(`commands.ts lists ${entries} commands and this reads ${found.length}`)
+    die(`${path} lists ${entries} commands and this reads ${found.length}`)
   }
   return found.map((one, i) => ({
     id: one[1],
@@ -198,23 +197,50 @@ const rowsOf = ({ text, entries }) => {
   }))
 }
 
+/**
+ * Every command declared across the palette, read from table.ts and any slice
+ * it composes.
+ */
+const readCommands = async () => {
+  const source = await read(PALETTE, 'lib/table.ts')
+  const calls = [...source.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].map((m) => m[1])
+  if (calls.length === 0) {
+    return rowsOf(declaring(source, 'commandsOf', 'table.ts no longer lists its commands'), 'table.ts')
+  }
+  const imports = new Map(
+    [...source.matchAll(/import\s*\{([^}]+)\}\s*from\s*'([^']+)'/g)].flatMap(([, names, specifier]) =>
+      names.split(',').map((n) => [n.trim(), specifier]),
+    ),
+  )
+  const rows = []
+  for (const fn of calls) {
+    const specifier = imports.get(fn)
+    if (!specifier) die(`table.ts calls '${fn}' without importing it`)
+    const path = `lib/${specifier.replace(/^\.\//, '')}.ts`
+    const partSource = await read(PALETTE, path)
+    const part = declaring(partSource, fn, `${path} no longer lists its commands`)
+    rows.push(...rowsOf(part, path))
+  }
+  return rows
+}
+
 /** Which entry of the words a command is drawn with. */
-const spoken = (source, command) => {
-  const row = rowsOf(listing(source)).find((one) => one.id === command)
+const spoken = (declared, command) => {
+  const row = declared.find((one) => one.id === command)
   const found = row?.said.match(/text:\s*words\.([A-Za-z]+)/)
-  if (!found) die(`no row in commands.ts draws the command '${command}'`)
+  if (!found) die(`no command draws '${command}'`)
   return found[1]
 }
 
 /** Every command the palette offers, in the order it draws them. */
 const commands = async () => {
-  const source = await read(UI, 'command/commands.ts')
   const words = await read(UI, 'words.ts')
-  const keys = await read(UI, 'command/chords.ts')
+  const keys = await read(PALETTE, 'lib/chords.ts')
   const table = chords(keys)
 
-  const declared = rowsOf(listing(source))
-  if (declared.length === 0) die('no commands are declared in commands.ts')
+  const declared = await readCommands()
+  if (declared.length === 0) die('no commands are declared in table.ts')
+
 
   // Every command declared is a command the page carries. One the words or the
   // groups say nothing about stops the build.
@@ -370,10 +396,11 @@ const meaning = (doc, name, keys) => {
 
 /**
  * Where each package's settings are declared, so the walk crosses from one to
- * the next by itself. The walk runs from `settings.Config` down, and a package
+ * the next by itself. The walk runs from the document down, and a package
  * nobody listed here stops the build.
  */
 const PACKAGES = {
+  container: 'container',
   settings: 'adapter/settings',
   download: 'internal/adapter/download',
   embed: 'internal/adapter/embed',
@@ -494,9 +521,11 @@ const sectioned = (keys) => {
 }
 
 const settings = async () => {
-  // The whole package, walked from the top: a section nobody thought to list is
-  // still walked into, and a key added to one turns up here.
-  const keys = await keysOf(PACKAGES.settings, 'Config', '')
+  // The document, walked from the top: a section nobody thought to list is
+  // still walked into, and a key added to one turns up here. It is declared
+  // where every adapter is bound, because the file is the union of their
+  // sections and the sections about the window.
+  const keys = await keysOf(PACKAGES.container, 'Settings', '')
 
   const row = (key, section) =>
     `| \`${section ? key.path.slice(section.length + 1) : key.path}\` | ${key.kind} | ${key.meaning} |`

@@ -24,11 +24,11 @@ type standing struct {
 	file *ast.File
 }
 
-// walked is every hand-written Go file of this application, parsed.
+// readSources is every hand-written Go file of this application, parsed.
 //
 // A test file is left out: a test stands outside the package it exercises and
 // builds what stands in for the real thing.
-func walked(t *testing.T) []standing {
+func readSources(t *testing.T) []standing {
 	t.Helper()
 
 	var found []standing
@@ -81,7 +81,7 @@ func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
 // everything a person has to act on is said in the window they are looking at.
 func TestNoApplicationLogs(t *testing.T) {
 	var wrong []string
-	for _, held := range walked(t) {
+	for _, held := range readSources(t) {
 		for _, one := range held.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil {

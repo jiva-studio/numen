@@ -16,10 +16,10 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/csp"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/csp"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
@@ -59,10 +59,10 @@ type registry struct {
 	last domain.VaultID
 }
 
-func (r registry) All() ([]domain.Vault, error) { return r.held, nil }
-func (r registry) Save(domain.Vault) error      { return nil }
-func (r registry) Remove(domain.VaultID) error  { return nil }
-func (r registry) Opened(domain.VaultID) error  { return nil }
+func (r registry) All() ([]domain.Vault, error)      { return r.held, nil }
+func (r registry) Save(domain.Vault) error           { return nil }
+func (r registry) Remove(domain.VaultID) error       { return nil }
+func (r registry) RecordOpened(domain.VaultID) error { return nil }
 
 func (r registry) Find(id string) (domain.Vault, bool, error) {
 	for _, v := range r.held {
@@ -82,8 +82,8 @@ func (r registry) Last() (domain.Vault, bool, error) {
 	return domain.Vault{}, false, nil
 }
 
-// windowed is the API as the window builds it, over vaults of a test's own.
-func windowed(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
+// newAPI is the API as the window builds it, over vaults of a test's own.
+func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 	t.Helper()
 	ctx := t.Context()
 
@@ -127,7 +127,7 @@ func windowed(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 		},
 		Presets: running.Presets,
 		Notes:   db.Queries(),
-		Window:  Watching(task.New()),
+		Window:  NewWindow(task.New()),
 		Day:     running.Day,
 		Now:     time.Now,
 	}
@@ -140,20 +140,20 @@ func windowed(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 	return api, held
 }
 
-// serving is the window's own client, over a server of the test's own. The
-// front door is a stream, and a stream is asked for the way the page asks for
-// it.
-func serving(t *testing.T, api *API) numenv1connect.FlashcardsServiceClient {
+// newFlashcardsClient is the window's own client, over a server of the test's
+// own. The front door is a stream, and a stream is asked for the way the page
+// asks for it.
+func newFlashcardsClient(t *testing.T, api *API) numenv1connect.FlashcardsServiceClient {
 	t.Helper()
-	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 }
 
-// watching is the window itself, over that same handler.
-func watching(t *testing.T, api *API) numenv1connect.WindowServiceClient {
+// newWindowClient is the window itself, over that same handler.
+func newWindowClient(t *testing.T, api *API) numenv1connect.WindowServiceClient {
 	t.Helper()
-	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
 }
@@ -166,11 +166,11 @@ func watching(t *testing.T, api *API) numenv1connect.WindowServiceClient {
 // reading wakes it, so the asking is done here until nothing is being read.
 func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	t.Helper()
-	client := serving(t, api)
+	client := newFlashcardsClient(t, api)
 
 	var out *v1.WatchCardsDueResponse
 	for at := time.Now(); time.Since(at) < 30*time.Second; {
-		out = asked(t, client)
+		out = readCardsDue(t, client)
 		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultCardsDue).GetReading) {
 			return out
 		}
@@ -180,9 +180,11 @@ func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	return out
 }
 
-// asked is one opening of the front door, with each count filled into the row
-// it belongs to as it arrives.
-func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.WatchCardsDueResponse {
+// readCardsDue is one opening of the front door, with each count filled into
+// the row it belongs to as it arrives.
+func readCardsDue(
+	t *testing.T, client numenv1connect.FlashcardsServiceClient,
+) *v1.WatchCardsDueResponse {
 	t.Helper()
 	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
@@ -219,8 +221,8 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Watc
 	return out
 }
 
-// started is a session opened on one vault, and what it holds to ask.
-func started(t *testing.T, api *API, v domain.Vault) *v1.StartSessionResponse {
+// startSession is a session opened on one vault, and what it holds to ask.
+func startSession(t *testing.T, api *API, v domain.Vault) *v1.StartSessionResponse {
 	t.Helper()
 	out, err := api.StartSession(t.Context(),
 		connect.NewRequest(&v1.StartSessionRequest{Vault: string(v.ID)}))
@@ -233,10 +235,10 @@ func started(t *testing.T, api *API, v domain.Vault) *v1.StartSessionResponse {
 // A run belongs to the vault it was opened on, and an answer naming another
 // vault's run is refused.
 func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
-	api, held := windowed(t, deck, other)
+	api, held := newAPI(t, deck, other)
 	one, two := held[0], held[1]
 
-	session := started(t, api, one)
+	session := startSession(t, api, one)
 	if len(session.GetAsked()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
@@ -282,11 +284,11 @@ func runs(t *testing.T, v domain.Vault) []string {
 // A session that is over is over: the run it wrote is never appended to again,
 // so a page holding its name from an hour ago writes nothing.
 func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
 
-	was := started(t, api, v)
-	now := started(t, api, v)
+	was := startSession(t, api, v)
+	now := startSession(t, api, v)
 	if was.GetRun() == now.GetRun() {
 		t.Fatal("a second session wrote to the file the first opened")
 	}
@@ -311,12 +313,12 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 // owes, and the two vaults here share no mark, no face and no word, so nothing
 // could pass between them by looking alike.
 func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
-	api, held := windowed(t, deck, other)
+	api, held := newAPI(t, deck, other)
 	one, two := held[0], held[1]
 
-	was := counted(t, front(t, api), string(two.ID))
+	was := findVaultCount(t, front(t, api), string(two.ID))
 
-	session := started(t, api, one)
+	session := startSession(t, api, one)
 	for _, card := range session.GetAsked() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(one.ID), Run: session.GetRun(),
@@ -328,11 +330,11 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 	}
 
 	after := front(t, api)
-	if now := counted(t, after, string(two.ID)); now.GetNew() != was.GetNew() ||
+	if now := findVaultCount(t, after, string(two.ID)); now.GetNew() != was.GetNew() ||
 		now.GetDue() != was.GetDue() || now.GetFaces() != was.GetFaces() {
 		t.Errorf("the other vault came to %+v, having come to %+v", now, was)
 	}
-	if now := counted(t, after, string(one.ID)); now.GetNew() != 0 || now.GetDue() != 0 {
+	if now := findVaultCount(t, after, string(one.ID)); now.GetNew() != 0 || now.GetDue() != 0 {
 		t.Errorf("the answered vault still owes %+v", now)
 	}
 	// Nothing was written into the other vault's folder either.
@@ -341,8 +343,8 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 	}
 }
 
-// counted is one vault out of what the front door answered.
-func counted(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1.VaultCardsDue {
+// findVaultCount is one vault out of what the front door answered.
+func findVaultCount(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1.VaultCardsDue {
 	t.Helper()
 	for _, one := range said.GetVaults() {
 		if one.GetId() == id {
@@ -356,10 +358,10 @@ func counted(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1.VaultC
 // An answer is written to the run's own file, and the identifier it comes back
 // with is what taking it back names.
 func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
 
-	session := started(t, api, v)
+	session := startSession(t, api, v)
 	card := session.GetAsked()[0]
 
 	given, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
@@ -392,9 +394,9 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 
 // An answer outside the four is the caller's mistake and is refused as one.
 func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
-	session := started(t, api, v)
+	session := startSession(t, api, v)
 	card := session.GetAsked()[0]
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
@@ -410,13 +412,13 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 // Every vault the window opens is read before it is counted, and its numbers
 // arrive with the count the finished reading wakes.
 func TestAVaultIsReadBeforeItIsCounted(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: append(held, unread)}
 
 	// Nothing is counted from a walk half done, so the first opening finds every
 	// row waiting on one.
-	for _, one := range asked(t, serving(t, api)).GetVaults() {
+	for _, one := range readCardsDue(t, newFlashcardsClient(t, api)).GetVaults() {
 		if !one.GetReading() || one.GetUnread() != "" {
 			t.Errorf("a vault came back %+v", one)
 		}
@@ -438,7 +440,7 @@ func TestAVaultIsReadBeforeItIsCounted(t *testing.T) {
 // A vault the index already carries is read again when the window opens it. A
 // vault edited while nothing was running went past every watcher.
 func TestAVaultTheIndexCarriesIsReadAgainOnOpening(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
 
 	var read atomic.Int64
@@ -448,13 +450,13 @@ func TestAVaultTheIndexCarriesIsReadAgainOnOpening(t *testing.T) {
 	})
 
 	testsupport.WaitFor(t, func() bool {
-		api.counted(t.Context(), v)
+		api.countVault(t.Context(), v)
 		return read.Load() == 1
 	})
 
 	// And once only: the watcher carries the vault from there.
-	api.counted(t.Context(), v)
-	api.counted(t.Context(), v)
+	api.countVault(t.Context(), v)
+	api.countVault(t.Context(), v)
 	if got := read.Load(); got != 1 {
 		t.Errorf("the vault was read %d times", got)
 	}
@@ -463,7 +465,7 @@ func TestAVaultTheIndexCarriesIsReadAgainOnOpening(t *testing.T) {
 // A window that reads no vault leaves one the index does not carry uncounted,
 // and says why nothing could be counted.
 func TestAVaultTheIndexDoesNotCarryIsUncountedWhereNothingReadsIt(t *testing.T) {
-	api, _ := windowed(t)
+	api, _ := newAPI(t)
 	api.Reading(t.Context(), nil)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
@@ -477,7 +479,7 @@ func TestAVaultTheIndexDoesNotCarryIsUncountedWhereNothingReadsIt(t *testing.T) 
 
 // A session opened on a vault the index does not carry is refused, and says so.
 func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
-	api, _ := windowed(t)
+	api, _ := newAPI(t)
 	api.Reading(t.Context(), nil)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
@@ -494,7 +496,7 @@ func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 
 // A question about a vault the installation does not hold is refused.
 func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
-	api, _ := windowed(t)
+	api, _ := newAPI(t)
 	_, err := api.StartSession(t.Context(),
 		connect.NewRequest(&v1.StartSessionRequest{Vault: "nothing"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
@@ -508,8 +510,8 @@ func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
 // What each of the four would do to the card is worked out with the card, so a
 // person choosing between them is shown what they are choosing between.
 func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
-	api, held := windowed(t, deck)
-	session := started(t, api, held[0])
+	api, held := newAPI(t, deck)
+	session := startSession(t, api, held[0])
 	ahead := session.GetAsked()[0].GetAhead()
 
 	if ahead == nil {
@@ -534,7 +536,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 		t.Errorf("the policy reads %q", policy)
 	}
 
-	handler := (&API{}).Serving(http.NotFoundHandler())
+	handler := (&API{}).NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css"} {
 		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r.URL.Path = path
@@ -570,11 +572,11 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 		v1.Rating_RATING_GOOD:  review.Good,
 		v1.Rating_RATING_EASY:  review.Easy,
 	} {
-		if got := rating(said); got != want {
+		if got := newRating(said); got != want {
 			t.Errorf("%v came across as %v", said, got)
 		}
 	}
-	if got := rating(v1.Rating_RATING_UNSPECIFIED); got.Valid() {
+	if got := newRating(v1.Rating_RATING_UNSPECIFIED); got.Valid() {
 		t.Errorf("nothing said came across as %v", got)
 	}
 }
@@ -582,7 +584,7 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 // A deck that could not be given marks is named to the person, so they know
 // which of their cards are not in front of them.
 func TestASessionSaysWhichDecksItCouldNotMark(t *testing.T) {
-	api, held := windowed(t, map[string]string{
+	api, held := newAPI(t, map[string]string{
 		"Term.md": deck["Term.md"],
 		// The card carries no mark, so the deck is written to give it one.
 		"decks/Own.md": "---\ntype: deck\n---\n" +
@@ -594,7 +596,7 @@ func TestASessionSaysWhichDecksItCouldNotMark(t *testing.T) {
 	// session, and it is named.
 	testsupport.Unwritable(t, filepath.Join(v.Path, "decks", "Own.md"))
 
-	session := started(t, api, v)
+	session := startSession(t, api, v)
 	if len(session.GetUnwritten()) != 1 || session.GetUnwritten()[0] != "decks/Own.md" {
 		t.Errorf("the session says %v could not be marked", session.GetUnwritten())
 	}
@@ -606,7 +608,7 @@ func TestASessionSaysWhichDecksItCouldNotMark(t *testing.T) {
 // Flashcards works on any vault the installation holds without one being opened
 // first, because a person owes what they owe across all of them.
 func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
-	api, held := windowed(t, deck, other)
+	api, held := newAPI(t, deck, other)
 
 	out := front(t, api)
 	if len(out.GetVaults()) != len(held) {
@@ -619,7 +621,7 @@ func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 	}
 }
 
-// Counting the front door writes nothing into any vault: a mark is minted when
+// Counting the front door writes nothing into any vault: a mark is given when
 // a person sits down to a vault, and not for every vault at every launch.
 func TestCountingTheFrontDoorWritesIntoNoVault(t *testing.T) {
 	handwritten := map[string]string{
@@ -627,7 +629,7 @@ func TestCountingTheFrontDoorWritesIntoNoVault(t *testing.T) {
 		"decks/Own.md": "---\ntype: deck\n---\n" +
 			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
 	}
-	api, held := windowed(t, handwritten)
+	api, held := newAPI(t, handwritten)
 	at := filepath.Join(held[0].Path, "decks", "Own.md")
 
 	before, err := os.ReadFile(at)
@@ -658,10 +660,10 @@ var pointed = map[string]string{
 // The front door says what today came to under each preset the vault's decks
 // name: what was answered under it, how long that took, and what the day holds.
 func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
-	api, held := windowed(t, pointed)
+	api, held := newAPI(t, pointed)
 	v := held[0]
 
-	session := started(t, api, v)
+	session := startSession(t, api, v)
 	if len(session.GetAsked()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
@@ -690,7 +692,7 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 // A deck naming no preset comes under the defaults, which is what a vault
 // holding no preset at all comes to.
 func TestADeckNamingNoPresetComesUnderTheDefaults(t *testing.T) {
-	api, _ := windowed(t, deck)
+	api, _ := newAPI(t, deck)
 
 	presets := front(t, api).GetVaults()[0].GetPresets()
 	if len(presets) != 1 {
@@ -728,10 +730,10 @@ var twoPresets = map[string]string{
 // A session over a vault of two presets is the union of them: each deck is held
 // to its own preset's budget, and one preset running out closes its own decks.
 func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
-	api, held := windowed(t, twoPresets)
+	api, held := newAPI(t, twoPresets)
 
 	got := make(map[string]int)
-	for _, one := range started(t, api, held[0]).GetAsked() {
+	for _, one := range startSession(t, api, held[0]).GetAsked() {
 		got[one.GetDeck()]++
 	}
 	want := map[string]int{"decks/Roots.md": 1, "decks/Mantras.md": 2}
@@ -748,7 +750,7 @@ func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 // The front door says what each of a vault's presets holds today, and neither
 // of them carries the other's budget.
 func TestTheFrontDoorSaysWhatEachPresetOfAVaultHolds(t *testing.T) {
-	api, _ := windowed(t, twoPresets)
+	api, _ := newAPI(t, twoPresets)
 
 	got := make(map[string]int32)
 	for _, one := range front(t, api).GetVaults()[0].GetPresets() {
@@ -765,10 +767,10 @@ func TestTheFrontDoorSaysWhatEachPresetOfAVaultHolds(t *testing.T) {
 	}
 }
 
-// carded is a deck of as many cards, pointing at the preset named.
+// newDeck is a deck of as many cards, pointing at the preset named.
 // Each deck is written from a mark of its own, because a mark is what names a
 // card and two decks writing one mark are writing one card.
-func carded(at string, cards, from int) string {
+func newDeck(at string, cards, from int) string {
 	out := "---\ntype: deck\n"
 	if at != "" {
 		out += "links:\n  - to: " + at + "\n    role: ref\n    type: preset\n"
@@ -788,8 +790,8 @@ var backlogged = map[string]string{
 	"Term.md": deck["Term.md"],
 	"Steady.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 10\n" +
 		"new_a_day: 12\nreviews_a_day: 1\nretention: 0.9\ncounts: cards\n---\n\n# Steady\n",
-	"decks/Steady.md": carded("Steady", 60, 0),
-	"decks/Loose.md":  carded("", 20, 1000),
+	"decks/Steady.md": newDeck("Steady", 60, 0),
+	"decks/Loose.md":  newDeck("", 20, 1000),
 }
 
 // The deck screen and the preset tab are one arithmetic, under every goal.
@@ -837,7 +839,7 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			api, held := windowed(t, backlogged)
+			api, held := newAPI(t, backlogged)
 			v := held[0]
 
 			p := asWritten(t, api, v, "Steady.md")
@@ -845,10 +847,10 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 			if one.learned != "" {
 				p.Rule = one.learned
 			}
-			writtenBack(t, api, v, "Steady.md", p)
+			writePreset(t, api, v, "Steady.md", p)
 
 			offers := 0
-			for _, deck := range owing(t, api, v).GetDecks() {
+			for _, deck := range getVaultCount(t, api, v).GetDecks() {
 				if deck.GetDeck() == "decks/Steady.md" {
 					offers = int(deck.GetDue() + deck.GetNew())
 				}
@@ -857,7 +859,7 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 				t.Fatal("the deck screen offers nothing to compare")
 			}
 
-			drawn := pictured(t, api, v, "Steady.md", p)
+			drawn := getCurve(t, api, v, "Steady.md", p)
 			at := drawn.GetNow().GetAt()
 			if at < 0 {
 				t.Fatalf("the preset stands nowhere on its own curve: %+v", drawn.GetNow())
@@ -883,10 +885,10 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 // Under a goal of minutes a day long enough for the whole of the material is
 // closed by nothing: the material itself ran out, and no card limit is named.
 func TestALongEnoughDayIsClosedByNothing(t *testing.T) {
-	api, held := windowed(t, backlogged)
+	api, held := newAPI(t, backlogged)
 	v := held[0]
 
-	drawn := pictured(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
+	drawn := getCurve(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
 	if got := drawn.GetAt()[len(drawn.GetAt())-1].GetClosed(); len(got) != 0 {
 		t.Errorf("the longest day on the range is closed by %q", got)
 	}
@@ -900,16 +902,16 @@ func TestALongEnoughDayIsClosedByNothing(t *testing.T) {
 // asks may already be the whole count: a card the day comes back to is the one
 // card, and the showings it takes are what the clock runs out on.
 func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
-	api, held := windowed(t, lived)
+	api, held := newAPI(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
-	writtenBack(t, api, v, "Sanskrit.md", p)
+	writePreset(t, api, v, "Sanskrit.md", p)
 
-	drawn := pictured(t, api, v, "Sanskrit.md", p)
+	drawn := getCurve(t, api, v, "Sanskrit.md", p)
 	at := int(drawn.GetSuggested().GetAt())
 	if at < 0 {
 		t.Fatalf("nothing is suggested: %+v", drawn.GetSuggested())
@@ -942,13 +944,13 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 // does. What the deck screen owes today is that backlog and the cards falling
 // due today besides, so it is never the smaller of the two.
 func TestWhatIsOverdueStandsOverTheWholeCurve(t *testing.T) {
-	api, held := windowed(t, lived)
+	api, held := newAPI(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	owes := 0
-	for _, one := range owing(t, api, v).GetDecks() {
+	for _, one := range getVaultCount(t, api, v).GetDecks() {
 		for _, deck := range underSanskrit {
 			if one.GetDeck() == deck {
 				owes += int(one.GetDue())
@@ -958,8 +960,8 @@ func TestWhatIsOverdueStandsOverTheWholeCurve(t *testing.T) {
 
 	p := asWritten(t, api, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
-	writtenBack(t, api, v, "Sanskrit.md", p)
-	byMinutes := pictured(t, api, v, "Sanskrit.md", p)
+	writePreset(t, api, v, "Sanskrit.md", p)
+	byMinutes := getCurve(t, api, v, "Sanskrit.md", p)
 
 	overdue := int(byMinutes.GetOverdue())
 	if overdue == 0 {
@@ -972,7 +974,7 @@ func TestWhatIsOverdueStandsOverTheWholeCurve(t *testing.T) {
 
 	// The same vault under another goal is the same backlog.
 	p.Goal = review.GoalRetention
-	if got := int(pictured(t, api, v, "Sanskrit.md", p).GetOverdue()); got != overdue {
+	if got := int(getCurve(t, api, v, "Sanskrit.md", p).GetOverdue()); got != overdue {
 		t.Errorf("steered by its retention the same vault stands %d overdue, and by its "+
 			"minutes %d", got, overdue)
 	}
@@ -993,10 +995,10 @@ func TestWhatIsOverdueStandsOverTheWholeCurve(t *testing.T) {
 // A vault nobody has answered has nothing overdue, and no place of its curve
 // has a backlog to clear.
 func TestAVaultNobodyHasAnsweredHasNothingOverdue(t *testing.T) {
-	api, held := windowed(t, backlogged)
+	api, held := newAPI(t, backlogged)
 	v := held[0]
 
-	drawn := pictured(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
+	drawn := getCurve(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
 	if got := drawn.GetOverdue(); got != 0 {
 		t.Errorf("%d card faces stand overdue in a vault nobody has answered", got)
 	}
@@ -1020,11 +1022,11 @@ var spread = map[string]string{
 		"new_a_day: 2\nreviews_a_day: 1\nretention: 0.9\ncounts: cards\n---\n\n# Timed\n",
 	"Counted.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
 		"new_a_day: 8\nreviews_a_day: 30\nminutes_a_day: 15\ncounts: cards\n---\n\n# Counted\n",
-	"decks/Verbs.md": written("Both", "Timed", 100, 0),
-	"decks/Nouns.md": written("One", "Timed", 80, 1000),
-	"decks/Roots.md": written("One", "Counted", 100, 2000),
-	"decks/Loose.md": written("One", "", 60, 3000),
-	"decks/Odds.md":  written("One", "", 60, 4000),
+	"decks/Verbs.md": newStencilDeck("Both", "Timed", 100, 0),
+	"decks/Nouns.md": newStencilDeck("One", "Timed", 80, 1000),
+	"decks/Roots.md": newStencilDeck("One", "Counted", 100, 2000),
+	"decks/Loose.md": newStencilDeck("One", "", 60, 3000),
+	"decks/Odds.md":  newStencilDeck("One", "", 60, 4000),
 }
 
 // The tile over a preset and the session it opens are one number.
@@ -1032,12 +1034,12 @@ var spread = map[string]string{
 // A preset is the whole scope of its own budget, so what the count leaves under
 // it is what a session over it asks, and the count carries that figure.
 func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
-	api, held := windowed(t, spread)
+	api, held := newAPI(t, spread)
 	v := held[0]
 	lives(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
-	said := owing(t, api, v)
+	said := getVaultCount(t, api, v)
 	// Which decks each preset schedules, so what a session asks can be checked
 	// against the rows it was gathered from.
 	under := make(map[string][]string)
@@ -1063,7 +1065,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 		}
 
 		sat, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
-			Vault: string(v.ID), Preset: naming(one.GetPreset()),
+			Vault: string(v.ID), Preset: newPresetName(one.GetPreset()),
 		}))
 		if err != nil {
 			t.Fatal(err)
@@ -1110,14 +1112,14 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 		notes map[string]string
 	}{{"lived", lived}, {"spread", spread}} {
 		t.Run(one.what, func(t *testing.T) {
-			api, held := windowed(t, one.notes)
+			api, held := newAPI(t, one.notes)
 			v := held[0]
 			lives(t, api, v, 14)
 			now := firstMorning.AddDate(0, 0, 14)
 			setNow(api, now)
 
 			past := 0
-			for _, said := range owing(t, api, v).GetPresets() {
+			for _, said := range getVaultCount(t, api, v).GetPresets() {
 				if said.GetCards() == 0 {
 					continue
 				}
@@ -1155,15 +1157,15 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 // Overdue, unbegun and the cards whose day is still to come are three separate
 // counts of the one material, and the band begins where the overdue pile does.
 func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
-	api, held := windowed(t, lived)
+	api, held := newAPI(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
-	writtenBack(t, api, v, "Sanskrit.md", p)
-	drawn := pictured(t, api, v, "Sanskrit.md", p)
+	writePreset(t, api, v, "Sanskrit.md", p)
+	drawn := getCurve(t, api, v, "Sanskrit.md", p)
 
 	overdue, unbegun, cards := drawn.GetOverdue(), drawn.GetUnbegun(), drawn.GetCards()
 	if overdue == 0 || unbegun == 0 {
@@ -1229,7 +1231,7 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 		{"counts that never bind", 50, 200, review.BudgetUnitCards, true},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			api, held := windowed(t, lived)
+			api, held := newAPI(t, lived)
 			v := held[0]
 			lives(t, api, v, 14)
 			setNow(api, firstMorning.AddDate(0, 0, 14))
@@ -1238,8 +1240,8 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 			p.Goal = review.GoalRetention
 			p.NewADay, p.ReviewsADay = one.newADay, one.reviews
 			p.Counts = one.counts
-			writtenBack(t, api, v, "Sanskrit.md", p)
-			drawn := pictured(t, api, v, "Sanskrit.md", p)
+			writePreset(t, api, v, "Sanskrit.md", p)
+			drawn := getCurve(t, api, v, "Sanskrit.md", p)
 
 			least := drawn.GetAt()[0].GetMinutes()
 			most := drawn.GetAt()[len(drawn.GetAt())-1].GetMinutes()
@@ -1280,7 +1282,7 @@ type sat struct{ asked, owed, fresh int }
 func session(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	t.Helper()
 	out, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
-		Vault: string(v.ID), Preset: naming(preset),
+		Vault: string(v.ID), Preset: newPresetName(preset),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -1308,23 +1310,23 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	bands := make(map[int][]int32, 2)
 
 	for _, share := range []int{100, 0} {
-		api, made := windowed(t, lived)
+		api, made := newAPI(t, lived)
 		v := made[0]
 		lives(t, api, v, 20)
 		setNow(api, firstMorning.AddDate(0, 0, 20))
 
 		p := asWritten(t, api, v, "Sanskrit.md")
 		p.Goal, p.Backlog = review.GoalMinutes, share
-		writtenBack(t, api, v, "Sanskrit.md", p)
+		writePreset(t, api, v, "Sanskrit.md", p)
 
 		// The control is left on a place of its own grid, so the picture is
 		// drawn for the day the vault is held to.
-		drawn := pictured(t, api, v, "Sanskrit.md", p)
+		drawn := getCurve(t, api, v, "Sanskrit.md", p)
 		value := drawn.GetGrid()[2]
 		p.MinutesADay = int(value)
-		writtenBack(t, api, v, "Sanskrit.md", p)
+		writePreset(t, api, v, "Sanskrit.md", p)
 
-		drawn = pictured(t, api, v, "Sanskrit.md", p)
+		drawn = getCurve(t, api, v, "Sanskrit.md", p)
 		at := 2
 		if drawn.GetGrid()[at] != value {
 			t.Fatalf("the control was left at %v and the grid holds %v there",

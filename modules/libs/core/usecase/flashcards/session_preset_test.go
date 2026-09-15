@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
-// over is what the vault asks at this instant when the session is opened over
-// this deck or this preset.
-func (s vaulted) over(
+// openSession is what the vault asks at this instant when the session is opened
+// over this deck or this preset.
+func (s vaulted) openSession(
 	t *testing.T, day review.Day, now time.Time, at flashcards.Scope,
 ) (flashcards.SessionResult, error) {
 	t.Helper()
@@ -22,12 +22,13 @@ func (s vaulted) over(
 	}.Execute(t.Context(), s.vault, at)
 }
 
-// under is the session over one preset, and a fatal error where it was refused.
-func (s vaulted) under(
+// openSessionByPreset is the session over one preset, and a fatal error where
+// it was refused.
+func (s vaulted) openSessionByPreset(
 	t *testing.T, day review.Day, now time.Time, preset string,
 ) flashcards.SessionResult {
 	t.Helper()
-	sat, err := s.over(t, day, now, flashcards.ByPreset(preset))
+	sat, err := s.openSession(t, day, now, flashcards.ByPreset(preset))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +39,7 @@ func (s vaulted) under(
 // card of another preset.
 func TestASessionOverAPresetAsksTheDecksThatPointAtIt(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":         term,
 		"Steady.md":       preset("new_a_day: 20\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"Other.md":        preset("new_a_day: 20\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -47,7 +48,7 @@ func TestASessionOverAPresetAsksTheDecksThatPointAtIt(t *testing.T) {
 		"decks/Rivers.md": deckOf("Other", 5, 200),
 	})
 
-	got := byDeck(s.under(t, today, saturday, "Steady.md"))
+	got := byDeck(s.openSessionByPreset(t, today, saturday, "Steady.md"))
 	want := map[string]int{"decks/Birds.md": 3, "decks/Trees.md": 4}
 	for deck, cards := range want {
 		if got[deck] != cards {
@@ -63,14 +64,14 @@ func TestASessionOverAPresetAsksTheDecksThatPointAtIt(t *testing.T) {
 // is opened by naming no note.
 func TestASessionOverThePresetOfTheDecksNamingNone(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Steady.md":      preset("new_a_day: 20\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Loose.md": deckOf("", 3, 0),
 		"decks/Birds.md": deckOf("Steady", 4, 100),
 	})
 
-	got := byDeck(s.under(t, today, saturday, ""))
+	got := byDeck(s.openSessionByPreset(t, today, saturday, ""))
 	if len(got) != 1 || got["decks/Loose.md"] != 3 {
 		t.Errorf("the session held %v, want three cards of decks/Loose.md", got)
 	}
@@ -80,14 +81,14 @@ func TestASessionOverThePresetOfTheDecksNamingNone(t *testing.T) {
 // the decks under it share that one budget.
 func TestASessionOverAPresetIsHeldToItsBudget(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Five.md":        preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Birds.md": deckOf("Five", 10, 0),
 		"decks/Trees.md": deckOf("Five", 10, 100),
 	})
 
-	if got := asked(s.under(t, today, saturday, "Five.md")); got != 5 {
+	if got := countQueue(s.openSessionByPreset(t, today, saturday, "Five.md")); got != 5 {
 		t.Errorf("a preset of five new cards a day offered %d", got)
 	}
 }
@@ -96,12 +97,12 @@ func TestASessionOverAPresetIsHeldToItsBudget(t *testing.T) {
 // the day has spent is off the allowance the tile was drawn from.
 func TestASecondSessionOverAPresetTakesUpWhereTheFirstLeftOff(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":       term,
 		"Five.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Five.md": deckOf("Five", 20, 0),
 	})
-	if got := unseen(s.under(t, today, saturday, "Five.md")); got != 5 {
+	if got := unseen(s.openSessionByPreset(t, today, saturday, "Five.md")); got != 5 {
 		t.Fatalf("the morning was asked %d new cards, want 5", got)
 	}
 
@@ -110,7 +111,7 @@ func TestASecondSessionOverAPresetTakesUpWhereTheFirstLeftOff(t *testing.T) {
 		answer(t, morning, mark(i), 6*time.Second)
 	}
 
-	if got := unseen(s.under(t, today, saturday.Add(2*time.Hour), "Five.md")); got != 2 {
+	if got := unseen(s.openSessionByPreset(t, today, saturday.Add(2*time.Hour), "Five.md")); got != 2 {
 		t.Errorf("the evening was asked %d new cards, want 2", got)
 	}
 }
@@ -119,13 +120,13 @@ func TestASecondSessionOverAPresetTakesUpWhereTheFirstLeftOff(t *testing.T) {
 // session puts the question back.
 func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Steady.md":      preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Birds.md": deckOf("Steady", 3, 0),
 	})
 
-	_, err := s.over(t, today, saturday, flashcards.Scope{
+	_, err := s.openSession(t, today, saturday, flashcards.Scope{
 		Deck: "decks/Birds.md", Preset: "Steady.md", Named: true,
 	})
 	if !errors.Is(err, flashcards.ErrBothNamed) {
@@ -136,14 +137,14 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 // A preset no deck points at has nothing to sit to, and says so.
 func TestASessionOverAPresetNothingPointsAtIsRefused(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Steady.md":      preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"Lonely.md":      preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Birds.md": deckOf("Steady", 3, 0),
 	})
 
-	_, err := s.over(t, today, saturday, flashcards.ByPreset("Lonely.md"))
+	_, err := s.openSession(t, today, saturday, flashcards.ByPreset("Lonely.md"))
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a preset nothing points at was answered with %v", err)
 	}
@@ -155,13 +156,13 @@ func TestASessionOverAPresetNothingPointsAtIsRefused(t *testing.T) {
 // A paused preset is refused with the reason, and not with an empty session.
 func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":         term,
 		"Paused.md":       preset("new_a_day: 0\nreviews_a_day: 0\n"),
 		"decks/Paused.md": deckOf("Paused", 6, 0),
 	})
 
-	_, err := s.over(t, today, saturday, flashcards.ByPreset("Paused.md"))
+	_, err := s.openSession(t, today, saturday, flashcards.ByPreset("Paused.md"))
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a paused preset was answered with %v", err)
 	}
@@ -174,14 +175,14 @@ func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
 // whole of the allowance, and the second is told why there is nothing left.
 func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"Two.md": preset(
 			"new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\ncounts: shows\n"),
 		"decks/Two.md":  deckOf("Two", 6, 0),
 		"decks/Rest.md": deckOf("", 6, 100),
 	})
-	if got := unseen(s.under(t, today, saturday, "Two.md")); got != 2 {
+	if got := unseen(s.openSessionByPreset(t, today, saturday, "Two.md")); got != 2 {
 		t.Fatalf("the morning was asked %d new cards, want 2", got)
 	}
 
@@ -190,7 +191,7 @@ func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 		answer(t, morning, mark(i), 6*time.Second)
 	}
 
-	_, err := s.over(t, today, saturday.Add(2*time.Hour), flashcards.ByPreset("Two.md"))
+	_, err := s.openSession(t, today, saturday.Add(2*time.Hour), flashcards.ByPreset("Two.md"))
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a spent day was answered with %v", err)
 	}

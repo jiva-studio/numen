@@ -129,7 +129,7 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Content
 		//nolint:nilerr // a file that will not read is this file's outcome, not the caller's error
 		return out, nil
 	}
-	out.Body = markdown.Normalised(doc.Body())
+	out.Body = markdown.Normalise(doc.Body())
 	out.Outcome = Ok
 	return out, nil
 }

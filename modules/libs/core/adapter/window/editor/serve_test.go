@@ -176,10 +176,10 @@ func openingWith(
 	t.Cleanup(func() { db.Close() })
 
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled, time.Now)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	api := &API{
-		Listeners: following(),
-		Places:    focusing(),
+		Listeners: newChangeAudience(),
+		Places:    newPlaceAudience(),
 		Notes: Notes{
 			Queries: db.Queries(),
 			Links:   db.Links(),
@@ -195,16 +195,15 @@ func openingWith(
 		api.Indexing.Model.Store(embedder.Model().String())
 		api.Indexing.Progress = db.Progress()
 	}
-	opened := cfg.VaultOpenerWith(db, readers, watcher)
-
 	line, done := api.Listeners.listen()
 	t.Cleanup(done)
 
-	wake := waking(still)
+	wake := newNudges(still)
 	api.Wrote = func() { raise(wake.notes) }
 
 	ctx, stop := context.WithCancel(t.Context())
-	wait := begin(ctx, v, cfg, db, api, opened, readers, embedder, wake, &pending{}, io.Discard)
+	_, wait := begin(ctx, v, newWatched(cfg, db, readers, watcher),
+		api, false, embedder, wake, &pending{}, io.Discard)
 	t.Cleanup(func() {
 		stop()
 		wait()
@@ -228,8 +227,8 @@ func save(t *testing.T, f *behind, path, body string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the save of %s was refused: %v", path, refusal)
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the save of %s was refused: %v", path, code)
 	}
 }
 
@@ -402,7 +401,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	}, watcher, unreadable{VaultReaders: filesystem.VaultReaders{}})
 
 	eventually(t, "the scan was not reported as failed", func() bool {
-		return f.api.Failed.Why() != ""
+		return f.api.Error.Why() != ""
 	})
 
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
@@ -440,9 +439,9 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 	})
 }
 
-// runningBehind publishes the passes a request is answered through, the way a
+// setPasses publishes the passes a request is answered through, the way a
 // vault arriving in the window does.
-func runningBehind(api *API, change func(*passes)) {
+func setPasses(api *API, change func(*passes)) {
 	on := passes{}
 	if held := api.showing.Load(); held != nil {
 		on = *held
@@ -516,8 +515,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	readers := filesystem.VaultReaders{}
 	watcher := byHand()
 	api := &API{
-		Listeners: following(),
-		Places:    focusing(),
+		Listeners: newChangeAudience(),
+		Places:    newPlaceAudience(),
 		Window:    &wire.Window{Named: wire.Editor, Tasking: task.New()},
 		Notes:     Notes{Queries: db.Queries(), Links: db.Links()},
 	}
@@ -525,8 +524,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 
 	out := &saying{}
 	ctx, stop := context.WithCancel(t.Context())
-	wait := begin(ctx, v, cfg, db, api, cfg.VaultOpenerWith(db, readers, watcher),
-		readers, nil, waking(settled), &pending{}, out)
+	_, wait := begin(ctx, v, newWatched(cfg, db, readers, watcher),
+		api, true, nil, newNudges(settled), &pending{}, out)
 	t.Cleanup(func() {
 		stop()
 		wait()

@@ -26,12 +26,12 @@ func searchCommand(
 
 	// The same search the window runs. An installation with no model answers by
 	// words alone, and says nothing about it: half a search is a whole answer.
-	trouble := func(err error) { fmt.Fprintf(errOut, "answering by words alone: %v\n", err) }
-	open, err := deps.Search(ctx, trouble)
+	errorHandler := func(err error) { fmt.Fprintf(errOut, "answering by words alone: %v\n", err) }
+	open, err := deps.Search(ctx, errorHandler)
 	if err != nil {
 		return err
 	}
-	defer closing(open.Close)
+	defer closeIfOpen(open.Close)
 	if open.Words != nil {
 		fmt.Fprintf(errOut, "searching by words alone: %v\n", open.Words)
 	}

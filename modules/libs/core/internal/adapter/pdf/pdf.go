@@ -165,18 +165,18 @@ type Location struct {
 // Locate answers where one offset in the document's text is.
 func (b *Book) Locate(offset int) Location {
 	var at Location
-	if i := preceding(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
+	if i := getPrecedingIndex(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
 		at.Part, at.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
-	if i := preceding(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
+	if i := getPrecedingIndex(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
 		at.Page = i
 	}
 	return at
 }
 
-// preceding is the index of the last item at or before an offset, and -1 when
+// getPrecedingIndex is the index of the last item at or before an offset, and -1 when
 // there is none. The items are ascending by offset.
-func preceding(n, offset int, offsetOf func(int) int) int {
+func getPrecedingIndex(n, offset int, offsetOf func(int) int) int {
 	return sort.Search(n, func(i int) bool { return offsetOf(i) > offset }) - 1
 }
 

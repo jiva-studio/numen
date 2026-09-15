@@ -36,13 +36,13 @@ type Fingerprint struct {
 	ModTime time.Time
 }
 
-// Unchanged reports whether the file can be skipped. Size and modification time
-// are the invalidation key; content is not hashed during a walk, because that
-// would mean reading every file to discover that nothing changed.
+// IsUnchanged reports whether the file can be skipped. Size and modification
+// time are the invalidation key; content is not hashed during a walk, because
+// that would mean reading every file to discover that nothing changed.
 //
 // The time is compared with Equal, because a time.Time also carries a zone and
 // a monotonic reading, and neither of those says which instant it is.
-func (f Fingerprint) Unchanged(other Fingerprint) bool {
+func (f Fingerprint) IsUnchanged(other Fingerprint) bool {
 	return f.Size == other.Size && f.ModTime.Equal(other.ModTime)
 }
 

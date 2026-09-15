@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
 // Transcribe listens to a recording with a model and writes down what it heard.
@@ -139,7 +139,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// A recording that gave no words gave an answer all the same, and it is
 	// recorded. Taking the record away is how a person asks for it again.
 	if held, err := store.Read(ctx, text.Answer(area, hash)); err == nil {
-		gave, _ := text.Answered(held)
+		gave, _ := text.ReadAnswer(held)
 		res.Silent = gave == text.Silent
 		res.Unopened = gave == text.Unopened
 		return res, u.stand(ctx, v, ref, hash, "")
@@ -148,7 +148,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	recording, err := u.By.Open(ctx, raw)
 	if err != nil {
 		res.Unopened = true
-		return res, u.answer(ctx, v, ref, hash, area, store, text.Unopened+": "+said(err.Error()))
+		return res, u.answer(ctx, v, ref, hash, area, store, text.Unopened+": "+describeFailure(err.Error()))
 	}
 	defer recording.Close()
 	res.Length = recording.Length()
@@ -168,7 +168,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// again.
 	opened := size > 0
 	write := func(cues []transcript.Cue, transcribed int) error {
-		body := appended(transcript.Marshal(cues), opened)
+		body := trimHeader(transcript.Marshal(cues), opened)
 		if err := store.Append(ctx, partial, append(body, transcript.Reaches(transcribed)...)); err != nil {
 			return err
 		}
@@ -300,17 +300,18 @@ func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, h
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, text.Beside(area, hash), append(raw, '\n'))
+	return store.Write(ctx, text.GetProducerFile(area, hash), append(raw, '\n'))
 }
 
-// said is a failure as one line, which is what a file holding one line takes.
-func said(why string) string {
+// describeFailure is a failure as one line, which is what a file holding one
+// line takes.
+func describeFailure(why string) string {
 	return strings.Join(strings.Fields(why), " ")
 }
 
-// appended is a run of cues as they are added to a file that has been written
+// trimHeader is a run of cues as they are added to a file that has been written
 // to already. The header stands once, at the top.
-func appended(raw []byte, opened bool) []byte {
+func trimHeader(raw []byte, opened bool) []byte {
 	if !opened {
 		return raw
 	}
@@ -332,7 +333,7 @@ func leftOff(
 	if err != nil {
 		return 0, 0, err
 	}
-	ms, end := transcript.Reached(raw)
+	ms, end := transcript.ReadReached(raw)
 	if end < len(raw) {
 		// Written back to the note. Bytes past it are cues no note claims.
 		if err := store.Write(ctx, partial, raw[:end]); err != nil {

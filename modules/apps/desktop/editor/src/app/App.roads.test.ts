@@ -1,0 +1,463 @@
+/**
+ * Every road to a file, and what the window tells whoever answers for the
+ * person about what they have open.
+ *
+ * A road holds a path and no choice, so the same file reached by the palette,
+ * by the search, by a link in an answer or from outside the window opens in the
+ * same editor every time.
+ */
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { type VueWrapper } from '@vue/test-utils'
+import {
+  Agent,
+  Editor,
+  openTabBeside,
+  Palette,
+  panesOf,
+  Plex,
+  Reader,
+  Tree,
+  WorkspaceLayout,
+  type Workspace,
+} from '@numen/ui'
+import { DocumentTab } from '@/pages/document-viewer'
+import { NoteTab } from '@/pages/note-editor'
+import { RecordingTab } from '@/pages/media-recording'
+import {
+  requests,
+  cards,
+  DEBOUNCE,
+  folders,
+  layoutOf,
+  mountWindow,
+  nameAnswer,
+  nodeInPlex,
+  outside,
+  paneKinds,
+  passageAnswer,
+  said,
+  settle,
+} from '@/testing/window'
+
+describe('the window with no note to show', () => {
+  it('says the vault could not be read, and that nothing was read from it', async () => {
+    said.opening = null
+    said.error = 'the vault folder is not there'
+
+    const window = await mountWindow()
+
+    const corner = cards(window)
+    expect(corner[0]).toContain('the vault folder is not there')
+    expect(corner[1]).toBe('nothing was read')
+  })
+
+  it('says nothing when the vault was read and holds none', async () => {
+    said.opening = null
+    said.error = ''
+
+    const window = await mountWindow()
+
+    expect(cards(window)).toStrictEqual([])
+  })
+})
+
+describe('every road to a file', () => {
+  /**
+   * Each road, by what it is called, as a gesture on a window standing on one
+   * file. They are listed here so that every one of them is asked the same
+   * four questions, and a road opening a file some other way is a road missing
+   * from this list.
+   */
+  const ROADS: Record<string, (window: VueWrapper, path: string) => Promise<void>> = {
+    'the plex': async (window) => {
+      window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
+    },
+    'the tree': async (window, path) => {
+      window.findComponent(Tree).vm.$emit('activate', path)
+    },
+    'the palette': async (window, path) => {
+      await typeInSearch(window, 'ani')
+      window.findComponent(Palette).vm.$emit('choose', path, 'note')
+    },
+    'the search': async (window, path) => {
+      await typeInSearch(window, 'ani')
+      window.findComponent(Palette).vm.$emit('choose', `text:${path}:0`, 'note')
+    },
+    'a command': async (window) => {
+      pressKey('p')
+      await settle()
+      window.findComponent(Palette).vm.$emit('choose', 'read', 'read')
+    },
+    // The two roads that arrive naming a span of a source's own text: a link
+    // in an answer the agent wrote, and a place asked for from outside the
+    // window altogether.
+    'a link in an answer': async (window, path) => {
+      const turn = { id: 'a', voice: 'answered' as const, text: '' }
+      const link = `numen:${encodeURIComponent(path)}?start=0&length=4`
+      window
+        .findComponent(Agent)
+        .vm.$emit('follow', turn, link, new MouseEvent('click', { cancelable: true }))
+    },
+    'a place asked for from outside': async (_, path) => {
+      outside.ask({ path, start: 0, length: 4 })
+    },
+  }
+
+  /** A keystroke the window answers, which the palette and the commands are. */
+  const pressKey = (key: string) =>
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true }))
+
+  /** The search open, with words typed into it and the answers back. */
+  const typeInSearch = async (window: VueWrapper, words: string) => {
+    pressKey('k')
+    await settle()
+    window.findComponent(Palette).vm.$emit('update:modelValue', words)
+    await new Promise((done) => setTimeout(done, DEBOUNCE))
+  }
+
+  /** The root of the vault holds one file of each of four. */
+  const root = folders['']
+  beforeEach(() => {
+    folders[''] = [
+      { path: 'Animals.md', name: 'Animals.md', folder: false, kind: 'note', type: 'deck' },
+      { path: 'Animal.md', name: 'Animal.md', folder: false, kind: 'note', type: 'stencil' },
+      { path: 'Ants.md', name: 'Ants.md', folder: false, kind: 'note', type: 'note' },
+      { path: 'Ants.epub', name: 'Ants.epub', folder: false, kind: 'book', type: 'note' },
+    ]
+  })
+  afterEach(() => {
+    folders[''] = root ?? []
+  })
+
+  /** One file opened by one road, answered with what the window drew. */
+  const openBy = async (
+    road: (window: VueWrapper, path: string) => Promise<void>,
+    path: string,
+    type: 'note' | 'deck' | 'stencil',
+  ): Promise<readonly string[]> => {
+    said.types = { [path]: type }
+    said.opening = path
+    said.names = [nameAnswer(path, path, type)]
+    said.passages = [passageAnswer(path, path, type)]
+
+    const window = await mountWindow()
+    await road(window, path)
+    await settle()
+    await settle()
+    return paneKinds(window).flat()
+  }
+
+  for (const [name, road] of Object.entries(ROADS)) {
+    it(`opens a deck in the editor of its cards, reached by ${name}`, async () => {
+      expect(await openBy(road, 'Animals.md', 'deck')).toContain('deck')
+    })
+
+    it(`opens a stencil in the editor of its fields and faces, reached by ${name}`, async () => {
+      expect(await openBy(road, 'Animal.md', 'stencil')).toContain('stencil')
+    })
+
+    it(`opens an ordinary note in the editor of its prose, reached by ${name}`, async () => {
+      const drew = await openBy(road, 'Ants.md', 'note')
+
+      expect(drew).toContain('note')
+      expect(drew).not.toContain('deck')
+      expect(drew).not.toContain('stencil')
+    })
+
+    // The vault is never asked about the book by anything but the window, and
+    // the palette is told it turned up a note: the path alone has to be enough.
+    it(`opens a book in the reader, reached by ${name}`, async () => {
+      const drew = await openBy(road, 'Ants.epub', 'note')
+
+      expect(drew).toContain('book')
+      expect(drew).not.toContain('note')
+    })
+
+    // A book is turned by the arrows and by nothing else, so a road that opens
+    // one and leaves the keyboard behind is a book nobody can read: whatever
+    // holds it reads the arrows for itself, and the tree walks its rows by them.
+    it(`hands the book the keyboard, reached by ${name}`, async () => {
+      await openBy(road, 'Ants.epub', 'note')
+
+      expect(document.activeElement?.className).toContain('book-tab')
+    })
+
+    it(`turns the book by the arrows, reached by ${name}`, async () => {
+      await openBy(road, 'Ants.epub', 'note')
+
+      globalThis.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }),
+      )
+
+      expect(requests.pressed).toStrictEqual(['ArrowRight'])
+    })
+  }
+})
+
+describe('what the person has open, as whoever answers for them is told it', () => {
+  /** The last the window said about it, and nothing where it has said nothing. */
+  const getLastReport = () => requests.openTabs.at(-1) ?? null
+
+  /** The tab the window said is in front, of the last it said. */
+  const front = () => {
+    const open = getLastReport()
+    return open?.tabs.find((one) => one.id === open.front) ?? null
+  }
+
+  it('lists every tab the window holds, the plex it opens on in front', async () => {
+    await mountWindow()
+
+    expect([...(getLastReport()?.tabs ?? [])].map((one) => one.kind).sort()).toEqual([
+      'agent',
+      'files',
+      'plex',
+    ])
+    expect(front()?.kind).toBe('plex')
+    expect(front()?.path).toBe('Root.md')
+  })
+
+  it('names the tab beside the agent, where the person is writing in one', async () => {
+    const window = await mountWindow()
+    const workspace = window.findComponent(WorkspaceLayout)
+
+    // The person is in the agent, which is where a question is written.
+    workspace.vm.$emit('update:modelValue', {
+      ...(workspace.props('modelValue') as Workspace),
+      focus: 'aside',
+    })
+    await settle()
+
+    expect(front()?.kind).toBe('plex')
+  })
+
+  it('names the book in front, and the note the plex stands on beside it', async () => {
+    const window = await mountWindow()
+
+    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
+    await settle()
+    await settle()
+    window.unmount()
+
+    expect(front()?.kind).toBe('book')
+    expect(front()?.path).toBe('Ants.epub')
+    expect(getLastReport()?.tabs.some((one) => one.kind === 'plex' && one.path === 'Root.md')).toBe(
+      true,
+    )
+  })
+})
+
+describe('a note asked for in the plex', () => {
+  it('is drawn in a tab of its own', async () => {
+    const window = await mountWindow()
+
+    window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
+    await settle()
+
+    expect(window.findComponent(NoteTab).exists()).toBe(true)
+    expect(window.findComponent(NoteTab).findComponent(Editor).exists()).toBe(true)
+  })
+
+  it('is asked for by the node, and a path opens nothing', async () => {
+    const window = await mountWindow()
+
+    window.findComponent(Plex).vm.$emit('show', 'Root.md', 'here')
+    await settle()
+
+    expect(window.findComponent(NoteTab).exists()).toBe(false)
+  })
+})
+
+describe('a place an answer names', () => {
+  it('is drawn in the document it stands in', async () => {
+    const window = await mountWindow()
+
+    window
+      .findComponent(Agent)
+      .vm.$emit(
+        'follow',
+        { id: 'said', voice: 'said', text: '[here](numen:Source.pdf?start=0&length=4)' },
+        'numen:Source.pdf?start=0&length=4',
+        { preventDefault: () => {} },
+      )
+    await settle()
+
+    expect(window.findComponent(DocumentTab).exists()).toBe(true)
+    expect(window.findComponent(DocumentTab).findComponent(Reader).exists()).toBe(true)
+  })
+})
+
+// A recording is the one file the window reaches two ports for: the player is
+// loaded from one, and what the file carries is asked of the other. Neither is
+// reached by any other kind of tab.
+describe('a recording put in front', () => {
+  const RECORDING = '730709BG.LON.mp3'
+
+  /** The window with that recording open, asked for from outside it. */
+  const openRecording = async () => {
+    const window = await mountWindow()
+    outside.ask({ path: RECORDING, start: 0, length: 4 })
+    await settle()
+    await settle()
+    return window
+  }
+
+  it('is played from where the application answers, on the words written down', async () => {
+    const window = await openRecording()
+
+    const state = window.findComponent(RecordingTab).props('state') as {
+      url: { value: string }
+      prose: { value: string }
+      isEditable: { value: boolean }
+    }
+    expect(requests.listened).toStrictEqual([RECORDING])
+    expect(state.url.value).toBe(said.transcribed.mediaUrl)
+    expect(state.prose.value).toBe(said.transcribed.cues[0]?.text)
+    expect(state.isEditable.value).toBe(true)
+    // How long it runs and how far the words reach are the application's
+    // answer, and what the window says the person has open carries them.
+    expect(requests.openTabs.at(-1)?.tabs.at(-1)).toMatchObject({
+      path: RECORDING,
+      recording: {
+        transcribedDurationMs: said.transcribed.cues[0]?.to,
+        durationMs: said.transcribed.duration,
+      },
+    })
+  })
+
+  // What is offered over a recording follows what has been made from it, and
+  // not its kind alone: one already written down is not offered to be written
+  // down again.
+  it('is offered being written down while it carries no transcript', async () => {
+    said.carries = { [RECORDING]: { transcript: 'none' } }
+
+    const window = await openRecording()
+
+    expect(requests.carried).toStrictEqual([RECORDING])
+    expect(await runsOffered(window)).toStrictEqual(['transcribe'])
+  })
+
+  it('is offered putting the words right once a run has written them', async () => {
+    said.carries = { [RECORDING]: { transcript: 'done' } }
+
+    const window = await openRecording()
+
+    expect(requests.carried).toStrictEqual([RECORDING])
+    expect(await runsOffered(window)).toStrictEqual(['proofread', 'deleteText'])
+  })
+})
+
+/** The runs the palette offers over the file in front, in the order it draws them. */
+const runsOffered = async (window: VueWrapper): Promise<readonly string[]> => {
+  globalThis.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }),
+  )
+  await settle()
+  const groups = window.findComponent(Palette).props('groups') as readonly {
+    id: string
+    items: readonly { id: string }[]
+  }[]
+  return groups.find((one) => one.id === 'file')?.items.map((one) => one.id) ?? []
+}
+
+describe('a key struck while a book is in front', () => {
+  it('reaches the book, whichever pane the person came to it from', async () => {
+    // The tab is asked before the commands are. A book that hears no key is a
+    // book nothing turns: the arrows are what a page is turned by.
+    said.opening = 'Root.md'
+    const window = await mountWindow()
+
+    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
+    await settle()
+    await settle()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+    expect(requests.pressed).toStrictEqual(['ArrowRight'])
+    window.unmount()
+  })
+
+  it('reaches no book where the person is in another kind of tab', async () => {
+    said.opening = 'Root.md'
+    const window = await mountWindow()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+    expect(requests.pressed).toStrictEqual([])
+    window.unmount()
+  })
+})
+
+describe('a key struck while a document is in front', () => {
+  it('reaches the document, which is turned by the arrows as a book is', async () => {
+    // A reader who opened a book and a reader who opened a document are one
+    // person, and neither is told which of the two they are looking at.
+    said.opening = 'Root.md'
+    const window = await mountWindow()
+
+    outside.ask({ path: 'Source.pdf', start: 0, length: 4 })
+    await settle()
+    await settle()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+    expect(requests.pressed).toStrictEqual(['ArrowRight'])
+    window.unmount()
+  })
+})
+
+describe('a book carried into another group of tabs', () => {
+  it('keeps the keyboard, so the arrows still turn it', async () => {
+    // A tab dragged into another pane is drawn again where it landed, and a
+    // book drawn again without the keyboard is one the arrows never reach.
+    said.opening = 'Root.md'
+    const window = await mountWindow()
+    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
+    await settle()
+    await settle()
+    requests.pressed = []
+
+    const workspace = window.findComponent(WorkspaceLayout)
+    const was = layoutOf(window)
+    const book = panesOf(was.root)
+      .flatMap((one) => one.tabs)
+      .find((tab) => tab.startsWith('book:'))!
+    workspace.vm.$emit(
+      'update:modelValue',
+      openTabBeside(was, book, 'right', () => 'landed'),
+    )
+    await settle()
+    await settle()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+    expect(requests.pressed).toStrictEqual(['ArrowRight'])
+    window.unmount()
+  })
+})
+
+describe('a book beside the pane the person is in', () => {
+  it('is turned by the arrows while it holds the keyboard', async () => {
+    // Several panes are drawn at once and the person is in one of them. The
+    // book is in another, holding the keyboard, and the arrows are struck at
+    // the book they are looking at.
+    said.opening = 'Root.md'
+    const window = await mountWindow()
+    outside.ask({ path: 'Ants.epub', start: 0, length: 4 })
+    await settle()
+    await settle()
+    requests.pressed = []
+
+    const workspace = window.findComponent(WorkspaceLayout)
+    const was = layoutOf(window)
+    const other = panesOf(was.root).find((one) => !one.tabs.some((tab) => tab.startsWith('book:')))!
+    workspace.vm.$emit('update:modelValue', { ...was, focus: other.id })
+    await settle()
+
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true, bubbles: true }),
+    )
+
+    expect(requests.pressed).toStrictEqual(['ArrowRight'])
+    window.unmount()
+  })
+})

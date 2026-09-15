@@ -24,7 +24,8 @@ const FURTHEST = 40
 const PARTS = 9
 
 /** The fields the browser walks Tab through part by part. */
-const PARTED = 'input[type="time"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"]'
+const PARTED =
+  'input[type="time"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"]'
 
 /** The roles whose name never comes from what stands inside them. */
 const HELD = new Set(['textbox', 'combobox', 'searchbox', 'spinbutton', 'slider'])
@@ -86,7 +87,8 @@ const shown = (element: Element): boolean => {
 }
 
 /** What the browser may put the keyboard on. */
-const REACHABLE = 'a[href], area[href], button, input, select, textarea, [tabindex], [contenteditable]'
+const REACHABLE =
+  'a[href], area[href], button, input, select, textarea, [tabindex], [contenteditable]'
 
 /**
  * Whether the page holds somewhere else for the keyboard to go. A story with

@@ -20,6 +20,7 @@ go test ./internal/adapter/filesystem/ -run XXX -bench Derived -benchmem -count 
 go test ./adapter/index/ -run XXX -bench Unembedded -benchmem -count 10 -benchtime 300x
 go test ./adapter/index/ -run XXX -bench SaveVectors -benchmem -count 10 -benchtime 50x
 go test ./adapter/index/ -run XXX -bench ChunkIdentity -benchmem -count 10
+NUMEN_EPUB_CORPUS=<a folder of EPUB files> go test ./epub/ -run XXX -bench 'ReadingABook|DrawingOneDocument|CountingThePages' -benchtime 5x -count 2
 ```
 
 The bundle each window is built into, from the repository root:
@@ -602,6 +603,22 @@ The document is 546 pages of a scan at 600 dpi, 233 MB, carrying a text layer so
 | Naming every page | 4 ms |
 
 The compile is the module, not the document, and it is paid by the first PDF a run reads and by no other. The text of a smaller document is proportionally quicker: 80 pages is under a second.
+
+## Opening a book made for a screen
+
+Recorded 2026-09-06 on the same AMD Ryzen 7 6800U. The corpus is not in the repository; these stand aside without it.
+
+The book is the largest of the forty: 19.8 MB on disk, 4 032 243 bytes of text over 96 spine documents, naming 99 parts, and read in 2 177 pages. Its longest document is 88 707 bytes of text.
+
+| | |
+| --- | --- |
+| Reading the whole file | 105–122 ms (about 175 MB/s) |
+| Setting one document — the longest — as the markup a window draws | 1.5–2.0 ms |
+| Counting the pages of the book | 100–200 ns |
+
+Nothing is laid out to count the pages, which is why the last row is nanoseconds and not seconds: the count is arithmetic over the one text stream. A reader that paginated by laying every document out would pay for the whole book before showing any of it, and it is the engine the window runs in that this matters on — the pages are set by WebKit on two of the three platforms.
+
+Reading the file is paid once when the book is opened and not again while it is held; a chapter turned to is the second row.
 
 ## Reading a scanned page with a model
 

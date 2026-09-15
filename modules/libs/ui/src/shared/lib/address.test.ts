@@ -4,7 +4,7 @@
  * The same brackets stand in an answer and in a note, and both are read here.
  */
 import { describe, expect, it } from 'vitest'
-import { addressOf, pointsAtNote, stated, wikilinkAt, wikilinksIn } from './address'
+import { addressOf, isNoteAddress, writeAddress, wikilinkAt, wikilinksIn } from './address'
 
 /**
  * The addresses in a note travel on the wire as they were written, so the core
@@ -28,20 +28,20 @@ describe('an address', () => {
   })
 
   it('is one string, which is how it is handed on and read back', () => {
-    expect(stated(addressOf('[[Entropy]]'))).toBe('name://Entropy')
-    expect(addressOf(stated(addressOf('[[Entropy]]')))).toStrictEqual(addressOf('Entropy'))
+    expect(writeAddress(addressOf('[[Entropy]]'))).toBe('name://Entropy')
+    expect(addressOf(writeAddress(addressOf('[[Entropy]]')))).toStrictEqual(addressOf('Entropy'))
   })
 })
 
 describe('what points at a note', () => {
   it('is a name and an identifier', () => {
-    expect(pointsAtNote('name://Entropy')).toBe(true)
-    expect(pointsAtNote('note://01J8')).toBe(true)
+    expect(isNoteAddress('name://Entropy')).toBe(true)
+    expect(isNoteAddress('note://01J8')).toBe(true)
   })
 
   it('is not a place in a source, and not a page on the web', () => {
-    expect(pointsAtNote('numen:book.pdf?start=1&length=2')).toBe(false)
-    expect(pointsAtNote('https://example.com')).toBe(false)
+    expect(isNoteAddress('numen:book.pdf?start=1&length=2')).toBe(false)
+    expect(isNoteAddress('https://example.com')).toBe(false)
   })
 })
 

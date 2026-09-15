@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/klippa-app/go-pdfium/requests"
 )
 

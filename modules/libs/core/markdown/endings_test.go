@@ -68,10 +68,10 @@ func TestAMixedNoteIsNotRewrittenEndToEnd(t *testing.T) {
 
 // A carriage return on its own is a line break, and comes back as one.
 func TestALoneCarriageReturnIsALineBreak(t *testing.T) {
-	if got := Normalised("first\rsecond\r\nthird\n"); got != "first\nsecond\nthird\n" {
+	if got := Normalise("first\rsecond\r\nthird\n"); got != "first\nsecond\nthird\n" {
 		t.Errorf("got %q", got)
 	}
-	if got := Normalised("nothing to normalise\n"); got != "nothing to normalise\n" {
+	if got := Normalise("nothing to normalise\n"); got != "nothing to normalise\n" {
 		t.Errorf("text with no carriage return came back changed: %q", got)
 	}
 }

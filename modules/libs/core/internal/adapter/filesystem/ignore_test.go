@@ -56,7 +56,7 @@ func TestAToolsOwnFilesAreNotNotes(t *testing.T) {
 		"backup/.git/config.md": "not a note\n",
 	}, nil)
 
-	if got := walked(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Note.md"}) {
+	if got := walkWithOptions(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Note.md"}) {
 		t.Errorf("walked %v", got)
 	}
 }
@@ -71,12 +71,12 @@ func TestAVaultSaysWhatToIgnore(t *testing.T) {
 		"Draft.tmp.md":       "# Draft\n",
 	}
 
-	if got := walked(t, vaultOf(t, files, nil), filesystem.Options{}); len(got) != 4 {
+	if got := walkWithOptions(t, vaultOf(t, files, nil), filesystem.Options{}); len(got) != 4 {
 		t.Fatalf("without rules the vault holds %v", got)
 	}
 
 	root := vaultOf(t, files, []string{"archive/", "*.tmp.md"})
-	if got := walked(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Note.md"}) {
+	if got := walkWithOptions(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Note.md"}) {
 		t.Errorf("walked %v, want only the note that survives both rules", got)
 	}
 }
@@ -92,7 +92,7 @@ func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
 		"backup/.git/config.md": "not a note\n",
 	}, []string{"!.*"})
 
-	if got := walked(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Note.md"}) {
+	if got := walkWithOptions(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Note.md"}) {
 		t.Errorf("walked %v", got)
 	}
 
@@ -120,7 +120,7 @@ func TestAVaultTakesBackItsOwnRule(t *testing.T) {
 		"Draft.tmp.md": "# Draft\n",
 	}, []string{"*.tmp.md", "!Draft.tmp.md"})
 
-	if got := walked(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Draft.tmp.md", "Note.md"}) {
+	if got := walkWithOptions(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Draft.tmp.md", "Note.md"}) {
 		t.Errorf("walked %v", got)
 	}
 }
@@ -132,10 +132,10 @@ func TestIgnoringOneVaultDoesNotIgnoreAnother(t *testing.T) {
 	quiet := vaultOf(t, files, []string{"archive/"})
 	loud := vaultOf(t, files, nil)
 
-	if got := walked(t, quiet, filesystem.Options{}); len(got) != 1 {
+	if got := walkWithOptions(t, quiet, filesystem.Options{}); len(got) != 1 {
 		t.Errorf("the vault with a rule walked %v", got)
 	}
-	if got := walked(t, loud, filesystem.Options{}); len(got) != 2 {
+	if got := walkWithOptions(t, loud, filesystem.Options{}); len(got) != 2 {
 		t.Errorf("the vault without one walked %v", got)
 	}
 }

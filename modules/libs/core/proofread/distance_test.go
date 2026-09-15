@@ -23,7 +23,7 @@ func TestACorrectionHeldToNoDistanceStandsHoweverFar(t *testing.T) {
 		t.Fatalf("the two stand %.2f apart, which the reading's own limit allows", apart)
 	}
 
-	put, _, ok := proofread.Fixed(oneLine(asHeard), "7 | "+asSaid, 0)
+	put, _, ok := proofread.GetFixedLines(oneLine(asHeard), "7 | "+asSaid, 0)
 	if !ok {
 		t.Fatal("the batch was refused")
 	}
@@ -34,7 +34,7 @@ func TestACorrectionHeldToNoDistanceStandsHoweverFar(t *testing.T) {
 
 // The reading's own limit still holds where it is given.
 func TestACorrectionBeyondTheLimitGivenIsDropped(t *testing.T) {
-	put, _, ok := proofread.Fixed(oneLine(asHeard), "7 | "+asSaid, proofread.MaxEditDistance)
+	put, _, ok := proofread.GetFixedLines(oneLine(asHeard), "7 | "+asSaid, proofread.MaxEditDistance)
 	if !ok {
 		t.Fatal("the batch was refused")
 	}
@@ -45,7 +45,7 @@ func TestACorrectionBeyondTheLimitGivenIsDropped(t *testing.T) {
 
 // An answer that empties a line which said something refuses the batch.
 func TestAnAnswerThatEmptiesALineRefusesTheBatch(t *testing.T) {
-	if _, _, ok := proofread.Fixed(oneLine(asHeard), "7 | ", 0); ok {
+	if _, _, ok := proofread.GetFixedLines(oneLine(asHeard), "7 | ", 0); ok {
 		t.Error("the batch was taken")
 	}
 }

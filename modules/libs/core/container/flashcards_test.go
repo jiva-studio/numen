@@ -21,7 +21,7 @@ func TestAMachineWithNoCacheFolderIsAnsweredNoStoreAtAll(t *testing.T) {
 		asked func(container.Config) (port.ScheduleStore, error)
 	}{
 		{"the schedules", container.Config.Schedules},
-		{"the counting", container.Config.Counting},
+		{"the counting", container.Config.OpenDayCounts},
 	} {
 		kept, err := one.asked(container.Config{ServiceDir: ".numen"})
 		if err == nil {

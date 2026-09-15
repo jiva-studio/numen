@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 // published is the format a site hands its captions over in: one event to a
@@ -23,7 +23,7 @@ type published struct {
 	} `json:"events"`
 }
 
-// cued is the captions as cues.
+// parseCues is the captions as cues.
 //
 // An event whose segments say nothing is the blank a site puts between two
 // stretches, and an event marked as appending is the tail of the one before it
@@ -31,7 +31,7 @@ type published struct {
 //
 // A cue ends where the next begins, so that a moment on the player belongs to
 // one stretch of speech.
-func cued(raw []byte) ([]transcript.Cue, error) {
+func parseCues(raw []byte) ([]transcript.Cue, error) {
 	var held published
 	if err := json.Unmarshal(raw, &held); err != nil {
 		return nil, fmt.Errorf("what the captions said: %w", err)
@@ -55,17 +55,17 @@ func cued(raw []byte) ([]transcript.Cue, error) {
 			To:   event.Start + event.Duration,
 		})
 	}
-	return trimmed(cues), nil
+	return trimOverlaps(cues), nil
 }
 
-// trimmed ends each cue where the next begins. A site draws two stretches at
+// trimOverlaps ends each cue where the next begins. A site draws two stretches at
 // once while one is still being said, and a chunk cut from words that stand
 // twice is a passage read back over its neighbour.
 //
 // What was said first stands first, whatever order it arrived in: the words are
 // read as one text, and a moment on the player is found in them by looking
 // forward.
-func trimmed(cues []transcript.Cue) []transcript.Cue {
+func trimOverlaps(cues []transcript.Cue) []transcript.Cue {
 	sort.SliceStable(cues, func(i, j int) bool { return cues[i].From < cues[j].From })
 	for i := range cues {
 		if i+1 < len(cues) && cues[i].To > cues[i+1].From {

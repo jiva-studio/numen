@@ -35,10 +35,10 @@ func summaryOf(s cards.StencilSummary) *v1.StencilSummary {
 	return &v1.StencilSummary{Path: s.Path, Title: s.Title, Fields: s.Fields}
 }
 
-// renamedOf is what a rename reached and what it did not, as the schema carries
+// newRenameResponse is what a rename reached and what it did not, as the schema carries
 // it. A deck it could not be written to keeps the old heading, and the problem
 // says which deck and why.
-func renamedOf(r cards.RenameResult) *v1.RenameStencilFieldResponse {
+func newRenameResponse(r cards.RenameResult) *v1.RenameStencilFieldResponse {
 	out := &v1.RenameStencilFieldResponse{
 		Decks: r.Decks,
 		Cards: int32(r.Cards),
@@ -181,9 +181,9 @@ func faultOf(fault format.Fault) (v1.Fault, bool) {
 	}
 }
 
-// writtenDeck is the deck a client is putting in the vault, in the words the
+// newDeck is the deck a client is putting in the vault, in the words the
 // core holds one in.
-func writtenDeck(w *v1.WriteDeckRequest) format.Deck {
+func newDeck(w *v1.WriteDeckRequest) format.Deck {
 	out := format.Deck{
 		Preamble: w.GetPreamble(),
 		Cards:    cardsOf(w.GetCards()),

@@ -13,8 +13,8 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// checked scans a vault and hands back the checks over it.
-func checked(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
+// scanVault scans a vault and hands back the checks over it.
+func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db, err := container.Config{IndexPath: indexfile.Path(t)}.OpenIndex(t.Context())
@@ -55,7 +55,7 @@ func only(found []domain.VaultProblem, check domain.Check) []domain.VaultProblem
 // The point of the whole arrangement: the problem is against the note somebody
 // opens to settle it, which for an ambiguous link is the note that wrote it.
 func TestAnAmbiguousLinkIsTheProblemOfTheNoteThatWroteIt(t *testing.T) {
-	l, v := checked(t, map[string]string{
+	l, v := scanVault(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
 		"chemistry/Entropy.md": "# Entropy\n",
 		"Heat.md":              "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
@@ -79,7 +79,7 @@ func TestAnAmbiguousLinkIsTheProblemOfTheNoteThatWroteIt(t *testing.T) {
 // A name that is an exact path is not ambiguous, however many notes share the
 // filename. Reporting it would be the check disagreeing with the resolver.
 func TestANameThatResolvesExactlyIsNotAmbiguous(t *testing.T) {
-	l, v := checked(t, map[string]string{
+	l, v := scanVault(t, map[string]string{
 		"Entropy.md":         "# Entropy\n",
 		"physics/Entropy.md": "# Entropy\n",
 		"Heat.md":            "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
@@ -93,7 +93,7 @@ func TestANameThatResolvesExactlyIsNotAmbiguous(t *testing.T) {
 // Quiet: a vault being written is full of links to notes not yet made, and they
 // would bury everything else.
 func TestADanglingLinkArrivesOnlyWhenAskedFor(t *testing.T) {
-	l, v := checked(t, map[string]string{
+	l, v := scanVault(t, map[string]string{
 		"Heat.md": "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 	})
 
@@ -113,7 +113,7 @@ func TestADanglingLinkArrivesOnlyWhenAskedFor(t *testing.T) {
 // Writing the missing note mends it, and nobody touches the link: what a name
 // reaches is worked out when it is asked.
 func TestWritingTheMissingNoteMendsADanglingLink(t *testing.T) {
-	l, v := checked(t, map[string]string{
+	l, v := scanVault(t, map[string]string{
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 		"Entropy.md": "# Entropy\n",
 	})
@@ -124,7 +124,7 @@ func TestWritingTheMissingNoteMendsADanglingLink(t *testing.T) {
 }
 
 func TestWhatOneFileGotWrongIsReportedAgainstThatFile(t *testing.T) {
-	l, v := checked(t, map[string]string{
+	l, v := scanVault(t, map[string]string{
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n---\n# Heat\n",
 		"Broken.md":  "---\nid: [unterminated\n---\n# Broken\n",
 		"Entropy.md": "# Entropy\n",
@@ -145,7 +145,7 @@ func TestWhatOneFileGotWrongIsReportedAgainstThatFile(t *testing.T) {
 }
 
 func TestAskingForACheckThatDoesNotExistSaysWhatDoes(t *testing.T) {
-	l, v := checked(t, nil)
+	l, v := scanVault(t, nil)
 
 	_, err := l.Run(t.Context(), v, "spelling")
 	if err == nil {
@@ -160,7 +160,7 @@ func TestAskingForACheckThatDoesNotExistSaysWhatDoes(t *testing.T) {
 
 // Adding a check is adding a file, and what runs is whatever the set holds.
 func TestTheSetOfChecksIsWhatRuns(t *testing.T) {
-	l, v := checked(t, map[string]string{"Heat.md": "---\nlinks:\n  - to: Entropy\n---\n# Heat\n"})
+	l, v := scanVault(t, map[string]string{"Heat.md": "---\nlinks:\n  - to: Entropy\n---\n# Heat\n"})
 	l.List = nil
 
 	if found := run(t, l, v); len(found) != 0 {
@@ -172,7 +172,7 @@ func TestTheSetOfChecksIsWhatRuns(t *testing.T) {
 // the world, and the vault holding it may not be open on this machine. The
 // resolver says so deliberately, and the check must not disagree with it.
 func TestAnIdentifierFromAnotherVaultIsNotDangling(t *testing.T) {
-	l, v := checked(t, map[string]string{
+	l, v := scanVault(t, map[string]string{
 		"Heat.md": "---\nlinks:\n  - to: note://01J8F3K2M9QRSTVWXYZ012\n    role: parent\n---\n# Heat\n",
 	})
 

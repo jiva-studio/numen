@@ -11,11 +11,11 @@ import (
 	"testing"
 )
 
-// packed is an archive laid out the way a mac release is: the library carrying
+// createArchive is an archive laid out the way a mac release is: the library carrying
 // its version, the plain name beside it as a link, and another library named for
 // what it adds. What comes back is where it is and the sums it and the library
 // inside it carry.
-func packed(t *testing.T, dir string) release {
+func createArchive(t *testing.T, dir string) release {
 	t.Helper()
 	at := filepath.Join(dir, "onnxruntime-osx-arm64-1.23.0.tgz")
 	file, err := os.Create(at)
@@ -58,7 +58,7 @@ func packed(t *testing.T, dir string) release {
 	if err := file.Sync(); err != nil {
 		t.Fatal(err)
 	}
-	return release{archive: at, sum: sum(t, at), library: summed(body)}
+	return release{archive: at, sum: sum(t, at), library: computeSum(body)}
 }
 
 // sum is what one file on this machine carries.
@@ -68,10 +68,10 @@ func sum(t *testing.T, at string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return summed(string(held))
+	return computeSum(string(held))
 }
 
-func summed(body string) string {
+func computeSum(body string) string {
 	held := sha256.Sum256([]byte(body))
 	return hex.EncodeToString(held[:])
 }
@@ -80,7 +80,7 @@ func summed(body string) string {
 // beside it is a link to it. What is taken out of the archive is the file.
 func TestTheMacLibraryIsTakenOutOfTheArchive(t *testing.T) {
 	dir := t.TempDir()
-	found := packed(t, dir)
+	found := createArchive(t, dir)
 	at, err := unpack(found.archive, "libonnxruntime.dylib", found)
 	if err != nil {
 		t.Fatal(err)
@@ -98,8 +98,8 @@ func TestTheMacLibraryIsTakenOutOfTheArchive(t *testing.T) {
 // taken out of it, and what a person is told names the file.
 func TestAnArchiveThatIsNotTheOnePublishedIsRefused(t *testing.T) {
 	dir := t.TempDir()
-	found := packed(t, dir)
-	found.sum = summed("another archive")
+	found := createArchive(t, dir)
+	found.sum = computeSum("another archive")
 
 	at, err := unpack(found.archive, "libonnxruntime.dylib", found)
 	if err == nil {
@@ -115,9 +115,9 @@ func TestAnArchiveThatIsNotTheOnePublishedIsRefused(t *testing.T) {
 // archive as it is published.
 func TestACachedArchiveThatIsNotTheOnePublishedIsFetchedAgain(t *testing.T) {
 	dir := t.TempDir()
-	found := packed(t, dir)
+	found := createArchive(t, dir)
 	broken := found
-	broken.sum = summed("another archive")
+	broken.sum = computeSum("another archive")
 
 	if _, err := unpack(broken.archive, "libonnxruntime.dylib", broken); err == nil {
 		t.Fatal("an archive that is not the one published was unpacked")
@@ -126,7 +126,7 @@ func TestACachedArchiveThatIsNotTheOnePublishedIsFetchedAgain(t *testing.T) {
 		t.Fatal("the archive is still in the cache, and every later run is handed it")
 	}
 
-	found = packed(t, dir)
+	found = createArchive(t, dir)
 	at, err := unpack(found.archive, "libonnxruntime.dylib", found)
 	if err != nil {
 		t.Fatal(err)
@@ -144,7 +144,7 @@ func TestACachedArchiveThatIsNotTheOnePublishedIsFetchedAgain(t *testing.T) {
 // that it is broken. The two send a person to different places.
 func TestAnArchiveHoldingNoSuchLibrarySaysSo(t *testing.T) {
 	dir := t.TempDir()
-	found := packed(t, dir)
+	found := createArchive(t, dir)
 
 	_, err := unpack(found.archive, "libsomethingelse.dylib", found)
 	if err == nil {
@@ -160,7 +160,7 @@ func TestAnArchiveHoldingNoSuchLibrarySaysSo(t *testing.T) {
 // that is.
 func TestALibraryInTheCacheThatIsNotTheOnePublishedIsWrittenOver(t *testing.T) {
 	dir := t.TempDir()
-	found := packed(t, dir)
+	found := createArchive(t, dir)
 	at := filepath.Join(dir, "libonnxruntime.dylib")
 	if err := os.WriteFile(at, []byte("something else"), 0o755); err != nil {
 		t.Fatal(err)

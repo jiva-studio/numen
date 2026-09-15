@@ -20,9 +20,9 @@ type SchemaEnum interface {
 	protoreflect.Enum
 }
 
-// Handled fails for every value of the enum that reaches nothing on the way in.
-// Reading answers whether the value was acted on.
-func Handled[E SchemaEnum](t *testing.T, reading func(E) bool) {
+// CheckHandled fails for every value of the enum that reaches nothing on the
+// way in. Reading answers whether the value was acted on.
+func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 	t.Helper()
 	each(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
 		if !reading(one) {
@@ -31,10 +31,11 @@ func Handled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 	})
 }
 
-// Produced fails for every value of the enum nothing on this side is written
-// as. From names what each value is written from, and writing does the writing,
-// so a value nobody names and a value named for the wrong thing both fail.
-func Produced[E SchemaEnum, C any](t *testing.T, from map[E]C, writing func(C) E) {
+// CheckProduced fails for every value of the enum nothing on this side is
+// written as. From names what each value is written from, and writing does the
+// writing, so a value nobody names and a value named for the wrong thing both
+// fail.
+func CheckProduced[E SchemaEnum, C any](t *testing.T, from map[E]C, writing func(C) E) {
 	t.Helper()
 	each(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
 		was, named := from[one]

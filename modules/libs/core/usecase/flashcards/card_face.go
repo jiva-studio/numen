@@ -83,7 +83,7 @@ func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, err
 	if u.Notes == nil {
 		return nil, ErrNotCarried
 	}
-	held, err := u.Notes.Holds(ctx, v.ID)
+	held, err := u.Notes.Has(ctx, v.ID)
 	if err != nil {
 		return nil, err
 	}

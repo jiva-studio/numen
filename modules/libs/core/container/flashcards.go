@@ -16,27 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
-// Flashcards is everything that runs a vault's cards: what stands in it, what it
-// owes, what to ask next, and what an answer is written to.
-type Flashcards struct {
-	CardFaces flashcards.ListCardFaces
-	Marks     flashcards.MarkCards
-	Schedules flashcards.Schedules
-	CardsDue  flashcards.CountCardsDue
-	Session   flashcards.Session
-	Log       flashcards.Log
-	// Counted is how much of a vault was answered on each day it was reviewed.
-	Counted flashcards.CountReviews
-	// Presets is which preset each deck is scheduled by, and how one is read,
-	// written and made.
-	Presets flashcards.Presets
-	// Curves is what the one control of a preset comes to over the whole range
-	// of its goal.
-	Curves flashcards.ProjectCurve
-	// Day is where one day of review gives way to the next.
-	Day review.Day
-}
-
 // Answers opens the shelf a vault's answers are kept on. It is the same folder
 // the application keeps everything else of its own in, under an area of its
 // own.
@@ -48,11 +27,7 @@ func (c Config) Answers() port.DerivedStores {
 // hold it. A file that cannot be read begins the day where an installation
 // nobody has configured begins it.
 func (c Config) DayStarts() time.Duration {
-	path, err := c.settingsFile()
-	if err != nil {
-		return settings.DefaultStarts()
-	}
-	held, err := settings.At(path)
+	held, err := c.Settings()
 	if err != nil {
 		return settings.DefaultStarts()
 	}
@@ -75,11 +50,11 @@ func (c Config) Schedules() (port.ScheduleStore, error) {
 	return kept, nil
 }
 
-// Counting is where what each day came to is remembered. It stands beside the
+// OpenDayCounts is where what each day came to is remembered. It stands beside the
 // schedules and not in them, because the two go out of date by different rules:
 // a schedule is the whole history read again, and a day is a sum one file at a
 // time.
-func (c Config) Counting() (port.ScheduleStore, error) {
+func (c Config) OpenDayCounts() (port.ScheduleStore, error) {
 	if c.SchedulesPath != "" {
 		return appstate.SchedulesAt(filepath.Join(c.SchedulesPath, "days")), nil
 	}
@@ -100,14 +75,14 @@ func (c Config) Flashcards(
 	links port.LinkQueries,
 	problems port.ProblemQueries,
 	index func(ctx context.Context, v domain.Vault, paths []string) error,
-) Flashcards {
+) flashcards.Scenarios {
 	logs := c.Answers()
 	now := c.Clock()
 	kept, err := c.Schedules()
 	if err != nil {
 		// A machine that cannot say where its caches go works the schedules out
 		// at every launch. That is slower and no less correct.
-		c.trouble(fmt.Errorf("the schedules are worked out at every launch: %w", err))
+		c.handleError(fmt.Errorf("the schedules are worked out at every launch: %w", err))
 	}
 
 	faces := flashcards.NewListCardFaces(c.VaultReaders(), notes, links)
@@ -116,9 +91,9 @@ func (c Config) Flashcards(
 	)
 	day := review.Day{Starts: c.DayStarts()}
 
-	counting, err := c.Counting()
+	counting, err := c.OpenDayCounts()
 	if err != nil {
-		c.trouble(fmt.Errorf("the days are counted again at every launch: %w", err))
+		c.handleError(fmt.Errorf("the days are counted again at every launch: %w", err))
 	}
 
 	presets := flashcards.NewPresets(
@@ -141,7 +116,7 @@ func (c Config) Flashcards(
 	// once, which is a fact only here is allowed to read.
 	curves.Cores = runtime.GOMAXPROCS(0)
 
-	return Flashcards{
+	return flashcards.Scenarios{
 		CardFaces: faces,
 		Marks:     marking,
 		Schedules: schedules,

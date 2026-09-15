@@ -22,8 +22,8 @@ import (
 // the index is behind: the file is on disk and search does not hold what it now
 // says.
 
-// jammed is an index that will not come level with what was written.
-func jammed(context.Context, domain.Vault, []string) error {
+// refuseToLevel is an index that will not come level with what was written.
+func refuseToLevel(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is held open elsewhere")
 }
 
@@ -33,10 +33,10 @@ func jammed(context.Context, domain.Vault, []string) error {
 func unwritten(t *testing.T, notes map[string]string) (*going, *cutting) {
 	t.Helper()
 
-	f := quitting(t, nil, notes)
-	scanned(t, f)
-	f.opened.API.Notes.Write.Index = jammed
-	f.opened.API.Cards.Write.Index = jammed
+	f := openWindow(t, nil, notes)
+	waitForScan(t, f)
+	f.opened.API.Notes.Write.Index = refuseToLevel
+	f.opened.API.Cards.Write.Index = refuseToLevel
 
 	route, handler := numenv1connect.NewCardsServiceHandler(f.opened.API)
 	mux := http.NewServeMux()
@@ -63,7 +63,7 @@ func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("saving answered %+v", answer.Msg)
 	}
 	// Without it the next save has nothing to present and is answered as a note
@@ -97,7 +97,7 @@ func TestADeckWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing the deck answered %+v", answer.Msg)
 	}
 	if answer.Msg.GetAt() == nil {
@@ -129,7 +129,7 @@ func TestAStencilWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing the stencil answered %+v", answer.Msg)
 	}
 	if answer.Msg.GetAt() == nil {
@@ -147,8 +147,8 @@ func TestAStencilWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 // every save carries says nothing, and a client shown a warning after every
 // save learns to ignore it.
 func TestASaveTheIndexCameLevelWithSaysNothingIsBehind(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	scanned(t, f)
+	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	waitForScan(t, f)
 
 	answer, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Note.md",
@@ -160,7 +160,7 @@ func TestASaveTheIndexCameLevelWithSaysNothingIsBehind(t *testing.T) {
 	if answer.Msg.GetUnlevelled() {
 		t.Error("a save the index came level with is answered as behind")
 	}
-	if at := levelling(t, f); at != nil {
+	if at := findLevellingTask(t, f); at != nil {
 		t.Errorf("a save that went through stands in the list as %+v", at)
 	}
 }
@@ -182,8 +182,8 @@ func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
 	}
 
 	save()
-	at := levelling(t, f)
-	if at == nil || at.GetFailed() == "" {
+	at := findLevellingTask(t, f)
+	if at == nil || at.GetError() == "" {
 		t.Fatalf("what a person is shown after a save search cannot see is %+v", at)
 	}
 
@@ -191,15 +191,15 @@ func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
 	// is what says so. A list nothing leaves is a list nobody reads.
 	f.opened.API.Notes.Write.Index = func(context.Context, domain.Vault, []string) error { return nil }
 	save()
-	if at := levelling(t, f); at != nil {
+	if at := findLevellingTask(t, f); at != nil {
 		t.Errorf("the index came level and a person is still shown %+v", at)
 	}
 }
 
-// levelling is what the list of what is being done says about the index, asked
+// findLevellingTask is what the list of what is being done says about the index, asked
 // for the way the window asks for it. The first message of the stream is the
 // list as it stands, so nothing here waits on anything.
-func levelling(t *testing.T, f *going) *v1.Task {
+func findLevellingTask(t *testing.T, f *going) *v1.Task {
 	t.Helper()
 
 	listening, over := context.WithCancel(t.Context())

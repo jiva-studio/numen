@@ -5,10 +5,10 @@ on:
     paths:
       - "modules/apps/docs/**"
       # What the manual writes itself from.
-      - "modules/apps/desktop/editor/src/shared/command/chords.ts"
+      - "modules/apps/desktop/editor/src/features/command-palette/lib/chords.ts"
+      - "modules/apps/desktop/editor/src/features/command-palette/lib/table.ts"
+      - "modules/apps/desktop/editor/src/features/command-palette/ui/CommandPalette.vue"
       - "modules/apps/desktop/editor/src/shared/words.ts"
-      - "modules/apps/desktop/editor/src/shared/command/commands.ts"
-      - "modules/apps/desktop/editor/src/shared/command/CommandPalette.vue"
       - "modules/apps/desktop/cmd/numen/main.go"
       - "modules/libs/core/adapter/cli/cli.go"
       - "modules/libs/core/adapter/settings/**"
@@ -23,10 +23,10 @@ on:
     paths:
       - "modules/apps/docs/**"
       # What the manual writes itself from.
-      - "modules/apps/desktop/editor/src/shared/command/chords.ts"
+      - "modules/apps/desktop/editor/src/features/command-palette/lib/chords.ts"
+      - "modules/apps/desktop/editor/src/features/command-palette/lib/table.ts"
+      - "modules/apps/desktop/editor/src/features/command-palette/ui/CommandPalette.vue"
       - "modules/apps/desktop/editor/src/shared/words.ts"
-      - "modules/apps/desktop/editor/src/shared/command/commands.ts"
-      - "modules/apps/desktop/editor/src/shared/command/CommandPalette.vue"
       - "modules/apps/desktop/cmd/numen/main.go"
       - "modules/libs/core/adapter/cli/cli.go"
       - "modules/libs/core/adapter/settings/**"

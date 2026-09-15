@@ -24,9 +24,9 @@ export const LOST = 'lost touch with numen — the window keeps trying'
 /** What following a stream reads of the window it is following for. */
 export interface StreamDeps {
   /** Whether the window is still open. Nothing is followed once it is not. */
-  open(): boolean
+  isOpen(): boolean
   /** What the window lost touch with, said until it has it back. */
-  lost(said: string): void
+  setLost(said: string): void
   wait(ms: number): Promise<unknown>
   /**
    * What the follower lets go of when a stream ends: whatever it holds answers
@@ -35,7 +35,30 @@ export interface StreamDeps {
   reset?(): void
 }
 
-export function following(deps: StreamDeps) {
+export function createFollower(deps: StreamDeps) {
+  /**
+   * One reading of a stream, to its end or to the fault that ends it. It
+   * answers whether the window is still open.
+   */
+  const readStream = async <Said>(
+    stream: () => AsyncIterable<Said>,
+    each: (said: Said) => void | Promise<void>,
+  ): Promise<boolean> => {
+    try {
+      for await (const said of stream()) {
+        if (!deps.isOpen()) return false
+        await each(said)
+      }
+    } catch {
+      // Anything the reading throws ends this one and is said as losing
+      // touch, which is what all but one of them are. The exception is a
+      // fault in `each`, and this cannot tell the two apart.
+      if (!deps.isOpen()) return false
+      deps.setLost(LOST)
+    }
+    return true
+  }
+
   /**
    * One stream, read for as long as the window is open. What arrives is
    * answered before the next of it is read, and what the answer throws ends
@@ -46,23 +69,12 @@ export function following(deps: StreamDeps) {
     each: (said: Said) => void | Promise<void>,
     again = AGAIN,
   ): Promise<void> {
-    while (deps.open()) {
-      try {
-        for await (const said of stream()) {
-          if (!deps.open()) return
-          await each(said)
-        }
-      } catch {
-        // Anything the reading throws ends this one and is said as losing
-        // touch, which is what all but one of them are. The exception is a
-        // fault in `each`, and this cannot tell the two apart.
-        if (!deps.open()) return
-        deps.lost(LOST)
-      }
+    while (deps.isOpen()) {
+      if (!(await readStream(stream, each))) return
       deps.reset?.()
       await deps.wait(again)
       // Taken up again, so what was said about losing it no longer holds.
-      if (deps.open()) deps.lost('')
+      if (deps.isOpen()) deps.setLost('')
     }
   }
 }

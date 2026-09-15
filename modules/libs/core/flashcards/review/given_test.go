@@ -7,9 +7,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
-// jumbled is a history as a synchroniser leaves it: out of order, with a
-// duplicated run and an answer taken back.
-func jumbled() []review.Answer {
+// makeJumbledHistory is a history as a synchroniser leaves it: out of order,
+// with a duplicated run and an answer taken back.
+func makeJumbledHistory() []review.Answer {
 	at := time.Date(2026, 8, 29, 9, 0, 0, 0, time.UTC)
 	one := review.Answer{
 		ID: "b", CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"},
@@ -32,10 +32,10 @@ func jumbled() []review.Answer {
 // A history put in order once is the history each of the four questions was
 // putting in order for itself.
 func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
-	answers := jumbled()
+	answers := makeJumbledHistory()
 	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	by := review.NewFSRS()
-	named := day.Names(answers[0].At)
+	named := day.GetName(answers[0].At)
 	under := map[review.CardFaceID]string{
 		{Card: "k7m2xq9fzp", Face: "Say it"}: "Sanskrit.md",
 		{Card: "zpqrstvwxy", Face: "Say it"}: "Sanskrit.md",
@@ -47,22 +47,22 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 	}
 
 	for face, want := range review.Replay(day, by, answers) {
-		if got := given.Replay(day, review.By(by))[face]; got != want {
+		if got := given.Replay(day, review.ScheduleBy(by))[face]; got != want {
 			t.Errorf("%+v stands at %+v, want %+v", face, got, want)
 		}
 	}
-	for day1, want := range review.Retained(by, day, answers) {
-		if got := given.Retained(by, day)[day1]; got != want {
+	for day1, want := range review.GetRetained(by, day, answers) {
+		if got := given.GetRetained(by, day)[day1]; got != want {
 			t.Errorf("%s kept %+v, want %+v", day1, got, want)
 		}
 	}
-	for path, want := range review.SpentUnder(day, named, answers, under, nil) {
-		if got := given.SpentUnder(day, named, under, nil)[path]; got != want {
+	for path, want := range review.GetSpentUnder(day, named, answers, under, nil) {
+		if got := given.GetSpentUnder(day, named, under, nil)[path]; got != want {
 			t.Errorf("%s spent %+v, want %+v", path, got, want)
 		}
 	}
-	for face, want := range review.Faced(day, named, answers) {
-		if got := given.Faced(day, named)[face]; got != want {
+	for face, want := range review.GetFaced(day, named, answers) {
+		if got := given.GetFaced(day, named)[face]; got != want {
 			t.Errorf("%+v was faced %v, want %v", face, got, want)
 		}
 	}

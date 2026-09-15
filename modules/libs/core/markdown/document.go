@@ -14,12 +14,12 @@ import (
 // Such a note is never written.
 var ErrUnreadable = errors.New("the frontmatter of this note cannot be read")
 
-// ErrBodyRefused is a body that opens with the frontmatter delimiter. It is a
-// whole note handed back as prose — a caller that read a file, changed it, and
-// returned all of it. Writing it would put a second frontmatter block inside
-// the first one's note, and the block that then reads as the note's own is the
-// wrong one.
-var ErrBodyRefused = errors.New(
+// ErrBodyUnwritable is a body that opens with the frontmatter delimiter. It is
+// a whole note handed back as prose — a caller that read a file, changed it,
+// and returned all of it. Writing it would put a second frontmatter block
+// inside the first one's note, and the block that then reads as the note's own
+// is the wrong one.
+var ErrBodyUnwritable = errors.New(
 	"a body is the prose below the frontmatter, and this one begins with a frontmatter block; " +
 		"send what note_read gave you, or use the link tools to change the frontmatter")
 
@@ -79,7 +79,7 @@ func Open(raw []byte) (*Document, error) {
 			d.front = rest[from:at]
 			d.shut = rest[at:next]
 			d.body = rest[next:]
-			if _, err := d.mapping(); err != nil {
+			if _, err := d.readMapping(); err != nil {
 				return nil, err
 			}
 			return d, nil
@@ -133,7 +133,7 @@ func (d *Document) SetBody(body string) error {
 	if d.unterminated {
 		return ErrUnterminated
 	}
-	text := Normalised(body)
+	text := Normalise(body)
 	if text != "" && !strings.HasSuffix(text, "\n") {
 		text += "\n"
 	}
@@ -155,7 +155,7 @@ func (d *Document) SpliceBody(start, end int, text string) error {
 		return fmt.Errorf("splice %d:%d is outside a body of %d bytes", start, end, len(d.body))
 	}
 
-	written := Normalised(text)
+	written := Normalise(text)
 	if d.eol == "\r\n" {
 		written = strings.ReplaceAll(written, "\n", "\r\n")
 	}

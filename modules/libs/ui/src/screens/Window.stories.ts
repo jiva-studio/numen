@@ -24,28 +24,28 @@ import {
   Waypoints,
 } from '@lucide/vue'
 import { ref } from 'vue'
-import WorkspaceLayout from '@/features/workspace/WorkspaceLayout.vue'
-import Plex from '@/features/plex/Plex.vue'
-import Editor from '@/features/editor/Editor.vue'
-import Palette from '@/features/palette/Palette.vue'
-import Reader from '@/features/reader/Reader.vue'
-import Tree from '@/features/tree/Tree.vue'
+import { WorkspaceLayout } from '@/features/workspace'
+import { Plex } from '@/features/plex'
+import { Editor } from '@/features/editor'
+import { Palette } from '@/features/palette'
+import { Reader } from '@/features/reader'
+import { Tree } from '@/features/tree'
 import { Menu } from '@/shared/ui/menu'
 import type { MenuItem } from '@/shared/ui/menu'
 import Agent from './Agent.vue'
-import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace/node'
-import { keyChord } from '@/features/palette/item'
-import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette/item'
+import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace'
+import { keyChord } from '@/features/palette'
+import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette'
 import type { Span } from '@/shared/lib/span'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
-import type { PlexPart } from '@/features/plex/inside'
-import { RELATED_SEATS, type PlexRelatedSeat } from '@/features/plex/seat'
-import type { PlexEdge } from '@/features/plex/edge'
-import type { PlexNeighbourhood } from '@/features/plex/neighbourhood'
-import type { PlexNode } from '@/features/plex/node'
-import type { Row } from '@/features/tree/row'
-import type { Turn } from '@/features/thread/turn'
-import { hovered } from '@/shared/fixtures/colour'
+import type { PlexPart } from '@/features/plex'
+import { RELATED_SEATS, type PlexRelatedSeat } from '@/features/plex'
+import type { PlexEdge } from '@/features/plex'
+import type { PlexNeighbourhood } from '@/features/plex'
+import type { PlexNode } from '@/features/plex'
+import type { Row } from '@/features/tree'
+import type { Turn } from '@/features/thread'
+import { hoverOver } from '@/shared/fixtures/colour'
 
 const PLEX = 'plex'
 const NOTE = 'note'
@@ -114,7 +114,9 @@ const OPEN = ['physics', 'computation', 'reading']
 
 /** What is drawn beside a row: a folder says whether what it holds is drawn. */
 const iconFor = (id: string, open: boolean) => {
-  const row = ROWS.find((one) => one.id === id) ?? ROWS.flatMap((one) => one.rows ?? []).find((one) => one.id === id)
+  const row =
+    ROWS.find((one) => one.id === id) ??
+    ROWS.flatMap((one) => one.rows ?? []).find((one) => one.id === id)
   if (row?.holds) return open ? FolderOpen : Folder
   if (row?.name.endsWith('.pdf')) return Book
   return FileText
@@ -146,31 +148,31 @@ const LABELS: Readonly<Record<string, string>> = {
 }
 
 /** A sibling hangs off the parent it shares; everything else meets the focus. */
-const edgeFor = (related: PlexNode): PlexEdge => {
-  const label = LABELS[related.id]
-  if (related.seat === 'sibling') return { from: 'thermodynamics', to: related.id }
-  if (related.seat === 'parent' || related.seat === 'jump') {
-    return { from: related.id, to: 'focus', ...(label ? { label } : {}) }
+const edgeFor = (neighbour: PlexNode): PlexEdge => {
+  const label = LABELS[neighbour.id]
+  if (neighbour.seat === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
+  if (neighbour.seat === 'parent' || neighbour.seat === 'jump') {
+    return { from: neighbour.id, to: 'focus', ...(label ? { label } : {}) }
   }
-  return { from: 'focus', to: related.id, ...(label ? { label } : {}) }
+  return { from: 'focus', to: neighbour.id, ...(label ? { label } : {}) }
 }
 
-const around = (related: readonly PlexNode[]): PlexNeighbourhood => ({
-  nodes: [node('focus', 'Entropy', 'focus'), ...related],
-  edges: related.map(edgeFor),
+const createNeighbourhood = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
+  nodes: [node('focus', 'Entropy', 'focus'), ...neighbours],
+  edges: neighbours.map(edgeFor),
 })
 
 /** What a pane of a divided window has the width for. */
-const NEIGHBOURHOOD = around(RELATED)
+const NEIGHBOURHOOD = createNeighbourhood(RELATED)
 
 /** What a pane sharing its column with a note has the width for. */
-const CLOSE = around(RELATED.slice(0, 6))
+const CLOSE = createNeighbourhood(RELATED.slice(0, 6))
 
 /**
  * What a pane with the window to itself has the room for: wider at the sides,
  * and no deeper, so nothing is left off the picture.
  */
-const WIDE = around([
+const WIDE = createNeighbourhood([
   ...RELATED,
   node('landauer', "Landauer's principle", 'jump'),
   node('carnot', 'Carnot cycle', 'jump'),
@@ -309,17 +311,17 @@ const MARGIN = 84
 const FIRST = 132
 const LEADING = 27
 
-const escaped = (line: string) =>
+const escapeHtml = (line: string) =>
   line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-const drawnPage = (page: number): string => {
+const renderPage = (page: number): string => {
   const leaf = page - BOOK_FIRST
   const lines = BOOK_PAGES[leaf] ?? []
   const set = lines
     .map((line, at) => {
       const y = FIRST + at * LEADING
       const weight = at === 0 && leaf === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
-      return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="16"${weight} fill="#1b1b1b">${escaped(line)}</text>`
+      return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="16"${weight} fill="#1b1b1b">${escapeHtml(line)}</text>`
     })
     .join('')
   const number = `<text x="${PAPER.wide / 2}" y="${PAPER.high - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#5a5a5a">${page + 1}</text>`
@@ -338,7 +340,7 @@ const overLines = (from: number, to: number, ends: number) => ({
 /** The passage a search found in it: the sentence the count is defined by. */
 const HIGHLIGHTS = [overLines(8, 9, 420), overLines(10, 11, 360)]
 
-const said = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
+const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
 
 const did = (id: string, text: string, about: string, aside: string): Turn => ({
   id,
@@ -349,13 +351,13 @@ const did = (id: string, text: string, about: string, aside: string): Turn => ({
   opens: true,
 })
 
-const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
+const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
 
 /** A tool is named the way the panel says it: as a program is named, spoken. */
 const TURNS: readonly Turn[] = [
-  said('1', 'What does this note leave out?'),
+  createAsked('1', 'What does this note leave out?'),
   did('2', 'note neighbourhood', 'Entropy', '4 links'),
-  back(
+  createAnswered(
     '3',
     'Two things. The note says the demon has to pay, but not where the payment ' +
       'lands — that is Landauer, and you have no note for him. And the passage on ' +
@@ -364,9 +366,9 @@ const TURNS: readonly Turn[] = [
       'the same measure, so one of them is wrong and it is not the one you wrote ' +
       'first.',
   ),
-  said('4', 'Then make the Landauer note and put it under Entropy.'),
+  createAsked('4', 'Then make the Landauer note and put it under Entropy.'),
   did('5', 'note create', "Landauer's principle", 'under Entropy'),
-  back(
+  createAnswered(
     '6',
     'Made and filed under Entropy, written from p. 373 and the 1961 paper: what ' +
       'clearing one bit costs, and why the sorting is what pays it. I linked it ' +
@@ -392,7 +394,7 @@ const READ_AT = { id: 'readAt', text: 'Open at this heading' }
 const READ_DOCUMENT = { id: 'readDocument', text: 'Open the document here' }
 
 /** A note whose name carries the words: the name, and nothing under it. */
-const named = (id: string, title: string): PaletteItem => ({
+const createItem = (id: string, title: string): PaletteItem => ({
   id,
   title,
   at: marks(title, 'entrop'),
@@ -431,8 +433,8 @@ const GROUPS: readonly PaletteGroup[] = [
     id: 'names',
     title: 'Names',
     items: [
-      named('n1', 'Entropy'),
-      named('n2', 'Entropy of mixing'),
+      createItem('n1', 'Entropy'),
+      createItem('n2', 'Entropy of mixing'),
       heading('n3', 'Entropy as missing information', 'Shannon entropy'),
     ],
   },
@@ -443,15 +445,14 @@ const GROUPS: readonly PaletteGroup[] = [
       passage(
         't1',
         'Boltzmann 1877',
-        'the entropy of a state is the logarithm of the number of arrangements it '
-          + 'could have been made of',
+        'the entropy of a state is the logarithm of the number of arrangements it ' +
+          'could have been made of',
         [READ_DOCUMENT],
       ),
       passage(
         't2',
         'The second law',
-        'entropy never falls in a closed system, which is the whole of it stated '
-          + 'in one line',
+        'entropy never falls in a closed system, which is the whole of it stated ' + 'in one line',
         [READ, TRAVEL],
       ),
     ],
@@ -463,15 +464,15 @@ const GROUPS: readonly PaletteGroup[] = [
       passage(
         'm1',
         "Landauer's principle",
-        'clearing one bit of memory costs at least kT ln 2 of heat, which is what '
-          + 'the sorting has to pay for',
+        'clearing one bit of memory costs at least kT ln 2 of heat, which is what ' +
+          'the sorting has to pay for',
         [READ, TRAVEL],
       ),
       passage(
         'm2',
         "Maxwell's demon",
-        'a demon that sorts fast molecules from slow ones appears to lower the '
-          + 'disorder of a gas for nothing',
+        'a demon that sorts fast molecules from slow ones appears to lower the ' +
+          'disorder of a gas for nothing',
         [READ, TRAVEL],
       ),
     ],
@@ -631,7 +632,7 @@ const screen = ({
       groups: panel === 'commands' ? COMMANDS : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
       pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
-      picture: (page: number) => drawnPage(page),
+      picture: (page: number) => renderPage(page),
       highlightsOn: (page: number) => (page === BOOK_FIRST ? HIGHLIGHTS : []),
       go: (page: number) => {
         at.value = Math.min(Math.max(page, 0), BOOK_LEAVES - 1)
@@ -740,7 +741,7 @@ const paneOf = (canvas: HTMLElement, id: string): HTMLElement => {
 }
 
 /** Whether one pane stands entirely past another's trailing edge. */
-const past = (later: HTMLElement, earlier: HTMLElement): boolean =>
+const isPast = (later: HTMLElement, earlier: HTMLElement): boolean =>
   later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
 
 /** The map with the room, and the agent along the trailing edge. */
@@ -761,14 +762,14 @@ export const Map: Story = {
     // The map is drawn around the note the window is focused on, and it has the
     // room: most of the width, and the whole neighbourhood in it.
     await waitFor(() => expect(within(map).getAllByLabelText(/, focus$/)).toHaveLength(1))
-    expect(within(map).getAllByLabelText(/, (parent|child|sibling|jump)$/).length).toBeGreaterThan(3)
-    expect(map.getBoundingClientRect().width).toBeGreaterThan(
-      aside.getBoundingClientRect().width,
+    expect(within(map).getAllByLabelText(/, (parent|child|sibling|jump)$/).length).toBeGreaterThan(
+      3,
     )
+    expect(map.getBoundingClientRect().width).toBeGreaterThan(aside.getBoundingClientRect().width)
 
     // The agent is along the trailing edge, and is something to ask with.
     within(aside).getByPlaceholderText('Ask about the vault')
-    expect(past(aside, map)).toBe(true)
+    expect(isPast(aside, map)).toBe(true)
   },
 }
 
@@ -791,9 +792,7 @@ export const Mapping: Story = {
   play: async ({ canvasElement }) => {
     // The map has the window: one pane, and no second one beside it.
     expect(canvasElement.querySelectorAll('[data-workspace-pane]')).toHaveLength(1)
-    await waitFor(() =>
-      expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1),
-    )
+    await waitFor(() => expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1))
 
     // The menu was asked for on a node, and every item of it is in the window
     // rather than off the edge it was asked near.
@@ -834,7 +833,7 @@ export const Hanging: Story = {
     // They come in one after another, so the picture is let settle first.
     const HEADINGS = (PARTS['focus'] ?? []).map((part) => part.text)
     const hung = () => HEADINGS.filter((words) => canvas.queryByText(words))
-    await hovered(focus)
+    await hoverOver(focus)
     await waitFor(() => expect(hung().length).toBeGreaterThan(4), { timeout: 5000 })
 
     // As many as the panel has room for, taken from the top of the note: what
@@ -954,11 +953,7 @@ export const Asking: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [
-            pane('source', [BOOK], BOOK),
-            pane('middle', [NOTE], NOTE),
-            pane('aside', [AGENT]),
-          ],
+          [pane('source', [BOOK], BOOK), pane('middle', [NOTE], NOTE), pane('aside', [AGENT])],
           [0.4, 0.3, 0.3],
         ),
         axis: 'horizontal',
@@ -971,8 +966,8 @@ export const Asking: Story = {
     const aside = paneOf(canvasElement, 'aside')
 
     // The three stand in the order they were divided in, the agent last.
-    expect(past(note, source)).toBe(true)
-    expect(past(aside, note)).toBe(true)
+    expect(isPast(note, source)).toBe(true)
+    expect(isPast(aside, note)).toBe(true)
 
     // The agent is something to ask with, and it is already carrying the
     // asking it is beside the note about.

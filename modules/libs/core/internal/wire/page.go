@@ -12,7 +12,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
 )
 
 // OpensAt is the document a window opens at.
@@ -22,9 +22,9 @@ const OpensAt = "index.html"
 // parses to none of them empty, and a window is asked for under all three.
 var OpenedAt = []string{"", "/", "/" + OpensAt}
 
-// Built is the interface as it sits inside a binary. A binary built without one
-// says so, in the words of the person who has to fix it.
-func Built(pages fs.FS) (fs.FS, error) {
+// GetInterface is the interface as it sits inside a binary. A binary built
+// without one says so, in the words of the person who has to fix it.
+func GetInterface(pages fs.FS) (fs.FS, error) {
 	missing := fmt.Errorf("no interface in this binary — run: make interface")
 	built, err := fs.Sub(pages, "pages/app")
 	if err != nil {
@@ -36,9 +36,9 @@ func Built(pages fs.FS) (fs.FS, error) {
 	return built, nil
 }
 
-// Serving is the built interface as a file server.
-func Serving(pages fs.FS) (http.Handler, error) {
-	built, err := Built(pages)
+// NewInterfaceServer is the built interface as a file server.
+func NewInterfaceServer(pages fs.FS) (http.Handler, error) {
+	built, err := GetInterface(pages)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func Page(
 	themes numenv1connect.ThemeServiceHandler,
 	files http.Handler,
 ) {
-	built, err := Built(pages)
+	built, err := GetInterface(pages)
 	if err != nil {
 		files.ServeHTTP(w, r)
 		return
@@ -68,8 +68,8 @@ func Page(
 		files.ServeHTTP(w, r)
 		return
 	}
-	if said, is := chosen(r.Context(), themes); is {
-		text = appearance.Into(text, said.Styles())
+	if said, is := readAppearanceSettings(r.Context(), themes); is {
+		text = appearance.AddStyles(text, said.Styles())
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -78,14 +78,14 @@ func Page(
 	_, _ = w.Write(text)
 }
 
-// chosen is what the settings say a window shows, and whether they could say
-// anything at all.
+// readAppearanceSettings is what the settings say a window shows, and whether
+// they could say anything at all.
 //
 // It is asked for every request, so a theme chosen, a size chosen, or a file in
 // the person's folder edited, shows on the next reload. Settings that cannot
 // say what they hold put nothing in the page, and the tokens the build carries
 // stand.
-func chosen(
+func readAppearanceSettings(
 	ctx context.Context, themes numenv1connect.ThemeServiceHandler,
 ) (appearance.Settings, bool) {
 	if themes == nil {

@@ -24,9 +24,9 @@ const props = withDefaults(
 /** The hour in force, written as `04:00`. An empty field holds none. */
 const model = defineModel<string>({ default: '' })
 
-const raises = defineEmits<{
+const emit = defineEmits<{
   /** The field come to rest at an hour of the day. */
-  settles: [value: string]
+  settle: [value: string]
 }>()
 
 /** What stands in the field, which is an hour of the day or nothing at all. */
@@ -34,11 +34,11 @@ const inForce = computed(() => (onTheClock(model.value) ? model.value : ''))
 
 const element = useTemplateRef<HTMLInputElement>('element')
 
-const took = (event: Event) => {
+const onChange = (event: Event) => {
   const said = (event.target as HTMLInputElement).value
   if (!onTheClock(said) || said === model.value) return
   model.value = said
-  raises('settles', said)
+  emit('settle', said)
 }
 
 defineExpose({
@@ -59,16 +59,16 @@ defineExpose({
     :max="max || undefined"
     :class="
       cn(
-        'time-field w-full rounded-tight border border-field-rule bg-field',
+        'time-field rounded-tight border-field-rule bg-field w-full border',
         // One row tall, which every control standing on a row is drawn at.
         'h-action px-2',
-        'font-sans text-base leading-none text-ink tabular-nums',
-        'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+        'text-ink font-sans text-base leading-none tabular-nums',
+        'outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )
     "
-    @change="took"
+    @change="onChange"
   />
 </template>
 

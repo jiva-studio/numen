@@ -45,7 +45,7 @@ func TestTheSharedFileDeclaresNoServiceAndImportsNothing(t *testing.T) {
 		t.Fatalf("%s is not in the schema: the walk is reading something else", shared)
 	}
 
-	for _, why := range owning(held) {
+	for _, why := range describeOwnership(held) {
 		t.Errorf("%s %s, and the file three services share owns no subject", shared, why)
 	}
 }
@@ -71,16 +71,16 @@ func TestWhatTheSharedFileRuleRefuses(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", one.path, err)
 		}
-		if got := owning(file); !slices.Equal(got, one.why) {
+		if got := describeOwnership(file); !slices.Equal(got, one.why) {
 			t.Errorf("%s owns %v, and the rule reads %v", one.path, one.why, got)
 		}
 	}
 }
 
-// owning is every way a file of the schema owns a subject of its own: the
-// services it answers with, and the files it reaches for. A file owning none is
-// one every other may stand on.
-func owning(file protoreflect.FileDescriptor) []string {
+// describeOwnership is every way a file of the schema owns a subject of its
+// own: the services it answers with, and the files it reaches for. A file
+// owning none is one every other may stand on.
+func describeOwnership(file protoreflect.FileDescriptor) []string {
 	var out []string
 	for i := range file.Services().Len() {
 		out = append(out, "declares "+string(file.Services().Get(i).Name()))

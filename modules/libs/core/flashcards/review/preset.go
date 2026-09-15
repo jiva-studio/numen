@@ -63,9 +63,9 @@ type Preset struct {
 // carries.
 const FullLoad = 100
 
-// Share is how much of a day's load this day of the week carries, as a share of
-// one.
-func (p Preset) Share(day time.Weekday) float64 {
+// GetShare is how much of a day's load this day of the week carries, as a share
+// of one.
+func (p Preset) GetShare(day time.Weekday) float64 {
 	per, named := p.Load[day]
 	if !named {
 		return 1
@@ -73,21 +73,21 @@ func (p Preset) Share(day time.Weekday) float64 {
 	return float64(per) / FullLoad
 }
 
-// Evens reports whether this preset moves a card face off the day the scheduler
+// CanEvenLoad reports whether this preset moves a card face off the day the scheduler
 // chose.
 //
 // A preset aiming at a day does not. The pace is what spreads a date's material
 // over its days, and the days it has are the days it needs.
-func (p Preset) Evens() bool { return p.EvenLoad && p.Goal != GoalDate }
+func (p Preset) CanEvenLoad() bool { return p.EvenLoad && p.Goal != GoalDate }
 
-// Placing is how this preset puts a card on a day, as a short name: whether it
-// evens the days out, and the share each day of the week carries. A schedule
+// GetPlacing is how this preset puts a card on a day, as a short name: whether
+// it evens the days out, and the share each day of the week carries. A schedule
 // worked out under one placing is not read back under another.
-func (p Preset) Placing() string {
+func (p Preset) GetPlacing() string {
 	var out strings.Builder
-	fmt.Fprintf(&out, "even=%t", p.Evens())
+	fmt.Fprintf(&out, "even=%t", p.CanEvenLoad())
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		fmt.Fprintf(&out, " %s=%d", DayName(day), int(math.Round(p.Share(day)*FullLoad)))
+		fmt.Fprintf(&out, " %s=%d", DayName(day), int(math.Round(p.GetShare(day)*FullLoad)))
 	}
 	return out.String()
 }
@@ -101,8 +101,8 @@ const (
 	GoalDate      Goal = "by_date"
 )
 
-// KnownGoal reports whether a goal is one of the three.
-func KnownGoal(g Goal) bool {
+// IsKnownGoal reports whether a goal is one of the three.
+func IsKnownGoal(g Goal) bool {
 	switch g {
 	case GoalMinutes, GoalRetention, GoalDate:
 		return true
@@ -123,8 +123,8 @@ const (
 	RuleRetention LearnedRule = "retention"
 )
 
-// KnownRule reports whether a rule is one of the two.
-func KnownRule(r LearnedRule) bool {
+// IsKnownRule reports whether a rule is one of the two.
+func IsKnownRule(r LearnedRule) bool {
 	switch r {
 	case RuleInterval, RuleRetention:
 		return true
@@ -132,39 +132,39 @@ func KnownRule(r LearnedRule) bool {
 	return false
 }
 
-// Learned reports whether a card face standing at this schedule is one the
+// IsLearned reports whether a card face standing at this schedule is one the
 // person has learned at this instant, under the rule this preset names.
 //
 // A card face nobody has answered is learned by neither rule.
 //
 // It is the one place the rule is read.
-func (p Preset) Learned(s Schedule, at time.Time) bool {
-	if !s.Seen() {
+func (p Preset) IsLearned(s Schedule, at time.Time) bool {
+	if !s.IsSeen() {
 		return false
 	}
-	rule, interval, retention := p.counting()
+	rule, interval, retention := p.getLearnedRule()
 	if rule == RuleRetention {
 		return Recall(at.Sub(s.Last), s.Stability) >= retention
 	}
 	return s.Due.Sub(s.Last) >= time.Duration(interval)*24*time.Hour
 }
 
-// counting is the rule a card face is counted learned by here, and the two
-// values a rule reads.
+// getLearnedRule is the rule a card face is counted learned by here, and the
+// two values a rule reads.
 //
 // A preset naming no rule counts by the default rule, and a value the rule
 // cannot hold stands at the default. A preset that says nothing holds its cards
 // to the threshold in Defaults.
-func (p Preset) counting() (LearnedRule, int, float64) {
+func (p Preset) getLearnedRule() (LearnedRule, int, float64) {
 	defaults := Defaults()
 	rule, interval, retention := p.Rule, p.Interval, p.Retention
-	if !KnownRule(rule) {
+	if !IsKnownRule(rule) {
 		rule = defaults.Rule
 	}
-	if !IntervalBounds.Holds(float64(interval)) {
+	if !IntervalBounds.Contains(float64(interval)) {
 		interval = defaults.Interval
 	}
-	if !RetentionBounds.Holds(retention) {
+	if !RetentionBounds.Contains(retention) {
 		retention = defaults.Retention
 	}
 	return rule, interval, retention
@@ -182,14 +182,14 @@ const (
 	BudgetUnitShows BudgetUnit = "shows"
 )
 
-// Charges reports whether a showing of a card face spends a slot of a day's
+// IsCharged reports whether a showing of a card face spends a slot of a day's
 // count, where shown is whether the day has asked that face already.
 //
 // It is the one place the counting is read.
-func (u BudgetUnit) Charges(shown bool) bool { return u == BudgetUnitShows || !shown }
+func (u BudgetUnit) IsCharged(shown bool) bool { return u == BudgetUnitShows || !shown }
 
-// KnownBudgetUnit reports whether a value is one of the two.
-func KnownBudgetUnit(u BudgetUnit) bool {
+// IsKnownBudgetUnit reports whether a value is one of the two.
+func IsKnownBudgetUnit(u BudgetUnit) bool {
 	switch u {
 	case BudgetUnitCards, BudgetUnitShows:
 		return true
@@ -200,8 +200,8 @@ func KnownBudgetUnit(u BudgetUnit) bool {
 // Bounds is how far a setting goes, at each end.
 type Bounds struct{ Least, Most float64 }
 
-// Holds reports whether a value is within the bounds.
-func (b Bounds) Holds(value float64) bool { return value >= b.Least && value <= b.Most }
+// Contains reports whether a value is within the bounds.
+func (b Bounds) Contains(value float64) bool { return value >= b.Least && value <= b.Most }
 
 // What each setting of a preset may be. A day holds no more minutes than it
 // has, a retention target outside these is a scheduler asking for what memory
@@ -259,14 +259,14 @@ const (
 	StoppedNoWeek StopReason = "no_week"
 )
 
-// Stops is why this preset schedules nothing, and StoppedNothing where it
-// schedules something.
+// GetOverallStopReason is why this preset schedules nothing on any day, and
+// StoppedNothing where it schedules something.
 //
 // It is the one place the rule is read. A goal of a date is answered against the
 // day holding now, and stops once the day it names is behind that one. A week
 // every day of which carries none of the load is read whatever the goal, since
 // no budget is spent on a day that schedules nothing.
-func (p Preset) Stops(d Day, now time.Time) StopReason {
+func (p Preset) GetOverallStopReason(d Day, now time.Time) StopReason {
 	switch p.Goal {
 	case GoalRetention:
 		if p.NewADay == 0 && p.ReviewsADay == 0 {
@@ -276,7 +276,7 @@ func (p Preset) Stops(d Day, now time.Time) StopReason {
 		if p.By.IsZero() {
 			return StoppedNoDay
 		}
-		if p.Past(d, now) {
+		if p.IsPast(d, now) {
 			return StoppedPastDay
 		}
 	default:
@@ -284,40 +284,42 @@ func (p Preset) Stops(d Day, now time.Time) StopReason {
 			return StoppedNoMinutes
 		}
 	}
-	if p.Week() == 0 {
+	if p.GetWeeklyShare() == 0 {
 		return StoppedNoWeek
 	}
 	return StoppedNothing
 }
 
-// Week is how many whole days of review a week of this preset holds, counting
+// GetWeeklyShare is how many whole days of review a week of this preset holds, counting
 // each day of it for the share of the load it carries.
-func (p Preset) Week() float64 {
+func (p Preset) GetWeeklyShare() float64 {
 	out := 0.0
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		out += p.Share(day)
+		out += p.GetShare(day)
 	}
 	return out
 }
 
-// StopsOn is why this preset schedules nothing on the day holding now: whatever
-// stops the preset at all, and a day of the week carrying none of the load. A
-// week with no day carrying any stops the preset itself, so this day is one of
-// the quiet days of a week that has loud ones.
-func (p Preset) StopsOn(d Day, now time.Time) StopReason {
-	if why := p.Stops(d, now); why != StoppedNothing {
+// GetStopReason is why this preset schedules nothing on the day holding now:
+// whatever stops the preset at all, and a day of the week carrying none of the
+// load. A week with no day carrying any stops the preset itself, so this day is
+// one of the quiet days of a week that has loud ones.
+func (p Preset) GetStopReason(d Day, now time.Time) StopReason {
+	if why := p.GetOverallStopReason(d, now); why != StoppedNothing {
 		return why
 	}
-	if p.Share(d.Opened(now).Weekday()) == 0 {
+	if p.GetShare(d.GetDate(now).Weekday()) == 0 {
 		return StoppedNoLoad
 	}
 	return StoppedNothing
 }
 
-// Paused reports whether the preset schedules nothing.
-func (p Preset) Paused(d Day, now time.Time) bool { return p.Stops(d, now) != StoppedNothing }
+// IsPaused reports whether the preset schedules nothing.
+func (p Preset) IsPaused(d Day, now time.Time) bool {
+	return p.GetOverallStopReason(d, now) != StoppedNothing
+}
 
-// paces is how much of the material a day holds when a date sets the pace: what
+// getPace is how much of the material a day holds when a date sets the pace: what
 // is left to begin, over the days on which beginning a card still leaves it time
 // to be learned by the day the preset aims at. A day past the one it aims at
 // holds none of it.
@@ -325,7 +327,7 @@ func (p Preset) Paused(d Day, now time.Time) bool { return p.Stops(d, now) != St
 // Where no day leaves that much time, the pace is everything left. It is the
 // pace that gets there every card face that can, and how many cannot is
 // Projection.Short.
-func (p Preset) paces(d Day, now time.Time, unbegunCards, daysToLearn int) int {
+func (p Preset) getPace(d Day, now time.Time, unbegunCards, daysToLearn int) int {
 	days := p.days(d, now)
 	if days <= 0 {
 		return 0
@@ -333,25 +335,25 @@ func (p Preset) paces(d Day, now time.Time, unbegunCards, daysToLearn int) int {
 	if daysToLearn == NeverRipens {
 		return unbegunCards
 	}
-	in := p.beginning(d, now, daysToLearn)
+	in := p.getRoomToBegin(d, now, daysToLearn)
 	if in <= 0 {
 		return unbegunCards
 	}
 	return int(math.Ceil(float64(unbegunCards) / in))
 }
 
-// beginning is how much room a date leaves for beginning cards: the days of
-// review from the day holding now up to the last one on which a card begun
+// getRoomToBegin is how much room a date leaves for beginning cards: the days
+// of review from the day holding now up to the last one on which a card begun
 // still has its ripening before the day the preset aims at.
 //
 // Each day counts for the share of the load its day of the week carries, and
 // the ripening is counted in days of review, so the days it takes are dropped
 // at the shares they carry.
-func (p Preset) beginning(d Day, now time.Time, ripens int) float64 {
+func (p Preset) getRoomToBegin(d Day, now time.Time, ripens int) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	from, err := time.Parse(Named, d.Names(now))
+	from, err := time.Parse(Named, d.GetName(now))
 	if err != nil {
 		return 0
 	}
@@ -360,11 +362,11 @@ func (p Preset) beginning(d Day, now time.Time, ripens int) float64 {
 	span := int(to.Sub(from).Hours()/24) + 1
 	for span > 0 && ripens > 0 {
 		span--
-		if p.Share(from.AddDate(0, 0, span).Weekday()) > 0 {
+		if p.GetShare(from.AddDate(0, 0, span).Weekday()) > 0 {
 			ripens--
 		}
 	}
-	return p.admits(from, span)
+	return p.getDaysOfReview(from, span)
 }
 
 // days is how many days of review there are from the day holding now through to
@@ -377,34 +379,34 @@ func (p Preset) days(d Day, now time.Time) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	from, err := time.Parse(Named, d.Names(now))
+	from, err := time.Parse(Named, d.GetName(now))
 	if err != nil {
 		return 0
 	}
 	y, m, day := p.By.Date()
 	to := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
-	return p.admits(from, int(to.Sub(from).Hours()/24)+1)
+	return p.getDaysOfReview(from, int(to.Sub(from).Hours()/24)+1)
 }
 
-// admits is how many whole days of review the preset holds over the calendar
-// days from this one.
-func (p Preset) admits(from time.Time, days int) float64 {
+// getDaysOfReview is how many whole days of review the preset holds over the
+// calendar days from this one.
+func (p Preset) getDaysOfReview(from time.Time, days int) float64 {
 	if days <= 0 {
 		return 0
 	}
 	whole := days / 7
-	out := p.Week() * float64(whole)
+	out := p.GetWeeklyShare() * float64(whole)
 	for i := range days % 7 {
-		out += p.Share(from.AddDate(0, 0, whole*7+i).Weekday())
+		out += p.GetShare(from.AddDate(0, 0, whole*7+i).Weekday())
 	}
 	return out
 }
 
-// Past reports whether the review day the goal names is behind us. The day it
+// IsPast reports whether the review day the goal names is behind us. The day it
 // names is a whole day of review, and a preset aiming at no day is never past.
-func (p Preset) Past(d Day, now time.Time) bool {
+func (p Preset) IsPast(d Day, now time.Time) bool {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return false
 	}
-	return !now.Before(d.Ending(p.By))
+	return !now.Before(d.GetEndOfDate(p.By))
 }

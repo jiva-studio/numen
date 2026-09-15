@@ -29,7 +29,7 @@ func (none) All() ([]domain.Vault, error)            { return nil, nil }
 func (none) Save(domain.Vault) error                 { return nil }
 func (none) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
 func (none) Remove(domain.VaultID) error             { return nil }
-func (none) Opened(domain.VaultID) error             { return nil }
+func (none) RecordOpened(domain.VaultID) error       { return nil }
 func (none) Last() (domain.Vault, bool, error)       { return domain.Vault{}, false, nil }
 
 // The editor and the review window are told the same day for the same clock.
@@ -49,7 +49,7 @@ func TestBothWindowsAreToldTheSameDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reviewing := counted(t, &window.API{Registry: none{}, Day: day, Now: clock})
+	reviewing := newFlashcardsClient(t, &window.API{Registry: none{}, Day: day, Now: clock})
 	stream, err := reviewing.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -68,8 +68,8 @@ func TestBothWindowsAreToldTheSameDay(t *testing.T) {
 	}
 }
 
-// counted is the review window's cards, asked the way that window asks.
-func counted(t *testing.T, api *window.API) numenv1connect.FlashcardsServiceClient {
+// newFlashcardsClient is the review window's cards, asked the way that window asks.
+func newFlashcardsClient(t *testing.T, api *window.API) numenv1connect.FlashcardsServiceClient {
 	t.Helper()
 	path, handler := numenv1connect.NewFlashcardsServiceHandler(api)
 	mux := http.NewServeMux()

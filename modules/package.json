@@ -8,5 +8,14 @@
     "apps/*",
     "apps/desktop/*",
     "tools/*"
-  ]
+  ],
+  "scripts": {
+    "format": "prettier --write \"{libs,apps}/**/*.{ts,vue,json,css}\"",
+    "format:check": "prettier --check \"{libs,apps}/**/*.{ts,vue,json,css}\""
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "prettier-plugin-tailwindcss": "^0.8.1"
+  }
 }

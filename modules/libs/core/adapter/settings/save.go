@@ -36,8 +36,10 @@ type Setting struct {
 // A file the settings could not be read out of again is not written either: a
 // value of the wrong shape, and a number past what its setting goes to, are
 // refused where they are handed in.
-func Save(path string, settings ...Setting) error {
-	return reaching(path, func(path string) error {
+// into says what shape the whole file takes, so a value written into any
+// section of it is read back before it lands.
+func Save(path string, into Document, settings ...Setting) error {
+	return runOnFile(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if errors.Is(err, fs.ErrNotExist) {
 			raw = []byte("{}\n")
@@ -60,7 +62,7 @@ func Save(path string, settings ...Setting) error {
 			raw = patched
 		}
 
-		if err := takes(raw, settings); err != nil {
+		if err := takes(raw, settings, into); err != nil {
 			return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
 		}
 		return replace(path, raw)
@@ -69,12 +71,11 @@ func Save(path string, settings ...Setting) error {
 
 // holds says what is wrong with the settings these bytes make, and nothing
 // where they read out as settings this build can work with.
-func holds(raw []byte) error {
-	held := Defaults()
-	if err := json.Unmarshal(raw, &held); err != nil {
+func holds(raw []byte, into Document) error {
+	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
-	return held.Appearance.Check()
+	return into.GetAppearance().Check()
 }
 
 // takes says what is wrong with the settings this call wrote, and nothing where
@@ -82,12 +83,11 @@ func holds(raw []byte) error {
 //
 // A value outside its setting that the file already held is one the person
 // typed and one they can still reach: what is refused is what was handed in.
-func takes(raw []byte, wrote []Setting) error {
-	held := Defaults()
-	if err := json.Unmarshal(raw, &held); err != nil {
+func takes(raw []byte, wrote []Setting, into Document) error {
+	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
-	for _, outside := range held.Appearance.Outsides() {
+	for _, outside := range into.GetAppearance().Outsides() {
 		for _, setting := range wrote {
 			if covers(setting.At, outside.At) {
 				return outside
@@ -98,7 +98,7 @@ func takes(raw []byte, wrote []Setting) error {
 		if !covers(setting.At, dayStartsAt) {
 			continue
 		}
-		if _, err := Starting(held.Review.DayStarts); err != nil {
+		if _, err := ReadDayStart(into.GetReview().DayStarts); err != nil {
 			return err
 		}
 	}
@@ -122,7 +122,7 @@ func covers(at []string, field string) bool {
 // A file that has not got the field is left alone. A field whose new name the
 // section already holds is left alone as well: one section holds one of a name.
 func rename(path string, at []string, to string) error {
-	return reaching(path, func(path string) error {
+	return runOnFile(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			return err
@@ -135,7 +135,7 @@ func rename(path string, at []string, to string) error {
 			return fmt.Errorf("%s: %w", path, err)
 		}
 
-		renamed, done := named(raw, at, to)
+		renamed, done := renameMember(raw, at, to)
 		if !done {
 			return nil
 		}
@@ -143,9 +143,9 @@ func rename(path string, at []string, to string) error {
 	})
 }
 
-// named hands back the object's bytes with one member's name changed, and
-// whether it found the member to change.
-func named(object []byte, at []string, to string) ([]byte, bool) {
+// renameMember hands back the object's bytes with one member's name changed,
+// and whether it found the member to change.
+func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 	if len(at) == 0 {
 		return object, false
 	}
@@ -159,11 +159,11 @@ func named(object []byte, at []string, to string) ([]byte, bool) {
 			continue
 		}
 		if len(at) > 1 {
-			section, done := named(object[one.from:one.to], at[1:], to)
+			section, done := renameMember(object[one.from:one.to], at[1:], to)
 			if !done {
 				return object, false
 			}
-			return spliced(object, one.from, one.to, section), true
+			return splice(object, one.from, one.to, section), true
 		}
 		if one.nameTo == 0 || held.holds(to) {
 			return object, false
@@ -172,7 +172,7 @@ func named(object []byte, at []string, to string) ([]byte, bool) {
 		if err != nil {
 			return object, false
 		}
-		return spliced(object, one.nameFrom, one.nameTo, name), true
+		return splice(object, one.nameFrom, one.nameTo, name), true
 	}
 
 	return object, false
@@ -231,16 +231,16 @@ func put(object []byte, at []string, value []byte, outer string) ([]byte, error)
 			continue
 		}
 		if len(at) == 1 {
-			return spliced(object, one.from, one.to, value), nil
+			return splice(object, one.from, one.to, value), nil
 		}
 		section, err := put(object[one.from:one.to], at[1:], value, held.indent)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", one.key, err)
 		}
-		return spliced(object, one.from, one.to, section), nil
+		return splice(object, one.from, one.to, section), nil
 	}
 
-	return held.appending(object, at, value, outer), nil
+	return held.appendMember(object, at, value, outer), nil
 }
 
 // member is one member of an object: its name, where that name is written, and
@@ -333,36 +333,36 @@ func (s shape) holds(key string) bool {
 	return false
 }
 
-// appending puts a member at the end of the object, laid out the way the object
-// already is. The end is where a name nobody has written yet belongs: the order
-// of the rest is a person's.
-func (s shape) appending(object []byte, at []string, value []byte, outer string) []byte {
+// appendMember puts a member at the end of the object, laid out the way the
+// object already is. The end is where a name nobody has written yet belongs:
+// the order of the rest is a person's.
+func (s shape) appendMember(object []byte, at []string, value []byte, outer string) []byte {
 	name, _ := json.Marshal(at[0])
 
 	if len(s.pairs) == 0 {
 		// An object holding nothing says nothing about how it is laid out, so
 		// it is opened out one step past the name it hangs from.
 		indent := outer + "  "
-		body := string(name) + ": " + string(sectioned(at[1:], value, indent))
-		return spliced(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer))
+		body := string(name) + ": " + string(wrapInSections(at[1:], value, indent))
+		return splice(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer))
 	}
 
-	body := string(name) + ": " + string(sectioned(at[1:], value, s.indent))
+	body := string(name) + ": " + string(wrapInSections(at[1:], value, s.indent))
 	if s.indent == "" {
-		return spliced(object, s.last, s.last, []byte(", "+body))
+		return splice(object, s.last, s.last, []byte(", "+body))
 	}
-	return spliced(object, s.last, s.last, []byte(",\n"+s.indent+body))
+	return splice(object, s.last, s.last, []byte(",\n"+s.indent+body))
 }
 
-// sectioned is the value a name is given, wrapped in the sections between it
-// and the field it names. A section made for a one-line object is written on
+// wrapInSections is the value a name is given, wrapped in the sections between
+// it and the field it names. A section made for a one-line object is written on
 // one line too.
-func sectioned(at []string, value []byte, indent string) []byte {
+func wrapInSections(at []string, value []byte, indent string) []byte {
 	if len(at) == 0 {
 		return value
 	}
 	name, _ := json.Marshal(at[0])
-	inside := sectioned(at[1:], value, indent+"  ")
+	inside := wrapInSections(at[1:], value, indent+"  ")
 	if indent == "" {
 		return []byte("{" + string(name) + ": " + string(inside) + "}")
 	}
@@ -381,10 +381,10 @@ func indentOf(object []byte, first int) string {
 	return string(rest[:len(rest)-len(bytes.TrimLeft(rest, " \t"))])
 }
 
-// resolved is where the bytes of the settings are, with every link on the way
-// followed. A link is followed to its end whether or not anything is written
-// there yet, and a path that resolves to nothing is its own answer.
-func resolved(path string) string {
+// resolvePath is where the bytes of the settings are, with every link on the
+// way followed. A link is followed to its end whether or not anything is
+// written there yet, and a path that resolves to nothing is its own answer.
+func resolvePath(path string) string {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return path
@@ -411,18 +411,18 @@ func resolved(path string) string {
 	return filepath.Join(dir, filepath.Base(abs))
 }
 
-// reaching hands the work the file the path leads to, with the folder that file
-// sits in made. Everything that writes the settings goes through it, so a link
-// is followed once and the rest of the way is the file itself.
-func reaching(path string, work func(path string) error) error {
-	real := resolved(path)
+// runOnFile hands the work the file the path leads to, with the folder that
+// file sits in made. Everything that writes the settings goes through it, so a
+// link is followed once and the rest of the way is the file itself.
+func runOnFile(path string, work func(path string) error) error {
+	real := resolvePath(path)
 	if err := os.MkdirAll(filepath.Dir(real), 0o755); err != nil {
 		return err
 	}
 	return work(real)
 }
 
-func spliced(raw []byte, from, to int, with []byte) []byte {
+func splice(raw []byte, from, to int, with []byte) []byte {
 	patched := make([]byte, 0, len(raw)-(to-from)+len(with))
 	patched = append(patched, raw[:from]...)
 	patched = append(patched, with...)
@@ -433,7 +433,7 @@ func spliced(raw []byte, from, to int, with []byte) []byte {
 // machine that dies mid-write leaves the settings whole. Where a file carries a
 // mode it is the person's alone: they type their service keys into this file.
 //
-// The path is the one reaching hands its work: the file itself, with every link
+// The path is the one runOnFile hands its work: the file itself, with every link
 // on the way to it already followed.
 func replace(path string, content []byte) error {
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")

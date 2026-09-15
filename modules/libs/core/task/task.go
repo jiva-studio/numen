@@ -32,10 +32,9 @@ type Task struct {
 	// an ordinary state and not an unknown one.
 	Count, Total int64
 
-	// Failed is why the work stopped, when it stopped badly. A task that failed
-	// stays in the list until whoever put it there takes it out, because a
-	// failure nobody was shown is a failure nobody can act on.
-	Failed string
+	// Error is why the work stopped, when it stopped badly. A task that stopped
+	// badly stays in the list until whoever put it there takes it out.
+	Error string
 
 	// Asked is set for work a person started and is waiting to be told about.
 	// Work nobody asked for is shown once it has lasted, and most of it ends
@@ -88,8 +87,8 @@ func (t *Tasks) Set(task Task) {
 	t.tell()
 }
 
-// Done takes one task out. A task that is not there is the outcome asked for.
-func (t *Tasks) Done(id string) {
+// Remove takes one task out. A task that is not there is the outcome asked for.
+func (t *Tasks) Remove(id string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if _, held := t.held[id]; !held {

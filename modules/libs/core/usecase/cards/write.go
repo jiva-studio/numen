@@ -50,7 +50,7 @@ func NewWrite(
 // that carried none was given.
 type WriteResult struct {
 	Fingerprint domain.Fingerprint
-	Minted      []format.MintedMark
+	Given       []format.CardMark
 }
 
 // Deck puts body in the deck at path.
@@ -61,10 +61,10 @@ type WriteResult struct {
 func (u Write) Deck(
 	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
 ) (WriteResult, error) {
-	if err := note.Bounded(path, len(body), MaxBytes); err != nil {
+	if err := note.CheckSize(path, len(body), MaxBytes); err != nil {
 		return WriteResult{}, err
 	}
-	whole, minted, err := u.whole(ctx, v, path, body)
+	whole, given, err := u.whole(ctx, v, path, body)
 	if err != nil {
 		return WriteResult{}, err
 	}
@@ -74,7 +74,7 @@ func (u Write) Deck(
 	}
 	// The file is on disk, so what it now stands at comes back beside a
 	// levelling that failed, and the caller can tell the two apart.
-	return WriteResult{Fingerprint: at, Minted: minted}, err
+	return WriteResult{Fingerprint: at, Given: given}, err
 }
 
 // whole is the body every card of which has been made whole, and the marks that
@@ -82,17 +82,17 @@ func (u Write) Deck(
 // wikilink the caller has just changed is cut by the stencil it now names.
 func (u Write) whole(
 	ctx context.Context, v domain.Vault, path, body string,
-) (string, []format.MintedMark, error) {
+) (string, []format.CardMark, error) {
 	read := Read{Readers: u.Readers, Links: u.Links}
-	by, err := read.Cutting(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
+	by, err := read.GetCardStencils(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
 	if err != nil {
 		return "", nil, err
 	}
-	whole, minted, err := format.Whole(body, by, cardid.New)
+	whole, given, err := format.Whole(body, by, cardid.New)
 	if err != nil {
 		return "", nil, fmt.Errorf("make %s whole: %w", path, err)
 	}
-	return whole, minted, nil
+	return whole, given, nil
 }
 
 // Stencil puts the faces and the fields into the stencil at path. A stencil is
@@ -104,7 +104,7 @@ func (u Write) Stencil(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if err := note.Bounded(path, len(body), note.MaxBytes); err != nil {
+	if err := note.CheckSize(path, len(body), note.MaxBytes); err != nil {
 		return domain.Fingerprint{}, err
 	}
 	return u.stencil(ctx, v, path, body, fields, fingerprint)
@@ -117,7 +117,7 @@ func (u Write) stencil(
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
 	if markdown.OpensFrontmatter(body) {
-		return domain.Fingerprint{}, note.ErrBodyRefused
+		return domain.Fingerprint{}, note.ErrBodyUnwritable
 	}
 
 	e := note.NewEdit(u.Readers, u.Writers, u.Index, u.Now)

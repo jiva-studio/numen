@@ -30,7 +30,11 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 		t.Fatal(err)
 	}
 
-	opened, err := editor.Open(t.Context(), cfg, "one", io.Discard)
+	made, err := cfg.GetEditorAssembly(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	opened, err := editor.Open(t.Context(), made, "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +77,7 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := titled(c.vault, c.open); got != c.want {
+			if got := getWindowTitle(c.vault, c.open); got != c.want {
 				t.Errorf("the window is called %q", got)
 			}
 		})

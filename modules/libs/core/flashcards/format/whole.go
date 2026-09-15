@@ -7,10 +7,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// MintedMark is a mark given to a card that carried none, and where that card
+// CardMark is a mark given to a card that carried none, and where that card
 // stands in the deck, counted from its first card. A caller that has just
 // written a card learns from this what to address it by.
-type MintedMark struct {
+type CardMark struct {
 	Card int
 	Mark domain.CardID
 }
@@ -18,7 +18,7 @@ type MintedMark struct {
 // Whole is a deck's body with every card made whole: a card carrying no mark is
 // given one, and a heading that has fallen out of step with the card's first
 // field is written again from the field. Every other byte of the body is left
-// as it arrived. What comes back beside it is every mark this minted.
+// as it arrived. What comes back beside it is every mark this gave.
 //
 // A deck passes here once, on its way to the vault.
 //
@@ -32,24 +32,24 @@ type MintedMark struct {
 // The body is text whose line endings are normalised, and so is what comes
 // back. The endings the file keeps are put on when it is written.
 func Whole(
-	body string, stencils map[string]Stencil, mint func() (domain.CardID, error),
-) (string, []MintedMark, error) {
+	body string, stencils map[string]Stencil, createID func() (domain.CardID, error),
+) (string, []CardMark, error) {
 	raw := []byte(body)
 	deck, spans := readDeck(domain.Fingerprint{}, raw)
 
-	var minted []MintedMark
+	var given []CardMark
 	// Backwards, because a splice moves every byte after it.
 	for i := len(spans) - 1; i >= 0; i-- {
 		card, span := deck.Cards[i], spans[i]
 
 		carried := card.Mark
 		if carried == "" {
-			given, err := mint()
+			id, err := createID()
 			if err != nil {
-				return "", nil, fmt.Errorf("mint a mark for the card standing at %d: %w", i, err)
+				return "", nil, fmt.Errorf("create a mark for the card standing at %d: %w", i, err)
 			}
-			carried = given
-			minted = append(minted, MintedMark{Card: i, Mark: carried})
+			carried = id
+			given = append(given, CardMark{Card: i, Mark: carried})
 		}
 		text := card.Heading
 		if first := stencils[card.StencilLink].First(); first != "" {
@@ -71,6 +71,6 @@ func Whole(
 		out = append(out, line...)
 		raw = append(out, raw[span.from:]...)
 	}
-	slices.Reverse(minted)
-	return string(raw), minted, nil
+	slices.Reverse(given)
+	return string(raw), given, nil
 }

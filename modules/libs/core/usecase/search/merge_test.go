@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// ranking is chunks in the order a half returned them.
-func ranking(chunks ...domain.ChunkID) []domain.Passage {
+// newRanking is chunks in the order a half returned them.
+func newRanking(chunks ...domain.ChunkID) []domain.Passage {
 	out := make([]domain.Passage, 0, len(chunks))
 	for _, c := range chunks {
 		out = append(out, domain.Passage{ChunkID: c, Source: "s"})
@@ -72,9 +72,9 @@ func TestTheFusedOrderIsTheSumOfReciprocalRanks(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			var rankings [][]domain.Passage
-			rankings = append(rankings, ranking(c.words...))
+			rankings = append(rankings, newRanking(c.words...))
 			if c.dense != nil {
-				rankings = append(rankings, ranking(c.dense...))
+				rankings = append(rankings, newRanking(c.dense...))
 			}
 			got := chunksIn(merge(rankings...))
 			if !slices.Equal(got, c.want) {

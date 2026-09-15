@@ -34,10 +34,10 @@ func TestAnInstallationNamingNoAgentOpensNoPort(t *testing.T) {
 	if listens(addr) {
 		t.Error("the tools are on a port")
 	}
-	if minted(t, cfg) {
+	if hasToken(t, cfg) {
 		t.Error("a token was written")
 	}
-	if _, written := announced(t, cfg); written {
+	if _, written := readAnnouncement(t, cfg); written {
 		t.Error("an endpoint was announced")
 	}
 	if opened.API.Unreachable.Why() == "" {
@@ -61,10 +61,10 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	if !listens(addr) {
 		t.Error("nothing answers where the agents are told to look")
 	}
-	if !minted(t, cfg) {
+	if !hasToken(t, cfg) {
 		t.Error("no token was kept")
 	}
-	said, written := announced(t, cfg)
+	said, written := readAnnouncement(t, cfg)
 	if !written {
 		t.Fatal("nothing says where the endpoint is")
 	}
@@ -74,7 +74,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	if said.Token == "" {
 		t.Error("the announcement carries no token")
 	}
-	if opened.API.Answering() == nil {
+	if opened.API.GetAgent() == nil {
 		t.Error("the panel has no agent to ask")
 	}
 
@@ -84,7 +84,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	if listens(addr) {
 		t.Error("the port is still open")
 	}
-	if _, left := announced(t, cfg); left {
+	if _, left := readAnnouncement(t, cfg); left {
 		t.Error("the announcement was left behind")
 	}
 }
@@ -104,11 +104,11 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	if !listens(addr) {
 		t.Error("nothing answers where the agents are told to look")
 	}
-	said, written := announced(t, cfg)
+	said, written := readAnnouncement(t, cfg)
 	if !written || said.Token == "" {
 		t.Fatal("an agent has nothing to be configured from")
 	}
-	if opened.API.Answering() != nil {
+	if opened.API.GetAgent() != nil {
 		t.Error("the panel was given an agent the settings do not name")
 	}
 	if opened.API.Unreachable.Why() == "" {
@@ -121,7 +121,7 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	if listens(addr) {
 		t.Error("the port is still open")
 	}
-	if _, left := announced(t, cfg); left {
+	if _, left := readAnnouncement(t, cfg); left {
 		t.Error("the announcement was left behind")
 	}
 }
@@ -152,9 +152,9 @@ func listens(addr string) bool {
 	return true
 }
 
-// announced is what an agent would be configured from, and whether the file is
-// there at all.
-func announced(t *testing.T, cfg container.Config) (agents.Announcement, bool) {
+// readAnnouncement is what an agent would be configured from, and whether the
+// file is there at all.
+func readAnnouncement(t *testing.T, cfg container.Config) (agents.Announcement, bool) {
 	t.Helper()
 
 	path, err := agents.AnnouncementPath(cfg)
@@ -175,8 +175,8 @@ func announced(t *testing.T, cfg container.Config) (agents.Announcement, bool) {
 	return said, true
 }
 
-// minted is whether the token an agent presents has been written down.
-func minted(t *testing.T, cfg container.Config) bool {
+// hasToken is whether the token an agent presents has been written down.
+func hasToken(t *testing.T, cfg container.Config) bool {
 	t.Helper()
 
 	path, err := agents.TokenPath(cfg)

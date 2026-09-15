@@ -18,11 +18,11 @@ type Window interface {
 	// it means.
 	Focus(ctx context.Context, at domain.Place) error
 
-	// Moved says a note is no longer where it was. Whoever is showing it at the
-	// name it had follows it to the name it now has.
-	Moved(ctx context.Context, went domain.Move) error
+	// ShowMove says a note is no longer where it was. Whoever is showing it at
+	// the name it had follows it to the name it now has.
+	ShowMove(ctx context.Context, went domain.Move) error
 
-	// Editing says a change to a note's prose is being made, so that a person
+	// ShowEdit says a change to a note's prose is being made, so that a person
 	// reading that note sees it arrive where it belongs.
-	Editing(ctx context.Context, said domain.Edit) error
+	ShowEdit(ctx context.Context, said domain.Edit) error
 }

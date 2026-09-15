@@ -36,7 +36,7 @@ func (c Config) profile(name string) (proofreading.Profile, error) {
 			"proofreading profile %q is used through %q, which is neither %q nor %q",
 			name, profile.Use, proofreading.UseService, proofreading.UseAgent)
 	}
-	if !profile.Named() {
+	if !profile.HasModel() {
 		return proofreading.Profile{}, fmt.Errorf(
 			"proofreading profile %q names no model to use with %q", name, profile.Use)
 	}
@@ -77,20 +77,21 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 	})
 }
 
-// ProofreadingScans is what a document's reading is put right with: the profile
-// the settings name for a scan, and the sizes a reading is asked about at.
-func (c Config) ProofreadingScans() source.ProofreadingConfig {
-	return c.proofreadingFor(c.ScanProofreading)
+// GetScanProofreading is what a document's reading is put right with: the
+// profile the settings name for a scan, and the sizes a reading is asked about
+// at.
+func (c Config) GetScanProofreading() source.ProofreadingConfig {
+	return c.getProofreading(c.ScanProofreading)
 }
 
-// ProofreadingSpeech is the same for what a model heard.
-func (c Config) ProofreadingSpeech() source.ProofreadingConfig {
-	return c.proofreadingFor(c.TranscriptProofreading)
+// GetSpeechProofreading is the same for what a model heard.
+func (c Config) GetSpeechProofreading() source.ProofreadingConfig {
+	return c.getProofreading(c.TranscriptProofreading)
 }
 
-// proofreadingFor is what a reading of one kind is put right with: the profile
+// getProofreading is what a reading of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
-func (c Config) proofreadingFor(said proofreading.Proofread) source.ProofreadingConfig {
+func (c Config) getProofreading(said proofreading.Proofread) source.ProofreadingConfig {
 	profile := c.Proofreading.Profiles[said.Profile]
 	return source.ProofreadingConfig{
 		Named:           said.Profile != "",

@@ -5,9 +5,9 @@
  * in, and what it answered the last thing it was asked. A new kind of any of
  * them is an entry in one of the three lists and nothing here.
  */
-import { noticed } from '@numen/ui'
+import { createNotice } from '@numen/ui'
 import type { Notice, Stay, Tone } from '@numen/ui'
-import type { Task } from '../core'
+import type { Task } from './task'
 import { wordsOnly, type IndexCoverage } from './coverage'
 import type { MessageKind, WindowMessage } from './messages'
 
@@ -36,12 +36,12 @@ export interface State {
   /** The vault is still being read for the first time. */
   readonly reading: boolean
   /** Whether the vault holds a note to show at all. */
-  readonly holds: boolean
+  readonly hasNote: boolean
 }
 
 /** How each kind of word is drawn, and how long it stands. */
 const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
-  refusal: { tone: 'alarm', stay: 'kept' },
+  error: { tone: 'alarm', stay: 'kept' },
   caution: { tone: 'caution', stay: 'kept' },
   report: { tone: 'plain', stay: 'read' },
   state: { tone: 'plain', stay: 'holds' },
@@ -51,7 +51,7 @@ const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
 const soThat = (
   id: string,
   says: string,
-  how: { about?: string; tone?: Tone; asked?: boolean } = {},
+  how: { about?: string; tone?: Tone; isAsked?: boolean } = {},
 ): readonly Notice[] =>
   says === ''
     ? []
@@ -62,7 +62,7 @@ const soThat = (
           about: how.about ?? '',
           tone: how.tone ?? 'plain',
           working: false,
-          asked: how.asked ?? true,
+          isAsked: how.isAsked ?? true,
           stay: 'holds',
         },
       ]
@@ -72,7 +72,7 @@ const soThat = (
  * it. That is how a reason arrives from the core: `doing this: what went
  * wrong`.
  */
-const carries = (outer: string, inner: string): boolean =>
+const isSameReason = (outer: string, inner: string): boolean =>
   outer === inner || outer.endsWith(`: ${inner}`)
 
 /**
@@ -84,13 +84,13 @@ const carries = (outer: string, inner: string): boolean =>
  */
 const alone = (tasks: readonly Task[]): readonly Task[] =>
   tasks.filter((at, index) => {
-    if (at.failed === '') return true
+    if (at.error === '') return true
     return !tasks.some(
       (other, was) =>
-        other.failed !== '' &&
+        other.error !== '' &&
         other !== at &&
-        carries(at.failed, other.failed) &&
-        (other.failed.length < at.failed.length || was < index),
+        isSameReason(at.error, other.error) &&
+        (other.error.length < at.error.length || was < index),
     )
   })
 
@@ -103,12 +103,12 @@ const alone = (tasks: readonly Task[]): readonly Task[] =>
  */
 export const cornerOf = (
   tasks: readonly Task[],
-  told: readonly WindowMessage[],
+  messages: readonly WindowMessage[],
   state: State,
   vault: IndexCoverage,
   words: Words,
 ): readonly Notice[] => {
-  const working: readonly Notice[] = alone(tasks).map(noticed)
+  const working: readonly Notice[] = alone(tasks).map(createNotice)
 
   const so: Notice[] = [
     ...soThat('unwatched', state.unwatched && words.unwatched, {
@@ -124,17 +124,17 @@ export const cornerOf = (
     // One at a time: a vault still being read has not finished reading nothing.
     ...soThat(
       'nothingRead',
-      !state.reading && !state.holds && state.unread ? words.nothingRead : '',
+      !state.reading && !state.hasNote && state.unread ? words.nothingRead : '',
     ),
     // Said once and quietly, and it is so whether or not anything is running.
-    ...soThat('wordsOnly', wordsOnly(vault) ? words.wordsOnly : '', { asked: false }),
+    ...soThat('wordsOnly', wordsOnly(vault) ? words.wordsOnly : '', { isAsked: false }),
   ]
 
-  const said: Notice[] = told.map((one) => ({
+  const said: Notice[] = messages.map((one) => ({
     id: one.id,
     says: one.text,
     working: false,
-    asked: true,
+    isAsked: true,
     ...manner[one.kind],
   }))
 

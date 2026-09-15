@@ -17,7 +17,7 @@ import (
 // never an answer of its own.
 func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	record := s.run(t, time.Now())
@@ -50,7 +50,7 @@ func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 // synchroniser has nothing to reconcile.
 func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	// Both faces of one card, so the order turns on the face and not the card.
 	recognise := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	name := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Name it"}
@@ -87,7 +87,7 @@ func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
 // the schedules are worked out from them again.
 func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -111,10 +111,10 @@ func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	}
 }
 
-// targeted is a vault of two presets asking for different shares of the cards,
-// with a deck of one card under each. Neither evens its days out, so what
-// separates two cards here is the target each stands under.
-func targeted(high, low float64) map[string]string {
+// newTargetedNotes is a vault of two presets asking for different shares of the
+// cards, with a deck of one card under each. Neither evens its days out, so
+// what separates two cards here is the target each stands under.
+func newTargetedNotes(high, low float64) map[string]string {
 	return map[string]string{
 		"Term.md": term,
 		"High.md": preset(fmt.Sprintf("retention: %g\neven_load: false\n", high)),
@@ -134,10 +134,10 @@ var (
 	underLow  = review.CardFaceID{Card: "zpqrstvwxy", Face: "Say it"}
 )
 
-// answeredAlike takes both cards through the same answers at the same moments,
-// far enough for each to be learned, so what separates their schedules is the
-// preset each stands under.
-func answeredAlike(t *testing.T, s vaulted) {
+// answerBothAlike takes both cards through the same answers at the same
+// moments, far enough for each to be learned, so what separates their schedules
+// is the preset each stands under.
+func answerBothAlike(t *testing.T, s vaulted) {
 	t.Helper()
 	for day := range 3 {
 		record := s.run(t, saturday.AddDate(0, 0, day-3))
@@ -150,8 +150,8 @@ func answeredAlike(t *testing.T, s vaulted) {
 // presets asking for different shares send the same answer different distances.
 func TestEachPresetSchedulesItsCardsAtItsOwnTarget(t *testing.T) {
 	t.Parallel()
-	s := opened(t, targeted(0.95, 0.75))
-	answeredAlike(t, s)
+	s := openVault(t, newTargetedNotes(0.95, 0.75))
+	answerBothAlike(t, s)
 
 	got, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -171,8 +171,8 @@ func TestEachPresetSchedulesItsCardsAtItsOwnTarget(t *testing.T) {
 // again, so the cards under it come round somewhere else.
 func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
 	t.Parallel()
-	s := opened(t, targeted(0.95, 0.75))
-	answeredAlike(t, s)
+	s := openVault(t, newTargetedNotes(0.95, 0.75))
+	answerBothAlike(t, s)
 
 	was, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -208,9 +208,9 @@ func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
 // what the cache is held against.
 func TestRepointingADeckWorksTheSchedulesOutAgain(t *testing.T) {
 	t.Parallel()
-	files := targeted(0.95, 0.75)
-	s := opened(t, files)
-	answeredAlike(t, s)
+	files := newTargetedNotes(0.95, 0.75)
+	s := openVault(t, files)
+	answerBothAlike(t, s)
 
 	was, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -243,11 +243,11 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 	// The card that moves, written so that it can be cut from one deck and
 	// pasted into the other.
 	moving := "\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n"
-	files := targeted(0.95, 0.75)
+	files := newTargetedNotes(0.95, 0.75)
 	files["decks/High.md"] += "\n## Stays ^card000001\n\n[[Term]]\n\n### Word\n\nkr\n" +
 		"\n### Meaning\n\nto do\n"
-	s := opened(t, files)
-	answeredAlike(t, s)
+	s := openVault(t, files)
+	answerBothAlike(t, s)
 
 	was, err := s.kept.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -271,7 +271,7 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 // defaults are the target the whole vault stood at.
 func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, saturday).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -313,7 +313,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 		t.Fatalf("the second answer sends the card %g days away", away)
 	}
 
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"Even.md": preset(fmt.Sprintf(
 			"new_a_day: 0\nreviews_a_day: 9999\nretention: 0.9\neven_load: true\nload: {%s: 0}\n",
@@ -372,10 +372,10 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 func dayFrom(from, at time.Time) int {
 	open := from
 	for i := range 400 {
-		if at.Before(today.Ends(open)) {
+		if at.Before(today.GetEnd(open)) {
 			return i
 		}
-		open = today.Ends(open)
+		open = today.GetEnd(open)
 	}
 	return -1
 }
@@ -390,7 +390,7 @@ func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
 	begun := by.Next(review.Schedule{}, when, review.Good)
 	fell := by.Next(begun, when, review.Good).Due
 
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md": term,
 		"Even.md": preset(fmt.Sprintf(
 			"new_a_day: 0\nreviews_a_day: 9999\nretention: 0.9\neven_load: false\nload: {%s: 0}\n",
@@ -412,11 +412,11 @@ func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
 		t.Fatalf("the card comes round at %v, and the scheduler put it at %v", got, fell)
 	}
 
-	opens := today.Ends(fell).AddDate(0, 0, -1)
+	opens := today.GetEnd(fell).AddDate(0, 0, -1)
 	if asked := s.sessionAt(t, today, opens.Add(6*time.Hour)).Queue; len(asked) != 0 {
 		t.Errorf("a %v carrying none of the load asked %d cards", fell.Weekday(), len(asked))
 	}
-	after := today.Ends(fell).Add(6 * time.Hour)
+	after := today.GetEnd(fell).Add(6 * time.Hour)
 	if asked := s.sessionAt(t, today, after).Queue; len(asked) != 1 {
 		t.Errorf("the day after asked %d cards, want the one standing over", len(asked))
 	}

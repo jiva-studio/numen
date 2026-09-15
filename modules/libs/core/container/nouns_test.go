@@ -48,8 +48,8 @@ func gerund(name string) bool {
 	return !known
 }
 
-// declared are the exported types one file declares.
-func declared(file *ast.File) []string {
+// getExportedTypes are the exported types one file declares.
+func getExportedTypes(file *ast.File) []string {
 	var found []string
 	ast.Inspect(file, func(node ast.Node) bool {
 		spec, is := node.(*ast.TypeSpec)
@@ -77,7 +77,7 @@ func everyExportedType(t *testing.T) map[string]string {
 		if err != nil {
 			return err
 		}
-		for _, one := range declared(file) {
+		for _, one := range getExportedTypes(file) {
 			found[one] = path
 		}
 		return nil

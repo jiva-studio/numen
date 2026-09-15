@@ -30,7 +30,7 @@ var choosing = map[string]string{
 // Every preset the vault holds is listed, by path and by what it is called.
 func TestThePresetsOfAVaultAreListed(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 
 	held, err := s.presets.List(t.Context(), s.vault)
 	if err != nil {
@@ -51,7 +51,7 @@ func TestThePresetsOfAVaultAreListed(t *testing.T) {
 // defaults, which are no note.
 func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 	t.Parallel()
-	s := opened(t, vault)
+	s := openVault(t, vault)
 
 	held, err := s.presets.List(t.Context(), s.vault)
 	if err != nil {
@@ -66,7 +66,7 @@ func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 // answers with an empty list, and only that is a fact about the vault.
 func TestABuildThatCannotReachThePresetsRefusesToListThem(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 
 	blind := s.presets
 	blind.Notes = nil
@@ -78,7 +78,7 @@ func TestABuildThatCannotReachThePresetsRefusesToListThem(t *testing.T) {
 // A deck that named no preset names one, and is scheduled by it afterwards.
 func TestADeckIsPutOnAPreset(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 
 	if _, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{}); err != nil {
@@ -106,7 +106,7 @@ func TestADeckIsPutOnAPreset(t *testing.T) {
 // afterwards.
 func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 
 	if _, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
@@ -137,7 +137,7 @@ func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 // `links:` block goes with the entry it held.
 func TestADeckIsTakenOffItsPreset(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 
 	if _, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Roots.md", "", domain.Fingerprint{}); err != nil {
@@ -162,7 +162,7 @@ func TestADeckIsTakenOffItsPreset(t *testing.T) {
 // write as the bytes it went in as.
 func TestPointingADeckLeavesTheRestOfTheFrontmatter(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Sanskrit.md": choosing["Sanskrit.md"],
 		"decks/Roots.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\n" +
 			"tags: [grammar, roots]\n# the ones I keep coming back to\n" +
@@ -194,7 +194,7 @@ func TestPointingADeckLeavesTheRestOfTheFrontmatter(t *testing.T) {
 // another preset.
 func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Sanskrit.md":     choosing["Sanskrit.md"],
 		"presets/Slow.md": choosing["presets/Slow.md"],
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n" +
@@ -219,7 +219,7 @@ func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
 // one and the file is left as it stands.
 func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 	was := read(t, s.vault, "decks/Terms.md")
 
 	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Grammar.md", domain.Fingerprint{})
@@ -234,7 +234,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 // A path the vault holds no note at is refused, and nothing is written.
 func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 	was := read(t, s.vault, "decks/Terms.md")
 
 	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Pali.md", domain.Fingerprint{})
@@ -249,7 +249,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 // A deck the person has edited since the caller read it is left alone.
 func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 
 	at, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
@@ -272,7 +272,7 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 // The fingerprint a write answers with is the one the next write is held to.
 func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 
 	at, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
@@ -317,7 +317,7 @@ func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
 		"taken off its preset":    {"", ""},
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := opened(t, map[string]string{
+			s := openVault(t, map[string]string{
 				"Sanskrit.md":     choosing["Sanskrit.md"],
 				"presets/Slow.md": choosing["presets/Slow.md"],
 				"decks/Roots.md":  deck,
@@ -341,7 +341,7 @@ func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
 // note is read back as the deck it is.
 func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
 	t.Parallel()
-	s := opened(t, choosing)
+	s := openVault(t, choosing)
 
 	if _, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Roots.md", "", domain.Fingerprint{}); err != nil {
@@ -364,7 +364,7 @@ func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
 // A block holding other entries keeps them when the preset entry goes.
 func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Sanskrit.md": choosing["Sanskrit.md"],
 		"Grammar.md":  choosing["Grammar.md"],
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Grammar\n    role: parent\n" +
@@ -389,7 +389,7 @@ func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
 // leaves it naming one, which is what settles the problem.
 func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Sanskrit.md":     choosing["Sanskrit.md"],
 		"presets/Slow.md": choosing["presets/Slow.md"],
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n" +
@@ -418,7 +418,7 @@ func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 // by identifier is answered the same way after it is moved.
 func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Sanskrit.md":     "---\nid: 01M02ACGM0FYMSXNDP29C90JNR\ntype: preset\ngoal: minutes_a_day\n---\n\n# Sanskrit\n",
 		"presets/Slow.md": choosing["presets/Slow.md"],
 		"decks/Terms.md":  choosing["decks/Terms.md"],
@@ -430,7 +430,7 @@ func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
-	if got := pointedAt(t, s, "Sanskrit.md"); !slices.Equal(got, []string{"decks/Roots.md", "decks/Terms.md"}) {
+	if got := getPointingDecks(t, s, "Sanskrit.md"); !slices.Equal(got, []string{"decks/Roots.md", "decks/Terms.md"}) {
 		t.Errorf("what points at the preset is %v", got)
 	}
 
@@ -440,17 +440,17 @@ func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
 		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
-	if got := pointedAt(t, s, "Sanskrit.md"); !slices.Equal(got, []string{"decks/Terms.md"}) {
+	if got := getPointingDecks(t, s, "Sanskrit.md"); !slices.Equal(got, []string{"decks/Terms.md"}) {
 		t.Errorf("what points at the preset is %v", got)
 	}
-	if got := pointedAt(t, s, "presets/Slow.md"); !slices.Equal(got, []string{"decks/Roots.md"}) {
+	if got := getPointingDecks(t, s, "presets/Slow.md"); !slices.Equal(got, []string{"decks/Roots.md"}) {
 		t.Errorf("what points at the other preset is %v", got)
 	}
 }
 
-// pointing is the decks whose preset link reaches the note at path, in the
-// order they are filed under.
-func pointedAt(t *testing.T, s vaulted, path string) []string {
+// getPointingDecks is the decks whose preset link reaches the note at path, in
+// the order they are filed under.
+func getPointingDecks(t *testing.T, s vaulted, path string) []string {
 	t.Helper()
 	found, err := s.presets.Links.Backlinks(t.Context(), s.vault.ID, path)
 	if err != nil {

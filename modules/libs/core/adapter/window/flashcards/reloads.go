@@ -53,15 +53,15 @@ func (f *following) say() {
 	}
 }
 
-// Moved says that something the window draws from has changed.
+// ReportChange says that something the window draws from has changed.
 //
 // What changed is not carried and not acted on. The page asks what the vaults
 // come to now, which is the one answer that cannot go stale. Who watches what
 // is the command's: this holds the listeners and nothing else.
-func (a *API) Moved() { a.listeners.say() }
+func (a *API) ReportChange() { a.listeners.say() }
 
-// Follows says Moved for everything one channel reports, until it closes or ctx
-// is done.
+// Follows says ReportChange for everything one channel reports, until it closes
+// or ctx is done.
 func (a *API) Follows(ctx context.Context, moved <-chan struct{}) {
 	go func() {
 		for {
@@ -72,7 +72,7 @@ func (a *API) Follows(ctx context.Context, moved <-chan struct{}) {
 				if !open {
 					return
 				}
-				a.Moved()
+				a.ReportChange()
 			}
 		}
 	}()

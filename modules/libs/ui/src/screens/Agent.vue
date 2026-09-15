@@ -6,10 +6,10 @@
  * clear of however much room it takes, sitting at its foot when a question is
  * sent. It fills whatever it is put in, and says nothing about where that is.
  */
-import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import Thread from '@/features/thread/Thread.vue'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { Thread } from '@/features/thread'
 import { MessageComposer } from './message-composer'
-import type { Turn } from '@/features/thread/turn'
+import type { Turn } from '@/features/thread'
 
 withDefaults(
   defineProps<{
@@ -19,18 +19,20 @@ withDefaults(
     placeholder?: string
     disabled?: boolean
     /** What the disc at the end of the field is called while it sends. */
-    sends?: string
+    sendLabel?: string
     /** What it is called while it stops the answer on its way. */
-    stops?: string
+    stopLabel?: string
   }>(),
   {
     working: false,
     placeholder: 'Write a message',
     disabled: false,
-    sends: 'Send',
-    stops: 'Stop',
+    sendLabel: 'Send',
+    stopLabel: 'Stop',
   },
 )
+
+const text = defineModel<string>({ default: '' })
 
 const emit = defineEmits<{
   (event: 'submit', text: string): void
@@ -42,8 +44,6 @@ const emit = defineEmits<{
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
 }>()
 
-const text = defineModel<string>({ default: '' })
-
 const composer = useTemplateRef<InstanceType<typeof MessageComposer>>('composer')
 const thread = useTemplateRef<InstanceType<typeof Thread>>('thread')
 
@@ -51,7 +51,7 @@ defineExpose({ focus: (how?: FocusOptions) => composer.value?.focus(how) })
 const room = ref('0px')
 
 /** Sent. The conversation takes up following its foot, where the question is. */
-const sent = (text: string) => {
+const onSubmit = (text: string) => {
   emit('submit', text)
   thread.value?.toFoot(true)
 }
@@ -72,22 +72,19 @@ onMounted(() => {
   watching.observe(element)
 })
 
+const agentStyle = computed(() => ({ '--agent-room': room.value }))
+
 onBeforeUnmount(() => watching?.disconnect())
 </script>
 
 <template>
-  <div
-    class="agent numen flex min-h-0 flex-col font-sans text-base text-ink"
-    :style="{ '--agent-room': room }"
-  >
+  <div class="agent numen text-ink flex min-h-0 flex-col font-sans text-base" :style="agentStyle">
     <Thread
       ref="thread"
       class="agent__thread"
       :turns="turns"
       @open="emit('open', $event)"
-      @follow="
-        (turn: Turn, href: string, press: MouseEvent) => emit('follow', turn, href, press)
-      "
+      @follow="(turn: Turn, href: string, press: MouseEvent) => emit('follow', turn, href, press)"
     >
       <template #silence><slot name="silence">Nothing said yet</slot></template>
       <template v-if="$slots.turn" #turn="bound"><slot name="turn" v-bind="bound" /></template>
@@ -101,9 +98,9 @@ onBeforeUnmount(() => watching?.disconnect())
       :working="working"
       :placeholder="placeholder"
       :disabled="disabled"
-      :sends="sends"
-      :stops="stops"
-      @submit="sent"
+      :send-label="sendLabel"
+      :stop-label="stopLabel"
+      @submit="onSubmit"
       @stop="emit('stop')"
     />
   </div>

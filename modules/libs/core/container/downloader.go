@@ -17,7 +17,7 @@ import (
 func (c Config) Downloader(ctx context.Context) port.Downloader {
 	downloader, err := download.New(ctx, c.Importing)
 	if err != nil {
-		c.trouble(err)
+		c.handleError(err)
 		return nil
 	}
 	return downloader
@@ -31,13 +31,13 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Downloader) so
 	notes := c.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), level)
 	return source.ImportURL{
 		Readers:     c.VaultReaders(),
-		Derived:     c.DerivedStores(),
+		Derived:     c.GetDerivedStores(),
 		By:          by,
 		CopyMaxSize: c.Importing.CopyBytes(),
-		ToVault:     c.Importing.KeepsCopiesInVault(),
+		ToVault:     c.Importing.HasCopiesInVault(),
 		Writers:     c.VaultWriters(),
 		Languages:   c.Importing.Captions,
-		Automatic:   c.Importing.AllowsAutomaticCaptions(),
+		Automatic:   c.Importing.CanUseAutomaticCaptions(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			return level(ctx, v, []string{path})
 		},

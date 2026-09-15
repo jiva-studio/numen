@@ -48,10 +48,10 @@ export const addressOf = (raw: string): Address => {
 }
 
 /** An address as one string, which is how it is handed on and read back. */
-export const stated = (address: Address): string => `${address.scheme}://${address.value}`
+export const writeAddress = (address: Address): string => `${address.scheme}://${address.value}`
 
 /** Whether an address, written as one string, points at a note. */
-export const pointsAtNote = (address: string): boolean =>
+export const isNoteAddress = (address: string): boolean =>
   address.startsWith(`${NAME}://`) || address.startsWith(`${NOTE}://`)
 
 /** One wikilink as it stands in a text. */
@@ -78,7 +78,7 @@ export const wikilinksIn = (text: string): readonly Wikilink[] => {
     found.push({
       at: match.index,
       to: match.index + match[0].length,
-      address: stated(address),
+      address: writeAddress(address),
       text: (alias >= 0 ? inside.slice(alias + 1) : inside).trim(),
     })
   }

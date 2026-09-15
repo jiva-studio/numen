@@ -130,11 +130,9 @@ type API struct {
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
 
-	// Ready is set when the scan finished, and Failed says why it could not —
-	// a vault that could not be read is not an empty one, and the interface has
-	// to be able to tell them apart.
-	Ready  atomic.Bool
-	Failed wire.Reason
+	// Ready is set when the scan finished, and Error says why it could not.
+	Ready atomic.Bool
+	Error wire.Reason
 	// Unwatched is why the vault is not being followed, when it is not.
 	Unwatched wire.Reason
 	// Unreachable is why an agent cannot be reached, when one cannot.
@@ -273,9 +271,9 @@ type IndexState struct {
 	Recipe atomic.Value
 }
 
-// Showing is the vault the window has open. A window standing on nothing
+// GetShownVault is the vault the window has open. A window standing on nothing
 // answers with no vault at all.
-func (a *API) Showing() domain.Vault {
+func (a *API) GetShownVault() domain.Vault {
 	if v := a.vault.Load(); v != nil {
 		return *v
 	}
@@ -339,24 +337,24 @@ func (a *API) forgets() func(domain.Vault, string) {
 // window, for a build that keeps one.
 func (a *API) say(at task.Task) { a.Window.Say(at) }
 
-// finished takes one piece of work out of that list.
-func (a *API) finished(id string) { a.Window.Finished(id) }
+// finishTask takes one piece of work out of that list.
+func (a *API) finishTask(id string) { a.Window.Finish(id) }
 
-// unlevelled says whether a write reached the vault and the index did not
+// isUnlevelled says whether a write reached the vault and the index did not
 // follow.
 // The answer goes on the wire, so the client that saved knows search has not
 // caught up with what it saved, and it stands in the list of what is being done
 // until a write levels the index again, so a person who is not looking at that
 // note is told too.
-func (a *API) unlevelled(err error) bool {
+func (a *API) isUnlevelled(err error) bool {
 	if err == nil {
-		a.finished(levellingTheIndex)
+		a.finishTask(levellingTheIndex)
 		return false
 	}
 	if !errors.Is(err, note.ErrUnlevelled) {
 		return false
 	}
-	a.say(task.Task{ID: levellingTheIndex, Doing: "Bringing the index level", Failed: err.Error()})
+	a.say(task.Task{ID: levellingTheIndex, Doing: "Bringing the index level", Error: err.Error()})
 	return true
 }
 
@@ -368,30 +366,30 @@ func (a *API) Shut() {
 	<-a.questions.seal()
 }
 
-func (a *API) closed() bool { return a.shut.Load() }
+func (a *API) isClosed() bool { return a.shut.Load() }
 
-// shown is the vault a question is answered over. A window standing on nothing
+// getShownVault is the vault a question is answered over. A window standing on nothing
 // has none, and every question that would reach into a vault is refused there.
-func (a *API) shown() (domain.Vault, error) {
-	v := a.Showing()
+func (a *API) getShownVault() (domain.Vault, error) {
+	v := a.GetShownVault()
 	if v.ID == "" {
 		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
 	return v, nil
 }
 
-// Answering is the agent the panel's tasks go to, and nothing where the vault
+// GetAgent is the agent the panel's tasks go to, and nothing where the vault
 // has none.
-func (a *API) Answering() port.Agent {
+func (a *API) GetAgent() port.Agent {
 	if taking := a.agent.Load(); taking != nil {
 		return *taking
 	}
 	return nil
 }
 
-// Answers is who takes the panel's tasks from now on. Nothing leaves the vault
-// with no agent.
-func (a *API) Answers(taking port.Agent) {
+// SetAgent names who takes the panel's tasks from now on. Nothing leaves the
+// vault with no agent.
+func (a *API) SetAgent(taking port.Agent) {
 	if taking == nil {
 		a.agent.Store(nil)
 		return
@@ -407,14 +405,14 @@ func text(v *atomic.Value) string {
 func (a *API) GetVaultState(
 	ctx context.Context, _ *connect.Request[v1.GetVaultStateRequest],
 ) (*connect.Response[v1.GetVaultStateResponse], error) {
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	out := &v1.GetVaultStateResponse{
 		Id:   string(showing.ID),
 		Name: showing.Name,
 		Path: showing.Path,
 		Scan: &v1.Scan{
 			Ready:     a.Ready.Load(),
-			Failed:    a.Failed.Why(),
+			Error:     a.Error.Why(),
 			Unwatched: a.Unwatched.Why(),
 		},
 		Coverage: &v1.IndexCoverage{Embedding: text(&a.Indexing.Model) != ""},

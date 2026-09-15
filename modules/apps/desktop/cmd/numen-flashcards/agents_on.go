@@ -37,9 +37,9 @@ type reaching struct {
 	vault domain.Vault
 }
 
-// Opened is a session opening on a vault. A session opened on the same vault
-// again leaves the agent where it is.
-func (r *reaching) Opened(_ context.Context, v domain.Vault) {
+// SetSessionVault is a session opening on a vault. A session opened on the same
+// vault again leaves the agent where it is.
+func (r *reaching) SetSessionVault(_ context.Context, v domain.Vault) {
 	r.mu.Lock()
 	again := r.vault.ID == v.ID
 	r.vault = v
@@ -48,10 +48,10 @@ func (r *reaching) Opened(_ context.Context, v domain.Vault) {
 	if again {
 		return
 	}
-	_ = r.swapping.Around(func() error { return nil })
+	_ = r.swapping.RunSwap(func() error { return nil })
 }
 
-func (r *reaching) showing() domain.Vault {
+func (r *reaching) getVault() domain.Vault {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.vault
@@ -79,7 +79,7 @@ func serveAgents(
 		return func() error { return nil }
 	}
 
-	secret, err := agents.Mint()
+	secret, err := agents.CreateToken()
 	if err != nil {
 		api.Unreachable.Store(err.Error())
 		fmt.Fprintln(out, "numen-flashcards: no agent:", err)
@@ -94,14 +94,14 @@ func serveAgents(
 	held := &reaching{}
 	held.swapping = &agents.Endpoint{
 		Serve: func() (func() error, error) {
-			v := held.showing()
+			v := held.getVault()
 			root, err := filepath.Abs(v.Path)
 			if err != nil {
 				return nil, err
 			}
 			served, err := agents.Serve(ctx, agents.Options{
 				Config:  cfg,
-				Core:    reviewing(cfg, db, notes, cutting, api, v, root, out),
+				Core:    makeReviewCore(cfg, db, notes, cutting, api, v, root, out),
 				Reviews: true,
 				Token:   secret,
 				Root:    root,
@@ -110,18 +110,18 @@ func serveAgents(
 			if err != nil {
 				return nil, err
 			}
-			api.Answers(served.Agent)
+			api.SetAgent(served.Agent)
 			return served.Close, nil
 		},
-		Showing:     held.showing,
-		Handler:     api.Answers,
-		Unreachable: func(why string) { api.Unreachable.Store(why) },
-		Trouble:     func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
+		Showing:      held.getVault,
+		Handler:      api.SetAgent,
+		Unreachable:  func(why string) { api.Unreachable.Store(why) },
+		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}
 
-	api.Opened = held.Opened
+	api.Opened = held.SetSessionVault
 	return func() error {
-		held.swapping.Off()
+		held.swapping.Stop()
 		return nil
 	}
 }
@@ -136,7 +136,7 @@ func serveAgents(
 // Nothing embeds behind this window, so a search answers by the words the vault
 // holds. Nothing scans either: a card the agent writes is levelled in the index
 // by the paths it touched.
-func reviewing(
+func makeReviewCore(
 	cfg container.Config,
 	db *container.Index,
 	notes container.Notes,
@@ -147,7 +147,7 @@ func reviewing(
 	out io.Writer,
 ) mcp.Core {
 	return mcp.Core{
-		Showing: mcp.ShowingOne(v, root),
+		Showing: mcp.ShowOneVault(v, root),
 		Readers: cfg.VaultReaders(),
 		// Which card the person is on is a tool's answer and never part of the
 		// question, so a deck named by whoever synced it is data and not
@@ -161,13 +161,13 @@ func reviewing(
 			Queries:       db.Queries(),
 			Neighbourhood: notes.Neighbourhood,
 			Links:         notes.Links,
-			Search: cfg.SearchingOver(db.Passages(), nil,
+			Search: cfg.NewSearchOver(db.Passages(), nil,
 				func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
 		},
 
 		Sources: mcp.Sources{
 			Queries:   db.SourcesKnown(),
-			Derived:   cfg.DerivedStores(),
+			Derived:   cfg.GetDerivedStores(),
 			Documents: cfg.TextExtractor(),
 		},
 

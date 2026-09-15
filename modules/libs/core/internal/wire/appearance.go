@@ -3,7 +3,7 @@ package wire
 import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
 )
 
 // ModeOf is which half of a colour pair the tokens are read as, as the schema

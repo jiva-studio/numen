@@ -27,12 +27,12 @@ func Open() (*VaultRegistry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return At(filepath.Join(dir, "numen", "vaults.json")), nil
+	return OpenAt(filepath.Join(dir, "numen", "vaults.json")), nil
 }
 
-// At is Open with an explicit path, so that a test does not touch the machine's
-// real configuration.
-func At(path string) *VaultRegistry { return &VaultRegistry{path: path} }
+// OpenAt is Open with an explicit path, so that a test does not touch the
+// machine's real configuration.
+func OpenAt(path string) *VaultRegistry { return &VaultRegistry{path: path} }
 
 func (r *VaultRegistry) Path() string { return r.path }
 
@@ -166,7 +166,7 @@ func (r *VaultRegistry) Remove(id domain.VaultID) error {
 
 // Opened records the vault a window is showing. Recording the vault already
 // recorded writes nothing.
-func (r *VaultRegistry) Opened(id domain.VaultID) error {
+func (r *VaultRegistry) RecordOpened(id domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	f, err := r.load()

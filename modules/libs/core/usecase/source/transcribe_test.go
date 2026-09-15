@@ -10,13 +10,13 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// A voice is a recording made of stretches given in advance, and the model that
-// hears them. It counts the stretches it was handed, so a test can say that a
+// A voice is a recording made of spans given in advance, and the model that
+// hears them. It counts the spans it was handed, so a test can say that a
 // run taken up again did not hear one twice.
 type voice struct {
 	words []string
@@ -25,13 +25,13 @@ type voice struct {
 	refuse error
 
 	opens int
-	heard []int // the millisecond each stretch handed over began at
+	heard []int // the millisecond each span handed over began at
 	stop  func(int)
 }
 
-// stretch is where the words spoken n-th sit in the recording. Every stretch is
+// getSpan is where the words spoken n-th sit in the recording. Every span is
 // a second long with a fifth of a second of silence after it.
-func stretch(n int) port.Audio {
+func getSpan(n int) port.Audio {
 	return port.Audio{From: n * 1000, To: n*1000 + 800}
 }
 
@@ -68,7 +68,7 @@ func (p played) Length() int { return len(p.words) * 1000 }
 func (p played) Segments(_ context.Context, from, count int) ([]port.Audio, error) {
 	var out []port.Audio
 	for n := range p.words {
-		if at := stretch(n); at.From >= from {
+		if at := getSpan(n); at.From >= from {
 			out = append(out, at)
 			if len(out) == count {
 				break
@@ -83,10 +83,10 @@ func (p played) Close() error { return nil }
 // recordingPath is where the recording sits in the vault under test.
 const recordingPath = "library/talk.mp3"
 
-// recorded is the bytes of the file the words were spoken into. Nothing here
-// reads them: what the recording says comes from the model, and the model is a
-// fake.
-func recorded(words []string) []byte {
+// newRecording is the bytes of the file the words were spoken into. Nothing
+// here reads them: what the recording says comes from the model, and the model
+// is a fake.
+func newRecording(words []string) []byte {
 	return []byte("a recording of " + strings.Join(words, "|"))
 }
 
@@ -94,7 +94,7 @@ func recorded(words []string) []byte {
 // its artifact is named by.
 func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, *shelf, *voice, string) {
 	t.Helper()
-	raw := recorded(words)
+	raw := newRecording(words)
 	shelved := newLibrary()
 	shelved.hold(recordingPath, domain.KindRecording, raw, 1)
 	index := newStore()
@@ -109,8 +109,8 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	}, first, index, kept, model, text.Fingerprint(raw)
 }
 
-// spoken is the words of an artifact, in the order they were said.
-func spoken(t *testing.T, raw []byte) []string {
+// getWords is the words of an artifact, in the order they were said.
+func getWords(t *testing.T, raw []byte) []string {
 	t.Helper()
 	_, cues := transcript.Parse(raw)
 	out := make([]string, 0, len(cues))
@@ -130,7 +130,7 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	if res.Length != 3000 {
 		t.Errorf("the recording is %d ms long", res.Length)
 	}
-	if res.Heard != stretch(2).To {
+	if res.Heard != getSpan(2).To {
 		t.Errorf("heard %d ms of it", res.Heard)
 	}
 	if res.Silent || res.Unopened || res.Busy {
@@ -151,7 +151,7 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	if !bytes.HasPrefix(raw, []byte(transcript.Head+"\n")) {
 		t.Fatalf("the artifact is not WebVTT: %q", raw)
 	}
-	if said := spoken(t, raw); !slices.Equal(said, model.words) {
+	if said := getWords(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
 	if _, err := shelf.Read(t.Context(), text.Partial("asr", hash)); err == nil {
@@ -184,7 +184,7 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Resumed != stretch(0).To {
+	if res.Resumed != getSpan(0).To {
 		t.Errorf("the second run began at %d ms", res.Resumed)
 	}
 
@@ -192,7 +192,7 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said := spoken(t, raw); !slices.Equal(said, model.words) {
+	if said := getWords(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
 	// The stretch the stopped run did not write down is the only one heard
@@ -227,7 +227,7 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said := spoken(t, raw); !slices.Equal(said, model.words) {
+	if said := getWords(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
 	if bytes.Contains(raw, []byte("half a thought")) {
@@ -362,7 +362,7 @@ func TestWhatListenedIsKeptBesideWhatItHeard(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	raw, err := shelf.Read(t.Context(), text.Beside("asr", hash))
+	raw, err := shelf.Read(t.Context(), text.GetProducerFile("asr", hash))
 	if err != nil {
 		t.Fatalf("nothing says what listened: %v", err)
 	}
@@ -408,7 +408,7 @@ func TestAskingForARecordingToBeHeardAgain(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nothing was written the second time: %v", err)
 	}
-	if said := spoken(t, raw); len(said) != 2 {
+	if said := getWords(t, raw); len(said) != 2 {
 		t.Errorf("the transcript reads back as %v", said)
 	}
 }

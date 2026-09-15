@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-// filed writes an empty file under dir and answers with where it is.
-func filed(t *testing.T, dir, name string) string {
+// writeEmptyFile writes an empty file under dir and answers with where it is.
+func writeEmptyFile(t *testing.T, dir, name string) string {
 	t.Helper()
 	at := filepath.Join(dir, name)
 	if err := os.WriteFile(at, nil, 0o644); err != nil {
@@ -21,10 +21,10 @@ func filed(t *testing.T, dir, name string) string {
 // models folder, and a name that is neither is not fetched.
 func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 	dir := t.TempDir()
-	runtime := filed(t, dir, "libonnxruntime.so")
-	segmenter := filed(t, dir, "silero.onnx")
+	runtime := writeEmptyFile(t, dir, "libonnxruntime.so")
+	segmenter := writeEmptyFile(t, dir, "silero.onnx")
 	for _, name := range []string{encoderFile, decoderFile, joinerFile, tokensFile} {
-		filed(t, dir, name)
+		writeEmptyFile(t, dir, name)
 	}
 
 	for name, c := range map[string]struct {
@@ -46,7 +46,7 @@ func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 				if err := os.Remove(filepath.Join(dir, tokensFile)); err != nil {
 					t.Fatal(err)
 				}
-				t.Cleanup(func() { filed(t, dir, tokensFile) })
+				t.Cleanup(func() { writeEmptyFile(t, dir, tokensFile) })
 			}, false,
 		},
 		"a name is nowhere to fetch from": {

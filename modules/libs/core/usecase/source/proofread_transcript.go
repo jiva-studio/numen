@@ -10,10 +10,10 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
 // ProofreadTranscript puts a recording's transcript right, where a person
@@ -67,17 +67,17 @@ func NewProofreadTranscript(
 
 // ProofreadTranscriptResult reports what proofreading a transcript did.
 type ProofreadTranscriptResult struct {
-	Path    string // the recording whose transcript is being put right
-	Lines   int    // how many lines the transcript has
-	Read    int    // how many have been asked about, this run and before it
-	Resumed int    // how many a run before this one had already asked about
-	Fixed   int    // lines put right
-	Left    int    // lines asked about that stand as they were heard
-	Refused int    // batches whose reply was no answer, and were left as heard
-	None    bool   // there is no transcript to put right, and nothing was done
-	Edited  bool   // somebody else wrote what stands, and it is left as they left it
-	Busy    bool   // the recording is held by another run
-	Already bool   // this proofreader has been over every line, and nothing was asked
+	Path               string // the recording whose transcript is being put right
+	Lines              int    // how many lines the transcript has
+	Read               int    // how many have been asked about, this run and before it
+	Resumed            int    // how many a run before this one had already asked about
+	Fixed              int    // lines put right
+	Left               int    // lines asked about that stand as they were heard
+	UncorrectedBatches int    // batches replied to without a correction, left as heard
+	None               bool   // there is no transcript to put right, and nothing was done
+	Edited             bool   // somebody else wrote what stands, and it is left as they left it
+	Busy               bool   // the recording is held by another run
+	Already            bool   // this proofreader has been over every line, and nothing was asked
 }
 
 // How a transcript is cut up where nothing says otherwise: the lines to a
@@ -146,11 +146,11 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		return res, nil
 	}
 
-	stood, err := u.taken(ctx, store, far)
+	stood, err := u.readCheckpoint(ctx, store, far)
 	if err != nil {
 		return res, err
 	}
-	if beside && (transcript.Written(whole) || stood.By != u.By.Name()) {
+	if beside && (transcript.IsWrittenByHand(whole) || stood.By != u.By.GetName()) {
 		// The words as they stand are somebody's own, and a model does not
 		// correct them. Deleting the file beside the artifact gives back what
 		// was heard.
@@ -164,26 +164,26 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	// The transcript is asked about batch by batch, and then once more around
 	// the cuts a sentence was answered for past the end of. What the whole
 	// recording holds stands on every batch of it.
-	about := proofread.About(cues)
-	spoken := told(proofread.Spoken(cues, u.batchSize(), u.overlap()), about)
+	about := proofread.Describe(cues)
+	spoken := setContext(proofread.GetSpeechBatches(cues, u.batchSize(), u.overlap()), about)
 	batches := spoken
 	// The seams are cut from the transcript as this run found it, so the batch
 	// a line falls in does not move as sentences are put back together.
 	asHeard := slices.Clone(cues)
 	// A batch reaches back over the lines it shares with the one before it, so
 	// what this run counts as read begins where the run before it stopped.
-	from := unasked(cues, stood.At)
+	from := getFirstUnasked(cues, stood.At)
 	res.Lines = linesBefore(cues, len(cues))
 	res.Resumed = linesBefore(cues, from)
 	res.Read, res.Left = res.Resumed, 0
 
-	at := after(spoken, cues, stood.At)
+	at := getFirstUnaskedBatch(spoken, cues, stood.At)
 	if at >= len(spoken) {
 		// A run taking up after the first pass holds no reply saying which cuts
 		// a sentence was answered for past the end of, and asks about every
 		// seam standing past the count.
 		batches = slices.Concat(spoken, u.seams(asHeard, everyCut(len(spoken)), about))
-		at = len(spoken) + after(batches[len(spoken):], cues, stood.Seam)
+		at = len(spoken) + getFirstUnaskedBatch(batches[len(spoken):], cues, stood.Seam)
 	}
 	if at >= len(batches) {
 		// This proofreader has been over every line and every seam.
@@ -196,7 +196,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	// Who is putting this transcript right stands before the first words do,
 	// and the count of what they have asked about stands after the lines it
 	// claims.
-	if err := u.counted(ctx, store, far, stood); err != nil {
+	if err := u.writeCheckpoint(ctx, store, far, stood); err != nil {
 		return res, err
 	}
 
@@ -218,7 +218,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		if err != nil {
 			return res, fmt.Errorf("proofread %s: %w", path, err)
 		}
-		res.Refused += refused(group, replies, unbounded)
+		res.UncorrectedBatches += countUncorrected(group, replies, unbounded)
 		for _, batch := range group {
 			for _, line := range batch.Lines {
 				if line.Number >= from {
@@ -228,7 +228,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		}
 
 		wrote := false
-		put, past := proofread.Gathered(group, replies, unbounded)
+		put, past := proofread.GetGatheredLines(group, replies, unbounded)
 		// A seam is asked about once, so a run past the end of one names no
 		// further cut.
 		for _, batch := range past {
@@ -240,7 +240,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		// not turn on the order a map hands them back in.
 		for _, line := range slices.Sorted(maps.Keys(put)) {
 			said := put[line]
-			if joined(together, said) {
+			if isJoined(together, said) {
 				continue
 			}
 			cues[line].Text = said.Text
@@ -276,7 +276,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		if end == len(spoken) {
 			batches = slices.Concat(spoken, u.seams(asHeard, cuts, about))
 		}
-		if err := u.counted(ctx, store, far, reached(batches, len(spoken), end, cues)); err != nil {
+		if err := u.writeCheckpoint(ctx, store, far, getProgress(batches, len(spoken), end, cues)); err != nil {
 			return res, err
 		}
 		u.progress(res)
@@ -309,9 +309,9 @@ func (u ProofreadTranscript) current(
 	return raw, false, nil
 }
 
-// taken is who put this transcript right and how far they got. A record nothing
-// here can read names nobody.
-func (u ProofreadTranscript) taken(ctx context.Context, store port.DerivedStore, far string) (putting, error) {
+// readCheckpoint is who put this transcript right and how far they got. A
+// record nothing here can read names nobody.
+func (u ProofreadTranscript) readCheckpoint(ctx context.Context, store port.DerivedStore, far string) (putting, error) {
 	raw, err := store.Read(ctx, far)
 	if errors.Is(err, fs.ErrNotExist) {
 		return putting{}, nil
@@ -327,10 +327,10 @@ func (u ProofreadTranscript) taken(ctx context.Context, store port.DerivedStore,
 	return stood, nil
 }
 
-// counted writes down who is putting this transcript right and how far they
-// have got.
-func (u ProofreadTranscript) counted(ctx context.Context, store port.DerivedStore, far string, stood putting) error {
-	stood.By = u.By.Name()
+// writeCheckpoint writes down who is putting this transcript right and how far
+// they have got.
+func (u ProofreadTranscript) writeCheckpoint(ctx context.Context, store port.DerivedStore, far string, stood putting) error {
+	stood.By = u.By.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err
@@ -338,26 +338,26 @@ func (u ProofreadTranscript) counted(ctx context.Context, store port.DerivedStor
 	return store.Write(ctx, far, append(raw, '\n'))
 }
 
-// refused is how many of a run's batches answered with what is no answer. Such
-// a batch is one nothing was learned from, and its lines stand as they were
-// heard.
-func refused(asked []proofread.Batch, replies map[int]string, apart float64) int {
+// countUncorrected is how many of a run's batches answered with what is no
+// correction. Such a batch is one nothing was learned from, and its lines stand
+// as they were heard.
+func countUncorrected(asked []proofread.Batch, replies map[int]string, apart float64) int {
 	out := 0
 	for _, batch := range asked {
 		reply, answered := replies[batch.Number]
 		if !answered {
 			continue
 		}
-		if _, _, ok := proofread.Fixed(batch, reply, apart); !ok {
+		if _, _, ok := proofread.GetFixedLines(batch, reply, apart); !ok {
 			out++
 		}
 	}
 	return out
 }
 
-// after is the first batch holding a line no run has asked about.
-func after(batches []proofread.Batch, cues []transcript.Cue, ms int) int {
-	from := unasked(cues, ms)
+// getFirstUnaskedBatch is the first batch holding a line no run has asked about.
+func getFirstUnaskedBatch(batches []proofread.Batch, cues []transcript.Cue, ms int) int {
+	from := getFirstUnasked(cues, ms)
 	at := 0
 	for at < len(batches) && last(batches[at]) < from {
 		at++
@@ -365,9 +365,9 @@ func after(batches []proofread.Batch, cues []transcript.Cue, ms int) int {
 	return at
 }
 
-// unasked is the first line no run has asked about. A line ending at the moment
-// a run reached is one that run asked about.
-func unasked(cues []transcript.Cue, ms int) int {
+// getFirstUnasked is the first line no run has asked about. A line ending at
+// the moment a run reached is one that run asked about.
+func getFirstUnasked(cues []transcript.Cue, ms int) int {
 	for at, cue := range cues {
 		if cue.To > ms {
 			return at
@@ -376,9 +376,9 @@ func unasked(cues []transcript.Cue, ms int) int {
 	return len(cues)
 }
 
-// joined says whether a correction answers about a line already put together
+// isJoined says whether a correction answers about a line already put together
 // with another. Those words no longer stand on their own.
-func joined(together map[int]bool, said proofread.Line) bool {
+func isJoined(together map[int]bool, said proofread.Line) bool {
 	for at := said.Number; at <= said.Last; at++ {
 		if together[at] {
 			return true
@@ -387,11 +387,11 @@ func joined(together map[int]bool, said proofread.Line) bool {
 	return false
 }
 
-// reached is where a run stands once the first end batches have been answered.
-// The first spoken of them are the pass over the whole transcript and the rest
-// the pass over its seams, and each batch of a pass reaches further into the
-// transcript than the one before it.
-func reached(batches []proofread.Batch, spoken, end int, cues []transcript.Cue) putting {
+// getProgress is where a run stands once the first end batches have been
+// answered. The first spoken of them are the pass over the whole transcript and
+// the rest the pass over its seams, and each batch of a pass reaches further
+// into the transcript than the one before it.
+func getProgress(batches []proofread.Batch, spoken, end int, cues []transcript.Cue) putting {
 	var stood putting
 	if done := min(end, spoken); done > 0 {
 		stood.At = cues[last(batches[done-1])].To
@@ -410,11 +410,11 @@ func reached(batches []proofread.Batch, spoken, end int, cues []transcript.Cue) 
 
 // seams is a batch for each of the cuts, carrying what the recording holds.
 func (u ProofreadTranscript) seams(cues []transcript.Cue, cuts []int, about string) []proofread.Batch {
-	return told(proofread.Seams(cues, u.batchSize(), u.overlap(), cuts), about)
+	return setContext(proofread.Seams(cues, u.batchSize(), u.overlap(), cuts), about)
 }
 
-// told is the batches with what the recording holds on each of them.
-func told(batches []proofread.Batch, about string) []proofread.Batch {
+// setContext is the batches with what the recording holds on each of them.
+func setContext(batches []proofread.Batch, about string) []proofread.Batch {
 	for at := range batches {
 		batches[at].Context = about
 	}

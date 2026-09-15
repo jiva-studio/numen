@@ -12,12 +12,12 @@ func TestARoleNobodyDecidedOnIsNotActedOn(t *testing.T) {
 	for _, role := range []domain.LinkRole{
 		domain.RoleParent, domain.RoleChild, domain.RoleJump, domain.RoleRef, domain.RoleAttachment,
 	} {
-		if !domain.KnownRole(role) {
+		if !domain.IsKnownRole(role) {
 			t.Errorf("%q is not acted on", role)
 		}
 	}
 	for _, role := range []domain.LinkRole{"", "PARENT", "sibling", "see-also"} {
-		if domain.KnownRole(role) {
+		if domain.IsKnownRole(role) {
 			t.Errorf("%q is acted on", role)
 		}
 	}

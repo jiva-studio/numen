@@ -9,13 +9,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// The stretch named is replaced and the rest of the note is the bytes it was,
+// The span named is replaced and the rest of the note is the bytes it was,
 // which is the whole reason for a tool that is not `note_rewrite`.
-func TestEditingANoteChangesOnlyTheStretchNamed(t *testing.T) {
-	v, core := built(t, map[string]string{
+func TestEditingANoteChangesOnlyTheSpanNamed(t *testing.T) {
+	v, core := newCoreWithNotes(t, map[string]string{
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
 	})
-	s := connectedTo(t, core)
+	s := newSessionOver(t, core)
 
 	answer := call[struct {
 		Path        string `json:"path"`
@@ -35,22 +35,22 @@ func TestEditingANoteChangesOnlyTheStretchNamed(t *testing.T) {
 	}
 	body := onDisk(t, v, "Aggressor.md")
 	if !strings.Contains(body, "An axe is named.") {
-		t.Errorf("the stretch was not replaced:\n%s", body)
+		t.Errorf("the span was not replaced:\n%s", body)
 	}
 	if !strings.Contains(body, "And nothing else.\n") {
 		t.Errorf("what was not named changed:\n%s", body)
 	}
 }
 
-// A stretch standing twice is refused, and the refusal says how many places
+// A span standing twice is refused, and the refusal says how many places
 // there are rather than picking one.
-func TestEditingRefusesAStretchThatStandsTwice(t *testing.T) {
-	_, core := built(t, map[string]string{
+func TestEditingRefusesASpanThatStandsTwice(t *testing.T) {
+	_, core := newCoreWithNotes(t, map[string]string{
 		"Aggressor.md": "A foe advances.\n\nAnother foe advances.\n",
 	})
-	s := connectedTo(t, core)
+	s := newSessionOver(t, core)
 
-	said := failing(t, s, "note_edit", map[string]any{
+	said := getRefusal(t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "foe advances", "text": "foe retreats",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
@@ -59,15 +59,15 @@ func TestEditingRefusesAStretchThatStandsTwice(t *testing.T) {
 	}
 }
 
-// A stretch that is not there is refused with what the note holds in its place,
+// A span that is not there is refused with what the note holds in its place,
 // so the next attempt is not the same guess again.
 func TestEditingSaysWhatTheNoteHoldsInstead(t *testing.T) {
-	_, core := built(t, map[string]string{
+	_, core := newCoreWithNotes(t, map[string]string{
 		"Aggressor.md": "the wrath of the advancing foe\n",
 	})
-	s := connectedTo(t, core)
+	s := newSessionOver(t, core)
 
-	said := failing(t, s, "note_edit", map[string]any{
+	said := getRefusal(t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "the wrath of the retreating foe", "text": "nothing",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
@@ -77,12 +77,12 @@ func TestEditingSaysWhatTheNoteHoldsInstead(t *testing.T) {
 }
 
 // Quotes and dashes a person's editor wrote are not what a program reproduces.
-// The stretch is found, and the answer says the reading was a loose one.
-func TestEditingFindsAStretchWhosePunctuationDiffers(t *testing.T) {
-	v, core := built(t, map[string]string{
+// The span is found, and the answer says the reading was a loose one.
+func TestEditingFindsASpanWhosePunctuationDiffers(t *testing.T) {
+	v, core := newCoreWithNotes(t, map[string]string{
 		"Aggressor.md": "Он сказал «да» — и ушёл.\n",
 	})
-	s := connectedTo(t, core)
+	s := newSessionOver(t, core)
 
 	answer := call[struct {
 		Match string `json:"match"`
@@ -105,9 +105,9 @@ func TestEditingFindsAStretchWhosePunctuationDiffers(t *testing.T) {
 
 // An empty replacement takes the text out, which is one operation and not a
 // second tool.
-func TestEditingWithNothingTakesTheStretchOut(t *testing.T) {
-	v, core := built(t, map[string]string{"Aggressor.md": "one two three\n"})
-	s := connectedTo(t, core)
+func TestEditingWithNothingTakesTheSpanOut(t *testing.T) {
+	v, core := newCoreWithNotes(t, map[string]string{"Aggressor.md": "one two three\n"})
+	s := newSessionOver(t, core)
 
 	call[struct {
 		Path string `json:"path"`
@@ -134,7 +134,7 @@ func onDisk(t *testing.T, v domain.Vault, path string) string {
 // A person reading the note sees the change arrive where it belongs, so an
 // edit says what it is doing before it does it, and says when it is over.
 func TestEditingTellsTheWindowWhereItIsChangingTheNote(t *testing.T) {
-	s, looking := watched(t, map[string]string{
+	s, looking := newSessionWithWindow(t, map[string]string{
 		"Aggressor.md": "A hedgehog is named.\n",
 	})
 
@@ -166,11 +166,11 @@ func TestEditingTellsTheWindowWhereItIsChangingTheNote(t *testing.T) {
 // A change that was refused is over, and a drawing that is never ended stays
 // on the screen.
 func TestARefusedEditIsStillEnded(t *testing.T) {
-	s, looking := watched(t, map[string]string{
+	s, looking := newSessionWithWindow(t, map[string]string{
 		"Aggressor.md": "A foe.\n\nAnother foe.\n",
 	})
 
-	failing(t, s, "note_edit", map[string]any{
+	getRefusal(t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "foe", "text": "friend",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
@@ -182,10 +182,10 @@ func TestARefusedEditIsStillEnded(t *testing.T) {
 	}
 }
 
-// A note written whole is drawn as the stretch that changed, so a person sees
+// A note written whole is drawn as the span that changed, so a person sees
 // the change and not the note.
 func TestWritingANoteWholeTellsTheWindowOnlyWhatChanged(t *testing.T) {
-	s, looking := watched(t, map[string]string{
+	s, looking := newSessionWithWindow(t, map[string]string{
 		"Aggressor.md": "# Title\n\nA hedgehog is named.\n\nAnd nothing else.\n",
 	})
 
@@ -205,15 +205,15 @@ func TestWritingANoteWholeTellsTheWindowOnlyWhatChanged(t *testing.T) {
 		t.Errorf("what goes in is %q, wanted only what changed", began.Text)
 	}
 	if began.To-began.From != len("A hedgehog") {
-		t.Errorf("the stretch is %d bytes, wanted the ten that changed", began.To-began.From)
+		t.Errorf("the span is %d bytes, wanted the ten that changed", began.To-began.From)
 	}
 }
 
 // A note that is not ASCII is where counting in bytes and counting the way a
-// client counts part company, and a stretch named in bytes is drawn over the
+// client counts part company, and a span named in bytes is drawn over the
 // wrong words.
-func TestTheStretchIsCountedTheWayAClientCountsText(t *testing.T) {
-	s, looking := watched(t, map[string]string{
+func TestTheSpanIsCountedTheWayAClientCountsText(t *testing.T) {
+	s, looking := newSessionWithWindow(t, map[string]string{
 		"Aggressor.md": "Он сказал да.\n",
 	})
 
@@ -227,14 +227,14 @@ func TestTheStretchIsCountedTheWayAClientCountsText(t *testing.T) {
 	began := looking.drawn[0]
 	// "Он " is three characters and four bytes.
 	if began.From != 3 || began.To != 9 {
-		t.Errorf("the stretch is %d..%d, wanted 3..9", began.From, began.To)
+		t.Errorf("the span is %d..%d, wanted 3..9", began.From, began.To)
 	}
 }
 
 // Every tool that writes takes the fingerprint of what it read, and one
 // presenting none is refused with the read that gives it named.
 func TestAWriteWithNoFingerprintIsRefused(t *testing.T) {
-	session, _ := connected(t, map[string]string{
+	session, _ := newSession(t, map[string]string{
 		"Animal.md":    stencil,
 		"Animals.md":   deck,
 		"Aggressor.md": "A hedgehog is named.\n",
@@ -262,7 +262,7 @@ func TestAWriteWithNoFingerprintIsRefused(t *testing.T) {
 	for _, w := range writes {
 		t.Run(w.tool, func(t *testing.T) {
 			w.args["fingerprint"] = ""
-			said := failing(t, session, w.tool, w.args)
+			said := getRefusal(t, session, w.tool, w.args)
 			if !strings.Contains(said, "note_read") || !strings.Contains(said, "card_read") {
 				t.Errorf("the refusal does not say where a fingerprint comes from: %s", said)
 			}

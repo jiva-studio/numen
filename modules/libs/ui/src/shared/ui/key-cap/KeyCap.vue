@@ -22,6 +22,8 @@ const spoken = computed(() =>
     .filter((word) => word !== '')
     .join(' '),
 )
+
+const iconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills })
 </script>
 
 <template>
@@ -32,7 +34,7 @@ const spoken = computed(() =>
       v-for="icon in keys.icons"
       :key="icon"
       class="cap__icon"
-      :style="{ '--fills': ICONS[icon].fills }"
+      :style="iconStyle(icon)"
       :stroke-width="ICONS[icon].stroke"
       aria-hidden="true"
       focusable="false"
@@ -59,8 +61,7 @@ const spoken = computed(() =>
   block-size: 1.6em;
   min-inline-size: 1.6em;
   padding-inline: 0.45em;
-  border: var(--numen-stroke) solid
-    color-mix(in oklab, var(--numen-raised), var(--numen-ink) 25%);
+  border: var(--numen-stroke) solid color-mix(in oklab, var(--numen-raised), var(--numen-ink) 25%);
   border-radius: var(--cap-radius);
   background: var(--numen-raised);
   color: var(--numen-ink);

@@ -228,10 +228,12 @@ type Tab struct {
 	// Title is what the tab is called, as the person reads it.
 	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
 	// How far the person has got through what the tab holds. A tab holding a
-	// document sets document, a tab holding a recording sets recording, and a tab
-	// of any other kind sets neither.
+	// document sets document, a tab holding a recording sets recording, a tab
+	// holding a book that reflows sets book, and a tab of any other kind sets
+	// none of them.
 	Document      *DocumentProgress  `protobuf:"bytes,5,opt,name=document,proto3" json:"document,omitempty"`
 	Recording     *RecordingProgress `protobuf:"bytes,6,opt,name=recording,proto3" json:"recording,omitempty"`
+	Book          *BookProgress      `protobuf:"bytes,7,opt,name=book,proto3" json:"book,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -308,6 +310,13 @@ func (x *Tab) GetRecording() *RecordingProgress {
 	return nil
 }
 
+func (x *Tab) GetBook() *BookProgress {
+	if x != nil {
+		return x.Book
+	}
+	return nil
+}
+
 // A DocumentProgress is how far through a document the person reading it is.
 type DocumentProgress struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -363,6 +372,73 @@ func (x *DocumentProgress) GetPageCount() int32 {
 	return 0
 }
 
+// A BookProgress is how far through a book that reflows the person reading it
+// is. Such a book has no pages of its own, so where they stand is an offset
+// into its text and the page is counted from that.
+type BookProgress struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Offset is where they are reading, in bytes of the book's text.
+	Offset int32 `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
+	// Page is the page the offset falls on, counted from one, and PageCount how
+	// many the book is read in. Both are counted over the text by the size of a
+	// page the book was answered with, which is not here.
+	Page          int32 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageCount     int32 `protobuf:"varint,3,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BookProgress) Reset() {
+	*x = BookProgress{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BookProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BookProgress) ProtoMessage() {}
+
+func (x *BookProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BookProgress.ProtoReflect.Descriptor instead.
+func (*BookProgress) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *BookProgress) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *BookProgress) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *BookProgress) GetPageCount() int32 {
+	if x != nil {
+		return x.PageCount
+	}
+	return 0
+}
+
 // A RecordingProgress is how far into a recording the words written down reach.
 type RecordingProgress struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -378,7 +454,7 @@ type RecordingProgress struct {
 
 func (x *RecordingProgress) Reset() {
 	*x = RecordingProgress{}
-	mi := &file_numen_v1_workspace_proto_msgTypes[6]
+	mi := &file_numen_v1_workspace_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -390,7 +466,7 @@ func (x *RecordingProgress) String() string {
 func (*RecordingProgress) ProtoMessage() {}
 
 func (x *RecordingProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_workspace_proto_msgTypes[6]
+	mi := &file_numen_v1_workspace_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -403,7 +479,7 @@ func (x *RecordingProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordingProgress.ProtoReflect.Descriptor instead.
 func (*RecordingProgress) Descriptor() ([]byte, []int) {
-	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RecordingProgress) GetTranscribedDurationMs() int32 {
@@ -432,18 +508,24 @@ const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
-	"\x15WriteOpenTabsResponse\"\xc6\x01\n" +
+	"\x15WriteOpenTabsResponse\"\xf2\x01\n" +
 	"\x03Tab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x126\n" +
 	"\bdocument\x18\x05 \x01(\v2\x1a.numen.v1.DocumentProgressR\bdocument\x129\n" +
-	"\trecording\x18\x06 \x01(\v2\x1b.numen.v1.RecordingProgressR\trecording\"E\n" +
+	"\trecording\x18\x06 \x01(\v2\x1b.numen.v1.RecordingProgressR\trecording\x12*\n" +
+	"\x04book\x18\a \x01(\v2\x16.numen.v1.BookProgressR\x04book\"E\n" +
 	"\x10DocumentProgress\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1d\n" +
 	"\n" +
-	"page_count\x18\x02 \x01(\x05R\tpageCount\"l\n" +
+	"page_count\x18\x02 \x01(\x05R\tpageCount\"Y\n" +
+	"\fBookProgress\x12\x16\n" +
+	"\x06offset\x18\x01 \x01(\x05R\x06offset\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1d\n" +
+	"\n" +
+	"page_count\x18\x03 \x01(\x05R\tpageCount\"l\n" +
 	"\x11RecordingProgress\x126\n" +
 	"\x17transcribed_duration_ms\x18\x01 \x01(\x05R\x15transcribedDurationMs\x12\x1f\n" +
 	"\vduration_ms\x18\x02 \x01(\x05R\n" +
@@ -465,7 +547,7 @@ func file_numen_v1_workspace_proto_rawDescGZIP() []byte {
 	return file_numen_v1_workspace_proto_rawDescData
 }
 
-var file_numen_v1_workspace_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_workspace_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_workspace_proto_goTypes = []any{
 	(*WatchFocusRequest)(nil),     // 0: numen.v1.WatchFocusRequest
 	(*WatchFocusResponse)(nil),    // 1: numen.v1.WatchFocusResponse
@@ -473,23 +555,25 @@ var file_numen_v1_workspace_proto_goTypes = []any{
 	(*WriteOpenTabsResponse)(nil), // 3: numen.v1.WriteOpenTabsResponse
 	(*Tab)(nil),                   // 4: numen.v1.Tab
 	(*DocumentProgress)(nil),      // 5: numen.v1.DocumentProgress
-	(*RecordingProgress)(nil),     // 6: numen.v1.RecordingProgress
-	(*Span)(nil),                  // 7: numen.v1.Span
+	(*BookProgress)(nil),          // 6: numen.v1.BookProgress
+	(*RecordingProgress)(nil),     // 7: numen.v1.RecordingProgress
+	(*Span)(nil),                  // 8: numen.v1.Span
 }
 var file_numen_v1_workspace_proto_depIdxs = []int32{
-	7, // 0: numen.v1.WatchFocusResponse.spans:type_name -> numen.v1.Span
+	8, // 0: numen.v1.WatchFocusResponse.spans:type_name -> numen.v1.Span
 	4, // 1: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
 	5, // 2: numen.v1.Tab.document:type_name -> numen.v1.DocumentProgress
-	6, // 3: numen.v1.Tab.recording:type_name -> numen.v1.RecordingProgress
-	0, // 4: numen.v1.WorkspaceService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
-	2, // 5: numen.v1.WorkspaceService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
-	1, // 6: numen.v1.WorkspaceService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
-	3, // 7: numen.v1.WorkspaceService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	7, // 3: numen.v1.Tab.recording:type_name -> numen.v1.RecordingProgress
+	6, // 4: numen.v1.Tab.book:type_name -> numen.v1.BookProgress
+	0, // 5: numen.v1.WorkspaceService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
+	2, // 6: numen.v1.WorkspaceService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
+	1, // 7: numen.v1.WorkspaceService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
+	3, // 8: numen.v1.WorkspaceService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_workspace_proto_init() }
@@ -504,7 +588,7 @@ func file_numen_v1_workspace_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_workspace_proto_rawDesc), len(file_numen_v1_workspace_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

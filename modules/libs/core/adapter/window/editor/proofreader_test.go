@@ -10,8 +10,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -40,13 +40,13 @@ func (p *proofreads) Proofread(
 	return p.came, p.why
 }
 
-// proofreading is a window over the same vault the runs are asked for over,
+// newProofreadWindow is a window over the same vault the runs are asked for over,
 // with a proofreading a test watches.
-func proofreading(t *testing.T, held port.DerivedStore, read indexed) (*API, http.Handler, *proofreads) {
+func newProofreadWindow(t *testing.T, held port.DerivedStore, read indexed) (*API, http.Handler, *proofreads) {
 	t.Helper()
-	api, handler := running(t, held, read, willRun(), willRun())
+	api, handler := openRunWindow(t, held, read, willRun(), willRun())
 	by := &proofreads{ready: true}
-	runningBehind(api, func(on *passes) { on.proofreads = by })
+	setPasses(api, func(on *passes) { on.proofreads = by })
 	return api, handler, by
 }
 
@@ -58,16 +58,16 @@ func onTheShelf() stored {
 // A transcript the window asks for is put right, the run is told which file of
 // which vault, and the corrections are said to be under way.
 func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
-	api, _, by := proofreading(t, onTheShelf(), heardBy())
+	api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
 
-	made := making(t, api, talk, correctedOf)
+	made := createArtifact(t, api, talk, correctedOf)
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the transcript was answered %s", made.GetState())
 	}
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if by.times != 1 || by.path != talk || by.vault != string(api.Showing().ID) {
+	if by.times != 1 || by.path != talk || by.vault != string(api.GetShownVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", by.path, by.vault, by.times)
 	}
 }
@@ -86,10 +86,10 @@ func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 		{"a transcript holding no words", source.ProofreadTranscriptResult{None: true}, v1.State_STATE_NONE},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			api, _, by := proofreading(t, onTheShelf(), heardBy())
+			api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
 			by.came = one.came
 
-			if made := making(t, api, talk, correctedOf); made.GetState() != one.state {
+			if made := createArtifact(t, api, talk, correctedOf); made.GetState() != one.state {
 				t.Fatalf("it was answered %s", made.GetState())
 			}
 		})
@@ -99,9 +99,9 @@ func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 // A recording the index says nothing has listened to holds no words to put
 // right, and the run is never asked for.
 func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
-	api, _, by := proofreading(t, stored{}, nothingRead())
+	api, _, by := newProofreadWindow(t, stored{}, newEmptyIndex())
 
-	if code := refusedMaking(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
+	if code := getRefusedCode(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
 		t.Fatalf("a recording nothing has heard was refused %s", code)
 	}
 	if by.times != 0 {
@@ -109,7 +109,7 @@ func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
 	}
 	// Nothing stands, and the window that asked what the recording carries is
 	// told so.
-	if state := carrying(t, api, talk)[correctedOf]; state != v1.State_STATE_NONE {
+	if state := getArtifactStates(t, api, talk)[correctedOf]; state != v1.State_STATE_NONE {
 		t.Errorf("the corrections of a recording nothing heard are %s", state)
 	}
 }
@@ -119,9 +119,9 @@ func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
 func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 	for _, path := range []string{book, idea} {
 		t.Run(path, func(t *testing.T) {
-			api, _, by := proofreading(t, onTheShelf(), heardBy())
+			api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
 
-			if code := refusedMaking(t, api, path, correctedOf); code != connect.CodeInvalidArgument {
+			if code := getRefusedCode(t, api, path, correctedOf); code != connect.CodeInvalidArgument {
 				t.Fatalf("a file of the wrong kind was refused %s", code)
 			}
 			if by.times != 0 {
@@ -136,10 +136,10 @@ func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 // settings', so the call was answered and the answer is that there is nothing
 // to ask.
 func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
-	api, _, _ := proofreading(t, onTheShelf(), heardBy())
-	runningBehind(api, func(on *passes) { on.proofreads = &proofreads{} })
+	api, _, _ := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
+	setPasses(api, func(on *passes) { on.proofreads = &proofreads{} })
 
-	if code := refusedMaking(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
+	if code := getRefusedCode(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
 		t.Fatalf("it was refused %s", code)
 	}
 }
@@ -147,10 +147,10 @@ func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
 // A vault whose passes are not up yet holds nothing to put a transcript right
 // with, and the caller asks again.
 func TestAProofreadingAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
-	api, _, _ := proofreading(t, onTheShelf(), heardBy())
-	runningBehind(api, func(on *passes) { on.proofreads = nil })
+	api, _, _ := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
+	setPasses(api, func(on *passes) { on.proofreads = nil })
 
-	if code := refusedMaking(t, api, talk, correctedOf); code != connect.CodeUnavailable {
+	if code := getRefusedCode(t, api, talk, correctedOf); code != connect.CodeUnavailable {
 		t.Fatalf("it was refused %s", code)
 	}
 }
@@ -161,7 +161,7 @@ func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
 	const put = "the name and the named are not two"
 	held := onTheShelf()
 	held[derived.Corrections(asr, hashed)] = []byte(put)
-	api, _, by := proofreading(t, held, heardBy())
+	api, _, by := newProofreadWindow(t, held, newTranscriptIndex())
 
 	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
 	if err != nil {

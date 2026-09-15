@@ -18,9 +18,9 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// refreshing is a vault already scanned once, and the use case that brings named
+// newRefresh is a vault already scanned once, and the use case that brings named
 // notes up to date afterwards.
-func refreshing(t *testing.T, notes map[string]string) (vaults.Refresh, *container.Index, domain.Vault) {
+func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *container.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
@@ -51,7 +51,7 @@ func passages(t *testing.T, db *container.Index, v domain.Vault, query string) [
 
 func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	paths := searched(t, db, v, query)
+	paths := searchNotes(t, db, v, query)
 	named, err := db.Queries().Notes(t.Context(), v.ID, paths)
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +88,7 @@ func TestANoteIsLevelledInAVaultNothingHasWalked(t *testing.T) {
 // TestARefreshedNoteIsWhatIsOnDisk.
 func TestARefreshedNoteIsWhatIsOnDisk(t *testing.T) {
 	t.Parallel()
-	refresh, db, v := refreshing(t, map[string]string{
+	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 
@@ -113,7 +113,7 @@ func TestARefreshedNoteIsWhatIsOnDisk(t *testing.T) {
 // and opens nothing.
 func TestADeletedNoteLeavesTheIndex(t *testing.T) {
 	t.Parallel()
-	refresh, db, v := refreshing(t, map[string]string{
+	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md":  "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 		"Other.md": "---\ntitle: Other\n---\n\n# Other\n\nentropy\n",
 	})
@@ -138,7 +138,7 @@ func TestADeletedNoteLeavesTheIndex(t *testing.T) {
 // the vault holds is there, and taking its text out of it is its own step.
 func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 	t.Parallel()
-	refresh, db, v := refreshing(t, map[string]string{
+	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 	testsupport.WriteBook(t, v.Path, "library/A Book.epub")
@@ -156,8 +156,8 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 	if !slices.Equal(res.Indexed, []string{"Note.md"}) {
 		t.Errorf("indexed %v", res.Indexed)
 	}
-	if !slices.Equal(res.Changed(), []string{"Note.md"}) {
-		t.Errorf("the caller was told to look at %v", res.Changed())
+	if !slices.Equal(res.GetChangedPaths(), []string{"Note.md"}) {
+		t.Errorf("the caller was told to look at %v", res.GetChangedPaths())
 	}
 	if got := titles(t, db, v, "entropy"); !slices.Equal(got, []string{"Note"}) {
 		t.Errorf("the index holds %v", got)
@@ -169,7 +169,7 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 // that opens nothing.
 func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	t.Parallel()
-	refresh, db, v := refreshing(t, map[string]string{
+	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	})
 	const book = "library/A Book.epub"
@@ -198,7 +198,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	if found := passages(t, db, v, "reversible"); len(found) != 0 {
 		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
 	}
-	held, err := db.SourcesKnown().Under(t.Context(), v.ID, "library")
+	held, err := db.SourcesKnown().GetSourcesUnder(t.Context(), v.ID, "library")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +211,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 // changes what a path that is not there means.
 func TestARefreshedBookThatWentIsStillGone(t *testing.T) {
 	t.Parallel()
-	refresh, _, v := refreshing(t, map[string]string{
+	refresh, _, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 
@@ -258,7 +258,7 @@ func (u unreadableReader) Read(ctx context.Context, path string) ([]byte, error)
 // anything dropped alongside a failure is dropped until the next full scan.
 func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 	t.Parallel()
-	refresh, db, v := refreshing(t, map[string]string{
+	refresh, db, v := newRefresh(t, map[string]string{
 		"Locked.md": "---\ntitle: Locked\n---\n\n# Locked\n\nentropy\n",
 		"Note.md":   "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
@@ -343,7 +343,7 @@ func (c *countingNotes) Remove(context.Context, domain.VaultID, []string) error 
 // follows arrives as its own event.
 func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 	t.Parallel()
-	refresh, db, v := refreshing(t, map[string]string{
+	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 

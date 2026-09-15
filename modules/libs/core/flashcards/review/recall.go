@@ -38,5 +38,5 @@ func AsModelled(c Schedule, at time.Time) float64 {
 	return Recall(at.Sub(c.Last), c.Stability)
 }
 
-// NothingForgotten is a run in which every card face asked comes back.
-func NothingForgotten(Schedule, time.Time) float64 { return 1 }
+// GetFullRecall is a run in which every card face asked comes back.
+func GetFullRecall(Schedule, time.Time) float64 { return 1 }

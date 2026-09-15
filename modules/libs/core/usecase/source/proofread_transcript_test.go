@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
 // hearing is a ProofreadTranscript over one vault holding one recording whose
@@ -19,17 +19,17 @@ import (
 //
 // One line to a batch and one batch to a request, so the number a reply is
 // about is the number of the line it puts right.
-func hearing(
+func newProofreadTranscript(
 	t *testing.T, says map[int]string, words ...string,
 ) (ProofreadTranscript, domain.Vault, *shelf, *corrector, string) {
 	t.Helper()
-	raw := recorded(words)
+	raw := newRecording(words)
 	shelved := newLibrary()
 	shelved.hold(recordingPath, domain.KindRecording, raw, 1)
 	kept := newShelf()
 
 	hash := text.Fingerprint(raw)
-	if err := kept.Write(t.Context(), text.Artifact(text.ASR, hash), transcript.Marshal(heard(words))); err != nil {
+	if err := kept.Write(t.Context(), text.Artifact(text.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
 		t.Fatal(err)
 	}
 	by := &corrector{says: says}
@@ -42,19 +42,19 @@ func hearing(
 	}, first, kept, by, hash
 }
 
-// heard is the words as the cues a model wrote them down as.
-func heard(words []string) []transcript.Cue {
+// newCues is the words as the cues a model wrote them down as.
+func newCues(words []string) []transcript.Cue {
 	out := make([]transcript.Cue, 0, len(words))
 	for n, said := range words {
-		out = append(out, transcript.Cue{Text: said, From: stretch(n).From, To: stretch(n).To})
+		out = append(out, transcript.Cue{Text: said, From: getSpan(n).From, To: getSpan(n).To})
 	}
 	return out
 }
 
-// cued is what a transcript on the shelf says, cue by cue.
-func cued(t *testing.T, shelved *shelf, name string) []transcript.Cue {
+// readCues is what a transcript on the shelf says, cue by cue.
+func readCues(t *testing.T, shelved *shelf, name string) []transcript.Cue {
 	t.Helper()
-	_, cues := transcript.Parse(kept(t, shelved, name))
+	_, cues := transcript.Parse(readShelf(t, shelved, name))
 	return cues
 }
 
@@ -63,7 +63,7 @@ func cued(t *testing.T, shelved *shelf, name string) []transcript.Cue {
 // settings hand over and the constructor takes it without a word. A caller that
 // forgot to refuse it first is answered, not brought down mid-transcript.
 func TestNothingIsPutRightWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
-	u, v, _, by, _ := hearing(t, nil, "first thing", "secnd thing")
+	u, v, _, by, _ := newProofreadTranscript(t, nil, "first thing", "secnd thing")
 
 	if _, err := NewProofreadTranscript(u.Readers, u.Derived, nil).
 		Execute(t.Context(), v, recordingPath); !errors.Is(err, errNothingProofreads) {
@@ -79,17 +79,17 @@ func TestNothingIsPutRightWhereNothingWasConfiguredToProofreadWith(t *testing.T)
 
 func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing"}
-	u, v, shelved, _, hash := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	u, v, shelved, _, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
 
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Lines != 3 || res.Read != 3 || res.Fixed != 1 || res.Left != 2 || res.Refused != 0 {
+	if res.Lines != 3 || res.Read != 3 || res.Fixed != 1 || res.Left != 2 || res.UncorrectedBatches != 0 {
 		t.Errorf("got %+v", res)
 	}
 
-	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != len(words) {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -97,7 +97,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 		t.Errorf("the second line says %q", cues[1].Text)
 	}
 	for at, cue := range cues {
-		if cue.From != stretch(at).From || cue.To != stretch(at).To {
+		if cue.From != getSpan(at).From || cue.To != getSpan(at).To {
 			t.Errorf("line %d is now %d to %d", at, cue.From, cue.To)
 		}
 	}
@@ -106,30 +106,30 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	}
 
 	var stood putting
-	if err := json.Unmarshal(kept(t, shelved, text.Proofread(text.ASR, hash)), &stood); err != nil {
+	if err := json.Unmarshal(readShelf(t, shelved, text.Proofread(text.ASR, hash)), &stood); err != nil {
 		t.Fatal(err)
 	}
-	if stood.By != "a proofreader" || stood.At != stretch(2).To {
+	if stood.By != "a proofreader" || stood.At != getSpan(2).To {
 		t.Errorf("got %+v", stood)
 	}
 }
 
 func TestWhatTheModelHeardIsNotWrittenOver(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
-	u, v, shelved, _, hash := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)
-	was := string(kept(t, shelved, text.Artifact(text.ASR, hash)))
+	u, v, shelved, _, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	was := string(readShelf(t, shelved, text.Artifact(text.ASR, hash)))
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if now := string(kept(t, shelved, text.Artifact(text.ASR, hash))); now != was {
+	if now := string(readShelf(t, shelved, text.Artifact(text.ASR, hash))); now != was {
 		t.Errorf("the artifact now says %q", now)
 	}
 }
 
 func TestAReplyThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
-	u, v, shelved, _, hash := hearing(t, map[int]string{
+	u, v, shelved, _, hash := newProofreadTranscript(t, map[int]string{
 		1: proofread.Opens + "1" + proofread.Closes + "second thing",
 	}, words...)
 
@@ -137,7 +137,7 @@ func TestAReplyThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Refused != 1 || res.Fixed != 0 || res.Left != 2 {
+	if res.UncorrectedBatches != 1 || res.Fixed != 0 || res.Left != 2 {
 		t.Errorf("got %+v", res)
 	}
 	if _, err := shelved.Read(t.Context(), text.Corrections(text.ASR, hash)); err == nil {
@@ -147,7 +147,7 @@ func TestAReplyThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
 
 func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
-	u, v, shelved, by, hash := hearing(t, map[int]string{
+	u, v, shelved, by, hash := newProofreadTranscript(t, map[int]string{
 		0: corrects(0, "the first thing"),
 		1: corrects(1, "second thing"),
 	}, words...)
@@ -179,7 +179,7 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 		}
 	}
 
-	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 4 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -195,12 +195,12 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 // passes what the transcript holds.
 func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
-	u, v, shelved, _, hash := hearing(t, nil, words...)
+	u, v, shelved, _, hash := newProofreadTranscript(t, nil, words...)
 	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
-	if err := shelved.Write(t.Context(), text.Corrections(text.ASR, hash), transcript.Marshal(heard(words))); err != nil {
+	if err := shelved.Write(t.Context(), text.Corrections(text.ASR, hash), transcript.Marshal(newCues(words))); err != nil {
 		t.Fatal(err)
 	}
-	stood, err := json.Marshal(putting{By: "a proofreader", At: stretch(1).To})
+	stood, err := json.Marshal(putting{By: "a proofreader", At: getSpan(1).To})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,7 +232,7 @@ func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
 }
 
 func TestOneRunToARecordingBeingPutRight(t *testing.T) {
-	u, v, shelved, by, hash := hearing(t, nil, "first thing", "secnd thing")
+	u, v, shelved, by, hash := newProofreadTranscript(t, nil, "first thing", "secnd thing")
 	shelved.hold(text.Partial(text.ASR, hash))
 
 	res, err := u.Execute(t.Context(), v, recordingPath)
@@ -249,19 +249,19 @@ func TestOneRunToARecordingBeingPutRight(t *testing.T) {
 
 func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
-	own := transcript.Marshal(heard([]string{"first thing", "what a person typed"}))
+	own := transcript.Marshal(newCues([]string{"first thing", "what a person typed"}))
 
 	for _, one := range []struct {
 		name  string
 		said  []byte
 		stood putting
 	}{
-		{"a person wrote it in the window", append(own, transcript.Hand()...), putting{By: "a proofreader", At: stretch(1).To}},
+		{"a person wrote it in the window", append(own, transcript.Hand()...), putting{By: "a proofreader", At: getSpan(1).To}},
 		{"nobody here wrote it", own, putting{}},
-		{"another proofreader wrote it", own, putting{By: "somebody else", At: stretch(1).To}},
+		{"another proofreader wrote it", own, putting{By: "somebody else", At: getSpan(1).To}},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			u, v, shelved, by, hash := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)
+			u, v, shelved, by, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
 			if err := shelved.Write(t.Context(), text.Corrections(text.ASR, hash), one.said); err != nil {
 				t.Fatal(err)
 			}
@@ -285,7 +285,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 			if len(by.asked) != 0 {
 				t.Errorf("it asked about %v", by.asked)
 			}
-			if now := string(kept(t, shelved, text.Corrections(text.ASR, hash))); now != string(one.said) {
+			if now := string(readShelf(t, shelved, text.Corrections(text.ASR, hash))); now != string(one.said) {
 				t.Errorf("the transcript now says %q", now)
 			}
 		})
@@ -293,7 +293,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 }
 
 func TestATranscriptThatIsNotThereIsNothingToPutRight(t *testing.T) {
-	u, v, shelved, _, hash := hearing(t, nil, "first thing")
+	u, v, shelved, _, hash := newProofreadTranscript(t, nil, "first thing")
 	if err := shelved.Remove(t.Context(), text.Artifact(text.ASR, hash)); err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +308,7 @@ func TestATranscriptThatIsNotThereIsNothingToPutRight(t *testing.T) {
 }
 
 func TestASourceIsCutAgainAsItsLinesArePutRight(t *testing.T) {
-	u, v, _, _, _ := hearing(t, map[int]string{0: corrects(0, "the first thing")}, "first thing", "secnd thing")
+	u, v, _, _, _ := newProofreadTranscript(t, map[int]string{0: corrects(0, "the first thing")}, "first thing", "secnd thing")
 	cuts := 0
 	u.Cut = func(context.Context, domain.Vault, string) error {
 		cuts++
@@ -332,7 +332,7 @@ func TestEveryBatchCarriesWhatTheRecordingHolds(t *testing.T) {
 		"The teacher listened. Then Ganaka spoke of Mithila",
 		"as a city nobody had named before him.",
 	}
-	u, v, _, by, _ := hearing(t, nil, words...)
+	u, v, _, by, _ := newProofreadTranscript(t, nil, words...)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -353,7 +353,7 @@ func TestEveryBatchCarriesWhatTheRecordingHolds(t *testing.T) {
 // told about it.
 func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 	words := []string{"first thing", "secnd thing"}
-	u, v, _, _, _ := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	u, v, _, _, _ := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
@@ -377,7 +377,7 @@ func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 // among them is work a person is told about.
 func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
-	u, v, shelved, _, hash := hearing(t, nil, words...)
+	u, v, shelved, _, hash := newProofreadTranscript(t, nil, words...)
 	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -385,7 +385,7 @@ func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 
 	// The shelf as a run that ended between the two passes left it: every line
 	// asked about, and no seam.
-	stood, err := json.Marshal(putting{By: u.By.Name(), At: stretch(len(words) - 1).To})
+	stood, err := json.Marshal(putting{By: u.By.GetName(), At: getSpan(len(words) - 1).To})
 	if err != nil {
 		t.Fatal(err)
 	}

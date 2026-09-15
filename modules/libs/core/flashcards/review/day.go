@@ -43,30 +43,30 @@ func (d Day) zone() *time.Location {
 	return d.In
 }
 
-// Ends is the instant the day holding at gives way to the next.
-func (d Day) Ends(at time.Time) time.Time {
+// GetEnd is the instant the day holding at gives way to the next.
+func (d Day) GetEnd(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
-	if opened := d.opens(y, m, day); local.Before(opened) {
+	if opened := d.getStartTime(y, m, day); local.Before(opened) {
 		return opened
 	}
-	return d.opens(y, m, day+1)
+	return d.getStartTime(y, m, day+1)
 }
 
-// Opens is the instant the day holding at began.
-func (d Day) Opens(at time.Time) time.Time {
+// GetStart is the instant the day holding at began.
+func (d Day) GetStart(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
-	if opened := d.opens(y, m, day); !local.Before(opened) {
+	if opened := d.getStartTime(y, m, day); !local.Before(opened) {
 		return opened
 	}
-	return d.opens(y, m, day-1)
+	return d.getStartTime(y, m, day-1)
 }
 
-// Opened is the date the day holding at began on, as a plain date. A day is
+// GetDate is the date the day holding at began on, as a plain date. A day is
 // named and numbered from this, so that it is one day of review whatever the
 // clock did around its boundaries.
-func (d Day) Opened(at time.Time) time.Time {
+func (d Day) GetDate(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
 	date := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
@@ -77,10 +77,10 @@ func (d Day) Opened(at time.Time) time.Time {
 	return date
 }
 
-// opens is the instant the day of this date began. The boundary is an hour of
+// getStartTime is the instant the day of this date began. The boundary is an hour of
 // the clock on the wall, so the day an hour was put into or taken out of begins
 // and ends at the hour a person reads.
-func (d Day) opens(y int, m time.Month, day int) time.Time {
+func (d Day) getStartTime(y int, m time.Month, day int) time.Time {
 	h, min := d.boundary()
 	open := time.Date(y, m, day, h, min, 0, 0, d.zone())
 	// An hour the clock skips over is read by no instant, and the day begins
@@ -103,17 +103,17 @@ func wall(at time.Time) time.Time {
 	return time.Date(y, m, day, at.Hour(), at.Minute(), 0, 0, time.UTC)
 }
 
-// Ending is the instant the day of this date gives way to the next. The date
-// is read as it is written, and the boundary falls in the zone the days are
-// counted in.
-func (d Day) Ending(named time.Time) time.Time {
+// GetEndOfDate is the instant the day of this date gives way to the next. The
+// date is read as it is written, and the boundary falls in the zone the days
+// are counted in.
+func (d Day) GetEndOfDate(named time.Time) time.Time {
 	y, m, day := named.Date()
-	return d.opens(y, m, day+1)
+	return d.getStartTime(y, m, day+1)
 }
 
-// Owed reports whether a card is to be answered on this face in the day holding
-// now. A card face that has never been answered is owed the first time it is
-// asked about.
-func (d Day) Owed(s Schedule, now time.Time) bool {
-	return !s.Seen() || s.Due.Before(d.Ends(now))
+// IsOwed reports whether a card is to be answered on this face in the day
+// holding now. A card face that has never been answered is owed the first time
+// it is asked about.
+func (d Day) IsOwed(s Schedule, now time.Time) bool {
+	return !s.IsSeen() || s.Due.Before(d.GetEnd(now))
 }

@@ -97,7 +97,7 @@ func (h unheard) Fingerprints(
 	return out, nil
 }
 
-func (h unheard) Recognised(
+func (h unheard) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return nil, nil
@@ -170,7 +170,7 @@ func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
 	by := &deaf{}
 	listening, v := listens(t, by)
-	owed := listening.owing(t.Context(), recognised{"talks/one.mp3"}, v)
+	owed := listening.getUntranscribed(t.Context(), recognised{"talks/one.mp3"}, v)
 	if len(owed) != 0 {
 		t.Errorf("the queue owes %v", owed)
 	}
@@ -185,7 +185,7 @@ func (h recognised) Fingerprints(
 	return map[string]domain.Fingerprint{h.path: {Path: h.path}}, nil
 }
 
-func (h recognised) Recognised(
+func (h recognised) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return []port.SourceText{{
@@ -193,11 +193,11 @@ func (h recognised) Recognised(
 	}}, nil
 }
 
-func (h recognised) Under(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
+func (h recognised) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
 	return nil, nil
 }
 
-func (h recognised) Unchunked(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
+func (h recognised) GetUnchunkedSources(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
 	return nil, nil
 }
 
@@ -243,8 +243,8 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 	if got := listening.Start(v, "talks/two.mp3"); got != port.Queued {
 		t.Errorf("the same recording named again: %v", got)
 	}
-	if listening.Waiting() != 1 {
-		t.Errorf("%d recordings are in line", listening.Waiting())
+	if listening.CountWaiting() != 1 {
+		t.Errorf("%d recordings are in line", listening.CountWaiting())
 	}
 
 	close(going)
@@ -253,8 +253,8 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 	if got := by.times(); got != 2 {
 		t.Errorf("%d recordings were heard", got)
 	}
-	if listening.Waiting() != 0 {
-		t.Errorf("%d recordings were left in line", listening.Waiting())
+	if listening.CountWaiting() != 0 {
+		t.Errorf("%d recordings were left in line", listening.CountWaiting())
 	}
 }
 
@@ -266,7 +266,7 @@ func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
 	listening.with.Unasked = 10 << 20
 
 	known := sized{recordings: map[string]int64{"album.flac": 400 << 20}}
-	if owed := listening.owing(t.Context(), known, v); len(owed) != 0 {
+	if owed := listening.getUntranscribed(t.Context(), known, v); len(owed) != 0 {
 		t.Fatalf("the queue took %v on its own", owed)
 	}
 
@@ -370,7 +370,7 @@ func (s sized) Fingerprints(
 	return out, nil
 }
 
-func (sized) Recognised(
+func (sized) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return nil, nil
@@ -387,14 +387,14 @@ func TestALargeRecordingIsLeftForTheHand(t *testing.T) {
 		"talk.mp3":   5 << 20,
 		"album.flac": 400 << 20,
 	}}
-	owed := held.owing(t.Context(), known, v)
+	owed := held.getUntranscribed(t.Context(), known, v)
 	if len(owed) != 1 || owed[0] != "talk.mp3" {
 		t.Errorf("the queue took %v", owed)
 	}
 
 	// Naming no size takes whatever the vault holds.
 	held.with.Unasked = 0
-	if owed := held.owing(t.Context(), known, v); len(owed) != 2 {
+	if owed := held.getUntranscribed(t.Context(), known, v); len(owed) != 2 {
 		t.Errorf("with no limit the queue took %v", owed)
 	}
 }

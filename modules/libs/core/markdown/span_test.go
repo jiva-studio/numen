@@ -143,7 +143,7 @@ func TestOnlyWhatDiffersIsAnswered(t *testing.T) {
 	was := "# Title\n\nA hedgehog is named.\n\nAnd nothing else.\n"
 	now := "# Title\n\nAn axe is named.\n\nAnd nothing else.\n"
 
-	at, insert := Differs(was, now)
+	at, insert := Diff(was, now)
 	if was[at.From:at.To] != "A hedgehog" {
 		t.Errorf("the span is %q", was[at.From:at.To])
 	}
@@ -154,7 +154,7 @@ func TestOnlyWhatDiffersIsAnswered(t *testing.T) {
 
 // Two texts that are the same name no span at all.
 func TestTextThatDidNotChangeAnswersAnEmptySpan(t *testing.T) {
-	at, insert := Differs("the same", "the same")
+	at, insert := Diff("the same", "the same")
 	if at.From != at.To || insert != "" {
 		t.Errorf("answered %d..%d with %q", at.From, at.To, insert)
 	}
@@ -162,7 +162,7 @@ func TestTextThatDidNotChangeAnswersAnEmptySpan(t *testing.T) {
 
 // A span never begins or ends inside a rune, whatever the two texts share.
 func TestASpanNeverSplitsARune(t *testing.T) {
-	at, insert := Differs("сказал «да» сразу", "сказал «нет» сразу")
+	at, insert := Diff("сказал «да» сразу", "сказал «нет» сразу")
 	if !utf8.ValidString(insert) {
 		t.Errorf("what goes in is not text: %q", insert)
 	}
@@ -187,7 +187,7 @@ func TestAnOffsetIsCountedTheWayAClientCountsText(t *testing.T) {
 		"past the end of it": {"сказал", 999, 6},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := Counted(c.text, c.at); got != c.want {
+			if got := CountUTF16(c.text, c.at); got != c.want {
 				t.Errorf("counted %d, wanted %d", got, c.want)
 			}
 		})

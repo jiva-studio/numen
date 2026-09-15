@@ -17,8 +17,8 @@ const LEVELS: readonly number[] = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
 /** The week, every day at the whole of it but for the ones named. */
 const week = (
   levelOf: Readonly<Record<string, number>> = {},
-  named: readonly { id: string; short: string; long: string }[] = WEEK,
-): readonly Day[] => named.map((one) => ({ ...one, level: levelOf[one.id] ?? 1 }))
+  days: readonly { id: string; short: string; long: string }[] = WEEK,
+): readonly Day[] => days.map((one) => ({ ...one, level: levelOf[one.id] ?? 1 }))
 
 type ChipsProps = InstanceType<typeof WeekdayChips>['$props']
 
@@ -29,11 +29,11 @@ const mountChips = (props: Partial<ChipsProps> = {}) =>
   })
 
 /** Every day the row has handed back, with the level chosen for it. */
-const handed = (row: ReturnType<typeof mountChips>): readonly unknown[][] =>
-  (row.emitted('chooses') ?? []) as unknown[][]
+const getChosen = (row: ReturnType<typeof mountChips>): readonly unknown[][] =>
+  (row.emitted('choose') ?? []) as unknown[][]
 
 /** The levels on offer, once a chip has been pressed. */
-const offered = (): readonly string[] =>
+const getOfferedLabels = (): readonly string[] =>
   [...document.body.querySelectorAll('.menu__item')].map((one) => one.textContent?.trim() ?? '')
 
 afterEach(() => {
@@ -65,10 +65,10 @@ describe('what is drawn', () => {
   // a day at nothing has none.
   it('fills a day in step with the level it stands at', () => {
     const chips = mountChips({ days: week({ sat: 0, sun: 0.75 }) }).findAll('button')
-    const filling = (at: number) => chips[at]?.attributes('style') ?? ''
-    expect(filling(0)).toContain('var(--numen-accent) 100%')
-    expect(filling(5)).toContain('var(--numen-accent) 0%')
-    expect(filling(6)).toContain('var(--numen-accent) 75%')
+    const getStyle = (at: number) => chips[at]?.attributes('style') ?? ''
+    expect(getStyle(0)).toContain('var(--numen-accent) 100%')
+    expect(getStyle(5)).toContain('var(--numen-accent) 0%')
+    expect(getStyle(6)).toContain('var(--numen-accent) 75%')
   })
 
   it('says a day offers the levels rather than turning on the spot', () => {
@@ -113,7 +113,7 @@ describe('a day standing at a level the offer does not name', () => {
   it('offers that level too, in its place among them and as the one in force', async () => {
     const row = mountChips({ days: week({ sat: 0.37 }) })
     await row.findAll('button')[5]?.trigger('click')
-    expect(offered()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%'])
+    expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%'])
 
     const marked = [...document.body.querySelectorAll('.menu__item')]
       .filter((one) => one.getAttribute('aria-checked') === 'true')
@@ -124,7 +124,7 @@ describe('a day standing at a level the offer does not name', () => {
 
 describe('the keyboard while the levels are offered', () => {
   /** The chip pressed, focused as the keyboard would leave it. */
-  const asked = async (row: ReturnType<typeof mountChips>, at: number) => {
+  const openMenu = async (row: ReturnType<typeof mountChips>, at: number) => {
     const chip = row.findAll('button')[at]
     const element = chip?.element as HTMLElement
     element.focus()
@@ -138,11 +138,9 @@ describe('the keyboard while the levels are offered', () => {
 
   it('opens on the level the day stands at, and says which of them it is', async () => {
     const row = mountChips()
-    await asked(row, 5)
+    await openMenu(row, 5)
     expect(document.activeElement).toBe(items()[3])
-    expect(items().map((one) => one.getAttribute('role'))).toEqual(
-      Array(7).fill('menuitemradio'),
-    )
+    expect(items().map((one) => one.getAttribute('role'))).toEqual(Array(7).fill('menuitemradio'))
     expect(items().map((one) => one.getAttribute('aria-checked'))).toEqual([
       'false',
       'false',
@@ -156,7 +154,7 @@ describe('the keyboard while the levels are offered', () => {
 
   it('gives the keyboard back to the chip once a level is chosen', async () => {
     const row = mountChips()
-    const chip = await asked(row, 5)
+    const chip = await openMenu(row, 5)
     items()[2]?.click()
     await row.vm.$nextTick()
     expect(document.activeElement).toBe(chip)
@@ -164,7 +162,7 @@ describe('the keyboard while the levels are offered', () => {
 
   it('gives the keyboard back to the chip where nothing is chosen at all', async () => {
     const row = mountChips()
-    const chip = await asked(row, 0)
+    const chip = await openMenu(row, 0)
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await row.vm.$nextTick()
     expect(items()).toEqual([])
@@ -176,13 +174,13 @@ describe('giving a day a level', () => {
   it('offers the levels it was given, in the order it was given them', async () => {
     const row = mountChips()
     await row.findAll('button')[5]?.trigger('click')
-    expect(offered()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%'])
+    expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%'])
   })
 
   it('offers three where three is what it was given', async () => {
     const row = mountChips({ levels: [0, 0.5, 1] })
     await row.findAll('button')[0]?.trigger('click')
-    expect(offered()).toEqual(['0%', '50%', '100%'])
+    expect(getOfferedLabels()).toEqual(['0%', '50%', '100%'])
   })
 
   // The day is handed back as it was given, and the level with it; what a level
@@ -191,14 +189,14 @@ describe('giving a day a level', () => {
     const row = mountChips()
     await row.findAll('button')[0]?.trigger('click')
     await document.body.querySelectorAll<HTMLElement>('.menu__item')[2]?.click()
-    expect(handed(row)).toEqual([['mon', 0.25]])
+    expect(getChosen(row)).toEqual([['mon', 0.25]])
   })
 
   it('hands back a day put at the whole of it like any other', async () => {
     const row = mountChips()
     await row.findAll('button')[5]?.trigger('click')
     await document.body.querySelectorAll<HTMLElement>('.menu__item')[6]?.click()
-    expect(handed(row)).toEqual([['sat', 1]])
+    expect(getChosen(row)).toEqual([['sat', 1]])
   })
 
   // A chip nobody may turn is pressed like any other and answers with nothing.
@@ -206,16 +204,12 @@ describe('giving a day a level', () => {
   it('offers nothing while nobody may turn them, and says so on every chip', async () => {
     const row = mountChips({ disabled: true })
     const chips = row.findAll('button')
-    expect(chips.map((chip) => chip.attributes('aria-disabled'))).toEqual(
-      Array(7).fill('true'),
-    )
-    expect(chips.map((chip) => chip.attributes('disabled'))).toEqual(
-      Array(7).fill(undefined),
-    )
+    expect(chips.map((chip) => chip.attributes('aria-disabled'))).toEqual(Array(7).fill('true'))
+    expect(chips.map((chip) => chip.attributes('disabled'))).toEqual(Array(7).fill(undefined))
 
     await chips[1]?.trigger('click')
-    expect(offered()).toEqual([])
-    expect(handed(row)).toEqual([])
+    expect(getOfferedLabels()).toEqual([])
+    expect(getChosen(row)).toEqual([])
     expect(chips[1]?.attributes('aria-expanded')).toBe('false')
   })
 })

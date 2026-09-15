@@ -14,9 +14,9 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
 // ytDLP is the provider that fetches by running yt-dlp. The sites it supports
@@ -32,25 +32,25 @@ type ytDLP struct {
 }
 
 func newYtDLP(ctx context.Context, c Config) *ytDLP {
-	command := resolved(c.Video, "yt-dlp")
+	command := resolveProgram(c.Video, "yt-dlp")
 	return &ytDLP{
 		command: command,
-		sound:   resolved(c.Sound, "ffmpeg"),
+		sound:   resolveProgram(c.Sound, "ffmpeg"),
 		version: version(ctx, command),
 	}
 }
 
 // Supports is a video, on a machine holding the tool that gets at one.
-func (v *ytDLP) Supports(at domain.URL) bool { return carries(at) && v.command.held() }
+func (v *ytDLP) Supports(at domain.URL) bool { return isVideoSite(at) && v.command.isPresent() }
 
-func (v *ytDLP) Downloading(domain.URL) port.DownloadModel {
+func (v *ytDLP) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
 }
 
 // version is what the tool answers when asked which it is. A tool that will not
 // say is still a tool, and what it produced is claimed by its name alone.
 func version(ctx context.Context, tool program) string {
-	if !tool.held() {
+	if !tool.isPresent() {
 		return ""
 	}
 	said, err := run(ctx, tool, nil, "--version")
@@ -153,7 +153,7 @@ func (v *ytDLP) subtitles(
 	if err != nil {
 		return nil, err
 	}
-	cues, err := cued(raw)
+	cues, err := parseCues(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -183,10 +183,10 @@ func (v *ytDLP) Download(
 		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
 		"-o", filepath.Join(folder, "copy.%(ext)s"), string(at),
 	}
-	if where := v.sound.at(); where != "" {
+	if where := v.sound.getPath(); where != "" {
 		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
 	}
-	taking := v.command.started(ctx, arguments...)
+	taking := v.command.buildCommand(ctx, arguments...)
 	var said bytes.Buffer
 	taking.Stdout, taking.Stderr = &said, &said
 	if err := taking.Run(); err != nil {
@@ -241,7 +241,7 @@ func language(meta port.Metadata, languages []string, automatic bool) string {
 		return ""
 	}
 	for _, wanted := range append(append([]string(nil), languages...), meta.Language) {
-		if one := slices.IndexFunc(tracks, in(wanted)); one >= 0 {
+		if one := slices.IndexFunc(tracks, matchLanguage(wanted)); one >= 0 {
 			return tracks[one]
 		}
 	}
@@ -251,9 +251,10 @@ func language(meta port.Metadata, languages []string, automatic bool) string {
 	return tracks[0]
 }
 
-// in says whether a track is in one language. A machine's own is that language
-// with a word after it, and its translations of that one are other languages.
-func in(language string) func(string) bool {
+// matchLanguage says whether a track is in one language. A machine's own is that
+// language with a word after it, and its translations of that one are other
+// languages.
+func matchLanguage(language string) func(string) bool {
 	return func(track string) bool { return track == language || track == language+"-orig" }
 }
 
@@ -273,9 +274,9 @@ var videoSites = map[string]bool{
 	"youtu.be":             true,
 }
 
-// carries says whether this provider answers for an address, which is whether
-// the site is one of its own and the address names something there.
-func carries(at domain.URL) bool {
+// isVideoSite says whether this provider answers for an address, which is
+// whether the site is one of its own and the address names something there.
+func isVideoSite(at domain.URL) bool {
 	address, err := url.Parse(string(at))
 	if err != nil {
 		return false

@@ -59,7 +59,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 	moved := make(chan struct{}, 1)
 	api.Follows(t.Context(), moved)
 
-	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 

@@ -39,7 +39,7 @@ type appearances struct {
 	say  func(string)
 }
 
-func (a appearances) Read() (theme.Appearance, error) { return a.cfg.dressed(a.said) }
+func (a appearances) Read() (theme.Appearance, error) { return a.cfg.readAppearance(a.said) }
 
 func (a appearances) Write(chosen theme.Appearance) error { return a.cfg.wear(chosen, a.said) }
 
@@ -56,8 +56,8 @@ type scales struct {
 	drawn, set float64
 }
 
-// over puts what was said this launch over what the file holds.
-func (l *scales) over(worn *theme.Appearance) {
+// apply puts what was said this launch over what the file holds.
+func (l *scales) apply(worn *theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.drawn > 0 {
@@ -68,9 +68,9 @@ func (l *scales) over(worn *theme.Appearance) {
 	}
 }
 
-// chose lets go of what was said this launch about a size a person has now
+// clearSizes lets go of what was said this launch about a size a person has now
 // chosen for themselves.
-func (l *scales) chose(chosen theme.Appearance) {
+func (l *scales) clearSizes(chosen theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if chosen.InterfaceScale > 0 {
@@ -83,22 +83,22 @@ func (l *scales) chose(chosen theme.Appearance) {
 
 func (c Config) catalogue() (theme.Catalogue, error) {
 	if c.ThemesPath != "" {
-		return theme.At(c.ThemesPath)
+		return theme.OpenAt(c.ThemesPath)
 	}
-	if folder, chosen := c.beside("themes"); chosen {
-		return theme.At(folder)
+	if folder, chosen := c.getPathBeside("themes"); chosen {
+		return theme.OpenAt(folder)
 	}
 	return theme.Open()
 }
 
-// dressed and wear are the settings file as the themes need it: one section of
-// it read, and up to four fields of it written.
-func (c Config) dressed(said *scales) (theme.Appearance, error) {
+// readAppearance and wear are the settings file as the themes need it: one
+// section of it read, and up to four fields of it written.
+func (c Config) readAppearance(said *scales) (theme.Appearance, error) {
 	path, err := c.settingsFile()
 	if err != nil {
 		return theme.Appearance{}, err
 	}
-	held, err := settings.At(path)
+	held, err := c.getSettingsAt(path)
 	if err != nil {
 		return theme.Appearance{}, err
 	}
@@ -108,7 +108,7 @@ func (c Config) dressed(said *scales) (theme.Appearance, error) {
 		InterfaceScale: held.Appearance.InterfaceScale,
 		TextScale:      held.Appearance.TextScale,
 	}
-	said.over(&worn)
+	said.apply(&worn)
 	return worn, nil
 }
 
@@ -139,9 +139,10 @@ func (c Config) wear(chosen theme.Appearance, said *scales) error {
 		writing = append(writing,
 			settings.Setting{At: []string{"appearance", "text_scale"}, Written: chosen.TextScale})
 	}
-	if err := settings.Save(path, writing...); err != nil {
+	into := DefaultSettings()
+	if err := settings.Save(path, &into, writing...); err != nil {
 		return err
 	}
-	said.chose(chosen)
+	said.clearSizes(chosen)
 	return nil
 }

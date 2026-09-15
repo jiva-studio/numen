@@ -7,7 +7,7 @@ import (
 
 	read "github.com/getcharzp/go-ocr"
 
-	"github.com/jiva-studio/numen/modules/libs/core/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
 // A page whose every part was refused says nothing, and a page that says

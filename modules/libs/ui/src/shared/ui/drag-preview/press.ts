@@ -9,41 +9,41 @@ import type { Position } from '@/shared/lib/geometry'
 import type { Clock } from '@/shared/lib/clock'
 
 /** What is being carried, and whether the pointer has gone far enough to mean it. */
-export interface Drag<Held> {
-  readonly held: Held
+export interface Drag<Item> {
+  readonly item: Item
   readonly moved: boolean
 }
 
 /**
  * What following a press takes.
  *
- * `Held` is what the press picked up and `At` is where letting go would put it;
+ * `Item` is what the press picked up and `At` is where letting go would put it;
  * both are handed back untouched.
  */
-export interface Press<Held, At> {
+export interface Press<Item, At> {
   /** How far the pointer travels before a press becomes a drag. */
-  readonly threshold: () => number
+  readonly getThreshold: () => number
   /** The clock the release is held against. */
-  readonly clock: () => Clock
+  readonly getClock: () => Clock
   /** Where letting go here would put what is held. */
-  readonly landingAt: (held: Held, at: Position) => At | null
+  readonly getLandingAt: (item: Item, at: Position) => At | null
   /** What letting go after a drag comes to. The landing is nothing off any target. */
-  readonly settle: (held: Held, at: At | null) => void
+  readonly settle: (item: Item, at: At | null) => void
   /** Said once, when the press turns into a drag. */
-  readonly began?: (held: Held) => void
+  readonly begin?: (item: Item) => void
 }
 
 /** What a press answers: what is held, where it would land, and how to start one. */
-export interface PressDragState<Held, At> {
-  readonly dragging: ShallowRef<Drag<Held> | null>
+export interface PressDragState<Item, At> {
+  readonly dragging: ShallowRef<Drag<Item> | null>
   readonly at: ShallowRef<At | null>
   /** Where the pointer is, for as long as a drag is live. */
   readonly position: ShallowRef<Position | null>
-  readonly lift: (held: Held, event: PointerEvent) => void
+  readonly lift: (item: Item, event: PointerEvent) => void
 }
 
-export function usePressDrag<Held, At>(press: Press<Held, At>): PressDragState<Held, At> {
-  const dragging = shallowRef<Drag<Held> | null>(null)
+export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<Item, At> {
+  const dragging = shallowRef<Drag<Item> | null>(null)
   const at = shallowRef<At | null>(null)
   const position = shallowRef<Position | null>(null)
 
@@ -62,14 +62,14 @@ export function usePressDrag<Held, At>(press: Press<Held, At>): PressDragState<H
     const now: Position = { x: event.clientX, y: event.clientY }
     const moved =
       held.moved ||
-      Math.abs(now.x - start.x) > press.threshold() ||
-      Math.abs(now.y - start.y) > press.threshold()
+      Math.abs(now.x - start.x) > press.getThreshold() ||
+      Math.abs(now.y - start.y) > press.getThreshold()
 
-    dragging.value = { held: held.held, moved }
+    dragging.value = { item: held.item, moved }
     position.value = moved ? now : null
-    at.value = moved ? press.landingAt(held.held, now) : null
+    at.value = moved ? press.getLandingAt(held.item, now) : null
 
-    if (moved && !held.moved) press.began?.(held.held)
+    if (moved && !held.moved) press.begin?.(held.item)
   }
 
   function drop(): void {
@@ -79,17 +79,17 @@ export function usePressDrag<Held, At>(press: Press<Held, At>): PressDragState<H
     detach()
     at.value = null
     position.value = null
-    if (held?.moved) press.settle(held.held, found)
+    if (held?.moved) press.settle(held.item, found)
     // Held one frame longer: the click that follows the release reads it and
     // stands down.
-    press.clock().schedule(() => {
+    press.getClock().schedule(() => {
       dragging.value = null
     })
   }
 
-  const lift = (held: Held, event: PointerEvent): void => {
+  const lift = (item: Item, event: PointerEvent): void => {
     start = { x: event.clientX, y: event.clientY }
-    dragging.value = { held, moved: false }
+    dragging.value = { item, moved: false }
     window.addEventListener('pointermove', drag)
     window.addEventListener('pointerup', drop)
     window.addEventListener('pointercancel', drop)

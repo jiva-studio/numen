@@ -12,8 +12,8 @@ import (
 // on reaches a window as the unspecified value, and the window draws the theme
 // under neither heading.
 func TestEveryShelfIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.Shelf]Shelf{
+	testsupport.CheckProduced(t, map[v1.Shelf]Shelf{
 		v1.Shelf_SHELF_PRESET: Preset,
 		v1.Shelf_SHELF_MINE:   Mine,
-	}, shelved)
+	}, encodeShelf)
 }

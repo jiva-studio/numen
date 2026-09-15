@@ -36,7 +36,7 @@ func recogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []stri
 	if err != nil {
 		return fmt.Errorf("nothing to read with: %w", err)
 	}
-	defer closing(open.Close)
+	defer closeIfOpen(open.Close)
 
 	recognise, cut := open.Recognise, open.Cut
 	fmt.Fprintf(out, "reading %s with %s\n", args[1], recognise.By.Recognition())

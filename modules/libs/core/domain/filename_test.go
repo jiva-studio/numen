@@ -15,7 +15,7 @@ func TestATitleThatIsAlreadyAFilenameIsFiledUnderItself(t *testing.T) {
 		"Холм у реки",
 		"Lecture 3 — entropy, and what it is not",
 	} {
-		name, exact := domain.ReducedFilename(title)
+		name, exact := domain.GetReducedFilename(title)
 		if name != title || !exact {
 			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
 		}
@@ -25,7 +25,7 @@ func TestATitleThatIsAlreadyAFilenameIsFiledUnderItself(t *testing.T) {
 func TestACharacterAFilesystemReservesBecomesADash(t *testing.T) {
 	// A slash would file the note in a folder, and the rest are reserved
 	// somewhere that matters.
-	name, exact := domain.ReducedFilename(`a/b\c:d*e?f"g<h>i|j`)
+	name, exact := domain.GetReducedFilename(`a/b\c:d*e?f"g<h>i|j`)
 	if name != "a-b-c-d-e-f-g-h-i-j" {
 		t.Errorf("got %q", name)
 	}
@@ -36,7 +36,7 @@ func TestACharacterAFilesystemReservesBecomesADash(t *testing.T) {
 
 func TestATitleIsFiledUnderNoLeadingDot(t *testing.T) {
 	// A leading dot files the note where nothing looks.
-	name, exact := domain.ReducedFilename(".hidden")
+	name, exact := domain.GetReducedFilename(".hidden")
 	if name != "hidden" || exact {
 		t.Errorf("got %q, exact %v", name, exact)
 	}
@@ -44,7 +44,7 @@ func TestATitleIsFiledUnderNoLeadingDot(t *testing.T) {
 
 func TestATrailingDotOrSpaceIsDropped(t *testing.T) {
 	for _, title := range []string{"Entropy.", "Entropy ", "Entropy. ."} {
-		name, exact := domain.ReducedFilename(title)
+		name, exact := domain.GetReducedFilename(title)
 		if name != "Entropy" {
 			t.Errorf("%q was filed as %q", title, name)
 		}
@@ -55,7 +55,7 @@ func TestATrailingDotOrSpaceIsDropped(t *testing.T) {
 }
 
 func TestAControlCharacterIsNotInTheName(t *testing.T) {
-	name, exact := domain.ReducedFilename("En\x00tro\npy")
+	name, exact := domain.GetReducedFilename("En\x00tro\npy")
 	if name != "Entropy" || exact {
 		t.Errorf("got %q, exact %v", name, exact)
 	}
@@ -65,7 +65,7 @@ func TestATitleTooLongIsCutBetweenCharacters(t *testing.T) {
 	// Most filesystems stop at 255 bytes for one component, and the cut lands
 	// between characters: half a character is not a character.
 	long := strings.Repeat("ṛ", 200)
-	name, exact := domain.ReducedFilename(long)
+	name, exact := domain.GetReducedFilename(long)
 	if exact {
 		t.Error("a title that was cut says it survived")
 	}
@@ -79,7 +79,7 @@ func TestATitleTooLongIsCutBetweenCharacters(t *testing.T) {
 
 func TestATitleThatCannotBeAFilenameIsNoFilename(t *testing.T) {
 	for _, title := range []string{"", "   ", "...", "\x00", ". ."} {
-		if name, exact := domain.ReducedFilename(title); name != "" || exact {
+		if name, exact := domain.GetReducedFilename(title); name != "" || exact {
 			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
 		}
 	}
@@ -94,7 +94,7 @@ func TestATitleThatNamesAWindowsDeviceIsFiledBeside(t *testing.T) {
 		// The name is the device whatever follows the first dot.
 		"CON.txt", "aux.notes.md",
 	} {
-		name, exact := domain.ReducedFilename(title)
+		name, exact := domain.GetReducedFilename(title)
 		if name == title || exact {
 			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
 		}
@@ -112,7 +112,7 @@ func TestATitleThatMerelyLooksLikeADeviceIsFiledUnderItself(t *testing.T) {
 	for _, title := range []string{
 		"CONSOLE", "Conference", "COM", "COM0", "COM10", "LPT", "NULL", "AUXILIARY",
 	} {
-		if name, exact := domain.ReducedFilename(title); name != title || !exact {
+		if name, exact := domain.GetReducedFilename(title); name != title || !exact {
 			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
 		}
 	}
@@ -130,7 +130,7 @@ func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {
 		"ordinary", "Ṛtu and the seasons",
 		"Lecture 1.2", "Seminar 1.2–1.3 — Lisbon, 9 July 1973",
 	} {
-		name, _ := domain.ReducedFilename(title)
+		name, _ := domain.GetReducedFilename(title)
 		if name == "" {
 			continue
 		}
@@ -159,7 +159,7 @@ func TestAFilenameKeepsWhatALinkCanBeWrittenWith(t *testing.T) {
 		"TCP/IP":          "TCP-IP",
 		"Ṛtu":             "Ṛtu",
 	} {
-		if name, _ := domain.ReducedFilename(title); name != want {
+		if name, _ := domain.GetReducedFilename(title); name != want {
 			t.Errorf("%q is filed as %q, want %q", title, name, want)
 		}
 	}

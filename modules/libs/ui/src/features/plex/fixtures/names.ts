@@ -81,11 +81,11 @@ function hash(text: string): number {
 }
 
 /**
- * A name for the `index`-th node invented around `seed`. Stepping the index
+ * A name for the `index`-th node invented around `stem`. Stepping the index
  * keeps a neighbourhood free of repeats until it outgrows the pool.
  */
-export const nameFor = (seed: string, index: number): string =>
-  NAMES[(hash(seed) + index) % NAMES.length]!
+export const nameFor = (stem: string, index: number): string =>
+  NAMES[(hash(stem) + index) % NAMES.length]!
 
 /**
  * A name for a node made just now, seeded by the moment it was made.

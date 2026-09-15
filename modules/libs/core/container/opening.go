@@ -18,9 +18,9 @@ import (
 type VaultOpener struct {
 	// Told, if set, is called each time the index and the vault are level again.
 	Told func(VaultChanges)
-	// Trouble, if set, is called with what went wrong, and with nil when a later
-	// attempt succeeds.
-	Trouble port.Trouble
+	// ErrorHandler, if set, is called with what went wrong, and with nil when a
+	// later attempt succeeds.
+	ErrorHandler port.ErrorHandler
 	// Rebuild reads every note again, whatever its fingerprint says.
 	Rebuild bool
 
@@ -62,31 +62,31 @@ func (c Config) VaultOpenerWith(
 	scan := c.Scan(db)
 	scan.Readers = walking
 
-	held := &holding{NoteRepository: db.NotesCutAt(c.Chunking(), c.Legibility())}
+	held := &holding{NoteRepository: db.NotesCutAt(c.GetChunkSizes(), c.Legibility())}
 	return &VaultOpener{
 		watcher: watcher,
 		scan:    scan,
 		held:    held,
-		refresh: refreshing(c, db, held),
+		refresh: makeRefresh(c, db, held),
 	}
 }
 
-// refreshing brings named notes up to date, cut at this installation's sizes
+// makeRefresh brings named notes up to date, cut at this installation's sizes
 // and carrying what was fetched for a link note.
-func refreshing(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
+func makeRefresh(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
 	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources())
-	refresh.Derived = c.DerivedStores()
+	refresh.Derived = c.GetDerivedStores()
 	return refresh
 }
 
-// Refreshing brings named notes up to date, through whatever is following the
+// GetRefresh brings named notes up to date, through whatever is following the
 // vault they are in. Whatever changes a note calls it, so what changed is
 // findable before the change is reported done.
-func (o *VaultOpener) Refreshing() vault.Refresh { return o.refresh }
+func (o *VaultOpener) GetRefresh() vault.Refresh { return o.refresh }
 
-// Scanning is the walk this opener makes, for a caller asked to read the vault
+// GetScan is the walk this opener makes, for a caller asked to read the vault
 // again.
-func (o *VaultOpener) Scanning() vault.Scan {
+func (o *VaultOpener) GetScan() vault.Scan {
 	scan := o.scan
 	scan.RebuildIndex = o.Rebuild
 	return scan
@@ -101,16 +101,17 @@ func (o *VaultOpener) Level(ctx context.Context, v domain.Vault, paths []string)
 
 // Begin opens the vault: the watch is started, and Read is the walk beside it.
 //
-// A vault that cannot be watched is opened all the same, and Unwatched says why.
+// A vault that cannot be watched is opened all the same, and
+// GetUnwatchedReason says why.
 func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
-	scan := o.Scanning()
+	scan := o.GetScan()
 	follow := vault.NewFollow(o.watcher, o.refresh, scan)
 	if told := o.Told; told != nil {
 		follow.Changed = func(m vault.VaultChanges) {
 			told(VaultChanges{Paths: m.Paths, Assets: m.Assets, Reload: m.Reload})
 		}
 	}
-	follow.Trouble = o.Trouble
+	follow.ErrorHandler = o.ErrorHandler
 	watching, err := follow.Begin(ctx, v)
 	return &OpenVault{
 		opening:   o,
@@ -132,9 +133,10 @@ type OpenVault struct {
 	unwatched error
 }
 
-// Unwatched is why the vault is not being followed, and nothing while it is. A
-// vault nobody is following looks exactly like a vault nothing happens to.
-func (o *OpenVault) Unwatched() error { return o.unwatched }
+// GetUnwatchedReason is why the vault is not being followed, and nothing while
+// it is. A vault nobody is following looks exactly like a vault nothing happens
+// to.
+func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 
 // Read walks the vault into the index and answers how many notes it holds.
 // during, if set, is called while the walk is still running.
@@ -151,13 +153,13 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 	}
 	res, err := walk.Execute(ctx, o.vault)
 
-	under := o.opening.held.taken()
+	under := o.opening.held.takePaths()
 	if err != nil {
 		return res.Notes, err
 	}
 	if len(under) > 0 {
 		if _, err := o.opening.refresh.Execute(ctx, o.vault, under); err != nil {
-			o.trouble(err)
+			o.handleError(err)
 		}
 	}
 	return res.Notes, nil
@@ -175,9 +177,9 @@ func (o *OpenVault) Run(ctx context.Context) {
 	o.watching.Run(ctx)
 }
 
-func (o *OpenVault) trouble(err error) {
-	if o.follow.Trouble != nil {
-		o.follow.Trouble(err)
+func (o *OpenVault) handleError(err error) {
+	if o.follow.ErrorHandler != nil {
+		o.follow.ErrorHandler(err)
 	}
 }
 
@@ -238,9 +240,9 @@ func (w *writes) hold(path string) {
 	w.paths = append(w.paths, path)
 }
 
-// taken is every path held, and the end of the holding: the walk is over, so a
-// write that lands from now on is already the last one.
-func (w *writes) taken() []string {
+// takePaths is every path held, and the end of the holding: the walk is over,
+// so a write that lands from now on is already the last one.
+func (w *writes) takePaths() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 

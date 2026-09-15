@@ -43,7 +43,7 @@ export const modules = [
     at: 'modules/apps/desktop/editor',
     sources: ['src'],
     written: 'modules/apps/desktop/editor/src',
-    reads: 'src/App.vue',
+    reads: 'src/app/App.vue',
     says: 'The notes window: reaches the components, the wire and the schema.',
   },
   {
@@ -51,7 +51,7 @@ export const modules = [
     at: 'modules/apps/desktop/flashcards',
     sources: ['src'],
     written: 'modules/apps/desktop/flashcards/src',
-    reads: 'src/App.vue',
+    reads: 'src/app/App.vue',
     says: 'The review window: the same three, and never the other window.',
   },
   {

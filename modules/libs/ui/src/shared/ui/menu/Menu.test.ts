@@ -37,7 +37,7 @@ const settle = async () => {
   await nextTick()
 }
 
-const drawn = () => document.body.querySelector<HTMLElement>('.menu')
+const getDrawnMenu = () => document.body.querySelector<HTMLElement>('.menu')
 const choices = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
 
 afterEach(() => {
@@ -48,17 +48,17 @@ afterEach(() => {
 describe('being open and being closed', () => {
   it('draws nothing at all until it is opened', async () => {
     const menu = mountMenu({ open: false })
-    expect(drawn()).toBeNull()
+    expect(getDrawnMenu()).toBeNull()
 
     await menu.setProps({ open: true })
     await settle()
-    expect(drawn()).not.toBeNull()
+    expect(getDrawnMenu()).not.toBeNull()
   })
 
   it('draws itself outside whatever asked for it', async () => {
     mountMenu()
     await settle()
-    expect(drawn()?.parentElement).toBe(document.body)
+    expect(getDrawnMenu()?.parentElement).toBe(document.body)
   })
 
   it('goes when the caller says so, and takes its listeners with it', async () => {
@@ -66,7 +66,7 @@ describe('being open and being closed', () => {
     await settle()
 
     await menu.setProps({ open: false })
-    expect(drawn()).toBeNull()
+    expect(getDrawnMenu()).toBeNull()
 
     // Nothing left behind answering for a menu nobody has open.
     window.dispatchEvent(new Event('resize'))
@@ -109,7 +109,7 @@ describe('being put away', () => {
     const menu = mountMenu()
     await settle()
 
-    drawn()!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    getDrawnMenu()!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     expect(menu.emitted('dismiss')).toBeUndefined()
 
     document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
@@ -128,7 +128,7 @@ describe('being put away', () => {
     const menu = mountMenu()
     await settle()
 
-    drawn()!.dispatchEvent(new Event('scroll'))
+    getDrawnMenu()!.dispatchEvent(new Event('scroll'))
     expect(menu.emitted('dismiss')).toBeUndefined()
 
     document.dispatchEvent(new Event('scroll'))
@@ -147,25 +147,24 @@ describe('being put away', () => {
 
 describe('where the keyboard is while it is open', () => {
   /** Opened from the keyboard, which is the opening that lands on an item. */
-  const opened = (props: Partial<MenuProps> = {}) =>
-    mountMenu({ opening: 'keyboard', ...props })
+  const openMenu = (props: Partial<MenuProps> = {}) => mountMenu({ opening: 'keyboard', ...props })
 
   it('is on the first item that can be chosen', async () => {
-    opened({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })
+    openMenu({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })
     await settle()
     expect(document.activeElement).toBe(choices()[1])
   })
 
   it('is on the menu itself when there is nothing to be on', async () => {
-    opened({ items: [] })
+    openMenu({ items: [] })
     await settle()
-    expect(document.activeElement).toBe(drawn())
+    expect(document.activeElement).toBe(getDrawnMenu())
   })
 
   it('walks the items with the arrows, and wraps', async () => {
-    opened()
+    openMenu()
     await settle()
-    const menu = drawn()!
+    const menu = getDrawnMenu()!
 
     menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
     expect(document.activeElement).toBe(choices()[1])
@@ -178,9 +177,9 @@ describe('where the keyboard is while it is open', () => {
   })
 
   it('goes to the ends on Home and End', async () => {
-    opened()
+    openMenu()
     await settle()
-    const menu = drawn()!
+    const menu = getDrawnMenu()!
 
     menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }))
     expect(document.activeElement).toBe(choices()[2])
@@ -190,9 +189,9 @@ describe('where the keyboard is while it is open', () => {
   })
 
   it('is kept inside: tab moves within the items rather than out of them', async () => {
-    opened()
+    openMenu()
     await settle()
-    const menu = drawn()!
+    const menu = getDrawnMenu()!
 
     const tab = () => {
       const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
@@ -210,13 +209,13 @@ describe('where the keyboard is while it is open', () => {
 
 describe('where the keyboard is in a menu opened by hand', () => {
   const step = (key: string) =>
-    drawn()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    getDrawnMenu()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
 
   it('is on no item at all, and on the menu itself', async () => {
     mountMenu()
     await settle()
     expect(choices().some((item) => item === document.activeElement)).toBe(false)
-    expect(document.activeElement).toBe(drawn())
+    expect(document.activeElement).toBe(getDrawnMenu())
   })
 
   it('goes to the first item on the first step down', async () => {
@@ -281,15 +280,15 @@ describe('where it is drawn', () => {
   it('is placed against the area it is drawn into, not against its caller', async () => {
     mountMenu({ at: { x: 30, y: 20 }, viewport: { width: 900, height: 700 } })
     await settle()
-    expect(drawn()?.style.left).toBe('30px')
-    expect(drawn()?.style.top).toBe('20px')
+    expect(getDrawnMenu()?.style.left).toBe('30px')
+    expect(getDrawnMenu()?.style.top).toBe('20px')
   })
 
   it('is brought in off an edge it was asked for right against', async () => {
     mountMenu({ at: { x: 0, y: 0 }, viewport: { width: 900, height: 700 }, margin: 12 })
     await settle()
-    expect(drawn()?.style.left).toBe('12px')
-    expect(drawn()?.style.top).toBe('12px')
+    expect(getDrawnMenu()?.style.left).toBe('12px')
+    expect(getDrawnMenu()?.style.top).toBe('12px')
   })
 })
 
@@ -297,7 +296,9 @@ describe('when there is nothing to choose', () => {
   it('says so rather than drawing an empty box', async () => {
     mountMenu({ items: [] })
     await settle()
-    expect(drawn()?.querySelector('.menu__silence')?.textContent?.trim()).toBe('Nothing to do')
+    expect(getDrawnMenu()?.querySelector('.menu__silence')?.textContent?.trim()).toBe(
+      'Nothing to do',
+    )
   })
 
   it('says it in the words it was given', async () => {
@@ -307,7 +308,7 @@ describe('when there is nothing to choose', () => {
       attachTo: document.body,
     })
     await settle()
-    expect(drawn()?.querySelector('.menu__silence')?.textContent?.trim()).toBe('ничего')
+    expect(getDrawnMenu()?.querySelector('.menu__silence')?.textContent?.trim()).toBe('ничего')
   })
 })
 
@@ -355,13 +356,13 @@ describe('what an item says beside its words', () => {
 })
 
 describe('typing to jump', () => {
-  const types = (letter: string) =>
-    drawn()?.dispatchEvent(new KeyboardEvent('keydown', { key: letter, bubbles: true }))
+  const typeLetter = (letter: string) =>
+    getDrawnMenu()?.dispatchEvent(new KeyboardEvent('keydown', { key: letter, bubbles: true }))
 
   it('lands on the first item the letter begins', async () => {
     mountMenu()
     await settle()
-    types('c')
+    typeLetter('c')
     await nextTick()
     expect(document.activeElement).toBe(choices()[2])
   })
@@ -369,9 +370,9 @@ describe('typing to jump', () => {
   it('walks the items one letter begins', async () => {
     mountMenu({ items: [...ITEMS, { id: 'cut', text: 'Cut' }] })
     await settle()
-    types('c')
+    typeLetter('c')
     await nextTick()
-    types('c')
+    typeLetter('c')
     await nextTick()
     expect(document.activeElement).toBe(choices()[3])
   })
@@ -379,17 +380,17 @@ describe('typing to jump', () => {
   it('lands on nothing where no item begins with it', async () => {
     mountMenu()
     await settle()
-    types('z')
+    typeLetter('z')
     await nextTick()
-    expect(document.activeElement).toBe(drawn())
+    expect(document.activeElement).toBe(getDrawnMenu())
   })
 
   it('leaves the space bar to the item it is on', async () => {
     mountMenu()
     await settle()
-    types(' ')
+    typeLetter(' ')
     await nextTick()
-    expect(document.activeElement).toBe(drawn())
+    expect(document.activeElement).toBe(getDrawnMenu())
   })
 })
 
@@ -397,12 +398,12 @@ describe('the width it is told to keep to', () => {
   it('carries the width of what asked for it into its own rule', async () => {
     mountMenu({ asking: 420 })
     await settle()
-    expect(drawn()?.style.getPropertyValue('--asking')).toBe('420px')
+    expect(getDrawnMenu()?.style.getPropertyValue('--asking')).toBe('420px')
   })
 
   it('asks for nothing where nothing said how wide it asked', async () => {
     mountMenu()
     await settle()
-    expect(drawn()?.style.getPropertyValue('--asking')).toBe('0px')
+    expect(getDrawnMenu()?.style.getPropertyValue('--asking')).toBe('0px')
   })
 })

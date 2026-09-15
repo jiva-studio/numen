@@ -14,14 +14,14 @@ export interface Question {
    * Whether this answer may be drawn over what is drawn already. An answer
    * older than one that has landed is let go of.
    */
-  lands(): boolean
+  claim(): boolean
 }
 
 export type AnswerGuard = ReturnType<typeof answerGuard>
 
 export function answerGuard() {
   let asked = 0
-  let landed = 0
+  let drawn = 0
   let listening = true
 
   /** A turn for one question. What is already on its way is let go of. */
@@ -31,9 +31,9 @@ export function answerGuard() {
       get current() {
         return listening && mine === asked
       },
-      lands() {
-        if (!listening || mine < landed) return false
-        landed = mine
+      claim() {
+        if (!listening || mine < drawn) return false
+        drawn = mine
         return true
       },
     }
@@ -42,7 +42,7 @@ export function answerGuard() {
   /** Nothing already asked for will be drawn. */
   const drop = () => {
     asked += 1
-    landed = asked
+    drawn = asked
   }
 
   /** Nothing will be drawn from here on, whenever it lands. */

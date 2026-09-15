@@ -47,7 +47,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	}
 	// One folder has one name here, whichever route reached it, and which
 	// routes lead to it is the machine's to say.
-	root = u.Identity.Named(root)
+	root = u.Identity.GetName(root)
 	if err := u.Identity.Readable(root); err != nil {
 		return domain.Vault{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}

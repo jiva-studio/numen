@@ -46,7 +46,7 @@ func TestLoad(t *testing.T) {
 
 	generating := time.Now()
 	v := testsupport.GenerateVault(t, notes)
-	t.Logf("generated %d notes in %s", notes, took(generating))
+	t.Logf("generated %d notes in %s", notes, getElapsed(generating))
 
 	indexfile.AsShipped()
 	db, err := container.Config{
@@ -80,7 +80,7 @@ func TestLoad(t *testing.T) {
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("warm scan: %s — this is what a startup pays", took(warm))
+	t.Logf("warm scan: %s — this is what a startup pays", getElapsed(warm))
 
 	size, err := os.Stat(db.Path())
 	if err == nil {
@@ -172,4 +172,4 @@ func touchEverything(root string) error {
 	})
 }
 
-func took(since time.Time) time.Duration { return time.Since(since).Round(time.Millisecond) }
+func getElapsed(since time.Time) time.Duration { return time.Since(since).Round(time.Millisecond) }

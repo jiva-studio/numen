@@ -14,8 +14,8 @@ import (
 // is a bound on a machine under load and not a measurement.
 const waited = 5 * time.Second
 
-// heard is the names reported next, debounced into one batch by the watcher.
-func heard(t *testing.T, changed <-chan []string) []string {
+// readNames is the names reported next, debounced into one batch by the watcher.
+func readNames(t *testing.T, changed <-chan []string) []string {
 	t.Helper()
 	select {
 	case names, open := <-changed:
@@ -29,9 +29,9 @@ func heard(t *testing.T, changed <-chan []string) []string {
 	}
 }
 
-func watched(t *testing.T, catalogue theme.Catalogue, hold time.Duration) <-chan []string {
+func startWatch(t *testing.T, catalogue theme.Catalogue, hold time.Duration) <-chan []string {
 	t.Helper()
-	changed, err := catalogue.Watching(t.Context(), hold)
+	changed, err := catalogue.Watch(t.Context(), hold)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,10 +43,10 @@ func watched(t *testing.T, catalogue theme.Catalogue, hold time.Duration) <-chan
 
 func TestAThemeWrittenIntoTheFolderIsReported(t *testing.T) {
 	catalogue := folder(t)
-	changed := watched(t, catalogue, 20*time.Millisecond)
+	changed := startWatch(t, catalogue, 20*time.Millisecond)
 
 	put(t, catalogue, "dracula.css", ":root { --numen-surface: #282a36 }")
-	if names := heard(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -63,17 +63,17 @@ func TestAThemeFolderReachedThroughALinkIsWatched(t *testing.T) {
 		t.Skipf("this machine does not make links: %v", err)
 	}
 
-	catalogue, err := theme.At(link)
+	catalogue, err := theme.OpenAt(link)
 	if err != nil {
 		t.Fatal(err)
 	}
-	changed := watched(t, catalogue, 20*time.Millisecond)
+	changed := startWatch(t, catalogue, 20*time.Millisecond)
 
 	body := ":root { --numen-surface: #1c1c28 }"
 	if err := os.WriteFile(filepath.Join(real, "midnight.css"), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if names := heard(t, changed); len(names) != 1 || names[0] != "mine:midnight" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:midnight" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -83,7 +83,7 @@ func TestAThemeFolderReachedThroughALinkIsWatched(t *testing.T) {
 func TestAThemeSavedOverItselfIsReported(t *testing.T) {
 	catalogue := folder(t)
 	put(t, catalogue, "dracula.css", ":root { --numen-surface: #282a36 }")
-	changed := watched(t, catalogue, 20*time.Millisecond)
+	changed := startWatch(t, catalogue, 20*time.Millisecond)
 
 	tmp := filepath.Join(catalogue.Dir(), ".dracula.css.swp")
 	if err := os.WriteFile(tmp, []byte(":root { --numen-surface: #000000 }"), 0o644); err != nil {
@@ -92,7 +92,7 @@ func TestAThemeSavedOverItselfIsReported(t *testing.T) {
 	if err := os.Rename(tmp, filepath.Join(catalogue.Dir(), "dracula.css")); err != nil {
 		t.Fatal(err)
 	}
-	if names := heard(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -102,12 +102,12 @@ func TestAThemeSavedOverItselfIsReported(t *testing.T) {
 func TestAThemeDeletedIsReportedByName(t *testing.T) {
 	catalogue := folder(t)
 	put(t, catalogue, "dracula.css", ":root {}")
-	changed := watched(t, catalogue, 20*time.Millisecond)
+	changed := startWatch(t, catalogue, 20*time.Millisecond)
 
 	if err := os.Remove(filepath.Join(catalogue.Dir(), "dracula.css")); err != nil {
 		t.Fatal(err)
 	}
-	if names := heard(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -116,7 +116,7 @@ func TestAThemeDeletedIsReportedByName(t *testing.T) {
 // alone.
 func TestWhatIsNotAThemeIsNotReported(t *testing.T) {
 	catalogue := folder(t)
-	changed := watched(t, catalogue, 20*time.Millisecond)
+	changed := startWatch(t, catalogue, 20*time.Millisecond)
 
 	put(t, catalogue, "dracula.css.bak", ":root {}")
 	put(t, catalogue, "notes.md", "the themes I mean to write")
@@ -125,7 +125,7 @@ func TestWhatIsNotAThemeIsNotReported(t *testing.T) {
 	}
 	put(t, catalogue, "nord.css", ":root {}")
 
-	if names := heard(t, changed); len(names) != 1 || names[0] != "mine:nord" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:nord" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -134,12 +134,12 @@ func TestWhatIsNotAThemeIsNotReported(t *testing.T) {
 // thing a person did.
 func TestAHandfulOfFilesLandingAtOnceIsOneReport(t *testing.T) {
 	catalogue := folder(t)
-	changed := watched(t, catalogue, 300*time.Millisecond)
+	changed := startWatch(t, catalogue, 300*time.Millisecond)
 
 	for _, name := range []string{"nord.css", "dracula.css", "gruvbox.css"} {
 		put(t, catalogue, name, ":root {}")
 	}
-	names := heard(t, changed)
+	names := readNames(t, changed)
 	if len(names) != 3 {
 		t.Errorf("reported %v", names)
 	}
@@ -147,7 +147,7 @@ func TestAHandfulOfFilesLandingAtOnceIsOneReport(t *testing.T) {
 
 func TestAWatchOnAFolderThatIsNotThereIsRefused(t *testing.T) {
 	var catalogue theme.Catalogue
-	if _, err := catalogue.Watching(t.Context(), 0); err == nil {
+	if _, err := catalogue.Watch(t.Context(), 0); err == nil {
 		t.Error("a catalogue with no folder was watched")
 	}
 }
@@ -155,7 +155,7 @@ func TestAWatchOnAFolderThatIsNotThereIsRefused(t *testing.T) {
 // The watch ends where the caller does, and the channel is closed behind it.
 func TestAWatchStopsWithTheCallerItWasStartedFor(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
-	changed, err := folder(t).Watching(ctx, 20*time.Millisecond)
+	changed, err := folder(t).Watch(ctx, 20*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}

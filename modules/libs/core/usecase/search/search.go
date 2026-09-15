@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // defaultLimit is how many results a caller that names no number gets.
@@ -63,8 +63,8 @@ type Parameters struct {
 	Kinds []domain.SourceKind
 }
 
-// filled supplies what the caller left out.
-func (p Parameters) filled() Parameters {
+// fill supplies what the caller left out.
+func (p Parameters) fill() Parameters {
 	if p.Limit <= 0 {
 		p.Limit = defaultLimit
 	}
@@ -88,13 +88,13 @@ func (p Parameters) filled() Parameters {
 // Every field is asked for by New. An embedder that is left out answers: the
 // words half runs alone, with none of what the vectors hold.
 type Search struct {
-	passages  port.PassageQueries
-	readers   port.VaultReaders
-	embedder  port.Embedder
-	derived   port.DerivedStores
-	documents port.TextExtractor
-	floor     float64
-	trouble   func(error)
+	passages     port.PassageQueries
+	readers      port.VaultReaders
+	embedder     port.Embedder
+	derived      port.DerivedStores
+	documents    port.TextExtractor
+	floor        float64
+	errorHandler func(error)
 }
 
 // New is a search over one vault's index.
@@ -107,23 +107,23 @@ type Search struct {
 // `floor` is how near the query a passage stands to be an answer, in the units
 // the model in use measures in. Zero takes DefaultFloor.
 //
-// `trouble` hears about a half that could not answer. Nothing is said by
+// `errorHandler` hears about a half that could not answer. Nothing is said by
 // passing nothing.
-func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, trouble func(error)) Search {
+func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, errorHandler func(error)) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}
-	if trouble == nil {
-		trouble = func(error) {}
+	if errorHandler == nil {
+		errorHandler = func(error) {}
 	}
 	return Search{
-		passages:  passages,
-		readers:   readers,
-		embedder:  embedder,
-		derived:   derived,
-		documents: documents,
-		floor:     floor,
-		trouble:   trouble,
+		passages:     passages,
+		readers:      readers,
+		embedder:     embedder,
+		derived:      derived,
+		documents:    documents,
+		floor:        floor,
+		errorHandler: errorHandler,
 	}
 }
 
@@ -137,7 +137,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	if p.Floor == 0 {
 		p.Floor = u.floor
 	}
-	p = p.filled()
+	p = p.fill()
 
 	var rankings [][]domain.Passage
 	if p.Lexical > 0 {
@@ -149,7 +149,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	var named []domain.Passage
 	if p.Named > 0 {
-		found, err := u.passages.Named(ctx, v.ID, query, p.Kinds, p.Named, p.Growing)
+		found, err := u.passages.GetNamedPassages(ctx, v.ID, query, p.Kinds, p.Named, p.Growing)
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +165,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 			// A model out of reach leaves the words to answer. A vault is
 			// searched on a machine with no network, and by a person whose key
 			// has run out.
-			u.trouble(err)
+			u.errorHandler(err)
 		case err != nil:
 			return nil, err
 		default:
@@ -226,7 +226,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	for _, p := range found {
 		prose, held := read[p.Source]
 		if !held && !gone[p.Source] {
-			prose, err = extracted(ctx, of, p.Source, p.Producer, p.SourceHash)
+			prose, err = extractText(ctx, of, p.Source, p.Producer, p.SourceHash)
 			if port.NoNote(err) || errors.Is(err, errUnreadable) {
 				gone[p.Source] = true
 				continue
@@ -251,7 +251,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 // not a failure of the search: the passage is dropped and the rest answer.
 var errUnreadable = errors.New("nothing could be read from the source")
 
-// extracted is the text a source's chunks are places in.
+// extractText is the text a source's chunks are places in.
 //
 // A note's text is its file. A book's is what taking the text out of it produces,
 // and a chunk's offsets belong to that, not to the bytes on disk: slicing the
@@ -260,7 +260,7 @@ var errUnreadable = errors.New("nothing could be read from the source")
 //
 // Which reader produces it is decided in one place, so that what a search slices
 // and what an extractor cut are the same text.
-func extracted(ctx context.Context, reader text.Reader, path, from, hash string) (string, error) {
+func extractText(ctx context.Context, reader text.Reader, path, from, hash string) (string, error) {
 	doc, err := reader.Of(ctx, path, from, hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		return "", errUnreadable
@@ -322,14 +322,14 @@ const (
 	ByName
 )
 
-// Typing is the parameters for a search asked in the mode named, while a person
-// is still typing it: the last word is matched by its opening.
+// GetTypingParameters is the parameters for a search asked in the mode named,
+// while a person is still typing it: the last word is matched by its opening.
 //
 // A mode that is not wanted keeps no candidates, which is how one is told not
 // to run. Every mode but the one named is silenced, so a caller drawing them
 // apart is shown one of them and not one and a half.
-func Typing(mode Mode, limit int) Parameters {
-	p := Parameters{Limit: limit, Growing: true}.filled()
+func GetTypingParameters(mode Mode, limit int) Parameters {
+	p := Parameters{Limit: limit, Growing: true}.fill()
 	switch mode {
 	case Lexical:
 		p.Dense, p.Named = 0, 0

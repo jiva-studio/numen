@@ -12,9 +12,9 @@ const pointer = (type: string, x: number, y: number) =>
   new PointerEvent(type, { clientX: x, clientY: y, bubbles: true })
 
 /** A press under way, with the frame held until the test lets it come. */
-function following(threshold = 4) {
-  const settle = vi.fn<(held: string, at: Position | null) => void>()
-  const began = vi.fn<(held: string) => void>()
+function createPress(threshold = 4) {
+  const settle = vi.fn<(item: string, at: Position | null) => void>()
+  const begin = vi.fn<(item: string) => void>()
   let next: ((now: number) => void) | null = null
 
   /** A clock whose next frame comes when the test says so. */
@@ -32,18 +32,18 @@ function following(threshold = 4) {
   const scope = effectScope()
   const press = scope.run(() =>
     usePressDrag<string, Position>({
-      threshold: () => threshold,
-      clock: () => clock,
-      landingAt: (_held, at) => (at.x < 500 ? at : null),
+      getThreshold: () => threshold,
+      getClock: () => clock,
+      getLandingAt: (_item, at) => (at.x < 500 ? at : null),
       settle,
-      began,
+      begin,
     }),
   )!
 
   return {
     ...press,
     settle,
-    began,
+    begin,
     scope,
     frame: () => {
       const run = next
@@ -55,17 +55,17 @@ function following(threshold = 4) {
 
 describe('usePressDrag', () => {
   it('holds what was pressed without calling it a drag', () => {
-    const press = following()
+    const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
 
-    expect(press.dragging.value).toEqual({ held: 'a row', moved: false })
+    expect(press.dragging.value).toEqual({ item: 'a row', moved: false })
     expect(press.position.value).toBeNull()
-    expect(press.began).not.toHaveBeenCalled()
+    expect(press.begin).not.toHaveBeenCalled()
     press.scope.stop()
   })
 
   it('stays a press until the pointer passes the threshold', () => {
-    const press = following()
+    const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
 
     window.dispatchEvent(pointer('pointermove', 13, 13))
@@ -80,18 +80,18 @@ describe('usePressDrag', () => {
   })
 
   it('says a drag began once, however far it travels', () => {
-    const press = following()
+    const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
 
     window.dispatchEvent(pointer('pointermove', 40, 10))
     window.dispatchEvent(pointer('pointermove', 80, 10))
 
-    expect(press.began).toHaveBeenCalledExactlyOnceWith('a row')
+    expect(press.begin).toHaveBeenCalledExactlyOnceWith('a row')
     press.scope.stop()
   })
 
   it('settles on the landing the pointer was over', () => {
-    const press = following()
+    const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointermove', 40, 60))
     window.dispatchEvent(pointer('pointerup', 40, 60))
@@ -103,7 +103,7 @@ describe('usePressDrag', () => {
   })
 
   it('settles on nothing where the pointer is over no landing', () => {
-    const press = following()
+    const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointermove', 600, 60))
     window.dispatchEvent(pointer('pointerup', 600, 60))
@@ -113,7 +113,7 @@ describe('usePressDrag', () => {
   })
 
   it('settles nothing where the press never travelled', () => {
-    const press = following()
+    const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointerup', 11, 11))
 
@@ -122,7 +122,7 @@ describe('usePressDrag', () => {
   })
 
   it('holds what was carried one frame past the release', () => {
-    const press = following()
+    const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointermove', 40, 60))
     window.dispatchEvent(pointer('pointerup', 40, 60))
@@ -134,7 +134,7 @@ describe('usePressDrag', () => {
   })
 
   it('lets go of the window when the release comes', () => {
-    const press = following()
+    const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointermove', 40, 60))
     window.dispatchEvent(pointer('pointerup', 40, 60))
@@ -147,12 +147,12 @@ describe('usePressDrag', () => {
   })
 
   it('lets go of the window when the scope goes', () => {
-    const press = following()
+    const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     press.scope.stop()
 
     window.dispatchEvent(pointer('pointermove', 40, 60))
     expect(press.dragging.value).toBeNull()
-    expect(press.began).not.toHaveBeenCalled()
+    expect(press.begin).not.toHaveBeenCalled()
   })
 })

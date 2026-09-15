@@ -38,12 +38,12 @@ test('a catch that discards the error says why', () => {
     `${read.length} files holding a catch read: the walk is not reading them`,
   )
   assert.ok(
-    read.some((at) => at.endsWith('desktop/editor/src/note-tab/titles.ts')),
+    read.some((at) => at.endsWith('desktop/editor/src/pages/note-editor/model/titles.ts')),
     'the walk did not read titles.ts, whose bare catch is what this rule was written for',
   )
   assert.ok(
-    read.some((at) => at.endsWith('apps/mobile/src/plex/following.ts')),
-    "the walk did not read the phone's following.ts, so the rule stops at the mobile border",
+    read.some((at) => at.endsWith('apps/mobile/src/plex/follow.ts')),
+    "the walk did not read the phone's follow.ts, so the rule stops at the mobile border",
   )
 })
 
@@ -77,7 +77,7 @@ test('what the catch rule refuses', () => {
     {
       says: 'a catch that tells the person what went wrong',
       allowed: true,
-      source: 'try { open() } catch (why) { said(troubleWords(why), "refusal") }',
+      source: 'try { open() } catch (why) { said(formatErrorMessage(why), "refusal") }',
     },
     {
       says: 'a catch that puts the error back',
@@ -87,7 +87,7 @@ test('what the catch rule refuses', () => {
     {
       says: 'a catch naming the error inside a template literal',
       allowed: true,
-      source: 'try { open() } catch (why) { wrong.value = `unread ${troubleWords(why)}` }',
+      source: 'try { open() } catch (why) { wrong.value = `unread ${formatErrorMessage(why)}` }',
     },
     {
       says: 'a catch carrying a block comment',

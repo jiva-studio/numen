@@ -63,11 +63,11 @@ func OnFile(fault Fault, detail string) Problem {
 
 // OnCard files a problem about one card, counted from the deck's first card.
 func OnCard(card int, fault Fault, detail string) Problem {
-	return against(card, fault, detail)
+	return newCardProblem(card, fault, detail)
 }
 
-// against files a problem about one card.
-func against(card int, fault Fault, detail string) Problem {
+// newCardProblem files a problem about one card.
+func newCardProblem(card int, fault Fault, detail string) Problem {
 	return Problem{Fault: fault, Card: card, Face: NoPosition, Detail: detail}
 }
 

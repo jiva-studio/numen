@@ -9,14 +9,14 @@
 import { computed, nextTick, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/classes'
 import {
-  allowed,
-  clamped,
+  isAllowed,
+  clamp,
   numberOf,
   onItsWay,
-  settled,
-  standsFor,
-  walked,
-  written,
+  snapToBounds,
+  isTextForValue,
+  stepForKey,
+  formatNumber,
   DEFAULT_BOUNDS,
 } from './number'
 
@@ -44,15 +44,15 @@ const props = withDefaults(
 /** The number in force. An empty field holds none. */
 const model = defineModel<number | null>({ default: null })
 
-const raises = defineEmits<{
+const emit = defineEmits<{
   /** The field come to rest at a number other than the one it was resting at. */
-  settles: [value: number | null]
+  settle: [value: number | null]
 }>()
 
 const bounds = computed(() => ({ min: props.min, max: props.max, step: props.step }))
 
 /** What stands in the field, which is what was typed until the field is left. */
-const typed = ref(written(model.value))
+const typed = ref(formatNumber(model.value))
 
 /** The number the field last stood at rest at. Settling is what moves it. */
 let rested = model.value
@@ -68,16 +68,14 @@ const refused = computed(() => {
   if (said === '') return false
   if (!onItsWay(said)) return true
   const value = numberOf(said)
-  return value !== null && value !== clamped(value, bounds.value)
+  return value !== null && value !== clamp(value, bounds.value)
 })
 
 /** What a refused line is said as, so it is read out and not only marked. */
 const saying = computed(() => (refused.value ? typed.value.trim() : undefined))
 
 /** The number in force, which is a number the bounds hold. */
-const inForce = computed(() =>
-  model.value === null ? null : clamped(model.value, bounds.value),
-)
+const inForce = computed(() => (model.value === null ? null : clamp(model.value, bounds.value)))
 
 /** A number the bounds no longer hold is brought in, and stands there written out. */
 watch(
@@ -85,7 +83,7 @@ watch(
   (now) => {
     if (now === model.value) return
     model.value = now
-    typed.value = written(now)
+    typed.value = formatNumber(now)
     rested = now
   },
   { immediate: true },
@@ -95,15 +93,15 @@ const element = useTemplateRef<HTMLInputElement>('element')
 
 /** A number set from outside is written out; typing that means it is left alone. */
 watch(model, (now) => {
-  if (standsFor(typed.value, now)) return
-  typed.value = written(now)
+  if (isTextForValue(typed.value, now)) return
+  typed.value = formatNumber(now)
   rested = now
 })
 
-const took = (event: Event) => {
+const onInput = (event: Event) => {
   typed.value = (event.target as HTMLInputElement).value
   if (typed.value.trim() === '') model.value = null
-  else if (allowed(typed.value, bounds.value)) model.value = numberOf(typed.value)
+  else if (isAllowed(typed.value, bounds.value)) model.value = numberOf(typed.value)
 }
 
 /**
@@ -115,16 +113,16 @@ const took = (event: Event) => {
  */
 const settle = async () => {
   const value = numberOf(typed.value)
-  const now = value === null ? null : settled(value, bounds.value)
+  const now = value === null ? null : snapToBounds(value, bounds.value)
   model.value = now
-  typed.value = written(now)
+  typed.value = formatNumber(now)
   if (now !== rested) {
     rested = now
-    raises('settles', now)
+    emit('settle', now)
   }
   await nextTick()
-  if (!standsFor(typed.value, model.value)) {
-    typed.value = written(model.value)
+  if (!isTextForValue(typed.value, model.value)) {
+    typed.value = formatNumber(model.value)
     rested = model.value
   }
 }
@@ -133,17 +131,17 @@ const settle = async () => {
  * A key the spin button answers: the arrows a step, the page keys ten, and home
  * and end the ends. Enter settles the field where it stands.
  */
-const pressed = (event: KeyboardEvent) => {
+const onKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     void settle()
     return
   }
-  const said = walked(event.key, numberOf(typed.value) ?? model.value, bounds.value)
+  const said = stepForKey(event.key, numberOf(typed.value) ?? model.value, bounds.value)
   if (said === null) return
   event.preventDefault()
   if (props.disabled) return
   model.value = said
-  typed.value = written(said)
+  typed.value = formatNumber(said)
 }
 
 defineExpose({
@@ -171,18 +169,18 @@ defineExpose({
     :aria-invalid="refused || undefined"
     :class="
       cn(
-        'w-full rounded-tight border border-field-rule bg-field',
+        'rounded-tight border-field-rule bg-field w-full border',
         // One row tall, which every control standing on a row is drawn at.
         'h-action px-2',
-        'font-sans text-base leading-none text-ink tabular-nums placeholder:text-hushed',
-        'outline-none ring-numen',
+        'text-ink placeholder:text-hushed font-sans text-base leading-none tabular-nums',
+        'ring-numen outline-none',
         'aria-invalid:border-alarm aria-invalid:text-alarm',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )
     "
-    @input="took"
+    @input="onInput"
     @blur="settle"
-    @keydown="pressed"
+    @keydown="onKeyDown"
   />
 </template>

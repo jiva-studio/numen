@@ -991,7 +991,7 @@ type ReadNoteResponse struct {
 	// note is refused.
 	Body string `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`
 	// Set when the note was not read, and why.
-	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file this prose came out of. Absent when the note was refused.
 	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1035,11 +1035,11 @@ func (x *ReadNoteResponse) GetBody() string {
 	return ""
 }
 
-func (x *ReadNoteResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *ReadNoteResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ReadNoteResponse) GetAt() *Fingerprint {
@@ -1173,7 +1173,7 @@ func (x *WriteNoteRequest) GetSeen() *LastRead {
 type WriteNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was written, and why.
-	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1215,11 +1215,11 @@ func (*WriteNoteResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *WriteNoteResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *WriteNoteResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *WriteNoteResponse) GetAt() *Fingerprint {
@@ -1368,7 +1368,7 @@ type CreateNoteResponse struct {
 	// Where the note is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Set when the note is on disk and the index would not come level with it.
 	// The note was made and `path` stands; search does not answer about it until
 	// a walk goes past.
@@ -1414,11 +1414,11 @@ func (x *CreateNoteResponse) GetPath() string {
 	return ""
 }
 
-func (x *CreateNoteResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *CreateNoteResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *CreateNoteResponse) GetUnlevelled() bool {
@@ -1484,9 +1484,9 @@ func (x *WriteLinkRequest) GetLink() *Link {
 type WriteLinkResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was written, and why. A note that moved between being
-	// read and being written is REFUSAL_STALE, and the caller reads it again
+	// read and being written is ERROR_CODE_STALE, and the caller reads it again
 	// before asking for this.
-	Refusal       *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error         *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1521,11 +1521,11 @@ func (*WriteLinkResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *WriteLinkResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *WriteLinkResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 type RenameNoteRequest struct {
@@ -1597,8 +1597,8 @@ type RenameNoteResponse struct {
 	Moved *MoveResult `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when the rename did not finish, and why. The note may already have been
 	// written: `path`, `title` and `by` say what stands. A note holding prose the
-	// caller never saw is REFUSAL_STALE, and nothing was written at all.
-	Refusal *Refusal `protobuf:"varint,5,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// caller never saw is ERROR_CODE_STALE, and nothing was written at all.
+	Error *ErrorCode `protobuf:"varint,5,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Set when the rename reached the vault and the index would not come level
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
@@ -1665,11 +1665,11 @@ func (x *RenameNoteResponse) GetMoved() *MoveResult {
 	return nil
 }
 
-func (x *RenameNoteResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *RenameNoteResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *RenameNoteResponse) GetUnlevelled() bool {
@@ -1851,13 +1851,12 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04line\x18\x02 \x01(\x05R\x04line\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\x05R\x05level\"%\n" +
 	"\x0fReadNoteRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x97\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x93\x01\n" +
 	"\x10ReadNoteResponse\x12\x12\n" +
-	"\x04body\x18\x01 \x01(\tR\x04body\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusalB\x05\n" +
+	"\x04body\x18\x01 \x01(\tR\x04body\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\b\n" +
+	"\x06_errorB\x05\n" +
 	"\x03_at\"G\n" +
 	"\bLastRead\x12\x14\n" +
 	"\x05prose\x18\x01 \x01(\tR\x05prose\x12%\n" +
@@ -1866,15 +1865,14 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x12+\n" +
 	"\x04seen\x18\x03 \x01(\v2\x12.numen.v1.LastReadH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa4\x01\n" +
-	"\x11WriteNoteResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
+	"\x05_seen\"\xa0\x01\n" +
+	"\x11WriteNoteResponse\x12.\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\n" +
-	"\n" +
-	"\b_refusalB\x05\n" +
+	"unlevelledB\b\n" +
+	"\x06_errorB\x05\n" +
 	"\x03_at\"P\n" +
 	"\x04Link\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x12\"\n" +
@@ -1883,37 +1881,34 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x11CreateNoteRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12$\n" +
-	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\x86\x01\n" +
+	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\x82\x01\n" +
 	"\x12CreateNoteResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\n" +
-	"\n" +
-	"\b_refusal\"J\n" +
+	"unlevelledB\b\n" +
+	"\x06_error\"J\n" +
 	"\x10WriteLinkRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
-	"\x04link\x18\x02 \x01(\v2\x0e.numen.v1.LinkR\x04link\"Q\n" +
-	"\x11WriteLinkResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal\"=\n" +
+	"\x04link\x18\x02 \x01(\v2\x0e.numen.v1.LinkR\x04link\"M\n" +
+	"\x11WriteLinkResponse\x12.\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xfa\x01\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xf6\x01\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
 	"\x02by\x18\x03 \x01(\x0e2\x11.numen.v1.NamedByR\x02by\x12/\n" +
-	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x120\n" +
-	"\arefusal\x18\x05 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
+	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x06 \x01(\bR\n" +
 	"unlevelledB\b\n" +
-	"\x06_movedB\n" +
-	"\n" +
-	"\b_refusal\"\x13\n" +
+	"\x06_movedB\b\n" +
+	"\x06_error\"\x13\n" +
 	"\x11WatchEditsRequest\"\x8c\x01\n" +
 	"\x12WatchEditsResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +
@@ -2001,7 +1996,7 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(*WatchEditsRequest)(nil),        // 28: numen.v1.WatchEditsRequest
 	(*WatchEditsResponse)(nil),       // 29: numen.v1.WatchEditsResponse
 	(NoteType)(0),                    // 30: numen.v1.NoteType
-	(Refusal)(0),                     // 31: numen.v1.Refusal
+	(ErrorCode)(0),                   // 31: numen.v1.ErrorCode
 	(*Fingerprint)(nil),              // 32: numen.v1.Fingerprint
 	(*MoveResult)(nil),               // 33: numen.v1.MoveResult
 	(*Span)(nil),                     // 34: numen.v1.Span
@@ -2017,20 +2012,20 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	11, // 7: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
 	14, // 8: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
 	15, // 9: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
-	31, // 10: numen.v1.ReadNoteResponse.refusal:type_name -> numen.v1.Refusal
+	31, // 10: numen.v1.ReadNoteResponse.error:type_name -> numen.v1.ErrorCode
 	32, // 11: numen.v1.ReadNoteResponse.at:type_name -> numen.v1.Fingerprint
 	32, // 12: numen.v1.LastRead.at:type_name -> numen.v1.Fingerprint
 	18, // 13: numen.v1.WriteNoteRequest.seen:type_name -> numen.v1.LastRead
-	31, // 14: numen.v1.WriteNoteResponse.refusal:type_name -> numen.v1.Refusal
+	31, // 14: numen.v1.WriteNoteResponse.error:type_name -> numen.v1.ErrorCode
 	32, // 15: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.Fingerprint
 	1,  // 16: numen.v1.Link.role:type_name -> numen.v1.Role
 	21, // 17: numen.v1.CreateNoteRequest.links:type_name -> numen.v1.Link
-	31, // 18: numen.v1.CreateNoteResponse.refusal:type_name -> numen.v1.Refusal
+	31, // 18: numen.v1.CreateNoteResponse.error:type_name -> numen.v1.ErrorCode
 	21, // 19: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.Link
-	31, // 20: numen.v1.WriteLinkResponse.refusal:type_name -> numen.v1.Refusal
+	31, // 20: numen.v1.WriteLinkResponse.error:type_name -> numen.v1.ErrorCode
 	2,  // 21: numen.v1.RenameNoteResponse.by:type_name -> numen.v1.NamedBy
 	33, // 22: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
-	31, // 23: numen.v1.RenameNoteResponse.refusal:type_name -> numen.v1.Refusal
+	31, // 23: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
 	34, // 24: numen.v1.WatchEditsResponse.span:type_name -> numen.v1.Span
 	4,  // 25: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
 	6,  // 26: numen.v1.NoteService.GetNeighbourhood:input_type -> numen.v1.GetNeighbourhoodRequest

@@ -14,12 +14,12 @@ import (
 // Config is the core's configuration with what this machine supplies already in
 // it. What a settings file says is read over it.
 func Config() container.Config {
-	return container.Config{AgentProofreader: proofreading}
+	return container.Config{AgentProofreader: openProofreader}
 }
 
-// proofreading opens a proofreading profile that reaches the command line the
-// person already has installed.
-func proofreading(said container.ProofreaderSpec) (port.Proofreader, error) {
+// openProofreader opens a proofreading profile that reaches the command line
+// the person already has installed.
+func openProofreader(said container.ProofreaderSpec) (port.Proofreader, error) {
 	return &claudecode.Proofreader{
 		Command:     said.Command,
 		Model:       said.Model,

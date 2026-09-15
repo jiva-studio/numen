@@ -56,9 +56,9 @@ type Agent struct {
 	ReadsHooksAndSkills bool
 	// Turns is how many times the agent may go to the model before it is stopped.
 	Turns int
-	// Trouble is told what the agent wrote to its error output when something
-	// went wrong.
-	Trouble func(error)
+	// ErrorHandler is told what the agent wrote to its error output when
+	// something went wrong.
+	ErrorHandler func(error)
 
 	// carried is the session each conversation is on so far, under the name the
 	// task gave its conversation. The next question of a conversation is asked
@@ -152,9 +152,9 @@ func (a *Agent) Finish(_ context.Context, conversation string) error {
 	return failed
 }
 
-// carries is the session the next question of this conversation is asked in,
+// getSession is the session the next question of this conversation is asked in,
 // empty for a conversation nothing has been asked in yet.
-func (a *Agent) carries(conversation string) string {
+func (a *Agent) getSession(conversation string) string {
 	if conversation == "" {
 		return ""
 	}
@@ -163,9 +163,9 @@ func (a *Agent) carries(conversation string) string {
 	return a.carried.sessions[conversation]
 }
 
-// carrying is what one run tells the session it is on to. It is kept under
-// that run's conversation, and a run that named none is kept nowhere.
-func (a *Agent) carrying(conversation string) func(string) {
+// makeSessionKeeper is what one run tells the session it is on to. It is kept
+// under that run's conversation, and a run that named none is kept nowhere.
+func (a *Agent) makeSessionKeeper(conversation string) func(string) {
 	if conversation == "" {
 		return func(string) {}
 	}
@@ -250,7 +250,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 		defer close(w.steps)
 		defer os.Remove(configuration)
 
-		failed := read(running, out, w.steps, a.Words, a.carrying(task.Conversation), a.Drafting)
+		failed := read(running, out, w.steps, a.Words, a.makeSessionKeeper(task.Conversation), a.Drafting)
 
 		err := cmd.Wait()
 		if running.Err() != nil {
@@ -264,8 +264,8 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 		case w.steps <- port.Step{Kind: port.StepStopped, Detail: failed}:
 		case <-running.Done():
 		}
-		if err != nil && a.Trouble != nil {
-			a.Trouble(fmt.Errorf("%s: %w: %s", name, err, strings.TrimSpace(said.String())))
+		if err != nil && a.ErrorHandler != nil {
+			a.ErrorHandler(fmt.Errorf("%s: %w: %s", name, err, strings.TrimSpace(said.String())))
 		}
 	}()
 	return w, nil
@@ -273,7 +273,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 
 func (a *Agent) command() (string, []string) {
 	if len(a.Command) == 0 {
-		return installed(), nil
+		return findCommand(), nil
 	}
 	return a.Command[0], a.Command[1:]
 }
@@ -336,7 +336,7 @@ func (a *Agent) arguments(task port.Task, configuration string) []string {
 	// --tools offers it; the allowance is what lets it be called, and nothing
 	// outside the allowance is called at all under this mode.
 	args = append(args, "--allowedTools", strings.Join(append([]string{brought}, a.Allowed...), ","))
-	if session := a.carries(task.Conversation); session != "" {
+	if session := a.getSession(task.Conversation); session != "" {
 		args = append(args, "--resume", session)
 	}
 	return args

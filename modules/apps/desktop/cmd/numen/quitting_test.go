@@ -14,7 +14,7 @@ type screen struct {
 	seen []string
 }
 
-func watching() *screen { return &screen{} }
+func makeScreen() *screen { return &screen{} }
 
 func (s *screen) sight() visibility {
 	return visibility{hide: func() { s.mark("hide") }, show: func() { s.mark("show") }}
@@ -85,7 +85,7 @@ func TestACloseCalledOffCanBeAskedForAgain(t *testing.T) {
 	if g.wait() {
 		t.Fatal("a question standing let the window go")
 	}
-	if g.settled() {
+	if g.isSettled() {
 		t.Error("a called-off close left the vault settled")
 	}
 	if g.wait() {
@@ -94,7 +94,7 @@ func TestACloseCalledOffCanBeAskedForAgain(t *testing.T) {
 	if !g.wait() {
 		t.Fatal("the ask after the question was answered did not let the window go")
 	}
-	if !g.settled() {
+	if !g.isSettled() {
 		t.Error("the vault settled and does not say so")
 	}
 	if vault.times() != 3 {
@@ -167,7 +167,7 @@ func TestAQuitAskedForElsewhereDoesNotGoOnAQuestion(t *testing.T) {
 	g := &going{settle: vault.settle}
 
 	quit := make(chan struct{}, 1)
-	if asked(g, watching().sight(), func() { quit <- struct{}{} }) {
+	if requestQuit(g, makeScreen().sight(), func() { quit <- struct{}{} }) {
 		t.Fatal("the quit went before the vault settled")
 	}
 
@@ -184,7 +184,7 @@ func TestAQuitAskedForElsewhereGoesOnceTheVaultSettles(t *testing.T) {
 	g := &going{settle: vault.settle}
 
 	quit := make(chan struct{}, 1)
-	if asked(g, watching().sight(), func() { quit <- struct{}{} }) {
+	if requestQuit(g, makeScreen().sight(), func() { quit <- struct{}{} }) {
 		t.Fatal("the quit went before the vault settled")
 	}
 
@@ -193,7 +193,7 @@ func TestAQuitAskedForElsewhereGoesOnceTheVaultSettles(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the quit was never asked for again")
 	}
-	if !asked(g, watching().sight(), func() { t.Error("a settled vault was quit twice") }) {
+	if !requestQuit(g, makeScreen().sight(), func() { t.Error("a settled vault was quit twice") }) {
 		t.Error("a settled vault refused the quit")
 	}
 }
@@ -212,7 +212,7 @@ func TestAQuestionCallsTheCloseOffAndTheWindowIsAskedForAgain(t *testing.T) {
 	}
 	again := make(chan struct{}, 1)
 
-	if closing(t.Context(), g, watching().sight(), answered, func() { again <- struct{}{} }) {
+	if closeWindow(t.Context(), g, makeScreen().sight(), answered, func() { again <- struct{}{} }) {
 		t.Fatal("a question standing let the window go")
 	}
 	select {
@@ -238,7 +238,7 @@ func TestAWindowNobodyAnswersForIsNotAskedForAgain(t *testing.T) {
 	g := &going{settle: vault.settle}
 
 	again := make(chan struct{}, 1)
-	if closing(t.Context(), g, watching().sight(), func(context.Context) bool { return false }, func() {
+	if closeWindow(t.Context(), g, makeScreen().sight(), func(context.Context) bool { return false }, func() {
 		again <- struct{}{}
 	}) {
 		t.Fatal("a question standing let the window go")
@@ -255,7 +255,7 @@ func TestAWindowNobodyAnswersForIsNotAskedForAgain(t *testing.T) {
 func TestAWindowWithNothingOwedIsDestroyed(t *testing.T) {
 	g := &going{settle: settles(true).settle}
 
-	if !closing(t.Context(), g, watching().sight(), func(context.Context) bool {
+	if !closeWindow(t.Context(), g, makeScreen().sight(), func(context.Context) bool {
 		t.Error("a settled vault was waited on for an answer")
 		return false
 	}, func() { t.Error("a settled vault asked for the close again") }) {
@@ -266,14 +266,14 @@ func TestAWindowWithNothingOwedIsDestroyed(t *testing.T) {
 // TestTheWindowIsOutOfSightBeforeTheSettlingBegins. The window goes from the
 // screen when the close is asked for, and everything owed lands behind it.
 func TestTheWindowIsOutOfSightBeforeTheSettlingBegins(t *testing.T) {
-	seen := watching()
+	seen := makeScreen()
 	begun := make(chan []string, 1)
 	g := &going{settle: func(context.Context) bool {
 		begun <- seen.was()
 		return true
 	}}
 
-	if !closing(t.Context(), g, seen.sight(), func(context.Context) bool {
+	if !closeWindow(t.Context(), g, seen.sight(), func(context.Context) bool {
 		t.Error("a settled vault was waited on for an answer")
 		return false
 	}, func() { t.Error("a settled vault asked for the close again") }) {
@@ -297,11 +297,11 @@ func TestTheWindowIsOutOfSightBeforeTheSettlingBegins(t *testing.T) {
 // question standing is a window on the screen the person answers on, and an
 // application that has not gone.
 func TestAQuestionPutsTheWindowBackAndHoldsTheQuitOff(t *testing.T) {
-	seen := watching()
+	seen := makeScreen()
 	g := &going{settle: settles(false).settle}
 
 	quit := make(chan struct{}, 1)
-	if asked(g, seen.sight(), func() { quit <- struct{}{} }) {
+	if requestQuit(g, seen.sight(), func() { quit <- struct{}{} }) {
 		t.Fatal("the quit went before the vault settled")
 	}
 

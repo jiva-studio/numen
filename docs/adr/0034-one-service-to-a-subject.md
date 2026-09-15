@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-09-04
-- **Applies to:** `modules/libs/protocol`; `modules/libs/core` — `adapter/window/editor`, `adapter/window/flashcards`
+- **Applies to:** `modules/libs/protocol`, `modules/libs/core`
 - **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [Review is an application of its own](0027-review-is-an-application-of-its-own.md), [Both windows open a vault through one path](0033-both-windows-open-a-vault-through-one-path.md)
 
 ## Context
@@ -25,31 +25,31 @@ A file is a place, not a subject. A service gathering every question that happen
 
 A window answers every call of a service it serves. A question one binary cannot answer therefore does not go on a service that binary needs: it goes on a service of its own, or it stays where it is. What is left unanswered is what a composition binds no use case to, which is a fact about that build and not about the shape of the wire.
 
-The two calls that read a deck's preset are the case. The editor builds the use case that writes a preset and the review window does not, so folding the review window's call into `PresetsService` would put `CreatePreset` in front of a binary that cannot answer it — or answer it unimplemented, which is the thing this split exists to take out. The two stay, and the whole of the duplication is one pair of messages.
+The two calls that read a deck's preset are the case. The editor builds the use case that writes a preset and the review window does not, so folding the review window's call into the presets service would put the call that writes a preset in front of a binary that cannot answer it — or answer it unimplemented, which is the thing this split exists to take out. The two stay, and the whole of the duplication is one pair of messages.
 
-The files of the vault are the other. The phone serves the vault's notes to a network, over a socket answering any origin at all, and must serve none of what is on the person's disk beside them: a book's pages, where a recording is played from, a model set running over either. Those are services of their own, and the phone declines every one of them. `FileService` is the tree and not the bytes — what a folder holds and where a file is filed — and the phone draws its own tree out of it, so it mounts that one.
+The files of the vault are the other. The phone serves the vault's notes to a network, over a socket answering any origin at all, and must serve none of what is on the person's disk beside them: a book's pages, where a recording is played from, a model set running over either. Those are services of their own, and the phone declines every one of them. The service of the vault's files is the tree and not the bytes — what a folder holds and where a file is filed — and the phone draws its own tree out of it, so it mounts that one.
 
 ### A window is a scope
 
-Every call of `WindowService` names the window it is about, and one that names another window than the one answering is not answered. Two windows are open on one installation at once, and which vault each has in front of the person, what each is doing behind itself, and what it is owed before it can go, are the window's and not the installation's. That is why the list of vaults no longer says which one is being shown: the list is the same for both windows and the answer is not.
+Every call of the window's service names the window it is about, and one that names another window than the one answering is not answered. Two windows are open on one installation at once, and which vault each has in front of the person, what each is doing behind itself, and what it is owed before it can go, are the window's and not the installation's. That is why the list of vaults no longer says which one is being shown: the list is the same for both windows and the answer is not.
 
-The review window is open on the installation rather than on any one vault — it says what is owed across all of them and names a vault in every call — so it answers `GetShownVault` with none. That is the answer, not a stub: a window standing on nothing gives the same one.
+The review window is open on the installation rather than on any one vault — it says what is owed across all of them and names a vault in every call — so it answers with none when asked which vault it shows. That is the answer, not a stub: a window standing on nothing gives the same one.
 
-### A service is one subject in a file of its own, and the types three services hold are `shared.proto`
+### A service is one subject in a file of its own, and the types three services hold stand in a file of their own
 
-Each service has a file of its own, and a file that has grown a second subject is split: each subject becomes a service in a file of its own. `WorkspaceService` came out of `VaultService` that way, because where the person stands is the window's and what the vault holds is not.
+Each service has a file of its own, and a file that has grown a second subject is split: each subject becomes a service in a file of its own. The service for where the person stands came out of the vault's that way, because where the person stands is the window's and what the vault holds is not.
 
-`shared.proto` holds what three or more services use: `Refusal`, `NoteType`, `Fingerprint` and `Stretch`. It declares no service and imports nothing, and it is the base of the import graph.
+The shared file holds what three or more services use: the code an error carries, what kind a note is, the fingerprint of a file and a range in a text. It declares no service and imports nothing, and it is the base of the import graph.
 
-**A type enters `shared.proto` only when three services already use it.** Two services holding one type is a coincidence; three is a shape. Everything else stays in the file of the service that answers with it, and the service that wants it imports that file. `Note` and `Heading` are `NoteService`'s and `SearchService` imports them; `SourceKind` and `MoveResult` are `FileService`'s, and `NoteService` and `SearchService` import them.
+**A type enters the shared file only when three services already use it.** Two services holding one type is a coincidence; three is a shape. Everything else stays in the file of the service that answers with it, and the service that wants it imports that file: a note and its headings belong to the service of notes and search imports them; what kind a source is and what a move came back with belong to the service of the vault's files, and the services of notes and of search import them.
 
 Under any looser rule the shared file admits whatever might be wanted twice and fills with types nothing in particular owns, and a type that arrives there early is one every service is written around afterwards.
 
-The shared types are a file of their own and not a service's file, because a service's file is what that service answers with. `Refusal` is a note's, and `VaultService` never says one; a file whose contents the rule above describes exactly is the only file that can hold all four.
+The shared types are a file of their own and not a service's file, because a service's file is what that service answers with. The code an error carries is a note's, and the vault's service never says one; a file whose contents the rule above describes exactly is the only file that can hold all four.
 
 ### The service's name in front of a message is a cost of the flat package, not a reason to move it
 
-Every file is the one proto package, so a message name is unique across the whole wire, and two services that both answer a `List` cannot both have a `ListRequest`. The lint's answer is to put the service's name in front of the second, and that is where the cost is paid. It is not paid by lifting the message somewhere shared.
+Every file is the one proto package, so a message name is unique across the whole wire, and two services that both answer a call of the same name cannot both name its request after it. The lint's answer is to put the service's name in front of the second, and that is where the cost is paid. It is not paid by lifting the message somewhere shared.
 
 ## Consequences
 
@@ -62,7 +62,7 @@ Every file is the one proto package, so a message name is unique across the whol
 
 ## Alternatives considered
 
-**A proto package per service.** Rejected: `Refusal` and `Fingerprint` would then be imported across packages, and every generated client would carry a path per service where it now carries one. The prefixed names are the whole of what the flat package costs.
+**A proto package per service.** Rejected: the shared types would then be imported across packages, and every generated client would carry a path per service where it now carries one. The prefixed names are the whole of what the flat package costs.
 
 **A service per window.** Rejected: both windows ask about the agent, the theme and the window itself, so a service per window is those three written twice and drifting apart.
 

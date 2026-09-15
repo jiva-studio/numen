@@ -10,7 +10,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/csp"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/csp"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -24,7 +24,7 @@ var errShut = errors.New("this window is shut")
 
 // Pages is the interface itself, built by `make interface` and carried inside
 // the binary. A binary built without it says so.
-func Pages() (http.Handler, error) { return wire.Serving(pages) }
+func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
 // served is one service this build answers: where its calls arrive, and what
 // answers them.
@@ -36,15 +36,15 @@ type served struct {
 // mount takes a generated handler and the path it answers under as one.
 func mount(at string, to http.Handler) served { return served{at: at, to: to} }
 
-// Serving puts the questions in front of the pages, so that a window and a
+// NewHandler puts the questions in front of the pages, so that a window and a
 // browser are answered by one handler.
 //
 // named is the services this build answers, by the names the schema gives them.
 // A service left out is not mounted, and a call of one is unanswered because
 // nothing serves it — not because a handler standing there has nothing behind
 // it. Naming none is a build that answers the whole schema.
-func (a *API) Serving(files http.Handler, named ...string) http.Handler {
-	counted := a.counting()
+func (a *API) NewHandler(files http.Handler, named ...string) http.Handler {
+	counted := a.newQuestionCounter()
 	serves := func(service string) bool {
 		return len(named) == 0 || slices.Contains(named, service)
 	}
@@ -101,6 +101,9 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	if serves(numenv1connect.RecordingServiceName) {
 		routes = append(routes, mount(numenv1connect.NewRecordingServiceHandler(a, counted)))
 	}
+	if serves(numenv1connect.BookServiceName) {
+		routes = append(routes, mount(numenv1connect.NewBookServiceHandler(a, counted)))
+	}
 	// The themes belong to the installation and arrive here from whatever put
 	// the window together, so a build put together without a catalogue serves
 	// none.
@@ -108,10 +111,10 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 		routes = append(routes, mount(numenv1connect.NewThemeServiceHandler(a.Themes, counted)))
 	}
 
-	// A page of a document is what a browser's own elements speak, and it is
-	// the document, so it is served where the document is answered about and
-	// nowhere else.
-	bytes := serves(numenv1connect.DocumentServiceName)
+	// A page of a document, the markup of a book and a picture the book carries
+	// are what a browser's own elements speak, and each is the thing itself, so
+	// they are served where that thing is answered about and nowhere else.
+	bytes := serves(numenv1connect.DocumentServiceName) || serves(numenv1connect.BookServiceName)
 
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for. What a link note
@@ -120,13 +123,13 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	// directly: a host is told which address holds its player, and a window
 	// drawn from a scheme of its own has none to give.
 	policy := csp.Sources{
-		Media:  a.Playing.named(),
-		Frames: a.Playing.named(),
+		Media:  a.Playing.getPlayOrigins(),
+		Frames: a.Playing.getPlayOrigins(),
 	}.Policy()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
 		// A window being taken away answers nothing.
-		if a.closed() {
+		if a.isClosed() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
@@ -142,7 +145,7 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 				http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 				return
 			}
-			defer a.questions.done()
+			defer a.questions.finish()
 			a.Asset(w, r)
 		case slices.Contains(wire.OpenedAt, r.URL.Path):
 			wire.Page(w, r, pages, a.Themes, files)
@@ -152,19 +155,19 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	})
 }
 
-// counting takes every question a client asks and gives it back when it is
+// newQuestionCounter takes every question a client asks and gives it back when it is
 // answered, so the index closes with nothing reading it.
 //
 // A stream is left out: it lives as long as the page that opened it, and the
 // window closes while its pages are still drawn.
-func (a *API) counting() connect.HandlerOption {
+func (a *API) newQuestionCounter() connect.HandlerOption {
 	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {
 			return func(ctx context.Context, r connect.AnyRequest) (connect.AnyResponse, error) {
 				if !a.questions.begin() {
 					return nil, connect.NewError(connect.CodeUnavailable, errShut)
 				}
-				defer a.questions.done()
+				defer a.questions.finish()
 				return next(ctx, r)
 			}
 		},

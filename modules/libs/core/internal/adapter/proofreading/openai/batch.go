@@ -99,7 +99,7 @@ func (c *Client) Leave(ctx context.Context, pages []proofread.Batch) (string, er
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return "", fmt.Errorf("leaving %d pages: %d %s: %s", len(pages),
-			resp.StatusCode, http.StatusText(resp.StatusCode), c.said(resp.Body))
+			resp.StatusCode, http.StatusText(resp.StatusCode), c.readDetail(resp.Body))
 	}
 
 	var left batch
@@ -134,7 +134,7 @@ func (c *Client) Collect(ctx context.Context, name string) (map[int]string, bool
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, false, fmt.Errorf("batch %s: %d %s: %s", name,
-			resp.StatusCode, http.StatusText(resp.StatusCode), c.said(resp.Body))
+			resp.StatusCode, http.StatusText(resp.StatusCode), c.readDetail(resp.Body))
 	}
 
 	var held batch
@@ -171,9 +171,9 @@ func (c *Client) queue(path string) string {
 	return strings.TrimSuffix(c.service.BatchURL, "/") + path
 }
 
-// said is a short piece of what the service answered, with the key struck out
+// readDetail is a short piece of what the service answered, with the key struck out
 // of it.
-func (c *Client) said(body io.Reader) string {
+func (c *Client) readDetail(body io.Reader) string {
 	read, _ := io.ReadAll(io.LimitReader(body, 512))
 	return c.detail(read)
 }

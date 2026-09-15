@@ -13,7 +13,7 @@ import (
 // it comes round again: the better it came back, the longer it is left.
 func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 	by := review.NewFSRS()
-	when := at("2026-08-29T09:00:00Z")
+	when := parseTime("2026-08-29T09:00:00Z")
 
 	// A card already spaced, so that the four answers are told apart by what
 	// they do to it rather than by the first steps of learning.
@@ -34,7 +34,7 @@ func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 // A card that did not come back at all is a lapse, and it is counted.
 func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 	by := review.NewFSRS()
-	when := at("2026-08-29T09:00:00Z")
+	when := parseTime("2026-08-29T09:00:00Z")
 
 	learnt := by.Next(by.Next(review.Schedule{}, when, review.Good),
 		when.Add(10*24*time.Hour), review.Good)
@@ -55,9 +55,9 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 // reached yet.
 func TestAnAnsweredCardIsSeen(t *testing.T) {
 	by := review.NewFSRS()
-	when := at("2026-08-29T09:00:00Z")
+	when := parseTime("2026-08-29T09:00:00Z")
 
-	if by.Next(review.Schedule{}, when, review.Good).Seen() != true {
+	if by.Next(review.Schedule{}, when, review.Good).IsSeen() != true {
 		t.Error("a card answered once is not seen")
 	}
 	if got := by.Next(review.Schedule{}, when, review.Good).Last; !got.Equal(when) {
@@ -75,7 +75,7 @@ func TestAnAnsweredCardIsSeen(t *testing.T) {
 // place of a curve.
 func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
 	by := review.NewFSRS()
-	when := at("2026-08-29T09:00:00Z")
+	when := parseTime("2026-08-29T09:00:00Z")
 
 	// A spread of card faces: one nobody has answered, ones the scheduler is
 	// still putting into memory, and ones it has put into review.
@@ -132,14 +132,14 @@ func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
 // A schedule says which scheduler filled it, because the numbers one carries
 // between answers are its own.
 func TestASchedulerSaysWhichItIs(t *testing.T) {
-	got := review.NewFSRS().Name()
+	got := review.NewFSRS().GetName()
 	if !strings.HasPrefix(got, review.FSRSName+".") {
 		t.Errorf("named itself %q, want the algorithm and what it is running on", got)
 	}
 	if got == review.FSRSName+"." {
 		t.Error("named itself the algorithm and nothing about its parameters")
 	}
-	if again := review.NewFSRS().Name(); again != got {
+	if again := review.NewFSRS().GetName(); again != got {
 		t.Errorf("named itself %q and then %q", got, again)
 	}
 }

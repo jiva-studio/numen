@@ -10,9 +10,9 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// pointing is a deck of as many cards naming this preset. A deck naming none is
-// written with an empty name.
-func pointing(at string, cards int, from int) string {
+// newWordDeck is a deck of as many cards naming this preset. A deck naming none
+// is written with an empty name.
+func newWordDeck(at string, cards int, from int) string {
 	out := "---\ntype: deck\n"
 	if at != "" {
 		out += "links:\n  - to: " + at + "\n    role: ref\n    type: preset\n"
@@ -36,21 +36,21 @@ var presetted = map[string]string{
 		"new_a_day: 2\nreviews_a_day: 0\n---\n\n# Other\n",
 	"Lonely.md": "---\ntype: preset\ngoal: retention\n" +
 		"new_a_day: 2\nreviews_a_day: 0\n---\n\n# Lonely\n",
-	"decks/Birds.md":  pointing("Steady", 4, 0),
-	"decks/Rivers.md": pointing("Other", 4, 100),
+	"decks/Birds.md":  newWordDeck("Steady", 4, 0),
+	"decks/Rivers.md": newWordDeck("Other", 4, 100),
 }
 
-// naming is the preset a request names, as the window sends it.
-func naming(preset string) *string { return &preset }
+// newPresetName is the preset a request names, as the window sends it.
+func newPresetName(preset string) *string { return &preset }
 
 // The window draws a tile per preset, and pressing one opens a session over the
 // cards of every deck pointing at it, held to that preset's budget.
 func TestASessionIsOpenedOverOnePreset(t *testing.T) {
-	api, held := windowed(t, presetted)
+	api, held := newAPI(t, presetted)
 	v := held[0]
 
 	out, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
-		Vault: string(v.ID), Preset: naming("Steady.md"),
+		Vault: string(v.ID), Preset: newPresetName("Steady.md"),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -68,11 +68,11 @@ func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 
 // Which cards were meant is a question, and the window is asked it again.
 func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
-	api, held := windowed(t, presetted)
+	api, held := newAPI(t, presetted)
 	v := held[0]
 
 	_, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
-		Vault: string(v.ID), Deck: "decks/Birds.md", Preset: naming("Steady.md"),
+		Vault: string(v.ID), Deck: "decks/Birds.md", Preset: newPresetName("Steady.md"),
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("a deck and a preset together were answered with %v", err)
@@ -100,7 +100,7 @@ func TestEachPresetOnTheFrontDoorSaysWhyItSchedulesNothing(t *testing.T) {
 		"decks/Birds.md":  marked("Steady", "3f4g5h6j7k"),
 		"decks/Rivers.md": marked("Quiet", "zpqrstvwxy"),
 	}
-	api, _ := windowed(t, stopped)
+	api, _ := newAPI(t, stopped)
 
 	got := make(map[string]v1.StopReason)
 	for _, one := range front(t, api).GetVaults()[0].GetPresets() {
@@ -121,11 +121,11 @@ func TestEachPresetOnTheFrontDoorSaysWhyItSchedulesNothing(t *testing.T) {
 // The preset a deck is scheduled by carries the same verdict, which is what a
 // window has before any curve exists.
 func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
-	api, held := windowed(t, map[string]string{
+	api, held := newAPI(t, map[string]string{
 		"Term.md": deck["Term.md"],
 		"Quiet.md": "---\ntype: preset\ngoal: minutes_a_day\n" +
 			"minutes_a_day: 0\n---\n\n# Quiet\n",
-		"decks/Birds.md": pointing("Quiet", 2, 0),
+		"decks/Birds.md": newWordDeck("Quiet", 2, 0),
 	})
 
 	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
@@ -147,11 +147,11 @@ func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
 // A preset with nothing to ask is refused with the reason, which is what the
 // window shows in place of an empty session.
 func TestAPresetThatSchedulesNothingIsRefusedWithItsReason(t *testing.T) {
-	api, held := windowed(t, presetted)
+	api, held := newAPI(t, presetted)
 	v := held[0]
 
 	_, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
-		Vault: string(v.ID), Preset: naming("Lonely.md"),
+		Vault: string(v.ID), Preset: newPresetName("Lonely.md"),
 	}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("a preset nothing points at was answered with %v", err)

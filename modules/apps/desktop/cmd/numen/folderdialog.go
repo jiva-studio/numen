@@ -31,13 +31,13 @@ func (d *folderDialog) Choose(_ context.Context, title, startingAt string) (stri
 	// The library the dialog is built by ends the process where this machine
 	// holds no settings for it to read, taking the window and whatever a person
 	// had not written down with it.
-	if !settled() {
+	if !hasSchemas() {
 		return "", false, port.ErrNoFolderDialog
 	}
 	if !d.alone() {
 		return "", false, port.ErrChoosing
 	}
-	defer d.done()
+	defer d.release()
 
 	if title == "" {
 		title = "Choose a folder"
@@ -70,7 +70,7 @@ func (d *folderDialog) alone() bool {
 	return true
 }
 
-func (d *folderDialog) done() {
+func (d *folderDialog) release() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.up = false

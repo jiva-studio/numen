@@ -12,8 +12,9 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// outside is a folder on this machine holding those files, and where it is.
-func outside(t *testing.T, files map[string]string) string {
+// createOutsideFolder is a folder on this machine holding those files, and
+// where it is.
+func createOutsideFolder(t *testing.T, files map[string]string) string {
 	t.Helper()
 	root := t.TempDir()
 	for name, body := range files {
@@ -28,9 +29,9 @@ func outside(t *testing.T, files map[string]string) string {
 	return root
 }
 
-// arrived is what the vault holds at a path, and the test stops where it holds
-// nothing.
-func arrived(t *testing.T, root, path string) string {
+// readArrived is what the vault holds at a path, and the test stops where it
+// holds nothing.
+func readArrived(t *testing.T, root, path string) string {
 	t.Helper()
 	body, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
 	if err != nil {
@@ -44,7 +45,7 @@ func arrived(t *testing.T, root, path string) string {
 func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
-	from := outside(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})
+	from := createOutsideFolder(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})
 	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
 
 	brought, err := bring.Execute(t.Context(), v, "physics", []string{
@@ -54,14 +55,14 @@ func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Refused) != 0 {
-		t.Fatalf("files were refused: %v", brought.Refused)
+	if len(brought.Errors) != 0 {
+		t.Fatalf("files stayed outside: %v", brought.Errors)
 	}
 
-	if body := arrived(t, v.Path, "physics/Cover.png"); body != "PNG" {
+	if body := readArrived(t, v.Path, "physics/Cover.png"); body != "PNG" {
 		t.Errorf("the picture arrived as %q", body)
 	}
-	if body := arrived(t, v.Path, "physics/Notes.md"); body != "# Notes\n" {
+	if body := readArrived(t, v.Path, "physics/Notes.md"); body != "# Notes\n" {
 		t.Errorf("the note arrived as %q", body)
 	}
 	if _, err := os.Stat(filepath.Join(from, "Cover.png")); err != nil {
@@ -74,7 +75,7 @@ func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 func TestAFolderIsBroughtInWhole(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, nil)
-	from := outside(t, map[string]string{
+	from := createOutsideFolder(t, map[string]string{
 		"scans/Cover.png":       "PNG",
 		"scans/pages/One.png":   "ONE",
 		"scans/pages/Two.png":   "TWO",
@@ -89,15 +90,15 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Refused) != 0 {
-		t.Fatalf("files were refused: %v", brought.Refused)
+	if len(brought.Errors) != 0 {
+		t.Fatalf("files stayed outside: %v", brought.Errors)
 	}
 	// Four files, and the folder itself with the three under it.
 	if len(brought.Landed) != 8 {
 		t.Errorf("%d files and folders landed", len(brought.Landed))
 	}
 
-	if body := arrived(t, v.Path, "scans/pages/Two.png"); body != "TWO" {
+	if body := readArrived(t, v.Path, "scans/pages/Two.png"); body != "TWO" {
 		t.Errorf("a file under the folder arrived as %q", body)
 	}
 	info, err := os.Stat(filepath.Join(v.Path, "scans", "empty"))
@@ -111,7 +112,7 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Cover.png": "MINE"})
-	from := outside(t, map[string]string{"Cover.png": "THEIRS", "Kelvin.md": "# Kelvin\n"})
+	from := createOutsideFolder(t, map[string]string{"Cover.png": "THEIRS", "Kelvin.md": "# Kelvin\n"})
 	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{
@@ -122,16 +123,16 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(brought.Refused) != 1 || brought.Refused[0].Name != "Cover.png" {
-		t.Fatalf("what was refused: %v", brought.Refused)
+	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Cover.png" {
+		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
-	if !errors.Is(brought.Refused[0].Why, port.ErrOccupied) {
-		t.Errorf("the refusal: want ErrOccupied, got %v", brought.Refused[0].Why)
+	if !errors.Is(brought.Errors[0].Why, port.ErrOccupied) {
+		t.Errorf("the error: want ErrOccupied, got %v", brought.Errors[0].Why)
 	}
-	if body := arrived(t, v.Path, "Cover.png"); body != "MINE" {
+	if body := readArrived(t, v.Path, "Cover.png"); body != "MINE" {
 		t.Errorf("the file that was there was replaced with %q", body)
 	}
-	if body := arrived(t, v.Path, "Kelvin.md"); body != "# Kelvin\n" {
+	if body := readArrived(t, v.Path, "Kelvin.md"); body != "# Kelvin\n" {
 		t.Errorf("the note beside it arrived as %q", body)
 	}
 }
@@ -147,8 +148,8 @@ func TestAFolderHoldingTheVaultIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Refused) != 1 {
-		t.Fatalf("what was refused: %v", brought.Refused)
+	if len(brought.Errors) != 1 {
+		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
 	if len(brought.Landed) != 0 {
 		t.Errorf("%d files landed", len(brought.Landed))

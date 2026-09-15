@@ -32,7 +32,7 @@ func TestEveryBudgetUnitCrossesBothWays(t *testing.T) {
 }
 
 func TestEveryVerdictIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.StopReason]review.StopReason{
+	testsupport.CheckProduced(t, map[v1.StopReason]review.StopReason{
 		v1.StopReason_STOP_REASON_NOTHING:    review.StoppedNothing,
 		v1.StopReason_STOP_REASON_NO_MINUTES: review.StoppedNoMinutes,
 		v1.StopReason_STOP_REASON_NO_CARDS:   review.StoppedNoCards,
@@ -44,7 +44,7 @@ func TestEveryVerdictIsWrittenFromOne(t *testing.T) {
 }
 
 func TestEveryUnitIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.Unit]task.Unit{
+	testsupport.CheckProduced(t, map[v1.Unit]task.Unit{
 		v1.Unit_UNIT_THINGS:  task.Things,
 		v1.Unit_UNIT_BYTES:   task.Bytes,
 		v1.Unit_UNIT_SECONDS: task.Seconds,
@@ -54,5 +54,5 @@ func TestEveryUnitIsWrittenFromOne(t *testing.T) {
 // A page that named nothing has said nothing, and silence is what the round
 // waits its bound for. Every answer the schema offers is one of the answers.
 func TestEveryFlushResultIsAnAnswer(t *testing.T) {
-	testsupport.Handled(t, func(said v1.FlushResult) bool { return left(said) != silent })
+	testsupport.CheckHandled(t, func(said v1.FlushResult) bool { return left(said) != silent })
 }

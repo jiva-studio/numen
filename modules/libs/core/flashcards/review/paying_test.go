@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
-// spending is a day standing at a share of itself for the debt, drawn over the
-// whole of what the share may be.
-func spending(t *rapid.T) review.Allowance {
+// drawAllowance is a day standing at a share of itself for the debt, drawn over
+// the whole of what the share may be.
+func drawAllowance(t *rapid.T) review.Allowance {
 	return review.Allowance{Backlog: rapid.IntRange(0, review.AllBacklog).Draw(t, "backlog")}
 }
 
@@ -27,12 +27,12 @@ func spending(t *rapid.T) review.Allowance {
 func TestTheDebtTakesItsShareOfEveryPointOfTheRun(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		day := spending(t)
+		day := drawAllowance(t)
 		cards := rapid.IntRange(0, 60).Draw(t, "cards")
 
 		var debt, begun int
 		for taken := 1; taken <= cards; taken++ {
-			if day.Paying(debt, begun, true, true) {
+			if day.IsPayingDebt(debt, begun, true, true) {
 				debt++
 			} else {
 				begun++
@@ -55,14 +55,14 @@ func TestTheDebtTakesItsShareOfEveryPointOfTheRun(t *testing.T) {
 func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		day := spending(t)
+		day := drawAllowance(t)
 		owed := rapid.IntRange(0, 30).Draw(t, "owed")
 		fresh := rapid.IntRange(0, 30).Draw(t, "fresh")
 		admits := rapid.IntRange(0, 60).Draw(t, "admits")
 
 		var debt, begun int
 		for debt+begun < admits && (debt < owed || begun < fresh) {
-			if day.Paying(debt, begun, debt < owed, begun < fresh) {
+			if day.IsPayingDebt(debt, begun, debt < owed, begun < fresh) {
 				debt++
 			} else {
 				begun++
@@ -97,7 +97,7 @@ func TestWhatADayOfShowingsCosts(t *testing.T) {
 		faced := make(map[int]bool, len(shows))
 		var charged int
 		for _, face := range shows {
-			if counts.Charges(faced[face]) {
+			if counts.IsCharged(faced[face]) {
 				charged++
 			}
 			faced[face] = true

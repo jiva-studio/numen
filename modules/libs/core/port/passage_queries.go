@@ -22,10 +22,10 @@ type PassageQueries interface {
 	// still be being typed, and is then matched by its opening.
 	Lexical(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
 
-	// Named is the sections of one vault whose names match the words typed,
-	// best first. A section answers with the chunk it opens, so what comes back
-	// stands where the section begins.
-	Named(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
+	// GetNamedPassages is the sections of one vault whose names match the words
+	// typed, best first. A section answers with the chunk it opens, so what
+	// comes back stands where the section begins.
+	GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
 
 	// Nearest is the chunks of one vault nearest a query vector, nearest first,
 	// at most `limit` of them. `query` is the full precision the model answered

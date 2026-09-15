@@ -13,18 +13,18 @@ import (
 func TestAFileIsSkippedOnItsSizeAndItsTime(t *testing.T) {
 	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
 	was := domain.Fingerprint{Path: "a.md", Kind: domain.KindNote, Size: 10, ModTime: at}
-	if !was.Unchanged(domain.Fingerprint{Size: 10, ModTime: at}) {
+	if !was.IsUnchanged(domain.Fingerprint{Size: 10, ModTime: at}) {
 		t.Error("an unchanged file is read again")
 	}
-	if was.Unchanged(domain.Fingerprint{Size: 11, ModTime: at}) {
+	if was.IsUnchanged(domain.Fingerprint{Size: 11, ModTime: at}) {
 		t.Error("a file that grew is skipped")
 	}
-	if was.Unchanged(domain.Fingerprint{Size: 10, ModTime: at.Add(time.Nanosecond)}) {
+	if was.IsUnchanged(domain.Fingerprint{Size: 10, ModTime: at.Add(time.Nanosecond)}) {
 		t.Error("a file written again is skipped")
 	}
 	// The path is not the key: a fingerprint the index hands back carries
 	// neither path nor kind.
-	if !was.Unchanged(domain.Fingerprint{Path: "elsewhere.md", Size: 10, ModTime: at}) {
+	if !was.IsUnchanged(domain.Fingerprint{Path: "elsewhere.md", Size: 10, ModTime: at}) {
 		t.Error("the path decided whether the file was read")
 	}
 }
@@ -34,7 +34,7 @@ func TestAFileIsSkippedOnItsSizeAndItsTime(t *testing.T) {
 func TestAStampInSecondsIsNotTheSameFileAsOneInNanoseconds(t *testing.T) {
 	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
 	was := domain.Fingerprint{Size: 10, ModTime: at}
-	if was.Unchanged(domain.Fingerprint{Size: 10, ModTime: at.Truncate(time.Second)}) {
+	if was.IsUnchanged(domain.Fingerprint{Size: 10, ModTime: at.Truncate(time.Second)}) {
 		t.Error("a stamp in seconds passed for the file a stamp in nanoseconds describes")
 	}
 }
@@ -50,7 +50,7 @@ func TestOneInstantInTwoZonesIsOneFile(t *testing.T) {
 		t.Fatal("the two are the same value, and this test proves nothing")
 	}
 	was := domain.Fingerprint{Size: 10, ModTime: at}
-	if !was.Unchanged(domain.Fingerprint{Size: 10, ModTime: elsewhere}) {
+	if !was.IsUnchanged(domain.Fingerprint{Size: 10, ModTime: elsewhere}) {
 		t.Error("the same instant in another zone read as another file")
 	}
 }
@@ -64,7 +64,7 @@ func TestAStampCarryingAMonotonicReadingIsTheSameFileWithoutIt(t *testing.T) {
 		t.Skip("this clock hands out no monotonic reading")
 	}
 	was := domain.Fingerprint{Size: 10, ModTime: at}
-	if !was.Unchanged(domain.Fingerprint{Size: 10, ModTime: time.Unix(0, at.UnixNano())}) {
+	if !was.IsUnchanged(domain.Fingerprint{Size: 10, ModTime: time.Unix(0, at.UnixNano())}) {
 		t.Error("a stamp read back off the wire read as another file")
 	}
 }

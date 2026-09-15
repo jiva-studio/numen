@@ -22,8 +22,8 @@ export type BrokenAddresses = ReadonlySet<string>
 
 const NONE: BrokenAddresses = new Set()
 
-export const render = (text: string, unresolved: BrokenAddresses = NONE): VNode[] =>
-  nodes(marks.parse(text, {}), unresolved)
+export const render = (text: string, deadAddresses: BrokenAddresses = NONE): VNode[] =>
+  nodes(marks.parse(text, {}), deadAddresses)
 
 /**
  * Tokens arrive flat, with the nesting written on them. A frame is one element
@@ -35,7 +35,7 @@ interface Frame {
   children: (VNode | string)[]
 }
 
-const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] => {
+const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[] => {
   const root: Frame = { tag: '', attrs: {}, children: [] }
   const stack: Frame[] = [root]
   const top = () => stack[stack.length - 1]!
@@ -47,7 +47,7 @@ const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] =
     if (token.hidden) continue
 
     if (token.nesting === 1) {
-      stack.push({ tag: token.tag, attrs: attrs(token, unresolved), children: [] })
+      stack.push({ tag: token.tag, attrs: attrs(token, deadAddresses), children: [] })
       continue
     }
     if (token.nesting === -1) {
@@ -57,23 +57,7 @@ const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] =
       continue
     }
 
-    switch (token.type) {
-      case 'inline':
-        top().children.push(...inline(token.children ?? [], unresolved, () => placed++))
-        break
-      case 'fence':
-      case 'code_block':
-        top().children.push(h('pre', attrs(token), [h('code', token.content)]))
-        break
-      case 'hr':
-        top().children.push(h('hr'))
-        break
-      case 'html_block':
-        top().children.push(token.content)
-        break
-      default:
-        if (token.content) top().children.push(token.content)
-    }
+    top().children.push(...block(token, deadAddresses, () => placed++))
   }
 
   // A stream stops mid-sentence, so elements are left open. They are closed
@@ -85,6 +69,27 @@ const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] =
   return root.children.filter((child): child is VNode => typeof child !== 'string')
 }
 
+/** What a block token stands for, once it has opened and closed nothing. */
+const block = (
+  token: Token,
+  deadAddresses: BrokenAddresses,
+  next: () => number,
+): (VNode | string)[] => {
+  switch (token.type) {
+    case 'inline':
+      return inline(token.children ?? [], deadAddresses, next)
+    case 'fence':
+    case 'code_block':
+      return [h('pre', attrs(token), [h('code', token.content)])]
+    case 'hr':
+      return [h('hr')]
+    case 'html_block':
+      return [token.content]
+    default:
+      return token.content ? [token.content] : []
+  }
+}
+
 /**
  * The inside of a paragraph: words, and the marks that dress them.
  *
@@ -92,7 +97,7 @@ const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] =
  */
 const inline = (
   tokens: readonly Token[],
-  unresolved: BrokenAddresses,
+  deadAddresses: BrokenAddresses,
   next: () => number,
 ): (VNode | string)[] => {
   const root: Frame = { tag: '', attrs: {}, children: [] }
@@ -101,7 +106,7 @@ const inline = (
 
   for (const token of tokens) {
     if (token.nesting === 1) {
-      stack.push({ tag: token.tag, attrs: attrs(token, unresolved), children: [] })
+      stack.push({ tag: token.tag, attrs: attrs(token, deadAddresses), children: [] })
       continue
     }
     if (token.nesting === -1) {
@@ -111,28 +116,7 @@ const inline = (
       continue
     }
 
-    switch (token.type) {
-      case 'text':
-        top().children.push(...words(token.content, next))
-        break
-      case 'code_inline':
-        top().children.push(h('code', { key: next() }, token.content))
-        break
-      case 'softbreak':
-        top().children.push(' ')
-        break
-      case 'hardbreak':
-        top().children.push(h('br'))
-        break
-      case 'image':
-        top().children.push(h('img', attrs(token)))
-        break
-      case 'html_inline':
-        top().children.push(token.content)
-        break
-      default:
-        if (token.content) top().children.push(token.content)
-    }
+    top().children.push(...mark(token, next))
   }
 
   while (stack.length > 1) {
@@ -142,20 +126,38 @@ const inline = (
   return root.children
 }
 
+/** What an inline token stands for, once it has opened and closed nothing. */
+const mark = (token: Token, next: () => number): (VNode | string)[] => {
+  switch (token.type) {
+    case 'text':
+      return words(token.content, next)
+    case 'code_inline':
+      return [h('code', { key: next() }, token.content)]
+    case 'softbreak':
+      return [' ']
+    case 'hardbreak':
+      return [h('br')]
+    case 'image':
+      return [h('img', attrs(token))]
+    case 'html_inline':
+      return [token.content]
+    default:
+      return token.content ? [token.content] : []
+  }
+}
+
 /** Text, cut into words with the spaces between them kept. */
 const words = (text: string, next: () => number): (VNode | string)[] =>
   text
     .split(/(\s+)/)
     .filter((piece) => piece !== '')
-    .map((piece) =>
-      /^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece),
-    )
+    .map((piece) => (/^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece)))
 
-const attrs = (token: Token, unresolved: BrokenAddresses = NONE): Record<string, string> => {
+const attrs = (token: Token, deadAddresses: BrokenAddresses = NONE): Record<string, string> => {
   const written: Record<string, string> = Object.fromEntries(
     (token.attrs ?? []).map(([name, value]) => [name, String(value)]),
   )
   const href = written.href
-  if (href !== undefined && unresolved.has(href)) written[REACHES] = 'nothing'
+  if (href !== undefined && deadAddresses.has(href)) written[REACHES] = 'nothing'
   return written
 }

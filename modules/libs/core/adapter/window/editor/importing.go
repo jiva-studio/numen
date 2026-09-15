@@ -13,9 +13,9 @@ import (
 // importingFiles is what a drop is called in the list of what is being done.
 const importingFiles = "importing files"
 
-// namedInARefusal is how many of the files that stayed outside are named before
+// namedInAnError is how many of the files that stayed outside are named before
 // the rest are counted.
-const namedInARefusal = 3
+const namedInAnError = 3
 
 // Imports copies files a person let go of over the window into a folder of the
 // vault, the root being the empty path.
@@ -31,14 +31,14 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	if api.Files.Import == nil || len(paths) == 0 {
 		return
 	}
-	showing := api.Showing()
+	showing := api.GetShownVault()
 	if showing.ID == "" {
 		return
 	}
 	if !api.Writing.begin() {
 		return
 	}
-	defer api.Writing.done()
+	defer api.Writing.finish()
 
 	at := task.Task{ID: importingFiles + " " + into, Doing: "Bringing files in", About: into}
 	api.say(at)
@@ -48,16 +48,16 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 		api.Listeners.tell(change{paths: landed})
 	}
 	if err != nil {
-		at.Failed = err.Error()
+		at.Error = err.Error()
 		api.say(at)
 		return
 	}
-	if said := refusedIn(brought.Refused); said != "" {
-		at.Failed = said
+	if said := describeImportFailures(brought.Errors); said != "" {
+		at.Error = said
 		api.say(at)
 		return
 	}
-	api.finished(at.ID)
+	api.finishTask(at.ID)
 }
 
 // directlyIn is what of a drop sits in the folder it was let go over. What
@@ -73,17 +73,17 @@ func directlyIn(into string, landed []string) []string {
 	return shown
 }
 
-// refusedIn is what a drop could not bring in, in one sentence. Nothing is said
-// where every file arrived.
-func refusedIn(refused []vaults.Refusal) string {
-	if len(refused) == 0 {
+// describeImportFailures says what a drop could not bring in, in one sentence.
+// Nothing is said where every file arrived.
+func describeImportFailures(errs []vaults.ImportFailure) string {
+	if len(errs) == 0 {
 		return ""
 	}
-	said := make([]string, 0, namedInARefusal)
-	for _, one := range refused[:min(len(refused), namedInARefusal)] {
+	said := make([]string, 0, namedInAnError)
+	for _, one := range errs[:min(len(errs), namedInAnError)] {
 		said = append(said, fmt.Sprintf("%s: %v", one.Name, one.Why))
 	}
-	if rest := len(refused) - len(said); rest > 0 {
+	if rest := len(errs) - len(said); rest > 0 {
 		said = append(said, fmt.Sprintf("and %d more", rest))
 	}
 	return strings.Join(said, "; ")

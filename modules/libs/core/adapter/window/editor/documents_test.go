@@ -46,7 +46,7 @@ func (h *held) Close() {
 // drawn on it, it is taken from under the drawing.
 func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 	one := &held{drawing: make(chan struct{}), let: make(chan struct{})}
-	docs := keeping()
+	docs := newDocuments()
 	print := fingerprint{path: "library/a.pdf", size: 1, mtime: 1}
 
 	drawn := make(chan error, 1)
@@ -90,7 +90,7 @@ func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 
 // A window with nothing open goes at once.
 func TestGoingWithNothingOpenIsNotAWait(t *testing.T) {
-	docs := keeping()
+	docs := newDocuments()
 	done := make(chan struct{})
 	go func() { docs.close(); close(done) }()
 	select {
@@ -105,7 +105,7 @@ func TestGoingWithNothingOpenIsNotAWait(t *testing.T) {
 // A document taken after the last one was given back would be a document
 // nobody is left to close, and the going would wait on it for ever.
 func TestAWindowGoingOpensNothingMore(t *testing.T) {
-	docs := keeping()
+	docs := newDocuments()
 	docs.close()
 
 	print := fingerprint{path: "library/a.pdf", size: 1, mtime: 1}

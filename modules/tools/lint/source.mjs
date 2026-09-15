@@ -1,5 +1,5 @@
-/** The interface modules' own source, and the walk that reads it. */
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+/** The repository's own source, and the walks that read it. */
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, extname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { modules, root } from '../modules.mjs'
@@ -29,6 +29,46 @@ export function sources(kinds) {
   for (const one of modules) {
     for (const path of walk(join(root, one.written), [])) {
       if (!kinds.includes(extname(path)) || path.endsWith('.d.ts')) continue
+      found.push({ at: relative(root, path), text: readFileSync(path, 'utf8') })
+    }
+  }
+  return found
+}
+
+/** The one Go module whose files nobody wrote. */
+const generated = new Set(['modules/libs/protocol'])
+
+/** Every Go module of the repository, found by its go.mod. */
+export function goModules() {
+  const found = []
+  for (const under of ['modules/libs', 'modules/apps']) {
+    for (const one of readdirSync(join(root, under), { withFileTypes: true })) {
+      if (!one.isDirectory()) continue
+      const at = `${under}/${one.name}`
+      if (existsSync(join(root, at, 'go.mod')) && !generated.has(at)) found.push({ at })
+    }
+  }
+  return found
+}
+
+/** What is nobody's Go: a fixture, a generated schema, a window's own tree. */
+const goSkipped = new Set(['node_modules', 'dist', 'gen', 'testdata', 'frontend'])
+
+function goWalk(at, found) {
+  for (const name of readdirSync(at)) {
+    if (goSkipped.has(name)) continue
+    const path = join(at, name)
+    if (statSync(path).isDirectory()) goWalk(path, found)
+    else if (name.endsWith('.go') && !name.endsWith('.pb.go')) found.push(path)
+  }
+  return found
+}
+
+/** Every hand-written Go file of the modules above, and the text in it. */
+export function goSources() {
+  const found = []
+  for (const one of goModules()) {
+    for (const path of goWalk(join(root, one.at), [])) {
       found.push({ at: relative(root, path), text: readFileSync(path, 'utf8') })
     }
   }

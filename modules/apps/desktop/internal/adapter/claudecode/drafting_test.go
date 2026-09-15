@@ -21,7 +21,7 @@ type drawn struct {
 	asked []string
 }
 
-func (d *drawn) drafting() claudecode.Drafting {
+func (d *drawn) makeDrafting() claudecode.Drafting {
 	return claudecode.Drafting{
 		Report: func(_ context.Context, said domain.Edit) { d.said = append(d.said, said) },
 		Location: func(_ context.Context, path, stood string) (int, int, bool) {
@@ -33,8 +33,8 @@ func (d *drawn) drafting() claudecode.Drafting {
 	}
 }
 
-// drafting is the agent with a window behind it, fed a canned stream.
-func drafting(t *testing.T, window *drawn, prints string) port.Run {
+// startDrafting is the agent with a window behind it, fed a canned stream.
+func startDrafting(t *testing.T, window *drawn, prints string) port.Run {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -55,7 +55,7 @@ func drafting(t *testing.T, window *drawn, prints string) port.Run {
 				},
 			},
 		},
-		Drafting: window.drafting(),
+		Drafting: window.makeDrafting(),
 	}
 	work, err := claude.Take(t.Context(), port.Task{Question: "change it"})
 	if err != nil {
@@ -68,10 +68,10 @@ func drafting(t *testing.T, window *drawn, prints string) port.Run {
 // piece is one delta of a call being written out.
 func piece(partial string) string {
 	return `{"type":"stream_event","event":{"type":"content_block_delta",` +
-		`"delta":{"type":"input_json_delta","partial_json":` + quoted(partial) + `}}}`
+		`"delta":{"type":"input_json_delta","partial_json":` + quoteText(partial) + `}}}`
 }
 
-func quoted(text string) string {
+func quoteText(text string) string {
 	out := `"`
 	for _, r := range text {
 		switch r {
@@ -94,12 +94,12 @@ const opens = `{"type":"stream_event","event":{"type":"content_block_start",` +
 // the replacement has begun.
 func TestNothingIsDrawnBeforeTheReplacementHasBegun(t *testing.T) {
 	window := &drawn{found: true}
-	work := drafting(t, window, opens+"\n"+
+	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md",`)+"\n"+
 		piece(`"stood":"A hedgehog`)+"\n"+
 		piece(` is named"`))
 
-	heard(t, work)
+	getSteps(t, work)
 
 	if len(window.said) != 0 {
 		t.Fatalf("a change was drawn before its replacement: %+v", window.said)
@@ -113,12 +113,12 @@ func TestNothingIsDrawnBeforeTheReplacementHasBegun(t *testing.T) {
 // piece of the replacement is drawn where that stretch stands.
 func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
 	window := &drawn{found: true}
-	work := drafting(t, window, opens+"\n"+
+	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md","stood":"A hedgehog",`)+"\n"+
 		piece(`"becomes":"An axe`)+"\n"+
 		piece(`, two-bladed"}`))
 
-	heard(t, work)
+	getSteps(t, work)
 
 	if len(window.said) < 2 {
 		t.Fatalf("the change was drawn %d times: %+v", len(window.said), window.said)
@@ -144,14 +144,14 @@ func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
 
 // A stretch that stands nowhere or twice is not a place, and drawing over a
 // guess is worse than drawing nothing.
-func TestAStretchThatIsNotOnePlaceIsNotDrawn(t *testing.T) {
+func TestASpanThatIsNotOnePlaceIsNotDrawn(t *testing.T) {
 	window := &drawn{found: true}
 	window.found = false
-	work := drafting(t, window, opens+"\n"+
+	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md","stood":"foe",`)+"\n"+
 		piece(`"becomes":"friend"}`))
 
-	heard(t, work)
+	getSteps(t, work)
 
 	if len(window.said) != 0 {
 		t.Fatalf("a change was drawn over a stretch that stands nowhere: %+v", window.said)

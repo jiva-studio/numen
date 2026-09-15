@@ -75,11 +75,11 @@ func Open() (Catalogue, error) {
 	if err != nil {
 		return Catalogue{}, err
 	}
-	return At(filepath.Join(dir, "numen", "themes"))
+	return OpenAt(filepath.Join(dir, "numen", "themes"))
 }
 
-// At is Open with an explicit path.
-func At(dir string) (Catalogue, error) {
+// OpenAt is Open with an explicit path.
+func OpenAt(dir string) (Catalogue, error) {
 	made := os.MkdirAll(dir, 0o755)
 	// The folder is where the links lead. The paths the operating system
 	// reports changes at are resolved, and they are named against this.
@@ -104,7 +104,7 @@ func (c Catalogue) Themes() []Theme {
 			if err != nil {
 				continue
 			}
-			themes = append(themes, described(Preset, entry.Name(), string(text)))
+			themes = append(themes, describeTheme(Preset, entry.Name(), string(text)))
 		}
 	}
 	return append(themes, c.mine()...)
@@ -132,12 +132,12 @@ func (c Catalogue) mine() []Theme {
 		if err != nil {
 			continue
 		}
-		themes = append(themes, described(Mine, entry.Name(), text))
+		themes = append(themes, describeTheme(Mine, entry.Name(), text))
 	}
 	return themes
 }
 
-func described(shelf Shelf, filename, text string) Theme {
+func describeTheme(shelf Shelf, filename, text string) Theme {
 	title := strings.TrimSuffix(filename, Extension)
 	return Theme{
 		Name:   string(shelf) + ":" + title,
@@ -170,9 +170,9 @@ func (c Catalogue) Text(name string) (string, error) {
 	return text, nil
 }
 
-// Applied is the theme a name asks for. A name matching nothing wears this
+// GetApplied is the theme a name asks for. A name matching nothing wears this
 // product's own palette, and is given back as the name that was not found.
-func (c Catalogue) Applied(name string) (applied, missing string) {
+func (c Catalogue) GetApplied(name string) (applied, missing string) {
 	if name == "" {
 		return Default, ""
 	}

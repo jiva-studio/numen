@@ -39,11 +39,11 @@ type allowance struct {
 	spent  review.Spent
 }
 
-// budgeted works out the day's budgets over the cards standing.
+// getBudgets works out the day's budgets over the cards standing.
 //
 // What has been answered since the day opened is off it, so a second session
 // takes up where the first left off.
-func budgeted(
+func getBudgets(
 	ctx context.Context, v domain.Vault, reading *PresetReads, day review.Day,
 	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 	log ReviewLog, by review.Scheduler, at func(retention float64) review.Scheduler,
@@ -90,12 +90,12 @@ func budgeted(
 	for deck, path := range asked {
 		counting[deck] = settings[path].Counts
 	}
-	named := day.Names(now)
-	out.faced = review.Faced(day, named, log.Answers)
+	named := day.GetName(now)
+	out.faced = review.GetFaced(day, named, log.Answers)
 
 	// A card face stands in one deck and one preset, so a preset's day is the
 	// sum of the days of the decks that name it.
-	out.spentUnder = review.SpentUnder(day, named, log.Answers, in, counting)
+	out.spentUnder = review.GetSpentUnder(day, named, log.Answers, in, counting)
 	spent := make(map[string]review.Spent, len(settings))
 	for deck, one := range out.spentUnder {
 		at := spent[asked[deck]]
@@ -106,7 +106,7 @@ func budgeted(
 		spent[asked[deck]] = at
 	}
 
-	costed := review.CostedUnder(by, log.Answers, out.under)
+	costed := review.GetCostUnder(by, log.Answers, out.under)
 	for path, p := range settings {
 		cost, held := costed[path]
 		if !held {
@@ -120,7 +120,7 @@ func budgeted(
 			learn = review.Ripens(at(p.Retention), day, p, now)
 		}
 		out.left[path] = &allowance{
-			admits: p.Admits(day, now, spent[path], unseen[path], learn),
+			admits: p.GetAllowance(day, now, spent[path], unseen[path], learn),
 			cost:   cost,
 			counts: p.Counts,
 			spent:  spent[path],
@@ -141,10 +141,10 @@ func budgeted(
 // whichever way the preset counts.
 func (b *budgets) takes(share *allowance, face review.CardFaceID, fresh bool) bool {
 	one, held := b.left[b.under[face]]
-	if !held || one.admits.Paused() {
+	if !held || one.admits.IsPaused() {
 		return false
 	}
-	counted := one.counts.Charges(b.faced[face])
+	counted := one.counts.IsCharged(b.faced[face])
 	cost := one.cost.Review
 	if fresh {
 		cost = one.cost.New
@@ -208,7 +208,7 @@ func (b *budgets) refuses(preset string) error {
 	switch {
 	case !scheduling:
 		return fmt.Errorf("%w: no deck of this vault is scheduled by it", ErrSchedulesNothing)
-	case one.admits.Paused():
+	case one.admits.IsPaused():
 		return fmt.Errorf("%w: it is paused", ErrSchedulesNothing)
 	case one.spent.Answered > 0:
 		return fmt.Errorf("%w: its day is spent", ErrSchedulesNothing)
@@ -217,8 +217,8 @@ func (b *budgets) refuses(preset string) error {
 	}
 }
 
-// asks is what the budgets leave of the cards standing, in the order they are
-// put to a person.
+// getAsking is what the budgets leave of the cards standing, in the order they
+// are put to a person.
 //
 // Each preset spends its day between the debt before it and the material it has
 // not begun, in the share it names. What is taken is then put in one order: the
@@ -229,7 +229,7 @@ func (b *budgets) refuses(preset string) error {
 // held back, and the session is then the slice of that division belonging to
 // what it was opened over. A deck's row on the front door and what pressing
 // that deck hands over are the one division.
-func (b *budgets) asks(
+func (b *budgets) getAsking(
 	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 	day review.Day, now time.Time, over Scope,
 ) asking {
@@ -239,7 +239,7 @@ func (b *budgets) asks(
 		switch {
 		case !answered:
 			fresh = append(fresh, one)
-		case day.Owed(s, now):
+		case day.IsOwed(s, now):
 			owed = append(owed, one)
 		}
 	}
@@ -276,9 +276,9 @@ type deckShare struct {
 	debt, begun  int
 }
 
-// remaining is how many of a deck's cards no share has taken, which is what the
-// deck still owes of the day.
-func (q *deckShare) remaining(out taken) int {
+// countRemaining is how many of a deck's cards no share has taken, which is
+// what the deck still owes of the day.
+func (q *deckShare) countRemaining(out taken) int {
 	held := 0
 	for _, at := range q.owed {
 		if !out.owed[at] {
@@ -293,9 +293,10 @@ func (q *deckShare) remaining(out taken) int {
 	return held
 }
 
-// given is how much of the day a deck has had, in the time it took: what an
-// earlier session spent of today, and what the deck's own share has just spent.
-func (b *budgets) given(q *deckShare, cost review.AnswerCost) time.Duration {
+// getTimeSpent is how much of the day a deck has had, in the time it took: what
+// an earlier session spent of today, and what the deck's own share has just
+// spent.
+func (b *budgets) getTimeSpent(q *deckShare, cost review.AnswerCost) time.Duration {
 	return b.spentUnder[q.deck].Took +
 		time.Duration(q.debt)*cost.Review + time.Duration(q.begun)*cost.New
 }
@@ -350,7 +351,7 @@ func (b *budgets) spends(owed, fresh []CardFace) taken {
 
 	for _, path := range order {
 		one, held := b.left[path]
-		if !held || one.admits.Paused() {
+		if !held || one.admits.IsPaused() {
 			continue
 		}
 		// The decks are handed their shares in the order their paths stand, so
@@ -374,12 +375,12 @@ func (b *budgets) spends(owed, fresh []CardFace) taken {
 		// in the order of the time the day has given them already, least first.
 		remaining := make(map[string]int, len(decks))
 		for _, q := range decks {
-			remaining[q.deck] = q.remaining(out)
+			remaining[q.deck] = q.countRemaining(out)
 		}
 		slices.SortStableFunc(decks, func(x, y *deckShare) int {
 			return cmp.Or(
 				cmp.Compare(remaining[y.deck], remaining[x.deck]),
-				cmp.Compare(b.given(x, one.cost), b.given(y, one.cost)),
+				cmp.Compare(b.getTimeSpent(x, one.cost), b.getTimeSpent(y, one.cost)),
 			)
 		})
 		for _, q := range decks {
@@ -440,7 +441,7 @@ func (b *budgets) deals(share *allowance, q *deckShare, owed, fresh []CardFace, 
 		}
 		// The next card comes from the side the share leaves short, and from
 		// whichever side is left when the other is done.
-		if share.admits.Paying(q.debt, q.begun, debt, begun) {
+		if share.admits.IsPayingDebt(q.debt, q.begun, debt, begun) {
 			if card := owed[q.owed[q.seen]]; b.takes(share, card.ID, false) {
 				out.owed[q.owed[q.seen]] = true
 				q.debt++

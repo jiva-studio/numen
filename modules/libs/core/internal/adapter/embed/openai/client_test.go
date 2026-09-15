@@ -23,9 +23,9 @@ func server(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	return s
 }
 
-// served is the settings with the vault indexed at the service the changes
-// describe, and that service: the two a client is opened with.
-func served(t *testing.T, cfg embed.Config, change func(*embed.ServiceModel)) (embed.Config, embed.ServiceModel) {
+// setServiceModel is the settings with the vault indexed at the service the
+// changes describe, and that service: the two a client is opened with.
+func setServiceModel(t *testing.T, cfg embed.Config, change func(*embed.ServiceModel)) (embed.Config, embed.ServiceModel) {
 	t.Helper()
 	cfg.Indexing.Use = embed.UseService
 	service, ok := cfg.Indexing.Service()
@@ -33,7 +33,7 @@ func served(t *testing.T, cfg embed.Config, change func(*embed.ServiceModel)) (e
 		t.Fatal("the vault is not indexed by a service")
 	}
 	change(&service)
-	cfg.Indexing = cfg.Indexing.Serving(service)
+	cfg.Indexing = cfg.Indexing.SetService(service)
 	return cfg, service
 }
 
@@ -42,10 +42,10 @@ func client(t *testing.T, baseURL string, dimensions int) *openai.Client {
 	t.Setenv(embed.KeyEnvVar, "test-key")
 	cfg := embed.Defaults()
 	cfg.Model.Dimensions = dimensions
-	cfg, service := served(t, cfg, func(at *embed.ServiceModel) {
+	cfg, service := setServiceModel(t, cfg, func(at *embed.ServiceModel) {
 		at.BaseURL, at.Name = baseURL, "test-embed"
 	})
-	c, err := openai.New(cfg.Stored(), service)
+	c, err := openai.New(cfg.GetStoredModel(), service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,11 +250,11 @@ func TestABatchIsCutByCharacters(t *testing.T) {
 	cfg.Model.Dimensions = 4
 	// A verse in Devanagari: the same number of texts, far more tokens.
 	verse := strings.Repeat("धर्मक्षेत्रे कुरुक्षेत्रे ", 10)
-	cfg, service := served(t, cfg, func(at *embed.ServiceModel) {
+	cfg, service := setServiceModel(t, cfg, func(at *embed.ServiceModel) {
 		at.BaseURL, at.Name = s.URL, "test-embed"
 		at.BatchCharacters = len([]rune(verse)) * 2
 	})
-	c, err := openai.New(cfg.Stored(), service)
+	c, err := openai.New(cfg.GetStoredModel(), service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,10 +287,10 @@ func TestNoTextsIsNoRequest(t *testing.T) {
 
 func TestAServiceWithoutAKeyIsRefusedBeforeAnyRequest(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "")
-	cfg, service := served(t, embed.Defaults(), func(at *embed.ServiceModel) {
+	cfg, service := setServiceModel(t, embed.Defaults(), func(at *embed.ServiceModel) {
 		at.BaseURL = "http://127.0.0.1:1"
 	})
-	if _, err := openai.New(cfg.Stored(), service); !errors.Is(err, openai.ErrNoKey) {
+	if _, err := openai.New(cfg.GetStoredModel(), service); !errors.Is(err, openai.ErrNoKey) {
 		t.Fatalf("got %v", err)
 	}
 }
@@ -327,7 +327,7 @@ func TestTheKeyIsNotInAnError(t *testing.T) {
 
 func TestTheKeyIsNotInWhatTheConfigurationPrints(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-secret")
-	_, service := served(t, embed.Defaults(), func(*embed.ServiceModel) {})
+	_, service := setServiceModel(t, embed.Defaults(), func(*embed.ServiceModel) {})
 	if printed := fmt.Sprintf("%v", service); strings.Contains(printed, "sk-secret") {
 		t.Errorf("the key is in %q", printed)
 	}

@@ -20,7 +20,7 @@ import (
 // reaches the client about a source that is not a note.
 
 func TestANoteIsFoundByName(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n",
 	})
@@ -47,7 +47,7 @@ func TestANoteIsFoundByName(t *testing.T) {
 }
 
 func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
 	})
 
@@ -72,7 +72,7 @@ func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
 // TestANameSaysWhichOfFourTheNoteIs. The palette draws a deck and a stencil as
 // what they are, and a heading is drawn as the note it stands in.
 func TestANameSaysWhichOfFourTheNoteIs(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Entropy of a llama\n",
 	})
@@ -100,7 +100,7 @@ func TestANameSaysWhichOfFourTheNoteIs(t *testing.T) {
 // TestAPassageSaysWhichOfFourItsNoteIs. A passage is drawn with the mark of the
 // note it was read out of.
 func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Daily.md": "---\ntype: preset\ntitle: Daily\n---\n\n# Daily\n\nNo engine beats a reversible engine.\n",
 	})
 
@@ -123,7 +123,7 @@ func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
 // TestAPassageSaysWhatTheVaultHoldsAtItsPath. A list a person runs their eye
 // down draws a book as a book, and a note as the note it is.
 func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Engines.md":          "---\ntitle: Engines\n---\n\n# Engines\n\nA book of engines.\n",
 		"library/A Book.epub": string(testsupport.Book(t)),
 	})
@@ -160,7 +160,7 @@ func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
 }
 
 func TestEachModeIsAskedByItself(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
@@ -189,7 +189,7 @@ func TestEachModeIsAskedByItself(t *testing.T) {
 }
 
 func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
@@ -219,7 +219,7 @@ func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 // A hit is a place in a source, and the client is told which place: it is what
 // opens the source there, and nothing the client holds says it.
 func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
@@ -245,7 +245,7 @@ func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
 }
 
 func TestAnAnswerIsCutToWhatWasAskedFor(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"a.md": "# Entropy one\n",
 		"b.md": "# Entropy two\n",
 		"c.md": "# Entropy three\n",
@@ -263,7 +263,7 @@ func TestAnAnswerIsCutToWhatWasAskedFor(t *testing.T) {
 }
 
 func TestNothingTypedIsAnsweredWithNothing(t *testing.T) {
-	client, _ := opened(t, map[string]string{"a.md": "# Entropy\n"})
+	client, _ := openVault(t, map[string]string{"a.md": "# Entropy\n"})
 
 	for _, query := range []string{"", "   "} {
 		answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{Query: query}))
@@ -279,7 +279,7 @@ func TestNothingTypedIsAnsweredWithNothing(t *testing.T) {
 // What a note is divided into, over the wire.
 
 func TestANoteSaysWhatItIsDividedInto(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
 	})
 
@@ -313,7 +313,7 @@ func TestANoteSaysWhatItIsDividedInto(t *testing.T) {
 // TestANeighbourhoodSaysWhichOfThreeEachNoteIs. A plex draws a deck and a
 // stencil as what they are, and the picture is where it is told which is which.
 func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
 			"  - to: Animal\n    role: child\n---\n\nan animal is a note\n",
 		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Llama\n\n[[Animal]]\n",
@@ -356,7 +356,7 @@ func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
 }
 
 func TestAPathAskedTwiceIsAnsweredOnce(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 
@@ -376,7 +376,7 @@ func TestAPathAskedTwiceIsAnsweredOnce(t *testing.T) {
 // absent from the answer, so an answer cut to fit the ceiling would be one a
 // caller cannot tell from a note with nothing in it.
 func TestMorePathsThanAreAnsweredAtOnceAreRefused(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 
@@ -393,7 +393,7 @@ func TestMorePathsThanAreAnsweredAtOnceAreRefused(t *testing.T) {
 }
 
 func TestANoteCarryingNoHeadingIsAbsent(t *testing.T) {
-	client, _ := opened(t, map[string]string{
+	client, _ := openVault(t, map[string]string{
 		"Plain.md": "---\ntitle: Plain\n---\n\nProse and nothing else.\n",
 	})
 

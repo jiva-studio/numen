@@ -27,7 +27,7 @@ func fileAt(t *testing.T, root, path string) string {
 // says so itself: the link is in the note that was made, so one write leaves it
 // joined.
 func TestANoteIsMadeCarryingTheLinkThatSeatsIt(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
 
@@ -38,8 +38,8 @@ func TestANoteIsMadeCarryingTheLinkThatSeatsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the note was refused: %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the note was refused: %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "Entropy.md" {
 		t.Fatalf("the note was filed at %q", path)
@@ -61,7 +61,7 @@ func TestANoteIsMadeCarryingTheLinkThatSeatsIt(t *testing.T) {
 // new note writes, so the role is the one that puts each of the two where the
 // person put them.
 func TestANoteMadeInTheChildSeatIsTheParentsChild(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
 
@@ -85,7 +85,7 @@ func TestANoteMadeInTheChildSeatIsTheParentsChild(t *testing.T) {
 // TestANoteIsMadeInTheFolderItWasAskedFor. The person's arrangement of their own
 // folders is followed and never altered.
 func TestANoteIsMadeInTheFolderItWasAskedFor(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"physics/Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
 
@@ -110,7 +110,7 @@ func TestANoteIsMadeInTheFolderItWasAskedFor(t *testing.T) {
 // TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack. This is what puts a note
 // in the picture as soon as it exists.
 func TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
 
@@ -121,7 +121,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := f.opened.Index.Queries().Notes(t.Context(), f.opened.Showing().ID, []string{"Entropy.md"})
+	found, err := f.opened.Queries().Notes(t.Context(), f.opened.GetShownVault().ID, []string{"Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack(t *testing.T) {
 // left as it stands.
 func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 	const held = "---\ntitle: Ontology\n---\n\n# Ontology\n"
-	f := quitting(t, nil, map[string]string{"Ontology.md": held})
+	f := openWindow(t, nil, map[string]string{"Ontology.md": held})
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Ontology",
@@ -143,8 +143,8 @@ func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_OCCUPIED {
-		t.Errorf("a name already taken was answered with %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+		t.Errorf("a name already taken was answered with %v", code)
 	}
 	if answer.Msg.GetPath() != "" {
 		t.Errorf("a note that was not made was filed at %q", answer.Msg.GetPath())
@@ -155,9 +155,9 @@ func TestANoteMadeWhereOneAlreadyIsIsRefused(t *testing.T) {
 }
 
 // TestALinkNamingNoRoleLeavesNoNote. A link the application acts on carries one
-// of the roles the schema names, and the refusal comes before the file does.
+// of the roles the schema names, and the error comes before the file does.
 func TestALinkNamingNoRoleLeavesNoNote(t *testing.T) {
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
 
@@ -177,7 +177,7 @@ func TestALinkNamingNoRoleLeavesNoNote(t *testing.T) {
 // account of a relationship: the other note is not touched.
 func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
 	const other = "---\ntitle: Entropy\n---\n\n# Entropy\n"
-	f := quitting(t, nil, map[string]string{
+	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\ntags:\n  - draft\n---\n\n# Ontology\n",
 		"Entropy.md":  other,
 	})
@@ -189,8 +189,8 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the link was refused: %v", refusal)
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the link was refused: %v", code)
 	}
 
 	joined := fileAt(t, f.root, "Ontology.md")
@@ -212,7 +212,7 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
 // from. Written by name, it would hang off the other one, and the picture the
 // person is looking at would not draw it at all.
 func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
-	f := quitting(t, nil, nil)
+	f := openWindow(t, nil, nil)
 	// Both are made through the window, which is what puts them in the index:
 	// the vault is scanned at startup, and a test is not started.
 	for _, folder := range []string{"", "physics"} {
@@ -267,7 +267,7 @@ func TestEveryRoleTheSchemaNamesIsWrittenUnderThatWord(t *testing.T) {
 		{v1.Role_ROLE_ATTACHMENT, "attachment"},
 	} {
 		t.Run(one.word, func(t *testing.T) {
-			f := quitting(t, nil, map[string]string{
+			f := openWindow(t, nil, map[string]string{
 				"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 			})
 

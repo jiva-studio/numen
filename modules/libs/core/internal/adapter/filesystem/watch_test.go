@@ -13,9 +13,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
-// watching follows a vault and gives back a function that waits for the next
+// watchVault follows a vault and gives back a function that waits for the next
 // batch of changed paths.
-func watching(t *testing.T, root string) func() []string {
+func watchVault(t *testing.T, root string) func() []string {
 	t.Helper()
 	changes, _, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
@@ -112,7 +112,7 @@ func TestAFolderAlreadyThereIsNotItsWholeContents(t *testing.T) {
 	// A watch opened on a folder written a moment ago is told what was already
 	// in it, and one of those cannot be told from a file that has just arrived.
 	time.Sleep(500 * time.Millisecond)
-	next := watching(t, root)
+	next := watchVault(t, root)
 
 	now := time.Now()
 	if err := os.Chtimes(root, now, now); err != nil {
@@ -201,7 +201,7 @@ func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 // TestAnEditIsReported.
 func TestAnEditIsReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	next := watching(t, root)
+	next := watchVault(t, root)
 
 	write(t, root, "Note.md", "# Note\n\nedited\n")
 
@@ -214,7 +214,7 @@ func TestAnEditIsReported(t *testing.T) {
 // the original, renamed over the top.
 func TestASaveThroughATemporaryFileIsOneChange(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	next := watching(t, root)
+	next := watchVault(t, root)
 
 	temp := filepath.Join(root, "Note.md.tmp")
 	if err := os.WriteFile(temp, []byte("# Note\n\nedited\n"), 0o644); err != nil {
@@ -233,7 +233,7 @@ func TestASaveThroughATemporaryFileIsOneChange(t *testing.T) {
 // made after it started is part of that tree.
 func TestANewNoteInANewFolderIsReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	next := watching(t, root)
+	next := watchVault(t, root)
 
 	write(t, root, "later/Added.md", "# Added\n")
 
@@ -273,7 +273,7 @@ func TestABookAppearingIsReported(t *testing.T) {
 // what the walk does not report the watcher does not report either.
 func TestAnImageAppearingIsNotReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	next := watching(t, root)
+	next := watchVault(t, root)
 
 	write(t, root, "assets/scan.png", "PNG\n")
 	write(t, root, "Note.md", "# Note\n\nedited\n")
@@ -288,7 +288,7 @@ func TestAnImageAppearingIsNotReported(t *testing.T) {
 // found the file.
 func TestWhatTheVaultIgnoresIsNotReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, []string{"archive/"})
-	next := watching(t, root)
+	next := watchVault(t, root)
 
 	write(t, root, "archive/Old.md", "# Old\n")
 	write(t, root, ".#Note.md", "lock\n")

@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 

@@ -27,10 +27,10 @@ const props = withDefaults(
   { placeholder: '', name: 'Choices', disabled: false },
 )
 
-defineOptions({ inheritAttrs: false })
-
 /** Which choice is in force, by the identifier the caller gave it. */
 const model = defineModel<string>({ default: '' })
+
+defineOptions({ inheritAttrs: false })
 
 const items = computed<readonly MenuItem[]>(() =>
   props.choices.map((one) => ({
@@ -59,14 +59,14 @@ const asking = ref<{ at: Position; wide: number } | null>(null)
  * The line opens the choices under itself, along its own leading edge and no
  * narrower than itself.
  */
-const opens = () => {
+const openChoices = () => {
   const line = element.value
   if (!line || props.disabled) return
   const box = line.getBoundingClientRect()
   asking.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
 }
 
-const chose = (id: string) => {
+const onChoose = (id: string) => {
   model.value = id
 }
 
@@ -74,7 +74,7 @@ const chose = (id: string) => {
 const onKey = (event: KeyboardEvent) => {
   if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
   event.preventDefault()
-  opens()
+  openChoices()
 }
 
 defineExpose({
@@ -96,16 +96,16 @@ defineExpose({
     :class="
       cn(
         'flex w-full items-center justify-between gap-2',
-        'h-action rounded-tight border border-field-rule bg-field px-2',
-        'font-sans text-base leading-none text-ink text-left',
-        'cursor-pointer outline-none transition-colors duration-100 ease-numen',
+        'h-action rounded-tight border-field-rule bg-field border px-2',
+        'text-ink text-left font-sans text-base leading-none',
+        'ease-numen cursor-pointer transition-colors duration-100 outline-none',
         'hover:border-rule',
-        'focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+        'focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )
     "
-    @click="opens"
+    @click="openChoices"
     @keydown="onKey"
   >
     <span class="select__reading min-w-0" :class="{ 'text-hushed': !chosen && !model }">
@@ -125,7 +125,7 @@ defineExpose({
     groups
     open
     opening="keyboard"
-    @choose="chose"
+    @choose="onChoose"
     @dismiss="asking = null"
   >
     <template #silence>Nothing to choose</template>

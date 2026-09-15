@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
-import { holdsTheWindow } from '@numen/ui'
-import App from './App.vue'
+import { holdWindow } from '@numen/ui'
+import App from './app/App.vue'
 
 // The window draws its own menus. The one the webview draws carries a browser's
 // idea of what is here — inspect, reload, view source — and refusing it
@@ -16,7 +16,7 @@ const wails = import(/* @vite-ignore */ runtime).catch(() => undefined)
 // A note may have been written by anybody, and this window has no address bar
 // to say where it has ended up. Nothing takes it off the pages it serves: an
 // address that leads outward is opened where the person opens everything else.
-holdsTheWindow((href) => {
+holdWindow((href) => {
   void wails.then((it) => it?.Browser.OpenURL(href))
 })
 

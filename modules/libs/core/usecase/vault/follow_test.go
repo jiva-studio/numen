@@ -25,7 +25,7 @@ type hand struct {
 	lost    chan struct{}
 }
 
-func held() *hand {
+func newHand() *hand {
 	return &hand{changes: make(chan []string), lost: make(chan struct{}, 1)}
 }
 
@@ -64,8 +64,8 @@ type followed struct {
 	moved <-chan vaults.VaultChanges
 }
 
-// following puts one vault, one index and a watcher a test drives together.
-func following(t *testing.T, notes map[string]string, watcher *hand) followed {
+// newFollowed puts one vault, one index and a watcher a test drives together.
+func newFollowed(t *testing.T, notes map[string]string, watcher *hand) followed {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
@@ -104,8 +104,8 @@ func next[T any](t *testing.T, from <-chan T) T {
 // TestAChangedNoteIsBroughtUpToDateAndReported.
 func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 	t.Parallel()
-	watcher := held()
-	f := following(t, map[string]string{
+	watcher := newHand()
+	f := newFollowed(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
 
@@ -127,8 +127,8 @@ func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 // source it sees; what a listener is told to look at again is notes.
 func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 	t.Parallel()
-	watcher := held()
-	f := following(t, map[string]string{
+	watcher := newHand()
+	f := newFollowed(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
 	testsupport.WriteBook(t, f.vault.Path, "library/A Book.epub")
@@ -152,8 +152,8 @@ func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 // Not knowing what changed is answered by looking at everything, books included.
 func TestWhatCannotBeFollowedTakesTheBooksWithIt(t *testing.T) {
 	t.Parallel()
-	watcher := held()
-	f := following(t, map[string]string{"Note.md": "# Note\n"}, watcher)
+	watcher := newHand()
+	f := newFollowed(t, map[string]string{"Note.md": "# Note\n"}, watcher)
 
 	watcher.lost <- struct{}{}
 
@@ -167,8 +167,8 @@ func TestWhatCannotBeFollowedTakesTheBooksWithIt(t *testing.T) {
 // than told which notes moved.
 func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	t.Parallel()
-	watcher := held()
-	f := following(t, map[string]string{
+	watcher := newHand()
+	f := newFollowed(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
 
@@ -195,7 +195,7 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 // application is failing when it is working.
 func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	t.Parallel()
-	watcher := held()
+	watcher := newHand()
 	v := testsupport.NewVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
@@ -204,13 +204,13 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	trouble := make(chan error, 8)
+	reported := make(chan error, 8)
 	readers := &sometimes{VaultReaders: filesystem.VaultReaders{}}
 	follow := vaults.Follow{
-		Watcher: watcher,
-		Refresh: vaults.Refresh{Readers: readers, Vaults: db.Vaults(), Notes: db.Notes()},
-		Scan:    scanner(filesystem.VaultReaders{}, db),
-		Trouble: func(err error) { trouble <- err },
+		Watcher:      watcher,
+		Refresh:      vaults.Refresh{Readers: readers, Vaults: db.Vaults(), Notes: db.Notes()},
+		Scan:         scanner(filesystem.VaultReaders{}, db),
+		ErrorHandler: func(err error) { reported <- err },
 	}
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {
@@ -220,13 +220,13 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 
 	readers.refuse.Store(true)
 	watcher.changes <- []string{"Note.md"}
-	if err := next(t, trouble); err == nil {
+	if err := next(t, reported); err == nil {
 		t.Fatal("a vault that could not be opened was reported as working")
 	}
 
 	readers.refuse.Store(false)
 	watcher.changes <- []string{"Note.md"}
-	if err := next(t, trouble); err != nil {
+	if err := next(t, reported); err != nil {
 		t.Errorf("still reporting %v after it worked", err)
 	}
 }

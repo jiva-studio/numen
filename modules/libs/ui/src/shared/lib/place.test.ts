@@ -4,11 +4,11 @@
  * has to fit in.
  */
 import { describe, expect, it } from 'vitest'
-import { beside } from './place'
+import { getPlaceBeside } from './place'
 
 /** A span from 100 to 120, in an area of 240, with a thing 60 to place. */
-const span = (over: Partial<Parameters<typeof beside>[0]> = {}) =>
-  beside({ from: 100, to: 120, size: 60, room: 240, margin: 8, gap: 8, ...over })
+const span = (over: Partial<Parameters<typeof getPlaceBeside>[0]> = {}) =>
+  getPlaceBeside({ from: 100, to: 120, size: 60, room: 240, margin: 8, gap: 8, ...over })
 
 describe('where a thing standing beside a span goes', () => {
   it('runs on from the far end of the span, clear of it', () => {

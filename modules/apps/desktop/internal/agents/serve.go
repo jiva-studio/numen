@@ -80,18 +80,18 @@ func (s *Server) Close() error {
 func Serve(ctx context.Context, opts Options) (*Server, error) {
 	secret := opts.Token
 	if secret == "" {
-		minted, err := Token(opts.Config)
+		token, err := GetToken(opts.Config)
 		if err != nil {
 			return nil, err
 		}
-		secret = minted
+		secret = token
 	}
 	addr := opts.Addr
 	if addr == "" {
 		addr = ephemeral
 	}
 
-	trouble := func(err error) { fmt.Fprintln(opts.Out, "agents:", err) }
+	errorHandler := func(err error) { fmt.Fprintln(opts.Out, "agents:", err) }
 	serving := mcp.ServeHTTP
 	switch {
 	case opts.Reads:
@@ -99,7 +99,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	case opts.Reviews:
 		serving = mcp.ServeReviewingHTTP
 	}
-	endpoint, err := serving(ctx, addr, secret, opts.Core, trouble)
+	endpoint, err := serving(ctx, addr, secret, opts.Core, errorHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		case opts.Reads:
 			vocabulary = mcp.ReadingVocabulary
 		case opts.Reviews:
-			vocabulary = mcp.ReviewingVocabulary
+			vocabulary = mcp.GetReviewVocabulary
 		}
 		words, err := vocabulary(ctx, opts.Core)
 		if err != nil {
@@ -196,6 +196,6 @@ func Claude(
 		Model:               cfg.Agent.Claude.Model,
 		Turns:               cfg.Agent.Claude.MaxSteps,
 		ReadsHooksAndSkills: cfg.Agent.Claude.ReadsHooksAndSkills,
-		Trouble:             func(err error) { fmt.Fprintln(out, "agent:", err) },
+		ErrorHandler:        func(err error) { fmt.Fprintln(out, "agent:", err) },
 	}
 }

@@ -46,18 +46,19 @@ test('there are stories for the keyboard walk to run after', () => {
     '@numen/ui': [
       30,
       [
-        'modules/libs/ui/src/features/workspace/WorkspaceLayout.stories.ts',
-        'modules/libs/ui/src/features/reader/Reader.stories.ts',
+        'modules/libs/ui/src/features/workspace/ui/WorkspaceLayout.stories.ts',
+        'modules/libs/ui/src/features/reader/ui/Reader.stories.ts',
+        'modules/libs/ui/src/features/book/ui/Book.stories.ts',
       ],
     ],
     '@numen/editor': [
       5,
       [
-        'modules/apps/desktop/editor/src/window/screens.stories.ts',
-        'modules/apps/desktop/editor/src/settings-tab/setting-row/SettingRow.stories.ts',
+        'modules/apps/desktop/editor/src/app/screens.stories.ts',
+        'modules/apps/desktop/editor/src/pages/settings/ui/setting-row/SettingRow.stories.ts',
       ],
     ],
-    '@numen/flashcards': [1, ['modules/apps/desktop/flashcards/src/screens.stories.ts']],
+    '@numen/flashcards': [1, ['modules/apps/desktop/flashcards/src/app/screens.stories.ts']],
   }
   assert.deepEqual(unstaged(corpora(), wanted), [])
 })

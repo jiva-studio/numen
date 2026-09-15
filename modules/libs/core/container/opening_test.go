@@ -24,7 +24,7 @@ var note = map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"}
 // newest copy of it lands last. A walk writes in groups from what it read, and
 // its copy of a note lands whenever the group does.
 func TestANoteWrittenUnderTheWalkIsReadAgain(t *testing.T) {
-	cfg, db, v := opened(t, note)
+	cfg, db, v := openVault(t, note)
 	opening := cfg.VaultOpener(db)
 	open := opening.Begin(t.Context(), v)
 
@@ -48,9 +48,9 @@ func TestANoteWrittenUnderTheWalkIsReadAgain(t *testing.T) {
 // vault whose first walk failed is walked again on the opening it already has,
 // and a note written under that walk is read again after it.
 func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
-	cfg, db, v := opened(t, note)
+	cfg, db, v := openVault(t, note)
 
-	held := gated()
+	held := makeGatedReaders()
 	opening := cfg.VaultOpenerWith(db, held, cfg.VaultWatcher())
 	open := opening.Begin(t.Context(), v)
 
@@ -91,10 +91,10 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 
 // A vault that cannot be watched is opened all the same, and says why.
 func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
-	cfg, db, v := opened(t, note)
+	cfg, db, v := openVault(t, note)
 	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
 
-	if open.Unwatched() == nil {
+	if open.GetUnwatchedReason() == nil {
 		t.Fatal("a vault nobody can follow says nothing about it")
 	}
 	// And it still reads: what cannot be followed can still be walked.
@@ -110,10 +110,10 @@ func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
 // once the first walk is over. The note on disk is what the index says
 // afterwards, however old the copy the first walk was holding.
 func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
-	cfg, db, v := opened(t, note)
+	cfg, db, v := openVault(t, note)
 
-	watcher := waved()
-	readers := staging()
+	watcher := makeWatcher()
+	readers := makeStagedReaders()
 	opening := cfg.VaultOpenerWith(db, readers, watcher)
 
 	told := make(chan container.VaultChanges, 8)
@@ -129,7 +129,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	}()
 
 	// The first walk has the note's old bytes in hand.
-	if path := awaited(t, readers.read, "the walk read nothing"); path != "Leaf.md" {
+	if path := receiveFrom(t, readers.read, "the walk read nothing"); path != "Leaf.md" {
 		t.Fatalf("the walk is reading %q", path)
 	}
 	write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
@@ -144,10 +144,10 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	}
 
 	readers.release()
-	if err := awaited(t, walked, "the first walk did not finish"); err != nil {
+	if err := receiveFrom(t, walked, "the first walk did not finish"); err != nil {
 		t.Fatal(err)
 	}
-	if m := awaited(t, told, "the vault was never read again"); !m.Reload {
+	if m := receiveFrom(t, told, "the vault was never read again"); !m.Reload {
 		t.Fatalf("reported %+v", m)
 	}
 	if got := titleOf(t, db, v, "Leaf.md"); got != "Renamed" {
@@ -155,9 +155,9 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	}
 }
 
-// awaited is what the channel carries, and a failure saying what did not happen
-// when it carries nothing.
-func awaited[T any](t *testing.T, from <-chan T, what string) T {
+// receiveFrom is what the channel carries, and a failure saying what did not
+// happen when it carries nothing.
+func receiveFrom[T any](t *testing.T, from <-chan T, what string) T {
 	t.Helper()
 	select {
 	case value := <-from:
@@ -169,9 +169,9 @@ func awaited[T any](t *testing.T, from <-chan T, what string) T {
 	}
 }
 
-// waved is a watcher whose events a test sends itself, so what happens when a
-// vault changes can be asked without a filesystem or a timer.
-func waved() *waves {
+// makeWatcher is a watcher whose events a test sends itself, so what happens
+// when a vault changes can be asked without a filesystem or a timer.
+func makeWatcher() *waves {
 	return &waves{changes: make(chan []string), lost: make(chan struct{}, 1)}
 }
 
@@ -184,10 +184,10 @@ func (w *waves) Watch(context.Context, domain.Vault) (<-chan []string, <-chan st
 	return w.changes, w.lost, nil
 }
 
-// staging is readers whose first walk holds every note it has read, and whose
-// later walks read straight through. A second walk of the vault can then be
-// asked for while the first is still holding an older copy.
-func staging() *staged {
+// makeStagedReaders is readers whose first walk holds every note it has read,
+// and whose later walks read straight through. A second walk of the vault can
+// then be asked for while the first is still holding an older copy.
+func makeStagedReaders() *staged {
 	return &staged{
 		VaultReaders: filesystem.VaultReaders{},
 		read:         make(chan string, 1),
@@ -236,9 +236,9 @@ func (r stagedRead) Read(ctx context.Context, path string) ([]byte, error) {
 	return raw, err
 }
 
-// gated is readers that hold each read open once the bytes are in hand, so a
-// test can change the file the walk is holding a copy of.
-func gated() *gate {
+// makeGatedReaders is readers that hold each read open once the bytes are in
+// hand, so a test can change the file the walk is holding a copy of.
+func makeGatedReaders() *gate {
 	return &gate{
 		VaultReaders: filesystem.VaultReaders{},
 		begun:        make(chan string, 1),
@@ -281,7 +281,7 @@ func (g *gate) release() {
 	}
 }
 
-func (g *gate) waiting() chan struct{} {
+func (g *gate) getWaiting() chan struct{} {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.until
@@ -307,7 +307,7 @@ func (r gating) Read(ctx context.Context, path string) ([]byte, error) {
 	default:
 	}
 	select {
-	case <-r.at.waiting():
+	case <-r.at.getWaiting():
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
@@ -321,8 +321,8 @@ func (refusing) Watch(context.Context, domain.Vault) (<-chan []string, <-chan st
 	return nil, nil, os.ErrPermission
 }
 
-// opened is a vault and an index of a test's own.
-func opened(t *testing.T, notes map[string]string) (container.Config, *container.Index, domain.Vault) {
+// openVault is a vault and an index of a test's own.
+func openVault(t *testing.T, notes map[string]string) (container.Config, *container.Index, domain.Vault) {
 	t.Helper()
 
 	cfg := container.Config{IndexPath: indexfile.Path(t)}

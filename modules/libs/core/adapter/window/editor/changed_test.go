@@ -20,16 +20,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// unlevelled brings nothing level: what is asked in these tests is what the
+// levelNothing brings nothing level: what is asked in these tests is what the
 // schema carries, and there is no index behind them to find it in.
-func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 
 // editable is a vault with a read and a save on it and nothing behind them.
 // What is asked here is what the schema carries.
 func editable(t *testing.T, notes map[string]string) *API {
 	t.Helper()
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled, time.Now)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	api := &API{
 		Notes: Notes{
 			Read:  &note.Read{Readers: filesystem.VaultReaders{}},
@@ -40,7 +40,7 @@ func editable(t *testing.T, notes map[string]string) *API {
 	return api
 }
 
-func at(t *testing.T, api *API, path string) *v1.LastRead {
+func readNote(t *testing.T, api *API, path string) *v1.LastRead {
 	t.Helper()
 	out, err := api.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: path}))
 	if err != nil {
@@ -52,15 +52,15 @@ func at(t *testing.T, api *API, path string) *v1.LastRead {
 	return &v1.LastRead{Prose: out.Msg.GetBody(), At: out.Msg.GetAt()}
 }
 
-// A note holding prose the client has not read is its own answer. A refusal is
+// A note holding prose the client has not read is its own answer. An error is
 // something a tab can do nothing about, and this one is a question for the
 // person.
 func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	api := editable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	seen := at(t, api, "Entropy.md")
+	seen := readNote(t, api, "Entropy.md")
 
 	theirs := "# Entropy\n\nTheirs.\n"
-	on := filepath.Join(api.Showing().Path, "Entropy.md")
+	on := filepath.Join(api.GetShownVault().Path, "Entropy.md")
 	if err := os.WriteFile(on, []byte(theirs), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -73,8 +73,8 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
 	}
-	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_STALE {
-		t.Errorf("a note that changed was answered %v", refusal)
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+		t.Errorf("a note that changed was answered %v", code)
 	}
 	if out.Msg.GetAt() != nil {
 		t.Error("a write that wrote nothing answered with a fingerprint")
@@ -93,7 +93,7 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 // write, and it is what lets a session hold more than one save.
 func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	api := editable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	seen := at(t, api, "Entropy.md")
+	seen := readNote(t, api, "Entropy.md")
 
 	first, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Entropy.md",
@@ -103,7 +103,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.Msg.GetRefusal() == v1.Refusal_REFUSAL_STALE {
+	if first.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
 		t.Fatal("the first write said the note changed")
 	}
 	if first.Msg.GetAt() == nil {
@@ -118,11 +118,11 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if second.Msg.GetRefusal() == v1.Refusal_REFUSAL_STALE {
+	if second.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
 		t.Error("the write after a write said the note changed")
 	}
 
-	raw, err := os.ReadFile(filepath.Join(api.Showing().Path, "Entropy.md"))
+	raw, err := os.ReadFile(filepath.Join(api.GetShownVault().Path, "Entropy.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 	})
-	on := filepath.Join(api.Showing().Path, "Heat.md")
+	on := filepath.Join(api.GetShownVault().Path, "Heat.md")
 
 	var once sync.Once
 	linking := note.NewEditLinks(
@@ -181,7 +181,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 			})
 		}},
 		filesystem.VaultWriters{},
-		unlevelled,
+		levelNothing,
 		time.Now,
 	)
 	api.Notes.Linking = &linking
@@ -193,8 +193,8 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
 	}
-	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_STALE {
-		t.Errorf("a note that changed was answered %v", refusal)
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+		t.Errorf("a note that changed was answered %v", code)
 	}
 
 	raw, err := os.ReadFile(on)

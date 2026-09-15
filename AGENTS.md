@@ -1,79 +1,307 @@
-# Constraints
+# Numen — Coding Conventions
 
-The layering and port rules of this repository, as a list to check code against before it is written. Where a machine refuses a violation the line names it.
+These rules apply to all code in the numen repository. Every agent (Claude,
+Gemini, or any other) must follow them.
 
-Rules 1–23 are decisions recorded in [`docs/adr/`](docs/adr/README.md), and where a line and an ADR disagree, the ADR is right and this file is wrong. Rules 24–32 name things rather than layer them: their source is the preamble of [`docs/glossary.md`](docs/glossary.md) — a concept takes the name its field already gives it — and the checks named beside them, and this file is where they are written for the code.
+## Canonical guides
 
-This is not the whole of the architecture. It is the part a generator gets wrong. Commit format, labels and platform runs are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- **Architecture decisions**: [`docs/adr/README.md`](docs/adr/README.md) — the rules live here, not in this file's memory.
 
-Paths below are relative to `modules/libs/core/` unless they say otherwise. The two guards are `container/layers_test.go`, which parses import blocks, and `container/direction_test.go`, which reads the transitive `Deps` out of `go list -json` for four platforms.
+---
 
-## The core
+## 1. Comments state the rule, and stop
 
-1. `domain/`, `port/`, `usecase/**`, and every other package of the core, are compiled from no `adapter/**`, no `internal/adapter/**`, no `container` and no `modules/libs/protocol` — at any remove, not only in the import block. → `TestNothingTheCoreIsCompiledFromReachesOutward`
-2. `internal/wire` is the one package that may name the generated schema, because two driving adapters both put its types on the wire. → `wireBaseline` in `direction_test.go`
-3. `container` may name `domain`, `port`, `usecase/**` and the adapters, and nothing else of the core. It binds; it does none of the core's work. → `refused` / `assembling`
-4. `container` may not name the generated schema. It is the one package answering for what it names rather than for everything it is built from. → `answering`
-5. `domain`, `flashcards`, `markdown`, `internal/cardid` and `internal/ulid` import only each other. A pure package reaching a sibling of the core takes on its goroutines, its channels and its schema. → `pure` in `layers_test.go`
-6. A test of a pure package reaches what the package itself reaches, and builds the rest in the test. → `TestNoPurePackageIsTestedThroughAnAdapter`
-7. The core is told the time, the stream it writes to, and what to do when something goes wrong. `time.Now` and `time.Since` stand in `adapter/`, `container/`, an application's `cmd/`, and `internal/onnxruntime/`, which fetches a runtime over the network; the core takes a clock port. `fmt.Print*` stands in `adapter/cli/` and `cmd/`. `panic` stands in a test, and in `adapter/index/sqlfile/sqlfile.go` and `adapter/settings/models.go`, over what the build already decided. → `.golangci.yml`, `forbidigo` — `make lint-go` fails on what it finds
-8. The core is handed the stream it writes to. What went wrong in work it carries on past is said through `port.Trouble`; what a call could not answer is that call's error. **A person is told in the window they are looking at**, which is why no module here imports a logging package. → `TestNothingOfTheCoreLogs`, and `TestNoApplicationLogs` in `modules/apps/desktop/internal/layers/` and in `modules/apps/mobile/internal/layers/`
+A comment says what holds. It never names an alternative that is not in the
+code, and never cites an ADR number — restate the rule inline instead.
 
-## Adapters
+Before writing a comment, delete each clause in turn. If what remains still
+describes the code, the deleted clause was argument and does not belong.
 
-9. An adapter reaches the core and its own subpackages, and is handed every other adapter it needs. Its subpackages are itself; `internal/adapter/x` is not `adapter/x`. → `refused` / `sibling`
-10. An adapter is given what it needs, so `container` is a name it has no use for. → `refused`
-11. Only a driving adapter imports `usecase/**`. The driving adapters are `adapter/cli`, `adapter/mcp`, `adapter/window/editor`, `adapter/window/flashcards`, `internal/adapter/theme`. → `driving` in `layers_test.go`
-12. An adapter importing the generated schema is a driving adapter and is listed as one. Direction is read off the messages an adapter handles, never off the folder it sits in: `internal/` says only that nothing outside composes it. → `TestEveryAdapterServingTheSchemaIsDriving`
-13. `adapter/` holds exactly `agent, cli, index, mcp, settings, window/editor, window/flashcards`. `adapter/window/` groups adapters and is not one. `internal/adapter/` holds exactly `appstate, embed, filesystem, pdf, proofreading, recognition, theme, transcription, trash`. A new adapter is a line added to the list, which is what makes it a decision. → `TestTheCoresPublicAdaptersAreTheseAndNoOthers`, `TestTheCoresHeldAdaptersAreTheseAndNoOthers`
-14. An existing edge that breaks a rule above is an entry in `baseline`, and that list only shrinks. The rule stays as it is written; the baseline entry is what carries the exception.
+Rewrite on sight of any of these:
 
-## Ports
+- `rather than X`, `instead of X`, `not X but Y`
+- `X would have…`, `otherwise somebody would…`, `told only Y, a caller would…`
+- `so that we do not…`, `to avoid…`
+- `these are those X`, `which is why this exists`
+- benchmark numbers, or any comparison with a previous implementation
+  (measurements live only in `docs/performance.md`)
 
-15. An interface the composition root binds an adapter to is declared in `port/`. An interface a single use case needs and nothing binds is declared beside that use case. What has to see it decides where it goes. → [Where a port is declared, and where an adapter stands](docs/adr/0035-where-a-port-is-declared-and-where-an-adapter-stands.md)
-16. **The number of callers decides nothing.** A one-caller port is a port. `VaultWatcher`, `IndexMaintenance` and `VectorQueries` are settled cases; do not reopen them.
-17. Every interface in `port/` is named as `port.X` somewhere outside `port/`. A port whose last caller went is deleted, not kept. So is every other type `port/` declares: the words a conversation is held in stand beside it, and a word nothing outside says belongs to no conversation. → `TestEveryPortIsAskedForSomewhereElse`, `TestEveryTypePortDeclaresIsNamedSomewhereElse`
-18. The composition root is the one place an adapter is bound to its port, so `var _ port.X = …` is written there and nowhere else. Written in the adapter too, the binding stands in two places. A method *returning* `port.X` is another matter: where one port opens another, that return type is the port's own signature, and an adapter bound to the first has no choice but to write the second. → `TestNoAdapterNamesThePortItSatisfies`, and `TestNoApplicationNamesThePortItSatisfies` in `modules/apps/desktop/internal/layers/`
-19. A port is named after the need and in the core's own language; an adapter after the technology. The core asks for a `VaultReader`; that the answer is a filesystem is known in `adapter/` and `container/` alone.
+Two sentences is usually the ceiling. The same holds in ADRs: a passage that
+would read as true with nothing decided is narration.
 
-## Applications
+---
 
-20. An application under `modules/apps/**` takes `container`, the adapters it serves something through, `domain` and `port`. Everything else of the core is the core's work, and an application doing it is an entry in that module's `baseline`. → `TestNoApplicationDoesTheCoresWork` in `modules/apps/desktop/internal/layers/`
-21. What two applications share is a library under `modules/libs/`, which is how each reaches the other's work without reaching the other. → the same test
+## 2. Function and method naming (all languages)
 
-## The interface library
+Functions and methods take **imperative verb phrases** in the base form
+(`get…`, `read…`, `write…`, `fetch…`, `create…`, `open…`, `delete…`) or
+**predicate phrases** (`is…`, `has…`, `can…`).
 
-22. `modules/libs/ui` is compiled from Vue, its own source and what its manifest names — in a component, in a story and in a fixture alike. The dependency runs `modules/apps/*` → `modules/libs/ui`, and a window's own words (`@numen/protocol`, `@numen/editor`, anything under `modules/apps/**`) reach it as arguments. → three things refuse the three ways in: the bare package names fail to resolve, because `modules/libs/ui/package.json` declares none of them; `no-restricted-imports` in `modules/libs/ui/eslint.config.js` refuses `@numen/protocol`, `@numen/editor`, `@numen/wire` and `**/apps/**` over every `.ts` and `.vue` the module holds; and in `modules/tools/depgraph/rules.cjs` `no-reach-out-of-the-module` refuses a relative path out of the module's own folder while `no-path-into-the-install` refuses one into `node_modules`
-23. A component's pure core takes the clock, the animation frame and the viewport as parameters. `Date.now`, `new Date()`, `Math.random`, `requestAnimationFrame`, `matchMedia` and `getBoundingClientRect` belong in `lib/clock.ts` and in `.vue` views, not in a pure `.ts`. → nothing refuses this today
+Forbidden patterns:
 
-## Names in TypeScript
+| Pattern | Example | Fix |
+|---|---|---|
+| Third-person singular | `carries`, `attends`, `reads` | `carry`, `attend`, `read` |
+| Past participle | `listened`, `spoken`, `cued` | `getTranscript`, `transcribe` |
+| Bare noun / adjective | `highlight`, `book` | `getHighlight`, `createBook` |
+| Bare preposition | `At`, `Under`, `Beside` | `OpenAt`, `GetSourcesUnder`, `GetPlaceBeside` |
+| Literary metaphor | `minting`, `held`, `cold` | `getTitle`, `getActiveTab`, `getTitle` |
 
-24. **A name comes from what the field calls the thing, not from what this repository already calls it.** The repository's word counts only where it is also the standard one; where the two differ, the standard wins. [`docs/glossary.md`](docs/glossary.md) already says this of domain concepts — "a concept takes the name its field already gives it" — and it holds for identifiers too. This rule outranks 25–30: they are the standard as of writing, and a better-sourced standard replaces them.
-25. **A type or interface is a noun or noun phrase** — not a gerund, a participle, a third-person verb or a preposition. Verb phrases name functions and methods; nouns name the things they act on. → Martin, *Clean Code* ch. 2 ("Class Names"): classes take noun or noun phrase names, "a class name should not be a verb"; Cwalina & Abrams, [*Framework Design Guidelines*](https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/names-of-classes-structs-and-interfaces): "DO name classes and structs with nouns or noun phrases … This distinguishes type names from methods, which are named with verb phrases."
-26. **A name says what the thing is, and the type says how it is declared.** An `I` prefix, an `Interface` suffix and anything else restating the type belong to the declaration, which already carries them. → [microsoft/TypeScript coding guidelines](https://github.com/microsoft/TypeScript/wiki/Coding-guidelines): "Do not use `I` as a prefix for interface names"; [Google TypeScript style guide](https://google.github.io/styleguide/tsguide.html): "TypeScript expresses information in types, so names should not be decorated with information that is included in the type."
-27. **A name is descriptive and spelled in whole words.** → Google: "Names must be descriptive and clear to a new reader"; TypeScript guidelines: "Use whole words in names when possible"; [Vue style guide](https://vuejs.org/style-guide/rules-strongly-recommended.html): "Component names should prefer full words over abbreviations."
-28. **The recurring shapes take the suffix the field gives them**, so a reader knows the kind of thing before reading the body. A component's inputs are `Props` ([Vue](https://vuejs.org/guide/typescript/composition-api.html) names the interface `Props`); an optional argument bag is `Options`; a required collaborator set passed in is `Deps`; a thing a composable holds is `State`; an address to something is `Ref`; the imperative surface a component exposes is a `Handle`; a payload carried by an event is an `Event`. Named after what they belong to: `PlexTabDeps`.
-29. **`UpperCamelCase` for types, `lowerCamelCase` for values, `CONSTANT_CASE` for global constants.** A composable is a function named `useX`. → [Google](https://google.github.io/styleguide/tsguide.html); [Vue composables](https://vuejs.org/guide/reusability/composables.html): "composable functions … camelCase names that start with `use`".
+A method states **what operation is performed** using standard engineering
+terms, never literary third-person narrative.
 
-    **The `use` prefix says the function deals in reactive state.** That is Vue's own word for the shape: a composable takes reactive state, returns it, or holds it across renders, and one that registers no lifecycle hook is a composable still. Where a hook is registered — where the function must be called during `setup` or inside a live scope — the prefix is the only warning its caller gets, so such a function always carries it. The reverse is not owed: a factory that hands back refs and can be called from anywhere, including a test that mounts nothing, takes a plain noun instead, as `screens` and `session` do. What the prefix refuses is a function dealing in no reactive state at all, which promises a composable and hands back a plain value. → `every use* of the interface modules deals in reactive state`, in `modules/tools/lint/composables.test.mjs`
-30. **A rename earns its churn where a stranger who has not read the body is plainly better off**, and a synonym leaves that stranger where they were. Names that already read as things — `Vault`, `Entry` — stay. → Ousterhout, *A Philosophy of Software Design* ch. 14: a name must "create an image" and be precise; a name that resists this is a sign the thing itself is unclear.
+---
 
-    **Where 25 and 30 disagree, 25 wins, and being an ordinary English word is not a defence.** The question 30 asks is whether a stranger is better off, and a stranger meeting a gerund cannot tell what the thing is or which part of the application it belongs to — so renaming one is not a synonym swap, it is the fix 25 asks for. Every example 30 protects is a noun.
+## 3. Event handler naming (frontend — TypeScript / Vue)
 
-    The test, in one sentence: **a competent stranger, meeting the name cold, can say what the thing is and whose it is.** A name that fails it is changed even if the replacement is arguable; a name that passes it stays even if a tidier word exists. When the stem is the fault, change the stem — a `State` or `Result` suffix bolted onto a stem nobody could read fixes nothing.
+Event handlers are named `on<Action>`:
 
-31. **In one barrel a word names one thing.** `modules/libs/ui/src/index.ts` exports components and data types together, so when both want the same noun the noun goes to the type and the component says what it does with one: `Stencil` and `StencilEditor`, never `StencilView`. A `View` suffix added only to dodge the barrel is the collision showing through, and rule 26 already refuses it.
+```ts
+// ✅ correct
+onSubmit, onClose, onClick, onSelect, onToggle
 
-    **A single-word component name is fine where the field uses one.** `Button` and `Menu` are what shadcn, MUI and Radix call these, so rule 24 hands them to us. Vue's own rule asks for two words to keep clear of HTML elements — every eslint config that reads Vue turns it off deliberately, and this is why. → [Vue style guide, essential rules](https://vuejs.org/style-guide/rules-essential.html): "User component names should always be multi-word … This prevents conflicts with existing and future HTML elements, since all HTML elements are a single word." A single-file component is addressed in `PascalCase` and does not collide in practice; the barrel is the constraint that bites here, not the word count.
+// ❌ wrong
+cold, submitted, handle, doThing
+```
 
-Nothing refuses 24–28, 30 or 31. They are read by a person and by a reviewer.
+In Vue `<template>`, emits use kebab-case (`@item-selected`); the
+corresponding handler in `<script>` is `onItemSelected`.
 
-## Names on files
+---
 
-32. **A file named by a gerund or a participle says that word in its own code.** A file answers with a declaration of its own — a type, a function, a constant, its package clause, a method, whose name is its receiver's and not the file's; a test answers with any name its code calls, being named after what it tests; a single-file component answers with its own file name, which is what every template addresses it by. None of them answers with a comment, a string, or a package it imports: a word another module declared stands for nothing here. There is no dictionary and nothing is exempt: a verb form the code does not use is a word standing on nothing, and the file takes the name of what it declares. → `every file named by a verb form says that word in its own code`, in `modules/tools/lint/filenames.test.mjs`, over the Go of the modules and the `.ts` and `.vue` of the interface modules
+## 4. Vue component structure (`<script setup>` / `<script>`)
 
-    **A file can answer with the very noun that should have been its name, and no machine sees it.** No suffix reaches that: `transcrib` and `transcript` are two stems, so are `recognis` and `recognit`, and `Counts` and `Places` are one spelling for a plural and for a verb. So the machine holds the ending against the code and stops there, and a person asks the second question of the declarations — **the head word of what a file declares is the file's name**.
+All Vue components organize their `<script>` block into sections separated by
+80-character comment banners:
 
-## The reviewer
+```vue
+<script setup lang="ts">
+/* --------------------------------- Props ---------------------------------- */
+const props = defineProps<{ ... }>()
 
-`.claude/agents/go-reviewer.md` reviews Go changes against the same records, afterwards. The one place the two could have disagreed is the number of a port's callers: the reviewer's rule against abstracting before a second case draws the line where rule 16 does. It holds for an ordinary Go interface; inside `port/` it does not, and "only one caller" is not a finding there.
+/* --------------------------------- Events --------------------------------- */
+const emit = defineEmits<{ ... }>()
+
+// Or when combined:
+/* ----------------------------- Props & Emits ------------------------------ */
+
+/* --------------------------------- State ---------------------------------- */
+const isOpen = ref(false)
+const title = computed(() => ...)
+
+/* --------------------------------- Hooks ---------------------------------- */
+onMounted(() => { ... })
+
+/* -------------------------------- Handlers -------------------------------- */
+function onSubmit() { ... }
+function onClose() { ... }
+
+/* -------------------------------- Helpers --------------------------------- */
+function formatValue(val: string) { ... }
+</script>
+```
+
+Rules:
+1. Always follow the order: **Props → Events (or Props & Emits) → State → Hooks → Handlers → Helpers**.
+2. Only include headers for sections that actually exist in the component.
+3. The banner is the 80-character form: `/* --------------------------------- <Name> ---------------------------------- */`.
+4. A section with independent state, or a part rendered on its own elsewhere, is extracted into its own component.
+5. Business logic does not live in a `.vue` file — it is a composable or a domain model.
+
+---
+
+## 5. Composables naming (`use<Feature>`)
+
+Composables and reactive state factories in Vue must be named with the `use…` prefix:
+
+```ts
+// ✅ correct
+useBookTab, useDocumentTab, useAgentChat, useFileManager
+
+// ❌ wrong (gerunds, verbs, literary words)
+booking, documenting, talking, opening
+```
+
+---
+
+## 6. Type and interface naming (all languages)
+
+Types and interfaces are **singular nouns** or noun phrases:
+
+```ts
+// ✅
+Tab, FileEntry, MoveResult, TranscriptSegment
+
+// ❌ gerunds, adjectives, verbs
+Opening, Doing, Failed
+```
+
+### Boolean fields
+
+Boolean fields and properties use `is…` / `has…` / `can…` prefix:
+
+```ts
+// ✅
+isUserRequested: boolean
+hasTranscript: boolean
+
+// ❌
+userRequested: boolean   // reads as past tense, not boolean
+failed: string           // "failed" looks boolean but is a string — rename to failureReason
+```
+
+### Struct / interface fields
+
+Fields are **noun phrases** that say what they hold:
+
+```ts
+// ✅
+title, completedCount, totalCount, failureReason, progressPercent
+
+// ❌ cryptic or ambiguous
+about, doing, done, total, counting
+```
+
+---
+
+## 7. Factory and constructor functions
+
+### Frontend (TypeScript / Vue)
+
+Factory functions use `create…`:
+
+```ts
+// ✅
+createTab, createBookKind, createDocumentTab
+
+// ❌
+makeTab, bookKind, newTab
+```
+
+The word `make` is **not used** in frontend code for factories.
+
+### Go
+
+Go follows its own idioms: `New…` for constructors, `make` for built-in
+allocation. Both are allowed.
+
+```go
+// ✅
+NewServer(), NewReading(), make(map[string]string)
+```
+
+---
+
+## 8. Result pattern for fallible operations (frontend)
+
+Functions that can fail return a **discriminated result**, never a bare value,
+implicit `null`, or custom `refusal`:
+
+```ts
+type Result<T, E = ErrorCode> = { ok: true; value: T } | { ok: false; error: E }
+
+// ✅
+function openVault(id: string): Result<Vault, ErrorCode>
+
+// ❌ caller cannot tell success from failure, or uses custom discriminant
+function openVault(id: string): Vault | ErrorCode | undefined
+function openVault(id: string): { ok: boolean; refusal?: RefusalReason }
+```
+
+Pick **one** word for the failure discriminant: **`error`** (never `refusal`, `reason`, or `refusalReason`).
+
+---
+
+## 9. Domain terminology
+
+Follow standard domain terms consistently across models, storage entities, and protocols.
+
+Specific term rules:
+
+| Wrong | Correct | Context |
+|---|---|---|
+| `refusal`, `refused` | `error`, `errorCode` | operation error discriminants |
+| `readings` | `recognition` | OCR output — the core's word is `Recognition` |
+| `spoken`, `spokenBy` | `transcript` | audio/video transcription output |
+| `reflow` for EPUB | `book` | EPUB = book; PDF = document |
+| `make` (frontend) | `create` | factory functions in TS/Vue |
+
+Domain distinctions:
+- **`stretch`** is a run of a source's text where it stands, in bytes. **`span`**
+  is that same run as a client counts it, `from` and `to` in UTF-16 code units.
+- **`address`** is scheme and value, the only thing that says where a link goes (`domain.Address`).
+  **`link`** is the relationship as written in a file.
+- **`overtaken`** is the tab state where a file no longer holds
+  the prose the tab read. `stale` is the backend write conflict state (`port.ErrStale`).
+
+---
+
+## 10. File placement — domain code stays in its domain
+
+Code that serves one domain lives inside that domain's folder under
+`modules/apps/desktop/editor/src/` or `modules/apps/desktop/flashcards/src/`:
+
+| File | Belongs in |
+|---|---|
+| Note-specific types (`Move`, `Focus`, `Enabler`) | `note/` |
+| File-manager entries (`FileEntry`, `MoveResult`) | `files/` |
+| Flashcard review settings | `cards/` |
+
+There is no `tabs/` folder and no `shared/`. What two or more domains genuinely
+use sits at the top of `src/` under the word for what it is — `transport.ts`,
+`theme.ts`, `words.ts` — and a type only one domain reads never moves there.
+
+---
+
+## 11. Single Responsibility — no god objects
+
+Do not build a single type or composable that handles all variants of a
+concept. Split by capability:
+
+```ts
+// ❌ one ArtifactRunner that can transcribe, correct, fetch for all artifact types
+class ArtifactRunner { transcribe(); correct(); fetch(); }
+
+// ✅ separate by capability, composed via generics or mixins
+interface Transcribable { getTranscript(): Transcript }
+interface Correctable  { applyCorrection(c: Correction): void }
+```
+
+A file is split when it holds a second responsibility. The unit of organisation
+is the thing, not the kind of thing: a folder collecting every type, every
+handler or every use case is a heap at fifty entries and was already one at
+five.
+
+---
+
+## 12. File and directory naming (frontend — TypeScript / Vue)
+
+Directories and files follow strict casing rules:
+
+1. **Directories**: always `kebab-case` (`status-corner/`, `command-palette/`, `file-routing/`, `tabs/`).
+2. **Vue components**: always `PascalCase` (`App.vue`, `NoteTab.vue`, `Field.vue`).
+3. **TypeScript / JavaScript files**: always `camelCase` (`useWorkspaceTabs.ts`, `useFileRouter.ts`, `transport.ts`, `words.ts`, `answers.ts`).
+
+---
+
+## 13. Known gotchas
+
+- **Every worktree shares one `git stash` stack.** Two agents stashing at once
+  cross: one `pop` takes the other's entry into the wrong tree. For a clean
+  tree, commit first and `git checkout HEAD~1 -- <path>`, or copy the file
+  aside.
+- **The windows reach `@numen/ui` through its build.** Run `npm run build` in
+  `modules/libs/ui` before the suites in `modules/apps/desktop/editor` and
+  `flashcards`, or they fail on `Cannot find module '@numen/ui'`.
+- **`node_modules` symlinked from the primary checkout resolves
+  `@numen/protocol` to whatever branch that checkout is parked on.** A
+  generated symbol missing there is that, not the branch under test. Install
+  for real when the answer matters.
+- **`usecase/flashcards` and `adapter/flashcardsui` run close to the 10-minute
+  per-package limit under `-race`.** A timeout there is the machine's load, not
+  the code.
+- **`npm test` in `modules/libs/ui` starts both story instances at once**, and
+  the run dies before any test executes. Take them one at a time:
+  `npm run test:unit`,
+  `vitest run --project 'stories (chromium)'`,
+  `vitest run --project 'stories (webkit)'`. WebKit does run on this machine.

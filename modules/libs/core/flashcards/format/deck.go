@@ -78,7 +78,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 			break
 		}
 	}
-	d.Preamble = markdown.Normalised(string(body[:first]))
+	d.Preamble = markdown.Normalise(string(body[:first]))
 
 	read := 0
 	under := NoSection
@@ -102,7 +102,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 			lead, leadEnd := run(body, s.from, end)
 			d.Sections = append(d.Sections, Section{Name: s.name, Preamble: lead})
 			under = len(d.Sections) - 1
-			read = trimmedEnd(body, s.head, s.from)
+			read = getTrimmedEnd(body, s.head, s.from)
 			if lead != "" {
 				read = leadEnd
 			}
@@ -119,9 +119,9 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 
 		target, leadFrom := stencil(body, s.from, s.to)
 		card.StencilLink = target
-		read = trimmedEnd(body, s.head, s.from)
+		read = getTrimmedEnd(body, s.head, s.from)
 		if target != "" {
-			read = trimmedEnd(body, s.from, leadFrom)
+			read = getTrimmedEnd(body, s.from, leadFrom)
 			span.linkFrom, span.linkTo = lineFrom(body, s.from, read), read
 		}
 		lead, leadEnd := run(body, leadFrom, s.to)
@@ -130,7 +130,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 			read = leadEnd
 		}
 		if target == "" {
-			d.Problems = append(d.Problems, against(at, FaultNoStencil,
+			d.Problems = append(d.Problems, newCardProblem(at, FaultNoStencil,
 				"the first paragraph of this card is not a lone wikilink, so it names no stencil"))
 		}
 
@@ -140,14 +140,14 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 				break
 			}
 			value, valueEnd := run(body, f.from, f.to)
-			read = trimmedEnd(body, f.head, f.from)
+			read = getTrimmedEnd(body, f.head, f.from)
 			if value != "" {
 				read = valueEnd
 			}
 			card.Values = append(card.Values, Value{Field: f.name, Text: value})
 			span.values = append(span.values, valueSpan{field: f.name, head: f.head, from: f.from, to: f.to})
 			if fields[f.name] {
-				problem := against(at, FaultTwoValues, "this card writes "+f.name+" twice")
+				problem := newCardProblem(at, FaultTwoValues, "this card writes "+f.name+" twice")
 				problem.Field = f.name
 				d.Problems = append(d.Problems, problem)
 			}
@@ -160,7 +160,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 
 	d.Problems = append(d.Problems, twoMarks(d.Cards)...)
 	if len(d.Cards) > 0 || len(d.Sections) > 0 {
-		d.Tail = markdown.Normalised(string(body[read:]))
+		d.Tail = markdown.Normalise(string(body[read:]))
 	}
 	return d, spans
 }
@@ -180,7 +180,7 @@ func twoMarks(cs []Card) []Problem {
 	var out []Problem
 	for at, c := range cs {
 		if c.Mark != "" && carried[c.Mark] > 1 {
-			out = append(out, against(at, FaultTwoMarks,
+			out = append(out, newCardProblem(at, FaultTwoMarks,
 				"another card in this deck carries the mark "+string(c.Mark)))
 		}
 	}

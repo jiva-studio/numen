@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+// What a client has to know before it can read a book that reflows: the
+// documents it is read in, what it names inside them, and how far its text
+// runs.
+//
+// Such a book has no pages of its own. It is set in columns against the room
+// the reader has, so a place in it is an offset into its one text stream, and
+// every number here is counted in bytes of that text. The bytes of one picture
+// are at an address of their own, because a browser's own elements speak bytes
+// and not this.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// BookService answers what a book that reflows is, for whatever opens one.
+service BookService {
+  // GetBook is what the book is: what it is called, the documents it is read
+  // in, what it names inside them, and how far its text runs. A window lays a
+  // document out itself, so it takes the whole of this and then asks for one
+  // document at a time.
+  rpc GetBook(GetBookRequest) returns (GetBookResponse);
+
+  // ReadBookMarkup is one document of the book, as the markup a window sets a
+  // page from. It answers while the file is still the bytes the ask names, so
+  // one answer is one reading of one file.
+  rpc ReadBookMarkup(ReadBookMarkupRequest) returns (ReadBookMarkupResponse);
+}
+
+message GetBookRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+}
+
+message GetBookResponse {
+  // What the package document calls the book.
+  string title = 1;
+
+  // The documents of the spine, in reading order.
+  repeated SpineDocument documents = 2;
+
+  // What the book names, ascending by offset.
+  repeated BookPart parts = 3;
+
+  // The pages of the printed book this file was made from, ascending by
+  // offset. A book naming nothing is reached by these, and most books carry
+  // none.
+  repeated PrintedPage printed_pages = 4;
+
+  // How many pages the book is read in. A book that reflows has none of its
+  // own, so they are counted over its text and not over anything drawn.
+  int32 page_count = 5;
+
+  // How many bytes the book's text is, and how many of them stand on one page.
+  // A page is a number of letters and a letter is several bytes in most of the
+  // scripts a book is written in, so the size is measured in this book's own.
+  //
+  // The page an offset falls on is counted from these, and comes to the same
+  // page wherever it is counted.
+  int32 text_bytes = 6;
+  int32 page_bytes = 7;
+
+  // Which bytes the book was read from. It stands in the ask for the markup of
+  // a document and in the address the bytes of a picture are answered at, so
+  // both name one reading of one file.
+  Fingerprint fingerprint = 8;
+}
+
+message ReadBookMarkupRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+
+  // The document of the spine, as the archive names it.
+  string document = 2;
+
+  // Which bytes the ask was given out for. A file that is other bytes now is
+  // not answered: the book is asked for again, and the new answer is asked
+  // with what that says.
+  optional Fingerprint seen = 3;
+}
+
+message ReadBookMarkupResponse {
+  // The markup of the document, carrying the offsets the book's text stands
+  // at.
+  string markup = 1;
+}
+
+// SpineDocument is one document of the book, and where its text stands in the
+// book's text.
+message SpineDocument {
+  // Path is the document's name inside the archive, which the markup of it is
+  // asked for by.
+  string path = 1;
+
+  // Where the document's text begins in the book's text, and how many bytes of
+  // it the document is.
+  int32 offset = 2;
+  int32 length = 3;
+}
+
+// BookPart is a named division of the book, at the offset its text begins.
+message BookPart {
+  string title = 1;
+  int32 offset = 2;
+
+  // Level is the depth of the heading the part came from, and zero for one the
+  // book's own navigation document named.
+  int32 level = 3;
+}
+
+// PrintedPage is one page of the printed book, at the offset it starts.
+message PrintedPage {
+  string label = 1;
+  int32 offset = 2;
+}

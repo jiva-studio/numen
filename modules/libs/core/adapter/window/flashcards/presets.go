@@ -21,14 +21,14 @@ func (a *API) GetVaultDeckPreset(
 	}
 	found, err := a.Presets.Of(ctx, v, r.Msg.GetDeck())
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
 	out := &v1.GetVaultDeckPresetResponse{}
-	if reason, refused := wire.RefusalOf(found.Outcome); refused {
-		out.Refusal = &reason
+	if reason, refused := wire.ErrorCodeOf(found.Outcome); refused {
+		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.PresetOf(found, wire.Titled(ctx, a.Notes, v.ID, found.Path))
+	out.Preset = wire.PresetOf(found, wire.GetTitle(ctx, a.Notes, v.ID, found.Path))
 	return connect.NewResponse(out), nil
 }

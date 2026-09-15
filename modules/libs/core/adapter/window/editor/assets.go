@@ -8,33 +8,35 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
-// A page of a document the vault holds is bytes, and bytes are what this route
+// What a file of the vault is made of is bytes, and bytes are what this route
 // answers:
 //
-//	GET /assets/<id>/pages/<n>?wide=W&size=S&mtime=T   one page, drawn to that width
+//	GET /assets/<id>/<where>    the bytes at that place in the file
 //
-// The id is the file's path in the vault, escaped. A page is the whole of what
-// this route answers; everything else about a file is asked over the schema.
+// The id is the file's path in the vault, escaped whole, and where in the file
+// is the rest. Which places a file has is the reader's to say: a document is
+// asked for a page of it, a book that reflows for a picture it carries. Bytes
+// are the whole of what this route answers; everything else about a file is
+// asked over the schema.
 const assetsRoute = "/assets/"
 
-// The one facet an asset offers.
-const pagesFacet = "pages"
-
-// An address is one question about one asset: which file, which facet, and what
-// the facet was named with.
+// An address is one question about one file: which file, and where in it.
 type address struct {
 	path  string
-	facet string
-	at    string
+	where string
 }
 
-// addressed takes an asset's address apart.
+// parseAssetAddress takes an asset's address apart.
 //
 // The escaped path is what is read: Go decodes before a handler is reached, and
-// a decoded separator runs the id and the facet after it together.
-func addressed(r *http.Request) (address, bool) {
+// a decoded separator runs the id and the place after it together. A place is
+// as many segments as the file names it with, each escaped on its own.
+func parseAssetAddress(r *http.Request) (address, bool) {
 	rest := strings.TrimPrefix(r.URL.EscapedPath(), assetsRoute)
 	if rest == "" || rest == r.URL.EscapedPath() {
 		return address{}, false
@@ -45,39 +47,53 @@ func addressed(r *http.Request) (address, bool) {
 		return address{}, false
 	}
 	held := address{path: path}
-	if len(parts) > 1 {
-		held.facet = parts[1]
+	if len(parts) == 1 {
+		return held, true
 	}
-	if len(parts) > 2 {
-		held.at = parts[2]
+	asked := make([]string, 0, len(parts)-1)
+	for _, one := range parts[1:] {
+		said, err := url.PathUnescape(one)
+		if err != nil {
+			return address{}, false
+		}
+		asked = append(asked, said)
 	}
-	if len(parts) > 3 {
-		return address{}, false
-	}
+	held.where = strings.Join(asked, "/")
 	return held, true
 }
 
-// Asset answers with the bytes of one page of one file of the vault.
+// Asset answers with the bytes of one file of the vault, at the place asked of
+// it.
+//
+// The reader the file is read by names the places it has, and a file no reader
+// reads has none.
 func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
-	at, ok := addressed(r)
+	at, ok := parseAssetAddress(r)
 	if !ok {
 		http.Error(w, "not an asset", http.StatusBadRequest)
 		return
 	}
-	if at.facet != pagesFacet {
-		http.Error(w, "an asset answers with a page and nothing else", http.StatusNotFound)
+	if at.where == "" {
+		http.Error(w, "an asset is asked with where in the file", http.StatusBadRequest)
 		return
 	}
-	a.Page(w, r, at.path, at.at)
+	switch named, _ := derived.ReaderName(domain.Fingerprint{Path: at.path}); named {
+	case derived.ReaderEPUB:
+		a.Entry(w, r, at.path, at.where)
+	case derived.ReaderPDF:
+		a.Page(w, r, at.path, at.where)
+	default:
+		http.Error(w, "no reader reads that file", http.StatusNotFound)
+	}
 }
 
-// assetOf is where a file of the vault is drawn from, and pageOf one page of
-// it. A path is escaped whole, so a file in a folder is one segment and what
-// hangs off it is the next.
+// assetOf is where a file of the vault is asked about, and pageOf one page of
+// it. A path is escaped whole, so a file in a folder is one segment and what is
+// asked of it is the next.
 func assetOf(path string) string { return assetsRoute + url.PathEscape(path) }
 
 func pageOf(path string, at, wide int, print fingerprint) string {
-	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetOf(path), pagesFacet, at, wide, printing(print))
+	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetOf(path), pagesName, at, wide, formatFingerprint(print))
 }
 
 // An address that names which bytes it is about answers those bytes or nothing,
@@ -88,14 +104,14 @@ const immutable = "public, max-age=31536000, immutable"
 // The address is gone: the caller asks the vault again and is given another.
 var errChanged = errors.New("the file changed since this address was given out")
 
-// printing is a fingerprint as an address carries it, and printed is it read
+// formatFingerprint is a fingerprint as an address carries it, and parseFingerprint is it read
 // back. The path is a segment of the address already, so what is written here
 // is the rest of what says which bytes the file is.
-func printing(print fingerprint) string {
+func formatFingerprint(print fingerprint) string {
 	return fmt.Sprintf("size=%d&mtime=%d", print.size, print.mtime)
 }
 
-func printed(query url.Values) (fingerprint, error) {
+func parseFingerprint(query url.Values) (fingerprint, error) {
 	size, err := strconv.ParseInt(query.Get("size"), 10, 64)
 	if err != nil {
 		return fingerprint{}, fmt.Errorf("size: %q is not a size", query.Get("size"))

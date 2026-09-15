@@ -9,9 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Refusal is one file that stayed outside the vault, by the name it carries on
-// this machine and by what stopped it.
-type Refusal struct {
+// ImportFailure is one file that stayed outside the vault, by the name it
+// carries on this machine and by what stopped it.
+type ImportFailure struct {
 	Name string
 	Why  error
 }
@@ -22,8 +22,8 @@ type ImportResult struct {
 	// Landed is each file and folder that arrived, by the path the vault files
 	// it under.
 	Landed []string
-	// Refused is each file that stayed where it was.
-	Refused []Refusal
+	// Errors is each file that stayed where it was.
+	Errors []ImportFailure
 }
 
 // Import copies files from this machine into a folder of the vault.
@@ -50,8 +50,8 @@ func NewImport(writers port.VaultWriters, files port.ImportedFiles) Import {
 //
 // One file refused leaves the rest to arrive: a drop of twenty pictures is
 // nineteen pictures and a sentence. A name the folder already carries is one of
-// those refusals: what a person meant by a second file of that name is theirs
-// to say.
+// those errors: what a person meant by a second file of that name is theirs to
+// say.
 func (u Import) Execute(
 	ctx context.Context,
 	v domain.Vault,
@@ -71,9 +71,9 @@ func (u Import) Execute(
 		if err := ctx.Err(); err != nil {
 			return brought, err
 		}
-		name := u.Files.Named(handle)
-		if err := u.bring(ctx, writer, v, handle, filed(into, name), &brought); err != nil {
-			brought.Refused = append(brought.Refused, Refusal{Name: name, Why: err})
+		name := u.Files.GetName(handle)
+		if err := u.bring(ctx, writer, v, handle, joinPath(into, name), &brought); err != nil {
+			brought.Errors = append(brought.Errors, ImportFailure{Name: name, Why: err})
 		}
 	}
 	return brought, nil
@@ -99,7 +99,7 @@ func (u Import) bring(
 	case info.Folder:
 		// A folder the vault sits inside does not come in: the vault is where it
 		// would be copied to.
-		if u.Files.Holds(from, v.Path) {
+		if u.Files.Contains(from, v.Path) {
 			return errHoldsTheVault
 		}
 		if err := writer.MakeFolder(ctx, to); err != nil {
@@ -111,8 +111,8 @@ func (u Import) bring(
 			return err
 		}
 		for _, one := range held {
-			if err := u.bring(ctx, writer, v, one.Handle, filed(to, one.Name), brought); err != nil {
-				brought.Refused = append(brought.Refused, Refusal{Name: one.Name, Why: err})
+			if err := u.bring(ctx, writer, v, one.Handle, joinPath(to, one.Name), brought); err != nil {
+				brought.Errors = append(brought.Errors, ImportFailure{Name: one.Name, Why: err})
 			}
 		}
 		return nil
@@ -142,9 +142,9 @@ var errHoldsTheVault = errors.New("the vault is inside it")
 // holds files and folders.
 var errNotAFile = errors.New("it is neither a file nor a folder")
 
-// filed is where a name goes in a folder of the vault. The root is the empty
+// joinPath is where a name goes in a folder of the vault. The root is the empty
 // path, and a name at the root is the whole of it.
-func filed(folder, name string) string {
+func joinPath(folder, name string) string {
 	if folder == "" {
 		return name
 	}

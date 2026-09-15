@@ -14,13 +14,13 @@ import (
 // `vectors` is addressed by chunks of both.
 const sharedText = "a passage that both vaults hold word for word"
 
-// filled puts a row in every table the index has, for one vault: a note with
+// fillVault puts a row in every table the index has, for one vault: a note with
 // a heading, a link and a problem, a book cut into chunks and embedded, and a
 // book whose chunks open named sections.
 //
 // Every text carries the stem, so a row that arrives from the wrong vault is
 // recognisable. The one exception is the shared passage.
-func filled(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
+func fillVault(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
 	t.Helper()
 	ctx := t.Context()
 
@@ -72,8 +72,9 @@ type contents struct {
 	chunks   []int64
 }
 
-// held reads what a vault holds. A vault holding none of the four fails here.
-func held(t *testing.T, db *DB, vault domain.Vault) contents {
+// getVaultContents reads what a vault holds. A vault holding none of the four
+// fails here.
+func getVaultContents(t *testing.T, db *DB, vault domain.Vault) contents {
 	t.Helper()
 
 	c := contents{
@@ -100,11 +101,11 @@ func virtual(t *testing.T, db *DB, c contents) map[string]int {
 	t.Helper()
 
 	return map[string]int{
-		"chunks_vec":   counted(t, db, `SELECT COUNT(*) FROM chunks_vec WHERE chunk_id IN `+list(c.chunks)),
-		"chunks_fts":   counted(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid IN `+list(c.chunks)),
-		"sections_fts": counted(t, db, `SELECT COUNT(*) FROM sections_fts WHERE rowid IN `+list(c.chunks)),
-		"titles_fts":   counted(t, db, `SELECT COUNT(*) FROM titles_fts WHERE rowid IN `+list(c.notes)),
-		"headings_fts": counted(t, db, `SELECT COUNT(*) FROM headings_fts WHERE rowid IN `+list(c.headings)),
+		"chunks_vec":   countRows(t, db, `SELECT COUNT(*) FROM chunks_vec WHERE chunk_id IN `+list(c.chunks)),
+		"chunks_fts":   countRows(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid IN `+list(c.chunks)),
+		"sections_fts": countRows(t, db, `SELECT COUNT(*) FROM sections_fts WHERE rowid IN `+list(c.chunks)),
+		"titles_fts":   countRows(t, db, `SELECT COUNT(*) FROM titles_fts WHERE rowid IN `+list(c.notes)),
+		"headings_fts": countRows(t, db, `SELECT COUNT(*) FROM headings_fts WHERE rowid IN `+list(c.headings)),
 	}
 }
 
@@ -113,12 +114,12 @@ func ordinary(t *testing.T, db *DB, c contents) map[string]int {
 	t.Helper()
 
 	return map[string]int{
-		"sources":  counted(t, db, `SELECT COUNT(*) FROM sources WHERE id IN `+list(c.sources)),
-		"notes":    counted(t, db, `SELECT COUNT(*) FROM notes WHERE source_id IN `+list(c.notes)),
-		"headings": counted(t, db, `SELECT COUNT(*) FROM headings WHERE id IN `+list(c.headings)),
-		"links":    counted(t, db, `SELECT COUNT(*) FROM links WHERE note_id IN `+list(c.notes)),
-		"problems": counted(t, db, `SELECT COUNT(*) FROM problems WHERE note_id IN `+list(c.notes)),
-		"chunks":   counted(t, db, `SELECT COUNT(*) FROM chunks WHERE id IN `+list(c.chunks)),
+		"sources":  countRows(t, db, `SELECT COUNT(*) FROM sources WHERE id IN `+list(c.sources)),
+		"notes":    countRows(t, db, `SELECT COUNT(*) FROM notes WHERE source_id IN `+list(c.notes)),
+		"headings": countRows(t, db, `SELECT COUNT(*) FROM headings WHERE id IN `+list(c.headings)),
+		"links":    countRows(t, db, `SELECT COUNT(*) FROM links WHERE note_id IN `+list(c.notes)),
+		"problems": countRows(t, db, `SELECT COUNT(*) FROM problems WHERE note_id IN `+list(c.notes)),
+		"chunks":   countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id IN `+list(c.chunks)),
 	}
 }
 
@@ -161,22 +162,22 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	// search with a passage of a vault the index no longer holds, and the row it
 	// names is gone, so nothing else says so either.
 	ctx := t.Context()
-	db := opened(t)
-	filled(t, db, first, "first", 0x0f)
-	filled(t, db, second, "second", 0xf0)
+	db := openDB(t)
+	fillVault(t, db, first, "first", 0x0f)
+	fillVault(t, db, second, "second", 0xf0)
 
-	gone := held(t, db, first)
-	kept := held(t, db, second)
+	gone := getVaultContents(t, db, first)
+	kept := getVaultContents(t, db, second)
 	goneVirtual, goneOrdinary := virtual(t, db, gone), ordinary(t, db, gone)
 	keptVirtual, keptOrdinary := virtual(t, db, kept), ordinary(t, db, kept)
 
-	vectors := counted(t, db, `SELECT COUNT(*) FROM vectors`)
+	vectors := countRows(t, db, `SELECT COUNT(*) FROM vectors`)
 	bought := numbers(t, db, `SELECT rowid FROM vectors WHERE hash IN
 		(SELECT unhex(hash) FROM chunks WHERE id IN `+list(gone.chunks)+`)`)
 	if len(bought) == 0 {
 		t.Fatal("the vault that is forgotten paid for no vector, so this test would pass either way")
 	}
-	if shared := counted(t, db, `SELECT COUNT(*) FROM
+	if shared := countRows(t, db, `SELECT COUNT(*) FROM
 		(SELECT hash FROM chunks GROUP BY hash HAVING COUNT(DISTINCT vault_id) > 1)`); shared == 0 {
 		t.Fatal("no text is held by both vaults, so no vector here is one the other vault still holds")
 	}
@@ -203,7 +204,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 			t.Errorf("%s holds %d rows of the vault that was forgotten", table, n)
 		}
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, first.ID); got != 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, first.ID); got != 0 {
 		t.Errorf("the forgotten vault still has %d rows of its own", got)
 	}
 
@@ -217,7 +218,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 			t.Errorf("%s holds %d rows of the other vault, and held %d", table, n, keptOrdinary[table])
 		}
 	}
-	if now := held(t, db, second); !slices.Equal(now.chunks, kept.chunks) ||
+	if now := getVaultContents(t, db, second); !slices.Equal(now.chunks, kept.chunks) ||
 		!slices.Equal(now.sources, kept.sources) ||
 		!slices.Equal(now.notes, kept.notes) ||
 		!slices.Equal(now.headings, kept.headings) {
@@ -226,10 +227,10 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 
 	// A vector is addressed by the text it was made from, so chunks of several
 	// vaults hold one, and it is bought work.
-	if got := counted(t, db, `SELECT COUNT(*) FROM vectors WHERE rowid IN `+list(bought)); got != len(bought) {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors WHERE rowid IN `+list(bought)); got != len(bought) {
 		t.Errorf("%d of the %d vectors the forgotten vault paid for are left", got, len(bought))
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM vectors`); got != vectors {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != vectors {
 		t.Errorf("%d vectors, and %d were bought", got, vectors)
 	}
 }
@@ -238,9 +239,9 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 	// Every search runs over one table holding every vault. What the forgotten
 	// vault was filed under is what the other vault's rows are read back by.
 	ctx := t.Context()
-	db := opened(t)
-	filled(t, db, first, "first", 0x0f)
-	filled(t, db, second, "second", 0xf0)
+	db := openDB(t)
+	fillVault(t, db, first, "first", 0x0f)
+	fillVault(t, db, second, "second", 0xf0)
 
 	if err := db.Vaults().Forget(ctx, first.ID); err != nil {
 		t.Fatal(err)
@@ -260,7 +261,7 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 		}
 	}
 
-	sections, err := queries.Named(ctx, second.ID, "second section", nil, 10, false)
+	sections, err := queries.GetNamedPassages(ctx, second.ID, "second section", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,7 +279,7 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 }
 
 func TestForgettingAVaultTheIndexDoesNotHold(t *testing.T) {
-	db := opened(t)
+	db := openDB(t)
 
 	if err := db.Vaults().Forget(t.Context(), "01NOTHING"); err != nil {
 		t.Errorf("forgetting a vault the index never held: %v", err)

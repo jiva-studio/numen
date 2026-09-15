@@ -51,29 +51,29 @@ type order struct {
 	said []string
 }
 
-func (o *order) at(what string) {
+func (o *order) record(what string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	o.said = append(o.said, what)
 }
 
-func (o *order) taken() []string {
+func (o *order) getAll() []string {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	return append([]string(nil), o.said...)
 }
 
-// quitting opens a vault the way the window does for an installation nobody has
+// openWindow opens a vault the way the window does for an installation nobody has
 // configured, with the moment of each write kept and, where a test asked for
 // one, the write held there.
-func quitting(t *testing.T, hold *held, notes map[string]string) *going {
+func openWindow(t *testing.T, hold *held, notes map[string]string) *going {
 	t.Helper()
 	return opening(t, hold, notes, true)
 }
 
-// naming writes the settings file a rename reads, beside the vault list, which
+// writeNamingSettings writes the settings file a rename reads, beside the vault list, which
 // is where an installation pointed somewhere of its own keeps one.
-func naming(t *testing.T, registry string, sync note.SyncTitleAndFilename) {
+func writeNamingSettings(t *testing.T, registry string, sync note.SyncTitleAndFilename) {
 	t.Helper()
 	body := fmt.Sprintf(`{"naming":{"sync_title_and_filename":%v}}`, bool(sync))
 	if err := os.WriteFile(
@@ -83,7 +83,7 @@ func naming(t *testing.T, registry string, sync note.SyncTitleAndFilename) {
 	}
 }
 
-// opening is quitting with a title and a filename told apart or kept as one
+// opening is openWindow with a title and a filename told apart or kept as one
 // name, which is the one setting a rename reads.
 func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTitleAndFilename) *going {
 	t.Helper()
@@ -107,7 +107,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 		RegistryPath:  filepath.Join(t.TempDir(), "vaults.json"),
 		SchedulesPath: filepath.Join(t.TempDir(), "flashcards"),
 	}
-	naming(t, cfg.RegistryPath, sync)
+	writeNamingSettings(t, cfg.RegistryPath, sync)
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -120,7 +120,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 		t.Fatal(err)
 	}
 
-	opened, err := editor.Open(t.Context(), cfg, "", os.Stderr)
+	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +172,7 @@ func (f *going) read(t *testing.T) {
 		if f.opened.API.Ready.Load() {
 			return
 		}
-		if why := f.opened.API.Failed.Why(); why != "" {
+		if why := f.opened.API.Error.Why(); why != "" {
 			t.Fatalf("the vault could not be read: %v", why)
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -188,7 +188,7 @@ type held struct {
 	once  sync.Once
 }
 
-func holding() *held {
+func newHeld() *held {
 	return &held{begun: make(chan struct{}, 1), until: make(chan struct{})}
 }
 
@@ -231,15 +231,15 @@ func (w records) Write(
 		}
 	}
 	written, err := w.VaultWriter.Write(ctx, path, content, ref)
-	w.order.at("wrote " + path)
+	w.order.record("wrote " + path)
 	return written, err
 }
 
 // TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses. The window may not
 // take the vault away from a write that is already on its way to it.
 func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
-	hold := holding()
-	f := quitting(t, hold, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	hold := newHeld()
+	f := openWindow(t, hold, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	defer hold.release()
 
 	writing := make(chan error, 1)
@@ -268,7 +268,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 		if err := f.opened.Close(); err != nil {
 			t.Error(err)
 		}
-		f.order.at("closed")
+		f.order.record("closed")
 	}()
 
 	select {
@@ -288,7 +288,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 		t.Fatalf("the write was refused: %v", err)
 	}
 
-	if got := f.order.taken(); len(got) != 2 || got[0] != "wrote Note.md" || got[1] != "closed" {
+	if got := f.order.getAll(); len(got) != 2 || got[0] != "wrote Note.md" || got[1] != "closed" {
 		t.Errorf("the quit went %v", got)
 	}
 	body, err := os.ReadFile(filepath.Join(f.root, "Note.md"))
@@ -303,7 +303,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 // TestTheQuitWaitsForThePageToWriteWhatItOwes. The owed write is a buffer in
 // the webview, so the quit asks for it and does not go until it has landed.
 func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
@@ -353,7 +353,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	f.opened.Settle(ctx)
-	f.order.at("settled")
+	f.order.record("settled")
 
 	select {
 	case <-flushed:
@@ -361,7 +361,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 		t.Fatal("the page never answered")
 	}
 
-	if got := f.order.taken(); len(got) != 2 || got[0] != "wrote Note.md" || got[1] != "settled" {
+	if got := f.order.getAll(); len(got) != 2 || got[0] != "wrote Note.md" || got[1] != "settled" {
 		t.Errorf("the quit went %v", got)
 	}
 
@@ -381,7 +381,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 // script has stopped answers never, and a person who asked for the window to
 // go gets it.
 func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.opened.Close() })
 
 	listening, hangUp := context.WithCancel(t.Context())
@@ -431,8 +431,8 @@ type speaking struct {
 	hangUp context.CancelFunc
 }
 
-// listening opens the quit stream and takes the token it opens with.
-func listening(t *testing.T, f *going) *speaking {
+// openQuitStream opens the quit stream and takes the token it opens with.
+func openQuitStream(t *testing.T, f *going) *speaking {
 	t.Helper()
 
 	ctx, hangUp := context.WithCancel(t.Context())
@@ -464,8 +464,8 @@ func listening(t *testing.T, f *going) *speaking {
 	return p
 }
 
-// answering is the page doing, at every ask, what a test says a page does.
-func (p *speaking) answering(doing func(token string) v1.FlushResult) {
+// answerFlushes is the page doing, at every ask, what a test says a page does.
+func (p *speaking) answerFlushes(doing func(token string) v1.FlushResult) {
 	go func() {
 		for token := range p.asked {
 			p.says(token, doing(token))
@@ -482,9 +482,9 @@ func (p *speaking) says(token string, said v1.FlushResult) {
 	}))
 }
 
-// went is the page's stream ending, and waits for the application to have
+// endStream is the page's stream ending, and waits for the application to have
 // noticed.
-func (p *speaking) went(t *testing.T) {
+func (p *speaking) endStream(t *testing.T) {
 	t.Helper()
 
 	p.hangUp()
@@ -501,11 +501,11 @@ func (p *speaking) went(t *testing.T) {
 // TestAPageWithAQuestionStandingDoesNotLetTheWindowGo. The text is in that
 // buffer and nowhere else, and only the person says where it ends up.
 func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.opened.Close() })
 
-	page := listening(t, f)
-	page.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	page := openQuitStream(t, f)
+	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
@@ -537,11 +537,11 @@ func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
 
 // TestTheWindowGoesOnceTheQuestionsAreAnswered.
 func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.opened.Close() })
 
-	page := listening(t, f)
-	page.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	page := openQuitStream(t, f)
+	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
@@ -552,7 +552,7 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 	// What the window does with a close it called off: it waits on a person,
 	// and that wait is not measured.
 	answered := make(chan bool, 1)
-	go func() { answered <- f.opened.Answered(t.Context()) }()
+	go func() { answered <- f.opened.WaitForAnswers(t.Context()) }()
 
 	select {
 	case <-answered:
@@ -576,12 +576,12 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 // TestACloseCalledOffAsksThePageAgain. A second quit is a second ask, and what
 // the page holds is written for it.
 func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.opened.Close() })
 
-	page := listening(t, f)
+	page := openQuitStream(t, f)
 	asks := 0
-	page.answering(func(token string) v1.FlushResult {
+	page.answerFlushes(func(token string) v1.FlushResult {
 		asks++
 		if asks == 1 {
 			return v1.FlushResult_FLUSH_RESULT_ASKING
@@ -608,7 +608,7 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 		t.Fatal("the second quit did not settle the vault")
 	}
 
-	if got := f.order.taken(); len(got) != 1 || got[0] != "wrote Note.md" {
+	if got := f.order.getAll(); len(got) != 1 || got[0] != "wrote Note.md" {
 		t.Errorf("the quit went %v", got)
 	}
 	body, err := os.ReadFile(filepath.Join(f.root, "Note.md"))
@@ -624,18 +624,18 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 // ending is not an answer, so what the page held is waited for; and it is
 // waited for as silence is, which is the bound and no longer.
 func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.opened.Close() })
 
-	page := listening(t, f)
-	page.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	page := openQuitStream(t, f)
+	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	if f.opened.Settle(asking) {
 		t.Fatal("the vault settled with a question standing")
 	}
-	page.went(t)
+	page.endStream(t)
 
 	bound := 400 * time.Millisecond
 	ctx, endsAt := context.WithTimeout(t.Context(), bound)
@@ -658,24 +658,24 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 // TestAPageThatComesBackRaisesItsQuestionAgain. The client is back after a
 // second under a token of its own, and the text it holds is still its own.
 func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
-	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.opened.Close() })
 
-	first := listening(t, f)
-	first.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	first := openQuitStream(t, f)
+	first.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	if f.opened.Settle(asking) {
 		t.Fatal("the vault settled with a question standing")
 	}
-	first.went(t)
+	first.endStream(t)
 
-	back := listening(t, f)
+	back := openQuitStream(t, f)
 	if back.token == first.token {
 		t.Fatalf("the page that came back listens under the token that went, %q", back.token)
 	}
-	back.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	back.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	again, cancelAgain := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelAgain()

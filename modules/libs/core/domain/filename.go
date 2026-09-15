@@ -16,7 +16,7 @@ var ErrUnnameable = errors.New("a note cannot be given this title")
 // Two titles are refused whatever the note: one that leaves no filename, and
 // one carrying a line break. The title comes in trimmed.
 func Filename(title string) (name string, exact bool, err error) {
-	switch name, exact = ReducedFilename(title); {
+	switch name, exact = GetReducedFilename(title); {
 	case name == "":
 		return "", false, fmt.Errorf("%w: %q leaves nothing a file can be named after", ErrUnnameable, title)
 	case strings.ContainsAny(title, "\n\r"):
@@ -29,7 +29,7 @@ func Filename(title string) (name string, exact bool, err error) {
 // 255 bytes for one component, and a title is not the place to find that out.
 const maxFilename = 120
 
-// ReducedFilename is the filename a title reduces to, refusing nothing: a
+// GetReducedFilename is the filename a title reduces to, refusing nothing: a
 // title that reduces to no name at all comes back empty.
 //
 // A note is shown by its `title`, else by its filename. So a file named after
@@ -38,7 +38,7 @@ const maxFilename = 120
 //
 // Every name that comes back is one Nameable accepts, so a link written by it
 // reaches the note back.
-func ReducedFilename(title string) (name string, exact bool) {
+func GetReducedFilename(title string) (name string, exact bool) {
 	var b strings.Builder
 	var last rune
 	for _, r := range strings.TrimSpace(title) {
@@ -58,9 +58,9 @@ func ReducedFilename(title string) (name string, exact bool) {
 		last = r
 	}
 
-	name = trimmedEnds(b.String())
+	name = trimEnds(b.String())
 	if len(name) > maxFilename {
-		name = trimmedEnds(cutRunes(name, maxFilename))
+		name = trimEnds(cutRunes(name, maxFilename))
 	}
 	if name == "" {
 		return "", false
@@ -88,10 +88,10 @@ func isDevice(name string) bool {
 	return stem[:3] == "COM" || stem[:3] == "LPT"
 }
 
-// trimmedEnds is a name carrying at neither end a dot or a space. A leading dot
+// trimEnds is a name carrying at neither end a dot or a space. A leading dot
 // files the note where nothing looks, a trailing one is dropped by Windows, and
 // a space is no part of the name a link is written by.
-func trimmedEnds(name string) string {
+func trimEnds(name string) string {
 	return strings.TrimFunc(name, func(r rune) bool {
 		return r == '.' || unicode.IsSpace(r)
 	})

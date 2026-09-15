@@ -108,7 +108,7 @@ func (s *sessions) remember(v domain.Vault, run *flashcards.LogWriter) {
 	s.run[v.ID] = run
 }
 
-// named is the run this window has open on a vault, and only under the name
+// getRun is the run this window has open on a vault, and only under the name
 // that run writes.
 //
 // The vault is part of what is asked for, because an answer is written to the
@@ -116,11 +116,11 @@ func (s *sessions) remember(v domain.Vault, run *flashcards.LogWriter) {
 // person's answer in a history it does not belong to, and an answer written is
 // not written again. The name is asked for as well, so a page holding the name
 // of a session that is over cannot go on writing to it.
-func (s *sessions) named(vault domain.VaultID, name string) (*flashcards.LogWriter, error) {
+func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWriter, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	run, is := s.run[vault]
-	if !is || run.Name() != name {
+	if !is || run.GetName() != name {
 		return nil, fmt.Errorf("%w: %s", ErrNoRun, name)
 	}
 	return run, nil
@@ -143,18 +143,18 @@ func (a *API) Current() CurrentCard {
 	return CurrentCard{}
 }
 
-// Answering is the agent a question about a card goes to, and nothing where
+// GetAgent is the agent a question about a card goes to, and nothing where
 // this window has none.
-func (a *API) Answering() port.Agent {
+func (a *API) GetAgent() port.Agent {
 	if taking := a.agent.Load(); taking != nil {
 		return *taking
 	}
 	return nil
 }
 
-// Answers is who takes those questions from now on. Nothing leaves the window
-// with no agent.
-func (a *API) Answers(taking port.Agent) {
+// SetAgent names who takes those questions from now on. Nothing leaves the
+// window with no agent.
+func (a *API) SetAgent(taking port.Agent) {
 	if taking == nil {
 		a.agent.Store(nil)
 		return
@@ -167,8 +167,8 @@ func (a *API) Vault(id string) (domain.Vault, error) {
 	return vaults.NewFind(a.Registry).Execute(id)
 }
 
-// opened starts a run and remembers it under its own name.
-func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
+// openRun starts a run and remembers it under its own name.
+func (a *API) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
 	run, err := a.Log.Open(ctx, v, a.now())
 	if err != nil {
 		return nil, err
@@ -182,10 +182,10 @@ func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.LogWriter
 	return run, nil
 }
 
-// Watching is this window as the schema answers about it, over the list a build
-// keeps of what it is doing. It is what the API's Window is built from, which
-// is the whole of how a window outside this module names itself.
-func Watching(tasks *task.Tasks) *wire.Window {
+// NewWindow is this window as the schema answers about it, over the list a
+// build keeps of what it is doing. It is what the API's Window is built from,
+// which is the whole of how a window outside this module names itself.
+func NewWindow(tasks *task.Tasks) *wire.Window {
 	return &wire.Window{Named: wire.Review, Tasking: tasks}
 }
 
@@ -193,8 +193,8 @@ func Watching(tasks *task.Tasks) *wire.Window {
 // window, for a window that keeps one.
 func (a *API) say(at task.Task) { a.Window.Say(at) }
 
-// finished takes one piece of work out of that list.
-func (a *API) finished(id string) { a.Window.Finished(id) }
+// finishTask takes one piece of work out of that list.
+func (a *API) finishTask(id string) { a.Window.Finish(id) }
 
 func (a *API) now() time.Time {
 	if a.Now == nil {

@@ -19,7 +19,7 @@ func bodyLinks(body []byte) []domain.Link {
 	var f Fence
 	for sc.Scan() {
 		line := strings.TrimRight(sc.Text(), "\r")
-		if f.Crosses(line) || f.Inside() {
+		if f.Crosses(line) || f.IsInside() {
 			// A link inside a code fence is an example of a link, not one.
 			continue
 		}
@@ -67,7 +67,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			problems = append(problems, "links: "+to+NoRole)
 			continue
 		}
-		if !domain.KnownRole(role) {
+		if !domain.IsKnownRole(role) {
 			// The list of roles is closed, so an unknown one has no behaviour.
 			// It is reported as a problem.
 			problems = append(problems, "links: "+to+" has an unknown role "+string(role))

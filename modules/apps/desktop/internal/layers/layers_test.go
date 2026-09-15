@@ -21,10 +21,10 @@ const core = "github.com/jiva-studio/numen/modules/libs/core/"
 // apps is what every application is named under.
 const apps = "github.com/jiva-studio/numen/modules/apps/"
 
-// assembled is what an application takes from the core: the composition root,
+// isAssembled is what an application takes from the core: the composition root,
 // the adapters it serves something through, and the two languages both are
 // named in. Everything else the core holds is the core's own work.
-func assembled(pkg string) bool {
+func isAssembled(pkg string) bool {
 	return pkg == "container" || pkg == "domain" || pkg == "port" ||
 		strings.HasPrefix(pkg, "adapter/")
 }
@@ -66,11 +66,11 @@ var named = []string{
 	"mobile/bind/mobile.go",
 }
 
-// walked is every hand-written Go file of the applications, parsed.
+// readSources is every hand-written Go file of the applications, parsed.
 //
 // A test file is left out: a test stands outside the package it exercises and
 // builds what stands in for the real thing.
-func walked(t *testing.T) []standing {
+func readSources(t *testing.T) []standing {
 	t.Helper()
 
 	var found []standing
@@ -91,7 +91,7 @@ func walked(t *testing.T) []standing {
 		}
 		found = append(found, standing{
 			at:   filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
-			in:   within(root, path),
+			in:   getPackage(root, path),
 			file: file,
 		})
 		return nil
@@ -119,7 +119,7 @@ func walked(t *testing.T) []standing {
 func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 	var wrong []string
 	var read int
-	for _, held := range walked(t) {
+	for _, held := range readSources(t) {
 		from := held.in
 		for _, one := range held.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
@@ -130,7 +130,7 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 			case strings.HasPrefix(to, core):
 				read++
 				reaches := strings.TrimPrefix(to, core)
-				if assembled(reaches) || allowed(from, reaches) {
+				if isAssembled(reaches) || isAllowed(from, reaches) {
 					continue
 				}
 				wrong = append(wrong, from+" reaches "+reaches+
@@ -174,7 +174,7 @@ func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
 // window they are looking at. A logger would write to neither.
 func TestNoApplicationLogs(t *testing.T) {
 	var wrong []string
-	for _, held := range walked(t) {
+	for _, held := range readSources(t) {
 		for _, one := range held.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil {
@@ -216,8 +216,8 @@ func TestWhatTheLoggingRuleRefuses(t *testing.T) {
 // nothing yet asks it for that method.
 func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
-	for _, held := range walked(t) {
-		for _, one := range claimed(held.file) {
+	for _, held := range readSources(t) {
+		for _, one := range getClaimedPorts(held.file) {
 			wrong = append(wrong, held.at+" names port."+one)
 		}
 	}
@@ -226,13 +226,14 @@ func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 	}
 }
 
-// claimed are the ports a file declares itself to answer, by the blank name.
+// getClaimedPorts are the ports a file declares itself to answer, by the blank
+// name.
 //
 // A blank standing among other names is the same claim as one standing alone,
 // and a declaration inside a function is the same claim as one beside the
 // package's own. A variable that holds a port is not one: it is given what
 // answers the port, and names what it was given.
-func claimed(file *ast.File) []string {
+func getClaimedPorts(file *ast.File) []string {
 	var held []string
 	ast.Inspect(file, func(node ast.Node) bool {
 		decl, is := node.(*ast.GenDecl)
@@ -279,13 +280,13 @@ func mount() {
 		t.Fatal(err)
 	}
 	want := []string{"Agent", "Trash", "Recording"}
-	if got := claimed(file); !slices.Equal(got, want) {
+	if got := getClaimedPorts(file); !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
 }
 
-// within is the package a file belongs to, as the rules name it.
-func within(root, path string) string {
+// getPackage is the package a file belongs to, as the rules name it.
+func getPackage(root, path string) string {
 	held, err := filepath.Rel(root, filepath.Dir(path))
 	if err != nil {
 		return path
@@ -299,8 +300,8 @@ func application(pkg string) string {
 	return held
 }
 
-// allowed says whether the baseline holds the edge a package has.
-func allowed(from, to string) bool {
+// isAllowed says whether the baseline holds the edge a package has.
+func isAllowed(from, to string) bool {
 	for _, held := range baseline[from] {
 		if to == held || strings.HasPrefix(to, held+"/") {
 			return true

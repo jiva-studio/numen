@@ -7,9 +7,9 @@ export type ComposerAction = 'send' | 'stop'
 
 export interface ComposerStateDescriptor {
   /** Whether pressing the disc does anything. */
-  readonly acts: boolean
+  readonly canAct: boolean
   /** What stands on the disc, which is what pressing it does. */
-  readonly shows: ComposerAction
+  readonly action: ComposerAction
 }
 
 /**
@@ -17,9 +17,9 @@ export interface ComposerStateDescriptor {
  * of the field and whether it can be pressed both read from here.
  */
 export const COMPOSER_STATES = {
-  empty: { acts: false, shows: 'send' },
-  ready: { acts: true, shows: 'send' },
-  writing: { acts: true, shows: 'stop' },
+  empty: { canAct: false, action: 'send' },
+  ready: { canAct: true, action: 'send' },
+  writing: { canAct: true, action: 'stop' },
 } as const satisfies Record<string, ComposerStateDescriptor>
 
 export type ComposerState = keyof typeof COMPOSER_STATES
@@ -30,13 +30,13 @@ export type ComposerState = keyof typeof COMPOSER_STATES
  * Writing outranks the text: the end of the field belongs to the answer on
  * its way until it arrives.
  */
-export const composerState = (text: string, working: boolean): ComposerState => {
-  if (working) return 'writing'
-  return said(text) ? 'ready' : 'empty'
+export const composerState = (text: string, isWriting: boolean): ComposerState => {
+  if (isWriting) return 'writing'
+  return getMessage(text) ? 'ready' : 'empty'
 }
 
 /** What is left after the whitespace, which is what would be sent. */
-export const said = (text: string): string => text.trim()
+export const getMessage = (text: string): string => text.trim()
 
 /** What the key that was pressed means. */
 export type KeyIntent = 'submit' | 'newline' | 'pass'

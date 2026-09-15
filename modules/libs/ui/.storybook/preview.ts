@@ -56,7 +56,8 @@ const preview: Preview = {
       },
     },
     interface: {
-      description: 'How large the interface is drawn: chrome, controls, spacing, and the type in them',
+      description:
+        'How large the interface is drawn: chrome, controls, spacing, and the type in them',
       toolbar: {
         title: 'Interface',
         icon: 'grow',
@@ -65,7 +66,8 @@ const preview: Preview = {
       },
     },
     font: {
-      description: 'How large the text a person reads is set: a note, a book, an answer, the editor',
+      description:
+        'How large the text a person reads is set: a note, a book, an answer, the editor',
       toolbar: {
         title: 'Text',
         icon: 'paragraph',

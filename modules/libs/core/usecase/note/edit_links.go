@@ -60,7 +60,7 @@ func (u EditLinks) Add(
 			return domain.Fingerprint{}, err
 		}
 	}
-	e := u.editing()
+	e := u.newEdit()
 	e.Fingerprint = fingerprint
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		for _, link := range links {
@@ -82,10 +82,10 @@ func (u EditLinks) Update(
 	ctx context.Context, v domain.Vault, from string, to domain.Address,
 	change domain.Link, fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if change.Role != "" && !domain.KnownRole(change.Role) {
+	if change.Role != "" && !domain.IsKnownRole(change.Role) {
 		return domain.Fingerprint{}, fmt.Errorf("%q is not a role a link can carry", change.Role)
 	}
-	e := u.editing()
+	e := u.newEdit()
 	e.Fingerprint = fingerprint
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		changed, err := doc.UpdateLink(to, change)
@@ -117,10 +117,10 @@ func (u EditLinks) PointAt(
 	if of == "" {
 		return domain.Fingerprint{}, errors.New("a link is pointed at under a type")
 	}
-	if to.Value != "" && !domain.KnownRole(role) {
+	if to.Value != "" && !domain.IsKnownRole(role) {
 		return domain.Fingerprint{}, fmt.Errorf("%q is not a role a link can carry", role)
 	}
-	e := u.editing()
+	e := u.newEdit()
 	e.Fingerprint = fingerprint
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		return doc.SetLinkOfType(of, to, role)
@@ -134,7 +134,7 @@ func (u EditLinks) Remove(
 	ctx context.Context, v domain.Vault, from string, to domain.Address,
 	role domain.LinkRole, fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	e := u.editing()
+	e := u.newEdit()
 	e.Fingerprint = fingerprint
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		removed, err := doc.RemoveLink(to, role)
@@ -150,7 +150,7 @@ func (u EditLinks) Remove(
 
 // Writable is what a link must carry before anything will write it.
 func Writable(link domain.Link) error {
-	if !domain.KnownRole(link.Role) {
+	if !domain.IsKnownRole(link.Role) {
 		return fmt.Errorf("%q is not a role a link can carry", link.Role)
 	}
 	if link.Target.Value == "" {
@@ -159,6 +159,6 @@ func Writable(link domain.Link) error {
 	return nil
 }
 
-func (u EditLinks) editing() Edit {
+func (u EditLinks) newEdit() Edit {
 	return Edit{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
 }

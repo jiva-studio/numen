@@ -74,7 +74,7 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 	if name == "" {
 		return "", fmt.Errorf("no %s model: name one, or say where it is", kind)
 	}
-	for _, at := range onnxruntime.Beside(cfg.Dir, filepath.Base(name)) {
+	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(name)) {
 		if _, err := os.Stat(at); err == nil {
 			return at, nil
 		}
@@ -82,7 +82,7 @@ func model(ctx context.Context, cfg Config, path, name, kind string) (string, er
 	if !onnxruntime.IsAddress(name) {
 		return "", fmt.Errorf("the %s model %q is not beside the application, and is not somewhere to fetch it from", kind, name)
 	}
-	found, err := onnxruntime.Fetched(ctx, cfg.settings(), name)
+	found, err := onnxruntime.Fetch(ctx, cfg.settings(), name)
 	if err != nil {
 		return "", fmt.Errorf("the %s model: %w", kind, err)
 	}

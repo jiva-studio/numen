@@ -12,9 +12,9 @@ import (
 
 // The window asks for every setting and writes one of them back.
 
-// setting is what stands at a path through the settings, read off the whole of
+// getSetting is what stands at a path through the settings, read off the whole of
 // them. What the file leaves out stands there at its default.
-func setting(t *testing.T, f *going, at ...string) any {
+func getSetting(t *testing.T, f *going, at ...string) any {
 	t.Helper()
 	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
@@ -236,8 +236,8 @@ func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 	}
 }
 
-// The file holds a person's keys, and what a refusal says does not repeat them.
-func TestWhatARefusalSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
+// The file holds a person's keys, and what an error says does not repeat them.
+func TestWhatAnErrorSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	secret := "sk-not-a-real-key-0000"
 
@@ -251,12 +251,12 @@ func TestWhatARefusalSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 		t.Fatal("the file was taken")
 	}
 	if strings.Contains(err.Error(), secret) {
-		t.Errorf("the refusal says %q", err)
+		t.Errorf("the error says %q", err)
 	}
 }
 
-// presented is the file a client says it last read.
-func presented(written string) *string { return &written }
+// newString is the file a client says it last read.
+func newString(written string) *string { return &written }
 
 // The settings page and the file's own tab both write this file. A tab
 // presenting a file the settings page has since patched is answered the
@@ -283,13 +283,13 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 	said, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
 		&v1.WriteSettingsFileRequest{
 			Written: "{\n  \"agent\": { \"use\": \"claude\" }\n}\n",
-			Seen:    presented(was.Msg.GetWritten()),
+			Seen:    newString(was.Msg.GetWritten()),
 		},
 	))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+	if said.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Error("the write landed, wanted the question put to the person")
 	}
 
@@ -312,12 +312,12 @@ func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
 	written := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 
 	said, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
-		&v1.WriteSettingsFileRequest{Written: written, Seen: presented(was.Msg.GetWritten())},
+		&v1.WriteSettingsFileRequest{Written: written, Seen: newString(was.Msg.GetWritten())},
 	))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if said.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatal("the write was answered the question, wanted it to land")
 	}
 

@@ -19,8 +19,8 @@ func TestPiecesJoinIntoWords(t *testing.T) {
 	if got := p.text([]int{1, 900}); got != "what" {
 		t.Errorf("an unknown token said %q", got)
 	}
-	if p.at("<blk>") != 6 || p.at("nothing") != -1 {
-		t.Errorf("the blank stands at %d", p.at("<blk>"))
+	if p.getIndex("<blk>") != 6 || p.getIndex("nothing") != -1 {
+		t.Errorf("the blank stands at %d", p.getIndex("<blk>"))
 	}
 }
 
@@ -33,7 +33,7 @@ func TestTokensReadsTheFilePublishedBesideAModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(said) != 4 || said[1] != "▁a" || said.at("<blk>") != 3 {
+	if len(said) != 4 || said[1] != "▁a" || said.getIndex("<blk>") != 3 {
 		t.Errorf("the file names %v", said)
 	}
 }

@@ -43,7 +43,7 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 		reason: "the load of sat",
 	}} {
 		t.Run(one.what, func(t *testing.T) {
-			s := opened(t, settled)
+			s := openVault(t, settled)
 			was := read(t, s.vault, "Sanskrit.md")
 
 			_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", one.of(minutes()), domain.Fingerprint{})

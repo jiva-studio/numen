@@ -11,9 +11,9 @@ import (
 // MaxEditDistance is how far a correction may stand from the line as read.
 const MaxEditDistance = 0.30
 
-// Fixed is the lines a reply puts right, whether any of its runs ran on past
-// the last line the batch carries, and whether the reply answers the question
-// that was asked.
+// GetFixedLines is the lines a reply puts right, whether any of its runs ran on
+// past the last line the batch carries, and whether the reply answers the
+// question that was asked.
 //
 // A sentence carried on past the end of a batch is one the cut after that batch
 // broke, and past is how a caller learns of it.
@@ -28,7 +28,7 @@ const MaxEditDistance = 0.30
 // only puts something wordless in front of it, and as is one standing further
 // than maxDistance from the line as read. A maxDistance at or below zero sets
 // no limit.
-func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok bool) {
+func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, past, ok bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false, false
 	}
@@ -40,12 +40,12 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 
 	var out []Line
 	answered := make(map[int]bool, len(batch.Lines))
-	for _, row := range strings.Split(unfenced(reply), "\n") {
+	for _, row := range strings.Split(stripFence(reply), "\n") {
 		row = strings.TrimSpace(row)
 		if row == "" {
 			continue
 		}
-		at, through, text, barred, numbers := numbered(row)
+		at, through, text, barred, numbers := readRow(row)
 		if !numbers {
 			return nil, false, false
 		}
@@ -103,7 +103,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 		// What is dropped is a correction that changes nothing. A run changes
 		// the lines whatever it says: they become one.
 		if through == at {
-			if fronted(was, text) {
+			if isFronted(was, text) {
 				continue
 			}
 			if maxDistance > 0 && EditDistance(was, text) > maxDistance {
@@ -115,7 +115,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 	return out, past, true
 }
 
-// Gathered is what a run of batches put right, keyed by the line, and the
+// GetGatheredLines is what a run of batches put right, keyed by the line, and the
 // batches whose reply ran on past the last line they carry, in the order they
 // were asked. It is given the batches as they were asked and the replies keyed
 // by the number each batch is known by.
@@ -124,7 +124,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 // batch in which the line stands further from the end; where they stand equally
 // far, it is the one from the later batch. A reply the gates refuse puts
 // nothing right, and a line no accepted reply covers is not in the result.
-func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
+func GetGatheredLines(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
 	put := make(map[int]Line)
 	best := make(map[int]int)
 	var past []int
@@ -133,7 +133,7 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[i
 		if !answered {
 			continue
 		}
-		lines, ran, ok := Fixed(batch, reply, maxDistance)
+		lines, ran, ok := GetFixedLines(batch, reply, maxDistance)
 		if !ok {
 			continue
 		}
@@ -155,12 +155,12 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[i
 	return put, past
 }
 
-// numbered is the line a reply row is about, what that line now says, and
+// readRow is the line a reply row is about, what that line now says, and
 // whether a bar stood between the two.
 //
 // A row opens with the number, and a bar, spaces, or both stand between the
 // number and the line.
-func numbered(row string) (at, through int, text string, barred, ok bool) {
+func readRow(row string) (at, through int, text string, barred, ok bool) {
 	digits := opening(row)
 	if digits == "" || len(digits) == len(row) {
 		return 0, 0, "", false, false
@@ -205,13 +205,13 @@ func opening(row string) string {
 	return row[:digits]
 }
 
-// fronted is a correction that says what the line says with something wordless
-// put in front of it.
+// isFronted is a correction that says what the line says with something
+// wordless put in front of it.
 //
 // A separator this does not know — a dash, an arrow, a colon — stands where the
 // line begins, and the letters either side of it are the same, so nothing that
 // counts letters sees it.
-func fronted(was, text string) bool {
+func isFronted(was, text string) bool {
 	was = strings.TrimSpace(was)
 	if was == "" || !strings.HasSuffix(text, was) {
 		return false
@@ -224,8 +224,8 @@ func fronted(was, text string) bool {
 	return true
 }
 
-// unfenced is a reply with the code fence a model wrapped it in taken off.
-func unfenced(reply string) string {
+// stripFence is a reply with the code fence a model wrapped it in taken off.
+func stripFence(reply string) string {
 	body := strings.TrimSpace(reply)
 	if !strings.HasPrefix(body, "```") {
 		return body

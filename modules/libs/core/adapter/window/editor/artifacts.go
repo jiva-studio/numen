@@ -12,9 +12,9 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -44,13 +44,13 @@ var (
 	errNotCarried = errors.New("this file carries no artifact of that name")
 )
 
-// carried is every artifact a file can carry, in the order they are made. A
+// getArtifactKinds is every artifact a file can carry, in the order they are made. A
 // file carrying none is one nothing is made from.
 //
 // A note carries what is at the address it points at, and what that is follows
 // from the address: a video is words with the times they were said at, and
 // every other page is the prose it is written around.
-func carried(kind domain.SourceKind, produces string) []v1.ArtifactKind {
+func getArtifactKinds(kind domain.SourceKind, produces string) []v1.ArtifactKind {
 	switch {
 	case kind == domain.KindBook:
 		return []v1.ArtifactKind{
@@ -76,39 +76,39 @@ func carried(kind domain.SourceKind, produces string) []v1.ArtifactKind {
 	}
 }
 
-// carrying is the vault the window is showing and the file at a path, where
+// getArtifactFile is the vault the window is showing and the file at a path, where
 // that file carries the artifact asked about. A file carrying none of that kind
 // holds nothing to read.
-func (a *API) carrying(
+func (a *API) getArtifactFile(
 	ctx context.Context,
 	path string,
 	of v1.ArtifactKind,
 ) (domain.Vault, domain.Fingerprint, error) {
-	showing, ref, err := a.held(ctx, path)
+	showing, ref, err := a.getShownFile(ctx, path)
 	if err != nil {
-		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(reaching(err), err)
+		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(getReachCode(err), err)
 	}
 	at := a.points(ctx, showing, ref)
-	if !slices.Contains(carried(ref.Kind, a.producing(at)), of) {
+	if !slices.Contains(getArtifactKinds(ref.Kind, a.getProducer(at)), of) {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(
 			connect.CodeInvalidArgument, errNotCarried)
 	}
 	return showing, ref, nil
 }
 
-// producing is what fetching an address would keep its text under, and nothing
+// getProducer is what fetching an address would keep its text under, and nothing
 // where this build reaches no address at all. What is at an address is the
 // fetcher's to say, so nothing here reads the address itself.
-func (a *API) producing(at domain.URL) string {
+func (a *API) getProducer(at domain.URL) string {
 	if a.Imports == nil || a.Imports.By == nil || at == "" {
 		return ""
 	}
-	return a.Imports.By.Downloading(at).Producer
+	return a.Imports.By.GetDownloadModel(at).Producer
 }
 
-// standing is the name one artifact stands under in the store, and whether the
+// getArtifactID is the name one artifact stands under in the store, and whether the
 // schema names that artifact at all.
-func standing(of v1.ArtifactKind) (string, bool) {
+func getArtifactID(of v1.ArtifactKind) (string, bool) {
 	switch of {
 	case v1.ArtifactKind_ARTIFACT_KIND_OCR:
 		return readingID, true
@@ -133,20 +133,20 @@ func (a *API) points(ctx context.Context, v domain.Vault, ref domain.Fingerprint
 	if ref.Kind != domain.KindURL {
 		return domain.URL("")
 	}
-	return a.pointing(ctx, v, ref.Path)
+	return a.getNoteURL(ctx, v, ref.Path)
 }
 
-// linked is the text of what a note points at, as it now stands. What kind of
+// getLinkedArtifact is the text of what a note points at, as it now stands. What kind of
 // text that is follows from the address: a video is a transcript, and every
 // other page is an article.
-func (a *API) linked(
+func (a *API) getLinkedArtifact(
 	ctx context.Context, v domain.Vault, path string, at domain.URL,
 ) (*v1.Artifact, error) {
 	out := &v1.Artifact{
-		Kind:  textOf(a.producing(at)),
+		Kind:  textOf(a.getProducer(at)),
 		State: v1.State_STATE_NONE,
 	}
-	_, stores, held := a.transcribing()
+	_, stores, held := a.getSourceStores()
 	if !held || string(at) == "" {
 		return out, nil
 	}
@@ -161,7 +161,7 @@ func (a *API) linked(
 			return nil, err
 		}
 		if got.stands != untouched {
-			return stood(textOf(a.producing(at)), got), nil
+			return newArtifact(textOf(a.getProducer(at)), got), nil
 		}
 	}
 	return out, nil
@@ -172,29 +172,29 @@ func (a *API) linked(
 func (a *API) drops(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*connect.Response[v1.DeleteArtifactResponse], error) {
-	_, stores, held := a.transcribing()
+	_, stores, held := a.getSourceStores()
 	if !held {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	// A copy kept in the vault is the person's own file, and taking it away is
 	// taking a file out of their folder.
-	if beside, _, stands := a.standing(ctx, v, ref.Path, at); stands && beside != "" &&
+	if beside, _, stands := a.getCopyLocation(ctx, v, ref.Path, at); stands && beside != "" &&
 		a.Files.Writers != nil {
 		writer, err := a.Files.Writers.Open(v)
 		if err != nil {
-			return nil, connect.NewError(reaching(err), err)
+			return nil, connect.NewError(getReachCode(err), err)
 		}
 		if err := writer.Remove(ctx, beside); err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return nil, connect.NewError(reaching(err), err)
+			return nil, connect.NewError(getReachCode(err), err)
 		}
 	}
 	store, err := stores.Open(v)
 	if err != nil {
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
 	name := derived.Copy(derived.Fingerprint([]byte(string(at))))
 	if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
 	return connect.NewResponse(&v1.DeleteArtifactResponse{}), nil
 }
@@ -208,7 +208,7 @@ func (a *API) copyOf(
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
 		State: v1.State_STATE_NONE,
 	}
-	_, size, held := a.standing(ctx, v, path, at)
+	_, size, held := a.getCopyLocation(ctx, v, path, at)
 	if !held {
 		return out
 	}
@@ -235,14 +235,14 @@ func (a *API) copies(
 		})
 	}
 	got, err := asked.Copy(ctx, v, ref.Path)
-	a.finished(copying + ref.Path)
+	a.finishTask(copying + ref.Path)
 	out := a.copyOf(ctx, v, ref.Path, at)
 	if errors.Is(err, source.ErrBeingDownloaded) {
 		out.State = v1.State_STATE_RUNNING
 		return out, nil
 	}
 	if err != nil {
-		return nil, connect.NewError(downloaded(err), err)
+		return nil, connect.NewError(getDownloadCode(err), err)
 	}
 	if got.TooLarge() {
 		out.State = v1.State_STATE_FAILED
@@ -262,12 +262,12 @@ const (
 	copying  = "copying:"
 )
 
-// Changed says an artifact of the file at a path was written from outside the
-// window, so a tab drawing it reads what now stands. It is the same channel a
-// run reports itself through, and a tab follows both the same way.
-func (a *API) Changed(path string) {
+// ReportArtifactChange says an artifact of the file at a path was written from
+// outside the window, so a tab drawing it reads what now stands. It is the same
+// channel a run reports itself through, and a tab follows both the same way.
+func (a *API) ReportArtifactChange(path string) {
 	a.say(task.Task{ID: fetching + path, Doing: "Correcting a transcript", About: path})
-	a.finished(fetching + path)
+	a.finishTask(fetching + path)
 }
 
 // ListArtifacts is every artifact the file at a path can carry and what has
@@ -281,13 +281,13 @@ func (a *API) ListArtifacts(
 	ctx context.Context,
 	r *connect.Request[v1.ListArtifactsRequest],
 ) (*connect.Response[v1.ListArtifactsResponse], error) {
-	showing, ref, err := a.held(ctx, r.Msg.GetPath())
+	showing, ref, err := a.getShownFile(ctx, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
 	at := a.points(ctx, showing, ref)
 	out := &v1.ListArtifactsResponse{}
-	for _, of := range carried(ref.Kind, a.producing(at)) {
+	for _, of := range getArtifactKinds(ref.Kind, a.getProducer(at)) {
 		one, err := a.artifact(ctx, showing, ref, at, of)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -308,22 +308,22 @@ func (a *API) CreateArtifact(
 	r *connect.Request[v1.CreateArtifactRequest],
 ) (*connect.Response[v1.CreateArtifactResponse], error) {
 	of := r.Msg.GetKind()
-	if _, named := standing(of); !named {
+	if _, named := getArtifactID(of); !named {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoArtifact)
 	}
-	showing, ref, err := a.held(ctx, r.Msg.GetPath())
+	showing, ref, err := a.getShownFile(ctx, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
 	// What a url carries is what fetches it, so a build that reaches no address
 	// says it cannot rather than that the file carries nothing.
 	at := a.points(ctx, showing, ref)
-	if ref.Kind == domain.KindURL && a.producing(at) == "" {
+	if ref.Kind == domain.KindURL && a.getProducer(at) == "" {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// The kind of the file decides what is made from it, so an artifact the file
 	// does not carry is a client asking for a run over the wrong thing.
-	if !slices.Contains(carried(ref.Kind, a.producing(at)), of) {
+	if !slices.Contains(getArtifactKinds(ref.Kind, a.getProducer(at)), of) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
 	}
 
@@ -357,12 +357,12 @@ func (a *API) DeleteArtifact(
 	ctx context.Context,
 	r *connect.Request[v1.DeleteArtifactRequest],
 ) (*connect.Response[v1.DeleteArtifactResponse], error) {
-	showing, ref, err := a.held(ctx, r.Msg.GetPath())
+	showing, ref, err := a.getShownFile(ctx, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
 	of := r.Msg.GetKind()
-	if _, named := standing(of); !named {
+	if _, named := getArtifactID(of); !named {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoArtifact)
 	}
 	// A copy is bytes and no words: taking it away leaves the url as it was,
@@ -375,7 +375,7 @@ func (a *API) DeleteArtifact(
 			return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 		}
 		if err := a.Imports.DeleteText(ctx, showing, ref.Path); err != nil {
-			return nil, connect.NewError(reaching(err), err)
+			return nil, connect.NewError(getReachCode(err), err)
 		}
 		return connect.NewResponse(&v1.DeleteArtifactResponse{}), nil
 	}
@@ -391,7 +391,7 @@ func (a *API) DeleteArtifact(
 	res, err := drops.Execute(ctx, showing, ref.Path)
 	switch {
 	case err != nil:
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(getReachCode(err), err)
 	case res.Busy:
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errBeingHeard)
 	case res.None:
@@ -414,12 +414,12 @@ func (a *API) run(
 	}
 	got, err := a.far(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
 	// What stands is what the ask comes to. A source a run already answered
 	// about is answered the same until that record is taken away.
 	if got.stands == done || got.stands == under || got.stands == silent || got.stands == unopened {
-		return stood(of, got), nil
+		return newArtifact(of, got), nil
 	}
 
 	// What this machine has fetched is not asked about. A run comes up in its
@@ -429,12 +429,12 @@ func (a *API) run(
 	// under the work and the file it is over.
 	return &v1.Artifact{
 		Kind:  of,
-		State: beginning(by.Start(v, ref.Path)),
+		State: getStartState(by.Start(v, ref.Path)),
 	}, nil
 }
 
-// beginning is what a run just set going is, as the schema carries it.
-func beginning(started port.StartOutcome) v1.State {
+// getStartState is what a run just set going is, as the schema carries it.
+func getStartState(started port.StartOutcome) v1.State {
 	if started == port.Queued {
 		return v1.State_STATE_QUEUED
 	}
@@ -479,11 +479,11 @@ func (a *API) downloads(
 	asked.Again = true
 	a.say(task.Task{ID: fetching + ref.Path, Doing: "Downloading an address", About: ref.Path})
 	_, err := asked.Execute(ctx, v, ref.Path)
-	a.finished(fetching + ref.Path)
+	a.finishTask(fetching + ref.Path)
 	if err != nil {
-		return nil, connect.NewError(downloaded(err), err)
+		return nil, connect.NewError(getDownloadCode(err), err)
 	}
-	return a.linked(ctx, v, ref.Path, at)
+	return a.getLinkedArtifact(ctx, v, ref.Path, at)
 }
 
 // proofreadTranscript begins putting the transcript of a recording right, and
@@ -504,9 +504,9 @@ func (a *API) proofreadTranscript(
 	if !puts.ProofreaderReady() {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoProofreading)
 	}
-	_, _, listened, err := a.made(ctx, v, ref.Path)
+	_, _, listened, err := a.getSourceText(ctx, v, ref.Path)
 	if err != nil {
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
 	// Words a model heard are what a proofreader is given, so a recording
 	// nothing listened to has nothing to put right. A client that listed what
@@ -517,21 +517,21 @@ func (a *API) proofreadTranscript(
 
 	res, err := puts.Proofread(ctx, v, ref.Path)
 	if err != nil {
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(getReachCode(err), err)
 	}
 	return &v1.Artifact{
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
-		State: came(res),
+		State: getProofreadState(res),
 	}, nil
 }
 
-// came is what asking for a transcript to be put right came to.
+// getProofreadState is what asking for a transcript to be put right came to.
 //
 // Words already standing are corrections, whether a model or the person wrote
 // them: nothing runs over them either way. One run to a recording, by the name
 // it writes under: a run listening to this recording holds that name, and so
 // does a proofreading of it.
-func came(res source.ProofreadTranscriptResult) v1.State {
+func getProofreadState(res source.ProofreadTranscriptResult) v1.State {
 	switch {
 	case res.Busy:
 		return v1.State_STATE_RUNNING
@@ -559,7 +559,7 @@ func (a *API) artifact(
 	if ref.Kind == domain.KindURL &&
 		(of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ||
 			of == v1.ArtifactKind_ARTIFACT_KIND_ARTICLE) {
-		return a.linked(ctx, v, ref.Path, at)
+		return a.getLinkedArtifact(ctx, v, ref.Path, at)
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
 		return a.copyOf(ctx, v, ref.Path, at), nil
@@ -568,7 +568,7 @@ func (a *API) artifact(
 	if err != nil {
 		return nil, err
 	}
-	return stood(of, got), nil
+	return newArtifact(of, got), nil
 }
 
 // corrections is what putting a recording's transcript right has come to.
@@ -585,7 +585,7 @@ func (a *API) corrections(
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 		State: v1.State_STATE_NONE,
 	}
-	said, store, listened, err := a.made(ctx, v, ref.Path)
+	said, store, listened, err := a.getSourceText(ctx, v, ref.Path)
 	if err != nil || !listened {
 		return out, err
 	}
@@ -602,8 +602,8 @@ func (a *API) corrections(
 	return out, nil
 }
 
-// stood is how far a run got, as the artifact a client reads.
-func stood(of v1.ArtifactKind, got reached) *v1.Artifact {
+// newArtifact is how far a run got, as the artifact a client reads.
+func newArtifact(of v1.ArtifactKind, got reached) *v1.Artifact {
 	out := &v1.Artifact{Kind: of, Bytes: int64(got.size)}
 	switch got.stands {
 	case done:
@@ -622,18 +622,18 @@ func stood(of v1.ArtifactKind, got reached) *v1.Artifact {
 	return out
 }
 
-// reaching is the code a file that could not be reached is answered with.
-// downloaded is what a run over an address answers with. What a tool said about
+// getDownloadCode is what a run over an address answers with. What a tool said about
 // an address is what the person is owed, and it reaches them only under a code
 // that carries its own words.
-func downloaded(err error) connect.Code {
-	if code := reaching(err); code != connect.CodeInternal {
+func getDownloadCode(err error) connect.Code {
+	if code := getReachCode(err); code != connect.CodeInternal {
 		return code
 	}
 	return connect.CodeFailedPrecondition
 }
 
-func reaching(err error) connect.Code {
+// getReachCode is the code a file that could not be reached is answered with.
+func getReachCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, port.ErrOutside):
 		return connect.CodeInvalidArgument
@@ -646,13 +646,13 @@ func reaching(err error) connect.Code {
 	}
 }
 
-// standing is where the copy of a video is: beside the note as a file of the
+// getCopyLocation is where the copy of a video is: beside the note as a file of the
 // vault, or in the application's own folder. Nothing where no copy stands.
 //
 // A copy lands wherever `importing.copies_to_vault` said when it was fetched,
 // and a setting turned afterwards does not move what is already here. Both
 // places are looked in, and the vault's own file is the one a person can see.
-func (a *API) standing(
+func (a *API) getCopyLocation(
 	ctx context.Context, v domain.Vault, path string, at domain.URL,
 ) (beside string, size int64, held bool) {
 	if at == "" {
@@ -663,7 +663,7 @@ func (a *API) standing(
 			return ref.Path, ref.Size, true
 		}
 	}
-	_, stores, ready := a.transcribing()
+	_, stores, ready := a.getSourceStores()
 	if !ready {
 		return "", 0, false
 	}

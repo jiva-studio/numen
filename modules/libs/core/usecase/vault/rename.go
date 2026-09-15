@@ -41,7 +41,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	if other, taken := domain.Vaults(known).Called(name, v.ID); taken {
+	if other, taken := domain.Vaults(known).FindByName(name, v.ID); taken {
 		return domain.Vault{}, fmt.Errorf("%w: the vault at %s is already called %s",
 			ErrNameTaken, other.Path, other.Name)
 	}

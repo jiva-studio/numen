@@ -10,7 +10,15 @@ import { onMounted, ref, type Component } from 'vue'
 import { Copy, CornerDownRight, FileText } from '@lucide/vue'
 import Menu from './Menu.vue'
 import { MENU_OPENINGS_ALL, type MenuItem, type MenuOpening } from './item'
-import { ARABIC, DEVANAGARI, EMPTY, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/shared/fixtures/prose'
+import {
+  ARABIC,
+  DEVANAGARI,
+  EMPTY,
+  LINK,
+  LONG,
+  RUSSIAN,
+  UNBREAKABLE,
+} from '@/shared/fixtures/prose'
 
 interface Knobs {
   items: readonly MenuItem[]
@@ -44,13 +52,11 @@ const menuElement = () => document.body.querySelector<HTMLElement>('.menu')
  * asked, and the story plays the caller's part: it holds whether the menu is
  * open, and it puts it away when the menu says so.
  */
-const asked = (args: Knobs) => ({
+const renderMenu = (args: Knobs) => ({
   components: { Menu },
   setup() {
     const open = ref(true)
-    const at = ref(
-      args.at.x < 0 ? { x: window.innerWidth + args.at.x, y: args.at.y } : args.at,
-    )
+    const at = ref(args.at.x < 0 ? { x: window.innerWidth + args.at.x, y: args.at.y } : args.at)
     const node = ref<HTMLElement | null>(null)
     const from = ref<HTMLElement | null>(null)
 
@@ -136,7 +142,7 @@ const meta = {
     onChoose: fn(),
     onDismiss: fn(),
   },
-  render: asked,
+  render: renderMenu,
 } satisfies Meta<Knobs>
 
 export default meta
@@ -151,9 +157,7 @@ export const Playground: Story = {}
  */
 export const Choosing: Story = {
   play: async ({ args }) => {
-    await userEvent.click(
-      within(menuElement()!).getByRole('menuitem', { name: 'New child note' }),
-    )
+    await userEvent.click(within(menuElement()!).getByRole('menuitem', { name: 'New child note' }))
     await expect(args.onChoose).toHaveBeenCalledWith('child')
     await waitFor(async () => {
       await expect(menuElement()).toBeNull()
@@ -196,12 +200,12 @@ export const GivingItBack: Story = {
   args: { opening: 'keyboard' },
   play: async ({ canvasElement }) => {
     const node = within(canvasElement).getByRole('button', { name: 'A node' })
-    const named = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
+    const getItem = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
 
-    await expect(named('Open')).toHaveFocus()
+    await expect(getItem('Open')).toHaveFocus()
 
     await userEvent.keyboard('{Tab}')
-    await expect(named('New child note')).toHaveFocus()
+    await expect(getItem('New child note')).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
     await waitFor(async () => {
@@ -419,13 +423,13 @@ export const NotChoosable: Story = {
   },
   play: async () => {
     // The keyboard passes over it in both directions.
-    const named = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
+    const getItem = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
 
-    await expect(named('Open')).toHaveFocus()
+    await expect(getItem('Open')).toHaveFocus()
     await userEvent.keyboard('{ArrowDown}')
-    await expect(named('Copy path')).toHaveFocus()
+    await expect(getItem('Copy path')).toHaveFocus()
     await userEvent.keyboard('{ArrowUp}')
-    await expect(named('Open')).toHaveFocus()
+    await expect(getItem('Open')).toHaveFocus()
   },
 }
 

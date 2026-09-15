@@ -10,11 +10,11 @@ import { shallowRef, type Ref } from 'vue'
 /**
  * What kind of thing the window said.
  *
- * A refusal is what did not happen. A caution is worth reading and needs
+ * An error is what did not happen. A caution is worth reading and needs
  * nothing done at once. A report is what a command did. A state is so until
  * something else makes it not so.
  */
-export type MessageKind = 'refusal' | 'caution' | 'report' | 'state'
+export type MessageKind = 'error' | 'caution' | 'report' | 'state'
 
 /** One message the window holds. */
 export interface WindowMessage {
@@ -33,9 +33,9 @@ export type MessageWriter = (text: string, kind?: MessageKind) => void
 export interface MessageLog {
   readonly messages: Ref<readonly WindowMessage[]>
   /** A writer under a name of its own. */
-  under(name: string): MessageWriter
+  getWriter(name: string): MessageWriter
   /** A message the person is finished with, by the identity it was given. */
-  forget(id: string): void
+  dismiss(id: string): void
 }
 
 /**
@@ -49,7 +49,7 @@ export function messageLog(): MessageLog {
   const messages = shallowRef<readonly WindowMessage[]>([])
   let minted = 0
 
-  const under =
+  const getWriter =
     (name: string): MessageWriter =>
     (text, kind = 'report') => {
       // The same text written again is nothing new, and what stands keeps its
@@ -67,9 +67,9 @@ export function messageLog(): MessageLog {
       messages.value = [...rest, { id: `${name}#${minted}`, name, kind, text }]
     }
 
-  const forget = (id: string): void => {
+  const dismiss = (id: string): void => {
     messages.value = messages.value.filter((one) => one.id !== id)
   }
 
-  return { messages, under, forget }
+  return { messages, getWriter, dismiss }
 }

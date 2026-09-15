@@ -6,18 +6,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// Cards is everything that acts on the two notes a flashcard is made of. Both
-// the window and the tools an agent calls are served the same set, so what one
-// of them refuses the other refuses.
-type Cards struct {
-	Read   cards.Read
-	List   cards.List
-	Write  cards.Write
-	Create cards.Create
-	Rename cards.RenameField
-}
+// Cards is what everything that acts on the two notes a flashcard is made of is
+// called where it is built. An application is handed the set and names it here.
+type Cards = cards.Scenarios
 
-// Cards builds them against this installation's vault readers and writers.
+// Cards builds everything that acts on the two notes a flashcard is made of,
+// against this installation's vault readers and writers.
 //
 // Index brings what a write touched up to date before it answers, so a caller
 // that makes a deck and lists the vault's stencils in the next breath finds
@@ -26,12 +20,12 @@ func (c Config) Cards(
 	notes port.NoteQueries,
 	links port.LinkQueries,
 	index note.Levels,
-) Cards {
+) cards.Scenarios {
 	readers := c.VaultReaders()
 	writers := c.VaultWriters()
 	now := c.Clock()
 
-	return Cards{
+	return cards.Scenarios{
 		Read:   cards.NewRead(readers, links),
 		List:   cards.NewList(readers, notes),
 		Write:  cards.NewWrite(readers, writers, links, index, now),

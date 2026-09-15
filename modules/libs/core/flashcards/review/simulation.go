@@ -48,9 +48,9 @@ type Simulation struct {
 	Spent Spent
 }
 
-// Covers is how many days this run walks, counting the day it opens as the
+// GetDurationDays is how many days this run walks, counting the day it opens as the
 // first. A run told nothing walks Ahead of them.
-func (s Simulation) Covers() int {
+func (s Simulation) GetDurationDays() int {
 	if s.Days <= 0 {
 		return Ahead
 	}
@@ -83,31 +83,31 @@ const mostAnswers = 1000
 // week does, so the pace holds for a card face begun on any of them.
 func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{By: by, Day: d}
-	from := d.Opens(now)
+	from := d.GetStart(now)
 	out := 0
 	for range 7 {
-		one := s.ripens(p, from)
+		one := s.getRipeningDays(p, from)
 		if one == NeverRipens {
 			return NeverRipens
 		}
 		out = max(out, one)
-		from = d.Ends(from)
+		from = d.GetEnd(from)
 	}
 	return out
 }
 
-// ripens is how many days of review a card face begun on this day needs.
-func (s Simulation) ripens(p Preset, open time.Time) int {
+// getRipeningDays is how many days of review a card face begun on this day needs.
+func (s Simulation) getRipeningDays(p Preset, open time.Time) int {
 	var c Schedule
 	days := 0
 	for range LongestRipening {
-		ends := s.Day.Ends(open)
-		if p.Share(open.Weekday()) == 0 {
+		ends := s.Day.GetEnd(open)
+		if p.GetShare(open.Weekday()) == 0 {
 			open = ends
 			continue
 		}
-		c = s.settles(c, open, ends, p)
-		if p.Learned(c, ends) {
+		c = s.settleDay(c, open, ends, p)
+		if p.IsLearned(c, ends) {
 			return days
 		}
 		days++
@@ -116,24 +116,24 @@ func (s Simulation) ripens(p Preset, open time.Time) int {
 	return NeverRipens
 }
 
-// answers is where one showing leaves a card face, at the hour the day opens. A
-// card face the day is not asking for stands where it is.
-func (s Simulation) answers(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
-	if c.Seen() && !c.Due.Before(ends) {
+// getAfterShowing is where one showing leaves a card face, at the hour the day
+// opens. A card face the day is not asking for stands where it is.
+func (s Simulation) getAfterShowing(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
+	if c.IsSeen() && !c.Due.Before(ends) {
 		return c
 	}
 	return s.step(c, open, p, on)
 }
 
-// settles is where a day of review leaves a card face when the day answers
+// settleDay is where a day of review leaves a card face when the day answers
 // every showing it asks for: an answer that leaves the card falling due before
 // the day closes is a card the day asks again, up to MostShowings.
 //
 // It is the day with no budget over it, which is the day the ripening of a card
 // face is counted in.
-func (s Simulation) settles(c Schedule, open, ends time.Time, p Preset) Schedule {
+func (s Simulation) settleDay(c Schedule, open, ends time.Time, p Preset) Schedule {
 	for range MostShowings {
-		if c.Seen() && !s.Day.Owed(c, open) {
+		if c.IsSeen() && !s.Day.IsOwed(c, open) {
 			break
 		}
 		c = s.step(c, open, p, nil)
@@ -141,30 +141,30 @@ func (s Simulation) settles(c Schedule, open, ends time.Time, p Preset) Schedule
 	return c
 }
 
-// reaches reports whether a card face standing here is learned on the day the
+// canReachGoal reports whether a card face standing here is learned on the day the
 // preset aims at, when every day of review from now to that day answers every
 // showing it falls due for.
 //
 // Nothing paces it: a card face this does not get there is one no pace gets
 // there, because no pace can give it more days than there are.
-func (s Simulation) reaches(p Preset, c Schedule, open, by time.Time) bool {
+func (s Simulation) canReachGoal(p Preset, c Schedule, open, by time.Time) bool {
 	for range mostAnswers {
-		if c.Seen() && !c.Due.Before(by) {
+		if c.IsSeen() && !c.Due.Before(by) {
 			break
 		}
-		if c.Seen() && !c.Due.Before(s.Day.Ends(open)) {
+		if c.IsSeen() && !c.Due.Before(s.Day.GetEnd(open)) {
 			// Nothing is asked of it until the day its schedule falls in.
-			open = s.Day.Opens(c.Due)
+			open = s.Day.GetStart(c.Due)
 		}
-		ends := s.Day.Ends(open)
+		ends := s.Day.GetEnd(open)
 		// A day of the week at none of the load asks it nothing, and the next
 		// day of review picks it up.
-		if p.Share(open.Weekday()) != 0 {
-			c = s.settles(c, open, ends, p)
+		if p.GetShare(open.Weekday()) != 0 {
+			c = s.settleDay(c, open, ends, p)
 		}
 		open = ends
 	}
-	return p.Learned(c, by)
+	return p.IsLearned(c, by)
 }
 
 // short is how many of these card faces cannot be learned by the day the preset
@@ -173,14 +173,14 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	by := s.Day.Ending(p.By)
+	by := s.Day.GetEndOfDate(p.By)
 	out := 0
 	for _, c := range cards {
-		if !s.reaches(p, c, open, by) {
+		if !s.canReachGoal(p, c, open, by) {
 			out++
 		}
 	}
-	if unseen > 0 && !s.reaches(p, Schedule{}, open, by) {
+	if unseen > 0 && !s.canReachGoal(p, Schedule{}, open, by) {
 		out += unseen
 	}
 	return out
@@ -193,15 +193,15 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 // down the middle of what it may do. The phase is the one a card that came back
 // is left in.
 func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Schedule {
-	if c.Seen() {
+	if c.IsSeen() {
 		c.Stability = math.Max(c.Stability, LeastStability)
 	}
-	if !c.Seen() {
+	if !c.IsSeen() {
 		good := s.By.Next(c, at, Good)
 		good.Due = p.Places(on, at, good.Due)
 		return good
 	}
-	back := s.recalls(c, at)
+	back := s.getRecallProbability(c, at)
 	good, again := s.By.Endings(c, at)
 
 	out := good
@@ -212,9 +212,9 @@ func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Sched
 	return out
 }
 
-// recalls is how likely a card face standing here is to come back at this
+// getRecallProbability is how likely a card face standing here is to come back at this
 // instant, under the assumption this run was given.
-func (s Simulation) recalls(c Schedule, at time.Time) float64 {
+func (s Simulation) getRecallProbability(c Schedule, at time.Time) float64 {
 	if s.Recalls == nil {
 		return AsModelled(c, at)
 	}

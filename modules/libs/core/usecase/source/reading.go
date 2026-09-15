@@ -36,10 +36,10 @@ func (p *passing) Read(into []byte) (int, error) {
 // errTooLarge is a copy that ran past the size the settings name.
 var errTooLarge = errors.New("over the size a copy may be")
 
-// capped is what comes down, stopped at the size the settings name. A site that
-// declares no size is held to it all the same, and a limit of nothing lets
+// limitReader is what comes down, stopped at the size the settings name. A site
+// that declares no size is held to it all the same, and a limit of nothing lets
 // everything through.
-func capped(from io.Reader, under int64) io.Reader {
+func limitReader(from io.Reader, under int64) io.Reader {
 	if under <= 0 {
 		return from
 	}

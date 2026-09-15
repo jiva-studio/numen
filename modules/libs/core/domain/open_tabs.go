@@ -10,9 +10,9 @@ type OpenTabs struct {
 	FrontID string
 }
 
-// Fronted is the tab the person is looking at. A window holding none answers
-// with no tab at all.
-func (o OpenTabs) Fronted() (Tab, bool) {
+// GetFrontTab is the tab the person is looking at. A window holding none
+// answers with no tab at all.
+func (o OpenTabs) GetFrontTab() (Tab, bool) {
 	for _, one := range o.Tabs {
 		if one.ID != "" && one.ID == o.FrontID {
 			return one, true
@@ -39,6 +39,9 @@ type Tab struct {
 	// Recording is the recording the tab holds, and nothing in a tab holding
 	// none.
 	Recording *RecordingProgress
+	// Book is how far through the book that reflows the tab holds they are, and
+	// nothing in a tab holding none.
+	Book *BookProgress
 }
 
 // A DocumentProgress is how far through a document the person reading it is.
@@ -46,6 +49,18 @@ type DocumentProgress struct {
 	// Page is the page in front of them, counted from one.
 	Page int
 	// PageCount is how many pages the document has.
+	PageCount int
+}
+
+// A BookProgress is how far through a book that reflows the person reading it
+// is. Such a book has no pages of its own, so where they stand is an offset
+// into its text and the page is counted from that.
+type BookProgress struct {
+	// Offset is where they are reading, in bytes of the book's text.
+	Offset int
+	// Page is the page the offset falls on, counted from one, and PageCount how
+	// many the book is read in.
+	Page      int
 	PageCount int
 }
 
@@ -64,6 +79,7 @@ type RecordingProgress struct {
 const (
 	TabNote      = "note"
 	TabDocument  = "document"
+	TabBook      = "book"
 	TabRecording = "recording"
 	TabPlex      = "plex"
 )

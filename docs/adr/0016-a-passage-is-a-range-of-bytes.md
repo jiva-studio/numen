@@ -39,11 +39,11 @@ GET /assets/<id>/pages/<n>?wide=W&size=S&mtime=T   one page drawn, where the ass
 
 `size` and `mtime` are the document's fingerprint, so one address names one drawing of one document and answers the same picture for as long as it answers at all.
 
-**Nothing else of a file is addressed here.** What a document is is `DocumentService` and how long a recording runs is `RecordingService`; what has been made from either is listed, asked for and taken away on `ArtifactService`, and each kind of it is read on the service named for that kind. Only bytes stay on these routes, because only bytes are what a browser's own elements speak.
+**Nothing else of a file is addressed here.** What a document is, and how long a recording runs, are each asked of the service for that subject; what has been made from either is listed, asked for and taken away on the service of artifacts, and each kind of it is read on the service named for that kind. Only bytes stay on these routes, because only bytes are what a browser's own elements speak.
 
 Each of those is a service of its own for the reason a service is carved at all: the phone serves the vault's notes to a network and must not serve what is in its files, and a service is the unit of what a binary answers.
 
-A recording's bytes are not here either. They are served ranged, from a loopback port, at the address `RecordingService.GetRecording` answers with under `media`: a media element speaks the protocols of the world and not the scheme one application serves its window under.
+A recording's bytes are not here either. They are served ranged, from a loopback port, at the address the recording's service answers with under `media`: a media element speaks the protocols of the world and not the scheme one application serves its window under.
 
 `<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. This route is served by the same adapter that serves the generated handler.
 
@@ -63,7 +63,7 @@ What a page is called, and what a location says to a person, is [`../recognising
 - A page asked for with the pool full comes back busy, and the window has to show that.
 - A document rewritten since its recognition is lit by its own layer, and the two disagree about where a word is.
 - Drawn pages are lost with the cache folder, and cost the drawing again.
-- A recording's cues are read and written on `ArtifactService`, beside the artifact they are the words of.
+- A recording's cues are read and written on the service of artifacts, beside the artifact they are the words of.
 
 ## Alternatives considered
 

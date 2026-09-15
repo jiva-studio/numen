@@ -21,9 +21,11 @@ const here = new URL('..', import.meta.url).pathname.replace(/^\/@fs/, '')
 
 /** The policy the page carries, directive by directive. */
 const policy: Record<string, string[]> = Object.fromEntries(
-  (/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/.exec(
-    readFileSync(join(here, 'index.html'), 'utf8'),
-  )?.[1] ?? '')
+  (
+    /http-equiv="Content-Security-Policy"\s+content="([^"]+)"/.exec(
+      readFileSync(join(here, 'index.html'), 'utf8'),
+    )?.[1] ?? ''
+  )
     .split(';')
     .map((one) => one.trim().split(/\s+/))
     .map(([named, ...sources]) => [named, sources]),
@@ -54,10 +56,10 @@ function allows(directive: string, address: string): boolean {
 }
 
 /** Every file the page is built from. Its tests are not built into it. */
-function built(from: string): string[] {
+function readSources(from: string): string[] {
   return readdirSync(from, { withFileTypes: true }).flatMap((entry) => {
     const path = join(from, entry.name)
-    if (entry.isDirectory()) return built(path)
+    if (entry.isDirectory()) return readSources(path)
     if (/\.test\.ts$/.test(entry.name)) return []
     return /\.(ts|vue)$/.test(entry.name) ? [readFileSync(path, 'utf8')] : []
   })
@@ -132,14 +134,15 @@ describe('what the page asks for', () => {
   it('asks for nothing from a stylesheet', () => {
     for (const sheet of STYLESHEETS) {
       const css = readFileSync(from.resolve(sheet), 'utf8')
-      expect([sheet, [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((at) => at[1])]).toStrictEqual(
-        [sheet, []],
-      )
+      expect([
+        sheet,
+        [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((at) => at[1]),
+      ]).toStrictEqual([sheet, []])
     }
   })
 
   it('names no host but the core in what it is built from', () => {
-    const named = built(join(here, 'src')).flatMap((source) =>
+    const named = readSources(join(here, 'src')).flatMap((source) =>
       [...source.matchAll(/https?:\/\/([^:/'"`\s$]+)/g)].map((at) => at[1]),
     )
     expect([...new Set(named)]).toStrictEqual(['127.0.0.1'])

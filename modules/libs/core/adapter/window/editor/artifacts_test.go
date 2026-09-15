@@ -8,7 +8,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	derived "github.com/jiva-studio/numen/modules/libs/core/text"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
 // What a file carries is asked before anything is offered over it. A window
@@ -19,11 +19,11 @@ import (
 // The row is the answer, and its absence would be a build that makes no
 // readings at all.
 func TestABookNothingHasReadCarriesAReadingThatIsNothing(t *testing.T) {
-	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
 	// A scan carries its reading and that reading put right: what a proofreader
 	// writes is another thing to ask about, and is asked about here.
-	held := carrying(t, api, book)
+	held := getArtifactStates(t, api, book)
 	if len(held) != 2 {
 		t.Fatalf("a book carries %v", held)
 	}
@@ -35,7 +35,7 @@ func TestABookNothingHasReadCarriesAReadingThatIsNothing(t *testing.T) {
 // A book a model has read carries that reading, and how long it is.
 func TestABookAModelHasReadCarriesTheReading(t *testing.T) {
 	const wrote = "what the model read off the pages"
-	api, _ := running(t,
+	api, _ := openRunWindow(t,
 		stored{derived.Artifact(reader, scanned): []byte(wrote)},
 		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}, Producer: reader, Hash: scanned}},
 		willRun(), willRun(),
@@ -60,7 +60,7 @@ func TestABookAModelHasReadCarriesTheReading(t *testing.T) {
 // A recording carries two: the words a model heard, and those words put right.
 // They stand in the order they are made.
 func TestARecordingCarriesWhatWasHeardAndWhatWasPutRight(t *testing.T) {
-	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
 	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
 	if err != nil {
@@ -87,9 +87,9 @@ func TestARecordingCarriesWhatWasHeardAndWhatWasPutRight(t *testing.T) {
 // A file nothing is made from carries nothing, and the window offers nothing
 // over it.
 func TestAFileNothingIsMadeFromCarriesNothing(t *testing.T) {
-	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
-	if held := carrying(t, api, idea); len(held) != 0 {
+	if held := getArtifactStates(t, api, idea); len(held) != 0 {
 		t.Errorf("a note carries %v", held)
 	}
 }
@@ -97,7 +97,7 @@ func TestAFileNothingIsMadeFromCarriesNothing(t *testing.T) {
 // A path the vault does not hold carries nothing that can be asked about, and
 // the question is refused.
 func TestWhatAPathTheVaultDoesNotHoldCarriesIsNotFound(t *testing.T) {
-	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
 	_, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{
 		Path: "library/nothing.pdf",
@@ -121,7 +121,7 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 		{"could not be opened", derived.Unopened + ": " + said + "\n", v1.State_STATE_FAILED, said},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			api, _ := running(t,
+			api, _ := openRunWindow(t,
 				stored{derived.Answer(asr, hashed): []byte(one.gave)},
 				indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 				willRun(), willRun(),
@@ -157,12 +157,12 @@ func TestAWindowStandingOnNothingCarriesNothing(t *testing.T) {
 // A note that points nowhere carries nothing: what is made from a file follows
 // from what the file is.
 func TestANoteThatPointsNowhereCarriesNothing(t *testing.T) {
-	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
-	if held := carrying(t, api, idea); len(held) != 0 {
+	if held := getArtifactStates(t, api, idea); len(held) != 0 {
 		t.Errorf("an ordinary note carries %v", held)
 	}
-	if code := refusedMaking(t, api, idea, transcriptOf); code != connect.CodeInvalidArgument {
+	if code := getRefusedCode(t, api, idea, transcriptOf); code != connect.CodeInvalidArgument {
 		t.Errorf("fetching for an ordinary note was refused with %s", code)
 	}
 }
@@ -170,9 +170,9 @@ func TestANoteThatPointsNowhereCarriesNothing(t *testing.T) {
 // A link note carries what is at its address, and it is nothing until something
 // has been fetched.
 func TestALinkNoteCarriesWhatIsAtItsAddress(t *testing.T) {
-	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
-	held := carrying(t, api, pointed)
+	held := getArtifactStates(t, api, pointed)
 	if len(held) != 2 {
 		t.Fatalf("a link note carries %v", held)
 	}
@@ -187,12 +187,12 @@ func TestALinkNoteCarriesWhatIsAtItsAddress(t *testing.T) {
 func TestALinkNoteCarriesTheWordsFetchedForIt(t *testing.T) {
 	const words = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nwhat was said\n"
 	hash := derived.Fingerprint([]byte(pointsAt))
-	api, _ := running(t,
+	api, _ := openRunWindow(t,
 		stored{derived.Artifact(derived.Captions, hash): []byte(words)},
-		nothingRead(), willRun(), willRun(),
+		newEmptyIndex(), willRun(), willRun(),
 	)
 
-	held := carrying(t, api, pointed)
+	held := getArtifactStates(t, api, pointed)
 	if held[transcriptOf] != v1.State_STATE_DONE {
 		t.Errorf("a link note the words were fetched for carries %s", held[transcriptOf])
 	}
@@ -201,10 +201,10 @@ func TestALinkNoteCarriesTheWordsFetchedForIt(t *testing.T) {
 // A build on a machine holding neither tool says so, and the window offers the
 // fetch nowhere from then on.
 func TestABuildThatCannotFetch(t *testing.T) {
-	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 	api.Imports = nil
 
-	if code := refusedMaking(t, api, pointed, transcriptOf); code != connect.CodeUnimplemented {
+	if code := getRefusedCode(t, api, pointed, transcriptOf); code != connect.CodeUnimplemented {
 		t.Errorf("a build with no fetcher refused with %s", code)
 	}
 }
@@ -214,7 +214,7 @@ func TestABuildThatCannotFetch(t *testing.T) {
 func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
 	const words = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nwhat was said\n"
 	hash := derived.Fingerprint([]byte(pointsAt))
-	api, _ := running(t,
+	api, _ := openRunWindow(t,
 		stored{derived.Artifact(derived.Captions, hash): []byte(words)},
 		indexed{pointed: {
 			Fingerprint: domain.Fingerprint{Path: pointed},
@@ -240,10 +240,10 @@ func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
 func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 	hash := derived.Fingerprint([]byte(pointsAt))
 	held := stored{derived.Copy(hash): []byte("the bytes of a video")}
-	api, _ := running(t, held, nothingRead(), willRun(), willRun())
+	api, _ := openRunWindow(t, held, newEmptyIndex(), willRun(), willRun())
 
-	if carrying(t, api, pointed)[copyOf] != v1.State_STATE_DONE {
-		t.Fatalf("a note with a copy carries %v", carrying(t, api, pointed))
+	if getArtifactStates(t, api, pointed)[copyOf] != v1.State_STATE_DONE {
+		t.Fatalf("a note with a copy carries %v", getArtifactStates(t, api, pointed))
 	}
 
 	if _, err := api.DeleteArtifact(t.Context(), connect.NewRequest(&v1.DeleteArtifactRequest{
@@ -251,8 +251,8 @@ func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 	})); err != nil {
 		t.Fatal(err)
 	}
-	if carrying(t, api, pointed)[copyOf] != v1.State_STATE_NONE {
-		t.Errorf("the copy is still here: %v", carrying(t, api, pointed))
+	if getArtifactStates(t, api, pointed)[copyOf] != v1.State_STATE_NONE {
+		t.Errorf("the copy is still here: %v", getArtifactStates(t, api, pointed))
 	}
 	if _, held := held[derived.Copy(hash)]; held {
 		t.Error("the bytes are still in the store")
@@ -265,7 +265,7 @@ func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 func TestALinkNoteIsAskedWhatItIsBeforeItsWords(t *testing.T) {
 	const words = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nwhat was said\n"
 	hash := derived.Fingerprint([]byte(pointsAt))
-	api, _ := running(t,
+	api, _ := openRunWindow(t,
 		stored{derived.Artifact(derived.Captions, hash): []byte(words)},
 		indexed{pointed: {
 			Fingerprint: domain.Fingerprint{Path: pointed},

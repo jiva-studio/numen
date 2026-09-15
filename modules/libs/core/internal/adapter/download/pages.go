@@ -13,8 +13,8 @@ import (
 	readability "github.com/go-shiori/go-readability"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // mostBytes is the most of a page that is read. A page is an article somebody
@@ -57,9 +57,9 @@ func newPages() *pages {
 // Supports anything published as a page, which is every address a site does not
 // publish as a video. It stands last, and it takes whatever the providers
 // before it did not.
-func (p *pages) Supports(at domain.URL) bool { return !carries(at) }
+func (p *pages) Supports(at domain.URL) bool { return !isVideoSite(at) }
 
-func (p *pages) Downloading(domain.URL) port.DownloadModel {
+func (p *pages) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: readerName, Producer: text.Article}
 }
 

@@ -5,15 +5,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { IonToast } from '@ionic/vue'
-import { troubleWords } from '@numen/wire'
+import { formatErrorMessage } from '@numen/wire'
 import PlexPage from './PlexPage.vue'
 import { reach } from '../core'
 
 vi.mock('../core', () => ({ reach: vi.fn() }))
 
-/** The toast the page puts its trouble on, after the core has answered. */
-async function toastAfter(thrown: unknown) {
-  vi.mocked(reach).mockRejectedValueOnce(thrown)
+/** The toast the page puts its error on, after the core has answered. */
+async function toastAfter(why: unknown) {
+  vi.mocked(reach).mockRejectedValueOnce(why)
   const page = mount(PlexPage)
   await flushPromises()
   const toast = page.getComponent(IonToast)
@@ -36,7 +36,7 @@ describe('a core that cannot be reached', () => {
     const { page, open, said } = await toastAfter(thrown)
 
     expect(open).toBe(true)
-    expect(said).toBe(troubleWords(thrown))
+    expect(said).toBe(formatErrorMessage(thrown))
     expect(said).not.toContain('ECONNREFUSED')
 
     page.unmount()

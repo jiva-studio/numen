@@ -26,16 +26,16 @@ The save reads the file it is replacing and holds the prose there against the pr
 
 The frontmatter is not compared. It is carried across.
 
-## When the file was overtaken
+## When the file moved past the tab
 
-Prose the tab has not read stops the save. Nothing is written, the tab carries the mark `overtaken`, and the unasked save stops for that tab: what the person typed stays in the buffer, and every keystroke after that leaves it there. `Ctrl+S` stops here too.
+Prose the tab has not read stops the save. Nothing is written, the tab carries the mark `stale`, and the unasked save stops for that tab: what the person typed stays in the buffer, and every keystroke after that leaves it there. `Ctrl+S` stops here too.
 
 The person answers with one of two, and the unasked save runs again afterwards:
 
 - **keep mine** writes the tab's prose over the file, presenting nothing;
 - **take the file's** reads the file again, and that read replaces the buffer.
 
-A tab that is overtaken is answered before it closes and before the window quits.
+A tab that is stale is answered before it closes and before the window quits.
 
 ### The states a tab is in
 
@@ -46,23 +46,23 @@ The predicates are read in order, so a tab is in exactly one state. The mark is 
 | `stuck` | reading or writing this note is impossible, and the tab says why | `stuck` |
 | `loading` | the first read has not answered; there is no document to type into | — |
 | `gone` | the name the tab stands at has no file behind it | `gone` |
-| `overtaken` | the file moved past the prose this tab read, and the save stopped | `overtaken` |
+| `stale` | the file moved past the prose this tab read, and the save stopped | `stale` |
 | `saving` | a write is in the air | `unsaved` |
 | `unsaved` | what is shown differs from what was written | `unsaved` |
 | `clean` | the file holds what is shown | — |
 
-A tab is `stuck` on one of six refusals:
+A tab is `stuck` on one of six errors:
 
-| Refusal | What the person is told |
+| Error | What the person is told |
 | --- | --- |
 | `tooLarge` | this note is longer than the editor holds |
-| `bodyRefused` | a note begins below its frontmatter, and this text begins with one |
+| `bodyUnwritable` | a note begins below its frontmatter, and this text begins with one |
 | `notANote` | this file is not a note |
 | `notText` | this file is not text |
 | `unreadable` | the frontmatter of this note cannot be read |
 | `unreachable` | the vault could not be reached, so this note was not written |
 
-A keystroke is worth trying again after three of them — `tooLarge`, `bodyRefused` and `unreachable` — and typing clears the refusal. The other three are conditions of the file. A tab held on a mendable refusal is told once when it is asked to close, and goes the second time it is asked.
+A keystroke is worth trying again after three of them — `tooLarge`, `bodyUnwritable` and `unreachable` — and typing clears the error. The other three are conditions of the file. A tab held on a mendable error is told once when it is asked to close, and goes the second time it is asked.
 
 ## What a save writes
 
@@ -166,9 +166,9 @@ A picture or an archive is reported to nobody by the watcher, so what arrived is
 
 The window is asked for everything it still holds, and it answers once every tab has written what it owes.
 
-**A tab whose save stopped is answered first.** The quit lists every overtaken tab and waits for the person to answer each one, with no bound. Each stands with three ways out: **keep mine**, **take the file's**, and **later**.
+**A tab whose save stopped is answered first.** The quit lists every stale tab and waits for the person to answer each one, with no bound. Each stands with three ways out: **keep mine**, **take the file's**, and **later**.
 
-**Later calls the quit off.** The tab leaves the list, stays `overtaken`, and the window stays as it was, so the next close stops on it again. What ends a question is one of the two answers and nothing else. Every asking is put to the person whole, so a note put off is drawn again the next time the window is asked to go.
+**Later calls the quit off.** The tab leaves the list, stays `stale`, and the window stays as it was, so the next close stops on it again. What ends a question is one of the two answers and nothing else. Every asking is put to the person whole, so a note put off is drawn again the next time the window is asked to go.
 
 A page that goes with a question standing is still owed. Its work is held by a window this process cannot reach into, and a page that comes back takes it over and raises the question again.
 
@@ -186,10 +186,10 @@ stateDiagram-v2
     saving --> clean: the write lands
     saving --> unsaved: typing arrived while the write was in the air
     saving --> stuck: the write is refused
-    saving --> overtaken: the file holds prose this tab has not read
+    saving --> stale: the file holds prose this tab has not read
     clean --> gone: a re-read finds no file
-    overtaken --> saving: keep mine
-    overtaken --> clean: take the file's
+    stale --> saving: keep mine
+    stale --> clean: take the file's
     gone --> saving: keep mine
     gone --> clean: a read finds the note
 ```

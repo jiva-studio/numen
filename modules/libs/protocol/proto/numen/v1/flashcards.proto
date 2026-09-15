@@ -410,7 +410,7 @@ message DeckNeighbour {
   bool ambiguous = 7;
 
   // Set when the note is there and its text could not be had, and says why.
-  optional Refusal refusal = 8;
+  optional ErrorCode error = 8;
 }
 
 message WatchReloadsRequest {}
@@ -423,8 +423,8 @@ message WatchReloadsResponse {
 
 // The presets a window over many vaults asks about. Each request names the
 // vault it is about, the same way an answer names the vault it is written to.
-// The settings themselves, the curve and the refusals are presets.proto, which
-// the editor asks over the one vault its window shows.
+// The settings themselves, the curve and the error codes are presets.proto,
+// which the editor asks over the one vault its window shows.
 
 message GetVaultDeckPresetRequest {
   string vault = 1;
@@ -438,5 +438,5 @@ message GetVaultDeckPresetResponse {
   optional Preset preset = 1;
 
   // Set when the preset was not read, and why.
-  optional Refusal refusal = 2;
+  optional ErrorCode error = 2;
 }

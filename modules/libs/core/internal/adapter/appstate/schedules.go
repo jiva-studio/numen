@@ -41,7 +41,7 @@ func OpenCounting() (*Schedules, error) {
 func SchedulesAt(dir string) *Schedules { return &Schedules{dir: dir} }
 
 func (s *Schedules) Read(_ context.Context, vaultID domain.VaultID) ([]byte, error) {
-	at, err := s.at(vaultID)
+	at, err := s.getPath(vaultID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (s *Schedules) Read(_ context.Context, vaultID domain.VaultID) ([]byte, err
 }
 
 func (s *Schedules) Write(_ context.Context, vaultID domain.VaultID, content []byte) error {
-	at, err := s.at(vaultID)
+	at, err := s.getPath(vaultID)
 	if err != nil {
 		return err
 	}
@@ -84,11 +84,11 @@ func (s *Schedules) Write(_ context.Context, vaultID domain.VaultID, content []b
 	return nil
 }
 
-// at is the file one vault's schedules stand in.
+// getPath is the file one vault's schedules stand in.
 //
 // The identity is written into the name, and an identity carrying a separator
 // or a dot is refused.
-func (s *Schedules) at(vaultID domain.VaultID) (string, error) {
+func (s *Schedules) getPath(vaultID domain.VaultID) (string, error) {
 	name := string(vaultID)
 	if name == "" || strings.ContainsAny(name, `/\.`) {
 		return "", fmt.Errorf("%q is not the identity of a vault", name)

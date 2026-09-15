@@ -33,8 +33,8 @@ func TestARecordingInLineOutlivesTheContext(t *testing.T) {
 	listening.mu.Unlock()
 	listening.drain(over)
 
-	if listening.Waiting() != 1 {
-		t.Errorf("%d recordings are in line after the context ended", listening.Waiting())
+	if listening.CountWaiting() != 1 {
+		t.Errorf("%d recordings are in line after the context ended", listening.CountWaiting())
 	}
 	if got := by.times(); got != 0 {
 		t.Errorf("a transcriber was handed %d recordings after the context ended", got)
@@ -83,21 +83,21 @@ func TestARecordingNamedAsDrainAndReleaseEndsIsTranscribed(t *testing.T) {
 
 	crossed := newInstant()
 	listening.whenIdle(func() {
-		crossed.at(func() port.StartOutcome { return listening.Start(v, "talks/b.mp3") })
+		crossed.nameOnce(func() port.StartOutcome { return listening.Start(v, "talks/b.mp3") })
 	})
 
 	if got := listening.Start(v, "talks/a.mp3"); got != port.Began {
 		t.Fatalf("the first recording was not transcribed: %v", got)
 	}
-	if n := begun(t, hearing); n != 1 {
+	if n := waitForReading(t, hearing); n != 1 {
 		t.Fatalf("the first transcription is the %dth", n)
 	}
 	close(first)
 
-	if taken := crossed.answered(t); taken != port.Began {
+	if taken := crossed.getOutcome(t); taken != port.Began {
 		t.Fatalf("the recording named as the line emptied was told %v", taken)
 	}
-	if n := begun(t, hearing); n != 2 {
+	if n := waitForReading(t, hearing); n != 2 {
 		t.Fatalf("the recording named as the line emptied is the %dth transcription", n)
 	}
 
@@ -118,7 +118,7 @@ func TestARecordingNamedAsDrainAndReleaseEndsIsTranscribed(t *testing.T) {
 	if heard != 3 {
 		t.Errorf("a transcriber was opened %d times", heard)
 	}
-	if listening.Waiting() != 0 {
-		t.Errorf("%d recordings were left in line", listening.Waiting())
+	if listening.CountWaiting() != 0 {
+		t.Errorf("%d recordings were left in line", listening.CountWaiting())
 	}
 }

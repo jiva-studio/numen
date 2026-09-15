@@ -95,7 +95,7 @@ func (d *Document) set(key string, rendered []byte) error {
 	if err != nil {
 		return err
 	}
-	rendered = indented(rendered, d.indent(node))
+	rendered = indentLines(rendered, d.indent(node))
 
 	start, end, found := d.span(node, key)
 	if !found {
@@ -129,7 +129,7 @@ func (d *Document) set(key string, rendered []byte) error {
 func (d *Document) commit(front []byte) error {
 	was := d.front
 	d.front = front
-	if _, err := d.mapping(); err != nil {
+	if _, err := d.readMapping(); err != nil {
 		d.front = was
 		return err
 	}
@@ -156,12 +156,12 @@ func (d *Document) indent(node *yaml.Node) string {
 	if at < 1 || at >= len(lines) {
 		return ""
 	}
-	return leading(string(d.front[lines[at-1]:lines[at]]))
+	return getIndent(string(d.front[lines[at-1]:lines[at]]))
 }
 
-// indented is rendered lines written at the indentation the block's keys stand
-// at. A line with nothing on it takes none.
-func indented(rendered []byte, indent string) []byte {
+// indentLines is rendered lines written at the indentation the block's keys
+// stand at. A line with nothing on it takes none.
+func indentLines(rendered []byte, indent string) []byte {
 	if indent == "" || len(rendered) == 0 {
 		return rendered
 	}
@@ -252,7 +252,7 @@ func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 		if strings.TrimSpace(text) == "" {
 			continue
 		}
-		if len(leading(text)) < column {
+		if len(getIndent(text)) < column {
 			break
 		}
 		last = at
@@ -260,8 +260,8 @@ func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 	return last
 }
 
-// mapping is the frontmatter as YAML, or nil when there is none to read.
-func (d *Document) mapping() (*yaml.Node, error) {
+// readMapping is the frontmatter as YAML, or nil when there is none to read.
+func (d *Document) readMapping() (*yaml.Node, error) {
 	if len(bytes.TrimSpace(d.front)) == 0 {
 		return nil, nil
 	}
@@ -296,11 +296,11 @@ func (d *Document) writable() (*yaml.Node, error) {
 	if d.unterminated {
 		return nil, ErrUnterminated
 	}
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil || node == nil {
 		return node, err
 	}
-	if anchored(node) {
+	if hasAnchor(node) {
 		return nil, ErrAnchored
 	}
 	if flow(node) {
@@ -326,8 +326,8 @@ var ErrInline = errors.New("this frontmatter is written on one line, and cannot 
 // note stops opening at all.
 var ErrAnchored = errors.New("this frontmatter carries a YAML anchor, and cannot be changed a key at a time")
 
-// anchored reports whether anything in a subtree carries an anchor.
-func anchored(node *yaml.Node) bool {
+// hasAnchor reports whether anything in a subtree carries an anchor.
+func hasAnchor(node *yaml.Node) bool {
 	if node == nil {
 		return false
 	}
@@ -335,7 +335,7 @@ func anchored(node *yaml.Node) bool {
 		return true
 	}
 	for _, child := range node.Content {
-		if anchored(child) {
+		if hasAnchor(child) {
 			return true
 		}
 	}
@@ -363,15 +363,15 @@ func empty(node *yaml.Node) bool {
 	return node.Kind == yaml.ScalarNode && node.Tag == "!!null" && node.Value == ""
 }
 
-// flowing reports whether anything in a subtree is written on one line. An
+// hasFlowStyle reports whether anything in a subtree is written on one line. An
 // entry of the `links:` block is replaced on its own, and that is a line at a
 // time all the way down.
-func flowing(node *yaml.Node) bool {
+func hasFlowStyle(node *yaml.Node) bool {
 	if flow(node) {
 		return true
 	}
 	for _, child := range node.Content {
-		if flowing(child) {
+		if hasFlowStyle(child) {
 			return true
 		}
 	}

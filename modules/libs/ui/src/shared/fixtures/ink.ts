@@ -27,7 +27,7 @@ export interface Ink {
 /** How large a drawing is painted again to be measured, in pixels a side. */
 const GRAIN = 240
 
-const painting = (): CanvasRenderingContext2D => {
+const createCanvas = (): CanvasRenderingContext2D => {
   const canvas = document.createElement('canvas')
   canvas.width = GRAIN
   canvas.height = GRAIN
@@ -37,9 +37,9 @@ const painting = (): CanvasRenderingContext2D => {
 }
 
 /** The lines the ink on a painting reaches, and how thick it is, in its pixels. */
-const painted = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; run: number } => {
+const readInk = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; run: number } => {
   const data = ctx.getImageData(0, 0, GRAIN, GRAIN).data
-  const on = (x: number, y: number): boolean =>
+  const isInked = (x: number, y: number): boolean =>
     x >= 0 && y >= 0 && x < GRAIN && y < GRAIN && data[(y * GRAIN + x) * 4 + 3]! > 128
 
   const inked: [number, number][] = []
@@ -47,7 +47,7 @@ const painted = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; 
   let bottom = -1
   for (let y = 0; y < GRAIN; y += 1) {
     for (let x = 0; x < GRAIN; x += 1) {
-      if (!on(x, y)) continue
+      if (!isInked(x, y)) continue
       inked.push([x, y])
       if (top < 0) top = y
       bottom = y
@@ -66,8 +66,8 @@ const painted = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; 
     let least = Infinity
     for (const [dx, dy, step] of WAYS) {
       let run = 1
-      for (let out = 1; on(x + dx * out, y + dy * out); out += 1) run += 1
-      for (let out = 1; on(x - dx * out, y - dy * out); out += 1) run += 1
+      for (let out = 1; isInked(x + dx * out, y + dy * out); out += 1) run += 1
+      for (let out = 1; isInked(x - dx * out, y - dy * out); out += 1) run += 1
       least = Math.min(least, run * step)
     }
     across.push(least)
@@ -92,15 +92,15 @@ export const drawingInk = async (drawing: SVGElement): Promise<Ink> => {
       'data:image/svg+xml;charset=utf-8,' +
       encodeURIComponent(new XMLSerializer().serializeToString(copy))
   })
-  const ctx = painting()
+  const ctx = createCanvas()
   ctx.drawImage(image, 0, 0, GRAIN, GRAIN)
 
-  const ink = painted(ctx)
-  const down = (at: number): number => box.top + (at / GRAIN) * box.height
+  const ink = readInk(ctx)
+  const getPageY = (at: number): number => box.top + (at / GRAIN) * box.height
   return {
-    top: down(ink.top),
-    bottom: down(ink.bottom),
-    middle: down((ink.top + ink.bottom) / 2),
+    top: getPageY(ink.top),
+    bottom: getPageY(ink.bottom),
+    middle: getPageY((ink.top + ink.bottom) / 2),
     stroke: (ink.run / GRAIN) * box.width,
   }
 }

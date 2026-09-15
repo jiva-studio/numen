@@ -35,8 +35,8 @@ test('nothing but a test draws this export', () => {
   for (const one of [
     'modules/libs/ui/src/index.ts',
     'modules/libs/wire/index.ts',
-    'modules/apps/desktop/editor/src/flashcards-preset-tab/curve.ts',
-    'modules/apps/desktop/flashcards/src/decks/presets.ts',
+    'modules/apps/desktop/editor/src/pages/preset-editor/lib/curve.ts',
+    'modules/apps/desktop/flashcards/src/pages/decks/model/presets.ts',
     'modules/apps/mobile/src/core.ts',
   ]) {
     assert.ok(
@@ -52,7 +52,7 @@ test('nothing but a test draws this export', () => {
   const held = fixturesOf(files)
   for (const one of [
     'modules/libs/ui/src/shared/fixtures/clock.ts',
-    'modules/apps/desktop/editor/src/shared/testing/window.ts',
+    'modules/apps/desktop/editor/src/testing/window.ts',
   ]) {
     assert.ok(held.includes(one), `${one} is drawn by tests alone and the walk did not see it`)
   }

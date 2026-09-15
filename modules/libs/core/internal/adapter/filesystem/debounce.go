@@ -164,7 +164,7 @@ func walks(
 		case <-going:
 			return
 		case at := <-asked:
-			paths, whole := shape.inside(ctx, at)
+			paths, whole := shape.getPathsUnder(ctx, at)
 			select {
 			case <-ctx.Done():
 				return

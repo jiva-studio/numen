@@ -14,7 +14,7 @@ const mountField = (props: Partial<TimeFieldProps> = {}) =>
   mount(TimeField, { props: { modelValue: '04:00', ...props } })
 
 /** Every hour the field has handed on, in the order it handed them on. */
-const handed = (field: ReturnType<typeof mountField>): readonly unknown[] =>
+const getEmitted = (field: ReturnType<typeof mountField>): readonly unknown[] =>
   (field.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
 
 describe('the hour in force', () => {
@@ -23,8 +23,9 @@ describe('the hour in force', () => {
   })
 
   it('stands at nothing where what was given is no hour of the day', () => {
-    expect((mountField({ modelValue: 'noon' }).get('input').element as HTMLInputElement).value)
-      .toBe('')
+    expect(
+      (mountField({ modelValue: 'noon' }).get('input').element as HTMLInputElement).value,
+    ).toBe('')
   })
 })
 
@@ -32,21 +33,21 @@ describe('an hour typed', () => {
   it('is handed on, and said to have settled', async () => {
     const field = mountField()
     await field.get('input').setValue('06:30')
-    expect(handed(field)).toStrictEqual(['06:30'])
-    expect(field.emitted('settles')).toStrictEqual([['06:30']])
+    expect(getEmitted(field)).toStrictEqual(['06:30'])
+    expect(field.emitted('settle')).toStrictEqual([['06:30']])
   })
 
   it('is handed on once where it is the hour already in force', async () => {
     const field = mountField()
     await field.get('input').setValue('04:00')
-    expect(handed(field)).toStrictEqual([])
+    expect(getEmitted(field)).toStrictEqual([])
   })
 
   it('is left where it stands where it is no hour of the day', async () => {
     const field = mountField()
     await field.get('input').setValue('')
-    expect(handed(field)).toStrictEqual([])
-    expect(field.emitted('settles')).toBeUndefined()
+    expect(getEmitted(field)).toStrictEqual([])
+    expect(field.emitted('settle')).toBeUndefined()
   })
 })
 

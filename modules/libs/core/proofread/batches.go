@@ -1,12 +1,12 @@
 package proofread
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
-// Scanned is the printed lines of a reading, gathered by the page they were
-// read from.
+// GetScanBatches is the printed lines of a reading, gathered by the page they
+// were read from.
 //
 // A line is known by the index of its box in the reading, so the number a
 // correction is keyed by counts through the whole book. Boxes come in reading
@@ -17,7 +17,7 @@ import (
 // batch is asked about and answered for by its page, and two batches under one
 // page would take one reply between them, writing one page's corrections onto
 // the other's lines.
-func Scanned(prose string, boxes []highlight.Box) []Batch {
+func GetScanBatches(prose string, boxes []highlight.Box) []Batch {
 	var out []Batch
 	for at, box := range boxes {
 		if box.Empty() {
@@ -41,7 +41,7 @@ func Scanned(prose string, boxes []highlight.Box) []Batch {
 	return out
 }
 
-// Spoken is the cues of a transcript, cut into batches of size lines, each
+// GetSpeechBatches is the cues of a transcript, cut into batches of size lines, each
 // batch opening on the last overlap lines of the one before it. Speech runs on
 // past the cut, so the lines a batch shares with its neighbour are seen whole
 // by one of the two.
@@ -51,12 +51,12 @@ func Scanned(prose string, boxes []highlight.Box) []Batch {
 //
 // A run of lines is answered for inside one batch, so a sentence broken over a
 // cut is put back together here where the overlap carries it whole.
-func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
+func GetSpeechBatches(cues []transcript.Cue, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
 	}
-	lines := spoken(cues)
-	step := size - shared(size, overlap)
+	lines := getSpokenLines(cues)
+	step := size - getSharedLines(size, overlap)
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
 		end := min(start+size, len(lines))
@@ -80,13 +80,13 @@ func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
 // A transcript of one batch has no cut, and a batch of one line has no room
 // for a line on either side of one. The last batch is followed by no cut.
 func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
-	batches := Spoken(cues, size, overlap)
+	batches := GetSpeechBatches(cues, size, overlap)
 	if size < 2 || len(batches) < 2 {
 		return nil
 	}
 
-	lines := spoken(cues)
-	step := size - shared(size, overlap)
+	lines := getSpokenLines(cues)
+	step := size - getSharedLines(size, overlap)
 	var out []Batch
 	reach := -1
 	for _, cut := range cuts {
@@ -110,9 +110,9 @@ func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
 	return out
 }
 
-// spoken is every cue that says something, as a line known by the index of its
-// cue in the transcript.
-func spoken(cues []transcript.Cue) []Line {
+// getSpokenLines is every cue that says something, as a line known by the index
+// of its cue in the transcript.
+func getSpokenLines(cues []transcript.Cue) []Line {
 	var out []Line
 	for at, cue := range cues {
 		if cue.Text == "" {
@@ -123,10 +123,10 @@ func spoken(cues []transcript.Cue) []Line {
 	return out
 }
 
-// shared is how many lines a batch keeps from the one before it: never as many
-// as size, so each batch reaches further into the transcript than its
+// getSharedLines is how many lines a batch keeps from the one before it: never
+// as many as size, so each batch reaches further into the transcript than its
 // neighbour.
-func shared(size, overlap int) int {
+func getSharedLines(size, overlap int) int {
 	if overlap < 0 {
 		return 0
 	}

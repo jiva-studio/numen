@@ -21,11 +21,11 @@ import (
 func (a *API) ListStencils(
 	ctx context.Context, r *connect.Request[v1.ListStencilsRequest],
 ) (*connect.Response[v1.ListStencilsResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
-	held, count, err := a.Cards.List.Execute(ctx, showing, offering(r.Msg.GetLimit()))
+	held, count, err := a.Cards.List.Execute(ctx, showing, getStencilLimit(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -38,9 +38,9 @@ func (a *API) ListStencils(
 	return connect.NewResponse(out), nil
 }
 
-// offering is how many stencils one answer carries. Nothing asked for takes the
+// getStencilLimit is how many stencils one answer carries. Nothing asked for takes the
 // ceiling, and so does more than the ceiling.
-func offering(limit int32) int {
+func getStencilLimit(limit int32) int {
 	if limit <= 0 || limit > maxStencils {
 		return maxStencils
 	}
@@ -52,7 +52,7 @@ func offering(limit int32) int {
 func (a *API) CreateStencil(
 	ctx context.Context, r *connect.Request[v1.CreateStencilRequest],
 ) (*connect.Response[v1.CreateStencilResponse], error) {
-	made, refusal, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
 		return a.Cards.Create.Stencil(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
@@ -60,7 +60,7 @@ func (a *API) CreateStencil(
 		return nil, err
 	}
 	return connect.NewResponse(&v1.CreateStencilResponse{
-		Path: made.Path, Refusal: refusal, Unlevelled: unlevelled,
+		Path: made.Path, Error: code, Unlevelled: unlevelled,
 	}), nil
 }
 
@@ -68,31 +68,31 @@ func (a *API) CreateStencil(
 func (a *API) CreateDeck(
 	ctx context.Context, r *connect.Request[v1.CreateDeckRequest],
 ) (*connect.Response[v1.CreateDeckResponse], error) {
-	made, refusal, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Deck(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}
 	return connect.NewResponse(&v1.CreateDeckResponse{
-		Path: made.Path, Refusal: refusal, Unlevelled: unlevelled,
+		Path: made.Path, Error: code, Unlevelled: unlevelled,
 	}), nil
 }
 
 // makes is what making a deck and making a stencil have in common: the vault
-// being shown, the window's hold on writing, and the refusals a file that could
-// not be made comes back as.
+// being shown, the window's hold on writing, and the error codes a file that
+// could not be made comes back as.
 func (a *API) makes(
 	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
-) (cards.CreateNoteResult, *v1.Refusal, bool, error) {
-	showing, err := a.shown()
+) (cards.CreateNoteResult, *v1.ErrorCode, bool, error) {
+	showing, err := a.getShownVault()
 	if err != nil {
 		return cards.CreateNoteResult{}, nil, false, err
 	}
 	if !a.Writing.begin() {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	made, err := cut(showing, cards.New{Title: title, Path: folder})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
@@ -101,14 +101,14 @@ func (a *API) makes(
 		}
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.
-		return made, nil, a.unlevelled(err), nil
+		return made, nil, a.isUnlevelled(err), nil
 	}
 	if errors.Is(err, cards.ErrNoFields) {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return cards.CreateNoteResult{}, nil, false, connect.NewError(wire.Coded(err), err)
+		return cards.CreateNoteResult{}, nil, false, connect.NewError(wire.GetCode(err), err)
 	}
 	return cards.CreateNoteResult{}, &reason, false, nil
 }
@@ -120,14 +120,14 @@ func (a *API) makes(
 func (a *API) RenameStencilField(
 	ctx context.Context, r *connect.Request[v1.RenameStencilFieldRequest],
 ) (*connect.Response[v1.RenameStencilFieldResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	renamed, err := a.Cards.RenameField.Execute(ctx, showing, cards.Rename{
 		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
@@ -137,8 +137,8 @@ func (a *API) RenameStencilField(
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		out := renamedOf(renamed)
-		out.Unlevelled = a.unlevelled(err)
+		out := newRenameResponse(renamed)
+		out.Unlevelled = a.isUnlevelled(err)
 		return connect.NewResponse(out), nil
 	}
 	// The name a rename is given is the client's: one the stencil does not
@@ -146,32 +146,32 @@ func (a *API) RenameStencilField(
 	if errors.Is(err, format.ErrNoSuchField) || errors.Is(err, format.ErrFieldTaken) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
-	return connect.NewResponse(&v1.RenameStencilFieldResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.RenameStencilFieldResponse{Error: &reason}), nil
 }
 
 // ReadStencil is the fields and the faces of one stencil.
 func (a *API) ReadStencil(
 	ctx context.Context, r *connect.Request[v1.ReadStencilRequest],
 ) (*connect.Response[v1.ReadStencilResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
 	found, err := a.Cards.Read.Stencil(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
 	out := &v1.ReadStencilResponse{}
-	if refusal, refused := refusedStencil(found.Outcome, found.Type); refused {
-		out.Refusal = &refusal
+	if code, refused := errorCodeOfStencil(found.Outcome, found.Type); refused {
+		out.Error = &code
 		return connect.NewResponse(out), nil
 	}
-	title := wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path)
+	title := wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path)
 	out.Stencil = stencilOf(found.Path, title, found.Body)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the stencil back.
@@ -183,26 +183,26 @@ func (a *API) ReadStencil(
 func (a *API) ReadDeck(
 	ctx context.Context, r *connect.Request[v1.ReadDeckRequest],
 ) (*connect.Response[v1.ReadDeckResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
 	found, err := a.Cards.Read.Deck(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
 	out := &v1.ReadDeckResponse{}
-	if refusal, refused := refusedDeck(found.Outcome, found.Type); refused {
-		out.Refusal = &refusal
-		// The bound travels with the refusal, so the interface names it
+	if code, refused := errorCodeOfDeck(found.Outcome, found.Type); refused {
+		out.Error = &code
+		// The bound travels with the error code, so the interface names it
 		// without holding a number of its own.
-		if refusal == v1.Refusal_REFUSAL_DECK_TOO_LARGE {
+		if code == v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE {
 			out.Bound = cards.MaxBytes
 		}
 		return connect.NewResponse(out), nil
 	}
-	title := wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path)
+	title := wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path)
 	out.Deck = deckOf(found.Path, title, found.Body, found.Stencils)
 	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
@@ -214,24 +214,24 @@ func (a *API) ReadDeck(
 func (a *API) WriteDeck(
 	ctx context.Context, r *connect.Request[v1.WriteDeckRequest],
 ) (*connect.Response[v1.WriteDeckResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
-	body, err := format.DeckBody(writtenDeck(r.Msg))
+	body, err := format.DeckBody(newDeck(r.Msg))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	wrote, err := a.Cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.unlevelled(err)
+	behind := a.isUnlevelled(err)
 	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()
@@ -241,16 +241,16 @@ func (a *API) WriteDeck(
 		}), nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
-		refusal := v1.Refusal_REFUSAL_DECK_TOO_LARGE
+		code := v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE
 		return connect.NewResponse(&v1.WriteDeckResponse{
-			Refusal: &refusal, Bound: cards.MaxBytes,
+			Error: &code, Bound: cards.MaxBytes,
 		}), nil
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
-	return connect.NewResponse(&v1.WriteDeckResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.WriteDeckResponse{Error: &reason}), nil
 }
 
 // WriteStencil puts fields and faces into a stencil. A stencil still holding
@@ -259,7 +259,7 @@ func (a *API) WriteDeck(
 func (a *API) WriteStencil(
 	ctx context.Context, r *connect.Request[v1.WriteStencilRequest],
 ) (*connect.Response[v1.WriteStencilResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -271,14 +271,14 @@ func (a *API) WriteStencil(
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	at, err := a.Cards.Write.Stencil(
 		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
-	behind := a.unlevelled(err)
+	behind := a.isUnlevelled(err)
 	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()
@@ -287,29 +287,29 @@ func (a *API) WriteStencil(
 			At: fingerprintOf(at), Unlevelled: behind,
 		}), nil
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(wire.GetCode(err), err)
 	}
-	return connect.NewResponse(&v1.WriteStencilResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.WriteStencilResponse{Error: &reason}), nil
 }
 
-// refusedDeck is why a deck was not read. What holds for a note holds here, and
-// a deck read at a bound of its own is refused at that bound.
-func refusedDeck(o note.ReadOutcome, is domain.NoteType) (v1.Refusal, bool) {
+// errorCodeOfDeck is why a deck was not read. What holds for a note holds here,
+// and a deck read at a bound of its own is refused at that bound.
+func errorCodeOfDeck(o note.ReadOutcome, is domain.NoteType) (v1.ErrorCode, bool) {
 	if o == note.TooLarge {
-		return v1.Refusal_REFUSAL_DECK_TOO_LARGE, true
+		return v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE, true
 	}
 	if o == note.Ok && is != domain.TypeDeck {
-		return v1.Refusal_REFUSAL_NOT_A_DECK, true
+		return v1.ErrorCode_ERROR_CODE_NOT_A_DECK, true
 	}
-	return wire.RefusalOf(o)
+	return wire.ErrorCodeOf(o)
 }
 
-// refusedStencil is why a stencil was not read.
-func refusedStencil(o note.ReadOutcome, is domain.NoteType) (v1.Refusal, bool) {
+// errorCodeOfStencil is why a stencil was not read.
+func errorCodeOfStencil(o note.ReadOutcome, is domain.NoteType) (v1.ErrorCode, bool) {
 	if o == note.Ok && is != domain.TypeStencil {
-		return v1.Refusal_REFUSAL_NOT_A_STENCIL, true
+		return v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL, true
 	}
-	return wire.RefusalOf(o)
+	return wire.ErrorCodeOf(o)
 }

@@ -60,7 +60,7 @@ func Standard(queries port.ProblemQueries) Checks {
 // quiet. A quiet check is one whose findings are ordinary in a vault somebody is
 // still writing, and which would bury the rest if it arrived unasked.
 func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) ([]domain.VaultProblem, error) {
-	wanted, err := c.wanted(named)
+	wanted, err := c.getWanted(named)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (c Checks) Names() []domain.Check {
 	return out
 }
 
-func (c Checks) wanted(named []domain.Check) ([]Checker, error) {
+func (c Checks) getWanted(named []domain.Check) ([]Checker, error) {
 	if len(named) == 0 {
 		return c.loud(), nil
 	}

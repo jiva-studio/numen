@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 )
@@ -40,7 +40,7 @@ type watched struct {
 	while []task.Task
 }
 
-func recognising(t *testing.T, why error) *watched {
+func newWatched(t *testing.T, why error) *watched {
 	t.Helper()
 	tasks := task.New()
 	w := &watched{tasks: tasks, held: &blank{}}
@@ -68,8 +68,8 @@ func recognising(t *testing.T, why error) *watched {
 	return w
 }
 
-// opened is how many times a recogniser was asked for.
-func (w *watched) opened() int {
+// countOpens is how many times a recogniser was asked for.
+func (w *watched) countOpens() int {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return w.open
@@ -86,11 +86,11 @@ func (w *watched) opening(t *testing.T) task.Task {
 	return w.while[0]
 }
 
-// settled waits for the reading to be over.
-func (w *watched) settled(t *testing.T) {
+// waitUntilDone waits for the reading to be over.
+func (w *watched) waitUntilDone(t *testing.T) {
 	t.Helper()
 	for range 200 {
-		if !w.Running() {
+		if !w.IsRunning() {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)
@@ -98,8 +98,8 @@ func (w *watched) settled(t *testing.T) {
 	t.Fatal("the reading never ended")
 }
 
-// said is the one task in the list, or nothing.
-func (w *watched) said(t *testing.T) (task.Task, bool) {
+// getTask is the one task in the list, or nothing.
+func (w *watched) getTask(t *testing.T) (task.Task, bool) {
 	t.Helper()
 	held := w.tasks.List()
 	if len(held) == 0 {
@@ -116,7 +116,7 @@ var somewhere = domain.Vault{ID: "v", Path: "/nowhere"}
 // One at a time: the models hold a worker each. A document named while one is
 // being read waits its turn, and a document named twice waits once.
 func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
-	w := recognising(t, errors.New("nothing to read with"))
+	w := newWatched(t, errors.New("nothing to read with"))
 
 	reading, held := make(chan struct{}, 2), make(chan struct{})
 	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
@@ -140,35 +140,35 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 	if got := w.Start(somewhere, "b.pdf"); got != port.Queued {
 		t.Errorf("the same document named again: %v", got)
 	}
-	if w.Waiting() != 1 {
-		t.Errorf("%d documents are in line", w.Waiting())
+	if w.CountWaiting() != 1 {
+		t.Errorf("%d documents are in line", w.CountWaiting())
 	}
 
 	close(held)
-	w.settled(t)
+	w.waitUntilDone(t)
 
-	if w.opened() != 2 {
-		t.Errorf("a recogniser was opened %d times", w.opened())
+	if w.countOpens() != 2 {
+		t.Errorf("a recogniser was opened %d times", w.countOpens())
 	}
-	if w.Waiting() != 0 {
-		t.Errorf("%d documents were left in line", w.Waiting())
+	if w.CountWaiting() != 0 {
+		t.Errorf("%d documents were left in line", w.CountWaiting())
 	}
 }
 
 // A failure nobody was shown is a failure nobody can act on.
 func TestAReadingThatFailedStaysInTheList(t *testing.T) {
-	w := recognising(t, errors.New("no models on this machine"))
+	w := newWatched(t, errors.New("no models on this machine"))
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
 		t.Fatal("the document was not read")
 	}
-	w.settled(t)
+	w.waitUntilDone(t)
 
-	at, held := w.said(t)
+	at, held := w.getTask(t)
 	if !held {
 		t.Fatal("the failure was not said")
 	}
-	if at.Failed == "" || at.About != "a.pdf" {
+	if at.Error == "" || at.About != "a.pdf" {
 		t.Errorf("got %+v", at)
 	}
 }
@@ -177,12 +177,12 @@ func TestAReadingThatFailedStaysInTheList(t *testing.T) {
 // row that calls it by the name of the work that follows leaves a person
 // watching a reading that has not begun.
 func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
-	w := recognising(t, errors.New("no models on this machine"))
+	w := newWatched(t, errors.New("no models on this machine"))
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
 		t.Fatal("the document was not read")
 	}
-	w.settled(t)
+	w.waitUntilDone(t)
 
 	at := w.opening(t)
 	if at.Doing != "Fetching models" {
@@ -197,37 +197,37 @@ func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
 // The next reading takes the one before it out of the list: one reading is one
 // line, however many have failed.
 func TestTheNextReadingClearsTheOneBeforeIt(t *testing.T) {
-	w := recognising(t, errors.New("no models on this machine"))
+	w := newWatched(t, errors.New("no models on this machine"))
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
 		t.Fatal("the document was not read")
 	}
-	w.settled(t)
-	if _, held := w.said(t); !held {
+	w.waitUntilDone(t)
+	if _, held := w.getTask(t); !held {
 		t.Fatal("the first failure was not said")
 	}
 
 	if w.Start(somewhere, "b.pdf") != port.Began {
 		t.Fatal("the second document was not read")
 	}
-	w.settled(t)
+	w.waitUntilDone(t)
 
-	at, held := w.said(t)
+	at, held := w.getTask(t)
 	if !held {
 		t.Fatal("the second failure was not said")
 	}
 	if at.About != "b.pdf" {
 		t.Errorf("the list holds %+v", at)
 	}
-	if w.opened() != 2 {
-		t.Errorf("a recogniser was opened %d times", w.opened())
+	if w.countOpens() != 2 {
+		t.Errorf("a recogniser was opened %d times", w.countOpens())
 	}
 }
 
 // A reading whoever asked for it stopped is a reading that is over, and not one
 // that failed.
 func TestAReadingStoppedIsNotAFailure(t *testing.T) {
-	w := recognising(t, nil)
+	w := newWatched(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	w.under = ctx
 	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
@@ -238,9 +238,9 @@ func TestAReadingStoppedIsNotAFailure(t *testing.T) {
 	if w.Start(somewhere, "a.pdf") != port.Began {
 		t.Fatal("the document was not read")
 	}
-	w.settled(t)
+	w.waitUntilDone(t)
 
-	if at, held := w.said(t); held {
+	if at, held := w.getTask(t); held {
 		t.Errorf("a reading that was stopped is in the list: %+v", at)
 	}
 }
@@ -248,7 +248,7 @@ func TestAReadingStoppedIsNotAFailure(t *testing.T) {
 // A reading that ends where nothing expected it to holds nothing afterwards:
 // the next document is taken.
 func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
-	w := recognising(t, nil)
+	w := newWatched(t, nil)
 
 	// The first reading leaves its goroutine partway down, as a panic under the
 	// reading does.
@@ -266,27 +266,27 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 	if w.Start(somewhere, "a.pdf") != port.Began {
 		t.Fatal("the document was not read")
 	}
-	w.settled(t)
+	w.waitUntilDone(t)
 
 	if w.Start(somewhere, "b.pdf") != port.Began {
 		t.Fatal("nothing was read after a reading that ended where nothing expected it to")
 	}
-	w.settled(t)
+	w.waitUntilDone(t)
 }
 
 // Every page is read through the runtime the process made before its window. A
 // reading through one made afterwards writes down a blank page for every page of
 // the document, so what was missing is fetched and nothing is read.
 func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
-	w := recognising(t, nil)
+	w := newWatched(t, nil)
 	w.RecognitionWorker.with.Runtime.Prepared = func() bool { return false }
 
 	err := w.recognise(t.Context(), somewhere, "recognition-1", "a.pdf")
 	if !errors.Is(err, errLateRuntime) {
 		t.Fatalf("the document was read through a runtime made after the window: %v", err)
 	}
-	if w.opened() != 1 {
-		t.Errorf("what was missing was fetched %d times", w.opened())
+	if w.countOpens() != 1 {
+		t.Errorf("what was missing was fetched %d times", w.countOpens())
 	}
 	if !w.held.closed {
 		t.Error("what was opened was not given back")
@@ -296,7 +296,7 @@ func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 // A reading writes to the index, and the application waits for it before what
 // it writes to is closed.
 func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
-	w := recognising(t, nil)
+	w := newWatched(t, nil)
 
 	holding := make(chan struct{})
 	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
@@ -327,7 +327,7 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 // A queue that failed to build is said, as the proofreader that failed to build
 // is said. A person who configured a queue and is given none is owed the reason.
 func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
-	w := recognising(t, nil)
+	w := newWatched(t, nil)
 	w.RecognitionWorker.with.Proofreading = ProofreadingConfig{
 		Named: true, Automatically: true,
 		By: func(string) (port.Proofreader, error) { return &puts{}, nil },
@@ -338,11 +338,11 @@ func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 
 	w.proofread(t.Context(), somewhere, "a.pdf")
 
-	at, held := w.said(t)
+	at, held := w.getTask(t)
 	if !held {
 		t.Fatal("a queue that failed to build was not said")
 	}
-	if at.Failed == "" || at.About != "a.pdf" {
+	if at.Error == "" || at.About != "a.pdf" {
 		t.Errorf("got %+v", at)
 	}
 }

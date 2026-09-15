@@ -29,7 +29,7 @@ func (l *theList) Last() (domain.Vault, bool, error) {
 
 func (l *theList) Save(domain.Vault) error                 { return nil }
 func (l *theList) Remove(domain.VaultID) error             { return nil }
-func (l *theList) Opened(domain.VaultID) error             { return nil }
+func (l *theList) RecordOpened(domain.VaultID) error       { return nil }
 func (l *theList) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
 
 // folders are the vaults whose folder can be opened. Every other path answers

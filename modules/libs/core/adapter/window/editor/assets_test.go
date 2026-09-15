@@ -7,45 +7,67 @@ import (
 	"testing"
 )
 
-// A file of the vault is one part of its address, and what is asked of it is the
-// next.
+// A file of the vault is one part of its address, and what is asked of it is
+// the rest.
 //
 // The path is written out whole, so a file standing in a folder named for a
-// facet is still one part. Read as the parts arrived, `pages/pages/x.pdf` and
-// the page asked of it are the same three words twice over.
+// page is still one part. Read as the parts arrived, `pages/pages/x.pdf` and
+// the page asked of it are the same three words twice over. A place in a book
+// is as many parts as the archive names it with.
 func TestAFileIsOnePartOfItsAddress(t *testing.T) {
 	for _, one := range []struct {
 		what  string
 		url   string
 		path  string
-		facet string
-		at    string
+		where string
 	}{
-		{"a file", assetOf("library/a.pdf"), "library/a.pdf", "", ""},
+		{"a file", assetOf("library/a.pdf"), "library/a.pdf", ""},
 		{"a page of it", pageOf("library/a.pdf", 3, 800, fingerprint{}),
-			"library/a.pdf", pagesFacet, "3"},
-		{"a file in a folder named for a facet", pageOf("pages/pages/x.pdf", 2, 400, fingerprint{}),
-			"pages/pages/x.pdf", pagesFacet, "2"},
-		{"a name with a space in it", assetOf("library/A Book.pdf"), "library/A Book.pdf", "", ""},
+			"library/a.pdf", "pages/3"},
+		{"a file in a folder named for a page", pageOf("pages/pages/x.pdf", 2, 400, fingerprint{}),
+			"pages/pages/x.pdf", "pages/2"},
+		{"a picture of a book", pictureOf("library/a.epub", "OEBPS/pictures/plate.png", fingerprint{}),
+			"library/a.epub", "OEBPS/pictures/plate.png"},
+		{"a name with a space in it", assetOf("library/A Book.pdf"), "library/A Book.pdf", ""},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			got, ok := addressed(httptest.NewRequest("GET", one.url, nil))
+			got, ok := parseAssetAddress(httptest.NewRequest("GET", one.url, nil))
 			if !ok {
 				t.Fatalf("%s is not an address", one.url)
 			}
-			if got.path != one.path || got.facet != one.facet || got.at != one.at {
-				t.Errorf("%s reads as %q/%q/%q, want %q/%q/%q",
-					one.url, got.path, got.facet, got.at, one.path, one.facet, one.at)
+			if got.path != one.path || got.where != one.where {
+				t.Errorf("%s reads as %q/%q, want %q/%q",
+					one.url, got.path, got.where, one.path, one.where)
 			}
 		})
 	}
 }
 
 func TestWhatIsNotAnAssetIsNotAnAddress(t *testing.T) {
-	for _, url := range []string{"/assets/", "/assets", "/elsewhere/a.pdf", assetOf("a.pdf") + "/pages/1/more"} {
-		if _, ok := addressed(httptest.NewRequest("GET", url, nil)); ok {
+	for _, url := range []string{"/assets/", "/assets", "/elsewhere/a.pdf"} {
+		if _, ok := parseAssetAddress(httptest.NewRequest("GET", url, nil)); ok {
 			t.Errorf("%s was read as an address", url)
 		}
+	}
+}
+
+// A file no reader reads has no places, and a file is asked with a place in it.
+func TestAnAssetNoReaderReadsIsNotAnswered(t *testing.T) {
+	handler := (&API{}).NewHandler(http.NotFoundHandler())
+
+	for _, one := range []struct {
+		what string
+		url  string
+		want int
+	}{
+		{"a file with no place named", assetOf("library/a.pdf"), http.StatusBadRequest},
+		{"a file of no reader", pageOf("library/a.md", 0, 800, fingerprint{}), http.StatusNotFound},
+	} {
+		t.Run(one.what, func(t *testing.T) {
+			if out := ask(handler, one.url); out.Code != one.want {
+				t.Errorf("%s was answered %d, want %d", one.url, out.Code, one.want)
+			}
+		})
 	}
 }
 
@@ -58,7 +80,7 @@ func TestTheWindowsOwnPiecesAreServed(t *testing.T) {
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}
-	handler := (&API{}).Serving(files)
+	handler := (&API{}).NewHandler(files)
 
 	page := ask(handler, "/")
 	if page.Code != http.StatusOK {

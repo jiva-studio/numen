@@ -11,7 +11,7 @@ func TestTheHistoryOpensEachRunFileOnce(t *testing.T) {
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
-	cold := l.counting(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
+	cold := l.countLoads(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
 	if cold.Opened != loadDays {
 		t.Errorf("opened %d run files where the vault holds %d", cold.Opened, loadDays)
 	}
@@ -19,7 +19,7 @@ func TestTheHistoryOpensEachRunFileOnce(t *testing.T) {
 		t.Errorf("listed the log %d times", cold.Listed)
 	}
 
-	warm := l.counting(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
+	warm := l.countLoads(t, func() error { _, err := l.review.Execute(ctx, l.vault); return err })
 	if warm.Opened != loadDays {
 		t.Errorf("a warm request opened %d run files where the vault holds %d",
 			warm.Opened, loadDays)

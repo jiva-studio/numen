@@ -19,7 +19,7 @@ func (parseCheck) Name() domain.Check { return domain.CheckParse }
 func (parseCheck) Quiet() bool        { return false }
 
 func (c parseCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
-	noted, err := c.queries.Noted(ctx, v.ID)
+	noted, err := c.queries.GetParseProblems(ctx, v.ID)
 	if err != nil {
 		return nil, err
 	}

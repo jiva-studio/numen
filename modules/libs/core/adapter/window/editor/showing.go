@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
@@ -19,7 +18,9 @@ import (
 //
 // It is published as one, through API.showing, and every request reads it there.
 type passes struct {
-	opening      *container.VaultOpener
+	// refresh brings a note of this vault up to date through the opening it is
+	// being followed by.
+	refresh      vaults.Refresh
 	recognising  *source.RecognitionWorker
 	transcribing *source.TranscriptionWorker
 
@@ -56,10 +57,10 @@ var errAsking = errors.New("a page is holding work a person has to answer for")
 // window stays on the one it had, and a window neither comes up in stands on
 // nothing and says so.
 func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
-	if v.ID == o.API.Showing().ID {
+	if v.ID == o.API.GetShownVault().ID {
 		return nil
 	}
-	if err := readable(o.cfg, v); err != nil {
+	if err := readable(o.made.GetVaultIdentity(), v); err != nil {
 		return err
 	}
 	if err := o.shutting.alone(); err != nil {
@@ -71,11 +72,11 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	held, spent := context.WithTimeout(ctx, HandedOverIn)
 	defer spent()
 
-	if !settling(held, o.API.Window, &o.API.Writing) {
+	if !settle(held, o.API.Window, &o.API.Writing) {
 		return errAsking
 	}
 
-	was := o.API.Showing()
+	was := o.API.GetShownVault()
 	o.leave()
 	o.forget()
 
@@ -86,7 +87,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 			// The window is standing on nothing: it says so, and the door on
 			// writes stays shut.
 			o.API.show(domain.Vault{})
-			o.API.Failed.Store(back.Error())
+			o.API.Error.Store(back.Error())
 			return errors.Join(err, back)
 		}
 	}
@@ -94,7 +95,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	o.API.Writing.open()
 	// The round the settling was is over, and what a page holds from here is
 	// this vault's.
-	o.API.Window.Over()
+	o.API.Window.EndRound()
 	// Everything a page is holding was read in a vault that is no longer in
 	// front of it.
 	o.API.Listeners.tell(change{reload: true})
@@ -114,10 +115,10 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 	}
 	// Recorded before the vault is built, so the next window opens on it. A
 	// list that could not be written is said and nothing more.
-	if err := o.registry.Opened(v.ID); err != nil {
+	if err := o.registry.RecordOpened(v.ID); err != nil {
 		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
-	on, err := o.begins(v, rebuild)
+	on, err := o.beginVault(v, rebuild)
 	if err != nil {
 		return err
 	}
@@ -127,17 +128,18 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 	return nil
 }
 
-// begins builds the half of the window that belongs to one vault: the scan and
-// the watch behind it, the reading of the documents it holds, and the batches
-// left with a proofreader.
-func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
+// beginVault builds the half of the window that belongs to one vault: the scan
+// and the watch behind it, the reading of the documents it holds, and the
+// batches left with a proofreader.
+func (o *Installation) beginVault(v domain.Vault, rebuild bool) (*passes, error) {
 	known, err := vaults.NewList(o.registry).Execute()
 	if err != nil {
 		return nil, err
 	}
 
 	watching, stop := context.WithCancel(o.under)
-	recognising := o.cfg.Recognising(watching, o.Index.Sources(), o.tasks, o.models)
+	recognising := o.made.OpenRecognitionWorker(watching, o.tasks, o.models)
+	sources := o.made.GetSourceQueries()
 
 	// What a recognition writes down is cut where every other cut happens. A
 	// document being read and a vault being scanned are then never two passes
@@ -152,41 +154,32 @@ func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
 	// A batch left with a proofreader outlives the run that left it, so one
 	// left before the application closed is collected when it opens. Every
 	// vault this installation holds is asked after.
-	recognising.Collecting(watching, o.Index.SourcesKnown(), collectedEvery, known...)
+	recognising.CollectBatches(watching, sources, collectedEvery, known...)
 
 	// A proofreading stands at the page it reached, so one that ended among the
 	// batches is taken up when the application opens.
-	recognising.TakingUp(watching, o.Index.SourcesKnown(), known...)
+	recognising.TakeUp(watching, sources, known...)
 
 	// A recording says nothing until a model has listened to it, so the ones
 	// this vault holds no transcript for are work whether or not anybody asks.
 	// What it writes is cut where every other cut happens.
-	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks, o.models)
+	transcribing := o.made.OpenTranscriptionWorker(watching, o.tasks, o.models)
 	transcribing.Cut = recognising.Cut
-	if o.cfg.Transcribes {
-		transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
+	if o.made.IsTranscribingUnasked() {
+		transcribing.Queue(watching, sources, heardEvery, v)
 	}
 
 	// A transcript's proofreading stands at the line it reached, and is taken up
 	// here whether or not this installation listens to recordings on its own.
 	// Every vault this installation holds is asked after.
-	transcribing.TakingUp(watching, o.Index.SourcesKnown(), known...)
+	transcribing.TakeUp(watching, sources, known...)
 
 	// Reading every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
-	cfg := o.cfg
-	cfg.RebuildIndex = rebuild
-
-	// Opening a vault is the same act in both windows, so it is one thing in the
-	// container. What this window says about it while it runs is below.
-	opening := cfg.VaultOpener(o.Index)
-	opening.Rebuild = rebuild
-
-	ended := begin(watching, v, cfg, o.Index, o.API, opening,
-		cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
+	refresh, ended := begin(watching, v, o.made, o.API, rebuild, o.Embedder, o.wake, owed, o.out)
 
 	return &passes{
-		opening:      opening,
+		refresh:      refresh,
 		recognising:  recognising,
 		transcribing: transcribing,
 		// The window asks for a scan to be read through the same job an agent
@@ -237,23 +230,23 @@ func (o *Installation) leave() {
 // for as long as the window is open.
 func (o *Installation) forget() {
 	o.API.Ready.Store(false)
-	o.API.Failed.Store("")
+	o.API.Error.Store("")
 	o.API.Unwatched.Store("")
 
 	for _, pass := range []string{walkingNotes, readingBooks, makingVectors, wordsAlone} {
-		o.API.finished(pass)
+		o.API.finishTask(pass)
 	}
 	if o.why != nil {
-		o.API.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: o.why.Error()})
+		o.API.say(task.Task{ID: makingVectors, Doing: "Indexing", Error: o.why.Error()})
 	}
 }
 
-// chosen is the vault this window opens: the one a person named, else the one
+// chooseVault is the vault this window opens: the one a person named, else the one
 // shown last, else the first this installation holds. An installation holding
 // none answers with no vault at all.
 //
 // A vault named and not on the list is refused, and the window does not open.
-func chosen(registry port.VaultRegistry, asked string) (domain.Vault, error) {
+func chooseVault(registry port.VaultRegistry, asked string) (domain.Vault, error) {
 	if asked != "" {
 		return vaults.NewFind(registry).Execute(asked)
 	}
@@ -276,8 +269,7 @@ func chosen(registry port.VaultRegistry, asked string) (domain.Vault, error) {
 
 // readable is the vault being one this window can show: the folder reads as a
 // vault, and it carries the identity the list has for it.
-func readable(cfg container.Config, v domain.Vault) error {
-	identity := cfg.VaultIdentity()
+func readable(identity port.VaultIdentity, v domain.Vault) error {
 	if err := identity.Readable(v.Path); err != nil {
 		return fmt.Errorf("%w: %w", vaults.ErrUnreadable, err)
 	}

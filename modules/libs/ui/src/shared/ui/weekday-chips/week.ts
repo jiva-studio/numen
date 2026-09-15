@@ -44,10 +44,10 @@ export const weekFrom = <One extends DayName>(id: string, week: readonly One[]):
  * whole of it. A level outside that is none a chip can show, and the figure
  * said and the colour drawn are this one number.
  */
-export const filled = (level: number): number => Math.min(Math.max(level, 0), 1)
+export const getFill = (level: number): number => Math.min(Math.max(level, 0), 1)
 
 /** How full a chip stands, written out as a share of the whole. */
-export const filledPercent = (level: number): string => `${Math.round(filled(level) * 100)}%`
+export const getFillPercent = (level: number): string => `${Math.round(getFill(level) * 100)}%`
 
 /**
  * The levels on offer, holding the one a day stands at. A level the offer does
@@ -55,7 +55,7 @@ export const filledPercent = (level: number): string => `${Math.round(filled(lev
  * choose without its own level among the choices. No level in force leaves the
  * offer as it is.
  */
-export const offering = (
+export const getOfferedLevels = (
   levels: readonly number[],
   inForce: number | null,
 ): readonly number[] => {

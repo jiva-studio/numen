@@ -25,7 +25,7 @@ func TestSettingsAreFoundInADataDirectory(t *testing.T) {
 	t.Setenv("GSETTINGS_SCHEMA_DIR", "")
 	t.Setenv("XDG_DATA_DIRS", filepath.Join(t.TempDir(), "empty")+":"+data)
 
-	if !settled() {
+	if !hasSchemas() {
 		t.Error("the settings were not found where they are")
 	}
 }
@@ -34,7 +34,7 @@ func TestSettingsAreFoundWhereTheEnvironmentNamesThem(t *testing.T) {
 	t.Setenv("XDG_DATA_DIRS", filepath.Join(t.TempDir(), "empty"))
 	t.Setenv("GSETTINGS_SCHEMA_DIR", schemasIn(t, filepath.Join(t.TempDir(), "held")))
 
-	if !settled() {
+	if !hasSchemas() {
 		t.Error("the settings were not found where the environment names them")
 	}
 }
@@ -43,7 +43,7 @@ func TestAMachineWithNoSettingsIsSaidToHaveNone(t *testing.T) {
 	t.Setenv("GSETTINGS_SCHEMA_DIR", "")
 	t.Setenv("XDG_DATA_DIRS", filepath.Join(t.TempDir(), "empty"))
 
-	if settled() {
+	if hasSchemas() {
 		t.Error("a machine holding no settings was said to hold them")
 	}
 }

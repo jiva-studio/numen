@@ -36,11 +36,11 @@ export interface DrawnIcon {
   readonly said: string
 }
 
-const drawn = (icon: LucideIcon, said: string, fills = 1): DrawnIcon => ({
+const createIcon = (icon: LucideIcon, label: string, fills = 1): DrawnIcon => ({
   icon,
   fills,
   stroke: STROKE / fills,
-  said,
+  said: label,
 })
 
 /**
@@ -51,9 +51,9 @@ const drawn = (icon: LucideIcon, said: string, fills = 1): DrawnIcon => ({
  * the same width, and the thinner stroke that keeps its ink the same weight.
  */
 export const ICONS = {
-  control: drawn(ChevronUp, 'Control', 4 / 3),
-  shift: drawn(ArrowBigUp, 'Shift'),
-  command: drawn(Command, 'Command'),
-  option: drawn(Option, 'Option'),
-  return: drawn(CornerDownLeft, 'Return'),
+  control: createIcon(ChevronUp, 'Control', 4 / 3),
+  shift: createIcon(ArrowBigUp, 'Shift'),
+  command: createIcon(Command, 'Command'),
+  option: createIcon(Option, 'Option'),
+  return: createIcon(CornerDownLeft, 'Return'),
 } as const satisfies Record<PaletteIcon, DrawnIcon>

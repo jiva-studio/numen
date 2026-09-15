@@ -93,7 +93,7 @@ func TestAHeadingCarriesTheByteItBeginsAt(t *testing.T) {
 			t.Fatalf("%q begins at %d, and the body is %d bytes", h.Text, h.Offset, len(n.Body))
 		}
 		if !strings.HasPrefix(n.Body[h.Offset:], want) {
-			t.Errorf("the body at %d is %q, want %q", h.Offset, shortened(n.Body[h.Offset:]), want)
+			t.Errorf("the body at %d is %q, want %q", h.Offset, shortenText(n.Body[h.Offset:]), want)
 		}
 		if h.Offset == h.Line {
 			t.Errorf("%q begins at %d, which is its line number", h.Text, h.Offset)
@@ -113,13 +113,13 @@ func TestAHeadingInAFileWrittenWithCRLFBeginsWhereItSays(t *testing.T) {
 	for _, h := range n.Headings {
 		want := strings.Repeat("#", h.Level) + " " + h.Text + "\r\n"
 		if !strings.HasPrefix(n.Body[h.Offset:], want) {
-			t.Errorf("the body at %d is %q, want %q", h.Offset, shortened(n.Body[h.Offset:]), want)
+			t.Errorf("the body at %d is %q, want %q", h.Offset, shortenText(n.Body[h.Offset:]), want)
 		}
 	}
 }
 
-// shortened cuts text down for a failure message.
-func shortened(s string) string {
+// shortenText cuts text down for a failure message.
+func shortenText(s string) string {
 	if len(s) > 20 {
 		return s[:20]
 	}

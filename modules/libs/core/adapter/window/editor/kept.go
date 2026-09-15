@@ -52,9 +52,9 @@ const (
 	sweptEvery = mostKept / 8
 )
 
-// shelved is where this machine keeps pages already drawn, and nothing where it
+// newDiskCache is where this machine keeps pages already drawn, and nothing where it
 // says it keeps nothing.
-func shelved() *cache {
+func newDiskCache() *cache {
 	under, err := os.UserCacheDir()
 	if err != nil {
 		return nil
@@ -63,12 +63,12 @@ func shelved() *cache {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil
 	}
-	return keptIn(dir)
+	return newCacheIn(dir)
 }
 
-// keptIn is a cache in one folder, with nothing written to it yet and no sweep
+// newCacheIn is a cache in one folder, with nothing written to it yet and no sweep
 // running.
-func keptIn(dir string) *cache {
+func newCacheIn(dir string) *cache {
 	return &cache{dir: dir, limit: mostKept, every: sweptEvery}
 }
 
@@ -96,7 +96,7 @@ func (s *cache) get(key pictureID) []byte {
 	if s == nil {
 		return nil
 	}
-	at := filepath.Join(s.dir, s.named(key))
+	at := filepath.Join(s.dir, s.getFileName(key))
 	body, err := os.ReadFile(at)
 	if err != nil {
 		return nil
@@ -112,7 +112,7 @@ func (s *cache) put(key pictureID, body []byte) {
 	if s == nil || len(body) == 0 {
 		return
 	}
-	at := filepath.Join(s.dir, s.named(key))
+	at := filepath.Join(s.dir, s.getFileName(key))
 	// Written under another name and moved into place, so a reader never opens
 	// half a picture.
 	temp, err := os.CreateTemp(s.dir, "drawing-")
@@ -190,13 +190,13 @@ func (s *cache) sweep() {
 	}
 }
 
-// named is what one drawn page is called: the bytes it was drawn from, which
+// getFileName is what one drawn page is called: the bytes it was drawn from, which
 // page of them, and how wide.
 //
 // The file's own name says nothing about the vault. A folder listing is
 // readable by whatever else runs as this person, and what they are reading is
 // theirs.
-func (s *cache) named(key pictureID) string {
+func (s *cache) getFileName(key pictureID) string {
 	sum := sha256.Sum256(fmt.Appendf(nil, "%s\x00%d\x00%d\x00%d\x00%d",
 		key.document.path, key.document.size, key.document.mtime, key.page, key.width))
 	return hex.EncodeToString(sum[:]) + ".jpg"

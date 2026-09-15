@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/workspace.proto.
  */
 export const file_numen_v1_workspace: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIhMKEVdhdGNoRm9jdXNSZXF1ZXN0IkEKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEh0KBXNwYW5zGAIgAygLMg4ubnVtZW4udjEuU3BhbiJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSKaAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIsCghkb2N1bWVudBgFIAEoCzIaLm51bWVuLnYxLkRvY3VtZW50UHJvZ3Jlc3MSLgoJcmVjb3JkaW5nGAYgASgLMhsubnVtZW4udjEuUmVjb3JkaW5nUHJvZ3Jlc3MiNAoQRG9jdW1lbnRQcm9ncmVzcxIMCgRwYWdlGAEgASgFEhIKCnBhZ2VfY291bnQYAiABKAUiSQoRUmVjb3JkaW5nUHJvZ3Jlc3MSHwoXdHJhbnNjcmliZWRfZHVyYXRpb25fbXMYASABKAUSEwoLZHVyYXRpb25fbXMYAiABKAUyrwEKEFdvcmtzcGFjZVNlcnZpY2USSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIhMKEVdhdGNoRm9jdXNSZXF1ZXN0IkEKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEh0KBXNwYW5zGAIgAygLMg4ubnVtZW4udjEuU3BhbiJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSLAAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIsCghkb2N1bWVudBgFIAEoCzIaLm51bWVuLnYxLkRvY3VtZW50UHJvZ3Jlc3MSLgoJcmVjb3JkaW5nGAYgASgLMhsubnVtZW4udjEuUmVjb3JkaW5nUHJvZ3Jlc3MSJAoEYm9vaxgHIAEoCzIWLm51bWVuLnYxLkJvb2tQcm9ncmVzcyI0ChBEb2N1bWVudFByb2dyZXNzEgwKBHBhZ2UYASABKAUSEgoKcGFnZV9jb3VudBgCIAEoBSJACgxCb29rUHJvZ3Jlc3MSDgoGb2Zmc2V0GAEgASgFEgwKBHBhZ2UYAiABKAUSEgoKcGFnZV9jb3VudBgDIAEoBSJJChFSZWNvcmRpbmdQcm9ncmVzcxIfChd0cmFuc2NyaWJlZF9kdXJhdGlvbl9tcxgBIAEoBRITCgtkdXJhdGlvbl9tcxgCIAEoBTKvAQoQV29ya3NwYWNlU2VydmljZRJJCgpXYXRjaEZvY3VzEhsubnVtZW4udjEuV2F0Y2hGb2N1c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEZvY3VzUmVzcG9uc2UwARJQCg1Xcml0ZU9wZW5UYWJzEh4ubnVtZW4udjEuV3JpdGVPcGVuVGFic1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.WatchFocusRequest
@@ -143,8 +143,9 @@ export type Tab = Message<"numen.v1.Tab"> & {
 
   /**
    * How far the person has got through what the tab holds. A tab holding a
-   * document sets document, a tab holding a recording sets recording, and a tab
-   * of any other kind sets neither.
+   * document sets document, a tab holding a recording sets recording, a tab
+   * holding a book that reflows sets book, and a tab of any other kind sets
+   * none of them.
    *
    * @generated from field: numen.v1.DocumentProgress document = 5;
    */
@@ -154,6 +155,11 @@ export type Tab = Message<"numen.v1.Tab"> & {
    * @generated from field: numen.v1.RecordingProgress recording = 6;
    */
   recording?: RecordingProgress | undefined;
+
+  /**
+   * @generated from field: numen.v1.BookProgress book = 7;
+   */
+  book?: BookProgress | undefined;
 };
 
 /**
@@ -192,6 +198,43 @@ export const DocumentProgressSchema: GenMessage<DocumentProgress> = /*@__PURE__*
   messageDesc(file_numen_v1_workspace, 5);
 
 /**
+ * A BookProgress is how far through a book that reflows the person reading it
+ * is. Such a book has no pages of its own, so where they stand is an offset
+ * into its text and the page is counted from that.
+ *
+ * @generated from message numen.v1.BookProgress
+ */
+export type BookProgress = Message<"numen.v1.BookProgress"> & {
+  /**
+   * Offset is where they are reading, in bytes of the book's text.
+   *
+   * @generated from field: int32 offset = 1;
+   */
+  offset: number;
+
+  /**
+   * Page is the page the offset falls on, counted from one, and PageCount how
+   * many the book is read in. Both are counted over the text by the size of a
+   * page the book was answered with, which is not here.
+   *
+   * @generated from field: int32 page = 2;
+   */
+  page: number;
+
+  /**
+   * @generated from field: int32 page_count = 3;
+   */
+  pageCount: number;
+};
+
+/**
+ * Describes the message numen.v1.BookProgress.
+ * Use `create(BookProgressSchema)` to create a new message.
+ */
+export const BookProgressSchema: GenMessage<BookProgress> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 6);
+
+/**
  * A RecordingProgress is how far into a recording the words written down reach.
  *
  * @generated from message numen.v1.RecordingProgress
@@ -219,7 +262,7 @@ export type RecordingProgress = Message<"numen.v1.RecordingProgress"> & {
  * Use `create(RecordingProgressSchema)` to create a new message.
  */
 export const RecordingProgressSchema: GenMessage<RecordingProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 6);
+  messageDesc(file_numen_v1_workspace, 7);
 
 /**
  * WorkspaceService answers where in the vault the person stands, and takes what

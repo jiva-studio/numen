@@ -105,9 +105,9 @@ type Config struct {
 	// are holding.
 	RebuildIndex bool
 
-	// Trouble is where what is assembled here says what went wrong in work it
-	// carries on past. An installation that sets none is told nothing.
-	Trouble port.Trouble
+	// ErrorHandler is where what is assembled here says what went wrong in work
+	// it carries on past. An installation that sets none is told nothing.
+	ErrorHandler port.ErrorHandler
 
 	// Now is what time it is, for every scenario that stamps a note or asks
 	// what is due today. An installation that names none reads this machine's
@@ -123,30 +123,11 @@ func (c Config) Clock() port.Clock {
 	return time.Now
 }
 
-// trouble says what went wrong to whoever asked to be told.
-func (c Config) trouble(err error) {
-	if c.Trouble != nil {
-		c.Trouble(err)
+// handleError says what went wrong to whoever asked to be told.
+func (c Config) handleError(err error) {
+	if c.ErrorHandler != nil {
+		c.ErrorHandler(err)
 	}
-}
-
-// Indexing is this configuration carrying what a settings file says about
-// making a vault searchable.
-//
-// Every section of it is carried here, in one place both entry points use. A
-// section an entry point leaves behind is a part of the application that does
-// nothing and says nothing, since naming no model is how a person turns one
-// off.
-func (c Config) Indexing(said settings.Indexing) Config {
-	c.Embedding = said.Embedding
-	c.Recognition = said.Recognition.Config
-	c.Proofreading = said.Proofreading
-	c.ScanProofreading = said.Recognition.Proofread
-	c.TranscriptProofreading = said.Transcription.Proofread
-	c.Transcription = said.Transcription.Config
-	c.Transcribes = said.Transcribes()
-	c.TranscribesUnder = said.TranscribesUnder()
-	return c
 }
 
 // SyncSetting reads, as each rename is made, whether a note's title and its
@@ -154,11 +135,7 @@ func (c Config) Indexing(said settings.Indexing) Config {
 // name, which is what an installation nobody has configured does.
 func (c Config) SyncSetting() note.SyncSetting {
 	return func() note.SyncTitleAndFilename {
-		path, err := c.settingsFile()
-		if err != nil {
-			return true
-		}
-		held, err := settings.At(path)
+		held, err := c.Settings()
 		if err != nil {
 			return true
 		}
@@ -166,26 +143,26 @@ func (c Config) SyncSetting() note.SyncSetting {
 	}
 }
 
-// Configured reads, as the window asks, every setting as JSON and the file it
+// ReadSettings reads, as the window asks, every setting as JSON and the file it
 // stands in.
-func (c Config) Configured() func() (string, string, error) {
+func (c Config) ReadSettings() func() (string, string, error) {
 	return func() (string, string, error) {
 		path, err := c.settingsFile()
 		if err != nil {
 			return "", "", err
 		}
-		held, err := settings.At(path)
+		held, err := c.getSettingsAt(path)
 		if err != nil {
 			return "", path, err
 		}
-		written, err := settings.Written(held)
+		written, err := held.WriteJSON()
 		return written, path, err
 	}
 }
 
-// ConfiguredFile reads, as the window asks, the settings file as its person
+// ReadSettingsFile reads, as the window asks, the settings file as its person
 // wrote it, and the file it stands in.
-func (c Config) ConfiguredFile() func() (string, string, error) {
+func (c Config) ReadSettingsFile() func() (string, string, error) {
 	return func() (string, string, error) {
 		path, err := c.settingsFile()
 		if err != nil {
@@ -211,30 +188,8 @@ func (c Config) WritesConfiguredFile() func(written string, seen *string) error 
 		if err != nil {
 			return err
 		}
-		return settings.Write(path, []byte(written), seen)
-	}
-}
-
-// Models reads, as the window asks, the models each setting that names one can
-// be set to, and the programs the agent setting can name. The settings are read
-// with them, so every row is answered against what is in force; a file that
-// cannot be read is answered against the defaults.
-//
-// Whether a model's files are on this machine is looked for by the adapter that
-// would fetch them, bound here as every other adapter is.
-func (c Config) Models() func() []port.Model {
-	return func() []port.Model {
-		held := settings.Defaults()
-		if path, err := c.settingsFile(); err == nil {
-			if read, err := settings.At(path); err == nil {
-				held = read
-			}
-		}
-		fetched := settings.Fetches{
-			Embedding:   embed.Fetched,
-			Recognising: recognition.Fetched,
-		}
-		return append(settings.Models(held, fetched), settings.Agents()...)
+		held := DefaultSettings()
+		return settings.Write(path, []byte(written), seen, &held)
 	}
 }
 
@@ -268,18 +223,9 @@ func (c Config) TurnsSetting() func(written []port.Setting) error {
 		if err != nil {
 			return err
 		}
-		return settings.Save(path, held...)
+		into := DefaultSettings()
+		return settings.Save(path, &into, held...)
 	}
-}
-
-// Settings are what a person has configured this installation to do. An
-// installation nobody has configured is written down as what it is doing.
-func (c Config) Settings() (settings.Config, error) {
-	path, err := c.settingsFile()
-	if err != nil {
-		return settings.Config{}, err
-	}
-	return settings.At(path)
 }
 
 // settingsFile is the file a person configures this installation in.
@@ -287,16 +233,16 @@ func (c Config) settingsFile() (string, error) {
 	if c.SettingsPath != "" {
 		return c.SettingsPath, nil
 	}
-	if file, chosen := c.beside("numen.json"); chosen {
+	if file, chosen := c.getPathBeside("numen.json"); chosen {
 		return file, nil
 	}
 	return settings.Path()
 }
 
-// beside is where this installation keeps a file of its own. A registry pointed
-// somewhere chosen takes everything else with it, which is what a test and a
-// second installation both need.
-func (c Config) beside(name string) (string, bool) {
+// getPathBeside is where this installation keeps a file of its own. A registry
+// pointed somewhere chosen takes everything else with it, which is what a test
+// and a second installation both need.
+func (c Config) getPathBeside(name string) (string, bool) {
 	if c.RegistryPath == "" {
 		return "", false
 	}
@@ -307,7 +253,7 @@ func (c Config) beside(name string) (string, bool) {
 // kept with the application.
 func (c Config) Registry() (port.VaultRegistry, error) {
 	if c.RegistryPath != "" {
-		return appstate.At(c.RegistryPath), nil
+		return appstate.OpenAt(c.RegistryPath), nil
 	}
 	return appstate.Open()
 }
@@ -323,10 +269,10 @@ func (c Config) VaultWriters() port.VaultWriters {
 	return filesystem.VaultWriters{Options: c.vaultOptions()}
 }
 
-// ImportedFiles reads what a person handed this application from outside every
-// vault. On a machine with a filesystem that is a path; a phone hands over
-// something else, and this is where the two part.
-func (c Config) ImportedFiles() port.ImportedFiles {
+// GetImportedFiles reads what a person handed this application from outside
+// every vault. On a machine with a filesystem that is a path; a phone hands
+// over something else, and this is where the two part.
+func (c Config) GetImportedFiles() port.ImportedFiles {
 	return filesystem.ImportedFiles{}
 }
 
@@ -355,14 +301,14 @@ func (c Config) vaultOptions() filesystem.Options {
 	}
 }
 
-// DerivedStores opens the shelf the application keeps its own irreplaceable
+// GetDerivedStores opens the shelf the application keeps its own irreplaceable
 // files on, inside a vault. It is a third opener beside the readers and the
 // writers because it is a third right: reading a person's vault, changing it,
 // and keeping something of our own in it are not the same permission.
 //
 // It answers for what a reading wrote and for what a transcription wrote, since
 // a use case that places a passage reads both.
-func (c Config) DerivedStores() port.DerivedStores {
+func (c Config) GetDerivedStores() port.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: c.vaultOptions(),
 		Area:    filesystem.OCRDir,

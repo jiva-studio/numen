@@ -27,7 +27,7 @@ func TestAShapeShortOfAFolderComesBackAsAnError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	shape, why := remembered(reader)
+	shape, why := readShape(reader)
 	if why == nil {
 		t.Fatal("a folder the walk could not enter was not reported")
 	}

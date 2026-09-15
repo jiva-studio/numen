@@ -19,7 +19,7 @@ import (
 // how many of them stand there at once, as the settings hold the two.
 func hangs(t *testing.T, f *going) bool {
 	t.Helper()
-	held, is := setting(t, f, "appearance", "hang_parts_under_a_node").(bool)
+	held, is := getSetting(t, f, "appearance", "hang_parts_under_a_node").(bool)
 	if !is {
 		t.Fatal("the setting is not written as a switch")
 	}
@@ -28,7 +28,7 @@ func hangs(t *testing.T, f *going) bool {
 
 func parts(t *testing.T, f *going) int {
 	t.Helper()
-	held, is := setting(t, f, "appearance", "parts_under_a_node").(float64)
+	held, is := getSetting(t, f, "appearance", "parts_under_a_node").(float64)
 	if !is {
 		t.Fatal("the count is not written as a number")
 	}

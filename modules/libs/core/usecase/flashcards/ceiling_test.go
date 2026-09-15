@@ -35,7 +35,7 @@ func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
 		}
 		files["Term.md"] = vault["Term.md"]
 
-		s := opened(t, files)
+		s := openVault(t, files)
 		now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 		if took := s.minutes(t, today, now); took != theCeiling {
 			t.Errorf("%d decks: the day ran %v, and the goal asks for %v", decks, took, theCeiling)
@@ -59,7 +59,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
 			cost := review.DefaultCost.Review
-			if !one.Schedule.Seen() {
+			if !one.Schedule.IsSeen() {
 				cost = review.DefaultCost.New
 			}
 			out += cost
@@ -88,7 +88,7 @@ func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 		files[fmt.Sprintf("decks/D%d.md", d)] = deck
 	}
 
-	s := opened(t, files)
+	s := openVault(t, files)
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 	var out time.Duration
 	for d := range 3 {
@@ -104,7 +104,7 @@ func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 			record := s.run(t, now)
 			for _, one := range sat.Queue {
 				cost := review.DefaultCost.Review
-				if !one.Schedule.Seen() {
+				if !one.Schedule.IsSeen() {
 					cost = review.DefaultCost.New
 				}
 				out += cost
@@ -142,7 +142,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 		files[fmt.Sprintf("decks/D%d.md", d)] = deck
 	}
 
-	s := opened(t, files)
+	s := openVault(t, files)
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 	sits := func(over flashcards.Scope) flashcards.SessionResult {
 		sat, err := flashcards.Session{

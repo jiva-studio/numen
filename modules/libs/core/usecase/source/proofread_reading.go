@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/modules/libs/core/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // errNothingProofreads is a proofreading with nothing to proofread with. An
@@ -67,15 +67,15 @@ func NewProofreadReading(
 
 // ProofreadReadingResult reports what proofreading a reading did.
 type ProofreadReadingResult struct {
-	Path    string // the document being proofread
-	Pages   int    // how many pages the reading has
-	Read    int    // how many have been asked about, this run and before it
-	Resumed int    // how many a run before this one had already asked about
-	Fixed   int    // lines put right
-	Refused int    // pages whose reply was no answer, and were left as they were
-	None    bool   // there is no reading to proofread, and nothing was done
-	Waiting bool   // a batch is out and what comes back is not there yet
-	Busy    bool   // somebody else is proofreading this reading
+	Path             string // the document being proofread
+	Pages            int    // how many pages the reading has
+	Read             int    // how many have been asked about, this run and before it
+	Resumed          int    // how many a run before this one had already asked about
+	Fixed            int    // lines put right
+	UncorrectedPages int    // pages replied to without a correction, left as they were read
+	None             bool   // there is no reading to proofread, and nothing was done
+	Waiting          bool   // a batch is out and what comes back is not there yet
+	Busy             bool   // somebody else is proofreading this reading
 }
 
 // DefaultPages is how many pages one request carries.
@@ -137,13 +137,13 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 	}
 	res.Pages = len(pages)
 
-	stood, err := u.taken(ctx, store, corrections, far)
+	stood, err := u.readCheckpoint(ctx, store, corrections, far)
 	if err != nil {
 		return res, err
 	}
 	done := min(stood.Pages, len(pages))
 	stood.Pages = done
-	if err := cropped(ctx, store, corrections, pages, done); err != nil {
+	if err := dropCorrections(ctx, store, corrections, pages, done); err != nil {
 		return res, err
 	}
 	res.Resumed, res.Read = done, done
@@ -170,8 +170,8 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 		if err != nil {
 			return res, fmt.Errorf("proofread %s: %w", path, err)
 		}
-		put, refused := u.gathered(asked, replies)
-		res.Refused += refused
+		put, uncorrected := u.getCorrections(asked, replies)
+		res.UncorrectedPages += uncorrected
 
 		// The corrections are written, the source is cut, and the count stands
 		// after both: a batch no count claims is one the next run asks about
@@ -186,7 +186,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 		if err := u.cut(ctx, v, path); err != nil {
 			return res, err
 		}
-		if err := u.counted(ctx, store, far, checkpoint{Pages: end}); err != nil {
+		if err := u.writeCheckpoint(ctx, store, far, checkpoint{Pages: end}); err != nil {
 			return res, err
 		}
 		u.progress(res)
@@ -217,42 +217,42 @@ func (u ProofreadReading) lines(
 		return nil, err
 	}
 	prose, _ := ocr.Read(artifact)
-	return proofread.Scanned(prose, highlight.Unpack(boxes)), nil
+	return proofread.GetScanBatches(prose, highlight.Unpack(boxes)), nil
 }
 
-// gathered is what a run of pages had put right, and how many of them answered
-// with something that was no answer.
+// getCorrections is what a run of pages had put right, and how many of them
+// answered with something that was no answer.
 //
 // A page nothing came back about and a page whose reply the gates refused are
 // the same outcome: the page is left as it was read.
-func (u ProofreadReading) gathered(
+func (u ProofreadReading) getCorrections(
 	asked []proofread.Batch,
 	replies map[int]string,
-) (put []correction.Line, refused int) {
+) (put []correction.Line, uncorrected int) {
 	for _, page := range asked {
 		reply, answered := replies[page.Number]
 		if !answered {
 			continue
 		}
-		lines, _, ok := proofread.Fixed(page, reply, u.distance())
+		lines, _, ok := proofread.GetFixedLines(page, reply, u.distance())
 		if !ok {
-			refused++
+			uncorrected++
 			continue
 		}
 		for _, line := range lines {
 			put = append(put, correction.Line{Number: line.Number, Text: line.Text})
 		}
 	}
-	return put, refused
+	return put, uncorrected
 }
 
-// taken is how many pages a run before this one asked about, with the
+// readCheckpoint is how many pages a run before this one asked about, with the
 // corrections past that count cut away.
 //
 // A count stands after the corrections it claims, so what follows the last one
 // is a batch that did not land whole. Corrections another proofreader made are
 // not this one's, and the reading is taken up from the first page.
-func (u ProofreadReading) taken(
+func (u ProofreadReading) readCheckpoint(
 	ctx context.Context,
 	store port.DerivedStore,
 	corrections, far string,
@@ -265,7 +265,7 @@ func (u ProofreadReading) taken(
 		return checkpoint{}, err
 	}
 	var stood checkpoint
-	if err := json.Unmarshal(raw, &stood); err != nil || stood.By != u.By.Name() {
+	if err := json.Unmarshal(raw, &stood); err != nil || stood.By != u.By.GetName() {
 		if err := store.Remove(ctx, corrections); err != nil {
 			return checkpoint{}, err
 		}
@@ -293,7 +293,7 @@ func (u ProofreadReading) await(
 			// The batch is forgotten, and the pages it covered are left again
 			// by the next run.
 			stood.Batch, stood.Left = "", 0
-			if put := u.counted(ctx, store, far, stood); put != nil {
+			if put := u.writeCheckpoint(ctx, store, far, stood); put != nil {
 				return res, put
 			}
 			return res, fmt.Errorf("collect the proofreading of %s: %w", path, err)
@@ -303,8 +303,8 @@ func (u ProofreadReading) await(
 			return res, nil
 		}
 		end := min(stood.Pages+stood.Left, len(pages))
-		put, refused := u.gathered(pages[stood.Pages:end], replies)
-		res.Refused += refused
+		put, uncorrected := u.getCorrections(pages[stood.Pages:end], replies)
+		res.UncorrectedPages += uncorrected
 		if len(put) > 0 {
 			if err := store.Append(ctx, corrections, correction.Pack(put)); err != nil {
 				return res, err
@@ -316,7 +316,7 @@ func (u ProofreadReading) await(
 		if err := u.cut(ctx, v, path); err != nil {
 			return res, err
 		}
-		if err := u.counted(ctx, store, far, stood); err != nil {
+		if err := u.writeCheckpoint(ctx, store, far, stood); err != nil {
 			return res, err
 		}
 		u.progress(res)
@@ -331,13 +331,14 @@ func (u ProofreadReading) await(
 		return res, fmt.Errorf("leave the pages of %s: %w", path, err)
 	}
 	res.Waiting = true
-	return res, u.counted(ctx, store, far, checkpoint{Pages: stood.Pages, Batch: name, Left: end - stood.Pages})
+	return res, u.writeCheckpoint(
+		ctx, store, far, checkpoint{Pages: stood.Pages, Batch: name, Left: end - stood.Pages})
 }
 
-// cropped drops the corrections of pages no count claims. A line is numbered by
-// where its run stands in the reading, so the pages beyond the count are the
-// lines from the first of them onwards.
-func cropped(
+// dropCorrections drops the corrections of pages no count claims. A line is
+// numbered by where its run stands in the reading, so the pages beyond the
+// count are the lines from the first of them onwards.
+func dropCorrections(
 	ctx context.Context,
 	store port.DerivedStore,
 	corrections string,
@@ -381,10 +382,10 @@ func opening(pages []proofread.Batch, done int) (int, bool) {
 	return 0, false
 }
 
-// counted writes down who put this reading right and how far they got. It
-// stands last and is what makes the batch before it count.
-func (u ProofreadReading) counted(ctx context.Context, store port.DerivedStore, far string, stood checkpoint) error {
-	stood.By = u.By.Name()
+// writeCheckpoint writes down who put this reading right and how far they got.
+// It stands last and is what makes the batch before it count.
+func (u ProofreadReading) writeCheckpoint(ctx context.Context, store port.DerivedStore, far string, stood checkpoint) error {
+	stood.By = u.By.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err

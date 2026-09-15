@@ -13,7 +13,7 @@ const HANDED = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 export type LinkOpener = (href: string) => void
 
 /** Whether an address names somewhere this page is not served from. */
-export const pointsOutward = (at: URL, here: URL): boolean =>
+export const isOutward = (at: URL, here: URL): boolean =>
   at.protocol !== here.protocol || at.host !== here.host
 
 /**
@@ -24,8 +24,8 @@ export const pointsOutward = (at: URL, here: URL): boolean =>
  * can carry the window off. What a link inside the application means is still
  * the application's, and is left alone.
  */
-export const holdsTheWindow = (opens: LinkOpener, root: Document = document): (() => void) => {
-  const pressed = (press: MouseEvent) => {
+export const holdWindow = (openLink: LinkOpener, root: Document = document): (() => void) => {
+  const onPress = (press: MouseEvent) => {
     const link = (press.target as Element | null)?.closest?.('a[href]')
     const href = link?.getAttribute('href')
     if (href === null || href === undefined) return
@@ -39,16 +39,16 @@ export const holdsTheWindow = (opens: LinkOpener, root: Document = document): ((
       // page's own and is left to it.
       return
     }
-    if (!pointsOutward(at, here)) return
+    if (!isOutward(at, here)) return
 
     press.preventDefault()
-    if (HANDED.has(at.protocol)) opens(at.href)
+    if (HANDED.has(at.protocol)) openLink(at.href)
   }
 
-  root.addEventListener('click', pressed, true)
-  root.addEventListener('auxclick', pressed, true)
+  root.addEventListener('click', onPress, true)
+  root.addEventListener('auxclick', onPress, true)
   return () => {
-    root.removeEventListener('click', pressed, true)
-    root.removeEventListener('auxclick', pressed, true)
+    root.removeEventListener('click', onPress, true)
+    root.removeEventListener('auxclick', onPress, true)
   }
 }

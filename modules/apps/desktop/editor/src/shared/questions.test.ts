@@ -51,7 +51,7 @@ describe('the answer that lands', () => {
     const asks = answerGuard()
     const first = asks.ask()
     asks.ask()
-    expect(first.lands()).toBe(true)
+    expect(first.claim()).toBe(true)
   })
 
   it('is let go of where something newer has been drawn already', () => {
@@ -59,30 +59,30 @@ describe('the answer that lands', () => {
     const first = asks.ask()
     const second = asks.ask()
 
-    expect(second.lands()).toBe(true)
-    expect(first.lands()).toBe(false)
+    expect(second.claim()).toBe(true)
+    expect(first.claim()).toBe(false)
   })
 
   it('is drawn again by the one that drew it, which is one answer arriving in parts', () => {
     const asks = answerGuard()
     const one = asks.ask()
 
-    expect(one.lands()).toBe(true)
-    expect(one.lands()).toBe(true)
+    expect(one.claim()).toBe(true)
+    expect(one.claim()).toBe(true)
   })
 
   it('is let go of where what was on its way was let go of', () => {
     const asks = answerGuard()
     const one = asks.ask()
     asks.drop()
-    expect(one.lands()).toBe(false)
+    expect(one.claim()).toBe(false)
   })
 
   it('is let go of once it has closed', () => {
     const asks = answerGuard()
     const one = asks.ask()
     asks.close()
-    expect(one.lands()).toBe(false)
+    expect(one.claim()).toBe(false)
   })
 })
 

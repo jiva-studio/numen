@@ -1,6 +1,6 @@
 package onnx
 
-import "github.com/jiva-studio/numen/modules/libs/core/embedding"
+import "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 
 // meanPool turns a model's per-token output into one vector per text: the
 // average of the tokens the mask keeps, at unit length.
@@ -48,11 +48,11 @@ func headPool(flat []float32, rows, seq, dimensions int) [][]float32 {
 	return out
 }
 
-// padded lays a batch out as the model takes it: one row per text, every row as
-// long as the longest of them, the rest of a row the padding token.
+// padBatch lays a batch out as the model takes it: one row per text, every row
+// as long as the longest of them, the rest of a row the padding token.
 //
 // The three come back as the model reads them, row after row.
-func padded(batch [][]int, pad int) (rows, seq int, ids, mask, types []int64) {
+func padBatch(batch [][]int, pad int) (rows, seq int, ids, mask, types []int64) {
 	rows = len(batch)
 	for _, one := range batch {
 		seq = max(seq, len(one))

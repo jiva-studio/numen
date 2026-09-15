@@ -32,7 +32,7 @@ test('every use* of the interface modules deals in reactive state', () => {
   // first if it stops at a package border.
   assert.ok(
     found.some(
-      (one) => one.at.endsWith('apps/desktop/flashcards/src/window.ts') && one.name === 'useWindow',
+      (one) => one.at.endsWith('apps/desktop/flashcards/src/app/window.ts') && one.name === 'useWindow',
     ),
     "the walk did not read useWindow in the review window, so the rule stops at the library's border",
   )

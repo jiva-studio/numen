@@ -36,7 +36,7 @@ func TestLogMelMatchesReference(t *testing.T) {
 		t.Fatalf("%d values, and the reference has %d", len(got), bands*frames)
 	}
 	for i := range want {
-		if apart(float64(got[i]), float64(want[i])) > 1e-4 {
+		if getRelativeError(float64(got[i]), float64(want[i])) > 1e-4 {
 			t.Fatalf("band %d frame %d is %g, and the reference says %g",
 				i/frames, i%frames, got[i], want[i])
 		}
@@ -86,7 +86,7 @@ func TestFFTAgainstDefinition(t *testing.T) {
 // The signal is mirrored at each end, and the sample on the edge is not said
 // twice.
 func TestReflected(t *testing.T) {
-	got := reflected([]float64{1, 2, 3, 4}, 2)
+	got := padReflect([]float64{1, 2, 3, 4}, 2)
 	want := []float64{3, 2, 1, 2, 3, 4, 3, 2}
 	if len(got) != len(want) {
 		t.Fatalf("%v, and it should be %v", got, want)
@@ -99,7 +99,7 @@ func TestReflected(t *testing.T) {
 }
 
 func TestEmphasised(t *testing.T) {
-	got := emphasised([]float32{1, 1, 1})
+	got := applyPreemphasis([]float32{1, 1, 1})
 	if got[0] != 1 {
 		t.Fatalf("the first sample is %g", got[0])
 	}
@@ -142,8 +142,9 @@ func reference(t *testing.T, path string) ([]float32, int, int) {
 	return out, bands, frames
 }
 
-// apart is how far two numbers are from each other, as a share of the larger.
-func apart(got, want float64) float64 {
+// getRelativeError is how far two numbers are from each other, as a share of
+// the larger.
+func getRelativeError(got, want float64) float64 {
 	scale := math.Max(math.Abs(want), 1)
 	return math.Abs(got-want) / scale
 }

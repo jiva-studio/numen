@@ -31,8 +31,8 @@ type Endpoint struct {
 	// Unreachable is told why an agent cannot be reached, and an empty string
 	// while one can be.
 	Unreachable func(string)
-	// Trouble is told what went wrong serving the tools or taking them away.
-	Trouble func(error)
+	// ErrorHandler is told what went wrong serving the tools or taking them away.
+	ErrorHandler func(error)
 
 	// turn is one swap. It is held from the endpoint stopping to the endpoint
 	// being served again, so a second swap waits for the first.
@@ -42,23 +42,23 @@ type Endpoint struct {
 	close func() error
 }
 
-// Around runs one swap with the tools taken away, and serves them again on the
+// RunSwap runs one swap with the tools taken away, and serves them again on the
 // vault the window then has.
 //
 // One swap holds this at a time, so the endpoint is started again by the swap
 // that stopped it and on the vault that swap ended on.
-func (s *Endpoint) Around(swap func() error) error {
+func (s *Endpoint) RunSwap(swap func() error) error {
 	s.turn.Lock()
 	defer s.turn.Unlock()
 
-	s.Off()
-	defer s.On()
+	s.Stop()
+	defer s.Start()
 	return swap()
 }
 
-// On serves the tools against the vault in the window. A window standing on no
-// vault serves none.
-func (s *Endpoint) On() {
+// Start serves the tools against the vault in the window. A window standing on
+// no vault serves none.
+func (s *Endpoint) Start() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -69,14 +69,14 @@ func (s *Endpoint) On() {
 	shut, err := s.Serve()
 	if err != nil {
 		s.Unreachable(err.Error())
-		s.Trouble(fmt.Errorf("no agent: %w", err))
+		s.ErrorHandler(fmt.Errorf("no agent: %w", err))
 		return
 	}
 	s.close = shut
 }
 
-// Off stops the endpoint and the agents this window started.
-func (s *Endpoint) Off() {
+// Stop stops the endpoint and the agents this window started.
+func (s *Endpoint) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -84,7 +84,7 @@ func (s *Endpoint) Off() {
 		return
 	}
 	if err := s.close(); err != nil {
-		s.Trouble(fmt.Errorf("agents: %w", err))
+		s.ErrorHandler(fmt.Errorf("agents: %w", err))
 	}
 	s.close = nil
 	s.Handler(nil)

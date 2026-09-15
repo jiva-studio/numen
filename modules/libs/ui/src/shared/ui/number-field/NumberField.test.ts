@@ -16,7 +16,7 @@ const mountField = (props: Partial<FieldProps> = {}) =>
   })
 
 /** Every number the field has handed on, in the order it handed them on. */
-const handed = (field: ReturnType<typeof mountField>): readonly unknown[] =>
+const getEmitted = (field: ReturnType<typeof mountField>): readonly unknown[] =>
   (field.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
 
 describe('what is typed', () => {
@@ -25,7 +25,7 @@ describe('what is typed', () => {
     await field.get('input').setValue('12x')
 
     expect(field.get('input').element.value).toBe('12x')
-    expect(handed(field)).toEqual([])
+    expect(getEmitted(field)).toEqual([])
   })
 
   it('is marked where nothing further would make a number of it', async () => {
@@ -43,13 +43,13 @@ describe('what is typed', () => {
   it('is handed on as soon as it is a number the bounds allow', async () => {
     const field = mountField()
     await field.get('input').setValue('45')
-    expect(handed(field)).toEqual([45])
+    expect(getEmitted(field)).toEqual([45])
   })
 
   it('holds no number at all once the field is emptied', async () => {
     const field = mountField()
     await field.get('input').setValue('')
-    expect(handed(field)).toEqual([null])
+    expect(getEmitted(field)).toEqual([null])
   })
 
   it('marks a thousands group and hands nothing on', async () => {
@@ -57,7 +57,7 @@ describe('what is typed', () => {
     await field.get('input').setValue('1,200')
 
     expect(field.get('input').attributes('aria-invalid')).toBe('true')
-    expect(handed(field)).toEqual([])
+    expect(getEmitted(field)).toEqual([])
   })
 })
 
@@ -67,7 +67,7 @@ describe('a number between two places the step lays', () => {
     await field.get('input').setValue('13')
 
     expect(field.get('input').element.value).toBe('13')
-    expect(handed(field)).toEqual([])
+    expect(getEmitted(field)).toEqual([])
   })
 
   it('is brought onto a place of the step once the field is left', async () => {
@@ -75,7 +75,7 @@ describe('a number between two places the step lays', () => {
     await field.get('input').setValue('13')
     await field.get('input').trigger('blur')
 
-    expect(handed(field)).toEqual([15])
+    expect(getEmitted(field)).toEqual([15])
     expect(field.get('input').element.value).toBe('15')
   })
 
@@ -84,7 +84,7 @@ describe('a number between two places the step lays', () => {
     await field.get('input').setValue('13')
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
 
-    expect(handed(field)).toEqual([20])
+    expect(getEmitted(field)).toEqual([20])
     expect(field.get('input').element.value).toBe('20')
   })
 })
@@ -96,7 +96,7 @@ describe('the bounds', () => {
 
     expect(field.get('input').element.value).toBe('900')
     expect(field.get('input').attributes('aria-invalid')).toBe('true')
-    expect(handed(field)).toEqual([])
+    expect(getEmitted(field)).toEqual([])
   })
 
   it('brings what stands there inside them once the field is left', async () => {
@@ -104,7 +104,7 @@ describe('the bounds', () => {
     await field.get('input').setValue('900')
     await field.get('input').trigger('blur')
 
-    expect(handed(field)).toEqual([240])
+    expect(getEmitted(field)).toEqual([240])
     expect(field.get('input').element.value).toBe('240')
     expect(field.get('input').attributes('aria-invalid')).toBeUndefined()
   })
@@ -115,7 +115,7 @@ describe('the bounds', () => {
     await field.get('input').trigger('blur')
 
     expect(field.get('input').element.value).toBe('')
-    expect(handed(field)).toEqual([null])
+    expect(getEmitted(field)).toEqual([null])
   })
 })
 
@@ -126,7 +126,7 @@ describe('the bounds moving under the number', () => {
     const field = mountField({ modelValue: 200 })
     await field.setProps({ max: 10 })
 
-    expect(handed(field)).toEqual([10])
+    expect(getEmitted(field)).toEqual([10])
     expect(field.get('input').element.value).toBe('10')
     expect(field.get('input').attributes('aria-valuenow')).toBe('10')
     expect(field.get('input').attributes('aria-invalid')).toBeUndefined()
@@ -136,14 +136,14 @@ describe('the bounds moving under the number', () => {
     const field = mountField({ modelValue: 20 })
     await field.setProps({ min: 100 })
 
-    expect(handed(field)).toEqual([100])
+    expect(getEmitted(field)).toEqual([100])
     expect(field.get('input').element.value).toBe('100')
   })
 
   it('brings in a number the bounds it opened on never held', () => {
     const field = mountField({ modelValue: 900 })
     expect(field.get('input').element.value).toBe('240')
-    expect(handed(field)).toEqual([240])
+    expect(getEmitted(field)).toEqual([240])
   })
 })
 
@@ -151,7 +151,7 @@ describe('the arrow keys', () => {
   it('move the number one step', async () => {
     const field = mountField()
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
-    expect(handed(field)).toEqual([25])
+    expect(getEmitted(field)).toEqual([25])
     expect(field.get('input').element.value).toBe('25')
   })
 
@@ -160,7 +160,7 @@ describe('the arrow keys', () => {
     await field.get('input').trigger('keydown', { key: 'ArrowDown' })
     await field.get('input').trigger('keydown', { key: 'ArrowDown' })
 
-    expect(handed(field)).toEqual([0])
+    expect(getEmitted(field)).toEqual([0])
     expect(field.get('input').element.value).toBe('0')
   })
 
@@ -168,14 +168,14 @@ describe('the arrow keys', () => {
     const field = mountField({ modelValue: 0.81, min: 0.7, max: 0.99, step: 0.01 })
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
 
-    expect(handed(field)).toEqual([0.82])
+    expect(getEmitted(field)).toEqual([0.82])
     expect(field.get('input').element.value).toBe('0.82')
   })
 
   it('leave a field nobody may type into where it stands', async () => {
     const field = mountField({ disabled: true })
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
-    expect(handed(field)).toEqual([])
+    expect(getEmitted(field)).toEqual([])
   })
 })
 
@@ -189,7 +189,7 @@ describe('the other keys a spin button answers', () => {
 
     await field.get('input').trigger('keydown', { key: 'Home' })
     expect(field.get('input').element.value).toBe('0')
-    expect(handed(field)).toEqual([240, 0])
+    expect(getEmitted(field)).toEqual([240, 0])
   })
 
   it('moves ten steps under the page keys, and stops at the bounds', async () => {
@@ -210,13 +210,13 @@ describe('the other keys a spin button answers', () => {
     const field = mountField({ disabled: true })
     await field.get('input').trigger('keydown', { key: 'End' })
     await field.get('input').trigger('keydown', { key: 'PageUp' })
-    expect(handed(field)).toEqual([])
+    expect(getEmitted(field)).toEqual([])
   })
 
   it('leaves a key it does not answer to the field it is typed into', async () => {
     const field = mountField()
     await field.get('input').trigger('keydown', { key: 'a' })
-    expect(handed(field)).toEqual([])
+    expect(getEmitted(field)).toEqual([])
     expect(field.get('input').element.value).toBe('20')
   })
 })
@@ -225,8 +225,8 @@ describe('the other keys a spin button answers', () => {
 // is a field that has settled nowhere.
 describe('leaving the field', () => {
   /** Every number the field has come to rest at, in the order it rested at them. */
-  const rested = (field: ReturnType<typeof mountField>): readonly unknown[] =>
-    (field.emitted('settles') ?? []).map((said) => (said as unknown[])[0])
+  const getSettles = (field: ReturnType<typeof mountField>): readonly unknown[] =>
+    (field.emitted('settle') ?? []).map((said) => (said as unknown[])[0])
 
   it('says nothing where nothing was typed into it', async () => {
     const field = mountField()
@@ -234,7 +234,7 @@ describe('leaving the field', () => {
     await field.get('input').trigger('focus')
     await field.get('input').trigger('blur')
 
-    expect(rested(field)).toEqual([])
+    expect(getSettles(field)).toEqual([])
   })
 
   it('says nothing where what was typed came to the number already standing', async () => {
@@ -242,7 +242,7 @@ describe('leaving the field', () => {
     await field.get('input').setValue('20')
     await field.get('input').trigger('blur')
 
-    expect(rested(field)).toEqual([])
+    expect(getSettles(field)).toEqual([])
   })
 
   it('says it where the number the field comes to rest at is another one', async () => {
@@ -251,7 +251,7 @@ describe('leaving the field', () => {
     await field.get('input').trigger('blur')
     await field.get('input').trigger('blur')
 
-    expect(rested(field)).toEqual([45])
+    expect(getSettles(field)).toEqual([45])
   })
 
   it('says nothing where a number set from outside is the one it is left at', async () => {
@@ -259,7 +259,7 @@ describe('leaving the field', () => {
     await field.setProps({ modelValue: 60 })
     await field.get('input').trigger('blur')
 
-    expect(rested(field)).toEqual([])
+    expect(getSettles(field)).toEqual([])
   })
 })
 
@@ -339,7 +339,7 @@ describe('a number set from outside', () => {
  * caller holds after it.
  */
 describe('a field the caller holds the value of', () => {
-  const held = (refuses: (said: number | null) => boolean) => {
+  const mountHeldField = (refuses: (said: number | null) => boolean) => {
     let inForce: number | null = 20
     const field = mount(NumberField, {
       props: {
@@ -358,7 +358,7 @@ describe('a field the caller holds the value of', () => {
   }
 
   it('stands on the number the caller holds where the caller refuses one', async () => {
-    const field = held((said) => said === null)
+    const field = mountHeldField((said) => said === null)
     await field.get('input').setValue('')
     await field.get('input').trigger('blur')
     await field.vm.$nextTick()
@@ -367,7 +367,7 @@ describe('a field the caller holds the value of', () => {
   })
 
   it('stands on the number the caller took where the caller took one', async () => {
-    const field = held((said) => said === null)
+    const field = mountHeldField((said) => said === null)
     await field.get('input').setValue('45')
     await field.get('input').trigger('blur')
     await field.vm.$nextTick()

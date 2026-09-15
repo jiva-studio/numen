@@ -31,8 +31,8 @@ func TestANameIsWeighedAsWhatItPointsAt(t *testing.T) {
 	files := []string{"model.onnx"}
 	sizes := map[string]int64{"model.onnx": 4096}
 
-	if got := weighed(dir, files, sizes); got != 4096 {
-		t.Errorf("weighed = %d, want the size of the file the name points at", got)
+	if got := sumBytes(dir, files, sizes); got != 4096 {
+		t.Errorf("sumBytes = %d, want the size of the file the name points at", got)
 	}
 }
 
@@ -43,8 +43,8 @@ func TestANameLeadingNowhereWeighsNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := weighed(dir, []string{"model.onnx"}, map[string]int64{"model.onnx": 4096}); got != 0 {
-		t.Errorf("weighed = %d, want nothing", got)
+	if got := sumBytes(dir, []string{"model.onnx"}, map[string]int64{"model.onnx": 4096}); got != 0 {
+		t.Errorf("sumBytes = %d, want nothing", got)
 	}
 }
 
@@ -55,7 +55,7 @@ func TestAFilePartWrittenCountsForWhatIsThere(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := weighed(dir, []string{"model.onnx"}, map[string]int64{"model.onnx": 4096}); got != 1000 {
-		t.Errorf("weighed = %d, want what has arrived", got)
+	if got := sumBytes(dir, []string{"model.onnx"}, map[string]int64{"model.onnx": 4096}); got != 1000 {
+		t.Errorf("sumBytes = %d, want what has arrived", got)
 	}
 }

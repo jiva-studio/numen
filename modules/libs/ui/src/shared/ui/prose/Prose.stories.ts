@@ -70,9 +70,15 @@ export const Everything: Story = {
 /** Code, which arrives whenever the agent quotes what it wrote. */
 export const Code: Story = {
   args: {
-    text: ['Written like this:', '', '```markdown', '# Simple pendulum', '', 'part of: [[Harmonic oscillator]]', '```'].join(
-      '\n',
-    ),
+    text: [
+      'Written like this:',
+      '',
+      '```markdown',
+      '# Simple pendulum',
+      '',
+      'part of: [[Harmonic oscillator]]',
+      '```',
+    ].join('\n'),
   },
 }
 

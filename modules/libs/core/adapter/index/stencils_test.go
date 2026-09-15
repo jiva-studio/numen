@@ -6,8 +6,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// typed puts one note in, of the kind its file says it is.
-func typed(t *testing.T, db *DB, vault domain.Vault, path, title string, kind domain.NoteType) {
+// saveTypedNote puts one note in, of the kind its file says it is.
+func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string, kind domain.NoteType) {
 	t.Helper()
 
 	n := domain.Note{
@@ -34,11 +34,11 @@ func stencils(t *testing.T, db *DB, vault domain.Vault) []domain.Stencil {
 
 // A stencil is found by what the index holds, and a note beside it is not.
 func TestTheStencilsOfAVaultAreTheNotesThatSaySoAndNoOthers(t *testing.T) {
-	db := opened(t)
-	typed(t, db, first, "stencils/animal.md", "Animal", domain.TypeStencil)
-	typed(t, db, first, "stencils/verb.md", "Verb", domain.TypeStencil)
-	typed(t, db, first, "decks/mammals.md", "Mammals", domain.TypeDeck)
-	typed(t, db, first, "notes/entropy.md", "Entropy", domain.TypeNote)
+	db := openDB(t)
+	saveTypedNote(t, db, first, "stencils/animal.md", "Animal", domain.TypeStencil)
+	saveTypedNote(t, db, first, "stencils/verb.md", "Verb", domain.TypeStencil)
+	saveTypedNote(t, db, first, "decks/mammals.md", "Mammals", domain.TypeDeck)
+	saveTypedNote(t, db, first, "notes/entropy.md", "Entropy", domain.TypeNote)
 
 	found := stencils(t, db, first)
 
@@ -57,8 +57,8 @@ func TestTheStencilsOfAVaultAreTheNotesThatSaySoAndNoOthers(t *testing.T) {
 // A note carrying no type is a note, and the stencils of a vault do not include
 // it.
 func TestANoteWhoseFileSaysNothingIsANote(t *testing.T) {
-	db := opened(t)
-	noted(t, db, first, "notes/entropy.md", "Entropy")
+	db := openDB(t)
+	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
 
 	if found := stencils(t, db, first); len(found) != 0 {
 		t.Errorf("a note that says nothing about itself answered as %+v", found)
@@ -78,11 +78,11 @@ func TestANoteWhoseFileSaysNothingIsANote(t *testing.T) {
 // The two vaults share no word, and both directions are asserted: a leak in
 // either is a stencil whose title cannot be mistaken for one of this vault's.
 func TestTheStencilsOfOneVaultAreNotAnotherVaultsStencils(t *testing.T) {
-	db := opened(t)
-	typed(t, db, first, "stencils/animal.md", "Animal", domain.TypeStencil)
-	typed(t, db, first, "decks/mammals.md", "Mammals", domain.TypeDeck)
-	typed(t, db, second, "patterns/quasar.md", "Quasar", domain.TypeStencil)
-	typed(t, db, second, "collections/pulsars.md", "Pulsars", domain.TypeDeck)
+	db := openDB(t)
+	saveTypedNote(t, db, first, "stencils/animal.md", "Animal", domain.TypeStencil)
+	saveTypedNote(t, db, first, "decks/mammals.md", "Mammals", domain.TypeDeck)
+	saveTypedNote(t, db, second, "patterns/quasar.md", "Quasar", domain.TypeStencil)
+	saveTypedNote(t, db, second, "collections/pulsars.md", "Pulsars", domain.TypeDeck)
 
 	for _, held := range []struct {
 		vault domain.Vault
@@ -104,11 +104,11 @@ func TestTheStencilsOfOneVaultAreNotAnotherVaultsStencils(t *testing.T) {
 // The type of every entry of one folder is one question, so a file tree tells a
 // deck from a note without opening either.
 func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
-	db := opened(t)
-	typed(t, db, first, "cards/mammals.md", "Mammals", domain.TypeDeck)
-	typed(t, db, first, "cards/animal.md", "Animal", domain.TypeStencil)
-	typed(t, db, first, "cards/reading.md", "Reading", domain.TypeNote)
-	typed(t, db, second, "cards/quasars.md", "Quasars", domain.TypeDeck)
+	db := openDB(t)
+	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", domain.TypeDeck)
+	saveTypedNote(t, db, first, "cards/animal.md", "Animal", domain.TypeStencil)
+	saveTypedNote(t, db, first, "cards/reading.md", "Reading", domain.TypeNote)
+	saveTypedNote(t, db, second, "cards/quasars.md", "Quasars", domain.TypeDeck)
 
 	held, err := db.NoteQueries().Types(t.Context(), first.ID, []string{
 		"cards/mammals.md", "cards/animal.md", "cards/reading.md",
@@ -139,9 +139,9 @@ func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 
 // A note saved again as a deck is a deck, and the column carries the change.
 func TestSavingANoteAgainWritesTheTypeItNowCarries(t *testing.T) {
-	db := opened(t)
-	typed(t, db, first, "cards/mammals.md", "Mammals", domain.TypeNote)
-	typed(t, db, first, "cards/mammals.md", "Mammals", domain.TypeDeck)
+	db := openDB(t)
+	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", domain.TypeNote)
+	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", domain.TypeDeck)
 
 	held, err := db.NoteQueries().Types(t.Context(), first.ID, []string{"cards/mammals.md"})
 	if err != nil {

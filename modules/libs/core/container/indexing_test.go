@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
@@ -12,8 +11,9 @@ import (
 // is built from. A section left behind is a part of the application that does
 // nothing, and turning a model off is done by naming none, so nothing says it.
 func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
-	said := settings.Defaults().Indexing
-	cfg := container.Config{IndexPath: "/somewhere/index.db"}.Indexing(said)
+	said := container.DefaultIndexing()
+	held := container.Settings{Indexing: said}
+	cfg := container.Config{IndexPath: "/somewhere/index.db"}.SetSettings(held)
 
 	if !reflect.DeepEqual(cfg.Embedding, said.Embedding) {
 		t.Error("the embedding section did not arrive")
@@ -33,7 +33,7 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	if !reflect.DeepEqual(cfg.TranscriptProofreading, said.Transcription.Proofread) {
 		t.Error("what puts a transcript right did not arrive")
 	}
-	if cfg.Transcribes != said.Transcribes() {
+	if cfg.Transcribes != said.CanTranscribe() {
 		t.Error("whether a recording is heard without being asked did not arrive")
 	}
 	if cfg.TranscribesUnder != said.TranscribesUnder() {
@@ -48,7 +48,12 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 // until it is carried, which is the failure the sections themselves cannot
 // have: an unconfigured model is a model nobody asked for.
 func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
-	if held := reflect.TypeOf(settings.Indexing{}).NumField(); held != 6 {
-		t.Errorf("indexing holds %d sections; carry the new one in Config.Indexing", held)
+	if held := reflect.TypeOf(container.Indexing{}).NumField(); held != 6 {
+		t.Errorf("indexing holds %d sections; carry the new one in Config.SetSettings", held)
+	}
+	// The document holds the sections the file does, and the line a person is
+	// left about what it says.
+	if held := reflect.TypeOf(container.Settings{}).NumField(); held != 8 {
+		t.Errorf("the settings hold %d sections; carry the new one in Config.SetSettings", held)
 	}
 }

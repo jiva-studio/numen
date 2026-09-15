@@ -28,10 +28,10 @@ func TestADateIsABudget(t *testing.T) {
 		{time.Date(2026, 10, 1, 2, 0, 0, 0, time.UTC), false},
 		{time.Date(2026, 10, 1, 10, 0, 0, 0, time.UTC), true},
 	} {
-		if got := p.Past(day, one.hour); got != one.past {
+		if got := p.IsPast(day, one.hour); got != one.past {
 			t.Errorf("at %v the day it aims at is past = %v, want %v", one.hour, got, one.past)
 		}
-		if got := p.Paused(day, one.hour); got != one.past {
+		if got := p.IsPaused(day, one.hour); got != one.past {
 			t.Errorf("at %v the preset is paused = %v, want %v", one.hour, got, one.past)
 		}
 	}
@@ -54,7 +54,7 @@ func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
 		if len(problems) != 0 {
 			t.Fatalf("problems = %v", problems)
 		}
-		got := p.Paused(review.Day{Starts: review.DayStarts}, time.Now())
+		got := p.IsPaused(review.Day{Starts: review.DayStarts}, time.Now())
 		if got != one.paused {
 			t.Errorf("%q is paused %v, want %v", one.front, got, one.paused)
 		}
@@ -81,17 +81,17 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 	for _, days := range []int{7, 21, 60} {
 		one := p
 		one.Interval = days
-		if !one.Learned(schedule(200, days, 10), now) {
+		if !one.IsLearned(schedule(200, days, 10), now) {
 			t.Errorf("a card sent away for %d days is not learned at an interval of %d",
 				days, days)
 		}
-		if one.Learned(schedule(0, days-1, 90), now) {
+		if one.IsLearned(schedule(0, days-1, 90), now) {
 			t.Errorf("a card sent away for %d days is learned at an interval of %d",
 				days-1, days)
 		}
 	}
 	// Nobody has answered it, so neither rule has anything to read.
-	if p.Learned(review.Schedule{}, now) {
+	if p.IsLearned(review.Schedule{}, now) {
 		t.Error("a card face nobody has answered is learned")
 	}
 
@@ -99,13 +99,13 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 
 	// The same two card faces, under the other rule: what is asked now is the
 	// chance of recalling them today, and the intervals take no part.
-	if p.Learned(schedule(200, 21, 10), now) {
+	if p.IsLearned(schedule(200, 21, 10), now) {
 		t.Error("a card 200 days past an answer at a stability of 10 is recalled nine times in ten")
 	}
-	if !p.Learned(schedule(0, 20, 90), now) {
+	if !p.IsLearned(schedule(0, 20, 90), now) {
 		t.Error("a card answered today is not recalled nine times in ten")
 	}
-	if p.Learned(review.Schedule{}, now) {
+	if p.IsLearned(review.Schedule{}, now) {
 		t.Error("a card face nobody has answered is learned")
 	}
 }
@@ -126,16 +126,16 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	// Every field left empty, which is a preset built from settings that name
 	// no rule at all.
 	var said review.Preset
-	if said.Learned(near, now) {
+	if said.IsLearned(near, now) {
 		t.Error("a card face sixteen days off is learned under a preset naming no rule")
 	}
-	if !said.Learned(far, now) {
+	if !said.IsLearned(far, now) {
 		t.Error("a card face twenty-one days off is not learned at the default interval")
 	}
 
 	// A rule named with no value under it reads the default value too.
 	named := review.Preset{Rule: review.RuleInterval}
-	if named.Learned(near, now) {
+	if named.IsLearned(near, now) {
 		t.Error("a card face sixteen days off is learned under an interval nobody wrote")
 	}
 
@@ -145,10 +145,10 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 		Last: now.AddDate(0, 0, -200), Due: now, Reps: 3, Stability: 10,
 	}
 	chance := review.Preset{Rule: review.RuleRetention}
-	if chance.Learned(faded, now) {
+	if chance.IsLearned(faded, now) {
 		t.Error("a card face two hundred days past its answer is recalled nine times in ten")
 	}
-	if !chance.Learned(near, now) {
+	if !chance.IsLearned(near, now) {
 		t.Error("a card face answered yesterday is not recalled nine times in ten")
 	}
 }
@@ -162,7 +162,7 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 	stands := review.Defaults()
 	stands.Load = map[time.Weekday]int{time.Saturday: 50}
-	was := stands.Placing()
+	was := stands.GetPlacing()
 
 	for what, alter := range map[string]func(p *review.Preset){
 		"an even load off":   func(p *review.Preset) { p.EvenLoad = false },
@@ -173,7 +173,7 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 		one := stands
 		one.Load = maps.Clone(stands.Load)
 		alter(&one)
-		if got := one.Placing(); got == was {
+		if got := one.GetPlacing(); got == was {
 			t.Errorf("with %s a card is placed under %q, the same mark as without it",
 				what, got)
 		}
@@ -183,7 +183,7 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 		one := stands
 		one.Load = maps.Clone(stands.Load)
 		one.Load[day] = 30
-		if got := one.Placing(); got == was {
+		if got := one.GetPlacing(); got == was {
 			t.Errorf("a %v at thirty is placed under %q, the same mark as one at the "+
 				"whole of it", day, got)
 		}
@@ -296,14 +296,14 @@ func TestWhatAPresetSchedules(t *testing.T) {
 			want: review.StoppedNoDay,
 		},
 	} {
-		if got := one.p.Stops(day, now); got != one.want {
+		if got := one.p.GetOverallStopReason(day, now); got != one.want {
 			t.Errorf("%s stops on %q, want %q", one.what, got, one.want)
 		}
-		if got, want := one.p.Paused(day, now), one.want != review.StoppedNothing; got != want {
+		if got, want := one.p.IsPaused(day, now), one.want != review.StoppedNothing; got != want {
 			t.Errorf("%s is paused %v, want %v", one.what, got, want)
 		}
 		// A day of the week at the whole of the load stops nothing of its own.
-		if got := one.p.StopsOn(day, now); got != one.want {
+		if got := one.p.GetStopReason(day, now); got != one.want {
 			t.Errorf("%s stops today on %q, want %q", one.what, got, one.want)
 		}
 	}
@@ -323,20 +323,20 @@ func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
 		Load: map[time.Weekday]int{time.Thursday: 0},
 	}
 
-	if got := p.Stops(day, thursday); got != review.StoppedNothing {
+	if got := p.GetOverallStopReason(day, thursday); got != review.StoppedNothing {
 		t.Errorf("a preset with a light Thursday stops on %q", got)
 	}
-	if got := p.StopsOn(day, thursday); got != review.StoppedNoLoad {
+	if got := p.GetStopReason(day, thursday); got != review.StoppedNoLoad {
 		t.Errorf("its Thursday stops on %q, want %q", got, review.StoppedNoLoad)
 	}
-	if got := p.StopsOn(day, thursday.AddDate(0, 0, 1)); got != review.StoppedNothing {
+	if got := p.GetStopReason(day, thursday.AddDate(0, 0, 1)); got != review.StoppedNothing {
 		t.Errorf("its Friday stops on %q", got)
 	}
 
 	// A preset that schedules nothing at all says so on a light day too, and the
 	// day of the week is not what to fix.
 	p.MinutesADay = 0
-	if got := p.StopsOn(day, thursday); got != review.StoppedNoMinutes {
+	if got := p.GetStopReason(day, thursday); got != review.StoppedNoMinutes {
 		t.Errorf("a paused preset stops today on %q, want %q", got, review.StoppedNoMinutes)
 	}
 }
@@ -363,15 +363,15 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 		},
 	} {
 		t.Run(what, func(t *testing.T) {
-			if got := p.Stops(day, at); got != review.StoppedNoWeek {
+			if got := p.GetOverallStopReason(day, at); got != review.StoppedNoWeek {
 				t.Errorf("a dead week stops on %q, want %q", got, review.StoppedNoWeek)
 			}
-			if got := p.StopsOn(day, at); got != review.StoppedNoWeek {
+			if got := p.GetStopReason(day, at); got != review.StoppedNoWeek {
 				t.Errorf("its day stops on %q, want %q", got, review.StoppedNoWeek)
 			}
 			for i := range 7 {
 				on := at.AddDate(0, 0, i)
-				if got := p.StopsOn(day, on); got == review.StoppedNoLoad {
+				if got := p.GetStopReason(day, on); got == review.StoppedNoLoad {
 					t.Errorf("its %v promises a next day that carries some load", on.Weekday())
 				}
 			}
@@ -382,10 +382,10 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 	alive := maps.Clone(dead)
 	alive[time.Friday] = review.FullLoad
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, Load: alive}
-	if got := p.Stops(day, at); got != review.StoppedNothing {
+	if got := p.GetOverallStopReason(day, at); got != review.StoppedNothing {
 		t.Errorf("a week with one loud day stops on %q", got)
 	}
-	if got := p.StopsOn(day, at); got != review.StoppedNoLoad {
+	if got := p.GetStopReason(day, at); got != review.StoppedNoLoad {
 		t.Errorf("its Thursday stops on %q, want %q", got, review.StoppedNoLoad)
 	}
 }

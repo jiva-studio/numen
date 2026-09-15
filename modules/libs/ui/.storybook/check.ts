@@ -24,7 +24,8 @@ export interface Proof {
 }
 
 /** What the page not coming to rest is said with, where it may be the cause. */
-const RESTLESS = 'and the page had not come to rest, so these may be what it was drawn as on the way'
+const RESTLESS =
+  'and the page had not come to rest, so these may be what it was drawn as on the way'
 
 /**
  * What a story says of the walk: `false` to leave it unwalked, or the way out

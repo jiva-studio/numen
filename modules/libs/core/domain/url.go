@@ -45,7 +45,7 @@ func ParseURL(raw string) (URL, error) {
 	}
 	address.Fragment, address.RawFragment = "", ""
 	address.User = nil
-	address.RawQuery = kept(address.Query()).Encode()
+	address.RawQuery = dropCampaign(address.Query()).Encode()
 	return URL(address.String()), nil
 }
 
@@ -76,8 +76,8 @@ var campaign = map[string]bool{
 	"ref_url": true,
 }
 
-// kept is the query without them.
-func kept(query url.Values) url.Values {
+// dropCampaign is the query without them.
+func dropCampaign(query url.Values) url.Values {
 	for name := range query {
 		folded := strings.ToLower(name)
 		if campaign[folded] || strings.HasPrefix(folded, "utm_") {

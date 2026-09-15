@@ -51,23 +51,20 @@ func FuzzAssetAddress(f *testing.F) {
 		print := fingerprint{size: size, mtime: mtime}
 		url := pageOf(path, page, 800, print)
 
-		at, ok := addressed(httptest.NewRequest("GET", url, nil))
+		at, ok := parseAssetAddress(httptest.NewRequest("GET", url, nil))
 		if !ok {
 			t.Fatalf("%q is addressed as %q, which is no address", path, url)
 		}
 		if at.path != path {
 			t.Fatalf("%q is addressed as %q and read back as %q", path, url, at.path)
 		}
-		if at.facet != pagesFacet {
-			t.Fatalf("a page of %q is addressed as %q and asks for %q", path, url, at.facet)
-		}
-		if want := strconv.Itoa(page); at.at != want {
-			t.Fatalf("page %d of %q is addressed as %q and asks for %q", page, path, url, at.at)
+		if want := pagesName + "/" + strconv.Itoa(page); at.where != want {
+			t.Fatalf("page %d of %q is addressed as %q and asks for %q", page, path, url, at.where)
 		}
 
 		// Which bytes the address is about rides beside it, and says the same
 		// thing on the way back.
-		got, err := printed(httptest.NewRequest("GET", url, nil).URL.Query())
+		got, err := parseFingerprint(httptest.NewRequest("GET", url, nil).URL.Query())
 		if err != nil {
 			t.Fatalf("%q carries %+v and came back: %v", url, print, err)
 		}

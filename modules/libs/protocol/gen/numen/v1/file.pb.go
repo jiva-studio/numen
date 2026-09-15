@@ -87,6 +87,59 @@ func (SourceKind) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{0}
 }
 
+// BookFormat is which sort of book stands at a path, so a client opens it in
+// the reader made for it: one is drawn as pictures a page at a time, the other
+// reflows. It is decided from the file's name, as SourceKind is, and a file
+// that is no book is unspecified.
+type BookFormat int32
+
+const (
+	BookFormat_BOOK_FORMAT_UNSPECIFIED BookFormat = 0
+	BookFormat_BOOK_FORMAT_PDF         BookFormat = 1
+	BookFormat_BOOK_FORMAT_EPUB        BookFormat = 2
+)
+
+// Enum value maps for BookFormat.
+var (
+	BookFormat_name = map[int32]string{
+		0: "BOOK_FORMAT_UNSPECIFIED",
+		1: "BOOK_FORMAT_PDF",
+		2: "BOOK_FORMAT_EPUB",
+	}
+	BookFormat_value = map[string]int32{
+		"BOOK_FORMAT_UNSPECIFIED": 0,
+		"BOOK_FORMAT_PDF":         1,
+		"BOOK_FORMAT_EPUB":        2,
+	}
+)
+
+func (x BookFormat) Enum() *BookFormat {
+	p := new(BookFormat)
+	*p = x
+	return p
+}
+
+func (x BookFormat) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BookFormat) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_file_proto_enumTypes[1].Descriptor()
+}
+
+func (BookFormat) Type() protoreflect.EnumType {
+	return &file_numen_v1_file_proto_enumTypes[1]
+}
+
+func (x BookFormat) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BookFormat.Descriptor instead.
+func (BookFormat) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_file_proto_rawDescGZIP(), []int{1}
+}
+
 type ListFilesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The folder to list, as a path relative to the root. Empty is the root.
@@ -362,7 +415,9 @@ type FileKind struct {
 	// archive — is unspecified.
 	Kind SourceKind `protobuf:"varint,2,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
 	// Which of three the note is. It says nothing about a path holding no note.
-	Type          NoteType `protobuf:"varint,3,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
+	Type NoteType `protobuf:"varint,3,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
+	// Which sort of book it is. It says nothing about a path holding no book.
+	Format        BookFormat `protobuf:"varint,4,opt,name=format,proto3,enum=numen.v1.BookFormat" json:"format,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -416,6 +471,13 @@ func (x *FileKind) GetType() NoteType {
 		return x.Type
 	}
 	return NoteType_NOTE_TYPE_UNSPECIFIED
+}
+
+func (x *FileKind) GetFormat() BookFormat {
+	if x != nil {
+		return x.Format
+	}
+	return BookFormat_BOOK_FORMAT_UNSPECIFIED
 }
 
 type MoveFileRequest struct {
@@ -477,7 +539,7 @@ type MoveFileResponse struct {
 	// What the file did. Absent when nothing was moved.
 	Moved *MoveResult `protobuf:"bytes,1,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when nothing was moved, and why.
-	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Set when the move reached the vault and the index would not come level with
 	// it. Search answers about these files as it read them last, until a walk
 	// goes past.
@@ -523,11 +585,11 @@ func (x *MoveFileResponse) GetMoved() *MoveResult {
 	return nil
 }
 
-func (x *MoveFileResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *MoveFileResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *MoveFileResponse) GetUnlevelled() bool {
@@ -677,7 +739,7 @@ type RemoveFileResponse struct {
 	// The notes whose links pointed at what was removed and now reach nothing.
 	Dangling []string `protobuf:"bytes,2,rep,name=dangling,proto3" json:"dangling,omitempty"`
 	// Set when nothing was removed, and why.
-	Refusal *Refusal `protobuf:"varint,3,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error *ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Set when the file has gone and the index would not come level with it.
 	// Search answers about it as it read it last, until a walk goes past.
 	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
@@ -729,11 +791,11 @@ func (x *RemoveFileResponse) GetDangling() []string {
 	return nil
 }
 
-func (x *RemoveFileResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *RemoveFileResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *RemoveFileResponse) GetUnlevelled() bool {
@@ -792,7 +854,7 @@ func (x *CreateFolderRequest) GetPath() string {
 type CreateFolderResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was made, and why.
-	Refusal       *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error         *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -827,11 +889,11 @@ func (*CreateFolderResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *CreateFolderResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *CreateFolderResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 type CreateURLRequest struct {
@@ -895,7 +957,7 @@ type CreateURLResponse struct {
 	// Where the file is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Error         *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -937,11 +999,11 @@ func (x *CreateURLResponse) GetPath() string {
 	return ""
 }
 
-func (x *CreateURLResponse) GetRefusal() Refusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
+func (x *CreateURLResponse) GetError() ErrorCode {
+	if x != nil && x.Error != nil {
+		return *x.Error
 	}
-	return Refusal_REFUSAL_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 var File_numen_v1_file_proto protoreflect.FileDescriptor
@@ -962,23 +1024,23 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"A\n" +
 	"\x15ListFileKindsResponse\x12(\n" +
-	"\x05kinds\x18\x01 \x03(\v2\x12.numen.v1.FileKindR\x05kinds\"p\n" +
+	"\x05kinds\x18\x01 \x03(\v2\x12.numen.v1.FileKindR\x05kinds\"\x9e\x01\n" +
 	"\bFileKind\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12(\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12&\n" +
-	"\x04type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"5\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\x12,\n" +
+	"\x06format\x18\x04 \x01(\x0e2\x14.numen.v1.BookFormatR\x06format\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\"\xab\x01\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"\xa7\x01\n" +
 	"\x10MoveFileResponse\x12/\n" +
-	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x03 \x01(\bR\n" +
 	"unlevelledB\b\n" +
-	"\x06_movedB\n" +
-	"\n" +
-	"\b_refusal\"h\n" +
+	"\x06_movedB\b\n" +
+	"\x06_error\"h\n" +
 	"\n" +
 	"MoveResult\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
@@ -987,37 +1049,39 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\bdangling\x18\x04 \x03(\tR\bdangling\"A\n" +
 	"\x11RemoveFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa8\x01\n" +
+	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa4\x01\n" +
 	"\x12RemoveFileResponse\x12\x18\n" +
 	"\atrashed\x18\x01 \x01(\tR\atrashed\x12\x1a\n" +
-	"\bdangling\x18\x02 \x03(\tR\bdangling\x120\n" +
-	"\arefusal\x18\x03 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\bdangling\x18\x02 \x03(\tR\bdangling\x12.\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
 	"\n" +
 	"unlevelled\x18\x04 \x01(\bR\n" +
-	"unlevelledB\n" +
-	"\n" +
-	"\b_refusal\")\n" +
+	"unlevelledB\b\n" +
+	"\x06_error\")\n" +
 	"\x13CreateFolderRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"T\n" +
-	"\x14CreateFolderResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal\"8\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"P\n" +
+	"\x14CreateFolderResponse\x12.\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error\"8\n" +
 	"\x10CreateURLRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"e\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"a\n" +
 	"\x11CreateURLResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal*\x85\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error*\x85\x01\n" +
 	"\n" +
 	"SourceKind\x12\x1b\n" +
 	"\x17SOURCE_KIND_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10SOURCE_KIND_NOTE\x10\x01\x12\x14\n" +
 	"\x10SOURCE_KIND_BOOK\x10\x02\x12\x19\n" +
 	"\x15SOURCE_KIND_RECORDING\x10\x03\x12\x13\n" +
-	"\x0fSOURCE_KIND_URL\x10\x042\xc6\x03\n" +
+	"\x0fSOURCE_KIND_URL\x10\x04*T\n" +
+	"\n" +
+	"BookFormat\x12\x1b\n" +
+	"\x17BOOK_FORMAT_UNSPECIFIED\x10\x00\x12\x13\n" +
+	"\x0fBOOK_FORMAT_PDF\x10\x01\x12\x14\n" +
+	"\x10BOOK_FORMAT_EPUB\x10\x022\xc6\x03\n" +
 	"\vFileService\x12D\n" +
 	"\tListFiles\x12\x1a.numen.v1.ListFilesRequest\x1a\x1b.numen.v1.ListFilesResponse\x12P\n" +
 	"\rListFileKinds\x12\x1e.numen.v1.ListFileKindsRequest\x1a\x1f.numen.v1.ListFileKindsResponse\x12A\n" +
@@ -1039,57 +1103,59 @@ func file_numen_v1_file_proto_rawDescGZIP() []byte {
 	return file_numen_v1_file_proto_rawDescData
 }
 
-var file_numen_v1_file_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_numen_v1_file_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_file_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_numen_v1_file_proto_goTypes = []any{
 	(SourceKind)(0),               // 0: numen.v1.SourceKind
-	(*ListFilesRequest)(nil),      // 1: numen.v1.ListFilesRequest
-	(*ListFilesResponse)(nil),     // 2: numen.v1.ListFilesResponse
-	(*Entry)(nil),                 // 3: numen.v1.Entry
-	(*ListFileKindsRequest)(nil),  // 4: numen.v1.ListFileKindsRequest
-	(*ListFileKindsResponse)(nil), // 5: numen.v1.ListFileKindsResponse
-	(*FileKind)(nil),              // 6: numen.v1.FileKind
-	(*MoveFileRequest)(nil),       // 7: numen.v1.MoveFileRequest
-	(*MoveFileResponse)(nil),      // 8: numen.v1.MoveFileResponse
-	(*MoveResult)(nil),            // 9: numen.v1.MoveResult
-	(*RemoveFileRequest)(nil),     // 10: numen.v1.RemoveFileRequest
-	(*RemoveFileResponse)(nil),    // 11: numen.v1.RemoveFileResponse
-	(*CreateFolderRequest)(nil),   // 12: numen.v1.CreateFolderRequest
-	(*CreateFolderResponse)(nil),  // 13: numen.v1.CreateFolderResponse
-	(*CreateURLRequest)(nil),      // 14: numen.v1.CreateURLRequest
-	(*CreateURLResponse)(nil),     // 15: numen.v1.CreateURLResponse
-	(NoteType)(0),                 // 16: numen.v1.NoteType
-	(Refusal)(0),                  // 17: numen.v1.Refusal
+	(BookFormat)(0),               // 1: numen.v1.BookFormat
+	(*ListFilesRequest)(nil),      // 2: numen.v1.ListFilesRequest
+	(*ListFilesResponse)(nil),     // 3: numen.v1.ListFilesResponse
+	(*Entry)(nil),                 // 4: numen.v1.Entry
+	(*ListFileKindsRequest)(nil),  // 5: numen.v1.ListFileKindsRequest
+	(*ListFileKindsResponse)(nil), // 6: numen.v1.ListFileKindsResponse
+	(*FileKind)(nil),              // 7: numen.v1.FileKind
+	(*MoveFileRequest)(nil),       // 8: numen.v1.MoveFileRequest
+	(*MoveFileResponse)(nil),      // 9: numen.v1.MoveFileResponse
+	(*MoveResult)(nil),            // 10: numen.v1.MoveResult
+	(*RemoveFileRequest)(nil),     // 11: numen.v1.RemoveFileRequest
+	(*RemoveFileResponse)(nil),    // 12: numen.v1.RemoveFileResponse
+	(*CreateFolderRequest)(nil),   // 13: numen.v1.CreateFolderRequest
+	(*CreateFolderResponse)(nil),  // 14: numen.v1.CreateFolderResponse
+	(*CreateURLRequest)(nil),      // 15: numen.v1.CreateURLRequest
+	(*CreateURLResponse)(nil),     // 16: numen.v1.CreateURLResponse
+	(NoteType)(0),                 // 17: numen.v1.NoteType
+	(ErrorCode)(0),                // 18: numen.v1.ErrorCode
 }
 var file_numen_v1_file_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
+	4,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
 	0,  // 1: numen.v1.Entry.kind:type_name -> numen.v1.SourceKind
-	16, // 2: numen.v1.Entry.type:type_name -> numen.v1.NoteType
-	6,  // 3: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
+	17, // 2: numen.v1.Entry.type:type_name -> numen.v1.NoteType
+	7,  // 3: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
 	0,  // 4: numen.v1.FileKind.kind:type_name -> numen.v1.SourceKind
-	16, // 5: numen.v1.FileKind.type:type_name -> numen.v1.NoteType
-	9,  // 6: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
-	17, // 7: numen.v1.MoveFileResponse.refusal:type_name -> numen.v1.Refusal
-	17, // 8: numen.v1.RemoveFileResponse.refusal:type_name -> numen.v1.Refusal
-	17, // 9: numen.v1.CreateFolderResponse.refusal:type_name -> numen.v1.Refusal
-	17, // 10: numen.v1.CreateURLResponse.refusal:type_name -> numen.v1.Refusal
-	1,  // 11: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
-	4,  // 12: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
-	7,  // 13: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
-	10, // 14: numen.v1.FileService.RemoveFile:input_type -> numen.v1.RemoveFileRequest
-	12, // 15: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
-	14, // 16: numen.v1.FileService.CreateURL:input_type -> numen.v1.CreateURLRequest
-	2,  // 17: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
-	5,  // 18: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
-	8,  // 19: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
-	11, // 20: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
-	13, // 21: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
-	15, // 22: numen.v1.FileService.CreateURL:output_type -> numen.v1.CreateURLResponse
-	17, // [17:23] is the sub-list for method output_type
-	11, // [11:17] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	17, // 5: numen.v1.FileKind.type:type_name -> numen.v1.NoteType
+	1,  // 6: numen.v1.FileKind.format:type_name -> numen.v1.BookFormat
+	10, // 7: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
+	18, // 8: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	18, // 9: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	18, // 10: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
+	18, // 11: numen.v1.CreateURLResponse.error:type_name -> numen.v1.ErrorCode
+	2,  // 12: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
+	5,  // 13: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
+	8,  // 14: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
+	11, // 15: numen.v1.FileService.RemoveFile:input_type -> numen.v1.RemoveFileRequest
+	13, // 16: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
+	15, // 17: numen.v1.FileService.CreateURL:input_type -> numen.v1.CreateURLRequest
+	3,  // 18: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
+	6,  // 19: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
+	9,  // 20: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
+	12, // 21: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
+	14, // 22: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
+	16, // 23: numen.v1.FileService.CreateURL:output_type -> numen.v1.CreateURLResponse
+	18, // [18:24] is the sub-list for method output_type
+	12, // [12:18] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_file_proto_init() }
@@ -1107,7 +1173,7 @@ func file_numen_v1_file_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_file_proto_rawDesc), len(file_numen_v1_file_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,

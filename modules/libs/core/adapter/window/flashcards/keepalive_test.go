@@ -51,18 +51,18 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			api := &API{
 				Registry: registry{},
 				Now:      time.Now,
-				Window:   Watching(task.New()),
+				Window:   NewWindow(task.New()),
 			}
-			api.Answers(testsupport.SilentAgent{})
+			api.SetAgent(testsupport.SilentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()
 			cards, decks := numenv1connect.NewFlashcardsServiceHandler(api)
-			mux.Handle(cards, testsupport.Rooted(decks, entered, returned))
+			mux.Handle(cards, testsupport.NewRootedHandler(decks, entered, returned))
 			agent, agents := numenv1connect.NewAgentServiceHandler(api)
-			mux.Handle(agent, testsupport.Rooted(agents, entered, returned))
+			mux.Handle(agent, testsupport.NewRootedHandler(agents, entered, returned))
 			drawn, itself := numenv1connect.NewWindowServiceHandler(api.Window)
-			mux.Handle(drawn, testsupport.Rooted(itself, entered, returned))
+			mux.Handle(drawn, testsupport.NewRootedHandler(itself, entered, returned))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 
@@ -94,7 +94,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 // stream saying nothing until a count lands leaves those counters reading for a
 // window that has gone, and reloading the page stacks another four on them.
 func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
-	api, _ := windowed(t, deck)
+	api, _ := newAPI(t, deck)
 	// The vault is read when the window opens it, and what a count that will not
 	// come back does to the stream is what is under test here.
 	front(t, api)
@@ -103,7 +103,8 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	defer close(held)
 	api.CardsDue.CardFaces.Readers = waiting{until: held}
 
-	stream, err := serving(t, api).WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
+		t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

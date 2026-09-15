@@ -14,10 +14,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // A shelf is what a recognition is written to, in memory.
@@ -207,7 +207,7 @@ func recogniser(t *testing.T, says string) (Recognise, domain.Vault, *store, *sh
 // reading is a Recognise over a vault holding a document printed as these pages.
 func reading(t *testing.T, says string, pages [][]string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
 	t.Helper()
-	raw := printedAs(pages)
+	raw := printPages(pages)
 	shelved := newLibrary()
 	shelved.hold(documentPath, domain.KindBook, raw, 1)
 	v := first
@@ -353,7 +353,7 @@ func TestWhatReadItIsKeptBesideWhatItRead(t *testing.T) {
 	src := index.sources[v.ID][documentPath]
 	hash := src.Hash
 
-	raw, err := shelf.Read(t.Context(), text.Beside("ocr", hash))
+	raw, err := shelf.Read(t.Context(), text.GetProducerFile("ocr", hash))
 	if err != nil {
 		t.Fatalf("nothing says what read the document: %v", err)
 	}
@@ -403,7 +403,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 }
 
 // documentHash is the hash a reading of the document under test is kept under.
-func documentHash() string { return text.Fingerprint(printedAs(outline)) }
+func documentHash() string { return text.Fingerprint(printPages(outline)) }
 
 // reads checks that every coordinate names the words it was read from, in the
 // prose the artifact holds.
@@ -728,7 +728,7 @@ func TestAReadingNamesItsParts(t *testing.T) {
 		t.Fatalf("the parts are not beside the artifact: %v", err)
 	}
 
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 	if len(doc.Parts) != res.Pages {
 		t.Fatalf("the reading names %d parts over %d pages", len(doc.Parts), res.Pages)
 	}
@@ -779,7 +779,7 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	doc := text.Recognised(raw, parts, nil, nil)
+	doc := text.ReadRecognition(raw, parts, nil, nil)
 	if len(doc.Parts) != res.Pages {
 		t.Fatalf("the reading names %d parts over %d pages", len(doc.Parts), res.Pages)
 	}

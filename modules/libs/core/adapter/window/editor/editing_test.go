@@ -22,7 +22,7 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 	said := domain.Edit{
 		Change: "one", Path: "Aggressor.md", From: 2, To: 12, Text: "An axe",
 	}
-	if err := api.Viewing().Editing(t.Context(), said); err != nil {
+	if err := api.GetWindow().ShowEdit(t.Context(), said); err != nil {
 		t.Fatal(err)
 	}
 
@@ -89,17 +89,17 @@ func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
 	}
 }
 
-// A refusal is about the note the request named. Only what the core named as
-// missing is answered as one.
+// An error code is about the note the request named. Only what the core named
+// as missing is answered as one.
 func TestOnlyTheCoreSaysWhichNoteIsMissing(t *testing.T) {
 	for name, c := range map[string]struct {
 		err  error
-		want v1.Refusal
+		want v1.ErrorCode
 		is   bool
 	}{
 		"the vault holds no note there": {
 			err:  fmt.Errorf("read Old.md: %w", note.ErrNoNote),
-			want: v1.Refusal_REFUSAL_MISSING,
+			want: v1.ErrorCode_ERROR_CODE_MISSING,
 			is:   true,
 		},
 		"the vault itself is out of reach": {
@@ -107,22 +107,22 @@ func TestOnlyTheCoreSaysWhichNoteIsMissing(t *testing.T) {
 		},
 		"a title no note can be given": {
 			err:  fmt.Errorf("%w: nothing to name it", note.ErrUnnameable),
-			want: v1.Refusal_REFUSAL_UNNAMEABLE,
+			want: v1.ErrorCode_ERROR_CODE_UNNAMEABLE,
 			is:   true,
 		},
 		"a frontmatter written on one line": {
 			err:  fmt.Errorf("Old.md: %w", note.ErrInline),
-			want: v1.Refusal_REFUSAL_UNREADABLE,
+			want: v1.ErrorCode_ERROR_CODE_UNREADABLE,
 			is:   true,
 		},
 		"a frontmatter block that is never closed": {
 			err:  fmt.Errorf("Old.md: %w", note.ErrUnterminated),
-			want: v1.Refusal_REFUSAL_UNREADABLE,
+			want: v1.ErrorCode_ERROR_CODE_UNREADABLE,
 			is:   true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			reason, refused := wire.RefusalBy(c.err)
+			reason, refused := wire.ErrorCodeBy(c.err)
 			if refused != c.is {
 				t.Fatalf("want refused=%v, got %v (%v)", c.is, refused, reason)
 			}

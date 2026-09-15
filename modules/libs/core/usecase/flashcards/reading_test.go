@@ -76,7 +76,7 @@ func (a lookups) Links(ctx context.Context, vaultID domain.VaultID, from string)
 // which preset schedules it.
 func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Sanskrit.md":    preset("new_a_day: 8\nreviews_a_day: 45\n"),
 		"decks/One.md":   deckOf("Sanskrit", 2, 0),
@@ -92,7 +92,7 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	presets := s.presets
 	presets.Links = lookups{LinkQueries: presets.Links, looks: looks}
 
-	owed := s.owedAt(today, func() time.Time { return saturday })
+	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday })
 	owed.CardFaces = standings
 	owed.Presets = presets
 
@@ -113,7 +113,7 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 // A preset note is opened once however many decks name it.
 func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Sanskrit.md":    preset("new_a_day: 8\nreviews_a_day: 45\n"),
 		"decks/One.md":   deckOf("Sanskrit", 2, 0),
@@ -124,7 +124,7 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	reads := map[string]int{}
 	presets := s.presets
 	presets.Readers = counting{VaultReaders: presets.Readers, reads: reads}
-	owed := s.owedAt(today, func() time.Time { return saturday })
+	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday })
 	owed.Presets = presets
 
 	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
@@ -139,7 +139,7 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 // counted from come out of the one reading.
 func TestTheAnswerLogIsReadOnce(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"decks/Roots.md": deckOf("", 3, 0),
 	})
@@ -148,7 +148,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 	reads := map[string]int{}
 	kept := s.kept
 	kept.Logs = tallied{DerivedStores: kept.Logs, reads: reads}
-	owed := s.owedAt(today, func() time.Time { return saturday })
+	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday })
 	owed.Schedules = kept
 
 	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
@@ -168,7 +168,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 // what it gave up on.
 func TestACurveAnswersTheCallersCancellation(t *testing.T) {
 	t.Parallel()
-	s := opened(t, studied(30))
+	s := openVault(t, newStudiedNotes(30))
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	ctx, stop := context.WithCancel(t.Context())

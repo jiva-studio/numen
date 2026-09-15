@@ -62,7 +62,7 @@ type Transaction struct {
 
 func (t *Transaction) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
-	prepared, err := t.prepared(ctx, query)
+	prepared, err := t.prepare(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (t *Transaction) ExecContext(ctx context.Context, query string, args ...any
 
 func (t *Transaction) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
-	prepared, err := t.prepared(ctx, query)
+	prepared, err := t.prepare(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -83,17 +83,17 @@ func (t *Transaction) QueryContext(ctx context.Context, query string, args ...an
 // carries what went wrong and there is no other way to put it there.
 func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
-	prepared, err := t.prepared(ctx, query)
+	prepared, err := t.prepare(ctx, query)
 	if err != nil {
 		return t.Tx.QueryRowContext(ctx, query, args...)
 	}
 	return prepared.QueryRowContext(ctx, args...)
 }
 
-// prepared is the statement this text was prepared as, preparing it the first
+// prepare is the statement this text was prepared as, preparing it the first
 // time it is asked for. One transaction is written by one goroutine, which is
 // what the pool of one write connection leaves it.
-func (t *Transaction) prepared(ctx context.Context, query string) (*sql.Stmt, error) {
+func (t *Transaction) prepare(ctx context.Context, query string) (*sql.Stmt, error) {
 	if held, ok := t.ready[query]; ok {
 		return held, nil
 	}
@@ -130,16 +130,16 @@ func again(ctx context.Context, write func() error) error {
 				return ctx.Err()
 			}
 		}
-		if err = write(); !locked(err) {
+		if err = write(); !isLocked(err) {
 			return err
 		}
 	}
 	return err
 }
 
-// locked says the database was held by a writer this one waited out. The
+// isLocked says the database was held by a writer this one waited out. The
 // extended result codes carry the primary one in their low byte.
-func locked(err error) bool {
+func isLocked(err error) bool {
 	var said *sqlite.Error
 	if !errors.As(err, &said) {
 		return false

@@ -19,8 +19,8 @@ type deckLoad struct {
 	owed, fresh int
 }
 
-// loading generates the decks of one preset, each under a path of its own.
-func loading(t *rapid.T) []deckLoad {
+// newDeckLoads generates the decks of one preset, each under a path of its own.
+func newDeckLoads(t *rapid.T) []deckLoad {
 	decks := rapid.IntRange(1, 5).Draw(t, "decks")
 	out := make([]deckLoad, decks)
 	for at := range out {
@@ -33,13 +33,13 @@ func loading(t *rapid.T) []deckLoad {
 	return out
 }
 
-// walking is what a day of this budget hands over, with the decks reached in
-// this order: the card faces the session takes, by name.
+// getTakenFaces is what a day of this budget hands over, with the decks reached
+// in this order: the card faces the session takes, by name.
 //
 // The order stands for the order the vault was walked in. Each deck's own cards
 // keep the order they stand in, which is the deck's and not the walk's. A
 // budget of no minutes is a day that does not close on them.
-func walking(load []deckLoad, order []int, keeps review.Budget) map[review.CardFaceID]bool {
+func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review.CardFaceID]bool {
 	limits := review.Limits{New: review.ClosedNew, Reviews: review.ClosedReviews}
 	if keeps.Minutes > 0 {
 		limits.Minutes = review.ClosedMinutes
@@ -96,14 +96,15 @@ func walking(load []deckLoad, order []int, keeps review.Budget) map[review.CardF
 	return out
 }
 
-// handedOver is how many cards each deck was handed of a day of this budget.
-func handedOver(load []deckLoad, keeps review.Budget) map[string]int {
+// countHandedOver is how many cards each deck was handed of a day of this
+// budget.
+func countHandedOver(load []deckLoad, keeps review.Budget) map[string]int {
 	places := make([]int, len(load))
 	for at := range places {
 		places[at] = at
 	}
 	out := make(map[string]int, len(load))
-	for face := range walking(load, places, keeps) {
+	for face := range getTakenFaces(load, places, keeps) {
 		for _, one := range load {
 			if strings.HasPrefix(face.Card, one.path+"/") {
 				out[one.path]++
@@ -126,12 +127,12 @@ func TestWhatNoDeckCouldUseGoesToTheDeckHoldingMost(t *testing.T) {
 	keeps := review.Budget{New: 6, Minutes: 1}
 	one, five := "decks/a.md", "decks/b.md"
 
-	got := handedOver([]deckLoad{{path: one, fresh: 1}, {path: five, fresh: 5}}, keeps)
+	got := countHandedOver([]deckLoad{{path: one, fresh: 1}, {path: five, fresh: 5}}, keeps)
 	if want := (map[string]int{five: 3}); !maps.Equal(got, want) {
 		t.Fatalf("a day of one minute handed over %v, want %v", got, want)
 	}
 	// The same two decks under each other's names hand over the same cards.
-	got = handedOver([]deckLoad{{path: five, fresh: 1}, {path: one, fresh: 5}}, keeps)
+	got = countHandedOver([]deckLoad{{path: five, fresh: 1}, {path: one, fresh: 5}}, keeps)
 	if want := (map[string]int{one: 3}); !maps.Equal(got, want) {
 		t.Fatalf("a day of one minute over the same decks renamed handed over "+
 			"%v, want %v", got, want)
@@ -146,7 +147,7 @@ func TestWhatNoDeckCouldUseGoesToTheDeckHoldingMost(t *testing.T) {
 func TestTheWalkOfAVaultDoesNotChangeWhatADayHandsOver(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		load := loading(t)
+		load := newDeckLoads(t)
 		keeps := review.Budget{
 			New:     rapid.IntRange(0, 20).Draw(t, "new"),
 			Reviews: rapid.IntRange(0, 20).Draw(t, "reviews"),
@@ -156,8 +157,8 @@ func TestTheWalkOfAVaultDoesNotChangeWhatADayHandsOver(t *testing.T) {
 			places[at] = at
 		}
 
-		was := walking(load, places, keeps)
-		now := walking(load, rapid.Permutation(places).Draw(t, "walk"), keeps)
+		was := getTakenFaces(load, places, keeps)
+		now := getTakenFaces(load, rapid.Permutation(places).Draw(t, "walk"), keeps)
 		if !maps.Equal(was, now) {
 			t.Fatalf("a day of %d new and %d reviews over %v hands over %v "+
 				"walked in order and %v walked otherwise",

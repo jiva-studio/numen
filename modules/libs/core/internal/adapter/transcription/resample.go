@@ -9,18 +9,18 @@ import (
 // zeroes on each side.
 const sincWidth = 16
 
-// resampled is one signal at another rate.
+// resample is one signal at another rate.
 //
 // Each output sample is what the input says at that moment, band-limited to
 // whichever of the two rates is the lower.
-func resampled(ctx context.Context, in []float32, from, to int) ([]float32, error) {
+func resample(ctx context.Context, in []float32, from, to int) ([]float32, error) {
 	if from == to || from <= 0 || len(in) == 0 {
 		return in, nil
 	}
 	ratio := float64(to) / float64(from)
 	cutoff := math.Min(ratio, 1)
 	reach := sincWidth / cutoff
-	kernel := weighing(cutoff, reach)
+	kernel := buildKernel(cutoff, reach)
 
 	out := make([]float32, int(float64(len(in))*ratio))
 	for i := range out {
@@ -37,7 +37,7 @@ func resampled(ctx context.Context, in []float32, from, to int) ([]float32, erro
 
 		var sum, weight float64
 		for j := first; j <= last; j++ {
-			w := kernel.at(centre - float64(j))
+			w := kernel.getValueAt(centre - float64(j))
 			sum += w * float64(in[j])
 			weight += w
 		}
@@ -59,8 +59,8 @@ type kernel struct {
 	step float64
 }
 
-// weighing works the kernel out over its whole reach.
-func weighing(cutoff, reach float64) kernel {
+// buildKernel works the kernel out over its whole reach.
+func buildKernel(cutoff, reach float64) kernel {
 	step := float64(kernelSteps)
 	held := make([]float64, int(reach*step)+2)
 	for i := range held {
@@ -70,9 +70,10 @@ func weighing(cutoff, reach float64) kernel {
 	return kernel{held: held, step: step}
 }
 
-// at is the kernel at a distance, between the two steps it falls between. The
-// kernel is even, so a distance either side of nothing reads the same.
-func (w kernel) at(d float64) float64 {
+// getValueAt is the kernel at a distance, between the two steps it falls
+// between. The kernel is even, so a distance either side of nothing reads the
+// same.
+func (w kernel) getValueAt(d float64) float64 {
 	at := math.Abs(d) * w.step
 	i := int(at)
 	if i+1 >= len(w.held) {

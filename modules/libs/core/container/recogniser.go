@@ -41,16 +41,16 @@ func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, clo
 // asked for that document and waits for it. Recognising is the queue that reads
 // what nobody asked about.
 func (c Config) Recognise(sources port.SourceRepository, by port.Recogniser) source.Recognise {
-	return source.NewRecognise(c.VaultReaders(), sources, c.DerivedStores(), c.PageRenderer(), by)
+	return source.NewRecognise(c.VaultReaders(), sources, c.GetDerivedStores(), c.PageRenderer(), by)
 }
 
-// Recognising is the queue that reads this installation's scanned documents,
-// built against the adapters it was configured with and reporting itself into
-// the list of what is being done.
+// OpenRecognitionWorker is the queue that reads this installation's scanned
+// documents, built against the adapters it was configured with and reporting
+// itself into the list of what is being done.
 //
 // models is what it takes its turn at with the queue that listens to
 // recordings: one run holds this machine's models at a time.
-func (c Config) Recognising(
+func (c Config) OpenRecognitionWorker(
 	ctx context.Context,
 	sources port.SourceRepository,
 	tasks *task.Tasks,
@@ -58,7 +58,7 @@ func (c Config) Recognising(
 ) *source.RecognitionWorker {
 	return source.NewRecognitionWorker(ctx, source.Recognitions{
 		Readers:   c.VaultReaders(),
-		Derived:   c.DerivedStores(),
+		Derived:   c.GetDerivedStores(),
 		Documents: c.PageRenderer(),
 		Sources:   sources,
 		Tasks:     tasks,
@@ -76,8 +76,8 @@ func (c Config) Recognising(
 				return models, models.Close, nil
 			},
 			Ready:    c.RecogniserReady,
-			Prepared: recognition.Prepared,
+			Prepared: recognition.IsPrepared,
 		},
-		Proofreading: c.proofreadingFor(c.ScanProofreading),
+		Proofreading: c.getProofreading(c.ScanProofreading),
 	})
 }

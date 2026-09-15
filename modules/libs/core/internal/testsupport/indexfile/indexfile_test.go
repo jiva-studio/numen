@@ -30,7 +30,7 @@ func TestACopyIsAMigratedIndex(t *testing.T) {
 	if held, want := versionOf(t, copied), versionOf(t, scratch); held != want {
 		t.Errorf("a copy is at schema %d, and an index opened from nothing is at %d", held, want)
 	}
-	held, want := appliedIn(t, copied), appliedIn(t, scratch)
+	held, want := readAppliedMigrations(t, copied), readAppliedMigrations(t, scratch)
 	if len(want) == 0 {
 		t.Fatal("an index opened from nothing records nothing as applied")
 	}
@@ -83,7 +83,7 @@ func vaultsIn(t *testing.T, path string) int {
 	return count
 }
 
-func appliedIn(t *testing.T, path string) []string {
+func readAppliedMigrations(t *testing.T, path string) []string {
 	t.Helper()
 	rows, err := openFile(t, path).QueryContext(t.Context(),
 		"SELECT name FROM schema_migrations ORDER BY version")

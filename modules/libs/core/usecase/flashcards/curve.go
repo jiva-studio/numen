@@ -43,9 +43,10 @@ func NewProjectCurve(
 	}
 }
 
-// steered is what is wrong with the value the goal moves, and is nil where the
-// value stands inside its bounds. A goal of a date names a day and no number.
-func steered(p review.Preset) error {
+// checkGoal is what is wrong with the value the goal moves, and is nil where
+// the value stands inside its bounds. A goal of a date names a day and no
+// number.
+func checkGoal(p review.Preset) error {
 	var value float64
 	var bounds review.Bounds
 	var key string
@@ -57,7 +58,7 @@ func steered(p review.Preset) error {
 	default:
 		return nil
 	}
-	if bounds.Holds(value) {
+	if bounds.Contains(value) {
 		return nil
 	}
 	return fmt.Errorf("%w: %s %g is outside %g to %g",
@@ -75,10 +76,10 @@ func (u ProjectCurve) Execute(
 ) (review.Curve, error) {
 	// The value the goal steers is written into the grid, and a grid runs only
 	// between the bounds of it.
-	if err := steered(p); err != nil {
+	if err := checkGoal(p); err != nil {
 		return review.Curve{}, err
 	}
-	scheduled, err := u.scheduled(ctx, v, path)
+	scheduled, err := u.getScheduledDecks(ctx, v, path)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -90,11 +91,11 @@ func (u ProjectCurve) Execute(
 	// A deck is asked once which preset schedules it, however many card faces
 	// it holds, and a preset note is opened once however many decks name it.
 	reading := u.Presets.Reading()
-	asks, err := u.Schedules.under(ctx, v, reading, faces)
+	asks, err := u.Schedules.getAssignmentFrom(ctx, v, reading, faces)
 	if err != nil {
 		return review.Curve{}, err
 	}
-	schedules := u.Schedules.worked(held, asks)
+	schedules := u.Schedules.getSchedules(held, asks)
 
 	decks := make(map[string]bool)
 	at := make(map[review.CardFaceID]review.Schedule)
@@ -125,12 +126,12 @@ func (u ProjectCurve) Execute(
 
 	// How many decks this preset schedules, counted over every deck that could
 	// name it: a deck of no cards points at its preset like any other.
-	mine, err := u.pointing(ctx, v, reading, path, scheduled, decks)
+	mine, err := u.countPointingDecks(ctx, v, reading, path, scheduled, decks)
 	if err != nil {
 		return review.Curve{}, err
 	}
 
-	cost, costed := review.CostedUnder(u.Schedules.By, held.Answers, under)[path]
+	cost, costed := review.GetCostUnder(u.Schedules.By, held.Answers, under)[path]
 	if !costed {
 		cost = review.DefaultCost
 	}
@@ -139,15 +140,15 @@ func (u ProjectCurve) Execute(
 	// one its cards are scheduled by, and it opens on the day a person is
 	// already partway through.
 	run := review.Simulation{
-		By: u.at(p.Retention), Day: u.Day, Cost: cost,
-		Spent: review.SpentUnder(u.Day, u.Day.Names(now), held.Answers, under,
+		By: u.getScheduler(p.Retention), Day: u.Day, Cost: cost,
+		Spent: review.GetSpentUnder(u.Day, u.Day.GetName(now), held.Answers, under,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
-	out, err := run.Curve(ctx, now, p, at, unseen, u.at, u.places)
+	out, err := run.Curve(ctx, now, p, at, unseen, u.getScheduler, u.places)
 	if err != nil {
 		return review.Curve{}, err
 	}
-	out.Stops = p.Stops(u.Day, now)
+	out.Stops = p.GetOverallStopReason(u.Day, now)
 	out.Decks = mine
 	out.Cards = len(under)
 	out.Overdue = review.Overdue(u.Day, at, now)
@@ -166,7 +167,7 @@ func (u ProjectCurve) Execute(
 // The decks they schedule are the decks naming no preset, which is a question
 // only the decks answer: every one of them is read, and the curve of the
 // defaults pays for the whole vault.
-func (u ProjectCurve) scheduled(ctx context.Context, v domain.Vault, path string) ([]string, error) {
+func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, path string) ([]string, error) {
 	decks, err := u.CardFaces.Decks(ctx, v)
 	if err != nil || path == "" || u.Presets.Links == nil {
 		return decks, err
@@ -192,9 +193,9 @@ func (u ProjectCurve) scheduled(ctx context.Context, v domain.Vault, path string
 	return out, nil
 }
 
-// pointing is how many of these decks name the preset at path. Asked is what
-// has already been worked out from the cards standing.
-func (u ProjectCurve) pointing(
+// countPointingDecks is how many of these decks name the preset at path. Asked
+// is what has already been worked out from the cards standing.
+func (u ProjectCurve) countPointingDecks(
 	ctx context.Context, v domain.Vault, reading *PresetReads, path string,
 	decks []string, asked map[string]bool,
 ) (int, error) {
@@ -247,8 +248,8 @@ func (u ProjectCurve) places(count int, each func(at int) error) error {
 	return nil
 }
 
-// at is the scheduler asking for a share of the cards to come back.
-func (u ProjectCurve) at(retention float64) review.Scheduler {
+// getScheduler is the scheduler asking for a share of the cards to come back.
+func (u ProjectCurve) getScheduler(retention float64) review.Scheduler {
 	if u.By != nil {
 		return u.By(retention)
 	}

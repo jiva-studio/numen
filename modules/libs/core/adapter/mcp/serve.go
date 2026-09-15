@@ -35,18 +35,18 @@ type Endpoint struct {
 // errClosed is what a call asked for after the door is shut gets.
 var errClosed = errors.New("this vault is closing")
 
-// counting takes what an agent asks for, so that closing can wait for what it
+// countCalls takes what an agent asks for, so that closing can wait for what it
 // is in the middle of.
 //
 // Every method an agent calls is bounded work — a tool call is a change to the
 // vault and to the index behind it. The stream a session holds open is not a
 // method and is not counted.
-func (e *Endpoint) counting(next sdk.MethodHandler) sdk.MethodHandler {
+func (e *Endpoint) countCalls(next sdk.MethodHandler) sdk.MethodHandler {
 	return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
 		if !e.calls.begin() {
 			return nil, errClosed
 		}
-		defer e.calls.done()
+		defer e.calls.end()
 		return next(ctx, method, req)
 	}
 }
@@ -75,7 +75,7 @@ func (c *calls) begin() bool {
 	return true
 }
 
-func (c *calls) done() {
+func (c *calls) end() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -112,25 +112,25 @@ func (c *calls) reckon() {
 // The listener is opened before returning, so a port already in use is an
 // error the person sees at startup.
 //
-// Trouble, if it is given, is called with whatever stops the server later. It
-// is how the person hears that it stopped.
-func ServeHTTP(ctx context.Context, addr, token string, core Core, trouble func(error)) (*Endpoint, error) {
-	return serve(ctx, addr, token, New(core), trouble)
+// errorHandler, if it is given, is called with whatever stops the server later.
+// It is how the person hears that it stopped.
+func ServeHTTP(ctx context.Context, addr, token string, core Core, errorHandler func(error)) (*Endpoint, error) {
+	return serve(ctx, addr, token, New(core), errorHandler)
 }
 
 // ServeReadingHTTP starts a server whose every tool reads. An agent answering
 // through it changes nothing.
-func ServeReadingHTTP(ctx context.Context, addr, token string, core Core, trouble func(error)) (*Endpoint, error) {
-	return serve(ctx, addr, token, NewReading(core), trouble)
+func ServeReadingHTTP(ctx context.Context, addr, token string, core Core, errorHandler func(error)) (*Endpoint, error) {
+	return serve(ctx, addr, token, NewReading(core), errorHandler)
 }
 
 // ServeReviewingHTTP starts the server the window a person runs their cards in
 // serves: everything that reads, and the cards of a deck.
-func ServeReviewingHTTP(ctx context.Context, addr, token string, core Core, trouble func(error)) (*Endpoint, error) {
-	return serve(ctx, addr, token, NewReviewing(core), trouble)
+func ServeReviewingHTTP(ctx context.Context, addr, token string, core Core, errorHandler func(error)) (*Endpoint, error) {
+	return serve(ctx, addr, token, NewReviewing(core), errorHandler)
 }
 
-func serve(ctx context.Context, addr, token string, server *sdk.Server, trouble func(error)) (*Endpoint, error) {
+func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHandler func(error)) (*Endpoint, error) {
 	if addr == "" {
 		addr = DefaultAddr
 	}
@@ -139,7 +139,7 @@ func serve(ctx context.Context, addr, token string, server *sdk.Server, trouble 
 	}
 
 	endpoint := &Endpoint{}
-	server.AddReceivingMiddleware(endpoint.counting)
+	server.AddReceivingMiddleware(endpoint.countCalls)
 	handler := sdk.NewStreamableHTTPHandler(
 		func(*http.Request) *sdk.Server { return server },
 		&sdk.StreamableHTTPOptions{
@@ -157,15 +157,15 @@ func serve(ctx context.Context, addr, token string, server *sdk.Server, trouble 
 
 	endpoint.URL = "http://" + listener.Addr().String() + "/mcp"
 	endpoint.server = &http.Server{
-		Handler:           behind(token, handler),
+		Handler:           requireToken(token, handler),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	go func() {
 		err := endpoint.server.Serve(listener)
-		if errors.Is(err, http.ErrServerClosed) || trouble == nil {
+		if errors.Is(err, http.ErrServerClosed) || errorHandler == nil {
 			return
 		}
-		trouble(err)
+		errorHandler(err)
 	}()
 	stopped := make(chan struct{})
 	endpoint.stop = func() { close(stopped) }
@@ -214,11 +214,11 @@ func Local(addr string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-// behind refuses anything that does not present the token.
+// requireToken refuses anything that does not present the token.
 //
 // On the loopback interface this is the second line, behind a port nothing
 // outside the machine can reach. Anywhere else it is the only one.
-func behind(token string, next http.Handler) http.Handler {
+func requireToken(token string, next http.Handler) http.Handler {
 	want := []byte("Bearer " + token)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		got := r.Header.Get("Authorization")

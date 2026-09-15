@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMPOSER_STATES, composerState, keyIntent, said } from './state'
+import { COMPOSER_STATES, composerState, keyIntent, getMessage } from './state'
 
 const press = (over: Partial<Parameters<typeof keyIntent>[0]> = {}) => ({
   key: 'Enter',
@@ -26,26 +26,25 @@ describe('what state a composer is in', () => {
   })
 
   it('can be pressed with something to send, and while an answer arrives', () => {
-    expect(COMPOSER_STATES.empty.acts).toBe(false)
-    expect(COMPOSER_STATES.ready.acts).toBe(true)
-    expect(COMPOSER_STATES.writing.acts).toBe(true)
+    expect(COMPOSER_STATES.empty.canAct).toBe(false)
+    expect(COMPOSER_STATES.ready.canAct).toBe(true)
+    expect(COMPOSER_STATES.writing.canAct).toBe(true)
   })
 
   it('stops the answer on its way, and sends the rest of the time', () => {
-    expect(COMPOSER_STATES.empty.shows).toBe('send')
-    expect(COMPOSER_STATES.ready.shows).toBe('send')
-    expect(COMPOSER_STATES.writing.shows).toBe('stop')
+    expect(COMPOSER_STATES.empty.action).toBe('send')
+    expect(COMPOSER_STATES.ready.action).toBe('send')
+    expect(COMPOSER_STATES.writing.action).toBe('stop')
   })
-
 })
 
 describe('what was said', () => {
   it('is what is left after the whitespace around it', () => {
-    expect(said('  hello  ')).toBe('hello')
+    expect(getMessage('  hello  ')).toBe('hello')
   })
 
   it('keeps the whitespace inside it', () => {
-    expect(said(' one  two \n three ')).toBe('one  two \n three')
+    expect(getMessage(' one  two \n three ')).toBe('one  two \n three')
   })
 })
 

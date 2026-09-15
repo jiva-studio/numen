@@ -56,7 +56,7 @@ func (i *ignoring) MatchesPath(path string) bool {
 	return i.defaults.MatchesPath(path) || i.vaults.MatchesPath(path)
 }
 
-func (o Options) ignored() *ignoring {
+func (o Options) compileIgnoring() *ignoring {
 	return &ignoring{
 		defaults: ignore.CompileIgnoreLines(DefaultIgnore...),
 		vaults:   ignore.CompileIgnoreLines(o.Ignore...),
@@ -129,13 +129,13 @@ func (o Options) bookExtensions() []string {
 // at all. A name that answers to more than one list is a note.
 func (o Options) kind(name string) (domain.SourceKind, bool) {
 	switch {
-	case named(name, NoteExtensions):
+	case hasExtension(name, NoteExtensions):
 		return domain.KindNote, true
-	case named(name, o.bookExtensions()):
+	case hasExtension(name, o.bookExtensions()):
 		return domain.KindBook, true
-	case named(name, o.recordingExtensions()):
+	case hasExtension(name, o.recordingExtensions()):
 		return domain.KindRecording, true
-	case named(name, URLExtensions):
+	case hasExtension(name, URLExtensions):
 		return domain.KindURL, true
 	}
 	return "", false
@@ -161,7 +161,7 @@ func (o Options) writable(name string) bool {
 	return ok && (kind == domain.KindNote || kind == domain.KindURL)
 }
 
-func named(name string, extensions []string) bool {
+func hasExtension(name string, extensions []string) bool {
 	for _, ext := range extensions {
 		if len(name) > len(ext) && strings.EqualFold(name[len(name)-len(ext):], ext) {
 			return true

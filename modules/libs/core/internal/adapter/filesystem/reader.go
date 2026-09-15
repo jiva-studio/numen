@@ -49,7 +49,7 @@ func Open(root string, opts Options) (*VaultReader, error) {
 	if cfg, err := ReadConfig(abs, opts.ServiceDir); err == nil && len(cfg.Ignore) > 0 {
 		opts.Ignore = cfg.Ignore
 	}
-	return &VaultReader{root: abs, opts: opts, ignored: opts.ignored()}, nil
+	return &VaultReader{root: abs, opts: opts, ignored: opts.compileIgnoring()}, nil
 }
 
 func (s *VaultReader) Root() string { return s.root }
@@ -85,7 +85,7 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.Fingerprint) erro
 			if p == s.root {
 				return nil
 			}
-			if s.skipped(rel, d.Name()) {
+			if s.isSkipped(rel, d.Name()) {
 				return fs.SkipDir
 			}
 			return nil
@@ -131,7 +131,7 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 	target := s.root
 	if folder != "" {
 		var err error
-		if target, err = inside(s.root, folder, s.opts.serviceDir()); err != nil {
+		if target, err = getContainedPath(s.root, folder, s.opts.serviceDir()); err != nil {
 			return nil, err
 		}
 		folder = pathpkg.Clean(filepath.ToSlash(folder))
@@ -207,7 +207,7 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-	target, err := inside(s.root, path, s.opts.serviceDir())
+	target, err := getContainedPath(s.root, path, s.opts.serviceDir())
 	if err != nil {
 		return nil, err
 	}
@@ -218,16 +218,16 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if err := readable(path, info); err != nil {
 		return nil, err
 	}
-	if err := s.sized(path, info); err != nil {
+	if err := s.checkSize(path, info); err != nil {
 		return nil, err
 	}
 	return os.ReadFile(target)
 }
 
-// sized holds a note to the most one is read whole at. A book and a recording
+// checkSize holds a note to the most one is read whole at. A book and a recording
 // are read a part at a time by a caller that knows how large the thing it is
 // reading is.
-func (s *VaultReader) sized(path string, info fs.FileInfo) error {
+func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
 	bound := s.opts.maxNoteBytes()
 	if !s.opts.isNote(pathpkg.Base(path)) || info.Size() <= bound {
 		return nil
@@ -242,7 +242,7 @@ func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-	target, err := inside(s.root, path, s.opts.serviceDir())
+	target, err := getContainedPath(s.root, path, s.opts.serviceDir())
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.Fingerprint
 // It costs a look at the file's metadata and never its bytes, which is what a
 // caller deciding whether to open a 400 MB export has to be able to ask.
 func (s *VaultReader) leftAlone(path string) error {
-	target, err := inside(s.root, path, s.opts.serviceDir())
+	target, err := getContainedPath(s.root, path, s.opts.serviceDir())
 	if err != nil {
 		return fs.ErrNotExist
 	}
@@ -309,10 +309,10 @@ func (s *VaultReader) leftAlone(path string) error {
 	return fmt.Errorf("%s: %w", path, ErrNotANote)
 }
 
-// skipped says whether a walk stops at a folder and does not descend. The walk
+// isSkipped says whether a walk stops at a folder and does not descend. The walk
 // and the watcher both ask it, so neither of them looks where the other does
 // not.
-func (s *VaultReader) skipped(path, name string) bool {
+func (s *VaultReader) isSkipped(path, name string) bool {
 	return s.opts.isService(name) || s.ignored.MatchesPath(path+"/")
 }
 
@@ -330,7 +330,7 @@ func (s *VaultReader) relative(absolute string) (path string, inside bool) {
 // walk would report it at all. The walk and the watcher both ask it, so the two
 // agree about what the vault holds.
 func (s *VaultReader) holds(path string) (domain.SourceKind, bool) {
-	if _, err := inside(s.root, path, s.opts.serviceDir()); err != nil {
+	if _, err := getContainedPath(s.root, path, s.opts.serviceDir()); err != nil {
 		return "", false
 	}
 	kind, ok := s.opts.kind(pathpkg.Base(path))

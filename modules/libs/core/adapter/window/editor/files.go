@@ -10,6 +10,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -20,7 +21,7 @@ import (
 func (a *API) ListFiles(
 	ctx context.Context, r *connect.Request[v1.ListFilesRequest],
 ) (*connect.Response[v1.ListFilesResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +31,7 @@ func (a *API) ListFiles(
 	}
 	held, err := reader.List(ctx, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(listing(err), err)
+		return nil, connect.NewError(getListCode(err), err)
 	}
 
 	// The folder says which of its entries are notes, and the index says what
@@ -85,7 +86,7 @@ func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string)
 func (a *API) ListFileKinds(
 	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],
 ) (*connect.Response[v1.ListFileKindsResponse], error) {
-	showing := a.Showing()
+	showing := a.GetShownVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}
@@ -112,7 +113,11 @@ func (a *API) ListFileKinds(
 		if err != nil && !errors.Is(err, port.ErrNotANote) {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Kinds = append(out.Kinds, &v1.FileKind{Path: path, Kind: kindOf(ref.Kind)})
+		out.Kinds = append(out.Kinds, &v1.FileKind{
+			Path:   path,
+			Kind:   kindOf(ref.Kind),
+			Format: formatOf(path, ref.Kind),
+		})
 		if ref.Kind == domain.KindNote {
 			notes = append(notes, path)
 		}
@@ -132,26 +137,26 @@ func (a *API) ListFileKinds(
 func (a *API) MoveFile(
 	ctx context.Context, r *connect.Request[v1.MoveFileRequest],
 ) (*connect.Response[v1.MoveFileResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	moved, err := a.Files.Move.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
 	out := &v1.MoveFileResponse{}
 	if moved.Landed {
-		out.Moved = movedOf(moved)
+		out.Moved = newMoveResult(moved)
 	}
-	out.Unlevelled = a.unlevelled(err)
+	out.Unlevelled = a.isUnlevelled(err)
 	if err != nil && !out.GetUnlevelled() {
-		reason, refused := wire.RefusalBy(err)
+		reason, refused := wire.ErrorCodeBy(err)
 		switch {
 		case refused:
-			out.Refusal = &reason
+			out.Error = &reason
 		case !moved.Landed:
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -165,14 +170,14 @@ func (a *API) MoveFile(
 func (a *API) CreateFolder(
 	ctx context.Context, r *connect.Request[v1.CreateFolderRequest],
 ) (*connect.Response[v1.CreateFolderResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	writer, err := a.Files.Writers.Open(showing)
 	if err != nil {
@@ -180,11 +185,11 @@ func (a *API) CreateFolder(
 	}
 	out := &v1.CreateFolderResponse{}
 	if err := writer.MakeFolder(ctx, r.Msg.GetPath()); err != nil {
-		reason, refused := wire.RefusalBy(err)
+		reason, refused := wire.ErrorCodeBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Refusal = &reason
+		out.Error = &reason
 	}
 	return connect.NewResponse(out), nil
 }
@@ -196,7 +201,7 @@ func (a *API) CreateFolder(
 func (a *API) CreateURL(
 	ctx context.Context, r *connect.Request[v1.CreateURLRequest],
 ) (*connect.Response[v1.CreateURLResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +212,7 @@ func (a *API) CreateURL(
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	made, err := a.Files.URLs.Execute(ctx, showing, source.NewURL{
 		Address: at, Path: r.Msg.GetPath(),
@@ -218,15 +223,15 @@ func (a *API) CreateURL(
 	if err == nil {
 		return connect.NewResponse(&v1.CreateURLResponse{}), nil
 	}
-	reason, refused := wire.RefusalBy(err)
+	reason, refused := wire.ErrorCodeBy(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.CreateURLResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.CreateURLResponse{Error: &reason}), nil
 }
 
-// listing is the code a folder that could not be listed is answered with.
-func listing(err error) connect.Code {
+// getListCode is the code a folder that could not be listed is answered with.
+func getListCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, port.ErrOutside):
 		return connect.CodeInvalidArgument
@@ -249,6 +254,23 @@ func typeOf(noteType domain.NoteType) v1.NoteType {
 		return v1.NoteType_NOTE_TYPE_PRESET
 	default:
 		return v1.NoteType_NOTE_TYPE_UNSPECIFIED
+	}
+}
+
+// formatOf is which sort of book stands at a path, as the schema carries it.
+// One is drawn as pictures a page at a time and the other reflows, and which
+// reads the file is decided from its name.
+func formatOf(path string, kind domain.SourceKind) v1.BookFormat {
+	if kind != domain.KindBook {
+		return v1.BookFormat_BOOK_FORMAT_UNSPECIFIED
+	}
+	switch reader, _ := derived.ReaderName(domain.Fingerprint{Path: path, Kind: kind}); reader {
+	case derived.ReaderEPUB:
+		return v1.BookFormat_BOOK_FORMAT_EPUB
+	case derived.ReaderPDF:
+		return v1.BookFormat_BOOK_FORMAT_PDF
+	default:
+		return v1.BookFormat_BOOK_FORMAT_UNSPECIFIED
 	}
 }
 

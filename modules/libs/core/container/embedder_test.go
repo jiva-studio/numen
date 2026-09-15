@@ -31,26 +31,27 @@ const (
 	elsewhere = "http://127.0.0.1:2/v1"
 )
 
-func serving(name string) embed.Config {
+func makeEmbedConfig(name string) embed.Config {
 	cfg := embed.Defaults()
 	cfg.Model.Name = name
-	cfg.Indexing = at(cfg.Indexing, name, nowhere)
+	cfg.Indexing = newServiceProvider(cfg.Indexing, name, nowhere)
 	return cfg
 }
 
-// at is a provider asking a service at a base URL for the model it calls name.
-// Everything else about the service is left as the settings hold it.
-func at(where embed.Provider, name, baseURL string) embed.Provider {
+// newServiceProvider is a provider asking a service at a base URL for the model
+// it calls name. Everything else about the service is left as the settings hold
+// it.
+func newServiceProvider(where embed.Provider, name, baseURL string) embed.Provider {
 	where.Use = embed.UseService
 	service, _ := where.Service()
 	service.Name, service.BaseURL = name, baseURL
-	return where.Serving(service)
+	return where.SetService(service)
 }
 
 func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	embedder, close, why := container.Config{Embedding: serving("bge-m3")}.Embedder(t.Context())
+	embedder, close, why := container.Config{Embedding: makeEmbedConfig("bge-m3")}.Embedder(t.Context())
 	if why != nil {
 		t.Fatal(why)
 	}
@@ -69,7 +70,7 @@ func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
 func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	indexing, asking, close, why := container.Config{Embedding: serving("bge-m3")}.Embedders(t.Context(), nil)
+	indexing, asking, close, why := container.Config{Embedding: makeEmbedConfig("bge-m3")}.Embedders(t.Context(), nil)
 	if why != nil {
 		t.Fatal(why)
 	}
@@ -86,8 +87,8 @@ func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 
 func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
-	cfg := serving("bge-m3")
-	cfg.Query = at(cfg.Query, "reached-another-way", nowhere)
+	cfg := makeEmbedConfig("bge-m3")
+	cfg.Query = newServiceProvider(cfg.Query, "reached-another-way", nowhere)
 
 	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why != nil {
@@ -129,9 +130,9 @@ func recipe(t *testing.T, cfg embed.Config) string {
 func TestTwoServicesServingOneNameKeepTheirOwnVectors(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	one := serving("bge-m3")
-	other := serving("bge-m3")
-	other.Indexing = at(other.Indexing, "bge-m3", elsewhere)
+	one := makeEmbedConfig("bge-m3")
+	other := makeEmbedConfig("bge-m3")
+	other.Indexing = newServiceProvider(other.Indexing, "bge-m3", elsewhere)
 
 	if a, b := recipe(t, one), recipe(t, other); a == b {
 		t.Errorf("two services keep their vectors under one key: %s", a)
@@ -149,9 +150,9 @@ func TestAModelRunHereAndOneServedKeepTheirOwnVectors(t *testing.T) {
 	local, _ := here.Indexing.Local()
 	// The repository is named and not fetched, so nothing reaches a network.
 	local.Download = false
-	here.Indexing = here.Indexing.Running(local)
-	served := serving(here.Model.Name)
-	served.Indexing = at(served.Indexing, local.Name, nowhere)
+	here.Indexing = here.Indexing.SetLocal(local)
+	served := makeEmbedConfig(here.Model.Name)
+	served.Indexing = newServiceProvider(served.Indexing, local.Name, nowhere)
 
 	if a, b := recipe(t, here), recipe(t, served); a == b {
 		t.Errorf("a model run here and one served keep their vectors under one key: %s", a)
@@ -165,10 +166,10 @@ func TestAModelRunHereAndOneServedKeepTheirOwnVectors(t *testing.T) {
 func TestARunThatOnlyAsksClaimsWhatTheIndexWasFilledWith(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	cfg := serving("bge-m3")
-	cfg.Query = at(cfg.Query, "bge-m3", elsewhere)
+	cfg := makeEmbedConfig("bge-m3")
+	cfg.Query = newServiceProvider(cfg.Query, "bge-m3", elsewhere)
 
-	asking, close, why := container.Config{Embedding: cfg}.Asking(t.Context())
+	asking, close, why := container.Config{Embedding: cfg}.OpenQuestionEmbedder(t.Context())
 	if why != nil {
 		t.Fatal(why)
 	}
@@ -189,7 +190,7 @@ func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 	cfg := embed.Defaults()
 	// A folder with nothing in it: the model is looked for and not found,
 	// which is what this asks about. Nothing reaches a network.
-	cfg.Indexing = missing(t)
+	cfg.Indexing = makeMissingProvider(t)
 	held := container.Config{Embedding: cfg}
 
 	embedder, close, why := held.Embedder(t.Context())
@@ -223,32 +224,33 @@ func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 // A word for a provider that nobody implements is a reason, not a vault
 // quietly searched by its words.
 func TestAProviderNobodyImplementsIsARefusal(t *testing.T) {
-	cfg := serving("bge-m3")
+	cfg := makeEmbedConfig("bge-m3")
 	cfg.Query.Use = "grcp"
 
 	if _, _, _, why := (container.Config{Embedding: cfg}).Embedders(t.Context(), nil); why == nil {
 		t.Fatal("want a reason")
 	}
-	cfg = serving("bge-m3")
+	cfg = makeEmbedConfig("bge-m3")
 	cfg.Indexing.Use = "sevrice"
 	if _, _, _, why := (container.Config{Embedding: cfg}).Embedders(t.Context(), nil); why == nil {
 		t.Fatal("want a reason")
 	}
 }
 
-// missing is a provider for a model on this machine that is not on it: a
-// folder with nothing in it, looked in and not fetched. Nothing reaches a
+// makeMissingProvider is a provider for a model on this machine that is not on
+// it: a folder with nothing in it, looked in and not fetched. Nothing reaches a
 // network.
-func missing(t *testing.T) embed.Provider {
+func makeMissingProvider(t *testing.T) embed.Provider {
 	t.Helper()
 	where := embed.Defaults().Indexing
 	local, _ := where.Local()
 	local.Dir, local.Download = t.TempDir(), false
-	return where.Running(local)
+	return where.SetLocal(local)
 }
 
-// waited is the list of what is being done, once it holds what is asked of it.
-func waited(t *testing.T, tasks *task.Tasks, enough func([]task.Task) bool) []task.Task {
+// waitForTasks is the list of what is being done, once it holds what is asked
+// of it.
+func waitForTasks(t *testing.T, tasks *task.Tasks, enough func([]task.Task) bool) []task.Task {
 	t.Helper()
 	for range 400 {
 		if held := tasks.List(); enough(held) {
@@ -260,17 +262,17 @@ func waited(t *testing.T, tasks *task.Tasks, enough func([]task.Task) bool) []ta
 	return nil
 }
 
-// uncompared is two providers the comparison between them never got an answer
-// out of: the model the vault would be indexed by is not on this machine, and
-// questions are placed with a service. It answers with the list.
-func uncompared(t *testing.T) *task.Tasks {
+// makeUncomparedTasks is two providers the comparison between them never got an
+// answer out of: the model the vault would be indexed by is not on this
+// machine, and questions are placed with a service. It answers with the list.
+func makeUncomparedTasks(t *testing.T) *task.Tasks {
 	t.Helper()
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 	cfg := embed.Defaults()
-	cfg.Indexing = missing(t)
+	cfg.Indexing = makeMissingProvider(t)
 	// A provider on a service is reached by the model it asks for, and names no
 	// repository at all.
-	cfg.Query = embed.Provider{}.Serving(
+	cfg.Query = embed.Provider{}.SetService(
 		embed.ServiceModel{Name: "reached-another-way", BaseURL: nowhere})
 
 	tasks := task.New()
@@ -284,13 +286,14 @@ func uncompared(t *testing.T) *task.Tasks {
 	return tasks
 }
 
-// failing is the list once the number of things that stopped badly is reached.
-func failing(t *testing.T, tasks *task.Tasks, want int) []task.Task {
+// waitForFailures is the list once the number of things that stopped badly is
+// reached.
+func waitForFailures(t *testing.T, tasks *task.Tasks, want int) []task.Task {
 	t.Helper()
-	return waited(t, tasks, func(held []task.Task) bool {
+	return waitForTasks(t, tasks, func(held []task.Task) bool {
 		got := 0
 		for _, at := range held {
-			if at.Failed != "" {
+			if at.Error != "" {
 				got++
 			}
 		}
@@ -300,8 +303,8 @@ func failing(t *testing.T, tasks *task.Tasks, want int) []task.Task {
 
 // A provider is called by the name it is reached by, whichever kind it is.
 func TestAProviderIsInTheListUnderItsOwnName(t *testing.T) {
-	tasks := uncompared(t)
-	held := failing(t, tasks, 2)
+	tasks := makeUncomparedTasks(t)
+	held := waitForFailures(t, tasks, 2)
 
 	for _, at := range held {
 		if at.About == "reached-another-way" {
@@ -315,11 +318,11 @@ func TestAProviderIsInTheListUnderItsOwnName(t *testing.T) {
 // what was opened before it is let go of.
 func TestAQuestionWithNowhereToBeEmbeddedIsAReason(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
-	cfg := serving("bge-m3")
+	cfg := makeEmbedConfig("bge-m3")
 	cfg.Query.Use = embed.UseService
 	service, _ := cfg.Query.Service()
 	service.BaseURL = ""
-	cfg.Query = cfg.Query.Serving(service)
+	cfg.Query = cfg.Query.SetService(service)
 
 	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why == nil {
@@ -339,7 +342,7 @@ func TestAQuestionWithNowhereToBeEmbeddedIsAReason(t *testing.T) {
 func TestAnInstallationSilentAboutQuestionsPreparesNoModelHere(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	cfg := serving("baai/bge-m3")
+	cfg := makeEmbedConfig("baai/bge-m3")
 	cfg.Query.Use = ""
 
 	tasks := task.New()
@@ -355,10 +358,10 @@ func TestAnInstallationSilentAboutQuestionsPreparesNoModelHere(t *testing.T) {
 	}
 	// Both halves are the provider the settings named, and neither is this
 	// machine's own model.
-	if from := indexing.Model().From; from != cfg.Indexing.From() {
+	if from := indexing.Model().From; from != cfg.Indexing.GetAddress() {
 		t.Errorf("the index is filled from %q", from)
 	}
-	if from := asking.Model().From; from != cfg.Indexing.From() {
+	if from := asking.Model().From; from != cfg.Indexing.GetAddress() {
 		t.Errorf("a question is embedded from %q", from)
 	}
 	if held := tasks.List(); len(held) != 0 {

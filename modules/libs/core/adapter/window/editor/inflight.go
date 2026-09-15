@@ -33,7 +33,7 @@ func (w *inflight) begin() bool {
 	return true
 }
 
-func (w *inflight) done() {
+func (w *inflight) finish() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 

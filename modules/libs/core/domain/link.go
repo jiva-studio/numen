@@ -14,9 +14,9 @@ const (
 	RoleAttachment LinkRole = "attachment"
 )
 
-// KnownRole reports whether a role is one the application acts on. An unknown
+// IsKnownRole reports whether a role is one the application acts on. An unknown
 // role in a file is shown as a problem.
-func KnownRole(r LinkRole) bool {
+func IsKnownRole(r LinkRole) bool {
 	switch r {
 	case RoleParent, RoleChild, RoleJump, RoleRef, RoleAttachment:
 		return true
@@ -42,10 +42,10 @@ const (
 
 func (a Address) String() string { return a.Scheme + "://" + a.Value }
 
-// Written is an address as it goes into a file, and as it is shown to the
+// GetWritten is an address as it goes into a file, and as it is shown to the
 // person who wrote it. A name is written as itself: `name://` is how the index
 // holds it and never appears in a note.
-func (a Address) Written() string {
+func (a Address) GetWritten() string {
 	if a.Scheme == SchemeName {
 		return a.Value
 	}

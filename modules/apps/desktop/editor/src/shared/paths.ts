@@ -17,3 +17,13 @@ export const nameOf = (path: string): string => {
   const dot = file.lastIndexOf('.')
   return dot > 0 ? file.slice(0, dot) : file
 }
+
+/** A note or file that is no longer where it was, and where it now is. */
+export interface PathRename {
+  readonly from: string
+  readonly to: string
+}
+
+/** Where a file went, and nothing where none of these moved it. */
+export const getRenamedPath = (renames: readonly PathRename[], path: string): string =>
+  renames.find((one) => one.from === path)?.to ?? ''

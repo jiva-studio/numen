@@ -5,13 +5,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
 // paths is the table the settings page draws its rows from, which it holds in a
 // file of its own so that this can be read against the same table the window
 // reads.
-const paths = "../../editor/src/settings-tab/paths.json"
+const paths = "../../editor/src/pages/settings/paths.json"
 
 // Every path the settings page reads is a path through the file this build
 // writes. A row reading a key nothing writes draws nothing, whatever the file
@@ -29,7 +29,7 @@ func TestEveryPathThePageReadsStandsInTheFile(t *testing.T) {
 		t.Fatal("the page draws no rows")
 	}
 
-	written, err := settings.Written(settings.Defaults())
+	written, err := container.DefaultSettings().WriteJSON()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,8 +12,9 @@ import (
 // worked out across the whole vault at the moment they are asked, because what
 // they answer depends on every other note and stops being true when one moves.
 type ProblemQueries interface {
-	// Noted is what parsing each file turned up, as the parser said it.
-	Noted(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
+	// GetParseProblems is what parsing each file turned up, as the parser said
+	// it.
+	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 	// Unreadable is the notes whose frontmatter is not YAML, with what the
 	// parser said about it.
 	Unreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
@@ -21,6 +22,6 @@ type ProblemQueries interface {
 	// Ambiguous is every link that more than one note answers to, resolved the
 	// same way a link is resolved anywhere else.
 	Ambiguous(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error)
-	// Dangling is every link that reaches nothing at all.
-	Dangling(ctx context.Context, vaultID domain.VaultID) ([]domain.ResolvedLink, error)
+	// GetDanglingLinks is every link that reaches nothing at all.
+	GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.ResolvedLink, error)
 }

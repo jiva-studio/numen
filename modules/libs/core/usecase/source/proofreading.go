@@ -44,7 +44,7 @@ type ProofreadingConfig struct {
 func (c ProofreadingConfig) Reading(
 	readers port.VaultReaders, derived port.DerivedStores,
 ) (right ProofreadReading, held bool, err error) {
-	by, err := opened(c.By, proofread.ScanInstruction)
+	by, err := openProofreader(c.By, proofread.ScanInstruction)
 	if err != nil {
 		return ProofreadReading{}, false, fmt.Errorf("nothing to proofread with: %w", err)
 	}
@@ -77,7 +77,7 @@ func (c ProofreadingConfig) Reading(
 func (c ProofreadingConfig) Transcript(
 	readers port.VaultReaders, derived port.DerivedStores,
 ) (right ProofreadTranscript, held bool, err error) {
-	by, err := opened(c.By, proofread.SpeechInstruction)
+	by, err := openProofreader(c.By, proofread.SpeechInstruction)
 	if err != nil {
 		return ProofreadTranscript{}, false, fmt.Errorf("nothing to proofread with: %w", err)
 	}
@@ -92,9 +92,9 @@ func (c ProofreadingConfig) Transcript(
 	return right, true, nil
 }
 
-// opened is what answers about a batch, and nothing where an installation
-// placed nothing to open.
-func opened(
+// openProofreader is what answers about a batch, and nothing where an
+// installation placed nothing to open.
+func openProofreader(
 	open func(string) (port.Proofreader, error), instruction string,
 ) (port.Proofreader, error) {
 	if open == nil {

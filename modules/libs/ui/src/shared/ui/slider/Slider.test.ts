@@ -35,7 +35,7 @@ const mountSlider = (props: Partial<SliderProps> = {}) =>
 const handle = (control: ReturnType<typeof mountSlider>) => control.get('[role="slider"]')
 
 /** Every value the control has handed on, in the order it handed them on. */
-const handed = (control: ReturnType<typeof mountSlider>): readonly unknown[] =>
+const getEmitted = (control: ReturnType<typeof mountSlider>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
 
 describe('what a screen reader is told', () => {
@@ -76,7 +76,7 @@ describe('moving the handle', () => {
   it('hands back a number and not a list', async () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
-    expect(handed(control)).toEqual([41])
+    expect(getEmitted(control)).toEqual([41])
   })
 
   // A caller puts back what it was handed, which is what a walk of the track
@@ -86,18 +86,18 @@ describe('moving the handle', () => {
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     await control.setProps({ modelValue: 45 })
     await handle(control).trigger('keydown', { key: 'ArrowLeft' })
-    expect(handed(control)).toEqual([45, 40])
+    expect(getEmitted(control)).toEqual([45, 40])
   })
 
   it('goes to either end, and no further', async () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'Home' })
     await handle(control).trigger('keydown', { key: 'End' })
-    expect(handed(control)).toEqual([0, 100])
+    expect(getEmitted(control)).toEqual([0, 100])
 
     const least = mountSlider({ modelValue: 0 })
     await handle(least).trigger('keydown', { key: 'ArrowLeft' })
-    expect(handed(least)).toEqual([])
+    expect(getEmitted(least)).toEqual([])
   })
 
   // A step out and a step back come to where they began, and the ceiling is a
@@ -108,7 +108,7 @@ describe('moving the handle', () => {
     await control.setProps({ modelValue: 10 })
     await handle(control).trigger('keydown', { key: 'ArrowLeft' })
 
-    expect(handed(control)).toEqual([10, 9])
+    expect(getEmitted(control)).toEqual([10, 9])
   })
 
   it('moves ten steps under a page key, and under a key held with shift', async () => {
@@ -119,13 +119,13 @@ describe('moving the handle', () => {
     await control.setProps({ modelValue: 40 })
     await handle(control).trigger('keydown', { key: 'ArrowRight', shiftKey: true })
 
-    expect(handed(control)).toEqual([50, 40, 50])
+    expect(getEmitted(control)).toEqual([50, 40, 50])
   })
 
   it('hands nothing on while nobody may move it', async () => {
     const control = mountSlider({ disabled: true })
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
-    expect(handed(control)).toEqual([])
+    expect(getEmitted(control)).toEqual([])
   })
 })
 
@@ -134,14 +134,14 @@ describe('a value the ends do not hold', () => {
     const control = mountSlider({ modelValue: 90, max: 50 })
     await nextTick()
     expect(handle(control).attributes('aria-valuenow')).toBe('50')
-    expect(handed(control)).toEqual([50])
+    expect(getEmitted(control)).toEqual([50])
   })
 
   it('stands at the floor where it is handed a value under it', async () => {
     const control = mountSlider({ modelValue: -20 })
     await nextTick()
     expect(handle(control).attributes('aria-valuenow')).toBe('0')
-    expect(handed(control)).toEqual([0])
+    expect(getEmitted(control)).toEqual([0])
   })
 
   // A caller narrowing what a control allows narrows it under a value already
@@ -151,13 +151,13 @@ describe('a value the ends do not hold', () => {
     await control.setProps({ max: 50 })
     await nextTick()
     expect(handle(control).attributes('aria-valuenow')).toBe('50')
-    expect(handed(control)).toEqual([50])
+    expect(getEmitted(control)).toEqual([50])
   })
 })
 
 describe('coming to rest', () => {
   /** A walk of so many places, the key held down the whole way. */
-  const walked = async (control: ReturnType<typeof mountSlider>, places: readonly number[]) => {
+  const walkTrack = async (control: ReturnType<typeof mountSlider>, places: readonly number[]) => {
     for (const at of places) {
       await handle(control).trigger('keydown', { key: 'ArrowRight' })
       await control.setProps({ modelValue: at })
@@ -171,26 +171,26 @@ describe('coming to rest', () => {
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     await handle(control).trigger('keyup', { key: 'ArrowRight' })
 
-    expect(handed(control)).toEqual([41])
-    expect(control.emitted('settles')).toEqual([[41]])
+    expect(getEmitted(control)).toEqual([41])
+    expect(control.emitted('settle')).toEqual([[41]])
     const order = Object.keys(control.emitted())
-    expect(order.indexOf('update:modelValue')).toBeLessThan(order.indexOf('settles'))
+    expect(order.indexOf('update:modelValue')).toBeLessThan(order.indexOf('settle'))
   })
 
   it('says nothing about settling while the keys are still walking it', async () => {
     const control = mountSlider()
-    await walked(control, [41, 42, 43])
+    await walkTrack(control, [41, 42, 43])
 
-    expect(handed(control)).toEqual([41, 42, 43])
-    expect(control.emitted('settles')).toBeUndefined()
+    expect(getEmitted(control)).toEqual([41, 42, 43])
+    expect(control.emitted('settle')).toBeUndefined()
   })
 
   it('says it once, at where the walk left it, when the key is let go of', async () => {
     const control = mountSlider()
-    await walked(control, [41, 42, 43])
+    await walkTrack(control, [41, 42, 43])
     await handle(control).trigger('keyup', { key: 'ArrowRight' })
 
-    expect(control.emitted('settles')).toEqual([[43]])
+    expect(control.emitted('settle')).toEqual([[43]])
   })
 
   it('says nothing where the walk left the handle where it began', async () => {
@@ -198,15 +198,15 @@ describe('coming to rest', () => {
     await handle(control).trigger('keydown', { key: 'ArrowLeft' })
     await handle(control).trigger('keyup', { key: 'ArrowLeft' })
 
-    expect(control.emitted('settles')).toBeUndefined()
+    expect(control.emitted('settle')).toBeUndefined()
   })
 
   // A handle the keyboard leaves in the middle of a walk is a handle let go of.
   it('says it where the keyboard leaves the handle with the key still down', async () => {
     const control = mountSlider()
-    await walked(control, [41])
+    await walkTrack(control, [41])
     await handle(control).trigger('blur')
 
-    expect(control.emitted('settles')).toEqual([[41]])
+    expect(control.emitted('settle')).toEqual([[41]])
   })
 })

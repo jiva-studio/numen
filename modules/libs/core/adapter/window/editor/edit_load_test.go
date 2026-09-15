@@ -48,10 +48,10 @@ func TestEditLoad(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled, time.Now)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	api := &API{
-		Listeners: following(),
-		Places:    focusing(),
+		Listeners: newChangeAudience(),
+		Places:    newPlaceAudience(),
 		Notes: Notes{
 			Queries: db.Queries(),
 			Links:   db.Links(),
@@ -61,15 +61,15 @@ func TestEditLoad(t *testing.T) {
 	}
 	api.Indexing.Progress = db.Progress()
 	api.show(v)
-	opened := cfg.VaultOpener(db)
 
 	reading := time.Now()
-	wait := begin(t.Context(), v, cfg, db, api, opened, filesystem.VaultReaders{}, nil, waking(time.Hour), &pending{}, io.Discard)
+	_, wait := begin(t.Context(), v, container.NewEditorAssembly(cfg, nil, db),
+		api, false, nil, newNudges(time.Hour), &pending{}, io.Discard)
 	t.Cleanup(wait)
-	for !api.Ready.Load() && api.Failed.Why() == "" {
+	for !api.Ready.Load() && api.Error.Why() == "" {
 		time.Sleep(50 * time.Millisecond)
 	}
-	if why := api.Failed.Why(); why != "" {
+	if why := api.Error.Why(); why != "" {
 		t.Fatalf("the vault could not be read: %s", why)
 	}
 	t.Logf("read %d notes in %s", notes, time.Since(reading).Round(time.Millisecond))

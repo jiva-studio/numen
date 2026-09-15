@@ -17,7 +17,7 @@ import (
 // It is called before anything draws: the search path is read once, the first
 // time something asks for a setting.
 func findSchemas() {
-	if settled() {
+	if hasSchemas() {
 		return
 	}
 	found := schemasOf(toolkit())
@@ -59,7 +59,7 @@ func schemasOf(prefix string) string {
 		return ""
 	}
 	at := filepath.Join(prefix, "share", "glib-2.0", "schemas")
-	if compiled(at) {
+	if hasCompiledSchemas(at) {
 		return at
 	}
 	filed, err := filepath.Glob(filepath.Join(prefix, "share", "gsettings-schemas", "*", "glib-2.0", "schemas"))
@@ -67,19 +67,19 @@ func schemasOf(prefix string) string {
 		return ""
 	}
 	for _, at := range filed {
-		if compiled(at) {
+		if hasCompiledSchemas(at) {
 			return at
 		}
 	}
 	return ""
 }
 
-// settled reports whether this machine holds the settings a folder dialog
+// hasSchemas reports whether this machine holds the settings a folder dialog
 // reads. Compiled settings sit under `glib-2.0/schemas` of a data directory,
 // and the environment may name a folder of them outright.
-func settled() bool {
+func hasSchemas() bool {
 	for _, dir := range filepath.SplitList(os.Getenv("GSETTINGS_SCHEMA_DIR")) {
-		if compiled(dir) {
+		if hasCompiledSchemas(dir) {
 			return true
 		}
 	}
@@ -88,14 +88,14 @@ func settled() bool {
 		dirs = "/usr/local/share:/usr/share"
 	}
 	for _, dir := range strings.Split(dirs, ":") {
-		if dir != "" && compiled(filepath.Join(dir, "glib-2.0", "schemas")) {
+		if dir != "" && hasCompiledSchemas(filepath.Join(dir, "glib-2.0", "schemas")) {
 			return true
 		}
 	}
 	return false
 }
 
-func compiled(dir string) bool {
+func hasCompiledSchemas(dir string) bool {
 	at, err := os.Stat(filepath.Join(dir, "gschemas.compiled"))
 	return err == nil && !at.IsDir()
 }

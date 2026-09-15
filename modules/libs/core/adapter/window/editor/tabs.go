@@ -32,6 +32,13 @@ func (a *API) WriteOpenTabs(
 				PageCount: int(doc.GetPageCount()),
 			}
 		}
+		if book := one.GetBook(); book != nil {
+			tab.Book = &domain.BookProgress{
+				Offset:    int(book.GetOffset()),
+				Page:      int(book.GetPage()),
+				PageCount: int(book.GetPageCount()),
+			}
+		}
 		if rec := one.GetRecording(); rec != nil {
 			tab.Recording = &domain.RecordingProgress{
 				TranscribedDuration: int(rec.GetTranscribedDurationMs()),
@@ -47,9 +54,9 @@ func (a *API) WriteOpenTabs(
 	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
 }
 
-// Attended is what the person has open, as the window last said. A window that
-// has said nothing has nothing open as far as anyone here knows.
-func (a *API) Attended() domain.OpenTabs {
+// GetOpenTabs is what the person has open, as the window last said. A window
+// that has said nothing has nothing open as far as anyone here knows.
+func (a *API) GetOpenTabs() domain.OpenTabs {
 	if open := a.openTabs.Load(); open != nil {
 		return *open
 	}

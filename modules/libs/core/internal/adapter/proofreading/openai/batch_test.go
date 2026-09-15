@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
-// queued is a client whose queue is the fake service.
-func queued(t *testing.T, batchURL string) *openai.Client {
+// newBatchClient is a client whose queue is the fake service.
+func newBatchClient(t *testing.T, batchURL string) *openai.Client {
 	t.Helper()
 	t.Setenv(proofreading.KeyEnvVar, theKey)
 	cfg := proofreading.ServiceDefaults()
@@ -72,9 +72,9 @@ func holds(t *testing.T, status string, results []map[string]any) *httptest.Serv
 	})
 }
 
-// answered is one result in a completed batch, in the shape the service writes
+// newResult is one result in a completed batch, in the shape the service writes
 // it.
-func answered(customID, text string) map[string]any {
+func newResult(customID, text string) map[string]any {
 	return map[string]any{
 		"custom_id": customID,
 		"response": map[string]any{
@@ -93,7 +93,7 @@ func TestTheRunIsLeftWithItsFieldsInTheOrderTheServiceReadsThem(t *testing.T) {
 	var raw []byte
 	s := takes(t, "batch_1", &raw)
 
-	if _, err := queued(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
+	if _, err := newBatchClient(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -116,7 +116,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 	var raw []byte
 	s := takes(t, "batch_1", &raw)
 
-	if _, err := queued(t, s.URL).Leave(t.Context(), pages); err != nil {
+	if _, err := newBatchClient(t, s.URL).Leave(t.Context(), pages); err != nil {
 		t.Fatal(err)
 	}
 
@@ -161,7 +161,7 @@ func TestLeaveAnswersWithTheNameTheServiceGave(t *testing.T) {
 	var raw []byte
 	s := takes(t, "batch_1e9f", &raw)
 
-	name, err := queued(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")})
+	name, err := newBatchClient(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func TestABatchStillWorkingIsNotThereYet(t *testing.T) {
 		t.Run(status, func(t *testing.T) {
 			s := holds(t, status, nil)
 
-			replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
+			replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -191,11 +191,11 @@ func TestABatchStillWorkingIsNotThereYet(t *testing.T) {
 
 func TestACompletedBatchAnswersAboutEveryPageUnderItsOwnNumber(t *testing.T) {
 	s := holds(t, "completed", []map[string]any{
-		answered("7", "700|the first line"),
-		answered("8", "800|the second line"),
+		newResult("7", "700|the first line"),
+		newResult("8", "800|the second line"),
 	})
 
-	replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
+	replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,7 +218,7 @@ func TestABatchThatEndedNamesTheStatus(t *testing.T) {
 		t.Run(status, func(t *testing.T) {
 			s := holds(t, status, nil)
 
-			replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
+			replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
 			if err == nil {
 				t.Fatal("no error")
 			}
@@ -237,13 +237,13 @@ func TestABatchThatEndedNamesTheStatus(t *testing.T) {
 
 func TestAResultNotAboutAPageOrSayingNothingIsLeftOut(t *testing.T) {
 	s := holds(t, "completed", []map[string]any{
-		answered("7", "700|the first line"),
-		answered("the third one", "800|a line under no number"),
-		answered("9", "   "),
+		newResult("7", "700|the first line"),
+		newResult("the third one", "800|a line under no number"),
+		newResult("9", "   "),
 		{"custom_id": "10", "response": map[string]any{"body": map[string]any{}}},
 	})
 
-	replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
+	replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -261,7 +261,7 @@ func TestAResultNotAboutAPageOrSayingNothingIsLeftOut(t *testing.T) {
 func TestACompletedBatchWithNoResultsAnswersAboutNothing(t *testing.T) {
 	s := holds(t, "completed", nil)
 
-	replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
+	replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,7 +278,7 @@ func TestARefusedBatchNamesTheStatusAndNotTheKey(t *testing.T) {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, "the service says no, and quotes %s back", r.Header.Get("Authorization"))
 	})
-	c := queued(t, s.URL)
+	c := newBatchClient(t, s.URL)
 
 	name, err := c.Leave(t.Context(), []proofread.Batch{page(1, "a line")})
 	if err == nil {

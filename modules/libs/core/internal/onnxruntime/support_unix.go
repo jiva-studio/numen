@@ -10,7 +10,7 @@ import "github.com/ebitengine/purego"
 // system to hold it. Loading it here first, into the global namespace, is what
 // resolves that name on a machine that keeps the file somewhere else.
 func support() {
-	for _, at := range installed("libstdc++.so", "*-gcc-*-lib") {
+	for _, at := range findInstalled("libstdc++.so", "*-gcc-*-lib") {
 		if _, err := purego.Dlopen(at, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 			return
 		}

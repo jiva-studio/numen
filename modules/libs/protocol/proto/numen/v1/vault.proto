@@ -48,9 +48,8 @@ message Scan {
   // Ready is set when the scan has finished.
   bool ready = 1;
 
-  // Why the scan stopped, when it stopped for a reason. A vault that could not
-  // be read is not an empty one.
-  string failed = 2;
+  // Error is why the scan stopped, when it stopped for a reason.
+  string error = 2;
 
   // Why the vault is not being followed, when it is not. Changes will only
   // appear when something asks for them again.

@@ -93,9 +93,9 @@ func NewRenameField(
 	}
 }
 
-// stamp is the identifier a file this rename writes is to carry where it
-// carries none.
-func (u RenameField) stamp() (string, error) { return ulid.New(u.Now()) }
+// createIdentifier is the identifier a file this rename writes is to carry
+// where it carries none.
+func (u RenameField) createIdentifier() (string, error) { return ulid.New(u.Now()) }
 
 // Execute renames the field, in the stencil first and then in the vault.
 //
@@ -112,7 +112,7 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 		return out, err
 	}
 	written := append([]string{in.Stencil}, out.Decks...)
-	return out, note.Levelled(u.Index(ctx, v, written), written...)
+	return out, note.WrapUnlevelled(u.Index(ctx, v, written), written...)
 }
 
 // rename is the whole of the writing, under this vault's write lock from before
@@ -147,7 +147,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 	named := domain.Basename(in.Stencil)
 	one := deckWriter{
 		reader: reader, writer: writer, links: u.Links, vault: v,
-		read: Read{Readers: u.Readers, Links: u.Links}, stamp: u.stamped,
+		read: Read{Readers: u.Readers, Links: u.Links}, writeIdentifier: u.writeIdentifier,
 	}
 	for _, path := range paths {
 		if err := ctx.Err(); err != nil {
@@ -193,16 +193,16 @@ func (u RenameField) stencil(
 	if err := f.RenameField(in.From, in.To); err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
-	if err := u.stamped(f.Stamped); err != nil {
+	if err := u.writeIdentifier(f.WriteIdentifier); err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
 	return writer.Write(ctx, in.Stencil, f.Bytes(), against)
 }
 
-// stamped writes an identifier into a file that carries none, which is what
-// the application changing what a note holds does.
-func (u RenameField) stamped(into func(string) (bool, error)) error {
-	identifier, err := u.stamp()
+// writeIdentifier writes an identifier into a file that carries none, which is
+// what the application changing what a note holds does.
+func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
+	identifier, err := u.createIdentifier()
 	if err != nil {
 		return err
 	}
@@ -228,8 +228,8 @@ type deckWriter struct {
 	vault  domain.Vault
 	// read is what opens the stencils this deck's cards are cut by, which is
 	// what says which of a card's fields is first.
-	read  Read
-	stamp func(func(string) (bool, error)) error
+	read            Read
+	writeIdentifier func(func(string) (bool, error)) error
 }
 
 // rename rewrites the heading in every card of this deck the stencil cuts, and
@@ -239,7 +239,7 @@ type deckWriter struct {
 // the deck against its stencils holds to.
 //
 // This is the application writing the file, so the deck it leaves behind is
-// whole: it is stamped with an identifier where it carried none, and every card
+// whole: it is given an identifier where it carried none, and every card
 // of it is given its mark and its heading.
 func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {
 	on, err := d.reader.Stat(ctx, path)
@@ -258,7 +258,7 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 	if err != nil {
 		return 0, err
 	}
-	at, err := cutting(ctx, d.links, d.vault.ID, path, f.Deck(on))
+	at, err := getStencilPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
 	if err != nil {
 		return 0, err
 	}
@@ -276,7 +276,7 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 	if _, err := f.Whole(by, cardid.New); err != nil {
 		return 0, err
 	}
-	if err := d.stamp(f.Stamped); err != nil {
+	if err := d.writeIdentifier(f.WriteIdentifier); err != nil {
 		return 0, err
 	}
 	if _, err := d.writer.Write(ctx, path, f.Bytes(), on); err != nil {

@@ -31,10 +31,10 @@ var titles = []string{"Entropy", "Order", "TCP/IP", "Энтропия", "a: b"}
 // folders are where a note is moved to.
 var folders = []string{"", "physics", "physics/thermo"}
 
-// begun writes one run's note into a folder of its own and tells the index
+// writeNote writes one run's note into a folder of its own and tells the index
 // about it. One vault stands for the whole check: opening an index for every
 // run of a property is what makes one too slow to keep.
-func begun(rt *rapid.T, c changing, folder, raw string) string {
+func writeNote(rt *rapid.T, c changing, folder, raw string) string {
 	rt.Helper()
 	path := folder + "/Old.md"
 	on := filepath.Join(c.vault.Path, filepath.FromSlash(path))
@@ -50,9 +50,9 @@ func begun(rt *rapid.T, c changing, folder, raw string) string {
 	return path
 }
 
-// carried is the identifier the note at this path stands under, and whether it
-// carries one at all.
-func carried(t *rapid.T, root, path string) (string, bool) {
+// getIdentifier is the identifier the note at this path stands under, and
+// whether it carries one at all.
+func getIdentifier(t *rapid.T, root, path string) (string, bool) {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
 	if err != nil {
@@ -78,8 +78,8 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 	rapid.Check(t, func(rt *rapid.T) {
 		runs++
 		folder := fmt.Sprintf("run%04d", runs)
-		path := begun(rt, c, folder, rapid.SampledFrom(started).Draw(rt, "note"))
-		was, stamped := carried(rt, c.vault.Path, path)
+		path := writeNote(rt, c, folder, rapid.SampledFrom(started).Draw(rt, "note"))
+		was, stamped := getIdentifier(rt, c.vault.Path, path)
 
 		for step := range rapid.IntRange(1, 6).Draw(rt, "steps") {
 			var moved bool
@@ -102,7 +102,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 			case "rename", "rename apart":
 				renaming := c.rename()
 				if rapid.Bool().Draw(rt, "apart") {
-					renaming = c.apart()
+					renaming = c.renameApart()
 				}
 				out, err := renaming.Execute(rt.Context(), c.vault, path,
 					rapid.SampledFrom(titles).Draw(rt, "title"))
@@ -115,12 +115,12 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 			case "called":
 				// The name the file carries written into the note, which is
 				// what a rename made outside the application settles into.
-				if err := c.move().Called(rt.Context(), c.vault, path); err != nil {
+				if err := c.move().WriteFilenameAsTitle(rt.Context(), c.vault, path); err != nil {
 					rt.Fatalf("call %s by its filename: %v", path, err)
 				}
 			}
 
-			now, holds := carried(rt, c.vault.Path, path)
+			now, holds := getIdentifier(rt, c.vault.Path, path)
 			switch {
 			case stamped && (!holds || now != was):
 				rt.Fatalf("a note stamped %q stands at %q after step %d, filed at %s",
@@ -149,7 +149,7 @@ func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 	rapid.Check(t, func(rt *rapid.T) {
 		runs++
 		raw := rapid.SampledFrom(started).Draw(rt, "note")
-		path := begun(rt, c, fmt.Sprintf("run%04d", runs), raw)
+		path := writeNote(rt, c, fmt.Sprintf("run%04d", runs), raw)
 		title := rapid.SampledFrom(titles).Draw(rt, "title")
 
 		out, err := c.rename().Execute(rt.Context(), c.vault, path, title)
@@ -161,7 +161,7 @@ func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 		}
 
 		now := c.read(t, out.Path)
-		_, holds := carried(rt, c.vault.Path, out.Path)
+		_, holds := getIdentifier(rt, c.vault.Path, out.Path)
 		had := strings.Contains(raw, "id: ")
 
 		// The filename says it where the note carries no title of its own and

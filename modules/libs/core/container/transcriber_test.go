@@ -30,7 +30,7 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 		return nil, errors.New("nothing on this machine puts a transcript right")
 	}
 
-	held := cfg.Transcribing(t.Context(), nil, task.New(), nil)
+	held := cfg.OpenTranscriptionWorker(t.Context(), nil, task.New(), nil)
 	_, _ = held.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")
 	held.Wait()
 
@@ -46,12 +46,12 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 // the run, and one that names nothing does not.
 func TestAProofreadingIsOfferedWhereAProfileIsNamed(t *testing.T) {
 	cfg := Config{ServiceDir: ".numen"}
-	if cfg.Transcribing(t.Context(), nil, nil, nil).ProofreaderReady() {
+	if cfg.OpenTranscriptionWorker(t.Context(), nil, nil, nil).ProofreaderReady() {
 		t.Error("an installation naming no profile offers the run")
 	}
 
 	cfg.TranscriptProofreading = proofreading.Proofread{Profile: "by hand"}
-	if !cfg.Transcribing(t.Context(), nil, nil, nil).ProofreaderReady() {
+	if !cfg.OpenTranscriptionWorker(t.Context(), nil, nil, nil).ProofreaderReady() {
 		t.Error("an installation naming a profile does not offer the run")
 	}
 }

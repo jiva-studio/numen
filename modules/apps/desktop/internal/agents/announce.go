@@ -42,12 +42,14 @@ func Announce(cfg container.Config, url, token string) (func(), error) {
 	return func() { os.Remove(path) }, nil
 }
 
-// Token is what an agent presents, kept between launches.
+// GetToken is what an agent presents, kept between launches. The one already
+// written down is the one handed back, and a token is created only where there
+// is none.
 //
-// Minting a new one every time would mean the line in somebody's agent
-// configuration stops working every time the application restarts, which is not
-// a configuration file at all.
-func Token(cfg container.Config) (string, error) {
+// A new token every time would mean the line in somebody's agent configuration
+// stops working every time the application restarts, which is not a
+// configuration file at all.
+func GetToken(cfg container.Config) (string, error) {
 	path, err := TokenPath(cfg)
 	if err != nil {
 		return "", err
@@ -56,19 +58,20 @@ func Token(cfg container.Config) (string, error) {
 		return string(kept), nil
 	}
 
-	minted, err := Mint()
+	token, err := CreateToken()
 	if err != nil {
 		return "", err
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return "", err
 	}
-	return minted, replace(path, []byte(minted))
+	return token, replace(path, []byte(token))
 }
 
-// Mint is a token an agent presents, kept nowhere. A window nobody configures
-// an agent against is reached for as long as it is open and no longer.
-func Mint() (string, error) {
+// CreateToken is a token an agent presents, kept nowhere. A window nobody
+// configures an agent against is reached for as long as it is open and no
+// longer.
+func CreateToken() (string, error) {
 	raw := make([]byte, 32)
 	if _, err := rand.Read(raw); err != nil {
 		return "", err
@@ -105,13 +108,12 @@ func replace(path string, content []byte) error {
 
 // AnnouncementPath is where an agent a person configures themselves is told to
 // look, and TokenPath is where the token it presents is kept.
-func AnnouncementPath(cfg container.Config) (string, error) { return beside(cfg, "agents.json") }
-func TokenPath(cfg container.Config) (string, error)        { return beside(cfg, "agents.token") }
+func AnnouncementPath(cfg container.Config) (string, error) { return getStatePath(cfg, "agents.json") }
+func TokenPath(cfg container.Config) (string, error)        { return getStatePath(cfg, "agents.token") }
 
-// beside is where this installation keeps its own state. A registry pointed
-// somewhere chosen takes everything else with it, which is what a test and a
-// second installation both need.
-func beside(cfg container.Config, name string) (string, error) {
+// getStatePath is where this installation keeps its own state. A registry
+// pointed somewhere chosen takes everything else with it.
+func getStatePath(cfg container.Config, name string) (string, error) {
 	if cfg.RegistryPath != "" {
 		return filepath.Join(filepath.Dir(cfg.RegistryPath), name), nil
 	}

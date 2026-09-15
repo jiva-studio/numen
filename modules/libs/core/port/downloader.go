@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 // ErrNothingDownloaded is an address that answered, and carries nothing of what
@@ -58,10 +58,10 @@ type Metadata struct {
 // be had. Nothing here reaches the vault — what comes back is bytes, and where
 // they are kept is the caller's.
 type Downloader interface {
-	// Downloading is what this address is downloaded by. A video and a page are
-	// reached by different tools, and what is kept names the one that brought
-	// it.
-	Downloading(at domain.URL) DownloadModel
+	// GetDownloadModel is what this address is downloaded by. A video and a page
+	// are reached by different tools, and what is kept names the one that
+	// brought it.
+	GetDownloadModel(at domain.URL) DownloadModel
 
 	// Metadata is what the site says about the address, taking none of it.
 	Metadata(ctx context.Context, at domain.URL) (Metadata, error)

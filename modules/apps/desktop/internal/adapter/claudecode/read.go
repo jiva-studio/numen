@@ -100,7 +100,7 @@ func (rd *parser) line(ctx context.Context, line string) {
 	case "user":
 		// The tool answered. Everything from here until the next block arrives
 		// is the model's, and the step says so.
-		if said.answers() {
+		if said.hasToolAnswer() {
 			rd.tell(ctx, port.Step{Kind: port.StepAnswered})
 		}
 	case "system":
@@ -306,19 +306,19 @@ func (rd *parser) calls(callID, tool, arguments string) port.Step {
 	}
 
 	step.Count = len([]rune(arguments))
-	step.About = about(words.Arguments, arguments)
+	step.About = getAbout(words.Arguments, arguments)
 	if words.Arguments.About == notePath {
-		step.Place = placed(step.About, arguments)
+		step.Place = getPlace(step.About, arguments)
 	}
 	return step
 }
 
-// placed is where a call is working: the path it named, and the stretch of that
-// source's text it named beside it.
+// getPlace is where a call is working: the path it named, and the stretch of
+// that source's text it named beside it.
 //
 // The stretch is read once the arguments parse whole, so it arrives with the
 // report that ends the call. Half a number is another number.
-func placed(path, arguments string) domain.Place {
+func getPlace(path, arguments string) domain.Place {
 	at := domain.Place{Path: path}
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
@@ -332,32 +332,32 @@ func placed(path, arguments string) domain.Place {
 	return at
 }
 
-// about is what a call was about, read from the arguments as far as they have
-// arrived.
+// getAbout is what a call was about, read from the arguments as far as they
+// have arrived.
 //
 // Arguments still arriving is where most of a long wait is spent, and half a
 // document does not parse. What has been written is read for the name, so that
 // the person sees which note is being written while it is being written.
-func about(names Arguments, arguments string) string {
+func getAbout(names Arguments, arguments string) string {
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
-		if seen := glimpsed(arguments, names.Element); seen != "" {
+		if seen := getGlimpse(arguments, names.Element); seen != "" {
 			return seen
 		}
-		return glimpsed(arguments, names.About)
+		return getGlimpse(arguments, names.About)
 	}
 	switch value := made[names.About].(type) {
 	case string:
 		return value
 	case []any:
-		return named(value, names.Element)
+		return describeCollection(value, names.Element)
 	}
 	return ""
 }
 
-// named is what a collection of arguments is about: the first element by the
-// name it carries, and how many others there are.
-func named(value []any, inside string) string {
+// describeCollection is what a collection of arguments is about: the first
+// element by the name it carries, and how many others there are.
+func describeCollection(value []any, inside string) string {
 	if len(value) == 0 {
 		return ""
 	}
@@ -380,8 +380,8 @@ func named(value []any, inside string) string {
 	return first
 }
 
-// answers reports whether this line carries the answer of a tool.
-func (e event) answers() bool {
+// hasToolAnswer reports whether this line carries the answer of a tool.
+func (e event) hasToolAnswer() bool {
 	for _, block := range e.blocks() {
 		if block.Type == "tool_result" {
 			return true
@@ -419,7 +419,7 @@ func (rd *parser) draw(ctx context.Context) {
 		return
 	}
 	if !rd.drawn {
-		path, stood := glimpsed(arguments, names.About), glimpsed(arguments, names.Match)
+		path, stood := getGlimpse(arguments, names.About), getGlimpse(arguments, names.Match)
 		if path == "" || stood == "" {
 			return
 		}
@@ -440,6 +440,6 @@ func (rd *parser) draw(ctx context.Context) {
 		Path:   rd.path,
 		From:   rd.from,
 		To:     rd.to,
-		Text:   glimpsed(arguments, names.Text),
+		Text:   getGlimpse(arguments, names.Text),
 	})
 }

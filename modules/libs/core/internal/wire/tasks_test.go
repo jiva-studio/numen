@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// listening is the stream a window would hold, over a list a test drives.
-func listening(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v1.WatchTasksResponse] {
+// openTaskStream is the stream a window would hold, over a list a test drives.
+func openTaskStream(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v1.WatchTasksResponse] {
 	t.Helper()
 
 	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Named: Editor, Tasking: tasks})
@@ -36,8 +36,8 @@ func listening(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v
 	return stream
 }
 
-// told is the list the stream says next.
-func told(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTasksResponse]) []*v1.Task {
+// receiveTasks is the list the stream says next.
+func receiveTasks(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTasksResponse]) []*v1.Task {
 	t.Helper()
 	if !stream.Receive() {
 		t.Fatalf("the stream ended: %v", stream.Err())
@@ -50,23 +50,23 @@ func told(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTasksRespo
 // screen as work still running.
 func TestOneChangeIsSaidTwice(t *testing.T) {
 	tasks := task.New()
-	stream := listening(t, tasks)
+	stream := openTaskStream(t, tasks)
 
-	if first := told(t, stream); len(first) != 0 {
+	if first := receiveTasks(t, stream); len(first) != 0 {
 		t.Fatalf("a window that opened with nothing running was told of %d", len(first))
 	}
 
 	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan"})
 	for telling := range 2 {
-		list := told(t, stream)
+		list := receiveTasks(t, stream)
 		if len(list) != 1 || list[0].GetId() != "reading" {
 			t.Fatalf("telling %d said %v", telling+1, list)
 		}
 	}
 
-	tasks.Done("reading")
+	tasks.Remove("reading")
 	for telling := range 2 {
-		if list := told(t, stream); len(list) != 0 {
+		if list := receiveTasks(t, stream); len(list) != 0 {
 			t.Fatalf("telling %d said %v, and the work had ended", telling+1, list)
 		}
 	}

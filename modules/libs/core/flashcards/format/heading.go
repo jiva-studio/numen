@@ -21,7 +21,7 @@ const caret = "^"
 // shows and the mark it carries.
 //
 // A mark is separated from the text by one space, stands last, and is a mark
-// only at the length and in the alphabet marks are minted in. Anything else at
+// only at the length and in the alphabet marks are written in. Anything else at
 // the end of a heading is heading text, and comes back as part of the text.
 func ReadHeading(heading string) (text string, carried domain.CardID) {
 	at := strings.LastIndex(heading, " ")
@@ -57,7 +57,7 @@ func WriteHeading(text string, carried domain.CardID) string {
 // first line break and at HeadingRunes characters, and the spaces at either end
 // are dropped. A field that is empty, or holds only spaces, projects to nothing.
 func Project(value string) string {
-	line := markdown.Normalised(value)
+	line := markdown.Normalise(value)
 	if at := strings.IndexByte(line, '\n'); at >= 0 {
 		line = line[:at]
 	}
@@ -153,7 +153,7 @@ func links(line string) [][]int {
 // oneLine is what a name a caller composed a heading from stands as. A heading
 // is one line, so it holds what stands in front of the first break in it.
 func oneLine(name string) string {
-	line := markdown.Normalised(name)
+	line := markdown.Normalise(name)
 	if at := strings.IndexByte(line, '\n'); at >= 0 {
 		line = line[:at]
 	}

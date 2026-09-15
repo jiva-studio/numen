@@ -8,8 +8,8 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import { Textarea } from '@/shared/ui/textarea'
-import { Button } from '@/shared/ui/button'
-import { COMPOSER_STATES, composerState, keyIntent, said } from './state'
+import { Disc } from './disc'
+import { COMPOSER_STATES, composerState, keyIntent, getMessage } from './state'
 
 const props = withDefaults(
   defineProps<{
@@ -18,18 +18,20 @@ const props = withDefaults(
     working?: boolean
     disabled?: boolean
     /** What the disc is called while it sends. */
-    sends?: string
+    sendLabel?: string
     /** What the disc is called while it stops. */
-    stops?: string
+    stopLabel?: string
   }>(),
   {
     placeholder: 'Write a message',
     working: false,
     disabled: false,
-    sends: 'Send',
-    stops: 'Stop',
+    sendLabel: 'Send',
+    stopLabel: 'Stop',
   },
 )
+
+const text = defineModel<string>({ default: '' })
 
 const emit = defineEmits<{
   /** Sent. Carries what was written, with the whitespace around it gone. */
@@ -38,30 +40,25 @@ const emit = defineEmits<{
   (event: 'stop'): void
 }>()
 
-const text = defineModel<string>({ default: '' })
-
 const field = useTemplateRef<InstanceType<typeof Textarea>>('field')
 
 const state = computed(() => composerState(text.value, props.working))
 const descriptor = computed(() => COMPOSER_STATES[state.value])
 
 /** Nothing to say, or turned off. */
-const barred = computed(() => props.disabled || !descriptor.value.acts)
-
-/** What the disc is called. */
-const named = computed(() => (descriptor.value.shows === 'stop' ? props.stops : props.sends))
+const barred = computed(() => props.disabled || !descriptor.value.canAct)
 
 const act = () => {
   if (barred.value) return
-  if (descriptor.value.shows === 'stop') emit('stop')
-  else emit('submit', said(text.value))
+  if (descriptor.value.action === 'stop') emit('stop')
+  else emit('submit', getMessage(text.value))
 }
 
 /** Enter sends, and while an answer is on its way it does nothing. */
 const onKeydown = (event: KeyboardEvent) => {
   if (keyIntent(event) !== 'submit') return
   event.preventDefault()
-  if (descriptor.value.shows === 'send') act()
+  if (descriptor.value.action === 'send') act()
 }
 
 defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
@@ -69,7 +66,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
 
 <template>
   <div
-    class="composer numen rounded-field border border-panel-rule bg-panel shadow-panel backdrop-blur-panel font-sans text-base text-ink focus-within:ring-(length:--numen-ring-width) focus-within:ring-ring"
+    class="composer numen rounded-field border-panel-rule bg-panel shadow-panel backdrop-blur-panel text-ink border font-sans text-base"
   >
     <!-- The field, a copy of what is in it, and the words standing in for what
          is not typed, all in one grid cell. The copy is what has a height, so
@@ -92,36 +89,17 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
     </div>
 
     <!-- Out of the flow, so what stands here never decides how tall a row of
-         typing is. One disc either way; the glyph on it is what changes. -->
-    <div class="composer__action">
-      <Transition name="composer__swap" mode="out-in">
-        <Button
-          :key="descriptor.shows"
-          size="icon"
-          :disabled="barred"
-          :aria-label="named"
-          @click="act"
-        >
-          <slot v-if="descriptor.shows === 'send'" name="glyph">
-            <svg
-              viewBox="0 0 16 16"
-              class="size-4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M8 13V3" />
-              <path d="M3.5 7.5 8 3l4.5 4.5" />
-            </svg>
-          </slot>
-          <svg v-else viewBox="0 0 16 16" class="size-4" fill="currentColor">
-            <rect x="3" y="3" width="10" height="10" rx="2" />
-          </svg>
-        </Button>
-      </Transition>
-    </div>
+         typing is. -->
+    <Disc
+      class="composer__action"
+      :action="descriptor.action"
+      :disabled="barred"
+      :send-label="sendLabel"
+      :stop-label="stopLabel"
+      @press="act"
+    >
+      <template v-if="$slots.glyph" #glyph><slot name="glyph" /></template>
+    </Disc>
   </div>
 </template>
 
@@ -193,24 +171,5 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
   position: absolute;
   inset-block-end: var(--numen-field-padding);
   inset-inline-end: var(--numen-field-padding);
-  display: flex;
-  block-size: var(--numen-action-size);
-  align-items: center;
-  justify-content: center;
-}
-
-/* One disc gives way to the other, both halves together taking as long as a
-   hover. */
-.composer__swap-enter-active,
-.composer__swap-leave-active {
-  transition:
-    opacity var(--numen-motion-hover) var(--numen-easing),
-    transform var(--numen-motion-hover) var(--numen-easing);
-}
-
-.composer__swap-enter-from,
-.composer__swap-leave-to {
-  opacity: 0;
-  transform: scale(0.75);
 }
 </style>

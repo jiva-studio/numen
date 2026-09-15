@@ -25,7 +25,7 @@ const props = withDefaults(
 /** Which choice is in force, by the identifier the caller gave it. */
 const model = defineModel<string>({ default: '' })
 
-const chose = (value: unknown) => {
+const onChoose = (value: unknown) => {
   if (typeof value === 'string') model.value = value
 }
 
@@ -52,11 +52,11 @@ const onKey = (event: KeyboardEvent) => {
     :class="
       cn(
         // One row tall, which every control standing on a row is drawn at.
-        'inline-flex h-action items-stretch gap-px rounded-tight border border-rule bg-raised p-px',
+        'h-action rounded-tight border-rule bg-raised inline-flex items-stretch gap-px border p-px',
         props.class,
       )
     "
-    @update:model-value="chose"
+    @update:model-value="onChoose"
     @keydown="onKey"
   >
     <RadioGroupItem
@@ -65,16 +65,16 @@ const onKey = (event: KeyboardEvent) => {
       :value="choice.id"
       :class="
         cn(
-          'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-tight',
+          'rounded-tight inline-flex shrink-0 items-center justify-center whitespace-nowrap',
           // A segment fills the height of the row and keeps its own clearance
           // at the ends, which is measured to the ink the screen paints.
           'px-1.5',
-          'font-sans text-base font-medium leading-none text-ink',
-          'cursor-pointer transition-[background-color,color] duration-hover ease-numen',
+          'text-ink font-sans text-base leading-none font-medium',
+          'duration-hover ease-numen cursor-pointer transition-[background-color,color]',
           'hover:bg-[color-mix(in_oklab,var(--numen-raised),var(--numen-ink)_8%)]',
           'data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink',
           'data-[state=checked]:hover:bg-[color-mix(in_oklab,var(--numen-accent),var(--numen-accent-ink)_8%)]',
-          'outline-none ring-numen',
+          'ring-numen outline-none',
           'disabled:cursor-not-allowed disabled:opacity-50',
         )
       "

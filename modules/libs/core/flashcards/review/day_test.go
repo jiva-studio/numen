@@ -23,12 +23,12 @@ func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts, In: in}
 
 	late := time.Date(2026, 3, 10, 1, 30, 0, 0, in)
-	if got, want := day.Ends(late), time.Date(2026, 3, 10, 4, 0, 0, 0, in); !got.Equal(want) {
+	if got, want := day.GetEnd(late), time.Date(2026, 3, 10, 4, 0, 0, 0, in); !got.Equal(want) {
 		t.Errorf("the day holding %v ends at %v, want %v", late, got, want)
 	}
 
 	morning := time.Date(2026, 3, 10, 9, 0, 0, 0, in)
-	if got, want := day.Ends(morning), time.Date(2026, 3, 11, 4, 0, 0, 0, in); !got.Equal(want) {
+	if got, want := day.GetEnd(morning), time.Date(2026, 3, 11, 4, 0, 0, 0, in); !got.Equal(want) {
 		t.Errorf("the day holding %v ends at %v, want %v", morning, got, want)
 	}
 }
@@ -41,7 +41,7 @@ func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 
 	// The clocks go forward at one in the morning on 29 March 2026.
 	before := time.Date(2026, 3, 28, 9, 0, 0, 0, in)
-	if got, want := day.Ends(before), time.Date(2026, 3, 29, 4, 0, 0, 0, in); !got.Equal(want) {
+	if got, want := day.GetEnd(before), time.Date(2026, 3, 29, 4, 0, 0, 0, in); !got.Equal(want) {
 		t.Errorf("ends at %v, want %v", got, want)
 	}
 }
@@ -65,7 +65,7 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			s := review.Schedule{Due: one.due, Last: now.Add(-24 * time.Hour)}
-			if got := day.Owed(s, now); got != one.owed {
+			if got := day.IsOwed(s, now); got != one.owed {
 				t.Errorf("a card due %v is owed = %v, want %v", one.due, got, one.owed)
 			}
 		})
@@ -75,7 +75,7 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 // A card nobody has answered is owed the first time it is asked about.
 func TestACardNobodyAnsweredIsOwed(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts}
-	if !day.Owed(review.Schedule{}, time.Now()) {
+	if !day.IsOwed(review.Schedule{}, time.Now()) {
 		t.Error("a card with no answers behind it is not owed")
 	}
 }
@@ -84,7 +84,7 @@ func TestACardNobodyAnsweredIsOwed(t *testing.T) {
 func TestADayWithNoZoneIsCountedInTheMachinesOwn(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts}
 	now := time.Date(2026, 3, 10, 9, 0, 0, 0, time.Local)
-	if got := day.Ends(now); got.Location() != time.Local {
+	if got := day.GetEnd(now); got.Location() != time.Local {
 		t.Errorf("counted in %v, want the machine's own", got.Location())
 	}
 }
@@ -116,7 +116,7 @@ func TestADayOfReviewIsNamedForItsOwnDate(t *testing.T) {
 				if at.Hour() < hour {
 					want = want.AddDate(0, 0, -1)
 				}
-				if got := day.Names(at); got != want.Format(review.Named) {
+				if got := day.GetName(at); got != want.Format(review.Named) {
 					t.Fatalf("in %s, %v under a day beginning at %02d:00 is named %s, want %s",
 						name, at, hour, got, want.Format(review.Named))
 				}
@@ -135,18 +135,18 @@ func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
 		}
 		for hour := range 24 {
 			day := review.Day{Starts: time.Duration(hour) * time.Hour, In: in}
-			on := review.Spreading(day)
+			on := review.NewDueByDay(day)
 			days := make([]time.Time, 0, 800)
-			for at := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; at = day.Ends(at) {
+			for at := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; at = day.GetEnd(at) {
 				days = append(days, at)
-				if next := day.Ends(at); !next.After(at) {
+				if next := day.GetEnd(at); !next.After(at) {
 					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
 						"ends at %v", name, at, hour, next)
 				}
-				on.Holds(at)
+				on.Add(at)
 			}
 			for _, at := range days {
-				if got := on.On(at); got != 1 {
+				if got := on.CountOn(at); got != 1 {
 					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
 						"carries %d of the 800 cards, want 1", name, at, hour, got)
 				}

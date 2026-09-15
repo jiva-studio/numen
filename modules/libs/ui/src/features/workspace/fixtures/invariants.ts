@@ -1,9 +1,9 @@
 /** What is true of every workspace an edit produces. */
-import type { Workspace, WorkspaceNode } from '../node'
-import { isBranch, panesOf } from '../tree'
+import type { Workspace, WorkspaceNode } from '../lib/node'
+import { isBranch, panesOf } from '../lib/tree'
 
 /** Anything that does not hold about a workspace, said in words. */
-export function broken(workspace: Workspace): readonly string[] {
+export function getFaults(workspace: Workspace): readonly string[] {
   const faults: string[] = []
   const seen = new Set<string>()
 
@@ -22,7 +22,8 @@ export function broken(workspace: Workspace): readonly string[] {
 
     const total = node.sizes.reduce((sum, size) => sum + size, 0)
     if (Math.abs(total - 1) > 1e-9) faults.push(`shares of ${node.id} come to ${total}`)
-    if (node.sizes.some((size) => !(size > 0))) faults.push(`branch ${node.id} gives a child nothing`)
+    if (node.sizes.some((size) => !(size > 0)))
+      faults.push(`branch ${node.id} gives a child nothing`)
 
     node.children.forEach(walk)
   }

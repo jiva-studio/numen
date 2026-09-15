@@ -24,12 +24,12 @@ const bothWays = "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
 const oneWay = "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
 	"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n"
 
-// written is a deck of as many cards cut by one stencil, pointing at the preset
-// named. A deck naming none is written with an empty name.
+// newStencilDeck is a deck of as many cards cut by one stencil, pointing at the
+// preset named. A deck naming none is written with an empty name.
 //
 // Each deck is written from a mark of its own: a mark names a card, and two
 // decks writing one mark are writing one card.
-func written(stencil, at string, cards, from int) string {
+func newStencilDeck(stencil, at string, cards, from int) string {
 	out := "---\ntype: deck\n"
 	if at != "" {
 		out += "links:\n  - to: " + at + "\n    role: ref\n    type: preset\n"
@@ -54,10 +54,10 @@ var lived = map[string]string{
 		"new_a_day: 15\nreviews_a_day: 120\nretention: 0.9\ncounts: cards\n---\n\n# Sanskrit\n",
 	"Grammar.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
 		"new_a_day: 10\nreviews_a_day: 40\nminutes_a_day: 15\ncounts: cards\n---\n\n# Grammar\n",
-	"decks/Verbs.md": written("Both", "Sanskrit", 150, 0),
-	"decks/Nouns.md": written("One", "Sanskrit", 120, 1000),
-	"decks/Roots.md": written("One", "Grammar", 150, 2000),
-	"decks/Loose.md": written("One", "", 60, 3000),
+	"decks/Verbs.md": newStencilDeck("Both", "Sanskrit", 150, 0),
+	"decks/Nouns.md": newStencilDeck("One", "Sanskrit", 120, 1000),
+	"decks/Roots.md": newStencilDeck("One", "Grammar", 150, 2000),
+	"decks/Loose.md": newStencilDeck("One", "", 60, 3000),
 }
 
 // The card faces of the lived vault, by the deck they stand in.
@@ -107,7 +107,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 			continue
 		}
 
-		session := started(t, api, v)
+		session := startSession(t, api, v)
 		// How far a person got before they stopped, which is not always the end.
 		through := len(session.GetAsked())
 		if day%3 == 1 {
@@ -133,8 +133,8 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 	}
 }
 
-// owing is what the front door says about one vault.
-func owing(t *testing.T, api *API, v domain.Vault) *v1.VaultCardsDue {
+// getVaultCount is what the front door says about one vault.
+func getVaultCount(t *testing.T, api *API, v domain.Vault) *v1.VaultCardsDue {
 	t.Helper()
 	for _, one := range front(t, api).GetVaults() {
 		if one.GetId() == string(v.ID) {
@@ -172,18 +172,18 @@ func asWritten(t *testing.T, api *API, v domain.Vault, path string) review.Prese
 	return found.Settings
 }
 
-// writtenBack writes settings into the preset at path, which is what the window
+// writePreset writes settings into the preset at path, which is what the window
 // does when a person lets go of the control.
-func writtenBack(t *testing.T, api *API, v domain.Vault, path string, p review.Preset) {
+func writePreset(t *testing.T, api *API, v domain.Vault, path string, p review.Preset) {
 	t.Helper()
 	if _, err := api.Presets.Save(t.Context(), v, path, p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 }
 
-// pictured is what these settings come to over the whole range of their goal,
+// getCurve is what these settings come to over the whole range of their goal,
 // drawn by the simulator this window's own pieces make.
-func pictured(t *testing.T, api *API, v domain.Vault, path string, p review.Preset) *v1.Curve {
+func getCurve(t *testing.T, api *API, v domain.Vault, path string, p review.Preset) *v1.Curve {
 	t.Helper()
 	held, err := curves(api).Execute(t.Context(), v, path, p)
 	if err != nil {
@@ -234,7 +234,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			api, held := windowed(t, lived)
+			api, held := newAPI(t, lived)
 			v := held[0]
 			lives(t, api, v, 14)
 			setNow(api, firstMorning.AddDate(0, 0, 14))
@@ -244,21 +244,21 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 			for _, at := range one.places {
 				// The control is moved to a place of the grid and let go of, so
 				// the preset the decks are held to is the one the curve drew.
-				drawn := pictured(t, api, v, "Sanskrit.md", p)
+				drawn := getCurve(t, api, v, "Sanskrit.md", p)
 				if len(drawn.GetGrid()) <= at {
 					t.Fatalf("the curve has %d places", len(drawn.GetGrid()))
 				}
 				value := drawn.GetGrid()[at]
 				one.steered(&p, value)
-				writtenBack(t, api, v, "Sanskrit.md", p)
+				writePreset(t, api, v, "Sanskrit.md", p)
 
-				drawn = pictured(t, api, v, "Sanskrit.md", p)
+				drawn = getCurve(t, api, v, "Sanskrit.md", p)
 				if drawn.GetGrid()[at] != value {
 					t.Fatalf("the control was left at %v and the grid holds %v there",
 						value, drawn.GetGrid()[at])
 				}
 				draws := int(drawn.GetAt()[at].GetReviews())
-				if got := offers(owing(t, api, v), underSanskrit); got != draws {
+				if got := offers(getVaultCount(t, api, v), underSanskrit); got != draws {
 					t.Errorf("at %v the curve draws %d cards for the day and the deck "+
 						"screen offers %d", value, draws, got)
 				}
@@ -270,11 +270,11 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 // A curve carries the decks and the card faces the preset schedules, which is
 // what tells a preset with nothing under it from one whose day is simply spent.
 func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
-	api, held := windowed(t, lived)
+	api, held := newAPI(t, lived)
 	v := held[0]
 	setNow(api, firstMorning)
 
-	drawn := pictured(t, api, v, "Sanskrit.md", asWritten(t, api, v, "Sanskrit.md"))
+	drawn := getCurve(t, api, v, "Sanskrit.md", asWritten(t, api, v, "Sanskrit.md"))
 	want := facesIn["decks/Verbs.md"] + facesIn["decks/Nouns.md"]
 	if int(drawn.GetDecks()) != len(underSanskrit) || int(drawn.GetCards()) != want {
 		t.Errorf("the curve stands over %d decks and %d card faces, want %d and %d",
@@ -289,12 +289,12 @@ var sole = map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
 // What each deck offers adds up to what the vault offers, and a session on one
 // deck asks for that deck's share and nothing else.
 func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
-	api, held := windowed(t, lived)
+	api, held := newAPI(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
-	said := owing(t, api, v)
+	said := getVaultCount(t, api, v)
 	if int(said.GetFaces()) != 630 {
 		t.Errorf("the vault holds %d card faces, want 630", said.GetFaces())
 	}
@@ -339,13 +339,13 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 // A deck says how much of it was answered in the day holding now, so a deck
 // nobody has answered in today is told apart from one whose day is done.
 func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
-	api, held := windowed(t, lived)
+	api, held := newAPI(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
 
 	// A new day, with nothing answered in it yet.
 	setNow(api, firstMorning.AddDate(0, 0, 14))
-	for _, one := range owing(t, api, v).GetDecks() {
+	for _, one := range getVaultCount(t, api, v).GetDecks() {
 		if one.GetAnswered() != 0 {
 			t.Errorf("nothing was answered today and %s counts %d",
 				one.GetDeck(), one.GetAnswered())
@@ -372,7 +372,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 		}
 	}
 
-	for _, one := range owing(t, api, v).GetDecks() {
+	for _, one := range getVaultCount(t, api, v).GetDecks() {
 		want := 0
 		if one.GetDeck() == "decks/Roots.md" {
 			want = 3
@@ -387,7 +387,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 // The front door holds each vault once, and each row carries that vault's own
 // count.
 func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
-	api, held := windowed(t, lived, deck)
+	api, held := newAPI(t, lived, deck)
 	setNow(api, firstMorning)
 
 	rows := front(t, api).GetVaults()
@@ -415,10 +415,10 @@ func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 				row.GetName(), faces, row.GetFaces())
 		}
 	}
-	if got := owing(t, api, held[0]).GetFaces(); got != 630 {
+	if got := getVaultCount(t, api, held[0]).GetFaces(); got != 630 {
 		t.Errorf("the lived vault counts %d card faces, want 630", got)
 	}
-	if got := owing(t, api, held[1]).GetFaces(); got != 1 {
+	if got := getVaultCount(t, api, held[1]).GetFaces(); got != 1 {
 		t.Errorf("the vault of one card counts %d card faces", got)
 	}
 }
@@ -429,21 +429,21 @@ func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 // Asking for more of the cards back is shorter intervals, so the same history
 // leaves more of them owed today.
 func TestATargetMovedIsNotAnsweredFromTheWorkingOutUnderTheOldOne(t *testing.T) {
-	api, held := windowed(t, lived)
+	api, held := newAPI(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Grammar.md")
 	p.Retention = review.RetentionBounds.Least
-	writtenBack(t, api, v, "Grammar.md", p)
+	writePreset(t, api, v, "Grammar.md", p)
 	// The first count is what writes the working out down, so the second is the
 	// one that could be answered from it.
-	least := offers(owing(t, api, v), underGrammar)
+	least := offers(getVaultCount(t, api, v), underGrammar)
 
 	p.Retention = review.RetentionBounds.Most
-	writtenBack(t, api, v, "Grammar.md", p)
-	most := offers(owing(t, api, v), underGrammar)
+	writePreset(t, api, v, "Grammar.md", p)
+	most := offers(getVaultCount(t, api, v), underGrammar)
 
 	if most <= least {
 		t.Errorf("asking for %v of the cards back offers %d, and %v offers %d",
@@ -451,7 +451,7 @@ func TestATargetMovedIsNotAnsweredFromTheWorkingOutUnderTheOldOne(t *testing.T) 
 	}
 
 	// And the preset beside it, whose target nobody moved, is where it was.
-	if got := offers(owing(t, api, v), underSanskrit); got == 0 {
+	if got := offers(getVaultCount(t, api, v), underSanskrit); got == 0 {
 		t.Error("the preset nobody touched offers nothing")
 	}
 }

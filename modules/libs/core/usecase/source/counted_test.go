@@ -33,7 +33,7 @@ func (h *holding) Fingerprints(
 	return nil, errHeld
 }
 
-func (h *holding) Recognised(
+func (h *holding) GetRecognisedSources(
 	ctx context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	select {
@@ -108,7 +108,7 @@ func TestCollectingRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 
-	w := recognising(t, nil)
+	w := newWatched(t, nil)
 	w.RecognitionWorker.with.Proofreading = ProofreadingConfig{
 		Named: true, Batch: 1,
 		Queue: func(string) (port.ProofreadQueue, error) { return leaves{}, nil },
@@ -119,7 +119,7 @@ func TestCollectingRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	came := make(chan struct{})
 	go func() {
 		defer close(came)
-		w.Collecting(ctx, known, time.Hour, v)
+		w.CollectBatches(ctx, known, time.Hour, v)
 	}()
 	select {
 	case <-came:

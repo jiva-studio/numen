@@ -7,23 +7,16 @@
  * The editor stands in the page's own root, under the layer this draws.
  */
 import { onMounted, ref, useTemplateRef } from 'vue'
-import {
-  IonButton,
-  IonButtons,
-  IonHeader,
-  IonProgressBar,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/vue'
 import { Editor } from '@numen/ui'
-import { refusalWords } from '@numen/wire'
+import { formatErrorCodeMessage } from '@numen/wire'
+import { NoteBar } from './note-bar'
 import type { ReadNoteResponse } from '@numen/protocol'
 import type { Core } from '../core'
 
 const props = defineProps<{ core: Core; path: string }>()
 const emit = defineEmits<{
   (event: 'close'): void
-  (event: 'trouble', said: string): void
+  (event: 'error', message: string): void
 }>()
 
 const prose = ref('')
@@ -33,14 +26,14 @@ const editor = useTemplateRef<InstanceType<typeof Editor>>('editor')
 
 onMounted(async () => {
   try {
-    const said = await props.core.notes.readNote({ path: props.path })
-    if (said.refusal) {
-      emit('trouble', refusalWords(said.refusal))
+    const answer = await props.core.notes.readNote({ path: props.path })
+    if (answer.error) {
+      emit('error', formatErrorCodeMessage(answer.error))
       emit('close')
       return
     }
-    prose.value = said.body
-    seen.value = said.at ? { prose: said.body, at: said.at } : null
+    prose.value = answer.body
+    seen.value = answer.at ? { prose: answer.body, at: answer.at } : null
   } finally {
     reading.value = false
   }
@@ -48,13 +41,13 @@ onMounted(async () => {
 })
 
 async function keep() {
-  const said = await props.core.notes.writeNote({
+  const answer = await props.core.notes.writeNote({
     path: props.path,
     body: prose.value,
     seen: seen.value ?? undefined,
   })
-  if (said.refusal) {
-    emit('trouble', refusalWords(said.refusal))
+  if (answer.error) {
+    emit('error', formatErrorCodeMessage(answer.error))
     return
   }
   emit('close')
@@ -63,18 +56,7 @@ async function keep() {
 
 <template>
   <div class="note">
-    <IonHeader>
-      <IonToolbar>
-        <IonButtons slot="start">
-          <IonButton data-testid="leave" @click="emit('close')">Back</IonButton>
-        </IonButtons>
-        <IonTitle size="small">{{ path }}</IonTitle>
-        <IonButtons slot="end">
-          <IonButton data-testid="keep" @click="keep">Keep</IonButton>
-        </IonButtons>
-      </IonToolbar>
-      <IonProgressBar v-if="reading" type="indeterminate" />
-    </IonHeader>
+    <NoteBar :path="path" :reading="reading" @close="emit('close')" @keep="keep" />
     <div class="note__prose">
       <Editor ref="editor" v-model="prose" data-testid="editor" />
     </div>

@@ -6,10 +6,10 @@ import {
   type Orientation,
   type Workspace,
   type WorkspaceNode,
-} from '../node'
-import { panesOf } from '../tree'
-import { even } from '../shares'
-import type { NodeIdFactory } from '../edit'
+} from '../lib/node'
+import { panesOf } from '../lib/tree'
+import { even } from '../lib/shares'
+import type { NodeIdFactory } from '../lib/edit'
 
 /** A stack of tabs. */
 export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => pane(id, tabs)
@@ -32,7 +32,7 @@ export const workspaceOf = (
 })
 
 /** Identities that count up, so a test can name what a gesture made. */
-export function naming(prefix = 'made'): NodeIdFactory {
+export function createIdFactory(prefix = 'made'): NodeIdFactory {
   let made = 0
   return () => `${prefix}-${++made}`
 }
@@ -55,13 +55,16 @@ export const deep = (): Workspace =>
       stack('a', 'one'),
       split('down', [
         stack('b', 'two'),
-        split('across', [stack('c', 'three'), split('again', [stack('d', 'four'), stack('e', 'five')])]),
+        split('across', [
+          stack('c', 'three'),
+          split('again', [stack('d', 'four'), stack('e', 'five')]),
+        ]),
       ]),
     ]),
   )
 
 /** A stack with more tabs than a narrow strip can show. */
-export const crowded = (): Workspace =>
+export const manyTabs = (): Workspace =>
   workspaceOf(
     split(
       'root',

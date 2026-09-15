@@ -33,7 +33,7 @@ func (i indexed) Fingerprints(context.Context, domain.VaultID, domain.SourceKind
 	return nil, nil
 }
 
-func (i indexed) Unchunked(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
+func (i indexed) GetUnchunkedSources(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
 	return nil, nil
 }
 
@@ -41,17 +41,17 @@ func (i indexed) ByOtherRecipe(context.Context, domain.VaultID, domain.SourceKin
 	return nil, nil
 }
 
-func (i indexed) Recognised(context.Context, domain.VaultID, domain.SourceKind) ([]port.SourceText, error) {
+func (i indexed) GetRecognisedSources(context.Context, domain.VaultID, domain.SourceKind) ([]port.SourceText, error) {
 	return nil, nil
 }
 
-func (i indexed) Under(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
+func (i indexed) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
 	return nil, nil
 }
 
-// placing is a window over a vault holding one document with a text layer, and
+// openHighlightWindow is a window over a vault holding one document with a text layer, and
 // that document read, so a test can name a word and ask where it is.
-func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
+func openHighlightWindow(t *testing.T) (*API, http.Handler, *pdf.Book) {
 	t.Helper()
 	raw, err := os.ReadFile("../../../internal/adapter/pdf/testdata/tiny.pdf")
 	if err != nil {
@@ -74,7 +74,7 @@ func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
 		},
 	}
 	api.show(vault)
-	return api, api.Serving(http.NotFoundHandler()), doc
+	return api, api.NewHandler(http.NotFoundHandler()), doc
 }
 
 // where is where a word of the document is, as the window would ask about it.
@@ -102,7 +102,7 @@ func reads(api *API, path string, at ...*v1.Span) ([]*v1.Run, error) {
 // A run of a source's text comes back as what it says and the boxes covering
 // it, each on the page it was read from.
 func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
-	api, _, doc := placing(t)
+	api, _, doc := openHighlightWindow(t)
 
 	runs, err := reads(api, book, where(t, doc, "Delta"))
 	if err != nil {
@@ -135,7 +135,7 @@ func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
 // its place in the answer, so a caller still reads one run per run it asked
 // about.
 func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
-	api, _, doc := placing(t)
+	api, _, doc := openHighlightWindow(t)
 	api.Highlight.Sources = indexed{}
 
 	runs, err := reads(api, book, where(t, doc, "Delta"))
@@ -161,7 +161,7 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 		beside,
 	} {
 		t.Run(path, func(t *testing.T) {
-			api, _, _ := placing(t)
+			api, _, _ := openHighlightWindow(t)
 
 			_, err := reads(api, path, &v1.Span{From: 0, To: 5})
 			if code := connect.CodeOf(err); code != connect.CodeNotFound &&
@@ -184,7 +184,7 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 		{"a run longer than a book", []*v1.Span{{From: 0, To: longestRun + 1}}},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			api, _, _ := placing(t)
+			api, _, _ := openHighlightWindow(t)
 
 			if _, err := reads(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Errorf("asking about %s was refused %v", one.what, err)

@@ -62,24 +62,38 @@ func Start(dir string) (int, error) {
 		return 0, err
 	}
 
-	cfg := configured(dir, os.Stderr)
+	cfg := makeConfig(dir, os.Stderr)
 
 	if err := seed(root); err != nil {
 		return 0, err
 	}
 	// The list holds a folder under the name it resolves to, and that is the
 	// name the vault is opened by.
-	filed, err := known(cfg, root)
+	filed, err := registerVault(cfg, root)
 	if err != nil {
 		return 0, err
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := editor.Open(ctx, cfg, filed, os.Stderr)
+	made, err := cfg.GetEditorAssembly(ctx)
 	if err != nil {
 		stop()
 		return 0, err
 	}
+	opened, err := editor.Open(ctx, made, filed, os.Stderr)
+	if err != nil {
+		stop()
+		return 0, err
+	}
+
+	// The themes are the installation's, and a folder that could not be made
+	// leaves the ones this binary ships. A theme the settings name that the
+	// catalogue has not is said where the person is.
+	themes, wrong := cfg.Themes(opened.SayTheme)
+	if wrong != nil {
+		fmt.Fprintln(os.Stderr, "themes:", wrong)
+	}
+	opened.API.Themes = themes
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		stop()
@@ -104,7 +118,7 @@ func Start(dir string) (int, error) {
 	// beside the notes, which is a book read off the disk and a model set
 	// running over one.
 	server := &http.Server{
-		Handler: allowing(opened.API.Serving(
+		Handler: allowOrigin(opened.API.NewHandler(
 			http.NotFoundHandler(),
 			numenv1connect.VaultServiceName,
 			numenv1connect.NoteServiceName,
@@ -150,21 +164,21 @@ func Port() int {
 	return running.port
 }
 
-// configured is what this installation starts from: everything it keeps sits
+// makeConfig is what this installation starts from: everything it keeps sits
 // under the folder the platform gave it, and what the core carried on past is
 // said on the stream the platform collects.
-func configured(dir string, out io.Writer) container.Config {
+func makeConfig(dir string, out io.Writer) container.Config {
 	return container.Config{
 		IndexPath:    filepath.Join(dir, "index.db"),
 		RegistryPath: filepath.Join(dir, "vaults.json"),
 		ThemesPath:   filepath.Join(dir, "themes"),
-		Trouble:      func(err error) { fmt.Fprintln(out, "numen:", err) },
+		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen:", err) },
 	}
 }
 
-// known puts the vault on this installation's list, and answers with the path
-// the list files it under. A vault already on it stays where it is.
-func known(cfg container.Config, root string) (string, error) {
+// registerVault puts the vault on this installation's list, and answers with
+// the path the list files it under. A vault already on it stays where it is.
+func registerVault(cfg container.Config, root string) (string, error) {
 	registry, err := cfg.Registry()
 	if err != nil {
 		return "", err
@@ -234,7 +248,7 @@ func seed(root string) error {
 // loopback, so the page is asking across origins and says so.
 const Page = "http://localhost"
 
-// allowing lets the page the platform serves ask this server, which sits on
+// allowOrigin lets the page the platform serves ask this server, which sits on
 // another origin than the one the webview loaded.
 //
 // It names that one origin. The socket is on the loopback and every process on
@@ -242,7 +256,7 @@ const Page = "http://localhost"
 // well; naming the origin is what makes a browser refuse to send that ask and
 // refuse to hand back what came of it. Nothing here is authentication: a
 // program that speaks for itself sends no origin and is not held to one.
-func allowing(next http.Handler) http.Handler {
+func allowOrigin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		head := w.Header()
 		head.Set("Access-Control-Allow-Origin", Page)

@@ -25,7 +25,7 @@ func FuzzCued(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {
-		cues, err := cued([]byte(raw))
+		cues, err := parseCues([]byte(raw))
 		if err != nil {
 			return
 		}

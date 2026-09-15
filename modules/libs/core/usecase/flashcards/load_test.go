@@ -109,7 +109,7 @@ type countingBy struct {
 	on    *loadCounts
 }
 
-func (b countingBy) Name() string { return b.inner.Name() }
+func (b countingBy) GetName() string { return b.inner.GetName() }
 
 func (b countingBy) Next(s review.Schedule, at time.Time, r review.Rating) review.Schedule {
 	b.on.Dated++
@@ -121,7 +121,7 @@ func (b countingBy) Endings(s review.Schedule, at time.Time) (review.Schedule, r
 	return b.inner.Endings(s, at)
 }
 
-func (b countingBy) Spaced(s review.Schedule) bool { return b.inner.Spaced(s) }
+func (b countingBy) IsSpaced(s review.Schedule) bool { return b.inner.IsSpaced(s) }
 
 // loaded is a vault of many cards and many run files, with everything a request
 // asks of the store, the cache and the scheduler counted.
@@ -139,7 +139,7 @@ type loaded struct {
 func load(tb testing.TB, cards, days, perDay int) loaded {
 	tb.Helper()
 
-	s := opened(tb, loadDeck(cards))
+	s := openVault(tb, loadDeck(cards))
 	on := &loadCounts{}
 	logs := countingStores{inner: s.logs, on: on}
 	schedules := flashcards.Schedules{
@@ -179,8 +179,8 @@ func (l loaded) logRead(tb testing.TB) (flashcards.ReviewLog, error) {
 	return flashcards.Log{Stores: l.logs}.Read(tb.Context(), l.vault)
 }
 
-// counting runs one request with the counters cleared, and says what it asked.
-func (l loaded) counting(tb testing.TB, run func() error) loadCounts {
+// countLoads runs one request with the counters cleared, and says what it asked.
+func (l loaded) countLoads(tb testing.TB, run func() error) loadCounts {
 	tb.Helper()
 	*l.on = loadCounts{}
 	if err := run(); err != nil {
@@ -255,7 +255,7 @@ func loadAnswers(tb testing.TB, s vaulted, cards, days, perDay int) {
 			lines = append(lines, raw...)
 			card++
 		}
-		if err := store.Write(ctx, run.Name(), lines); err != nil {
+		if err := store.Write(ctx, run.GetName(), lines); err != nil {
 			tb.Fatal(err)
 		}
 	}

@@ -8,14 +8,14 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { onScopeDispose, ref } from 'vue'
-import WorkspaceLayout from '@/features/workspace/WorkspaceLayout.vue'
-import Plex from '@/features/plex/Plex.vue'
+import { WorkspaceLayout } from '@/features/workspace'
+import { Plex } from '@/features/plex'
 import Agent from './Agent.vue'
-import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace/node'
-import { neighbourhoods } from '@/features/plex/fixtures/neighbourhoods'
+import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace'
+import { neighbourhoods } from '@/features/plex'
 import { LONG, MULTILINE } from '@/shared/fixtures/prose'
-import type { PlexNeighbourhood } from '@/features/plex/neighbourhood'
-import type { Turn } from '@/features/thread/turn'
+import type { PlexNeighbourhood } from '@/features/plex'
+import type { Turn } from '@/features/thread'
 
 const PLEX = 'plex'
 const AGENT = 'agent'
@@ -36,12 +36,12 @@ interface Knobs {
   neighbourhood: PlexNeighbourhood
 }
 
-const said = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
-const back = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
+const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
+const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
 
 const OPENING: readonly Turn[] = [
-  said('1', 'What is this note linked to?'),
-  back('2', MULTILINE),
+  createAsked('1', 'What is this note linked to?'),
+  createAnswered('2', MULTILINE),
 ]
 
 const meta: Meta<Knobs> = {
@@ -73,15 +73,15 @@ const meta: Meta<Knobs> = {
       }
 
       /** An answer that arrives a few characters at a time. */
-      const onSubmit = (asked: string) => {
-        turns.value.push(said(`${++next}`, asked))
+      const onSubmit = (message: string) => {
+        turns.value.push(createAsked(`${++next}`, message))
         text.value = ''
         working.value = true
 
         const id = `${++next}`
         turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
 
-        const reply = `About “${asked}”. ${LONG}`
+        const reply = `About “${message}”. ${LONG}`
         let at = 0
         tick = setInterval(() => {
           at = Math.min(reply.length, at + 3)

@@ -13,7 +13,7 @@ import (
 // whole of it is waiting for the thing being watched. The first field of that
 // name is taken, since the first element of a collection is the one being
 // written when there is nothing else to show yet.
-func glimpsed(arguments, field string) string {
+func getGlimpse(arguments, field string) string {
 	if field == "" {
 		return ""
 	}
@@ -49,7 +49,7 @@ func glimpsed(arguments, field string) string {
 		}
 		out.WriteByte(rest[i])
 	}
-	return unquoted(whole(out.String()))
+	return unquote(whole(out.String()))
 }
 
 // whole is the text without a character that has half arrived.
@@ -67,13 +67,13 @@ func whole(text string) string {
 	return text
 }
 
-// unquoted turns the escapes of a JSON string into what they stand for.
+// unquote turns the escapes of a JSON string into what they stand for.
 //
 // The last escape may have arrived in pieces — a character named by number is
 // six of them, and five are not a character — so the tail is given up a piece at
 // a time until what is left reads. An escape shown as itself is text the person
 // did not write.
-func unquoted(text string) string {
+func unquote(text string) string {
 	for at := len(text); at > 0; at-- {
 		var out string
 		if err := json.Unmarshal([]byte(`"`+text[:at]+`"`), &out); err == nil {

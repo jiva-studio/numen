@@ -30,13 +30,13 @@ type queries struct {
 // SaveSource records what a file is now, with no recipe: a source saved this way
 // owes its text.
 func (s sources) SaveSource(ctx context.Context, vaultID domain.VaultID, src domain.Source) error {
-	return s.write.SaveSource(ctx, vaultID, stored(src))
+	return s.write.SaveSource(ctx, vaultID, newChunkSource(src))
 }
 
 // SaveExtraction records the source and replaces its chunks in one write, so a
 // recipe is never recorded for chunks that are not there.
 func (s sources) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
-	return s.write.SaveExtraction(ctx, vaultID, stored(e.Source), chunks(e.Chunks))
+	return s.write.SaveExtraction(ctx, vaultID, newChunkSource(e.Source), chunks(e.Chunks))
 }
 
 // RemoveSources takes out the sources at the paths given, and their chunks and
@@ -51,17 +51,17 @@ func (s sources) MoveSources(ctx context.Context, vaultID domain.VaultID, from, 
 	return s.write.MoveSources(ctx, vaultID, from, to)
 }
 
-// Under is every source the vault holds at a path and beneath it.
-func (s queries) Under(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
-	return s.read.Under(ctx, vaultID, path)
+// GetSourcesUnder is every source the vault holds at a path and beneath it.
+func (s queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
+	return s.read.GetSourcesUnder(ctx, vaultID, path)
 }
 
 func (s queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
 	return s.read.Fingerprints(ctx, vaultID, string(kind))
 }
 
-func (s queries) Unchunked(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
-	return s.read.Unchunked(ctx, vaultID, string(kind), limit)
+func (s queries) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
+	return s.read.GetUnchunkedSources(ctx, vaultID, string(kind), limit)
 }
 
 func (s queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
@@ -88,12 +88,12 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 	return s.write.SaveVectors(ctx, out)
 }
 
-func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
-	from, err := resuming(after)
+func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
+	from, err := getCursorRow(after)
 	if err != nil {
 		return nil, "", err
 	}
-	found, err := s.read.Unembedded(ctx, vaultID, model.Recipe(), from, limit)
+	found, err := s.read.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), from, limit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -117,16 +117,16 @@ func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model p
 	return out, next, nil
 }
 
-// resuming is the chunk a walk carries on after. A cursor is a chunk's own
+// getCursorRow is the chunk a walk carries on after. A cursor is a chunk's own
 // address, so it is read the same way, and the empty one is the beginning.
-func resuming(after port.ChunkCursor) (int64, error) {
+func getCursorRow(after port.ChunkCursor) (int64, error) {
 	if after == "" {
 		return 0, nil
 	}
 	return chunk.Row(domain.ChunkID(after))
 }
 
-func stored(s domain.Source) chunk.Source {
+func newChunkSource(s domain.Source) chunk.Source {
 	return chunk.Source{
 		Path:     s.Fingerprint.Path,
 		Kind:     string(s.Fingerprint.Kind),
@@ -153,9 +153,9 @@ func chunks(in []domain.Chunk) []chunk.Chunk {
 	return out
 }
 
-// Kept is the vectors already made for these texts under this recipe.
-func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
-	return s.read.Kept(ctx, recipe, of)
+// GetKeptVectors is the vectors already made for these texts under this recipe.
+func (s sources) GetKeptVectors(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+	return s.read.GetKeptVectors(ctx, recipe, of)
 }
 
 // Reading is what one source's text came from, and false where the index holds
@@ -172,9 +172,9 @@ func (s queries) Reading(ctx context.Context, vaultID domain.VaultID, path strin
 	}, true, nil
 }
 
-// Recognised is the sources of one kind whose text a producer made.
-func (s queries) Recognised(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
-	found, err := s.read.Recognised(ctx, vaultID, string(kind))
+// GetRecognisedSources is the sources of one kind whose text a producer made.
+func (s queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
+	found, err := s.read.GetRecognisedSources(ctx, vaultID, string(kind))
 	if err != nil {
 		return nil, err
 	}

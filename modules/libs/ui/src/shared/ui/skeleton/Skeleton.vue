@@ -7,7 +7,9 @@
  * whoever draws it draws the value itself the moment there is one. The fill is
  * taken from the text of whatever holds it.
  */
-withDefaults(
+import { computed } from 'vue'
+
+const props = withDefaults(
   defineProps<{
     /** How wide it stands, as a length. */
     wide?: string
@@ -18,13 +20,18 @@ withDefaults(
   }>(),
   { wide: '100%', high: '1em', pill: false },
 )
+
+const skeletonStyle = computed(() => ({
+  inlineSize: props.wide,
+  blockSize: props.high,
+}))
 </script>
 
 <template>
   <span
     class="skeleton numen"
     :class="{ 'skeleton--pill': pill }"
-    :style="{ inlineSize: wide, blockSize: high }"
+    :style="skeletonStyle"
     aria-hidden="true"
   />
 </template>

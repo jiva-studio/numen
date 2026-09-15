@@ -34,12 +34,12 @@ type nothing struct {
 	elsewhere string
 }
 
-// standingOnNothing opens a window on an installation that has added nothing.
+// openEmptyWindow opens a window on an installation that has added nothing.
 //
 // Both the folder this system keeps documents in and the home it would fall
 // back on are somewhere a test owns, so anything made for a person to write in
 // is made where this can see it.
-func standingOnNothing(t *testing.T) *nothing {
+func openEmptyWindow(t *testing.T) *nothing {
 	t.Helper()
 
 	elsewhere := t.TempDir()
@@ -50,7 +50,7 @@ func standingOnNothing(t *testing.T) *nothing {
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 	}
-	opened, err := editor.Open(t.Context(), cfg, "", os.Stderr)
+	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatalf("an installation holding no vault would not open: %v", err)
 	}
@@ -59,7 +59,7 @@ func standingOnNothing(t *testing.T) *nothing {
 	// The welcome screen's way into a vault: the list opens one in this window.
 	opened.API.Opens = opened.Show
 
-	server := httptest.NewUnstartedServer(opened.API.Serving(http.NotFoundHandler()))
+	server := httptest.NewUnstartedServer(opened.API.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)
@@ -80,9 +80,9 @@ func standingOnNothing(t *testing.T) *nothing {
 // nothing to stand on. A folder appearing in a person's documents is a folder
 // they did not ask for.
 func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
-	if got := f.opened.Showing(); got != (domain.Vault{}) {
+	if got := f.opened.GetShownVault(); got != (domain.Vault{}) {
 		t.Errorf("the window opened on %+v, want no vault", got)
 	}
 
@@ -113,7 +113,7 @@ func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T)
 // person can do anything, and one of them refusing is a window that never comes
 // up.
 func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	state, err := f.vault.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
 	if err != nil {
@@ -125,7 +125,7 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if !state.Msg.GetScan().GetReady() {
 		t.Error("the window says it is still being read, and nothing is reading")
 	}
-	if reason := state.Msg.GetScan().GetFailed(); reason != "" {
+	if reason := state.Msg.GetScan().GetError(); reason != "" {
 		t.Errorf("the window says it could not be read: %s", reason)
 	}
 	if state.Msg.GetCoverage().GetChunkCount() != 0 || state.Msg.GetCoverage().GetEmbeddedCount() != 0 {
@@ -163,7 +163,7 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 // to four streams as it opens and draws nothing until each has said its first
 // word.
 func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
@@ -209,7 +209,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				_ = f.opened.API.Viewing().Focus(asking, domain.Place{Path: "Somewhere.md"})
+				_ = f.opened.API.GetWindow().Focus(asking, domain.Place{Path: "Somewhere.md"})
 			}
 		}
 	}()
@@ -235,7 +235,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 // A vault with no identity is every vault at once in one database, and a vault
 // with no path is whichever folder this process happens to be standing in.
 func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	asked := map[string]func() error{
 		"list a folder of the vault": func() error {
@@ -312,7 +312,7 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 // TestAWindowStandingOnNothingSearchesNothing. The palette is a keystroke away
 // from a person who has added no vault, and typing in it turns up nothing.
 func TestAWindowStandingOnNothingSearchesNothing(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	named, err := f.vault.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "one"}))
 	if err != nil {
@@ -336,11 +336,12 @@ func TestAWindowStandingOnNothingSearchesNothing(t *testing.T) {
 // TestNoDocumentIsDrawnForAWindowStandingOnNothing. A document is addressed by
 // its path in the vault, and there is no vault for a path to be in.
 func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	// A file of the folder this process is standing in, which is what a path
-	// with no vault under it reaches.
-	const file = "serve.go"
+	// with no vault under it reaches. The name is a document's, so the ask is
+	// one a reader would take.
+	const file = "serve.pdf"
 
 	answer, err := f.server.Client().Get(
 		f.server.URL + "/assets/" + file + "/pages/0?wide=800&size=1&mtime=1")
@@ -386,7 +387,7 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 // TestAVaultAddedToAWindowStandingOnNothingIsShown, which is where the welcome
 // screen's two ways in both end.
 func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
-	f := standingOnNothing(t)
+	f := openEmptyWindow(t)
 
 	root := t.TempDir()
 	if err := os.WriteFile(
@@ -404,7 +405,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a folder could not be added: %v", err)
 	}
-	if refused := added.Msg.Refusal; refused != nil {
+	if refused := added.Msg.Error; refused != nil {
 		t.Fatalf("the folder was refused: %v", *refused)
 	}
 
@@ -414,7 +415,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}
 
-	if got := string(f.opened.Showing().ID); got != added.Msg.GetVault().GetId() {
+	if got := string(f.opened.GetShownVault().ID); got != added.Msg.GetVault().GetId() {
 		t.Fatalf("the window is showing %q, want the vault just added", got)
 	}
 
@@ -424,7 +425,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if reason := state.Msg.GetScan().GetFailed(); reason != "" {
+		if reason := state.Msg.GetScan().GetError(); reason != "" {
 			t.Fatalf("the vault could not be read: %s", reason)
 		}
 		if state.Msg.GetScan().GetReady() {

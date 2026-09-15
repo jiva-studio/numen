@@ -21,11 +21,11 @@ func spans(text, query string) []domain.Span {
 	if len(words) == 0 || text == "" {
 		return nil
 	}
-	folded, units := folding(text)
+	folded, units := getFoldedRunes(text)
 
 	var at []domain.Span
 	for i, word := range words {
-		wanted, _ := folding(word)
+		wanted, _ := getFoldedRunes(word)
 		if len(wanted) == 0 {
 			continue
 		}
@@ -41,7 +41,7 @@ func spans(text, query string) []domain.Span {
 			at = append(at, domain.Span{From: units[from], To: units[to]})
 		}
 	}
-	return merged(at)
+	return mergeSpans(at)
 }
 
 // wordly is what a word is made of, so that what stands either side of one is
@@ -54,9 +54,9 @@ func opens(runes []rune, at int) bool { return at == 0 || !wordly(runes[at-1]) }
 
 func closes(runes []rune, at int) bool { return at == len(runes) || !wordly(runes[at]) }
 
-// merged is the spans in the order they stand, with ones that touch or overlap
+// mergeSpans is the spans in the order they stand, with ones that touch or overlap
 // made into one. Two words typed can name the same characters.
-func merged(at []domain.Span) []domain.Span {
+func mergeSpans(at []domain.Span) []domain.Span {
 	if len(at) < 2 {
 		return at
 	}
@@ -74,13 +74,13 @@ func merged(at []domain.Span) []domain.Span {
 	return out
 }
 
-// folding is the text one rune at a time with case dropped, and where each of
+// getFoldedRunes is the text one rune at a time with case dropped, and where each of
 // those runes begins for something counting in UTF-16 code units.
 //
 // A rune at a time: folding a whole string can change how many characters it
 // holds. The offsets run one longer than the text, so the end of the last rune
 // is among them.
-func folding(text string) ([]rune, []int) {
+func getFoldedRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
 
@@ -104,8 +104,8 @@ const (
 	leading  = 60
 )
 
-// around is the part of a passage worth drawing: the words about the first span
-// that matched, or about the hit itself when no word matched at all.
+// getTextAround is the part of a passage worth drawing: the words about the
+// first span that matched, or about the hit itself when no word matched at all.
 //
 // A passage is the whole of the window enclosing its hit, which for a note is
 // the whole note. A hit by meaning stands on no word, so `from` is where the
@@ -113,8 +113,8 @@ const (
 //
 // The spans move with the text and the ones left outside are dropped, so what
 // comes back addresses what comes back.
-func around(text string, spans []domain.Span, from int) (string, []domain.Span) {
-	runes, units := counting(text)
+func getTextAround(text string, spans []domain.Span, from int) (string, []domain.Span) {
+	runes, units := getRunes(text)
 	total := units[len(runes)]
 	if total <= glancing {
 		return text, spans
@@ -134,7 +134,7 @@ func around(text string, spans []domain.Span, from int) (string, []domain.Span) 
 	// A window reaching past the end of the passage closes there and holds less
 	// than a glance.
 	to := min(opens+glancing, total)
-	first, last := begins(units, opens), ends(units, to)
+	first, last := getOpeningRune(units, opens), getClosingRune(units, to)
 	shift := units[first]
 
 	var kept []domain.Span
@@ -161,10 +161,10 @@ func around(text string, spans []domain.Span, from int) (string, []domain.Span) 
 	return cut, kept
 }
 
-// counting is the text one rune at a time, and where each of those runes begins
+// getRunes is the text one rune at a time, and where each of those runes begins
 // for something counting in UTF-16 code units. The offsets run one longer than
 // the text, so the end of the last rune is among them.
-func counting(text string) ([]rune, []int) {
+func getRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
 
@@ -180,9 +180,9 @@ func counting(text string) ([]rune, []int) {
 	return runes, append(units, at)
 }
 
-// begins is the rune the window opens on: the last one beginning at or before
-// the offset given, so a cut never lands inside a character.
-func begins(units []int, at int) int {
+// getOpeningRune is the rune the window opens on: the last one beginning at or
+// before the offset given, so a cut never lands inside a character.
+func getOpeningRune(units []int, at int) int {
 	for i := 1; i < len(units); i++ {
 		if units[i] > at {
 			return i - 1
@@ -191,9 +191,9 @@ func begins(units []int, at int) int {
 	return len(units) - 1
 }
 
-// ends is the rune the window closes before: the first one beginning at or
-// after the offset given.
-func ends(units []int, at int) int {
+// getClosingRune is the rune the window closes before: the first one beginning
+// at or after the offset given.
+func getClosingRune(units []int, at int) int {
 	for i := range units {
 		if units[i] >= at {
 			return i

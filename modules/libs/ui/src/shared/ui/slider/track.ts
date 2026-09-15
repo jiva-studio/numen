@@ -13,7 +13,7 @@ export interface Bounds {
 }
 
 /** The value brought inside the ends. */
-export const clamped = (value: number, bounds: Bounds): number =>
+export const clamp = (value: number, bounds: Bounds): number =>
   Math.min(bounds.max, Math.max(bounds.min, value))
 
 /** The keys that walk the handle along the track. */
@@ -29,7 +29,7 @@ const WALKING: readonly string[] = [
 ]
 
 /** Whether a key is one the handle walks under. */
-export const walks = (key: string): boolean => WALKING.includes(key)
+export const isWalkingKey = (key: string): boolean => WALKING.includes(key)
 
 /** How many steps a page key covers, which is what a key held with shift covers. */
 const PACES = 10
@@ -42,7 +42,7 @@ const places = (value: number): number => {
 }
 
 /** A value written to the places the floor and the step are written to. */
-const rounded = (value: number, bounds: Bounds): number => {
+const roundToPlaces = (value: number, bounds: Bounds): number => {
   const scale = 10 ** Math.max(places(bounds.min), places(bounds.step))
   return Math.round(value * scale) / scale
 }
@@ -51,7 +51,7 @@ const rounded = (value: number, bounds: Bounds): number => {
  * How many steps a value stands above the floor. A value one step short of a
  * whole one by the width of a rounding error stands on that whole one.
  */
-const above = (value: number, bounds: Bounds): number => {
+const getStepsAbove = (value: number, bounds: Bounds): number => {
   const steps = (value - bounds.min) / bounds.step
   const whole = Math.round(steps)
   return Math.abs(steps - whole) < 1e-9 ? whole : steps
@@ -63,16 +63,16 @@ const above = (value: number, bounds: Bounds): number => {
  * between two places is drawn onto the one the walk is heading towards, so a
  * step out and a step back come to where they began.
  */
-export const stepped = (value: number, by: number, bounds: Bounds): number => {
-  const from = clamped(value, bounds)
+export const stepBy = (value: number, by: number, bounds: Bounds): number => {
+  const from = clamp(value, bounds)
   if (bounds.step <= 0 || by === 0) return from
-  const at = above(from, bounds)
+  const at = getStepsAbove(from, bounds)
   const place = (by > 0 ? Math.floor(at) : Math.ceil(at)) + by
-  return clamped(rounded(bounds.min + place * bounds.step, bounds), bounds)
+  return clamp(roundToPlaces(bounds.min + place * bounds.step, bounds), bounds)
 }
 
 /** Where a key leaves the handle, and nothing for a key it does not answer. */
-export const walked = (
+export const stepForKey = (
   key: string,
   value: number,
   bounds: Bounds,
@@ -81,9 +81,9 @@ export const walked = (
   const paces = far ? PACES : 1
   if (key === 'Home') return bounds.min
   if (key === 'End') return bounds.max
-  if (key === 'ArrowRight' || key === 'ArrowUp') return stepped(value, paces, bounds)
-  if (key === 'ArrowLeft' || key === 'ArrowDown') return stepped(value, -paces, bounds)
-  if (key === 'PageUp') return stepped(value, PACES, bounds)
-  if (key === 'PageDown') return stepped(value, -PACES, bounds)
+  if (key === 'ArrowRight' || key === 'ArrowUp') return stepBy(value, paces, bounds)
+  if (key === 'ArrowLeft' || key === 'ArrowDown') return stepBy(value, -paces, bounds)
+  if (key === 'PageUp') return stepBy(value, PACES, bounds)
+  if (key === 'PageDown') return stepBy(value, -PACES, bounds)
   return null
 }

@@ -28,16 +28,16 @@ type ImportedFile struct {
 // same reason: what arrives is a path on one machine and a content URI on
 // another, and nothing above this knows which.
 type ImportedFiles interface {
-	// Named is what the machine calls the file at a handle. It reads nothing,
+	// GetName is what the machine calls the file at a handle. It reads nothing,
 	// so a handle that cannot be opened still has a name to be refused under.
-	Named(handle string) string
+	GetName(handle string) string
 	// Stat says what is at a handle.
 	Stat(ctx context.Context, handle string) (ImportedFile, error)
 	// List is what a folder holds, each by its own handle, without descending.
 	List(ctx context.Context, handle string) ([]ImportedFile, error)
 	// Open reads one file. Whoever opens it closes it.
 	Open(ctx context.Context, handle string) (io.ReadCloser, error)
-	// Holds reports whether a folder handed in is one a vault sits under. Such
-	// a folder would be copied into itself, and it does not come in.
-	Holds(handle, vault string) bool
+	// Contains reports whether a folder handed in is one a vault sits under.
+	// Such a folder would be copied into itself, and it does not come in.
+	Contains(handle, vault string) bool
 }

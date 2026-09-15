@@ -30,7 +30,11 @@ describe('the height a row shares', () => {
   })
 
   it('is what a line of choices stands at', () => {
-    expect(mount(Select, { props: { choices: CHOICES } }).get('button').classes()).toContain(ROW)
+    expect(
+      mount(Select, { props: { choices: CHOICES } })
+        .get('button')
+        .classes(),
+    ).toContain(ROW)
   })
 
   it('is what a row of segments stands at', () => {

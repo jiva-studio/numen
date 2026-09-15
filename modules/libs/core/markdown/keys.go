@@ -12,7 +12,7 @@ import (
 
 // Identifier is what the note carries, and whether it carries one.
 func (d *Document) Identifier() (string, bool) {
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil || node == nil {
 		return "", false
 	}
@@ -33,7 +33,7 @@ func (d *Document) SetIdentifier(identifier string) error {
 // A key with nothing in it names nothing, and the note is named by what comes
 // after it.
 func (d *Document) Title() (string, bool) {
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil || node == nil {
 		return "", false
 	}
@@ -59,7 +59,7 @@ func (d *Document) SetTitle(title string) error {
 // stand in it. False when the key is not there, and when it holds anything but
 // a list. An entry that is not text is not a name and is not among them.
 func (d *Document) List(key string) ([]string, bool) {
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil || node == nil {
 		return nil, false
 	}
@@ -85,7 +85,7 @@ func (d *Document) SetList(key string, names []string) error {
 		return d.set(key, nil)
 	}
 
-	spelled := d.spelling(key)
+	spelled := d.getSpelling(key)
 	seq := &yaml.Node{Kind: yaml.SequenceNode}
 	for _, name := range names {
 		seq.Content = append(seq.Content, &yaml.Node{
@@ -111,7 +111,7 @@ type Entry struct {
 // False is a key holding something other than a mapping. Such a value is the
 // person's whole, and the entries of a mapping are what this writes.
 func (d *Document) EntryNames(key string) ([]string, bool) {
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil {
 		return nil, false
 	}
@@ -150,7 +150,7 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 		return d.set(key, nil)
 	}
 
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 // Scalar is what one top-level frontmatter key holds, and whether it holds
 // anything. A key holding a list or a mapping holds no scalar.
 func (d *Document) Scalar(key string) (string, bool) {
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil || node == nil {
 		return "", false
 	}
@@ -229,11 +229,11 @@ func (d *Document) SetDay(key string, day time.Time) error {
 	})
 }
 
-// spelling is how each name of one key's list is quoted, so that a name coming
-// through a write untouched comes through spelled as it was.
-func (d *Document) spelling(key string) map[string]yaml.Style {
+// getSpelling is how each name of one key's list is quoted, so that a name
+// coming through a write untouched comes through spelled as it was.
+func (d *Document) getSpelling(key string) map[string]yaml.Style {
 	out := map[string]yaml.Style{}
-	node, err := d.mapping()
+	node, err := d.readMapping()
 	if err != nil || node == nil {
 		return out
 	}

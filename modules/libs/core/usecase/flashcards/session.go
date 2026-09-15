@@ -132,30 +132,30 @@ func (u Session) Execute(
 	// One reading of this vault's presets answers both the schedulers the cards
 	// are worked out by and the budgets they are held to.
 	reading := u.Presets.Reading()
-	asks, err := u.Schedules.under(ctx, v, reading, faces)
+	asks, err := u.Schedules.getAssignmentFrom(ctx, v, reading, faces)
 	if err != nil {
 		return SessionResult{}, err
 	}
-	schedules := u.Schedules.replayed(ctx, v, held, asks)
+	schedules := u.Schedules.getSchedulesCached(ctx, v, held, asks)
 
 	now := u.Now()
-	day, err := budgeted(
+	day, err := getBudgets(
 		ctx, v, reading, u.Day, faces, schedules, held,
-		u.Schedules.By, u.Schedules.at, now,
+		u.Schedules.By, u.Schedules.getScheduler, now,
 	)
 	if err != nil {
 		return SessionResult{}, err
 	}
-	holds := day.asks(faces, schedules, u.Day, now, over)
+	holds := day.getAsking(faces, schedules, u.Day, now, over)
 	if over.Named && len(holds.seen)+len(holds.fresh) == 0 {
 		return SessionResult{}, day.refuses(over.Preset)
 	}
 
 	// How loaded each day of review already is, which is what a card put on one
 	// of them is weighed against.
-	on := review.Spreading(u.Day)
+	on := review.NewDueByDay(u.Day)
 	for _, s := range schedules {
-		on.Holds(s.Due)
+		on.Add(s.Due)
 	}
 
 	out := SessionResult{Unwritten: marked.Unwritten, Skipped: held.Skipped}
@@ -163,26 +163,26 @@ func (u Session) Execute(
 	for _, one := range holds.seen {
 		s := schedules[one.ID]
 		out.Queue = append(out.Queue, QueuedCardFace{
-			CardFace: one, Schedule: s, Ahead: ahead(asks.under, on, one.ID, s, now),
+			CardFace: one, Schedule: s, Ahead: getIntervals(asks.under, on, one.ID, s, now),
 		})
 	}
 	for _, one := range holds.fresh {
 		out.Queue = append(out.Queue, QueuedCardFace{
 			CardFace: one,
-			Ahead:    ahead(asks.under, on, one.ID, review.Schedule{}, now),
+			Ahead:    getIntervals(asks.under, on, one.ID, review.Schedule{}, now),
 		})
 	}
 	return out, nil
 }
 
-// ahead is how long each of the four would leave a card standing where this
-// schedule leaves it. The card is left where it was, and so is the table of how
+// getIntervals is how long each of the four would leave a card standing where
+// this schedule leaves it. The card is left where it was, and so is the table of how
 // loaded each day is: only the answer a person gives lands anywhere.
 //
 // The scheduler is the one this card face is scheduled by and the placement is
 // its own preset's, so the window under each button is the day the card will
 // come back on.
-func ahead(
+func getIntervals(
 	under review.Assignment, on *review.DueByDay, face review.CardFaceID,
 	s review.Schedule, now time.Time,
 ) map[review.Rating]time.Duration {

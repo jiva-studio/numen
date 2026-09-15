@@ -5,15 +5,15 @@ import "fmt"
 // Bounds is how far a multiplier goes, at each end.
 type Bounds struct{ Least, Most float64 }
 
-// Holds is whether a number is one the setting takes.
-func (b Bounds) Holds(value float64) bool {
+// Contains is whether a number is one the setting takes.
+func (b Bounds) Contains(value float64) bool {
 	return value >= b.Least && value <= b.Most
 }
 
 // Check hands back what is wrong with a number the setting does not take, and
 // nothing for one it does. at is where the number sits in the file.
 func (b Bounds) Check(at string, value float64) error {
-	if b.Holds(value) {
+	if b.Contains(value) {
 		return nil
 	}
 	return &OutsideBounds{At: at, Number: value, Bounds: b}

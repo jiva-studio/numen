@@ -28,14 +28,14 @@ var learnedVault = map[string]string{
 // rule.
 func TestADecksLearnedFacesAreCountedByItsOwnPresetsRule(t *testing.T) {
 	t.Parallel()
-	s := opened(t, learnedVault)
+	s := openVault(t, learnedVault)
 
 	run := s.run(t, learnedHour)
 	answer(t, run, "card000000", 5*time.Second)
 	answer(t, run, "card000010", 5*time.Second)
 	answer(t, run, "card000020", 5*time.Second)
 
-	owing, err := s.owedAt(today, func() time.Time { return learnedHour.Add(time.Minute) }).
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour.Add(time.Minute) }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -66,9 +66,9 @@ func TestADecksLearnedFacesAreCountedByItsOwnPresetsRule(t *testing.T) {
 // has sat down to stands at nothing learned.
 func TestADeckNobodyHasAnsweredStandsAtNothingLearned(t *testing.T) {
 	t.Parallel()
-	s := opened(t, learnedVault)
+	s := openVault(t, learnedVault)
 
-	owing, err := s.owedAt(today, func() time.Time { return learnedHour }).
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -86,14 +86,14 @@ func TestADeckNobodyHasAnsweredStandsAtNothingLearned(t *testing.T) {
 // learned.
 func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 	t.Parallel()
-	s := opened(t, map[string]string{
+	s := openVault(t, map[string]string{
 		"Term.md":        term,
 		"Recall.md":      preset("learned: retention\nretention: 0.9\n"),
 		"decks/Empty.md": deckOf("Recall", 0, 0),
 		"decks/One.md":   deckOf("Recall", 1, 0),
 	})
 
-	owing, err := s.owedAt(today, func() time.Time { return learnedHour }).
+	owing, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -110,9 +110,9 @@ func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 // pass, so a deck every face of which is unbegun says so on its own row.
 func TestADecksUnbegunFacesAreCounted(t *testing.T) {
 	t.Parallel()
-	s := opened(t, learnedVault)
+	s := openVault(t, learnedVault)
 
-	before, err := s.owedAt(today, func() time.Time { return learnedHour }).
+	before, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -127,7 +127,7 @@ func TestADecksUnbegunFacesAreCounted(t *testing.T) {
 	run := s.run(t, learnedHour)
 	answer(t, run, "card000000", 5*time.Second)
 
-	after, err := s.owedAt(today, func() time.Time { return learnedHour.Add(time.Minute) }).
+	after, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour.Add(time.Minute) }).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)

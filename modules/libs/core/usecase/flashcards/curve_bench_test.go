@@ -55,7 +55,7 @@ func curveWhole(cards int) map[string]string {
 func BenchmarkCurveCards(b *testing.B) {
 	for _, cards := range []int{500, 5000, 20000, 50000} {
 		b.Run(fmt.Sprint(cards), func(b *testing.B) {
-			s := opened(b, curveWhole(cards))
+			s := openVault(b, curveWhole(cards))
 			loadAnswers(b, s, cards, 180, max(1, cards*150/50000))
 
 			ctx := b.Context()
@@ -89,7 +89,7 @@ func BenchmarkCurveCards(b *testing.B) {
 // the window and then a preset tab costs.
 func BenchmarkPresetCurve(b *testing.B) {
 	const cards = 50000
-	s := opened(b, curveLoad(cards))
+	s := openVault(b, curveLoad(cards))
 	loadAnswers(b, s, cards, 180, 150)
 
 	ctx := b.Context()

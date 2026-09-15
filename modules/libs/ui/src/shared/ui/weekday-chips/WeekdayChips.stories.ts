@@ -12,7 +12,7 @@ import { computed, ref } from 'vue'
 import WeekdayChips from './WeekdayChips.vue'
 import { weekFrom, WEEK, type DayName } from './week'
 import { lightness } from '@/shared/fixtures/colour'
-import { DARK, drawnDark } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 /** The week as Russian names it, for the names that are not Latin. */
 const RUSSIAN: readonly DayName[] = [
@@ -70,10 +70,10 @@ const meta: Meta<Knobs> = {
           args.named ?? weekFrom(args.startsOn, args.names === 'Russian' ? RUSSIAN : WEEK)
         return named.map((one) => ({ ...one, level: levelOf.value[one.id] ?? 1 }))
       })
-      const chose = (day: string, level: number) => {
+      const onChoose = (day: string, level: number) => {
         levelOf.value = { ...levelOf.value, [day]: level }
       }
-      return { args, days, chose }
+      return { args, days, onChoose }
     },
     template: `
       <div style="padding: 2rem">
@@ -82,7 +82,7 @@ const meta: Meta<Knobs> = {
           :days="days"
           :levels="args.levels"
           :disabled="args.disabled"
-          @chooses="chose"
+          @choose="onChoose"
         />
       </div>
     `,
@@ -95,10 +95,10 @@ type Story = StoryObj<Knobs>
 const chips = (canvas: HTMLElement): readonly HTMLElement[] =>
   Array.from(canvas.querySelectorAll<HTMLElement>('[data-slot="weekday-chips"] button'))
 
-const said = (canvas: HTMLElement): readonly string[] =>
+const getChipLabels = (canvas: HTMLElement): readonly string[] =>
   chips(canvas).map((chip) => chip.getAttribute('aria-label') ?? '')
 
-const offered = (): readonly string[] =>
+const getOfferedLabels = (): readonly string[] =>
   Array.from(document.body.querySelectorAll('.menu__item')).map(
     (one) => one.textContent?.trim() ?? '',
   )
@@ -130,12 +130,12 @@ export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
 export const ALevelNotOnOffer: Story = {
   args: { levelOf: { sat: 0.37, sun: 4 } },
   play: async ({ canvasElement }) => {
-    expect(said(canvasElement)[5]).toBe('Saturday, 37%')
-    expect(said(canvasElement)[6]).toBe('Sunday, 100%')
+    expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 37%')
+    expect(getChipLabels(canvasElement)[6]).toBe('Sunday, 100%')
 
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
     await waitFor(() =>
-      expect(offered()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%']),
+      expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%']),
     )
   },
 }
@@ -160,7 +160,7 @@ export const NoDaysAtAll: Story = {
 export const OneDay: Story = {
   args: { named: [{ id: 'wed', short: 'W', long: 'Wednesday' }], levelOf: { wed: 0.25 } },
   play: async ({ canvasElement }) => {
-    expect(said(canvasElement)).toEqual(['Wednesday, 25%'])
+    expect(getChipLabels(canvasElement)).toEqual(['Wednesday, 25%'])
 
     await userEvent.tab()
     await userEvent.keyboard('{ArrowRight}')
@@ -175,7 +175,7 @@ export const NoLevelsAtAll: Story = {
     await userEvent.click(chips(canvasElement)[0] as HTMLElement)
     // The level the day stands at is on offer wherever it is asked for, so a
     // day is never asked to choose without its own among the choices.
-    await waitFor(() => expect(offered()).toEqual(['100%']))
+    await waitFor(() => expect(getOfferedLabels()).toEqual(['100%']))
   },
 }
 
@@ -219,7 +219,7 @@ export const AwkwardNames: Story = {
   play: async ({ canvasElement }) => {
     const all = chips(canvasElement)
     expect(all.map((chip) => chip.textContent?.trim())).toEqual(['', 'Tues', 'W', 'Четв'])
-    expect(said(canvasElement)[0]).toBe('Monday, 100%')
+    expect(getChipLabels(canvasElement)[0]).toBe('Monday, 100%')
 
     const first = all[0]?.getBoundingClientRect()
     for (const chip of all) {
@@ -248,7 +248,7 @@ export const DisabledOffersNothing: Story = {
 
     await userEvent.click(chip)
     await userEvent.keyboard(' ')
-    expect(offered()).toEqual([])
+    expect(getOfferedLabels()).toEqual([])
   },
 }
 
@@ -256,8 +256,8 @@ export const DisabledOffersNothing: Story = {
 export const EachChipSaysWhereItStands: Story = {
   play: async ({ canvasElement }) => {
     expect(chips(canvasElement)).toHaveLength(7)
-    expect(said(canvasElement)[0]).toBe('Monday, 100%')
-    expect(said(canvasElement)[5]).toBe('Saturday, 50%')
+    expect(getChipLabels(canvasElement)[0]).toBe('Monday, 100%')
+    expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 50%')
   },
 }
 
@@ -266,14 +266,16 @@ export const PressingADayOffersTheLevels: Story = {
   args: { levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
-    await waitFor(() => expect(offered()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']))
+    await waitFor(() =>
+      expect(getOfferedLabels()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']),
+    )
 
     const quarter = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item')).find(
       (one) => one.textContent?.trim() === '25%',
     )
     await userEvent.click(quarter as HTMLElement)
-    await waitFor(() => expect(said(canvasElement)[5]).toBe('Saturday, 25%'))
-    await waitFor(() => expect(offered()).toEqual([]))
+    await waitFor(() => expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 25%'))
+    await waitFor(() => expect(getOfferedLabels()).toEqual([]))
   },
 }
 
@@ -304,23 +306,22 @@ export const TheKeyboardComesBack: Story = {
     expect(document.activeElement).toBe(chip)
 
     await userEvent.keyboard(' ')
-    const onOffer = () =>
-      Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
+    const onOffer = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
     await waitFor(() => expect(onOffer()).toHaveLength(7))
     // Open on the level the day stands at, said on the item itself.
     expect(document.activeElement).toBe(onOffer()[3])
     expect(onOffer()[3]?.getAttribute('aria-checked')).toBe('true')
 
     await userEvent.keyboard('{Escape}')
-    await waitFor(() => expect(offered()).toEqual([]))
+    await waitFor(() => expect(getOfferedLabels()).toEqual([]))
     expect(document.activeElement).toBe(chip)
 
     await userEvent.keyboard(' ')
-    await waitFor(() => expect(offered()).toHaveLength(7))
+    await waitFor(() => expect(getOfferedLabels()).toHaveLength(7))
     await userEvent.keyboard('{ArrowUp}{Enter}')
-    await waitFor(() => expect(offered()).toEqual([]))
+    await waitFor(() => expect(getOfferedLabels()).toEqual([]))
     expect(document.activeElement).toBe(chip)
-    expect(said(canvasElement)[5]).toBe('Saturday, 25%')
+    expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 25%')
   },
 }
 
@@ -337,7 +338,7 @@ export const Dark: Story = {
     levelOf: { mon: 0.9, tue: 0.75, wed: 0.5, thu: 0.25, fri: 0.1, sat: 0, sun: 0.9 },
   },
   play: async ({ canvasElement }) => {
-    await drawnDark(canvasElement)
+    await expectDark(canvasElement)
     const all = chips(canvasElement)
     expect(all).toHaveLength(7)
 
@@ -368,6 +369,6 @@ export const TheKeyboardWalksAndOffers: Story = {
     expect(document.activeElement).toBe(chips(canvasElement)[2])
 
     await userEvent.keyboard(' ')
-    await waitFor(() => expect(offered()).toHaveLength(7))
+    await waitFor(() => expect(getOfferedLabels()).toHaveLength(7))
   },
 }

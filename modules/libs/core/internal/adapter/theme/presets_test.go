@@ -35,7 +35,7 @@ type declaration struct {
 // is nothing else in one.
 func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 	sets := themeable(t)
-	for name, css := range shipped(t) {
+	for name, css := range readPresets(t) {
 		for _, one := range setBy(css) {
 			if !strings.HasPrefix(one.property, "--") {
 				if one.property != "color-scheme" {
@@ -56,7 +56,7 @@ func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 // in one value. A preset that sets a token writes the shape that token takes.
 func TestAPresetGivesEachTokenTheShapeItTakes(t *testing.T) {
 	sets := themeable(t)
-	for name, css := range shipped(t) {
+	for name, css := range readPresets(t) {
 		for _, one := range setBy(css) {
 			want, is := sets[one.property]
 			if !is {
@@ -69,8 +69,8 @@ func TestAPresetGivesEachTokenTheShapeItTakes(t *testing.T) {
 	}
 }
 
-// shipped is every preset's text, under the name it is asked for.
-func shipped(t *testing.T) map[string]string {
+// readPresets is every preset's text, under the name it is asked for.
+func readPresets(t *testing.T) map[string]string {
 	t.Helper()
 	catalogue := folder(t)
 	texts := map[string]string{}
@@ -97,10 +97,10 @@ func themeable(t *testing.T) map[string]takes {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, block := range blocks(stripped(string(css))) {
+	for _, block := range blocks(stripComments(string(css))) {
 		sets := map[string]takes{}
 		held := map[string]string{}
-		for _, one := range declared(block) {
+		for _, one := range getDeclarations(block) {
 			if strings.HasPrefix(one.property, "--") {
 				held[one.property] = one.value
 			}
@@ -108,7 +108,7 @@ func themeable(t *testing.T) map[string]takes {
 		for property, value := range held {
 			// A token given as another token takes the shape that one takes:
 			// two names for one value are one value.
-			sets[property] = shapeOf(resolved(value, held))
+			sets[property] = shapeOf(resolveToken(value, held))
 		}
 		if len(sets) > 0 {
 			return sets
@@ -121,10 +121,10 @@ func themeable(t *testing.T) map[string]takes {
 // pointing is a value that is nothing but another token: `var(--numen-hushed)`.
 var pointing = regexp.MustCompile(`^var\(\s*(--[\w-]+)\s*\)$`)
 
-// resolved follows a token given as another token, to the value at the end of
+// resolveToken follows a token given as another token, to the value at the end of
 // it. A ring of them resolves to itself and is read as the shape it is written
 // as, which is no shape at all.
-func resolved(value string, held map[string]string) string {
+func resolveToken(value string, held map[string]string) string {
 	for range len(held) {
 		found := pointing.FindStringSubmatch(value)
 		if found == nil {
@@ -167,7 +167,7 @@ var hex = regexp.MustCompile(`^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})
 
 // isColour is a hex colour, or the pair of them the mode chooses between.
 func isColour(value string) bool {
-	if inner, is := paired(value); is {
+	if inner, is := getLightDarkPair(value); is {
 		halves := pieces(inner, ',')
 		return len(halves) == 2 &&
 			isColour(strings.TrimSpace(halves[0])) && isColour(strings.TrimSpace(halves[1]))
@@ -196,8 +196,8 @@ func isShadow(value string) bool {
 	return true
 }
 
-// paired is the inside of a `light-dark()`.
-func paired(value string) (string, bool) {
+// getLightDarkPair is the inside of a `light-dark()`.
+func getLightDarkPair(value string) (string, bool) {
 	const opens = "light-dark("
 	if !strings.HasPrefix(value, opens) || !strings.HasSuffix(value, ")") {
 		return "", false
@@ -208,15 +208,15 @@ func paired(value string) (string, bool) {
 // setBy is every property a stylesheet sets, whichever of its rules sets it.
 func setBy(css string) []declaration {
 	var found []declaration
-	for _, block := range blocks(stripped(css)) {
-		found = append(found, declared(block)...)
+	for _, block := range blocks(stripComments(css)) {
+		found = append(found, getDeclarations(block)...)
 	}
 	return found
 }
 
-// declared is what one block sets. A value runs to the semicolon standing
+// getDeclarations is what one block sets. A value runs to the semicolon standing
 // outside brackets, so a pair written over two lines stays whole.
-func declared(block string) []declaration {
+func getDeclarations(block string) []declaration {
 	var found []declaration
 	for _, part := range pieces(block, ';') {
 		name, value, is := strings.Cut(part, ":")
@@ -246,8 +246,8 @@ func blocks(css string) []string {
 	}
 }
 
-// stripped is a stylesheet with its comments cut away.
-func stripped(css string) string {
+// stripComments is a stylesheet with its comments cut away.
+func stripComments(css string) string {
 	var text strings.Builder
 	for {
 		start := strings.Index(css, "/*")

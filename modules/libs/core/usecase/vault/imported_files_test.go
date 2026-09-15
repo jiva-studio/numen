@@ -21,7 +21,7 @@ type handedOver struct {
 	holding map[string][]string
 }
 
-func (h handedOver) Named(handle string) string { return h.names[handle] }
+func (h handedOver) GetName(handle string) string { return h.names[handle] }
 
 func (h handedOver) Stat(_ context.Context, handle string) (port.ImportedFile, error) {
 	one := port.ImportedFile{Name: h.names[handle], Handle: handle}
@@ -52,7 +52,7 @@ func (h handedOver) Open(_ context.Context, handle string) (io.ReadCloser, error
 	return io.NopCloser(strings.NewReader(body)), nil
 }
 
-func (handedOver) Holds(string, string) bool { return false }
+func (handedOver) Contains(string, string) bool { return false }
 
 // What a person hands over is read through the port, so a machine that names
 // its files anything but paths can bring them in. A use case reaching the
@@ -80,16 +80,16 @@ func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(brought.Refused) != 0 {
-		t.Fatalf("what was refused: %v", brought.Refused)
+	if len(brought.Errors) != 0 {
+		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
 	if len(brought.Landed) != 3 {
 		t.Fatalf("what landed: %v", brought.Landed)
 	}
-	if body := arrived(t, v.Path, "scans/Cover.png"); body != "PNG" {
+	if body := readArrived(t, v.Path, "scans/Cover.png"); body != "PNG" {
 		t.Errorf("the picture arrived as %q", body)
 	}
-	if body := arrived(t, v.Path, "scans/Kelvin.md"); body != "# Kelvin\n" {
+	if body := readArrived(t, v.Path, "scans/Kelvin.md"); body != "# Kelvin\n" {
 		t.Errorf("the note arrived as %q", body)
 	}
 }

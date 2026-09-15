@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
 // joins is a reply putting a run of lines together as one. A run stands within
@@ -21,14 +21,14 @@ func joins(at, through int, said string) string {
 // wholly is a run over a transcript asked about in one batch.
 func wholly(t *testing.T, says map[int]string, words ...string) (ProofreadTranscript, domain.Vault, *shelf, string) {
 	t.Helper()
-	u, v, kept, _, hash := hearing(t, says, words...)
+	u, v, kept, _, hash := newProofreadTranscript(t, says, words...)
 	u.BatchSize = len(words)
 	return u, v, kept, hash
 }
 
-// A sentence the recording broke across two stretches comes back as one line,
+// A sentence the recording broke across two spans comes back as one line,
 // running from the first moment to the last.
-func TestASentenceBrokenAcrossStretchesBecomesOneLine(t *testing.T) {
+func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure."}
 	u, v, shelved, hash := wholly(t,
 		map[int]string{0: joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")},
@@ -38,19 +38,19 @@ func TestASentenceBrokenAcrossStretchesBecomesOneLine(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 2 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
 	if cues[0].Text != "Krishna is Radha, Krishna is connected with Radhika." {
 		t.Errorf("the first line says %q", cues[0].Text)
 	}
-	// The sentence runs from where the first stretch began to where the last
+	// The sentence runs from where the first span began to where the last
 	// one ended.
-	if cues[0].From != stretch(0).From || cues[0].To != stretch(1).To {
+	if cues[0].From != getSpan(0).From || cues[0].To != getSpan(1).To {
 		t.Errorf("the sentence runs %d-%d", cues[0].From, cues[0].To)
 	}
-	if cues[1].Text != "Sure." || cues[1].From != stretch(2).From {
+	if cues[1].Text != "Sure." || cues[1].From != getSpan(2).From {
 		t.Errorf("the line after it says %q at %d", cues[1].Text, cues[1].From)
 	}
 }
@@ -66,17 +66,17 @@ func TestJoiningLeavesWhatWasHeardWhereItIs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	heard := cued(t, shelved, text.Artifact(text.ASR, hash))
+	heard := readCues(t, shelved, text.Artifact(text.ASR, hash))
 	if len(heard) != 2 || heard[0].Text != words[0] || heard[1].Text != words[1] {
 		t.Errorf("what was heard now says %+v", heard)
 	}
 }
 
-// overlapping is a run over four stretches cut into two batches sharing three
+// newOverlappingRun is a run over four spans cut into two batches sharing three
 // lines, with as many batches to a request as asked for.
-func overlapping(t *testing.T, batches int, says map[int]string) (ProofreadTranscript, domain.Vault, *shelf, string) {
+func newOverlappingRun(t *testing.T, batches int, says map[int]string) (ProofreadTranscript, domain.Vault, *shelf, string) {
 	t.Helper()
-	u, v, kept, _, hash := hearing(t,
+	u, v, kept, _, hash := newProofreadTranscript(t,
 		says,
 		"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all.")
 	u.BatchSize, u.Overlap, u.InFlight = 3, 2, batches
@@ -97,7 +97,7 @@ const (
 func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 	for _, batches := range []int{1, 2} {
 		t.Run(fmt.Sprintf("%d to a request", batches), func(t *testing.T) {
-			u, v, shelved, hash := overlapping(t, batches, map[int]string{
+			u, v, shelved, hash := newOverlappingRun(t, batches, map[int]string{
 				0: joins(0, 1, putTogether),
 				1: corrects(1, onItsOwn),
 			})
@@ -106,7 +106,7 @@ func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			cues := cued(t, shelved, text.Corrections(text.ASR, hash))
+			cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
 			if len(cues) != 3 {
 				t.Fatalf("the transcript says %+v", cues)
 			}
@@ -123,7 +123,7 @@ func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 // Two batches answering for runs over the same lines: the run standing first
 // puts them together, and the one reaching into it is dropped.
 func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
-	u, v, shelved, hash := overlapping(t, 1, map[int]string{
+	u, v, shelved, hash := newOverlappingRun(t, 1, map[int]string{
 		0: joins(0, 1, putTogether),
 		1: joins(1, 2, "Connected with Radhika. Sure."),
 	})
@@ -132,16 +132,16 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 3 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
 	if cues[0].Text != putTogether || cues[1].Text != "Sure." {
 		t.Errorf("the transcript says %+v", cues)
 	}
-	// The run that stands reaches to the end of the second stretch, and the one
+	// The run that stands reaches to the end of the second span, and the one
 	// dropped moved no moment.
-	if cues[0].To != stretch(1).To || cues[1].To != stretch(2).To {
+	if cues[0].To != getSpan(1).To || cues[1].To != getSpan(2).To {
 		t.Errorf("the lines run to %d and %d", cues[0].To, cues[1].To)
 	}
 }
@@ -151,7 +151,7 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 // the lines are known by are not the same ones the run before it saw.
 func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
-	u, v, shelved, by, hash := hearing(t, map[int]string{0: joins(0, 1, putTogether)}, words...)
+	u, v, shelved, by, hash := newProofreadTranscript(t, map[int]string{0: joins(0, 1, putTogether)}, words...)
 	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
 
 	ctx, stop := context.WithCancel(t.Context())
@@ -176,15 +176,15 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Errorf("got %+v", res)
 	}
 
-	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 3 || cues[0].Text != putTogether {
 		t.Errorf("the transcript says %+v", cues)
 	}
 }
 
-// The stretches of speech one recording was heard as. The third, fourth and
+// The spans of speech one recording was heard as. The third, fourth and
 // fifth of them are one sentence.
-var stretches = []string{
+var speech = []string{
 	"Welcome, everyone.",
 	"Today we will read",
 	"a verse that the teacher",
@@ -195,15 +195,15 @@ var stretches = []string{
 	"Let us begin.",
 }
 
-// What those three stretches say, as one line.
+// What those three spans say, as one line.
 const crossed = "A verse that the teacher explained at some length in the morning class."
 
-// crossing is a run over those stretches, cut into batches of four sharing one
-// line, one batch to a request. The batches are numbered 0 to 2 and the seams
-// over the two cuts between them 3 and 4.
-func crossing(t *testing.T, says map[int]string) (ProofreadTranscript, domain.Vault, *shelf, *corrector, string) {
+// newCrossingRun is a run over those spans, cut into batches of four sharing
+// one line, one batch to a request. The batches are numbered 0 to 2 and the
+// seams over the two cuts between them 3 and 4.
+func newCrossingRun(t *testing.T, says map[int]string) (ProofreadTranscript, domain.Vault, *shelf, *corrector, string) {
 	t.Helper()
-	u, v, kept, by, hash := hearing(t, says, stretches...)
+	u, v, kept, by, hash := newProofreadTranscript(t, says, speech...)
 	u.BatchSize, u.Overlap, u.InFlight = 4, 1, 1
 	return u, v, kept, by, hash
 }
@@ -212,7 +212,7 @@ func crossing(t *testing.T, says map[int]string) (ProofreadTranscript, domain.Va
 // ending after it, is in no batch of the first pass. The seam over that cut
 // holds it whole, and it is put back together there.
 func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
-	u, v, shelved, by, hash := crossing(t, map[int]string{
+	u, v, shelved, by, hash := newCrossingRun(t, map[int]string{
 		0: joins(2, 4, crossed),
 		3: joins(2, 4, crossed),
 	})
@@ -226,17 +226,17 @@ func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
 		t.Fatalf("it asked %v", by.asked)
 	}
 
-	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 6 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
 	if cues[2].Text != crossed {
 		t.Errorf("the sentence says %q", cues[2].Text)
 	}
-	if cues[2].From != stretch(2).From || cues[2].To != stretch(4).To {
+	if cues[2].From != getSpan(2).From || cues[2].To != getSpan(4).To {
 		t.Errorf("the sentence runs %d-%d", cues[2].From, cues[2].To)
 	}
-	if cues[3].Text != stretches[5] {
+	if cues[3].Text != speech[5] {
 		t.Errorf("the line after it says %q", cues[3].Text)
 	}
 }
@@ -244,7 +244,7 @@ func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
 // Where no reply ran on past the end of its batch, no sentence crossed a cut,
 // and the transcript costs what its own batches cost.
 func TestATranscriptNothingRanPastAsksAboutItsBatchesOnly(t *testing.T) {
-	u, v, _, by, _ := crossing(t, map[int]string{
+	u, v, _, by, _ := newCrossingRun(t, map[int]string{
 		0: corrects(0, "Welcome, everybody."),
 		1: joins(3, 4, "Today we will read a verse that the teacher"),
 	})
@@ -271,7 +271,7 @@ func TestATranscriptNothingRanPastAsksAboutItsBatchesOnly(t *testing.T) {
 // One batch answered for a sentence running on past its end. The seam over that
 // cut is asked about, and the other cut costs nothing.
 func TestOnlyTheCutASentenceRanPastIsAskedAbout(t *testing.T) {
-	u, v, _, by, _ := crossing(t, map[int]string{0: joins(2, 4, crossed)})
+	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: joins(2, 4, crossed)})
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -283,8 +283,8 @@ func TestOnlyTheCutASentenceRanPastIsAskedAbout(t *testing.T) {
 
 // A transcript of one batch has no cut, and nothing is asked about twice.
 func TestATranscriptOfOneBatchAsksNothingMore(t *testing.T) {
-	u, v, _, by, _ := crossing(t, nil)
-	u.BatchSize = len(stretches)
+	u, v, _, by, _ := newCrossingRun(t, nil)
+	u.BatchSize = len(speech)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -297,7 +297,7 @@ func TestATranscriptOfOneBatchAsksNothingMore(t *testing.T) {
 // A run stopped in the seam pass takes up at the seam it stopped on. What the
 // pass before it asked about is not asked about again.
 func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
-	u, v, shelved, by, hash := crossing(t, map[int]string{
+	u, v, shelved, by, hash := newCrossingRun(t, map[int]string{
 		0: joins(2, 4, crossed),
 		1: joins(5, 7, "The point of it is very simple. Let us begin."),
 		2: corrects(7, "Let us begin!"),
@@ -322,14 +322,14 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 		t.Errorf("it asked %v, want the seam it stopped on", again.asked)
 	}
 
-	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 7 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
 	if cues[6].Text != "Let us begin!" {
 		t.Errorf("what the pass before put right says %q", cues[6].Text)
 	}
-	if cues[5].Text != "The point of it is very simple." || cues[5].To != stretch(6).To {
+	if cues[5].Text != "The point of it is very simple." || cues[5].To != getSpan(6).To {
 		t.Errorf("the sentence says %q and runs to %d", cues[5].Text, cues[5].To)
 	}
 }
@@ -337,7 +337,7 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 // A line the first pass put into a run stands in it. A seam answering for that
 // line again is answered too late.
 func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
-	u, v, shelved, _, hash := crossing(t, map[int]string{
+	u, v, shelved, _, hash := newCrossingRun(t, map[int]string{
 		0: joins(1, 2, "Today we will read a verse that the teacher") + "\n" +
 			joins(3, 5, "Explained at some length in the morning class."),
 		3: joins(2, 3, "A verse that the teacher explained at some length"),
@@ -347,21 +347,21 @@ func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
+	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 7 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
-	if cues[1].Text != "Today we will read a verse that the teacher" || cues[1].To != stretch(2).To {
+	if cues[1].Text != "Today we will read a verse that the teacher" || cues[1].To != getSpan(2).To {
 		t.Errorf("the run says %q and runs to %d", cues[1].Text, cues[1].To)
 	}
-	if cues[2].Text != stretches[3] {
+	if cues[2].Text != speech[3] {
 		t.Errorf("the line after the run says %q", cues[2].Text)
 	}
 }
 
 // A seam carries what the recording holds, as a batch of the first pass does.
 func TestASeamCarriesWhatTheRecordingHolds(t *testing.T) {
-	u, v, _, by, _ := crossing(t, map[int]string{0: joins(2, 4, crossed)})
+	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: joins(2, 4, crossed)})
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)

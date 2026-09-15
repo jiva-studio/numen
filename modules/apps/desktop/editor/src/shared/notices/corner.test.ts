@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { cornerOf, type State, type Words } from './corner'
-import type { Task } from '../core'
+import type { Task } from './task'
 import type { IndexCoverage } from './coverage'
 import type { WindowMessage } from './messages'
 
@@ -24,7 +24,7 @@ const well = (over: Partial<State> = {}): State => ({
   unread: '',
   lost: '',
   reading: false,
-  holds: true,
+  hasNote: true,
   ...over,
 })
 
@@ -42,12 +42,12 @@ const reading = (over: Partial<Task> = {}): Task => ({
   done: 42,
   total: 400,
   counting: 'things',
-  failed: '',
-  asked: true,
+  error: '',
+  isAsked: true,
   ...over,
 })
 
-const told = (over: Partial<WindowMessage> = {}): WindowMessage => ({
+const createMessage = (over: Partial<WindowMessage> = {}): WindowMessage => ({
   id: 'command#1',
   name: 'command',
   kind: 'report',
@@ -57,10 +57,10 @@ const told = (over: Partial<WindowMessage> = {}): WindowMessage => ({
 
 const corner = (
   tasks: readonly Task[] = [],
-  said: readonly WindowMessage[] = [],
+  messages: readonly WindowMessage[] = [],
   state: State = well(),
   coverage: IndexCoverage = vault(),
-) => cornerOf(tasks, said, state, coverage, words)
+) => cornerOf(tasks, messages, state, coverage, words)
 
 describe('a document being read', () => {
   it('draws one card, whatever else the vault says about itself', () => {
@@ -73,46 +73,46 @@ describe('a document being read', () => {
   })
 
   it('is drawn the moment it arrives, since a person asked for it', () => {
-    expect(corner([reading()])[0]?.asked).toBe(true)
+    expect(corner([reading()])[0]?.isAsked).toBe(true)
   })
 
   it('waits to be drawn when nobody asked, since most such work is soon over', () => {
-    const pass = reading({ id: 'reading the books', doing: 'Reading books', asked: false })
+    const pass = reading({ id: 'reading the books', doing: 'Reading books', isAsked: false })
 
-    expect(corner([pass])[0]?.asked).toBe(false)
+    expect(corner([pass])[0]?.isAsked).toBe(false)
   })
 })
 
 describe('work that stopped badly', () => {
-  it('is drawn as trouble and not as something still running', () => {
-    const drawn = corner([reading({ failed: 'nothing to read with' })])
+  it('is drawn as alarm and not as something still running', () => {
+    const drawn = corner([reading({ error: 'nothing to read with' })])
 
     expect(drawn[0]?.tone).toBe('alarm')
     expect(drawn[0]?.working).toBe(false)
   })
 
   it('is called by what stopped it, which is the sentence a person acts on', () => {
-    const drawn = corner([reading({ failed: 'nothing to read with' })])
+    const drawn = corner([reading({ error: 'nothing to read with' })])
 
     expect(drawn[0]?.says).toBe('nothing to read with')
     expect(drawn[0]?.about).toBe('library/Sabhaparva.pdf')
   })
 
   it('is one card where one failure stopped several passes', () => {
-    const why = 'intfloat/multilingual-e5-small is not on this machine'
+    const error = 'intfloat/multilingual-e5-small is not on this machine'
     const drawn = corner([
-      reading({ id: 'getting ready', doing: 'Preparing the model', failed: why }),
-      reading({ id: 'making the vectors', doing: 'Indexing', failed: `embedding demo: ${why}` }),
+      reading({ id: 'getting ready', doing: 'Preparing the model', error }),
+      reading({ id: 'making the vectors', doing: 'Indexing', error: `embedding demo: ${error}` }),
     ])
 
-    expect(drawn.map((one) => one.says)).toStrictEqual([why])
+    expect(drawn.map((one) => one.says)).toStrictEqual([error])
   })
 
   it('is one card where two passes stopped with the very same words', () => {
-    const why = 'the model is not on this machine'
+    const error = 'the model is not on this machine'
     const drawn = corner([
-      reading({ id: 'getting ready', doing: 'Preparing the model', failed: why }),
-      reading({ id: 'making the vectors', doing: 'Indexing', failed: why }),
+      reading({ id: 'getting ready', doing: 'Preparing the model', error }),
+      reading({ id: 'making the vectors', doing: 'Indexing', error }),
     ])
 
     expect(drawn.map((one) => one.id)).toStrictEqual(['getting ready'])
@@ -120,8 +120,8 @@ describe('work that stopped badly', () => {
 
   it('keeps two failures that only happen to end in the same word', () => {
     const drawn = corner([
-      reading({ id: 'one', failed: 'the disk is full' }),
-      reading({ id: 'two', failed: 'the index says the disk is full' }),
+      reading({ id: 'one', error: 'the disk is full' }),
+      reading({ id: 'two', error: 'the index says the disk is full' }),
     ])
 
     expect(drawn).toHaveLength(2)
@@ -129,18 +129,18 @@ describe('work that stopped badly', () => {
 
   it('keeps two failures that are two different things', () => {
     const drawn = corner([
-      reading({ id: 'one', failed: 'nothing to read with' }),
-      reading({ id: 'two', failed: 'the disk is full' }),
+      reading({ id: 'one', error: 'nothing to read with' }),
+      reading({ id: 'two', error: 'the disk is full' }),
     ])
 
     expect(drawn).toHaveLength(2)
   })
 
   it('stands until it is put away, and is drawn at once even where nobody asked', () => {
-    const drawn = corner([reading({ asked: false, failed: 'nothing to read with' })])
+    const drawn = corner([reading({ isAsked: false, error: 'nothing to read with' })])
 
     expect(drawn[0]?.stay).toBe('kept')
-    expect(drawn[0]?.asked).toBe(true)
+    expect(drawn[0]?.isAsked).toBe(true)
   })
 })
 
@@ -170,8 +170,8 @@ describe('work with nothing to count', () => {
 })
 
 describe('a step of a run', () => {
-  const step = (doing: string, about: string, done = 0, total = 0) =>
-    reading({ id: 'making the vectors', doing, about, done, total, asked: false })
+  const step = (what: string, about: string, count = 0, total = 0) =>
+    reading({ id: 'making the vectors', doing: what, about, done: count, total, isAsked: false })
 
   it('is called by what it is, and names what it is on', () => {
     const drawn = corner([step('Indexing', 'library/Sabhaparva.epub', 300, 1200)])
@@ -203,19 +203,19 @@ describe('what is so about the window', () => {
   })
 
   it('says nothing was read only once the reading is over', () => {
-    const drawn = corner([], [], well({ reading: true, holds: false, unread: 'no such folder' }))
+    const drawn = corner([], [], well({ reading: true, hasNote: false, unread: 'no such folder' }))
 
     expect(drawn.map((one) => one.says)).toStrictEqual([words.unread, words.reading])
   })
 
   it('says the vault could not be read, and that nothing was read from it', () => {
-    const drawn = corner([], [], well({ unread: 'the vault folder is not there', holds: false }))
+    const drawn = corner([], [], well({ unread: 'the vault folder is not there', hasNote: false }))
 
     expect(drawn.map((one) => one.says)).toStrictEqual([words.unread, words.nothingRead])
   })
 
   it('says nothing was read only where the vault could not be', () => {
-    const drawn = corner([], [], well({ holds: false }))
+    const drawn = corner([], [], well({ hasNote: false }))
 
     expect(drawn).toStrictEqual([])
   })
@@ -233,37 +233,50 @@ describe('what is so about the window', () => {
   })
 
   it('is drawn at once, since nothing about it is going to last ten seconds first', () => {
-    expect(corner([], [], well({ unwatched: '/home/vault' }))[0]?.asked).toBe(true)
+    expect(corner([], [], well({ unwatched: '/home/vault' }))[0]?.isAsked).toBe(true)
   })
 })
 
 describe('what the window said', () => {
   it('draws a report to be read and then let go of', () => {
-    const drawn = corner([], [told()])
+    const drawn = corner([], [createMessage()])
 
-    expect(drawn[0]).toMatchObject({ says: 'The note is in the trash', tone: 'plain', stay: 'read' })
+    expect(drawn[0]).toMatchObject({
+      says: 'The note is in the trash',
+      tone: 'plain',
+      stay: 'read',
+    })
   })
 
   it('draws a caution to be read and left standing', () => {
-    const drawn = corner([], [told({ kind: 'caution', text: 'that note changed on disk' })])
+    const drawn = corner(
+      [],
+      [createMessage({ kind: 'caution', text: 'that note changed on disk' })],
+    )
 
     expect(drawn[0]).toMatchObject({ tone: 'caution', stay: 'kept' })
   })
 
-  it('draws a refusal as trouble that stands until it is put away', () => {
-    const drawn = corner([], [told({ kind: 'refusal', text: 'a note of that name is filed there' })])
+  it('draws an error that stands until it is put away', () => {
+    const drawn = corner(
+      [],
+      [createMessage({ kind: 'error', text: 'a note of that name is filed there' })],
+    )
 
     expect(drawn[0]).toMatchObject({ tone: 'alarm', stay: 'kept' })
   })
 
   it('draws a state for as long as whoever said it keeps saying it', () => {
-    const drawn = corner([], [told({ kind: 'state', text: 'the themes stopped arriving' })])
+    const drawn = corner(
+      [],
+      [createMessage({ kind: 'state', text: 'the themes stopped arriving' })],
+    )
 
     expect(drawn[0]).toMatchObject({ tone: 'plain', stay: 'holds' })
   })
 
   it('keeps each utterance under the identity it was given', () => {
-    const drawn = corner([], [told({ id: 'command#7' })])
+    const drawn = corner([], [createMessage({ id: 'command#7' })])
 
     expect(drawn[0]?.id).toBe('command#7')
   })
@@ -271,7 +284,7 @@ describe('what the window said', () => {
 
 describe('the order the corner draws in', () => {
   it('puts work first, so a state or a word arriving does not shift a moving count', () => {
-    const drawn = corner([reading()], [told()], well({ unwatched: '/home/vault' }))
+    const drawn = corner([reading()], [createMessage()], well({ unwatched: '/home/vault' }))
 
     expect(drawn.map((one) => one.id)).toStrictEqual(['reading-1', 'unwatched', 'command#1'])
   })

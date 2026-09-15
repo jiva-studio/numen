@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/libs/core` — `adapter/mcp`
+- **Applies to:** `modules/libs/core`
 - **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [The vault is watched](0009-the-vault-is-watched.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md)
 
 ## Context
@@ -19,7 +19,7 @@ Neither is a client. A client is generated from the protocol and draws what it i
 
 ### The tool endpoint is a driving adapter inside the window
 
-`adapter/mcp` is compiled into the window binary and listens on a port. It knows nothing of the webview toolkit: it is handed what the window has open, and it names the schema for the reason a refusal carries. It consumes the ports the core declares, as the command line does.
+The tool endpoint is compiled into the window binary and listens on a port. It knows nothing of the webview toolkit: it is handed what the window has open, and it names the schema for the reason a refusal carries. It consumes the ports the core declares, as the command line does.
 
 ```mermaid
 graph TD
@@ -59,9 +59,9 @@ The tools are written by hand. The schema is shaped for a window — one focus, 
 
 ### Three surfaces, one core
 
-Each family of tools registers its reading half and its writing half separately, and a surface is a choice of halves. `adapter/mcp` builds three:
+Each family of tools registers its reading half and its writing half separately, and a surface is a choice of halves. The endpoint builds three:
 
-- **The whole surface** is every tool the vault has, and the editor window serves it. That window is where a person asks for the vault to be changed, and the endpoint it puts up is the one an agent a person configured themselves reaches, with the vault's writers on it. The set is exact, so a tool added to the server is a tool this window is knowingly given. → `TestTheWindowAPersonWritesInServesEveryToolTheVaultHas`
+- **The whole surface** is every tool the vault has, and the editor window serves it. That window is where a person asks for the vault to be changed, and the endpoint it puts up is the one an agent a person configured themselves reaches, with the vault's writers on it. The set is exact, so a tool added to the server is a tool this window is knowingly given. → `adapter/mcp/mcp_test.go`
 - **The reading surface** is every tool that reads and no writer at all. An agent answering from it changes nothing.
 - **The reviewing surface** is what the window a person runs their cards in serves: everything that reads, and the cards of a deck. Nothing on it makes a deck or a stencil, and nothing on it writes a note, a link or a document.
 

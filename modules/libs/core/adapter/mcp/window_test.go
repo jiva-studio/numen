@@ -17,13 +17,13 @@ type tabbed struct {
 	Front bool   `json:"front"`
 }
 
-// attending is the tools as an agent meets them, with a window saying what the
-// person has open.
-func attending(t *testing.T, open domain.OpenTabs) *sdk.ClientSession {
+// newSessionWithTabs is the tools as an agent meets them, with a window saying
+// what the person has open.
+func newSessionWithTabs(t *testing.T, open domain.OpenTabs) *sdk.ClientSession {
 	t.Helper()
-	_, core := built(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
+	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
 	core.Attending = func() domain.OpenTabs { return open }
-	return connectedTo(t, core)
+	return newSessionOver(t, core)
 }
 
 // tabs is what window_tab_list answers.
@@ -39,7 +39,7 @@ func tabs(t *testing.T, session *sdk.ClientSession) struct {
 }
 
 func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
-	session := attending(t, domain.OpenTabs{
+	session := newSessionWithTabs(t, domain.OpenTabs{
 		FrontID: "two",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabPlex, Path: "Main 222.md", Title: "Main 222"},
@@ -65,7 +65,7 @@ func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 }
 
 func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
-	session := attending(t, domain.OpenTabs{
+	session := newSessionWithTabs(t, domain.OpenTabs{
 		FrontID: "one",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabDocument, Path: "library/A Book.pdf",
@@ -82,10 +82,31 @@ func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
 	}
 }
 
+// A book that reflows has no pages of its own, so where the person stands in
+// one is an offset into its text, and the page is how far through that offset
+// is.
+func TestWindowTabsSaysWhereInABookThePersonIs(t *testing.T) {
+	session := newSessionWithTabs(t, domain.OpenTabs{
+		FrontID: "one",
+		Tabs: []domain.Tab{
+			{ID: "one", Kind: domain.TabBook, Path: "library/Adi.epub", Title: "The Adi Parva",
+				Book: &domain.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
+		},
+	})
+
+	out := tabs(t, session)
+
+	want := `the book "The Adi Parva" at library/Adi.epub is in front of them, ` +
+		`open at page 142 of 960, at byte 145203`
+	if out.Looking != want {
+		t.Errorf("says %q", out.Looking)
+	}
+}
+
 // A window is free to open a kind of tab nothing here has words for, and such a
 // tab is named by its own kind.
 func TestWindowTabsNamesAKindItHasNoWordsForAndNoNote(t *testing.T) {
-	session := attending(t, domain.OpenTabs{
+	session := newSessionWithTabs(t, domain.OpenTabs{
 		FrontID: "two",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabNote, Path: "notes/Entropy.md", Title: "Entropy"},
@@ -101,7 +122,7 @@ func TestWindowTabsNamesAKindItHasNoWordsForAndNoNote(t *testing.T) {
 }
 
 func TestWindowTabsSaysSoWhereNothingIsOpen(t *testing.T) {
-	session := attending(t, domain.OpenTabs{})
+	session := newSessionWithTabs(t, domain.OpenTabs{})
 
 	out := tabs(t, session)
 
@@ -112,8 +133,8 @@ func TestWindowTabsSaysSoWhereNothingIsOpen(t *testing.T) {
 
 // A build nobody is sitting at serves the vault and nothing about a window.
 func TestWindowTabsIsNotServedWhereNoWindowSays(t *testing.T) {
-	_, core := built(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
-	session := connectedTo(t, core)
+	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
+	session := newSessionOver(t, core)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{Name: "window_tab_list"})
 	if err == nil && !res.IsError {

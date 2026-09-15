@@ -8,9 +8,9 @@ import (
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // chunksPerQuery bounds one answer about what owes a vector.
@@ -92,7 +92,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
-		owing, next, err := u.Chunks.Unembedded(ctx, v.ID, model, after, chunksPerQuery)
+		owing, next, err := u.Chunks.GetUnembeddedChunks(ctx, v.ID, model, after, chunksPerQuery)
 		if err != nil {
 			return res, fmt.Errorf("what owes a vector from %s: %w", model, err)
 		}
@@ -177,7 +177,7 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 		}
 		hashes[i] = raw
 	}
-	kept, err := u.Vectors.Kept(ctx, recipe, hashes)
+	kept, err := u.Vectors.GetKeptVectors(ctx, recipe, hashes)
 	if err != nil {
 		return fmt.Errorf("what is already made: %w", err)
 	}
@@ -226,7 +226,7 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 				Hash:    hashes[at],
 				Model:   model,
 				Kind:    port.QuantisedInt8,
-				Value:   signed(quantised),
+				Value:   packVector(quantised),
 				Coarse:  embedding.Coarse(quantised),
 			})
 		}
@@ -246,8 +246,9 @@ func (u Embed) progress(res EmbedResult) {
 	}
 }
 
-// signed is a quantised vector as the bytes that are stored, one per dimension.
-func signed(q []int8) []byte {
+// packVector is a quantised vector as the bytes that are stored, one per
+// dimension.
+func packVector(q []int8) []byte {
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

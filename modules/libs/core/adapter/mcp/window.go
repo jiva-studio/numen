@@ -7,7 +7,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
 // A Tab is one tab of the person's window, as an agent is told about it.
@@ -54,43 +54,76 @@ func addWindowTools(server *sdk.Server, core Core) {
 				Kind:  one.Kind,
 				Path:  one.Path,
 				Title: one.Title,
-				Where: stands(one),
+				Where: tabPosition(one),
 				Front: front,
 			})
 			if front {
-				res.Looking = inFront(one)
+				res.Looking = describeTab(one)
 			}
 		}
 		return nil, res, nil
 	})
 }
 
-// inFront is the tab the person is looking at, said back to them. A kind this
-// application has no words for is named by its own word and nothing more.
-func inFront(t domain.Tab) string {
-	name, where := called(t), stands(t)
-	switch t.Kind {
-	case domain.TabNote:
-		return fmt.Sprintf("the note %s is in front of them", name)
-	case domain.TabPlex:
-		if t.Path == "" {
-			return "they are looking at a plex standing on no note"
-		}
-		return fmt.Sprintf("they are looking at the plex around the note %s", name)
-	case domain.TabDocument:
-		if where == "" {
-			return fmt.Sprintf("the document %s is in front of them", name)
-		}
-		return fmt.Sprintf("the document %s is in front of them, open at %s", name, where)
-	case domain.TabRecording:
-		return fmt.Sprintf("the recording %s is in front of them, with %s", name, where)
-	}
-	return fmt.Sprintf("a tab of kind %q is in front of them", t.Kind)
+// tabPresenter formats where in a tab the person is and how to describe it.
+type tabPresenter struct {
+	// position reports where in the tab the person is.
+	position func(t domain.Tab) string
+	// describe formats the tab description for an agent.
+	describe func(t domain.Tab, name, where string) string
 }
 
-// called is how a tab is named in a sentence: what the person calls it, and
-// the file it holds so that a tool can be asked about it.
-func called(t domain.Tab) string {
+// tabPresenters maps tab kinds to their presenters.
+var tabPresenters = map[string]tabPresenter{
+	domain.TabNote: {
+		describe: func(t domain.Tab, name, _ string) string {
+			return fmt.Sprintf("the note %s is in front of them", name)
+		},
+	},
+	domain.TabPlex: {
+		describe: func(t domain.Tab, name, _ string) string {
+			if t.Path == "" {
+				return "they are looking at a plex standing on no note"
+			}
+			return fmt.Sprintf("they are looking at the plex around the note %s", name)
+		},
+	},
+	domain.TabDocument: {
+		position: documentPosition,
+		describe: describeWithPosition("document"),
+	},
+	domain.TabBook: {
+		position: bookPosition,
+		describe: describeWithPosition("book"),
+	},
+	domain.TabRecording: {
+		position: recordingPosition,
+		describe: func(t domain.Tab, name, where string) string {
+			return fmt.Sprintf("the recording %s is in front of them, with %s", name, where)
+		},
+	},
+}
+
+// tabPosition returns the position string for the given tab.
+func tabPosition(t domain.Tab) string {
+	presenter, known := tabPresenters[t.Kind]
+	if !known || presenter.position == nil {
+		return ""
+	}
+	return presenter.position(t)
+}
+
+// describeTab returns the description of the tab currently in front.
+func describeTab(t domain.Tab) string {
+	presenter, known := tabPresenters[t.Kind]
+	if !known {
+		return fmt.Sprintf("a tab of kind %q is in front of them", t.Kind)
+	}
+	return presenter.describe(t, formatTabName(t), tabPosition(t))
+}
+
+// formatTabName returns how a tab is named in a sentence.
+func formatTabName(t domain.Tab) string {
 	switch {
 	case t.Title != "" && t.Path != "":
 		return fmt.Sprintf("%q at %s", t.Title, t.Path)
@@ -100,27 +133,43 @@ func called(t domain.Tab) string {
 	return fmt.Sprintf("%q", t.Title)
 }
 
-// stands is where in what a tab holds the person stands, in the terms that tab
-// measures in. A tab that measures nothing says nothing.
-func stands(t domain.Tab) string {
-	switch t.Kind {
-	case domain.TabDocument:
-		if t.Document == nil || t.Document.PageCount <= 0 {
-			return ""
+// describeWithPosition formats a tab description that includes its position.
+func describeWithPosition(what string) func(t domain.Tab, name, where string) string {
+	return func(_ domain.Tab, name, where string) string {
+		if where == "" {
+			return fmt.Sprintf("the %s %s is in front of them", what, name)
 		}
-		return fmt.Sprintf("page %d of %d", t.Document.Page, t.Document.PageCount)
-	case domain.TabRecording:
-		var writtenTo, length int
-		if t.Recording != nil {
-			writtenTo, length = t.Recording.TranscribedDuration, t.Recording.Duration
-		}
-		switch {
-		case writtenTo <= 0:
-			return "none of it written down yet"
-		case length <= 0:
-			return fmt.Sprintf("%s of it written down", transcript.Clock(writtenTo))
-		}
-		return fmt.Sprintf("%s of its %s written down", transcript.Clock(writtenTo), transcript.Clock(length))
+		return fmt.Sprintf("the %s %s is in front of them, open at %s", what, name, where)
 	}
-	return ""
+}
+
+// documentPosition returns the page of the document.
+func documentPosition(t domain.Tab) string {
+	if t.Document == nil || t.Document.PageCount <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("page %d of %d", t.Document.Page, t.Document.PageCount)
+}
+
+// bookPosition returns where the person is in a book.
+func bookPosition(t domain.Tab) string {
+	if t.Book == nil || t.Book.PageCount <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("page %d of %d, at byte %d", t.Book.Page, t.Book.PageCount, t.Book.Offset)
+}
+
+// recordingPosition returns how much of the recording is transcribed.
+func recordingPosition(t domain.Tab) string {
+	var writtenTo, length int
+	if t.Recording != nil {
+		writtenTo, length = t.Recording.TranscribedDuration, t.Recording.Duration
+	}
+	switch {
+	case writtenTo <= 0:
+		return "none of it written down yet"
+	case length <= 0:
+		return fmt.Sprintf("%s of it written down", transcript.Clock(writtenTo))
+	}
+	return fmt.Sprintf("%s of its %s written down", transcript.Clock(writtenTo), transcript.Clock(length))
 }

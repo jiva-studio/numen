@@ -12,8 +12,9 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// answered is one card of a session answered, and the line that stands for it.
-func answered(t *testing.T, api *API, vault string, session *v1.StartSessionResponse) string {
+// answerCard is one card of a session answered, and the line that stands for
+// it.
+func answerCard(t *testing.T, api *API, vault string, session *v1.StartSessionResponse) string {
 	t.Helper()
 	if len(session.GetAsked()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
@@ -34,10 +35,10 @@ func answered(t *testing.T, api *API, vault string, session *v1.StartSessionResp
 // has been seen, and it is due at an instant the page can read. A card nobody
 // has answered carries neither.
 func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
 
-	first := started(t, api, v)
+	first := startSession(t, api, v)
 	for _, card := range first.GetAsked() {
 		if card.GetSeen() {
 			t.Errorf("a card nobody answered says it was seen: %+v", card)
@@ -46,11 +47,11 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 			t.Errorf("a card nobody answered is due at %q", card.GetDue())
 		}
 	}
-	answered(t, api, string(v.ID), first)
+	answerCard(t, api, string(v.ID), first)
 
 	// Answered well, so the card is minutes away and asked again in this
 	// session: what it carries is where the answer left it.
-	next := started(t, api, v)
+	next := startSession(t, api, v)
 	if len(next.GetAsked()) == 0 {
 		t.Fatal("the card answered a moment ago is not asked again")
 	}
@@ -66,11 +67,11 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 // A person hits the wrong key and takes it back, and what they took back is
 // not part of what they answered.
 func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
 
-	session := started(t, api, v)
-	given := answered(t, api, string(v.ID), session)
+	session := startSession(t, api, v)
+	given := answerCard(t, api, string(v.ID), session)
 
 	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: session.GetRun(), Answer: given,
@@ -94,9 +95,9 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 // Taking back an answer nobody named is the caller's mistake, and is refused as
 // one.
 func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
-	session := started(t, api, v)
+	session := startSession(t, api, v)
 
 	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
@@ -109,10 +110,10 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 // An answer is taken back on the run it was given on. A run this window never
 // opened is not one to write into.
 func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 	v := held[0]
-	session := started(t, api, v)
-	given := answered(t, api, string(v.ID), session)
+	session := startSession(t, api, v)
+	given := answerCard(t, api, string(v.ID), session)
 
 	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: "nothing", Answer: given,
@@ -125,7 +126,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 // An answer names the vault it belongs to. One the installation does not hold
 // is refused before a line is written into anybody's review.
 func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
-	api, _ := windowed(t, deck)
+	api, _ := newAPI(t, deck)
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: "nothing", Run: "nothing",
@@ -149,7 +150,7 @@ func (unreadable) All() ([]domain.Vault, error) {
 func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
 	api := &API{Registry: unreadable{}, Now: time.Now}
 
-	stream, err := serving(t, api).WatchCardsDue(t.Context(),
+	stream, err := newFlashcardsClient(t, api).WatchCardsDue(t.Context(),
 		connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -165,7 +166,7 @@ func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
 
 // A vault the installation does not hold is refused before anything is written.
 func TestTakingBackOnAVaultNobodyHoldsIsRefused(t *testing.T) {
-	api, _ := windowed(t, deck)
+	api, _ := newAPI(t, deck)
 
 	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",

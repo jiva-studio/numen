@@ -36,9 +36,9 @@ type NoteQueries interface {
 	// the vault holds none.
 	Opening(ctx context.Context, vaultID domain.VaultID) (domain.NoteRef, bool, error)
 
-	// Named is the paths of every note filed under one name. More than one is
-	// what makes a link written by that name ambiguous.
-	Named(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
+	// GetNamedPaths is the paths of every note filed under one name. More than
+	// one is what makes a link written by that name ambiguous.
+	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 
 	// Stencils is every stencil one vault holds, by path. A card names the
 	// stencil it is cut by, and this is the list those names are picked from.
@@ -54,11 +54,11 @@ type NoteQueries interface {
 	// find out what each note is.
 	OfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 
-	// Holds reports whether the index carries this vault at all. A vault it
-	// does not carry is one nothing has scanned yet, and a caller that only
-	// reads the index tells a person so rather than showing them a vault that
-	// looks empty.
-	Holds(ctx context.Context, vaultID domain.VaultID) (bool, error)
+	// Has reports whether the index carries this vault at all. A vault it does
+	// not carry is one nothing has scanned yet, and a caller that only reads
+	// the index tells a person so rather than showing them a vault that looks
+	// empty.
+	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 }
 
 // LinkQueries answers what points where. It is separate from NoteQueries

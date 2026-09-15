@@ -55,7 +55,7 @@ type RemoveResult struct {
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
-	went, err := u.Queries.Under(ctx, v.ID, path)
+	went, err := u.Queries.GetSourcesUnder(ctx, v.ID, path)
 	if err != nil {
 		return res, err
 	}
@@ -87,7 +87,7 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 			break
 		}
 		if !errors.Is(err, port.ErrOccupied) {
-			return res, missing(err)
+			return res, mapMissingNote(err)
 		}
 		if attempt > 100 {
 			return res, fmt.Errorf("remove %s: the trash already holds it", path)
@@ -134,7 +134,7 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 		return res, err
 	}
 	if err := writer.Remove(ctx, path); err != nil {
-		return res, missing(err)
+		return res, mapMissingNote(err)
 	}
 	// The file is off the disk from here on, so what the levelling came to
 	// stands beside the links that now reach nothing.
@@ -146,7 +146,7 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 }
 
 func (u Remove) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return Levelled(u.Index(ctx, v, paths), paths...)
+	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
 }
 
 // withSuffix puts something before the extension: `note.md` and `-2` make

@@ -74,7 +74,7 @@ func (u Presets) Point(
 		case at.Outcome != note.Ok || at.Type != domain.TypePreset:
 			return domain.Fingerprint{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 		}
-		if to, err = note.Addressed(ctx, u.Notes, v.ID, preset); err != nil {
+		if to, err = note.GetAddress(ctx, u.Notes, v.ID, preset); err != nil {
 			return domain.Fingerprint{}, err
 		}
 	}
@@ -97,14 +97,14 @@ func (u Presets) Save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if err := bounded(settings); err != nil {
+	if err := checkBounds(settings); err != nil {
 		return domain.Fingerprint{}, err
 	}
 	at, err := u.save(ctx, v, path, settings, fingerprint)
 	if err != nil {
 		return at, err
 	}
-	return at, note.Levelled(u.Index(ctx, v, []string{path}), path)
+	return at, note.WrapUnlevelled(u.Index(ctx, v, []string{path}), path)
 }
 
 // save is the read, the change and the write, under this vault's write lock
@@ -125,7 +125,7 @@ func (u Presets) save(
 	}
 	on, err := reader.Stat(ctx, path)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, mapMissingNote(err))
 	}
 	// The bound a note is written under is the bound it is read under.
 	if on.Size > note.MaxBytes {
@@ -140,7 +140,7 @@ func (u Presets) save(
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, mapMissingNote(err))
 	}
 	n := markdown.Parse(against, raw)
 	if n.Type != domain.TypePreset {
@@ -274,21 +274,21 @@ var week = []time.Weekday{
 	time.Friday, time.Saturday, time.Sunday,
 }
 
-// bounded is what in the settings may not be written, and is nil when all of
-// them may.
-func bounded(p review.Preset) error {
-	if !review.KnownGoal(p.Goal) {
+// checkBounds is what in the settings may not be written, and is nil when all
+// of them may.
+func checkBounds(p review.Preset) error {
+	if !review.IsKnownGoal(p.Goal) {
 		return fmt.Errorf("%w: goal %s is not %s, %s or %s",
 			ErrOutOfBounds, p.Goal, review.GoalMinutes, review.GoalRetention, review.GoalDate)
 	}
 	if p.Goal == review.GoalDate && p.By.IsZero() {
 		return fmt.Errorf("%w: a preset aiming at a day says which day", ErrOutOfBounds)
 	}
-	if !review.KnownRule(p.Rule) {
+	if !review.IsKnownRule(p.Rule) {
 		return fmt.Errorf("%w: learned %s is not %s or %s",
 			ErrOutOfBounds, p.Rule, review.RuleInterval, review.RuleRetention)
 	}
-	if !review.KnownBudgetUnit(p.Counts) {
+	if !review.IsKnownBudgetUnit(p.Counts) {
 		return fmt.Errorf("%w: counts %s is not %s or %s",
 			ErrOutOfBounds, p.Counts, review.BudgetUnitCards, review.BudgetUnitShows)
 	}
@@ -304,7 +304,7 @@ func bounded(p review.Preset) error {
 		{intervalKey, float64(p.Interval), review.IntervalBounds},
 		{backlogKey, float64(p.Backlog), review.BacklogBounds},
 	} {
-		if !one.bounds.Holds(one.value) {
+		if !one.bounds.Contains(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",
 				ErrOutOfBounds, one.key, one.value, one.bounds.Least, one.bounds.Most)
 		}
@@ -314,7 +314,7 @@ func bounded(p review.Preset) error {
 		if !named {
 			continue
 		}
-		if !review.LoadBounds.Holds(float64(share)) {
+		if !review.LoadBounds.Contains(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
 				ErrOutOfBounds, review.DayName(weekday), share,
 				review.LoadBounds.Least, review.LoadBounds.Most)
@@ -328,9 +328,9 @@ func bounded(p review.Preset) error {
 	return nil
 }
 
-// missing is note.ErrNoNote where the vault holds nothing at the path, and the
-// error as it arrived otherwise.
-func missing(err error) error {
+// mapMissingNote is note.ErrNoNote where the vault holds nothing at the path,
+// and the error as it arrived otherwise.
+func mapMissingNote(err error) error {
 	if errors.Is(err, fs.ErrNotExist) {
 		return note.ErrNoNote
 	}

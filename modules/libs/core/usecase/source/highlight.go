@@ -6,11 +6,11 @@ import (
 	"io/fs"
 	"sort"
 
-	"github.com/jiva-studio/numen/modules/libs/core/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // Highlight is what runs of a source's text say and where they sit on the pages
@@ -83,7 +83,7 @@ func (u Highlight) Execute(
 	// Which producer made a source's text is what says where its offsets are,
 	// and a source the index does not hold says nothing about either.
 	if !stands {
-		return over("", nil, runs), nil
+		return getRuns("", nil, runs), nil
 	}
 	var store port.DerivedStore
 	if u.Derived != nil {
@@ -96,7 +96,7 @@ func (u Highlight) Execute(
 	// coordinates describe those. A file rewritten since is read from its own
 	// layer, which is the words that are there now.
 	var boxes []highlight.Box
-	if said.Producer != "" && ref.Unchanged(said.Fingerprint) {
+	if said.Producer != "" && ref.IsUnchanged(said.Fingerprint) {
 		boxes, err = u.read(ctx, store, said)
 	} else {
 		said = port.SourceText{}
@@ -109,7 +109,7 @@ func (u Highlight) Execute(
 	if err != nil {
 		return nil, err
 	}
-	return over(prose, boxes, runs), nil
+	return getRuns(prose, boxes, runs), nil
 }
 
 // prose is the text the runs are places in: what the producer wrote, or the
@@ -133,16 +133,16 @@ func (u Highlight) prose(
 	return doc.Text, nil
 }
 
-// over is what each run says and where it sits, in the order the runs were
+// getRuns is what each run says and where it sits, in the order the runs were
 // asked about. A run standing nowhere is lit nowhere and keeps its place in the
 // answer.
-func over(prose string, boxes []highlight.Box, runs []domain.Span) []Run {
+func getRuns(prose string, boxes []highlight.Box, runs []domain.Span) []Run {
 	out := make([]Run, 0, len(runs))
 	for _, one := range runs {
-		start, length := held(prose, one.From, one.Len())
+		start, length := getRuneBounds(prose, one.From, one.Len())
 		out = append(out, Run{
 			Text:  prose[start : start+length],
-			Boxes: highlight.Over(boxes, one),
+			Boxes: highlight.GetBoxesOver(boxes, one),
 		})
 	}
 	return out
@@ -219,7 +219,7 @@ func every(book port.TextLayer, runs []domain.Span) []int {
 	held := map[int]bool{}
 	var out []int
 	for _, one := range runs {
-		for _, page := range across(book, one.From, one.To) {
+		for _, page := range getPages(book, one.From, one.To) {
 			if held[page] {
 				continue
 			}
@@ -231,10 +231,10 @@ func every(book port.TextLayer, runs []domain.Span) []int {
 	return out
 }
 
-// across is the pages a run of the document's text falls on. A page holds the
+// getPages is the pages a run of the document's text falls on. A page holds the
 // text from where it begins up to where the next page does, and the last page
 // holds the rest.
-func across(book port.TextLayer, start, end int) []int {
+func getPages(book port.TextLayer, start, end int) []int {
 	if end > len(book.Text) {
 		end = len(book.Text)
 	}

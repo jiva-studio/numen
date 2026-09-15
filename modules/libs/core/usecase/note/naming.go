@@ -14,12 +14,12 @@ const (
 // SyncTitleAndFilename is whether a note's title and its filename are kept as one name.
 type SyncTitleAndFilename bool
 
-// Renaming is what one rename brings into line: whether a new title moves the
-// file, and whether a new filename is written into the note.
+// GetRenameEffects is what one rename brings into line: whether a new title
+// moves the file, and whether a new filename is written into the note.
 //
 // A note its filename names carries its name nowhere else, so its file moves
 // whatever this is set to and nothing is written into it.
-func (s SyncTitleAndFilename) Renaming(by NameSource) (moves, writes bool) {
+func (s SyncTitleAndFilename) GetRenameEffects(by NameSource) (moves, writes bool) {
 	if by == ByFilename {
 		return true, false
 	}
@@ -33,8 +33,8 @@ func (s SyncTitleAndFilename) Renaming(by NameSource) (moves, writes bool) {
 // has configured does.
 type SyncSetting func() SyncTitleAndFilename
 
-// Kept is what a rename reads.
-func (ask SyncSetting) Kept() SyncTitleAndFilename {
+// GetSetting is what a rename reads.
+func (ask SyncSetting) GetSetting() SyncTitleAndFilename {
 	if ask == nil {
 		return true
 	}

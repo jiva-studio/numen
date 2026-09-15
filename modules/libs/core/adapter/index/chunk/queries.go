@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 )
 
 // Queries answers questions about chunks in shapes that are not chunks: where a
@@ -87,9 +87,9 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind
 	return out, rows.Err()
 }
 
-// Under is every source the vault holds at a path and beneath it, by path: the
-// one file, or everything a folder holds.
-func (q *Queries) Under(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
+// GetSourcesUnder is every source the vault holds at a path and beneath it, by
+// path: the one file, or everything a folder holds.
+func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -98,7 +98,7 @@ func (q *Queries) Under(ctx context.Context, vaultID domain.VaultID, path string
 		return nil, err
 	}
 
-	first, past := under(path)
+	first, past := getRangeUnder(path)
 	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints_under"), vault, path, vault, first, past)
 	if err != nil {
 		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
@@ -178,14 +178,14 @@ func (q *Queries) Lexical(ctx context.Context, vaultID domain.VaultID, query str
 	return out, rows.Err()
 }
 
-// Named is the sections of one vault whose names match what was typed, best
-// first.
+// GetNamedPassages is the sections of one vault whose names match what was
+// typed, best first.
 //
 // A section answers with the chunk it opens, so what comes back stands where the
 // section begins. Asked where a book speaks about a thing, this is the half that
 // answers with the chapter about it and not with the paragraph that says its
 // name most often.
-func (q *Queries) Named(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
+func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
 	}
@@ -257,7 +257,7 @@ func (q *Queries) Nearest(ctx context.Context, vaultID domain.VaultID, recipe st
 	if len(ranked) > limit {
 		ranked = ranked[:limit]
 	}
-	return q.enclosing(ctx, vault, ranked)
+	return q.getEnclosingPassages(ctx, vault, ranked)
 }
 
 // coarse is the pass over the bit vectors: the chunks of one vault whose signs
@@ -281,12 +281,13 @@ func (q *Queries) coarse(ctx context.Context, vault int64, query []float32, k in
 	return near, rows.Err()
 }
 
-// enclosing is the large chunk each chunk sits inside, in the order given.
+// getEnclosingPassages is the large chunk each chunk sits inside, in the order
+// given.
 //
 // The nearest-neighbour question is asked of the vector index alone: it takes
 // its own ordering and does not join. Where each answer is read from is a
 // second question, asked once per answer.
-func (q *Queries) enclosing(ctx context.Context, vault int64, chunks []int64) ([]domain.Passage, error) {
+func (q *Queries) getEnclosingPassages(ctx context.Context, vault int64, chunks []int64) ([]domain.Passage, error) {
 	if len(chunks) == 0 {
 		return nil, nil
 	}
@@ -338,9 +339,9 @@ func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
 	return p, true, nil
 }
 
-// Unchunked is the sources of one kind with no small chunk: the file changed,
-// or it has never been cut.
-func (q *Queries) Unchunked(ctx context.Context, vaultID domain.VaultID, kind string, limit int) ([]string, error) {
+// GetUnchunkedSources is the sources of one kind with no small chunk: the file
+// changed, or it has never been cut.
+func (q *Queries) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind string, limit int) ([]string, error) {
 	return q.paths(ctx, vaultID, "unchunked", limit, func(vault int64) []any {
 		return []any{vault, kind, limit}
 	})
@@ -358,10 +359,10 @@ func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kin
 	})
 }
 
-// Unembedded is the small chunks of a vault with no vector from the model in
-// use, from `after` onwards. Asked with the last id of the previous answer, it
-// resumes.
-func (q *Queries) Unembedded(ctx context.Context, vaultID domain.VaultID, recipe string, after int64, limit int) ([]Passage, error) {
+// GetUnembeddedChunks is the small chunks of a vault with no vector from the
+// model in use, from `after` onwards. Asked with the last id of the previous
+// answer, it resumes.
+func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after int64, limit int) ([]Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -438,12 +439,12 @@ func (q *Queries) Progress(ctx context.Context, vaultID domain.VaultID, recipe s
 	return held, embedded, err
 }
 
-// Kept is the vectors already made for the texts given under the recipe given,
-// by the hex of their hash.
+// GetKeptVectors is the vectors already made for the texts given under the
+// recipe given, by the hex of their hash.
 //
 // A vector that comes back was paid for once, and asking a model for it again
 // is buying what is already here.
-func (q *Queries) Kept(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
 	if len(of) == 0 {
 		return nil, nil
 	}
@@ -511,13 +512,13 @@ func (q *Queries) Reading(ctx context.Context, vaultID domain.VaultID, path stri
 	return found, true, nil
 }
 
-// Recognised is the sources of one kind whose text a producer made rather than
-// their own bytes, by path.
+// GetRecognisedSources is the sources of one kind whose text a producer made
+// rather than their own bytes, by path.
 //
 // A scan asks it in order to find the ones whose files are gone: the store is a
 // folder on the person's disk and they may empty it, and a source standing on
 // files that are not there answers a search with nothing.
-func (q *Queries) Recognised(ctx context.Context, vaultID domain.VaultID, kind string) ([]SourceText, error) {
+func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind string) ([]SourceText, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil

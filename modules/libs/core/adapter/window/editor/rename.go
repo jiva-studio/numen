@@ -16,30 +16,30 @@ import (
 func (a *API) RenameNote(
 	ctx context.Context, r *connect.Request[v1.RenameNoteRequest],
 ) (*connect.Response[v1.RenameNoteResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	renamed, err := a.Notes.Rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
 	out := &v1.RenameNoteResponse{
 		Path:  renamed.Path,
 		Title: renamed.Title,
-		By:    namedByOf(renamed.By),
+		By:    newNamedBy(renamed.By),
 	}
 	if renamed.Moved != nil {
-		out.Moved = movedOf(*renamed.Moved)
+		out.Moved = newMoveResult(*renamed.Moved)
 	}
-	out.Unlevelled = a.unlevelled(err)
+	out.Unlevelled = a.isUnlevelled(err)
 	if err != nil && !out.GetUnlevelled() {
-		reason, refused := wire.RefusalBy(err)
+		reason, refused := wire.ErrorCodeBy(err)
 		switch {
 		case refused:
-			out.Refusal = &reason
+			out.Error = &reason
 		case out.GetPath() == "":
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -54,23 +54,23 @@ func (a *API) RenameNote(
 func (a *API) RemoveFile(
 	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
 ) (*connect.Response[v1.RemoveFileResponse], error) {
-	showing, err := a.shown()
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, err
 	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer a.Writing.done()
+	defer a.Writing.finish()
 
 	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
-	behind := a.unlevelled(err)
+	behind := a.isUnlevelled(err)
 	if err != nil && !behind {
-		reason, refused := wire.RefusalBy(err)
+		reason, refused := wire.ErrorCodeBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.RemoveFileResponse{Refusal: &reason}), nil
+		return connect.NewResponse(&v1.RemoveFileResponse{Error: &reason}), nil
 	}
 	// The watcher reports only the paths the vault holds a source for. What
 	// went is said here, so the tree drops the row whatever stood on it.
@@ -95,8 +95,8 @@ func (a *API) removal(
 	return a.Notes.Remove.Execute(ctx, v, path)
 }
 
-// namedByOf is which of the two a rename wrote, as the schema carries it.
-func namedByOf(by note.NameSource) v1.NamedBy {
+// newNamedBy is which of the two a rename wrote, as the schema carries it.
+func newNamedBy(by note.NameSource) v1.NamedBy {
 	switch by {
 	case note.ByFrontmatter:
 		return v1.NamedBy_NAMED_BY_FRONTMATTER
@@ -107,8 +107,8 @@ func namedByOf(by note.NameSource) v1.NamedBy {
 	}
 }
 
-// movedOf is what the file did, as the schema carries it.
-func movedOf(moved note.MoveResult) *v1.MoveResult {
+// newMoveResult is what the file did, as the schema carries it.
+func newMoveResult(moved note.MoveResult) *v1.MoveResult {
 	return &v1.MoveResult{
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,

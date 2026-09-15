@@ -1,7 +1,7 @@
-import type { PlexEdge } from '../edge'
-import type { PlexNeighbourhood } from '../neighbourhood'
-import type { PlexNode } from '../node'
-import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
+import type { PlexEdge } from '../lib/edge'
+import type { PlexNeighbourhood } from '../lib/neighbourhood'
+import type { PlexNode } from '../lib/node'
+import { RELATED_SEATS, type PlexRelatedSeat } from '../lib/seat'
 import { nameFor } from './names'
 
 export type SeatCounts = Readonly<Partial<Record<PlexRelatedSeat, number>>>
@@ -21,7 +21,7 @@ const RELATION: Record<PlexRelatedSeat, string> = {
 
 /** A neighbourhood of the requested size, for turning knobs against. */
 export function build(title: string, counts: SeatCounts): PlexNeighbourhood {
-  return around({ id: 'focus', title }, null, counts)
+  return buildAround({ id: 'focus', title }, null, counts)
 }
 
 /**
@@ -32,7 +32,7 @@ export function build(title: string, counts: SeatCounts): PlexNeighbourhood {
  * Names come from a pool rather than being numbered, because a plex of
  * "Child 1, Child 2" says nothing about whether real titles wrap or collide.
  */
-export function around(
+export function buildAround(
   focus: TitledNode,
   from: TitledNode | null,
   counts: SeatCounts,

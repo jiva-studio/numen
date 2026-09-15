@@ -65,13 +65,13 @@ func addVaultList(server *sdk.Server, core Core) {
 			Vaults []Vault `json:"vaults"`
 		}
 		held, err := vaults.NewKnownVaults(core.Vaults.Registry, core.Readers).
-			Execute(core.shown().Vault.ID)
+			Execute(core.getShownVault().Vault.ID)
 		if err != nil {
 			return nil, out{}, err
 		}
 		list := make([]Vault, 0, len(held))
 		for _, one := range held {
-			list = append(list, knownOf(one))
+			list = append(list, newVault(one))
 		}
 		return nil, out{Vaults: list}, nil
 	})
@@ -216,7 +216,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 		}
 		// The use cases are not told which vault is in front of the person, and
 		// this is.
-		if v.ID == core.shown().Vault.ID {
+		if v.ID == core.getShownVault().Vault.ID {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
 		}
 		if err := core.Vaults.Forget.Execute(ctx, v); err != nil {
@@ -258,7 +258,7 @@ func addVaultOpen(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		if v.ID == core.shown().Vault.ID {
+		if v.ID == core.getShownVault().Vault.ID {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is already showing", v.Name)
 		}
 
@@ -283,8 +283,8 @@ func (v Vaults) found(nameOrPath string) (domain.Vault, error) {
 	return vaults.NewFind(v.Registry).Execute(nameOrPath)
 }
 
-// knownOf is one vault as an agent is told about it.
-func knownOf(one vaults.KnownVault) Vault {
+// newVault is one vault as an agent is told about it.
+func newVault(one vaults.KnownVault) Vault {
 	return Vault{
 		ID:      string(one.Vault.ID),
 		Name:    one.Vault.Name,

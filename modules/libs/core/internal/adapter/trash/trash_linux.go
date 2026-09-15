@@ -24,7 +24,7 @@ const deletedAt = "2006-01-02T15:04:05"
 
 // send puts the folder in the trash the desktop reads.
 func send(path string) error {
-	return sent(path, home())
+	return sendTo(path, home())
 }
 
 // home is the trash of this login. It is empty where the machine will not say
@@ -41,12 +41,12 @@ func home() string {
 	return filepath.Join(data, "Trash")
 }
 
-// sent puts the folder in the trash of this login, and in the trash at the root
+// sendTo puts the folder in the trash of this login, and in the trash at the root
 // of its own volume when a rename cannot reach the first. A volume that has no
 // trash and takes none has nowhere to put it.
-func sent(path, home string) error {
+func sendTo(path, home string) error {
 	if home != "" {
-		if err := into(home, path, path); !errors.Is(err, syscall.EXDEV) {
+		if err := moveIntoTrash(home, path, path); !errors.Is(err, syscall.EXDEV) {
 			return err
 		}
 	}
@@ -62,7 +62,7 @@ func sent(path, home string) error {
 	if err != nil {
 		return err
 	}
-	return into(dir, path, from)
+	return moveIntoTrash(dir, path, from)
 }
 
 // topdir is the root of the volume the folder is on: the last directory on the
@@ -106,12 +106,12 @@ func volume(top string, uid int) (string, error) {
 	return mine, nil
 }
 
-// into moves the folder into one trash directory under a name nothing there
-// holds, and records where it came from beside it.
+// moveIntoTrash moves the folder into one trash directory under a name nothing
+// there holds, and records where it came from beside it.
 //
 // The note is written first: the name is this deletion's before anything moves
 // under it. A move that fails takes the note back with it.
-func into(dir, path, from string) error {
+func moveIntoTrash(dir, path, from string) error {
 	files := filepath.Join(dir, "files")
 	info := filepath.Join(dir, "info")
 	for _, at := range []string{files, info} {

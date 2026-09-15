@@ -59,7 +59,7 @@ func FuzzAt(f *testing.F) {
 			return
 		}
 
-		held, err := settings.At(written(t, path, string(raw)))
+		held, err := openAt(writeFile(t, path, string(raw)))
 		if err != nil {
 			// The file is well formed and every value in it is of the kind its
 			// setting takes, so the one thing left to refuse it for is a number
@@ -153,14 +153,14 @@ func FuzzWrite(f *testing.F) {
 	path := filepath.Join(f.TempDir(), "numen.json")
 	f.Fuzz(func(t *testing.T, raw string) {
 		const stood = `{"appearance":{"theme":"mine:dracula"}}`
-		written(t, path, stood)
+		writeFile(t, path, stood)
 
-		switch err := settings.Write(path, []byte(raw), nil); {
+		switch err := settings.Write(path, []byte(raw), nil, newDocument()); {
 		case err == nil:
 			if got := reading(t, path); got != raw {
 				t.Fatalf("%q was saved and %q stands in the file", raw, got)
 			}
-			if _, err := settings.At(path); err != nil {
+			if _, err := openAt(path); err != nil {
 				t.Fatalf("%q was saved and reads back as %v", raw, err)
 			}
 		default:
@@ -174,10 +174,10 @@ func FuzzWrite(f *testing.F) {
 	})
 }
 
-// written stands these bytes in the settings file, and hands back where it is.
-// One file is written over and over: a folder for each of a million inputs is a
-// folder a run never gets to the end of.
-func written(tb testing.TB, path, raw string) string {
+// writeFile stands these bytes in the settings file, and hands back where it
+// is. One file is written over and over: a folder for each of a million inputs
+// is a folder a run never gets to the end of.
+func writeFile(tb testing.TB, path, raw string) string {
 	tb.Helper()
 	if err := os.WriteFile(path, []byte(raw), 0o600); err != nil {
 		tb.Fatal(err)

@@ -203,8 +203,8 @@ func limit(ctx context.Context) *limited {
 	return &limited{Context: ctx, over: make(chan struct{})}
 }
 
-// reached is the limit being met.
-func (l *limited) reached() { close(l.over) }
+// reachLimit is the limit being met.
+func (l *limited) reachLimit() { close(l.over) }
 
 func (l *limited) Done() <-chan struct{} { return l.over }
 
@@ -221,7 +221,7 @@ func (l *limited) Err() error {
 type timedOut struct{ limit *limited }
 
 func (t timedOut) Open(domain.Vault) (port.VaultReader, error) {
-	t.limit.reached()
+	t.limit.reachLimit()
 	return nil, t.limit.Err()
 }
 

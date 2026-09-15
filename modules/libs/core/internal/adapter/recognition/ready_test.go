@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-// filed writes an empty file under dir and answers with where it is.
-func filed(t *testing.T, dir, name string) string {
+// writeFile writes an empty file under dir and answers with where it is.
+func writeFile(t *testing.T, dir, name string) string {
 	t.Helper()
 	at := filepath.Join(dir, name)
 	if err := os.WriteFile(at, nil, 0o644); err != nil {
@@ -21,10 +21,10 @@ func filed(t *testing.T, dir, name string) string {
 // name that is neither is not fetched.
 func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 	dir := t.TempDir()
-	runtime := filed(t, dir, "libonnxruntime.so")
-	layout := filed(t, dir, "layout.onnx")
-	detect := filed(t, dir, "detect.onnx")
-	filed(t, dir, "inference.onnx")
+	runtime := writeFile(t, dir, "libonnxruntime.so")
+	layout := writeFile(t, dir, "layout.onnx")
+	detect := writeFile(t, dir, "detect.onnx")
+	writeFile(t, dir, "inference.onnx")
 
 	for name, c := range map[string]struct {
 		change func(*Config)

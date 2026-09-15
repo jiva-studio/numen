@@ -7,11 +7,11 @@ import (
 	"io/fs"
 	"slices"
 
-	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
-	"github.com/jiva-studio/numen/modules/libs/core/urlfile"
 )
 
 // sourcesPerQuery bounds one answer about what owes its text, so that a library
@@ -104,7 +104,7 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 	if err := u.discover(ctx, v, reader, &res, &swept); err != nil {
 		return res, err
 	}
-	if err := u.forgotten(ctx, v, reader, &res); err != nil {
+	if err := u.dropMissingText(ctx, v, reader, &res); err != nil {
 		return res, err
 	}
 	if err := u.cut(ctx, v, reader, &res); err != nil {
@@ -140,7 +140,7 @@ func (u Extract) discover(
 		}
 		res.Seen++
 		found[ref.Path] = true
-		if previous, ok := held[ref.Path]; ok && !u.RebuildIndex && previous.Unchanged(ref) {
+		if previous, ok := held[ref.Path]; ok && !u.RebuildIndex && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			return nil
 		}
@@ -171,7 +171,7 @@ func (u Extract) discover(
 		// What those paths stood on, before the rows saying so are taken out.
 		// Which of those readings nothing stands on any more is a question for
 		// once every source has been cut.
-		went, err := u.recognised(ctx, v, kind, gone)
+		went, err := u.readSourceTexts(ctx, v, kind, gone)
 		if err != nil {
 			return err
 		}
@@ -184,9 +184,9 @@ func (u Extract) discover(
 	return nil
 }
 
-// recognised is the reading each of these paths stood on, for the ones that
-// stood on any.
-func (u Extract) recognised(
+// readSourceTexts is the reading each of these paths stood on, for the ones
+// that stood on any.
+func (u Extract) readSourceTexts(
 	ctx context.Context,
 	v domain.Vault,
 	kind domain.SourceKind,
@@ -195,7 +195,7 @@ func (u Extract) recognised(
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.Queries.Recognised(ctx, v.ID, kind)
+	held, err := u.Queries.GetRecognisedSources(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -228,7 +228,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	stood := make(map[port.SourceText]bool)
 	named := make(map[string]bool)
 	for _, kind := range u.kinds() {
-		held, err := u.Queries.Recognised(ctx, v.ID, kind)
+		held, err := u.Queries.GetRecognisedSources(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -256,19 +256,19 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	return nil
 }
 
-// forgotten finds the sources whose producer's files are no longer there.
+// dropMissingText finds the sources whose producer's files are no longer there.
 //
 // The store is a folder on the person's disk and they may empty it. A source
 // whose text went with it answers a search with nothing and would go on doing
 // so, because its recipe is still the one in use: nothing else asks after it.
 // Recording it afresh with no recipe clears which producer made its text, so the
 // next pass cuts it from the document again.
-func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
+func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
 	if u.Derived == nil {
 		return nil
 	}
 	for _, kind := range u.kinds() {
-		recognised, err := u.Queries.Recognised(ctx, v.ID, kind)
+		recognised, err := u.Queries.GetRecognisedSources(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -322,7 +322,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	for _, kind := range u.kinds() {
 		questions = append(questions,
 			func(ctx context.Context) ([]string, error) {
-				return u.Queries.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
+				return u.Queries.GetUnchunkedSources(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
 				return u.Queries.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
@@ -459,7 +459,7 @@ func (u Extract) source(
 		return fmt.Errorf("write the chunks of %s: %w", path, err)
 	}
 	res.Extracted++
-	res.Chunks += counted(chunks)
+	res.Chunks += countChunks(chunks)
 	u.progress(*res)
 	return nil
 }
@@ -473,7 +473,7 @@ func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibilit
 		// The name of a section is kept on the chunk that begins it, and on that
 		// one only: a small chunk standing at the same offset is inside it, and
 		// one section named twice is one section answering twice.
-		c.Opens = doc.Opens(large.Start)
+		c.Opens = doc.GetNamesAt(large.Start)
 		for _, small := range large.Small {
 			c.Small = append(c.Small, chunkAt(doc, small))
 		}
@@ -493,8 +493,8 @@ func chunkAt(doc *text.Document, c chunking.Chunk) domain.Chunk {
 	}
 }
 
-// counted is how many chunks of both sizes a cut produced.
-func counted(chunks []domain.Chunk) int {
+// countChunks is how many chunks of both sizes a cut produced.
+func countChunks(chunks []domain.Chunk) int {
 	n := len(chunks)
 	for _, c := range chunks {
 		n += len(c.Small)
@@ -523,7 +523,7 @@ func recipes(s chunking.Sizes) []string {
 
 // sizes are the sizes the cut works to, which is what the recipe has to name:
 // a recipe describing anything else describes bytes that were never written.
-func (u Extract) sizes() chunking.Sizes { return u.Sizes.Resolved() }
+func (u Extract) sizes() chunking.Sizes { return u.Sizes.Resolve() }
 
 func (u Extract) progress(res ExtractResult) {
 	if u.OnProgress != nil {
@@ -544,7 +544,7 @@ func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, h
 		if u.Derived == nil {
 			return &text.Document{}, "", nil
 		}
-		words, from, err := text.Downloaded(ctx, u.Derived, hash)
+		words, from, err := text.ReadDownloaded(ctx, u.Derived, hash)
 		if err != nil {
 			return nil, "", err
 		}
@@ -557,7 +557,7 @@ func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, h
 			case err == nil:
 				// The parts of a reading bound the chunks it is cut into, the
 				// way an outline bounds a book's.
-				doc, err := text.Composed(ctx, u.Derived, from, hash, found)
+				doc, err := text.ReadComposed(ctx, u.Derived, from, hash, found)
 				if err != nil {
 					return nil, "", err
 				}

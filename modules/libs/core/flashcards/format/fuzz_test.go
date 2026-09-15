@@ -31,10 +31,10 @@ var deckSeeds = []string{
 }
 
 // A deck passes here once, on its way to the vault, and what comes out is
-// finished: every card carries a mark that could have been minted, no card is
-// gained or lost, and every mark this minted names the card it was minted for.
+// finished: every card carries a mark that could have been created, no card is
+// gained or lost, and every mark this gave names the card it was given to.
 //
-// Passing what came out through again changes nothing and mints nothing, so the
+// Passing what came out through again changes nothing and gives no mark, so the
 // pass is safe to make on every write.
 func FuzzWhole(f *testing.F) {
 	for _, seed := range deckSeeds {
@@ -49,7 +49,7 @@ func FuzzWhole(f *testing.F) {
 			"empty":   {},
 		}
 
-		out, minted, err := format.Whole(body, stencils, counting())
+		out, given, err := format.Whole(body, stencils, createIDs())
 		if err != nil {
 			t.Fatalf("%q could not be made whole: %v", body, err)
 		}
@@ -65,22 +65,22 @@ func FuzzWhole(f *testing.F) {
 					i, card.Mark, out)
 			}
 		}
-		for _, one := range minted {
+		for _, one := range given {
 			if one.Card < 0 || one.Card >= len(now.Cards) {
-				t.Fatalf("a mark was minted for the card at %d, of %d cards",
+				t.Fatalf("a mark was given to the card at %d, of %d cards",
 					one.Card, len(now.Cards))
 			}
 			if got := now.Cards[one.Card].Mark; got != one.Mark {
-				t.Fatalf("%q was minted for the card at %d, which carries %q",
+				t.Fatalf("%q was given to the card at %d, which carries %q",
 					one.Mark, one.Card, got)
 			}
 			if was.Cards[one.Card].Mark != "" {
-				t.Fatalf("the card at %d already carried %q and was minted %q",
+				t.Fatalf("the card at %d already carried %q and was given %q",
 					one.Card, was.Cards[one.Card].Mark, one.Mark)
 			}
 		}
 
-		again, second, err := format.Whole(out, stencils, counting())
+		again, second, err := format.Whole(out, stencils, createIDs())
 		if err != nil {
 			t.Fatalf("a deck already made whole could not be: %v", err)
 		}
@@ -88,14 +88,14 @@ func FuzzWhole(f *testing.F) {
 			t.Fatalf("a second pass rewrote the deck\n was %q\n now %q", out, again)
 		}
 		if len(second) != 0 {
-			t.Fatalf("a second pass minted %d marks over %q", len(second), out)
+			t.Fatalf("a second pass gave %d marks over %q", len(second), out)
 		}
 	})
 }
 
-// counting mints marks a run at a time, so that what comes out of one body is
-// the same on every machine and in every run.
-func counting() func() (domain.CardID, error) {
+// createIDs creates marks a run at a time, so that what comes out of one body
+// is the same on every machine and in every run.
+func createIDs() func() (domain.CardID, error) {
 	at := 0
 	return func() (domain.CardID, error) {
 		at++

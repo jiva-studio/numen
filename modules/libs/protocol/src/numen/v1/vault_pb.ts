@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjgKBFNjYW4SDQoFcmVhZHkYASABKAgSDgoGZmFpbGVkGAIgASgJEhEKCXVud2F0Y2hlZBgDIAEoCSJPCg1JbmRleENvdmVyYWdlEhMKC2NodW5rX2NvdW50GAEgASgDEhYKDmVtYmVkZGVkX2NvdW50GAIgASgDEhEKCWVtYmVkZGluZxgDIAEoCCIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJMsABCgxWYXVsdFNlcnZpY2USUAoNR2V0VmF1bHRTdGF0ZRIeLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEl4KEVdhdGNoVmF1bHRDaGFuZ2VzEiIubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0GiMubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZTABQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjcKBFNjYW4SDQoFcmVhZHkYASABKAgSDQoFZXJyb3IYAiABKAkSEQoJdW53YXRjaGVkGAMgASgJIk8KDUluZGV4Q292ZXJhZ2USEwoLY2h1bmtfY291bnQYASABKAMSFgoOZW1iZWRkZWRfY291bnQYAiABKAMSEQoJZW1iZWRkaW5nGAMgASgIIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZSIgCgRNb3ZlEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkywAEKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -96,12 +96,11 @@ export type Scan = Message<"numen.v1.Scan"> & {
   ready: boolean;
 
   /**
-   * Why the scan stopped, when it stopped for a reason. A vault that could not
-   * be read is not an empty one.
+   * Error is why the scan stopped, when it stopped for a reason.
    *
-   * @generated from field: string failed = 2;
+   * @generated from field: string error = 2;
    */
-  failed: string;
+  error: string;
 
   /**
    * Why the vault is not being followed, when it is not. Changes will only

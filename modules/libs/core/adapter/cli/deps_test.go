@@ -10,11 +10,11 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
-	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
@@ -22,9 +22,9 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// derived is the shelf this installation keeps its own files on inside a vault:
-// what a reading wrote, and what a transcription wrote.
-func derived(options filesystem.Options) filesystem.DerivedStores {
+// getDerived is the shelf this installation keeps its own files on inside a
+// vault: what a reading wrote, and what a transcription wrote.
+func getDerived(options filesystem.Options) filesystem.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: options,
 		Area:    filesystem.OCRDir,
@@ -40,7 +40,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 	return cli.Deps{
 		Vaults: func() (cli.Vaults, error) {
 			return cli.Vaults{
-				Registry: appstate.At(where.Registry),
+				Registry: appstate.OpenAt(where.Registry),
 				Readers:  filesystem.VaultReaders{Options: options},
 				Identity: filesystem.VaultIdentity{Options: options},
 				Trash:    s.bin,
@@ -69,7 +69,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				return cli.Scan{}, err
 			}
 			readers := filesystem.VaultReaders{Options: options}
-			store, err := derived(options).Open(v)
+			store, err := getDerived(options).Open(v)
 			if err != nil {
 				_ = db.Close()
 				return cli.Scan{}, err
@@ -99,14 +99,14 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 
 		// No embedder: a test reaches no model, so a question is answered by its
 		// words alone.
-		Search: func(ctx context.Context, trouble port.Trouble) (cli.Search, error) {
+		Search: func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
 			db, err := index.Open(ctx, where.Index)
 			if err != nil {
 				return cli.Search{}, err
 			}
 			return cli.Search{
 				Search: search.New(db.ChunkQueries(), filesystem.VaultReaders{Options: options},
-					derived(options), pdf.Documents{}, nil, 0, trouble),
+					getDerived(options), pdf.Documents{}, nil, 0, errorHandler),
 				Close: db.Close,
 			}, nil
 		},
@@ -124,10 +124,10 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 // oneVault is a list holding a single vault, answering nothing about any other.
 type oneVault struct{ held domain.Vault }
 
-func (o oneVault) All() ([]domain.Vault, error) { return []domain.Vault{o.held}, nil }
-func (oneVault) Save(domain.Vault) error        { return nil }
-func (oneVault) Remove(domain.VaultID) error    { return nil }
-func (oneVault) Opened(domain.VaultID) error    { return nil }
+func (o oneVault) All() ([]domain.Vault, error)    { return []domain.Vault{o.held}, nil }
+func (oneVault) Save(domain.Vault) error           { return nil }
+func (oneVault) Remove(domain.VaultID) error       { return nil }
+func (oneVault) RecordOpened(domain.VaultID) error { return nil }
 
 func (o oneVault) Find(nameOrPath string) (domain.Vault, bool, error) {
 	if nameOrPath == o.held.Name {

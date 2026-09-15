@@ -5,10 +5,17 @@
  * Nothing else the window is showing is true while this stands, and a person
  * cannot put it away.
  */
+// --- Props & Emits ---
 const props = defineProps<{
   /** The core could not be reached, in words a person reads. */
   failure: string
 }>()
+
+// --- State ---
+
+// --- Handlers ---
+
+// --- Helpers ---
 </script>
 
 <template>

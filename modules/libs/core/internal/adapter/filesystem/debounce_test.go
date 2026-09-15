@@ -19,10 +19,10 @@ func (e event) Event() notify.Event { return notify.Write }
 func (e event) Path() string        { return e.path }
 func (e event) Sys() any            { return nil }
 
-// watched makes a vault of notes and the reader that answers for it. The root
+// makeVaultOfNotes makes a vault of notes and the reader that answers for it. The root
 // it gives back is the reader's own, which is every link resolved: that is the
 // path the operating system names a change at.
-func watched(t *testing.T, notes int) (root string, reader *VaultReader) {
+func makeVaultOfNotes(t *testing.T, notes int) (root string, reader *VaultReader) {
 	t.Helper()
 	at := t.TempDir()
 	for i := range notes {
@@ -41,7 +41,7 @@ func watched(t *testing.T, notes int) (root string, reader *VaultReader) {
 // shapeOf is a reader's vault as it stands before the first event.
 func shapeOf(t *testing.T, reader *VaultReader) *folders {
 	t.Helper()
-	shape, err := remembered(reader)
+	shape, err := readShape(reader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func settles(t *testing.T, q *queue, is func() bool) {
 // the debouncing looks at anything, so the answer does not depend on how fast the
 // next event arrives — or on whether one arrives at all.
 func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
-	root, reader := watched(t, 5)
+	root, reader := makeVaultOfNotes(t, 5)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 
@@ -106,7 +106,7 @@ func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
 // TestABurstInsideTheBacklogIsNotALoss. Nothing was dropped, so nothing became
 // unknowable, and a walk of the whole vault is work nobody asked for.
 func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
-	root, reader := watched(t, 4)
+	root, reader := makeVaultOfNotes(t, 4)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 
@@ -139,7 +139,7 @@ func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 // arrives while a batch stands undelivered is read, debounced and reported
 // after it.
 func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
-	root, reader := watched(t, 9)
+	root, reader := makeVaultOfNotes(t, 9)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 

@@ -58,8 +58,8 @@ var disallowed = []string{
 	"Glob", "Grep", "NotebookEdit", "Task", "TodoWrite",
 }
 
-// Name is what put a correction right, recorded beside every line it made.
-func (p *Proofreader) Name() string {
+// GetName is what put a correction right, recorded beside every line it made.
+func (p *Proofreader) GetName() string {
 	if p.Model == "" {
 		return "claude"
 	}
@@ -144,12 +144,12 @@ func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch
 	// The batch goes on the input: --disallowed-tools takes as many names as
 	// follow it, and a batch is longer than a command line holds.
 	cmd.Stdin = strings.NewReader(proofread.Ask(batch))
-	var said, trouble bytes.Buffer
+	var said, stderr bytes.Buffer
 	cmd.Stdout = &said
-	cmd.Stderr = &trouble
+	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("batch %d: %w: %s", batch.Number, err, lastLine(trouble.String()))
+		return "", fmt.Errorf("batch %d: %w: %s", batch.Number, err, lastLine(stderr.String()))
 	}
 	return strings.TrimSpace(said.String()), nil
 }
@@ -157,7 +157,7 @@ func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch
 // starts is the command line to run and what stands before its own arguments.
 func (p *Proofreader) starts() (string, []string) {
 	if len(p.Command) == 0 {
-		return installed(), nil
+		return findCommand(), nil
 	}
 	return p.Command[0], p.Command[1:]
 }

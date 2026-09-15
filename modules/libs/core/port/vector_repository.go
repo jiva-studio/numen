@@ -44,8 +44,8 @@ type VectorRepository interface {
 	// was made from, so that renumbering the chunks does not buy it again.
 	SaveVectors(ctx context.Context, vectors []Vector) error
 
-	// Kept is the vectors already made under the recipe given for the texts the
-	// hashes address, by hash. What comes back was paid for once and is not
-	// asked of a model again.
-	Kept(ctx context.Context, recipe string, hashes [][]byte) (map[string][]byte, error)
+	// GetKeptVectors is the vectors already made under the recipe given for the
+	// texts the hashes address, by hash. What comes back was paid for once and
+	// is not asked of a model again.
+	GetKeptVectors(ctx context.Context, recipe string, hashes [][]byte) (map[string][]byte, error)
 }

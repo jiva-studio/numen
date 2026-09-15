@@ -54,8 +54,8 @@ func sheets(pages int) *paper {
 	return &paper{pages: pages, wide: 612, high: 792}
 }
 
-// opened is what the viewer is given in place of pdf.Open.
-func (p *paper) opened([]byte) (scan, error) {
+// openScan is what the viewer is given in place of pdf.Open.
+func (p *paper) openScan([]byte) (scan, error) {
 	if p.gate != nil {
 		<-p.gate
 	}
@@ -98,33 +98,33 @@ func (p *paper) Close() {
 	p.closes++
 }
 
-func (p *paper) counted() (opens, draws, closes int) {
+func (p *paper) getCounts() (opens, draws, closes int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.opens, p.draws, p.closes
 }
 
-// drewPage is how many times one page was drawn.
-func (p *paper) drewPage(index int) int {
+// getPageDraws is how many times one page was drawn.
+func (p *paper) getPageDraws(index int) int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.each[index]
 }
 
-// drawnFrom is a window looking at one document, with the pages drawn by the
+// openViewerWindow is a window looking at one document, with the pages drawn by the
 // paper it is given.
-func drawnFrom(t *testing.T, from *paper) (*API, http.Handler) {
+func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{
 		book:    "the bytes of a scan",
 		another: "the bytes of a second scan",
 		beside:  "a file the vault leaves alone",
 	})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: looking(pdf.Documents{})}
+	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
 	api.show(vault)
-	api.Viewer.open = from.opened
+	api.Viewer.open = from.openScan
 	t.Cleanup(api.Viewer.close)
-	return api, api.Serving(http.NotFoundHandler())
+	return api, api.NewHandler(http.NotFoundHandler())
 }
 
 // alone turns off the page drawn ahead, for a test counting what was drawn: a
@@ -138,11 +138,11 @@ func alone(api *API) { api.Viewer.ahead.reading = make(chan struct{}) }
 func fromTheLibrary(t *testing.T, raw string) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{book: raw})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: looking(pdf.Documents{})}
+	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
 	api.show(vault)
 	api.Viewer.patience = time.Minute
 	t.Cleanup(api.Viewer.close)
-	return api, api.Serving(http.NotFoundHandler())
+	return api, api.NewHandler(http.NotFoundHandler())
 }
 
 // ask puts one request to the window and answers with what came back.
@@ -162,8 +162,8 @@ func printOf(t *testing.T, api *API, path string) fingerprint {
 	return print
 }
 
-// drawnAt is where one page of a file of this window's vault is drawn.
-func drawnAt(t *testing.T, api *API, path string, at, wide int) string {
+// getPageAddress is where one page of a file of this window's vault is drawn.
+func getPageAddress(t *testing.T, api *API, path string, at, wide int) string {
 	t.Helper()
 	return pageOf(path, at, wide, printOf(t, api, path))
 }
@@ -175,10 +175,10 @@ func drawnAt(t *testing.T, api *API, path string, at, wide int) string {
 func TestAPageComesBackDrawnAsWideAsWasAsked(t *testing.T) {
 	for _, wide := range []int{200, 612, 1000, 1} {
 		t.Run(fmt.Sprint(wide), func(t *testing.T) {
-			api, handler := drawnFrom(t, sheets(4))
+			api, handler := openViewerWindow(t, sheets(4))
 			alone(api)
 
-			out := ask(handler, drawnAt(t, api, book, 0, wide))
+			out := ask(handler, getPageAddress(t, api, book, 0, wide))
 			if out.Code != http.StatusOK {
 				t.Fatalf("asked for a page and got %d: %s", out.Code, out.Body)
 			}
@@ -205,17 +205,17 @@ func TestAPageComesBackDrawnAsWideAsWasAsked(t *testing.T) {
 // What a document is: how many pages it has, and what a person reading it would
 // call each one.
 func TestWhatADocumentIsIsHowManyPagesAndWhatEachIsCalled(t *testing.T) {
-	api, _ := drawnFrom(t, sheets(4))
+	api, _ := openViewerWindow(t, sheets(4))
 	alone(api)
 
-	told := shaped(t, api)
+	told := getDocument(t, api)
 	if len(told.GetPages()) != 4 || len(told.GetPages()) != 4 {
 		t.Errorf("the document came back as %+v", told)
 	}
 }
 
-// shaped is what a document is, as the window is told it.
-func shaped(t *testing.T, api *API) *v1.GetDocumentResponse {
+// getDocument is what a document is, as the window is told it.
+func getDocument(t *testing.T, api *API) *v1.GetDocumentResponse {
 	t.Helper()
 	out, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if err != nil {
@@ -236,7 +236,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 	} {
 		t.Run(path, func(t *testing.T) {
 			from := sheets(4)
-			api, handler := drawnFrom(t, from)
+			api, handler := openViewerWindow(t, from)
 			alone(api)
 
 			for _, url := range []string{
@@ -248,7 +248,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 					t.Errorf("%s was answered", url)
 				}
 			}
-			if opens, draws, _ := from.counted(); opens+draws != 0 {
+			if opens, draws, _ := from.getCounts(); opens+draws != 0 {
 				t.Errorf("a path the vault does not hold opened %d and drew %d", opens, draws)
 			}
 		})
@@ -272,15 +272,15 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 	} {
 		asked := one.at + one.wide
 		t.Run(asked, func(t *testing.T) {
-			api, handler := drawnFrom(t, sheets(4))
+			api, handler := openViewerWindow(t, sheets(4))
 			alone(api)
 
 			join := "&"
 			if one.wide == "" {
 				join = "?"
 			}
-			at := assetOf(book) + "/" + pagesFacet + "/" + asked +
-				join + printing(printOf(t, api, book))
+			at := assetOf(book) + "/" + pagesName + "/" + asked +
+				join + formatFingerprint(printOf(t, api, book))
 			out := ask(handler, at)
 			if out.Code != one.want {
 				t.Errorf("asking for %s was answered %d, not %d", asked, out.Code, one.want)
@@ -295,7 +295,7 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 // one document, so a document rewritten under the same name is a different
 // address and this one is gone.
 func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
-	api, handler := drawnFrom(t, sheets(4))
+	api, handler := openViewerWindow(t, sheets(4))
 	alone(api)
 
 	print := printOf(t, api, book)
@@ -317,36 +317,36 @@ func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
 // not opened again for the next page of it.
 func TestAPageDrawnIsNotDrawnAgain(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 
-	first := ask(handler, drawnAt(t, api, book, 0, 400))
+	first := ask(handler, getPageAddress(t, api, book, 0, 400))
 	if first.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d: %s", first.Code, first.Body)
 	}
-	opens, drawn, _ := from.counted()
+	opens, drawn, _ := from.getCounts()
 	if opens != 1 {
 		t.Fatalf("the document was opened %d times", opens)
 	}
 
-	again := ask(handler, drawnAt(t, api, book, 0, 400))
+	again := ask(handler, getPageAddress(t, api, book, 0, 400))
 	if again.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", again.Code)
 	}
 	if first.Body.String() != again.Body.String() {
 		t.Error("the page came back drawn differently the second time")
 	}
-	if opensAgain, drawnAgain, _ := from.counted(); drawnAgain != drawn || opensAgain != opens {
+	if opensAgain, drawnAgain, _ := from.getCounts(); drawnAgain != drawn || opensAgain != opens {
 		t.Errorf("the second ask opened %d and drew %d, having opened %d and drawn %d",
 			opensAgain, drawnAgain, opens, drawn)
 	}
 
 	// Another page of the same document is drawn out of the document already
 	// open.
-	if out := ask(handler, drawnAt(t, api, book, 2, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 2, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for another page and got %d", out.Code)
 	}
-	if opensAgain, _, _ := from.counted(); opensAgain != opens {
+	if opensAgain, _, _ := from.getCounts(); opensAgain != opens {
 		t.Errorf("a second page opened the document %d times", opensAgain)
 	}
 }
@@ -355,19 +355,19 @@ func TestAPageDrawnIsNotDrawnAgain(t *testing.T) {
 // asked for, where nothing keeps it on disk.
 func TestAPageDroppedForRoomIsDrawnAgain(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 	api.Viewer.drawn.Load().limit = 1
 
-	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
-	_, drawn, _ := from.counted()
+	_, drawn, _ := from.getCounts()
 
-	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
 	}
-	if _, drawnAgain, _ := from.counted(); drawnAgain <= drawn {
+	if _, drawnAgain, _ := from.getCounts(); drawnAgain <= drawn {
 		t.Errorf("the page was not drawn again: %d drawings both times", drawn)
 	}
 }
@@ -376,7 +376,7 @@ func TestAPageDroppedForRoomIsDrawnAgain(t *testing.T) {
 // answered with that drawing.
 func TestManyAsksForOnePageDrawItOnce(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 
 	const askers = 16
@@ -387,7 +387,7 @@ func TestManyAsksForOnePageDrawItOnce(t *testing.T) {
 		asking.Add(1)
 		go func() {
 			defer asking.Done()
-			out := ask(handler, drawnAt(t, api, book, 0, 400))
+			out := ask(handler, getPageAddress(t, api, book, 0, 400))
 			codes[i], bodies[i] = out.Code, out.Body.String()
 		}()
 	}
@@ -401,7 +401,7 @@ func TestManyAsksForOnePageDrawItOnce(t *testing.T) {
 			t.Errorf("two asks for one page came back drawn differently")
 		}
 	}
-	opens, drawn, _ := from.counted()
+	opens, drawn, _ := from.getCounts()
 	if opens != 1 {
 		t.Errorf("%d asks opened the document %d times", askers, opens)
 	}
@@ -413,7 +413,7 @@ func TestManyAsksForOnePageDrawItOnce(t *testing.T) {
 // Many asks for a whole document at once open it once.
 func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 	from := sheets(4)
-	api, _ := drawnFrom(t, from)
+	api, _ := openViewerWindow(t, from)
 	alone(api)
 
 	var asking sync.WaitGroup
@@ -429,7 +429,7 @@ func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 	}
 	asking.Wait()
 
-	if opens, _, _ := from.counted(); opens != 1 {
+	if opens, _, _ := from.getCounts(); opens != 1 {
 		t.Errorf("the document was opened %d times", opens)
 	}
 }
@@ -437,20 +437,20 @@ func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 // The page after the one asked for is drawn before anybody asks for it.
 func TestTheNextPageIsDrawnBeforeItIsAsked(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 
-	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
 	eventually(t, "the next page was not drawn ahead", func() bool {
-		return from.drewPage(1) == 1
+		return from.getPageDraws(1) == 1
 	})
 
-	if out := ask(handler, drawnAt(t, api, book, 1, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 1, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the next page and got %d", out.Code)
 	}
 	// Asking for it draws the page after it, and not it again.
-	if drawn := from.drewPage(1); drawn != 1 {
+	if drawn := from.getPageDraws(1); drawn != 1 {
 		t.Errorf("the page drawn ahead was drawn %d times", drawn)
 	}
 }
@@ -461,7 +461,7 @@ func TestTheNextPageIsDrawnBeforeItIsAsked(t *testing.T) {
 func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 	from := sheets(4)
 	from.gate = make(chan struct{})
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 	api.Viewer.patience = 20 * time.Millisecond
 	letIn := sync.OnceFunc(func() { close(from.gate) })
@@ -473,7 +473,7 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("what the document is was refused %v, not that it is busy", err)
 	}
-	out := ask(handler, drawnAt(t, api, book, 0, 400))
+	out := ask(handler, getPageAddress(t, api, book, 0, 400))
 	if out.Code != http.StatusServiceUnavailable {
 		t.Errorf("a page was answered %d, not that the document is busy", out.Code)
 	}
@@ -488,7 +488,7 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 		_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 		return err == nil
 	})
-	if opens, _, _ := from.counted(); opens != 1 {
+	if opens, _, _ := from.getCounts(); opens != 1 {
 		t.Errorf("the document was opened %d times", opens)
 	}
 }
@@ -497,22 +497,22 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 // holding goes back. Asking for it again opens it again.
 func TestADocumentNobodyIsLookingAtIsClosed(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 	api.Viewer.docs.Load().idleFor = 10 * time.Millisecond
 
-	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
 	eventually(t, "the document was never closed", func() bool {
-		_, _, closed := from.counted()
+		_, _, closed := from.getCounts()
 		return closed == 1
 	})
 
-	if out := ask(handler, drawnAt(t, api, book, 1, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, getPageAddress(t, api, book, 1, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for another page and got %d", out.Code)
 	}
-	if opens, _, _ := from.counted(); opens != 2 {
+	if opens, _, _ := from.getCounts(); opens != 2 {
 		t.Errorf("the document was opened %d times, having been closed", opens)
 	}
 }
@@ -521,16 +521,16 @@ func TestADocumentNobodyIsLookingAtIsClosed(t *testing.T) {
 // pool, and a recognition holds another for as long as it reads.
 func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, handler := openViewerWindow(t, from)
 	alone(api)
 	api.Viewer.docs.Load().limit = 1
 
 	for _, path := range []string{book, another} {
-		if out := ask(handler, drawnAt(t, api, path, 0, 400)); out.Code != http.StatusOK {
+		if out := ask(handler, getPageAddress(t, api, path, 0, 400)); out.Code != http.StatusOK {
 			t.Fatalf("asked for a page of %s and got %d", path, out.Code)
 		}
 	}
-	opens, _, closed := from.counted()
+	opens, _, closed := from.getCounts()
 	if opens != 2 || closed != 1 {
 		t.Errorf("two documents opened %d and closed %d, holding one at a time", opens, closed)
 	}
@@ -544,11 +544,11 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 	}
 	api, handler := fromTheLibrary(t, string(raw))
 
-	if told := shaped(t, api); len(told.GetPages()) < 1 {
+	if told := getDocument(t, api); len(told.GetPages()) < 1 {
 		t.Fatalf("the document came back as %+v", told)
 	}
 
-	page := ask(handler, drawnAt(t, api, book, 0, 500))
+	page := ask(handler, getPageAddress(t, api, book, 0, 500))
 	if page.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d: %s", page.Code, page.Body)
 	}
@@ -574,10 +574,10 @@ func TestAFileThatIsNotADocumentIsRefused(t *testing.T) {
 // What the window may load is said on everything it is served, and a page of a
 // document is not among the things it may make up for itself.
 func TestTheWindowIsToldWhatItMayLoad(t *testing.T) {
-	api, handler := drawnFrom(t, sheets(4))
+	api, handler := openViewerWindow(t, sheets(4))
 	alone(api)
 
-	allowed := ask(handler, drawnAt(t, api, book, 0, 400)).Header().Get("Content-Security-Policy")
+	allowed := ask(handler, getPageAddress(t, api, book, 0, 400)).Header().Get("Content-Security-Policy")
 	if allowed == "" {
 		t.Fatal("nothing was said about what the window may load")
 	}
@@ -598,7 +598,7 @@ func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	opened, err := looking(pdf.Documents{}).open(raw)
+	opened, err := newViewer(pdf.Documents{}).open(raw)
 	if err != nil {
 		t.Fatal(err)
 	}

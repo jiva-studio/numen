@@ -18,7 +18,7 @@ import (
 // met a conflict leaves a second copy of a run beside the first, and a person
 // restoring a backup puts one there by hand.
 func Replay(d Day, by Scheduler, answers []Answer) map[CardFaceID]Schedule {
-	return Give(answers).Replay(d, By(by))
+	return Give(answers).Replay(d, ScheduleBy(by))
 }
 
 // SchedulingPolicy is what one card face is worked out under: the scheduler
@@ -33,9 +33,9 @@ type SchedulingPolicy struct {
 // cards send the same card away for different lengths of time.
 type Assignment func(CardFaceID) SchedulingPolicy
 
-// By is one scheduler for every card face, on the preset a deck naming none is
-// scheduled by.
-func By(s Scheduler) Assignment {
+// ScheduleBy is one scheduler for every card face, on the preset a deck naming
+// none is scheduled by.
+func ScheduleBy(s Scheduler) Assignment {
 	return func(CardFaceID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
 }
 
@@ -48,7 +48,7 @@ func By(s Scheduler) Assignment {
 type History []Answer
 
 // Give puts a vault's answers in the order they were given.
-func Give(answers []Answer) History { return given(answers) }
+func Give(answers []Answer) History { return getGivenAnswers(answers) }
 
 // Replay works out where this history leaves every card face, each under the
 // scheduler its own preset asks for and on the day its own preset puts it.
@@ -57,7 +57,7 @@ func Give(answers []Answer) History { return given(answers) }
 // against.
 func (h History) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
-	on := Spreading(d)
+	on := NewDueByDay(d)
 	for _, a := range h {
 		one := by(a.CardFace)
 		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
@@ -81,22 +81,22 @@ type RecallTally struct {
 	Recalled int
 }
 
-// Retained is what came back on each day, by the name of the day.
+// GetRetained is what came back on each day, by the name of the day.
 //
 // It is worked out with the replay: whether a card face was spaced is a thing
 // only the answers before it can say.
-func Retained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
-	return Give(answers).Retained(by, d)
+func GetRetained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
+	return Give(answers).GetRetained(by, d)
 }
 
-// Retained is the same over a history already in order.
-func (h History) Retained(by Scheduler, d Day) map[string]RecallTally {
+// GetRetained is the same over a history already in order.
+func (h History) GetRetained(by Scheduler, d Day) map[string]RecallTally {
 	out := make(map[string]RecallTally)
-	h.replayed(by, func(before Schedule, a Answer) {
-		if !by.Spaced(before) {
+	h.walkAnswers(by, func(before Schedule, a Answer) {
+		if !by.IsSpaced(before) {
 			return
 		}
-		day := d.Names(a.At)
+		day := d.GetName(a.At)
 		one := out[day]
 		one.Asked++
 		if a.Rating != Again {
@@ -107,15 +107,15 @@ func (h History) Retained(by Scheduler, d Day) map[string]RecallTally {
 	return out
 }
 
-// replayed walks the answers in the order they were given, telling each one to
-// the caller with the schedule the card face stood at before it.
-func replayed(
+// walkAnswers walks the answers in the order they were given, telling each one
+// to the caller with the schedule the card face stood at before it.
+func walkAnswers(
 	by Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[CardFaceID]Schedule {
-	return Give(answers).replayed(by, each)
+	return Give(answers).walkAnswers(by, each)
 }
 
-func (h History) replayed(
+func (h History) walkAnswers(
 	by Scheduler, each func(before Schedule, a Answer),
 ) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
@@ -129,13 +129,13 @@ func (h History) replayed(
 	return out
 }
 
-// given is the answers that count, in the order they were given.
+// getGivenAnswers is the answers that count, in the order they were given.
 //
 // An answer some line takes back is left out, and one identifier is one answer
 // however many lines carry it. The files arrive in whatever order they were
 // synchronised, and what a card face has been through is the order of the
 // answers themselves.
-func given(answers []Answer) []Answer {
+func getGivenAnswers(answers []Answer) []Answer {
 	taken := make(map[string]bool)
 	for _, a := range answers {
 		if a.TakesBack() {

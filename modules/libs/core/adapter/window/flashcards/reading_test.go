@@ -17,7 +17,7 @@ import (
 // A vault being read is work the window reports, named by the vault it is on
 // and by how far it has got. A window session on a blank frame reads as broken.
 func TestReadingAVaultIsReportedAsWork(t *testing.T) {
-	api, _ := windowed(t)
+	api, _ := newAPI(t)
 	unread := testsupport.NewVault(t, deck)
 	unread.Name = "Sanskrit"
 	api.Registry = registry{held: []domain.Vault{unread}}
@@ -28,7 +28,7 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 		return nil
 	})
 
-	if one := api.counted(t.Context(), unread); !one.GetReading() || one.GetUnread() != "" {
+	if one := api.countVault(t.Context(), unread); !one.GetReading() || one.GetUnread() != "" {
 		t.Fatalf("the vault came back %+v", one)
 	}
 	testsupport.WaitFor(t, func() bool {
@@ -48,7 +48,7 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 // A vault the index already carries is drawn from what it holds, so reading it
 // again is work drawn only once it has lasted. An instant walk says nothing.
 func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
-	api, held := windowed(t, deck)
+	api, held := newAPI(t, deck)
 
 	holding := make(chan struct{})
 	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
@@ -56,7 +56,7 @@ func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 		return nil
 	})
 
-	api.counted(t.Context(), held[0])
+	api.countVault(t.Context(), held[0])
 	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 1 })
 
 	if at := api.Window.Tasking.List()[0]; at.Asked {
@@ -68,7 +68,7 @@ func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 // A reading that failed says why in the vault's own row, and is not begun over
 // and over by the counts that follow.
 func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
-	api, _ := windowed(t)
+	api, _ := newAPI(t)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
 
@@ -79,9 +79,9 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 	})
 
 	testsupport.WaitFor(t, func() bool {
-		return api.counted(t.Context(), unread).GetUnread() == "the folder is not there"
+		return api.countVault(t.Context(), unread).GetUnread() == "the folder is not there"
 	})
-	api.counted(t.Context(), unread)
+	api.countVault(t.Context(), unread)
 	if got := tried.Load(); got != 1 {
 		t.Errorf("the vault was read %d times", got)
 	}
@@ -89,17 +89,17 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 	// The vault moved underneath the window, which is what lets it be tried
 	// again.
 	api.Forget(unread.ID)
-	api.counted(t.Context(), unread)
+	api.countVault(t.Context(), unread)
 	testsupport.WaitFor(t, func() bool { return tried.Load() == 2 })
 }
 
 // The list of work is answered whether or not the window keeps one, so the page
 // has one thing to listen to.
 func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {
-	api, _ := windowed(t)
+	api, _ := newAPI(t)
 	api.Window.Tasking = nil
 
-	stream, err := watching(t, api).WatchTasks(
+	stream, err := newWindowClient(t, api).WatchTasks(
 		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Review}),
 	)
 	if err != nil {

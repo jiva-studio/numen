@@ -118,7 +118,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 		text := "no engine beats a reversible engine"
 		at := spans(text, "engine")
 
-		cut, kept := around(text, at, 0)
+		cut, kept := getTextAround(text, at, 0)
 		if cut != text {
 			t.Errorf("cut %q, want it whole", cut)
 		}
@@ -129,7 +129,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a long passage opens on the words about the first span", func(t *testing.T) {
 		text := long(500) + " engine " + long(500)
-		cut, kept := around(text, spans(text, "engine"), 0)
+		cut, kept := getTextAround(text, spans(text, "engine"), 0)
 
 		if len([]rune(cut)) > glancing+2 {
 			t.Errorf("cut is %d characters, want no more than %d and two marks",
@@ -149,7 +149,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a long passage with nothing marked opens at its beginning", func(t *testing.T) {
 		text := "The vault format is not settled. " + long(500)
-		cut, kept := around(text, nil, 0)
+		cut, kept := getTextAround(text, nil, 0)
 
 		if !strings.HasPrefix(cut, "The vault format") {
 			t.Errorf("cut opens on %q, want the beginning of the passage", cut[:20])
@@ -164,7 +164,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a span near the end of a passage opens the window all the same", func(t *testing.T) {
 		text := long(500) + " engine ends here"
-		cut, kept := around(text, spans(text, "engine"), 0)
+		cut, kept := getTextAround(text, spans(text, "engine"), 0)
 
 		if len(kept) != 1 {
 			t.Fatalf("kept %+v spans, want the one that matched", kept)
@@ -185,7 +185,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a span near the end of a passage of two bytes a character", func(t *testing.T) {
 		text := strings.Repeat("слово ", 200) + "дышать не можем"
-		cut, kept := around(text, spans(text, "дышать"), 0)
+		cut, kept := getTextAround(text, spans(text, "дышать"), 0)
 
 		if len(kept) != 1 {
 			t.Fatalf("kept %+v spans, want the one that matched", kept)
@@ -202,7 +202,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 			t.Fatalf("the passage holds %d spans, want 2", len(at))
 		}
 
-		_, kept := around(text, at, 0)
+		_, kept := getTextAround(text, at, 0)
 		if len(kept) != 1 {
 			t.Errorf("kept %+v, want only the span the window holds", kept)
 		}
@@ -210,7 +210,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("spans stay counted the way a client counts text", func(t *testing.T) {
 		text := "👋 " + long(400) + " engine " + long(400)
-		cut, kept := around(text, spans(text, "engine"), 0)
+		cut, kept := getTextAround(text, spans(text, "engine"), 0)
 
 		if len(kept) != 1 {
 			t.Fatalf("kept %+v spans, want 1", kept)
@@ -229,7 +229,7 @@ func TestAPassageOpensOnTheHitWhenNoWordMatched(t *testing.T) {
 
 	// Nothing matched a word — this is what a hit by meaning looks like — and
 	// the chunk that did match begins where the sentence does.
-	cut, kept := around(text, nil, 501)
+	cut, kept := getTextAround(text, nil, 501)
 
 	if !strings.Contains(cut, "Alice Fenn") {
 		t.Errorf("cut %q, want it to hold the words the hit stands on", cut[:40])

@@ -61,8 +61,8 @@ type RefreshResult struct {
 	Assets []string
 }
 
-// Changed is every note the caller may need to look at again.
-func (r RefreshResult) Changed() []string {
+// GetChangedPaths is every note the caller may need to look at again.
+func (r RefreshResult) GetChangedPaths() []string {
 	return append(append([]string(nil), r.Indexed...), r.Removed...)
 }
 
@@ -148,23 +148,23 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
 		return res, fmt.Errorf("remove: %w", err)
 	}
-	if err := u.swept(ctx, v, gone); err != nil {
+	if err := u.dropSources(ctx, v, gone); err != nil {
 		return res, fmt.Errorf("remove: %w", err)
 	}
 	return res, nil
 }
 
-// swept takes out the rows of every source at a path the vault no longer holds.
-// A note leaves through the note repository; a book and a recording are filed
-// by kind and leave through their own, with their chunks and their vectors.
-func (u Refresh) swept(ctx context.Context, v domain.Vault, paths []string) error {
+// dropSources takes out the rows of every source at a path the vault no longer
+// holds. A note leaves through the note repository; a book and a recording are
+// filed by kind and leave through their own, with their chunks and their vectors.
+func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string) error {
 	if len(paths) == 0 {
 		return nil
 	}
 	// A path names one file, and a folder names everything under it.
 	held := make(map[domain.SourceKind][]string)
 	for _, path := range paths {
-		under, err := u.Queries.Under(ctx, v.ID, path)
+		under, err := u.Queries.GetSourcesUnder(ctx, v.ID, path)
 		if err != nil {
 			return err
 		}

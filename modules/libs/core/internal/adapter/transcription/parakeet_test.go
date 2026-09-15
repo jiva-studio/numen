@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// loaded is the models a machine holds, and the recording to hear with them.
+// openTranscriber is the models a machine holds, and the recording to hear with them.
 // They are hundreds of megabytes and are not in the repository, so a machine
 // without them says so and the rest of the package is still tested.
-func loaded(t *testing.T) (*Transcriber, []byte) {
+func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 	t.Helper()
 	dir, recorded := os.Getenv("NUMEN_MODELS"), os.Getenv("NUMEN_RECORDING")
 	if dir == "" || recorded == "" {
@@ -36,7 +36,7 @@ func loaded(t *testing.T) (*Transcriber, []byte) {
 // A recording is opened, cut into the stretches that carry speech, and each of
 // them heard.
 func TestHearingARecording(t *testing.T) {
-	by, raw := loaded(t)
+	by, raw := openTranscriber(t)
 	recorded := os.Getenv("NUMEN_RECORDING")
 
 	sound, err := by.Open(t.Context(), raw)
@@ -75,13 +75,13 @@ func TestHearingARecording(t *testing.T) {
 // is given, and is how the words this writes are compared with the words it
 // writes.
 func TestHearingAWholeRecording(t *testing.T) {
-	by, raw := loaded(t)
+	by, raw := openTranscriber(t)
 
 	sound, rate, err := samples(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	at, err := resampled(t.Context(), sound, rate, sampleRate)
+	at, err := resample(t.Context(), sound, rate, sampleRate)
 	if err != nil {
 		t.Fatal(err)
 	}

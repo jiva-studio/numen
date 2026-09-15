@@ -37,7 +37,7 @@ func sections(body []byte, first, last int) []section {
 			end, next = at+i, at+i+1
 		}
 		line := strings.TrimRight(string(body[at:end]), "\r")
-		if !f.Crosses(line) && !f.Inside() {
+		if !f.Crosses(line) && !f.IsInside() {
 			if level, name, ok := heading(line, first, last); ok {
 				if n := len(out); n > 0 {
 					out[n-1].to = at
@@ -96,13 +96,13 @@ func run(body []byte, from, to int) (string, int) {
 		}
 		begin = next
 	}
-	end = trimmedEnd(body, begin, end)
-	return markdown.Normalised(string(body[begin:end])), end
+	end = getTrimmedEnd(body, begin, end)
+	return markdown.Normalise(string(body[begin:end])), end
 }
 
-// trimmedEnd is the byte a run's own text stops at, the whitespace that
+// getTrimmedEnd is the byte a run's own text stops at, the whitespace that
 // follows it counted as nobody's.
-func trimmedEnd(body []byte, from, to int) int {
+func getTrimmedEnd(body []byte, from, to int) int {
 	return from + len(bytes.TrimRight(body[from:to], " \t\r\n"))
 }
 

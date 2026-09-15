@@ -3,8 +3,8 @@ import test from 'node:test'
 import {
   baseline,
   calls,
-  carries,
-  echoes,
+  isCarriedBy,
+  isEchoOf,
   given,
   goDeclares,
   holds,
@@ -42,8 +42,8 @@ test('every file named by a verb form says that word in its own code', () => {
     'modules/apps/desktop/cmd/numen/main.go',
     'modules/apps/mobile/bind/mobile.go',
     'modules/libs/ui/src/shared/lib/digits.ts',
-    'modules/libs/ui/src/features/welcome/letters.ts',
-    'modules/libs/ui/src/features/notices/live-regions/LiveRegions.vue',
+    'modules/libs/ui/src/features/welcome/lib/letters.ts',
+    'modules/libs/ui/src/features/notices/ui/live-regions/LiveRegions.vue',
     'modules/apps/mobile/src/core.ts',
   ]) {
     assert.ok(
@@ -211,11 +211,11 @@ test('the stem of a file name', () => {
   assert.deepEqual(stemOf('a/b/Reader.stories.ts'), { stem: 'Reader', test: true })
   assert.deepEqual(stemOf('a/b/reading.ts'), { stem: 'reading', test: false })
   assert.deepEqual(stemOf('a/b/Reader.vue'), { stem: 'Reader', test: false })
-  assert.ok(carries('naming', 'names'))
-  assert.ok(!carries('naming', 'named'))
-  assert.ok(echoes('finding', 'FindingDeps'))
-  assert.ok(echoes('finding', 'finding'))
-  assert.ok(!echoes('finding', 'find'))
-  assert.ok(!echoes('commanding', 'commandsOf'))
-  assert.ok(!echoes('placing', 'usePlace'))
+  assert.ok(isCarriedBy('naming', 'names'))
+  assert.ok(!isCarriedBy('naming', 'named'))
+  assert.ok(isEchoOf('finding', 'FindingDeps'))
+  assert.ok(isEchoOf('finding', 'finding'))
+  assert.ok(!isEchoOf('finding', 'find'))
+  assert.ok(!isEchoOf('commanding', 'commandsOf'))
+  assert.ok(!isEchoOf('placing', 'usePlace'))
 })

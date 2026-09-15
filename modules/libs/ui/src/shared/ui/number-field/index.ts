@@ -1,14 +1,14 @@
 export { default as NumberField } from './NumberField.vue'
 export {
-  allowed,
-  clamped,
+  isAllowed,
+  clamp,
   numberOf,
   onItsWay,
-  settled,
-  standsFor,
-  stepped,
-  walked,
-  written,
+  snapToBounds,
+  isTextForValue,
+  stepBy,
+  stepForKey,
+  formatNumber,
   DEFAULT_BOUNDS,
 } from './number'
 export type { Bounds } from './number'

@@ -41,7 +41,7 @@ func TestAnAppendIsTakenBackToWhereItLanded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := back(root, file, "run.txt", wrote); err != nil {
+	if err := closeAndCut(root, file, "run.txt", wrote); err != nil {
 		t.Fatal(err)
 	}
 
@@ -70,7 +70,7 @@ func TestAnAppendThatLandedNothingCutsNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := back(root, file, "run.txt", 0); err != nil {
+	if err := closeAndCut(root, file, "run.txt", 0); err != nil {
 		t.Fatal(err)
 	}
 	if got, err := os.ReadFile(at); err != nil || string(got) != "one\n" {

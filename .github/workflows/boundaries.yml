@@ -73,6 +73,13 @@ jobs:
       - name: The story names
         run: npm run check --prefix modules/tools/stories
 
+      # What each window and each library is read against: the globals a pure
+      # core may not reach for, the promises nobody waits for, and the names a
+      # file declares and never uses. The rules are type-aware, so this stands
+      # after the components are built.
+      - name: The window rules
+        run: npm run lint --workspaces --if-present --prefix modules
+
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: modules/apps/desktop/go.mod
