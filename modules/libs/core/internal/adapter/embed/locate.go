@@ -1,4 +1,4 @@
-package onnx
+package embed
 
 import (
 	"context"
@@ -12,63 +12,56 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
-
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 )
 
 // FetchProgress is how much of a model is here and how much is wanted, told while it
 // comes down. Nothing is told for a model that is already on this machine.
 type FetchProgress func(done, total int64)
 
-// paths are the files a model is made of. tokenizer.json defines the tokeniser
+// Paths are the files a model is made of. tokenizer.json defines the tokeniser
 // in full, special tokens included.
-type paths struct {
-	model     string
-	tokenizer string
+type Paths struct {
+	Model     string
+	Tokenizer string
 }
 
-// Where a repository keeps the models it publishes, and which of them is run
-// when the configuration names none.
-const (
-	modelFolder = embed.ModelFolder
-	modelFile   = embed.ModelFile
-	tokenFile   = embed.TokenizerFile
-)
-
-// locate finds the model's files: in a directory the configuration names, or in
+// Locate finds the model's files: in a directory the configuration names, or in
 // the download cache. A named directory is what an installation with no network
 // uses.
-func locate(ctx context.Context, cfg embed.LocalModel, progress FetchProgress) (paths, error) {
+//
+// The files are the same whichever engine runs them, so both embedders come
+// here for them.
+func Locate(ctx context.Context, cfg LocalModel, progress FetchProgress) (Paths, error) {
 	file := cfg.File
 	if file == "" {
-		file = modelFile
+		file = ModelFile
 	}
 	if cfg.Dir != "" {
-		p := paths{
-			model:     filepath.Join(cfg.Dir, file),
-			tokenizer: filepath.Join(cfg.Dir, tokenFile),
+		p := Paths{
+			Model:     filepath.Join(cfg.Dir, file),
+			Tokenizer: filepath.Join(cfg.Dir, TokenizerFile),
 		}
-		for _, required := range []string{p.model, p.tokenizer} {
+		for _, required := range []string{p.Model, p.Tokenizer} {
 			if _, err := os.Stat(required); err != nil {
-				return paths{}, fmt.Errorf("model directory %s: %w", cfg.Dir, err)
+				return Paths{}, fmt.Errorf("model directory %s: %w", cfg.Dir, err)
 			}
 		}
 		return p, nil
 	}
 	if cfg.Name == "" {
-		return paths{}, errors.New("no model to run: name a repository or a directory")
+		return Paths{}, errors.New("no model to run: name a repository or a directory")
 	}
 	if !cfg.Download {
-		return paths{}, fmt.Errorf("%s is not on this machine: set local.dir to where it is, or local.download to fetch it", cfg.Name)
+		return Paths{}, fmt.Errorf("%s is not on this machine: set local.dir to where it is, or local.download to fetch it", cfg.Name)
 	}
 
 	repo := hub.New(cfg.Name).WithProgressBar(false)
 	folder, sizes, err := listRepoFiles(repo)
 	if err != nil {
-		return paths{}, fmt.Errorf("what %s publishes: %w", cfg.Name, err)
+		return Paths{}, fmt.Errorf("what %s publishes: %w", cfg.Name, err)
 	}
 	if !slices.Contains(folder, file) {
-		return paths{}, fmt.Errorf("%s publishes no %s/%s: it has %v", cfg.Name, modelFolder, file, folder)
+		return Paths{}, fmt.Errorf("%s publishes no %s/%s: it has %v", cfg.Name, ModelFolder, file, folder)
 	}
 
 	files := selectModelFiles(folder, file)
@@ -80,28 +73,28 @@ func locate(ctx context.Context, cfg embed.LocalModel, progress FetchProgress) (
 		defer reportProgress(dir, files, sizes, total, progress)()
 	}
 
-	p := paths{}
+	p := Paths{}
 	for _, name := range files {
-		at, err := repo.DownloadFileCtx(ctx, modelFolder+"/"+name)
+		at, err := repo.DownloadFileCtx(ctx, ModelFolder+"/"+name)
 		if err != nil {
-			return paths{}, fmt.Errorf("fetching %s/%s: %w", modelFolder, name, err)
+			return Paths{}, fmt.Errorf("fetching %s/%s: %w", ModelFolder, name, err)
 		}
 		if name == file {
-			p.model = at
+			p.Model = at
 		}
-		if name == tokenFile {
-			p.tokenizer = at
+		if name == TokenizerFile {
+			p.Tokenizer = at
 		}
 	}
 	// The tokeniser stands at the root of a repository, and beside the models
 	// in some.
-	if repo.HasFile(tokenFile) {
-		if p.tokenizer, err = repo.DownloadFileCtx(ctx, tokenFile); err != nil {
-			return paths{}, fmt.Errorf("fetching %s: %w", tokenFile, err)
+	if repo.HasFile(TokenizerFile) {
+		if p.Tokenizer, err = repo.DownloadFileCtx(ctx, TokenizerFile); err != nil {
+			return Paths{}, fmt.Errorf("fetching %s: %w", TokenizerFile, err)
 		}
 	}
-	if p.tokenizer == "" {
-		return paths{}, fmt.Errorf("%s publishes no %s", cfg.Name, tokenFile)
+	if p.Tokenizer == "" {
+		return Paths{}, fmt.Errorf("%s publishes no %s", cfg.Name, TokenizerFile)
 	}
 	return p, nil
 }
@@ -115,7 +108,7 @@ func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		rest, inside := strings.CutPrefix(info.Name, modelFolder+"/")
+		rest, inside := strings.CutPrefix(info.Name, ModelFolder+"/")
 		if !inside || rest == "" {
 			continue
 		}

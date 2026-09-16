@@ -62,7 +62,7 @@ type Embedder struct {
 //
 // is is the identity the vectors this model returns are kept under, which the
 // settings decide.
-func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalModel, progress FetchProgress) (*Embedder, error) {
+func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalModel, progress embed.FetchProgress) (*Embedder, error) {
 	if identity.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
@@ -75,11 +75,11 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
 			identity.Name, identity.Pooling, embed.PoolMean, embed.PoolHead)
 	}
-	paths, err := locate(ctx, cfg, progress)
+	paths, err := embed.Locate(ctx, cfg, progress)
 	if err != nil {
 		return nil, err
 	}
-	tokenizer, err := hftokenizer.NewFromFile(nil, paths.tokenizer)
+	tokenizer, err := hftokenizer.NewFromFile(nil, paths.Tokenizer)
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +103,9 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	if err := options.SetIntraOpNumThreads(int32(cfg.GetThreads())); err != nil {
 		return nil, err
 	}
-	session, err := engine.NewSession(paths.model, options)
+	session, err := engine.NewSession(paths.Model, options)
 	if err != nil {
-		return nil, fmt.Errorf("reading %s: %w", paths.model, err)
+		return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
 	}
 
 	e := &Embedder{
@@ -305,7 +305,7 @@ func chooseOutput(named []string) (string, error) {
 // createFetchListener is what fetching the runtime reports to. What is coming
 // down is named to the runtime's own listener and not to this one, which is
 // told about a model.
-func createFetchListener(progress FetchProgress) func(string, int64, int64) {
+func createFetchListener(progress embed.FetchProgress) func(string, int64, int64) {
 	if progress == nil {
 		return nil
 	}

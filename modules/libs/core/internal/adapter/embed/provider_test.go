@@ -2,10 +2,12 @@ package embed_test
 
 import (
 	"encoding/json"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // One model name is a repository and something a service answers to, and the
@@ -103,5 +105,46 @@ func TestAProviderIsReadAndWrittenByTheKeysAFileAlreadyHas(t *testing.T) {
 	// finds what they left.
 	if !strings.Contains(string(written), "a/repository") {
 		t.Errorf("the repository is gone from %s", written)
+	}
+}
+
+// The engine is the settings' where they name one. A model is run the same way
+// whatever else the file says about it.
+func TestTheEngineNamedIsTheEngineRun(t *testing.T) {
+	for _, named := range []string{embed.EngineRuntime, embed.EnginePureGo} {
+		if got := (embed.LocalModel{Engine: named}).GetEngine(); got != named {
+			t.Errorf("named %q, run on %q", named, got)
+		}
+	}
+}
+
+// A machine the runtime is published for runs the model through it, and one it
+// is not published for runs the model on what is in the binary. Either way the
+// settings name nothing.
+func TestAnEngineNobodyNamedIsTheOneThisPlatformHas(t *testing.T) {
+	want := embed.EnginePureGo
+	if onnxruntime.IsPublished() {
+		want = embed.EngineRuntime
+	}
+	if got := (embed.LocalModel{}).GetEngine(); got != want {
+		t.Errorf("got %q, want %q on %s/%s", got, want, runtime.GOOS, runtime.GOARCH)
+	}
+}
+
+// A person moving a vault between machines carries the file, and the engine
+// written on one of them is read on the other.
+func TestTheEngineIsReadOutOfTheFile(t *testing.T) {
+	var held embed.LocalModel
+	if err := json.Unmarshal([]byte(`{"engine":"go","runtime":"/opt/lib/libonnxruntime.so","threads":2}`), &held); err != nil {
+		t.Fatal(err)
+	}
+	if held.GetEngine() != embed.EnginePureGo {
+		t.Errorf("run on %q", held.GetEngine())
+	}
+	if held.Runtime != "/opt/lib/libonnxruntime.so" {
+		t.Errorf("the runtime is %q", held.Runtime)
+	}
+	if held.GetThreads() != 2 {
+		t.Errorf("one pass takes %d threads", held.GetThreads())
 	}
 }

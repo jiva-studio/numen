@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/gomlx"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/onnx"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -95,12 +96,9 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 
 	case embed.UseLocal:
 		local, _ := where.Local()
-		open := func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error) {
-			model, err := onnx.Open(ctx, is, local, tell)
-			if err != nil {
-				return nil, err
-			}
-			return model, nil
+		open, err := openLocal(is, local)
+		if err != nil {
+			return embedders.Provider{}, err
 		}
 		return embedders.NewFetched(is, local.Name, open), nil
 
@@ -109,4 +107,22 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 	}
 	return embedders.Provider{}, fmt.Errorf("vectors are made %q, and they are made %q or %q",
 		where.Use, embed.UseLocal, embed.UseService)
+}
+
+// openLocal is the engine that runs the model on this machine. A desktop runs
+// it through ONNX Runtime; a platform the runtime is not published for runs it
+// on the backend written in Go, which the settings may also ask for by name.
+func openLocal(is port.EmbeddingModel, cfg embed.LocalModel) (embedders.OpenModel, error) {
+	switch cfg.GetEngine() {
+	case embed.EngineRuntime:
+		return func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error) {
+			return onnx.Open(ctx, is, cfg, tell)
+		}, nil
+	case embed.EnginePureGo:
+		return func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error) {
+			return gomlx.Open(ctx, is, cfg, tell)
+		}, nil
+	}
+	return nil, fmt.Errorf("a model is run on %q, and it is run on %q or %q",
+		cfg.GetEngine(), embed.EngineRuntime, embed.EnginePureGo)
 }

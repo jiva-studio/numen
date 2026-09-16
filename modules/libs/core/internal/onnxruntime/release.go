@@ -76,3 +76,10 @@ func runtimeName() string {
 	}
 	return "libonnxruntime.so"
 }
+
+// IsPublished says whether a runtime is published for this platform. A platform
+// it is not published for runs what is written in Go.
+func IsPublished() bool {
+	_, ok := releases[runtime.GOOS+"/"+runtime.GOARCH]
+	return ok
+}
