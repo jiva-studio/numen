@@ -32,12 +32,12 @@ defineSlots<{
 const isDoing = computed(() => props.entry.turn.voice === 'doing')
 
 /** A line about work the person can press, which opens what it was working on. */
-const opens = computed(() => isDoing.value && props.entry.turn.opens === true)
+const opens = computed(() => isDoing.value && props.entry.turn.canOpen === true)
 
 /** What the line about a tool in hand is drawn from. */
 const call = computed(() => ({
   tool: props.entry.turn.text,
-  about: props.entry.turn.about ?? '',
+  subject: props.entry.turn.subject ?? '',
   aside: props.entry.turn.aside ?? '',
   working: props.entry.state === 'arriving',
 }))

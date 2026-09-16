@@ -10,7 +10,7 @@ const props = defineProps<{
   /** Where the pointer is, in pixels from the top left of the window. */
   at: Position
   /** What is being dragged, in the caller's own words. */
-  says: string
+  label: string
 }>()
 
 const previewStyle = computed(() => ({
@@ -21,7 +21,7 @@ const previewStyle = computed(() => ({
 
 <template>
   <p class="drag-preview text-small font-sans" :style="previewStyle">
-    {{ says }}
+    {{ label }}
   </p>
 </template>
 

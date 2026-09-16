@@ -9,19 +9,19 @@ import { getStillAway, readable, tallyOf, type Notice } from './notice'
 
 const one = (over: Partial<Notice> = {}): Notice => ({
   id: 'embedding',
-  says: 'Preparing search by meaning',
+  text: 'Preparing search by meaning',
   ...over,
 })
 
 describe('which notices stand in the corner', () => {
   it('draws the notices that have something to say, in the order given', () => {
     const first = one({ id: 'one' })
-    const second = one({ id: 'two', says: 'Reading the vault' })
+    const second = one({ id: 'two', text: 'Reading the vault' })
     expect(readable([first, second]).map((each) => each.id)).toEqual(['one', 'two'])
   })
 
   it('leaves out a notice nobody could read', () => {
-    expect(readable([one({ id: 'silent', says: '' }), one()]).map((each) => each.id)).toEqual([
+    expect(readable([one({ id: 'silent', text: '' }), one()]).map((each) => each.id)).toEqual([
       'embedding',
     ])
   })
@@ -99,8 +99,8 @@ describe('how long work runs before it is worth a card', () => {
 })
 
 describe('a notice somebody asked for', () => {
-  const asked: Notice = { id: 'reading', says: 'Reading a scan', isAsked: true }
-  const behind: Notice = { id: 'indexing', says: 'Indexing' }
+  const asked: Notice = { id: 'reading', text: 'Reading a scan', isAsked: true }
+  const behind: Notice = { id: 'indexing', text: 'Indexing' }
 
   it('is drawn the moment it arrives', () => {
     // The wait is for work nobody asked for. Somebody who asked is waiting to
@@ -133,7 +133,7 @@ describe('how long something said stands to be read', () => {
   })
 
   it('is drawn the moment it arrives and goes once it has been read', () => {
-    const said: Notice = { id: 'renamed', says: 'Renamed', stay: 'read' }
+    const said: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
     const arrived = getArrivalTimes(new Map(), [said], 1000)
 
     expect(getShownNotices([said], arrived, new Set(), 1000).map((each) => each.id)).toEqual([
@@ -148,7 +148,7 @@ describe('how long something said stands to be read', () => {
   it('stands until it is put away where it was not asked to be read in passing', () => {
     const kept: Notice = {
       id: 'occupied',
-      says: 'A note of that name is filed there',
+      text: 'A note of that name is filed there',
       stay: 'kept',
     }
     const arrived = getArrivalTimes(new Map(), [kept], 0)
@@ -160,7 +160,7 @@ describe('how long something said stands to be read', () => {
 
   it('keeps a notice too long to be read in passing standing, and never finishes it', () => {
     const list = Array.from({ length: 21 }, (_, at) => `Note${at}.md`).join(' ')
-    const long: Notice = { id: 'repaired', says: 'Links repaired in', about: list, stay: 'read' }
+    const long: Notice = { id: 'repaired', text: 'Links repaired in', about: list, stay: 'read' }
     const arrived = getArrivalTimes(new Map(), [long], 0)
 
     expect(getShownNotices([long], arrived, new Set(), 10_000_000).map((each) => each.id)).toEqual([
@@ -170,9 +170,9 @@ describe('how long something said stands to be read', () => {
   })
 
   it('names the ones whose caller may dismiss them, and only those', () => {
-    const said: Notice = { id: 'renamed', says: 'Renamed', stay: 'read' }
-    const kept: Notice = { id: 'occupied', says: 'Filed there already', stay: 'kept' }
-    const work: Notice = { id: 'embedding', says: 'Indexing', working: true }
+    const said: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
+    const kept: Notice = { id: 'occupied', text: 'Filed there already', stay: 'kept' }
+    const work: Notice = { id: 'embedding', text: 'Indexing', working: true }
     const all = [said, kept, work]
     const arrived = getArrivalTimes(new Map(), all, 0)
 
@@ -182,8 +182,8 @@ describe('how long something said stands to be read', () => {
 })
 
 describe('how many cards stand at once', () => {
-  const work = (id: string): Notice => ({ id, says: 'Indexing', working: true })
-  const word = (id: string): Notice => ({ id, says: 'Renamed', stay: 'read' })
+  const work = (id: string): Notice => ({ id, text: 'Indexing', working: true })
+  const word = (id: string): Notice => ({ id, text: 'Renamed', stay: 'read' })
 
   it('folds nothing while there is room', () => {
     expect(foldNotices([work('a'), word('b')], 4)).toEqual({
@@ -213,7 +213,7 @@ describe('how many cards stand at once', () => {
   it('folds nothing that stopped badly, wherever it stands', () => {
     // Trouble is what a person has to see, and it arrives before the reports
     // that pile up behind it.
-    const failed: Notice = { id: 'failed', says: 'Reading', tone: 'alarm', stay: 'kept' }
+    const failed: Notice = { id: 'failed', text: 'Reading', tone: 'alarm', stay: 'kept' }
     const drawn = [failed, word('a'), word('b'), word('c')]
 
     const { shown, over } = foldNotices(drawn, 2)
@@ -226,7 +226,7 @@ describe('how many cards stand at once', () => {
 describe('measuring how fast a count moves', () => {
   const createFetching = (count: number): Notice => ({
     id: 'model',
-    says: 'Preparing the model',
+    text: 'Preparing the model',
     done: count,
     total: 470_268_510,
     counting: 'bytes',
@@ -265,7 +265,7 @@ describe('measuring how fast a count moves', () => {
   })
 
   it('measures nothing for work with no total to count against', () => {
-    const nothing: Notice = { id: 'scan', says: 'Reading a scan', working: true }
+    const nothing: Notice = { id: 'scan', text: 'Reading a scan', working: true }
 
     expect(measureMovement(new Map(), [nothing], 1000).size).toBe(0)
   })

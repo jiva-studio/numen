@@ -59,7 +59,7 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
   }
 
   function activateRow(row: ShownRow): void {
-    if (row.holds) toggleRow(row)
+    if (row.hasChildren) toggleRow(row)
     tell('activate', row.id)
   }
 

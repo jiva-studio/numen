@@ -13,7 +13,7 @@ const line = (props: Props) => mount(Activity, { props })
 describe('a line of work', () => {
   it('carries what is happening and what it is happening to on lines of their own', () => {
     const drawn = line({
-      says: 'Proofreading the transcript',
+      text: 'Proofreading the transcript',
       about: 'A Conversation in Vrindavan, 1972-11-04.md',
       working: true,
       tally: { done: 9, total: 100 },
@@ -27,7 +27,7 @@ describe('a line of work', () => {
 
   it('draws how far and how long as figures, beside the words', () => {
     const drawn = line({
-      says: 'Learning what it says',
+      text: 'Learning what it says',
       about: 'Sabhaparva.epub',
       working: true,
       tally: { done: 1200, total: 36560 },
@@ -40,28 +40,28 @@ describe('a line of work', () => {
 
   it('keeps a count to two lines, and lets a reason run on', () => {
     const counting = line({
-      says: 'Reading',
+      text: 'Reading',
       about: 'a-note-nobody-shortened-before-they-filed-it-away.md',
       tally: { done: 2, total: 8 },
     })
     expect(counting.get('.activity__says').classes()).toContain('truncate')
     expect(counting.get('.activity__about').classes()).toContain('truncate')
 
-    const resting = line({ says: 'Reading', about: 'permission denied' })
+    const resting = line({ text: 'Reading', about: 'permission denied' })
     expect(resting.get('.activity__about').classes()).toContain('line-clamp-2')
 
-    const words = line({ says: 'Searching by words — no model to learn what it says' })
+    const words = line({ text: 'Searching by words — no model to learn what it says' })
     expect(words.get('.activity__says').classes()).toContain('line-clamp-3')
   })
 
   it('says nothing about a count it was given none of', () => {
-    const drawn = line({ says: 'Reading', about: 'Sabhaparva.epub', working: true })
+    const drawn = line({ text: 'Reading', about: 'Sabhaparva.epub', working: true })
 
     expect(drawn.find('.activity__count').exists()).toBe(false)
   })
 
   it('waits rather than draw a share of nothing', () => {
-    const drawn = line({ says: 'Fetching models', about: 'inference.onnx', working: true })
+    const drawn = line({ text: 'Fetching models', about: 'inference.onnx', working: true })
 
     expect(drawn.find('.activity__percent').exists()).toBe(false)
     expect(drawn.find('.activity__spinner').exists()).toBe(true)
@@ -69,7 +69,7 @@ describe('a line of work', () => {
 
   it('follows what the work moved on to', async () => {
     const drawn = line({
-      says: 'Indexing',
+      text: 'Indexing',
       about: 'Sabhaparva.epub',
       working: true,
       tally: { done: 3, total: 12 },

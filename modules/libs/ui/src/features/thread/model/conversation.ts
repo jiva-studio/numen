@@ -115,8 +115,8 @@ export function useConversation(
           case 'toolCall':
             answer.settle()
             work.setWaiting(false)
-            calls.add(`${step.tool}\u0000${step.about}`)
-            work.reach(step.tool, step.about, step.place, step.written)
+            calls.add(`${step.tool}\u0000${step.subject}`)
+            work.reach(step.tool, step.subject, step.place, step.written)
             break
 
           // A tool answered. Which one is not said, so with one call in hand the

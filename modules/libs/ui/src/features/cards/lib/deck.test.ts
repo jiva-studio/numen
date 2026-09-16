@@ -26,7 +26,7 @@ describe('getCardFieldValues', () => {
     expect(getCardFieldValues([{ field: 'Height', text: 'tall' }], FIELDS)[1]).toEqual({
       field: 'Weight',
       text: '',
-      declared: true,
+      isDeclared: true,
     })
   })
 
@@ -36,7 +36,7 @@ describe('getCardFieldValues', () => {
     expect(getCardFieldValues(filled, FIELDS)[2]).toEqual({
       field: 'Colour',
       text: 'brown',
-      declared: false,
+      isDeclared: false,
     })
   })
 
@@ -46,9 +46,9 @@ describe('getCardFieldValues', () => {
       { field: 'Height', text: 'taller' },
     ]
     expect(getCardFieldValues(filled, FIELDS)).toEqual([
-      { field: 'Height', text: 'tall', declared: true },
-      { field: 'Height', text: 'taller', declared: true },
-      { field: 'Weight', text: '', declared: true },
+      { field: 'Height', text: 'tall', isDeclared: true },
+      { field: 'Height', text: 'taller', isDeclared: true },
+      { field: 'Weight', text: '', isDeclared: true },
     ])
   })
 
@@ -59,8 +59,8 @@ describe('getCardFieldValues', () => {
   it('lays a name the stencil declares twice out once, where it first stands', () => {
     const filled = [{ field: 'Height', text: 'tall' }]
     expect(getCardFieldValues(filled, ['Height', 'Weight', 'Height'])).toEqual([
-      { field: 'Height', text: 'tall', declared: true },
-      { field: 'Weight', text: '', declared: true },
+      { field: 'Height', text: 'tall', isDeclared: true },
+      { field: 'Weight', text: '', isDeclared: true },
     ])
   })
 })
@@ -120,7 +120,7 @@ describe('grid', () => {
     expect(tile?.filled[0]).toEqual({
       field: 'Name',
       text: 'Llama',
-      declared: true,
+      isDeclared: true,
       at: 1,
       nth: 1,
       key: 'Name#1',
@@ -196,7 +196,7 @@ describe('grid', () => {
     const filled = tilesOf(getGrid(bare, [], CUTS, null))[0]?.filled ?? []
     expect(filled.map((each) => each.field)).toEqual(['Question', 'Answer'])
     expect(filled.map((each) => each.text)).toEqual(['what', 'this'])
-    expect(filled.every((each) => !each.declared)).toBe(true)
+    expect(filled.every((each) => !each.isDeclared)).toBe(true)
   })
 
   it('stands a field the card leaves out empty', () => {

@@ -73,12 +73,12 @@ export const shareOf = (tally: Tally): number | undefined => {
  * what makes the difference visible.
  */
 export const activity = (input: {
-  readonly says: string
+  readonly text: string
   readonly hasFailed?: boolean
   readonly working?: boolean
   readonly tally?: Tally
 }): ActivityDescriptor => {
-  if (!input.says) return { state: 'quiet', counts: false }
+  if (!input.text) return { state: 'quiet', counts: false }
   if (input.hasFailed) return { state: 'failed', counts: false }
 
   // Work is claimed, not assumed. Words alone say something is so, and a caller

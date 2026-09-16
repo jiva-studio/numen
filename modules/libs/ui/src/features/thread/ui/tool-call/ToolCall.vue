@@ -11,7 +11,7 @@ withDefaults(
     /** What the tool is called, in the words it is to be shown by. */
     tool: string
     /** What it is working on, when that is worth saying. */
-    about?: string
+    subject?: string
     /**
      * What is true of it beside its name: how much has been written, how long
      * the wait has lasted. It is what moves while nothing else does.
@@ -20,7 +20,7 @@ withDefaults(
     /** Still in hand. */
     working?: boolean
   }>(),
-  { about: '', aside: '', working: false },
+  { subject: '', aside: '', working: false },
 )
 </script>
 
@@ -28,7 +28,7 @@ withDefaults(
   <p class="tool-call numen text-hushed flex items-baseline gap-2 font-sans text-base">
     <span class="tool-call__mark" :data-working="working || undefined" />
     <span class="min-w-0 truncate">{{ tool }}</span>
-    <span v-if="about" class="min-w-0 flex-1 truncate opacity-70">{{ about }}</span>
+    <span v-if="subject" class="min-w-0 flex-1 truncate opacity-70">{{ subject }}</span>
     <span v-else class="flex-1" />
     <span v-if="aside" class="flex-none tabular-nums opacity-70">{{ aside }}</span>
     <TypingIndicator v-if="working" />

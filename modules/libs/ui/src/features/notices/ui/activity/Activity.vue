@@ -14,7 +14,7 @@ import { activity, percentWord, type Tally, type Tone } from '../../lib/tally'
 const props = withDefaults(
   defineProps<{
     /** What is happening, in the words it is to be shown by. */
-    says?: string
+    text?: string
     /** What it is happening to, when that is worth saying. */
     about?: string
     /**
@@ -32,19 +32,19 @@ const props = withDefaults(
     /** How the line reads. An alarm is a line that stopped badly. */
     tone?: Tone
   }>(),
-  { says: '', about: '', working: false, left: '', tone: 'plain' },
+  { text: '', about: '', working: false, left: '', tone: 'plain' },
 )
 
 const shown = computed(() =>
   activity({
-    says: props.says,
+    text: props.text,
     ...(props.tone === 'alarm' ? { hasFailed: true } : {}),
     ...(props.working ? { working: true } : {}),
     ...(props.tally ? { tally: props.tally } : {}),
   }),
 )
 
-const words = computed(() => props.says)
+const words = computed(() => props.text)
 
 /**
  * How far the work has got, said once.

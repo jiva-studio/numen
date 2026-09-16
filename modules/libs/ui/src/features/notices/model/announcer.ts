@@ -9,7 +9,7 @@ import { nextTick, onMounted, ref, shallowRef, watch, type Ref } from 'vue'
 import type { Notice } from '../lib/notice'
 
 /** What each card reads out as. */
-const wordsOf = (one: Notice): string => (one.about ? `${one.says} — ${one.about}` : one.says)
+const wordsOf = (one: Notice): string => (one.about ? `${one.text} — ${one.about}` : one.text)
 
 /** The two regions the corner is read out through. */
 export interface Announcer {

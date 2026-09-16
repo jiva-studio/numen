@@ -62,7 +62,7 @@ export const sessionCore: SessionCore = {
     for await (const said of windowService.watchTasks({ window: WINDOW }, { signal })) {
       yield said.tasks.map((at) => ({
         id: at.id,
-        doing: at.doing,
+        label: at.doing,
         about: at.about,
         done: Number(at.done),
         total: Number(at.total),

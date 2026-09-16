@@ -28,7 +28,7 @@ defineExpose({ way })
   <article class="notice" :data-tone="one.tone ?? 'plain'">
     <Activity
       class="notice__work"
-      :says="one.says"
+      :text="one.text"
       :about="one.about ?? ''"
       :tally="tallyOf(one)"
       :working="one.working ?? false"
@@ -39,7 +39,7 @@ defineExpose({ way })
       ref="way"
       type="button"
       class="notice__away ring-numen outline-none"
-      :aria-label="`${dismiss}: ${one.says}`"
+      :aria-label="`${dismiss}: ${one.text}`"
       @click="emit('dismiss')"
     >
       <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">

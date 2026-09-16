@@ -26,7 +26,7 @@ export interface Notice {
   /** Whatever the caller addresses this notice by. Never read, only handed back. */
   readonly id: string
   /** What is happening, in the words it is to be shown by. */
-  readonly says: string
+  readonly text: string
   /** What it is happening to, or why it stopped, when that is worth saying. */
   readonly about?: string
   /** Where it has got to, when there is a total to count against. */
@@ -50,7 +50,7 @@ export interface Notice {
 /** One piece of work a window is doing behind itself, as it is answered for. */
 export interface Task {
   readonly id: string
-  readonly doing: string
+  readonly label: string
   readonly about: string
   readonly error: string
   readonly isAsked: boolean
@@ -74,7 +74,7 @@ export const createNotice = (task: Task): Notice => {
 
   return {
     id: task.id,
-    says: error || task.doing,
+    text: error || task.label,
     about: task.about,
     working: error === '',
     isAsked: task.isAsked || error !== '',
@@ -91,7 +91,7 @@ export const createNotice = (task: Task): Notice => {
  * A notice with no words is one nobody could read.
  */
 export const readable = (notices: readonly Notice[]): readonly Notice[] =>
-  notices.filter((notice) => notice.says !== '')
+  notices.filter((notice) => notice.text !== '')
 
 /** What a notice counts against, for the ones that count anything. */
 export const tallyOf = (notice: Notice): { done: number; total: number } | undefined =>

@@ -13,7 +13,7 @@ export const getDraggedRows = (selection: readonly RowId[], row: RowId): readonl
 /** What is drawn at the pointer while rows are dragged. */
 export interface DragLabel {
   /** The name of the one row dragged, or how many there are. */
-  readonly says: string
+  readonly label: string
   /** Where the pointer is, which is where it is drawn. */
   readonly at: Position
 }
@@ -31,9 +31,9 @@ export function dragLabel(
   const first = rows[0]
   if (first === undefined) return null
 
-  const says =
+  const label =
     rows.length === 1
       ? (visibleRows.find((row) => row.id === first)?.name ?? first)
       : getCountWords(rows.length)
-  return { says, at }
+  return { label, at }
 }

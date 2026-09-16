@@ -21,7 +21,7 @@ const lineIn = (canvas: HTMLElement): HTMLElement | null => canvas.querySelector
 
 /** Nothing to say draws nothing. Quiet is not the same as finished. */
 export const Quiet: Story = {
-  args: { says: '' },
+  args: { text: '' },
   play: async ({ canvasElement }) => {
     await expect(lineIn(canvasElement)).toBeNull()
   },
@@ -29,7 +29,7 @@ export const Quiet: Story = {
 
 /** Work with no count: dots, and no bar to fill. */
 export const Working: Story = {
-  args: { says: 'Reading', about: 'Sabhaparva.epub', working: true },
+  args: { text: 'Reading', about: 'Sabhaparva.epub', working: true },
   play: async ({ canvasElement }) => {
     const line = lineIn(canvasElement)
     await expect(line).toHaveAttribute('data-state', 'working')
@@ -40,7 +40,7 @@ export const Working: Story = {
 /** A count that moves: how far, and how long is left, in figures. */
 export const Counting: Story = {
   args: {
-    says: 'Learning what it says',
+    text: 'Learning what it says',
     about: 'Sabhaparva.epub',
     working: true,
     tally: { done: 1200, total: 36560 },
@@ -61,7 +61,7 @@ export const Counting: Story = {
  */
 export const TwoLines: Story = {
   args: {
-    says: 'Proofreading the transcript',
+    text: 'Proofreading the transcript',
     about: 'A Conversation in Vrindavan, 1972-11-04.md',
     working: true,
     tally: { done: 9, total: 100 },
@@ -83,7 +83,7 @@ export const TwoLines: Story = {
 /** Names far too long for the room give way; how far and how long do not. */
 export const TooLong: Story = {
   args: {
-    says: 'Learning what a very long name for a piece of work has to say about itself',
+    text: 'Learning what a very long name for a piece of work has to say about itself',
     about: 'a-note-whose-name-nobody-shortened-before-they-filed-it-away-for-good.md',
     working: true,
     tally: { done: 74, total: 100 },
@@ -104,7 +104,7 @@ export const TooLong: Story = {
  * itself. Drawn without the marks of progress.
  */
 export const Resting: Story = {
-  args: { says: 'Searching by words — no model to learn what it says' },
+  args: { text: 'Searching by words — no model to learn what it says' },
   play: async ({ canvasElement }) => {
     const line = lineIn(canvasElement)
     await expect(line).toHaveAttribute('data-state', 'resting')
@@ -113,7 +113,7 @@ export const Resting: Story = {
 
 /** A caution is read at leisure, and is marked so it is read. */
 export const Caution: Story = {
-  args: { says: 'No tab of this window is over a note', tone: 'caution' },
+  args: { text: 'No tab of this window is over a note', tone: 'caution' },
   play: async ({ canvasElement }) => {
     const line = lineIn(canvasElement)
     await expect(line).toHaveAttribute('data-tone', 'caution')
@@ -124,7 +124,7 @@ export const Caution: Story = {
 /** Alarm outranks a count: a line that is both failing and counting says it is failing. */
 export const Failed: Story = {
   args: {
-    says: 'Reading',
+    text: 'Reading',
     about: 'permission denied',
     tally: { done: 2, total: 8 },
     tone: 'alarm',

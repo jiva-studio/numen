@@ -62,7 +62,7 @@ watch(
     class="tree__row flex min-w-0 items-center"
     role="treeitem"
     :aria-level="row.level"
-    :aria-expanded="row.holds ? row.open : undefined"
+    :aria-expanded="row.hasChildren ? row.open : undefined"
     :aria-selected="selected"
     :tabindex="tabbed ? 0 : -1"
     :data-tree-row="row.id"

@@ -71,17 +71,17 @@ const ROOT_AS_DESIGNED = 16
 const KINDS = [
   {
     name: 'The interface',
-    says: 'A magnifier over the whole window: chrome, controls, spacing, and the type in them. Each is in rem, and the root’s font size carries them all — the size below with them.',
+    label: 'A magnifier over the whole window: chrome, controls, spacing, and the type in them. Each is in rem, and the root’s font size carries them all — the size below with them.',
     tokens: CHROME,
   },
   {
     name: 'The text',
-    says: 'The size a note, a book, an answer and the editor are set at. The interface carries it like everything else, and this is a second multiplier over that.',
+    label: 'The size a note, a book, an answer and the editor are set at. The interface carries it like everything else, and this is a second multiplier over that.',
     tokens: READING,
   },
   {
     name: 'Neither',
-    says: 'A line is one line whatever it separates.',
+    label: 'A line is one line whatever it separates.',
     tokens: NEITHER,
   },
 ]
@@ -113,7 +113,7 @@ const meta = {
           <h2 class="mb-1 text-small uppercase text-hushed" style="letter-spacing:var(--numen-caps-tracking)">
             {{ kind.name }}
           </h2>
-          <p class="mb-3 text-hushed">{{ kind.says }}</p>
+          <p class="mb-3 text-hushed">{{ kind.label }}</p>
           <div v-for="token in kind.tokens" :key="token" class="mb-1 flex items-center gap-3">
             <code class="w-72 shrink-0 text-small text-hushed">{{ token }}</code>
             <span class="h-2 rounded-pill bg-ink" :style="{ inlineSize: 'var(' + token + ')' }" />

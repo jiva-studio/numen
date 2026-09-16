@@ -139,7 +139,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
 
   /** Whether anything drawn is going to go by itself. */
   const dwelling = computed(() =>
-    drawn.value.some((one) => one.stay === 'read' && dwellOf(one.says, one.about) !== Infinity),
+    drawn.value.some((one) => one.stay === 'read' && dwellOf(one.text, one.about) !== Infinity),
   )
 
   /** Whether anything drawn is counting, and so has a rate to be read. */

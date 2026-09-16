@@ -117,7 +117,7 @@ export function getGrid(
     // wrote stands as it was written.
     const named = card.stencil !== null
     const counted = getCardFieldValues(card.filled, fields)
-      .filter((each) => each.declared || !named)
+      .filter((each) => each.isDeclared || !named)
       .map((each, place) => {
         const nth = countOff(each.field)
         return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }

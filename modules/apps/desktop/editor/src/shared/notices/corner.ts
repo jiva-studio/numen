@@ -50,15 +50,15 @@ const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
 /** One state of the window, where it is in that state. */
 const soThat = (
   id: string,
-  says: string,
+  text: string,
   how: { about?: string; tone?: Tone; isAsked?: boolean } = {},
 ): readonly Notice[] =>
-  says === ''
+  text === ''
     ? []
     : [
         {
           id,
-          says,
+          text,
           about: how.about ?? '',
           tone: how.tone ?? 'plain',
           working: false,
@@ -132,7 +132,7 @@ export const cornerOf = (
 
   const said: Notice[] = messages.map((one) => ({
     id: one.id,
-    says: one.text,
+    text: one.text,
     working: false,
     isAsked: true,
     ...manner[one.kind],

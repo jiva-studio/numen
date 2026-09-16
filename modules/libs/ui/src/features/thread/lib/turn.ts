@@ -32,7 +32,7 @@ export interface Turn {
   readonly voice: Voice
   readonly text: string
   /** What the turn is about, for a voice that has something to be about. */
-  readonly about?: string
+  readonly subject?: string
   /**
    * What is true of the turn beside what it says: how much of a call has been
    * written, how long a wait has lasted, what a finished piece of work took.
@@ -41,7 +41,7 @@ export interface Turn {
   readonly aside?: string
   readonly state?: TurnState
   /** Whether the turn stands for somewhere the person can be taken. */
-  readonly opens?: boolean
+  readonly canOpen?: boolean
   /**
    * The addresses this turn points at that reach nothing. A link carrying one
    * is drawn as not resolving.

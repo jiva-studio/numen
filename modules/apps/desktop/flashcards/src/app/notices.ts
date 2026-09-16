@@ -29,7 +29,7 @@ export function useNotices() {
       ...told.value,
       {
         id: String(raised),
-        says: text,
+        text: text,
         tone,
         stay: 'kept',
         // A person pressed something and is waiting to hear. A card that waits

@@ -50,8 +50,8 @@ const reading = async () => {
 }
 
 /** One link of the document pressed, and the press as the page left it. */
-const press = async (wrapper: Awaited<ReturnType<typeof reading>>, says: string) => {
-  const link = wrapper.findAll('a').find((one) => one.text() === says)!
+const press = async (wrapper: Awaited<ReturnType<typeof reading>>, label: string) => {
+  const link = wrapper.findAll('a').find((one) => one.text() === label)!
   link.element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
   await wrapper.vm.$nextTick()
 }

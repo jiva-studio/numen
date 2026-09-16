@@ -15,19 +15,19 @@ const ROWS: readonly Row[] = [
   {
     id: 'work',
     name: 'Work',
-    holds: true,
+    hasChildren: true,
     rows: [
       {
         id: 'plans',
         name: 'Plans',
-        holds: true,
-        rows: [{ id: 'friday', name: 'Friday', holds: false }],
+        hasChildren: true,
+        rows: [{ id: 'friday', name: 'Friday', hasChildren: false }],
       },
-      { id: 'notes', name: 'Notes', holds: false },
+      { id: 'notes', name: 'Notes', hasChildren: false },
     ],
   },
-  { id: 'empty', name: 'Empty', holds: true },
-  { id: 'loose', name: 'Loose', holds: false },
+  { id: 'empty', name: 'Empty', hasChildren: true },
+  { id: 'loose', name: 'Loose', hasChildren: false },
 ]
 
 const getShownRows = (...open: readonly RowId[]) => flatten(ROWS, new Set(open))
@@ -86,7 +86,7 @@ describe('what is drawn', () => {
 
   it('tells a row that can hold from one that is holding', () => {
     const [, , , empty] = getShownRows('work')
-    expect(empty?.holds).toBe(true)
+    expect(empty?.hasChildren).toBe(true)
     expect(empty?.holding).toBe(false)
   })
 
@@ -416,15 +416,15 @@ describe('what follows the pointer', () => {
   const formatCount = (rows: number) => `${rows} rows`
 
   it('is the name of the one row dragged', () => {
-    expect(dragLabel(shown, ['notes'], at, formatCount)).toStrictEqual({ says: 'Notes', at })
+    expect(dragLabel(shown, ['notes'], at, formatCount)).toStrictEqual({ label: 'Notes', at })
   })
 
   it('is how many are dragged, where there are several', () => {
-    expect(dragLabel(shown, ['work', 'notes'], at, formatCount)?.says).toBe('2 rows')
+    expect(dragLabel(shown, ['work', 'notes'], at, formatCount)?.label).toBe('2 rows')
   })
 
   it('is the identity of a row dragged that is not drawn', () => {
-    expect(dragLabel(shown, ['friday'], at, formatCount)?.says).toBe('friday')
+    expect(dragLabel(shown, ['friday'], at, formatCount)?.label).toBe('friday')
   })
 
   it('is nothing at all while nothing is dragged', () => {

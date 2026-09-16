@@ -113,7 +113,7 @@ function rowsOf(entries: readonly ListingRow[]): Row[] {
   return entries.map((one) => ({
     id: one.entry.path,
     name: one.entry.name,
-    holds: one.entry.folder,
+    hasChildren: one.entry.folder,
     rows: rowsOf(one.rows),
   }))
 }
