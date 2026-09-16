@@ -26,7 +26,7 @@ func reading(
 ) (flashcards.ShowNeighbourhood, func(notes map[string]string) domain.Vault) {
 	t.Helper()
 
-	db, err := index.Open(t.Context(), indexfile.Path(t), indexfile.Unsynchronised())
+	db, err := index.Open(t.Context(), indexfile.Path(t), indexfile.SkipFlush())
 	if err != nil {
 		t.Fatal(err)
 	}

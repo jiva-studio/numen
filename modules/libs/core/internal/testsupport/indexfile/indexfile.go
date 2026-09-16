@@ -14,12 +14,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
-// Unsynchronised is what a test opens an index with. Nothing a test binary
-// writes outlives the run, so no index it opens waits for the disk.
-func Unsynchronised() index.Option { return index.Unsynchronised(testonly.NewGrant()) }
+// SkipFlush is what a test opens an index with. Nothing a test binary writes
+// outlives the run, so no index it opens waits for the disk.
+func SkipFlush() index.Option { return index.SkipFlush(testonly.NewGrant()) }
 
 var migrated = testsupport.NewTemplate(func(ctx context.Context, path string) error {
-	db, err := index.Open(ctx, path, Unsynchronised())
+	db, err := index.Open(ctx, path, SkipFlush())
 	if err != nil {
 		return err
 	}

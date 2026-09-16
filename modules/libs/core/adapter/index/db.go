@@ -70,10 +70,10 @@ type Option func(*settings)
 // reads them.
 type settings struct{ synchronous string }
 
-// Unsynchronised opens an index that does not wait for the disk. WAL, the
-// single writer and the busy timeout stay as they are; only the moment of the
-// flush moves. The grant is obtainable only inside this module.
-func Unsynchronised(testonly.Grant) Option {
+// SkipFlush opens an index that does not wait for the disk. WAL, the single
+// writer and the busy timeout stay as they are; only the moment of the flush
+// moves. The grant is obtainable only inside this module.
+func SkipFlush(testonly.Grant) Option {
 	return func(s *settings) { s.synchronous = unsynchronised }
 }
 

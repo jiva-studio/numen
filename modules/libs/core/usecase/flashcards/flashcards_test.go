@@ -54,7 +54,7 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 	t.Helper()
 	ctx := t.Context()
 
-	db, err := index.Open(ctx, indexfile.Path(t), indexfile.Unsynchronised())
+	db, err := index.Open(ctx, indexfile.Path(t), indexfile.SkipFlush())
 	if err != nil {
 		t.Fatal(err)
 	}
