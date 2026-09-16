@@ -291,6 +291,13 @@ var theMachine = map[string]bool{
 	"os": true, "os/exec": true, "net": true, "net/http": true, "syscall": true,
 }
 
+// golang.org/x/sys is the kernel under another name: every package beneath it
+// is one operating system's own calls and error numbers.
+const systemCalls = "golang.org/x/sys/"
+
+// isTheMachine answers whether an import is the machine.
+func isTheMachine(to string) bool { return theMachine[to] || strings.HasPrefix(to, systemCalls) }
+
 // looking are the functions of path/filepath that are not path arithmetic.
 // Each one asks the machine what is there, and Abs answers against the folder
 // the process was started in, which a scenario is not written against.
@@ -327,7 +334,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			if theMachine[to] {
+			if isTheMachine(to) {
 				wrong = append(wrong, path+" is compiled from "+to)
 			}
 		}
