@@ -93,6 +93,7 @@ export function useCommandPalette(
       known.value = listed.vaults
       showing.value = listed.showing
     } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       if (!mine.current) return
       known.value = []
       failureMessage.value = words.notAsked
@@ -130,6 +131,7 @@ export function useCommandPalette(
       if (!mine.current) return
       found.value = names
     } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       if (!mine.current) return
       found.value = []
       failureMessage.value = words.notAsked

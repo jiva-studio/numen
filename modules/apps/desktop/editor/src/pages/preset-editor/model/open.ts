@@ -55,6 +55,7 @@ export const readPreset = async (
   try {
     answer = await core.read(one.path.value)
   } catch {
+    // The window says what it could not do; what the call carried back adds nothing a person can act on.
     one.flight.errorMessage.value = words.unreachable
     one.curves.waiting.value = false
     return

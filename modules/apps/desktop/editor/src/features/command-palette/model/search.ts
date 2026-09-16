@@ -94,6 +94,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       if (!mine.current) return
       into(found)
     } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       if (!mine.current) return
       into([])
       failureMessages.value = { ...failureMessages.value, [group]: words.notAsked }

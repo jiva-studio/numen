@@ -76,6 +76,7 @@ export function createWindowAppearance(
       const css = await fileOf(theme)
       if (mine.current) dressed.theme.textContent = css
     } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       if (mine.current) write(words.unworn, 'error')
     }
   }
@@ -125,6 +126,7 @@ export function createWindowAppearance(
     try {
       answer = await core.getAppearance()
     } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       write(words.unlisted, 'error')
       return
     }
