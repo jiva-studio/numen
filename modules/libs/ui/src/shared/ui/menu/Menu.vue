@@ -184,7 +184,7 @@ onBeforeUnmount(leave)
         :key="item.id"
         :item="item"
         :current="current"
-        :named="groups && Boolean(item.group) && (item.rule || index === 0)"
+        :named="groups && Boolean(item.group) && (item.isRule || index === 0)"
         :icons="Boolean($slots.icon)"
         @focus="here = index"
         @choose="choose(item)"

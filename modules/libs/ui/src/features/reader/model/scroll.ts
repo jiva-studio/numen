@@ -1,5 +1,5 @@
 /**
- * The row moved: by a hand on it, by a wheel, and by being sent somewhere.
+ * The row hasMoved: by a hand on it, by a wheel, and by being sent somewhere.
  *
  * Which way a wheel moves the row and where a hand leaves it are `hand.ts`;
  * this is the element those answers are applied to.
@@ -24,7 +24,7 @@ export interface HandScroll {
   /** The row sent to a place along itself, travelling or at once. */
   readonly send: (to: number, how: ScrollBehavior) => void
   /**
-   * The row moved: how far along it is now, and whether it is standing still.
+   * The row hasMoved: how far along it is now, and whether it is standing still.
    * A row travelling to where it was sent passes over pages nobody turned to.
    */
   readonly isStill: () => boolean

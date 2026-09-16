@@ -27,7 +27,7 @@ export interface MenuItem {
 /** One item as it is drawn: what it says, and the rule standing above it. */
 export interface GroupedItem extends MenuItem {
   /** It begins a group, and a rule stands between it and what is above. */
-  readonly rule: boolean
+  readonly isRule: boolean
 }
 
 /**
@@ -35,7 +35,7 @@ export interface GroupedItem extends MenuItem {
  * above it. The first item begins the menu, and nothing is drawn above it.
  */
 export const groupItems = (items: readonly MenuItem[]): readonly GroupedItem[] =>
-  items.map((item, at) => ({ ...item, rule: at > 0 && item.group !== items[at - 1]?.group }))
+  items.map((item, at) => ({ ...item, isRule: at > 0 && item.group !== items[at - 1]?.group }))
 
 /** What placing a menu needs to know. */
 export interface MenuPlacement {

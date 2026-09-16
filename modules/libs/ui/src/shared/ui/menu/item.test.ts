@@ -128,7 +128,7 @@ describe('where the keyboard lands as a menu opens', () => {
 })
 
 describe('the rules a menu draws between its groups', () => {
-  const getRules = (items: readonly MenuItem[]) => groupItems(items).map((one) => one.rule)
+  const getRules = (items: readonly MenuItem[]) => groupItems(items).map((one) => one.isRule)
 
   it('stands where one group gives way to the next', () => {
     expect(

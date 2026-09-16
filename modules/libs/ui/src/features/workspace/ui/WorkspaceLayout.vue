@@ -79,7 +79,7 @@ const createNodeId = (): NodeId =>
 
 const frame = useTemplateRef<HTMLElement>('frame')
 
-const { moved, overlay, label, position, landing, press } = useTabDrag({
+const { hasMoved, overlay, label, position, landing, press } = useTabDrag({
   workspace,
   frame,
   getTab: tabOf,
@@ -90,7 +90,7 @@ const { moved, overlay, label, position, landing, press } = useTabDrag({
 })
 
 function choose(tab: TabId): void {
-  if (moved.value) return
+  if (hasMoved.value) return
   workspace.value = activateTab(workspace.value, tab)
   emit('activate', tab)
 }

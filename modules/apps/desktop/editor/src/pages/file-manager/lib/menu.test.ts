@@ -31,7 +31,7 @@ const getItemIds = (
 /** The same, as it is drawn: each item, and the rule standing above it. */
 const getGroupedIds = (source: Source): readonly string[] =>
   groupItems(itemsFor({ source, folder: false }, false, canRunAnything)).map(
-    (one) => `${one.rule ? '— ' : ''}${one.id}`,
+    (one) => `${one.isRule ? '— ' : ''}${one.id}`,
   )
 
 describe('the menu on a row standing for a recording', () => {

@@ -43,7 +43,7 @@ defineExpose({ focus })
   <p v-if="named" class="menu__group-name text-hushed px-2 py-1" aria-hidden="true">
     {{ item.group }}
   </p>
-  <hr v-else-if="item.rule" class="menu__rule" role="separator" />
+  <hr v-else-if="item.isRule" class="menu__rule" role="separator" />
 
   <button
     ref="row"

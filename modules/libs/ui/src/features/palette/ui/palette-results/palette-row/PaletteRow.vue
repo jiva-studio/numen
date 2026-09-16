@@ -19,7 +19,7 @@ defineProps<{
 
 const emit = defineEmits<{
   /** The pointer crossed the row, and the move that took it there. */
-  (event: 'point-at', moved: PointerEvent): void
+  (event: 'point-at', hasMoved: PointerEvent): void
   /** The row was pressed, and whether the second action was asked for. */
   (event: 'choose', second: boolean): void
 }>()
@@ -48,7 +48,7 @@ defineSlots<{
 
     <span class="palette__lines flex min-w-0 flex-1 flex-col">
       <span class="palette__name min-w-0" data-palette="name">
-        <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.hit || undefined">
+        <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.isHit || undefined">
           {{ part.text }}
         </span>
       </span>
@@ -58,7 +58,7 @@ defineSlots<{
         class="palette__detail text-small text-hushed min-w-0"
         data-palette="detail"
       >
-        <span v-for="(part, piece) in row.detail" :key="piece" :data-hit="part.hit || undefined">
+        <span v-for="(part, piece) in row.detail" :key="piece" :data-hit="part.isHit || undefined">
           {{ part.text }}
         </span>
       </span>

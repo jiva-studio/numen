@@ -26,7 +26,7 @@ defineExpose({ element })
     :data-here="here || undefined"
   >
     <span class="actions__name min-w-0 flex-1" data-actions="name">
-      <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.hit || undefined">
+      <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.isHit || undefined">
         {{ part.text }}
       </span>
     </span>

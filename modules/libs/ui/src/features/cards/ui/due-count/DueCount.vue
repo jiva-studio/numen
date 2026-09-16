@@ -11,7 +11,7 @@ import { DUE_WORDS, type DueWords } from './due'
 
 const props = withDefaults(
   defineProps<{
-    /** Cards due today: owed, and never asked. Nothing until it is counted. */
+    /** Cards due isToday: owed, and never asked. Nothing until it is counted. */
     due: number | null
     /**
      * The number alone. Where a list is long and the room is short, the word is
