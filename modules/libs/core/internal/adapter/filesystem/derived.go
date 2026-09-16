@@ -226,7 +226,7 @@ func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, 
 // Take puts what a reader gives under a name, through the same rename every
 // other write here lands by: what a fetch was still writing when a machine
 // stopped is not a file anything reads afterwards.
-func (d *DerivedStore) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+func (d *DerivedStore) Take(ctx context.Context, name string, from io.Reader) (int64, error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return 0, err
@@ -239,14 +239,14 @@ func (d *DerivedStore) Take(_ context.Context, name string, from io.Reader) (int
 	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return 0, err
 	}
-	written, err := replace(root, at, from, 0o644)
+	written, err := replace(ctx, root, at, from, 0o644)
 	if err != nil {
 		return 0, err
 	}
 	return written.Size, settle(root, filepath.Dir(at))
 }
 
-func (d *DerivedStore) Write(_ context.Context, name string, content []byte) error {
+func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) error {
 	target, err := d.getPath(name)
 	if err != nil {
 		return err
@@ -259,7 +259,7 @@ func (d *DerivedStore) Write(_ context.Context, name string, content []byte) err
 	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return err
 	}
-	if _, err := replace(root, at, bytes.NewReader(content), 0o644); err != nil {
+	if _, err := replace(ctx, root, at, bytes.NewReader(content), 0o644); err != nil {
 		return err
 	}
 	return settle(root, filepath.Dir(at))
