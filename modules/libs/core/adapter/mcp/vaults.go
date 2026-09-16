@@ -264,7 +264,10 @@ func addVaultOpen(server *sdk.Server, core Core) {
 
 		// The swap stops the endpoint this call arrived on, and that waits for
 		// the calls already taken. The answer goes back first, and the window
-		// moves behind it.
+		// moves behind it, under a context this call's ending does not cancel.
+		//
+		// What comes back is reported where the swap is bound, so there is
+		// nothing to carry back through an answer that has already gone.
 		go func() { _ = core.Vaults.Opens(context.WithoutCancel(ctx), v) }()
 		return nil, out{
 			Opening: true,
