@@ -87,7 +87,7 @@ func TestEveryConnectionGetsThePragmas(t *testing.T) {
 }
 
 func TestDSNCarriesEveryPragma(t *testing.T) {
-	got := dsn("/tmp/index.db")
+	got := dsn("/tmp/index.db", settings{synchronous: shipped})
 	for _, want := range []string{"foreign_keys%281%29", "busy_timeout%285000%29", "journal_mode%28WAL%29", "synchronous%28NORMAL%29"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("dsn %q is missing %s", got, want)

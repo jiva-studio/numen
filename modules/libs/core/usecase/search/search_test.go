@@ -51,7 +51,7 @@ func newCorpus(t *testing.T) corpus {
 	t.Helper()
 	ctx := t.Context()
 
-	db, err := index.Open(ctx, indexfile.Path(t))
+	db, err := index.Open(ctx, indexfile.Path(t), indexfile.Unsynchronised())
 	if err != nil {
 		t.Fatal(err)
 	}

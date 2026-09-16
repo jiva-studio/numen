@@ -169,7 +169,7 @@ func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	raw, err := sql.Open("sqlite", dsn(path))
+	raw, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +201,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
-	raw, err := sql.Open("sqlite", dsn(path))
+	raw, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +228,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	t.Logf("refused with: %v", err)
 
 	// What it held, it still holds.
-	back, err := sql.Open("sqlite", dsn(path))
+	back, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}

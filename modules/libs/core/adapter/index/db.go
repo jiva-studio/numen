@@ -63,22 +63,29 @@ const (
 	unsynchronised = "synchronous(OFF)"
 )
 
-// synchronous is what a commit waits for. The index is a cache: a crash costs a
-// rescan, never data, and NORMAL under WAL is what that is worth.
-var synchronous = shipped
+// Option is what an index is opened with.
+type Option func(*settings)
 
-// SetUnsynchronised stops every index this process opens from here on waiting
-// for the disk. WAL, the single writer and the busy timeout stay as they are;
-// only the moment of the flush moves. The grant is obtainable only inside this
-// module.
-func SetUnsynchronised(testonly.Grant) { synchronous = unsynchronised }
+// settings are what one index is opened with, and nothing outside this call
+// reads them.
+type settings struct{ synchronous string }
 
-// AsShipped puts back the setting a person's index runs with, for a measurement
-// that has to pay what the application pays.
-func AsShipped(testonly.Grant) { synchronous = shipped }
+// Unsynchronised opens an index that does not wait for the disk. WAL, the
+// single writer and the busy timeout stay as they are; only the moment of the
+// flush moves. The grant is obtainable only inside this module.
+func Unsynchronised(testonly.Grant) Option {
+	return func(s *settings) { s.synchronous = unsynchronised }
+}
 
-func Open(ctx context.Context, path string) (*DB, error) {
-	write, err := sql.Open("sqlite", writeDSN(path))
+func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
+	// A commit waits for the disk. The index is a cache: a crash costs a
+	// rescan, never data, and NORMAL under WAL is what that is worth.
+	at := settings{synchronous: shipped}
+	for _, one := range opts {
+		one(&at)
+	}
+
+	write, err := sql.Open("sqlite", writeDSN(path, at))
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +98,7 @@ func Open(ctx context.Context, path string) (*DB, error) {
 		return nil, err
 	}
 
-	read, err := sql.Open("sqlite", dsn(path))
+	read, err := sql.Open("sqlite", dsn(path, at))
 	if err != nil {
 		write.Close()
 		return nil, err
@@ -126,12 +133,14 @@ func (d *DB) Sources() sources {
 	return sources{queries: queries{read: d.ChunkQueries()}, write: d.Chunks()}
 }
 
-func dsn(path string) string { return dsnOf(path, append(slices.Clone(pragmas), synchronous)) }
+func dsn(path string, at settings) string {
+	return dsnOf(path, append(slices.Clone(pragmas), at.synchronous))
+}
 
 // writeDSN is what the write pool opens with. Every transaction on it takes the
 // write lock at BEGIN, so one that reads before it writes waits its turn under
 // the busy timeout.
-func writeDSN(path string) string { return dsn(path) + "&_txlock=immediate" }
+func writeDSN(path string, at settings) string { return dsn(path, at) + "&_txlock=immediate" }
 
 func dsnOf(path string, pragmas []string) string {
 	q := url.Values{}
