@@ -28,9 +28,9 @@ const meta = {
   argTypes: {
     wide: { control: 'text' },
     high: { control: 'text' },
-    pill: { control: 'boolean' },
+    isPill: { control: 'boolean' },
   },
-  args: { wide: '1.5rem', high: '0.75em', pill: true },
+  args: { wide: '1.5rem', high: '0.75em', isPill: true },
 } satisfies Meta<typeof Skeleton>
 
 export default meta
@@ -63,7 +63,7 @@ export const ARowThatDoesNotMove: Story = {
 
 /** A line of text, where what is coming is a name. */
 export const InPlaceOfWords: Story = {
-  args: { wide: '9rem', high: '1em', pill: false },
+  args: { wide: '9rem', high: '1em', isPill: false },
   render: (args) => ({
     components: { Skeleton },
     setup: () => ({ args }),
@@ -78,7 +78,7 @@ export const InPlaceOfWords: Story = {
 
 /** Filling the whole of what holds it, which is what it does given no width. */
 export const AsWideAsWhatHoldsIt: Story = {
-  args: { wide: '100%', high: '3rem', pill: false },
+  args: { wide: '100%', high: '3rem', isPill: false },
   render: (args) => ({
     components: { Skeleton },
     setup: () => ({ args }),
@@ -92,7 +92,7 @@ export const AsWideAsWhatHoldsIt: Story = {
 
 /** On a filled ground, where the fill has to read against the colour under it. */
 export const OnAFilledGround: Story = {
-  args: { wide: '4rem', high: '1em', pill: true },
+  args: { wide: '4rem', high: '1em', isPill: true },
   render: (args) => ({
     components: { Skeleton },
     setup: () => ({ args }),
@@ -114,7 +114,7 @@ export const OnAFilledGround: Story = {
  */
 export const Dark: Story = {
   globals: DARK,
-  args: { wide: '4rem', high: '1em', pill: true },
+  args: { wide: '4rem', high: '1em', isPill: true },
   render: (args) => ({
     components: { Skeleton },
     setup: () => ({ args }),
@@ -152,7 +152,7 @@ export const Dark: Story = {
 
 /** Far too many of them at once, which is a list nothing has answered for yet. */
 export const FarTooMany: Story = {
-  args: { wide: '100%', high: '0.9rem', pill: false },
+  args: { wide: '100%', high: '0.9rem', isPill: false },
   render: (args) => ({
     components: { Skeleton },
     setup: () => ({ args, rows: Array.from({ length: 40 }, (_, at) => at) }),

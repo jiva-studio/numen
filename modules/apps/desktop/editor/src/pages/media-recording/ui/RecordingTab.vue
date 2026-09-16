@@ -53,7 +53,7 @@ function onSeek(at: number) {
         class="recording__player"
         :at="now"
         :length="runs"
-        :playing="playing"
+        :is-playing="playing"
         :label="words.player"
         @play="onPlay"
         @pause="onPause"
