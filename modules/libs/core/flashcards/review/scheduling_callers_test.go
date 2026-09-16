@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// placing is every arithmetic that places a card's day: the session that hands
+// scheduling is every arithmetic that places a card's day: the session that hands
 // the cards out, and the projection drawn beside a control. Both go through
 // ScheduleDay, and that is the whole of the list.
 //
@@ -18,7 +18,7 @@ import (
 // projection places a card it has begun and a card it has answered again, and
 // they are one step. A third function here is a third arithmetic, kept in step
 // with these two by tests and drifting the day one of them is touched.
-var placing = []string{"History.Replay", "Simulation.step"}
+var scheduling = []string{"History.Replay", "Simulation.step"}
 
 // A day is chosen in one function, and a caller wanting one comes to it. The
 // walk is over this package's own files, because ScheduleDay is where a day is
@@ -56,13 +56,13 @@ func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
 	slices.Sort(calls)
 	calls = slices.Compact(calls)
 	for _, one := range calls {
-		if !slices.Contains(placing, one) {
+		if !slices.Contains(scheduling, one) {
 			t.Errorf("%s places a card's day: one function places it and everything else comes to that one", one)
 		}
 	}
-	for _, one := range placing {
+	for _, one := range scheduling {
 		if !slices.Contains(calls, one) {
-			t.Errorf("%s is named here as an arithmetic placing a day and places none", one)
+			t.Errorf("%s is named here as an arithmetic scheduling a day and places none", one)
 		}
 	}
 }
