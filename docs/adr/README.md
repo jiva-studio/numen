@@ -93,7 +93,7 @@ The numbers run without gaps, and the whole corpus is renumbered when one closes
 ### The interface
 
 - [How an interface component is built](0023-how-an-interface-component-is-built.md)
-- [The component library is built on Reka UI and Tailwind tokens](0024-the-component-library-is-shadcn-vue.md)
+- [The component library is built on Reka UI and Tailwind tokens](0024-the-component-library-is-built-on-reka-ui-and-tailwind-tokens.md)
 
 ### Architecture, layers and formatting
 

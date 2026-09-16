@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/ui`
-- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [The component library is shadcn-vue on Tailwind](0024-the-component-library-is-shadcn-vue.md), [How this application is tested](0025-how-this-application-is-tested.md)
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [The component library is built on Reka UI and Tailwind tokens](0024-the-component-library-is-built-on-reka-ui-and-tailwind-tokens.md), [How this application is tested](0025-how-this-application-is-tested.md)
 
 ## Context
 
@@ -74,7 +74,7 @@ Every colour a component paints with is a CSS custom property in one file, and a
 
 **The root's font size is the interface multiplier**, so every `rem` in this product and in the toolkit beneath it carries. Each token sits in one of three groups, stated in the file beside its value: what follows the interface, what the text multiplier reaches as well, and what follows neither — a hairline, a border, a focus ring and the stroke of a handle are one physical line and stay in `px`.
 
-What a theme is, and what a person may set, are in [`../themes.md`](../themes.md) and [`../settings.md`](../settings.md). What Tailwind and a copied-in component do with these tokens is [The component library is shadcn-vue on Tailwind](0024-the-component-library-is-shadcn-vue.md).
+What a theme is, and what a person may set, are in [`../themes.md`](../themes.md) and [`../settings.md`](../settings.md). What Tailwind and a copied-in component do with these tokens is [The component library is built on Reka UI and Tailwind tokens](0024-the-component-library-is-built-on-reka-ui-and-tailwind-tokens.md).
 
 ### Storybook is where a component is built
 
