@@ -19,7 +19,7 @@ Vectors are searched through the SQLite vector extension, in the same file as ev
 
 ### The driver carries the vector extension
 
-`modernc.org/sqlite`, at or above **v1.50.0**, which is where the bundled vector extension arrives; `go.mod` names v1.56.0. The floor is a requirement: below it the vector index is not in the build, and the failure is a missing SQL function.
+`modernc.org/sqlite`, at or above **v1.50.0**, which is where the bundled vector extension arrives. The floor is a requirement: below it the vector index is not in the build, and the failure is a missing SQL function.
 
 ### Dimensions are kept and precision is dropped
 
