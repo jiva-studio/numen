@@ -1,6 +1,6 @@
 /** The changes a note is drawn with, and the intervals they are let go of on. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { noteChanges } from './changes'
+import { createNoteChanges } from './changes'
 import type { NoteEdit } from '@/entities/note'
 
 const limits = { settle: 10, bound: 40, abandoned: 100 }
@@ -20,7 +20,7 @@ afterEach(() => vi.useRealTimers())
 
 describe('a change reported on a note', () => {
   it('is what the note is drawn with', () => {
-    const changes = noteChanges(limits)
+    const changes = createNoteChanges(limits)
 
     changes.reportChange(createEdit())
 
@@ -28,11 +28,11 @@ describe('a change reported on a note', () => {
   })
 
   it('is nothing on a note nobody is drawing', () => {
-    expect(noteChanges(limits).getChange('Entropy.md')).toBeNull()
+    expect(createNoteChanges(limits).getChange('Entropy.md')).toBeNull()
   })
 
   it('is let go of where nothing more is said about it', () => {
-    const changes = noteChanges(limits)
+    const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
 
     vi.advanceTimersByTime(limits.abandoned)
@@ -41,7 +41,7 @@ describe('a change reported on a note', () => {
   })
 
   it('waits again from the last word about it', () => {
-    const changes = noteChanges(limits)
+    const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
 
     vi.advanceTimersByTime(limits.abandoned - 1)
@@ -54,7 +54,7 @@ describe('a change reported on a note', () => {
 
 describe('a change that has ended', () => {
   it('stays until the note changes under it', () => {
-    const changes = noteChanges(limits)
+    const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
     changes.reportChange(createEdit({ isComplete: true }))
 
@@ -66,7 +66,7 @@ describe('a change that has ended', () => {
   })
 
   it('is let go of on the longer bound where the text never arrives', () => {
-    const changes = noteChanges(limits)
+    const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
     changes.reportChange(createEdit({ isComplete: true }))
 
@@ -78,7 +78,7 @@ describe('a change that has ended', () => {
 
 describe('a note the window is no longer showing', () => {
   it('is drawn with nothing, and waits on nothing', () => {
-    const changes = noteChanges(limits)
+    const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
 
     changes.closeNote('Entropy.md')
@@ -90,7 +90,7 @@ describe('a note the window is no longer showing', () => {
 
 describe('a window that is going', () => {
   it('lets go of every interval it is waiting on', () => {
-    const changes = noteChanges(limits)
+    const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
     changes.reportChange(createEdit({ path: 'Order.md' }))
 

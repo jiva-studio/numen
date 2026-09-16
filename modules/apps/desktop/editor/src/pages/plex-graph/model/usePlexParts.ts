@@ -3,7 +3,7 @@
  */
 import { shallowRef, watch, type Ref } from 'vue'
 import type { PlexPart } from '@numen/ui'
-import { answerGuard } from '@/shared/questions'
+import { createAnswerGuard } from '@/shared/questions'
 import type { NoteType } from '@/entities/file'
 import { asParts } from '../lib/picture'
 import type { PlexTabDeps } from '../types'
@@ -16,7 +16,7 @@ export function usePlexParts(
   nodeIdMap: NodeIdMap,
 ) {
   const parts = shallowRef<ReadonlyMap<string, readonly PlexPart[]>>(new Map())
-  const reading = answerGuard()
+  const reading = createAnswerGuard()
 
   const readParts = async () => {
     const notes = paths.value.filter((path) => (types.value.get(path) ?? 'note') === 'note')

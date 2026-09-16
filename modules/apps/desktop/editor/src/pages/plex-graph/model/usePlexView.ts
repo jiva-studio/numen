@@ -6,10 +6,10 @@
  */
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import { answerGuard } from '@/shared/questions'
+import { createAnswerGuard } from '@/shared/questions'
 import type { Neighbourhood } from '@/entities/note'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
-import { alike } from '../lib/picture'
+import { areNeighbourhoodsEqual } from '../lib/picture'
 
 /** The one question a plex asks of the vault: what is around a note. */
 export interface Neighbours {
@@ -34,7 +34,7 @@ export function usePlexView(core: Neighbours) {
   const isLoading = ref(true)
 
   /** Two answers can be in flight — a click while a change is being followed. */
-  const asks = answerGuard()
+  const asks = createAnswerGuard()
 
   async function go(path: string) {
     if (!asks.open()) return
@@ -48,7 +48,7 @@ export function usePlexView(core: Neighbours) {
       }
       error.value = ''
       here.value = path
-      if (!alike(neighbourhood.value, answer)) neighbourhood.value = answer
+      if (!areNeighbourhoodsEqual(neighbourhood.value, answer)) neighbourhood.value = answer
     } catch (thrown) {
       if (!mine.current) return
       error.value = formatErrorMessage(thrown)

@@ -16,10 +16,10 @@ import {
   syncSetting,
   TEXT_SCALE,
   useHangingSetting,
-  windowAppearance,
+  createWindowAppearance,
 } from '@/features/settings-commands'
-import { reviewSetting } from '@/entities/settings'
-import { settingsStore } from '@/entities/settings'
+import { createReviewSetting } from '@/entities/settings'
+import { createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
 import { createTextEditorTabKind } from '@/pages/text-editor'
 import type { PaletteLists } from '@/features/command-palette'
@@ -39,11 +39,11 @@ export interface SettingsDeps {
 }
 
 export function useSettings({ core, words, log, held, onSizeChanged }: SettingsDeps) {
-  const dayBegins = reviewSetting(core, words, log.getWriter('reviewed'))
+  const dayBegins = createReviewSetting(core, words, log.getWriter('reviewed'))
   const hungParts = useHangingSetting(core, words, log.getWriter('hanging'))
-  const dressed = windowAppearance(themes, words, log.getWriter('worn'))
+  const dressed = createWindowAppearance(themes, words, log.getWriter('worn'))
   const oneName = syncSetting(core, words, log.getWriter('named'))
-  const rest = settingsStore(core, words, log.getWriter('configured'))
+  const rest = createSettingsStore(core, words, log.getWriter('configured'))
 
   const file = createTextEditorTabKind(held.handle, core, () => void rest.start())
 

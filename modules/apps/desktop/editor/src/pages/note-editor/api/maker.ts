@@ -85,7 +85,7 @@ export interface NoteRef {
   readonly title: string
 }
 
-export function noteCreator(core: NoteMaker, writeMessage: MessageWriter) {
+export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
   /**
    * One note asked for. A name the vault has already filed is handed back as
    * `occupied` for the caller to answer for.
@@ -183,7 +183,7 @@ export function noteCreator(core: NoteMaker, writeMessage: MessageWriter) {
   }
 }
 
-export type NoteCreator = ReturnType<typeof noteCreator>
+export type NoteCreator = ReturnType<typeof createNoteWriter>
 
 /** The name the note asked for after that many taken ones is filed under. */
 const nameAt = (count: number): string => (count === 1 ? UNTITLED : `${UNTITLED} ${count}`)

@@ -22,7 +22,7 @@ interface SettledNote {
   readonly at: string
 }
 
-export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
+export function createNoteTitles(vault: NoteTitlesDeps, notes: Notes) {
   /**
    * What each note is called, as the vault last said it, under the identity its
    * tab opened under. A note keeps what it is called wherever its file goes.

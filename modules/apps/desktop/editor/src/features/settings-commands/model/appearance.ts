@@ -8,7 +8,7 @@
  */
 import { ref, shallowRef, watch } from 'vue'
 import { createFollower } from '@numen/ui'
-import { answerGuard } from '@/shared/questions'
+import { createAnswerGuard } from '@/shared/questions'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { DESIGNED, NOWHERE, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'
@@ -17,7 +17,7 @@ import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
 import { getModeGroups, getSizeGroups, getThemeGroups } from '../lib/offers'
 import { useAppearanceChoice } from './choice'
 
-export function windowAppearance(
+export function createWindowAppearance(
   core: Themes,
   words: AppearanceWords,
   write: MessageWriter,
@@ -54,7 +54,7 @@ export function windowAppearance(
   let arrived = true
 
   /** A file arriving for a row the keyboard has already left is dropped. */
-  const asks = answerGuard()
+  const asks = createAnswerGuard()
 
   /** One theme's file, read once and kept. */
   const fileOf = async (name: string): Promise<string> => {

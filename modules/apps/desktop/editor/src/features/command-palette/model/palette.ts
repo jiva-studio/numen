@@ -8,10 +8,10 @@
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { answerGuard as latest } from '@/shared/questions'
+import { createAnswerGuard as latest } from '@/shared/questions'
 import type { Vault } from '@/entities/vault'
 import { commandsOf } from '../lib/commands'
-import { view } from './view'
+import { getPaletteView } from './view'
 import { invocationOf } from '../lib/invocation'
 import type {
   CommandsDeps,
@@ -143,7 +143,7 @@ export function useCommandPalette(
     if (steps.here.value?.step === 'picking') await searchNames(text.trim())
   }
 
-  const draws = view({
+  const draws = getPaletteView({
     words,
     commands,
     byId,

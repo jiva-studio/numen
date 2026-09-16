@@ -7,8 +7,8 @@ import type { PathRename } from '@/shared/paths'
 import type { Cards } from '@/entities/deck'
 import type { Store } from '@/features/command-palette'
 import type { Presets } from '@/entities/deck'
-import { answers } from './answers'
-import { reader } from './reader'
+import { createDeckAnswers } from './answers'
+import { createDeckReader } from './reader'
 import { useDeckScheduleSync } from './useDeckScheduleSync'
 import { createDeckTabActions } from './deckTabActions'
 import { createDeckKind } from '../kind'
@@ -36,7 +36,7 @@ export function useDeckTabs(
   handle: WindowHandle,
   tabOpeners: FileOpeners,
 ) {
-  const vaultAnswers = answers()
+  const vaultAnswers = createDeckAnswers()
 
   const store = openNotes({
     read: async (path) => {
@@ -75,7 +75,7 @@ export function useDeckTabs(
     },
   })
 
-  const read = reader(store, vaultAnswers.problemsAt)
+  const read = createDeckReader(store, vaultAnswers.problemsAt)
   const { deckAt, marksAt } = read
 
   const wiring = useDeckScheduleSync(cards, presets, store)

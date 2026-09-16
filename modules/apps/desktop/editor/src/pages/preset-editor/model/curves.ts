@@ -2,7 +2,7 @@
  * Curve calculation, caching, and throttling for preset tabs.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { answerGuard, type AnswerGuard } from '@/shared/questions'
+import { createAnswerGuard, type AnswerGuard } from '@/shared/questions'
 import {
   DEFAULTS,
   type Curve,
@@ -44,7 +44,7 @@ export function createCurveState(
     shouldDrawAgain: false,
     shape: '',
     isReal: false,
-    asks: answerGuard(),
+    asks: createAnswerGuard(),
     answers: new Map<string, Curve>(),
   }
 }
