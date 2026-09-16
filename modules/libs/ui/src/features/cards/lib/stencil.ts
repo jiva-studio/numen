@@ -5,7 +5,7 @@
  */
 
 import type { FieldValue } from './card'
-import { renderPreview, strayIn } from './fill'
+import { renderPreview, getUndeclaredSlots } from './fill'
 import {
   getDeclaredFields,
   HALVES,
@@ -170,8 +170,8 @@ export function faceRows(
       back: face.back,
       frontPreview: renderPreview(face.front, sample, fields),
       backPreview: renderPreview(face.back, sample, fields),
-      frontStray: strayIn(face.front, fields),
-      backStray: strayIn(face.back, fields),
+      frontStray: getUndeclaredSlots(face.front, fields),
+      backStray: getUndeclaredSlots(face.back, fields),
     }
   })
 }

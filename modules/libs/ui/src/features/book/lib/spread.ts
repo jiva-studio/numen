@@ -1,8 +1,8 @@
 /**
- * Where the spreads of a book stand when its text is set in columns.
+ * Where the countSpreads of a book stand when its text is set in columns.
  *
  * Apart from the component the way the reader's own arithmetic is: how many
- * spreads a laid-out document comes to, where each one begins, which one a run
+ * countSpreads a laid-out document comes to, where each one begins, which one a run
  * of text falls in and how far into a run a byte offset reaches are arithmetic,
  * and a test asks them without a browser.
  */
@@ -104,7 +104,7 @@ export function columnAt(flow: Flow, x: number): number {
  * as many column boxes as a spread has, so a document of one line stands in one
  * column and beside an empty one, and only the runs say which.
  */
-export function columnsFilled(marks: readonly Mark[], flow: Flow): number {
+export function countFilledColumns(marks: readonly Mark[], flow: Flow): number {
   if (columnWidth(flow) <= 0 || marks.length === 0) return 0
   let last = 0
   for (const mark of marks) last = Math.max(last, columnAt(flow, mark.x))
@@ -123,7 +123,7 @@ export interface Pages {
  * laid out, so what is left of it is known exactly.
  */
 export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[]): number {
-  const here = columnsFilled(marks, flow)
+  const here = countFilledColumns(marks, flow)
   return Math.max(here - (spread + 1) * flow.columns, 0)
 }
 
@@ -143,7 +143,7 @@ export function pagesOf(
   spread: number,
   marks: readonly Mark[],
 ): Pages {
-  const here = columnsFilled(marks, flow)
+  const here = countFilledColumns(marks, flow)
   const first = spread * flow.columns + 1
   const bytes = document.to - document.from
   if (here <= 0 || bytes <= 0) return { page: Math.max(first, 1), pages: Math.max(here, 1) }
@@ -157,8 +157,8 @@ export function pagesOf(
   }
 }
 
-/** How many spreads the text comes to. */
-export function spreads(flow: Flow): number {
+/** How many countSpreads the text comes to. */
+export function countSpreads(flow: Flow): number {
   const all = columnsInAll(flow)
   return all === 0 ? 0 : Math.ceil(all / flow.columns)
 }
@@ -175,7 +175,7 @@ export function getSpreadStart(flow: Flow, spread: number): number {
 /** Which spread a place along the columns falls in. */
 export function spreadAt(flow: Flow, x: number): number {
   if (columnWidth(flow) <= 0) return 0
-  const last = Math.max(spreads(flow) - 1, 0)
+  const last = Math.max(countSpreads(flow) - 1, 0)
   return Math.min(Math.floor(columnAt(flow, x) / flow.columns), last)
 }
 

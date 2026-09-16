@@ -35,7 +35,7 @@ export const dwellOf = (says: string, about = ''): number => {
  * When each notice standing now was first seen. One that has been here keeps
  * the moment it arrived; one that has gone is forgotten.
  */
-export const arrivals = (
+export const getArrivalTimes = (
   was: ReadonlyMap<string, number>,
   notices: readonly Notice[],
   at: number,

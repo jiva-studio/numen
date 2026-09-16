@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { easeOut } from './arrange'
-import { hangParts, type PartsDeps, type PlexPart } from './inside'
+import { getNodeParts, type PartsDeps, type PlexPart } from './inside'
 import { furthest, getOpenParts, scrollBy } from './open'
 import type { PlacedNode } from './node'
 
@@ -40,7 +40,7 @@ const parts = (count: number, level = 1): PlexPart[] =>
     level,
   }))
 
-const hung = (items: readonly PlexPart[], deps = DEPS) => hangParts(NODE, items, SIZES, deps)
+const hung = (items: readonly PlexPart[], deps = DEPS) => getNodeParts(NODE, items, SIZES, deps)
 
 describe('what a node hangs', () => {
   it('is nothing at all for a node with no parts', () => {
@@ -88,7 +88,7 @@ describe('more parts than the window holds', () => {
   })
 
   it('stands as many as the options ask for', () => {
-    const settled = hangParts(NODE, parts(MOST + 4), { ...SIZES, maxParts: 3 }, DEPS)!
+    const settled = getNodeParts(NODE, parts(MOST + 4), { ...SIZES, maxParts: 3 }, DEPS)!
     expect(settled.shown).toBe(3)
     expect(furthest(settled)).toBe(MOST + 1)
   })
@@ -264,7 +264,7 @@ describe('how wide the parts are drawn', () => {
   it('slides back inside the window where the middle leaves no room', () => {
     const near = { ...NODE, x: 460 }
     const held = [{ id: '0', text: 'A heading of some length', level: 1 }]
-    const settled = hangParts(near, held, SIZES, DEPS)!
+    const settled = getNodeParts(near, held, SIZES, DEPS)!
     expect(near.x + settled.offset + settled.width / 2).toBeLessThanOrEqual(
       DEPS.viewport.width / 2 - DEPS.margin,
     )
@@ -279,7 +279,7 @@ describe('a node with little room under it', () => {
   })
 
   const hangWithRoom = (left: number, items = parts(MOST + 3)) =>
-    hangParts(low(left), items, SIZES, DEPS)
+    getNodeParts(low(left), items, SIZES, DEPS)
 
   it('hangs nothing where there is depth for not one part', () => {
     expect(hangWithRoom(SIZES.partHeight)).toBeNull()
@@ -301,7 +301,7 @@ describe('a node with little room under it', () => {
   })
 
   it('stands them all at once where the depth holds every one of them', () => {
-    const settled = hangParts(low(400), parts(3), SIZES, DEPS)!
+    const settled = getNodeParts(low(400), parts(3), SIZES, DEPS)!
     expect(settled.shown).toBe(3)
     expect(furthest(settled)).toBe(0)
   })
@@ -357,7 +357,7 @@ describe('what a wheel scrolls', () => {
 describe('however many parts stand at once', () => {
   /** A node with depth under it for as many parts as the ceiling allows. */
   const hangWithCeiling = (most: number) =>
-    hangParts(NODE, parts(most + 4), { ...SIZES, maxParts: most }, DEPS)!
+    getNodeParts(NODE, parts(most + 4), { ...SIZES, maxParts: most }, DEPS)!
 
   it('every one of them is up by the time it is all the way open', () => {
     // A lead that outran the opening left the last of them at nothing at all,

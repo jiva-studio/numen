@@ -3,7 +3,7 @@
  * its box, which of them stand in the window, and how far a wheel scrolls it.
  */
 import { clamp01, easeOut, lerp } from './arrange'
-import type { HungPart, HungParts } from './inside'
+import type { HungPart, NodeParts } from './inside'
 import type { Position } from './node'
 
 /**
@@ -65,7 +65,7 @@ export interface Arrow {
  * can be measured against a part.
  */
 export function scrollBy(
-  hung: HungParts,
+  hung: NodeParts,
   wheel: { readonly delta: number; readonly mode: number },
   leftover: number,
 ): { by: number; left: number } {
@@ -75,7 +75,7 @@ export function scrollBy(
 }
 
 /** What one of a wheel's own units comes to in pixels: a line, or a window. */
-function getStride(hung: HungParts, mode: number): number {
+function getStride(hung: NodeParts, mode: number): number {
   if (mode === LINES) return hung.partHeight
   if (mode === WINDOWS) return hung.shown * hung.partHeight
   return 1
@@ -86,7 +86,7 @@ const LINES = 1
 const WINDOWS = 2
 
 /** The furthest the window on the parts may be scrolled down, counted in parts. */
-export const furthest = (hung: HungParts): number => Math.max(0, hung.parts.length - hung.shown)
+export const furthest = (hung: NodeParts): number => Math.max(0, hung.parts.length - hung.shown)
 
 /**
  * What a node hangs at a moment of the opening.
@@ -98,7 +98,7 @@ export const furthest = (hung: HungParts): number => Math.max(0, hung.parts.leng
  *
  * Nothing while it is shut, which is what a node draws nothing at all under.
  */
-export function getOpenParts(hung: HungParts, open: number, scrollOffset = 0): OpenParts | null {
+export function getOpenParts(hung: NodeParts, open: number, scrollOffset = 0): OpenParts | null {
   const opened = clamp01(open)
   if (opened <= 0) return null
 
@@ -143,7 +143,7 @@ export function getOpenParts(hung: HungParts, open: number, scrollOffset = 0): O
  * An arrow at one edge of the ground, pointing the way there is more to scroll
  * to. It is drawn about the middle of what is hung, which is where the eye is.
  */
-function arrowAt(hung: HungParts, down: number, direction: 1 | -1): Arrow {
+function arrowAt(hung: NodeParts, down: number, direction: 1 | -1): Arrow {
   const middle = hung.offset
   const y = hung.top + down
   return {

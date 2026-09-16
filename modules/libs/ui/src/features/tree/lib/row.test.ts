@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { flatten, type Row, type RowId } from './row'
-import { everyRow, getRowsBetween, resolveSelection, sameRows, PLAIN, type Press } from './select'
+import { everyRow, getRowsBetween, resolveSelection, isSameSelection, PLAIN, type Press } from './select'
 import { isTreeKey, stepTo, TREE_KEYS } from './step'
 import { getDraggedRows, dragLabel } from './drag'
 import { holderOf, isRefused, landing } from './drop'
@@ -400,13 +400,13 @@ describe('the rows a press drags', () => {
 
 describe('two selections', () => {
   it('are the same holding the same rows in the same order', () => {
-    expect(sameRows(['work', 'notes'], ['work', 'notes'])).toBe(true)
-    expect(sameRows([], [])).toBe(true)
+    expect(isSameSelection(['work', 'notes'], ['work', 'notes'])).toBe(true)
+    expect(isSameSelection([], [])).toBe(true)
   })
 
   it('are not the same in another order, or of another length', () => {
-    expect(sameRows(['work', 'notes'], ['notes', 'work'])).toBe(false)
-    expect(sameRows(['work'], ['work', 'notes'])).toBe(false)
+    expect(isSameSelection(['work', 'notes'], ['notes', 'work'])).toBe(false)
+    expect(isSameSelection(['work'], ['work', 'notes'])).toBe(false)
   })
 })
 

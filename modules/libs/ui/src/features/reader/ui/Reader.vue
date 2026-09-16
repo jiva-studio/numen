@@ -72,7 +72,7 @@ const { viewport, measure } = useViewport(area)
 const {
   along,
   dragging,
-  whereabouts,
+  getScrollOffset,
   send,
   isStill,
   onPointerDown,
@@ -120,7 +120,7 @@ const stand = (page: number, how: ScrollBehavior) => {
 watch(
   () => props.at,
   (page) => {
-    if (page !== inFront(laid.value, viewport.value, whereabouts())) stand(page, 'smooth')
+    if (page !== inFront(laid.value, viewport.value, getScrollOffset())) stand(page, 'smooth')
   },
 )
 

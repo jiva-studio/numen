@@ -34,16 +34,16 @@ export const isWalkingKey = (key: string): boolean => WALKING.includes(key)
 /** How many steps a page key covers, which is what a key held with shift covers. */
 const PACES = 10
 
-/** The places a number is written to. */
-const places = (value: number): number => {
+/** The getDecimalPlaces a number is written to. */
+const getDecimalPlaces = (value: number): number => {
   const said = `${value}`
   const point = said.indexOf('.')
   return point < 0 ? 0 : said.length - point - 1
 }
 
-/** A value written to the places the floor and the step are written to. */
+/** A value written to the getDecimalPlaces the floor and the step are written to. */
 const roundToPlaces = (value: number, bounds: Bounds): number => {
-  const scale = 10 ** Math.max(places(bounds.min), places(bounds.step))
+  const scale = 10 ** Math.max(getDecimalPlaces(bounds.min), getDecimalPlaces(bounds.step))
   return Math.round(value * scale) / scale
 }
 
@@ -60,7 +60,7 @@ const getStepsAbove = (value: number, bounds: Bounds): number => {
 /**
  * Where a walk of so many steps leaves a value: the place the step lays that
  * many along from it, and the end of the track past the last of them. A value
- * between two places is drawn onto the one the walk is heading towards, so a
+ * between two getDecimalPlaces is drawn onto the one the walk is heading towards, so a
  * step out and a step back come to where they began.
  */
 export const stepBy = (value: number, by: number, bounds: Bounds): number => {

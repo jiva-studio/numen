@@ -20,7 +20,7 @@ export interface HandScroll {
    * where the room says it stands. A scroll moves the room before an event
    * reports it.
    */
-  readonly whereabouts: () => number
+  readonly getScrollOffset: () => number
   /** The row sent to a place along itself, travelling or at once. */
   readonly send: (to: number, how: ScrollBehavior) => void
   /**
@@ -42,7 +42,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
   /** Where the row was told to stand, while it is on its way there. */
   let heading: number | undefined
 
-  const whereabouts = (): number => heading ?? area.value?.scrollLeft ?? along.value
+  const getScrollOffset = (): number => heading ?? area.value?.scrollLeft ?? along.value
 
   const send = (to: number, how: ScrollBehavior): void => {
     if (!area.value) return
@@ -132,7 +132,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
   return {
     along,
     dragging,
-    whereabouts,
+    getScrollOffset,
     send,
     isStill,
     onPointerDown,

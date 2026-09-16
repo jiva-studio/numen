@@ -22,7 +22,7 @@ describe('how much of a year fits', () => {
     }
   })
 
-  it('spreads what is left over between the cells, so the grid meets both edges', () => {
+  it('countSpreads what is left over between the cells, so the grid meets both edges', () => {
     const room = measureGrid({ width: 200, cell: 10, gap: 2 })
     const drawn = room.columns * 10 + (room.columns - 1) * room.gap
     expect(drawn).toBeCloseTo(200, 5)

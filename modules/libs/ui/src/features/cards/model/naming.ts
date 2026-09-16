@@ -20,7 +20,7 @@ interface Draft {
  * is the rule's to say: a field is written in a slot and a face in a heading,
  * and the two are not written under the same rules.
  */
-export interface NamingDeps<Why extends Objection> {
+export interface NameEntryDeps<Why extends Objection> {
   /** The name the thing being typed over carries. */
   readonly getName: (over: string) => string
   /** The names already taken, which the one being typed is measured against. */
@@ -32,7 +32,7 @@ export interface NamingDeps<Why extends Objection> {
 }
 
 /** What naming answers: what a box holds, what is wrong with it, and the gestures. */
-export interface NamingState<Why extends Objection> {
+export interface NameEntryState<Why extends Objection> {
   /** What is in the box: the name it carries, or what is being typed over it. */
   readonly getText: (over: string) => string
   /** Why what is in the box cannot be used, and nothing while it can. */
@@ -45,7 +45,7 @@ export interface NamingState<Why extends Objection> {
   readonly onKey: (press: KeyboardEvent, over: string) => void
 }
 
-export function useNaming<Why extends Objection>(deps: NamingDeps<Why>): NamingState<Why> {
+export function useNameEntry<Why extends Objection>(deps: NameEntryDeps<Why>): NameEntryState<Why> {
   /** What is being typed, over the thing it is being typed over. */
   const draft = shallowRef<Draft | null>(null)
 

@@ -27,7 +27,7 @@ import {
   inFront,
   leftInDocument,
   pagesOf,
-  spreads,
+  countSpreads,
   type Flow,
 } from '../lib/spread'
 import type { PageTurn } from '@/shared/lib/turn'
@@ -76,8 +76,8 @@ export function useBookLayout(
     columns: columns.value,
   }))
 
-  /** How many spreads the document is read in. */
-  const spreadCount = computed(() => spreads(flow.value))
+  /** How many countSpreads the document is read in. */
+  const spreadCount = computed(() => countSpreads(flow.value))
 
   /** The spread in front, as a page of the book, and how many there are. */
   const front = computed(() =>

@@ -18,7 +18,7 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue'
-import { arrivals, dwellOf, getFinishedNotices, getShownNotices } from '../lib/dwell'
+import { getArrivalTimes, dwellOf, getFinishedNotices, getShownNotices } from '../lib/dwell'
 import { foldNotices } from '../lib/fold'
 import { measureMovement, type Movement } from '../lib/movement'
 import { getStillAway, readable, tallyOf, type Notice } from '../lib/notice'
@@ -100,7 +100,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     options.getNotices,
     (all) => {
       sample()
-      arrived.value = arrivals(arrived.value, all, read.value)
+      arrived.value = getArrivalTimes(arrived.value, all, read.value)
       away.value = getStillAway(away.value, all)
       const here = new Set(readable(all).map((one) => one.id))
       for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)

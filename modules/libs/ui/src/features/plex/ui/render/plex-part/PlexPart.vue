@@ -4,14 +4,14 @@
  * stand on.
  */
 import { computed } from 'vue'
-import type { HungParts } from '../../../lib/inside'
+import type { NodeParts } from '../../../lib/inside'
 import type { DrawnPart } from '../../../lib/open'
 
 const props = defineProps<{
   /** The part, as far out from under the box as it has come. */
   part: DrawnPart
   /** The parts and the room they are given. */
-  hung: HungParts
+  hung: NodeParts
 }>()
 
 const emit = defineEmits<{

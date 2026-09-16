@@ -7,7 +7,7 @@
  * are not written under the same rules.
  */
 import { afterEach, describe, expect, it } from 'vitest'
-import { useNaming, type NamingState } from './naming'
+import { useNameEntry, type NameEntryState } from './naming'
 import {
   checkFieldName,
   checkHeadingName,
@@ -18,7 +18,7 @@ import {
 /** A naming of the fields a stencil declares, with what it renamed. */
 const overFields = (fields: readonly string[]) => {
   const renamed: (readonly [string, string])[] = []
-  const naming = useNaming<Objection>({
+  const naming = useNameEntry<Objection>({
     getName: (field) => field,
     getTakenNames: (field) => fields.filter((each) => each !== field),
     checkName: checkFieldName,
@@ -32,7 +32,7 @@ const overFields = (fields: readonly string[]) => {
 /** A naming of the faces a stencil shows, each under the name it carries. */
 const overFaces = (faces: ReadonlyMap<string, string>) => {
   const renamed: (readonly [string, string])[] = []
-  const naming = useNaming<HeadingObjection>({
+  const naming = useNameEntry<HeadingObjection>({
     getName: (id) => faces.get(id) ?? '',
     getTakenNames: (id) => [...faces].filter(([each]) => each !== id).map(([, name]) => name),
     checkName: checkHeadingName,
@@ -45,7 +45,7 @@ const overFaces = (faces: ReadonlyMap<string, string>) => {
 
 /** A key struck in the box a name is typed in, which is what a break blurs. */
 const press = <Why extends Objection>(
-  naming: NamingState<Why>,
+  naming: NameEntryState<Why>,
   over: string,
   key: string,
 ): HTMLInputElement => {
@@ -61,7 +61,7 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-describe('useNaming', () => {
+describe('useNameEntry', () => {
   const FIELDS = ['Name', 'Height', 'Weight']
 
   it('stands the name a thing carries while nothing is being typed over it', () => {

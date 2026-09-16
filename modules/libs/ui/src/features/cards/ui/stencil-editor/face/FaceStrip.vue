@@ -6,7 +6,7 @@
 import { computed, useId } from 'vue'
 import { ErrorMessage } from '../../error-message'
 import { NameBox } from '../../name-box'
-import { useNaming } from '../../../model/naming'
+import { useNameEntry } from '../../../model/naming'
 import { Button } from '@/shared/ui/button'
 import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
 import { STENCIL_WORDS, type FaceRow, type StencilWords } from '../../../lib/stencil'
@@ -35,7 +35,7 @@ const uid = useId()
 const objectionsId = `${uid}-objections`
 
 /** A name typed over the one this face carries, until it is committed. */
-const naming = useNaming<HeadingObjection>({
+const naming = useNameEntry<HeadingObjection>({
   getName: () => props.face.name,
   getTakenNames: () => props.face.taken,
   checkName: checkHeadingName,

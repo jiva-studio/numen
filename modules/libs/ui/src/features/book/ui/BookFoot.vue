@@ -14,7 +14,7 @@ defineProps<{
   front: Pages
   /** How many columns of this chapter stand after the spread in front. */
   leftInChapter: number
-  /** How many spreads the document is read in. */
+  /** How many countSpreads the document is read in. */
   spreadCount: number
 }>()
 </script>

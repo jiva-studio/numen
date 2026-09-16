@@ -4,7 +4,7 @@ import { arrangePlex } from './arrange'
 import { interpolatePlex } from './interpolate'
 import { easeOut } from './math'
 import { MIDDLE } from './routing'
-import { ARROW_LENGTH, headingOf, lengthOf, rulerOf } from '../edge'
+import { ARROW_LENGTH, headingOf, lengthOf, createPointOnCurve } from '../edge'
 import type { PlexFrame } from '../frame'
 import type { PlexNeighbourhood } from '../neighbourhood'
 
@@ -312,7 +312,7 @@ describe('the arrow a line carries while the picture moves', () => {
   it('keeps it aimed along the piece of curve it covers, wherever the line has got to', () => {
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      const behind = rulerOf(edge)(1 - ARROW_LENGTH / lengthOf(edge))
+      const behind = createPointOnCurve(edge)(1 - ARROW_LENGTH / lengthOf(edge))
       const chord =
         (Math.atan2(edge.toPoint.y - behind.y, edge.toPoint.x - behind.x) * 180) / Math.PI
       expect(edge.arrowhead!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(chord, 1)

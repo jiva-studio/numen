@@ -74,7 +74,7 @@ const tabOf = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id ==
  * unique to the document and not only to this tree.
  */
 let made = 0
-const mint = (): NodeId =>
+const createNodeId = (): NodeId =>
   typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `node-${++made}-${Date.now()}`
 
 const frame = useTemplateRef<HTMLElement>('frame')
@@ -83,7 +83,7 @@ const { moved, overlay, label, position, landing, press } = useTabDrag({
   workspace,
   frame,
   getTab: tabOf,
-  getIdFactory: () => props.naming ?? mint,
+  getIdFactory: () => props.naming ?? createNodeId,
   getEdge: () => props.edge,
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
