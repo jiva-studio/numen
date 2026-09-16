@@ -191,7 +191,11 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 		return nil, err
 	}
 	defer root.Close()
-	return root.ReadFile(at)
+	raw, err := root.ReadFile(at)
+	if err != nil {
+		return nil, asHeld(err)
+	}
+	return raw, nil
 }
 
 // Open is one file of the store to read a part of, and how many bytes it holds.
