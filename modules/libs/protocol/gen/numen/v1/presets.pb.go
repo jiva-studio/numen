@@ -1299,7 +1299,7 @@ type CreatePresetResponse struct {
 	// Set when the preset is on disk and the index would not come level with it.
 	// The preset was made and `path` stands; search does not answer about it
 	// until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1348,9 +1348,9 @@ func (x *CreatePresetResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *CreatePresetResponse) GetUnlevelled() bool {
+func (x *CreatePresetResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1432,7 +1432,7 @@ type ScheduleDeckResponse struct {
 	// Set when the deck is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1481,9 +1481,9 @@ func (x *ScheduleDeckResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-func (x *ScheduleDeckResponse) GetUnlevelled() bool {
+func (x *ScheduleDeckResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1780,7 +1780,7 @@ type WritePresetResponse struct {
 	// Set when the preset is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1829,9 +1829,9 @@ func (x *WritePresetResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-func (x *WritePresetResponse) GetUnlevelled() bool {
+func (x *WritePresetResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -2014,25 +2014,21 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\"?\n" +
 	"\x13CreatePresetRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"\x84\x01\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\x89\x01\n" +
 	"\x14CreatePresetResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_error\"z\n" +
 	"\x13ScheduleDeckRequest\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x16\n" +
 	"\x06preset\x18\x02 \x01(\tR\x06preset\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa3\x01\n" +
+	"\x05_seen\"\xa8\x01\n" +
 	"\x14ScheduleDeckResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"'\n" +
 	"\x11ReadPresetRequest\x12\x12\n" +
@@ -2057,13 +2053,11 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa2\x01\n" +
+	"\x05_seen\"\xa7\x01\n" +
 	"\x13WritePresetResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"Y\n" +
 	"\x13ComputeCurveRequest\x12\x12\n" +

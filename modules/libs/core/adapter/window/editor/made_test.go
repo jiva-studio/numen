@@ -61,7 +61,7 @@ func TestAStencilTheIndexWouldNotComeLevelWithIsAnsweredWithItsPath(t *testing.T
 	if held := onDisk(t, f.root, "cards/Animal.md"); held == "" {
 		t.Error("the stencil the client was given a path to holds nothing")
 	}
-	if !answer.Msg.GetUnlevelled() {
+	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the stencil is answered as findable and search does not hold it")
 	}
 }
@@ -81,7 +81,7 @@ func TestADeckTheIndexWouldNotComeLevelWithIsAnsweredWithItsPath(t *testing.T) {
 	if path := answer.Msg.GetPath(); path != "Animals.md" {
 		t.Fatalf("the deck is filed at %q", path)
 	}
-	if !answer.Msg.GetUnlevelled() {
+	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the deck is answered as findable and search does not hold it")
 	}
 }
@@ -102,7 +102,7 @@ func TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	if path := answer.Msg.GetPath(); path != "Entropy.md" {
 		t.Fatalf("the note is filed at %q", path)
 	}
-	if !answer.Msg.GetUnlevelled() {
+	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the note is answered as findable and search does not hold it")
 	}
 }
@@ -128,7 +128,7 @@ func TestAFileRemovedWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	if answer.Msg.GetTrashed() == "" {
 		t.Error("the note went to the trash and the client was told nothing of where")
 	}
-	if !answer.Msg.GetUnlevelled() {
+	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the removal is answered as followed and search still holds the note")
 	}
 	if len(answer.Msg.GetDangling()) != 1 {

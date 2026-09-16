@@ -151,8 +151,8 @@ func (a *API) MoveFile(
 	if moved.Landed {
 		out.Moved = newMoveResult(moved)
 	}
-	out.Unlevelled = a.isUnlevelled(err)
-	if err != nil && !out.GetUnlevelled() {
+	out.IsUnlevelled = a.isUnlevelled(err)
+	if err != nil && !out.GetIsUnlevelled() {
 		reason, refused := wire.ErrorCodeBy(err)
 		switch {
 		case refused:

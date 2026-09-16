@@ -1180,7 +1180,7 @@ type WriteNoteResponse struct {
 	// Set when the prose is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this note as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1229,9 +1229,9 @@ func (x *WriteNoteResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-func (x *WriteNoteResponse) GetUnlevelled() bool {
+func (x *WriteNoteResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1372,7 +1372,7 @@ type CreateNoteResponse struct {
 	// Set when the note is on disk and the index would not come level with it.
 	// The note was made and `path` stands; search does not answer about it until
 	// a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1421,9 +1421,9 @@ func (x *CreateNoteResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *CreateNoteResponse) GetUnlevelled() bool {
+func (x *CreateNoteResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1602,7 +1602,7 @@ type RenameNoteResponse struct {
 	// Set when the rename reached the vault and the index would not come level
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
-	Unlevelled    bool `protobuf:"varint,6,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,6,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1672,9 +1672,9 @@ func (x *RenameNoteResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *RenameNoteResponse) GetUnlevelled() bool {
+func (x *RenameNoteResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1729,7 +1729,7 @@ type WatchEditsResponse struct {
 	Text string `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
 	// The last report of this change, which arrives whether the change landed or
 	// was refused.
-	Done          bool `protobuf:"varint,5,opt,name=done,proto3" json:"done,omitempty"`
+	IsFinal       bool `protobuf:"varint,5,opt,name=is_final,json=isFinal,proto3" json:"is_final,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1792,9 +1792,9 @@ func (x *WatchEditsResponse) GetText() string {
 	return ""
 }
 
-func (x *WatchEditsResponse) GetDone() bool {
+func (x *WatchEditsResponse) GetIsFinal() bool {
 	if x != nil {
-		return x.Done
+		return x.IsFinal
 	}
 	return false
 }
@@ -1865,13 +1865,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x12+\n" +
 	"\x04seen\x18\x03 \x01(\v2\x12.numen.v1.LastReadH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa0\x01\n" +
+	"\x05_seen\"\xa5\x01\n" +
 	"\x11WriteNoteResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"P\n" +
 	"\x04Link\x12\x0e\n" +
@@ -1881,13 +1879,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x11CreateNoteRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12$\n" +
-	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\x82\x01\n" +
+	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\x87\x01\n" +
 	"\x12CreateNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_error\"J\n" +
 	"\x10WriteLinkRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
@@ -1897,25 +1893,23 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x06_error\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xf6\x01\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xfb\x01\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
 	"\x02by\x18\x03 \x01(\x0e2\x11.numen.v1.NamedByR\x02by\x12/\n" +
 	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
-	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x06 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x06 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_movedB\b\n" +
 	"\x06_error\"\x13\n" +
-	"\x11WatchEditsRequest\"\x8c\x01\n" +
+	"\x11WatchEditsRequest\"\x93\x01\n" +
 	"\x12WatchEditsResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\"\n" +
 	"\x04span\x18\x03 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
-	"\x04text\x18\x04 \x01(\tR\x04text\x12\x12\n" +
-	"\x04done\x18\x05 \x01(\bR\x04done*^\n" +
+	"\x04text\x18\x04 \x01(\tR\x04text\x12\x19\n" +
+	"\bis_final\x18\x05 \x01(\bR\aisFinal*^\n" +
 	"\x04Seat\x12\x14\n" +
 	"\x10SEAT_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vSEAT_PARENT\x10\x01\x12\x0e\n" +

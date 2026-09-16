@@ -66,7 +66,7 @@ func (a *API) WriteNote(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: fingerprintOf(at), Unlevelled: behind,
+			At: fingerprintOf(at), IsUnlevelled: behind,
 		}), nil
 	}
 	reason, refused := wire.ErrorCodeBy(err)
@@ -108,7 +108,7 @@ func (a *API) CreateNote(
 		// after the write is the index catching up, and the watcher does it
 		// again.
 		return connect.NewResponse(&v1.CreateNoteResponse{
-			Path: made.Path, Unlevelled: behind,
+			Path: made.Path, IsUnlevelled: behind,
 		}), nil
 	}
 	if err == nil {

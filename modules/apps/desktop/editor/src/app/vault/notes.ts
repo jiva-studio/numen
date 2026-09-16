@@ -39,7 +39,7 @@ export const notesCore: NoteOperations = {
         path: said.path,
         span: run(said.span ?? { from: 0, to: 0 }),
         text: said.text,
-        isComplete: said.done,
+        isComplete: said.isFinal,
       }
     }
   },

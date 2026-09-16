@@ -60,7 +60,7 @@ func (a *API) CreateStencil(
 		return nil, err
 	}
 	return connect.NewResponse(&v1.CreateStencilResponse{
-		Path: made.Path, Error: code, Unlevelled: unlevelled,
+		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
 	}), nil
 }
 
@@ -75,7 +75,7 @@ func (a *API) CreateDeck(
 		return nil, err
 	}
 	return connect.NewResponse(&v1.CreateDeckResponse{
-		Path: made.Path, Error: code, Unlevelled: unlevelled,
+		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
 	}), nil
 }
 
@@ -138,7 +138,7 @@ func (a *API) RenameStencilField(
 			a.Wrote()
 		}
 		out := newRenameResponse(renamed)
-		out.Unlevelled = a.isUnlevelled(err)
+		out.IsUnlevelled = a.isUnlevelled(err)
 		return connect.NewResponse(out), nil
 	}
 	// The name a rename is given is the client's: one the stencil does not
@@ -237,7 +237,7 @@ func (a *API) WriteDeck(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WriteDeckResponse{
-			At: fingerprintOf(wrote.Fingerprint), Unlevelled: behind,
+			At: fingerprintOf(wrote.Fingerprint), IsUnlevelled: behind,
 		}), nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
@@ -284,7 +284,7 @@ func (a *API) WriteStencil(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WriteStencilResponse{
-			At: fingerprintOf(at), Unlevelled: behind,
+			At: fingerprintOf(at), IsUnlevelled: behind,
 		}), nil
 	}
 	reason, refused := wire.ErrorCodeBy(err)

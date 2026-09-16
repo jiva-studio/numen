@@ -106,11 +106,11 @@ func (a *API) WatchEdits(
 				return nil
 			}
 			if err := out.Send(&v1.WatchEditsResponse{
-				Change: said.Change,
-				Path:   said.Path,
-				Span:   &v1.Span{From: int32(said.From), To: int32(said.To)},
-				Text:   said.Text,
-				Done:   said.Done,
+				Change:  said.Change,
+				Path:    said.Path,
+				Span:    &v1.Span{From: int32(said.From), To: int32(said.To)},
+				Text:    said.Text,
+				IsFinal: said.Done,
 			}); err != nil {
 				return err
 			}
