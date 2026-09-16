@@ -77,7 +77,7 @@ const rowId = (at: number): string => optionId(props.uid, at)
       :key="row.item.id"
       :row="row"
       :id="rowId(row.at)"
-      :here="row.at === here"
+      :is-current="row.at === here"
       @point-at="(moved) => emit('point-at', row.at, moved)"
       @choose="(second) => emit('choose', row.at, second)"
     >

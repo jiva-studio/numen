@@ -172,7 +172,7 @@ describe('how long something said stands to be read', () => {
   it('names the ones whose caller may dismiss them, and only those', () => {
     const said: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
     const kept: Notice = { id: 'occupied', text: 'Filed there already', stay: 'kept' }
-    const work: Notice = { id: 'embedding', text: 'Indexing', working: true }
+    const work: Notice = { id: 'embedding', text: 'Indexing', isWorking: true }
     const all = [said, kept, work]
     const arrived = getArrivalTimes(new Map(), all, 0)
 
@@ -182,7 +182,7 @@ describe('how long something said stands to be read', () => {
 })
 
 describe('how many cards stand at once', () => {
-  const work = (id: string): Notice => ({ id, text: 'Indexing', working: true })
+  const work = (id: string): Notice => ({ id, text: 'Indexing', isWorking: true })
   const word = (id: string): Notice => ({ id, text: 'Renamed', stay: 'read' })
 
   it('folds nothing while there is room', () => {
@@ -230,7 +230,7 @@ describe('measuring how fast a count moves', () => {
     done: count,
     total: 470_268_510,
     counting: 'bytes',
-    working: true,
+    isWorking: true,
   })
 
   it('reads a count once before it has a rate', () => {
@@ -265,7 +265,7 @@ describe('measuring how fast a count moves', () => {
   })
 
   it('measures nothing for work with no total to count against', () => {
-    const nothing: Notice = { id: 'scan', text: 'Reading a scan', working: true }
+    const nothing: Notice = { id: 'scan', text: 'Reading a scan', isWorking: true }
 
     expect(measureMovement(new Map(), [nothing], 1000).size).toBe(0)
   })

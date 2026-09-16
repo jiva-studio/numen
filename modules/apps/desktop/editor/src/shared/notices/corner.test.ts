@@ -88,7 +88,7 @@ describe('work that stopped badly', () => {
     const drawn = corner([reading({ error: 'nothing to read with' })])
 
     expect(drawn[0]?.tone).toBe('alarm')
-    expect(drawn[0]?.working).toBe(false)
+    expect(drawn[0]?.isWorking).toBe(false)
   })
 
   it('is called by what stopped it, which is the sentence a person acts on', () => {
@@ -150,7 +150,7 @@ describe('work with nothing to count', () => {
 
     expect(drawn[0]?.done).toBeUndefined()
     expect(drawn[0]?.total).toBeUndefined()
-    expect(drawn[0]?.working).toBe(true)
+    expect(drawn[0]?.isWorking).toBe(true)
   })
 
   it('draws no share for a model of a size nobody has been told', () => {
@@ -296,7 +296,7 @@ describe('chunks with nothing to embed them', () => {
 
     expect(drawn).toHaveLength(1)
     expect(drawn[0]?.text).toBe(words.wordsOnly)
-    expect(drawn[0]?.working).toBe(false)
+    expect(drawn[0]?.isWorking).toBe(false)
   })
 
   it('says nothing where a model is going to embed them', () => {

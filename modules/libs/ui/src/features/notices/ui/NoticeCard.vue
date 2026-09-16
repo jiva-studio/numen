@@ -31,7 +31,7 @@ defineExpose({ way })
       :text="one.text"
       :about="one.about ?? ''"
       :tally="tallyOf(one)"
-      :working="one.working ?? false"
+      :is-working="one.isWorking ?? false"
       :left="left"
       :tone="one.tone ?? 'plain'"
     />

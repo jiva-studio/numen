@@ -61,7 +61,7 @@ const soThat = (
           text,
           about: how.about ?? '',
           tone: how.tone ?? 'plain',
-          working: false,
+          isWorking: false,
           isAsked: how.isAsked ?? true,
           stay: 'holds',
         },
@@ -133,7 +133,7 @@ export const cornerOf = (
   const said: Notice[] = messages.map((one) => ({
     id: one.id,
     text: one.text,
-    working: false,
+    isWorking: false,
     isAsked: true,
     ...manner[one.kind],
   }))

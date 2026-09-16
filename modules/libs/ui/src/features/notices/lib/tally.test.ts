@@ -35,7 +35,7 @@ describe('activity', () => {
   })
 
   it('works without a count when the work is claimed', () => {
-    expect(activity({ text: 'reading the vault', working: true })).toEqual({
+    expect(activity({ text: 'reading the vault', isWorking: true })).toEqual({
       state: 'working',
       counts: false,
     })

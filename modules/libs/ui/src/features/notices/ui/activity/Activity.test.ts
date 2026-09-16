@@ -15,7 +15,7 @@ describe('a line of work', () => {
     const drawn = line({
       text: 'Proofreading the transcript',
       about: 'A Conversation in Vrindavan, 1972-11-04.md',
-      working: true,
+      isWorking: true,
       tally: { done: 9, total: 100 },
       left: '4:05',
     })
@@ -29,7 +29,7 @@ describe('a line of work', () => {
     const drawn = line({
       text: 'Learning what it says',
       about: 'Sabhaparva.epub',
-      working: true,
+      isWorking: true,
       tally: { done: 1200, total: 36560 },
       left: '1:58:20',
     })
@@ -55,13 +55,13 @@ describe('a line of work', () => {
   })
 
   it('says nothing about a count it was given none of', () => {
-    const drawn = line({ text: 'Reading', about: 'Sabhaparva.epub', working: true })
+    const drawn = line({ text: 'Reading', about: 'Sabhaparva.epub', isWorking: true })
 
     expect(drawn.find('.activity__count').exists()).toBe(false)
   })
 
   it('waits rather than draw a share of nothing', () => {
-    const drawn = line({ text: 'Fetching models', about: 'inference.onnx', working: true })
+    const drawn = line({ text: 'Fetching models', about: 'inference.onnx', isWorking: true })
 
     expect(drawn.find('.activity__percent').exists()).toBe(false)
     expect(drawn.find('.activity__spinner').exists()).toBe(true)
@@ -71,7 +71,7 @@ describe('a line of work', () => {
     const drawn = line({
       text: 'Indexing',
       about: 'Sabhaparva.epub',
-      working: true,
+      isWorking: true,
       tally: { done: 3, total: 12 },
     })
     expect(drawn.get('.activity__about').text()).toBe('Sabhaparva.epub')

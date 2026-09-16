@@ -67,7 +67,7 @@ describe('what is not sent', () => {
 
 describe('while an answer is being written', () => {
   it('gives the disc to stopping, under the name it was given', async () => {
-    const wrapper = composer({ modelValue: 'hello', working: true, stopLabel: 'Give up' })
+    const wrapper = composer({ modelValue: 'hello', isWorking: true, stopLabel: 'Give up' })
     const disc = wrapper.get('button')
     expect(disc.attributes('aria-label')).toBe('Give up')
     expect(disc.attributes('disabled')).toBeUndefined()
@@ -78,20 +78,20 @@ describe('while an answer is being written', () => {
   })
 
   it('sends nothing on Enter', async () => {
-    const wrapper = composer({ modelValue: 'hello', working: true })
+    const wrapper = composer({ modelValue: 'hello', isWorking: true })
     await wrapper.get('textarea').trigger('keydown', enter)
     expect(wrapper.emitted('submit')).toBeUndefined()
   })
 
   it('stops nothing on Enter', async () => {
-    const wrapper = composer({ modelValue: 'hello', working: true })
+    const wrapper = composer({ modelValue: 'hello', isWorking: true })
     await wrapper.get('textarea').trigger('keydown', enter)
     expect(wrapper.emitted('stop')).toBeUndefined()
   })
 
   it('stands one disc either way, and changes the glyph on it', () => {
     const glyph = (isWriting: boolean) => {
-      const wrapper = composer({ modelValue: 'hello', working: isWriting })
+      const wrapper = composer({ modelValue: 'hello', isWorking: isWriting })
       expect(wrapper.findAll('button')).toHaveLength(1)
       return wrapper.get('button svg').html()
     }
@@ -99,8 +99,8 @@ describe('while an answer is being written', () => {
   })
 
   it('sends again once the answer has arrived', async () => {
-    const wrapper = composer({ modelValue: 'hello', working: true, sendLabel: 'Send it' })
-    await wrapper.setProps({ working: false })
+    const wrapper = composer({ modelValue: 'hello', isWorking: true, sendLabel: 'Send it' })
+    await wrapper.setProps({ isWorking: false })
     expect(wrapper.get('button').attributes('aria-label')).toBe('Send it')
 
     await wrapper.get('button').trigger('click')

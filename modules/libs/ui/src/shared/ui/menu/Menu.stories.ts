@@ -86,7 +86,7 @@ const renderMenu = (args: Knobs) => ({
         :from="from"
         :opening="args.opening"
         :current="args.current"
-        :groups="args.groups"
+        :has-groups="args.groups"
         :margin="args.margin"
         :name="args.name"
         @choose="args.onChoose"

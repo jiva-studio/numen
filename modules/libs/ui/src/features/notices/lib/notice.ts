@@ -35,7 +35,7 @@ export interface Notice {
   /** What that count counts. */
   readonly counting?: TallyUnit
   /** Whether it is running now, or is a fact that is simply so. */
-  readonly working?: boolean
+  readonly isWorking?: boolean
   /** How it reads. Plain unless said otherwise. */
   readonly tone?: Tone
   /** How long it stands. Held unless said otherwise. */
@@ -76,7 +76,7 @@ export const createNotice = (task: Task): Notice => {
     id: task.id,
     text: error || task.label,
     about: task.about,
-    working: error === '',
+    isWorking: error === '',
     isAsked: task.isAsked || error !== '',
     ...(error ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
     ...(completed !== undefined && total !== undefined && total > 0

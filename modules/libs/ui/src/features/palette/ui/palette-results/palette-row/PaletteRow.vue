@@ -14,7 +14,7 @@ defineProps<{
   /** What this row is addressed by. */
   id: string
   /** Whether the keyboard stands on it. */
-  here: boolean
+  isCurrent: boolean
 }>()
 
 const emit = defineEmits<{
@@ -34,9 +34,9 @@ defineSlots<{
     :id="id"
     class="palette__item rounded-node flex items-center gap-2 px-2 py-1.5"
     role="option"
-    :aria-selected="here"
+    :aria-selected="isCurrent"
     :aria-disabled="row.item.disabled || undefined"
-    :data-here="here || undefined"
+    :data-here="isCurrent || undefined"
     :data-disabled="row.item.disabled || undefined"
     @pointermove="emit('point-at', $event)"
     @pointerdown.prevent

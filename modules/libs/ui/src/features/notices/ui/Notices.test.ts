@@ -22,7 +22,7 @@ const draw = (notices: readonly Notice[], clock: () => number) =>
 
 const report: Notice = { id: 'renamed', text: 'Renamed', stay: 'read', isAsked: true }
 const error: Notice = { id: 'occupied', text: 'Filed there', stay: 'kept', isAsked: true }
-const work: Notice = { id: 'embedding', text: 'Indexing', working: true }
+const work: Notice = { id: 'embedding', text: 'Indexing', isWorking: true }
 
 describe('a card the person is finished with', () => {
   it('is named once it has been read long enough', async () => {

@@ -145,7 +145,7 @@ provide(
     <WorkspacePane
       v-else
       :pane="workspace.root"
-      :focused="workspace.root.id === workspace.focus"
+      :is-focused="workspace.root.id === workspace.focus"
       @choose="choose"
       @close="close"
       @lift="press"

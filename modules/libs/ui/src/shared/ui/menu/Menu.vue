@@ -39,7 +39,7 @@ const props = withDefaults(
      * Whether the name of a group is drawn over it. A menu whose groups are
      * named by identifiers draws none.
      */
-    groups?: boolean
+    hasGroups?: boolean
     /**
      * How wide what asked for it is. The menu is never narrower than that, and
      * grows past it for what it holds.
@@ -58,7 +58,7 @@ const props = withDefaults(
     current: null,
     from: null,
     viewport: null,
-    groups: false,
+    hasGroups: false,
     asking: 0,
     margin: 8,
     to: 'body',
@@ -184,8 +184,8 @@ onBeforeUnmount(leave)
         :key="item.id"
         :item="item"
         :current="current"
-        :named="groups && Boolean(item.group) && (item.isRule || index === 0)"
-        :icons="Boolean($slots.icon)"
+        :has-name="hasGroups && Boolean(item.group) && (item.isRule || index === 0)"
+        :has-icons="Boolean($slots.icon)"
         @focus="here = index"
         @choose="choose(item)"
       >

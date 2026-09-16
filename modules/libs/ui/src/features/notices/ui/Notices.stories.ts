@@ -28,7 +28,7 @@ const EMBEDDING: Notice = {
   about: 'notes/entropy.md',
   done: 3,
   total: 8,
-  working: true,
+  isWorking: true,
 }
 
 const FETCHING: Notice = {
@@ -38,7 +38,7 @@ const FETCHING: Notice = {
   done: 121_000_000,
   total: 470_268_510,
   counting: 'bytes',
-  working: true,
+  isWorking: true,
 }
 
 const READING: Notice = {
@@ -47,7 +47,7 @@ const READING: Notice = {
   about: 'library/mahabharata.epub',
   done: 2,
   total: 4,
-  working: true,
+  isWorking: true,
 }
 
 const RENAMED: Notice = {
@@ -180,7 +180,7 @@ export const CountedInBytes: Story = {
 
 /** Work that has not said what it found yet: words and no count. */
 export const NoTotalYet: Story = {
-  args: { notices: [{ id: 'embedding', text: 'Preparing search by meaning', working: true }] },
+  args: { notices: [{ id: 'embedding', text: 'Preparing search by meaning', isWorking: true }] },
 }
 
 /** A fact about this installation, said once and not happening. */
@@ -329,10 +329,10 @@ export const PutOneAway: Story = {
 export const TooMuchToSay: Story = {
   args: {
     notices: [
-      { id: 'one', text: RUSSIAN, about: LONG, done: 1, total: 2, working: true },
-      { id: 'two', text: UNBREAKABLE, about: UNBREAKABLE, working: true },
+      { id: 'one', text: RUSSIAN, about: LONG, done: 1, total: 2, isWorking: true },
+      { id: 'two', text: UNBREAKABLE, about: UNBREAKABLE, isWorking: true },
       { id: 'three', text: RUSSIAN, about: LONG, tone: 'alarm', stay: 'kept', isAsked: true },
-      { id: 'brief', text: 'Reading', working: true },
+      { id: 'brief', text: 'Reading', isWorking: true },
     ],
   },
   play: async () => {

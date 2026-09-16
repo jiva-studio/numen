@@ -36,7 +36,7 @@ describe('the file drawn', () => {
     expect(editor.props('language')).toBe('json')
     expect(editor.props('modelValue')).toBe(HELD)
     // Nothing here is markdown, so no mark is drawn as what it means.
-    expect(editor.props('live')).toBe(false)
+    expect(editor.props('isLive')).toBe(false)
   })
 
   it('carries no bar of its own over the text', async () => {

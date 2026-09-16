@@ -26,20 +26,20 @@ const props = withDefaults(
      */
     tally?: Tally | undefined
     /** Whether the work named is happening now. */
-    working?: boolean
+    isWorking?: boolean
     /** How much longer, on a clock, from whoever is timing the count. */
     left?: string
     /** How the line reads. An alarm is a line that stopped badly. */
     tone?: Tone
   }>(),
-  { text: '', about: '', working: false, left: '', tone: 'plain' },
+  { text: '', about: '', isWorking: false, left: '', tone: 'plain' },
 )
 
 const shown = computed(() =>
   activity({
     text: props.text,
     ...(props.tone === 'alarm' ? { hasFailed: true } : {}),
-    ...(props.working ? { working: true } : {}),
+    ...(props.isWorking ? { isWorking: true } : {}),
     ...(props.tally ? { tally: props.tally } : {}),
   }),
 )

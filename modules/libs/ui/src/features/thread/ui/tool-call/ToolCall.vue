@@ -18,20 +18,20 @@ withDefaults(
      */
     aside?: string
     /** Still in hand. */
-    working?: boolean
+    isWorking?: boolean
   }>(),
-  { subject: '', aside: '', working: false },
+  { subject: '', aside: '', isWorking: false },
 )
 </script>
 
 <template>
   <p class="tool-call numen text-hushed flex items-baseline gap-2 font-sans text-base">
-    <span class="tool-call__mark" :data-working="working || undefined" />
+    <span class="tool-call__mark" :data-working="isWorking || undefined" />
     <span class="min-w-0 truncate">{{ tool }}</span>
     <span v-if="subject" class="min-w-0 flex-1 truncate opacity-70">{{ subject }}</span>
     <span v-else class="flex-1" />
     <span v-if="aside" class="flex-none tabular-nums opacity-70">{{ aside }}</span>
-    <TypingIndicator v-if="working" />
+    <TypingIndicator v-if="isWorking" />
   </p>
 </template>
 

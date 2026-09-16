@@ -75,7 +75,7 @@ export const shareOf = (tally: Tally): number | undefined => {
 export const activity = (input: {
   readonly text: string
   readonly hasFailed?: boolean
-  readonly working?: boolean
+  readonly isWorking?: boolean
   readonly tally?: Tally
 }): ActivityDescriptor => {
   if (!input.text) return { state: 'quiet', counts: false }
@@ -84,7 +84,7 @@ export const activity = (input: {
   // Work is claimed, not assumed. Words alone say something is so, and a caller
   // that means "this is happening now" says that too.
   const share = input.tally ? shareOf(input.tally) : undefined
-  if (!input.working && share === undefined) return { state: 'resting', counts: false }
+  if (!input.isWorking && share === undefined) return { state: 'resting', counts: false }
 
   return share === undefined
     ? { state: 'working', counts: false }

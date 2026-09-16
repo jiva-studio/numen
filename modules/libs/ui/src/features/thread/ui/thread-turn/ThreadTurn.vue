@@ -72,7 +72,7 @@ const call = computed(() => ({
       <Prose
         v-else
         :text="entry.turn.text"
-        :arriving="entry.state === 'arriving'"
+        :is-arriving="entry.state === 'arriving'"
         :unresolved="entry.turn.unresolved ?? []"
         @follow="(href: string, press: MouseEvent) => emit('follow', entry.turn, href, press)"
       />
