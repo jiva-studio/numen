@@ -87,8 +87,12 @@ function quoted(text, at) {
 /**
  * The code of `text` with every comment and every string blanked out, each
  * line kept where it stands. A `${}` in a template literal is code, and is kept.
+ *
+ * `raw` says that a backtick opens a raw string, which is what Go's is: it runs
+ * to the next backtick, and a backslash inside it is a backslash. Without it a
+ * Go file holding `` `/\` `` reads on past the end of the string.
  */
-export function code(text) {
+export function code(text, raw = false) {
   const out = []
   const blank = (from, to) => out.push(text.slice(from, to).replace(/[^\n]/g, ' '))
   const through = (from, closing) => {
@@ -133,13 +137,13 @@ export function code(text) {
     let i = from + 1
     while (i < text.length) {
       const one = text[i]
-      if (one === '\\') {
+      if (!raw && one === '\\') {
         out.push('  ')
         i += 2
       } else if (one === '`') {
         out.push(' ')
         return i + 1
-      } else if (text.slice(i, i + 2) === '${') {
+      } else if (!raw && text.slice(i, i + 2) === '${') {
         out.push('${')
         i = through(i + 2, '}')
       } else {

@@ -268,7 +268,7 @@ const given = new Set([
  * caller reads `day.GetName()` exactly as it reads `getName()`.
  */
 export function goDeclares(source) {
-  return [...code(source).matchAll(GO_DECLARED)]
+  return [...code(source, true).matchAll(GO_DECLARED)]
     .map((one) => one[1])
     .filter((name) => !given.has(name))
 }
