@@ -14,8 +14,9 @@ import (
 // first settles nothing.
 func init() {
 	onnxruntime.Register(func(at string) {
-		// A reader asked for with no models is refused, and the engine it was
-		// to read through is made first.
+		// The engine is made for the binding it settles and is not kept. The
+		// one a page is read through is made in Open, which answers for what
+		// goes wrong there.
 		_, _ = paddle.NewEngine(paddle.Config{OnnxRuntimeLibPath: at})
 	})
 }
