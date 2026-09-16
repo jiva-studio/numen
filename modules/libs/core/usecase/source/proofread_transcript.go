@@ -410,7 +410,7 @@ func getProgress(batches []proofread.Batch, spoken, end int, cues []transcript.C
 
 // seams is a batch for each of the cuts, carrying what the recording holds.
 func (u ProofreadTranscript) seams(cues []transcript.Cue, cuts []int, about string) []proofread.Batch {
-	return setContext(proofread.Seams(cues, u.batchSize(), u.overlap(), cuts), about)
+	return setContext(proofread.CutIntoBatches(cues, u.batchSize(), u.overlap(), cuts), about)
 }
 
 // setContext is the batches with what the recording holds on each of them.

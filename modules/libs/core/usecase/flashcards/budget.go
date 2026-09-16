@@ -117,7 +117,7 @@ func getBudgets(
 		// spaced by. No other goal reads it, and it is asked for under no other.
 		learn := 0
 		if p.Goal == review.GoalDate {
-			learn = review.Ripens(at(p.Retention), day, p, now)
+			learn = review.GetRipeningDays(at(p.Retention), day, p, now)
 		}
 		out.left[path] = &allowance{
 			admits: p.GetAllowance(day, now, spent[path], unseen[path], learn),
@@ -409,9 +409,9 @@ func (b *budgets) divides(one *allowance, decks []*deckShare) []allowance {
 			time.Duration(len(q.fresh))*one.cost.New + spent.Took)
 	}
 	keeps := one.admits.Keeps
-	reviews = review.Shares(keeps.Reviews, reviews)
-	begun = review.Shares(keeps.New, begun)
-	minutes = review.Shares(int(keeps.Minutes*float64(time.Minute)), minutes)
+	reviews = review.DivideBudget(keeps.Reviews, reviews)
+	begun = review.DivideBudget(keeps.New, begun)
+	minutes = review.DivideBudget(int(keeps.Minutes*float64(time.Minute)), minutes)
 
 	out := make([]allowance, len(decks))
 	for at, q := range decks {

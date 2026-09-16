@@ -173,13 +173,13 @@ func (p Projection) Session() (int, bool) {
 	return 0, false
 }
 
-// Overdue is how many card faces standing at these schedules have had their day
+// CountOverdue is how many card faces standing at these schedules have had their day
 // and were not answered on it.
 //
 // A card falling due later in the day holding at is not overdue: its day is
 // this one. A card face nobody has answered is not overdue either, because it
 // has had no day.
-func Overdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
+func CountOverdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
 	opened := d.GetStart(now)
 	out := 0
 	for _, s := range at {
@@ -233,7 +233,7 @@ func (s Simulation) Run(
 		Clears: NeverClears, Learns: learns,
 	}
 	// A day that begins with nothing overdue has nothing to clear.
-	if Overdue(s.Day, at, now) == 0 {
+	if CountOverdue(s.Day, at, now) == 0 {
 		out.Clears = 0
 	}
 	left := unseen
@@ -264,7 +264,7 @@ func (s Simulation) Run(
 	out.Short = s.short(p, cards, unseen, open)
 	ripens := 0
 	if p.Goal == GoalDate {
-		ripens = Ripens(s.By, s.Day, p, now)
+		ripens = GetRipeningDays(s.By, s.Day, p, now)
 	}
 	// The card faces the day may answer, and how many of them it reached. Both
 	// are carried from one day to the next: what a day did not reach is the

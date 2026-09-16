@@ -61,7 +61,7 @@ func (h History) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
 	for _, a := range h {
 		one := by(a.CardFace)
 		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
-		next.Due = one.Preset.Places(on, a.At, next.Due)
+		next.Due = one.Preset.ScheduleDay(on, a.At, next.Due)
 		out[a.CardFace] = next
 	}
 	return out

@@ -12,7 +12,7 @@ import (
 
 // placing is every arithmetic that places a card's day: the session that hands
 // the cards out, and the projection drawn beside a control. Both go through
-// Places, and that is the whole of the list.
+// ScheduleDay, and that is the whole of the list.
 //
 // A function is one arithmetic however many times its body asks — the
 // projection places a card it has begun and a card it has answered again, and
@@ -21,9 +21,9 @@ import (
 var placing = []string{"History.Replay", "Simulation.step"}
 
 // A day is chosen in one function, and a caller wanting one comes to it. The
-// walk is over this package's own files, because Places is where a day is
+// walk is over this package's own files, because ScheduleDay is where a day is
 // decided and the deciding is all here.
-func TestTheSessionAndTheProjectionAreWhatPlacesADay(t *testing.T) {
+func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
 	held, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatal(err)
@@ -40,8 +40,8 @@ func TestTheSessionAndTheProjectionAreWhatPlacesADay(t *testing.T) {
 			t.Fatal(err)
 		}
 		read++
-		declared += countDeclarations(file, "Places")
-		calls = append(calls, getCallers(file, "Places")...)
+		declared += countDeclarations(file, "ScheduleDay")
+		calls = append(calls, getCallers(file, "ScheduleDay")...)
 	}
 
 	// A walk that read none of the package, or one that did not find the
@@ -50,7 +50,7 @@ func TestTheSessionAndTheProjectionAreWhatPlacesADay(t *testing.T) {
 		t.Fatalf("%d files of this package read: the walk is not reading it", read)
 	}
 	if declared != 1 {
-		t.Fatalf("%d functions named Places are declared here: the walk is reading something else", declared)
+		t.Fatalf("%d functions named ScheduleDay are declared here: the walk is reading something else", declared)
 	}
 
 	slices.Sort(calls)
@@ -75,42 +75,42 @@ func TestWhatThePlacingRuleRefuses(t *testing.T) {
 		calls    []string
 	}{{
 		why:   "a method calling it is named by its receiver's type",
-		src:   "package review\nfunc (s Simulation) step() { p.Places(on, at, due) }\n",
+		src:   "package review\nfunc (s Simulation) step() { p.ScheduleDay(on, at, due) }\n",
 		calls: []string{"Simulation.step"},
 	}, {
 		why:   "a function calling it is named on its own",
-		src:   "package review\nfunc drawn() { p.Places(on, at, due) }\n",
+		src:   "package review\nfunc drawn() { p.ScheduleDay(on, at, due) }\n",
 		calls: []string{"drawn"},
 	}, {
 		why:   "a body asking twice is one arithmetic",
-		src:   "package review\nfunc (s Simulation) step() { p.Places(a, b, c); p.Places(d, e, f) }\n",
+		src:   "package review\nfunc (s Simulation) step() { p.ScheduleDay(a, b, c); p.ScheduleDay(d, e, f) }\n",
 		calls: []string{"Simulation.step"},
 	}, {
 		why:   "a call inside a literal is the function holding the literal",
-		src:   "package review\nfunc (h History) Replay() { each(func() { one.Preset.Places(on, at, due) }) }\n",
+		src:   "package review\nfunc (h History) Replay() { each(func() { one.Preset.ScheduleDay(on, at, due) }) }\n",
 		calls: []string{"History.Replay"},
 	}, {
 		why:   "a pointer receiver is named by the type it is of",
-		src:   "package review\nfunc (s *Simulation) step() { p.Places(on, at, due) }\n",
+		src:   "package review\nfunc (s *Simulation) step() { p.ScheduleDay(on, at, due) }\n",
 		calls: []string{"Simulation.step"},
 	}, {
-		why: "the declaration of Places is not a call of it",
-		src: "package review\nfunc (p Preset) Places(s *DueByDay) { p.lands(s) }\n",
+		why: "the declaration of ScheduleDay is not a call of it",
+		src: "package review\nfunc (p Preset) ScheduleDay(s *DueByDay) { p.lands(s) }\n",
 	}, {
 		why: "a comment naming it is not a call",
-		src: "package review\n// Places is where the day is chosen.\nfunc drawn() { p.lands(on) }\n",
+		src: "package review\n// ScheduleDay is where the day is chosen.\nfunc drawn() { p.lands(on) }\n",
 	}, {
 		why: "another name is another function",
 		src: "package review\nfunc drawn() { p.Placed(on, at, due) }\n",
 	}, {
 		why: "naming it without calling it is not a call",
-		src: "package review\nfunc drawn() { each(p.Places) }\n",
+		src: "package review\nfunc drawn() { each(p.ScheduleDay) }\n",
 	}} {
 		file, err := parser.ParseFile(token.NewFileSet(), "one.go", one.src, 0)
 		if err != nil {
 			t.Fatalf("%s: %v", one.why, err)
 		}
-		if got := getCallers(file, "Places"); !slices.Equal(got, one.calls) {
+		if got := getCallers(file, "ScheduleDay"); !slices.Equal(got, one.calls) {
 			t.Errorf("%s: %v, and the rule reads %v", one.why, one.calls, got)
 		}
 	}

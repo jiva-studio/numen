@@ -73,19 +73,19 @@ func weekday(number int) time.Weekday {
 //
 // It is the one place a day is chosen. A session and a projection of it both
 // come here.
-func (p Preset) Places(s *DueByDay, at, due time.Time) time.Time {
+func (p Preset) ScheduleDay(s *DueByDay, at, due time.Time) time.Time {
 	out := p.lands(s, at, due)
 	s.Add(out)
 	return out
 }
 
-// Lands is the day a card answered at this instant would come back on, counting
+// GetLandingDay is the day a card answered at this instant would come back on, counting
 // it against no day.
 //
 // The four windows put to a person are four askings of one card, and one of
 // them is answered. The day each of them names is chosen by Places' own
 // arithmetic, so the button names the day the card lands on.
-func (p Preset) Lands(s *DueByDay, at, due time.Time) time.Time {
+func (p Preset) GetLandingDay(s *DueByDay, at, due time.Time) time.Time {
 	return p.lands(s, at, due)
 }
 
