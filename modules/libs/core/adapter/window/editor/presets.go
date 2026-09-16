@@ -67,7 +67,7 @@ func (a *API) ListPresets(
 func (a *API) CreatePreset(
 	ctx context.Context, r *connect.Request[v1.CreatePresetRequest],
 ) (*connect.Response[v1.CreatePresetResponse], error) {
-	made, code, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := a.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Preset(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {

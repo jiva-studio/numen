@@ -154,7 +154,7 @@ func Diff(was, now string) (Span, string) {
 	for head < len(was) && head < len(now) && was[head] == now[head] {
 		head++
 	}
-	for head > 0 && !opens(was, head) {
+	for head > 0 && !canSpanBeginAt(was, head) {
 		head--
 	}
 
@@ -163,16 +163,16 @@ func Diff(was, now string) (Span, string) {
 	for tail < most && was[len(was)-tail-1] == now[len(now)-tail-1] {
 		tail++
 	}
-	for tail > 0 && !closes(was, len(was)-tail) {
+	for tail > 0 && !canSpanEndAt(was, len(was)-tail) {
 		tail--
 	}
 
 	return Span{From: head, To: len(was) - tail}, now[head : len(now)-tail]
 }
 
-// opens reports whether a span may begin at `at`: at the start of the text,
+// canSpanBeginAt reports whether a span may begin at `at`: at the start of the text,
 // or where a rune begins and spacing stands before it.
-func opens(text string, at int) bool {
+func canSpanBeginAt(text string, at int) bool {
 	if at <= 0 {
 		return true
 	}
@@ -182,9 +182,9 @@ func opens(text string, at int) bool {
 	return spacing(text[at-1])
 }
 
-// closes reports whether a span may end at `at`: at the end of the text, or
+// canSpanEndAt reports whether a span may end at `at`: at the end of the text, or
 // where spacing stands.
-func closes(text string, at int) bool {
+func canSpanEndAt(text string, at int) bool {
 	if at >= len(text) {
 		return true
 	}

@@ -77,14 +77,14 @@ func addImportTool(server *sdk.Server, core Core) {
 		out.Path, out.Producer = fetched.Path, fetched.Producer
 		out.Bytes, out.Nothing = fetched.Bytes, fetched.Nothing
 		if in.Copy {
-			out.CopiedBytes, out.CopyRefused = copies(ctx, core, v, out.Path)
+			out.CopiedBytes, out.CopyRefused = copyFiles(ctx, core, v, out.Path)
 		}
 		return nil, out, nil
 	})
 }
 
-// copies fetches the video at an address, and says why where it did not.
-func copies(
+// copyFiles fetches the video at an address, and says why where it did not.
+func copyFiles(
 	ctx context.Context, core Core, v domain.Vault, path string,
 ) (int64, string) {
 	got, err := core.Sources.Import.Copy(ctx, v, path)

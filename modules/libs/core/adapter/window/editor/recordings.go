@@ -66,7 +66,7 @@ func (a *API) GetRecording(
 	// framed at the address instead, from the socket this run opened, and the
 	// frame is a page whatever is inside it.
 	if ref.Kind == domain.KindURL {
-		at := a.points(ctx, showing, ref)
+		at := a.getArtifactAddress(ctx, showing, ref)
 		out.MediaUrl, out.MediaType = a.getCopyMedia(ctx, showing, ref)
 		out.Url = string(at)
 		if out.MediaUrl == "" {
@@ -89,7 +89,7 @@ const asAPage = "text/html"
 func (a *API) getCopyMedia(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint,
 ) (media, kind string) {
-	at := a.points(ctx, v, ref)
+	at := a.getArtifactAddress(ctx, v, ref)
 	beside, size, held := a.getCopyLocation(ctx, v, ref.Path, at)
 	if !held {
 		return "", ""

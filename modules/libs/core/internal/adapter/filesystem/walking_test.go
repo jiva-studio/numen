@@ -54,7 +54,7 @@ func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
 	root, shape := makeVaultAndShape(t)
 	at := writeFolderOfNotes(t, root, "library", 3)
 
-	paths, whole, walk := shape.concerns(at)
+	paths, whole, walk := shape.getConcernedPaths(at)
 	if whole {
 		t.Fatal("a folder that arrived was answered as the whole vault")
 	}

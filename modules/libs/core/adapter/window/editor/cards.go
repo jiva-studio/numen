@@ -52,7 +52,7 @@ func getStencilLimit(limit int32) int {
 func (a *API) CreateStencil(
 	ctx context.Context, r *connect.Request[v1.CreateStencilRequest],
 ) (*connect.Response[v1.CreateStencilResponse], error) {
-	made, code, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := a.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
 		return a.Cards.Create.Stencil(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
@@ -68,7 +68,7 @@ func (a *API) CreateStencil(
 func (a *API) CreateDeck(
 	ctx context.Context, r *connect.Request[v1.CreateDeckRequest],
 ) (*connect.Response[v1.CreateDeckResponse], error) {
-	made, code, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := a.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Deck(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
@@ -79,10 +79,10 @@ func (a *API) CreateDeck(
 	}), nil
 }
 
-// makes is what making a deck and making a stencil have in common: the vault
+// createCardNote is what making a deck and making a stencil have in common: the vault
 // being shown, the window's hold on writing, and the error codes a file that
 // could not be made comes back as.
-func (a *API) makes(
+func (a *API) createCardNote(
 	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, *v1.ErrorCode, bool, error) {
 	showing, err := a.getShownVault()

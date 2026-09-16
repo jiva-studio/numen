@@ -130,7 +130,7 @@ func (a *API) WriteLink(
 	if err != nil {
 		return nil, err
 	}
-	link, err := a.writes(ctx, r.Msg.GetLink())
+	link, err := a.toDomainLink(ctx, r.Msg.GetLink())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -258,7 +258,7 @@ func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, er
 	}
 	out := make([]domain.Link, 0, len(links))
 	for _, l := range links {
-		link, err := a.writes(ctx, l)
+		link, err := a.toDomainLink(ctx, l)
 		if err != nil {
 			return nil, err
 		}
@@ -272,7 +272,7 @@ func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, er
 // The window names the note at the other end by the path it is filed under.
 // How much of that path the link carries is `note.GetAddress`: a name where it
 // means one note, and the path where it would mean another.
-func (a *API) writes(ctx context.Context, l *v1.Link) (domain.Link, error) {
+func (a *API) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	role, ok := roleOf(l.GetRole())
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link carries the role %v", l.GetRole())

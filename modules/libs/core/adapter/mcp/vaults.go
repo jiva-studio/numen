@@ -138,7 +138,7 @@ func addVaultAdd(server *sdk.Server, core Core) {
 		if !filepath.IsAbs(root) {
 			return nil, out{}, fmt.Errorf("%s is not an absolute path, and a vault is named by one", root)
 		}
-		if err := keepsNotes(root); err != nil {
+		if err := checkVaultRoot(root); err != nil {
 			return nil, out{}, err
 		}
 
@@ -297,9 +297,9 @@ func newVault(one vaults.KnownVault) Vault {
 	}
 }
 
-// keepsNotes refuses a root that is not a folder somebody keeps notes in: a
+// checkVaultRoot refuses a root that is not a folder somebody keeps notes in: a
 // filesystem root, and the person's home directory itself.
-func keepsNotes(root string) error {
+func checkVaultRoot(root string) error {
 	at := oneName(root)
 	if filepath.Dir(at) == at {
 		return fmt.Errorf(

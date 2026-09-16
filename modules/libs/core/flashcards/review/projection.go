@@ -432,7 +432,7 @@ func (s Simulation) Run(
 		// How much of the material stands learned at the close of the day, which
 		// is how far through it the day leaves a person, and how much of it
 		// comes back at that hour.
-		stands, back := reckoned.closes(cards, ends, out.Faces, answers[today])
+		stands, back := reckoned.countLearned(cards, ends, out.Faces, answers[today])
 		out.Through = append(out.Through, getLearnedShare(stands, out.Faces))
 		if out.Learns == NeverLearns && stands == out.Faces {
 			out.Learns = len(out.Load)
@@ -558,7 +558,7 @@ func (r *learnedCount) countBegun(c Schedule, at time.Time) {
 // A carried count is a fact about a card face's schedule, so the walk over the
 // whole material is made on the days the share is wanted. A count read off the
 // chance of recall is the same walk, and the share falls out of it.
-func (r *learnedCount) closes(
+func (r *learnedCount) countLearned(
 	cards []Schedule, at time.Time, faces int, wanted bool,
 ) (int, float64) {
 	if r.carried {

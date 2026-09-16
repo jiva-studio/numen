@@ -35,7 +35,7 @@ func spans(text, query string) []domain.Span {
 			if !slices.Equal(folded[from:to], wanted) {
 				continue
 			}
-			if !opens(folded, from) || (whole && !closes(folded, to)) {
+			if !isWordStart(folded, from) || (whole && !isWordEnd(folded, to)) {
 				continue
 			}
 			at = append(at, domain.Span{From: units[from], To: units[to]})
@@ -48,11 +48,11 @@ func spans(text, query string) []domain.Span {
 // what tells a word from a run of letters inside one.
 func wordly(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }
 
-// opens and closes say whether a span beginning or ending here is a whole
+// isWordStart and isWordEnd say whether a span beginning or ending here is a whole
 // word's beginning or end. The ends of the text are both.
-func opens(runes []rune, at int) bool { return at == 0 || !wordly(runes[at-1]) }
+func isWordStart(runes []rune, at int) bool { return at == 0 || !wordly(runes[at-1]) }
 
-func closes(runes []rune, at int) bool { return at == len(runes) || !wordly(runes[at]) }
+func isWordEnd(runes []rune, at int) bool { return at == len(runes) || !wordly(runes[at]) }
 
 // mergeSpans is the spans in the order they stand, with ones that touch or overlap
 // made into one. Two words typed can name the same characters.
