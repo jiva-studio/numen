@@ -17,7 +17,7 @@ export interface WindowStreamsDeps {
   /** What is being done behind the window, as cards to draw. */
   readonly setTasks: (said: readonly Task[]) => void
   /** A key pressed anywhere in the window. */
-  readonly handleKey: (press: KeyboardEvent) => void
+  readonly onKeyDown: (press: KeyboardEvent) => void
   /** Everything the window shows, counted again. */
   readonly count: () => Promise<void>
   /** The counting ended where it stands. */
@@ -42,7 +42,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   })
 
   onMounted(() => {
-    window.addEventListener('keydown', deps.handleKey)
+    window.addEventListener('keydown', deps.onKeyDown)
     void deps.count()
     // Whether a card can be asked about is the window's to know before a person
     // reaches for it, so it is asked once and the way in is drawn from it.
@@ -86,6 +86,6 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     open = false
     listening.abort()
     deps.stop()
-    window.removeEventListener('keydown', deps.handleKey)
+    window.removeEventListener('keydown', deps.onKeyDown)
   })
 }

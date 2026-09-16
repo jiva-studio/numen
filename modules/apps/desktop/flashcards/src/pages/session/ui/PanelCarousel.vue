@@ -15,7 +15,7 @@ const shown = defineModel<PanelPlace>('at', { required: true })
 const window_ = useTemplateRef<HTMLElement>('window')
 const middle = useTemplateRef<HTMLElement>('middle')
 
-const { taking, handleScroll, handlePointerDown, handlePointerMove, letGo } = useCarouselStrip({
+const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStrip({
   window: window_,
   middle,
   shown,
@@ -27,9 +27,9 @@ const { taking, handleScroll, handlePointerDown, handlePointerMove, letGo } = us
     ref="window"
     class="carousel"
     :class="{ 'carousel--taking': taking }"
-    @scroll="handleScroll"
-    @pointerdown="handlePointerDown"
-    @pointermove="handlePointerMove"
+    @scroll="onScroll"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
     @pointerup="letGo"
     @pointercancel="letGo"
   >

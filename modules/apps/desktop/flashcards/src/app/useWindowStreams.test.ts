@@ -47,7 +47,7 @@ describe('what the window follows', () => {
         useWindowStreams({
           reportError: () => {},
           setTasks: () => {},
-          handleKey: () => {},
+          onKeyDown: () => {},
           count: async () => {},
           stop: () => {},
           refresh: async () => {},

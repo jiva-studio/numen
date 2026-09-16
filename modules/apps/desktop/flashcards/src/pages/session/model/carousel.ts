@@ -107,7 +107,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     at.style.scrollBehavior = ''
   }
 
-  const handleResize = () => placeAt(shown.value)
+  const onResize = () => placeAt(shown.value)
 
   watch(
     () => shown.value,
@@ -120,7 +120,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
    * Where a hand has taken the strip. Past the halfway mark between two of the
    * stops it has asked for the nearer one, and the window is told as it crosses.
    */
-  const handleScroll = () => {
+  const onScroll = () => {
     const at = window_.value
     if (!at) return
     // A move in flight is over when it arrives, whatever time it took.
@@ -151,7 +151,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   let from = 0
   let was = 0
 
-  const handlePointerDown = (press: PointerEvent) => {
+  const onPointerDown = (press: PointerEvent) => {
     const at = window_.value
     if (!at || press.button !== 0) return
     taking.value = true
@@ -160,7 +160,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     at.setPointerCapture(press.pointerId)
   }
 
-  const handlePointerMove = (press: PointerEvent) => {
+  const onPointerMove = (press: PointerEvent) => {
     const at = window_.value
     if (!at || !taking.value) return
     at.scrollLeft = was - (press.clientX - from)
@@ -183,14 +183,14 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
 
   onMounted(() => {
     placeAt(shown.value)
-    window.addEventListener('resize', handleResize)
+    window.addEventListener('resize', onResize)
   })
 
   onBeforeUnmount(() => {
-    window.removeEventListener('resize', handleResize)
+    window.removeEventListener('resize', onResize)
     window.clearTimeout(sending)
     window.clearTimeout(settling)
   })
 
-  return { taking, handleScroll, handlePointerDown, handlePointerMove, letGo }
+  return { taking, onScroll, onPointerDown, onPointerMove, letGo }
 }

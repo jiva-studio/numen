@@ -27,7 +27,7 @@ const STILL = 4
 /** Where the hand went down, for telling a press from a drag across the card. */
 const from = ref<number | null>(null)
 
-const handlePointerDown = (press: PointerEvent) => {
+const onPointerDown = (press: PointerEvent) => {
   from.value = press.clientX
 }
 
@@ -49,7 +49,7 @@ const plain = (href: string) => {
  * A link inside a card is never followed — this window has one page — but a
  * link into the vault opens the reading beside the card on the note it names.
  */
-const handleFollow = (href: string, press: MouseEvent) => {
+const onFollow = (href: string, press: MouseEvent) => {
   press.preventDefault()
   // A name carrying no scheme points inside the vault, which is where the
   // reading beside the card is.
@@ -57,7 +57,7 @@ const handleFollow = (href: string, press: MouseEvent) => {
 }
 
 /** The card is turned over by pressing it, a press spent on a link aside. */
-const handleClick = (press: MouseEvent) => {
+const onClick = (press: MouseEvent) => {
   if (press.defaultPrevented) return
   // A hand that took the card across was moving the panel into view, and a
   // press that went nowhere is a person asking for the answer.
@@ -68,10 +68,10 @@ const handleClick = (press: MouseEvent) => {
 </script>
 
 <template>
-  <article class="card" @click="handleClick" @pointerdown="handlePointerDown">
-    <CardProse :text="front" @follow="handleFollow" />
+  <article class="card" @click="onClick" @pointerdown="onPointerDown">
+    <CardProse :text="front" @follow="onFollow" />
     <div v-if="shown" class="card__rule" />
-    <CardProse v-if="shown" :text="back" @follow="handleFollow" />
+    <CardProse v-if="shown" :text="back" @follow="onFollow" />
   </article>
 </template>
 
