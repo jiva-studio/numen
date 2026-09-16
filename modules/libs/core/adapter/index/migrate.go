@@ -22,10 +22,69 @@ import (
 //go:embed migration/*.sql
 var files embed.FS
 
-// ErrIndexAhead is an index at a schema this build does not carry. A version
-// only ever goes up, so this is an index some newer build migrated, and what is
-// in it is that build.s to read.
-var ErrIndexAhead = errors.New("this index was made by a newer version of numen")
+// dropping is the order objects come out of the index in. A virtual table goes
+// first because it owns shadow tables that stand in the catalogue beside it and
+// go when it goes, and a view goes before the tables it reads.
+var dropping = []struct {
+	kind  string
+	where string
+}{
+	{"TRIGGER", `type = 'trigger'`},
+	{"VIEW", `type = 'view'`},
+	{"TABLE", `type = 'table' AND sql LIKE 'CREATE VIRTUAL TABLE%'`},
+	{"TABLE", `type = 'table'`},
+}
+
+// empty takes everything out of the index and puts its version back to nothing,
+// so the migrations run from the first file.
+//
+// The catalogue is read again after every drop: a shadow table is listed in it
+// and is gone once the virtual table that owns it is dropped.
+func empty(ctx context.Context, db *sql.DB) error {
+	// A reference to a table already dropped holds nothing back while every
+	// table is going. The index writes over one connection, so the setting and
+	// the drops meet on it.
+	if _, err := writing.Exec(ctx, db, "PRAGMA foreign_keys = off"); err != nil {
+		return fmt.Errorf("emptying the index: %w", err)
+	}
+	dropped := dropEverything(ctx, db)
+	_, back := writing.Exec(ctx, db, "PRAGMA foreign_keys = on")
+	if dropped != nil {
+		return dropped
+	}
+	if back != nil {
+		return fmt.Errorf("putting the index's references back: %w", back)
+	}
+	if _, err := writing.Exec(ctx, db, "PRAGMA user_version = 0"); err != nil {
+		return fmt.Errorf("putting the index back to no schema: %w", err)
+	}
+	return nil
+}
+
+// dropEverything takes every object the catalogue names out of the index.
+func dropEverything(ctx context.Context, db *sql.DB) error {
+	for _, one := range dropping {
+		for {
+			var name string
+			err := db.QueryRowContext(ctx,
+				`SELECT name FROM sqlite_master WHERE `+one.where+
+					` AND name NOT LIKE 'sqlite_%' LIMIT 1`).Scan(&name)
+			if errors.Is(err, sql.ErrNoRows) {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("what this index holds: %w", err)
+			}
+			// An identifier is not a parameter, and this one is the catalogue's
+			// own.
+			if _, err := writing.Exec(ctx, db,
+				fmt.Sprintf("DROP %s IF EXISTS %q", one.kind, name)); err != nil {
+				return fmt.Errorf("dropping %s: %w", name, err)
+			}
+		}
+	}
+	return nil
+}
 
 // A migration is one numbered file, applied once, in order.
 //
@@ -66,9 +125,14 @@ func migrate(ctx context.Context, db *sql.DB) error {
 	if len(available) > 0 {
 		newest = available[len(available)-1].version
 	}
+	// An index at a schema this build does not carry holds what it cannot read.
+	// It is a cache: what it holds is a reading of the vault, and the next scan
+	// reads the vault again. It is emptied and migrated from the first file.
 	if current > newest {
-		return fmt.Errorf("%w: it is at schema %d and this build carries %d",
-			ErrIndexAhead, current, newest)
+		if err := empty(ctx, db); err != nil {
+			return err
+		}
+		current = 0
 	}
 
 	for _, m := range available {
