@@ -7,6 +7,7 @@ package bind
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -15,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -31,7 +33,9 @@ var (
 )
 
 type held struct {
-	port   int
+	port int
+	// gone says the server stopped on its own, so the port answers nothing.
+	gone   atomic.Bool
 	stop   context.CancelFunc
 	opened *editor.Installation
 	server *http.Server
@@ -125,14 +129,24 @@ func Start(dir string) (int, error) {
 			numenv1connect.FileServiceName,
 		)),
 	}
-	go func() { _ = server.Serve(listener) }()
-
 	running = &held{
 		port:   addr.Port,
 		stop:   stop,
 		opened: opened,
 		server: server,
 	}
+	standing := running
+	// Start has already answered with the port, so a serve that ends on its own
+	// leaves the caller holding a number nothing listens on. It is said where
+	// the platform collects it, and the port stops being answered.
+	go func() {
+		err := server.Serve(listener)
+		if errors.Is(err, http.ErrServerClosed) {
+			return
+		}
+		standing.gone.Store(true)
+		cfg.ErrorHandler(err)
+	}()
 	return running.port, nil
 }
 
@@ -158,7 +172,7 @@ func Stop() error {
 func Port() int {
 	mu.Lock()
 	defer mu.Unlock()
-	if running == nil {
+	if running == nil || running.gone.Load() {
 		return 0
 	}
 	return running.port
