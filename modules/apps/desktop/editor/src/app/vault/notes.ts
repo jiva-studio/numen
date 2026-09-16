@@ -86,7 +86,7 @@ export const notesCore: NoteOperations = {
   resolve: async (from, writtenAddresses) => {
     const answer = await notes.resolveAddresses({ from, written: [...writtenAddresses] })
     return new Map(
-      answer.resolved.filter((one) => !one.crossed).map((one) => [one.written, one.path]),
+      answer.resolved.filter((one) => !one.isCrossed).map((one) => [one.written, one.path]),
     )
   },
 }

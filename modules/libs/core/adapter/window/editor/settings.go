@@ -105,7 +105,7 @@ func newWireModels(held []port.Model) []*v1.Model {
 			Name:      one.Name,
 			Title:     one.Title,
 			Shelf:     one.Shelf,
-			ByDefault: one.Default,
+			IsDefault: one.Default,
 			Writes:    writes(one.Writes),
 			Presence:  presences[one.Presence],
 		})

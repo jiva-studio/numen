@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjcKBFNjYW4SDQoFcmVhZHkYASABKAgSDQoFZXJyb3IYAiABKAkSEQoJdW53YXRjaGVkGAMgASgJIk8KDUluZGV4Q292ZXJhZ2USEwoLY2h1bmtfY291bnQYASABKAMSFgoOZW1iZWRkZWRfY291bnQYAiABKAMSEQoJZW1iZWRkaW5nGAMgASgIIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZSIgCgRNb3ZlEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkywAEKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjoKBFNjYW4SEAoIaXNfcmVhZHkYASABKAgSDQoFZXJyb3IYAiABKAkSEQoJdW53YXRjaGVkGAMgASgJIlIKDUluZGV4Q292ZXJhZ2USEwoLY2h1bmtfY291bnQYASABKAMSFgoOZW1iZWRkZWRfY291bnQYAiABKAMSFAoMaXNfZW1iZWRkaW5nGAMgASgIIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZSIgCgRNb3ZlEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkywAEKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -89,11 +89,11 @@ export const GetVaultStateResponseSchema: GenMessage<GetVaultStateResponse> = /*
  */
 export type Scan = Message<"numen.v1.Scan"> & {
   /**
-   * Ready is set when the scan has finished.
+   * IsReady is set when the scan has finished.
    *
-   * @generated from field: bool ready = 1;
+   * @generated from field: bool is_ready = 1;
    */
-  ready: boolean;
+  isReady: boolean;
 
   /**
    * Error is why the scan stopped, when it stopped for a reason.
@@ -148,9 +148,9 @@ export type IndexCoverage = Message<"numen.v1.IndexCoverage"> & {
    * False for an installation with no model, where the vault is searched by its
    * words alone.
    *
-   * @generated from field: bool embedding = 3;
+   * @generated from field: bool is_embedding = 3;
    */
-  embedding: boolean;
+  isEmbedding: boolean;
 };
 
 /**

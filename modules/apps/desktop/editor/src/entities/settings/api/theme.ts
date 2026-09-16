@@ -81,7 +81,7 @@ export const themes: Themes = {
         name: one.name,
         title: one.title,
         isBuiltIn: ships[one.shelf],
-        isPinned: one.pinned,
+        isPinned: one.isPinned,
       })),
       applied: answer.applied,
       mode: WORDED[answer.mode] ?? 'system',

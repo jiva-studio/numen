@@ -365,7 +365,7 @@ type Settings struct {
 	// The share of cards recalled when they come round again.
 	Retention float64 `protobuf:"fixed64,6,opt,name=retention,proto3" json:"retention,omitempty"`
 	// Whether days are made to resemble each other.
-	EvenLoad bool `protobuf:"varint,7,opt,name=even_load,json=evenLoad,proto3" json:"even_load,omitempty"`
+	HasEvenLoad bool `protobuf:"varint,7,opt,name=has_even_load,json=hasEvenLoad,proto3" json:"has_even_load,omitempty"`
 	// What a day's budget is counted in. Unspecified is the default, which
 	// charges a card face once a review day.
 	Counts BudgetUnit `protobuf:"varint,8,opt,name=counts,proto3,enum=numen.v1.BudgetUnit" json:"counts,omitempty"`
@@ -463,9 +463,9 @@ func (x *Settings) GetRetention() float64 {
 	return 0
 }
 
-func (x *Settings) GetEvenLoad() bool {
+func (x *Settings) GetHasEvenLoad() bool {
 	if x != nil {
-		return x.EvenLoad
+		return x.HasEvenLoad
 	}
 	return false
 }
@@ -760,8 +760,8 @@ type Point struct {
 	// The share of the material learned by this day under the rule the settings
 	// name, and whether the pace this place sets learns every card face that can
 	// be learned by it.
-	Through float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
-	Enough  bool    `protobuf:"varint,6,opt,name=enough,proto3" json:"enough,omitempty"`
+	Through  float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
+	IsEnough bool    `protobuf:"varint,6,opt,name=is_enough,json=isEnough,proto3" json:"is_enough,omitempty"`
 	// Every budget that closed the day here. An empty list is a day that asked
 	// for every card there was, so the material itself ran out, and a budget the
 	// goal does not name is never here.
@@ -867,9 +867,9 @@ func (x *Point) GetThrough() float64 {
 	return 0
 }
 
-func (x *Point) GetEnough() bool {
+func (x *Point) GetIsEnough() bool {
 	if x != nil {
-		return x.Enough
+		return x.IsEnough
 	}
 	return false
 }
@@ -1940,15 +1940,15 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xdf\x03\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xe6\x03\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
 	"\rminutes_a_day\x18\x03 \x01(\x05R\vminutesADay\x12\x1a\n" +
 	"\tnew_a_day\x18\x04 \x01(\x05R\anewADay\x12\"\n" +
 	"\rreviews_a_day\x18\x05 \x01(\x05R\vreviewsADay\x12\x1c\n" +
-	"\tretention\x18\x06 \x01(\x01R\tretention\x12\x1b\n" +
-	"\teven_load\x18\a \x01(\bR\bevenLoad\x12,\n" +
+	"\tretention\x18\x06 \x01(\x01R\tretention\x12\"\n" +
+	"\rhas_even_load\x18\a \x01(\bR\vhasEvenLoad\x12,\n" +
 	"\x06counts\x18\b \x01(\x0e2\x14.numen.v1.BudgetUnitR\x06counts\x12\x18\n" +
 	"\abacklog\x18\t \x01(\x05R\abacklog\x120\n" +
 	"\x04load\x18\n" +
@@ -1976,14 +1976,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
 	"\aunbegun\x18\n" +
-	" \x01(\x05R\aunbegun\"\xd5\x02\n" +
+	" \x01(\x05R\aunbegun\"\xda\x02\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
 	"\bretained\x18\x03 \x01(\x01R\bretained\x12\x12\n" +
 	"\x04owed\x18\x04 \x01(\x05R\x04owed\x12\x18\n" +
-	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x16\n" +
-	"\x06enough\x18\x06 \x01(\bR\x06enough\x12,\n" +
+	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x1b\n" +
+	"\tis_enough\x18\x06 \x01(\bR\bisEnough\x12,\n" +
 	"\x06closed\x18\a \x03(\x0e2\x14.numen.v1.BudgetNameR\x06closed\x12\x16\n" +
 	"\x06clears\x18\b \x01(\x05R\x06clears\x12\x18\n" +
 	"\abacklog\x18\t \x03(\x05R\abacklog\x12\x18\n" +

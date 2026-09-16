@@ -230,7 +230,7 @@ type Model struct {
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	Shelf string `protobuf:"bytes,4,opt,name=shelf,proto3" json:"shelf,omitempty"`
 	// Set on the model an installation nobody has configured runs on.
-	ByDefault bool `protobuf:"varint,5,opt,name=by_default,json=byDefault,proto3" json:"by_default,omitempty"`
+	IsDefault bool `protobuf:"varint,5,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
 	// What choosing it writes. One model is several keys where the model decides
 	// more than its own name.
 	Writes []*Setting `protobuf:"bytes,6,rep,name=writes,proto3" json:"writes,omitempty"`
@@ -298,9 +298,9 @@ func (x *Model) GetShelf() string {
 	return ""
 }
 
-func (x *Model) GetByDefault() bool {
+func (x *Model) GetIsDefault() bool {
 	if x != nil {
-		return x.ByDefault
+		return x.IsDefault
 	}
 	return false
 }
@@ -668,7 +668,7 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x14\n" +
 	"\x05shelf\x18\x04 \x01(\tR\x05shelf\x12\x1d\n" +
 	"\n" +
-	"by_default\x18\x05 \x01(\bR\tbyDefault\x12)\n" +
+	"is_default\x18\x05 \x01(\bR\tisDefault\x12)\n" +
 	"\x06writes\x18\x06 \x03(\v2\x11.numen.v1.SettingR\x06writes\x12.\n" +
 	"\bpresence\x18\a \x01(\x0e2\x12.numen.v1.PresenceR\bpresence\"/\n" +
 	"\aSetting\x12\x0e\n" +

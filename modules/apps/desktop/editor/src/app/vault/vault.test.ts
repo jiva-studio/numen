@@ -267,7 +267,7 @@ describe('vaults domain', () => {
     const fromCore = await core.vaults()
     expect(fromCore.showing).toBe('v1')
 
-    asked.chooseFolder.mockResolvedValue({ chose: true, path: '/v2' })
+    asked.chooseFolder.mockResolvedValue({ isChosen: true, path: '/v2' })
     expect(await vaults.choose('Pick')).toBe('/v2')
 
     asked.addVault.mockResolvedValue({ vault: { id: 'v2', name: 'V2' } })

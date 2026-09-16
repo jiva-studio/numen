@@ -18,7 +18,7 @@ export const vaults: Vaults = {
   },
   choose: async (title) => {
     const answer = await vaultsService.chooseFolder({ title, startingAt: '' })
-    return answer.chose ? answer.path : ''
+    return answer.isChosen ? answer.path : ''
   },
   add: async (path, called) => mapVaultResult(await vaultsService.addVault({ path, name: called })),
   rename: async (id, called) =>

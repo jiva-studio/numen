@@ -94,7 +94,7 @@ message Vault {
 
   // Set when nothing is at the path. The vault stays on the list, and the
   // folder is found again if it comes back.
-  bool missing = 4;
+  bool is_missing = 4;
 }
 
 message ListVaultsRequest {}
@@ -121,7 +121,7 @@ message ChooseFolderResponse {
 
   // Set when the person chose a folder. False is a dialog they closed, which
   // is an ordinary answer.
-  bool chose = 2;
+  bool is_chosen = 2;
 }
 
 message AddVaultRequest {

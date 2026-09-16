@@ -124,7 +124,7 @@ const settingsOf = (settings: SettingsMessage | undefined): Settings =>
         counts: COUNTED[settings.counts] ?? DEFAULTS.counts,
         backlog: settings.backlog,
         load: settings.load,
-        evenLoad: settings.evenLoad,
+        evenLoad: settings.hasEvenLoad,
         learned: LEARNED[settings.learned] ?? DEFAULTS.learned,
         interval: settings.interval,
       }
@@ -152,7 +152,7 @@ const parsePoint = (one: PointMessage): Point => ({
   retained: one.retained,
   owed: one.owed,
   through: one.through,
-  enough: one.enough,
+  enough: one.isEnough,
   closed: one.closed,
   clears: one.clears,
   learned: one.learned,

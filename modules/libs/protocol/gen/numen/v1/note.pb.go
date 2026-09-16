@@ -465,7 +465,7 @@ type Neighbour struct {
 	// Set when both notes name this relationship, each in its own words. The
 	// label is then the one the note in focus wrote, and the arrow drawn on the
 	// line points at the note it was written about.
-	Mutual bool `protobuf:"varint,5,opt,name=mutual,proto3" json:"mutual,omitempty"`
+	IsMutual bool `protobuf:"varint,5,opt,name=is_mutual,json=isMutual,proto3" json:"is_mutual,omitempty"`
 	// Which of three the note is, so a client draws a deck and a stencil as what
 	// they are.
 	Type          NoteType `protobuf:"varint,6,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
@@ -531,9 +531,9 @@ func (x *Neighbour) GetThrough() string {
 	return ""
 }
 
-func (x *Neighbour) GetMutual() bool {
+func (x *Neighbour) GetIsMutual() bool {
 	if x != nil {
-		return x.Mutual
+		return x.IsMutual
 	}
 	return false
 }
@@ -659,10 +659,10 @@ type ResolvedAddress struct {
 	// an address may land outside the vault it was written in.
 	Vault string `protobuf:"bytes,3,opt,name=vault,proto3" json:"vault,omitempty"`
 	// Set where that vault is not the one this call was answered about.
-	Crossed bool `protobuf:"varint,4,opt,name=crossed,proto3" json:"crossed,omitempty"`
+	IsCrossed bool `protobuf:"varint,4,opt,name=is_crossed,json=isCrossed,proto3" json:"is_crossed,omitempty"`
 	// Set where several notes answer to the name. It reaches the nearest of them,
 	// which is a fact about where the notes currently sit.
-	Ambiguous     bool `protobuf:"varint,5,opt,name=ambiguous,proto3" json:"ambiguous,omitempty"`
+	IsAmbiguous   bool `protobuf:"varint,5,opt,name=is_ambiguous,json=isAmbiguous,proto3" json:"is_ambiguous,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -718,16 +718,16 @@ func (x *ResolvedAddress) GetVault() string {
 	return ""
 }
 
-func (x *ResolvedAddress) GetCrossed() bool {
+func (x *ResolvedAddress) GetIsCrossed() bool {
 	if x != nil {
-		return x.Crossed
+		return x.IsCrossed
 	}
 	return false
 }
 
-func (x *ResolvedAddress) GetAmbiguous() bool {
+func (x *ResolvedAddress) GetIsAmbiguous() bool {
 	if x != nil {
-		return x.Ambiguous
+		return x.IsAmbiguous
 	}
 	return false
 }
@@ -1820,25 +1820,26 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
 	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x121\n" +
 	"\n" +
-	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xc3\x01\n" +
+	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xc8\x01\n" +
 	"\tNeighbour\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12\"\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
-	"\athrough\x18\x04 \x01(\tR\athrough\x12\x16\n" +
-	"\x06mutual\x18\x05 \x01(\bR\x06mutual\x12&\n" +
+	"\athrough\x18\x04 \x01(\tR\athrough\x12\x1b\n" +
+	"\tis_mutual\x18\x05 \x01(\bR\bisMutual\x12&\n" +
 	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"G\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
 	"\awritten\x18\x02 \x03(\tR\awritten\"Q\n" +
 	"\x18ResolveAddressesResponse\x125\n" +
-	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\"\x8d\x01\n" +
+	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\"\x97\x01\n" +
 	"\x0fResolvedAddress\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
-	"\x05vault\x18\x03 \x01(\tR\x05vault\x12\x18\n" +
-	"\acrossed\x18\x04 \x01(\bR\acrossed\x12\x1c\n" +
-	"\tambiguous\x18\x05 \x01(\bR\tambiguous\"+\n" +
+	"\x05vault\x18\x03 \x01(\tR\x05vault\x12\x1d\n" +
+	"\n" +
+	"is_crossed\x18\x04 \x01(\bR\tisCrossed\x12!\n" +
+	"\fis_ambiguous\x18\x05 \x01(\bR\visAmbiguous\"+\n" +
 	"\x13ListHeadingsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"J\n" +
 	"\x14ListHeadingsResponse\x122\n" +

@@ -77,7 +77,7 @@ message Theme {
 
   // Set for a theme that declares `color-scheme` itself. Light and dark are
   // the theme's own, and the mode has nothing left to choose.
-  bool pinned = 4;
+  bool is_pinned = 4;
 }
 
 // Bounds is how far a size goes, at each end. A number outside them is

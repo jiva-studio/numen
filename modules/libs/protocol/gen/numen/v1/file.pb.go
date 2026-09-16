@@ -242,7 +242,7 @@ type Entry struct {
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Whether the entry holds other entries. A folder carries no source and
 	// nothing is made from it.
-	Folder bool `protobuf:"varint,3,opt,name=folder,proto3" json:"folder,omitempty"`
+	IsFolder bool `protobuf:"varint,3,opt,name=is_folder,json=isFolder,proto3" json:"is_folder,omitempty"`
 	// What the vault holds here.
 	Kind SourceKind `protobuf:"varint,4,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
 	// Which of three the note is. It says nothing about an entry that is not a
@@ -296,9 +296,9 @@ func (x *Entry) GetName() string {
 	return ""
 }
 
-func (x *Entry) GetFolder() bool {
+func (x *Entry) GetIsFolder() bool {
 	if x != nil {
-		return x.Folder
+		return x.IsFolder
 	}
 	return false
 }
@@ -1014,11 +1014,11 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x10ListFilesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\">\n" +
 	"\x11ListFilesResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x99\x01\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x9e\x01\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
-	"\x06folder\x18\x03 \x01(\bR\x06folder\x12(\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
+	"\tis_folder\x18\x03 \x01(\bR\bisFolder\x12(\n" +
 	"\x04kind\x18\x04 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12&\n" +
 	"\x04type\x18\x05 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\",\n" +
 	"\x14ListFileKindsRequest\x12\x14\n" +

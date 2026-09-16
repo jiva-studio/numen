@@ -104,7 +104,7 @@ export const mapNeighbourhood = (answer: NeighbourhoodMessage): Neighbourhood =>
         seat,
         label: one.label,
         through: one.through,
-        isMutual: one.mutual,
+        isMutual: one.isMutual,
       },
     ]
   }),

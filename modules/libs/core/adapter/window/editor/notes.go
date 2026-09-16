@@ -203,12 +203,12 @@ func (a *API) GetNeighbourhood(
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Neighbour{
-			Note:    noteOf(related.NoteRef),
-			Seat:    seatOf(related.Seat),
-			Label:   related.Label,
-			Through: related.Parent,
-			Mutual:  related.Mutual,
-			Type:    typeOf(types[related.Path]),
+			Note:     noteOf(related.NoteRef),
+			Seat:     seatOf(related.Seat),
+			Label:    related.Label,
+			Through:  related.Parent,
+			IsMutual: related.Mutual,
+			Type:     typeOf(types[related.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil
@@ -240,11 +240,11 @@ func (a *API) ResolveAddresses(
 		said[written] = true
 		vault, crossed := one.InVault(showing.ID)
 		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
-			Written:   written,
-			Path:      one.To,
-			Vault:     string(vault),
-			Crossed:   crossed,
-			Ambiguous: one.Ambiguous,
+			Written:     written,
+			Path:        one.To,
+			Vault:       string(vault),
+			IsCrossed:   crossed,
+			IsAmbiguous: one.Ambiguous,
 		})
 	}
 	return connect.NewResponse(out), nil

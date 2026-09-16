@@ -76,7 +76,7 @@ message Model {
   string shelf = 4;
 
   // Set on the model an installation nobody has configured runs on.
-  bool by_default = 5;
+  bool is_default = 5;
 
   // What choosing it writes. One model is several keys where the model decides
   // more than its own name.

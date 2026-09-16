@@ -72,7 +72,7 @@ export const settingsCore: SettingsPort = {
         name: one.name,
         title: one.title,
         shelf: one.shelf,
-        byDefault: one.byDefault,
+        byDefault: one.isDefault,
         writes: one.writes.map((w) => ({ at: w.at, value: w.value })),
         presence: fetched[one.presence],
       })),

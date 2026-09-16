@@ -19,7 +19,7 @@ const createNeighbourhood = (focus: string, neighbours: Neighbour[]) =>
       seat,
       label,
       through,
-      mutual: mutual ?? false,
+      isMutual: mutual ?? false,
     })),
   })
 

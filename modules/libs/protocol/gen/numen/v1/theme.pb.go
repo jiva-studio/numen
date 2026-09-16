@@ -152,7 +152,7 @@ type Theme struct {
 	Shelf Shelf `protobuf:"varint,3,opt,name=shelf,proto3,enum=numen.v1.Shelf" json:"shelf,omitempty"`
 	// Set for a theme that declares `color-scheme` itself. Light and dark are
 	// the theme's own, and the mode has nothing left to choose.
-	Pinned        bool `protobuf:"varint,4,opt,name=pinned,proto3" json:"pinned,omitempty"`
+	IsPinned      bool `protobuf:"varint,4,opt,name=is_pinned,json=isPinned,proto3" json:"is_pinned,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -208,9 +208,9 @@ func (x *Theme) GetShelf() Shelf {
 	return Shelf_SHELF_UNSPECIFIED
 }
 
-func (x *Theme) GetPinned() bool {
+func (x *Theme) GetIsPinned() bool {
 	if x != nil {
-		return x.Pinned
+		return x.IsPinned
 	}
 	return false
 }
@@ -700,12 +700,12 @@ var File_numen_v1_theme_proto protoreflect.FileDescriptor
 
 const file_numen_v1_theme_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/theme.proto\x12\bnumen.v1\"p\n" +
+	"\x14numen/v1/theme.proto\x12\bnumen.v1\"u\n" +
 	"\x05Theme\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12%\n" +
-	"\x05shelf\x18\x03 \x01(\x0e2\x0f.numen.v1.ShelfR\x05shelf\x12\x16\n" +
-	"\x06pinned\x18\x04 \x01(\bR\x06pinned\"2\n" +
+	"\x05shelf\x18\x03 \x01(\x0e2\x0f.numen.v1.ShelfR\x05shelf\x12\x1b\n" +
+	"\tis_pinned\x18\x04 \x01(\bR\bisPinned\"2\n" +
 	"\x06Bounds\x12\x14\n" +
 	"\x05least\x18\x01 \x01(\x01R\x05least\x12\x12\n" +
 	"\x04most\x18\x02 \x01(\x01R\x04most\"\x13\n" +

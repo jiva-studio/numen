@@ -30,7 +30,7 @@ export const bookFormat = (of: BookFormats): BookFormat | DocumentFormat | undef
 export const mapEntry = (one: EntryMessage): Entry => ({
   path: one.path,
   name: one.name,
-  folder: one.folder,
+  folder: one.isFolder,
   kind: sourceKind(one.kind),
   type: noteType(one.type),
 })

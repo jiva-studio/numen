@@ -16,7 +16,7 @@ export interface Settings {
   retention: number
   /** What each day of the week carries, in per cent, under the day's own name. */
   load: Record<string, number>
-  evenLoad: boolean
+  hasEvenLoad: boolean
 }
 
 /** The same, as the schema carries them. */

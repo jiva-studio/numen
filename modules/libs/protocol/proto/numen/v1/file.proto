@@ -67,7 +67,7 @@ message Entry {
 
   // Whether the entry holds other entries. A folder carries no source and
   // nothing is made from it.
-  bool folder = 3;
+  bool is_folder = 3;
 
   // What the vault holds here.
   SourceKind kind = 4;

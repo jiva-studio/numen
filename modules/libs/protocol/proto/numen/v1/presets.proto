@@ -133,7 +133,7 @@ message Settings {
   double retention = 6;
 
   // Whether days are made to resemble each other.
-  bool even_load = 7;
+  bool has_even_load = 7;
 
   // What a day's budget is counted in. Unspecified is the default, which
   // charges a card face once a review day.
@@ -312,7 +312,7 @@ message Point {
   // name, and whether the pace this place sets learns every card face that can
   // be learned by it.
   double through = 5;
-  bool enough = 6;
+  bool is_enough = 6;
 
   // Every budget that closed the day here. An empty list is a day that asked
   // for every card there was, so the material itself ran out, and a budget the

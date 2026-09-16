@@ -171,7 +171,7 @@ func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	var out *v1.WatchCardsDueResponse
 	for at := time.Now(); time.Since(at) < 30*time.Second; {
 		out = readCardsDue(t, client)
-		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultCardsDue).GetReading) {
+		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultCardsDue).GetIsReading) {
 			return out
 		}
 		time.Sleep(20 * time.Millisecond)
@@ -419,7 +419,7 @@ func TestAVaultIsReadBeforeItIsCounted(t *testing.T) {
 	// Nothing is counted from a walk half done, so the first opening finds every
 	// row waiting on one.
 	for _, one := range readCardsDue(t, newFlashcardsClient(t, api)).GetVaults() {
-		if !one.GetReading() || one.GetUnread() != "" {
+		if !one.GetIsReading() || one.GetUnread() != "" {
 			t.Errorf("a vault came back %+v", one)
 		}
 	}
@@ -472,7 +472,7 @@ func TestAVaultTheIndexDoesNotCarryIsUncountedWhereNothingReadsIt(t *testing.T) 
 
 	out := front(t, api)
 	one := out.GetVaults()[0]
-	if one.GetReading() || one.GetUnread() == "" {
+	if one.GetIsReading() || one.GetUnread() == "" {
 		t.Errorf("a vault nothing reads came back %+v", one)
 	}
 }
@@ -1289,7 +1289,7 @@ func session(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	}
 	held := sat{asked: len(out.Msg.GetAsked())}
 	for _, one := range out.Msg.GetAsked() {
-		if !one.GetSeen() {
+		if !one.GetIsSeen() {
 			held.fresh++
 			continue
 		}

@@ -34,7 +34,7 @@ const vault = (id: string, fields: Partial<VaultCounts> = {}): VaultCounts => ({
     },
   ],
   unread: '',
-  reading: false,
+  isReading: false,
   ...fields,
 })
 
@@ -168,7 +168,7 @@ describe('counting what every vault owes', () => {
 
     void one.count()
     front.sendCount(createVaultList(vault('01A')))
-    front.sendCount(count(vault('01A', { reading: true, faces: 0, due: 0, new: 0 })))
+    front.sendCount(count(vault('01A', { isReading: true, faces: 0, due: 0, new: 0 })))
     front.endCounts()
     await settles()
 
@@ -232,7 +232,7 @@ describe('counting what every vault owes', () => {
 
     const first = one.count()
     front.sendCount(createVaultList(vault('01A')))
-    front.sendCount(count(vault('01A', { reading: true })))
+    front.sendCount(count(vault('01A', { isReading: true })))
     await settles()
 
     // The reading finished and woke the counting while the first was still on.

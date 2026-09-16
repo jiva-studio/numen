@@ -120,7 +120,7 @@ message Neighbour {
   // Set when both notes name this relationship, each in its own words. The
   // label is then the one the note in focus wrote, and the arrow drawn on the
   // line points at the note it was written about.
-  bool mutual = 5;
+  bool is_mutual = 5;
 
   // Which of three the note is, so a client draws a deck and a stencil as what
   // they are.
@@ -157,11 +157,11 @@ message ResolvedAddress {
   string vault = 3;
 
   // Set where that vault is not the one this call was answered about.
-  bool crossed = 4;
+  bool is_crossed = 4;
 
   // Set where several notes answer to the name. It reaches the nearest of them,
   // which is a fact about where the notes currently sit.
-  bool ambiguous = 5;
+  bool is_ambiguous = 5;
 }
 
 message ListHeadingsRequest {

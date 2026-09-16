@@ -257,14 +257,14 @@ func describeTasks(list []task.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, at := range list {
 		out = append(out, &v1.Task{
-			Id:    at.ID,
-			Doing: at.Doing,
-			About: at.About,
-			Done:  at.Count,
-			Total: at.Total,
-			Error: at.Error,
-			Asked: at.Asked,
-			Unit:  unitOf(at.Unit),
+			Id:      at.ID,
+			Doing:   at.Doing,
+			About:   at.About,
+			Done:    at.Count,
+			Total:   at.Total,
+			Error:   at.Error,
+			IsAsked: at.Asked,
+			Unit:    unitOf(at.Unit),
 		})
 	}
 	return out
