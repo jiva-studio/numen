@@ -78,7 +78,7 @@ Buf's standard rules want a request and a response message of its own for every 
 
 ### No field changes name at this boundary
 
-A field carries the name it has in the core across the wire. A stretch and a span are not an exception to that: they are two things, they keep their own names on both sides, and the wire carries each under the name it has.
+A field carries the name it has in the core across the wire.
 
 A type's own name is another matter, because a proto package is one flat namespace where the core has packages that qualify a name for it. Two enums are where this bites — the theme's way of choosing light or dark, and the search's mode — and the second of them carries its subject in front of it on the wire. The field is named the same on both sides of both.
 

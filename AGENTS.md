@@ -227,8 +227,6 @@ Specific term rules:
 | `make` (frontend) | `create` | factory functions in TS/Vue |
 
 Domain distinctions:
-- **`stretch`** is a run of a source's text where it stands, in bytes. **`span`**
-  is that same run as a client counts it, `from` and `to` in UTF-16 code units.
 - **`address`** is scheme and value, the only thing that says where a link goes (`domain.Address`).
   **`link`** is the relationship as written in a file.
 - **`overtaken`** is the tab state where a file no longer holds
