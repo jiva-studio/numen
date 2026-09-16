@@ -93,10 +93,9 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       const found = await question()
       if (!mine.current) return
       into(found)
-    } catch (error) {
+    } catch {
       if (!mine.current) return
       into([])
-      console.error(error)
       failureMessages.value = { ...failureMessages.value, [group]: words.notAsked }
     } finally {
       if (mine.current) isWorking.value = { ...isWorking.value, [group]: false }

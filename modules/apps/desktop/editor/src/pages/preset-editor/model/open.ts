@@ -54,8 +54,7 @@ export const readPreset = async (
   let answer
   try {
     answer = await core.read(one.path.value)
-  } catch (error) {
-    console.error(error)
+  } catch {
     one.flight.errorMessage.value = words.unreachable
     one.curves.waiting.value = false
     return

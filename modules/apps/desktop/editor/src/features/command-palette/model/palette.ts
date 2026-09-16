@@ -92,10 +92,9 @@ export function useCommandPalette(
       if (!mine.current) return
       known.value = listed.vaults
       showing.value = listed.showing
-    } catch (error) {
+    } catch {
       if (!mine.current) return
       known.value = []
-      console.error(error)
       failureMessage.value = words.notAsked
     } finally {
       if (mine.current) isWorking.value = false
@@ -130,10 +129,9 @@ export function useCommandPalette(
       const names = await core.names(query, EACH)
       if (!mine.current) return
       found.value = names
-    } catch (error) {
+    } catch {
       if (!mine.current) return
       found.value = []
-      console.error(error)
       failureMessage.value = words.notAsked
     } finally {
       if (mine.current) isWorking.value = false

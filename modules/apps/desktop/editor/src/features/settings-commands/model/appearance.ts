@@ -75,10 +75,7 @@ export function windowAppearance(
     try {
       const css = await fileOf(theme)
       if (mine.current) dressed.theme.textContent = css
-    } catch (error) {
-      // The reason goes to the console; the person is told in the window's
-      // own voice.
-      console.error(error)
+    } catch {
       if (mine.current) write(words.unworn, 'error')
     }
   }
@@ -127,8 +124,7 @@ export function windowAppearance(
     let answer: Appearance
     try {
       answer = await core.getAppearance()
-    } catch (error) {
-      console.error(error)
+    } catch {
       write(words.unlisted, 'error')
       return
     }

@@ -43,9 +43,8 @@ export const sendWrite = async (
   let answer
   try {
     answer = await core.write(path, settings, flight.at)
-  } catch (error) {
+  } catch {
     flight.errorMessage.value = words.unwritten
-    console.error(error)
     return
   }
   if (answer.changed) {

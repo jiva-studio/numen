@@ -100,8 +100,7 @@ const fetchCurve = async (
   let answer: Curve
   try {
     answer = await core.curve(path, settings)
-  } catch (error) {
-    console.error(error)
+  } catch {
     if (!mine.current) return
     setErrorMessage(words.noCurve)
     state.waiting.value = false
