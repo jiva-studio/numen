@@ -191,8 +191,8 @@ const onKey = (event: KeyboardEvent) => {
    from. */
 .actions {
   /* How wide the panel is and how much of the palette its list takes. */
-  --panel-width: 280px;
-  --panel-tallest: 240px;
+  --panel-width: 17.5rem;
+  --panel-tallest: 15rem;
 
   position: absolute;
   inset-block-end: var(--numen-inset);

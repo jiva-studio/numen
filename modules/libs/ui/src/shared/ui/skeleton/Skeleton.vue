@@ -38,7 +38,7 @@ const skeletonStyle = computed(() => ({
 
 <style scoped>
 .skeleton {
-  --cycle: 1600ms;
+  --cycle: var(--numen-wait-shimmer);
 
   display: inline-block;
   flex: none;

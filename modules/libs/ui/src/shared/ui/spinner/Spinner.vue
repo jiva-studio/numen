@@ -16,7 +16,7 @@
    own middle. The colour is whatever it stands on, and `--spinner-size` and
    `--spinner-thickness` are whatever holds it. */
 .spinner {
-  --cycle: 800ms;
+  --cycle: var(--numen-wait-spin);
 
   display: inline-block;
   flex: none;

@@ -135,9 +135,11 @@ onBeforeUnmount(() => watching?.disconnect())
   min-height: 0;
   padding-block-start: var(--fade);
   padding-block-end: var(--clear);
+  /* A mask reads the alpha and nothing else, so this is opacity and not a
+     colour a theme reaches. */
   mask-image: linear-gradient(
     to bottom,
-    #000 calc(100% - var(--behind)),
+    black calc(100% - var(--behind)),
     transparent calc(100% - var(--behind) + var(--fade))
   );
 }

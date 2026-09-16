@@ -194,7 +194,7 @@ defineExpose({ seek })
   aspect-ratio: 16 / 9;
   max-block-size: 40vh;
   border: 0;
-  background: #000;
+  background: var(--numen-media-backdrop);
 }
 
 /* While the bar is held, the player takes no pointers: a frame that took one
