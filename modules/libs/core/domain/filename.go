@@ -36,7 +36,7 @@ const maxFilename = 120
 // the title needs no `title` key at all. When the title cannot be a filename,
 // `exact` is false and the caller writes the title into that key instead.
 //
-// Every name that comes back is one Nameable accepts, so a link written by it
+// Every name that comes back is one IsNameable accepts, so a link written by it
 // reaches the note back.
 func GetReducedFilename(title string) (name string, exact bool) {
 	var b strings.Builder

@@ -30,8 +30,8 @@ type Checker interface {
 	// Look reports what it found, each finding against the note somebody would
 	// open to settle it.
 	Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error)
-	// Quiet reports whether this check is left out unless it is asked for.
-	Quiet() bool
+	// IsQuiet reports whether this check is left out unless it is asked for.
+	IsQuiet() bool
 }
 
 // Checks is the set of checks run over one vault.
@@ -136,7 +136,7 @@ func (c Checks) Loud() []domain.Check {
 func (c Checks) loud() []Checker {
 	var out []Checker
 	for _, check := range c.List {
-		if !check.Quiet() {
+		if !check.IsQuiet() {
 			out = append(out, check)
 		}
 	}

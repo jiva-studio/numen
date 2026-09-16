@@ -37,7 +37,7 @@ type Tally struct {
 func GetDayTallies(d Day, answers []Answer) map[string]Tally {
 	taken := make(map[string]bool)
 	for _, a := range answers {
-		if a.TakesBack() {
+		if a.IsUndo() {
 			taken[a.Undoes] = true
 		}
 	}
@@ -45,7 +45,7 @@ func GetDayTallies(d Day, answers []Answer) map[string]Tally {
 	seen := make(map[string]bool, len(answers))
 	out := make(map[string]Tally)
 	for _, a := range answers {
-		if a.TakesBack() || taken[a.ID] || seen[a.ID] {
+		if a.IsUndo() || taken[a.ID] || seen[a.ID] {
 			continue
 		}
 		seen[a.ID] = true

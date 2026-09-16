@@ -280,7 +280,7 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 				continue
 			}
 			ref, err := reader.Stat(ctx, r.Path)
-			if port.NoNote(err) {
+			if port.IsNoNote(err) {
 				continue
 			}
 			if err != nil {
@@ -390,7 +390,7 @@ func (u Extract) source(
 	u.progress(*res)
 
 	ref, err := reader.Stat(ctx, path)
-	if port.NoNote(err) {
+	if port.IsNoNote(err) {
 		res.Vanished++
 		return nil
 	}

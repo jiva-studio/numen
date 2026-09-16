@@ -39,7 +39,7 @@ type line struct {
 // whole: what follows the last one in a file is a run that stopped partway.
 func Write(a Answer) ([]byte, error) {
 	l := line{V: Version, ID: a.ID, At: a.At.UTC().Format(Stamp)}
-	if a.TakesBack() {
+	if a.IsUndo() {
 		l.Undo = a.Undoes
 	} else {
 		l.Card, l.Face = a.CardFace.Card, a.CardFace.Face

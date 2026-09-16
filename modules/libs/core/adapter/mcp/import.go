@@ -95,7 +95,7 @@ func copies(
 		return 0, "another run is downloading this address"
 	case err != nil:
 		return 0, sayError(err)
-	case got.TooLarge():
+	case got.IsTooLarge():
 		return 0, fmt.Sprintf(
 			"it is %d MB, over the %d MB importing.copy_max_size_mb allows",
 			got.Bytes>>20, got.Limit>>20)

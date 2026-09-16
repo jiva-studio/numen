@@ -246,7 +246,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 			cues[line].Text = said.Text
 			wrote = true
 			fixed[line] = true
-			if !said.Joins() {
+			if !said.IsJoined() {
 				continue
 			}
 			// A sentence put back together is one cue, from the first moment of

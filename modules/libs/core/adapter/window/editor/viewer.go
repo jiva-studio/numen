@@ -431,7 +431,7 @@ func refuse(w http.ResponseWriter, err error) {
 		// The window is told when to ask again.
 		w.Header().Set("Retry-After", "1")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-	case errors.Is(err, errNoPage), errors.Is(err, errChanged), port.NoNote(err),
+	case errors.Is(err, errNoPage), errors.Is(err, errChanged), port.IsNoNote(err),
 		errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, port.ErrOutside):

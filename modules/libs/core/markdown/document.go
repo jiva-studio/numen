@@ -23,9 +23,9 @@ var ErrBodyUnwritable = errors.New(
 	"a body is the prose below the frontmatter, and this one begins with a frontmatter block; " +
 		"send what note_read gave you, or use the link tools to change the frontmatter")
 
-// OpensFrontmatter reports whether text begins a frontmatter block. A byte
+// IsFrontmatterStart reports whether text begins a frontmatter block. A byte
 // order mark stands before the delimiter and is no part of the prose.
-func OpensFrontmatter(text string) bool {
+func IsFrontmatterStart(text string) bool {
 	opening := strings.TrimPrefix(text, "\ufeff")
 	return strings.HasPrefix(opening, "---\n") || strings.HasPrefix(opening, "---\r\n")
 }

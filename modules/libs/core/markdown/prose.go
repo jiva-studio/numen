@@ -23,7 +23,7 @@ func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
 	if d.unterminated {
 		return 0, ErrUnterminated
 	}
-	if !domain.Nameable(to) {
+	if !domain.IsNameable(to) {
 		return 0, nil
 	}
 	var out strings.Builder
@@ -37,7 +37,7 @@ func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
 			end = at + next
 		}
 		line := strings.TrimRight(body[at:end], "\r")
-		if f.Crosses(line) || f.IsInside() {
+		if f.IsCrossedBy(line) || f.IsInside() {
 			at = end + 1
 			continue
 		}

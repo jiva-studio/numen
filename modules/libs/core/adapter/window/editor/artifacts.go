@@ -244,7 +244,7 @@ func (a *API) copies(
 	if err != nil {
 		return nil, connect.NewError(getDownloadCode(err), err)
 	}
-	if got.TooLarge() {
+	if got.IsTooLarge() {
 		out.State = v1.State_STATE_FAILED
 		out.Error = fmt.Sprintf(
 			"This is %d MB, and a copy may be up to %d MB. "+
@@ -637,7 +637,7 @@ func getReachCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, port.ErrOutside):
 		return connect.CodeInvalidArgument
-	case errors.Is(err, fs.ErrNotExist), port.NoNote(err):
+	case errors.Is(err, fs.ErrNotExist), port.IsNoNote(err):
 		return connect.CodeNotFound
 	case errors.Is(err, errNoVault):
 		return connect.CodeFailedPrecondition

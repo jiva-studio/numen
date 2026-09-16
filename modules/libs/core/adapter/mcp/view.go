@@ -126,7 +126,7 @@ func getFingerprint(ctx context.Context, core Core, path string) (domain.Fingerp
 		return domain.Fingerprint{}, err
 	}
 	ref, err := reader.Stat(ctx, path)
-	if port.NoNote(err) {
+	if port.IsNoNote(err) {
 		return domain.Fingerprint{}, fmt.Errorf("this vault holds nothing at %s", path)
 	}
 	if err != nil {

@@ -218,7 +218,7 @@ func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the rename was refused: %v", err)
 			}
-			if !domain.Nameable(domain.Basename(renamed.Path)) {
+			if !domain.IsNameable(domain.Basename(renamed.Path)) {
 				t.Fatalf("no link can be written by the name of %q", renamed.Path)
 			}
 
