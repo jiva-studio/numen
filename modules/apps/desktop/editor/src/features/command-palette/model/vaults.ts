@@ -46,7 +46,7 @@ export const renameVault = async (
   if (!invocation.name || invocation.name === invocation.vault.name) return
   const answer = await on.vaults.rename(invocation.vault.id, invocation.name)
   if (answer.error) return on.writeMessage(words.vaultErrors[answer.error], 'error')
-  if (answer.vault) on.vaults.showVault({ id: answer.vault.id, name: answer.vault.name })
+  if (answer.vault) on.vaults.setVaultName({ id: answer.vault.id, name: answer.vault.name })
 }
 
 /**

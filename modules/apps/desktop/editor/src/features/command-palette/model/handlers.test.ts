@@ -10,6 +10,7 @@ import { commandsOf } from '../lib/commands'
 import { runSupport } from './runs'
 import { invocationOf } from '../lib/invocation'
 import { createNotes } from '../lib/notes'
+import type { VaultRef } from '../types'
 import type { CommandDeps } from './deps'
 import type { CommandInvocation, CommandTarget, Store } from '../types'
 import { runInvocation } from './handlers'
@@ -212,7 +213,7 @@ const window = (
         done.push(`opens vault ${id}`)
         return turnedDown
       },
-      showVault: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
+      setVaultName: (vault: VaultRef) => void done.push(`calls ${vault.id} ${vault.name}`),
       reload: () => void done.push('reloads'),
     },
     goes: {

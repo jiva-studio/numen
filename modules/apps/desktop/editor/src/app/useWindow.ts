@@ -166,7 +166,7 @@ export const useWindow = () => {
     coverage: vaultsModule.coverage,
     making: editing.making,
     made: kinds.made,
-    shown: vaultsModule.shown,
+    setVaultName: vaultsModule.setVaultName,
     reload: vaultsModule.reload,
     loadArtifactStates: vaultsModule.loadArtifactStates,
     reached: editing.reached,

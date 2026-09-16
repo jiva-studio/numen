@@ -1,7 +1,7 @@
 /**
  * Command palette, keyboard shortcut dispatch, and command execution.
  */
-import type { Ref } from 'vue'
+
 import {
   isChord,
   commandFor,
@@ -40,7 +40,7 @@ export interface CommandsDepsOptions {
   coverage: () => IndexCoverage
   making: NoteCreator
   made: ReturnType<typeof createFileCreators>
-  shown: Ref<VaultRef>
+  setVaultName: (vault: VaultRef) => void
   reload: () => void
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
