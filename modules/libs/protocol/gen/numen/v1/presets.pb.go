@@ -35,6 +35,10 @@ const (
 
 // Goal is which value the one control steers. The value itself stands in the
 // field the goal names.
+//
+// A window spells each of these as the control it steers, so the names that
+// change on the way across are these: MINUTES_A_DAY is `minutes`, RETENTION is
+// `retention`, BY_DATE is `date`, and UNSPECIFIED is no goal at all.
 type Goal int32
 
 const (

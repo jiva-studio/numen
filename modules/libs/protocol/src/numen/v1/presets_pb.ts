@@ -940,6 +940,10 @@ export const ComputeCurveResponseSchema: GenMessage<ComputeCurveResponse> = /*@_
  * Goal is which value the one control steers. The value itself stands in the
  * field the goal names.
  *
+ * A window spells each of these as the control it steers, so the names that
+ * change on the way across are these: MINUTES_A_DAY is `minutes`, RETENTION is
+ * `retention`, BY_DATE is `date`, and UNSPECIFIED is no goal at all.
+ *
  * @generated from enum numen.v1.Goal
  */
 export enum Goal {

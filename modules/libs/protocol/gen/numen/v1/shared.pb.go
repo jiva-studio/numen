@@ -33,6 +33,11 @@ const (
 )
 
 // ErrorCode is why a note could not be read or written.
+//
+// Every code is spelled in the window as the same word in camel case, and
+// three do not read straight across: UNSPECIFIED is `unreadable` there, STALE
+// is carried as a question for the person and not a message, and the window
+// holds one code of its own for a core it could not reach at all.
 type ErrorCode int32
 
 const (
