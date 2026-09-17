@@ -12,7 +12,7 @@ import { deckName } from '@/entities/vault'
 import type { DeckCardsDue, PresetCardsDue, VaultCardsDue } from '@/entities/vault'
 
 import { readDeckPreset, UNREAD } from '../api/presets'
-import type { DeckPresetResult, PresetsClient } from '../api/presets'
+import type { DeckPreset, DeckPresetResult, PresetsClient } from '../api/presets'
 import { CLOSES_NOTHING } from '../types'
 import type { Budget, Preset, Settings } from '../types'
 import { getStoppedWords } from '../words'
@@ -128,15 +128,16 @@ const countDecksIntoPresets = (
 ): Map<string, PresetTally> => {
   const at = new Map<string, PresetTally>()
   for (const one of results) {
-    if (!one.held) continue
-    let into = at.get(one.held.path)
+    if (!one.ok) continue
+    const { deck: named, held } = one.value
+    let into = at.get(held.path)
     if (!into) {
-      into = createTally(one.held)
-      at.set(one.held.path, into)
+      into = createTally(held)
+      at.set(held.path, into)
     }
-    into.decks.push(one.deck)
-    for (const problem of one.held.problems) into.problems.add(problem)
-    const deck = dueByDeck.get(one.deck)
+    into.decks.push(named)
+    for (const problem of held.problems) into.problems.add(problem)
+    const deck = dueByDeck.get(named)
     into.due += deck?.due ?? 0
     into.fresh += deck?.new ?? 0
   }
@@ -144,7 +145,7 @@ const countDecksIntoPresets = (
 }
 
 /** One preset as it stands before a deck has been counted into it. */
-const createTally = (preset: NonNullable<DeckPresetResult['held']>): PresetTally => ({
+const createTally = (preset: DeckPreset['held']): PresetTally => ({
   path: preset.path,
   name: preset.name || 'The defaults',
   settings: preset.settings,
@@ -221,7 +222,7 @@ const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Pr
  * read; where they gave several, none of them is that preset's.
  */
 const getCommonError = (results: readonly DeckPresetResult[]): string => {
-  const errors = new Set(results.filter((one) => one.error).map((one) => one.error))
+  const errors = new Set(results.filter((one) => !one.ok).map((one) => (one.ok ? '' : one.error)))
   if (errors.size === 0) return ''
   return errors.size === 1 ? ([...errors][0] ?? '') : UNREAD
 }
