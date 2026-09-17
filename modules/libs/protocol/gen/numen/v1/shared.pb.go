@@ -312,6 +312,60 @@ func (x *Span) GetTo() int32 {
 	return 0
 }
 
+// Bounds is how far a size goes, at each end. A number outside them is
+// refused.
+type Bounds struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Least         float64                `protobuf:"fixed64,1,opt,name=least,proto3" json:"least,omitempty"`
+	Most          float64                `protobuf:"fixed64,2,opt,name=most,proto3" json:"most,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Bounds) Reset() {
+	*x = Bounds{}
+	mi := &file_numen_v1_shared_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Bounds) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Bounds) ProtoMessage() {}
+
+func (x *Bounds) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_shared_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Bounds.ProtoReflect.Descriptor instead.
+func (*Bounds) Descriptor() ([]byte, []int) {
+	return file_numen_v1_shared_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Bounds) GetLeast() float64 {
+	if x != nil {
+		return x.Least
+	}
+	return 0
+}
+
+func (x *Bounds) GetMost() float64 {
+	if x != nil {
+		return x.Most
+	}
+	return 0
+}
+
 var File_numen_v1_shared_proto protoreflect.FileDescriptor
 
 const file_numen_v1_shared_proto_rawDesc = "" +
@@ -323,7 +377,10 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\"*\n" +
 	"\x04Span\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\x05R\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\x05R\x02to*\x87\x03\n" +
+	"\x02to\x18\x02 \x01(\x05R\x02to\"2\n" +
+	"\x06Bounds\x12\x14\n" +
+	"\x05least\x18\x01 \x01(\x01R\x05least\x12\x12\n" +
+	"\x04most\x18\x02 \x01(\x01R\x04most*\x87\x03\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ERROR_CODE_MISSING\x10\x01\x12\x19\n" +
@@ -359,12 +416,13 @@ func file_numen_v1_shared_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_shared_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_numen_v1_shared_proto_goTypes = []any{
 	(ErrorCode)(0),      // 0: numen.v1.ErrorCode
 	(NoteType)(0),       // 1: numen.v1.NoteType
 	(*Fingerprint)(nil), // 2: numen.v1.Fingerprint
 	(*Span)(nil),        // 3: numen.v1.Span
+	(*Bounds)(nil),      // 4: numen.v1.Bounds
 }
 var file_numen_v1_shared_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -385,7 +443,7 @@ func file_numen_v1_shared_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_shared_proto_rawDesc), len(file_numen_v1_shared_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

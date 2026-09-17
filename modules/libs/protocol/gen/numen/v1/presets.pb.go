@@ -1940,7 +1940,7 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xe6\x03\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\xe6\x03\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
@@ -2220,7 +2220,6 @@ func file_numen_v1_presets_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
-	file_numen_v1_theme_proto_init()
 	file_numen_v1_presets_proto_msgTypes[3].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[6].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[11].OneofWrappers = []any{}

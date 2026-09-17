@@ -99,3 +99,10 @@ message Span {
   int32 from = 1;
   int32 to = 2;
 }
+
+// Bounds is how far a size goes, at each end. A number outside them is
+// refused.
+message Bounds {
+  double least = 1;
+  double most = 2;
+}

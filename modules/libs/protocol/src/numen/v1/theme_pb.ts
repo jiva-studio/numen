@@ -11,13 +11,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Bounds } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/theme.proto.
  */
 export const file_numen_v1_theme: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiVwoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIeCgVzaGVsZhgDIAEoDjIPLm51bWVuLnYxLlNoZWxmEhEKCWlzX3Bpbm5lZBgEIAEoCCIlCgZCb3VuZHMSDQoFbGVhc3QYASABKAESDAoEbW9zdBgCIAEoASITChFMaXN0VGhlbWVzUmVxdWVzdCLwAQoSTGlzdFRoZW1lc1Jlc3BvbnNlEh8KBnRoZW1lcxgBIAMoCzIPLm51bWVuLnYxLlRoZW1lEg8KB2FwcGxpZWQYAiABKAkSHAoEbW9kZRgDIAEoDjIOLm51bWVuLnYxLk1vZGUSFwoPaW50ZXJmYWNlX3NjYWxlGAQgASgBEhIKCnRleHRfc2NhbGUYBSABKAESMAoWaW50ZXJmYWNlX3NjYWxlX2JvdW5kcxgGIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIrChF0ZXh0X3NjYWxlX2JvdW5kcxgHIAEoCzIQLm51bWVuLnYxLkJvdW5kcyIgChBSZWFkVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiIAoRUmVhZFRoZW1lUmVzcG9uc2USCwoDY3NzGAEgASgJIp4BChZXcml0ZUFwcGVhcmFuY2VSZXF1ZXN0EgwKBG5hbWUYASABKAkSHAoEbW9kZRgCIAEoDjIOLm51bWVuLnYxLk1vZGUSHAoPaW50ZXJmYWNlX3NjYWxlGAMgASgBSACIAQESFwoKdGV4dF9zY2FsZRgEIAEoAUgBiAEBQhIKEF9pbnRlcmZhY2Vfc2NhbGVCDQoLX3RleHRfc2NhbGUiKAoXV3JpdGVBcHBlYXJhbmNlUmVzcG9uc2USDQoFZXJyb3IYASABKAkiFAoSV2F0Y2hUaGVtZXNSZXF1ZXN0IiQKE1dhdGNoVGhlbWVzUmVzcG9uc2USDQoFbmFtZXMYASADKAkqQAoFU2hlbGYSFQoRU0hFTEZfVU5TUEVDSUZJRUQQABIQCgxTSEVMRl9QUkVTRVQQARIOCgpTSEVMRl9NSU5FEAIqTAoETW9kZRIUChBNT0RFX1VOU1BFQ0lGSUVEEAASDwoLTU9ERV9TWVNURU0QARIOCgpNT0RFX0xJR0hUEAISDQoJTU9ERV9EQVJLEAMywwIKDFRoZW1lU2VydmljZRJHCgpMaXN0VGhlbWVzEhsubnVtZW4udjEuTGlzdFRoZW1lc1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VGhlbWVzUmVzcG9uc2USRAoJUmVhZFRoZW1lEhoubnVtZW4udjEuUmVhZFRoZW1lUmVxdWVzdBobLm51bWVuLnYxLlJlYWRUaGVtZVJlc3BvbnNlElYKD1dyaXRlQXBwZWFyYW5jZRIgLm51bWVuLnYxLldyaXRlQXBwZWFyYW5jZVJlcXVlc3QaIS5udW1lbi52MS5Xcml0ZUFwcGVhcmFuY2VSZXNwb25zZRJMCgtXYXRjaFRoZW1lcxIcLm51bWVuLnYxLldhdGNoVGhlbWVzUmVxdWVzdBodLm51bWVuLnYxLldhdGNoVGhlbWVzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiVwoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIeCgVzaGVsZhgDIAEoDjIPLm51bWVuLnYxLlNoZWxmEhEKCWlzX3Bpbm5lZBgEIAEoCCITChFMaXN0VGhlbWVzUmVxdWVzdCLwAQoSTGlzdFRoZW1lc1Jlc3BvbnNlEh8KBnRoZW1lcxgBIAMoCzIPLm51bWVuLnYxLlRoZW1lEg8KB2FwcGxpZWQYAiABKAkSHAoEbW9kZRgDIAEoDjIOLm51bWVuLnYxLk1vZGUSFwoPaW50ZXJmYWNlX3NjYWxlGAQgASgBEhIKCnRleHRfc2NhbGUYBSABKAESMAoWaW50ZXJmYWNlX3NjYWxlX2JvdW5kcxgGIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIrChF0ZXh0X3NjYWxlX2JvdW5kcxgHIAEoCzIQLm51bWVuLnYxLkJvdW5kcyIgChBSZWFkVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiIAoRUmVhZFRoZW1lUmVzcG9uc2USCwoDY3NzGAEgASgJIp4BChZXcml0ZUFwcGVhcmFuY2VSZXF1ZXN0EgwKBG5hbWUYASABKAkSHAoEbW9kZRgCIAEoDjIOLm51bWVuLnYxLk1vZGUSHAoPaW50ZXJmYWNlX3NjYWxlGAMgASgBSACIAQESFwoKdGV4dF9zY2FsZRgEIAEoAUgBiAEBQhIKEF9pbnRlcmZhY2Vfc2NhbGVCDQoLX3RleHRfc2NhbGUiKAoXV3JpdGVBcHBlYXJhbmNlUmVzcG9uc2USDQoFZXJyb3IYASABKAkiFAoSV2F0Y2hUaGVtZXNSZXF1ZXN0IiQKE1dhdGNoVGhlbWVzUmVzcG9uc2USDQoFbmFtZXMYASADKAkqQAoFU2hlbGYSFQoRU0hFTEZfVU5TUEVDSUZJRUQQABIQCgxTSEVMRl9QUkVTRVQQARIOCgpTSEVMRl9NSU5FEAIqTAoETW9kZRIUChBNT0RFX1VOU1BFQ0lGSUVEEAASDwoLTU9ERV9TWVNURU0QARIOCgpNT0RFX0xJR0hUEAISDQoJTU9ERV9EQVJLEAMywwIKDFRoZW1lU2VydmljZRJHCgpMaXN0VGhlbWVzEhsubnVtZW4udjEuTGlzdFRoZW1lc1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VGhlbWVzUmVzcG9uc2USRAoJUmVhZFRoZW1lEhoubnVtZW4udjEuUmVhZFRoZW1lUmVxdWVzdBobLm51bWVuLnYxLlJlYWRUaGVtZVJlc3BvbnNlElYKD1dyaXRlQXBwZWFyYW5jZRIgLm51bWVuLnYxLldyaXRlQXBwZWFyYW5jZVJlcXVlc3QaIS5udW1lbi52MS5Xcml0ZUFwcGVhcmFuY2VSZXNwb25zZRJMCgtXYXRjaFRoZW1lcxIcLm51bWVuLnYxLldhdGNoVGhlbWVzUmVxdWVzdBodLm51bWVuLnYxLldhdGNoVGhlbWVzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * Theme is one theme as the list refers to it. Its text is asked for by the
@@ -66,31 +68,6 @@ export const ThemeSchema: GenMessage<Theme> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 0);
 
 /**
- * Bounds is how far a size goes, at each end. A number outside them is
- * refused.
- *
- * @generated from message numen.v1.Bounds
- */
-export type Bounds = Message<"numen.v1.Bounds"> & {
-  /**
-   * @generated from field: double least = 1;
-   */
-  least: number;
-
-  /**
-   * @generated from field: double most = 2;
-   */
-  most: number;
-};
-
-/**
- * Describes the message numen.v1.Bounds.
- * Use `create(BoundsSchema)` to create a new message.
- */
-export const BoundsSchema: GenMessage<Bounds> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 1);
-
-/**
  * @generated from message numen.v1.ListThemesRequest
  */
 export type ListThemesRequest = Message<"numen.v1.ListThemesRequest"> & {
@@ -101,7 +78,7 @@ export type ListThemesRequest = Message<"numen.v1.ListThemesRequest"> & {
  * Use `create(ListThemesRequestSchema)` to create a new message.
  */
 export const ListThemesRequestSchema: GenMessage<ListThemesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 2);
+  messageDesc(file_numen_v1_theme, 1);
 
 /**
  * @generated from message numen.v1.ListThemesResponse
@@ -160,7 +137,7 @@ export type ListThemesResponse = Message<"numen.v1.ListThemesResponse"> & {
  * Use `create(ListThemesResponseSchema)` to create a new message.
  */
 export const ListThemesResponseSchema: GenMessage<ListThemesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 3);
+  messageDesc(file_numen_v1_theme, 2);
 
 /**
  * @generated from message numen.v1.ReadThemeRequest
@@ -179,7 +156,7 @@ export type ReadThemeRequest = Message<"numen.v1.ReadThemeRequest"> & {
  * Use `create(ReadThemeRequestSchema)` to create a new message.
  */
 export const ReadThemeRequestSchema: GenMessage<ReadThemeRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 4);
+  messageDesc(file_numen_v1_theme, 3);
 
 /**
  * @generated from message numen.v1.ReadThemeResponse
@@ -199,7 +176,7 @@ export type ReadThemeResponse = Message<"numen.v1.ReadThemeResponse"> & {
  * Use `create(ReadThemeResponseSchema)` to create a new message.
  */
 export const ReadThemeResponseSchema: GenMessage<ReadThemeResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 5);
+  messageDesc(file_numen_v1_theme, 4);
 
 /**
  * @generated from message numen.v1.WriteAppearanceRequest
@@ -240,7 +217,7 @@ export type WriteAppearanceRequest = Message<"numen.v1.WriteAppearanceRequest"> 
  * Use `create(WriteAppearanceRequestSchema)` to create a new message.
  */
 export const WriteAppearanceRequestSchema: GenMessage<WriteAppearanceRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 6);
+  messageDesc(file_numen_v1_theme, 5);
 
 /**
  * @generated from message numen.v1.WriteAppearanceResponse
@@ -259,7 +236,7 @@ export type WriteAppearanceResponse = Message<"numen.v1.WriteAppearanceResponse"
  * Use `create(WriteAppearanceResponseSchema)` to create a new message.
  */
 export const WriteAppearanceResponseSchema: GenMessage<WriteAppearanceResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 7);
+  messageDesc(file_numen_v1_theme, 6);
 
 /**
  * @generated from message numen.v1.WatchThemesRequest
@@ -272,7 +249,7 @@ export type WatchThemesRequest = Message<"numen.v1.WatchThemesRequest"> & {
  * Use `create(WatchThemesRequestSchema)` to create a new message.
  */
 export const WatchThemesRequestSchema: GenMessage<WatchThemesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 8);
+  messageDesc(file_numen_v1_theme, 7);
 
 /**
  * @generated from message numen.v1.WatchThemesResponse
@@ -292,7 +269,7 @@ export type WatchThemesResponse = Message<"numen.v1.WatchThemesResponse"> & {
  * Use `create(WatchThemesResponseSchema)` to create a new message.
  */
 export const WatchThemesResponseSchema: GenMessage<WatchThemesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_theme, 9);
+  messageDesc(file_numen_v1_theme, 8);
 
 /**
  * Shelf is where a theme came off: this application, or the person's themes
