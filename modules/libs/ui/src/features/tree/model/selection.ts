@@ -6,7 +6,13 @@
  */
 import { computed, shallowRef, type ComputedRef, type Ref } from 'vue'
 import type { RowId, ShownRow } from '../lib/row'
-import { everyRow, resolveSelection, isSameSelection, type Press, type RowSelection } from '../lib/select'
+import {
+  everyRow,
+  resolveSelection,
+  isSameSelection,
+  type Press,
+  type RowSelection,
+} from '../lib/select'
 
 export interface RowSelectionState {
   /** The rows selected, for asking one row at a time. */

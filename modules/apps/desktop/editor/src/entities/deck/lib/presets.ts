@@ -1,4 +1,5 @@
 /** How the decks pointing at one preset are scheduled, and what that comes to. */
+import type { Result } from '@numen/wire'
 import type { BudgetName, StopReason } from '@numen/protocol'
 import type { Goal } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
@@ -128,11 +129,8 @@ export interface WriteResult {
   readonly at: string
 }
 
-/** What making a preset came back with. */
-export interface MakeResult {
-  readonly path: string
-  readonly error: ErrorCode | null
-}
+/** Where a preset was filed, or why none was made. */
+export type MakeResult = Result<{ readonly path: string }, ErrorCode>
 
 /** What a preset comes to at one place of the grid. */
 export interface Point {

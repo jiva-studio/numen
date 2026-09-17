@@ -26,7 +26,7 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
   const core: NoteMaker = {
     create: async (note: NewNote): Promise<CreateResult> => {
       asked.push(note)
-      return answers.shift() ?? { path: pathOf(note), error: null }
+      return answers.shift() ?? { ok: true, value: { path: pathOf(note) } }
     },
     join: async (path: string, link: Link): Promise<ErrorCode | null> => {
       joined.push({ path, link })
@@ -79,8 +79,8 @@ describe('making a note in a seat of another', () => {
 
   it('asks for the next name for as long as the vault says the last one is taken', async () => {
     const { core, asked, write, last } = fake([
-      { path: '', error: 'occupied' },
-      { path: '', error: 'occupied' },
+      { ok: false, error: 'occupied' },
+      { ok: false, error: 'occupied' },
     ])
     const making = createNoteWriter(core, write)
     const made = await making.createInSeat('Ontology.md', 'child')
@@ -107,7 +107,7 @@ describe('making a note in a seat of another', () => {
   })
 
   it('says an error that is not a name already taken, and asks for nothing more', async () => {
-    const { core, asked, write, told } = fake([{ path: '', error: 'notANote' }])
+    const { core, asked, write, told } = fake([{ ok: false, error: 'notANote' }])
     const making = createNoteWriter(core, write)
 
     expect(await making.createInSeat('Ontology.md', 'child')).toBeNull()
@@ -174,7 +174,9 @@ describe('joining two notes that are both there', () => {
   it('writes nothing for a seat no link writes', async () => {
     const { core, joined, write } = fake()
 
-    expect(await createNoteWriter(core, write).join('Ontology.md', 'Entropy.md', 'sibling')).toBe(false)
+    expect(await createNoteWriter(core, write).join('Ontology.md', 'Entropy.md', 'sibling')).toBe(
+      false,
+    )
     expect(joined).toStrictEqual([])
   })
 

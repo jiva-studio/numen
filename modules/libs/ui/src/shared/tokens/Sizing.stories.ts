@@ -71,12 +71,14 @@ const ROOT_AS_DESIGNED = 16
 const KINDS = [
   {
     name: 'The interface',
-    label: 'A magnifier over the whole window: chrome, controls, spacing, and the type in them. Each is in rem, and the root’s font size carries them all — the size below with them.',
+    label:
+      'A magnifier over the whole window: chrome, controls, spacing, and the type in them. Each is in rem, and the root’s font size carries them all — the size below with them.',
     tokens: CHROME,
   },
   {
     name: 'The text',
-    label: 'The size a note, a book, an answer and the editor are set at. The interface carries it like everything else, and this is a second multiplier over that.',
+    label:
+      'The size a note, a book, an answer and the editor are set at. The interface carries it like everything else, and this is a second multiplier over that.',
     tokens: READING,
   },
   {

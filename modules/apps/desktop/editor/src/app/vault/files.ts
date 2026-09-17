@@ -1,6 +1,7 @@
 /**
  * File tree and filesystem domain methods for the window core.
  */
+import { asFailure, asValue } from '@numen/wire'
 import { files } from '@/shared/clients'
 import { bookFormat, mapEntry, mapMoveResult, noteType, sourceKind } from './words'
 import { errorIn } from '@/shared/answers'
@@ -27,16 +28,14 @@ export const filesCore: FilesCore = {
   move: async (from, to) => {
     const answer = await files.moveFile({ from, to })
     const error = errorIn(answer)
-    return {
-      moved: answer.moved ? mapMoveResult(answer.moved) : null,
-      error,
-    }
+    if (error) return asFailure(error)
+    return asValue(answer.moved ? mapMoveResult(answer.moved) : null)
   },
   createFolder: async (path) => errorIn(await files.createFolder({ path })),
   createUrl: async (url, folder) => {
     const answer = await files.createURL({ url, path: folder })
     const error = errorIn(answer)
-    return { path: answer.path, error }
+    return error ? asFailure(error) : asValue({ path: answer.path })
   },
   fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })

@@ -1,4 +1,5 @@
 /** The presets of a vault, as the window asks for them and as the schema writes them. */
+import { asFailure, asValue } from '@numen/wire'
 import {
   BudgetUnit as BudgetUnits,
   Rule as Rules,
@@ -40,7 +41,8 @@ export const presets: Presets = {
     })),
   createPreset: async (title, folder) => {
     const answer = await presetsService.createPreset({ title, path: folder })
-    return { path: answer.path, error: errorIn(answer) }
+    const error = errorIn(answer)
+    return error ? asFailure(error) : asValue({ path: answer.path })
   },
   scheduleDeck: async (deck, preset, seen) => {
     const answer = await presetsService.scheduleDeck({

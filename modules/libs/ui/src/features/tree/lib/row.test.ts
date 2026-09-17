@@ -6,7 +6,14 @@
  */
 import { describe, expect, it } from 'vitest'
 import { flatten, type Row, type RowId } from './row'
-import { everyRow, getRowsBetween, resolveSelection, isSameSelection, PLAIN, type Press } from './select'
+import {
+  everyRow,
+  getRowsBetween,
+  resolveSelection,
+  isSameSelection,
+  PLAIN,
+  type Press,
+} from './select'
 import { isTreeKey, stepTo, TREE_KEYS } from './step'
 import { getDraggedRows, dragLabel } from './drag'
 import { holderOf, isRefused, landing } from './drop'

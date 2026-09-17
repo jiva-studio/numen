@@ -37,12 +37,17 @@ describe('the listing as rows', () => {
   })
 
   it('carries what is under a folder as its own rows, however deep', () => {
-    const rows = getRows([createListingRow('a', true, [createListingRow('a/b', true, [createListingRow('a/b/c.md')])])])
+    const rows = getRows([
+      createListingRow('a', true, [createListingRow('a/b', true, [createListingRow('a/b/c.md')])]),
+    ])
 
     expect(rows[0]?.rows?.[0]?.rows?.[0]?.id).toBe('a/b/c.md')
   })
 
   it('opens a folder holding nothing', () => {
-    expect(getRows([createListingRow('empty', true)])[0]).toMatchObject({ hasChildren: true, rows: [] })
+    expect(getRows([createListingRow('empty', true)])[0]).toMatchObject({
+      hasChildren: true,
+      rows: [],
+    })
   })
 })

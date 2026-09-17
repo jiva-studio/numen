@@ -115,8 +115,8 @@ describe('making a preset', () => {
     replyWith({ path: 'Presets/Daily.md' })
 
     expect(await presets.createPreset('Daily', 'Presets')).toEqual({
-      path: 'Presets/Daily.md',
-      error: null,
+      ok: true,
+      value: { path: 'Presets/Daily.md' },
     })
   })
 })

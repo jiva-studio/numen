@@ -2,7 +2,14 @@
  * What the notices in the corner decide, as plain values.
  */
 import { describe, expect, it } from 'vitest'
-import { PER_WORD, SETTLE, getArrivalTimes, dwellOf, getFinishedNotices, getShownNotices } from './dwell'
+import {
+  PER_WORD,
+  SETTLE,
+  getArrivalTimes,
+  dwellOf,
+  getFinishedNotices,
+  getShownNotices,
+} from './dwell'
 import { foldNotices } from './fold'
 import { measureMovement, type Movement } from './movement'
 import { getStillAway, readable, tallyOf, type Notice } from './notice'

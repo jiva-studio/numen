@@ -107,7 +107,7 @@ const openPresetTab = async (
     }),
     getDeckPreset: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
-    createPreset: async () => ({ path: '', error: null }),
+    createPreset: async () => ({ ok: true, value: { path: '' } }),
     scheduleDeck: async () => ({ error: null, changed: false, at: '' }),
     write: async (_path, put) => {
       written.push(put)
@@ -177,7 +177,7 @@ const opening = async (file: Partial<Settings>) => {
     },
     getDeckPreset: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
-    createPreset: async () => ({ path: '', error: null }),
+    createPreset: async () => ({ ok: true, value: { path: '' } }),
     scheduleDeck: async () => ({ error: null, changed: false, at: '' }),
     write: async (_path, put) => {
       written.push(put)

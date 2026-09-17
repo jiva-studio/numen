@@ -59,15 +59,16 @@ describe('making a deck', () => {
     replyWith({ path: 'Decks/Words.md' })
 
     expect(await cards.createDeck('Words', 'Decks')).toEqual({
-      path: 'Decks/Words.md',
-      error: null,
+      ok: true,
+      value: { path: 'Decks/Words.md' },
     })
   })
 
   it('carries the error in the words the window uses', async () => {
-    replyWith({ path: '', error: 'ERROR_CODE_OCCUPIED' })
+    replyWith({ ok: false, error: 'ERROR_CODE_OCCUPIED' })
 
-    expect((await cards.createDeck('Words', 'Decks')).error).toBe('occupied')
+    const made = await cards.createDeck('Words', 'Decks')
+    expect(made.ok ? null : made.error).toBe('occupied')
   })
 })
 
@@ -76,8 +77,8 @@ describe('making a stencil', () => {
     replyWith({ path: 'Word.md' })
 
     expect(await cards.createStencil('Word', '', ['Front', 'Back'])).toEqual({
-      path: 'Word.md',
-      error: null,
+      ok: true,
+      value: { path: 'Word.md' },
     })
     expect(asked[0]).toEqual({ title: 'Word', fields: ['Front', 'Back'] })
   })

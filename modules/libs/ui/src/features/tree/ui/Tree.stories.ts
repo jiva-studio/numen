@@ -133,7 +133,12 @@ const UNBROKEN: readonly Row[] = [
 
 const NAMELESS: readonly Row[] = [
   { id: 'blank', name: '', hasChildren: false },
-  { id: 'blank-holder', name: '', hasChildren: true, rows: [{ id: 'inside', name: '', hasChildren: false }] },
+  {
+    id: 'blank-holder',
+    name: '',
+    hasChildren: true,
+    rows: [{ id: 'inside', name: '', hasChildren: false }],
+  },
   { id: 'named', name: 'Named', hasChildren: false },
 ]
 

@@ -1,6 +1,17 @@
 /** The document and book reader tab kinds of a window. */
-import { createDocumentKind, documents, useDocumentReader, useDocumentTab } from '@/pages/document-viewer'
-import { createBookKind, books, useBookReader, useBookTab, WORDS as bookWords } from '@/pages/book-reader'
+import {
+  createDocumentKind,
+  documents,
+  useDocumentReader,
+  useDocumentTab,
+} from '@/pages/document-viewer'
+import {
+  createBookKind,
+  books,
+  useBookReader,
+  useBookTab,
+  WORDS as bookWords,
+} from '@/pages/book-reader'
 import type { WindowKindsDeps } from './deps'
 
 export type ReaderKindsDeps = Pick<WindowKindsDeps, 'log' | 'tabOpeners' | 'held'>

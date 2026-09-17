@@ -23,7 +23,10 @@ export interface ShownStore {
 }
 
 /** The reader one window has, over the decks that window holds. */
-export function createDeckReader(store: ShownStore, problemsAt: (path: string) => readonly DeckProblem[]) {
+export function createDeckReader(
+  store: ShownStore,
+  problemsAt: (path: string) => readonly DeckProblem[],
+) {
   /** The last string a deck was read out of, and what it came to. */
   const parsed = new Map<string, { body: string; deck: BufferDeck }>()
 

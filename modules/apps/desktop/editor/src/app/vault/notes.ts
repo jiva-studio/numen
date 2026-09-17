@@ -1,6 +1,7 @@
 /**
  * Note domain methods for the window core.
  */
+import { asFailure, asValue } from '@numen/wire'
 import { notes } from '@/shared/clients'
 import {
   mapBaseline,
@@ -55,7 +56,7 @@ export const notesCore: NoteOperations = {
       links: note.links.map(mapLink),
     })
     const error = errorIn(answer)
-    return { path: answer.path, error }
+    return error ? asFailure(error) : asValue({ path: answer.path })
   },
   join: async (path, link) => errorIn(await notes.writeLink({ path, link: mapLink(link) })),
   rename: async (path, title) => {

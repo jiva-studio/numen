@@ -2,6 +2,7 @@
  * The decks and the stencils a vault holds, as the window asks for them and as
  * they come back.
  */
+import { asFailure, asValue } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
 import { cardsService } from '@/shared/clients'
 import type { Cards, DeckService, StencilService } from '../types'
@@ -20,7 +21,7 @@ export const deckService: DeckService = {
   createDeck: async (title, folder) => {
     const answer = await cardsService.createDeck({ title, path: folder })
     const error = errorIn(answer)
-    return { path: answer.path, error }
+    return error ? asFailure(error) : asValue({ path: answer.path })
   },
   readDeck: async (path) => {
     const answer = await cardsService.readDeck({ path })
@@ -61,7 +62,7 @@ export const stencilService: StencilService = {
   createStencil: async (title, folder, fields) => {
     const answer = await cardsService.createStencil({ title, path: folder, fields: [...fields] })
     const error = errorIn(answer)
-    return { path: answer.path, error }
+    return error ? asFailure(error) : asValue({ path: answer.path })
   },
   renameField: async (path, from, to, seen) => {
     const answer = await cardsService.renameStencilField({

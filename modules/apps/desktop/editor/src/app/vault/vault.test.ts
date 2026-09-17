@@ -136,14 +136,14 @@ describe('files domain', () => {
 
     asked.moveFile.mockResolvedValue({ moved: { from: 'a.md', to: 'b.md', repaired: [] } })
     const moved = await core.move('a.md', 'b.md')
-    expect(moved.moved?.to).toBe('b.md')
+    expect(moved.ok ? moved.value?.to : null).toBe('b.md')
 
     asked.createFolder.mockResolvedValue({})
     expect(await core.createFolder('folder')).toBeNull()
 
     asked.createURL.mockResolvedValue({ path: 'url.md' })
     const url = await core.createUrl('https://example.com', '')
-    expect(url.path).toBe('url.md')
+    expect(url.ok ? url.value.path : null).toBe('url.md')
 
     asked.listFileKinds.mockResolvedValue({
       kinds: [{ path: 'book.epub', kind: 2, type: 1, format: 2 }],

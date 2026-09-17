@@ -38,8 +38,8 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
 
   const core: Cards = {
     stencils: async () => ({ stencils: [], held: 0 }),
-    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
+    createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     // The vault writes the name in the fields and in the braces of every face.
     renameField: async (path, from, to) => {
       renamed.push(`${path} ${from} ${to}`)

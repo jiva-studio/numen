@@ -83,8 +83,8 @@ const mountDeck = async (
       stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
       held: 1,
     }),
-    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
+    createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     renameField: async () => ({
       decks: [],
       cards: 0,
@@ -129,7 +129,7 @@ const mountDeck = async (
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
-    createPreset: async () => ({ path: '', error: null }),
+    createPreset: async () => ({ ok: true, value: { path: '' } }),
     getDeckPreset: async () => ({
       preset: {
         path: by,

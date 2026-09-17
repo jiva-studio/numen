@@ -106,11 +106,7 @@ const measure = () => {
 
 const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
 
-const { here, holdRow, goTo, onKey } = useMenuKeys(
-  () => props.items,
-  menu,
-  props.clock,
-)
+const { here, holdRow, goTo, onKey } = useMenuKeys(() => props.items, menu, props.clock)
 
 const choose = (item: MenuItem) => {
   if (item.disabled) return

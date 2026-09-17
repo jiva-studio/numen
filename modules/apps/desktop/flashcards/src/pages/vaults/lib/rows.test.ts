@@ -40,7 +40,10 @@ describe('a vault as a row', () => {
   })
 
   it('says why it could not be read, in the core words', () => {
-    const row = getVaultRows([vault({ counted: false, unread: 'the folder has gone' })], VAULTS_WORDS)[0]
+    const row = getVaultRows(
+      [vault({ counted: false, unread: 'the folder has gone' })],
+      VAULTS_WORDS,
+    )[0]
 
     expect(row?.detail).toBe('the folder has gone')
   })

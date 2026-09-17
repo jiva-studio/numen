@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { ErrorCode } from '@/shared/errors'
+import type { CreateResult } from '@/entities/file/@x/tab'
 import { writer } from '@/testing/writer'
 import { ERRORS } from '@/shared/words'
 import { fileOpeners } from './openers'
@@ -15,9 +16,9 @@ const maker = (
   throws = false,
 ): VaultCreator & { asked: string[] } => {
   const asked: string[] = []
-  const answer = async (path: string) => {
+  const answer = async (path: string): Promise<CreateResult> => {
     if (throws) throw new Error('the vault is not there')
-    return { path: error ? '' : path, error }
+    return error ? { ok: false, error } : { ok: true, value: { path } }
   }
   return {
     asked,

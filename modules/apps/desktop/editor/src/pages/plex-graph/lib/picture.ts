@@ -109,7 +109,10 @@ export function asParts(headings: readonly NoteHeading[]): PlexPart[] {
  * A vault that changed somewhere else answers with a neighbourhood equal to the
  * one on screen, and a picture equal to the one on screen is left standing.
  */
-export function areNeighbourhoodsEqual(one: Neighbourhood | null, other: Neighbourhood | null): boolean {
+export function areNeighbourhoodsEqual(
+  one: Neighbourhood | null,
+  other: Neighbourhood | null,
+): boolean {
   if (one === null || other === null) return one === other
   if (one.focus.path !== other.focus.path) return false
   if (one.focus.title !== other.focus.title) return false

@@ -97,8 +97,8 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
   ): Promise<NoteRef | ErrorCode | null> {
     try {
       const made = await core.create({ title, folder, links })
-      if (made.error) return made.error
-      return { path: made.path, title }
+      if (!made.ok) return made.error
+      return { path: made.value.path, title }
     } catch (error) {
       writeMessage(formatErrorMessage(error), 'error')
       return null

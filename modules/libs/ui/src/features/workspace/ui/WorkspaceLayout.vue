@@ -155,7 +155,12 @@ provide(
 
     <WorkspaceOverlay v-if="overlay" :box="overlay" :has-caret="landing?.kind === 'strip'" />
 
-    <DragPreview v-if="label && position" class="workspace__dragged" :at="position" :label="label" />
+    <DragPreview
+      v-if="label && position"
+      class="workspace__dragged"
+      :at="position"
+      :label="label"
+    />
   </div>
 </template>
 

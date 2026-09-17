@@ -165,9 +165,9 @@ export const maker = (() => {
     createFile: (title: string, folder: string) => {
       if (!reached) throw new Error('the vault could not be reached')
       const path = `${folder ? `${folder}/` : ''}${title}.note`
-      if (filed.has(path)) return { path: '', error: 'occupied' as const }
+      if (filed.has(path)) return { ok: false as const, error: 'occupied' as const }
       filed.add(path)
-      return { path, error: null }
+      return { ok: true as const, value: { path } }
     },
   }
 })()

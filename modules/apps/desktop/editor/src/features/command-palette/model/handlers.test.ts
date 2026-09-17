@@ -128,7 +128,7 @@ const window = (
       },
       move: async (from, to) => {
         done.push(`move ${from} ${to}`)
-        return answers.movement ?? { moved: null, error: null }
+        return answers.movement ?? { ok: true, value: null }
       },
       createFolder: async (path) => {
         done.push(`createFolder ${path}`)
@@ -785,7 +785,7 @@ describe('a file filed somewhere else', () => {
   })
 
   it('stays where it is where something of that name is filed there', async () => {
-    const one = window({ movement: { moved: null, error: 'occupied' } })
+    const one = window({ movement: { ok: false, error: 'occupied' } })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
@@ -793,7 +793,7 @@ describe('a file filed somewhere else', () => {
   })
 
   it('says nothing of a note renamed, which is what a move is not', async () => {
-    const one = window({ movement: { moved: null, error: 'occupied' } })
+    const one = window({ movement: { ok: false, error: 'occupied' } })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
