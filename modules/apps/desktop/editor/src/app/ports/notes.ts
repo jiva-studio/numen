@@ -6,6 +6,7 @@ import type {
   NoteEdit,
   NoteHeading,
   NoteResult,
+  WriteResult,
   RemoveResult,
   RenameResult,
 } from '@/entities/note'
@@ -36,7 +37,11 @@ export interface NotePort {
    * saw comes back as changed, and nothing is written. Nothing seen writes
    * over whatever is there.
    */
-  write(path: string, body: string, seen: { prose: string; at: string } | null): Promise<NoteResult>
+  write(
+    path: string,
+    body: string,
+    seen: { prose: string; at: string } | null,
+  ): Promise<WriteResult>
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<CreateResult>
   /**

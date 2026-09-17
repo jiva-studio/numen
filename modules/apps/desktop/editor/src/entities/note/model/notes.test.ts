@@ -21,7 +21,7 @@ function fake(over: Partial<Notes> = {}) {
       // A note still holding either the prose or the file that prose came out of
       // is the note this caller read.
       if (seen && held !== undefined && held !== seen.prose && getFingerprint(held) !== seen.at) {
-        return asValue({ body: '', changed: true })
+        return asFailure('changed' as const)
       }
       files.set(path, body)
       return asValue({ body: '', at: getFingerprint(body) })

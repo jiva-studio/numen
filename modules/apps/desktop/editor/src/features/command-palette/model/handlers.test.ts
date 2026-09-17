@@ -17,7 +17,7 @@ import { runInvocation } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/entities/artifact'
 import { asFailure, asValue } from '@numen/wire'
 import type { Movement } from '@/entities/file'
-import type { RemoveResult, RenameResult } from '@/entities/note'
+import type { RemovedNote, RemoveResult, RenamedNote, RenameResult } from '@/entities/note'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
 import { WORDS } from '@/shared/words'
@@ -45,15 +45,14 @@ const createVault = (id: string, name: string): Vault => ({
   missing: false,
 })
 
-const createRenameResult = (over: Partial<RenameResult> = {}): RenameResult => ({
-  path: 'physics/Entropy.md',
-  title: 'Entropy',
-  hasFrontmatter: false,
-  moved: null,
-  error: null,
-  hasChanged: false,
-  ...over,
-})
+const createRenameResult = (over: Partial<RenamedNote> = {}): RenameResult =>
+  asValue({
+    path: 'physics/Entropy.md',
+    title: 'Entropy',
+    hasFrontmatter: false,
+    moved: null,
+    ...over,
+  })
 
 /** What an artifact now stands at, as the application answers it. */
 const outcome = (of: Artifact, state: ArtifactState, error = ''): Outcome => ({
@@ -63,12 +62,12 @@ const outcome = (of: Artifact, state: ArtifactState, error = ''): Outcome => ({
   error,
 })
 
-const createRemoveResult = (over: Partial<RemoveResult> = {}): RemoveResult => ({
-  trashed: '.trash/Ontology.md',
-  dangling: [],
-  error: null,
-  ...over,
-})
+const createRemoveResult = (over: Partial<RemovedNote> = {}): RemoveResult =>
+  asValue({
+    trashed: '.trash/Ontology.md',
+    dangling: [],
+    ...over,
+  })
 
 /**
  * A window that writes down everything a command asked of it, in order.
@@ -540,7 +539,7 @@ describe('a note renamed', () => {
   })
 
   it('says the note was written elsewhere while this was asked', async () => {
-    const one = window({ renamed: createRenameResult({ hasChanged: true }) })
+    const one = window({ renamed: asFailure('changed' as const) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -588,7 +587,7 @@ describe('a note renamed', () => {
   })
 
   it('says the name was taken, and that the note carries the new one', async () => {
-    const one = window({ renamed: createRenameResult({ error: 'occupied' }) })
+    const one = window({ renamed: asFailure('occupied' as const) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -596,7 +595,7 @@ describe('a note renamed', () => {
   })
 
   it('says a note whose frontmatter cannot be read cannot be renamed', async () => {
-    const one = window({ renamed: createRenameResult({ error: 'unreadable' }) })
+    const one = window({ renamed: asFailure('unreadable' as const) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -604,7 +603,7 @@ describe('a note renamed', () => {
   })
 
   it('says a name no file can be named', async () => {
-    const one = window({ renamed: createRenameResult({ error: 'unnameable' }) })
+    const one = window({ renamed: asFailure('unnameable' as const) })
 
     await carry(invocationOf('title', front(), '...'), one.on)
 
@@ -672,7 +671,7 @@ describe('a note removed', () => {
   })
 
   it('keeps the tab of a note the vault would not remove', async () => {
-    const one = window({ removed: createRemoveResult({ error: 'missing' }) })
+    const one = window({ removed: asFailure('missing' as const) })
 
     await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
@@ -680,7 +679,7 @@ describe('a note removed', () => {
   })
 
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
-    const one = window({ removed: createRemoveResult({ error: 'missing' }) })
+    const one = window({ removed: asFailure('missing' as const) })
 
     await carry(invocationOf('remove', front()), one.on)
 
@@ -739,7 +738,9 @@ describe('several files removed at once', () => {
         ...one.on.files,
         remove: async (path, destroy) => {
           one.done.push(`remove ${path} ${destroy}`)
-          return createRemoveResult(path === 'physics/Ontology.md' ? { error: 'missing' } : {})
+          return path === 'physics/Ontology.md'
+            ? asFailure('missing' as const)
+            : createRemoveResult()
         },
       },
     }

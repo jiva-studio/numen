@@ -71,15 +71,22 @@ export interface NoteContents {
   readonly link?: LinkAddress
   /** The file the prose came out of, as the next write presents it again. */
   readonly at?: string
-  /** The note holds prose nobody here has seen, and nothing was written. */
-  readonly changed?: boolean
 }
 
 /**
- * What a read or a write came back with. The words for a failure belong to
- * whatever shows it.
+ * Why a note was not read or not written. Changed is the file holding prose
+ * nobody here has seen, which stops a write.
+ */
+export type NoteFailure = ErrorCode | 'changed'
+
+/**
+ * What a read came back with. The words for a failure belong to whatever shows
+ * it.
  */
 export type NoteResult = Result<NoteContents, ErrorCode>
+
+/** What a write came back with. A file that changed is one nothing was written to. */
+export type WriteResult = Result<NoteContents, NoteFailure>
 
 /**
  * Where a link note points: the web address (URL) and embed player URL.
@@ -120,28 +127,27 @@ export interface Link {
   label?: string
 }
 
-/** What renaming a note came back with. */
-export interface RenameResult {
-  /**
-   * Where the note is filed. The note is brought into line before the file is,
-   * so a refused move comes back with the path the note still has.
-   */
-  path: string
-  title: string
+/** A note renamed, and what its file did. */
+export interface RenamedNote {
+  /** Where the note is filed now. */
+  readonly path: string
+  readonly title: string
   /** Whether the rename wrote the title into the frontmatter of the note. */
-  hasFrontmatter: boolean
+  readonly hasFrontmatter: boolean
   /** What the file did. Null when it stayed where it was. */
-  moved: MoveResult | null
-  error?: ErrorCode | null
-  /** The note holds prose nobody here has seen, and nothing was written. */
-  hasChanged: boolean
+  readonly moved: MoveResult | null
+}
+
+/** What renaming a note came back with. */
+export type RenameResult = Result<RenamedNote, NoteFailure>
+
+/** A note taken out of the vault, and what its going left behind. */
+export interface RemovedNote {
+  /** Where the note sits in the trash. Empty when it was destroyed. */
+  readonly trashed: string
+  /** The notes whose links pointed at it and now reach nothing. */
+  readonly dangling: readonly string[]
 }
 
 /** What removing a note came back with. */
-export interface RemoveResult {
-  /** Where the note sits in the trash. Empty when it was destroyed. */
-  trashed: string
-  /** The notes whose links pointed at it and now reach nothing. */
-  dangling: readonly string[]
-  error?: ErrorCode | null
-}
+export type RemoveResult = Result<RemovedNote, ErrorCode>

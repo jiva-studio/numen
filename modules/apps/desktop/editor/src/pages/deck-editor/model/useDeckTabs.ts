@@ -67,8 +67,9 @@ export function useDeckTabs(
       )
       const error = answer.error
       vaultAnswers.recordWrite(path, { error, bound: answer.bound })
+      if (answer.changed) return asFailure('changed')
       if (error !== null) return asFailure(error)
-      return asValue({ body: '', at: answer.at, changed: answer.changed })
+      return asValue({ body: '', at: answer.at })
     },
   })
 

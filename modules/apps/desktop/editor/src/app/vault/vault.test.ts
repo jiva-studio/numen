@@ -127,7 +127,7 @@ describe('files domain', () => {
   it('handles remove, list, move, createFolder, createUrl, and fileKinds', async () => {
     asked.removeFile.mockResolvedValue({ trashed: true, dangling: [] })
     const removed = await core.remove('test.md')
-    expect(removed.trashed).toBe(true)
+    expect(removed.ok && removed.value.trashed).toBe(true)
 
     asked.listFiles.mockResolvedValue({
       entries: [{ path: 'test.md', name: 'test.md', isFolder: false, kind: 1, type: 1 }],
@@ -215,7 +215,7 @@ describe('notes domain', () => {
       moved: { path: 'b.md' },
     })
     const renamed = await core.rename('a.md', 'B')
-    expect(renamed.path).toBe('b.md')
+    expect(renamed.ok && renamed.value.path).toBe('b.md')
 
     asked.listHeadings.mockResolvedValue({
       headings: [{ path: 'a.md', headings: [{ text: 'H1', level: 1, line: 1 }] }],

@@ -54,8 +54,9 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       writing: answer.error,
       at: answer.changed || answer.error !== null ? said.at : answer.at,
     })
+    if (answer.changed) return asFailure('changed' as const)
     if (answer.error !== null) return asFailure(answer.error)
-    return asValue({ body: '', changed: answer.changed, at: answer.at })
+    return asValue({ body: '', at: answer.at })
   }
 
   const renameField = async (

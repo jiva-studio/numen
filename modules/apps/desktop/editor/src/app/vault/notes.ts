@@ -9,6 +9,7 @@ import {
   mapMoveResult,
   mapNeighbourhood,
   mapNoteResult,
+  mapWriteResult,
   run,
   writes,
 } from './words'
@@ -46,7 +47,7 @@ export const notesCore: NoteOperations = {
   },
   read: async (path) => mapNoteResult(await notes.readNote({ path })),
   write: async (path, body, seen) =>
-    mapNoteResult(
+    mapWriteResult(
       await notes.writeNote({ path, body, ...(seen ? { seen: mapBaseline(seen) } : {}) }),
     ),
   create: async (note) => {
@@ -61,15 +62,15 @@ export const notesCore: NoteOperations = {
   join: async (path, link) => errorIn(await notes.writeLink({ path, link: mapLink(link) })),
   rename: async (path, title) => {
     const answer = await notes.renameNote({ path, title })
+    if (staleIn(answer)) return asFailure('changed')
     const error = errorIn(answer)
-    return {
+    if (error) return asFailure(error)
+    return asValue({
       path: answer.path,
       title: answer.title,
       hasFrontmatter: writes[answer.by],
       moved: answer.moved ? mapMoveResult(answer.moved) : null,
-      error,
-      hasChanged: staleIn(answer),
-    }
+    })
   },
   headings: async (paths) => {
     const answer = await notes.listHeadings({ paths: [...paths] })

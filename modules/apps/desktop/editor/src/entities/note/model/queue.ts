@@ -1,7 +1,7 @@
 /**
  * Save timers, settling coordination, and read/write execution for open notes.
  */
-import type { LinkAddress, NoteResult } from '../lib/note'
+import type { LinkAddress, NoteResult, WriteResult } from '../lib/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { Notes } from '../lib/noteTypes'
 import type { Event, NoteBaseline, NoteErrorCode } from '../lib/tab'
@@ -77,7 +77,7 @@ export function createNoteQueue(
     body: string,
     baseline: NoteBaseline | null,
   ): Promise<void> => {
-    let answered: NoteResult
+    let answered: WriteResult
     try {
       answered = await core.write(path, body, baseline)
     } catch {
@@ -87,11 +87,11 @@ export function createNoteQueue(
     }
     turn(id, {
       kind: 'written',
-      answer: !answered.ok
-        ? { kind: 'error', error: errorOf(answered.error) }
-        : answered.value.changed
+      answer: answered.ok
+        ? { kind: 'ok', at: answered.value.at ?? '' }
+        : answered.error === 'changed'
           ? { kind: 'changed' }
-          : { kind: 'ok', at: answered.value.at ?? '' },
+          : { kind: 'error', error: errorOf(answered.error) },
     })
     resumeClosing(id)
   }

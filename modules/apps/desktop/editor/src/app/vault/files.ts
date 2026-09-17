@@ -18,11 +18,8 @@ export const filesCore: FilesCore = {
   remove: async (path, destroy) => {
     const answer = await files.removeFile({ path, destroy: destroy ?? false })
     const error = errorIn(answer)
-    return {
-      trashed: answer.trashed,
-      dangling: answer.dangling,
-      error,
-    }
+    if (error) return asFailure(error)
+    return asValue({ trashed: answer.trashed, dangling: answer.dangling })
   },
   list: async (folder) => (await files.listFiles({ path: folder })).entries.map(mapEntry),
   move: async (from, to) => {

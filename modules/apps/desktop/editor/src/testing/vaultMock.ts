@@ -3,6 +3,7 @@
  * it was asked in `requests`.
  */
 import { vi } from 'vitest'
+import { asValue } from '@numen/wire'
 import { requests } from './requests'
 import { folders, getFileKind, held, listed, outside, said } from './answers'
 import type { Tab } from '@/entities/tab'
@@ -14,8 +15,8 @@ vi.mock('@/app/vault', () => ({
       requests.chose += 1
       return ''
     },
-    add: async () => ({ vault: null, error: null }),
-    rename: async () => ({ vault: null, error: null }),
+    add: async () => asValue(null),
+    rename: async () => asValue(null),
     remove: async () => null,
     open: async (id: string) => {
       requests.opened.push(id)
@@ -47,24 +48,24 @@ vi.mock('@/app/vault', () => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       related: [],
     }),
-    read: async () => ({ body: 'what is written', at: 'a1' }),
-    write: async () => ({ at: 'a2' }),
+    read: async () => asValue({ body: 'what is written', at: 'a1' }),
+    write: async () => asValue({ body: '', at: 'a2' }),
     create: async ({ title }: { title: string }) => {
       requests.made.push(title)
-      return { path: `${title}.md`, error: null }
+      return asValue({ path: `${title}.md` })
     },
     rename: async (path: string, title: string) => {
       requests.renamed.push(`${path} ${title}`)
-      return { path, title, by: 'frontmatter', moved: null, error: null }
+      return asValue({ path, title, hasFrontmatter: true, moved: null })
     },
     remove: async (path: string, destroy?: boolean) => {
       requests.removed.push(`${path} ${destroy ?? false}`)
-      return { trashed: `.trash/${path}`, dangling: [], error: null }
+      return asValue({ trashed: `.trash/${path}`, dangling: [] })
     },
     list: async (folder: string) => folders[folder] ?? [],
     move: async (from: string, to: string) => {
       requests.moved.push(`${from} ${to}`)
-      return { moved: null, error: null }
+      return asValue(null)
     },
     createFolder: async (path: string) => {
       requests.folders.push(path)
@@ -72,7 +73,7 @@ vi.mock('@/app/vault', () => ({
     },
     createUrl: async (url: string, folder: string) => {
       requests.urls.push(`${url} ${folder}`)
-      return { path: folder ? `${folder}/made.url` : 'made.url', error: null }
+      return asValue({ path: folder ? `${folder}/made.url` : 'made.url' })
     },
     watchVaultChanges: held,
     watchEdits: held,

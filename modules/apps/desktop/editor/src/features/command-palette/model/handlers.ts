@@ -185,13 +185,12 @@ const removeFiles = async (
       continue
     }
     const answer = await on.files.remove(path, destroy)
-    const error = answer.error
-    if (error) {
-      errors.push(words.errors[error])
+    if (!answer.ok) {
+      errors.push(words.errors[answer.error])
       continue
     }
     if (tab.held) on.notes.close(tab.held)
-    dangling.push(...answer.dangling)
+    dangling.push(...answer.value.dangling)
     if (opening) await on.goes.leave(path, opening)
   }
 

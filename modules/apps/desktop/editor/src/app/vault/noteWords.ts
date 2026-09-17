@@ -8,7 +8,7 @@ import type {
 } from '@numen/protocol'
 import { asFailure, asValue, namesOf } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
-import type { Link, Neighbourhood, NoteResult, Role, Seat } from '@/entities/note'
+import type { Link, Neighbourhood, NoteResult, Role, Seat, WriteResult } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 
 /**
@@ -81,11 +81,19 @@ export const mapNoteResult = (from: {
   const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
   return asValue({
     body: from.body ?? '',
-    changed: staleIn(from),
     ...(at === undefined ? {} : { at }),
     ...(link === undefined ? {} : { link }),
   })
 }
+
+/** What a write came back with. A file that moved past the caller has changed. */
+export const mapWriteResult = (from: {
+  body?: string | undefined
+  error?: ProtoErrorCode | undefined
+  at?: { path: string; size: bigint; mtime: bigint } | undefined
+  url?: string | undefined
+  embed?: string | undefined
+}): WriteResult => (staleIn(from) ? asFailure('changed') : mapNoteResult(from))
 
 /**
  * A neighbourhood in the words the window uses.

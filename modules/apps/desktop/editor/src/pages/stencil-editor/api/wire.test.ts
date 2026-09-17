@@ -114,7 +114,7 @@ describe('writing a stencil', () => {
       },
       '12 34 Word.md',
     )
-    expect(answer).toEqual(asValue({ body: '', changed: false, at: '56 78 Word.md' }))
+    expect(answer).toEqual(asValue({ body: '', at: '56 78 Word.md' }))
   })
 
   it('names no file where the tab read none, and nothing where the body is empty', async () => {
