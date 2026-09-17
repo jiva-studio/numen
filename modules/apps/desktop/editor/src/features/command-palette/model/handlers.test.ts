@@ -15,6 +15,7 @@ import type { CommandDeps } from './deps'
 import type { CommandInvocation, CommandTarget, Store } from '../types'
 import { runInvocation } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/entities/artifact'
+import { asFailure, asValue } from '@numen/wire'
 import type { Movement } from '@/entities/file'
 import type { RemoveResult, RenameResult } from '@/entities/note'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
@@ -199,11 +200,11 @@ const window = (
       },
       add: async (path, name) => {
         done.push(`add ${path} ${name || '—'}`)
-        return answers.added ?? { vault: createVault('heat', 'Heat'), error: null }
+        return answers.added ?? asValue(createVault('heat', 'Heat'))
       },
       rename: async (id, name) => {
         done.push(`renames vault ${id} ${name}`)
-        return answers.added ?? { vault: createVault(id, name), error: null }
+        return answers.added ?? asValue(createVault(id, name))
       },
       remove: async (id, trash) => {
         done.push(trash ? `erases ${id}` : `forgets ${id}`)
@@ -969,7 +970,7 @@ describe('a vault made', () => {
   })
 
   it('says a folder that lies inside a vault already added', async () => {
-    const one = window({ added: { vault: null, error: 'overlaps' } })
+    const one = window({ added: asFailure('overlaps') })
 
     await carry(invocationOf('newVault', front()), one.on)
 
@@ -995,7 +996,7 @@ describe('a vault renamed', () => {
   })
 
   it('says a name another vault is already called', async () => {
-    const one = window({ added: { vault: null, error: 'nameTaken' } })
+    const one = window({ added: asFailure('nameTaken') })
 
     await carry(invocationOf('renameVault', front(), 'Heat'), one.on)
 

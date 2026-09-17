@@ -272,11 +272,11 @@ describe('vaults domain', () => {
 
     asked.addVault.mockResolvedValue({ vault: { id: 'v2', name: 'V2' } })
     const added = await vaults.add('/v2', 'V2')
-    expect(added.vault?.id).toBe('v2')
+    expect(added.ok ? added.value?.id : null).toBe('v2')
 
     asked.renameVault.mockResolvedValue({ vault: { id: 'v2', name: 'V2 renamed' } })
     const renamed = await vaults.rename('v2', 'V2 renamed')
-    expect(renamed.vault?.name).toBe('V2 renamed')
+    expect(renamed.ok ? renamed.value?.name : null).toBe('V2 renamed')
 
     asked.removeVault.mockResolvedValue({})
     expect(await vaults.remove('v2', false)).toBeNull()

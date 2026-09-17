@@ -32,9 +32,9 @@ export const addVault = async (on: VaultContext & Voice, words: AnswerWords): Pr
   const path = await on.vaults.choose(words.folder)
   if (!path) return
   const answer = await on.vaults.add(path, '')
-  if (answer.error) return on.writeMessage(words.vaultErrors[answer.error], 'error')
-  if (!answer.vault) return
-  await showVault(answer.vault.id, on, words)
+  if (!answer.ok) return on.writeMessage(words.vaultErrors[answer.error], 'error')
+  if (!answer.value) return
+  await showVault(answer.value.id, on, words)
 }
 
 /** A vault called something else. Its folder keeps the name it has on disk. */
@@ -45,8 +45,8 @@ export const renameVault = async (
 ): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.vault.name) return
   const answer = await on.vaults.rename(invocation.vault.id, invocation.name)
-  if (answer.error) return on.writeMessage(words.vaultErrors[answer.error], 'error')
-  if (answer.vault) on.vaults.setVaultName({ id: answer.vault.id, name: answer.vault.name })
+  if (!answer.ok) return on.writeMessage(words.vaultErrors[answer.error], 'error')
+  if (answer.value) on.vaults.setVaultName({ id: answer.value.id, name: answer.value.name })
 }
 
 /**
