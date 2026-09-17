@@ -13,7 +13,7 @@ import { masked } from './catches.mjs'
 import { blocks } from './source.mjs'
 
 /** The modules laid out in slices, by where their source stands. */
-const LAID = ['modules/apps/desktop/editor/src/']
+const LAID = ['modules/apps/desktop/editor/src/', 'modules/apps/desktop/flashcards/src/']
 
 /** The layers cut into slices, whose folders are one deeper than the layer. */
 const SLICED = new Set(['entities', 'features', 'widgets', 'pages', 'screens'])
