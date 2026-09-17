@@ -9,6 +9,11 @@
 //
 // The settings belong to the installation and not to a vault: the same file
 // answers whichever vault a window is showing, and every window reads it.
+//
+// They travel as the file's own text. Their sections belong to whichever
+// adapters an installation is composed of, so the core does not know the whole
+// shape and does not describe it, and a setting is written by naming the path
+// through the file. It is the only tree here that goes undescribed.
 
 package numenv1
 
