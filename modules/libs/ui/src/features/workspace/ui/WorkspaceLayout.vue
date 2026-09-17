@@ -14,6 +14,7 @@ import { WorkspacePane } from './pane'
 import WorkspaceOverlay from './WorkspaceOverlay.vue'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../model/context'
 import { useTabDrag } from '../model/drag'
+import { createNodeIdFactory } from '../lib/identity'
 import { activateTab, closeTab, focusPane, resizeBranch, type NodeIdFactory } from '../lib/edit'
 import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
 
@@ -21,7 +22,7 @@ const props = withDefaults(
   defineProps<{
     tabs: readonly Tab[]
     /** Where identities for what a gesture makes come from. */
-    naming?: NodeIdFactory | undefined
+    createId?: NodeIdFactory | undefined
     /** How close to the outer edge divides the whole workspace. */
     edge?: number
     /** How far the pointer travels before a press becomes a drag. */
@@ -69,13 +70,8 @@ const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: str
 
 const tabOf = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)
 
-/**
- * A node's identity reaches the DOM as the id of a splitter panel, so it is
- * unique to the document and not only to this tree.
- */
-let made = 0
-const createNodeId = (): NodeId =>
-  typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `node-${++made}-${Date.now()}`
+/** The identities this layout makes where a caller hands over no factory. */
+const createNodeId = createNodeIdFactory()
 
 const frame = useTemplateRef<HTMLElement>('frame')
 
@@ -83,7 +79,7 @@ const { hasMoved, overlay, label, position, landing, press } = useTabDrag({
   workspace,
   frame,
   getTab: tabOf,
-  getIdFactory: () => props.naming ?? createNodeId,
+  getIdFactory: () => props.createId ?? createNodeId,
   getEdge: () => props.edge,
   getThreshold: () => props.threshold,
   getClock: () => props.clock,

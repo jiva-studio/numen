@@ -49,6 +49,8 @@ const props = withDefaults(
     margin?: number
     /** Where it is drawn. The end of the document by default. */
     to?: string | HTMLElement
+    /** What the moment is. The window's clock by default. */
+    clock?: () => number
     /** What it is announced as. */
     name?: string
   }>(),
@@ -63,6 +65,7 @@ const props = withDefaults(
     margin: 8,
     to: 'body',
     name: 'Menu',
+    clock: () => Date.now(),
   },
 )
 
@@ -106,7 +109,7 @@ const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
 const { here, holdRow, goTo, onKey } = useMenuKeys(
   () => props.items,
   menu,
-  () => Date.now(),
+  props.clock,
 )
 
 const choose = (item: MenuItem) => {
