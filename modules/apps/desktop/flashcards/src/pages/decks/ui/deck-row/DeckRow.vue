@@ -13,6 +13,7 @@ import { LEARNED, STOPPED } from '../../words'
 import type { DeckCardsDue } from '@/entities/vault'
 import type { Preset } from '../../types'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   deck: DeckCardsDue
   /** Where it stands in the list, which is the letter it is picked by. */
@@ -27,10 +28,12 @@ const props = defineProps<{
   canOpen: boolean
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   (event: 'start'): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 /** Why the deck is not studied today, and empty while its preset schedules it. */
 const paused = computed(() => props.by?.paused ?? '')
 

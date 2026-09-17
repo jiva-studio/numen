@@ -12,34 +12,13 @@ import { WORDS as words } from '../lib/notesWords'
 import type { Neighbour } from '../api/notes'
 import type { NotesPanelState } from '../model/notes'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ held: NotesPanelState }>()
 
+/* --------------------------------- State ---------------------------------- */
 const column = useTemplateRef<HTMLElement>('column')
 
-/** A note is keyed by what its article is keyed by. */
-const keyOf = (one: Neighbour) => one.path || one.written
-
-/**
- * Where each note was drawn, so the one a link named can be scrolled to. Read
- * only when a link is followed, so it is held outside the reactive graph.
- */
-const drawn = new Map<string, HTMLElement>()
-
-const holdNote = (one: Neighbour, element: unknown): void => {
-  if (element) drawn.set(keyOf(one), element as HTMLElement)
-  else drawn.delete(keyOf(one))
-}
-
-/** How much of the panel one press of space moves it. */
-const STEP = 0.85
-
-/** The panel scrolled by a key, because the caret is nowhere in it. */
-const scrollPage = (back = false) => {
-  const at = column.value
-  if (!at) return
-  at.scrollBy({ top: at.clientHeight * STEP * (back ? -1 : 1), behavior: 'smooth' })
-}
-
+/* --------------------------------- Hooks ---------------------------------- */
 defineExpose({ scrollPage })
 
 // A link pressed in the card opens the panel on the note it names, so the
@@ -58,6 +37,31 @@ watch(
   },
   { immediate: true },
 )
+
+/* -------------------------------- Helpers --------------------------------- */
+/** A note is keyed by what its article is keyed by. */
+const keyOf = (one: Neighbour) => one.path || one.written
+
+/**
+ * Where each note was drawn, so the one a link named can be scrolled to. Read
+ * only when a link is followed, so it is held outside the reactive graph.
+ */
+const drawn = new Map<string, HTMLElement>()
+
+const holdNote = (one: Neighbour, element: unknown): void => {
+  if (element) drawn.set(keyOf(one), element as HTMLElement)
+  else drawn.delete(keyOf(one))
+}
+
+/** How much of the panel one press of space moves it. */
+const STEP = 0.85
+
+/** The panel scrolled by a key, because the caret is nowhere in it. */
+function scrollPage(back = false) {
+  const at = column.value
+  if (!at) return
+  at.scrollBy({ top: at.clientHeight * STEP * (back ? -1 : 1), behavior: 'smooth' })
+}
 </script>
 
 <template>

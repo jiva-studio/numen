@@ -7,8 +7,10 @@ import { Button } from '@numen/ui'
 
 import type { Tile } from '../../lib/tiles'
 
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{ tile: Tile }>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   /** Sit down to every deck this preset schedules. */
   (event: 'start'): void

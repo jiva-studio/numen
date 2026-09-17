@@ -16,14 +16,17 @@ import type { VaultCardsDue } from '@/entities/vault'
 import { getDueByVault, getVaultRows } from './lib/rows'
 import { VAULTS_WORDS } from './words'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   vaults: readonly VaultCardsDue[]
   counting: boolean
   version: string
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{ (event: 'choose', vault: string): void }>()
 
+/* --------------------------------- State ---------------------------------- */
 /** Each vault as a row of the list, and how many cards it has waiting. */
 const listed = computed(() => getVaultRows(props.vaults, VAULTS_WORDS))
 

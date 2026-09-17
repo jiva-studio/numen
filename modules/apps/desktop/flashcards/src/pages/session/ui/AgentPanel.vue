@@ -12,10 +12,13 @@ import { Agent } from '@numen/ui'
 import { WORDS as words } from '../lib/agentWords'
 import type { AgentPanelState } from '../model/panel'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ held: AgentPanelState }>()
 
+/* --------------------------------- State ---------------------------------- */
 const talk = useTemplateRef<InstanceType<typeof Agent>>('talk')
 
+/* --------------------------------- Hooks ---------------------------------- */
 // A panel opened is a panel opened to write in, so the field takes the keyboard
 // as it arrives. Taking it scrolls nothing, because the panel is still moving.
 watch(

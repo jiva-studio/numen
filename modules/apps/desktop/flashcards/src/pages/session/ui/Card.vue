@@ -9,6 +9,7 @@
 import { ref } from 'vue'
 import { CardProse, scheme } from '@numen/ui'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   front: string
   back: string
@@ -16,6 +17,7 @@ const props = defineProps<{
   shown: boolean
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'show'): void
   (event: 'read', note: string): void
@@ -24,9 +26,11 @@ const emit = defineEmits<{
 /** A hand that moved less than this across was pressing and not dragging. */
 const STILL = 4
 
+/* --------------------------------- State ---------------------------------- */
 /** Where the hand went down, for telling a press from a drag across the card. */
 const from = ref<number | null>(null)
 
+/* -------------------------------- Handlers -------------------------------- */
 const onPointerDown = (press: PointerEvent) => {
   from.value = press.clientX
 }

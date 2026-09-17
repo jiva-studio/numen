@@ -12,6 +12,7 @@ import type { PanelPlace } from '../model/carousel'
 /** A hand moves this as much as the owner does, so it is a model and not a prop. */
 const shown = defineModel<PanelPlace>('at', { required: true })
 
+/* --------------------------------- State ---------------------------------- */
 const window_ = useTemplateRef<HTMLElement>('window')
 const middle = useTemplateRef<HTMLElement>('middle')
 

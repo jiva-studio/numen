@@ -18,6 +18,7 @@ import { AgentPanel, NotesPanel, Session, SessionSummary } from '@/pages/session
 import { VERSION } from '@/shared/version'
 import { useWindow } from './window'
 
+/* --------------------------------- State ---------------------------------- */
 const { on, notices, dismissNotice, vaults, decks, session } = useWindow()
 </script>
 
