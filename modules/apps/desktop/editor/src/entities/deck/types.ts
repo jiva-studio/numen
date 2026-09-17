@@ -155,19 +155,18 @@ export interface UnwrittenDeck {
   readonly text: string
 }
 
-/** What renaming a field came back with. */
-export interface FieldRenameResult {
+/** A field renamed, and what it reached. */
+export interface RenamedField {
   /** The decks a heading was rewritten in, by path. */
   readonly decks: readonly string[]
   /** How many headings were rewritten, over all those decks. */
   readonly cards: number
   readonly notWritten: readonly UnwrittenDeck[]
-  /** Set where nothing was renamed at all. */
-  readonly error: ErrorCode | null
-  /** The stencil is no longer the one this caller read, and nothing was renamed. */
-  readonly changed: boolean
   readonly at: string
 }
+
+/** What renaming a field came back with. */
+export type FieldRenameResult = Result<RenamedField, CardsFailure>
 
 /**
  * Deck persistence and lifecycle operations.

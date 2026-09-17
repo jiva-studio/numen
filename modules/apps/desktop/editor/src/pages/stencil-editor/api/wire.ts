@@ -74,14 +74,15 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       name,
       (told.get(path) ?? NOTHING).at || null,
     )
-    if (answer.error !== null) return say(ERRORS[answer.error], 'error')
-    if (answer.changed) {
+    if (!answer.ok) {
+      if (answer.error !== 'changed') return say(ERRORS[answer.error], 'error')
       say(words.notRenamed, 'error')
       return onChanged([path])
     }
-    if (answer.cards > 0) say(words.renamed(answer.cards, answer.decks.length))
-    if (answer.notWritten.length > 0) {
-      say(words.notWritten(answer.notWritten.map((one) => one.path)), 'error')
+    const renamed = answer.value
+    if (renamed.cards > 0) say(words.renamed(renamed.cards, renamed.decks.length))
+    if (renamed.notWritten.length > 0) {
+      say(words.notWritten(renamed.notWritten.map((one) => one.path)), 'error')
     }
     onChanged([path])
   }

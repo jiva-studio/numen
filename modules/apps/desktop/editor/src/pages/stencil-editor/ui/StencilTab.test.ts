@@ -51,7 +51,7 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
         front: rewriteBraces(face.front),
         back: rewriteBraces(face.back),
       }))
-      return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
+      return asValue({ decks: [], cards: 0, notWritten: [], at: 'renamed' })
     },
     readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
     writeDeck: async () => asValue({ at: '' }),

@@ -59,7 +59,7 @@ const vault = (
         front: rewriteBraces(face.front),
         back: rewriteBraces(face.back),
       }))
-      return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
+      return asValue({ decks: [], cards: 0, notWritten: [], at: 'renamed' })
     },
     readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
     writeDeck: async () => asValue({ at: '' }),
@@ -181,14 +181,12 @@ describe('a field renamed in a stencil', () => {
 
   it('says how far the new name reached', async () => {
     const { tab, said } = await open({
-      renaming: {
+      renaming: asValue({
         decks: ['Animals.md', 'More.md'],
         cards: 3,
         notWritten: [],
-        error: null,
-        changed: false,
         at: 'renamed',
-      },
+      }),
     })
 
     tab.renameField('Height', 'Shoulder')
@@ -199,14 +197,12 @@ describe('a field renamed in a stencil', () => {
 
   it('says which decks keep the old heading, which nothing else would tell', async () => {
     const { tab, said } = await open({
-      renaming: {
+      renaming: asValue({
         decks: ['Animals.md'],
         cards: 1,
         notWritten: [{ path: 'Broken.md', text: 'the frontmatter cannot be read' }],
-        error: null,
-        changed: false,
         at: 'renamed',
-      },
+      }),
     })
 
     tab.renameField('Height', 'Shoulder')
@@ -217,14 +213,7 @@ describe('a field renamed in a stencil', () => {
 
   it('says the error, and says nothing of decks reached, where none was', async () => {
     const { tab, said } = await open({
-      renaming: {
-        decks: [],
-        cards: 0,
-        notWritten: [],
-        error: 'notAStencil',
-        changed: false,
-        at: '',
-      },
+      renaming: asFailure('notAStencil' as const),
     })
 
     tab.renameField('Height', 'Shoulder')
@@ -235,14 +224,7 @@ describe('a field renamed in a stencil', () => {
 
   it('says nothing was renamed where the file moved past the stencil that was read', async () => {
     const { tab, said } = await open({
-      renaming: {
-        decks: ['Animals.md'],
-        cards: 3,
-        notWritten: [],
-        error: null,
-        changed: true,
-        at: '',
-      },
+      renaming: asFailure('changed' as const),
     })
 
     tab.renameField('Height', 'Shoulder')

@@ -7,10 +7,15 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
-import type { Cards, DeckProblem, VaultStencil } from '@/entities/deck'
+import type {
+  Cards,
+  DeckProblem,
+  FieldRenameResult,
+  RenamedField,
+  VaultStencil,
+} from '@/entities/deck'
 import { WORDS as words } from '@/entities/deck'
 import { ERRORS } from '@/shared/words'
-import type { ErrorCode } from '@/shared/errors'
 import { createStencilWire, NOTHING } from './wire'
 
 /** One stencil as the vault reads it, with whatever a test wants said of it. */
@@ -188,15 +193,9 @@ describe('what is shown for a fault', () => {
 })
 
 describe('renaming a field', () => {
-  const getRenameAnswer = (over: Record<string, unknown> = {}) => ({
-    decks: [],
-    cards: 0,
-    notWritten: [],
-    error: null as ErrorCode | null,
-    changed: false,
-    at: '',
-    ...over,
-  })
+  /** What the vault answered a rename with, or the refusal instead. */
+  const getRenameAnswer = (over: Partial<RenamedField> = {}): FieldRenameResult =>
+    asValue({ decks: [], cards: 0, notWritten: [], at: '', ...over })
 
   it('asks the vault for nothing where the name is unchanged or empty', async () => {
     const cards = vault()
@@ -253,7 +252,7 @@ describe('renaming a field', () => {
 
   it('carries the refusal in the words the window shows', async () => {
     const cards = vault()
-    cards.renameField.mockResolvedValue(getRenameAnswer({ error: 'unreadable' }))
+    cards.renameField.mockResolvedValue(asFailure('unreadable'))
     const { wire, said } = wireOver(cards)
     const changed = vi.fn()
 
@@ -265,7 +264,7 @@ describe('renaming a field', () => {
 
   it('says the file moved past what the tab read, and reads it again', async () => {
     const cards = vault()
-    cards.renameField.mockResolvedValue(getRenameAnswer({ changed: true }))
+    cards.renameField.mockResolvedValue(asFailure('changed'))
     const { wire, said } = wireOver(cards)
     const changed = vi.fn()
 
@@ -277,7 +276,7 @@ describe('renaming a field', () => {
 
   it('writes no message at all where the wire was given nowhere to write one', async () => {
     const cards = vault()
-    cards.renameField.mockResolvedValue(getRenameAnswer({ error: 'unreadable' }))
+    cards.renameField.mockResolvedValue(asFailure('unreadable'))
     const wire = createStencilWire(cards as unknown as Cards)
 
     await expect(wire.renameField('Word.md', 'Front', 'Face', vi.fn())).resolves.toBeUndefined()

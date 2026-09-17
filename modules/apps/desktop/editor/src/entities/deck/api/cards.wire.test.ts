@@ -7,7 +7,7 @@
  * parts the schema holds it in.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure } from '@numen/wire'
+import { asFailure, asValue } from '@numen/wire'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -260,21 +260,20 @@ describe('renaming a field', () => {
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })
 
-    expect(await cards.renameField('Word.md', 'Front', 'Face', read)).toEqual({
-      decks: ['Words.md', 'Roots.md'],
-      cards: 12,
-      notWritten: [{ path: 'Old.md', text: 'Front' }],
-      error: null,
-      changed: false,
-      at: '12 34 Word.md',
-    })
+    expect(await cards.renameField('Word.md', 'Front', 'Face', read)).toEqual(
+      asValue({
+        decks: ['Words.md', 'Roots.md'],
+        cards: 12,
+        notWritten: [{ path: 'Old.md', text: 'Front' }],
+        at: '12 34 Word.md',
+      }),
+    )
   })
 
   it('leaves a deck it could not read carrying nothing to say', async () => {
     replyWith({ decks: [], cards: 0, notWritten: [{ path: 'Old.md' }] })
 
-    expect((await cards.renameField('Word.md', 'Front', 'Face', null)).notWritten).toEqual([
-      { path: 'Old.md', text: '' },
-    ])
+    const answer = await cards.renameField('Word.md', 'Front', 'Face', null)
+    expect(answer.ok ? answer.value.notWritten : null).toEqual([{ path: 'Old.md', text: '' }])
   })
 })

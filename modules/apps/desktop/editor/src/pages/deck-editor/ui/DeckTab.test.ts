@@ -86,14 +86,7 @@ const mountDeck = async (
     }),
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
-    renameField: async () => ({
-      decks: [],
-      cards: 0,
-      notWritten: [],
-      error: null,
-      changed: false,
-      at: '',
-    }),
+    renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: '' }),
     readDeck: async (path) =>
       asValue({
         deck: {

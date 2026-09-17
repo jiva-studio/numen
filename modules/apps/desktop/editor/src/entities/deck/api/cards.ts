@@ -66,17 +66,17 @@ export const stencilService: StencilService = {
       to,
       ...(seen === null ? {} : { seen: fingerprint(seen) }),
     })
-    return {
+    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    if (code) return asFailure(code)
+    return asValue({
       decks: answer.decks,
       cards: answer.cards,
       notWritten: answer.notWritten.map((one) => ({
         path: one.path,
         text: one.problem?.text ?? '',
       })),
-      error: errorIn(answer),
-      changed: staleIn(answer),
       at: stamp(answer.at) ?? '',
-    }
+    })
   },
   readStencil: async (path) => {
     const answer = await cardsService.readStencil({ path })

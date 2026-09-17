@@ -5,7 +5,9 @@
  * `said` is what the vault says about itself and what stands in it, `listed`
  * the vaults this installation holds, and `folders` what each folder holds.
  */
+import { asValue } from '@numen/wire'
 import type { Entry } from '@/entities/file'
+import type { FieldRenameResult } from '@/entities/deck'
 
 /** What the mocked vault answers about itself, set before the window draws. */
 export const said = {
@@ -69,14 +71,12 @@ export const said = {
   /** Whether the application answers what a file carries at all. */
   carrying: true,
   /** What renaming a field of a stencil comes back with. */
-  renaming: {
+  renaming: asValue({
     decks: [] as string[],
     cards: 0,
     notWritten: [] as { path: string; text: string }[],
-    error: null as import('@/shared/errors').ErrorCode | null,
-    changed: false,
     at: 'a2',
-  },
+  }) as FieldRenameResult,
 }
 
 /** The vaults this installation holds, and the one the window is showing. */
@@ -240,14 +240,7 @@ export const forgetAnswers = () => {
   }
   said.carries = {}
   said.carrying = true
-  said.renaming = {
-    decks: [],
-    cards: 0,
-    notWritten: [],
-    error: null,
-    changed: false,
-    at: 'a2',
-  }
+  said.renaming = asValue({ decks: [], cards: 0, notWritten: [], at: 'a2' })
   maker.forget()
   outside.forget()
   listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]

@@ -5,6 +5,7 @@ export type {
   DeckProblem,
   CardsFailure,
   FieldRenameResult,
+  RenamedField,
   StencilSummary,
   Value,
   VaultCard,
