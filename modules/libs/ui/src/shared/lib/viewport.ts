@@ -17,6 +17,12 @@ export interface Viewport {
    * changes. Calling what comes back stops the watching.
    */
   readonly watchRoom: (took: (size: Size) => void) => () => void
+  /**
+   * Watch an element and be told the room it takes up with its padding and its
+   * edge, which is what anything standing clear of it has to clear. Calling
+   * what comes back stops the watching.
+   */
+  readonly watchWhole: (of: HTMLElement, took: (size: Size) => void) => () => void
 }
 
 export const browserViewport: Viewport = {
@@ -28,6 +34,20 @@ export const browserViewport: Viewport = {
       if (box && box.width > 0 && box.height > 0) {
         took({ width: box.width, height: box.height })
       }
+    })
+    observer.observe(of)
+    return () => observer.disconnect()
+  },
+
+  watchWhole: (of, took) => {
+    if (typeof ResizeObserver === 'undefined') return () => {}
+
+    const observer = new ResizeObserver(([entry]) => {
+      const box = entry?.borderBoxSize?.[0]
+      took({
+        width: box?.inlineSize ?? of.offsetWidth,
+        height: box?.blockSize ?? of.offsetHeight,
+      })
     })
     observer.observe(of)
     return () => observer.disconnect()
