@@ -14,8 +14,6 @@ This is why the plex talks about *nodes with a seat*: a link is not what the ple
 
 The dependency runs one way: `modules/apps/*` depends on `modules/libs/ui`. Never the reverse, and never sideways.
 
-**The gate reads it.** `modules/tools/lint/isolated.mjs` walks every file here and fails on an import of the schema, the transport or a window. Run it alone with `node modules/tools/lint/isolated.mjs`, which names each reach and counts them.
-
 ## Working on it
 
 ```bash
