@@ -171,7 +171,7 @@ describe('giving up', () => {
     await asking
 
     expect(conversation.turns.value.map((turn) => turn.text)).toEqual(['what is here?', 'Two '])
-    expect(conversation.working.value).toBe(false)
+    expect(conversation.isWorking.value).toBe(false)
   })
 })
 
@@ -553,7 +553,7 @@ describe('a conversation that is over', () => {
     await asking
 
     expect(conversation.turns.value.map((turn) => turn.text)).toEqual(['what is here?', 'Two '])
-    expect(conversation.working.value).toBe(false)
+    expect(conversation.isWorking.value).toBe(false)
   })
 
   it('says nothing when the agent refuses to let go', async () => {
@@ -638,7 +638,7 @@ describe('giving up on an answer', () => {
     conversation.stop()
 
     expect(conversation.turns.value.filter((turn) => turn.voice === 'doing')).toEqual([])
-    expect(conversation.working.value).toBe(false)
+    expect(conversation.isWorking.value).toBe(false)
 
     release()
     await asking

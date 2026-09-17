@@ -23,7 +23,7 @@ defineEmits<{
     variant="outline"
     class="presets__preset"
     :class="{ 'presets__preset--paused': tile.one.paused }"
-    :disabled="!tile.opens"
+    :disabled="!tile.canOpen"
     @click="$emit('start')"
   >
     <span class="presets__said">

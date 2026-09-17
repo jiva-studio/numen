@@ -64,7 +64,7 @@ watch(
 <template>
   <section class="reading" :aria-label="words.reading">
     <div ref="column" class="reading__column">
-      <p v-if="!props.held.notes.value.length && !props.held.working.value" class="reading__quiet">
+      <p v-if="!props.held.notes.value.length && !props.held.isWorking.value" class="reading__quiet">
         {{ words.nothing }}
       </p>
 

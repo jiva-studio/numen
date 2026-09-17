@@ -29,7 +29,7 @@ export interface VaultRow {
    * Whether what the window has to say about this row is still on its way. Such
    * a row is drawn and carries no letter, and it is not pressed until it is.
    */
-  readonly working?: boolean
+  readonly isWorking?: boolean
 }
 
 /** What the screen offers below the list, where a window offers anything. */

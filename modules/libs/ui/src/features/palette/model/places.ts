@@ -68,7 +68,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
    */
   const said = computed(() =>
     shown.value
-      .filter((group) => !group.working && group.items.length === 0 && group.silence)
+      .filter((group) => !group.isWorking && group.items.length === 0 && group.silence)
       .map((group) => group.silence)
       .join('. '),
   )

@@ -60,7 +60,7 @@ const allDue = computed(() => props.vault.due + props.vault.new)
           :by="byDeck.get(deck.deck)"
           :scheduled="scheduled"
           :counted="vault.counted"
-          :opens="canStart(deck, byDeck)"
+          :can-open="canStart(deck, byDeck)"
           @start="$emit('start', deck.deck)"
         />
       </li>

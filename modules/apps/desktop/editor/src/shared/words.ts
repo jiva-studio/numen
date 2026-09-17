@@ -188,7 +188,7 @@ export const WORDS = {
   noAction: 'Nothing by that name',
   /** The corner where what is running behind the window is shown. */
   wordsOnly: 'Searching by words only — no model set',
-  working: 'Background work',
+  isWorking: 'Background work',
   dismiss: 'Put away',
   more: 'more',
 }

@@ -473,7 +473,7 @@ describe('marking why an item is here', () => {
 describe('which group stands where', () => {
   const holding = group('names', [item('one')])
   const empty = group('text', [], { silence: 'nothing to search with' })
-  const alsoEmpty = group('meaning', [], { working: true })
+  const alsoEmpty = group('meaning', [], { isWorking: true })
 
   it('keeps the groups holding something in the order they were offered', () => {
     const also = group('text', [item('two')])
@@ -500,7 +500,7 @@ describe('which group stands where', () => {
   })
 
   it('draws a group holding nothing while it is still working', () => {
-    expect(orderGroups([group('meaning', [], { working: true })]).map((one) => one.id)).toEqual([
+    expect(orderGroups([group('meaning', [], { isWorking: true })]).map((one) => one.id)).toEqual([
       'meaning',
     ])
   })

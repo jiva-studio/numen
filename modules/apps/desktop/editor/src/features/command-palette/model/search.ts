@@ -166,7 +166,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
         id,
         title,
         items: rows.map((one) => one.item),
-        working: isWorking.value[id],
+        isWorking: isWorking.value[id],
         silence: silenceOf(id),
       }
     }

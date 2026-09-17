@@ -81,7 +81,7 @@ export const useWindow = () => {
   }
 
   /**
-   * What the session could not act on, said once as it opens: a deck whose cards
+   * What the session could not act on, said once as it canOpen: a deck whose cards
    * could not be given marks holds cards this session does not ask, and a line of
    * the vault's answers that could not be read is a card standing where the rest
    * of its history left it.

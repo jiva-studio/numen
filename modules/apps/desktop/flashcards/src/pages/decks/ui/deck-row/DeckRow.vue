@@ -24,7 +24,7 @@ const props = defineProps<{
   /** Whether the vault has been counted. */
   counted: boolean
   /** Whether it can be sat down to. */
-  opens: boolean
+  canOpen: boolean
 }>()
 
 defineEmits<{
@@ -64,7 +64,7 @@ const share = computed(() => {
 </script>
 
 <template>
-  <Button variant="outline" class="decks__deck" :disabled="!opens" @click="$emit('start')">
+  <Button variant="outline" class="decks__deck" :disabled="!canOpen" @click="$emit('start')">
     <!-- The letter it is picked by, where the alphabet reaches it: a
          person reads down the list and presses what they see. -->
     <KeyCap v-if="letterOf(at)" :keys="{ icons: [], letter: letterOf(at) }" />

@@ -108,7 +108,7 @@ export const cornerOf = (
   vault: IndexCoverage,
   words: Words,
 ): readonly Notice[] => {
-  const working: readonly Notice[] = alone(tasks).map(createNotice)
+  const isWorking: readonly Notice[] = alone(tasks).map(createNotice)
 
   const so: Notice[] = [
     ...soThat('unwatched', state.unwatched && words.unwatched, {
@@ -138,5 +138,5 @@ export const cornerOf = (
     ...manner[one.kind],
   }))
 
-  return [...working, ...so, ...said]
+  return [...isWorking, ...so, ...said]
 }
