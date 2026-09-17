@@ -48,18 +48,17 @@ export const sendWrite = async (
     flight.errorMessage.value = words.unwritten
     return
   }
-  if (answer.changed) {
-    flight.hasChanged.value = true
-    return
-  }
-  const writeError = answer.error
-  if (writeError) {
-    flight.errorMessage.value = words.notSaved(writeError)
+  if (!answer.ok) {
+    if (answer.error === 'changed') {
+      flight.hasChanged.value = true
+      return
+    }
+    flight.errorMessage.value = words.notSaved(answer.error)
     writeMessage(flight.errorMessage.value, 'error')
     return
   }
   flight.errorMessage.value = ''
-  flight.at = answer.at
+  flight.at = answer.value.at
   flight.theirs.clear()
   flight.isWarned = false
 }

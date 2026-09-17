@@ -149,9 +149,10 @@ export const useWindow = () => {
     const kind = (await core.fileKinds([path])).get(path)
     if (kind?.type !== 'deck') return editing.schedules.openPreset(path)
     const answer = await presets.getDeckPreset(path)
-    if (answer.error) return writeMessage(words.errors[answer.error], 'error')
-    if (!answer.preset?.path) return writeMessage(words.noPreset, 'caution')
-    editing.schedules.openPreset(answer.preset.path, answer.preset.title)
+    if (!answer.ok) return writeMessage(words.errors[answer.error], 'error')
+    const read = answer.value.preset
+    if (!read?.path) return writeMessage(words.noPreset, 'caution')
+    editing.schedules.openPreset(read.path, read.title)
   }
 
   const commandsModule = useCommands({

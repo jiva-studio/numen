@@ -43,11 +43,12 @@ export type {
   PresetChoice,
   PresetCounts,
   Presets,
-  ReadResult,
+  PresetReadResult,
+  PresetWriteResult,
+  ReadPreset,
   Rule,
   Settings,
   SettingsBounds,
-  WriteResult,
 } from './lib/presets'
 export { presets } from './api/presets.wire'
 export type { Surrounds } from './lib/surrounds'

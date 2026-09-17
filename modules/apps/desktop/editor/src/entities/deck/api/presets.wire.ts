@@ -24,7 +24,7 @@ import type {
   Point,
   Preset,
   Presets,
-  ReadResult,
+  PresetReadResult,
   Rule,
   Settings,
   SettingsBounds,
@@ -50,7 +50,9 @@ export const presets: Presets = {
       preset,
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
+    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    if (code) return asFailure(code)
+    return asValue({ at: stamp(answer.at) ?? '' })
   },
   write: async (path, settings, seen) => {
     const answer = await presetsService.writePreset({
@@ -58,7 +60,9 @@ export const presets: Presets = {
       settings: toSettingsMessage(settings),
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
+    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    if (code) return asFailure(code)
+    return asValue({ at: stamp(answer.at) ?? '' })
   },
   curve: async (path, settings) => {
     const answer = await presetsService.computeCurve({
@@ -75,12 +79,15 @@ const parseRead = (answer: {
   error?: ProtoErrorCode | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   bounds?: SettingsBoundsMessage | undefined
-}): ReadResult => ({
-  preset: answer.preset ? parsePreset(answer.preset) : null,
-  error: errorIn(answer),
-  at: stamp(answer.at) ?? '',
-  bounds: parseSettingsBounds(answer.bounds),
-})
+}): PresetReadResult => {
+  const error = errorIn(answer)
+  if (error) return asFailure(error)
+  return asValue({
+    preset: answer.preset ? parsePreset(answer.preset) : null,
+    at: stamp(answer.at) ?? '',
+    bounds: parseSettingsBounds(answer.bounds),
+  })
+}
 
 /** How far each setting goes, as the read answered it. */
 const parseSettingsBounds = (all: SettingsBoundsMessage | undefined): SettingsBounds => {

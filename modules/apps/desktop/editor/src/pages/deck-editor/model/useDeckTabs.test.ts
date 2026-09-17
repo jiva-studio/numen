@@ -149,40 +149,38 @@ const vault = (
   const put: { deck: string; preset: string; seen: string }[] = []
 
   const presets: Presets = {
-    read: async (path) => ({
-      preset: { path, title: 'Sanskrit', settings: DEFAULTS, problems: [], ...SCHEDULING },
-      error: null,
-      at: '',
-      bounds: NO_BOUNDS,
-    }),
+    read: async (path) =>
+      asValue({
+        preset: { path, title: 'Sanskrit', settings: DEFAULTS, problems: [], ...SCHEDULING },
+        at: '',
+        bounds: NO_BOUNDS,
+      }),
     list: async () =>
       answers.presets ?? [
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
-    createPreset: async () => ({ ok: true, value: { path: '' } }),
-    getDeckPreset: async () => ({
-      preset: {
-        path: by,
-        title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
-        settings: DEFAULTS,
-        problems: answers.saying ? [answers.saying] : [],
-        ...SCHEDULING,
-      },
-      error: null,
-      at: '',
-      bounds: NO_BOUNDS,
-    }),
+    createPreset: async () => asValue({ path: '' }),
+    getDeckPreset: async () =>
+      asValue({
+        preset: {
+          path: by,
+          title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
+          settings: DEFAULTS,
+          problems: answers.saying ? [answers.saying] : [],
+          ...SCHEDULING,
+        },
+        at: '',
+        bounds: NO_BOUNDS,
+      }),
     scheduleDeck: async (deck, preset, seen) => {
       put.push({ deck, preset, seen })
-      if (answers.notScheduled) {
-        return { error: answers.notScheduled, changed: false, at: '' }
-      }
-      if (answers.schedulingChanged) return { error: null, changed: true, at: '' }
+      if (answers.notScheduled) return asFailure(answers.notScheduled)
+      if (answers.schedulingChanged) return asFailure('changed' as const)
       by = preset
-      return { error: null, changed: false, at: 'scheduled' }
+      return asValue({ at: 'scheduled' })
     },
-    write: async () => ({ error: null, changed: false, at: '' }),
+    write: async () => asValue({ at: '' }),
     curve: async () => ({
       goal: 'minutes',
       grid: [],

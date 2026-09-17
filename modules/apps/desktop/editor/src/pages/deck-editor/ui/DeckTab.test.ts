@@ -118,39 +118,37 @@ const mountDeck = async (
   const put: string[] = []
 
   const presets: Presets = {
-    read: async (path) => ({
-      preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
-      error: null,
-      at: '',
-      bounds: NO_BOUNDS,
-    }),
+    read: async (path) =>
+      asValue({
+        preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
+        at: '',
+        bounds: NO_BOUNDS,
+      }),
     list: async () =>
       schedule.presets ?? [
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
-    createPreset: async () => ({ ok: true, value: { path: '' } }),
-    getDeckPreset: async () => ({
-      preset: {
-        path: by,
-        title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
-        settings: DEFAULTS,
-        problems: schedule.saying ? [schedule.saying] : [],
-        ...SCHEDULING,
-      },
-      error: null,
-      at: '',
-      bounds: NO_BOUNDS,
-    }),
+    createPreset: async () => asValue({ path: '' }),
+    getDeckPreset: async () =>
+      asValue({
+        preset: {
+          path: by,
+          title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
+          settings: DEFAULTS,
+          problems: schedule.saying ? [schedule.saying] : [],
+          ...SCHEDULING,
+        },
+        at: '',
+        bounds: NO_BOUNDS,
+      }),
     scheduleDeck: async (_deck, preset) => {
       put.push(preset)
-      if (schedule.notScheduled) {
-        return { error: schedule.notScheduled, changed: false, at: '' }
-      }
+      if (schedule.notScheduled) return asFailure(schedule.notScheduled)
       by = preset
-      return { error: null, changed: false, at: 'scheduled' }
+      return asValue({ at: 'scheduled' })
     },
-    write: async () => ({ error: null, changed: false, at: '' }),
+    write: async () => asValue({ at: '' }),
     curve: async () => ({
       goal: 'minutes',
       grid: [],
