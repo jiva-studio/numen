@@ -8,8 +8,8 @@
  * them all as one.
  */
 import { ref, type Ref } from 'vue'
-import { onNextFrame } from '@/shared/lib/clock'
-import { createAnswer, type Paint } from './answer'
+import { onNextFrame, type Paint } from '@/shared/lib/clock'
+import { createAnswer } from './answer'
 import { createWorkLine } from './work'
 import type { Turn } from '../lib/turn'
 import type { AgentPort, AgentStep, SourceLocation } from '../lib/agent'
