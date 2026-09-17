@@ -17,13 +17,13 @@ import {
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
-  folder: false,
+  isFolder: false,
   kind: 'note',
   type: 'note',
   ...over,
 })
 
-const folder = (path: string): Entry => file(path, { folder: true, kind: 'other' })
+const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
 
 /**
  * A vault of two folders and a picture nothing holds a source for, and a count

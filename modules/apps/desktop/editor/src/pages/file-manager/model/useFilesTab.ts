@@ -32,7 +32,7 @@ export type { DropPosition, FileMaker, FilesTabDeps, FilesTabState, MenuRequest 
 
 /** Where a row activated takes the person: the file the row stands for. */
 export const getLandingDestination = (entry: Entry): SearchDestination | null =>
-  entry.folder ? null : { at: 'file', path: entry.path, title: entry.name }
+  entry.isFolder ? null : { at: 'file', path: entry.path, title: entry.name }
 
 export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   const menu = ref<MenuRequest | null>(null)
@@ -53,7 +53,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   const select = (paths: readonly string[]) => list.selectPaths(paths)
 
   const rename = async (path: string, name: string) => {
-    const to = resolveRenamePath(path, name, list.getEntryAt(path)?.folder ?? false)
+    const to = resolveRenamePath(path, name, list.getEntryAt(path)?.isFolder ?? false)
     if (!to) return
     await deps.movePath(path, to)
     await list.refresh()
@@ -87,7 +87,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     deps.setDraggedPaths(
       paths.filter((path) => {
         const entry = list.getEntryAt(path)
-        return !!entry && !entry.folder && entry.kind === 'note'
+        return !!entry && !entry.isFolder && entry.kind === 'note'
       }),
     )
   }

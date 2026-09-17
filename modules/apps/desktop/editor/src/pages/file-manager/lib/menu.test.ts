@@ -26,11 +26,11 @@ const getItemIds = (
   source: Source,
   folder = false,
   canRun: RunGuard = canRunAnything,
-): readonly string[] => itemsFor({ source, folder }, false, canRun).map((one) => one.id)
+): readonly string[] => itemsFor({ source, isFolder: folder }, false, canRun).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
 const getGroupedIds = (source: Source): readonly string[] =>
-  groupItems(itemsFor({ source, folder: false }, false, canRunAnything)).map(
+  groupItems(itemsFor({ source, isFolder: false }, false, canRunAnything)).map(
     (one) => `${one.isRule ? '— ' : ''}${one.id}`,
   )
 

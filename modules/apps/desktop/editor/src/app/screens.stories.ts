@@ -548,7 +548,7 @@ export const Transcribing: Story = {
 const entry = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
-  folder: false,
+  isFolder: false,
   kind: 'note',
   type: 'note',
   ...over,
@@ -559,10 +559,10 @@ const other = (path: string, kind: Entry['kind']): Entry => entry(path, { kind, 
 /** The folders of the vault the pictures in this file are taken of. */
 const VAULT: Record<string, readonly Entry[]> = {
   [ROOT]: [
-    entry('Lectures', { folder: true, kind: 'other' }),
-    entry('Physics', { folder: true, kind: 'other' }),
-    entry('Reading', { folder: true, kind: 'other' }),
-    entry('Sanskrit', { folder: true, kind: 'other' }),
+    entry('Lectures', { isFolder: true, kind: 'other' }),
+    entry('Physics', { isFolder: true, kind: 'other' }),
+    entry('Reading', { isFolder: true, kind: 'other' }),
+    entry('Sanskrit', { isFolder: true, kind: 'other' }),
     entry('Entropy.md'),
     entry('Inbox.md'),
     entry('Reading list.md'),

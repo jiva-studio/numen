@@ -129,7 +129,7 @@ describe('files domain', () => {
     expect(removed.trashed).toBe(true)
 
     asked.listFiles.mockResolvedValue({
-      entries: [{ path: 'test.md', name: 'test.md', folder: false, kind: 1, type: 1 }],
+      entries: [{ path: 'test.md', name: 'test.md', isFolder: false, kind: 1, type: 1 }],
     })
     const listing = await core.list('')
     expect(listing.length).toBe(1)

@@ -87,13 +87,13 @@ export const listed = {
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders = {
   '': [
-    { path: 'physics', name: 'physics', folder: true, kind: 'other' },
-    { path: 'Root.md', name: 'Root.md', folder: false, kind: 'note' },
-    { path: 'Cover.png', name: 'Cover.png', folder: false, kind: 'other' },
+    { path: 'physics', name: 'physics', isFolder: true, kind: 'other' },
+    { path: 'Root.md', name: 'Root.md', isFolder: false, kind: 'note' },
+    { path: 'Cover.png', name: 'Cover.png', isFolder: false, kind: 'other' },
   ],
   physics: [
-    { path: 'physics/Entropy.md', name: 'Entropy.md', folder: false, kind: 'note' },
-    { path: 'physics/Kelvin.md', name: 'Kelvin.md', folder: false, kind: 'note' },
+    { path: 'physics/Entropy.md', name: 'Entropy.md', isFolder: false, kind: 'note' },
+    { path: 'physics/Kelvin.md', name: 'Kelvin.md', isFolder: false, kind: 'note' },
   ],
 } as Record<string, readonly Record<string, unknown>[]>
 

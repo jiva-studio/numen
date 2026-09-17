@@ -119,10 +119,10 @@ describe('every road to a file', () => {
   const root = folders['']
   beforeEach(() => {
     folders[''] = [
-      { path: 'Animals.md', name: 'Animals.md', folder: false, kind: 'note', type: 'deck' },
-      { path: 'Animal.md', name: 'Animal.md', folder: false, kind: 'note', type: 'stencil' },
-      { path: 'Ants.md', name: 'Ants.md', folder: false, kind: 'note', type: 'note' },
-      { path: 'Ants.epub', name: 'Ants.epub', folder: false, kind: 'book', type: 'note' },
+      { path: 'Animals.md', name: 'Animals.md', isFolder: false, kind: 'note', type: 'deck' },
+      { path: 'Animal.md', name: 'Animal.md', isFolder: false, kind: 'note', type: 'stencil' },
+      { path: 'Ants.md', name: 'Ants.md', isFolder: false, kind: 'note', type: 'note' },
+      { path: 'Ants.epub', name: 'Ants.epub', isFolder: false, kind: 'book', type: 'note' },
     ]
   })
   afterEach(() => {

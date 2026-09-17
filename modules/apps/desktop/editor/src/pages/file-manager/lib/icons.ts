@@ -10,7 +10,7 @@ import { iconOfNote } from '@/entities/note'
 
 export const iconOfEntry = (entry: Entry | null | undefined, open: boolean): LucideIcon => {
   if (!entry) return File
-  if (entry.folder) return open ? FolderOpen : Folder
+  if (entry.isFolder) return open ? FolderOpen : Folder
   if (entry.kind === 'note') return iconOfNote(entry.type)
   return iconOfSource(entry.kind) ?? File
 }

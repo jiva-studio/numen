@@ -24,10 +24,10 @@ const canRunAnything = () => true
 const inTheTree = [
   itemsFor(null, false, canRunAnything),
   ...(['note', 'book', 'recording', 'other'] as Source[]).flatMap((source) => [
-    itemsFor({ source, folder: false }, false, canRunAnything),
-    itemsFor({ source, folder: true }, false, canRunAnything),
+    itemsFor({ source, isFolder: false }, false, canRunAnything),
+    itemsFor({ source, isFolder: true }, false, canRunAnything),
   ]),
-  itemsFor({ source: 'note', folder: false }, true, canRunAnything),
+  itemsFor({ source: 'note', isFolder: false }, true, canRunAnything),
 ].flat()
 
 describe('the icon a command is drawn with', () => {
