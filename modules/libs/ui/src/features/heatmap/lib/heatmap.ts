@@ -193,3 +193,41 @@ export function getWeight(did: number): Day['weight'] {
   if (did < 50) return 3
   return 4
 }
+
+/** How round the corner of a cell is drawn, in the grid's own units. */
+const RADIUS = 2
+
+/** Where one day stands in the grid, and how it is drawn there. */
+export interface Cell {
+  readonly day: Day
+  readonly x: number
+  readonly y: number
+  readonly size: number
+  readonly radius: number
+}
+
+/** How far apart two cells begin. */
+const stepOf = (grid: { cell: number; gap: number }): number => grid.cell + grid.gap
+
+/** How tall the grid stands: seven rows, with no gap past the last of them. */
+export function getGridHeight(grid: { cell: number; gap: number }): number {
+  return ROWS * stepOf(grid) - grid.gap
+}
+
+/**
+ * Where every day is drawn. A column is a week, so a day's place is its own
+ * number over the rows and the remainder down them.
+ */
+export function getCells(
+  grid: { cell: number; gap: number },
+  days: readonly Day[],
+): readonly Cell[] {
+  const step = stepOf(grid)
+  return days.map((day, at) => ({
+    day,
+    x: Math.floor(at / ROWS) * step,
+    y: (at % ROWS) * step,
+    size: grid.cell,
+    radius: RADIUS,
+  }))
+}

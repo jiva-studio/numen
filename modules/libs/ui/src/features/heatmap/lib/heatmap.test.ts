@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getDays, getWeight, measureGrid, NOTHING, ROWS } from './heatmap'
+import { getCells, getDays, getGridHeight, getWeight, measureGrid, NOTHING, ROWS } from './heatmap'
 import { getDayName } from '@/shared/lib/day'
 import type { Tally } from './heatmap'
 
@@ -175,5 +175,29 @@ describe('how dark a day is drawn', () => {
     expect(getWeight(49)).toBe(3)
     expect(getWeight(50)).toBe(4)
     expect(getWeight(5000)).toBe(4)
+  })
+})
+
+describe('where the days are drawn', () => {
+  const grid = { cell: 10, gap: 2 }
+
+  it('stands seven rows tall, with no gap past the last', () => {
+    expect(getGridHeight(grid)).toBe(7 * 12 - 2)
+  })
+
+  it('fills a column before it begins the next', () => {
+    const days = getDays(2, new Date('2026-01-31T12:00:00Z'), new Map(), new Map())
+    const cells = getCells(grid, days)
+
+    expect(cells.slice(0, 7).map((one) => one.x)).toStrictEqual([0, 0, 0, 0, 0, 0, 0])
+    expect(cells.slice(0, 7).map((one) => one.y)).toStrictEqual([0, 12, 24, 36, 48, 60, 72])
+    expect(cells[7]?.x).toBe(12)
+    expect(cells[7]?.y).toBe(0)
+  })
+
+  it('draws every cell the size the grid measured', () => {
+    const days = getDays(1, new Date('2026-01-31T12:00:00Z'), new Map(), new Map())
+
+    for (const cell of getCells(grid, days)) expect(cell.size).toBe(10)
   })
 })
