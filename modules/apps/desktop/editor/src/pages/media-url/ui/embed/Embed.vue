@@ -9,6 +9,7 @@
  * runs in this window.
  */
 import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue'
+import { getDraggedHeight, LEAST } from '../../lib/height'
 
 // --- Props & Emits ---
 const props = defineProps<{
@@ -35,13 +36,16 @@ const player = useTemplateRef<HTMLVideoElement>('player')
 
 /** How tall the player is drawn, remembered on this machine. */
 const HEIGHT = 'numen.embed.height'
-const LEAST = 120
 
 const tall = ref(readHeight())
 const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
 const frameStyle = computed(() =>
   tall.value === null ? undefined : { blockSize: `${tall.value}px` },
 )
+
+// --- Hooks ---
+// A drag the page is taken out from under lets go of the bar it was holding.
+onBeforeUnmount(() => onPointerUp())
 
 // --- Handlers ---
 /**
@@ -70,8 +74,7 @@ function onPointerDown(at: PointerEvent): void {
 function onPointerMove(at: PointerEvent): void {
   const held = drawn.value
   if (!held) return
-  const most = Math.max(LEAST, window.innerHeight - 160)
-  tall.value = Math.min(most, Math.max(LEAST, held.was + at.clientY - held.from))
+  tall.value = getDraggedHeight(held.was, at.clientY - held.from, window.innerHeight)
 }
 
 function onPointerUp(): void {
@@ -94,8 +97,6 @@ function onVideoTimeUpdate(event: Event): void {
   const video = event.target as HTMLVideoElement
   emit('time-update', Math.round(video.currentTime * 1000))
 }
-
-onBeforeUnmount(onPointerUp)
 
 // --- Helpers ---
 /**
