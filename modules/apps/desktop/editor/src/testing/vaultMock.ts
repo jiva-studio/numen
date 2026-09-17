@@ -7,6 +7,8 @@ import { asValue } from '@numen/wire'
 import { requests } from './requests'
 import { folders, getFileKind, held, listed, outside, said } from './answers'
 import type { Tab } from '@/entities/tab'
+import type { VaultCore } from '@/app/vault/core'
+import type { Vaults } from '@/entities/vault'
 
 vi.mock('@/app/vault', () => ({
   vaults: {
@@ -22,13 +24,14 @@ vi.mock('@/app/vault', () => ({
       requests.opened.push(id)
       return null
     },
-  },
+  } satisfies Partial<Vaults>,
   core: {
     vaults: async () => {
       if (!said.listable) throw new Error('the vaults are not there')
       return listed
     },
     state: async () => ({
+      id: 'physics',
       name: 'Vault',
       path: '/vaults/Physics',
       scan: {
@@ -39,13 +42,14 @@ vi.mock('@/app/vault', () => ({
       coverage: {
         chunkCount: 0n,
         embeddedCount: BigInt(said.embedded),
-        isEmbedding: false,
+        isEmbedding: false as boolean,
       },
     }),
     agentUnreachable: async () => '',
     getInitialOpenPath: async () => (said.opening ? { path: said.opening } : null),
     neighbourhood: async (path: string) => ({
       focus: { path, title: path.replace(/\.md$/, '') },
+      focusType: 'note' as const,
       related: [],
     }),
     read: async () => asValue({ body: 'what is written', at: 'a1' }),
@@ -89,5 +93,5 @@ vi.mock('@/app/vault', () => ({
     fileKinds: async (paths: readonly string[]) =>
       new Map(paths.map((path) => [path, getFileKind(path)])),
     headings: async () => new Map(),
-  },
+  } satisfies Partial<VaultCore>,
 }))

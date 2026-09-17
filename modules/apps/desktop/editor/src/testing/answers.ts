@@ -5,6 +5,7 @@
  * `said` is what the vault says about itself and what stands in it, `listed`
  * the vaults this installation holds, and `folders` what each folder holds.
  */
+import type { Entry } from '@/entities/file'
 
 /** What the mocked vault answers about itself, set before the window draws. */
 export const said = {
@@ -85,17 +86,23 @@ export const listed = {
 }
 
 /** What each folder of the vault holds, as a listing answers it. */
-export const folders = {
+export const folders: Record<string, readonly Entry[]> = {
   '': [
-    { path: 'physics', name: 'physics', isFolder: true, kind: 'other' },
-    { path: 'Root.md', name: 'Root.md', isFolder: false, kind: 'note' },
-    { path: 'Cover.png', name: 'Cover.png', isFolder: false, kind: 'other' },
+    { path: 'physics', name: 'physics', isFolder: true, kind: 'other', type: 'note' },
+    { path: 'Root.md', name: 'Root.md', isFolder: false, kind: 'note', type: 'note' },
+    { path: 'Cover.png', name: 'Cover.png', isFolder: false, kind: 'other', type: 'note' },
   ],
   physics: [
-    { path: 'physics/Entropy.md', name: 'Entropy.md', isFolder: false, kind: 'note' },
-    { path: 'physics/Kelvin.md', name: 'Kelvin.md', isFolder: false, kind: 'note' },
+    {
+      path: 'physics/Entropy.md',
+      name: 'Entropy.md',
+      isFolder: false,
+      kind: 'note',
+      type: 'note',
+    },
+    { path: 'physics/Kelvin.md', name: 'Kelvin.md', isFolder: false, kind: 'note', type: 'note' },
   ],
-} as Record<string, readonly Record<string, unknown>[]>
+}
 
 /**
  * What the vault holds at a path. A book and a note are told apart by the name
