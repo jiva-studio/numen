@@ -172,10 +172,9 @@ export default tseslint.config(
           patterns: [
             {
               group: [
-                '@numen/protocol',
-                '@numen/protocol/*',
-                '@numen/editor',
-                '@numen/wire',
+                '@numen/*',
+                '@numen/*/**',
+                '!@numen/ui',
                 // The same packages named by the path the install put them at.
                 '**/node_modules/@numen/**',
               ],
