@@ -5,6 +5,7 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
+import { asValue } from '@numen/wire'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
 import type { Task } from '@/shared/notices/task'
@@ -51,8 +52,8 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     watchTasks: async function* () {
       await waitForever()
     },
-    read: async () => ({ body: '', error: null }),
-    write: async () => ({ body: '', error: null }),
+    read: async () => asValue({ body: '' }),
+    write: async () => asValue({ body: '' }),
     create: async () => ({ ok: true, value: { path: '' } }),
     join: async () => null,
     rename: async (path, title) => ({

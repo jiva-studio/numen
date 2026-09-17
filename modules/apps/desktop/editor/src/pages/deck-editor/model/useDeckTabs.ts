@@ -2,6 +2,7 @@
  * Window registration and tab state for flashcard deck tabs.
  */
 import { computed } from 'vue'
+import { asFailure, asValue } from '@numen/wire'
 import type { PlexDestination } from '@numen/ui'
 import type { PathRename } from '@/shared/paths'
 import type { Cards } from '@/entities/deck'
@@ -49,8 +50,8 @@ export function useDeckTabs(
         bound: answer.bound,
         title: answer.deck?.title ?? null,
       })
-      if (error !== null) return { body: '', error }
-      return { body: deck ? serializeBufferDeckToString(deck) : '', error: null, at: answer.at }
+      if (error !== null) return asFailure(error)
+      return asValue({ body: deck ? serializeBufferDeckToString(deck) : '', at: answer.at })
     },
     write: async (path, body, seen) => {
       const deck = deserializeBufferDeckFromString(body)
@@ -66,12 +67,8 @@ export function useDeckTabs(
       )
       const error = answer.error
       vaultAnswers.recordWrite(path, { error, bound: answer.bound })
-      return {
-        body: '',
-        error,
-        at: answer.at,
-        changed: answer.changed,
-      }
+      if (error !== null) return asFailure(error)
+      return asValue({ body: '', at: answer.at, changed: answer.changed })
     },
   })
 

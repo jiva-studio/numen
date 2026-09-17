@@ -6,7 +6,7 @@ import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
 } from '@numen/protocol'
-import { namesOf } from '@numen/wire'
+import { asFailure, asValue, namesOf } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
 import type { Link, Neighbourhood, NoteResult, Role, Seat } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
@@ -74,17 +74,17 @@ export const mapNoteResult = (from: {
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   url?: string | undefined
   embed?: string | undefined
-}): NoteResult & { at?: string; changed: boolean } => {
-  const at = stamp(from.at)
+}): NoteResult => {
   const error = errorIn(from)
+  if (error) return asFailure(error)
+  const at = stamp(from.at)
   const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
-  return {
+  return asValue({
     body: from.body ?? '',
-    error,
     changed: staleIn(from),
     ...(at === undefined ? {} : { at }),
     ...(link === undefined ? {} : { link }),
-  }
+  })
 }
 
 /**

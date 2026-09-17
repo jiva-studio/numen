@@ -1,6 +1,7 @@
 /**
  * Wire adapters and vault communication for flashcard stencil tabs.
  */
+import { asFailure, asValue } from '@numen/wire'
 import type { NoteBaseline } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { PathRename } from '@/shared/paths'
@@ -34,8 +35,8 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       at: answer.at,
     })
     if (answer.stencil) titles.set(path, answer.stencil.title)
-    if (answer.error !== null) return { body: '', error: answer.error }
-    return { body: stencil ? stencilBodyOf(stencil) : '', error: null, at: answer.at }
+    if (answer.error !== null) return asFailure(answer.error)
+    return asValue({ body: stencil ? stencilBodyOf(stencil) : '', at: answer.at })
   }
 
   const write = async (path: string, body: string, baseline: NoteBaseline | null = null) => {
@@ -53,7 +54,8 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       writing: answer.error,
       at: answer.changed || answer.error !== null ? said.at : answer.at,
     })
-    return { body: '', changed: answer.changed, error: answer.error, at: answer.at }
+    if (answer.error !== null) return asFailure(answer.error)
+    return asValue({ body: '', changed: answer.changed, at: answer.at })
   }
 
   const renameField = async (

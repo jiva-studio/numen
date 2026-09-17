@@ -2,6 +2,7 @@
  * The words the vault speaks about notes, and what the window asks of it over
  * them.
  */
+import type { Result } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Span } from '@/shared/span'
 import type { MoveResult, NoteType } from '@/entities/file/@x/note'
@@ -63,16 +64,22 @@ export interface NoteHeading {
   readonly line: number
 }
 
-/**
- * What a read or a write came back with. An error carries no body, and the
- * words for one belong to whatever shows it.
- */
-export interface NoteResult {
-  body: string
-  error?: ErrorCode | null
+/** The prose a read gave back, and what the vault says came with it. */
+export interface NoteContents {
+  readonly body: string
   /** Where a link note points, and nothing on every other note. */
-  link?: LinkAddress
+  readonly link?: LinkAddress
+  /** The file the prose came out of, as the next write presents it again. */
+  readonly at?: string
+  /** The note holds prose nobody here has seen, and nothing was written. */
+  readonly changed?: boolean
 }
+
+/**
+ * What a read or a write came back with. The words for a failure belong to
+ * whatever shows it.
+ */
+export type NoteResult = Result<NoteContents, ErrorCode>
 
 /**
  * Where a link note points: the web address (URL) and embed player URL.

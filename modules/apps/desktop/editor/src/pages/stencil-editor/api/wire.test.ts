@@ -6,6 +6,7 @@
  * last read or write earned, and a file that moved keeps what was said of it.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { asFailure, asValue } from '@numen/wire'
 import type { Cards, DeckProblem, VaultStencil } from '@/entities/deck'
 import { WORDS as words } from '@/entities/deck'
 import { ERRORS } from '@/shared/words'
@@ -62,9 +63,8 @@ describe('reading a stencil', () => {
 
     const answer = await wire.read('Word.md')
 
-    expect(answer.error).toBeNull()
-    expect(answer.at).toBe('12 34 Word.md')
-    expect(JSON.parse(answer.body).fields).toEqual(['Front', 'Back'])
+    expect(answer.ok && answer.value.at).toBe('12 34 Word.md')
+    expect(JSON.parse(answer.ok ? answer.value.body : '{}').fields).toEqual(['Front', 'Back'])
     expect(wire.getTitle('Word.md')).toBe('Word')
   })
 
@@ -73,7 +73,7 @@ describe('reading a stencil', () => {
     cards.readStencil.mockResolvedValue({ stencil: null, error: 'notAStencil', at: '' })
     const { wire } = wireOver(cards)
 
-    expect(await wire.read('Notes.md')).toEqual({ body: '', error: 'notAStencil' })
+    expect(await wire.read('Notes.md')).toEqual(asFailure('notAStencil'))
     expect(wire.getProblems('Notes.md')).toEqual([])
     expect(wire.getTitle('Notes.md')).toBeUndefined()
   })
@@ -100,7 +100,8 @@ describe('writing a stencil', () => {
     cards.writeStencil.mockResolvedValue({ error: null, changed: false, at: '56 78 Word.md' })
     const { wire } = wireOver(cards)
 
-    const { body } = await wire.read('Word.md')
+    const read = await wire.read('Word.md')
+    const body = read.ok ? read.value.body : ''
     const answer = await wire.write('Word.md', body, { prose: body, at: '12 34 Word.md' })
 
     expect(cards.writeStencil).toHaveBeenCalledWith(
@@ -113,7 +114,7 @@ describe('writing a stencil', () => {
       },
       '12 34 Word.md',
     )
-    expect(answer).toEqual({ body: '', changed: false, error: null, at: '56 78 Word.md' })
+    expect(answer).toEqual(asValue({ body: '', changed: false, at: '56 78 Word.md' }))
   })
 
   it('names no file where the tab read none, and nothing where the body is empty', async () => {

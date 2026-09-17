@@ -17,12 +17,8 @@ export interface OpenNote {
  * The core as a tab reads and writes through it.
  */
 export interface Notes {
-  read(path: string): Promise<NoteResult & { at?: string }>
-  write(
-    path: string,
-    body: string,
-    seen: NoteBaseline | null,
-  ): Promise<NoteResult & { at?: string; changed?: boolean }>
+  read(path: string): Promise<NoteResult>
+  write(path: string, body: string, seen: NoteBaseline | null): Promise<NoteResult>
 }
 
 /** What a person is told and answers with when their tab is in conflict. */

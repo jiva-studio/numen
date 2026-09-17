@@ -5,6 +5,7 @@
  * answers that everything landed, and the last seconds of typing are gone.
  */
 import { describe, expect, it } from 'vitest'
+import { asFailure, asValue } from '@numen/wire'
 
 import { openNotes, type Notes } from '@/entities/note'
 import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
@@ -54,14 +55,12 @@ function fake(getQuits: () => AsyncIterable<{ token: string; flush: boolean }>) 
       answered.push({ token, result })
     },
     read: async (path): Promise<NoteResult> =>
-      files.has(path)
-        ? { body: files.get(path) ?? '', error: null }
-        : { body: '', error: 'missing' },
+      files.has(path) ? asValue({ body: files.get(path) ?? '' }) : asFailure('missing'),
     write: async (path, body): Promise<NoteResult> => {
       if (held) await new Promise<void>((through) => (held = through))
       wrote.push({ path, body })
       files.set(path, body)
-      return { body: '', error: null }
+      return asValue({ body: '' })
     },
   }
   return {
