@@ -28,7 +28,6 @@ const LAYERS = {
   pages: { rank: 4, sliced: true },
   screens: { rank: 4, sliced: true },
   app: { rank: 5, sliced: false },
-  window: { rank: 5, sliced: false },
 }
 
 /** Where a screen stands: the rank a folder naming no layer is read at. */
