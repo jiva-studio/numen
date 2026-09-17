@@ -6,6 +6,8 @@
  * door is mocked too, over the rest of what it gives.
  */
 import { vi } from 'vitest'
+import { asValue } from '@numen/wire'
+import type { Cards } from '@/entities/deck'
 import type { Books } from '@/pages/book-reader/types'
 import type { Documents } from '@/pages/document-viewer/types'
 import { requests } from './requests'
@@ -134,38 +136,45 @@ const cardsSaid = {
       requests.renamedField.push(`${path} ${from} ${to}`)
       return said.renaming
     },
-    readDeck: async (path: string) => ({
-      deck: {
-        path,
-        title: path,
-        preamble: '',
-        cards: [],
-        sections: [],
-        tail: '',
-        problems: [],
-      },
-      error: null,
-      at: 'a1',
-      bound: 0,
-    }),
+    readDeck: async (path: string) =>
+      asValue({
+        deck: {
+          path,
+          title: path,
+          preamble: '',
+          cards: [],
+          sections: [],
+          tail: '',
+          problems: [],
+        },
+        at: 'a1',
+      }),
     writeDeck: async (
       path: string,
       deck: { cards: readonly { values: readonly { text: string }[] }[] },
     ) => {
       requests.cards.push(`deck ${path}`)
       requests.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
-      return { error: null, changed: false, at: 'a2', bound: 0 }
+      return asValue({ at: 'a2' })
     },
-    readStencil: async (path: string) => ({
-      stencil: { path, title: path, fields: [], faces: [], problems: [] },
-      error: null,
-      at: 'a1',
-    }),
+    readStencil: async (path: string) =>
+      asValue({
+        stencil: {
+          path,
+          title: path,
+          fields: [],
+          preamble: '',
+          faces: [],
+          tail: '',
+          problems: [],
+        },
+        at: 'a1',
+      }),
     writeStencil: async (path: string) => {
       requests.cards.push(`stencil ${path}`)
-      return { error: null, changed: false, at: 'a2' }
+      return asValue({ at: 'a2' })
     },
-  },
+  } satisfies Partial<Cards>,
 }
 
 vi.mock('@/entities/deck/api/cards', () => cardsSaid)

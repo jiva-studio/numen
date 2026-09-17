@@ -1,3 +1,4 @@
+import type { Result } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { CreateResult } from '@/entities/file/@x/deck'
 import type { Surrounds } from './lib/surrounds'
@@ -112,40 +113,40 @@ export interface VaultStencil extends Surrounds {
   readonly problems: readonly DeckProblem[]
 }
 
-/** What reading a deck came back with. */
-export interface DeckReadResult {
-  /** Null when the deck was refused. */
-  readonly deck: VaultDeck | null
-  readonly error: ErrorCode | null
-  /** The file it came out of, to present at the next write. */
-  readonly at: string
+/**
+ * Why a deck or a stencil was not read or not written. Changed is a file that
+ * moved past the caller, which stops a write.
+ */
+export type CardsFailure = ErrorCode | 'changed'
+
+/** Why a deck was not read or not written, with the size that stopped a read. */
+export interface DeckFailure {
+  readonly code: CardsFailure
   /** The size a deck is read up to, in bytes. */
   readonly bound: number
 }
 
+/** What reading a deck came back with. */
+export type DeckReadResult = Result<
+  {
+    readonly deck: VaultDeck
+    /** The file it came out of, to present at the next write. */
+    readonly at: string
+  },
+  DeckFailure
+>
+
 /** What writing a deck came back with. */
-export interface DeckWriteResult {
-  readonly error: ErrorCode | null
-  /** The file is no longer the one this caller read, and nothing was written. */
-  readonly changed: boolean
-  readonly at: string
-  readonly bound: number
-}
+export type DeckWriteResult = Result<{ readonly at: string }, DeckFailure>
 
 /** What reading a stencil came back with. */
-export interface StencilReadResult {
-  /** Null when the stencil was refused. */
-  readonly stencil: VaultStencil | null
-  readonly error: ErrorCode | null
-  readonly at: string
-}
+export type StencilReadResult = Result<
+  { readonly stencil: VaultStencil; readonly at: string },
+  CardsFailure
+>
 
 /** What writing a stencil came back with. */
-export interface StencilWriteResult {
-  readonly error: ErrorCode | null
-  readonly changed: boolean
-  readonly at: string
-}
+export type StencilWriteResult = Result<{ readonly at: string }, CardsFailure>
 
 /** One deck a rename did not reach, which keeps the heading it had. */
 export interface UnwrittenDeck {

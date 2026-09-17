@@ -8,6 +8,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
+import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultCard, DeckProblem } from '@/entities/deck'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
@@ -93,23 +94,22 @@ const mountDeck = async (
       changed: false,
       at: '',
     }),
-    readDeck: async (path) => ({
-      deck: {
-        path,
-        title: 'Animals',
-        preamble: '',
-        cards: CARDS,
-        sections: SECTIONS,
-        tail: '',
-        problems,
-      },
-      error: null,
-      at: 'read',
-      bound: 0,
-    }),
-    writeDeck: async () => ({ error: null, changed: false, at: 'written', bound: 0 }),
-    readStencil: async () => ({ stencil: null, error: 'missing', at: '' }),
-    writeStencil: async () => ({ error: null, changed: false, at: '' }),
+    readDeck: async (path) =>
+      asValue({
+        deck: {
+          path,
+          title: 'Animals',
+          preamble: '',
+          cards: CARDS,
+          sections: SECTIONS,
+          tail: '',
+          problems,
+        },
+        at: 'read',
+      }),
+    writeDeck: async () => asValue({ at: 'written' }),
+    readStencil: async () => asFailure('missing' as const),
+    writeStencil: async () => asValue({ at: '' }),
   }
 
   /** Which preset the deck names, as the vault answers it. */

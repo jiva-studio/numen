@@ -8,6 +8,7 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
+import { asFailure, asValue } from '@numen/wire'
 import type { Cards, VaultFace, DeckProblem } from '@/entities/deck'
 import { fileOpeners } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
@@ -52,14 +53,14 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
       }))
       return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
     },
-    readDeck: async () => ({ deck: null, error: 'missing', at: '', bound: 0 }),
-    writeDeck: async () => ({ error: null, changed: false, at: '', bound: 0 }),
-    readStencil: async (path) => ({
-      stencil: { path, title: 'Animal', fields, preamble: '', faces, tail: '', problems },
-      error: null,
-      at: 'read',
-    }),
-    writeStencil: async () => ({ error: null, changed: false, at: 'written' }),
+    readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
+    writeDeck: async () => asValue({ at: '' }),
+    readStencil: async (path) =>
+      asValue({
+        stencil: { path, title: 'Animal', fields, preamble: '', faces, tail: '', problems },
+        at: 'read',
+      }),
+    writeStencil: async () => asValue({ at: 'written' }),
   }
 
   const held = useWindowTabs()

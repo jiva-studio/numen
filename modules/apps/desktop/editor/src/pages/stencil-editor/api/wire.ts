@@ -8,7 +8,7 @@ import type { PathRename } from '@/shared/paths'
 import type { Cards, DeckProblem } from '@/entities/deck'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'
-import { WORDS as words } from '@/entities/deck'
+import { failedWith, WORDS as words } from '@/entities/deck'
 import { facesOf, stencilBodyOf, stencilIn, stencilOf } from '../lib/stencil'
 
 /** What the vault said about one file the last time it was read or written. */
@@ -27,16 +27,19 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
 
   const read = async (path: string) => {
     const answer = await cards.readStencil(path)
-    const stencil = answer.stencil ? stencilOf(answer.stencil) : null
+    if (!answer.ok) {
+      told.set(path, { problems: [], reading: failedWith(answer.error), writing: null, at: '' })
+      return asFailure(failedWith(answer.error) ?? 'notAStencil')
+    }
+    const read = answer.value.stencil
     told.set(path, {
-      problems: answer.stencil?.problems ?? [],
-      reading: answer.error,
+      problems: read.problems,
+      reading: null,
       writing: null,
-      at: answer.at,
+      at: answer.value.at,
     })
-    if (answer.stencil) titles.set(path, answer.stencil.title)
-    if (answer.error !== null) return asFailure(answer.error)
-    return asValue({ body: stencil ? stencilBodyOf(stencil) : '', at: answer.at })
+    titles.set(path, read.title)
+    return asValue({ body: stencilBodyOf(stencilOf(read)), at: answer.value.at })
   }
 
   const write = async (path: string, body: string, baseline: NoteBaseline | null = null) => {
@@ -51,12 +54,11 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
     told.set(path, {
       problems: said.problems,
       reading: said.reading,
-      writing: answer.error,
-      at: answer.changed || answer.error !== null ? said.at : answer.at,
+      writing: answer.ok ? null : failedWith(answer.error),
+      at: answer.ok ? answer.value.at : said.at,
     })
-    if (answer.changed) return asFailure('changed' as const)
-    if (answer.error !== null) return asFailure(answer.error)
-    return asValue({ body: '', at: answer.at })
+    if (!answer.ok) return asFailure(answer.error)
+    return asValue({ body: '', at: answer.value.at })
   }
 
   const renameField = async (

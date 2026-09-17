@@ -7,6 +7,7 @@
  * parts the schema holds it in.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { asFailure } from '@numen/wire'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -113,10 +114,10 @@ describe('reading a deck', () => {
 
     const answer = await cards.readDeck('Deck.md')
 
-    expect(answer.deck?.cards.map((one) => one.sectionIndex)).toEqual([0, null])
-    expect(answer.deck?.cards[0]?.values).toEqual([{ field: 'Front', text: '<p>Entropy</p>' }])
-    expect(answer.at).toBe(read)
-    expect(answer.bound).toBe(400)
+    if (!answer.ok) throw new Error('the deck was refused')
+    expect(answer.value.deck.cards.map((one) => one.sectionIndex)).toEqual([0, null])
+    expect(answer.value.deck.cards[0]?.values).toEqual([{ field: 'Front', text: '<p>Entropy</p>' }])
+    expect(answer.value.at).toBe(read)
   })
 
   it('is no deck where the answer carries none', async () => {
@@ -124,9 +125,8 @@ describe('reading a deck', () => {
 
     const answer = await cards.readDeck('Notes.md')
 
-    expect(answer.deck).toBeNull()
-    expect(answer.error).toBe('notADeck')
-    expect(answer.at).toBe('')
+    expect(answer.ok).toBe(false)
+    expect(answer.ok ? null : answer.error.code).toBe('notADeck')
   })
 
   it('names what is wrong with it in the words the window uses', async () => {
@@ -145,7 +145,8 @@ describe('reading a deck', () => {
       },
     })
 
-    expect((await cards.readDeck('Deck.md')).deck?.problems).toEqual([
+    const read = await cards.readDeck('Deck.md')
+    expect(read.ok ? read.value.deck.problems : null).toEqual([
       { fault: 'markCarriedTwice', card: 2, face: null, field: '', text: 'a1' },
       { fault: 'cardWithoutAStencil', card: null, face: null, field: 'Front', text: '' },
     ])
@@ -198,8 +199,7 @@ describe('writing a deck', () => {
       read,
     )
 
-    expect(answer.changed).toBe(true)
-    expect(answer.error).toBeNull()
+    expect(answer.ok ? null : answer.error.code).toBe('changed')
   })
 })
 
@@ -218,7 +218,8 @@ describe('a stencil', () => {
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })
 
-    expect((await cards.readStencil('Word.md')).stencil?.faces).toEqual([
+    const answer = await cards.readStencil('Word.md')
+    expect(answer.ok ? answer.value.stencil.faces : null).toEqual([
       { name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' },
     ])
   })
@@ -226,7 +227,7 @@ describe('a stencil', () => {
   it('is no stencil where the answer carries none', async () => {
     replyWith({ error: 'ERROR_CODE_NOT_A_STENCIL' })
 
-    expect((await cards.readStencil('Notes.md')).stencil).toBeNull()
+    expect(await cards.readStencil('Notes.md')).toEqual(asFailure('notAStencil'))
   })
 
   it('is written with its fields and its faces', async () => {
@@ -244,7 +245,7 @@ describe('a stencil', () => {
     )
 
     expect(asked[0]?.fields).toEqual(['Front', 'Back'])
-    expect(answer.at).toBe('12 34 Word.md')
+    expect(answer.ok && answer.value.at).toBe('12 34 Word.md')
   })
 })
 

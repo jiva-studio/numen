@@ -58,7 +58,7 @@ const wireOver = (cards: ReturnType<typeof vault>) => {
 describe('reading a stencil', () => {
   it('comes back as the body the tab is dirty against', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({ stencil: stencil(), error: null, at: '12 34 Word.md' })
+    cards.readStencil.mockResolvedValue(asValue({ stencil: stencil(), at: '12 34 Word.md' }))
     const { wire } = wireOver(cards)
 
     const answer = await wire.read('Word.md')
@@ -70,7 +70,7 @@ describe('reading a stencil', () => {
 
   it('carries no body at all where the read was refused', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({ stencil: null, error: 'notAStencil', at: '' })
+    cards.readStencil.mockResolvedValue(asFailure('notAStencil'))
     const { wire } = wireOver(cards)
 
     expect(await wire.read('Notes.md')).toEqual(asFailure('notAStencil'))
@@ -80,11 +80,9 @@ describe('reading a stencil', () => {
 
   it('holds what is wrong with the file the vault named', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({
-      stencil: stencil({ problems: [problem] }),
-      error: null,
-      at: '',
-    })
+    cards.readStencil.mockResolvedValue(
+      asValue({ stencil: stencil({ problems: [problem] }), at: '' }),
+    )
     const { wire } = wireOver(cards)
 
     await wire.read('Word.md')
@@ -96,8 +94,8 @@ describe('reading a stencil', () => {
 describe('writing a stencil', () => {
   it('sends the fields and the faces the body holds, under the file the tab read', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({ stencil: stencil(), error: null, at: '12 34 Word.md' })
-    cards.writeStencil.mockResolvedValue({ error: null, changed: false, at: '56 78 Word.md' })
+    cards.readStencil.mockResolvedValue(asValue({ stencil: stencil(), at: '12 34 Word.md' }))
+    cards.writeStencil.mockResolvedValue(asValue({ at: '56 78 Word.md' }))
     const { wire } = wireOver(cards)
 
     const read = await wire.read('Word.md')
@@ -119,7 +117,7 @@ describe('writing a stencil', () => {
 
   it('names no file where the tab read none, and nothing where the body is empty', async () => {
     const cards = vault()
-    cards.writeStencil.mockResolvedValue({ error: null, changed: false, at: '' })
+    cards.writeStencil.mockResolvedValue(asValue({ at: '' }))
     const { wire } = wireOver(cards)
 
     await wire.write('Word.md', '')
@@ -134,8 +132,8 @@ describe('writing a stencil', () => {
 
   it('keeps the file it last knew where the write was refused', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({ stencil: stencil(), error: null, at: '12 34 Word.md' })
-    cards.writeStencil.mockResolvedValue({ error: 'unreadable', changed: false, at: '' })
+    cards.readStencil.mockResolvedValue(asValue({ stencil: stencil(), at: '12 34 Word.md' }))
+    cards.writeStencil.mockResolvedValue(asFailure('unreadable'))
     const { wire } = wireOver(cards)
 
     await wire.read('Word.md')
@@ -160,7 +158,7 @@ describe('what is shown for a fault', () => {
 
   it('says the note is no stencil where the read was refused for that', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({ stencil: null, error: 'notAStencil', at: '' })
+    cards.readStencil.mockResolvedValue(asFailure('notAStencil'))
     const { wire } = wireOver(cards)
 
     await wire.read('Notes.md')
@@ -170,7 +168,7 @@ describe('what is shown for a fault', () => {
 
   it('says the file could not be read where the read was refused for anything else', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({ stencil: null, error: 'missing', at: '' })
+    cards.readStencil.mockResolvedValue(asFailure('missing'))
     const { wire } = wireOver(cards)
 
     await wire.read('Notes.md')
@@ -180,7 +178,7 @@ describe('what is shown for a fault', () => {
 
   it('says the note is no stencil where the write was refused for that', async () => {
     const cards = vault()
-    cards.writeStencil.mockResolvedValue({ error: 'notAStencil', changed: false, at: '' })
+    cards.writeStencil.mockResolvedValue(asFailure('notAStencil'))
     const { wire } = wireOver(cards)
 
     await wire.write('Notes.md', '')
@@ -296,11 +294,9 @@ describe('what the window remembers of a file', () => {
 
   it('is let go of when the last tab on it closes', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({
-      stencil: stencil({ problems: [problem] }),
-      error: null,
-      at: '',
-    })
+    cards.readStencil.mockResolvedValue(
+      asValue({ stencil: stencil({ problems: [problem] }), at: '' }),
+    )
     const { wire } = wireOver(cards)
     await wire.read('Word.md')
 
@@ -314,11 +310,9 @@ describe('what the window remembers of a file', () => {
 
   it('follows the file where it moved, and leaves nothing behind', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({
-      stencil: stencil({ problems: [problem] }),
-      error: null,
-      at: '',
-    })
+    cards.readStencil.mockResolvedValue(
+      asValue({ stencil: stencil({ problems: [problem] }), at: '' }),
+    )
     const { wire } = wireOver(cards)
     await wire.read('Word.md')
 

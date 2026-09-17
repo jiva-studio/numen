@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
+import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultCard, DeckProblem } from '@/entities/deck'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
@@ -114,9 +115,9 @@ const vault = (
       reads += 1
       if (answers.unreachable) throw new Error('out of reach')
       if (answers.error) {
-        return { deck: null, error: answers.error, at: '', bound: answers.bound ?? 0 }
+        return asFailure({ code: answers.error, bound: answers.bound ?? 0 })
       }
-      return {
+      return asValue({
         deck: {
           path,
           title: 'Animals',
@@ -126,22 +127,20 @@ const vault = (
           tail: '',
           problems: answers.problems ?? [],
         },
-        error: null,
         at: `read ${reads}`,
-        bound: 0,
-      }
+      })
     },
     writeDeck: async (path, deck, presented) => {
       written.push(`${path} ${deck.cards.map(getCardName).join(', ') || '—'}`)
       wrote.push(deck)
       seen.push(presented)
-      if (answers.wrote) return { error: answers.wrote, changed: false, at: '', bound: 0 }
-      if (answers.changed) return { error: null, changed: true, at: '', bound: 0 }
+      if (answers.wrote) return asFailure({ code: answers.wrote, bound: 0 })
+      if (answers.changed) return asFailure({ code: 'changed' as const, bound: 0 })
       cards = deck.cards
-      return { error: null, changed: false, at: 'written', bound: 0 }
+      return asValue({ at: 'written' })
     },
-    readStencil: async () => ({ stencil: null, error: 'missing', at: '' }),
-    writeStencil: async () => ({ error: null, changed: false, at: '' }),
+    readStencil: async () => asFailure('missing' as const),
+    writeStencil: async () => asValue({ at: '' }),
   }
 
   /** Which preset the deck names, as the vault answers it. */

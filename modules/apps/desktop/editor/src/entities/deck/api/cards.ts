@@ -25,12 +25,10 @@ export const deckService: DeckService = {
   },
   readDeck: async (path) => {
     const answer = await cardsService.readDeck({ path })
-    return {
-      deck: answer.deck ? deserializeDeck(answer.deck) : null,
-      error: errorIn(answer),
-      at: stamp(answer.at) ?? '',
-      bound: Number(answer.bound),
-    }
+    const bound = Number(answer.bound)
+    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    if (code || !answer.deck) return asFailure({ code: code ?? 'notADeck', bound })
+    return asValue({ deck: deserializeDeck(answer.deck), at: stamp(answer.at) ?? '' })
   },
   writeDeck: async (path, deck, seen) => {
     const answer = await cardsService.writeDeck({
@@ -44,12 +42,9 @@ export const deckService: DeckService = {
       tail: deck.tail,
       ...(seen === null ? {} : { seen: fingerprint(seen) }),
     })
-    return {
-      error: errorIn(answer),
-      changed: staleIn(answer),
-      at: stamp(answer.at) ?? '',
-      bound: Number(answer.bound),
-    }
+    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    if (code) return asFailure({ code, bound: Number(answer.bound) })
+    return asValue({ at: stamp(answer.at) ?? '' })
   },
 }
 
@@ -85,11 +80,9 @@ export const stencilService: StencilService = {
   },
   readStencil: async (path) => {
     const answer = await cardsService.readStencil({ path })
-    return {
-      stencil: answer.stencil ? deserializeStencil(answer.stencil) : null,
-      error: errorIn(answer),
-      at: stamp(answer.at) ?? '',
-    }
+    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    if (code || !answer.stencil) return asFailure(code ?? 'notAStencil')
+    return asValue({ stencil: deserializeStencil(answer.stencil), at: stamp(answer.at) ?? '' })
   },
   writeStencil: async (path, fields, stencil, seen) => {
     const answer = await cardsService.writeStencil({
@@ -105,11 +98,9 @@ export const stencilService: StencilService = {
       tail: stencil.tail,
       ...(seen === null ? {} : { seen: fingerprint(seen) }),
     })
-    return {
-      error: errorIn(answer),
-      changed: staleIn(answer),
-      at: stamp(answer.at) ?? '',
-    }
+    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    if (code) return asFailure(code)
+    return asValue({ at: stamp(answer.at) ?? '' })
   },
 }
 

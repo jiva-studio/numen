@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import { asFailure, asValue } from '@numen/wire'
 import type { PlexDestination } from '@numen/ui'
 import type { PathRename } from '@/shared/paths'
+import { failedWith } from '@/entities/deck'
 import type { Cards } from '@/entities/deck'
 import type { Store } from '@/features/command-palette'
 import type { Presets } from '@/entities/deck'
@@ -42,16 +43,27 @@ export function useDeckTabs(
   const store = openNotes({
     read: async (path) => {
       const answer = await cards.readDeck(path)
-      const deck = answer.deck ? deserializeVaultDeck(answer.deck) : null
-      const error = answer.error
+      if (!answer.ok) {
+        const code = failedWith(answer.error.code)
+        vaultAnswers.recordRead(path, {
+          problems: [],
+          error: code,
+          bound: answer.error.bound,
+          title: null,
+        })
+        return asFailure(code ?? 'notADeck')
+      }
+      const read = answer.value.deck
       vaultAnswers.recordRead(path, {
-        problems: answer.deck?.problems ?? [],
-        error,
-        bound: answer.bound,
-        title: answer.deck?.title ?? null,
+        problems: read.problems,
+        error: null,
+        bound: 0,
+        title: read.title,
       })
-      if (error !== null) return asFailure(error)
-      return asValue({ body: deck ? serializeBufferDeckToString(deck) : '', at: answer.at })
+      return asValue({
+        body: serializeBufferDeckToString(deserializeVaultDeck(read)),
+        at: answer.value.at,
+      })
     },
     write: async (path, body, seen) => {
       const deck = deserializeBufferDeckFromString(body)
@@ -65,11 +77,12 @@ export function useDeckTabs(
         },
         seen?.at ?? null,
       )
-      const error = answer.error
-      vaultAnswers.recordWrite(path, { error, bound: answer.bound })
-      if (answer.changed) return asFailure('changed')
-      if (error !== null) return asFailure(error)
-      return asValue({ body: '', at: answer.at })
+      vaultAnswers.recordWrite(path, {
+        error: answer.ok ? null : failedWith(answer.error.code),
+        bound: answer.ok ? 0 : answer.error.bound,
+      })
+      if (!answer.ok) return asFailure(answer.error.code)
+      return asValue({ body: '', at: answer.value.at })
     },
   })
 

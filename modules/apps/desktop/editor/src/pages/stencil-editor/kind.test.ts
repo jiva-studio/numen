@@ -3,6 +3,7 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
+import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultFace, DeckProblem, FieldRenameResult } from '@/entities/deck'
 import { fileOpeners } from '@/entities/tab'
@@ -60,12 +61,12 @@ const vault = (
       }))
       return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
     },
-    readDeck: async () => ({ deck: null, error: 'missing', at: '', bound: 0 }),
-    writeDeck: async () => ({ error: null, changed: false, at: '', bound: 0 }),
+    readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
+    writeDeck: async () => asValue({ at: '' }),
     readStencil: async (path) => {
       if (answers.unreachable) throw new Error('out of reach')
-      if (answers.error) return { stencil: null, error: answers.error, at: '' }
-      return {
+      if (answers.error) return asFailure(answers.error)
+      return asValue({
         stencil: {
           path,
           title: 'Animal',
@@ -75,19 +76,18 @@ const vault = (
           tail: '',
           problems: answers.problems ?? [],
         },
-        error: null,
         at: 'read',
-      }
+      })
     },
     writeStencil: async (path, wrote, drew) => {
       written.push(
         `${path} ${wrote.join(', ') || '—'} | ${drew.faces.map((one) => one.back).join(' ')}`,
       )
-      if (answers.wrote) return { error: answers.wrote, changed: false, at: '' }
-      if (answers.changed) return { error: null, changed: true, at: '' }
+      if (answers.wrote) return asFailure(answers.wrote)
+      if (answers.changed) return asFailure('changed' as const)
       fields = wrote
       faces = drew.faces
-      return { error: null, changed: false, at: 'written' }
+      return asValue({ at: 'written' })
     },
   }
 

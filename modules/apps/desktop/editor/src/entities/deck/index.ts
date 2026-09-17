@@ -3,6 +3,7 @@ export { cards } from './api/cards'
 export type {
   Cards,
   DeckProblem,
+  CardsFailure,
   FieldRenameResult,
   StencilSummary,
   Value,
@@ -12,6 +13,7 @@ export type {
   VaultSection,
   VaultStencil,
 } from './api/cards'
+export { failedWith } from './lib/failures'
 export { generateId } from './lib/identity'
 export type { IdMaker } from './lib/identity'
 export { areMarksEqual, createMarks } from './lib/marks'
