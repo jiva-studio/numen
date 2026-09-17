@@ -12,8 +12,9 @@
  */
 import { computed } from 'vue'
 import { DueCount, Spinner, WelcomePage } from '@numen/ui'
-import type { VaultRow } from '@numen/ui'
 import type { VaultCardsDue } from '@/entities/vault'
+import { getDueByVault, getVaultRows } from './lib/rows'
+import { VAULTS_WORDS } from './words'
 
 const props = defineProps<{
   vaults: readonly VaultCardsDue[]
@@ -23,43 +24,17 @@ const props = defineProps<{
 
 defineEmits<{ (event: 'choose', vault: string): void }>()
 
-/**
- * A vault as a row of the list. One being read into the index says so, and one
- * that could not be counted says why.
- */
-const listed = computed<readonly VaultRow[]>(() =>
-  props.vaults.map((one) => {
-    const said = one.reading ? 'Reading the vault' : one.unread
-    return {
-      id: one.vault,
-      name: one.name,
-      path: one.path,
-      isWorking: !one.counted,
-      ...(said ? { detail: said } : {}),
-    }
-  }),
-)
+/** Each vault as a row of the list, and how many cards it has waiting. */
+const listed = computed(() => getVaultRows(props.vaults, VAULTS_WORDS))
 
-/**
- * How many cards a vault has waiting, by the identity of the vault, and nothing
- * for a vault whose count has not arrived. A vault that could not be counted is
- * absent as well: what stands in its row is why, and not a number.
- */
-const waiting = computed(
-  () =>
-    new Map(
-      props.vaults
-        .filter((one) => !one.unread && !one.reading)
-        .map((one) => [one.vault, one.counted ? one.due + one.new : null]),
-    ),
-)
+const waiting = computed(() => getDueByVault(props.vaults))
 </script>
 
 <template>
   <WelcomePage
     name="flashcards"
     :vaults="listed"
-    heading="Vaults"
+    :heading="VAULTS_WORDS.heading"
     :version="version"
     @open="$emit('choose', $event)"
   >
@@ -73,7 +48,7 @@ const waiting = computed(
     <template v-if="counting" #waiting>
       <p class="vaults__counting" role="status">
         <Spinner />
-        Reading the vaults
+        {{ VAULTS_WORDS.counting }}
       </p>
     </template>
   </WelcomePage>
