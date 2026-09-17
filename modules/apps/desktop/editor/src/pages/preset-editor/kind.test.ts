@@ -93,7 +93,7 @@ const readAs = (base: ReadPreset, over: ReadOver): PresetReadResult =>
   over.error ? asFailure(over.error) : asValue({ ...base, ...over })
 
 /** A write built from what the test said of it. */
-const writtenAs = (over: WriteOver): PresetWriteResult =>
+const writeAs = (over: WriteOver): PresetWriteResult =>
   over.error ? asFailure(over.error) : asValue({ at: over.at ?? 'two' })
 
 const openPresetTab = async (
@@ -130,7 +130,7 @@ const openPresetTab = async (
     scheduleDeck: async () => asValue({ at: '' }),
     write: async (_path, put) => {
       written.push(put)
-      return writtenAs(await writing(writes++))
+      return writeAs(await writing(writes++))
     },
     curve: async (_path, put) => {
       asked.push(put.goal)

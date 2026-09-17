@@ -14,7 +14,7 @@ export type {
   VaultSection,
   VaultStencil,
 } from './api/cards'
-export { failedWith } from './lib/failures'
+export { getFailureCode } from './lib/failures'
 export { generateId } from './lib/identity'
 export type { IdMaker } from './lib/identity'
 export { areMarksEqual, createMarks } from './lib/marks'

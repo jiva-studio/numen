@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import { asFailure, asValue } from '@numen/wire'
 import type { PlexDestination } from '@numen/ui'
 import type { PathRename } from '@/shared/paths'
-import { failedWith } from '@/entities/deck'
+import { getFailureCode } from '@/entities/deck'
 import type { Cards } from '@/entities/deck'
 import type { Store } from '@/features/command-palette'
 import type { Presets } from '@/entities/deck'
@@ -44,7 +44,7 @@ export function useDeckTabs(
     read: async (path) => {
       const answer = await cards.readDeck(path)
       if (!answer.ok) {
-        const code = failedWith(answer.error.code)
+        const code = getFailureCode(answer.error.code)
         vaultAnswers.recordRead(path, {
           problems: [],
           error: code,
@@ -78,7 +78,7 @@ export function useDeckTabs(
         seen?.at ?? null,
       )
       vaultAnswers.recordWrite(path, {
-        error: answer.ok ? null : failedWith(answer.error.code),
+        error: answer.ok ? null : getFailureCode(answer.error.code),
         bound: answer.ok ? 0 : answer.error.bound,
       })
       if (!answer.ok) return asFailure(answer.error.code)
