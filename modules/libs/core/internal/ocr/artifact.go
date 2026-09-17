@@ -79,8 +79,8 @@ func getBoxesWithin(page Page, block Block, base int) []highlight.Box {
 	boxes := make([]highlight.Box, 0, len(block.Boxes))
 	for _, one := range block.Boxes {
 		boxes = append(boxes, highlight.Box{
-			Page: page.Index,
-			Span: domain.Span{From: base + one.Span.From, To: base + one.Span.To},
+			Page:     page.Index,
+			ByteSpan: domain.ByteSpan{From: base + one.Span.From, To: base + one.Span.To},
 			Rect: highlight.Rect{
 				MinX: float32(one.Rect.Min.X) / wide,
 				MinY: float32(one.Rect.Min.Y) / high,

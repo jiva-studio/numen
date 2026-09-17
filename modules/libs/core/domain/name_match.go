@@ -24,5 +24,5 @@ type NameMatch struct {
 
 	// Spans are where in the name that matched the words typed stand, counted
 	// the way a client counts text: in UTF-16 code units.
-	Spans []Span
+	Spans []UnitSpan
 }

@@ -56,7 +56,7 @@ func (a *API) WatchFocus(
 			}
 			if err := out.Send(&v1.WatchFocusResponse{
 				Path:  at.Path,
-				Spans: spansOf(at.Spans),
+				Spans: byteSpansOf(at.Spans),
 			}); err != nil {
 				return err
 			}

@@ -12,15 +12,15 @@ import (
 // looks at closely.
 func word(page, start, length int) highlight.Box {
 	return highlight.Box{
-		Page: page,
-		Span: domain.Span{From: start, To: start + length},
-		Rect: highlight.Rect{MinX: 0.1, MinY: float32(start) / 1000, MaxX: 0.9, MaxY: 0.2},
+		Page:     page,
+		ByteSpan: domain.ByteSpan{From: start, To: start + length},
+		Rect:     highlight.Rect{MinX: 0.1, MinY: float32(start) / 1000, MaxX: 0.9, MaxY: 0.2},
 	}
 }
 
 // run is a span of the prose, by where it begins and how far it reaches.
-func run(start, length int) domain.Span {
-	return domain.Span{From: start, To: start + length}
+func run(start, length int) domain.ByteSpan {
+	return domain.ByteSpan{From: start, To: start + length}
 }
 
 // read is a document read into words, each five bytes with a space after.

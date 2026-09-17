@@ -90,7 +90,7 @@ func stepsOf(step port.Step) []*v1.AskAgentResponse {
 
 // spanOf is the one span a call names, and nothing where it named the source
 // and no place inside it.
-func spanOf(spans []domain.Span) *v1.Span {
+func spanOf(spans []domain.ByteSpan) *v1.Span {
 	if len(spans) == 0 {
 		return nil
 	}

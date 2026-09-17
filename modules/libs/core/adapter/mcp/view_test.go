@@ -140,7 +140,7 @@ func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
 	if !out.Shown {
 		t.Errorf("answered with %+v", out)
 	}
-	want := domain.Place{Path: "library/A Book.epub", Spans: []domain.Span{{From: 1200, To: 1280}}}
+	want := domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}}
 	if len(looking.asked) != 1 || !reflect.DeepEqual(looking.asked[0], want) {
 		t.Errorf("the window was asked for %v", looking.asked)
 	}

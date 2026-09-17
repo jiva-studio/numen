@@ -240,7 +240,7 @@ func TestARunIsCountedTheWayAClientCountsText(t *testing.T) {
 	if len(found) != 1 {
 		t.Fatalf("found %d names, want 1", len(found))
 	}
-	if len(found[0].Spans) != 1 || found[0].Spans[0] != (domain.Span{From: 3, To: 10}) {
+	if len(found[0].Spans) != 1 || found[0].Spans[0] != (domain.UnitSpan{From: 3, To: 10}) {
 		t.Errorf("the run is at %+v, want one run from 3 to 10", found[0].Spans)
 	}
 }

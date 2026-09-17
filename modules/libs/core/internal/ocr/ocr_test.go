@@ -297,7 +297,7 @@ func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
 		{Index: 0, Blocks: []ocr.Block{{
 			Label: "text",
 			Text:  "Alpha beta",
-			Boxes: []ocr.Box{{Rect: image.Rect(0, 0, 50, 20), Span: domain.Span{From: 0, To: 5}}},
+			Boxes: []ocr.Box{{Rect: image.Rect(0, 0, 50, 20), Span: domain.ByteSpan{From: 0, To: 5}}},
 		}}},
 	})
 

@@ -160,7 +160,7 @@ func readSpan(prose string, at *v1.Span) (string, error) {
 	if at == nil {
 		return prose, nil
 	}
-	span := domain.Span{From: int(at.GetFrom()), To: int(at.GetTo())}
+	span := domain.ByteSpan{From: int(at.GetFrom()), To: int(at.GetTo())}
 	if span.From < 0 {
 		return "", fmt.Errorf("from: %d is not a place in the prose", span.From)
 	}
@@ -316,7 +316,7 @@ func parseCues(cues []*v1.Cue) ([]transcript.Cue, error) {
 // A search hit is played from the first of them.
 func cutToSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 	return func(cues []transcript.Cue) ([]transcript.Cue, error) {
-		span := domain.Span{From: int(at.GetFrom()), To: int(at.GetTo())}
+		span := domain.ByteSpan{From: int(at.GetFrom()), To: int(at.GetTo())}
 		if span.From < 0 {
 			return nil, fmt.Errorf("from: %d is not a place in the words", span.From)
 		}

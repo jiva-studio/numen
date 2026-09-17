@@ -7,8 +7,8 @@ import (
 
 // Span is a run of prose, by where it begins and where it ends, as byte offsets
 // into the text it was found in. Where a client is told about a run it is told
-// in the units a client counts in, which is domain.Span; nothing crosses that
-// boundary unconverted.
+// in the units a client counts in, which is domain.UnitSpan, and CountUTF16 is
+// the way across; nothing crosses that boundary unconverted.
 type Span struct {
 	From int
 	To   int

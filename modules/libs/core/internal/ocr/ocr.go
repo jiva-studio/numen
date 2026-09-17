@@ -40,7 +40,7 @@ type Line struct {
 // covers on the page, and the run of bytes it produced.
 type Box struct {
 	Rect image.Rectangle
-	Span domain.Span
+	Span domain.ByteSpan
 }
 
 // A Block is one region of a page, written out.
@@ -221,7 +221,7 @@ func writeLine(line []Line) (string, []Box) {
 			out.WriteString(" ")
 		}
 		at := out.Len()
-		kept = append(kept, Box{Rect: one.Box, Span: domain.Span{From: at, To: at + len(text)}})
+		kept = append(kept, Box{Rect: one.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
 		out.WriteString(text)
 	}
 	return out.String(), kept

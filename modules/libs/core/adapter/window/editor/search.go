@@ -48,7 +48,7 @@ func (a *API) SearchNames(
 	for _, m := range found {
 		titled := &v1.NameMatch{
 			Note:  &v1.Note{Path: m.Path, Title: m.Title},
-			Spans: spansOf(m.Spans),
+			Spans: unitSpansOf(m.Spans),
 			Type:  typeOf(m.Type),
 		}
 		if m.Heading != "" {
@@ -150,7 +150,7 @@ func (a *API) SearchPassages(
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,
-			Spans:    spansOf(at),
+			Spans:    unitSpansOf(at),
 			Location: p.Location,
 			Span:     &v1.Span{From: int32(p.Start), To: int32(p.Start + p.Length)},
 			Line:     int32(p.Line),
@@ -223,7 +223,18 @@ func sourcesOf(found []domain.Passage) []string {
 	return out
 }
 
-func spansOf(at []domain.Span) []*v1.Span {
+// byteSpansOf and unitSpansOf both write runs onto the wire. They are two
+// functions because the runs are counted in two different things, and the field
+// the answer carries them in says which.
+func byteSpansOf(at []domain.ByteSpan) []*v1.Span {
+	out := make([]*v1.Span, 0, len(at))
+	for _, span := range at {
+		out = append(out, &v1.Span{From: int32(span.From), To: int32(span.To)})
+	}
+	return out
+}
+
+func unitSpansOf(at []domain.UnitSpan) []*v1.Span {
 	out := make([]*v1.Span, 0, len(at))
 	for _, span := range at {
 		out = append(out, &v1.Span{From: int32(span.From), To: int32(span.To)})

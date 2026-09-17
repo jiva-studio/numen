@@ -15,7 +15,7 @@ import (
 
 // box is one printed line on a page, over a run of the prose.
 func box(page, start, length int) highlight.Box {
-	return highlight.Box{Page: page, Span: domain.Span{From: start, To: start + length}}
+	return highlight.Box{Page: page, ByteSpan: domain.ByteSpan{From: start, To: start + length}}
 }
 
 func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {
