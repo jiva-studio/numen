@@ -77,9 +77,8 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     window.clearTimeout(settling)
     const at = window_.value
     if (!at) return
-    // A strip already standing where it is being sent moves nothing, and a move
-    // that moves nothing never arrives: it would hold the strip deaf to the next
-    // hand for as long as a move takes.
+    // A strip already standing where it is being sent is left alone: a move
+    // that moves nothing never arrives.
     if (Math.abs(at.scrollLeft - stops()[where]) <= 1) return
     window.clearTimeout(sending)
     sending = window.setTimeout(() => {
@@ -136,8 +135,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     // the rest of the way once it has stopped. A hand still on it is not done.
     //
     // It is armed while a move is in flight too, and aims where that move was
-    // going: a wheel turned during one would otherwise leave the strip standing
-    // between two of the three, with nothing left to pull it to either.
+    // going, so a wheel turned during one still lands on a card.
     //
     // Where it settles is the window's answer and not the strip's: a panel the
     // window refused to open is a panel the strip must not be left standing on.

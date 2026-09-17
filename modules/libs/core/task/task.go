@@ -1,9 +1,8 @@
 // Package task holds what the application is doing behind the window.
 //
 // Anything that takes long enough for a person to wonder about it puts itself
-// here, and whatever shows work to a person reads the whole list. That is the
-// point of a list: the next kind of work is an entry rather than another field
-// on a message, another poll, and another branch in the window.
+// here, and whatever shows work to a person reads the whole list. The next
+// kind of work is an entry on it.
 //
 // A task is what is happening, not what happened. Nothing here is a record: a
 // task ends by being taken out.
@@ -120,9 +119,7 @@ func (t *Tasks) list() []Task {
 
 // Watch is the list, now and every time it changes, until the context ends.
 //
-// It is a stream rather than a question asked over and over: what is being done
-// is known here the moment it changes, and a window that asks on a timer is a
-// window that is either late or asking for nothing.
+// What is being done is known here the moment it changes.
 //
 // A listener that is not keeping up is given the newest list and not a queue of
 // old ones: what the work was doing a second ago is of no interest to anybody.

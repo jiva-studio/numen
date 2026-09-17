@@ -88,7 +88,7 @@ func open(raw []byte) (*document, error) {
 }
 
 // close gives the worker back. Closing the instance closes the document with
-// it, so there is one thing to get right rather than two.
+// it.
 func (d *document) close() { d.worker.Close() }
 
 // title is what the document says it is called. Most say nothing, and a good

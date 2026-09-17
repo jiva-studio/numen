@@ -17,8 +17,7 @@ const props = defineProps<{ held: AgentPanelState }>()
 const talk = useTemplateRef<InstanceType<typeof Agent>>('talk')
 
 // A panel opened is a panel opened to write in, so the field takes the keyboard
-// as it arrives. Taking it scrolls nothing: the panel is arriving, and a
-// browser bringing the field into view would drag what is moving.
+// as it arrives. Taking it scrolls nothing, because the panel is still moving.
 watch(
   () => props.held.open.value,
   (up) => {

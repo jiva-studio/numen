@@ -28,7 +28,7 @@ defineSlots<{
   failure?(props: { turn: Turn }): unknown
 }>()
 
-/** Whether the turn is a line about work rather than something said. */
+/** Whether the turn is a line about work. */
 const isDoing = computed(() => props.entry.turn.voice === 'doing')
 
 /** A line about work the person can press, which opens what it was working on. */

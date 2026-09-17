@@ -87,9 +87,8 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   /**
    * The clock forward, and every count read against it.
    *
-   * A count is read on the clock rather than as it arrives, so how fast it is
-   * moving is measured over stretches of time and not over however often the
-   * work behind it happens to speak.
+   * A count is read on the clock, so how fast it is moving is measured over
+   * stretches of time and not over however often the work behind it speaks.
    */
   const sample = (): void => {
     beat()

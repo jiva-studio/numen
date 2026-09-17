@@ -39,9 +39,8 @@ type VaultWriter interface {
 	Write(ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error)
 
 	// Create puts content where there is nothing, and refuses where there is
-	// something. Looking first and writing after is not the same promise: two
-	// callers can both look, both find nothing, and the second overwrite the
-	// first. Only the filesystem can answer this, and it answers it once.
+	// something. Only the filesystem can answer whether a path is free, and it
+	// answers it once.
 	Create(ctx context.Context, path string, content []byte) error
 
 	// Bring puts a file from this machine at a path, creating the folders above

@@ -118,9 +118,8 @@ export interface Pages {
 }
 
 /**
- * How many columns of this document stand after the spread in front. It is the
- * one number here that is measured rather than carried over: the document is
- * laid out, so what is left of it is known exactly.
+ * How many columns of this document stand after the spread in front. The
+ * document is laid out, so what is left of it is known exactly.
  */
 export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[]): number {
   const here = countFilledColumns(marks, flow)

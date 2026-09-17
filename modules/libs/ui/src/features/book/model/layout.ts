@@ -114,9 +114,8 @@ export function useBookLayout(
 
   /**
    * The spread put against the near edge of the reading area. The columns are
-   * carried there rather than scrolled to: a scroll stops at the end of what it
-   * has to scroll, and the gap the last column keeps beside it is not part of
-   * that, so the last spread of a document would stand half a gap short.
+   * carried there, gap and all, so the last spread of a document stands where
+   * every other one does.
    */
   const stand = (spread: number, how: 'smooth' | 'auto') => {
     const text = paper.value

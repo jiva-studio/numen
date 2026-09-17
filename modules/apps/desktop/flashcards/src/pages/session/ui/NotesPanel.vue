@@ -2,8 +2,7 @@
 /**
  * The panel the notes a deck is joined to are read in.
  *
- * They are read one under another rather than picked from a list: a person who
- * came here to read is reading, and a list would make them choose first.
+ * They are read one under another: a person who came here to read is reading.
  */
 import { nextTick, useTemplateRef, watch } from 'vue'
 import { Prose } from '@numen/ui'

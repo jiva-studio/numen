@@ -53,8 +53,7 @@ onBeforeUnmount(() => onPointerUp())
  *
  * The pointer is captured by the bar and the player stops taking pointers at
  * all: a frame is a document of its own, and one dragged across takes every
- * move and the release with it — so the bar would follow the pointer only while
- * it stayed off the player, and would never hear that it was let go.
+ * move and the release with it.
  */
 function onPointerDown(at: PointerEvent): void {
   const bar = at.currentTarget as HTMLElement

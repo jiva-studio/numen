@@ -121,9 +121,8 @@ export const SMOOTHING = 10
 /**
  * The rate a count is moving at, from two readings and the time between them.
  *
- * `seconds` is the time since the count last moved, so a count written in groups
- * is measured over the stretch a group took rather than over the moment it
- * landed in.
+ * `seconds` is the time since the count last moved, so a count written in
+ * groups is measured over the stretch a group took.
  *
  * Movement is smoothed towards what was known over that stretch, so a reading
  * taken a moment after the last counts for a moment and one taken a minute later
