@@ -12,6 +12,11 @@ export interface Viewport {
    * it is not a measurement. Calling what comes back stops the watching.
    */
   readonly watch: (of: HTMLElement, took: (size: Size) => void) => () => void
+  /**
+   * The room a component has when nobody hands it one, now and every time it
+   * changes. Calling what comes back stops the watching.
+   */
+  readonly watchRoom: (took: (size: Size) => void) => () => void
 }
 
 export const browserViewport: Viewport = {
@@ -26,6 +31,15 @@ export const browserViewport: Viewport = {
     })
     observer.observe(of)
     return () => observer.disconnect()
+  },
+
+  watchRoom: (took) => {
+    if (typeof window === 'undefined') return () => {}
+
+    const onResize = () => took({ width: window.innerWidth, height: window.innerHeight })
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   },
 }
 

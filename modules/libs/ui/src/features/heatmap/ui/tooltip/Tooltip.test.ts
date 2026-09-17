@@ -7,6 +7,7 @@
  * that size and the room it is given.
  */
 import { mount } from '@vue/test-utils'
+import { browserViewport, type Viewport } from '@/shared/lib/viewport'
 import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tooltip from './Tooltip.vue'
@@ -28,6 +29,15 @@ afterEach(() => {
 
 const ROOM = { width: 1000, height: 800 }
 
+/** A window of the size a test names, whatever the machine laid out. */
+const roomOf = (size: { width: number; height: number }): Viewport => ({
+  watch: () => () => {},
+  watchRoom: (took) => {
+    took(size)
+    return () => {}
+  },
+})
+
 const createBox = (overrides: Partial<Box> = {}): Box => ({
   x: 100,
   y: 200,
@@ -40,7 +50,7 @@ const createBox = (overrides: Partial<Box> = {}): Box => ({
  *  frame after the one it was measured on. */
 const mountTooltip = async (props: Record<string, unknown> = {}) => {
   const tooltip = mount(Tooltip, {
-    props: { at: createBox(), viewport: ROOM, ...props },
+    props: { at: createBox(), viewport: roomOf(ROOM), ...props },
     slots: { default: 'What this is' },
   })
   await nextTick()
@@ -74,7 +84,7 @@ describe('where it stands', () => {
   it('is brought inside the edge where neither side has room', async () => {
     const tooltip = await mountTooltip({
       at: createBox({ x: 60, y: 10 }),
-      viewport: { width: 200, height: 800 },
+      viewport: roomOf({ width: 200, height: 800 }),
     })
     expect(getPlacement(tooltip).x).toBe('72px')
   })
@@ -82,7 +92,7 @@ describe('where it stands', () => {
   it('folds up from the foot of the room rather than running past it', async () => {
     const tooltip = await mountTooltip({
       at: createBox({ y: 90 }),
-      viewport: { width: 1000, height: 100 },
+      viewport: roomOf({ width: 1000, height: 100 }),
     })
     expect(getPlacement(tooltip).y).toBe('50px')
   })
@@ -90,7 +100,7 @@ describe('where it stands', () => {
   it('stands clear of the edge it is against where it is larger than the room', async () => {
     const tooltip = await mountTooltip({
       at: createBox({ x: 10, y: 10 }),
-      viewport: { width: 60, height: 800 },
+      viewport: roomOf({ width: 60, height: 800 }),
     })
     expect(getPlacement(tooltip).x).toBe('8px')
   })
@@ -113,7 +123,7 @@ describe('the room it is placed in', () => {
   it('is the window where a caller measures none of its own', async () => {
     const was = window.innerWidth
     window.innerWidth = 2000
-    const tooltip = await mountTooltip({ at: createBox({ x: 900 }), viewport: null })
+    const tooltip = await mountTooltip({ at: createBox({ x: 900 }), viewport: browserViewport })
     expect(getPlacement(tooltip).x).toBe('928px')
 
     window.innerWidth = 1000
