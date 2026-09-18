@@ -165,6 +165,9 @@ Two providers are asked whether they are one model: both embed the same short te
   "dir": "",
   "file": "",
   "batch_texts": 8,
+  "engine": "",
+  "runtime": "",
+  "threads": 4,
   "download": true
 }}
 ```
@@ -175,6 +178,9 @@ Two providers are asked whether they are one model: both embed the same short te
 | `dir` | a folder holding the model and `tokenizer.json`, used as given. This is what an installation with no network names. |
 | `file` | which build inside the repository's `onnx/` folder. Empty is `model.onnx`. Naming another is how a quantised build is run in place of the full one. |
 | `batch_texts` | how many texts one forward pass carries. |
+| `engine` | what runs the model: `onnxruntime`, the library fetched at run time, or `go`, the backend in the binary. Empty takes the runtime where this platform has one published and the Go backend where it has none. The vectors are the same either way, so the index does not record which ran. |
+| `runtime` | the ONNX Runtime shared library, when the engine is `onnxruntime`. Empty takes the one the process already opened for a recognition or a transcription. |
+| `threads` | how many threads one forward pass may use. 4. |
 | `download` | fetch the model when this machine does not hold it. |
 
 What comes down is that build and what belongs to it: weights in a second file, a constant in a third, the tokeniser. The other builds in the same folder, and their weights, stay where they are.

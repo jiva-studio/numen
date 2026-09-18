@@ -5,12 +5,22 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // Where a vector is made.
 const (
 	UseLocal   = "local"
 	UseService = "service"
+)
+
+// What runs a model on this machine. EngineRuntime is ONNX Runtime, the library
+// fetched at run time and reached by name. EnginePureGo is the backend written
+// in Go, which asks for nothing that is not in the binary.
+const (
+	EngineRuntime = "onnxruntime"
+	EnginePureGo  = "go"
 )
 
 // KeyEnvVar is where the service key is read from when the configuration file
@@ -99,6 +109,9 @@ type LocalModel struct {
 	File string `json:"file"`
 	// BatchTexts is how many texts one forward pass carries.
 	BatchTexts int `json:"batch_texts"`
+	// Engine is EngineRuntime or EnginePureGo. Empty takes ONNX Runtime where
+	// this platform has one published, and the Go backend where it has none.
+	Engine string `json:"engine"`
 	// Runtime is the ONNX Runtime shared library. Empty means the one beside the
 	// application, and then the one the platform holds.
 	Runtime string `json:"runtime"`
@@ -107,6 +120,18 @@ type LocalModel struct {
 	// Download allows fetching the model when it is not on this machine. Turned
 	// off, and with no directory named, a vault is searched by its words.
 	Download bool `json:"download"`
+}
+
+// GetEngine is what runs this model here. A platform ONNX Runtime is published
+// for takes it, and one it is not published for takes the Go backend.
+func (m LocalModel) GetEngine() string {
+	if m.Engine != "" {
+		return m.Engine
+	}
+	if onnxruntime.IsPublished() {
+		return EngineRuntime
+	}
+	return EnginePureGo
 }
 
 // GetThreads is how much of this machine one forward pass may use. A
@@ -227,6 +252,9 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 		Dir        *string `json:"dir"`
 		File       *string `json:"file"`
 		BatchTexts *int    `json:"batch_texts"`
+		Engine     *string `json:"engine"`
+		Runtime    *string `json:"runtime"`
+		Threads    *int    `json:"threads"`
 		Download   *bool   `json:"download"`
 	}
 	if err := json.Unmarshal(raw, &f); err != nil {
@@ -236,6 +264,9 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 	assign(&m.Dir, f.Dir)
 	assign(&m.File, f.File)
 	assign(&m.BatchTexts, f.BatchTexts)
+	assign(&m.Engine, f.Engine)
+	assign(&m.Runtime, f.Runtime)
+	assign(&m.Threads, f.Threads)
 	assign(&m.Download, f.Download)
 	return nil
 }
