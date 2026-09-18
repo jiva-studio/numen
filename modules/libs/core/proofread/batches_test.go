@@ -323,7 +323,7 @@ func cuts(batches int) []int {
 	return out
 }
 
-// A seam batch holds the size lines around a cut, half of them before it, and
+// A batch over a cut batch holds the size lines around a cut, half of them before it, and
 // is numbered on from the batches the transcript was cut into.
 func TestASeamHoldsTheLinesOnBothSidesOfACut(t *testing.T) {
 	cues := makeTranscript(8)
@@ -332,47 +332,47 @@ func TestASeamHoldsTheLinesOnBothSidesOfACut(t *testing.T) {
 		t.Fatalf("batches %v", got)
 	}
 
-	seams := proofread.CutIntoBatches(cues, 4, 1, cuts(len(batches)))
-	if got := numbers(seams); !reflect.DeepEqual(got, [][]int{{1, 2, 3, 4}, {4, 5, 6, 7}}) {
-		t.Errorf("seams %v, want a window over each of the two cuts", got)
+	batchesAcrossCuts := proofread.CutIntoBatches(cues, 4, 1, cuts(len(batches)))
+	if got := numbers(batchesAcrossCuts); !reflect.DeepEqual(got, [][]int{{1, 2, 3, 4}, {4, 5, 6, 7}}) {
+		t.Errorf("batchesAcrossCuts %v, want a window over each of the two cuts", got)
 	}
-	for i, seam := range seams {
-		if seam.Number != len(batches)+i {
-			t.Errorf("seam %d is numbered %d, want its place after the batches", i, seam.Number)
+	for i, atCut := range batchesAcrossCuts {
+		if atCut.Number != len(batches)+i {
+			t.Errorf("batch over a cut %d is numbered %d, want its place after the batches", i, atCut.Number)
 		}
-		if !seam.IsJoinable {
-			t.Errorf("seam %d does not put lines together", i)
+		if !atCut.IsJoinable {
+			t.Errorf("batch over a cut %d does not put lines together", i)
 		}
 	}
 }
 
-// A seam is built for the cuts it is asked for and no others. The cut after
+// A batch over a cut is built for the cuts it is asked for and no others. The cut after
 // the last batch is no cut at all.
 func TestOnlyTheCutsAskedForAreBuilt(t *testing.T) {
 	cues := makeTranscript(8)
 	if got := numbers(proofread.CutIntoBatches(cues, 4, 1, []int{1})); !reflect.DeepEqual(got, [][]int{{4, 5, 6, 7}}) {
-		t.Errorf("seams %v, want the window over the second cut", got)
+		t.Errorf("batchesAcrossCuts %v, want the window over the second cut", got)
 	}
-	if seams := proofread.CutIntoBatches(cues, 4, 1, nil); seams != nil {
-		t.Errorf("no cuts gave back %v", seams)
+	if batchesAcrossCuts := proofread.CutIntoBatches(cues, 4, 1, nil); batchesAcrossCuts != nil {
+		t.Errorf("no cuts gave back %v", batchesAcrossCuts)
 	}
-	if seams := proofread.CutIntoBatches(cues, 4, 1, []int{2, 9, -1}); seams != nil {
-		t.Errorf("cuts after the last batch gave back %v", seams)
+	if batchesAcrossCuts := proofread.CutIntoBatches(cues, 4, 1, []int{2, 9, -1}); batchesAcrossCuts != nil {
+		t.Errorf("cuts after the last batch gave back %v", batchesAcrossCuts)
 	}
 }
 
 func TestATranscriptOfOneBatchHasNoSeams(t *testing.T) {
 	for _, count := range []int{0, 1, 2, 3, 4} {
-		if seams := proofread.CutIntoBatches(makeTranscript(count), 4, 1, cuts(4)); seams != nil {
-			t.Errorf("%d lines gave back %v", count, seams)
+		if batchesAcrossCuts := proofread.CutIntoBatches(makeTranscript(count), 4, 1, cuts(4)); batchesAcrossCuts != nil {
+			t.Errorf("%d lines gave back %v", count, batchesAcrossCuts)
 		}
 	}
 }
 
 // A batch of one line has no room for a line on either side of a cut.
 func TestABatchOfOneLineHasNoSeams(t *testing.T) {
-	if seams := proofread.CutIntoBatches(makeTranscript(6), 1, 0, cuts(6)); seams != nil {
-		t.Errorf("gave back %v", seams)
+	if batchesAcrossCuts := proofread.CutIntoBatches(makeTranscript(6), 1, 0, cuts(6)); batchesAcrossCuts != nil {
+		t.Errorf("gave back %v", batchesAcrossCuts)
 	}
 }
 
@@ -391,14 +391,14 @@ func carries(batch proofread.Batch, at, through int) bool {
 }
 
 // A run of lines is answered for inside one batch. A run of half a batch or
-// fewer that no batch of the transcript holds whole is held whole by a seam.
+// fewer that no batch of the transcript holds whole is held whole by a batch over a cut.
 func TestASentenceCrossingACutStandsWholeInASeam(t *testing.T) {
 	for _, count := range []int{2, 3, 5, 8, 13, 21} {
 		for size := 2; size <= 8; size++ {
 			for overlap := 0; overlap < size; overlap++ {
 				cues := makeTranscript(count)
 				batches := proofread.GetSpeechBatches(cues, size, overlap)
-				seams := proofread.CutIntoBatches(cues, size, overlap, cuts(len(batches)))
+				batchesAcrossCuts := proofread.CutIntoBatches(cues, size, overlap, cuts(len(batches)))
 
 				for at := 0; at < count; at++ {
 					for through := at; through <= min(at+size/2-1, count-1); through++ {
@@ -407,10 +407,10 @@ func TestASentenceCrossingACutStandsWholeInASeam(t *testing.T) {
 						}) {
 							continue
 						}
-						if !slices.ContainsFunc(seams, func(b proofread.Batch) bool {
+						if !slices.ContainsFunc(batchesAcrossCuts, func(b proofread.Batch) bool {
 							return carries(b, at, through)
 						}) {
-							t.Errorf("%d lines by %d sharing %d: the run %d-%d is in no batch and no seam",
+							t.Errorf("%d lines by %d sharing %d: the run %d-%d is in no batch and no batch over a cut",
 								count, size, overlap, at, through)
 						}
 					}
@@ -420,24 +420,24 @@ func TestASentenceCrossingACutStandsWholeInASeam(t *testing.T) {
 	}
 }
 
-// Each seam reaches further into the transcript than the one before it, so a
-// run taking up in the seam pass never stalls and never skips one.
+// Each batch over a cut reaches further into the transcript than the one before it, so a
+// run taking up in the pass over the cuts never stalls and never skips one.
 func TestEachSeamReachesFurtherThanTheOneBefore(t *testing.T) {
 	for _, count := range []int{2, 3, 5, 8, 13, 21} {
 		for size := 2; size <= 8; size++ {
 			for overlap := 0; overlap < size; overlap++ {
 				cues := makeTranscript(count)
-				seams := proofread.CutIntoBatches(cues, size, overlap, cuts(len(proofread.GetSpeechBatches(cues, size, overlap))))
-				for i, seam := range seams {
-					if len(seam.Lines) == 0 {
-						t.Fatalf("%d lines by %d sharing %d: seam %d holds nothing", count, size, overlap, i)
+				batchesAcrossCuts := proofread.CutIntoBatches(cues, size, overlap, cuts(len(proofread.GetSpeechBatches(cues, size, overlap))))
+				for i, atCut := range batchesAcrossCuts {
+					if len(atCut.Lines) == 0 {
+						t.Fatalf("%d lines by %d sharing %d: batch over a cut %d holds nothing", count, size, overlap, i)
 					}
-					if len(seam.Lines) > size {
-						t.Errorf("%d lines by %d sharing %d: seam %d holds %d lines",
-							count, size, overlap, i, len(seam.Lines))
+					if len(atCut.Lines) > size {
+						t.Errorf("%d lines by %d sharing %d: batch over a cut %d holds %d lines",
+							count, size, overlap, i, len(atCut.Lines))
 					}
-					if i > 0 && seam.Last() <= seams[i-1].Last() {
-						t.Errorf("%d lines by %d sharing %d: seam %d reaches no further than %d",
+					if i > 0 && atCut.Last() <= batchesAcrossCuts[i-1].Last() {
+						t.Errorf("%d lines by %d sharing %d: batch over a cut %d reaches no further than %d",
 							count, size, overlap, i, i-1)
 					}
 				}

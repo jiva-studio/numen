@@ -201,7 +201,7 @@ const crossed = "A verse that the teacher explained at some length in the mornin
 
 // newCrossingRun is a run over those spans, cut into batches of four sharing
 // one line, one batch to a request. The batches are numbered 0 to 2 and the
-// seams over the two cuts between them 3 and 4.
+// batchesAcrossCuts over the two cuts between them 3 and 4.
 func newCrossingRun(t *testing.T, says map[int]string) (ProofreadTranscript, domain.Vault, *shelf, *corrector, string) {
 	t.Helper()
 	u, v, kept, by, hash := newProofreadTranscript(t, says, speech...)
@@ -210,7 +210,7 @@ func newCrossingRun(t *testing.T, says map[int]string) (ProofreadTranscript, dom
 }
 
 // A sentence beginning further before a cut than the shared lines reach, and
-// ending after it, is in no batch of the first pass. The seam over that cut
+// ending after it, is in no batch of the first pass. The batch over that cut
 // holds it whole, and it is put back together there.
 func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
 	u, v, shelved, by, hash := newCrossingRun(t, map[int]string{
@@ -257,7 +257,7 @@ func TestATranscriptNothingRanPastAsksAboutItsBatchesOnly(t *testing.T) {
 		t.Errorf("it asked %v, want the three batches of the transcript", by.asked)
 	}
 
-	// The transcript is answered whole, seams and all, and a run over it again
+	// The transcript is answered whole, batchesAcrossCuts and all, and a run over it again
 	// asks nothing.
 	said := &corrector{}
 	again := newTranscriptProofreading(t, u.readers, u.derived, said)
@@ -270,7 +270,7 @@ func TestATranscriptNothingRanPastAsksAboutItsBatchesOnly(t *testing.T) {
 	}
 }
 
-// One batch answered for a sentence running on past its end. The seam over that
+// One batch answered for a sentence running on past its end. The batch over that
 // cut is asked about, and the other cut costs nothing.
 func TestOnlyTheCutASentenceRanPastIsAskedAbout(t *testing.T) {
 	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: newJoinReply(2, 4, crossed)})
@@ -279,7 +279,7 @@ func TestOnlyTheCutASentenceRanPastIsAskedAbout(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(by.asked, [][]int{{0}, {1}, {2}, {3}}) {
-		t.Errorf("it asked %v, want the three batches and the seam over the first cut", by.asked)
+		t.Errorf("it asked %v, want the three batches and the batch over the first cut", by.asked)
 	}
 }
 
@@ -296,7 +296,7 @@ func TestATranscriptOfOneBatchAsksNothingMore(t *testing.T) {
 	}
 }
 
-// A run stopped in the seam pass takes up at the seam it stopped on. What the
+// A run stopped in the pass over the cuts takes up at the cut it stopped on. What the
 // pass before it asked about is not asked about again.
 func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 	u, v, shelved, by, hash := newCrossingRun(t, map[int]string{
@@ -322,7 +322,7 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(said.asked, [][]int{{4}}) {
-		t.Errorf("it asked %v, want the seam it stopped on", said.asked)
+		t.Errorf("it asked %v, want the cut it stopped on", said.asked)
 	}
 
 	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
@@ -337,7 +337,7 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 	}
 }
 
-// A line the first pass put into a run stands in it. A seam answering for that
+// A line the first pass put into a run stands in it. A batch over a cut answering for that
 // line again is answered too late.
 func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
 	u, v, shelved, _, hash := newCrossingRun(t, map[int]string{
@@ -362,7 +362,7 @@ func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
 	}
 }
 
-// A seam carries what the recording holds, as a batch of the first pass does.
+// A batch over a cut carries what the recording holds, as a batch of the first pass does.
 func TestASeamCarriesWhatTheRecordingHolds(t *testing.T) {
 	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: newJoinReply(2, 4, crossed)})
 

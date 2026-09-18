@@ -75,7 +75,7 @@ func GetSpeechBatches(cues []transcript.Cue, size, overlap int) []Batch {
 //
 // A run of lines is answered for inside one batch, and a sentence reaching
 // across a cut further than the overlap carries is in no batch Spoken makes.
-// The seam batch for that cut holds it whole.
+// The batch over a cut batch for that cut holds it whole.
 //
 // A transcript of one batch has no cut, and a batch of one line has no room
 // for a line on either side of one. The last batch is followed by no cut.
@@ -94,7 +94,7 @@ func CutIntoBatches(cues []transcript.Cue, size, overlap int, cuts []int) []Batc
 			continue
 		}
 		// One window covers two cuts near the end of the transcript, and each
-		// seam batch reaches further than the one before it.
+		// batch over a cut batch reaches further than the one before it.
 		end := min(max((cut+1)*step-size/2, 0)+size, len(lines))
 		if end <= reach {
 			continue

@@ -230,8 +230,8 @@ func TestANameNeverLeavesItsVault(t *testing.T) {
 
 func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
 	t.Parallel()
-	// The seam the user put there on purpose: a link written by identifier finds
-	// its note wherever that note is, and says which vault that turned out to be.
+	// A link written by identifier finds its note wherever that note is, and
+	// says which vault that turned out to be.
 	const id = "01M02DTC80PABQQW3XS3XWDVHW"
 	db, first := newIndexedVault(t, map[string]string{
 		"source.md": "---\nlinks:\n  - to: \"note://" + id + "\"\n    role: jump\n---\n\nbody\n",

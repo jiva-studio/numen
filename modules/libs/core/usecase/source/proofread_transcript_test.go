@@ -395,7 +395,7 @@ func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 	}
 }
 
-// The seams are asked about after the whole transcript is, and a run taking up
+// The batchesAcrossCuts are asked about after the whole transcript is, and a run taking up
 // among them is work a person is told about.
 func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
@@ -406,7 +406,7 @@ func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 	}
 
 	// The shelf as a run that ended between the two passes left it: every line
-	// asked about, and no seam.
+	// asked about, and no batch over a cut.
 	stood, err := json.Marshal(putting{By: u.GetProofreaderName(), At: getSpan(len(words) - 1).To})
 	if err != nil {
 		t.Fatal(err)
@@ -421,6 +421,6 @@ func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 		t.Fatal(err)
 	}
 	if told == 0 {
-		t.Error("a run over the seams was told about no times")
+		t.Error("a run over the batchesAcrossCuts was told about no times")
 	}
 }

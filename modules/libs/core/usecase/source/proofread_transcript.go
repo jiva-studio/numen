@@ -108,9 +108,10 @@ type putting struct {
 	// At is the millisecond past which nothing has been asked about. It counts
 	// in time, which putting a broken sentence back together does not move.
 	At int `json:"at"`
-	// Seam is the millisecond past which no seam has been asked about. It
-	// stands still until At stands at the end of the transcript.
-	Seam int `json:"seam"`
+	// AtCut is the millisecond past which no batch covering a cut between two
+	// batches has been asked about. It stands still until At stands at the end
+	// of the transcript.
+	AtCut int `json:"at_cut"`
 }
 
 // Execute puts one recording's transcript right.
@@ -177,7 +178,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	about := proofread.Describe(cues)
 	spoken := setContext(proofread.GetSpeechBatches(cues, u.batchSize(), u.overlap()), about)
 	batches := spoken
-	// The seams are cut from the transcript as this run found it, so the batch
+	// The batchesAcrossCuts are cut from the transcript as this run found it, so the batch
 	// a line falls in does not move as sentences are put back together.
 	asHeard := slices.Clone(cues)
 	// A batch reaches back over the lines it shares with the one before it, so
@@ -191,12 +192,12 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	if at >= len(spoken) {
 		// A run taking up after the first pass holds no reply saying which cuts
 		// a sentence was answered for past the end of, and asks about every
-		// seam standing past the count.
-		batches = slices.Concat(spoken, u.seams(asHeard, everyCut(len(spoken)), about))
-		at = len(spoken) + getFirstUnaskedBatch(batches[len(spoken):], cues, stood.Seam)
+		// batch over a cut standing past the count.
+		batches = slices.Concat(spoken, u.batchesAcrossCuts(asHeard, everyCut(len(spoken)), about))
+		at = len(spoken) + getFirstUnaskedBatch(batches[len(spoken):], cues, stood.AtCut)
 	}
 	if at >= len(batches) {
-		// This proofreader has been over every line and every seam.
+		// This proofreader has been over every line and every batch over a cut.
 		res.IsAlready = true
 		return res, nil
 	}
@@ -239,7 +240,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 
 		wrote := false
 		put, past := proofread.GetGatheredLines(group, replies, unbounded)
-		// A seam is asked about once, so a run past the end of one names no
+		// A batch over a cut is asked about once, so a run past the end of one names no
 		// further cut.
 		for _, batch := range past {
 			if batch < len(spoken) {
@@ -284,7 +285,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 			return res, err
 		}
 		if end == len(spoken) {
-			batches = slices.Concat(spoken, u.seams(asHeard, cuts, about))
+			batches = slices.Concat(spoken, u.batchesAcrossCuts(asHeard, cuts, about))
 		}
 		if err := u.writeCheckpoint(ctx, store, far, getProgress(batches, len(spoken), end, cues)); err != nil {
 			return res, err
@@ -399,27 +400,28 @@ func isJoined(together map[int]bool, said proofread.Line) bool {
 
 // getProgress is where a run stands once the first end batches have been
 // answered. The first spoken of them are the pass over the whole transcript and
-// the rest the pass over its seams, and each batch of a pass reaches further
+// the rest the pass over its batchesAcrossCuts, and each batch of a pass reaches further
 // into the transcript than the one before it.
 func getProgress(batches []proofread.Batch, spoken, end int, cues []transcript.Cue) putting {
 	var stood putting
 	if done := min(end, spoken); done > 0 {
 		stood.At = cues[last(batches[done-1])].To
 	}
-	// Every batch is answered and no seam is left, so both counts stand at the
+	// Every batch is answered and no batch over a cut is left, so both counts stand at the
 	// end of the transcript.
 	if end == len(batches) {
-		stood.Seam = stood.At
+		stood.AtCut = stood.At
 		return stood
 	}
 	if end > spoken {
-		stood.Seam = cues[last(batches[end-1])].To
+		stood.AtCut = cues[last(batches[end-1])].To
 	}
 	return stood
 }
 
-// seams is a batch for each of the cuts, carrying what the recording holds.
-func (u ProofreadTranscript) seams(cues []transcript.Cue, cuts []int, about string) []proofread.Batch {
+// batchesAcrossCuts is a batch over each cut, carrying what the recording holds
+// on both sides of it, so a sentence broken in two is put right whole.
+func (u ProofreadTranscript) batchesAcrossCuts(cues []transcript.Cue, cuts []int, about string) []proofread.Batch {
 	return setContext(proofread.CutIntoBatches(cues, u.batchSize(), u.overlap(), cuts), about)
 }
 
