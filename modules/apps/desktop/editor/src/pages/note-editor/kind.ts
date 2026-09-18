@@ -6,10 +6,10 @@ import type { PlexDestination } from '@numen/ui'
 import type { Store } from '@/features/command-palette'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { NOTE } from '@/entities/tab'
-import type { noteChanges } from './model/changes'
+import type { createNoteChanges } from './model/changes'
 import { getMarkOf, type openNotes } from '@/entities/note'
-import { noteKeyboard, ITSELF } from './model/keyboard'
-import { noteTitles, type NoteTitlesDeps } from './model/titles'
+import { createNoteKeyboard, ITSELF } from './model/keyboard'
+import { createNoteTitles, type NoteTitlesDeps } from './model/titles'
 import NoteTab from './ui/NoteTab.vue'
 import type { FileOpeners } from '@/entities/tab'
 import type { NoteTabDeps, NoteTabState } from './types'
@@ -20,7 +20,7 @@ export type { NoteTabDeps, NoteTabState, NoteTitlesDeps }
 /** The notes of the whole window, read and written by one store. */
 type Notes = ReturnType<typeof openNotes>
 /** What is being typed into each note now, as the editor draws it. */
-type NoteChanges = ReturnType<typeof noteChanges>
+type NoteChanges = ReturnType<typeof createNoteChanges>
 
 export function useNoteTab(
   vault: NoteTabDeps,
@@ -29,8 +29,8 @@ export function useNoteTab(
   handle: WindowHandle,
   tabOpeners: FileOpeners,
 ) {
-  const names = noteTitles(vault, notes)
-  const keyboard = noteKeyboard()
+  const names = createNoteTitles(vault, notes)
+  const keyboard = createNoteKeyboard()
 
   /**
    * Every open note under the file it stands at now, against the identity it

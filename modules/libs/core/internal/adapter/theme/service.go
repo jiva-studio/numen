@@ -84,10 +84,10 @@ func (s *Service) ListThemes(
 	listed := make([]*v1.Theme, 0, len(themes))
 	for _, one := range themes {
 		listed = append(listed, &v1.Theme{
-			Name:   one.Name,
-			Title:  one.Title,
-			Shelf:  encodeShelf(one.Shelf),
-			Pinned: one.Pinned,
+			Name:     one.Name,
+			Title:    one.Title,
+			Shelf:    encodeShelf(one.Shelf),
+			IsPinned: one.Pinned,
 		})
 	}
 	return connect.NewResponse(&v1.ListThemesResponse{

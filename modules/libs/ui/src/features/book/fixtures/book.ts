@@ -66,7 +66,7 @@ export const VERSES: readonly Run[] = [
 
 /**
  * Verse as a book converted from plain text carries it: one pre element holding
- * the lines it was written on. Long enough to run over several spreads, so a
+ * the lines it was written on. Long enough to run over several countSpreads, so a
  * document that stopped at the first is one that stopped.
  */
 export const VERSE: string = Array.from(
@@ -77,7 +77,7 @@ export const VERSE: string = Array.from(
     '      unborn, unending, ancient of the worlds."',
 ).join('\n')
 
-/** Enough prose to run over several spreads at any size the text is set at. */
+/** Enough prose to run over several countSpreads at any size the text is set at. */
 export const PROSE: readonly Run[] = Array.from({ length: 24 }, (_, index) => ({
   tag: 'p',
   text:

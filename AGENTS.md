@@ -227,8 +227,6 @@ Specific term rules:
 | `make` (frontend) | `create` | factory functions in TS/Vue |
 
 Domain distinctions:
-- **`stretch`** is a run of a source's text where it stands, in bytes. **`span`**
-  is that same run as a client counts it, `from` and `to` in UTF-16 code units.
 - **`address`** is scheme and value, the only thing that says where a link goes (`domain.Address`).
   **`link`** is the relationship as written in a file.
 - **`overtaken`** is the tab state where a file no longer holds
@@ -236,20 +234,28 @@ Domain distinctions:
 
 ---
 
-## 10. File placement — domain code stays in its domain
+## 10. File placement — a file stands on a layer
 
-Code that serves one domain lives inside that domain's folder under
-`modules/apps/desktop/editor/src/` or `modules/apps/desktop/flashcards/src/`:
+A file of a window stands on one of six layers, and a layer reaches only what
+stands below it. The table is in
+[A file of the windows stands on a layer](docs/adr/0042-a-file-of-the-windows-stands-on-a-layer.md),
+and it is the one place the order is written:
 
-| File | Belongs in |
+| Layer | Holds |
 |---|---|
-| Note-specific types (`Move`, `Focus`, `Enabler`) | `note/` |
-| File-manager entries (`FileEntry`, `MoveResult`) | `files/` |
-| Flashcard review settings | `cards/` |
+| `shared` | system types, paths, transport, base components |
+| `entities` | a business thing: note, deck, media, settings, tab |
+| `features` | one user scenario, whole |
+| `widgets` | a composite block a page puts together |
+| `pages` | one tab, whole |
+| `app` | mounting, wiring, providers |
 
-There is no `tabs/` folder and no `shared/`. What two or more domains genuinely
-use sits at the top of `src/` under the word for what it is — `transport.ts`,
-`theme.ts`, `words.ts` — and a type only one domain reads never moves there.
+`shared` holds what has no domain in it. A thing two slices need goes down a
+layer, or the slice that owns it says so through `@x`.
+
+A slice holding more than one kind of file is cut into segments: `ui`, `model`,
+`lib`, `api`. A component beside a wire mapper, or a store beside a pure
+reducer, is a slice to cut.
 
 ---
 
@@ -278,7 +284,7 @@ five.
 
 Directories and files follow strict casing rules:
 
-1. **Directories**: always `kebab-case` (`status-corner/`, `command-palette/`, `file-routing/`, `tabs/`).
+1. **Directories**: always `kebab-case` (`status-corner/`, `command-palette/`, `file-routing/`, `preset-editor/`).
 2. **Vue components**: always `PascalCase` (`App.vue`, `NoteTab.vue`, `Field.vue`).
 3. **TypeScript / JavaScript files**: always `camelCase` (`useWorkspaceTabs.ts`, `useFileRouter.ts`, `transport.ts`, `words.ts`, `answers.ts`).
 

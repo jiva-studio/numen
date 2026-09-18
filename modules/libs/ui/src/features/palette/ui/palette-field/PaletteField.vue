@@ -19,7 +19,7 @@ defineProps<{
   /** The number of the row the keyboard stands on, and -1 for none. */
   here: number
   /** Whether there is a list under the field at all. */
-  expanded: boolean
+  isExpanded: boolean
   /** The words standing in for what has not been typed. */
   placeholder: string
   /** What the field is announced as. */
@@ -66,7 +66,7 @@ defineExpose({ focus, select })
       :placeholder="placeholder"
       :aria-label="name"
       :aria-describedby="crumb ? `${uid}-crumb` : undefined"
-      :aria-expanded="expanded"
+      :aria-expanded="isExpanded"
       :aria-controls="listId(uid)"
       :aria-activedescendant="here >= 0 ? optionId(uid, here) : undefined"
     />

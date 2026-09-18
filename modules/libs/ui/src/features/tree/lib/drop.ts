@@ -42,7 +42,7 @@ function bandAt(visibleRows: readonly ShownRow[], y: number, height: number): Ro
   if (!row) return { into: null }
 
   const band = y - at * height
-  const edge = row.holds ? height / 4 : height / 2
+  const edge = row.hasChildren ? height / 4 : height / 2
 
   if (band < edge) return { before: row.id }
   if (band < height - edge) return { into: row.id }

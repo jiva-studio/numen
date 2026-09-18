@@ -126,7 +126,7 @@ func headings(body []byte) []domain.Heading {
 			end = at + next
 		}
 		text := strings.TrimRight(string(body[at:end]), "\r")
-		if !f.Crosses(text) && !f.IsInside() {
+		if !f.IsCrossedBy(text) && !f.IsInside() {
 			if m := headingRe.FindStringSubmatch(text); m != nil {
 				out = append(out, domain.Heading{Level: len(m[1]), Text: m[2], Line: line, Offset: at})
 			}
@@ -150,9 +150,9 @@ func title(n domain.Note, notePath string) string {
 // tildes by tildes, so the other mark stands inside it as text.
 type Fence struct{ mark byte }
 
-// Crosses follows one line, and reports whether that line opens or closes the
+// IsCrossedBy follows one line, and reports whether that line opens or closes the
 // fence.
-func (f *Fence) Crosses(line string) bool {
+func (f *Fence) IsCrossedBy(line string) bool {
 	t := strings.TrimSpace(line)
 	var mark byte
 	switch {

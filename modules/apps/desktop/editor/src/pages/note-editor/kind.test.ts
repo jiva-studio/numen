@@ -12,7 +12,7 @@ import type { PlexDestination } from '@numen/ui'
 import { useNoteTab, type NoteTabDeps, type NoteTabState } from './kind'
 import { fileOpeners } from '@/entities/tab'
 import type { EditorHandle } from './model/keyboard'
-import type { noteChanges } from './model/changes'
+import type { createNoteChanges } from './model/changes'
 import type { openNotes, State } from '@/entities/note'
 import { useWindowTabs } from '@/entities/tab'
 import { NOTE } from '@/entities/tab'
@@ -94,7 +94,7 @@ const notes = (states: Record<string, State> = {}) => {
 const drawings = () => {
   const shut: string[] = []
   const store = { shown: () => 0, closeNote: (path: string) => shut.push(path) }
-  return { store: store as unknown as ReturnType<typeof noteChanges>, shut }
+  return { store: store as unknown as ReturnType<typeof createNoteChanges>, shut }
 }
 
 /** An editor that says whether it took what it was handed. */

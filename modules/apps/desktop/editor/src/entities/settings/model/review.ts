@@ -29,7 +29,7 @@ export interface ReviewDeps {
   setReviewSettings(starts: string): Promise<string | null>
 }
 
-export function reviewSetting(core: ReviewDeps, words: Words, write: MessageWriter) {
+export function createReviewSetting(core: ReviewDeps, words: Words, write: MessageWriter) {
   /** The hour in force. It opens where an installation nobody has configured begins. */
   const starts = ref(DEFAULT_STARTS)
 

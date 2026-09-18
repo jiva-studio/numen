@@ -57,7 +57,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 	known := domain.Vaults(held)
-	if err := known.Room(root); err != nil {
+	if err := known.CheckRoom(root); err != nil {
 		return domain.Vault{}, err
 	}
 

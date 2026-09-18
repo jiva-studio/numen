@@ -118,7 +118,7 @@ message VaultCardsDue {
 
   // Set while the vault is being read into the index. The three numbers are not
   // in yet, and a further count follows when the reading is done.
-  bool reading = 10;
+  bool is_reading = 10;
 }
 
 message DeckCardsDue {
@@ -234,7 +234,7 @@ message Asked {
   // Seen is false for a card nobody has answered, which is what a person means
   // by a new card. Due is when it comes round, and stands only where it has
   // been answered.
-  bool seen = 8;
+  bool is_seen = 8;
   string due = 9;
 
   // Where each of the four would leave it.
@@ -400,14 +400,14 @@ message DeckNeighbour {
   // their own instead of the note's name.
   string label = 5;
 
-  // Points says the deck points at this note; otherwise this note points at the
+  // IsPointedAt says the deck points at this note; otherwise this note points at the
   // deck. A person reads the two differently: one is what the deck was made
   // from, the other is what has since been hung off it.
-  bool points = 6;
+  bool is_pointed_at = 6;
 
-  // Ambiguous says more than one note answers to the name written, and the one
+  // IsAmbiguous says more than one note answers to the name written, and the one
   // here is only the first of them.
-  bool ambiguous = 7;
+  bool is_ambiguous = 7;
 
   // Set when the note is there and its text could not be had, and says why.
   optional ErrorCode error = 8;

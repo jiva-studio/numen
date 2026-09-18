@@ -25,8 +25,8 @@ export const TOO_MUCH = 20
  * Longer words are read for longer. Past twenty of them the time never runs
  * out: a list of names is something a person acts on, and it waits for them.
  */
-export const dwellOf = (says: string, about = ''): number => {
-  const words = `${says} ${about}`.split(/\s+/).filter((word) => word !== '')
+export const dwellOf = (text: string, about = ''): number => {
+  const words = `${text} ${about}`.split(/\s+/).filter((word) => word !== '')
   if (words.length > TOO_MUCH) return Infinity
   return SETTLE + words.length * PER_WORD
 }
@@ -35,7 +35,7 @@ export const dwellOf = (says: string, about = ''): number => {
  * When each notice standing now was first seen. One that has been here keeps
  * the moment it arrived; one that has gone is forgotten.
  */
-export const arrivals = (
+export const getArrivalTimes = (
   was: ReadonlyMap<string, number>,
   notices: readonly Notice[],
   at: number,
@@ -44,7 +44,7 @@ export const arrivals = (
 
 /** Whether a notice has stood long enough to have been read. */
 const isRead = (notice: Notice, firstSeen: ReadonlyMap<string, number>, at: number): boolean =>
-  at - (firstSeen.get(notice.id) ?? at) >= dwellOf(notice.says, notice.about)
+  at - (firstSeen.get(notice.id) ?? at) >= dwellOf(notice.text, notice.about)
 
 /** The notices drawn: the ones that have lasted, less the ones put away. */
 export const getShownNotices = (

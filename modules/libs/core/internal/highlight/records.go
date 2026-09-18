@@ -45,7 +45,7 @@ func Unpack(raw []byte) []Box {
 		from := int(int32(binary.LittleEndian.Uint32(one[4:])))
 		boxes = append(boxes, Box{
 			Page: int(int32(binary.LittleEndian.Uint32(one[0:]))),
-			Span: domain.Span{
+			ByteSpan: domain.ByteSpan{
 				From: from,
 				To:   from + int(int32(binary.LittleEndian.Uint32(one[8:]))),
 			},

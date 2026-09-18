@@ -9,7 +9,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { OPENING, type WideBox } from '../../model/dwell'
-import { hangParts, type PlexPart } from '../../lib/inside'
+import { getNodeParts, type PlexPart } from '../../lib/inside'
 import { stubClock } from '@/shared/fixtures/clock'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import type { PlexSeat } from '../../lib/seat'
@@ -494,7 +494,7 @@ describe('the parts a node hangs', () => {
       props: {
         node: nodeAt(),
         wide,
-        hung: hangParts(nodeAt(), items, SIZES, {
+        hung: getNodeParts(nodeAt(), items, SIZES, {
           viewport: { width: 1000, height: 600 },
           margin: 20,
         }),

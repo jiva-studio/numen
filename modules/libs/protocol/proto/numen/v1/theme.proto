@@ -8,6 +8,8 @@ syntax = "proto3";
 // its file, and which of them is chosen.
 package numen.v1;
 
+import "numen/v1/shared.proto";
+
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
 // ThemeService answers how the window is drawn, and is told what a person
@@ -77,14 +79,7 @@ message Theme {
 
   // Set for a theme that declares `color-scheme` itself. Light and dark are
   // the theme's own, and the mode has nothing left to choose.
-  bool pinned = 4;
-}
-
-// Bounds is how far a size goes, at each end. A number outside them is
-// refused.
-message Bounds {
-  double least = 1;
-  double most = 2;
+  bool is_pinned = 4;
 }
 
 message ListThemesRequest {}

@@ -39,7 +39,7 @@ export interface PaletteGroup {
   readonly title: string
   readonly items: readonly PaletteItem[]
   /** More is on its way, so what stands here is not all of it. */
-  readonly working?: boolean
+  readonly isWorking?: boolean
   /**
    * What is said in place of items when the group holds none. A group with
    * nothing to say here and nothing on its way is drawn nowhere.
@@ -70,7 +70,7 @@ export interface PalettePlace {
  */
 export const orderGroups = (groups: readonly PaletteGroup[]): readonly PaletteGroup[] => [
   ...groups.filter((one) => one.items.length > 0),
-  ...groups.filter((one) => one.items.length === 0 && (one.working || Boolean(one.silence))),
+  ...groups.filter((one) => one.items.length === 0 && (one.isWorking || Boolean(one.silence))),
 ]
 
 /**

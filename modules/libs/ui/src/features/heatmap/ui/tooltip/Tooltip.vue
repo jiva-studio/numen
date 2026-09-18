@@ -10,19 +10,20 @@ import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from
 
 import { getPlaceBeside, type Box } from '@/shared/lib/place'
 import type { Size } from '@/shared/lib/geometry'
+import { browserViewport, type Viewport } from '@/shared/lib/viewport'
 
 const props = withDefaults(
   defineProps<{
     /** The thing it is about, in pixels from the top left of the window. */
     at: Box
-    /** The area it is placed in. The browser's own by default. */
-    viewport?: Size | null
+    /** What measures the area it is placed in. The browser by default. */
+    viewport?: Viewport
     /** Kept clear of that area's edges. */
     margin?: number
     /** Left between it and the thing it is about. */
     gap?: number
   }>(),
-  { viewport: null, margin: 8, gap: 8 },
+  { viewport: () => browserViewport, margin: 8, gap: 8 },
 )
 
 const root = useTemplateRef<HTMLElement>('root')
@@ -30,11 +31,8 @@ const root = useTemplateRef<HTMLElement>('root')
 /** Its own size, which only the drawing knows. Placement is worked out from it. */
 const size = ref<Size>({ width: 0, height: 0 })
 
-/** The window, measured, and measured again whenever it changes size. */
-const window_ = ref<Size>({ width: window.innerWidth, height: window.innerHeight })
-
-/** The area to stay inside. The browser's, unless a caller measures its own. */
-const room = computed<Size>(() => props.viewport ?? window_.value)
+/** The area to stay inside, measured again whenever it changes. */
+const room = ref<Size>({ width: 0, height: 0 })
 
 /**
  * Across, it stands beside the thing it is about. Down, it begins where that
@@ -69,17 +67,18 @@ const measure = () => {
   if (box) size.value = { width: box.width, height: box.height }
 }
 
-const onResize = () => {
-  window_.value = { width: window.innerWidth, height: window.innerHeight }
-  measure()
-}
+/** What stops the watching, held from the moment it begins. */
+let stopWatching: (() => void) | null = null
 
 onMounted(() => {
   measure()
-  window.addEventListener('resize', onResize)
+  stopWatching = props.viewport.watchRoom((size) => {
+    room.value = size
+    measure()
+  })
 })
 
-onBeforeUnmount(() => window.removeEventListener('resize', onResize))
+onBeforeUnmount(() => stopWatching?.())
 
 // Measured again once the drawing has caught up with the thing it is about.
 watch(() => props.at, measure, { flush: 'post' })

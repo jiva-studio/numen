@@ -1,13 +1,14 @@
 /**
  * Wire adapters and vault communication for flashcard stencil tabs.
  */
+import { asFailure, asValue } from '@numen/wire'
 import type { NoteBaseline } from '@/entities/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { PathRename } from '@/shared/paths'
 import type { Cards, DeckProblem } from '@/entities/deck'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'
-import { WORDS as words } from '@/entities/deck'
+import { getFailureCode, WORDS as words } from '@/entities/deck'
 import { facesOf, stencilBodyOf, stencilIn, stencilOf } from '../lib/stencil'
 
 /** What the vault said about one file the last time it was read or written. */
@@ -26,16 +27,19 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
 
   const read = async (path: string) => {
     const answer = await cards.readStencil(path)
-    const stencil = answer.stencil ? stencilOf(answer.stencil) : null
+    if (!answer.ok) {
+      told.set(path, { problems: [], reading: getFailureCode(answer.error), writing: null, at: '' })
+      return asFailure(getFailureCode(answer.error) ?? 'notAStencil')
+    }
+    const read = answer.value.stencil
     told.set(path, {
-      problems: answer.stencil?.problems ?? [],
-      reading: answer.error,
+      problems: read.problems,
+      reading: null,
       writing: null,
-      at: answer.at,
+      at: answer.value.at,
     })
-    if (answer.stencil) titles.set(path, answer.stencil.title)
-    if (answer.error !== null) return { body: '', error: answer.error }
-    return { body: stencil ? stencilBodyOf(stencil) : '', error: null, at: answer.at }
+    titles.set(path, read.title)
+    return asValue({ body: stencilBodyOf(stencilOf(read)), at: answer.value.at })
   }
 
   const write = async (path: string, body: string, baseline: NoteBaseline | null = null) => {
@@ -50,10 +54,11 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
     told.set(path, {
       problems: said.problems,
       reading: said.reading,
-      writing: answer.error,
-      at: answer.changed || answer.error !== null ? said.at : answer.at,
+      writing: answer.ok ? null : getFailureCode(answer.error),
+      at: answer.ok ? answer.value.at : said.at,
     })
-    return { body: '', changed: answer.changed, error: answer.error, at: answer.at }
+    if (!answer.ok) return asFailure(answer.error)
+    return asValue({ body: '', at: answer.value.at })
   }
 
   const renameField = async (
@@ -69,14 +74,15 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       name,
       (told.get(path) ?? NOTHING).at || null,
     )
-    if (answer.error !== null) return say(ERRORS[answer.error], 'error')
-    if (answer.changed) {
+    if (!answer.ok) {
+      if (answer.error !== 'changed') return say(ERRORS[answer.error], 'error')
       say(words.notRenamed, 'error')
       return onChanged([path])
     }
-    if (answer.cards > 0) say(words.renamed(answer.cards, answer.decks.length))
-    if (answer.notWritten.length > 0) {
-      say(words.notWritten(answer.notWritten.map((one) => one.path)), 'error')
+    const renamed = answer.value
+    if (renamed.cards > 0) say(words.renamed(renamed.cards, renamed.decks.length))
+    if (renamed.notWritten.length > 0) {
+      say(words.notWritten(renamed.notWritten.map((one) => one.path)), 'error')
     }
     onChanged([path])
   }

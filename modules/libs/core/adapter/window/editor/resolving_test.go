@@ -42,10 +42,10 @@ func TestAnAddressIsAnsweredWithTheNoteItReaches(t *testing.T) {
 		if one.GetPath() != "physics/Entropy.md" {
 			t.Errorf("%q lands at %q", written, one.GetPath())
 		}
-		if one.GetVault() == "" || one.GetCrossed() {
-			t.Errorf("%q lands in vault %q, crossed %v", written, one.GetVault(), one.GetCrossed())
+		if one.GetVault() == "" || one.GetIsCrossed() {
+			t.Errorf("%q lands in vault %q, crossed %v", written, one.GetVault(), one.GetIsCrossed())
 		}
-		if one.GetAmbiguous() {
+		if one.GetIsAmbiguous() {
 			t.Errorf("%q is called ambiguous", written)
 		}
 	}
@@ -101,7 +101,7 @@ func TestANameSeveralNotesAnswerToIsReported(t *testing.T) {
 	if one.GetPath() != "heat/Entropy.md" {
 		t.Errorf("it reaches %q, want the nearest in the tree", one.GetPath())
 	}
-	if !one.GetAmbiguous() {
+	if !one.GetIsAmbiguous() {
 		t.Error("a name two notes answer to is not called ambiguous")
 	}
 }
@@ -125,7 +125,7 @@ func TestANameWrittenInNoNoteReachesTheNoteItNames(t *testing.T) {
 	if one.GetPath() != "notes/"+lecture+".md" {
 		t.Errorf("it reaches %q", one.GetPath())
 	}
-	if one.GetAmbiguous() {
+	if one.GetIsAmbiguous() {
 		t.Error("one note answers to that name and it was called ambiguous")
 	}
 }

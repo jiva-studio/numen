@@ -438,7 +438,7 @@ describe('what a group says about itself', () => {
 
   it('draws a line under a group that is still filling, and marks the group busy', async () => {
     mountPalette({
-      groups: [{ id: 'meaning', title: 'Meaning', items: [], working: true }],
+      groups: [{ id: 'meaning', title: 'Meaning', items: [], isWorking: true }],
     })
     await settle()
 
@@ -456,7 +456,7 @@ describe('what a group says about itself', () => {
 
   it('leaves the line out of what a screen reader reads, since the group says it', async () => {
     mountPalette({
-      groups: [{ id: 'meaning', title: 'Meaning', items: [], working: true }],
+      groups: [{ id: 'meaning', title: 'Meaning', items: [], isWorking: true }],
     })
     await settle()
 
@@ -485,7 +485,7 @@ describe('what a group says about itself', () => {
 
   it('draws a group holding nothing while it is still working', async () => {
     mountPalette({
-      groups: [{ id: 'meaning', title: 'Meaning', items: [], working: true }],
+      groups: [{ id: 'meaning', title: 'Meaning', items: [], isWorking: true }],
     })
     await settle()
 

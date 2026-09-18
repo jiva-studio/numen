@@ -3,15 +3,7 @@
  * time, and settled when it ends. An answer with nothing in it leaves no turn.
  */
 import type { Turn } from '../lib/turn'
-
-/**
- * When the words that have arrived are put on the screen.
- *
- * A model writes faster than a screen draws, and every piece put up on its own
- * marks up the whole answer again. They are collected and put up once a frame,
- * which is as often as anybody can see.
- */
-export type Paint = (draw: () => void) => void
+import type { Paint } from '@/shared/lib/clock'
 
 export interface Answer {
   /** More words of the answer. */

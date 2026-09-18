@@ -58,7 +58,7 @@ describe('usePressDrag', () => {
     const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
 
-    expect(press.dragging.value).toEqual({ item: 'a row', moved: false })
+    expect(press.dragging.value).toEqual({ item: 'a row', hasMoved: false })
     expect(press.position.value).toBeNull()
     expect(press.begin).not.toHaveBeenCalled()
     press.scope.stop()
@@ -69,11 +69,11 @@ describe('usePressDrag', () => {
     press.lift('a row', pointer('pointerdown', 10, 10))
 
     window.dispatchEvent(pointer('pointermove', 13, 13))
-    expect(press.dragging.value?.moved).toBe(false)
+    expect(press.dragging.value?.hasMoved).toBe(false)
     expect(press.at.value).toBeNull()
 
     window.dispatchEvent(pointer('pointermove', 20, 10))
-    expect(press.dragging.value?.moved).toBe(true)
+    expect(press.dragging.value?.hasMoved).toBe(true)
     expect(press.position.value).toEqual({ x: 20, y: 10 })
     expect(press.at.value).toEqual({ x: 20, y: 10 })
     press.scope.stop()
@@ -127,7 +127,7 @@ describe('usePressDrag', () => {
     window.dispatchEvent(pointer('pointermove', 40, 60))
     window.dispatchEvent(pointer('pointerup', 40, 60))
 
-    expect(press.dragging.value?.moved).toBe(true)
+    expect(press.dragging.value?.hasMoved).toBe(true)
     press.frame()
     expect(press.dragging.value).toBeNull()
     press.scope.stop()

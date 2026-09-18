@@ -5,6 +5,9 @@
  * `said` is what the vault says about itself and what stands in it, `listed`
  * the vaults this installation holds, and `folders` what each folder holds.
  */
+import { asValue } from '@numen/wire'
+import type { Entry } from '@/entities/file'
+import type { FieldRenameResult } from '@/entities/deck'
 
 /** What the mocked vault answers about itself, set before the window draws. */
 export const said = {
@@ -68,14 +71,12 @@ export const said = {
   /** Whether the application answers what a file carries at all. */
   carrying: true,
   /** What renaming a field of a stencil comes back with. */
-  renaming: {
+  renaming: asValue({
     decks: [] as string[],
     cards: 0,
     notWritten: [] as { path: string; text: string }[],
-    error: null as import('@/shared/errors').ErrorCode | null,
-    changed: false,
     at: 'a2',
-  },
+  }) as FieldRenameResult,
 }
 
 /** The vaults this installation holds, and the one the window is showing. */
@@ -85,17 +86,23 @@ export const listed = {
 }
 
 /** What each folder of the vault holds, as a listing answers it. */
-export const folders = {
+export const folders: Record<string, readonly Entry[]> = {
   '': [
-    { path: 'physics', name: 'physics', folder: true, kind: 'other' },
-    { path: 'Root.md', name: 'Root.md', folder: false, kind: 'note' },
-    { path: 'Cover.png', name: 'Cover.png', folder: false, kind: 'other' },
+    { path: 'physics', name: 'physics', isFolder: true, kind: 'other', type: 'note' },
+    { path: 'Root.md', name: 'Root.md', isFolder: false, kind: 'note', type: 'note' },
+    { path: 'Cover.png', name: 'Cover.png', isFolder: false, kind: 'other', type: 'note' },
   ],
   physics: [
-    { path: 'physics/Entropy.md', name: 'Entropy.md', folder: false, kind: 'note' },
-    { path: 'physics/Kelvin.md', name: 'Kelvin.md', folder: false, kind: 'note' },
+    {
+      path: 'physics/Entropy.md',
+      name: 'Entropy.md',
+      isFolder: false,
+      kind: 'note',
+      type: 'note',
+    },
+    { path: 'physics/Kelvin.md', name: 'Kelvin.md', isFolder: false, kind: 'note', type: 'note' },
   ],
-} as Record<string, readonly Record<string, unknown>[]>
+}
 
 /**
  * What the vault holds at a path. A book and a note are told apart by the name
@@ -165,9 +172,9 @@ export const maker = (() => {
     createFile: (title: string, folder: string) => {
       if (!reached) throw new Error('the vault could not be reached')
       const path = `${folder ? `${folder}/` : ''}${title}.note`
-      if (filed.has(path)) return { path: '', error: 'occupied' as const }
+      if (filed.has(path)) return { ok: false as const, error: 'occupied' as const }
       filed.add(path)
-      return { path, error: null }
+      return { ok: true as const, value: { path } }
     },
   }
 })()
@@ -233,14 +240,7 @@ export const forgetAnswers = () => {
   }
   said.carries = {}
   said.carrying = true
-  said.renaming = {
-    decks: [],
-    cards: 0,
-    notWritten: [],
-    error: null,
-    changed: false,
-    at: 'a2',
-  }
+  said.renaming = asValue({ decks: [], cards: 0, notWritten: [], at: 'a2' })
   maker.forget()
   outside.forget()
   listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]

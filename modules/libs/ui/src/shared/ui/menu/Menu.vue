@@ -39,7 +39,7 @@ const props = withDefaults(
      * Whether the name of a group is drawn over it. A menu whose groups are
      * named by identifiers draws none.
      */
-    groups?: boolean
+    hasGroups?: boolean
     /**
      * How wide what asked for it is. The menu is never narrower than that, and
      * grows past it for what it holds.
@@ -49,6 +49,8 @@ const props = withDefaults(
     margin?: number
     /** Where it is drawn. The end of the document by default. */
     to?: string | HTMLElement
+    /** What the moment is. The window's clock by default. */
+    clock?: () => number
     /** What it is announced as. */
     name?: string
   }>(),
@@ -58,11 +60,12 @@ const props = withDefaults(
     current: null,
     from: null,
     viewport: null,
-    groups: false,
+    hasGroups: false,
     asking: 0,
     margin: 8,
     to: 'body',
     name: 'Menu',
+    clock: () => Date.now(),
   },
 )
 
@@ -103,11 +106,7 @@ const measure = () => {
 
 const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
 
-const { here, holdRow, goTo, onKey } = useMenuKeys(
-  () => props.items,
-  menu,
-  () => Date.now(),
-)
+const { here, holdRow, goTo, onKey } = useMenuKeys(() => props.items, menu, props.clock)
 
 const choose = (item: MenuItem) => {
   if (item.disabled) return
@@ -184,8 +183,8 @@ onBeforeUnmount(leave)
         :key="item.id"
         :item="item"
         :current="current"
-        :named="groups && Boolean(item.group) && (item.rule || index === 0)"
-        :icons="Boolean($slots.icon)"
+        :has-name="hasGroups && Boolean(item.group) && (item.isRule || index === 0)"
+        :has-icons="Boolean($slots.icon)"
         @focus="here = index"
         @choose="choose(item)"
       >

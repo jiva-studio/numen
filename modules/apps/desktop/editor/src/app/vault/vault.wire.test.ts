@@ -122,7 +122,7 @@ describe('a neighbourhood the vault answers with', () => {
           note: { path: 'Allotments.md', title: 'Allotments' },
           seat: 'SEAT_PARENT',
           label: 'part of',
-          mutual: true,
+          isMutual: true,
         },
       ],
     })

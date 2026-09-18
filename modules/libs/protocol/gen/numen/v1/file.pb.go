@@ -242,7 +242,7 @@ type Entry struct {
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Whether the entry holds other entries. A folder carries no source and
 	// nothing is made from it.
-	Folder bool `protobuf:"varint,3,opt,name=folder,proto3" json:"folder,omitempty"`
+	IsFolder bool `protobuf:"varint,3,opt,name=is_folder,json=isFolder,proto3" json:"is_folder,omitempty"`
 	// What the vault holds here.
 	Kind SourceKind `protobuf:"varint,4,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
 	// Which of three the note is. It says nothing about an entry that is not a
@@ -296,9 +296,9 @@ func (x *Entry) GetName() string {
 	return ""
 }
 
-func (x *Entry) GetFolder() bool {
+func (x *Entry) GetIsFolder() bool {
 	if x != nil {
-		return x.Folder
+		return x.IsFolder
 	}
 	return false
 }
@@ -543,7 +543,7 @@ type MoveFileResponse struct {
 	// Set when the move reached the vault and the index would not come level with
 	// it. Search answers about these files as it read them last, until a walk
 	// goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -592,9 +592,9 @@ func (x *MoveFileResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *MoveFileResponse) GetUnlevelled() bool {
+func (x *MoveFileResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -742,7 +742,7 @@ type RemoveFileResponse struct {
 	Error *ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Set when the file has gone and the index would not come level with it.
 	// Search answers about it as it read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,4,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -798,9 +798,9 @@ func (x *RemoveFileResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *RemoveFileResponse) GetUnlevelled() bool {
+func (x *RemoveFileResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1014,11 +1014,11 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x10ListFilesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\">\n" +
 	"\x11ListFilesResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x99\x01\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x9e\x01\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
-	"\x06folder\x18\x03 \x01(\bR\x06folder\x12(\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
+	"\tis_folder\x18\x03 \x01(\bR\bisFolder\x12(\n" +
 	"\x04kind\x18\x04 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12&\n" +
 	"\x04type\x18\x05 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\",\n" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
@@ -1032,13 +1032,11 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x06format\x18\x04 \x01(\x0e2\x14.numen.v1.BookFormatR\x06format\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\"\xa7\x01\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"\xac\x01\n" +
 	"\x10MoveFileResponse\x12/\n" +
 	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_movedB\b\n" +
 	"\x06_error\"h\n" +
 	"\n" +
@@ -1049,14 +1047,12 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\bdangling\x18\x04 \x03(\tR\bdangling\"A\n" +
 	"\x11RemoveFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa4\x01\n" +
+	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa9\x01\n" +
 	"\x12RemoveFileResponse\x12\x18\n" +
 	"\atrashed\x18\x01 \x01(\tR\atrashed\x12\x1a\n" +
 	"\bdangling\x18\x02 \x03(\tR\bdangling\x12.\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x04 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x04 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_error\")\n" +
 	"\x13CreateFolderRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"P\n" +

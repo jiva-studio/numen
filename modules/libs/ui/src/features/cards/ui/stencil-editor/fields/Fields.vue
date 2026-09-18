@@ -12,7 +12,7 @@ import { Icon } from '../../icon'
 import { Divider } from '../../divider'
 import Field from './Field.vue'
 import { useDrag } from '../../../model/drag'
-import { useNaming } from '../../../model/naming'
+import { useNameEntry } from '../../../model/naming'
 import { Button } from '@/shared/ui/button'
 import {
   landing,
@@ -54,7 +54,7 @@ const objectionsId = (over: string): string => `${uid}-${encodeURIComponent(over
  * A name typed over the one a field carries. A field is named by its own name,
  * and what it is measured against is every other field's.
  */
-const naming = useNaming<Objection>({
+const naming = useNameEntry<Objection>({
   getName: (field) => field,
   getTakenNames: (field) => props.fields.filter((each) => each !== field),
   checkName: checkFieldName,

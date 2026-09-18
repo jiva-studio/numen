@@ -153,10 +153,9 @@ func (u Extract) discover(
 		return err
 	}
 
-	// What the index holds and the walk did not find is gone from the vault. It
-	// is taken out here rather than left: the text of a passage is read from the
-	// file, so a source that is not there answers a search with nothing and the
-	// row only wastes the coarse pass.
+	// What the index holds and the walk did not find is gone from the vault and
+	// is taken out here. The text of a passage is read from the file, so a
+	// source that is not there answers a search with nothing.
 	for _, kind := range u.kinds() {
 		gone := make([]string, 0)
 		for path := range known[kind] {
@@ -280,7 +279,7 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 				continue
 			}
 			ref, err := reader.Stat(ctx, r.Path)
-			if port.NoNote(err) {
+			if port.IsNoNote(err) {
 				continue
 			}
 			if err != nil {
@@ -390,7 +389,7 @@ func (u Extract) source(
 	u.progress(*res)
 
 	ref, err := reader.Stat(ctx, path)
-	if port.NoNote(err) {
+	if port.IsNoNote(err) {
 		res.Vanished++
 		return nil
 	}
@@ -580,8 +579,8 @@ func (u Extract) area() string {
 	return u.Area
 }
 
-// producer is who would have written this file's text down: a recording is
-// listened to, and everything else is read.
+// producer is where this file's text comes from: a recording is listened to,
+// and everything else is read.
 func (u Extract) producer(ref domain.Fingerprint) string {
 	if ref.Kind == domain.KindRecording {
 		return text.ASR

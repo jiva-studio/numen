@@ -138,7 +138,7 @@ function parameterAt(along: readonly number[], fraction: number): number {
  * length. The curve is measured once and read many times, since a title is
  * tried at several places on the same line.
  */
-export function rulerOf(edge: EdgeCurve): (fraction: number) => Position {
+export function createPointOnCurve(edge: EdgeCurve): (fraction: number) => Position {
   const along = measureAlong(edge)
   return (fraction) => pointAt(edge, parameterAt(along, fraction))
 }

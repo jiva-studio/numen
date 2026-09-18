@@ -15,7 +15,7 @@ import (
 
 // box is one printed line on a page, over a run of the prose.
 func box(page, start, length int) highlight.Box {
-	return highlight.Box{Page: page, Span: domain.Span{From: start, To: start + length}}
+	return highlight.Box{Page: page, ByteSpan: domain.ByteSpan{From: start, To: start + length}}
 }
 
 func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {
@@ -332,7 +332,7 @@ func TestASeamHoldsTheLinesOnBothSidesOfACut(t *testing.T) {
 		t.Fatalf("batches %v", got)
 	}
 
-	seams := proofread.Seams(cues, 4, 1, cuts(len(batches)))
+	seams := proofread.CutIntoBatches(cues, 4, 1, cuts(len(batches)))
 	if got := numbers(seams); !reflect.DeepEqual(got, [][]int{{1, 2, 3, 4}, {4, 5, 6, 7}}) {
 		t.Errorf("seams %v, want a window over each of the two cuts", got)
 	}
@@ -350,20 +350,20 @@ func TestASeamHoldsTheLinesOnBothSidesOfACut(t *testing.T) {
 // the last batch is no cut at all.
 func TestOnlyTheCutsAskedForAreBuilt(t *testing.T) {
 	cues := makeTranscript(8)
-	if got := numbers(proofread.Seams(cues, 4, 1, []int{1})); !reflect.DeepEqual(got, [][]int{{4, 5, 6, 7}}) {
+	if got := numbers(proofread.CutIntoBatches(cues, 4, 1, []int{1})); !reflect.DeepEqual(got, [][]int{{4, 5, 6, 7}}) {
 		t.Errorf("seams %v, want the window over the second cut", got)
 	}
-	if seams := proofread.Seams(cues, 4, 1, nil); seams != nil {
+	if seams := proofread.CutIntoBatches(cues, 4, 1, nil); seams != nil {
 		t.Errorf("no cuts gave back %v", seams)
 	}
-	if seams := proofread.Seams(cues, 4, 1, []int{2, 9, -1}); seams != nil {
+	if seams := proofread.CutIntoBatches(cues, 4, 1, []int{2, 9, -1}); seams != nil {
 		t.Errorf("cuts after the last batch gave back %v", seams)
 	}
 }
 
 func TestATranscriptOfOneBatchHasNoSeams(t *testing.T) {
 	for _, count := range []int{0, 1, 2, 3, 4} {
-		if seams := proofread.Seams(makeTranscript(count), 4, 1, cuts(4)); seams != nil {
+		if seams := proofread.CutIntoBatches(makeTranscript(count), 4, 1, cuts(4)); seams != nil {
 			t.Errorf("%d lines gave back %v", count, seams)
 		}
 	}
@@ -371,7 +371,7 @@ func TestATranscriptOfOneBatchHasNoSeams(t *testing.T) {
 
 // A batch of one line has no room for a line on either side of a cut.
 func TestABatchOfOneLineHasNoSeams(t *testing.T) {
-	if seams := proofread.Seams(makeTranscript(6), 1, 0, cuts(6)); seams != nil {
+	if seams := proofread.CutIntoBatches(makeTranscript(6), 1, 0, cuts(6)); seams != nil {
 		t.Errorf("gave back %v", seams)
 	}
 }
@@ -398,7 +398,7 @@ func TestASentenceCrossingACutStandsWholeInASeam(t *testing.T) {
 			for overlap := 0; overlap < size; overlap++ {
 				cues := makeTranscript(count)
 				batches := proofread.GetSpeechBatches(cues, size, overlap)
-				seams := proofread.Seams(cues, size, overlap, cuts(len(batches)))
+				seams := proofread.CutIntoBatches(cues, size, overlap, cuts(len(batches)))
 
 				for at := 0; at < count; at++ {
 					for through := at; through <= min(at+size/2-1, count-1); through++ {
@@ -427,7 +427,7 @@ func TestEachSeamReachesFurtherThanTheOneBefore(t *testing.T) {
 		for size := 2; size <= 8; size++ {
 			for overlap := 0; overlap < size; overlap++ {
 				cues := makeTranscript(count)
-				seams := proofread.Seams(cues, size, overlap, cuts(len(proofread.GetSpeechBatches(cues, size, overlap))))
+				seams := proofread.CutIntoBatches(cues, size, overlap, cuts(len(proofread.GetSpeechBatches(cues, size, overlap))))
 				for i, seam := range seams {
 					if len(seam.Lines) == 0 {
 						t.Fatalf("%d lines by %d sharing %d: seam %d holds nothing", count, size, overlap, i)

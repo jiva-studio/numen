@@ -9,7 +9,7 @@
 import { computed, onMounted, onScopeDispose, ref, type ShallowRef } from 'vue'
 import { getWideBox } from './dwell'
 import { useTitleWidths } from './measure'
-import { hangParts, type PlexPart } from '../lib/inside'
+import { getNodeParts, type PlexPart } from '../lib/inside'
 import { resolveOptions, type PlexOptionsInput, type Size } from '../lib/arrange'
 import type { PlacedNode } from '../lib/node'
 import type { Viewport } from '@/shared/lib/viewport'
@@ -87,7 +87,7 @@ export function useRoom(
 
     const { margin } = options.value
     const deps = { measure: measures.value?.part, viewport: room.value, margin }
-    return (node: PlacedNode) => hangParts(node, held(node.id), options.value, deps)
+    return (node: PlacedNode) => getNodeParts(node, held(node.id), options.value, deps)
   })
 
   return { room, options, measures, widen, hung }

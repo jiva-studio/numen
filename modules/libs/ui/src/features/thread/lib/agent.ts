@@ -23,7 +23,7 @@ export type AgentStep =
   | {
       readonly kind: 'toolCall'
       readonly tool: string
-      readonly about: string
+      readonly subject: string
       /** How much of the call has been written. It arrives more than once. */
       readonly written: number
       /** Where it was working, for a call working on a source. */

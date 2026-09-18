@@ -5,10 +5,14 @@ syntax = "proto3";
 //
 // The settings belong to the installation and not to a vault: the same file
 // answers whichever vault a window is showing, and every window reads it.
+//
+// They travel as the file's own text. Their sections belong to whichever
+// adapters an installation is composed of, so the core does not know the whole
+// shape and does not describe it, and a setting is written by naming the path
+// through the file. It is the only tree here that goes undescribed.
 package numen.v1;
 
 import "numen/v1/shared.proto";
-import "numen/v1/theme.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
@@ -76,7 +80,7 @@ message Model {
   string shelf = 4;
 
   // Set on the model an installation nobody has configured runs on.
-  bool by_default = 5;
+  bool is_default = 5;
 
   // What choosing it writes. One model is several keys where the model decides
   // more than its own name.

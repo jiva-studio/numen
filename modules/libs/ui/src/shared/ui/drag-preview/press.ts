@@ -11,7 +11,7 @@ import type { Clock } from '@/shared/lib/clock'
 /** What is being carried, and whether the pointer has gone far enough to mean it. */
 export interface Drag<Item> {
   readonly item: Item
-  readonly moved: boolean
+  readonly hasMoved: boolean
 }
 
 /**
@@ -60,16 +60,16 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     if (!held) return
 
     const now: Position = { x: event.clientX, y: event.clientY }
-    const moved =
-      held.moved ||
+    const hasMoved =
+      held.hasMoved ||
       Math.abs(now.x - start.x) > press.getThreshold() ||
       Math.abs(now.y - start.y) > press.getThreshold()
 
-    dragging.value = { item: held.item, moved }
-    position.value = moved ? now : null
-    at.value = moved ? press.getLandingAt(held.item, now) : null
+    dragging.value = { item: held.item, hasMoved }
+    position.value = hasMoved ? now : null
+    at.value = hasMoved ? press.getLandingAt(held.item, now) : null
 
-    if (moved && !held.moved) press.begin?.(held.item)
+    if (hasMoved && !held.hasMoved) press.begin?.(held.item)
   }
 
   function drop(): void {
@@ -79,7 +79,7 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     detach()
     at.value = null
     position.value = null
-    if (held?.moved) press.settle(held.item, found)
+    if (held?.hasMoved) press.settle(held.item, found)
     // Held one frame longer: the click that follows the release reads it and
     // stands down.
     press.getClock().schedule(() => {
@@ -89,7 +89,7 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
 
   const lift = (item: Item, event: PointerEvent): void => {
     start = { x: event.clientX, y: event.clientY }
-    dragging.value = { item, moved: false }
+    dragging.value = { item, hasMoved: false }
     window.addEventListener('pointermove', drag)
     window.addEventListener('pointerup', drop)
     window.addEventListener('pointercancel', drop)

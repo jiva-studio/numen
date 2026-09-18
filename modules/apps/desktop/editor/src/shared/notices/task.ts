@@ -13,7 +13,7 @@ export interface Task {
   /** What the work is called, so that the same work reported again replaces it. */
   readonly id: string
   /** What is being done, in the words it is to be shown by. */
-  readonly doing: string
+  readonly label: string
   /** What it is being done to. */
   readonly about: string
   /** How far it has got, where there is a total to count against. */

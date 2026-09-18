@@ -80,7 +80,7 @@ describe('agentPort', () => {
       {
         kind: 'toolCall',
         tool: 'read',
-        about: 'notes/Leaf mould.md',
+        subject: 'notes/Leaf mould.md',
         written: 12,
         place: { path: 'notes/Leaf mould.md', span: { from: 40, to: 48 } },
       },
@@ -92,7 +92,7 @@ describe('agentPort', () => {
     expect(step).toEqual({
       kind: 'toolCall',
       tool: 'read',
-      about: 'notes/Leaf mould.md',
+      subject: 'notes/Leaf mould.md',
       written: 12,
     })
     expect(step && 'place' in step).toBe(false)

@@ -196,7 +196,7 @@ func getIntervals(
 	out := make(map[review.Rating]time.Duration, 4)
 	for _, r := range []review.Rating{review.Again, review.Hard, review.Good, review.Easy} {
 		due := one.By.Next(s, now, r).Due
-		out[r] = one.Preset.Lands(on, now, due).Sub(now)
+		out[r] = one.Preset.GetLandingDay(on, now, due).Sub(now)
 	}
 	return out
 }

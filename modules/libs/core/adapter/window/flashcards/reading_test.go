@@ -28,7 +28,7 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 		return nil
 	})
 
-	if one := api.countVault(t.Context(), unread); !one.GetReading() || one.GetUnread() != "" {
+	if one := api.countVault(t.Context(), unread); !one.GetIsReading() || one.GetUnread() != "" {
 		t.Fatalf("the vault came back %+v", one)
 	}
 	testsupport.WaitFor(t, func() bool {

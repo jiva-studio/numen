@@ -86,7 +86,7 @@ func NewWrite(
 func (u Write) Execute(
 	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if markdown.OpensFrontmatter(body) {
+	if markdown.IsFrontmatterStart(body) {
 		return domain.Fingerprint{}, ErrBodyUnwritable
 	}
 
@@ -162,7 +162,7 @@ func (s *LastRead) stale(on domain.Fingerprint, prose string) bool {
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, seen *LastRead,
 ) (domain.Fingerprint, error) {
-	if markdown.OpensFrontmatter(body) {
+	if markdown.IsFrontmatterStart(body) {
 		return domain.Fingerprint{}, ErrBodyUnwritable
 	}
 	e := Edit{

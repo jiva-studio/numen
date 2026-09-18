@@ -37,7 +37,7 @@ const vault = (over: Partial<IndexCoverage> = {}): IndexCoverage => ({
 
 const reading = (over: Partial<Task> = {}): Task => ({
   id: 'reading-1',
-  doing: 'Reading a scan',
+  label: 'Reading a scan',
   about: 'library/Sabhaparva.pdf',
   done: 42,
   total: 400,
@@ -67,7 +67,7 @@ describe('a document being read', () => {
     const drawn = corner([reading()], [], well(), vault({ chunks: 65261 }))
 
     expect(drawn).toHaveLength(1)
-    expect(drawn[0]?.says).toBe('Reading a scan')
+    expect(drawn[0]?.text).toBe('Reading a scan')
     expect(drawn[0]?.about).toBe('library/Sabhaparva.pdf')
     expect(drawn[0]).toMatchObject({ done: 42, total: 400 })
   })
@@ -77,7 +77,7 @@ describe('a document being read', () => {
   })
 
   it('waits to be drawn when nobody asked, since most such work is soon over', () => {
-    const pass = reading({ id: 'reading the books', doing: 'Reading books', isAsked: false })
+    const pass = reading({ id: 'reading the books', label: 'Reading books', isAsked: false })
 
     expect(corner([pass])[0]?.isAsked).toBe(false)
   })
@@ -88,31 +88,31 @@ describe('work that stopped badly', () => {
     const drawn = corner([reading({ error: 'nothing to read with' })])
 
     expect(drawn[0]?.tone).toBe('alarm')
-    expect(drawn[0]?.working).toBe(false)
+    expect(drawn[0]?.isWorking).toBe(false)
   })
 
   it('is called by what stopped it, which is the sentence a person acts on', () => {
     const drawn = corner([reading({ error: 'nothing to read with' })])
 
-    expect(drawn[0]?.says).toBe('nothing to read with')
+    expect(drawn[0]?.text).toBe('nothing to read with')
     expect(drawn[0]?.about).toBe('library/Sabhaparva.pdf')
   })
 
   it('is one card where one failure stopped several passes', () => {
     const error = 'intfloat/multilingual-e5-small is not on this machine'
     const drawn = corner([
-      reading({ id: 'getting ready', doing: 'Preparing the model', error }),
-      reading({ id: 'making the vectors', doing: 'Indexing', error: `embedding demo: ${error}` }),
+      reading({ id: 'getting ready', label: 'Preparing the model', error }),
+      reading({ id: 'making the vectors', label: 'Indexing', error: `embedding demo: ${error}` }),
     ])
 
-    expect(drawn.map((one) => one.says)).toStrictEqual([error])
+    expect(drawn.map((one) => one.text)).toStrictEqual([error])
   })
 
   it('is one card where two passes stopped with the very same words', () => {
     const error = 'the model is not on this machine'
     const drawn = corner([
-      reading({ id: 'getting ready', doing: 'Preparing the model', error }),
-      reading({ id: 'making the vectors', doing: 'Indexing', error }),
+      reading({ id: 'getting ready', label: 'Preparing the model', error }),
+      reading({ id: 'making the vectors', label: 'Indexing', error }),
     ])
 
     expect(drawn.map((one) => one.id)).toStrictEqual(['getting ready'])
@@ -150,33 +150,33 @@ describe('work with nothing to count', () => {
 
     expect(drawn[0]?.done).toBeUndefined()
     expect(drawn[0]?.total).toBeUndefined()
-    expect(drawn[0]?.working).toBe(true)
+    expect(drawn[0]?.isWorking).toBe(true)
   })
 
   it('draws no share for a model of a size nobody has been told', () => {
     const drawn = corner([
       reading({
         id: 'getting ready',
-        doing: 'Fetching models',
+        label: 'Fetching models',
         about: 'inference.onnx',
         done: 0,
         total: 0,
       }),
     ])
 
-    expect(drawn[0]?.says).toBe('Fetching models')
+    expect(drawn[0]?.text).toBe('Fetching models')
     expect(drawn[0]?.total).toBeUndefined()
   })
 })
 
 describe('a step of a run', () => {
   const step = (what: string, about: string, count = 0, total = 0) =>
-    reading({ id: 'making the vectors', doing: what, about, done: count, total, isAsked: false })
+    reading({ id: 'making the vectors', label: what, about, done: count, total, isAsked: false })
 
   it('is called by what it is, and names what it is on', () => {
     const drawn = corner([step('Indexing', 'library/Sabhaparva.epub', 300, 1200)])
 
-    expect(drawn[0]?.says).toBe('Indexing')
+    expect(drawn[0]?.text).toBe('Indexing')
     expect(drawn[0]?.about).toBe('library/Sabhaparva.epub')
     expect(drawn[0]).toMatchObject({ done: 300, total: 1200 })
   })
@@ -196,7 +196,7 @@ describe('what is so about the window', () => {
     const drawn = corner([], [], well({ unwatched: '/home/vault' }))
 
     expect(drawn).toHaveLength(1)
-    expect(drawn[0]?.says).toBe(words.unwatched)
+    expect(drawn[0]?.text).toBe(words.unwatched)
     expect(drawn[0]?.about).toBe('/home/vault')
     expect(drawn[0]?.stay).toBe('holds')
     expect(drawn[0]?.tone).toBe('caution')
@@ -205,13 +205,13 @@ describe('what is so about the window', () => {
   it('says nothing was read only once the reading is over', () => {
     const drawn = corner([], [], well({ reading: true, hasNote: false, unread: 'no such folder' }))
 
-    expect(drawn.map((one) => one.says)).toStrictEqual([words.unread, words.reading])
+    expect(drawn.map((one) => one.text)).toStrictEqual([words.unread, words.reading])
   })
 
   it('says the vault could not be read, and that nothing was read from it', () => {
     const drawn = corner([], [], well({ unread: 'the vault folder is not there', hasNote: false }))
 
-    expect(drawn.map((one) => one.says)).toStrictEqual([words.unread, words.nothingRead])
+    expect(drawn.map((one) => one.text)).toStrictEqual([words.unread, words.nothingRead])
   })
 
   it('says nothing was read only where the vault could not be', () => {
@@ -223,13 +223,13 @@ describe('what is so about the window', () => {
   it('says the vault is still being read for the first time', () => {
     const drawn = corner([], [], well({ reading: true }))
 
-    expect(drawn.map((one) => one.says)).toStrictEqual([words.reading])
+    expect(drawn.map((one) => one.text)).toStrictEqual([words.reading])
   })
 
   it('says what the window lost touch with, in the words it was given', () => {
     const drawn = corner([], [], well({ lost: 'the themes stopped arriving' }))
 
-    expect(drawn.map((one) => one.says)).toStrictEqual(['the themes stopped arriving'])
+    expect(drawn.map((one) => one.text)).toStrictEqual(['the themes stopped arriving'])
   })
 
   it('is drawn at once, since nothing about it is going to last ten seconds first', () => {
@@ -242,7 +242,7 @@ describe('what the window said', () => {
     const drawn = corner([], [createMessage()])
 
     expect(drawn[0]).toMatchObject({
-      says: 'The note is in the trash',
+      text: 'The note is in the trash',
       tone: 'plain',
       stay: 'read',
     })
@@ -295,8 +295,8 @@ describe('chunks with nothing to embed them', () => {
     const drawn = corner([], [], well(), vault({ chunks: 4823, embedding: false }))
 
     expect(drawn).toHaveLength(1)
-    expect(drawn[0]?.says).toBe(words.wordsOnly)
-    expect(drawn[0]?.working).toBe(false)
+    expect(drawn[0]?.text).toBe(words.wordsOnly)
+    expect(drawn[0]?.isWorking).toBe(false)
   })
 
   it('says nothing where a model is going to embed them', () => {

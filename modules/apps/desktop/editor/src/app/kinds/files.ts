@@ -64,7 +64,7 @@ export function createFilesKind({
       createPreset: (title, folder) => presets.createPreset(title, folder),
       createUrl: async (address, folder) => {
         const made = await core.createUrl(address, folder)
-        if (made.path) void fetchArtifact(made.path)
+        if (made.ok) void fetchArtifact(made.value.path)
         return made
       },
     },

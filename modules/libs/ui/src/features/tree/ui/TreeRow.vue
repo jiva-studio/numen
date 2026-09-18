@@ -13,17 +13,17 @@ const props = defineProps<{
   /** What the tree is announced as. */
   name: string
   /** The selection stands on it. */
-  selected: boolean
+  isSelected: boolean
   /** It is among the rows being dragged. */
-  lifted: boolean
+  isLifted: boolean
   /** A drop would land inside it. */
-  into: boolean
+  isDropInside: boolean
   /** A drop would land above it. */
-  before: boolean
+  isDropAbove: boolean
   /** The one row the tab key reaches. */
-  tabbed: boolean
+  isTabStop: boolean
   /** Its name is in a field. */
-  renaming: boolean
+  isRenaming: boolean
   /** What the row is marked with, written onto it as it stands. */
   mark: Record<string, string>
 }>()
@@ -49,7 +49,7 @@ const rowStyle = computed(() => ({ '--level': props.row.level }))
 
 /** The keyboard into the field once it is drawn. */
 watch(
-  () => props.renaming,
+  () => props.isRenaming,
   (on) => {
     if (!on) return
     void nextTick(() => field.value?.focus())
@@ -62,15 +62,15 @@ watch(
     class="tree__row flex min-w-0 items-center"
     role="treeitem"
     :aria-level="row.level"
-    :aria-expanded="row.holds ? row.open : undefined"
-    :aria-selected="selected"
-    :tabindex="tabbed ? 0 : -1"
+    :aria-expanded="row.hasChildren ? row.open : undefined"
+    :aria-selected="isSelected"
+    :tabindex="isTabStop ? 0 : -1"
     :data-tree-row="row.id"
-    :data-selected="selected || undefined"
-    :data-dragged="lifted || undefined"
+    :data-selected="isSelected || undefined"
+    :data-dragged="isLifted || undefined"
     :data-last="row.last || undefined"
-    :data-into="into || undefined"
-    :data-before="before || undefined"
+    :data-into="isDropInside || undefined"
+    :data-before="isDropAbove || undefined"
     v-bind="mark"
     :style="rowStyle"
   >
@@ -79,7 +79,7 @@ watch(
     </span>
 
     <TreeField
-      v-if="renaming"
+      v-if="isRenaming"
       ref="field"
       :value="row.name"
       :name="name"

@@ -50,18 +50,18 @@ const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
 /** One state of the window, where it is in that state. */
 const soThat = (
   id: string,
-  says: string,
+  text: string,
   how: { about?: string; tone?: Tone; isAsked?: boolean } = {},
 ): readonly Notice[] =>
-  says === ''
+  text === ''
     ? []
     : [
         {
           id,
-          says,
+          text,
           about: how.about ?? '',
           tone: how.tone ?? 'plain',
-          working: false,
+          isWorking: false,
           isAsked: how.isAsked ?? true,
           stay: 'holds',
         },
@@ -108,7 +108,7 @@ export const cornerOf = (
   vault: IndexCoverage,
   words: Words,
 ): readonly Notice[] => {
-  const working: readonly Notice[] = alone(tasks).map(createNotice)
+  const isWorking: readonly Notice[] = alone(tasks).map(createNotice)
 
   const so: Notice[] = [
     ...soThat('unwatched', state.unwatched && words.unwatched, {
@@ -132,11 +132,11 @@ export const cornerOf = (
 
   const said: Notice[] = messages.map((one) => ({
     id: one.id,
-    says: one.text,
-    working: false,
+    text: one.text,
+    isWorking: false,
     isAsked: true,
     ...manner[one.kind],
   }))
 
-  return [...working, ...so, ...said]
+  return [...isWorking, ...so, ...said]
 }

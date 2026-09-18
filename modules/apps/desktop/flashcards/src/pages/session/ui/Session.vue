@@ -16,6 +16,7 @@ import { deckName } from '@/entities/vault'
 import { ASKS, READS } from '@/features/keyboard'
 import type { CardFace, Grade } from '@/entities/card'
 
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{
   card: CardFace
   /** Whether the answer is showing. */
@@ -29,6 +30,7 @@ defineProps<{
 /** Which of the card and the panels either side of it is in the window. */
 const at = defineModel<PanelPlace>('at', { required: true })
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   (event: 'show'): void
   (event: 'answer', how: Grade): void
@@ -38,6 +40,7 @@ defineEmits<{
   (event: 'read', note: string): void
 }>()
 
+/* -------------------------------- Helpers --------------------------------- */
 /** The panels are held with the overlay key, drawn as this machine's own. */
 const chord = (letter: string) => keyChord(letter, navigator.userAgent)
 </script>

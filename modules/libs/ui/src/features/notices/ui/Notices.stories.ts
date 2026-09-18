@@ -24,42 +24,42 @@ interface Knobs {
 
 const EMBEDDING: Notice = {
   id: 'embedding',
-  says: 'Preparing search by meaning',
+  text: 'Preparing search by meaning',
   about: 'notes/entropy.md',
   done: 3,
   total: 8,
-  working: true,
+  isWorking: true,
 }
 
 const FETCHING: Notice = {
   id: 'fetching',
-  says: 'Preparing the model',
+  text: 'Preparing the model',
   about: 'intfloat/multilingual-e5-small',
   done: 121_000_000,
   total: 470_268_510,
   counting: 'bytes',
-  working: true,
+  isWorking: true,
 }
 
 const READING: Notice = {
   id: 'reading',
-  says: 'Reading the vault',
+  text: 'Reading the vault',
   about: 'library/mahabharata.epub',
   done: 2,
   total: 4,
-  working: true,
+  isWorking: true,
 }
 
 const RENAMED: Notice = {
   id: 'renamed',
-  says: 'Renamed',
+  text: 'Renamed',
   stay: 'read',
   isAsked: true,
 }
 
 const OCCUPIED: Notice = {
   id: 'occupied',
-  says: 'A note of that name is filed there already',
+  text: 'A note of that name is filed there already',
   tone: 'alarm',
   stay: 'kept',
   isAsked: true,
@@ -180,12 +180,12 @@ export const CountedInBytes: Story = {
 
 /** Work that has not said what it found yet: words and no count. */
 export const NoTotalYet: Story = {
-  args: { notices: [{ id: 'embedding', says: 'Preparing search by meaning', working: true }] },
+  args: { notices: [{ id: 'embedding', text: 'Preparing search by meaning', isWorking: true }] },
 }
 
 /** A fact about this installation, said once and not happening. */
 export const Resting: Story = {
-  args: { notices: [{ id: 'words', says: 'Searching by words only — no model set' }] },
+  args: { notices: [{ id: 'words', text: 'Searching by words only — no model set' }] },
 }
 
 /** Work, something that is so, and something that happened, in one stack. */
@@ -195,13 +195,13 @@ export const WorkAndWords: Story = {
       READING,
       {
         id: 'unwatched',
-        says: 'The vault is not being watched',
+        text: 'The vault is not being watched',
         about: '/home/vault',
         tone: 'caution',
       },
       {
         id: 'nowhere',
-        says: 'No tab of this window is over a note',
+        text: 'No tab of this window is over a note',
         tone: 'caution',
         stay: 'kept',
       },
@@ -269,12 +269,12 @@ export const MoreThanThereIsRoomFor: Story = {
   args: {
     room: 3,
     notices: [
-      { id: 'a', says: 'Renamed', stay: 'read', isAsked: true },
-      { id: 'b', says: 'Links repaired in One.md', stay: 'kept', isAsked: true },
-      { id: 'c', says: 'The note is in the trash', stay: 'kept', isAsked: true },
+      { id: 'a', text: 'Renamed', stay: 'read', isAsked: true },
+      { id: 'b', text: 'Links repaired in One.md', stay: 'kept', isAsked: true },
+      { id: 'c', text: 'The note is in the trash', stay: 'kept', isAsked: true },
       {
         id: 'd',
-        says: 'A theme by that name is not in the catalogue',
+        text: 'A theme by that name is not in the catalogue',
         tone: 'alarm',
         stay: 'kept',
         isAsked: true,
@@ -329,10 +329,10 @@ export const PutOneAway: Story = {
 export const TooMuchToSay: Story = {
   args: {
     notices: [
-      { id: 'one', says: RUSSIAN, about: LONG, done: 1, total: 2, working: true },
-      { id: 'two', says: UNBREAKABLE, about: UNBREAKABLE, working: true },
-      { id: 'three', says: RUSSIAN, about: LONG, tone: 'alarm', stay: 'kept', isAsked: true },
-      { id: 'brief', says: 'Reading', working: true },
+      { id: 'one', text: RUSSIAN, about: LONG, done: 1, total: 2, isWorking: true },
+      { id: 'two', text: UNBREAKABLE, about: UNBREAKABLE, isWorking: true },
+      { id: 'three', text: RUSSIAN, about: LONG, tone: 'alarm', stay: 'kept', isAsked: true },
+      { id: 'brief', text: 'Reading', isWorking: true },
     ],
   },
   play: async () => {
@@ -407,7 +407,7 @@ export const Dark: Story = {
   args: {
     notices: [
       READING,
-      { id: 'unwatched', says: 'The vault is not being watched', tone: 'caution', stay: 'kept' },
+      { id: 'unwatched', text: 'The vault is not being watched', tone: 'caution', stay: 'kept' },
       OCCUPIED,
     ],
   },

@@ -16,14 +16,14 @@ import (
 // Case is folded and nothing else is. A span begins where a word begins, and
 // ends where one ends; the last word typed may still be growing, so it matches
 // a word by its opening, which is the rule the index matched it by.
-func spans(text, query string) []domain.Span {
+func spans(text, query string) []domain.UnitSpan {
 	words := strings.Fields(query)
 	if len(words) == 0 || text == "" {
 		return nil
 	}
 	folded, units := getFoldedRunes(text)
 
-	var at []domain.Span
+	var at []domain.UnitSpan
 	for i, word := range words {
 		wanted, _ := getFoldedRunes(word)
 		if len(wanted) == 0 {
@@ -35,10 +35,10 @@ func spans(text, query string) []domain.Span {
 			if !slices.Equal(folded[from:to], wanted) {
 				continue
 			}
-			if !opens(folded, from) || (whole && !closes(folded, to)) {
+			if !isWordStart(folded, from) || (whole && !isWordEnd(folded, to)) {
 				continue
 			}
-			at = append(at, domain.Span{From: units[from], To: units[to]})
+			at = append(at, domain.UnitSpan{From: units[from], To: units[to]})
 		}
 	}
 	return mergeSpans(at)
@@ -48,19 +48,19 @@ func spans(text, query string) []domain.Span {
 // what tells a word from a run of letters inside one.
 func wordly(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }
 
-// opens and closes say whether a span beginning or ending here is a whole
+// isWordStart and isWordEnd say whether a span beginning or ending here is a whole
 // word's beginning or end. The ends of the text are both.
-func opens(runes []rune, at int) bool { return at == 0 || !wordly(runes[at-1]) }
+func isWordStart(runes []rune, at int) bool { return at == 0 || !wordly(runes[at-1]) }
 
-func closes(runes []rune, at int) bool { return at == len(runes) || !wordly(runes[at]) }
+func isWordEnd(runes []rune, at int) bool { return at == len(runes) || !wordly(runes[at]) }
 
 // mergeSpans is the spans in the order they stand, with ones that touch or overlap
 // made into one. Two words typed can name the same characters.
-func mergeSpans(at []domain.Span) []domain.Span {
+func mergeSpans(at []domain.UnitSpan) []domain.UnitSpan {
 	if len(at) < 2 {
 		return at
 	}
-	slices.SortFunc(at, func(a, b domain.Span) int { return a.From - b.From })
+	slices.SortFunc(at, func(a, b domain.UnitSpan) int { return a.From - b.From })
 
 	out := at[:1]
 	for _, span := range at[1:] {
@@ -113,7 +113,7 @@ const (
 //
 // The spans move with the text and the ones left outside are dropped, so what
 // comes back addresses what comes back.
-func getTextAround(text string, spans []domain.Span, from int) (string, []domain.Span) {
+func getTextAround(text string, spans []domain.UnitSpan, from int) (string, []domain.UnitSpan) {
 	runes, units := getRunes(text)
 	total := units[len(runes)]
 	if total <= glancing {
@@ -137,13 +137,13 @@ func getTextAround(text string, spans []domain.Span, from int) (string, []domain
 	first, last := getOpeningRune(units, opens), getClosingRune(units, to)
 	shift := units[first]
 
-	var kept []domain.Span
+	var kept []domain.UnitSpan
 	for _, span := range spans {
-		clipped := domain.Span{From: max(span.From, units[first]), To: min(span.To, units[last])}
+		clipped := domain.UnitSpan{From: max(span.From, units[first]), To: min(span.To, units[last])}
 		if clipped.From >= clipped.To {
 			continue
 		}
-		kept = append(kept, domain.Span{From: clipped.From - shift, To: clipped.To - shift})
+		kept = append(kept, domain.UnitSpan{From: clipped.From - shift, To: clipped.To - shift})
 	}
 
 	cut := string(runes[first:last])
@@ -152,7 +152,7 @@ func getTextAround(text string, spans []domain.Span, from int) (string, []domain
 		// in it begins one unit further along.
 		cut = "…" + cut
 		for i := range kept {
-			kept[i] = domain.Span{From: kept[i].From + 1, To: kept[i].To + 1}
+			kept[i] = domain.UnitSpan{From: kept[i].From + 1, To: kept[i].To + 1}
 		}
 	}
 	if last < len(runes) {

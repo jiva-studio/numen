@@ -1,5 +1,5 @@
 /** Upright boxes in the plex's own coordinates: the room a node takes, and the room a run of a line takes. */
-import { rulerOf, type PlacedEdge } from '../edge'
+import { createPointOnCurve, type PlacedEdge } from '../edge'
 import type { PlacedNode, Position } from '../node'
 
 /** An upright box in the plex's own coordinates. */
@@ -30,7 +30,7 @@ export const boxOf = (node: PlacedNode, apart: number): Box => ({
  * around the whole of a diagonal run stands over most of a quarter of the
  * picture, and a line crossing anywhere near it would find nowhere to be.
  */
-export function ribbonOf(
+export function getTitleBoxes(
   boxAt: (from: number, to: number) => Box,
   from: number,
   to: number,
@@ -49,7 +49,7 @@ export function ribbonOf(
  * the line, which is where the letters stand.
  */
 export function runBoxes(edge: PlacedEdge, depth: number): (from: number, to: number) => Box {
-  const along = rulerOf(edge)
+  const along = createPointOnCurve(edge)
   const deep = depth / 2
 
   return (from, to) => {

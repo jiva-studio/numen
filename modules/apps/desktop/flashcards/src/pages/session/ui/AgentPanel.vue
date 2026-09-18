@@ -12,13 +12,15 @@ import { Agent } from '@numen/ui'
 import { WORDS as words } from '../lib/agentWords'
 import type { AgentPanelState } from '../model/panel'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ held: AgentPanelState }>()
 
+/* --------------------------------- State ---------------------------------- */
 const talk = useTemplateRef<InstanceType<typeof Agent>>('talk')
 
+/* --------------------------------- Hooks ---------------------------------- */
 // A panel opened is a panel opened to write in, so the field takes the keyboard
-// as it arrives. Taking it scrolls nothing: the panel is arriving, and a
-// browser bringing the field into view would drag what is moving.
+// as it arrives. Taking it scrolls nothing, because the panel is still moving.
 watch(
   () => props.held.open.value,
   (up) => {
@@ -36,7 +38,7 @@ watch(
       class="asking__talk"
       :model-value="props.held.written.value"
       :turns="props.held.turns.value"
-      :working="props.held.working.value"
+      :is-working="props.held.isWorking.value"
       :placeholder="words.ask"
       :send-label="words.send"
       :stop-label="words.stop"

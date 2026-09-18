@@ -56,6 +56,12 @@ A status code is for a call that did not happen: nothing serves it, the window i
 
 A client that must read a status code to tell one outcome from the other has two paths to one answer, and the one it takes depends on what the transport did on the way.
 
+### The settings tree is addressed by path, not described
+
+What a person configures is one JSON file whose sections belong to whichever adapters an installation is composed of. The core does not know the whole shape, so the schema does not describe it: the file travels as its own text, and a setting is written by naming the path through it and the JSON to put there.
+
+It is the only tree the schema leaves undescribed. Anything whose shape the core knows is described.
+
 ### Only bytes stay on HTTP
 
 A file's own bytes are served over HTTP, because that is what a browser's own elements speak: a page drawn from a document, the range of a recording a player asks for, the interface itself. Everything else is a message on a service, whatever else it might have been modelled as a resource. A question answered in JSON at a path of its own is a second contract with nothing generated from it and nothing linting it.
@@ -78,7 +84,7 @@ Buf's standard rules want a request and a response message of its own for every 
 
 ### No field changes name at this boundary
 
-A field carries the name it has in the core across the wire. A stretch and a span are not an exception to that: they are two things, they keep their own names on both sides, and the wire carries each under the name it has.
+A field carries the name it has in the core across the wire.
 
 A type's own name is another matter, because a proto package is one flat namespace where the core has packages that qualify a name for it. Two enums are where this bites — the theme's way of choosing light or dark, and the search's mode — and the second of them carries its subject in front of it on the wire. The field is named the same on both sides of both.
 
@@ -91,6 +97,7 @@ The search's modes are the one place a name is chosen twice over: the wire spell
 - Moving a client out of the binary is a transport change.
 - The toolchain grows two generators, and a build that skips them is a build against yesterday's contract.
 - Every call carries two messages of its own, and a read that answers one thing answers it inside a wrapper.
+- A client that reads one setting knows the path it stands at, and a section moved in the file is a client to change.
 - `modules/libs/protocol` has seven consumers — three Go modules and four npm packages — and a change to it is built against all of them.
 
 ## Alternatives considered

@@ -411,11 +411,11 @@ func (a *API) GetVaultState(
 		Name: showing.Name,
 		Path: showing.Path,
 		Scan: &v1.Scan{
-			Ready:     a.Ready.Load(),
+			IsReady:   a.Ready.Load(),
 			Error:     a.Error.Why(),
 			Unwatched: a.Unwatched.Why(),
 		},
-		Coverage: &v1.IndexCoverage{Embedding: text(&a.Indexing.Model) != ""},
+		Coverage: &v1.IndexCoverage{IsEmbedding: text(&a.Indexing.Model) != ""},
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands. A window standing on nothing holds no

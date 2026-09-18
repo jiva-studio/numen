@@ -9,7 +9,7 @@ import type { FileMaker, FilesTabDeps, FileTree } from '../types'
 export const getFolderFor = (list: FileTree, path: string | null): string => {
   if (path === null) return ROOT
   const entry = list.getEntryAt(path)
-  return entry?.folder ? entry.path : getFolderPath(path)
+  return entry?.isFolder ? entry.path : getFolderPath(path)
 }
 
 /** Creates a folder under a unique name and returns the created path if successful. */

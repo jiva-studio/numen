@@ -159,7 +159,7 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore
 	if _, err := os.Stat(abs); err != nil {
 		return nil, err
 	}
-	id, was, err := carried(abs, opts.serviceDir())
+	id, was, err := readIdentity(abs, opts.serviceDir())
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", abs, err)
 	}
@@ -191,7 +191,11 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 		return nil, err
 	}
 	defer root.Close()
-	return root.ReadFile(at)
+	raw, err := root.ReadFile(at)
+	if err != nil {
+		return nil, asHeld(err)
+	}
+	return raw, nil
 }
 
 // Open is one file of the store to read a part of, and how many bytes it holds.
@@ -222,12 +226,12 @@ func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, 
 // Take puts what a reader gives under a name, through the same rename every
 // other write here lands by: what a fetch was still writing when a machine
 // stopped is not a file anything reads afterwards.
-func (d *DerivedStore) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+func (d *DerivedStore) Take(ctx context.Context, name string, from io.Reader) (int64, error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return 0, err
 	}
-	root, at, err := d.making(target)
+	root, at, err := d.createRoot(target)
 	if err != nil {
 		return 0, err
 	}
@@ -235,19 +239,19 @@ func (d *DerivedStore) Take(_ context.Context, name string, from io.Reader) (int
 	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return 0, err
 	}
-	written, err := replace(root, at, from, 0o644)
+	written, err := replace(ctx, root, at, from, 0o644)
 	if err != nil {
 		return 0, err
 	}
 	return written.Size, settle(root, filepath.Dir(at))
 }
 
-func (d *DerivedStore) Write(_ context.Context, name string, content []byte) error {
+func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) error {
 	target, err := d.getPath(name)
 	if err != nil {
 		return err
 	}
-	root, at, err := d.making(target)
+	root, at, err := d.createRoot(target)
 	if err != nil {
 		return err
 	}
@@ -255,7 +259,7 @@ func (d *DerivedStore) Write(_ context.Context, name string, content []byte) err
 	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return err
 	}
-	if _, err := replace(root, at, bytes.NewReader(content), 0o644); err != nil {
+	if _, err := replace(ctx, root, at, bytes.NewReader(content), 0o644); err != nil {
 		return err
 	}
 	return settle(root, filepath.Dir(at))
@@ -275,7 +279,7 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 	if err != nil {
 		return err
 	}
-	root, at, err := d.making(target)
+	root, at, err := d.createRoot(target)
 	if err != nil {
 		return err
 	}
@@ -438,7 +442,7 @@ func (d *DerivedStore) still() error {
 	if now, err := os.Stat(configAt(d.vault, d.service)); err == nil && d.last.Load().holds(now) {
 		return nil
 	}
-	id, was, err := carried(d.vault, d.service)
+	id, was, err := readIdentity(d.vault, d.service)
 	if err != nil {
 		return fmt.Errorf("%s: %w", d.vault, err)
 	}
@@ -461,10 +465,11 @@ func (d *DerivedStore) still() error {
 	return nil
 }
 
-// carried is the identity a folder holds, and nothing where it holds none. The
-// file it was read from comes back with it, stamped before the reading, so a
-// file that changed under the reading is read again at the next asking.
-func carried(root, serviceDir string) (string, *fileInfo, error) {
+// readIdentity is the identity a folder holds, and nothing where it holds
+// none. The file it was read from comes back with it, stamped before the
+// reading, so a file that changed under the reading is read again at the next
+// asking.
+func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 	if serviceDir == "" {
 		serviceDir = DefaultServiceDir
 	}
@@ -498,9 +503,9 @@ func (d *DerivedStore) openRoot(target string) (*os.Root, string, error) {
 	return root, name, nil
 }
 
-// making is the same, with the store's own folder put there if it is not. It is
-// what a write does that a read does not.
-func (d *DerivedStore) making(target string) (*os.Root, string, error) {
+// createRoot is the same, with the store's own folder put there if it is not.
+// It is what a write does that a read does not.
+func (d *DerivedStore) createRoot(target string) (*os.Root, string, error) {
 	if err := os.MkdirAll(d.root, 0o755); err != nil {
 		return nil, "", err
 	}

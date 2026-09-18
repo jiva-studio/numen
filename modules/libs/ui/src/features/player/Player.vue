@@ -16,7 +16,7 @@ const props = withDefaults(
     at: number
     /** How long it runs, in milliseconds. */
     length: number
-    playing: boolean
+    isPlaying: boolean
     /** What the controls are called, where a person is read to. */
     label?: string
     play?: string
@@ -42,11 +42,11 @@ const onSeek = (event: Event) => emit('seek', Number((event.target as HTMLInputE
     <button
       type="button"
       class="player__sound"
-      :aria-label="props.playing ? props.pause : props.play"
-      :aria-pressed="props.playing ? 'true' : 'false'"
-      @click="props.playing ? emit('pause') : emit('play')"
+      :aria-label="props.isPlaying ? props.pause : props.play"
+      :aria-pressed="props.isPlaying ? 'true' : 'false'"
+      @click="props.isPlaying ? emit('pause') : emit('play')"
     >
-      <Pause v-if="props.playing" />
+      <Pause v-if="props.isPlaying" />
       <Play v-else />
     </button>
 

@@ -25,7 +25,7 @@ export interface Tile {
   /** Whether the day is past its budget, which is the one thing to catch the eye. */
   readonly over: boolean
   /** Whether it has a session to offer, which is what makes the tile pressable. */
-  readonly opens: boolean
+  readonly canOpen: boolean
 }
 
 /**
@@ -43,7 +43,7 @@ export const getTiles = (presets: readonly Preset[], today: string): Tile[] =>
       says: over ? 'over budget' : percent(done),
       left: one.paused ? '' : getLeftWords(one),
       over,
-      opens: !one.paused && one.cards > 0,
+      canOpen: !one.paused && one.cards > 0,
     }
   })
 

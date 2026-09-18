@@ -8,22 +8,36 @@ package domain
 // beginning.
 type Place struct {
 	Path string
-	// Spans are the runs, counted in bytes over the text the source is read as.
-	Spans []Span
+	// Spans are the runs, over the text the source is read as.
+	Spans []ByteSpan
 }
 
-// A Span is a run of text, by where it begins and where it ends. What it counts
-// in is the field carrying it.
-type Span struct {
+// A ByteSpan is a run of text, by where it begins and where it ends, counted in
+// bytes of the text as the vault stores it. It is what the core measures with.
+type ByteSpan struct {
 	From int
 	To   int
 }
 
 // Empty is a span naming no run at all.
-func (s Span) Empty() bool { return s.To <= s.From }
+func (s ByteSpan) Empty() bool { return s.To <= s.From }
 
 // Len is how many bytes the span covers.
-func (s Span) Len() int { return s.To - s.From }
+func (s ByteSpan) Len() int { return s.To - s.From }
+
+// A UnitSpan is a run of text counted the way a client counts text: in UTF-16
+// code units. It is what a window is told, and markdown.CountUTF16 is the only
+// way across.
+type UnitSpan struct {
+	From int
+	To   int
+}
+
+// Empty is a span naming no run at all.
+func (s UnitSpan) Empty() bool { return s.To <= s.From }
+
+// Len is how many code units the span covers.
+func (s UnitSpan) Len() int { return s.To - s.From }
 
 // MostHighlights is how many spans of one source are highlighted at once.
 //

@@ -14,7 +14,7 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { Tooltip } from './tooltip'
 import type { Box } from '@/shared/lib/place'
 import { DaySummary } from './day-summary'
-import { getDays, measureGrid, ROWS } from '../lib/heatmap'
+import { getCells, getDays, getGridHeight, measureGrid } from '../lib/heatmap'
 import type { Day, Tally } from '../lib/heatmap'
 import { useWidth } from '../model/width'
 import type { Words } from '../lib/words'
@@ -43,12 +43,9 @@ const room = useWidth(root)
 const laid = computed(() => measureGrid({ width: room.value, cell: props.cell, gap: props.gap }))
 const shown = computed(() => getDays(laid.value.columns, props.now, props.did, props.due))
 
-const step = computed(() => laid.value.cell + laid.value.gap)
+const height = computed(() => getGridHeight(laid.value))
 
-const height = computed(() => ROWS * step.value - laid.value.gap)
-
-const xOf = (at: number) => Math.floor(at / ROWS) * step.value
-const yOf = (at: number) => (at % ROWS) * step.value
+const cells = computed(() => getCells(laid.value, shown.value))
 
 /** The day a person is pointing at, and the cell on the page it is drawn in. */
 const pointed = ref<{ day: Day; at: Box } | null>(null)
@@ -74,20 +71,20 @@ const setPointed = (day: Day, press: MouseEvent) => {
       aria-label="What was answered on each day"
     >
       <rect
-        v-for="(day, at) in shown"
-        :key="day.day"
-        :x="xOf(at)"
-        :y="yOf(at)"
-        :width="laid.cell"
-        :height="laid.cell"
-        :rx="2"
-        :ry="2"
+        v-for="cell in cells"
+        :key="cell.day.day"
+        :x="cell.x"
+        :y="cell.y"
+        :width="cell.size"
+        :height="cell.size"
+        :rx="cell.radius"
+        :ry="cell.radius"
         class="heatmap__day"
-        :data-heatmap-day="day.day"
-        :data-weight="day.weight"
-        :data-ahead="day.ahead ? 'yes' : undefined"
-        :data-today="day.today ? 'yes' : undefined"
-        @mouseenter="setPointed(day, $event)"
+        :data-heatmap-day="cell.day.day"
+        :data-weight="cell.day.weight"
+        :data-ahead="cell.day.isAhead ? 'yes' : undefined"
+        :data-today="cell.day.isToday ? 'yes' : undefined"
+        @mouseenter="setPointed(cell.day, $event)"
         @mouseleave="pointed = null"
       />
     </svg>

@@ -6,7 +6,7 @@ import { presets } from '@/entities/deck'
 import { useDeckTabs } from '@/pages/deck-editor'
 import { useStencilTabs } from '@/pages/stencil-editor'
 import { usePresetTab } from '@/pages/preset-editor'
-import { noteChanges, noteCreator, useNoteTab } from '@/pages/note-editor'
+import { createNoteChanges, createNoteWriter, useNoteTab } from '@/pages/note-editor'
 import { openNotes } from '@/entities/note'
 import { raiseConflicts, useFileFlush } from '@/features/file-conflict'
 import { createNotes, type Store } from '@/features/command-palette'
@@ -25,9 +25,9 @@ export interface NoteEditorsDeps {
 }
 
 export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditorsDeps) {
-  const changes = noteChanges()
+  const changes = createNoteChanges()
   const notes = openNotes(core, { onReplaced: changes.handleNoteChange })
-  const making = noteCreator(core, log.getWriter('made'))
+  const making = createNoteWriter(core, log.getWriter('made'))
 
   const noted = useNoteTab(core, notes, changes, held.handle, tabOpeners)
   const decks = useDeckTabs(cards, presets, held.handle, tabOpeners)

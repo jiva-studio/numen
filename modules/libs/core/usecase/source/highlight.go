@@ -61,7 +61,7 @@ func (u Highlight) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-	runs []domain.Span,
+	runs []domain.ByteSpan,
 ) ([]Run, error) {
 	reader, err := u.Readers.Open(v)
 	if err != nil {
@@ -136,7 +136,7 @@ func (u Highlight) prose(
 // getRuns is what each run says and where it sits, in the order the runs were
 // asked about. A run standing nowhere is lit nowhere and keeps its place in the
 // answer.
-func getRuns(prose string, boxes []highlight.Box, runs []domain.Span) []Run {
+func getRuns(prose string, boxes []highlight.Box, runs []domain.ByteSpan) []Run {
 	out := make([]Run, 0, len(runs))
 	for _, one := range runs {
 		start, length := getRuneBounds(prose, one.From, one.Len())
@@ -188,7 +188,7 @@ func (u Highlight) layer(
 	ctx context.Context,
 	reader port.VaultReader,
 	ref domain.Fingerprint,
-	runs []domain.Span,
+	runs []domain.ByteSpan,
 ) ([]highlight.Box, error) {
 	if name, ok := text.ReaderName(ref); !ok || name != text.ReaderPDF {
 		// A book made for a screen is set afresh wherever it is shown, and
@@ -215,7 +215,7 @@ func (u Highlight) layer(
 
 // every is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
-func every(book port.TextLayer, runs []domain.Span) []int {
+func every(book port.TextLayer, runs []domain.ByteSpan) []int {
 	held := map[int]bool{}
 	var out []int
 	for _, one := range runs {

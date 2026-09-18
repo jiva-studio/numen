@@ -81,7 +81,7 @@ export function useNodePress(
     },
 
     onDoubleClick: (event: MouseEvent): void => {
-      if (props.showing.doubleClick) showNode(event.altKey)
+      if (props.showing.isDoubleClick) showNode(event.altKey)
     },
 
     onContextMenu: (event: MouseEvent): void => {

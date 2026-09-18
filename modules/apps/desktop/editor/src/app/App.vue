@@ -102,7 +102,7 @@ function dismissNotice(id: string) {
 
     <Notices
       :notices="notices"
-      :name="words.working"
+      :name="words.isWorking"
       :dismiss="words.dismiss"
       :more="words.more"
       @dismiss="dismissNotice"

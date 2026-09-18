@@ -3,7 +3,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/ui'
-import { answerGuard, type Question } from '@/shared/questions'
+import { createAnswerGuard, type Question } from '@/shared/questions'
 import type { NoteType, Source } from '@/entities/file'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
@@ -73,7 +73,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
   const failureMessages = ref<Record<SearchGroup, string>>({ names: '', text: '', meaning: '' })
 
-  const asks = answerGuard()
+  const asks = createAnswerGuard()
 
   const drop = () => {
     names.value = []
@@ -93,10 +93,10 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       const found = await question()
       if (!mine.current) return
       into(found)
-    } catch (error) {
+    } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       if (!mine.current) return
       into([])
-      console.error(error)
       failureMessages.value = { ...failureMessages.value, [group]: words.notAsked }
     } finally {
       if (mine.current) isWorking.value = { ...isWorking.value, [group]: false }
@@ -166,7 +166,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
         id,
         title,
         items: rows.map((one) => one.item),
-        working: isWorking.value[id],
+        isWorking: isWorking.value[id],
         silence: silenceOf(id),
       }
     }

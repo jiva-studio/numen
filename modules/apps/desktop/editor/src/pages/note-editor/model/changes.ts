@@ -9,7 +9,7 @@ import type { NoteEdit } from '@/entities/note'
 import { holdChanges, HOLD_LIMITS, type Change, type HoldLimits, type TimerRequest } from './hold'
 
 /** Every change in flight, filed by the note it stands on. */
-export function noteChanges(limits: HoldLimits = HOLD_LIMITS) {
+export function createNoteChanges(limits: HoldLimits = HOLD_LIMITS) {
   const decided = holdChanges(limits)
   /** What each note is drawn with, which Vue reads to draw it. */
   const changes = ref(new Map<string, Change>())

@@ -122,7 +122,7 @@ defineExpose({
     :from="element"
     :current="model"
     :name="name"
-    groups
+    has-groups
     open
     opening="keyboard"
     @choose="onChoose"

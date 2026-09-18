@@ -38,7 +38,7 @@ export interface TabDragOptions {
 
 export interface TabDragState {
   /** Whether the press being made has travelled far enough to be a drag. */
-  readonly moved: ComputedRef<boolean>
+  readonly hasMoved: ComputedRef<boolean>
   /** The area a drop would take, in the coordinates of the frame. */
   readonly overlay: ComputedRef<Rect | null>
   /** The name drawn at the pointer, and nothing until a press has become a drag. */
@@ -66,13 +66,13 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     },
   })
 
-  const moved = computed(() => dragging.value?.moved === true)
+  const hasMoved = computed(() => dragging.value?.hasMoved === true)
 
-  const overlay = computed(() => (moved.value ? (landing.value?.box ?? null) : null))
+  const overlay = computed(() => (hasMoved.value ? (landing.value?.box ?? null) : null))
 
   const label = computed(() => {
     const held = dragging.value
-    if (!held?.moved) return null
+    if (!held?.hasMoved) return null
     return options.getTab(held.item.tab)?.title ?? held.item.tab
   })
 
@@ -143,7 +143,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     return landOnPane({ x, y }, pane, id, local)
   }
 
-  return { moved, overlay, label, position, landing, press }
+  return { hasMoved, overlay, label, position, landing, press }
 }
 
 /** A box put in the coordinates of the frame. */

@@ -41,7 +41,7 @@ erDiagram
         INTEGER id PK
         INTEGER vault_id FK
         TEXT path UK "unique with vault_id"
-        TEXT kind "note, book, document, recording, url"
+        TEXT kind "note, book, recording, url"
         INTEGER size "the fingerprint"
         INTEGER modified_at "the fingerprint"
         TEXT hash "null until something computes it"

@@ -465,7 +465,7 @@ type Neighbour struct {
 	// Set when both notes name this relationship, each in its own words. The
 	// label is then the one the note in focus wrote, and the arrow drawn on the
 	// line points at the note it was written about.
-	Mutual bool `protobuf:"varint,5,opt,name=mutual,proto3" json:"mutual,omitempty"`
+	IsMutual bool `protobuf:"varint,5,opt,name=is_mutual,json=isMutual,proto3" json:"is_mutual,omitempty"`
 	// Which of three the note is, so a client draws a deck and a stencil as what
 	// they are.
 	Type          NoteType `protobuf:"varint,6,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
@@ -531,9 +531,9 @@ func (x *Neighbour) GetThrough() string {
 	return ""
 }
 
-func (x *Neighbour) GetMutual() bool {
+func (x *Neighbour) GetIsMutual() bool {
 	if x != nil {
-		return x.Mutual
+		return x.IsMutual
 	}
 	return false
 }
@@ -659,10 +659,10 @@ type ResolvedAddress struct {
 	// an address may land outside the vault it was written in.
 	Vault string `protobuf:"bytes,3,opt,name=vault,proto3" json:"vault,omitempty"`
 	// Set where that vault is not the one this call was answered about.
-	Crossed bool `protobuf:"varint,4,opt,name=crossed,proto3" json:"crossed,omitempty"`
+	IsCrossed bool `protobuf:"varint,4,opt,name=is_crossed,json=isCrossed,proto3" json:"is_crossed,omitempty"`
 	// Set where several notes answer to the name. It reaches the nearest of them,
 	// which is a fact about where the notes currently sit.
-	Ambiguous     bool `protobuf:"varint,5,opt,name=ambiguous,proto3" json:"ambiguous,omitempty"`
+	IsAmbiguous   bool `protobuf:"varint,5,opt,name=is_ambiguous,json=isAmbiguous,proto3" json:"is_ambiguous,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -718,16 +718,16 @@ func (x *ResolvedAddress) GetVault() string {
 	return ""
 }
 
-func (x *ResolvedAddress) GetCrossed() bool {
+func (x *ResolvedAddress) GetIsCrossed() bool {
 	if x != nil {
-		return x.Crossed
+		return x.IsCrossed
 	}
 	return false
 }
 
-func (x *ResolvedAddress) GetAmbiguous() bool {
+func (x *ResolvedAddress) GetIsAmbiguous() bool {
 	if x != nil {
-		return x.Ambiguous
+		return x.IsAmbiguous
 	}
 	return false
 }
@@ -1180,7 +1180,7 @@ type WriteNoteResponse struct {
 	// Set when the prose is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this note as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1229,9 +1229,9 @@ func (x *WriteNoteResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-func (x *WriteNoteResponse) GetUnlevelled() bool {
+func (x *WriteNoteResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1372,7 +1372,7 @@ type CreateNoteResponse struct {
 	// Set when the note is on disk and the index would not come level with it.
 	// The note was made and `path` stands; search does not answer about it until
 	// a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1421,9 +1421,9 @@ func (x *CreateNoteResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *CreateNoteResponse) GetUnlevelled() bool {
+func (x *CreateNoteResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1602,7 +1602,7 @@ type RenameNoteResponse struct {
 	// Set when the rename reached the vault and the index would not come level
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
-	Unlevelled    bool `protobuf:"varint,6,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,6,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1672,9 +1672,9 @@ func (x *RenameNoteResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *RenameNoteResponse) GetUnlevelled() bool {
+func (x *RenameNoteResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1729,7 +1729,7 @@ type WatchEditsResponse struct {
 	Text string `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
 	// The last report of this change, which arrives whether the change landed or
 	// was refused.
-	Done          bool `protobuf:"varint,5,opt,name=done,proto3" json:"done,omitempty"`
+	IsFinal       bool `protobuf:"varint,5,opt,name=is_final,json=isFinal,proto3" json:"is_final,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1792,9 +1792,9 @@ func (x *WatchEditsResponse) GetText() string {
 	return ""
 }
 
-func (x *WatchEditsResponse) GetDone() bool {
+func (x *WatchEditsResponse) GetIsFinal() bool {
 	if x != nil {
-		return x.Done
+		return x.IsFinal
 	}
 	return false
 }
@@ -1820,25 +1820,26 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
 	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x121\n" +
 	"\n" +
-	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xc3\x01\n" +
+	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xc8\x01\n" +
 	"\tNeighbour\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12\"\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
-	"\athrough\x18\x04 \x01(\tR\athrough\x12\x16\n" +
-	"\x06mutual\x18\x05 \x01(\bR\x06mutual\x12&\n" +
+	"\athrough\x18\x04 \x01(\tR\athrough\x12\x1b\n" +
+	"\tis_mutual\x18\x05 \x01(\bR\bisMutual\x12&\n" +
 	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"G\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
 	"\awritten\x18\x02 \x03(\tR\awritten\"Q\n" +
 	"\x18ResolveAddressesResponse\x125\n" +
-	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\"\x8d\x01\n" +
+	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\"\x97\x01\n" +
 	"\x0fResolvedAddress\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
-	"\x05vault\x18\x03 \x01(\tR\x05vault\x12\x18\n" +
-	"\acrossed\x18\x04 \x01(\bR\acrossed\x12\x1c\n" +
-	"\tambiguous\x18\x05 \x01(\bR\tambiguous\"+\n" +
+	"\x05vault\x18\x03 \x01(\tR\x05vault\x12\x1d\n" +
+	"\n" +
+	"is_crossed\x18\x04 \x01(\bR\tisCrossed\x12!\n" +
+	"\fis_ambiguous\x18\x05 \x01(\bR\visAmbiguous\"+\n" +
 	"\x13ListHeadingsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"J\n" +
 	"\x14ListHeadingsResponse\x122\n" +
@@ -1865,13 +1866,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x12+\n" +
 	"\x04seen\x18\x03 \x01(\v2\x12.numen.v1.LastReadH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa0\x01\n" +
+	"\x05_seen\"\xa5\x01\n" +
 	"\x11WriteNoteResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"P\n" +
 	"\x04Link\x12\x0e\n" +
@@ -1881,13 +1880,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x11CreateNoteRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12$\n" +
-	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\x82\x01\n" +
+	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\x87\x01\n" +
 	"\x12CreateNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_error\"J\n" +
 	"\x10WriteLinkRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
@@ -1897,25 +1894,23 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x06_error\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xf6\x01\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xfb\x01\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
 	"\x02by\x18\x03 \x01(\x0e2\x11.numen.v1.NamedByR\x02by\x12/\n" +
 	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
-	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x06 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x06 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_movedB\b\n" +
 	"\x06_error\"\x13\n" +
-	"\x11WatchEditsRequest\"\x8c\x01\n" +
+	"\x11WatchEditsRequest\"\x93\x01\n" +
 	"\x12WatchEditsResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\"\n" +
 	"\x04span\x18\x03 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
-	"\x04text\x18\x04 \x01(\tR\x04text\x12\x12\n" +
-	"\x04done\x18\x05 \x01(\bR\x04done*^\n" +
+	"\x04text\x18\x04 \x01(\tR\x04text\x12\x19\n" +
+	"\bis_final\x18\x05 \x01(\bR\aisFinal*^\n" +
 	"\x04Seat\x12\x14\n" +
 	"\x10SEAT_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vSEAT_PARENT\x10\x01\x12\x0e\n" +

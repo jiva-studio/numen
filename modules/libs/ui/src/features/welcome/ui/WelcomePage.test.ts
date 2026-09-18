@@ -62,7 +62,7 @@ describe('a vault on the list', () => {
 })
 
 describe('a vault the window has not answered for yet', () => {
-  const createWorkingVault = (id: string): VaultRow => ({ ...vault(id), working: true })
+  const createWorkingVault = (id: string): VaultRow => ({ ...vault(id), isWorking: true })
 
   it('stands on the list under its own name', () => {
     const screen = draw([createWorkingVault('physics')])

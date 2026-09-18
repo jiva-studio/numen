@@ -40,7 +40,7 @@ type Simulation struct {
 	// one thing a day counts over the whole material.
 	Retains []int
 	// Recalls is what this run assumes about coming back. A run holding none
-	// reads AsModelled.
+	// reads GetModelledRecall.
 	Recalls RecallChance
 	// Spent is what the day holding now has already gone through under this
 	// preset. The first day of a run is a real day a person may be halfway
@@ -58,10 +58,10 @@ func (s Simulation) GetDurationDays() int {
 }
 
 // NeverRipens is a rule a card face begun now does not reach in the years
-// Ripens looks over.
+// GetRipeningDays looks over.
 const NeverRipens = -1
 
-// LongestRipening is how far ahead Ripens looks for the day a card face begun
+// LongestRipening is how far ahead GetRipeningDays looks for the day a card face begun
 // now is learned.
 const LongestRipening = 10 * 365
 
@@ -69,7 +69,7 @@ const LongestRipening = 10 * 365
 // giving it up.
 const mostAnswers = 1000
 
-// Ripens is how many days of review a card face begun now needs before this
+// GetRipeningDays is how many days of review a card face begun now needs before this
 // preset counts it learned, when every day that card face falls due in answers
 // it.
 //
@@ -81,7 +81,7 @@ const mostAnswers = 1000
 // face nothing and counts for none of the days the pace divides by. A week
 // carrying such a day needs as many days of review as its slowest day of the
 // week does, so the pace holds for a card face begun on any of them.
-func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
+func GetRipeningDays(by Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{By: by, Day: d}
 	from := d.GetStart(now)
 	out := 0
@@ -198,7 +198,7 @@ func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Sched
 	}
 	if !c.IsSeen() {
 		good := s.By.Next(c, at, Good)
-		good.Due = p.Places(on, at, good.Due)
+		good.Due = p.ScheduleDay(on, at, good.Due)
 		return good
 	}
 	back := s.getRecallProbability(c, at)
@@ -208,7 +208,7 @@ func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Sched
 	out.Stability = back*good.Stability + (1-back)*again.Stability
 	out.Difficulty = back*good.Difficulty + (1-back)*again.Difficulty
 	away := back*good.Due.Sub(at).Seconds() + (1-back)*again.Due.Sub(at).Seconds()
-	out.Due = p.Places(on, at, at.Add(time.Duration(away*float64(time.Second))))
+	out.Due = p.ScheduleDay(on, at, at.Add(time.Duration(away*float64(time.Second))))
 	return out
 }
 
@@ -216,7 +216,7 @@ func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Sched
 // instant, under the assumption this run was given.
 func (s Simulation) getRecallProbability(c Schedule, at time.Time) float64 {
 	if s.Recalls == nil {
-		return AsModelled(c, at)
+		return GetModelledRecall(c, at)
 	}
 	return s.Recalls(c, at)
 }

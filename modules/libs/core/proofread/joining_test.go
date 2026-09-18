@@ -28,7 +28,7 @@ func TestASentenceBrokenAcrossLinesIsPutBackTogether(t *testing.T) {
 	if len(put) != 1 {
 		t.Fatalf("%v put right, want one line", put)
 	}
-	if put[0].Number != 4 || put[0].Last != 5 || !put[0].Joins() {
+	if put[0].Number != 4 || put[0].Last != 5 || !put[0].IsJoined() {
 		t.Errorf("the run stands at %d-%d", put[0].Number, put[0].Last)
 	}
 }
@@ -40,7 +40,7 @@ func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
 	if !ok {
 		t.Fatal("the batch was refused")
 	}
-	if len(put) != 1 || !put[0].Joins() {
+	if len(put) != 1 || !put[0].IsJoined() {
 		t.Errorf("%v put right", put)
 	}
 }

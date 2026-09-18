@@ -8,6 +8,7 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
+import { asFailure, asValue } from '@numen/wire'
 import type { Cards, VaultFace, DeckProblem } from '@/entities/deck'
 import { fileOpeners } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
@@ -38,8 +39,8 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
 
   const core: Cards = {
     stencils: async () => ({ stencils: [], held: 0 }),
-    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
+    createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     // The vault writes the name in the fields and in the braces of every face.
     renameField: async (path, from, to) => {
       renamed.push(`${path} ${from} ${to}`)
@@ -50,16 +51,16 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
         front: rewriteBraces(face.front),
         back: rewriteBraces(face.back),
       }))
-      return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
+      return asValue({ decks: [], cards: 0, notWritten: [], at: 'renamed' })
     },
-    readDeck: async () => ({ deck: null, error: 'missing', at: '', bound: 0 }),
-    writeDeck: async () => ({ error: null, changed: false, at: '', bound: 0 }),
-    readStencil: async (path) => ({
-      stencil: { path, title: 'Animal', fields, preamble: '', faces, tail: '', problems },
-      error: null,
-      at: 'read',
-    }),
-    writeStencil: async () => ({ error: null, changed: false, at: 'written' }),
+    readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
+    writeDeck: async () => asValue({ at: '' }),
+    readStencil: async (path) =>
+      asValue({
+        stencil: { path, title: 'Animal', fields, preamble: '', faces, tail: '', problems },
+        at: 'read',
+      }),
+    writeStencil: async () => asValue({ at: 'written' }),
   }
 
   const held = useWindowTabs()

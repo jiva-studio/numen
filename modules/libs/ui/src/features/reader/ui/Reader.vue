@@ -11,6 +11,7 @@ import { ReaderToolbar } from './reader-toolbar'
 import { Sheet } from './sheet'
 import { usePageWidth } from '../model/width'
 import { useViewport } from '@/shared/lib/viewport'
+import { onNextFrame, type Paint } from '@/shared/lib/clock'
 import { keyTurn } from '@/shared/lib/turn'
 import { useHandScroll } from '../model/scroll'
 import {
@@ -41,6 +42,8 @@ const props = withDefaults(
     words?: ReaderWords
     /** What is said where a page would not come. */
     undrawn?: string
+    /** When the row is put on the screen again. The next frame by default. */
+    paint?: Paint
   }>(),
   {
     pages: () => [],
@@ -50,6 +53,7 @@ const props = withDefaults(
     otherHighlights: () => [],
     words: () => READER_WORDS,
     undrawn: 'This page would not come.',
+    paint: onNextFrame,
   },
 )
 
@@ -72,7 +76,7 @@ const { viewport, measure } = useViewport(area)
 const {
   along,
   dragging,
-  whereabouts,
+  getScrollOffset,
   send,
   isStill,
   onPointerDown,
@@ -120,7 +124,7 @@ const stand = (page: number, how: ScrollBehavior) => {
 watch(
   () => props.at,
   (page) => {
-    if (page !== inFront(laid.value, viewport.value, whereabouts())) stand(page, 'smooth')
+    if (page !== inFront(laid.value, viewport.value, getScrollOffset())) stand(page, 'smooth')
   },
 )
 
@@ -129,7 +133,7 @@ watch(
 watch(
   () => laid.value.height,
   () => {
-    requestAnimationFrame(() => stand(props.at, 'auto'))
+    props.paint(() => stand(props.at, 'auto'))
   },
 )
 

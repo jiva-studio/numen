@@ -127,7 +127,7 @@ func (u Log) ReadFile(
 	if errors.Is(err, fs.ErrNotExist) {
 		return LogFile{Gone: true}, nil
 	}
-	if errors.Is(err, fs.ErrPermission) || isLocked(err) {
+	if errors.Is(err, fs.ErrPermission) || errors.Is(err, port.ErrHeldByAnother) {
 		return LogFile{Shut: true, Skipped: 1}, nil
 	}
 	if err != nil {

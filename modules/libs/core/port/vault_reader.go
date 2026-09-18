@@ -23,13 +23,13 @@ var ErrNotANote = errors.New("not a note this vault holds")
 // hearing about, and "no such note" would hide it.
 var ErrOutside = errors.New("not a path inside the vault")
 
-// NoNote reports whether an error says there is no note at the path: nothing is
+// IsNoNote reports whether an error says there is no note at the path: nothing is
 // there, or something is there that the vault leaves alone.
 //
 // A caller with work to do on a note asks this. Which of the two it is matters
 // to a caller acting on the difference, and it is the difference the two
 // sentinels carry.
-func NoNote(err error) bool {
+func IsNoNote(err error) bool {
 	return errors.Is(err, fs.ErrNotExist) || errors.Is(err, ErrNotANote)
 }
 

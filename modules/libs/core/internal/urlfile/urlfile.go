@@ -22,8 +22,8 @@ var ErrNoAddress = errors.New("this file names no address")
 
 // Read is the address a file points at.
 //
-// The section is not required and the key is matched without regard to case:
-// what other programs write varies, and every one of them writes `URL=`.
+// The first `URL=` line the file holds is the address. The section header is
+// not required and the key is matched without regard to case.
 func Read(raw []byte) (domain.URL, error) {
 	for line := range strings.Lines(string(raw)) {
 		name, value, split := strings.Cut(strings.TrimSpace(line), "=")

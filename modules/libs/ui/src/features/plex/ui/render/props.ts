@@ -5,7 +5,7 @@
 import type { MenuOpening } from '@/shared/ui/menu'
 import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
-import type { HungParts } from '../../lib/inside'
+import type { NodeParts } from '../../lib/inside'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { PlexRelatedSeat } from '../../lib/seat'
 import type { WideBox } from '../../model/dwell'
@@ -40,7 +40,7 @@ export interface PlexViewProps {
    * and nothing for a node with none. Which parts a node holds is the
    * picture's to work out.
    */
-  hung?: ((node: PlacedNode) => HungParts | null) | undefined
+  hung?: ((node: PlacedNode) => NodeParts | null) | undefined
   /** How long the attention rests on a box before it widens. Milliseconds. */
   dwell?: number
   /** How a node offers to be reached out of. The handle by default. */
@@ -95,7 +95,7 @@ export interface PlexNodeProps {
    * The parts it hangs under its box while the attention rests, and nothing
    * for a node with none.
    */
-  hung?: HungParts | null
+  hung?: NodeParts | null
   /** How long the attention rests before it widens. Milliseconds. */
   dwell?: number
   /** How this node offers to be reached out of. The handle by default. */

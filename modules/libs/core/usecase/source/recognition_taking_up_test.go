@@ -31,7 +31,7 @@ func newScanArtifact(lines []string) ([]byte, []byte) {
 			Size:  image.Point{X: 100, Y: 100},
 			Blocks: []ocr.Block{{
 				Text:  said,
-				Boxes: []ocr.Box{{Rect: image.Rect(0, 0, 100, 10), Span: domain.Span{To: len(said)}}},
+				Boxes: []ocr.Box{{Rect: image.Rect(0, 0, 100, 10), Span: domain.ByteSpan{To: len(said)}}},
 			}},
 		})
 	}

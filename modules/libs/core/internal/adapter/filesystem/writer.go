@@ -96,7 +96,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	if err := parents(root, filepath.Dir(name), path); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	written, err := replace(root, name, bytes.NewReader(content), mode)
+	written, err := replace(ctx, root, name, bytes.NewReader(content), mode)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -156,7 +156,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	if err := parents(root, filepath.Dir(arrives), to); err != nil {
 		return err
 	}
-	return rename(root, leaves, arrives)
+	return rename(ctx, root, leaves, arrives)
 }
 
 func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
@@ -424,12 +424,12 @@ func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader)
 	if err := parents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
-	return arrive(root, name, content)
+	return arrive(ctx, root, name, content)
 }
 
 // arrive streams content beside the target and renames it over the top, by the
 // same rules replace writes bytes it already holds.
-func arrive(root *os.Root, target string, content io.Reader) error {
+func arrive(ctx context.Context, root *os.Root, target string, content io.Reader) error {
 	dir := filepath.Dir(target)
 	tmp, at, err := temporary(root, dir, getTempPattern(filepath.Base(target)))
 	if err != nil {
@@ -452,7 +452,7 @@ func arrive(root *os.Root, target string, content io.Reader) error {
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := rename(root, at, target); err != nil {
+	if err := rename(ctx, root, at, target); err != nil {
 		return err
 	}
 	return settle(root, dir)

@@ -45,8 +45,8 @@ message GetVaultStateResponse {
 
 // Scan is how far reading a vault has got, and what stopped it.
 message Scan {
-  // Ready is set when the scan has finished.
-  bool ready = 1;
+  // IsReady is set when the scan has finished.
+  bool is_ready = 1;
 
   // Error is why the scan stopped, when it stopped for a reason.
   string error = 2;
@@ -72,7 +72,7 @@ message IndexCoverage {
   // Embedding says whether anything is going to turn the spans into vectors.
   // False for an installation with no model, where the vault is searched by its
   // words alone.
-  bool embedding = 3;
+  bool is_embedding = 3;
 }
 
 message WatchVaultChangesRequest {}

@@ -66,7 +66,7 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 	for _, entry := range root {
 		held[entry.GetName()] = entry
 	}
-	if entry := held["physics"]; !entry.GetFolder() || entry.GetPath() != "physics" {
+	if entry := held["physics"]; !entry.GetIsFolder() || entry.GetPath() != "physics" {
 		t.Errorf("the folder came back as %+v", entry)
 	}
 	if kind := held["alpha.md"].GetKind(); kind != v1.SourceKind_SOURCE_KIND_NOTE {

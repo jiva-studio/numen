@@ -15,6 +15,7 @@ import { canStart } from '../lib/progress'
 import type { VaultCardsDue } from '@/entities/vault'
 import type { Preset } from '../types'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   vault: VaultCardsDue
   /** How many cards were answered on each day, by the day it was. */
@@ -31,6 +32,7 @@ const props = defineProps<{
   today: string
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   (event: 'start', deck: string): void
   /** Sit down to every deck one preset schedules, by the note it stands in. */
@@ -38,6 +40,7 @@ defineEmits<{
   (event: 'back'): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 /** The whole vault's count: what is due today and what has never been asked. */
 const allDue = computed(() => props.vault.due + props.vault.new)
 </script>
@@ -60,7 +63,7 @@ const allDue = computed(() => props.vault.due + props.vault.new)
           :by="byDeck.get(deck.deck)"
           :scheduled="scheduled"
           :counted="vault.counted"
-          :opens="canStart(deck, byDeck)"
+          :can-open="canStart(deck, byDeck)"
           @start="$emit('start', deck.deck)"
         />
       </li>

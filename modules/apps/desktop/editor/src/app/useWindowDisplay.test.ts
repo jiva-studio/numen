@@ -5,6 +5,7 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
+import { asValue } from '@numen/wire'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
 import type { Task } from '@/shared/notices/task'
@@ -51,23 +52,16 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     watchTasks: async function* () {
       await waitForever()
     },
-    read: async () => ({ body: '', error: null }),
-    write: async () => ({ body: '', error: null }),
-    create: async () => ({ path: '', error: null }),
+    read: async () => asValue({ body: '' }),
+    write: async () => asValue({ body: '' }),
+    create: async () => ({ ok: true, value: { path: '' } }),
     join: async () => null,
-    rename: async (path, title) => ({
-      path,
-      title,
-      hasFrontmatter: false,
-      moved: null,
-      error: null,
-      hasChanged: false,
-    }),
-    remove: async () => ({ trashed: '', dangling: [], error: null }),
+    rename: async (path, title) => asValue({ path, title, hasFrontmatter: false, moved: null }),
+    remove: async () => asValue({ trashed: '', dangling: [] }),
     list: async () => [],
-    move: async () => ({ moved: null, error: null }),
+    move: async () => ({ ok: true, value: null }),
     createFolder: async () => null,
-    createUrl: async () => ({ path: '', error: null }),
+    createUrl: async () => ({ ok: true, value: { path: '' } }),
     getSyncEnabled: async () => true,
     getHangingSettings: async () => ({ isHanging: true, parts: 6, least: 1, most: 12 }),
     setSyncEnabled: async () => null,
@@ -470,7 +464,7 @@ describe('chunks with nothing to embed them', () => {
 describe('what the application is doing', () => {
   const reading = (count: number): Task => ({
     id: 'reading:library/scan.pdf',
-    doing: 'Reading a scan',
+    label: 'Reading a scan',
     about: 'library/scan.pdf',
     done: count,
     total: 400,

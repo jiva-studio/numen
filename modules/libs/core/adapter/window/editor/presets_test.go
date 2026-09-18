@@ -76,7 +76,7 @@ func settings() *v1.Settings {
 		Learned:     v1.Rule_RULE_INTERVAL,
 		Interval:    21,
 		Load:        map[string]int32{"sat": 50, "sun": 0},
-		EvenLoad:    true,
+		HasEvenLoad: true,
 	}
 }
 
@@ -158,7 +158,7 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 	if held.GetMinutesADay() != 20 || held.GetNewADay() != 10 || held.GetReviewsADay() != 200 {
 		t.Errorf("the defaults are %+v", held)
 	}
-	if held.GetRetention() != 0.9 || !held.GetEvenLoad() {
+	if held.GetRetention() != 0.9 || !held.GetHasEvenLoad() {
 		t.Errorf("the defaults are %+v", held)
 	}
 }
@@ -393,8 +393,8 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 		t.Errorf("a day counts %v and gives %d to the debt",
 			settled.GetCounts(), settled.GetBacklog())
 	}
-	if len(settled.GetLoad()) != 0 || !settled.GetEvenLoad() {
-		t.Errorf("the load is %v, evened %t", settled.GetLoad(), settled.GetEvenLoad())
+	if len(settled.GetLoad()) != 0 || !settled.GetHasEvenLoad() {
+		t.Errorf("the load is %v, evened %t", settled.GetLoad(), settled.GetHasEvenLoad())
 	}
 }
 

@@ -8,7 +8,7 @@ defineProps<{
   /** The action as it is drawn: its name in runs, and the key it carries. */
   row: PlacedAction
   /** Whether the panel stands on this row. */
-  here: boolean
+  isCurrent: boolean
 }>()
 
 /** The row itself, which the panel brings into sight. */
@@ -22,11 +22,11 @@ defineExpose({ element })
     ref="element"
     class="actions__item rounded-node flex items-center gap-3 px-2 py-1.5"
     role="option"
-    :aria-selected="here"
-    :data-here="here || undefined"
+    :aria-selected="isCurrent"
+    :data-here="isCurrent || undefined"
   >
     <span class="actions__name min-w-0 flex-1" data-actions="name">
-      <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.hit || undefined">
+      <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.isHit || undefined">
         {{ part.text }}
       </span>
     </span>

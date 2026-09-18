@@ -12,6 +12,17 @@ export interface Viewport {
    * it is not a measurement. Calling what comes back stops the watching.
    */
   readonly watch: (of: HTMLElement, took: (size: Size) => void) => () => void
+  /**
+   * The room a component has when nobody hands it one, now and every time it
+   * changes. Calling what comes back stops the watching.
+   */
+  readonly watchRoom: (took: (size: Size) => void) => () => void
+  /**
+   * Watch an element and be told the room it takes up with its padding and its
+   * edge, which is what anything standing clear of it has to clear. Calling
+   * what comes back stops the watching.
+   */
+  readonly watchWhole: (of: HTMLElement, took: (size: Size) => void) => () => void
 }
 
 export const browserViewport: Viewport = {
@@ -26,6 +37,29 @@ export const browserViewport: Viewport = {
     })
     observer.observe(of)
     return () => observer.disconnect()
+  },
+
+  watchWhole: (of, took) => {
+    if (typeof ResizeObserver === 'undefined') return () => {}
+
+    const observer = new ResizeObserver(([entry]) => {
+      const box = entry?.borderBoxSize?.[0]
+      took({
+        width: box?.inlineSize ?? of.offsetWidth,
+        height: box?.blockSize ?? of.offsetHeight,
+      })
+    })
+    observer.observe(of)
+    return () => observer.disconnect()
+  },
+
+  watchRoom: (took) => {
+    if (typeof window === 'undefined') return () => {}
+
+    const onResize = () => took({ width: window.innerWidth, height: window.innerHeight })
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   },
 }
 

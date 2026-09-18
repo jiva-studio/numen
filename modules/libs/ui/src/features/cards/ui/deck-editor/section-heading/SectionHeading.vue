@@ -11,7 +11,7 @@ import { computed, useId } from 'vue'
 import { ErrorMessage } from '../../error-message'
 import { SectionName } from './section-name'
 import { Divider } from '../../divider'
-import { useNaming } from '../../../model/naming'
+import { useNameEntry } from '../../../model/naming'
 import { DECK_WORDS, type DeckWords } from '../../../lib/deck'
 import type { PlacedSection } from '../../../lib/grid'
 import { checkHeadingName, type HeadingObjection } from '../../../lib/order'
@@ -37,7 +37,7 @@ const uid = useId()
 const objectionsId = `${uid}-objections`
 
 /** A name typed over the one this section carries, until it is committed. */
-const naming = useNaming<HeadingObjection>({
+const naming = useNameEntry<HeadingObjection>({
   getName: () => props.section.name,
   getTakenNames: () => [],
   checkName: checkHeadingName,

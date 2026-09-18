@@ -29,12 +29,12 @@ const meta = {
   },
   argTypes: {
     placeholder: { control: 'text' },
-    working: { control: 'boolean' },
+    isWorking: { control: 'boolean' },
     disabled: { control: 'boolean' },
   },
   args: {
     placeholder: 'Write a message',
-    working: false,
+    isWorking: false,
     disabled: false,
     onSubmit: fn(),
     onStop: fn(),

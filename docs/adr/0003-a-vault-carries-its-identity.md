@@ -18,7 +18,7 @@ A vault folder is renamed, moved to another disk, and copied, and the index has 
 ```
 
 ```json
-{ "v": 1, "id": "01J8F3K2M9QRSTVWXYZ012" }
+{ "v": 1, "id": "01J8F3K2M9QRSTVWXYZ0123456" }
 ```
 
 The identifier is a ULID, generated once, at the moment the person **adds the vault to the application**. That act is what permits the first write into the folder, and nothing generates an identity by scanning. This identity is what a vault reference means throughout the index, and it is how a folder is recognised after it is moved or renamed.

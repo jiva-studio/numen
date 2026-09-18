@@ -15,9 +15,9 @@ const (
 
 // split is a marked name as it actually reads, and the runs the index marked in
 // it, counted the way a client counts text: in UTF-16 code units.
-func split(marked string) (string, []domain.Span) {
+func split(marked string) (string, []domain.UnitSpan) {
 	var name strings.Builder
-	var at []domain.Span
+	var at []domain.UnitSpan
 
 	units, from := 0, -1
 	for _, r := range marked {
@@ -26,7 +26,7 @@ func split(marked string) (string, []domain.Span) {
 			from = units
 		case '\x03':
 			if from >= 0 && units > from {
-				at = append(at, domain.Span{From: from, To: units})
+				at = append(at, domain.UnitSpan{From: from, To: units})
 			}
 			from = -1
 		default:

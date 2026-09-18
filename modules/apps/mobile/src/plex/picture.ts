@@ -68,7 +68,7 @@ const getFocusNode = (focus: GetNeighbourhoodResponse['focus']): PlexNode => ({
  */
 const getEdge = (id: string, focus: string, seat: PlexRelatedSeat, note: RelatedNote): PlexEdge => {
   const line = note.label ? { label: note.label } : {}
-  const getArrow = (end: EdgeArrow) => (note.mutual ? { arrow: end } : {})
+  const getArrow = (end: EdgeArrow) => (note.isMutual ? { arrow: end } : {})
   if (seat === 'child') return { from: focus, to: id, ...line, ...getArrow('to') }
   return { from: id, to: focus, ...line, ...getArrow('from') }
 }

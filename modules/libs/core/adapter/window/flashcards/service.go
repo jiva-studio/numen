@@ -143,7 +143,7 @@ func (a *API) countVault(ctx context.Context, v domain.Vault) *v1.VaultCardsDue 
 	// from a walk half done, and the numbers arrive with the count that the
 	// finished walk wakes.
 	if underway, reason := a.reading(ctx, v); underway || reason != "" {
-		one.Reading, one.Unread = underway, reason
+		one.IsReading, one.Unread = underway, reason
 		return one
 	}
 
@@ -246,7 +246,7 @@ func newAsked(one flashcards.QueuedCardFace) *v1.Asked {
 		Heading: one.Heading,
 		Front:   front,
 		Back:    back,
-		Seen:    one.Schedule.IsSeen(),
+		IsSeen:  one.Schedule.IsSeen(),
 		Due:     stamp(one.Schedule.Due),
 		Ahead:   newAhead(one.Ahead),
 	}

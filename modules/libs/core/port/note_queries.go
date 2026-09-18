@@ -56,8 +56,7 @@ type NoteQueries interface {
 
 	// Has reports whether the index carries this vault at all. A vault it does
 	// not carry is one nothing has scanned yet, and a caller that only reads
-	// the index tells a person so rather than showing them a vault that looks
-	// empty.
+	// the index tells a person so.
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 }
 

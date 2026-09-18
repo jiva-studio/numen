@@ -291,7 +291,7 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 // or one carrying a key it does not own, is left alone: its link stays as it
 // was written and is visible as a problem.
 func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
-	if !domain.Nameable(to) {
+	if !domain.IsNameable(to) {
 		// Nothing a link could say reaches it. The link stays as it was
 		// written, and shows as a problem.
 		return 0, nil

@@ -30,7 +30,7 @@ defineSlots<{
  */
 const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
   const letter = vaultLetter(at)
-  if (!letter || vault.working) return undefined
+  if (!letter || vault.isWorking) return undefined
   return { icons: [], letter }
 }
 </script>
@@ -45,7 +45,7 @@ const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
         :aside="one.path"
         :whole="one.path"
         :keys="getVaultKeys(at, one)"
-        :disabled="one.working"
+        :disabled="one.isWorking"
         @click="$emit('open', one.id)"
       >
         <!-- What the window has to say about this one, drawn at the far end of

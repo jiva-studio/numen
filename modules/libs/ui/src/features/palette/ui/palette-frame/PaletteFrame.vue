@@ -61,7 +61,7 @@ defineOptions({ inheritAttrs: false })
   /* How far down the window it hangs, how wide it may be, and how much of the
      screen its list takes before it scrolls. */
   --drop: 12vh;
-  --widest: 640px;
+  --widest: 40rem;
   --tallest: 50vh;
 
   position: fixed;

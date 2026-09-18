@@ -61,7 +61,7 @@ func (h History) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
 	for _, a := range h {
 		one := by(a.CardFace)
 		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
-		next.Due = one.Preset.Places(on, a.At, next.Due)
+		next.Due = one.Preset.ScheduleDay(on, a.At, next.Due)
 		out[a.CardFace] = next
 	}
 	return out
@@ -138,7 +138,7 @@ func (h History) walkAnswers(
 func getGivenAnswers(answers []Answer) []Answer {
 	taken := make(map[string]bool)
 	for _, a := range answers {
-		if a.TakesBack() {
+		if a.IsUndo() {
 			taken[a.Undoes] = true
 		}
 	}
@@ -146,7 +146,7 @@ func getGivenAnswers(answers []Answer) []Answer {
 	seen := make(map[string]bool, len(answers))
 	out := make([]Answer, 0, len(answers))
 	for _, a := range answers {
-		if a.TakesBack() || taken[a.ID] || seen[a.ID] {
+		if a.IsUndo() || taken[a.ID] || seen[a.ID] {
 			continue
 		}
 		seen[a.ID] = true

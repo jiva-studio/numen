@@ -13,7 +13,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view'
-import { blockMarks, marks } from './marks'
+import { blockMarks, getMarks } from './marks'
 
 /**
  * How far past the lines on screen the marks are drawn, in characters. A pane
@@ -68,7 +68,7 @@ export const live = ViewPlugin.fromClass(
     constructor(view: EditorView) {
       this.span = getDrawnRange(view)
       this.decorations = this.span
-        ? marks(view.state, this.span.from, this.span.to)
+        ? getMarks(view.state, this.span.from, this.span.to)
         : Decoration.none
     }
 
@@ -90,7 +90,7 @@ export const live = ViewPlugin.fromClass(
 
       const span = getDrawnRange(update.view)
       this.span = span
-      this.decorations = span ? marks(update.view.state, span.from, span.to) : Decoration.none
+      this.decorations = span ? getMarks(update.view.state, span.from, span.to) : Decoration.none
     }
   },
   {

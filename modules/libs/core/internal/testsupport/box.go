@@ -9,8 +9,8 @@ import (
 // fraction of the page it covers.
 func Box(page, from, to int, over highlight.Rect) highlight.Box {
 	return highlight.Box{
-		Page: page,
-		Span: domain.Span{From: from, To: to},
-		Rect: over,
+		Page:     page,
+		ByteSpan: domain.ByteSpan{From: from, To: to},
+		Rect:     over,
 	}
 }

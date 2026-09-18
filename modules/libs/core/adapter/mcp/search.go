@@ -32,8 +32,7 @@ type Passage struct {
 	At       string `json:"at" jsonschema:"the address of this passage; write it into your answer as a markdown link where you speak about the passage, so that the person can go to it"`
 }
 
-// addressOf is where a passage is reached, as the window opens one. It is
-// written out here rather than left to be put together, because a passage
+// addressOf is where a passage is reached, as the window opens one. A passage
 // spoken about without one is a passage the person cannot go to.
 func addressOf(source string, start, length int) string {
 	return fmt.Sprintf("numen:%s?start=%d&length=%d", url.PathEscape(source), start, length)

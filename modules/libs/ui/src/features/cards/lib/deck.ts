@@ -125,7 +125,7 @@ export const NOTHING_WRONG: Wrong = Object.freeze({
 /** One value of a card, laid out under the stencil that cuts it. */
 export interface CardFieldValue extends FieldValue {
   /** The stencil names this slot. */
-  readonly declared: boolean
+  readonly isDeclared: boolean
 }
 
 /**
@@ -141,12 +141,12 @@ export function getCardFieldValues(
 ): readonly CardFieldValue[] {
   const stood = getDeclaredFields(fields).flatMap((field) => {
     const written = values.filter((each) => each.field === field)
-    if (!written.length) return [{ field, text: '', declared: true }]
-    return written.map((each) => ({ field, text: each.text, declared: true }))
+    if (!written.length) return [{ field, text: '', isDeclared: true }]
+    return written.map((each) => ({ field, text: each.text, isDeclared: true }))
   })
   const stray = values
     .filter((each) => !fields.includes(each.field))
-    .map((each) => ({ field: each.field, text: each.text, declared: false }))
+    .map((each) => ({ field: each.field, text: each.text, isDeclared: false }))
   return [...stood, ...stray]
 }
 

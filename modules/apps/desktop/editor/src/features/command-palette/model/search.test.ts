@@ -94,7 +94,7 @@ const groupOf = (groups: readonly { id: string }[], id: string) =>
     | {
         id: string
         items: readonly { id: string; title: string }[]
-        working?: boolean
+        isWorking?: boolean
         silence?: string
       }
     | undefined
@@ -156,9 +156,9 @@ describe('answers arriving', () => {
     await flushPromises()
 
     expect(groupOf(palette.groups.value, 'names')?.items).toHaveLength(1)
-    expect(groupOf(palette.groups.value, 'names')?.working).toBe(false)
-    expect(groupOf(palette.groups.value, 'text')?.working).toBe(true)
-    expect(groupOf(palette.groups.value, 'meaning')?.working).toBe(true)
+    expect(groupOf(palette.groups.value, 'names')?.isWorking).toBe(false)
+    expect(groupOf(palette.groups.value, 'text')?.isWorking).toBe(true)
+    expect(groupOf(palette.groups.value, 'meaning')?.isWorking).toBe(true)
   })
 
   it('drops an answer to a question nobody is asking any more', async () => {
@@ -192,7 +192,7 @@ describe('answers arriving', () => {
     await flushPromises()
 
     expect(groupOf(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notAsked)
-    expect(groupOf(palette.groups.value, 'meaning')?.working).toBe(false)
+    expect(groupOf(palette.groups.value, 'meaning')?.isWorking).toBe(false)
     expect(groupOf(palette.groups.value, 'names')?.items).toHaveLength(1)
   })
 
@@ -207,7 +207,7 @@ describe('answers arriving', () => {
 
     const group = groupOf(palette.groups.value, 'names')
     expect(group?.silence).toBe('')
-    expect(group?.working).toBe(false)
+    expect(group?.isWorking).toBe(false)
   })
 
   it('says the vault holds no vectors, where meaning came back with nothing', async () => {

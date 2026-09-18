@@ -40,7 +40,7 @@ export const appendCreateOffer = (
   at: CommandTarget,
 ): readonly PaletteGroup[] => {
   const name = text.trim()
-  const empty = groups.length > 0 && groups.every((one) => one.items.length === 0 && !one.working)
+  const empty = groups.length > 0 && groups.every((one) => one.items.length === 0 && !one.isWorking)
   if (!name || !empty) return groups
   // A note made from a search stands on its own, and the note in front is what
   // it can be joined to as it is made.

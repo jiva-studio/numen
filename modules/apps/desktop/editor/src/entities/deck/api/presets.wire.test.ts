@@ -6,6 +6,7 @@
  * the default, and a bound the application said nothing about is absent.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { asFailure } from '@numen/wire'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -33,7 +34,8 @@ describe('the settings of a preset', () => {
   it('are the defaults where the file names none of them', async () => {
     replyWith({ preset: { path: 'Daily.md', title: 'Daily' } })
 
-    expect((await presets.read('Daily.md')).preset?.settings).toEqual(DEFAULTS)
+    const answer = await presets.read('Daily.md')
+    expect(answer.ok ? answer.value.preset?.settings : null).toEqual(DEFAULTS)
   })
 
   it('carry the rule and the unit in the words the window uses', async () => {
@@ -54,14 +56,15 @@ describe('the settings of a preset', () => {
 
     const answer = await presets.read('Daily.md')
 
-    expect(answer.preset?.settings).toMatchObject({
+    if (!answer.ok) throw new Error('the preset was refused')
+    expect(answer.value.preset?.settings).toMatchObject({
       goal: 'retention',
       minutesADay: 30,
       counts: 'shows',
       learned: 'retention',
       load: { mon: 50 },
     })
-    expect(answer.at).toBe('12 34 Daily.md')
+    expect(answer.value.at).toBe('12 34 Daily.md')
   })
 
   it('take the default for a rule the file leaves unnamed', async () => {
@@ -69,7 +72,8 @@ describe('the settings of a preset', () => {
       preset: { path: 'Daily.md', title: 'Daily', settings: { learned: 'RULE_UNSPECIFIED' } },
     })
 
-    expect((await presets.read('Daily.md')).preset?.settings.learned).toBe(DEFAULTS.learned)
+    const answer = await presets.read('Daily.md')
+    expect(answer.ok ? answer.value.preset?.settings.learned : null).toBe(DEFAULTS.learned)
   })
 
   it('are no preset at all where the read was refused', async () => {
@@ -77,8 +81,7 @@ describe('the settings of a preset', () => {
 
     const answer = await presets.read('Notes.md')
 
-    expect(answer.preset).toBeNull()
-    expect(answer.error).toBe('notAPreset')
+    expect(answer).toEqual(asFailure('notAPreset'))
   })
 })
 
@@ -89,7 +92,8 @@ describe('how far each setting goes', () => {
       bounds: { minutesADay: { least: 5, most: 240 }, load: { least: 0, most: 100 } },
     })
 
-    expect((await presets.read('Daily.md')).bounds).toEqual({
+    const answer = await presets.read('Daily.md')
+    expect(answer.ok ? answer.value.bounds : null).toEqual({
       minutesADay: { least: 5, most: 240 },
       load: { least: 0, most: 100 },
     })
@@ -98,7 +102,8 @@ describe('how far each setting goes', () => {
   it('is nothing at all until the application has said', async () => {
     replyWith({ preset: { path: 'Daily.md', title: 'Daily' } })
 
-    expect((await presets.read('Daily.md')).bounds).toEqual({})
+    const answer = await presets.read('Daily.md')
+    expect(answer.ok ? answer.value.bounds : null).toEqual({})
   })
 })
 
@@ -115,8 +120,8 @@ describe('making a preset', () => {
     replyWith({ path: 'Presets/Daily.md' })
 
     expect(await presets.createPreset('Daily', 'Presets')).toEqual({
-      path: 'Presets/Daily.md',
-      error: null,
+      ok: true,
+      value: { path: 'Presets/Daily.md' },
     })
   })
 })
@@ -128,7 +133,7 @@ describe('putting a deck on a preset', () => {
     const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
 
     expect(asked[0]?.seen).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
-    expect(answer.at).toBe('12 34 Deck.md')
+    expect(answer.ok && answer.value.at).toBe('12 34 Deck.md')
   })
 
   it('names no file where the window read none', async () => {
@@ -142,11 +147,9 @@ describe('putting a deck on a preset', () => {
   it('says the file moved past what the window read', async () => {
     replyWith({ error: 'ERROR_CODE_STALE' })
 
-    expect(await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual({
-      error: null,
-      changed: true,
-      at: '',
-    })
+    expect(await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual(
+      asFailure('changed'),
+    )
   })
 })
 
@@ -154,7 +157,8 @@ describe('the preset a deck is scheduled by', () => {
   it('is read under the deck and not under a path', async () => {
     replyWith({ preset: { path: '', title: '' } })
 
-    expect((await presets.getDeckPreset('Deck.md')).preset?.path).toBe('')
+    const answer = await presets.getDeckPreset('Deck.md')
+    expect(answer.ok ? answer.value.preset?.path : null).toBe('')
     expect(asked[0]).toEqual({ deck: 'Deck.md' })
   })
 })

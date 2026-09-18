@@ -32,14 +32,14 @@ const emit = defineEmits<{
 <template>
   <div class="card__value">
     <Divider at="start">
-      <label v-if="value.declared" class="card__field text-small text-hushed" :for="boxId">
+      <label v-if="value.isDeclared" class="card__field text-small text-hushed" :for="boxId">
         {{ value.field }}
       </label>
       <span v-else class="card__field text-small text-hushed">{{ value.field }}</span>
     </Divider>
 
     <AutosizeTextarea
-      v-if="value.declared"
+      v-if="value.isDeclared"
       :id="boxId"
       :text="value.text"
       :data-value="value.field"

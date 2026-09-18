@@ -22,6 +22,7 @@ import { BranchPanel } from './panel'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { orientationAt, type Branch, type Orientation, type TabId } from '../../lib/node'
 import { atLeast, fit } from '../../lib/shares'
+import { browserViewport } from '@/shared/lib/viewport'
 
 const props = defineProps<{
   node: Branch
@@ -66,27 +67,26 @@ const floor = computed(
   () => atLeast(workspace.value.minimum, length.value, props.node.children.length) * 100,
 )
 
-let watching: ResizeObserver | undefined
+/** What stops the watching, held from the moment it begins. */
+let stopWatching: (() => void) | null = null
 
 // The element is followed: a change of shape gives the pane a new one.
 watch(
   () => frame.value?.$el as HTMLElement | undefined,
   (element) => {
-    watching?.disconnect()
-    if (!element || typeof ResizeObserver === 'undefined') return
+    stopWatching?.()
+    stopWatching = null
+    if (!element) return
 
-    watching = new ResizeObserver(([seen]) => {
-      if (!seen) return
-      const box = seen.contentRect
-      length.value = direction.value === 'horizontal' ? box.width : box.height
+    stopWatching = browserViewport.watch(element, (size) => {
+      length.value = direction.value === 'horizontal' ? size.width : size.height
     })
-    watching.observe(element)
   },
   { immediate: true, flush: 'post' },
 )
 
 onBeforeUnmount(() => {
-  watching?.disconnect()
+  stopWatching?.()
   // The branch is going, and where its handle reached is not news about a node
   // that will not be there to hear it.
   reached = null

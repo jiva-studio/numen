@@ -6,6 +6,7 @@ import type {
   NoteEdit,
   NoteHeading,
   NoteResult,
+  WriteResult,
   RemoveResult,
   RenameResult,
 } from '@/entities/note'
@@ -28,7 +29,7 @@ export interface NotePort {
   /** A change being made to a note's prose, reported while it is being made. */
   watchEdits(signal: AbortSignal): AsyncIterable<NoteEdit>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
-  read(path: string): Promise<NoteResult & { at?: string }>
+  read(path: string): Promise<NoteResult>
   /**
    * Prose into a note, keeping the frontmatter the file has when it lands.
    *
@@ -40,7 +41,7 @@ export interface NotePort {
     path: string,
     body: string,
     seen: { prose: string; at: string } | null,
-  ): Promise<NoteResult & { at?: string; changed?: boolean }>
+  ): Promise<WriteResult>
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<CreateResult>
   /**

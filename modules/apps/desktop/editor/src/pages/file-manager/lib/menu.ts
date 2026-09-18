@@ -117,7 +117,7 @@ const SEVERAL: readonly MenuItem[] = [{ id: 'remove', text: own.remove, group: G
 /** The row a menu was asked for on: what the vault holds there. */
 export interface MenuRow {
   readonly source: Source
-  readonly folder: boolean
+  readonly isFolder: boolean
 }
 
 /** Whether the window the menu is drawn in can do a run at all. */
@@ -135,7 +135,7 @@ export const itemsFor = (
 ): readonly MenuItem[] => {
   if (!on) return MADE
   if (several) return SEVERAL
-  if (on.folder) return FILED
+  if (on.isFolder) return FILED
   if (on.source === 'note') return NOTE
   if (on.source === 'url') return urls(canRun)
   if (on.source === 'recording') return runnable(TRANSCRIBE, canRun)

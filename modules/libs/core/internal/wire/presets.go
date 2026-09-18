@@ -84,7 +84,7 @@ func SettingsOf(p review.Preset) *v1.Settings {
 		Learned:     RuleOf(p.Rule),
 		Interval:    int32(p.Interval),
 		Backlog:     int32(p.Backlog),
-		EvenLoad:    p.EvenLoad,
+		HasEvenLoad: p.EvenLoad,
 		Load:        make(map[string]int32, len(p.Load)),
 	}
 	if !p.By.IsZero() {
@@ -110,7 +110,7 @@ func SettingsIn(s *v1.Settings) (review.Preset, error) {
 		Rule:        RuleIn(s.GetLearned()),
 		Interval:    int(s.GetInterval()),
 		Backlog:     int(s.GetBacklog()),
-		EvenLoad:    s.GetEvenLoad(),
+		EvenLoad:    s.GetHasEvenLoad(),
 	}
 	if written := strings.TrimSpace(s.GetByDate()); written != "" {
 		day, err := time.Parse(review.Named, written)
@@ -153,7 +153,7 @@ func CurveOf(c review.Curve) *v1.Curve {
 			Retained: one.Retained,
 			Owed:     int32(one.Owed),
 			Through:  one.Share,
-			Enough:   one.Enough,
+			IsEnough: one.Enough,
 			Closed:   BudgetsOf(one.Closed),
 			Short:    int32(one.Short),
 			Clears:   int32(one.Clears),

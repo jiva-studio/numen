@@ -16,9 +16,9 @@ const props = withDefaults(
     /** How tall it stands, as a length. */
     high?: string
     /** Rounded to its own ends, where what is awaited is drawn as a pill. */
-    pill?: boolean
+    isPill?: boolean
   }>(),
-  { wide: '100%', high: '1em', pill: false },
+  { wide: '100%', high: '1em', isPill: false },
 )
 
 const skeletonStyle = computed(() => ({
@@ -30,7 +30,7 @@ const skeletonStyle = computed(() => ({
 <template>
   <span
     class="skeleton numen"
-    :class="{ 'skeleton--pill': pill }"
+    :class="{ 'skeleton--pill': isPill }"
     :style="skeletonStyle"
     aria-hidden="true"
   />
@@ -38,7 +38,7 @@ const skeletonStyle = computed(() => ({
 
 <style scoped>
 .skeleton {
-  --cycle: 1600ms;
+  --cycle: var(--numen-wait-shimmer);
 
   display: inline-block;
   flex: none;

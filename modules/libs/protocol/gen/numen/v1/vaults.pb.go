@@ -126,7 +126,7 @@ type Vault struct {
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing is at the path. The vault stays on the list, and the
 	// folder is found again if it comes back.
-	Missing       bool `protobuf:"varint,4,opt,name=missing,proto3" json:"missing,omitempty"`
+	IsMissing     bool `protobuf:"varint,4,opt,name=is_missing,json=isMissing,proto3" json:"is_missing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -182,9 +182,9 @@ func (x *Vault) GetPath() string {
 	return ""
 }
 
-func (x *Vault) GetMissing() bool {
+func (x *Vault) GetIsMissing() bool {
 	if x != nil {
-		return x.Missing
+		return x.IsMissing
 	}
 	return false
 }
@@ -333,7 +333,7 @@ type ChooseFolderResponse struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when the person chose a folder. False is a dialog they closed, which
 	// is an ordinary answer.
-	Chose         bool `protobuf:"varint,2,opt,name=chose,proto3" json:"chose,omitempty"`
+	IsChosen      bool `protobuf:"varint,2,opt,name=is_chosen,json=isChosen,proto3" json:"is_chosen,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -375,9 +375,9 @@ func (x *ChooseFolderResponse) GetPath() string {
 	return ""
 }
 
-func (x *ChooseFolderResponse) GetChose() bool {
+func (x *ChooseFolderResponse) GetIsChosen() bool {
 	if x != nil {
-		return x.Chose
+		return x.IsChosen
 	}
 	return false
 }
@@ -796,22 +796,23 @@ var File_numen_v1_vaults_proto protoreflect.FileDescriptor
 
 const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/vaults.proto\x12\bnumen.v1\"Y\n" +
+	"\x15numen/v1/vaults.proto\x12\bnumen.v1\"^\n" +
 	"\x05Vault\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
-	"\x04path\x18\x03 \x01(\tR\x04path\x12\x18\n" +
-	"\amissing\x18\x04 \x01(\bR\amissing\"\x13\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\x12\x1d\n" +
+	"\n" +
+	"is_missing\x18\x04 \x01(\bR\tisMissing\"\x13\n" +
 	"\x11ListVaultsRequest\"=\n" +
 	"\x12ListVaultsResponse\x12'\n" +
 	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.VaultR\x06vaults\"L\n" +
 	"\x13ChooseFolderRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1f\n" +
 	"\vstarting_at\x18\x02 \x01(\tR\n" +
-	"startingAt\"@\n" +
+	"startingAt\"G\n" +
 	"\x14ChooseFolderResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05chose\x18\x02 \x01(\bR\x05chose\"9\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
+	"\tis_chosen\x18\x02 \x01(\bR\bisChosen\"9\n" +
 	"\x0fAddVaultRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"\x88\x01\n" +

@@ -57,7 +57,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   let opened = 0
 
   const turns = computed<Turn[]>(() => talk.value?.turns.value ?? [])
-  const working = computed(() => talk.value?.working.value ?? false)
+  const isWorking = computed(() => talk.value?.isWorking.value ?? false)
 
   /** The talk about one card, made once and let go of with the card. */
   const startTalk = (card: CardFace) => {
@@ -123,7 +123,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     written,
     about,
     turns,
-    working,
+    isWorking,
     openPanel,
     closePanel,
     setWritten,

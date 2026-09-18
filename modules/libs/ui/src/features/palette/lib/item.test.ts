@@ -82,10 +82,10 @@ describe('one list drawn in groups', () => {
     ])
 
     expect(placed[0]?.items[0]?.name).toEqual([
-      { text: 'Ent', hit: true },
-      { text: 'ropy', hit: false },
+      { text: 'Ent', isHit: true },
+      { text: 'ropy', isHit: false },
     ])
-    expect(placed[0]?.items[0]?.detail).toEqual([{ text: 'in: Ent', hit: false }])
+    expect(placed[0]?.items[0]?.detail).toEqual([{ text: 'in: Ent', isHit: false }])
   })
 
   it('draws no second line for an item that has none', () => {
@@ -309,10 +309,10 @@ describe('the actions the panel draws', () => {
 
   it('marks the run the words stand in, and marks nothing where nothing was typed', () => {
     expect(placeActions(MANY, 'name')[0]?.name).toEqual([
-      { text: 'Re', hit: false },
-      { text: 'name', hit: true },
+      { text: 'Re', isHit: false },
+      { text: 'name', isHit: true },
     ])
-    expect(placeActions(MANY)[3]?.name).toEqual([{ text: 'Rename', hit: false }])
+    expect(placeActions(MANY)[3]?.name).toEqual([{ text: 'Rename', isHit: false }])
   })
 
   it('carries the key of an action a key reaches, and nothing for the rest', () => {
@@ -362,7 +362,7 @@ describe('a list of actions changing under the panel', () => {
 
 describe('marking why an item is here', () => {
   it('draws a line nothing stands in as one run', () => {
-    expect(partsOf('Entropy')).toEqual([{ text: 'Entropy', hit: false }])
+    expect(partsOf('Entropy')).toEqual([{ text: 'Entropy', isHit: false }])
   })
 
   it('draws nothing at all for a line with nothing on it', () => {
@@ -371,22 +371,22 @@ describe('marking why an item is here', () => {
 
   it('marks a run at the start, in the middle and at the end', () => {
     expect(partsOf('abcdef', [{ from: 0, to: 2 }])).toEqual([
-      { text: 'ab', hit: true },
-      { text: 'cdef', hit: false },
+      { text: 'ab', isHit: true },
+      { text: 'cdef', isHit: false },
     ])
     expect(partsOf('abcdef', [{ from: 2, to: 4 }])).toEqual([
-      { text: 'ab', hit: false },
-      { text: 'cd', hit: true },
-      { text: 'ef', hit: false },
+      { text: 'ab', isHit: false },
+      { text: 'cd', isHit: true },
+      { text: 'ef', isHit: false },
     ])
     expect(partsOf('abcdef', [{ from: 4, to: 6 }])).toEqual([
-      { text: 'abcd', hit: false },
-      { text: 'ef', hit: true },
+      { text: 'abcd', isHit: false },
+      { text: 'ef', isHit: true },
     ])
   })
 
   it('marks the whole line as one run when the whole line is why', () => {
-    expect(partsOf('abc', [{ from: 0, to: 3 }])).toEqual([{ text: 'abc', hit: true }])
+    expect(partsOf('abc', [{ from: 0, to: 3 }])).toEqual([{ text: 'abc', isHit: true }])
   })
 
   it('draws two runs that do not touch as two', () => {
@@ -396,10 +396,10 @@ describe('marking why an item is here', () => {
         { from: 4, to: 5 },
       ]),
     ).toEqual([
-      { text: 'a', hit: true },
-      { text: 'bcd', hit: false },
-      { text: 'e', hit: true },
-      { text: 'f', hit: false },
+      { text: 'a', isHit: true },
+      { text: 'bcd', isHit: false },
+      { text: 'e', isHit: true },
+      { text: 'f', isHit: false },
     ])
   })
 
@@ -410,10 +410,10 @@ describe('marking why an item is here', () => {
         { from: 0, to: 1 },
       ]),
     ).toEqual([
-      { text: 'a', hit: true },
-      { text: 'bcd', hit: false },
-      { text: 'e', hit: true },
-      { text: 'f', hit: false },
+      { text: 'a', isHit: true },
+      { text: 'bcd', isHit: false },
+      { text: 'e', isHit: true },
+      { text: 'f', isHit: false },
     ])
   })
 
@@ -424,8 +424,8 @@ describe('marking why an item is here', () => {
         { from: 2, to: 4 },
       ]),
     ).toEqual([
-      { text: 'abcd', hit: true },
-      { text: 'ef', hit: false },
+      { text: 'abcd', isHit: true },
+      { text: 'ef', isHit: false },
     ])
     expect(
       partsOf('abcdef', [
@@ -433,39 +433,39 @@ describe('marking why an item is here', () => {
         { from: 2, to: 4 },
       ]),
     ).toEqual([
-      { text: 'abcd', hit: true },
-      { text: 'ef', hit: false },
+      { text: 'abcd', isHit: true },
+      { text: 'ef', isHit: false },
     ])
   })
 
   it('reads a run given back to front', () => {
     expect(partsOf('abcdef', [{ from: 4, to: 2 }])).toEqual([
-      { text: 'ab', hit: false },
-      { text: 'cd', hit: true },
-      { text: 'ef', hit: false },
+      { text: 'ab', isHit: false },
+      { text: 'cd', isHit: true },
+      { text: 'ef', isHit: false },
     ])
   })
 
   it('brings a run that runs off either end back inside the line', () => {
-    expect(partsOf('abc', [{ from: -5, to: 99 }])).toEqual([{ text: 'abc', hit: true }])
+    expect(partsOf('abc', [{ from: -5, to: 99 }])).toEqual([{ text: 'abc', isHit: true }])
   })
 
   it('drops a run with nothing in it', () => {
-    expect(partsOf('abc', [{ from: 1, to: 1 }])).toEqual([{ text: 'abc', hit: false }])
+    expect(partsOf('abc', [{ from: 1, to: 1 }])).toEqual([{ text: 'abc', isHit: false }])
   })
 
   it('never ends a run on half a character', () => {
     // The emoji is two code units, and the run names one of them.
     const text = 'a👋b'
     expect(partsOf(text, [{ from: 1, to: 2 }])).toEqual([
-      { text: 'a', hit: false },
-      { text: '👋', hit: true },
-      { text: 'b', hit: false },
+      { text: 'a', isHit: false },
+      { text: '👋', isHit: true },
+      { text: 'b', isHit: false },
     ])
     expect(partsOf(text, [{ from: 2, to: 3 }])).toEqual([
-      { text: 'a', hit: false },
-      { text: '👋', hit: true },
-      { text: 'b', hit: false },
+      { text: 'a', isHit: false },
+      { text: '👋', isHit: true },
+      { text: 'b', isHit: false },
     ])
   })
 })
@@ -473,7 +473,7 @@ describe('marking why an item is here', () => {
 describe('which group stands where', () => {
   const holding = group('names', [item('one')])
   const empty = group('text', [], { silence: 'nothing to search with' })
-  const alsoEmpty = group('meaning', [], { working: true })
+  const alsoEmpty = group('meaning', [], { isWorking: true })
 
   it('keeps the groups holding something in the order they were offered', () => {
     const also = group('text', [item('two')])
@@ -500,7 +500,7 @@ describe('which group stands where', () => {
   })
 
   it('draws a group holding nothing while it is still working', () => {
-    expect(orderGroups([group('meaning', [], { working: true })]).map((one) => one.id)).toEqual([
+    expect(orderGroups([group('meaning', [], { isWorking: true })]).map((one) => one.id)).toEqual([
       'meaning',
     ])
   })

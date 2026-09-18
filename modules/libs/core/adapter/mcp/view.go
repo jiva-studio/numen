@@ -99,14 +99,14 @@ func addViewTools(server *sdk.Server, core Core) {
 		}
 		at := domain.Place{Path: in.Path}
 		if in.Length > 0 {
-			at.Spans = append(at.Spans, domain.Span{From: in.Start, To: in.Start + in.Length})
+			at.Spans = append(at.Spans, domain.ByteSpan{From: in.Start, To: in.Start + in.Length})
 		}
 		for _, one := range in.Also {
 			if one.Start < 0 || one.Length <= 0 {
 				return nil, out{}, errors.New(
 					"a passage begins at or after the start of the text, and is longer than nothing")
 			}
-			at.Spans = append(at.Spans, domain.Span{From: one.Start, To: one.Start + one.Length})
+			at.Spans = append(at.Spans, domain.ByteSpan{From: one.Start, To: one.Start + one.Length})
 		}
 		if err := core.View.Focus(ctx, at); err != nil {
 			return nil, out{}, err
@@ -126,7 +126,7 @@ func getFingerprint(ctx context.Context, core Core, path string) (domain.Fingerp
 		return domain.Fingerprint{}, err
 	}
 	ref, err := reader.Stat(ctx, path)
-	if port.NoNote(err) {
+	if port.IsNoNote(err) {
 		return domain.Fingerprint{}, fmt.Errorf("this vault holds nothing at %s", path)
 	}
 	if err != nil {

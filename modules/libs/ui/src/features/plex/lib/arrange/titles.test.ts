@@ -6,7 +6,7 @@ import { MIDDLE, routeEdges, routingFor } from './routing'
 import { settleTitles } from './titles'
 import { build } from '../../fixtures/build'
 import { neighbourhoods } from '../../fixtures/neighbourhoods'
-import { headingOf, lengthOf, rulerOf, type PlacedEdge } from '../edge'
+import { headingOf, lengthOf, createPointOnCurve, type PlacedEdge } from '../edge'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode } from '../node'
 
@@ -53,7 +53,7 @@ const isOverlapping = (one: Box, other: Box): boolean =>
  */
 function boxOf(edge: PlacedEdge, width: (label: string) => number): Box {
   const arc = lengthOf(edge)
-  const along = rulerOf(edge)
+  const along = createPointOnCurve(edge)
   const at = edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt
   const half = width(edge.words!) / 2 / arc
   const deep = labelDepth / 2

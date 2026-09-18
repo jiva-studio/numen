@@ -17,9 +17,9 @@ const props = withDefaults(
   defineProps<{
     pane: Pane
     /** The pane a tab would open into. */
-    focused?: boolean
+    isFocused?: boolean
   }>(),
-  { focused: false },
+  { isFocused: false },
 )
 
 const emit = defineEmits<{
@@ -90,7 +90,7 @@ defineExpose({ reach })
       :title="titleOf(tab)"
       :mark="getMarkOf(tab)"
       :showing="tab === pane.active"
-      :focused="tab === pane.active && focused"
+      :is-focused="tab === pane.active && isFocused"
       @lift="emit('lift', tab, $event)"
       @close="emit('close', tab)"
       @click="emit('choose', tab)"

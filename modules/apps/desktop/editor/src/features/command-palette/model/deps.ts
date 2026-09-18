@@ -60,7 +60,8 @@ export interface FileMakers {
 /** The vaults this installation holds, as a command changes which one shows. */
 export interface VaultSwitcher extends Vaults {
   /** The vault the window is showing, under the name it has now. */
-  showVault(vault: VaultRef): void
+  /** One vault of the list under the name it was just given. */
+  setVaultName(vault: VaultRef): void
   /**
    * The page drawn again, on the vault the window shows now. Every tab and
    * every plex belonged to the vault that has gone.

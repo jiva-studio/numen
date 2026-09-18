@@ -54,32 +54,30 @@ export const readPreset = async (
   let answer
   try {
     answer = await core.read(one.path.value)
-  } catch (error) {
-    console.error(error)
+  } catch {
+    // The window says what it could not do; what the call carried back adds nothing a person can act on.
     one.flight.errorMessage.value = words.unreachable
     one.curves.waiting.value = false
     return
   }
-  const readError = answer.error
-  one.flight.errorMessage.value = readError === null ? '' : words.notRead(readError)
+  one.flight.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
   one.flight.hasChanged.value = false
-  one.flight.at = answer.at
-  bounds.value = answer.bounds
   one.curves.answers.clear()
-  if (!answer.preset) {
+  const read = answer.ok ? answer.value.preset : null
+  if (answer.ok) {
+    one.flight.at = answer.value.at
+    bounds.value = answer.value.bounds
+  }
+  if (!read) {
     one.problems.value = []
     one.stopped.value = StopReason.NOTHING
     one.curves.waiting.value = false
     return
   }
-  if (answer.preset.title) titles.set(one.path.value, answer.preset.title)
-  one.problems.value = answer.preset.problems
-  one.stopped.value = answer.preset.stopsOn
-  one.settings.value = reconcileSettings(
-    answer.preset.settings,
-    one.settings.value,
-    one.flight.theirs,
-  )
+  if (read.title) titles.set(one.path.value, read.title)
+  one.problems.value = read.problems
+  one.stopped.value = read.stopsOn
+  one.settings.value = reconcileSettings(read.settings, one.settings.value, one.flight.theirs)
   await updateCurves(
     one.curves,
     one.path.value,

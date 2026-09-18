@@ -1,5 +1,5 @@
 /**
- * A book made for a screen, read in one piece: its text in columns, the spreads
+ * A book made for a screen, read in one piece: its text in columns, the countSpreads
  * it comes to, and the controls floating over them.
  *
  * Where the layout is judged, because nothing without a layout can judge it:
@@ -186,7 +186,7 @@ const inFrontOf = (canvasElement: HTMLElement) =>
 
 /**
  * The text set in columns, once the browser has laid it out. The count is drawn
- * from the spreads the text came to, so it stands there when it has.
+ * from the countSpreads the text came to, so it stands there when it has.
  */
 const waitForLayout = async (canvasElement: HTMLElement) =>
   await waitFor(

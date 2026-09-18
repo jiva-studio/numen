@@ -1,6 +1,7 @@
 /**
  * The vaults an installation holds, and what the window asks of the list.
  */
+import type { Result } from '@numen/wire'
 
 /** One vault the installation holds, as the list has it. */
 export interface Vault {
@@ -21,12 +22,12 @@ export interface VaultList {
   readonly showing: string
 }
 
-/** What adding a vault came back with, and what renaming one comes back with. */
-export interface VaultResult {
-  /** The vault as the list has it now. Null where the list is as it was. */
-  vault: Vault | null
-  error?: VaultErrorCode | null
-}
+/**
+ * What adding a vault came back with, and what renaming one comes back with. A
+ * value of null is a list that is as it was, which is an answer and not a
+ * failure.
+ */
+export type VaultResult = Result<Vault | null, VaultErrorCode>
 
 /** Why the list is as it was, or why the window is showing what it was showing. */
 export type VaultErrorCode =

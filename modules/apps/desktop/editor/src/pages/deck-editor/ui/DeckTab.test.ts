@@ -8,6 +8,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
+import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultCard, DeckProblem } from '@/entities/deck'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
@@ -83,33 +84,25 @@ const mountDeck = async (
       stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
       held: 1,
     }),
-    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
-    renameField: async () => ({
-      decks: [],
-      cards: 0,
-      notWritten: [],
-      error: null,
-      changed: false,
-      at: '',
-    }),
-    readDeck: async (path) => ({
-      deck: {
-        path,
-        title: 'Animals',
-        preamble: '',
-        cards: CARDS,
-        sections: SECTIONS,
-        tail: '',
-        problems,
-      },
-      error: null,
-      at: 'read',
-      bound: 0,
-    }),
-    writeDeck: async () => ({ error: null, changed: false, at: 'written', bound: 0 }),
-    readStencil: async () => ({ stencil: null, error: 'missing', at: '' }),
-    writeStencil: async () => ({ error: null, changed: false, at: '' }),
+    createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: '' }),
+    readDeck: async (path) =>
+      asValue({
+        deck: {
+          path,
+          title: 'Animals',
+          preamble: '',
+          cards: CARDS,
+          sections: SECTIONS,
+          tail: '',
+          problems,
+        },
+        at: 'read',
+      }),
+    writeDeck: async () => asValue({ at: 'written' }),
+    readStencil: async () => asFailure('missing' as const),
+    writeStencil: async () => asValue({ at: '' }),
   }
 
   /** Which preset the deck names, as the vault answers it. */
@@ -118,39 +111,37 @@ const mountDeck = async (
   const put: string[] = []
 
   const presets: Presets = {
-    read: async (path) => ({
-      preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
-      error: null,
-      at: '',
-      bounds: NO_BOUNDS,
-    }),
+    read: async (path) =>
+      asValue({
+        preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
+        at: '',
+        bounds: NO_BOUNDS,
+      }),
     list: async () =>
       schedule.presets ?? [
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
-    createPreset: async () => ({ path: '', error: null }),
-    getDeckPreset: async () => ({
-      preset: {
-        path: by,
-        title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
-        settings: DEFAULTS,
-        problems: schedule.saying ? [schedule.saying] : [],
-        ...SCHEDULING,
-      },
-      error: null,
-      at: '',
-      bounds: NO_BOUNDS,
-    }),
+    createPreset: async () => asValue({ path: '' }),
+    getDeckPreset: async () =>
+      asValue({
+        preset: {
+          path: by,
+          title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
+          settings: DEFAULTS,
+          problems: schedule.saying ? [schedule.saying] : [],
+          ...SCHEDULING,
+        },
+        at: '',
+        bounds: NO_BOUNDS,
+      }),
     scheduleDeck: async (_deck, preset) => {
       put.push(preset)
-      if (schedule.notScheduled) {
-        return { error: schedule.notScheduled, changed: false, at: '' }
-      }
+      if (schedule.notScheduled) return asFailure(schedule.notScheduled)
       by = preset
-      return { error: null, changed: false, at: 'scheduled' }
+      return asValue({ at: 'scheduled' })
     },
-    write: async () => ({ error: null, changed: false, at: '' }),
+    write: async () => asValue({ at: '' }),
     curve: async () => ({
       goal: 'minutes',
       grid: [],

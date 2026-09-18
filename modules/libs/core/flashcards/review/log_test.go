@@ -58,7 +58,7 @@ func TestAnAnswerTakenBackNamesTheOneItTakesBack(t *testing.T) {
 	}
 
 	back, _ := review.Read(raw)
-	if len(back) != 1 || !back[0].TakesBack() || back[0].Undoes != "01K3ZQ7X2M9QRSTVWXYZ012345" {
+	if len(back) != 1 || !back[0].IsUndo() || back[0].Undoes != "01K3ZQ7X2M9QRSTVWXYZ012345" {
 		t.Errorf("read back %+v", back)
 	}
 }

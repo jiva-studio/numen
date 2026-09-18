@@ -173,8 +173,8 @@ func (p sheet) box(page, start, length int, word responses.CharPosition) highlig
 	x0, y0 := p.getDrawnPoint(word.Left, word.Top)
 	x1, y1 := p.getDrawnPoint(word.Right, word.Bottom)
 	return highlight.Box{
-		Page: page,
-		Span: domain.Span{From: start, To: start + length},
+		Page:     page,
+		ByteSpan: domain.ByteSpan{From: start, To: start + length},
 		Rect: highlight.Rect{
 			MinX: onPage(min(x0, x1)),
 			MinY: onPage(min(y0, y1)),

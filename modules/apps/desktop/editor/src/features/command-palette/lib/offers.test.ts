@@ -27,7 +27,7 @@ describe('a search that turned up nothing', () => {
       id: 'names',
       title: 'Names',
       items: Array.from({ length: items }, (_, at) => ({ id: `${at}`, title: 'One' })),
-      working: isWorking,
+      isWorking: isWorking,
     },
   ]
 

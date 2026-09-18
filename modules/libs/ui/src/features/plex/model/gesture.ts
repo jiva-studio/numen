@@ -32,9 +32,8 @@ export interface GestureHandlers {
 /**
  * Screen to plex coordinates.
  *
- * Through the element's own matrix rather than by measuring the box: the plex
- * happens to be drawn at one unit to the pixel today, and arithmetic that
- * assumed so would break silently the first time that changed.
+ * Through the element's own matrix, so the scale it is drawn at is whatever
+ * the element says it is.
  */
 export function positionIn(svg: SVGSVGElement, event: PointerEvent): Position | null {
   const screen = svg.getScreenCTM?.()
@@ -79,8 +78,7 @@ export function usePlexGesture(
     const now = at.value
     if (!source || !now) return null
 
-    // A gesture that has not travelled is a press, and a press has a rule
-    // rather than a direction.
+    // A gesture that has not travelled is a press, and a press has a rule.
     if (!hasTravelled(now)) {
       const seat = seatWithoutDirection(getSeats())
       return seat ? { kind: 'create', from: source, seat } : null

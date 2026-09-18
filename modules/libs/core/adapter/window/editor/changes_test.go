@@ -97,7 +97,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		if err != nil {
 			t.Fatal(err)
 		}
-		if state.Msg.GetScan().GetReady() {
+		if state.Msg.GetScan().GetIsReady() {
 			return client, watching, root, opened
 		}
 		if reason := state.Msg.GetScan().GetError(); reason != "" {

@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
-import { noteKeyboard, ITSELF, type EditorHandle } from './keyboard'
+import { createNoteKeyboard, ITSELF, type EditorHandle } from './keyboard'
 
 /** An editor that says whether it took what it was handed. */
 const editor = (takes = true) => {
@@ -28,7 +28,7 @@ const editor = (takes = true) => {
 
 describe('a note owed the keyboard', () => {
   it('takes it as soon as an editor is drawn', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     owed.requestFocus('Note.md')
     const drew = editor()
 
@@ -39,7 +39,7 @@ describe('a note owed the keyboard', () => {
   })
 
   it('is revealed at the line it was owed', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     const drew = editor()
     owed.setEditor('Note.md', drew.drawn)
 
@@ -50,7 +50,7 @@ describe('a note owed the keyboard', () => {
   })
 
   it('keeps the line it was owed when the note is asked for itself', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     const drew = editor()
 
     owed.requestFocus('Note.md', 12)
@@ -62,7 +62,7 @@ describe('a note owed the keyboard', () => {
   })
 
   it('stays owed while the editor cannot take it', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     const early = editor(false)
     owed.requestFocus('Note.md')
     owed.setEditor('Note.md', early.drawn)
@@ -76,7 +76,7 @@ describe('a note owed the keyboard', () => {
   })
 
   it('is owed nothing once an editor has taken it', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     const drew = editor()
     owed.requestFocus('Note.md')
     owed.setEditor('Note.md', drew.drawn)
@@ -89,7 +89,7 @@ describe('a note owed the keyboard', () => {
   })
 
   it('is owed nothing at all once its tab has closed', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     owed.requestFocus('Note.md')
     owed.cancelFocusRequest('Note.md')
 
@@ -101,7 +101,7 @@ describe('a note owed the keyboard', () => {
   })
 
   it('is owed to the note it was owed to, and to no other', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     const one = editor()
     const other = editor()
     owed.setEditor('One.md', one.drawn)
@@ -117,7 +117,7 @@ describe('a note owed the keyboard', () => {
 
 describe('the window drawn at another size', () => {
   it('has every open editor measure again', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     const one = editor()
     const other = editor()
     owed.setEditor('One.md', one.drawn)
@@ -130,7 +130,7 @@ describe('the window drawn at another size', () => {
   })
 
   it('has nothing to say to an editor whose tab has let go of it', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     const drew = editor()
     owed.setEditor('Note.md', drew.drawn)
     owed.setEditor('Note.md', null)
@@ -143,7 +143,7 @@ describe('the window drawn at another size', () => {
 
 describe('an editor that goes', () => {
   it('is not handed anything after it has', async () => {
-    const owed = noteKeyboard()
+    const owed = createNoteKeyboard()
     const drew = editor()
     owed.setEditor('Note.md', drew.drawn)
     owed.setEditor('Note.md', null)

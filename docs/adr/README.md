@@ -34,7 +34,7 @@ The numbers run without gaps, and the whole corpus is renumbered when one closes
 - [One service to a subject](0034-one-service-to-a-subject.md)
 - [Nothing is logged, and a person is told where they are](0037-nothing-is-logged.md)
 - [How this application is tested](0025-how-this-application-is-tested.md)
-- [TypeScript and Vue are formatted by hand](0044-typescript-and-vue-are-formatted-by-hand.md)
+- [Code formatting with Prettier and gofmt](0044-code-formatting-with-prettier-and-gofmt.md)
 
 ### The index
 
@@ -93,13 +93,13 @@ The numbers run without gaps, and the whole corpus is renumbered when one closes
 ### The interface
 
 - [How an interface component is built](0023-how-an-interface-component-is-built.md)
-- [The component library is built on Reka UI and Tailwind tokens](0024-the-component-library-is-shadcn-vue.md)
+- [The component library is built on Reka UI and Tailwind tokens](0024-the-component-library-is-built-on-reka-ui-and-tailwind-tokens.md)
 
 ### Architecture, layers and formatting
 
 - [A file of the windows stands on a layer](0042-a-file-of-the-windows-stands-on-a-layer.md)
 - [An import says which layer it reaches](0043-an-import-says-which-layer-it-reaches.md)
-- [Code formatting with Prettier and gofmt](0044-typescript-and-vue-are-formatted-by-hand.md)
+- [Code formatting with Prettier and gofmt](0044-code-formatting-with-prettier-and-gofmt.md)
 
 ## The specifications
 

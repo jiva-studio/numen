@@ -34,8 +34,8 @@ func (a *API) RenameNote(
 	if renamed.Moved != nil {
 		out.Moved = newMoveResult(*renamed.Moved)
 	}
-	out.Unlevelled = a.isUnlevelled(err)
-	if err != nil && !out.GetUnlevelled() {
+	out.IsUnlevelled = a.isUnlevelled(err)
+	if err != nil && !out.GetIsUnlevelled() {
 		reason, refused := wire.ErrorCodeBy(err)
 		switch {
 		case refused:
@@ -76,9 +76,9 @@ func (a *API) RemoveFile(
 	// went is said here, so the tree drops the row whatever stood on it.
 	a.Listeners.tell(change{paths: []string{removed.Path}})
 	return connect.NewResponse(&v1.RemoveFileResponse{
-		Trashed:    removed.Trashed,
-		Dangling:   removed.Dangling,
-		Unlevelled: behind,
+		Trashed:      removed.Trashed,
+		Dangling:     removed.Dangling,
+		IsUnlevelled: behind,
 	}), nil
 }
 

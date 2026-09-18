@@ -12,13 +12,13 @@ import { useFileTree, ROOT } from '../model/useFileTree'
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
-  folder: false,
+  isFolder: false,
   kind: 'note',
   type: 'note',
   ...over,
 })
 
-const folder = (path: string): Entry => file(path, { folder: true, kind: 'other' })
+const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
 
 const held: Record<string, readonly Entry[]> = {
   [ROOT]: [folder('physics'), file('Entropy.md'), file('Cover.png', { kind: 'other' })],

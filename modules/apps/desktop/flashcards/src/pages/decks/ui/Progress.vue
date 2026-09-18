@@ -10,6 +10,7 @@ import type { HeatmapTally, HeatmapWords } from '@numen/ui'
 
 import { called } from '@/entities/card'
 
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{
   /** What was answered on each day, by the day it was. */
   days: ReadonlyMap<string, HeatmapTally>

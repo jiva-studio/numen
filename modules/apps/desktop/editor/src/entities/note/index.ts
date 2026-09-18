@@ -9,10 +9,13 @@ export type {
   NoteEdit,
   NoteHeading,
   NoteResult,
+  RemovedNote,
   RemoveResult,
+  RenamedNote,
   RenameResult,
   Role,
   Seat,
+  WriteResult,
 } from './lib/note'
 export { openNotes } from './model/notes'
 export type { Notes, OpenNote } from './lib/noteTypes'

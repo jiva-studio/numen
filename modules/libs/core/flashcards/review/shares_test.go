@@ -37,7 +37,7 @@ func TestTheSharesOfADayAreHandedOutWhole(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		budget, owes := drawDivision(t)
-		got := getTotalOwed(review.Shares(budget, owes))
+		got := getTotalOwed(review.DivideBudget(budget, owes))
 		want := min(budget, getTotalOwed(owes))
 		if got != want {
 			t.Fatalf("a budget of %v over %v handed out %v, want %v",
@@ -55,7 +55,7 @@ func TestNoDeckTakesMoreOfTheDayThanItOwes(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		budget, owes := drawDivision(t)
-		for at, share := range review.Shares(budget, owes) {
+		for at, share := range review.DivideBudget(budget, owes) {
 			if share < 0 || share > owes[at] {
 				t.Fatalf("a deck owing %v took %v of a budget of %v over %v",
 					owes[at], share, budget, owes)
@@ -80,7 +80,7 @@ func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
 		if total <= 0 || budget >= total {
 			return
 		}
-		for at, share := range review.Shares(budget, owes) {
+		for at, share := range review.DivideBudget(budget, owes) {
 			exact := float64(budget) * float64(owes[at]) / float64(total)
 			if float64(share) < math.Floor(exact) || float64(share) > math.Ceil(exact) {
 				t.Fatalf("a deck owing %v of %v took %v of a budget of %v, "+
@@ -100,7 +100,7 @@ func TestADeckOwingMoreNeverTakesLess(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		budget, owes := drawDivision(t)
-		out := review.Shares(budget, owes)
+		out := review.DivideBudget(budget, owes)
 		for i := range owes {
 			for j := range owes {
 				ahead := owes[i] > owes[j] || (owes[i] == owes[j] && i < j)
@@ -133,7 +133,7 @@ func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
 			otherwise[at] = owes[one]
 		}
 
-		was, now := review.Shares(budget, owes), review.Shares(budget, otherwise)
+		was, now := review.DivideBudget(budget, owes), review.DivideBudget(budget, otherwise)
 		slices.Sort(was)
 		slices.Sort(now)
 		if !slices.Equal(was, now) {
@@ -154,7 +154,7 @@ func TestDecksLevelOnTheFractionAreSplitByWhatTheyOwe(t *testing.T) {
 	t.Parallel()
 	owes := []int{0, 1, 1, 7, 239, 400}
 	want := []int{0, 0, 0, 4, 120, 200}
-	if got := review.Shares(324, owes); !slices.Equal(got, want) {
+	if got := review.DivideBudget(324, owes); !slices.Equal(got, want) {
 		t.Fatalf("half a day over %v was handed out as %v, want %v",
 			owes, got, want)
 	}

@@ -87,7 +87,7 @@ export function createStepGroups(state: ViewState) {
       id: 'picking',
       title: words.names,
       items,
-      working: isWorking.value,
+      isWorking: isWorking.value,
       silence: failureMessage.value || (text.trim() ? words.noneFound : words.typeNote),
     }
   }
@@ -152,7 +152,7 @@ export function createStepGroups(state: ViewState) {
       id: 'vaults',
       title: words.vaults,
       items,
-      working: isWorking.value,
+      isWorking: isWorking.value,
       silence: failureMessage.value || words.noneFound,
     }
   }

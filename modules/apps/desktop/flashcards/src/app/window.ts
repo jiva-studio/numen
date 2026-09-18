@@ -81,7 +81,7 @@ export const useWindow = () => {
   }
 
   /**
-   * What the session could not act on, said once as it opens: a deck whose cards
+   * What the session could not act on, said once as it canOpen: a deck whose cards
    * could not be given marks holds cards this session does not ask, and a line of
    * the vault's answers that could not be read is a card standing where the rest
    * of its history left it.
@@ -139,7 +139,7 @@ export const useWindow = () => {
     await state.answer(how)
   }
 
-  const { handleKey } = createWindowKeys({
+  const { onKeyDown } = createWindowKeys({
     getScreen: () => on.value,
     getVaults: () => vaults.value,
     getChosenVault: () => chosen.value,
@@ -173,7 +173,7 @@ export const useWindow = () => {
     await schedules.read(chosen.value, today.value)
   }
 
-  useWindowStreams({ reportError, setTasks, handleKey, count, stop, refresh, unreachable })
+  useWindowStreams({ reportError, setTasks, onKeyDown, count, stop, refresh, unreachable })
 
   return {
     /** The window's own: which screen is on, and what it has to say. */

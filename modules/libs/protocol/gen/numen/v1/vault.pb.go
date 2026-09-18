@@ -151,8 +151,8 @@ func (x *GetVaultStateResponse) GetCoverage() *IndexCoverage {
 // Scan is how far reading a vault has got, and what stopped it.
 type Scan struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Ready is set when the scan has finished.
-	Ready bool `protobuf:"varint,1,opt,name=ready,proto3" json:"ready,omitempty"`
+	// IsReady is set when the scan has finished.
+	IsReady bool `protobuf:"varint,1,opt,name=is_ready,json=isReady,proto3" json:"is_ready,omitempty"`
 	// Error is why the scan stopped, when it stopped for a reason.
 	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	// Why the vault is not being followed, when it is not. Changes will only
@@ -192,9 +192,9 @@ func (*Scan) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Scan) GetReady() bool {
+func (x *Scan) GetIsReady() bool {
 	if x != nil {
-		return x.Ready
+		return x.IsReady
 	}
 	return false
 }
@@ -229,7 +229,7 @@ type IndexCoverage struct {
 	// Embedding says whether anything is going to turn the spans into vectors.
 	// False for an installation with no model, where the vault is searched by its
 	// words alone.
-	Embedding     bool `protobuf:"varint,3,opt,name=embedding,proto3" json:"embedding,omitempty"`
+	IsEmbedding   bool `protobuf:"varint,3,opt,name=is_embedding,json=isEmbedding,proto3" json:"is_embedding,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -278,9 +278,9 @@ func (x *IndexCoverage) GetEmbeddedCount() int64 {
 	return 0
 }
 
-func (x *IndexCoverage) GetEmbedding() bool {
+func (x *IndexCoverage) GetIsEmbedding() bool {
 	if x != nil {
-		return x.Embedding
+		return x.IsEmbedding
 	}
 	return false
 }
@@ -454,16 +454,16 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\"\n" +
 	"\x04scan\x18\x04 \x01(\v2\x0e.numen.v1.ScanR\x04scan\x123\n" +
-	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\"P\n" +
-	"\x04Scan\x12\x14\n" +
-	"\x05ready\x18\x01 \x01(\bR\x05ready\x12\x14\n" +
+	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\"U\n" +
+	"\x04Scan\x12\x19\n" +
+	"\bis_ready\x18\x01 \x01(\bR\aisReady\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1c\n" +
-	"\tunwatched\x18\x03 \x01(\tR\tunwatched\"u\n" +
+	"\tunwatched\x18\x03 \x01(\tR\tunwatched\"z\n" +
 	"\rIndexCoverage\x12\x1f\n" +
 	"\vchunk_count\x18\x01 \x01(\x03R\n" +
 	"chunkCount\x12%\n" +
-	"\x0eembedded_count\x18\x02 \x01(\x03R\rembeddedCount\x12\x1c\n" +
-	"\tembedding\x18\x03 \x01(\bR\tembedding\"\x1a\n" +
+	"\x0eembedded_count\x18\x02 \x01(\x03R\rembeddedCount\x12!\n" +
+	"\fis_embedding\x18\x03 \x01(\bR\visEmbedding\"\x1a\n" +
 	"\x18WatchVaultChangesRequest\"s\n" +
 	"\x19WatchVaultChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +

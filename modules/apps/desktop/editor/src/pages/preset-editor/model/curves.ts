@@ -2,7 +2,7 @@
  * Curve calculation, caching, and throttling for preset tabs.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { answerGuard, type AnswerGuard } from '@/shared/questions'
+import { createAnswerGuard, type AnswerGuard } from '@/shared/questions'
 import {
   DEFAULTS,
   type Curve,
@@ -44,7 +44,7 @@ export function createCurveState(
     shouldDrawAgain: false,
     shape: '',
     isReal: false,
-    asks: answerGuard(),
+    asks: createAnswerGuard(),
     answers: new Map<string, Curve>(),
   }
 }
@@ -100,8 +100,8 @@ const fetchCurve = async (
   let answer: Curve
   try {
     answer = await core.curve(path, settings)
-  } catch (error) {
-    console.error(error)
+  } catch {
+    // The window says what it could not do; what the call carried back adds nothing a person can act on.
     if (!mine.current) return
     setErrorMessage(words.noCurve)
     state.waiting.value = false

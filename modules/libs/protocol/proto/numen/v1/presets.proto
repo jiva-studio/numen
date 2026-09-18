@@ -14,7 +14,6 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/shared.proto";
-import "numen/v1/theme.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
@@ -72,6 +71,10 @@ service PresetsService {
 
 // Goal is which value the one control steers. The value itself stands in the
 // field the goal names.
+//
+// A window spells each of these as the control it steers, so the names that
+// change on the way across are these: MINUTES_A_DAY is `minutes`, RETENTION is
+// `retention`, BY_DATE is `date`, and UNSPECIFIED is no goal at all.
 enum Goal {
   GOAL_UNSPECIFIED = 0;
 
@@ -133,7 +136,7 @@ message Settings {
   double retention = 6;
 
   // Whether days are made to resemble each other.
-  bool even_load = 7;
+  bool has_even_load = 7;
 
   // What a day's budget is counted in. Unspecified is the default, which
   // charges a card face once a review day.
@@ -312,7 +315,7 @@ message Point {
   // name, and whether the pace this place sets learns every card face that can
   // be learned by it.
   double through = 5;
-  bool enough = 6;
+  bool is_enough = 6;
 
   // Every budget that closed the day here. An empty list is a day that asked
   // for every card there was, so the material itself ran out, and a budget the
@@ -425,7 +428,7 @@ message CreatePresetResponse {
   // Set when the preset is on disk and the index would not come level with it.
   // The preset was made and `path` stands; search does not answer about it
   // until a walk goes past.
-  bool unlevelled = 3;
+  bool is_unlevelled = 3;
 }
 
 message ScheduleDeckRequest {
@@ -454,7 +457,7 @@ message ScheduleDeckResponse {
   // Set when the deck is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
   // read it last, until a walk goes past.
-  bool unlevelled = 3;
+  bool is_unlevelled = 3;
 }
 
 message ReadPresetRequest {
@@ -519,7 +522,7 @@ message WritePresetResponse {
   // Set when the preset is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
   // read it last, until a walk goes past.
-  bool unlevelled = 3;
+  bool is_unlevelled = 3;
 }
 
 message ComputeCurveRequest {

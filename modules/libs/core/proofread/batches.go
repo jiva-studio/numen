@@ -68,7 +68,7 @@ func GetSpeechBatches(cues []transcript.Cue, size, overlap int) []Batch {
 	return out
 }
 
-// Seams is a batch for each of the cuts, holding the size lines around that
+// CutIntoBatches is a batch for each of the cuts, holding the size lines around that
 // cut, half of them before it and half after, and numbered on from the batches
 // Spoken gives back. A cut is named by the batch it comes after, and the cuts
 // come in the order they stand in the transcript.
@@ -79,7 +79,7 @@ func GetSpeechBatches(cues []transcript.Cue, size, overlap int) []Batch {
 //
 // A transcript of one batch has no cut, and a batch of one line has no room
 // for a line on either side of one. The last batch is followed by no cut.
-func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
+func CutIntoBatches(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
 	batches := GetSpeechBatches(cues, size, overlap)
 	if size < 2 || len(batches) < 2 {
 		return nil

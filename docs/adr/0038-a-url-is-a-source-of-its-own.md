@@ -28,6 +28,8 @@ URL=https://example.com/watch?v=aQ8kP2sYtR4
 
 `sources.kind` takes a fourth value. A file is a url from its name alone, as every other kind is.
 
+What is read out of it is the first `URL=` line it holds. The section header is not required and the key is matched without regard to case: what other programs write varies, and every one of them writes that key. A file holding no such line names no address.
+
 ### It holds one text, and that text is what was fetched
 
 The words a site published with a video, or the prose a page is written around. There is no body to write in, so nothing has to decide which of two texts a write is for: an agent asked to put a transcript right has one place to put it, and a person editing the words in the tab writes to the same place.

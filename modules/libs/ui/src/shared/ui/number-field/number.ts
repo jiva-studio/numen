@@ -42,8 +42,8 @@ export const numberOf = (text: string): number | null => {
 export const clamp = (value: number, bounds: Bounds): number =>
   Math.min(bounds.max, Math.max(bounds.min, value))
 
-/** The places a step is written to, which is what a number moved by it is kept to. */
-const places = (step: number): number => {
+/** The getDecimalPlaces a step is written to, which is what a number moved by it is kept to. */
+const getDecimalPlaces = (step: number): number => {
   const said = `${step}`
   const point = said.indexOf('.')
   return point < 0 ? 0 : said.length - point - 1
@@ -53,7 +53,7 @@ const places = (step: number): number => {
 const onStep = (value: number, bounds: Bounds): number => {
   if (bounds.step <= 0) return value
   const steps = Math.round((value - bounds.min) / bounds.step)
-  const scale = 10 ** places(bounds.step)
+  const scale = 10 ** getDecimalPlaces(bounds.step)
   return Math.round((bounds.min + steps * bounds.step) * scale) / scale
 }
 

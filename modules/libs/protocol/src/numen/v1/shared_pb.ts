@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUqhwMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASFgoSRVJST1JfQ09ERV9NSVNTSU5HEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIXChNFUlJPUl9DT0RFX09DQ1VQSUVEEAcSGQoVRVJST1JfQ09ERV9VTk5BTUVBQkxFEAgSHAoYRVJST1JfQ09ERV9OT1RfQV9TVEVOQ0lMEAkSGQoVRVJST1JfQ09ERV9OT1RfQV9ERUNLEAoSHQoZRVJST1JfQ09ERV9ERUNLX1RPT19MQVJHRRALEhsKF0VSUk9SX0NPREVfTk9UX0FfUFJFU0VUEAwSFAoQRVJST1JfQ09ERV9TVEFMRRANKmYKCE5vdGVUeXBlEhkKFU5PVEVfVFlQRV9VTlNQRUNJRklFRBAAEhIKDk5PVEVfVFlQRV9ERUNLEAESFQoRTk9URV9UWVBFX1NURU5DSUwQAhIUChBOT1RFX1RZUEVfUFJFU0VUEANCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUiJQoGQm91bmRzEg0KBWxlYXN0GAEgASgBEgwKBG1vc3QYAiABKAEqhwMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASFgoSRVJST1JfQ09ERV9NSVNTSU5HEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIXChNFUlJPUl9DT0RFX09DQ1VQSUVEEAcSGQoVRVJST1JfQ09ERV9VTk5BTUVBQkxFEAgSHAoYRVJST1JfQ09ERV9OT1RfQV9TVEVOQ0lMEAkSGQoVRVJST1JfQ09ERV9OT1RfQV9ERUNLEAoSHQoZRVJST1JfQ09ERV9ERUNLX1RPT19MQVJHRRALEhsKF0VSUk9SX0NPREVfTk9UX0FfUFJFU0VUEAwSFAoQRVJST1JfQ09ERV9TVEFMRRANKmYKCE5vdGVUeXBlEhkKFU5PVEVfVFlQRV9VTlNQRUNJRklFRBAAEhIKDk5PVEVfVFlQRV9ERUNLEAESFQoRTk9URV9UWVBFX1NURU5DSUwQAhIUChBOT1RFX1RZUEVfUFJFU0VUEANCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * Fingerprint is which file this is: where it is filed, how big it is, and when
@@ -81,7 +81,37 @@ export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 1);
 
 /**
+ * Bounds is how far a size goes, at each end. A number outside them is
+ * refused.
+ *
+ * @generated from message numen.v1.Bounds
+ */
+export type Bounds = Message<"numen.v1.Bounds"> & {
+  /**
+   * @generated from field: double least = 1;
+   */
+  least: number;
+
+  /**
+   * @generated from field: double most = 2;
+   */
+  most: number;
+};
+
+/**
+ * Describes the message numen.v1.Bounds.
+ * Use `create(BoundsSchema)` to create a new message.
+ */
+export const BoundsSchema: GenMessage<Bounds> = /*@__PURE__*/
+  messageDesc(file_numen_v1_shared, 2);
+
+/**
  * ErrorCode is why a note could not be read or written.
+ *
+ * Every code is spelled in the window as the same word in camel case, and
+ * three do not read straight across: UNSPECIFIED is `unreadable` there, STALE
+ * is carried as a question for the person and not a message, and the window
+ * holds one code of its own for a core it could not reach at all.
  *
  * @generated from enum numen.v1.ErrorCode
  */

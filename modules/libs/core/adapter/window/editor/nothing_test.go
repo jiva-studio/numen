@@ -122,7 +122,7 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if got := state.Msg; got.GetName() != "" || got.GetPath() != "" {
 		t.Errorf("the window says it is showing %q at %q", got.GetName(), got.GetPath())
 	}
-	if !state.Msg.GetScan().GetReady() {
+	if !state.Msg.GetScan().GetIsReady() {
 		t.Error("the window says it is still being read, and nothing is reading")
 	}
 	if reason := state.Msg.GetScan().GetError(); reason != "" {
@@ -428,7 +428,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		if reason := state.Msg.GetScan().GetError(); reason != "" {
 			t.Fatalf("the vault could not be read: %s", reason)
 		}
-		if state.Msg.GetScan().GetReady() {
+		if state.Msg.GetScan().GetIsReady() {
 			if got := state.Msg.GetName(); got != "the first one" {
 				t.Errorf("the window says it is showing %q", got)
 			}

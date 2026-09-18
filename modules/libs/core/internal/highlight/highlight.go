@@ -20,7 +20,7 @@ import (
 // of bytes in the text, and the rectangle it covers.
 type Box struct {
 	Page int
-	domain.Span
+	domain.ByteSpan
 	Rect
 }
 
@@ -34,7 +34,7 @@ type Rect struct {
 //
 // The boxes are in the order they were read, so the run is found by halving and
 // then walked to its end. A run crossing a page carries boxes from both of them.
-func GetBoxesOver(boxes []Box, span domain.Span) []Box {
+func GetBoxesOver(boxes []Box, span domain.ByteSpan) []Box {
 	if span.Empty() || len(boxes) == 0 {
 		return nil
 	}

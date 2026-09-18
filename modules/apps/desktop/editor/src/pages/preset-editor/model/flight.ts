@@ -43,23 +43,22 @@ export const sendWrite = async (
   let answer
   try {
     answer = await core.write(path, settings, flight.at)
-  } catch (error) {
+  } catch {
+    // The window says what it could not do; what the call carried back adds nothing a person can act on.
     flight.errorMessage.value = words.unwritten
-    console.error(error)
     return
   }
-  if (answer.changed) {
-    flight.hasChanged.value = true
-    return
-  }
-  const writeError = answer.error
-  if (writeError) {
-    flight.errorMessage.value = words.notSaved(writeError)
+  if (!answer.ok) {
+    if (answer.error === 'changed') {
+      flight.hasChanged.value = true
+      return
+    }
+    flight.errorMessage.value = words.notSaved(answer.error)
     writeMessage(flight.errorMessage.value, 'error')
     return
   }
   flight.errorMessage.value = ''
-  flight.at = answer.at
+  flight.at = answer.value.at
   flight.theirs.clear()
   flight.isWarned = false
 }
