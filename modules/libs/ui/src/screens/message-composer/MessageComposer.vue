@@ -15,7 +15,7 @@ const props = withDefaults(
   defineProps<{
     placeholder?: string
     /** An answer is being written; the disc stops it. */
-    working?: boolean
+    isWorking?: boolean
     disabled?: boolean
     /** What the disc is called while it sends. */
     sendLabel?: string
@@ -24,7 +24,7 @@ const props = withDefaults(
   }>(),
   {
     placeholder: 'Write a message',
-    working: false,
+    isWorking: false,
     disabled: false,
     sendLabel: 'Send',
     stopLabel: 'Stop',
@@ -42,7 +42,7 @@ const emit = defineEmits<{
 
 const field = useTemplateRef<InstanceType<typeof Textarea>>('field')
 
-const state = computed(() => composerState(text.value, props.working))
+const state = computed(() => composerState(text.value, props.isWorking))
 const descriptor = computed(() => COMPOSER_STATES[state.value])
 
 /** Nothing to say, or turned off. */

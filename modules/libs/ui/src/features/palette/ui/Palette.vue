@@ -134,7 +134,7 @@ const hinted = computed(() => getShortcuts(lit.value))
 const reveal = (): void => void results.value?.reveal(held.value)
 
 const {
-  open: panel,
+  open: isPanelOpen,
   chooseAction,
   onPress,
   onGround,
@@ -149,7 +149,7 @@ const { onKey } = usePaletteKeys({
   field,
   reveal,
   places,
-  panel,
+  isPanelOpen,
   getOfferedActions: () => offered.value,
   typed,
   isOpen: () => props.open,
@@ -163,7 +163,7 @@ const { onKey } = usePaletteKeys({
 // The action panel is about the item that was lit when it opened, and stays
 // about it while a pointer crosses the list.
 const onOver = (at: number, event: PointerEvent) => {
-  if (!panel.value) places.lightAt(at, event)
+  if (!isPanelOpen.value) places.lightAt(at, event)
 }
 </script>
 
@@ -180,7 +180,7 @@ const onOver = (at: number, event: PointerEvent) => {
       ref="field"
       v-model="typed"
       :uid="uid"
-      :here="panel ? -1 : here"
+      :here="isPanelOpen ? -1 : here"
       :expanded="placed.length !== 0"
       :placeholder="placeholder"
       :name="name"
@@ -218,8 +218,8 @@ const onOver = (at: number, event: PointerEvent) => {
     <!-- Everything the lit item offers, by name. It stands over the foot of
          the palette, and the list underneath stays where it was. -->
     <PaletteActions
-      v-if="panel"
-      v-model:open="panel"
+      v-if="isPanelOpen"
+      v-model:open="isPanelOpen"
       :offered="offered"
       :words="actionWords"
       @choose="chooseAction"

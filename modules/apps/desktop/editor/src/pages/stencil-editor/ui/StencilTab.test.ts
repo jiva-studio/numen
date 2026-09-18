@@ -50,16 +50,16 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
         front: rewriteBraces(face.front),
         back: rewriteBraces(face.back),
       }))
-      return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
+      return { decks: [], cards: 0, notWritten: [], error: null, isChanged: false, fingerprint: 'renamed' }
     },
-    readDeck: async () => ({ deck: null, error: 'missing', at: '', bound: 0 }),
-    writeDeck: async () => ({ error: null, changed: false, at: '', bound: 0 }),
+    readDeck: async () => ({ deck: null, error: 'missing', fingerprint: '', bound: 0 }),
+    writeDeck: async () => ({ error: null, isChanged: false, fingerprint: '', bound: 0 }),
     readStencil: async (path) => ({
       stencil: { path, title: 'Animal', fields, preamble: '', faces, tail: '', problems },
       error: null,
-      at: 'read',
+      fingerprint: 'read',
     }),
-    writeStencil: async () => ({ error: null, changed: false, at: 'written' }),
+    writeStencil: async () => ({ error: null, isChanged: false, fingerprint: 'written' }),
   }
 
   const held = useWindowTabs()

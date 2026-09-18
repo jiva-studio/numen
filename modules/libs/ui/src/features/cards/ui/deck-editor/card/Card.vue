@@ -60,7 +60,7 @@ const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(
 
 /** What is wrong with one value, said once, under the last box standing for its field. */
 const wrongIn = (value: PlacedFieldValue): readonly string[] =>
-  value.last ? (props.wrongUnder.get(value.field) ?? []) : []
+  value.isLast ? (props.wrongUnder.get(value.field) ?? []) : []
 </script>
 
 <template>
@@ -71,7 +71,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
     :aria-setsize="tile.of"
     :data-card="tile.id"
     :data-section="tile.section ?? undefined"
-    :data-dragged="tile.dragged || undefined"
+    :data-dragged="tile.isDragged || undefined"
   >
     <CardHeader
       :drag="`${words.drag}: ${called}`"
@@ -100,7 +100,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
     <div class="card__body flex flex-col">
       <!-- A card is waiting for a stencil only where it names one. -->
       <ErrorMessage
-        v-if="!tile.known && tile.stencil !== null"
+        v-if="!tile.isKnown && tile.stencil !== null"
         class="card__objections"
         role="alert"
         :said="words.unknown(tile.stencil)"

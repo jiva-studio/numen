@@ -66,13 +66,13 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     },
   })
 
-  const moved = computed(() => dragging.value?.moved === true)
+  const moved = computed(() => dragging.value?.isMoved === true)
 
   const overlay = computed(() => (moved.value ? (landing.value?.box ?? null) : null))
 
   const label = computed(() => {
     const held = dragging.value
-    if (!held?.moved) return null
+    if (!held?.isMoved) return null
     return options.getTab(held.item.tab)?.title ?? held.item.tab
   })
 

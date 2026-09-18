@@ -15,10 +15,10 @@ export interface TimingState {
   /** The line being said, counted from zero. None is -1. */
   readonly current: number
   /** The view moves to keep the line being said in sight. */
-  readonly following: boolean
+  readonly isFollowing: boolean
 }
 
-const NOTHING: TimingState = { times: [], current: -1, following: false }
+const NOTHING: TimingState = { times: [], current: -1, isFollowing: false }
 
 const told = StateEffect.define<TimingState>()
 
@@ -46,15 +46,15 @@ class Time extends GutterMarker {
   constructor(
     readonly text: string,
     readonly at: number,
-    readonly current: boolean,
+    readonly isCurrent: boolean,
     readonly goToLine: (line: number) => void,
   ) {
     super()
-    this.elementClass = current ? 'cm-current' : ''
+    this.elementClass = isCurrent ? 'cm-current' : ''
   }
 
   override eq(other: Time): boolean {
-    return other.text === this.text && other.at === this.at && other.current === this.current
+    return other.text === this.text && other.at === this.at && other.isCurrent === this.isCurrent
   }
 
   override toDOM(): Node {
@@ -130,9 +130,9 @@ export interface Timing {
 }
 
 /** Whether two of these say the same thing. */
-const same = (one: TimingState, two: TimingState): boolean =>
+const isSame = (one: TimingState, two: TimingState): boolean =>
   one.current === two.current &&
-  one.following === two.following &&
+  one.isFollowing === two.isFollowing &&
   (one.times === two.times ||
     (one.times.length === two.times.length &&
       one.times.every((text, at) => text === two.times[at])))
@@ -168,13 +168,13 @@ export function timing(goToLine: (line: number) => void): Timing {
     last = state
     if (!view) return
     const was = view.state.field(held)
-    if (same(was, state)) return
+    if (isSame(was, state)) return
     const effects: StateEffect<unknown>[] = [told.of(state)]
-    const moved = state.current !== was.current || state.following !== was.following
+    const isMoved = state.current !== was.current || state.isFollowing !== was.isFollowing
     if (
       may &&
-      state.following &&
-      moved &&
+      state.isFollowing &&
+      isMoved &&
       state.current >= 0 &&
       state.current < view.state.doc.lines
     ) {

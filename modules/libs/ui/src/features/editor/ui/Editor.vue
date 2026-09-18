@@ -15,7 +15,7 @@ import {
   adding,
   code,
   drawing,
-  editable,
+  createEditable,
   editing,
   preview,
   prose,
@@ -24,14 +24,14 @@ import {
   showing,
   written,
 } from '../lib/setup'
-import { wholly } from '../config/languages'
+import { loadLanguage } from '../config/languages'
 import { opening, resolving, saving } from '../lib/outside'
 import { replace } from '../lib/replace'
 
 const props = withDefaults(
   defineProps<{
     /** Marks are drawn as what they mean. Off, the text is shown as written. */
-    live?: boolean
+    isLivePreview?: boolean
     /**
      * What the whole document is written in, by the name a fence would use. A
      * document naming none is markdown, and one naming a language is set in the
@@ -55,7 +55,7 @@ const props = withDefaults(
     extensions?: Extension
   }>(),
   {
-    live: true,
+    isLivePreview: true,
     language: '',
     readonly: false,
     placeholder: 'Write',
@@ -89,7 +89,7 @@ onMounted(() => {
       doc: text.value,
       extensions: [
         setup({
-          live: props.live,
+          isLivePreview: props.isLivePreview,
           readonly: props.readonly,
           placeholder: props.placeholder,
           name: props.name,
@@ -123,7 +123,7 @@ watch(text, (fresh) => {
 })
 
 watch(
-  () => props.live,
+  () => props.isLivePreview,
   (on) => view?.dispatch({ effects: drawing.reconfigure(preview(on)) }),
 )
 
@@ -133,7 +133,7 @@ watch(
  * changed while one was loading keeps the one it asked for last.
  */
 const applyLanguage = async (name: string) => {
-  const support = name ? await wholly(name) : null
+  const support = name ? await loadLanguage(name) : null
   if (!view || name !== props.language) return
   view.dispatch({ effects: written.reconfigure(support ? code(support) : prose()) })
 }
@@ -142,7 +142,7 @@ watch(() => props.language, applyLanguage)
 
 watch(
   () => props.readonly,
-  (off) => view?.dispatch({ effects: editing.reconfigure(editable(!off)) }),
+  (off) => view?.dispatch({ effects: editing.reconfigure(createEditable(!off)) }),
 )
 
 watch(

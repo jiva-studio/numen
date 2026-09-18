@@ -1,7 +1,7 @@
 /**
  * Save timers, settling coordination, and read/write execution for open notes.
  */
-import type { LinkAddress, NoteResult } from '../lib/note'
+import type { LinkAddress, NoteReadResult, NoteWriteResult } from '../lib/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { Notes } from '../lib/noteTypes'
 import type { Event, NoteBaseline, NoteErrorCode } from '../lib/tab'
@@ -51,7 +51,7 @@ export function createNoteQueue(
     })
 
   const read = async (id: string, path: string, generation: number): Promise<void> => {
-    let answered: NoteResult & { at?: string }
+    let answered: NoteReadResult
     try {
       answered = await core.read(path)
     } catch {
@@ -66,7 +66,7 @@ export function createNoteQueue(
       kind: 'read',
       generation,
       answer: !answered.error
-        ? { kind: 'body', body: answered.body, at: answered.at ?? '' }
+        ? { kind: 'body', body: answered.body, at: answered.fingerprint ?? '' }
         : answered.error === 'missing'
           ? { kind: 'missing' }
           : { kind: 'error', error: errorOf(answered.error) },
@@ -79,7 +79,7 @@ export function createNoteQueue(
     body: string,
     baseline: NoteBaseline | null,
   ): Promise<void> => {
-    let answered: NoteResult & { at?: string; changed?: boolean }
+    let answered: NoteWriteResult
     try {
       answered = await core.write(path, body, baseline)
     } catch {
@@ -89,10 +89,10 @@ export function createNoteQueue(
     }
     turn(id, {
       kind: 'written',
-      answer: answered.changed
+      answer: answered.isChanged
         ? { kind: 'changed' }
         : !answered.error
-          ? { kind: 'ok', at: answered.at ?? '' }
+          ? { kind: 'ok', at: answered.fingerprint ?? '' }
           : { kind: 'error', error: errorOf(answered.error) },
     })
     resumeClosing(id)

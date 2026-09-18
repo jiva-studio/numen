@@ -7,22 +7,14 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
-import { StopReason } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
-import { NOWHERE, type Curve } from '../types'
+import { NOWHERE, STOP_REASONS, type Curve, type StopReason } from '../types'
 import { mountPresetTab, point, rows, tabAt } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('a preset that schedules nothing', () => {
-  /** Every verdict the schema carries, read off the schema itself. */
-  const VERDICTS = Object.values(StopReason).filter(
-    (one): one is StopReason => typeof one === 'number',
-  )
-
-  /** Those of them a person is told something about. */
-  const STOPPING = VERDICTS.filter(
-    (one) => one !== StopReason.NOTHING && one !== StopReason.UNSPECIFIED,
-  )
+  /** Those verdicts a person is told something about. */
+  const STOPPING = STOP_REASONS.filter((one) => one !== 'none')
 
   /** The tab drawn for a preset stopped for that reason. */
   const mountStoppedTab = (why: StopReason) => {
@@ -45,8 +37,8 @@ describe('a preset that schedules nothing', () => {
   })
 
   it('says nothing at all of a preset that schedules', () => {
-    expect(mountStoppedTab(StopReason.NOTHING).findAll('[data-preset="stopped"]')).toHaveLength(0)
-    expect(mountStoppedTab(StopReason.UNSPECIFIED).findAll('[data-preset="stopped"]')).toHaveLength(
+    expect(mountStoppedTab('none').findAll('[data-preset="stopped"]')).toHaveLength(0)
+    expect(mountStoppedTab('none').findAll('[data-preset="stopped"]')).toHaveLength(
       0,
     )
   })
@@ -54,16 +46,16 @@ describe('a preset that schedules nothing', () => {
   // A goal of a date reading no day, and a day of the week carrying none of the
   // load: neither is a reason the tab could reach on its own.
   it('says the reasons only the vault knows', () => {
-    expect(mountStoppedTab(StopReason.NO_DAY).text()).toContain(words.stopped(StopReason.NO_DAY))
-    expect(mountStoppedTab(StopReason.NO_LOAD).text()).toContain(words.stopped(StopReason.NO_LOAD))
-    expect(mountStoppedTab(StopReason.NO_WEEK).text()).toContain(words.stopped(StopReason.NO_WEEK))
+    expect(mountStoppedTab('noDay').text()).toContain(words.stopped('noDay'))
+    expect(mountStoppedTab('noLoad').text()).toContain(words.stopped('noLoad'))
+    expect(mountStoppedTab('noWeek').text()).toContain(words.stopped('noWeek'))
   })
 
   // One quiet day promises a next day that carries some load, and a week at
   // nothing has none to promise.
   it('promises a next day for one quiet day and not for a quiet week', () => {
-    expect(words.stopped(StopReason.NO_LOAD)).toContain('next day')
-    expect(words.stopped(StopReason.NO_WEEK)).not.toContain('next day')
+    expect(words.stopped('noLoad')).toContain('next day')
+    expect(words.stopped('noWeek')).not.toContain('next day')
   })
 })
 

@@ -132,7 +132,7 @@ const MEANING: PaletteGroup = {
   ],
 }
 
-const ALL: PaletteGroup[] = [NAMES, TEXT, { ...MEANING, working: true }]
+const ALL: PaletteGroup[] = [NAMES, TEXT, { ...MEANING, isWorking: true }]
 
 /** The same names, each offering more than two keys can reach. */
 const NAMED: PaletteGroup = {
@@ -440,7 +440,7 @@ export const Filling: Story = {
     setup() {
       const open = ref(true)
       const typed = ref('ent')
-      const groups = ref<PaletteGroup[]>([{ ...NAMES, items: [], working: true }, TEXT])
+      const groups = ref<PaletteGroup[]>([{ ...NAMES, items: [], isWorking: true }, TEXT])
 
       let waiting: ReturnType<typeof setTimeout> | undefined
       onMounted(() => {
@@ -484,7 +484,7 @@ export const NothingHeard: Story = {
     setup() {
       const open = ref(true)
       const typed = ref('ent')
-      const groups = ref<PaletteGroup[]>([{ ...NAMES, items: [], working: true }])
+      const groups = ref<PaletteGroup[]>([{ ...NAMES, items: [], isWorking: true }])
 
       let waiting: ReturnType<typeof setTimeout> | undefined
       onMounted(() => {
@@ -853,7 +853,7 @@ export const SomeCameBackEmpty: Story = {
     groups: [
       { id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' },
       TEXT,
-      { ...MEANING, working: true },
+      { ...MEANING, isWorking: true },
     ],
   },
   play: async () => {

@@ -26,14 +26,14 @@ interface Knobs {
   /** Below one, the edge is on its way in or out. */
   opacity: number
   /** Whether the line ends in a head. */
-  arrow: boolean
+  isArrow: boolean
 }
 
 const edgeFrom = (args: Knobs): PlacedEdge => ({
   from: 'one',
   to: 'two',
   label: args.words,
-  ...(args.arrow ? { arrow: 'to' as const } : {}),
+  ...(args.isArrow ? { arrow: 'to' as const } : {}),
   fromPoint: { x: -200, y: -40 },
   toPoint: { x: 200, y: 40 },
   control1: { x: -60, y: -40 },
@@ -42,7 +42,7 @@ const edgeFrom = (args: Knobs): PlacedEdge => ({
   heading: 'along',
   words: args.words || undefined,
   wordsAt: args.wordsAt,
-  ...(args.arrow ? { arrowhead: { at: { x: 200, y: 40 }, angle: 12 } } : {}),
+  ...(args.isArrow ? { arrowhead: { at: { x: 200, y: 40 }, angle: 12 } } : {}),
 })
 
 /** The edge with what the drawing asks of it, as the plex works it out. */
@@ -61,7 +61,7 @@ const lineFrom = (edge: PlacedEdge): EdgeLine => ({
  * The pair drawn twice over one window: at rest, and lifted. Each is wrapped in
  * a group of the story's own, because neither drawing carries a name.
  */
-const both = (args: Knobs) => ({
+const createBoth = (args: Knobs) => ({
   components: { PlexEdgeLine, PlexEdgeTitle },
   setup: () => ({ line: lineFrom(edgeFrom(args)) }),
   template: `
@@ -73,8 +73,8 @@ const both = (args: Knobs) => ({
           <PlexEdgeTitle :line="line" />
         </g>
         <g data-edge="lifted" transform="translate(0 48)">
-          <PlexEdgeLine :line="line" lifted />
-          <PlexEdgeTitle :line="line" lifted />
+          <PlexEdgeLine :line="line" is-raised />
+          <PlexEdgeTitle :line="line" is-raised />
         </g>
       </svg>
     </div>
@@ -87,7 +87,7 @@ const meta: Meta<Knobs> = {
   parameters: {
     layout: 'fullscreen',
     // The line is assembled from the knobs below.
-    controls: { exclude: ['line', 'lifted'] },
+    controls: { exclude: ['line', 'isRaised'] },
     docs: {
       description: {
         component:
@@ -101,10 +101,10 @@ const meta: Meta<Knobs> = {
     words: { control: 'text' },
     wordsAt: { control: { type: 'range', min: 0.1, max: 0.9, step: 0.05 } },
     opacity: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
-    arrow: { control: 'boolean' },
+    isArrow: { control: 'boolean' },
   },
-  args: { words: 'refers to', wordsAt: 0.5, opacity: 1, arrow: true },
-  render: both,
+  args: { words: 'refers to', wordsAt: 0.5, opacity: 1, isArrow: true },
+  render: createBoth,
 }
 
 export default meta

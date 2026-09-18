@@ -3,7 +3,7 @@
  * recording once the typing has been still.
  */
 import { ref, type Ref } from 'vue'
-import { applyCues, same, type Cue } from '../lib/cues'
+import { applyCues, isSame, type Cue } from '../lib/cues'
 import { formatErrorMessage } from '@numen/wire'
 
 /** What the words being edited are kept against. */
@@ -33,14 +33,14 @@ export function useTranscriptDraft(how: DraftOptions) {
   /** Whether what is on screen has still to reach the file. */
   let owed = false
   /** A write of the words that has not answered yet. */
-  let writing = false
+  let isWriting = false
   /** The wait the typing is being let settle over. */
   let settling: ReturnType<typeof setTimeout> | undefined
   /** The wait after which the view may go after the words again. */
   let stilling: ReturnType<typeof setTimeout> | undefined
 
   /** Whether the words on screen have somewhere to go now. */
-  const canWrite = (): boolean => isOpen() && owed && !writing && isEditable.value
+  const canWrite = (): boolean => isOpen() && owed && !isWriting && isEditable.value
 
   /**
    * The words as they now read, kept against the recording. A write that is
@@ -55,8 +55,8 @@ export function useTranscriptDraft(how: DraftOptions) {
     owed = false
     // A transcript written down is a transcript a person owns, and a
     // proofreader leaves it alone. Only words that changed are written.
-    if (same(next, cues.value)) return
-    writing = true
+    if (isSame(next, cues.value)) return
+    isWriting = true
     try {
       await write(next)
       if (!isOpen()) return
@@ -67,7 +67,7 @@ export function useTranscriptDraft(how: DraftOptions) {
       owed = true
       error.value = formatErrorMessage(thrown)
     } finally {
-      writing = false
+      isWriting = false
       // Typing that landed while the write was in the air is still owed.
       if (isOpen() && prose.value !== body) {
         owed = true

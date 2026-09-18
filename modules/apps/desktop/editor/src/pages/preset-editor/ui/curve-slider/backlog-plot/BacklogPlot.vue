@@ -30,7 +30,7 @@ const props = defineProps<{
   /** The place of the grid the knob stands at. */
   place: number
   /** Whether the curve on screen is an answer, and not the waiting for one. */
-  honest: boolean
+  isHonest: boolean
 }>()
 
 // --- State ---
@@ -51,7 +51,7 @@ const positions = computed(() => backlogPositionsOf(backlog.value, extent.value)
 const line = computed(() => lineOf(positions.value))
 
 /** Whether there is a backlog to draw at all. */
-const drawn = computed(() => props.honest && backlog.value.length > 1)
+const drawn = computed(() => props.isHonest && backlog.value.length > 1)
 
 /**
  * The ends of the extent, against the lines they are the height of. Nothing

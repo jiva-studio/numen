@@ -187,12 +187,12 @@ const areaOf = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__area') as HTMLElement
 
 /** Every run of the text, in the order the document sets them. */
-const runsOf = (canvasElement: HTMLElement) => [
+const getRunsOf = (canvasElement: HTMLElement) => [
   ...canvasElement.querySelectorAll<HTMLElement>('.book__paper [data-offset]'),
 ]
 
 /** How many pages the text came to, as the line under it counts them. */
-const spreadsIn = (canvasElement: HTMLElement) =>
+const countSpreadsIn = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__count')?.textContent
 
 /**
@@ -202,7 +202,7 @@ const spreadsIn = (canvasElement: HTMLElement) =>
 const waitForLayout = async (canvasElement: HTMLElement) =>
   await waitFor(
     async () => {
-      await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
+      await expect(getRunsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
       await expect(canvasElement.querySelector('.book__count')).toBeInTheDocument()
     },
     { timeout: ITS_OWN_PACE },
@@ -221,7 +221,7 @@ export const TheListComesOverTheText: Story = {
     const canvas = within(canvasElement)
     await waitForLayout(canvasElement)
     const before = areaOf(canvasElement).getBoundingClientRect()
-    const spreads = spreadsIn(canvasElement)
+    const spreads = countSpreadsIn(canvasElement)
 
     await userEvent.click(canvas.getByLabelText(words.showContents))
     const list = await canvas.findByRole('navigation')
@@ -232,7 +232,7 @@ export const TheListComesOverTheText: Story = {
     )
     const after = areaOf(canvasElement).getBoundingClientRect()
     await expect(after.width).toBe(before.width)
-    await expect(spreadsIn(canvasElement)).toBe(spreads)
+    await expect(countSpreadsIn(canvasElement)).toBe(spreads)
 
     // What stands where the list is drawn is the list, and the text is behind it.
     const box = list.getBoundingClientRect()
@@ -275,7 +275,7 @@ export const APlaceChosenIsTurnedTo: Story = {
 
     await waitFor(
       async () => {
-        const run = runsOf(canvasElement).find(
+        const run = getRunsOf(canvasElement).find(
           (one) => Number(one.dataset['offset']) === wanted.offset,
         )!
         const box = run.getClientRects()[0]!
@@ -370,7 +370,7 @@ const clickLink = async (link: HTMLElement) => {
 
 /** The run standing at an offset, and nothing where the document holds none. */
 const runAt = (canvasElement: HTMLElement, at: number) =>
-  runsOf(canvasElement).find((one) => Number(one.dataset['offset']) === at)
+  getRunsOf(canvasElement).find((one) => Number(one.dataset['offset']) === at)
 
 /** Whether a run stands in the spread the person is looking at. */
 const inFront = (canvasElement: HTMLElement, run: HTMLElement) => {

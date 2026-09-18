@@ -83,12 +83,12 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
 
   const lifted = computed(() => new Set(position.value ? (dragging.value?.item ?? []) : []))
 
-  const moved = computed(() => dragging.value?.moved === true)
+  const moved = computed(() => dragging.value?.isMoved === true)
 
   const label = computed<DragLabel | null>(() => {
     const held = dragging.value
     const where = position.value
-    if (!held?.moved || !where) return null
+    if (!held?.isMoved || !where) return null
     return dragLabel(options.getShownRows(), held.item, where, options.getCountWords())
   })
 

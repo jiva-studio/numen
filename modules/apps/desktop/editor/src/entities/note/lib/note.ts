@@ -75,6 +75,24 @@ export interface NoteResult {
 }
 
 /**
+ * What a read came back with: the note, and which bytes the file was when it
+ * was read. The fingerprint is what a later write presents to say which
+ * version it was typed over.
+ */
+export interface NoteReadResult extends NoteResult {
+  fingerprint?: string
+}
+
+/**
+ * What a write came back with. `isChanged` is the file having moved past the
+ * fingerprint the write presented, so nothing was written and what is on disk
+ * is somebody else's.
+ */
+export interface NoteWriteResult extends NoteReadResult {
+  isChanged?: boolean
+}
+
+/**
  * Where a link note points: the web address (URL) and embed player URL.
  */
 export interface LinkAddress {

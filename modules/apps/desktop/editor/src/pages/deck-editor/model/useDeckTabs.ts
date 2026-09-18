@@ -50,7 +50,7 @@ export function useDeckTabs(
         title: answer.deck?.title ?? null,
       })
       if (error !== null) return { body: '', error }
-      return { body: deck ? serializeBufferDeckToString(deck) : '', error: null, at: answer.at }
+      return { body: deck ? serializeBufferDeckToString(deck) : '', error: null, fingerprint: answer.fingerprint }
     },
     write: async (path, body, seen) => {
       const deck = deserializeBufferDeckFromString(body)
@@ -62,15 +62,15 @@ export function useDeckTabs(
           sections: serializeBufferSectionsToVaultSections(deck),
           tail: deck.tail,
         },
-        seen?.at ?? null,
+        seen?.fingerprint ?? null,
       )
       const error = answer.error
       vaultAnswers.recordWrite(path, { error, bound: answer.bound })
       return {
         body: '',
         error,
-        at: answer.at,
-        changed: answer.changed,
+        fingerprint: answer.fingerprint,
+        isChanged: answer.isChanged,
       }
     },
   })
@@ -138,7 +138,7 @@ export function useDeckTabs(
     has: (id) => store.getOpenIds().includes(id),
     getPath: (id) => store.getPath(id),
     getTitle: (id) => vaultAnswers.getTitle(store.getPath(id)),
-    isAsking: (id) => store.stale(id) !== null,
+    asking: (id) => store.stale(id) !== null,
     settle: (id) => store.settle(id),
     close: closeTabById,
     getTabAt: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,

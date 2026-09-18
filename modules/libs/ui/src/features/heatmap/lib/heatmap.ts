@@ -46,9 +46,9 @@ export interface Day extends Tally {
   /** How dark it is drawn: nothing at 0, most at 4. */
   readonly weight: 0 | 1 | 2 | 3 | 4
   /** Whether it is the day holding now. */
-  readonly today: boolean
+  readonly isToday: boolean
   /** Whether it is still to come, and what it holds is what is coming. */
-  readonly ahead: boolean
+  readonly isFuture: boolean
 }
 
 /** How many weeks of what is still to come the grid keeps room for. */
@@ -134,16 +134,16 @@ export function getDays(
     const on = new Date(first)
     on.setDate(on.getDate() + at)
     const day = getDayName(on)
-    const ahead = day > today
+    const isFuture = day > today
     const tally = did.get(day) ?? NOTHING
-    const count = ahead ? (due.get(day) ?? 0) : tally.answered
+    const count = isFuture ? (due.get(day) ?? 0) : tally.answered
     out.push({
-      ...(ahead ? NOTHING : tally),
+      ...(isFuture ? NOTHING : tally),
       day,
       did: count,
       weight: getWeight(count),
-      today: day === today,
-      ahead,
+      isToday: day === today,
+      isFuture,
     })
   }
   return out

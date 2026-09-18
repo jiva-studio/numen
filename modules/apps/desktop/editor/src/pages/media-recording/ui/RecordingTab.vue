@@ -16,7 +16,7 @@ import type { MediaTabState } from '@/entities/media'
 const props = defineProps<{ state: MediaTabState }>()
 
 // --- State ---
-const { deletable, now, playable, playing, proofreadable, runs } = props.state
+const { deletable, now, playable, isPlaying, proofreadable, runs } = props.state
 
 /** What the menu offers over this recording: each item only where it applies. */
 const offered = computed(() => [
@@ -53,7 +53,7 @@ function onSeek(at: number) {
         class="recording__player"
         :at="now"
         :length="runs"
-        :playing="playing"
+        :is-playing="isPlaying"
         :label="words.player"
         @play="onPlay"
         @pause="onPause"

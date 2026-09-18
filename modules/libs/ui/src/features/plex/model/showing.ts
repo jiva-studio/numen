@@ -15,12 +15,12 @@ import { onScopeDispose, ref } from 'vue'
  */
 export interface DestinationDescriptor {
   /** Whether the modifier is held while asking for this one. */
-  readonly modified: boolean
+  readonly isModified: boolean
 }
 
 export const DESTINATIONS = {
-  here: { modified: false },
-  beside: { modified: true },
+  here: { isModified: false },
+  beside: { isModified: true },
 } as const satisfies Record<string, DestinationDescriptor>
 
 /** Where a node asked for is to be drawn: where the reader is, or beside it. */
@@ -30,7 +30,7 @@ export const DESTINATIONS_ALL = Object.keys(DESTINATIONS) as readonly PlexDestin
 
 /** One name per modifier, taken from the table. */
 const BY_MODIFIER = Object.fromEntries(
-  DESTINATIONS_ALL.map((one) => [DESTINATIONS[one].modified, one]),
+  DESTINATIONS_ALL.map((one) => [DESTINATIONS[one].isModified, one]),
 ) as Readonly<Record<`${boolean}`, PlexDestination>>
 
 /**
@@ -51,25 +51,25 @@ export interface ShowSite {
   /** Whether this node answers being asked for at all. */
   readonly ready: () => boolean
   /** It was asked for. The modifier says where it is to be drawn. */
-  readonly show: (modified: boolean) => void
+  readonly show: (isModified: boolean) => void
 }
 
 export interface ShowStrategy {
   /** Whether the node answers the browser's own second click. */
-  readonly doubleClick: boolean
+  readonly isDoubleClick: boolean
   /** What the node listens for besides. Called once, inside the node's scope. */
   readonly listeners: (site: ShowSite) => Record<string, (event: PointerEvent) => void>
 }
 
 /** The second click, as the browser counts it. */
 export const byDoubleClick: ShowStrategy = {
-  doubleClick: true,
+  isDoubleClick: true,
   listeners: () => ({}),
 }
 
 /** Two taps, counted here. Milliseconds, if the wait is to be another. */
 export const byDoubleTap = (within: number = TAP): ShowStrategy => ({
-  doubleClick: false,
+  isDoubleClick: false,
   listeners: (site) => {
     const first = ref<{ timer: number; x: number; y: number } | null>(null)
 

@@ -39,7 +39,7 @@ export interface PaletteGroup {
   readonly title: string
   readonly items: readonly PaletteItem[]
   /** More is on its way, so what stands here is not all of it. */
-  readonly working?: boolean
+  readonly isWorking?: boolean
   /**
    * What is said in place of items when the group holds none. A group with
    * nothing to say here and nothing on its way is drawn nowhere.
@@ -70,7 +70,7 @@ export interface PalettePlace {
  */
 export const orderGroups = (groups: readonly PaletteGroup[]): readonly PaletteGroup[] => [
   ...groups.filter((one) => one.items.length > 0),
-  ...groups.filter((one) => one.items.length === 0 && (one.working || Boolean(one.silence))),
+  ...groups.filter((one) => one.items.length === 0 && (one.isWorking || Boolean(one.silence))),
 ]
 
 /**
@@ -80,7 +80,7 @@ export const flatten = (groups: readonly PaletteGroup[]): readonly PalettePlace[
   groups.flatMap((group) => group.items.map((item) => ({ group, item })))
 
 /** Whether the keyboard may land here. An item with nothing to do is passed over. */
-export const choosable = (item: PaletteItem): boolean =>
+export const canChoose = (item: PaletteItem): boolean =>
   !item.disabled && (item.actions?.length ?? 0) > 0
 
 /**
@@ -95,7 +95,7 @@ export const stepTo = (places: readonly PalettePlace[], from: number, by: number
   for (let step = 1; step <= total; step += 1) {
     const at = (((from + by * step) % total) + total) % total
     const place = places[at]
-    if (place && choosable(place.item)) return at
+    if (place && canChoose(place.item)) return at
   }
   return -1
 }
@@ -116,6 +116,6 @@ export const stepIn = (total: number, from: number, by: number): number => {
  * first item there is; a list with nothing to land on takes it nowhere.
  */
 export const findKeptPlace = (places: readonly PalettePlace[], was: string): number => {
-  const held = places.findIndex((place) => place.item.id === was && choosable(place.item))
+  const held = places.findIndex((place) => place.item.id === was && canChoose(place.item))
   return held >= 0 ? held : stepTo(places, -1, 1)
 }

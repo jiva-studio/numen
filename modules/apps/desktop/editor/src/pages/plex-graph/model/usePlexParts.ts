@@ -27,11 +27,11 @@ export function usePlexParts(
     }
     try {
       const found = await deps.readHeadings(notes)
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       parts.value = new Map([...found].map(([path, held]) => [path, asParts(held)]))
     } catch {
       // Reading parts failed.
-      if (mine.current) parts.value = new Map()
+      if (mine.isCurrent) parts.value = new Map()
     }
   }
 

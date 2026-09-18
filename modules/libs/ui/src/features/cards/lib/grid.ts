@@ -26,7 +26,7 @@ export interface PlacedFieldValue extends CardFieldValue {
    * It is the last box standing for its field, which is where what is wrong
    * with that field is said, once.
    */
-  readonly last: boolean
+  readonly isLast: boolean
 }
 
 /** One card as a tile of the grid. */
@@ -43,9 +43,9 @@ export interface Tile {
   /** How many stand in the grid with it, the plus among them. */
   readonly of: number
   /** The stencil it names is among the ones handed in. */
-  readonly known: boolean
+  readonly isKnown: boolean
   /** It is on its way somewhere else in the order. */
-  readonly dragged: boolean
+  readonly isDragged: boolean
 }
 
 /** One section as the grid draws it: the section, and where it stands. */
@@ -66,7 +66,7 @@ export interface Run {
    * section's heading and a run holding cards by the first of them; the cards
    * before the first section have neither where none of them stands.
    */
-  readonly landing: boolean
+  readonly isLanding: boolean
   /**
    * Where this run's plus stands in the grid, counting from one, and nothing
    * where the run draws none. A card is made at the end of a run, so a run
@@ -117,7 +117,7 @@ export function getGrid(
     // wrote stands as it was written.
     const named = card.stencil !== null
     const counted = getCardFieldValues(card.filled, fields)
-      .filter((each) => each.declared || !named)
+      .filter((each) => each.isDeclared || !named)
       .map((each, place) => {
         const nth = countOff(each.field)
         return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
@@ -129,12 +129,12 @@ export function getGrid(
       stencil: card.stencil,
       filled: counted.map((each) => ({
         ...each,
-        last: each.nth === (under.get(each.field) ?? 0),
+        isLast: each.nth === (under.get(each.field) ?? 0),
       })),
       at: 0,
       of: 0,
-      known: cut !== undefined,
-      dragged: card.id === dragCard,
+      isKnown: cut !== undefined,
+      isDragged: card.id === dragCard,
     }
   })
 
@@ -143,12 +143,12 @@ export function getGrid(
 
   const head = tilesUnder(null)
   const drawn = [
-    { id: HEAD, section: null, tiles: head, landing: head.length === 0 && sections.length > 0 },
+    { id: HEAD, section: null, tiles: head, isLanding: head.length === 0 && sections.length > 0 },
     ...sections.map((section, index) => ({
       id: section.id,
       section: { id: section.id, name: section.name, at: index + 1 },
       tiles: tilesUnder(section.id),
-      landing: false,
+      isLanding: false,
     })),
   ]
 

@@ -12,7 +12,7 @@ export interface RowSelectionState {
   /** The rows selected, for asking one row at a time. */
   readonly picked: ComputedRef<ReadonlySet<RowId>>
   /** Whether the press being made has said what the selection is already. */
-  readonly said: Ref<boolean>
+  readonly wasSaid: Ref<boolean>
   /** What a press on a row makes the selection, said and handed back. */
   readonly selectRow: (row: RowId, how: Press) => readonly RowId[]
   /** Every drawn row selected. */
@@ -30,7 +30,7 @@ export function useRowSelection(
   /** The row a reach is measured from, where a plain or joining press last landed. */
   const anchor = shallowRef<RowId | null>(null)
 
-  const said = shallowRef(false)
+  const wasSaid = shallowRef(false)
 
   /** A selection a press came to, said, and the anchor put where it names. */
   const apply = (selection: RowSelection): readonly RowId[] => {
@@ -44,5 +44,5 @@ export function useRowSelection(
 
   const selectEveryRow = (): readonly RowId[] => apply(everyRow(getVisibleRows(), anchor.value))
 
-  return { picked, said, selectRow, selectEveryRow }
+  return { picked, wasSaid, selectRow, selectEveryRow }
 }

@@ -19,7 +19,7 @@ const mountTextEditor = async (answers: Partial<TextEditorTabDeps> = {}) => {
     getSettingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
     saveSettingsFile: (written) => {
       wrote.push(written)
-      return Promise.resolve({ changed: false })
+      return Promise.resolve({ isChanged: false })
     },
     ...answers,
   }
@@ -36,7 +36,7 @@ describe('the file drawn', () => {
     expect(editor.props('language')).toBe('json')
     expect(editor.props('modelValue')).toBe(HELD)
     // Nothing here is markdown, so no mark is drawn as what it means.
-    expect(editor.props('live')).toBe(false)
+    expect(editor.props('isLivePreview')).toBe(false)
   })
 
   it('carries no bar of its own over the text', async () => {
@@ -79,9 +79,9 @@ describe('the file drawn', () => {
     const wrote: string[] = []
     const { tab, state } = await mountTextEditor({
       saveSettingsFile: (written, seen) => {
-        if (seen !== null) return Promise.resolve({ changed: true })
+        if (seen !== null) return Promise.resolve({ isChanged: true })
         wrote.push(written)
-        return Promise.resolve({ changed: false })
+        return Promise.resolve({ isChanged: false })
       },
     })
     state.type('{}\n')

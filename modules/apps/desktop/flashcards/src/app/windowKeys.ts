@@ -68,7 +68,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
     const vaults = deps.getVaults()
     const at = getVaultForKey(press, vaults.length)
     const one = at === null ? undefined : vaults[at]
-    if (!one || !one.counted) return
+    if (!one || !one.isCounted) return
     press.preventDefault()
     deps.choose(one.vault)
   }
@@ -132,9 +132,9 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
 
   const handleSessionKey = (press: KeyboardEvent) => {
     const asked = getSessionKeyIntent(press, {
-      shown: deps.isShown(),
-      asking: deps.getShowing() === 'asking',
-      reading: deps.getShowing() === 'reading',
+      isShown: deps.isShown(),
+      isAsking: deps.getShowing() === 'asking',
+      isReading: deps.getShowing() === 'reading',
     })
     if (!asked) return
     if (isSwallowed(asked)) press.preventDefault()

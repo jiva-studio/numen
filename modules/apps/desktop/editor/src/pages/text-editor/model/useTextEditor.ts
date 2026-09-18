@@ -18,7 +18,7 @@ export interface TextEditorTabDeps {
    * file it cannot read is refused, and a file standing at anything else is
    * answered `changed` with nothing written.
    */
-  saveSettingsFile(written: string, seen: string | null): Promise<{ readonly changed: boolean }>
+  saveSettingsFile(written: string, seen: string | null): Promise<{ readonly isChanged: boolean }>
 }
 
 /** What one tab of the settings file holds. */
@@ -76,7 +76,7 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
     }
     // Nothing was written, and the tab stands stale until the person says
     // which of the two is theirs.
-    if (answer.changed) {
+    if (answer.isChanged) {
       isStale.value = true
       return
     }

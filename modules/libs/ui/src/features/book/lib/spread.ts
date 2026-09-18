@@ -158,7 +158,7 @@ export function pagesOf(
 }
 
 /** How many spreads the text comes to. */
-export function spreads(flow: Flow): number {
+export function countSpreads(flow: Flow): number {
   const all = columnsInAll(flow)
   return all === 0 ? 0 : Math.ceil(all / flow.columns)
 }
@@ -175,7 +175,7 @@ export function getSpreadStart(flow: Flow, spread: number): number {
 /** Which spread a place along the columns falls in. */
 export function spreadAt(flow: Flow, x: number): number {
   if (columnWidth(flow) <= 0) return 0
-  const last = Math.max(spreads(flow) - 1, 0)
+  const last = Math.max(countSpreads(flow) - 1, 0)
   return Math.min(Math.floor(columnAt(flow, x) / flow.columns), last)
 }
 

@@ -26,7 +26,7 @@ const props = withDefaults(
     /** Where letting go would put the card being dragged. */
     at: InsertionPoint | undefined
     /** Its plus is showing which stencils a new card may be cut by. */
-    asking: boolean
+    isAsking: boolean
     /** The words it is drawn with. */
     words?: DeckWords
   }>(),
@@ -89,7 +89,7 @@ const removeSection = (): void => {
   <!-- The place before the first section, where a card is let go to stand
        under no section at all. -->
   <div
-    v-else-if="run.landing"
+    v-else-if="run.isLanding"
     class="deck__head caret-below"
     data-head
     :data-before="run.id === at || undefined"
@@ -134,7 +134,7 @@ const removeSection = (): void => {
     >
       <!-- The plus stands in the middle. -->
       <Button
-        v-if="!asking"
+        v-if="!isAsking"
         variant="ghost"
         class="deck__ask"
         :aria-label="words.add"

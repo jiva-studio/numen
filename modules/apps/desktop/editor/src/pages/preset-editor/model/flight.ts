@@ -9,7 +9,7 @@ import { WORDS as words } from '../words'
 /** State tracking write flight and dirty settings for one preset file. */
 export interface WriteFlight {
   at: string
-  writing: boolean
+  isWriting: boolean
   isWriteQueued: boolean
   flight: Promise<void> | null
   isWarned: boolean
@@ -21,7 +21,7 @@ export interface WriteFlight {
 export function createWriteFlight(): WriteFlight {
   return {
     at: '',
-    writing: false,
+    isWriting: false,
     isWriteQueued: false,
     flight: null,
     isWarned: false,
@@ -48,7 +48,7 @@ export const sendWrite = async (
     console.error(error)
     return
   }
-  if (answer.changed) {
+  if (answer.isChanged) {
     flight.hasChanged.value = true
     return
   }
@@ -59,7 +59,7 @@ export const sendWrite = async (
     return
   }
   flight.errorMessage.value = ''
-  flight.at = answer.at
+  flight.at = answer.fingerprint
   flight.theirs.clear()
   flight.isWarned = false
 }
@@ -72,7 +72,7 @@ const executeFlight = async (
   writeMessage: MessageWriter,
 ): Promise<void> => {
   await sendWrite(flight, path, settings, core, writeMessage)
-  flight.writing = false
+  flight.isWriting = false
   const again = flight.isWriteQueued && !flight.hasChanged.value
   flight.isWriteQueued = false
   if (again) {
@@ -90,11 +90,11 @@ export const requestWrite = (
   core: Presets,
   writeMessage: MessageWriter,
 ): Promise<void> => {
-  if (flight.writing) {
+  if (flight.isWriting) {
     flight.isWriteQueued = true
     return flight.flight ?? Promise.resolve()
   }
-  flight.writing = true
+  flight.isWriting = true
   const inFlight = executeFlight(flight, path, settings, core, writeMessage)
   flight.flight = inFlight
   return inFlight

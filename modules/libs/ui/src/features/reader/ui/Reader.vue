@@ -71,7 +71,7 @@ const { viewport, measure } = useViewport(area)
 /** Where the row stands, and what a hand or a wheel does to it. */
 const {
   along,
-  dragging,
+  isDragging,
   whereabouts,
   send,
   isStill,
@@ -179,7 +179,7 @@ defineExpose({
     <div
       ref="area"
       class="reader__viewport h-full overflow-auto overscroll-x-contain"
-      :class="dragging ? 'reader__viewport--held' : 'reader__viewport--takeable'"
+      :class="isDragging ? 'reader__viewport--held' : 'reader__viewport--takeable'"
       tabindex="0"
       role="region"
       :aria-label="words.pages"

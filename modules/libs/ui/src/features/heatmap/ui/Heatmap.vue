@@ -85,8 +85,8 @@ const setPointed = (day: Day, press: MouseEvent) => {
         class="heatmap__day"
         :data-heatmap-day="day.day"
         :data-weight="day.weight"
-        :data-ahead="day.ahead ? 'yes' : undefined"
-        :data-today="day.today ? 'yes' : undefined"
+        :data-ahead="day.isFuture ? 'yes' : undefined"
+        :data-today="day.isToday ? 'yes' : undefined"
         @mouseenter="setPointed(day, $event)"
         @mouseleave="pointed = null"
       />

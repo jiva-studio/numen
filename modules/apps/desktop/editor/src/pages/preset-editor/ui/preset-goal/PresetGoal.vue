@@ -19,7 +19,7 @@ const props = defineProps<{ state: PresetTabState }>()
 // --- State ---
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { curve, material, place, settings, stopped: stoppedAt, waiting } = props.state
+const { curve, material, place, settings, stopped: stoppedAt, isWaiting } = props.state
 
 /** Why the goal has nothing to work on, and empty where it has. */
 const nothing = computed(() => idle(curve.value))
@@ -81,7 +81,7 @@ function onSettleSlider() {
       :material="material"
       :place="place"
       :value-text="reading"
-      :waiting="waiting"
+      :is-waiting="isWaiting"
       @move="onMoveSlider"
       @settle="onSettleSlider"
     />

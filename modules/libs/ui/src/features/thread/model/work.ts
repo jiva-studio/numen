@@ -24,7 +24,7 @@ export interface WorkLine {
   /** The line comes down. */
   readonly takeDown: () => void
   /** The wait under it, up whenever nothing more particular is known. */
-  readonly setWaiting: (on: boolean) => void
+  readonly setWaiting: (isOn: boolean) => void
   /** Both lines come down. */
   readonly clear: () => void
 }
@@ -60,7 +60,7 @@ export function createWorkLine(
       about,
       aside: writeCharCount(count),
       state,
-      ...(locations.has(workId) ? { opens: true } : {}),
+      ...(locations.has(workId) ? { isOpening: true } : {}),
     })
     up = true
   }
@@ -71,8 +71,8 @@ export function createWorkLine(
     up = false
   }
 
-  const setWaiting = (on: boolean) => {
-    if (on) put({ id: wait, voice: 'doing', text: waitWords, about: '', state: 'arriving' })
+  const setWaiting = (isOn: boolean) => {
+    if (isOn) put({ id: wait, voice: 'doing', text: waitWords, about: '', state: 'arriving' })
     else drop(wait)
   }
 

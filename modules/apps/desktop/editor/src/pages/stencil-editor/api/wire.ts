@@ -31,11 +31,11 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       problems: answer.stencil?.problems ?? [],
       reading: answer.error,
       writing: null,
-      at: answer.at,
+      at: answer.fingerprint,
     })
     if (answer.stencil) titles.set(path, answer.stencil.title)
     if (answer.error !== null) return { body: '', error: answer.error }
-    return { body: stencil ? stencilBodyOf(stencil) : '', error: null, at: answer.at }
+    return { body: stencil ? stencilBodyOf(stencil) : '', error: null, at: answer.fingerprint }
   }
 
   const write = async (path: string, body: string, baseline: NoteBaseline | null = null) => {
@@ -44,16 +44,16 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       path,
       stencil.fields,
       { preamble: stencil.preamble, faces: facesOf(stencil), tail: stencil.tail },
-      baseline?.at ?? null,
+      baseline?.fingerprint ?? null,
     )
     const said = told.get(path) ?? NOTHING
     told.set(path, {
       problems: said.problems,
       reading: said.reading,
       writing: answer.error,
-      at: answer.changed || answer.error !== null ? said.at : answer.at,
+      at: answer.isChanged || answer.error !== null ? said.at : answer.fingerprint,
     })
-    return { body: '', changed: answer.changed, error: answer.error, at: answer.at }
+    return { body: '', isChanged: answer.isChanged, error: answer.error, at: answer.fingerprint }
   }
 
   const renameField = async (
@@ -70,7 +70,7 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       (told.get(path) ?? NOTHING).at || null,
     )
     if (answer.error !== null) return say(ERRORS[answer.error], 'error')
-    if (answer.changed) {
+    if (answer.isChanged) {
       say(words.notRenamed, 'error')
       return onChanged([path])
     }

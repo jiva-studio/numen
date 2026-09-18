@@ -14,9 +14,9 @@ defineProps<{
   /** Which item is the one in force, by the caller's identifier. */
   current: string | null
   /** Whether the name of the group it begins is drawn over it. */
-  named: boolean
+  hasGroupName: boolean
   /** Whether the menu draws icons, whose room is kept on every row. */
-  icons: boolean
+  hasIcons: boolean
 }>()
 
 defineEmits<{
@@ -40,10 +40,10 @@ defineExpose({ focus })
 </script>
 
 <template>
-  <p v-if="named" class="menu__group-name text-hushed px-2 py-1" aria-hidden="true">
+  <p v-if="hasGroupName" class="menu__group-name text-hushed px-2 py-1" aria-hidden="true">
     {{ item.group }}
   </p>
-  <hr v-else-if="item.rule" class="menu__rule" role="separator" />
+  <hr v-else-if="item.isRule" class="menu__rule" role="separator" />
 
   <button
     ref="row"
@@ -56,7 +56,7 @@ defineExpose({ focus })
     @focus="$emit('focus')"
     @click="$emit('choose')"
   >
-    <span v-if="icons" class="menu__icon flex shrink-0 items-center">
+    <span v-if="hasIcons" class="menu__icon flex shrink-0 items-center">
       <slot />
     </span>
     <span class="flex min-w-0 flex-col">

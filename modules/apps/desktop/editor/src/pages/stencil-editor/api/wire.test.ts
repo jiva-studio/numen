@@ -57,7 +57,7 @@ const wireOver = (cards: ReturnType<typeof vault>) => {
 describe('reading a stencil', () => {
   it('comes back as the body the tab is dirty against', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({ stencil: stencil(), error: null, at: '12 34 Word.md' })
+    cards.readStencil.mockResolvedValue({ stencil: stencil(), error: null, fingerprint: '12 34 Word.md' })
     const { wire } = wireOver(cards)
 
     const answer = await wire.read('Word.md')
@@ -70,7 +70,7 @@ describe('reading a stencil', () => {
 
   it('carries no body at all where the read was refused', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({ stencil: null, error: 'notAStencil', at: '' })
+    cards.readStencil.mockResolvedValue({ stencil: null, error: 'notAStencil', fingerprint: '' })
     const { wire } = wireOver(cards)
 
     expect(await wire.read('Notes.md')).toEqual({ body: '', error: 'notAStencil' })
@@ -96,12 +96,12 @@ describe('reading a stencil', () => {
 describe('writing a stencil', () => {
   it('sends the fields and the faces the body holds, under the file the tab read', async () => {
     const cards = vault()
-    cards.readStencil.mockResolvedValue({ stencil: stencil(), error: null, at: '12 34 Word.md' })
-    cards.writeStencil.mockResolvedValue({ error: null, changed: false, at: '56 78 Word.md' })
+    cards.readStencil.mockResolvedValue({ stencil: stencil(), error: null, fingerprint: '12 34 Word.md' })
+    cards.writeStencil.mockResolvedValue({ error: null, isChanged: false, fingerprint: '56 78 Word.md' })
     const { wire } = wireOver(cards)
 
     const { body } = await wire.read('Word.md')
-    const answer = await wire.write('Word.md', body, { prose: body, at: '12 34 Word.md' })
+    const answer = await wire.write('Word.md', body, { prose: body, fingerprint: '12 34 Word.md' })
 
     expect(cards.writeStencil).toHaveBeenCalledWith(
       'Word.md',
@@ -113,12 +113,12 @@ describe('writing a stencil', () => {
       },
       '12 34 Word.md',
     )
-    expect(answer).toEqual({ body: '', changed: false, error: null, at: '56 78 Word.md' })
+    expect(answer).toEqual({ body: '', isChanged: false, error: null, at: '56 78 Word.md' })
   })
 
   it('names no file where the tab read none, and nothing where the body is empty', async () => {
     const cards = vault()
-    cards.writeStencil.mockResolvedValue({ error: null, changed: false, at: '' })
+    cards.writeStencil.mockResolvedValue({ error: null, isChanged: false, fingerprint: '' })
     const { wire } = wireOver(cards)
 
     await wire.write('Word.md', '')
@@ -134,7 +134,7 @@ describe('writing a stencil', () => {
   it('keeps the file it last knew where the write was refused', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue({ stencil: stencil(), error: null, at: '12 34 Word.md' })
-    cards.writeStencil.mockResolvedValue({ error: 'unreadable', changed: false, at: '' })
+    cards.writeStencil.mockResolvedValue({ error: 'unreadable', isChanged: false, at: '' })
     const { wire } = wireOver(cards)
 
     await wire.read('Word.md')
@@ -179,7 +179,7 @@ describe('what is shown for a fault', () => {
 
   it('says the note is no stencil where the write was refused for that', async () => {
     const cards = vault()
-    cards.writeStencil.mockResolvedValue({ error: 'notAStencil', changed: false, at: '' })
+    cards.writeStencil.mockResolvedValue({ error: 'notAStencil', isChanged: false, at: '' })
     const { wire } = wireOver(cards)
 
     await wire.write('Notes.md', '')
@@ -194,7 +194,7 @@ describe('renaming a field', () => {
     cards: 0,
     notWritten: [],
     error: null as ErrorCode | null,
-    changed: false,
+    isChanged: false,
     at: '',
     ...over,
   })
@@ -266,7 +266,7 @@ describe('renaming a field', () => {
 
   it('says the file moved past what the tab read, and reads it again', async () => {
     const cards = vault()
-    cards.renameField.mockResolvedValue(getRenameAnswer({ changed: true }))
+    cards.renameField.mockResolvedValue(getRenameAnswer({ isChanged: true }))
     const { wire, said } = wireOver(cards)
     const changed = vi.fn()
 

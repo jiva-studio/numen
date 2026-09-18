@@ -4,7 +4,7 @@ import type { Span } from '@/shared/lib/span'
 /** One run of a line, and whether it is why the item is here. */
 export interface PalettePart {
   readonly text: string
-  readonly hit: boolean
+  readonly isHit: boolean
 }
 
 /**
@@ -17,16 +17,16 @@ export interface PalettePart {
  */
 export const partsOf = (text: string, at: readonly Span[] = []): readonly PalettePart[] => {
   const runs = mergeSpans(text, at)
-  if (runs.length === 0) return text === '' ? [] : [{ text, hit: false }]
+  if (runs.length === 0) return text === '' ? [] : [{ text, isHit: false }]
 
   const out: PalettePart[] = []
   let read = 0
   for (const run of runs) {
-    if (run.from > read) out.push({ text: text.slice(read, run.from), hit: false })
-    out.push({ text: text.slice(run.from, run.to), hit: true })
+    if (run.from > read) out.push({ text: text.slice(read, run.from), isHit: false })
+    out.push({ text: text.slice(run.from, run.to), isHit: true })
     read = run.to
   }
-  if (read < text.length) out.push({ text: text.slice(read), hit: false })
+  if (read < text.length) out.push({ text: text.slice(read), isHit: false })
   return out
 }
 

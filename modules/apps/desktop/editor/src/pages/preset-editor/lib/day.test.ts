@@ -7,7 +7,6 @@
  * another, and a date typed or written out is a day off the day the core reads.
  */
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '@numen/protocol'
 import { dayAfter } from '@numen/ui'
 
 import { usePresetTab } from '../kind'
@@ -31,7 +30,7 @@ const point: Point = {
   retained: 0.9,
   owed: 0,
   through: 1,
-  enough: true,
+  canLearnEveryCard: true,
   closed: [],
   clears: 0,
   learned: 0,
@@ -43,7 +42,7 @@ const point: Point = {
  * A curve of a date as the core answers one: the grid counts days from the day
  * holding now, and each place names the day it falls on.
  */
-const honest = (): Curve => {
+const createHonestCurve = (): Curve => {
   const grid = Array.from({ length: PLACES }, (_, at) => Math.round(1 + (29 * at) / (PLACES - 1)))
   return {
     goal: 'date',
@@ -56,7 +55,7 @@ const honest = (): Curve => {
     cards: 40,
     overdue: 0,
     unbegun: 0,
-    honest: true,
+    isHonest: true,
   }
 }
 
@@ -70,20 +69,20 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
         title: 'Sanskrit',
         settings: { ...DEFAULTS, ...settings },
         problems: [],
-        stops: StopReason.NOTHING,
-        stopsOn: StopReason.NOTHING,
+        stops: 'none',
+        stopsOn: 'none',
       },
       error: null,
-      at: 'one',
+      fingerprint: 'one',
       bounds: BOUNDS,
     }),
-    getDeckPreset: async () => ({ preset: null, error: null, at: '', bounds: NO_BOUNDS }),
+    getDeckPreset: async () => ({ preset: null, error: null, fingerprint: '', bounds: NO_BOUNDS }),
     list: async () => [],
     createPreset: async () => ({ path: '', error: null }),
-    scheduleDeck: async () => ({ error: null, changed: false, at: '' }),
+    scheduleDeck: async () => ({ error: null, isChanged: false, fingerprint: '' }),
     write: async (_path, put) => {
       written.push(put)
-      return { error: null, changed: false, at: 'two' }
+      return { error: null, isChanged: false, fingerprint: 'two' }
     },
     // A curve nobody answers leaves the sketch standing, which is what the
     // arithmetic here is read off.
@@ -114,7 +113,7 @@ describe('a goal of a date', () => {
   })
 
   it('leaves the knob where it stands when the day it already aims at is typed', async () => {
-    const answered = honest()
+    const answered = createHonestCurve()
     const { state } = await openPresetTab({ goal: 'date', byDate: BY }, answered)
     expect(state.place.value).toBe(answered.now.at)
 

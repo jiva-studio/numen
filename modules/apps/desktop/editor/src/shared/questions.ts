@@ -9,7 +9,7 @@
 /** One question asked, measured against everything asked after it. */
 export interface Question {
   /** Whether the answer to this one is still the answer to draw. */
-  readonly current: boolean
+  readonly isCurrent: boolean
   /**
    * Whether this answer may be drawn over what is drawn already. An answer
    * older than one that has landed is let go of.
@@ -28,7 +28,7 @@ export function answerGuard() {
   const ask = (): Question => {
     const mine = ++asked
     return {
-      get current() {
+      get isCurrent() {
         return listening && mine === asked
       },
       claim() {

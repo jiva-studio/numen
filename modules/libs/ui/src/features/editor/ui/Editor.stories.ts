@@ -52,7 +52,7 @@ const renderEditor =
 export const Playground: Story = { render: renderEditor(MARKED_UP) }
 
 /** The marks as they are written, with nothing drawn for them. */
-export const AsWritten: Story = { render: renderEditor(MARKED_UP, { live: false }) }
+export const AsWritten: Story = { render: renderEditor(MARKED_UP, { isLive: false }) }
 
 /** Nothing to type into. */
 export const ReadOnly: Story = { render: renderEditor(MARKED_UP, { readonly: true }) }
@@ -880,10 +880,10 @@ const SETTINGS = `{
  * the face code is set in. This is what a settings file is opened in.
  */
 export const AWholeDocumentOfCode: Story = {
-  render: renderEditor(SETTINGS, { live: false, language: 'json' }),
+  render: renderEditor(SETTINGS, { isLive: false, language: 'json' }),
 }
 
 /** A language no fence answers to leaves the document plain. */
 export const ALanguageNothingAnswersTo: Story = {
-  render: renderEditor(SETTINGS, { live: false, language: 'not-a-language' }),
+  render: renderEditor(SETTINGS, { isLive: false, language: 'not-a-language' }),
 }

@@ -26,20 +26,20 @@ const props = withDefaults(
      */
     tally?: Tally | undefined
     /** Whether the work named is happening now. */
-    working?: boolean
+    isWorking?: boolean
     /** How much longer, on a clock, from whoever is timing the count. */
     left?: string
     /** How the line reads. An alarm is a line that stopped badly. */
     tone?: Tone
   }>(),
-  { says: '', about: '', working: false, left: '', tone: 'plain' },
+  { says: '', about: '', isWorking: false, left: '', tone: 'plain' },
 )
 
 const shown = computed(() =>
   activity({
     says: props.says,
     ...(props.tone === 'alarm' ? { hasFailed: true } : {}),
-    ...(props.working ? { working: true } : {}),
+    ...(props.isWorking ? { isWorking: true } : {}),
     ...(props.tally ? { tally: props.tally } : {}),
   }),
 )
@@ -56,7 +56,7 @@ const percent = computed(() =>
 )
 
 /** Read off the count, so it is shown only where there is one. */
-const left = computed(() => (shown.value.counts ? props.left : ''))
+const left = computed(() => (shown.value.hasCounts ? props.left : ''))
 
 /**
  * How the words give way.
@@ -65,8 +65,8 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
  * A count keeps what it is about to one line too, and without one a path or a
  * reason is read over two.
  */
-const givesSays = computed(() => (shown.value.counts || props.about ? 'truncate' : 'line-clamp-3'))
-const givesAbout = computed(() => (shown.value.counts ? 'truncate' : 'line-clamp-2'))
+const givesSays = computed(() => (shown.value.hasCounts || props.about ? 'truncate' : 'line-clamp-3'))
+const givesAbout = computed(() => (shown.value.hasCounts ? 'truncate' : 'line-clamp-2'))
 
 /**
  * A line about work is hushed. A line with a tone is drawn in it, and takes the

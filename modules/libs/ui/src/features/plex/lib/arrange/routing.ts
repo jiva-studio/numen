@@ -93,8 +93,8 @@ function gate(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Posi
 }
 
 /** Whether there is clear space between two boxes along the given axis. */
-function isSeparated(a: PlacedNode, b: PlacedNode, vertical: boolean): boolean {
-  return vertical
+function isSeparated(a: PlacedNode, b: PlacedNode, isVertical: boolean): boolean {
+  return isVertical
     ? Math.abs(b.y - a.y) > (a.height + b.height) / 2
     : Math.abs(b.x - a.x) > (a.width + b.width) / 2
 }
@@ -112,8 +112,8 @@ function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): bool
 }
 
 /** The control point standing out from a gate along the run. */
-function controlFrom(at: Position, vertical: boolean, reach: number): Position {
-  return vertical ? { x: at.x, y: at.y + reach } : { x: at.x + reach, y: at.y }
+function controlFrom(at: Position, isVertical: boolean, reach: number): Position {
+  return isVertical ? { x: at.x, y: at.y + reach } : { x: at.x + reach, y: at.y }
 }
 
 /** The same curve read from its other end. */
@@ -130,22 +130,22 @@ function reverse(curve: EdgeCurve): EdgeCurve {
 function curveBetween(
   from: PlacedNode,
   to: PlacedNode,
-  vertical: boolean,
+  isVertical: boolean,
   routing: Routing,
 ): EdgeCurve {
-  const fromFirst = vertical ? from.y <= to.y : from.x <= to.x
+  const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
   const [first, second] = fromFirst ? [from, to] : [to, from]
 
-  const firstGate = gate(first, vertical ? 'bottom' : 'right')
-  const secondGate = gate(second, vertical ? 'top' : 'left')
+  const firstGate = gate(first, isVertical ? 'bottom' : 'right')
+  const secondGate = gate(second, isVertical ? 'top' : 'left')
 
-  const span = vertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
+  const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
   const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
 
   const along: EdgeCurve = {
     fromPoint: firstGate,
-    control1: controlFrom(firstGate, vertical, reach),
-    control2: controlFrom(secondGate, vertical, -reach),
+    control1: controlFrom(firstGate, isVertical, reach),
+    control2: controlFrom(secondGate, isVertical, -reach),
     toPoint: secondGate,
   }
 

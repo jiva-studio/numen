@@ -345,7 +345,7 @@ describe('what the caller draws into the editor', () => {
 describe('a document written in one language', () => {
   it('is read as that language, and set in the face code is set in', async () => {
     const editor = mount(Editor, {
-      props: { modelValue: '{ "agent": { "use": "claude" } }', live: false, language: 'json' },
+      props: { modelValue: '{ "agent": { "use": "claude" } }', isLive: false, language: 'json' },
       attachTo: document.body,
     })
     // The language is loaded when it is first wanted.

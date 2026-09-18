@@ -82,7 +82,7 @@ export const mapVault = (one: VaultMessage): Vault => ({
   id: one.id,
   name: one.name,
   path: one.path,
-  missing: one.missing,
+  isMissing: one.missing,
 })
 
 export const mapVaultResult = (from: {

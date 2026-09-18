@@ -37,7 +37,7 @@ export function spacingFor(options: PlexOptions, canFit: (spacing: Spacing) => b
 
   let spacing = set
   for (const opening of OPENS) {
-    const factor = widest(options.spread, (candidate) =>
+    const factor = findWidestFactor(options.spread, (candidate) =>
       canFit({ ...spacing, [opening]: set[opening] * candidate }),
     )
     spacing = { ...spacing, [opening]: set[opening] * factor }
@@ -46,7 +46,7 @@ export function spacingFor(options: PlexOptions, canFit: (spacing: Spacing) => b
 }
 
 /** The largest factor from one to `most` that holds. One is known to hold. */
-function widest(most: number, holds: (factor: number) => boolean): number {
+function findWidestFactor(most: number, holds: (factor: number) => boolean): number {
   if (holds(most)) return most
 
   let low = 1

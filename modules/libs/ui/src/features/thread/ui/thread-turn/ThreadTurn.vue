@@ -32,7 +32,7 @@ defineSlots<{
 const isDoing = computed(() => props.entry.turn.voice === 'doing')
 
 /** A line about work the person can press, which opens what it was working on. */
-const opens = computed(() => isDoing.value && props.entry.turn.opens === true)
+const opens = computed(() => isDoing.value && props.entry.turn.isOpening === true)
 
 /** What the line about a tool in hand is drawn from. */
 const call = computed(() => ({
@@ -53,7 +53,7 @@ const call = computed(() => ({
     <div
       class="thread__body min-w-0"
       :class="
-        entry.voice.bubble
+        entry.voice.isBubble
           ? 'rounded-bubble bg-bubble text-bubble-ink max-w-(--measure) px-3 py-2'
           : 'text-answer-ink'
       "
@@ -68,11 +68,11 @@ const call = computed(() => ({
         <ToolCall v-bind="call" />
       </button>
       <ToolCall v-else-if="isDoing" v-bind="call" />
-      <span v-else-if="entry.voice.bubble" class="thread__text">{{ entry.turn.text }}</span>
+      <span v-else-if="entry.voice.isBubble" class="thread__text">{{ entry.turn.text }}</span>
       <Prose
         v-else
         :text="entry.turn.text"
-        :arriving="entry.state === 'arriving'"
+        :is-streaming="entry.state === 'arriving'"
         :unresolved="entry.turn.unresolved ?? []"
         @follow="(href: string, press: MouseEvent) => emit('follow', entry.turn, href, press)"
       />

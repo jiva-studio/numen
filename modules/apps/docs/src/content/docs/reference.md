@@ -48,6 +48,7 @@ How a vault is made searchable.
 | `embedding.indexing.local.dir` | text | holds the model and tokenizer.json. Empty means the download cache. |
 | `embedding.indexing.local.file` | text | the model inside the repository or the directory. |
 | `embedding.indexing.local.batch_texts` | a number | how many texts one forward pass carries. |
+| `embedding.indexing.local.engine` | text | engineRuntime or EnginePureGo. Empty takes ONNX `runtime` where this platform has one published, and the Go backend where it has none. |
 | `embedding.indexing.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
 | `embedding.indexing.local.threads` | a number | how many of this machine one forward pass may use. |
 | `embedding.indexing.local.download` | yes or no | allows fetching the model when it is not on this machine. |
@@ -63,6 +64,7 @@ How a vault is made searchable.
 | `embedding.query.local.dir` | text | holds the model and tokenizer.json. Empty means the download cache. |
 | `embedding.query.local.file` | text | the model inside the repository or the directory. |
 | `embedding.query.local.batch_texts` | a number | how many texts one forward pass carries. |
+| `embedding.query.local.engine` | text | engineRuntime or EnginePureGo. Empty takes ONNX `runtime` where this platform has one published, and the Go backend where it has none. |
 | `embedding.query.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
 | `embedding.query.local.threads` | a number | how many of this machine one forward pass may use. |
 | `embedding.query.local.download` | yes or no | allows fetching the model when it is not on this machine. |

@@ -118,7 +118,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
 
   watch(
     () => drag.getDragged().length > 0,
-    (dragging) => (dragging ? follow() : stop()),
+    (isDragging) => (isDragging ? follow() : stop()),
     { immediate: true },
   )
 

@@ -10,7 +10,7 @@ import type { Source } from '@/entities/file'
 import type { CommandTarget, RunSupport } from '../types'
 
 /** A command over the note in front, which there has to be one of. */
-export const isOnNote = (at: CommandTarget): boolean => at.ready && at.path !== ''
+export const isOnNote = (at: CommandTarget): boolean => at.isReady && at.path !== ''
 
 /** A command over the vault in front, which there has to be one of. */
 export const isOnVault = (at: CommandTarget): boolean => at.vault.id !== ''
@@ -22,7 +22,7 @@ export const isOnVault = (at: CommandTarget): boolean => at.vault.id !== ''
 export const getOfferOnSource =
   (run: string, source: Source) =>
   (at: CommandTarget, runs: RunSupport): boolean =>
-    at.ready && at.file !== '' && at.source === source && runs.canRun(run)
+    at.isReady && at.file !== '' && at.source === source && runs.canRun(run)
 
 /**
  * A run over the file in front that is offered on what has been made from it,

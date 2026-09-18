@@ -29,7 +29,7 @@ export const useWindow = () => {
   const { notices, showNotice, reportError, setTasks, dismissNotice } = useNotices()
   const {
     vaults,
-    counting: busy,
+    isCounting,
     day: today,
     count,
     stop,
@@ -182,7 +182,7 @@ export const useWindow = () => {
     dismissNotice,
 
     /** The list of vaults, and the way into one. */
-    vaults: { list: vaults, counting: busy, choose },
+    vaults: { list: vaults, isCounting, choose },
 
     /** One vault's decks and presets, and the ways to sit down to them. */
     decks: { chosen, today, done, schedules, start, startPreset, goToVaults },

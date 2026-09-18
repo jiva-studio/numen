@@ -43,8 +43,8 @@ export interface OpenParts {
   /** Which part the window stands on, counted from the first. */
   readonly first: number
   /** Whether the window has parts above it, and parts below it. */
-  readonly above: boolean
-  readonly below: boolean
+  readonly isAbove: boolean
+  readonly isBelow: boolean
   /** The arrows at either edge, one per direction there is more to scroll to. */
   readonly arrows: readonly Arrow[]
 }
@@ -86,7 +86,7 @@ const LINES = 1
 const WINDOWS = 2
 
 /** The furthest the window on the parts may be scrolled down, counted in parts. */
-export const furthest = (hung: HungParts): number => Math.max(0, hung.parts.length - hung.shown)
+export const getFurthest = (hung: HungParts): number => Math.max(0, hung.parts.length - hung.shown)
 
 /**
  * What a node hangs at a moment of the opening.
@@ -103,7 +103,7 @@ export function getOpenParts(hung: HungParts, open: number, scrollOffset = 0): O
   if (opened <= 0) return null
 
   // The window stands whole on the parts, scrolled by one at a time.
-  const first = Math.min(Math.max(Math.round(scrollOffset), 0), furthest(hung))
+  const first = Math.min(Math.max(Math.round(scrollOffset), 0), getFurthest(hung))
   const shown = hung.parts.slice(first, first + hung.shown)
 
   // Each part sets off a lead behind the one above it, and the leads together
@@ -123,18 +123,18 @@ export function getOpenParts(hung: HungParts, open: number, scrollOffset = 0): O
     return { ...part, at: rests, y: lerp(from, rests, own), opacity: own }
   })
 
-  const above = first > 0
-  const below = first < furthest(hung)
+  const isAbove = first > 0
+  const isBelow = first < getFurthest(hung)
   return {
     height: hung.height,
     opacity: easeOut(opened),
     parts,
     first,
-    above,
-    below,
+    isAbove,
+    isBelow,
     arrows: [
-      ...(above ? [arrowAt(hung, hung.pad / 2, -1)] : []),
-      ...(below ? [arrowAt(hung, hung.height - hung.pad / 2, 1)] : []),
+      ...(isAbove ? [arrowAt(hung, hung.pad / 2, -1)] : []),
+      ...(isBelow ? [arrowAt(hung, hung.height - hung.pad / 2, 1)] : []),
     ],
   }
 }

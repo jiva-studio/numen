@@ -219,7 +219,7 @@ const createCardFace = (one: SessionStart['asked'][number]): CardFace => ({
   heading: one.heading,
   front: one.front,
   back: one.back,
-  seen: one.seen,
+  isSeen: one.seen,
   ahead: one.ahead
     ? ({
         again: Number(one.ahead.again),

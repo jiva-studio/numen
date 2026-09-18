@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from '../types'
 import { BOUNDS, curve as drawnCurve } from '../fixtures'
-import { clamp, goalValue, idle, nearest, produceSchedule, round, valueAt } from './curve'
+import { clamp, goalValue, idle, findNearest, produceSchedule, round, valueAt } from './curve'
 
 /** The review day the window is told, which is what a date is counted from. */
 const today = '2026-08-30'
@@ -20,7 +20,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   retained: 0,
   owed: 0,
   through: 0,
-  enough: true,
+  canLearnEveryCard: true,
   closed: [],
   clears: 0,
   learned: 0,
@@ -31,13 +31,13 @@ const point = (over: Partial<Point> = {}): Point => ({
 
 describe('where a value stands on a grid', () => {
   it('is the nearest place, whether the value sits on one or between two', () => {
-    expect(nearest([0, 10, 20, 30], 21)).toBe(2)
-    expect(nearest([0, 10, 20, 30], 30)).toBe(3)
-    expect(nearest([0, 10, 20, 30], -5)).toBe(0)
+    expect(findNearest([0, 10, 20, 30], 21)).toBe(2)
+    expect(findNearest([0, 10, 20, 30], 30)).toBe(3)
+    expect(findNearest([0, 10, 20, 30], -5)).toBe(0)
   })
 
   it('is nowhere at all on a grid with no places', () => {
-    expect(nearest([], 3)).toBe(-1)
+    expect(findNearest([], 3)).toBe(-1)
   })
 })
 
@@ -103,7 +103,7 @@ describe('what one place of the curve produces', () => {
     cards: 400,
     overdue: 0,
     unbegun: 0,
-    honest: true,
+    isHonest: true,
   }
 
   // The control moves the one value its goal names. What that comes to on this
@@ -162,7 +162,7 @@ describe('a goal with nothing to work on', () => {
     cards: 0,
     overdue: 0,
     unbegun: 0,
-    honest: true,
+    isHonest: true,
   }
 
   it('is a preset no deck points at, where the curve carries no deck', () => {
@@ -183,8 +183,8 @@ describe('a goal with nothing to work on', () => {
   })
 
   it('is not the line the window guessed, which is nobody’s answer', () => {
-    expect(idle({ ...nothing, honest: false })).toBe('')
-    expect(idle({ ...nothing, decks: 4, honest: false })).toBe('')
+    expect(idle({ ...nothing, isHonest: false })).toBe('')
+    expect(idle({ ...nothing, decks: 4, isHonest: false })).toBe('')
   })
 
   // The preset is not stopped: it schedules reviews, and nothing here can ever

@@ -17,7 +17,7 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   source: null,
   made: {},
   vault: { id: 'physics', name: 'Physics' },
-  ready: true,
+  isReady: true,
   ...over,
 })
 
@@ -27,7 +27,7 @@ describe('a search that turned up nothing', () => {
       id: 'names',
       title: 'Names',
       items: Array.from({ length: items }, (_, at) => ({ id: `${at}`, title: 'One' })),
-      working: isWorking,
+      isWorking: isWorking,
     },
   ]
 

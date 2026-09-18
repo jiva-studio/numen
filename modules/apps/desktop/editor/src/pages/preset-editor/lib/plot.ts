@@ -134,7 +134,7 @@ export const shortOf = (curve: Curve, places: readonly Position[]): string => {
   curve.at.forEach((point, place) => {
     const at = places[place]
     if (!at) return
-    if (point.enough) {
+    if (point.canLearnEveryCard) {
       if (run.length > 1) runs.push(lineOf(run))
       run = []
       return

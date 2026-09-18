@@ -325,7 +325,7 @@ describe('the groups the items stand in', () => {
     )
 
   it('are named where the menu is told to name them', async () => {
-    mountMenu({ items: SHELVED, groups: true })
+    mountMenu({ items: SHELVED, hasGroups: true })
     await settle()
     expect(shelves()).toStrictEqual(['Ships with numen', 'Yours'])
     expect(document.body.querySelectorAll('.menu__rule')).toHaveLength(0)

@@ -60,10 +60,10 @@ export function useHangingSetting(core: HangingDeps, words: HangingWords, write:
   }
 
   /** One row of a list, saying whether it is the value in force. */
-  const row = (id: string, title: string, inForce: boolean): StepRow => ({
+  const row = (id: string, title: string, isCurrent: boolean): StepRow => ({
     id,
     title,
-    ...(inForce ? { detail: words.current, inForce: true } : {}),
+    ...(isCurrent ? { detail: words.current, isCurrent: true } : {}),
   })
 
   /** The two, in one group named for the setting they are of. */

@@ -19,7 +19,7 @@ export const createNotes = (
       return null
     },
     getPath: (id) => holder(id)?.getPath(id) ?? id,
-    isAsking: (id) => holder(id)?.isAsking(id) ?? false,
+    asking: (id) => holder(id)?.asking(id) ?? false,
     settle: async (id) => {
       await holder(id)?.settle(id)
     },

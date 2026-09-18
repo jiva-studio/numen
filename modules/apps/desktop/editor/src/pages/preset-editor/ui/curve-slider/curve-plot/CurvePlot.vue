@@ -18,7 +18,7 @@ const props = defineProps<{
   /** What the curve is scheduled by, which names both axes. */
   goal: Goal
   /** Whether an answer is being waited for. */
-  waiting: boolean
+  isWaiting: boolean
   /** The value the knob stands at, said in the units of the goal. */
   valueText: string
 }>()
@@ -42,7 +42,7 @@ const roomStyle = { aspectRatio: `${WIDE} / ${HIGH}` }
 
     <div class="curve-slider__over" data-control="over">
       <div class="curve-slider__room" data-control="room" :style="roomStyle">
-        <CurveWaiting v-if="!isHonest && props.waiting" />
+        <CurveWaiting v-if="!isHonest && props.isWaiting" />
 
         <CurvePicture v-else-if="isHonest" :state="props.state" :value-text="props.valueText" />
       </div>

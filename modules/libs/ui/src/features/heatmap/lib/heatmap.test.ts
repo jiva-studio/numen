@@ -58,7 +58,7 @@ describe('the days a grid draws', () => {
     // Saturday.
     const now = new Date('2026-08-29T12:00:00')
     const shown = getDays(20, now, did)
-    const today = shown.filter((one) => one.today)
+    const today = shown.filter((one) => one.isToday)
 
     expect(today).toHaveLength(1)
     expect(shown[0]!.day < today[0]!.day).toBe(true)
@@ -66,10 +66,10 @@ describe('the days a grid draws', () => {
     const after = shown.slice(shown.indexOf(today[0]!) + 1)
     expect(after.length).toBeGreaterThan(ROWS * 3)
     for (const one of after) {
-      expect(one.ahead).toBe(true)
+      expect(one.isFuture).toBe(true)
     }
     for (const one of shown.slice(0, shown.indexOf(today[0]!) + 1)) {
-      expect(one.ahead).toBe(false)
+      expect(one.isFuture).toBe(false)
     }
   })
 
@@ -79,7 +79,7 @@ describe('the days a grid draws', () => {
     const shown = getDays(30, now, createTallies([['2026-08-28', 3]]))
 
     expect(shown).toHaveLength(30 * ROWS)
-    expect(shown.some((one) => one.today)).toBe(true)
+    expect(shown.some((one) => one.isToday)).toBe(true)
   })
 
   // Nobody wants years of empty squares from before they ever sat down. The
@@ -91,7 +91,7 @@ describe('the days a grid draws', () => {
 
     // The Monday of that week.
     expect(shown[0]!.day).toBe('2026-08-24')
-    expect(shown[shown.length - 1]!.ahead).toBe(true)
+    expect(shown[shown.length - 1]!.isFuture).toBe(true)
   })
 
   // Once they have been here longer than the width holds, the oldest weeks
@@ -105,8 +105,8 @@ describe('the days a grid draws', () => {
     const shown = getDays(12, now, long)
 
     expect(shown[0]!.day > '2024-01-01').toBe(true)
-    expect(shown.some((one) => one.today)).toBe(true)
-    expect(shown[shown.length - 1]!.ahead).toBe(true)
+    expect(shown.some((one) => one.isToday)).toBe(true)
+    expect(shown[shown.length - 1]!.isFuture).toBe(true)
   })
 
   // A vault whose cards are all still ahead has a beginning too.
@@ -120,7 +120,7 @@ describe('the days a grid draws', () => {
   it('gives the room to what is behind where there is little of it', () => {
     const shown = getDays(1, new Date('2026-08-29T12:00:00'), did)
     expect(shown).toHaveLength(ROWS)
-    expect(shown.some((one) => one.today)).toBe(true)
+    expect(shown.some((one) => one.isToday)).toBe(true)
   })
 
   // A day still to come holds what falls on it, and a day behind holds what was
@@ -138,10 +138,10 @@ describe('the days a grid draws', () => {
     ])
     const shown = getDays(12, now, done, coming)
 
-    expect(shown.find((one) => one.today)?.did).toBe(4)
+    expect(shown.find((one) => one.isToday)?.did).toBe(4)
     const later = shown.find((one) => one.day === '2026-09-02')
     expect(later?.did).toBe(7)
-    expect(later?.ahead).toBe(true)
+    expect(later?.isFuture).toBe(true)
   })
 
   it('reads what was done on each day it draws', () => {
@@ -152,7 +152,7 @@ describe('the days a grid draws', () => {
     ])
     const shown = getDays(4, on, counted)
 
-    expect(shown.find((one) => one.today)?.did).toBe(12)
+    expect(shown.find((one) => one.isToday)?.did).toBe(12)
     expect(shown.find((one) => one.day === '2026-08-28')?.weight).toBe(4)
     expect(shown.find((one) => one.day === '2026-08-27')?.did).toBe(0)
   })

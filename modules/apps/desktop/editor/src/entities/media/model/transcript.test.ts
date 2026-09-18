@@ -83,7 +83,7 @@ function createPlayer() {
   const address = ref('')
   const at = ref(0)
   const duration = ref(0)
-  const playing = ref(false)
+  const isPlaying = ref(false)
   const error = ref('')
   const sought: number[] = []
 
@@ -91,14 +91,14 @@ function createPlayer() {
     url: address,
     at,
     duration,
-    playing,
+    isPlaying,
     error,
     load: (wanted) => void (address.value = wanted),
     play: (wanted) => {
       address.value = wanted
-      playing.value = true
+      isPlaying.value = true
     },
-    pause: () => void (playing.value = false),
+    pause: () => void (isPlaying.value = false),
     seek: (wanted, ms) => {
       address.value = wanted
       at.value = ms
@@ -112,14 +112,14 @@ function createPlayer() {
     at.value = ms
   }
 
-  return { player, sought, setCurrentTime, error, address, duration, playing, at }
+  return { player, sought, setCurrentTime, error, address, duration, isPlaying, at }
 }
 
 /** Everything asked for has been answered and everything waiting has run. */
 const flush = () => new Promise((done) => setTimeout(done, 0))
 
 /** The words have been still long enough to be written, and were. */
-const still = () => new Promise((done) => setTimeout(done, 20))
+const waitForStill = () => new Promise((done) => setTimeout(done, 20))
 
 describe('a recording opened', () => {
   it('is played from the address the application serves it at', async () => {
@@ -295,7 +295,7 @@ describe('the one player the window has', () => {
     heard.play()
 
     expect(player.url.value).toBe(SUMMARY.mediaUrl)
-    expect(heard.playing.value).toBe(true)
+    expect(heard.isPlaying.value).toBe(true)
   })
 
   it('says this recording is not playing while it holds another', async () => {
@@ -307,7 +307,7 @@ describe('the one player the window has', () => {
     heard.play()
     player.play('http://127.0.0.1:1/files/w/v/another.mp3')
 
-    expect(heard.playing.value).toBe(false)
+    expect(heard.isPlaying.value).toBe(false)
   })
 
   it('is stopped only by the recording it holds', async () => {
@@ -319,7 +319,7 @@ describe('the one player the window has', () => {
     player.play('http://127.0.0.1:1/files/w/v/another.mp3')
     heard.pause()
 
-    expect(player.playing.value).toBe(true)
+    expect(player.isPlaying.value).toBe(true)
   })
 })
 
@@ -472,11 +472,11 @@ describe('a recording tab that closes', () => {
     const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
     await flush()
     heard.play()
-    expect(player.playing.value).toBe(true)
+    expect(player.isPlaying.value).toBe(true)
 
     heard.close()
 
-    expect(player.playing.value).toBe(false)
+    expect(player.isPlaying.value).toBe(false)
   })
 
   it('leaves another recording playing', async () => {
@@ -488,7 +488,7 @@ describe('a recording tab that closes', () => {
 
     heard.close()
 
-    expect(player.playing.value).toBe(true)
+    expect(player.isPlaying.value).toBe(true)
     expect(player.url.value).toBe('http://127.0.0.1:1/files/w/v/another.mp3')
   })
 
@@ -518,8 +518,8 @@ describe('a recording tab as it opens', () => {
     await flush()
 
     expect(player.url.value).toBe(SUMMARY.mediaUrl)
-    expect(player.playing.value).toBe(false)
-    expect(heard.playing.value).toBe(false)
+    expect(player.isPlaying.value).toBe(false)
+    expect(heard.isPlaying.value).toBe(false)
   })
 
   it('leaves the player alone where another recording is playing', async () => {
@@ -531,7 +531,7 @@ describe('a recording tab as it opens', () => {
     await flush()
 
     expect(player.url.value).toBe('http://127.0.0.1:1/files/w/v/another.mp3')
-    expect(player.playing.value).toBe(true)
+    expect(player.isPlaying.value).toBe(true)
   })
 })
 
@@ -650,7 +650,7 @@ describe('what the tab says where the words would stand', () => {
       throw new Error('the transcript is being listened to')
     }
     heard.setProse('One.\nThe second thing said.\nThe third thing said.')
-    await still()
+    await waitForStill()
 
     expect(heard.note.value).toBe('')
     expect(heard.error.value).toContain('numen did not answer')
@@ -765,7 +765,7 @@ describe('the words as a person edits them', () => {
     heard.setProse('The first thing said.\nThe second thing heard.\nThe third thing said.')
     expect(written).toStrictEqual([])
 
-    await still()
+    await waitForStill()
 
     expect(written).toStrictEqual([
       [CUES[0], { text: 'The second thing heard.', from: 2_500, to: 5_000 }, CUES[2]],
@@ -783,7 +783,7 @@ describe('the words as a person edits them', () => {
     heard.setProse('The first thing said.\nThe second thing h\nThe third thing said.')
     heard.setProse('The first thing said.\nThe second thing he\nThe third thing said.')
     heard.setProse('The first thing said.\nThe second thing heard.\nThe third thing said.')
-    await still()
+    await waitForStill()
 
     expect(written.length).toBe(1)
   })
@@ -797,7 +797,7 @@ describe('the words as a person edits them', () => {
     await flush()
 
     heard.setProse('The first thing said.\n\nThe third thing said.')
-    await still()
+    await waitForStill()
 
     expect(heard.cues.value).toStrictEqual([CUES[0], CUES[2]])
   })
@@ -829,7 +829,7 @@ describe('the words as a person edits them', () => {
     await flush()
 
     heard.setProse('Mine.\nThe second thing said.\nThe third thing said.')
-    await still()
+    await waitForStill()
 
     expect(heard.error.value).toContain('numen did not answer')
     expect(heard.cues.value).toStrictEqual(CUES)
@@ -948,12 +948,12 @@ describe('typing that lands while a write is in the air', () => {
     await flush()
 
     heard.setProse('One.\nThe second thing said.\nThe third thing said.')
-    await still()
+    await waitForStill()
     expect(written.length).toBe(1)
 
     heard.setProse('Two.\nThe second thing said.\nThe third thing said.')
     held.answer?.()
-    await still()
+    await waitForStill()
 
     expect(written.length).toBe(2)
     expect(written[1]![0]!.text).toBe('Two.')
@@ -971,7 +971,7 @@ describe('a transcript nobody edited', () => {
 
     // The editor hands the document back carrying a newline of its own.
     heard.setProse(heard.prose.value + '\n')
-    await still()
+    await waitForStill()
 
     expect(written).toStrictEqual([])
   })
@@ -985,7 +985,7 @@ describe('a transcript nobody edited', () => {
     await flush()
 
     heard.setProse('The first thing Rupa said.\nThe second thing said.\nThe third thing said.')
-    await still()
+    await waitForStill()
 
     expect(written).toHaveLength(1)
     expect(written[0]![0]!.text).toBe('The first thing Rupa said.')
@@ -1007,7 +1007,7 @@ describe('the view going after the words', () => {
     heard.setProse('One.\nThe second thing said.\nThe third thing said.')
     expect(heard.typing.value).toBe(true)
 
-    await still()
+    await waitForStill()
     expect(heard.typing.value).toBe(false)
   })
 

@@ -15,13 +15,13 @@ import type { Entry } from '@/entities/file'
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
-  folder: false,
+  isFolder: false,
   kind: 'note',
   type: 'note',
   ...over,
 })
 
-const folder = (path: string): Entry => file(path, { folder: true, kind: 'other' })
+const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
 
 /** A vault of one folder, a note, a book and a picture. */
 const VAULT: Record<string, readonly Entry[]> = {

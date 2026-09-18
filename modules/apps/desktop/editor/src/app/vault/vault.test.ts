@@ -65,7 +65,7 @@ describe('the file a save presents', () => {
     asked.writeNote.mockResolvedValue({})
 
     const read = await core.read(at.path)
-    await core.write(at.path, 'prose and more', { prose: read.body, at: read.at ?? '' })
+    await core.write(at.path, 'prose and more', { prose: read.body, fingerprint: read.fingerprint ?? '' })
 
     expect(asked.writeNote.mock.calls[0]?.[0]).toEqual({
       path: at.path,
@@ -129,7 +129,7 @@ describe('files domain', () => {
     expect(removed.trashed).toBe(true)
 
     asked.listFiles.mockResolvedValue({
-      entries: [{ path: 'test.md', name: 'test.md', folder: false, kind: 1, type: 1 }],
+      entries: [{ path: 'test.md', name: 'test.md', isFolder: false, kind: 1, type: 1 }],
     })
     const listing = await core.list('')
     expect(listing.length).toBe(1)
@@ -187,7 +187,7 @@ describe('settings domain', () => {
     const file = await core.getSettingsFile()
     expect(file.written).toBe('raw')
     const saved = await core.saveSettingsFile('raw2', null)
-    expect(saved.changed).toBe(false)
+    expect(saved.isChanged).toBe(false)
 
     const rev = await core.getReviewSettings()
     expect(rev.starts).toBe('04:00')
@@ -236,8 +236,8 @@ describe('session domain', () => {
       id: 'v1',
       name: 'V1',
       path: '/vault',
-      scan: { ready: true, error: '', unwatched: '' },
-      coverage: { chunkCount: 10n, embeddedCount: 10n, embedding: false },
+      scan: { isReady: true, error: '', unwatched: '' },
+      coverage: { chunkCount: 10n, embeddedCount: 10n, isEmbedding: false },
     })
     const st = await core.state()
     expect(st.name).toBe('V1')

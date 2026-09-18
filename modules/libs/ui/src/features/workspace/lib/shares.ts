@@ -41,12 +41,12 @@ export function fit(sizes: readonly number[], count: number): readonly number[] 
 export function insert(
   sizes: readonly number[],
   index: number,
-  before: boolean,
+  isBefore: boolean,
 ): readonly number[] {
   const fitted = [...fit(sizes, sizes.length)]
   const half = (fitted[index] ?? 1 / Math.max(fitted.length, 1)) / 2
   fitted[index] = half
-  fitted.splice(before ? index : index + 1, 0, half)
+  fitted.splice(isBefore ? index : index + 1, 0, half)
   return fit(fitted, fitted.length)
 }
 

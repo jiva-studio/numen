@@ -11,7 +11,7 @@ import { formatErrorMessage } from '@numen/wire'
 import type { CommandDeps, CommandHandler, RunContext, Voice } from './deps'
 import type { CommandInvocation } from '../types'
 import type { AnswerWords } from '../words'
-import { all, formatNames } from '../lib/voice'
+import { joinAll, formatNames } from '../lib/voice'
 export type { CommandDeps }
 import {
   atItsFile,
@@ -169,22 +169,22 @@ const getInvocationPaths = (invocation: CommandInvocation): readonly string[] =>
  */
 const removeFiles = async (
   invocation: CommandInvocation,
-  destroy: boolean,
+  isPermanent: boolean,
   on: CommandDeps,
   words: AnswerWords,
 ): Promise<void> => {
   const dangling: string[] = []
   const errors: string[] = []
-  let waiting = false
+  let isWaiting = false
   const opening = on.goes.getOpeningNote()
 
   for (const path of getInvocationPaths(invocation)) {
     const tab = await settleTab(path, on)
-    if (tab.waiting) {
-      waiting = true
+    if (tab.isWaiting) {
+      isWaiting = true
       continue
     }
-    const answer = await on.files.remove(path, destroy)
+    const answer = await on.files.remove(path, isPermanent)
     const error = answer.error
     if (error) {
       errors.push(words.errors[error])
@@ -195,8 +195,8 @@ const removeFiles = async (
     if (opening) await on.goes.leave(path, opening)
   }
 
-  if (errors.length > 0) return on.writeMessage(all(...errors), 'error')
-  if (waiting) return on.writeMessage(words.unanswered, 'caution')
+  if (errors.length > 0) return on.writeMessage(joinAll(...errors), 'error')
+  if (isWaiting) return on.writeMessage(words.unanswered, 'caution')
   on.writeMessage(formatNames(words.dangling, dangling))
 }
 

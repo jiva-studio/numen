@@ -55,11 +55,11 @@ export const renameVault = async (
  */
 export const removeVault = async (
   invocation: CommandInvocation,
-  erase: boolean,
+  shouldErase: boolean,
   on: VaultContext & Voice,
   words: AnswerWords,
 ): Promise<void> => {
   const id = invocation.vault.id
-  const error = await on.vaults.remove(id, erase)
+  const error = await on.vaults.remove(id, shouldErase)
   if (error) on.writeMessage(words.vaultErrors[error], 'error')
 }

@@ -59,7 +59,7 @@ const rowId = (at: number): string => optionId(props.uid, at)
     class="palette__group"
     role="group"
     :aria-labelledby="titleId"
-    :aria-busy="placed.group.working || undefined"
+    :aria-busy="placed.group.isWorking || undefined"
   >
     <p
       :id="titleId"
@@ -68,7 +68,7 @@ const rowId = (at: number): string => optionId(props.uid, at)
     >
       <span>{{ placed.group.title }}</span>
       <!-- More of this group is on its way. -->
-      <Spinner v-if="placed.group.working" />
+      <Spinner v-if="placed.group.isWorking" />
     </p>
 
     <PaletteRow
@@ -77,7 +77,7 @@ const rowId = (at: number): string => optionId(props.uid, at)
       :key="row.item.id"
       :row="row"
       :id="rowId(row.at)"
-      :here="row.at === here"
+      :is-highlighted="row.at === here"
       @point-at="(moved) => emit('point-at', row.at, moved)"
       @choose="(second) => emit('choose', row.at, second)"
     >

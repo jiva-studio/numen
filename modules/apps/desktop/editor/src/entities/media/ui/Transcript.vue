@@ -42,7 +42,7 @@ watchPostEffect(() =>
   times.show({
     times: cues.value,
     current: current.value,
-    following: following.value && !typing.value,
+    isFollowing: following.value && !typing.value,
   }),
 )
 
@@ -71,7 +71,7 @@ function onSave() {
       {{ error }}
     </p>
 
-    <!-- Until the recording has been read, no words is not the same as no words
+    <!-- Until the recording has been read, no words is not the isSame as no words
          yet. The button says there is nothing here, so the note says it only
          where there is no button. -->
     <Waiting v-if="isLoading" :label="words.loading" />

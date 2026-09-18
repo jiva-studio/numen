@@ -18,20 +18,20 @@ export interface ReachSite {
 
 export interface ReachStrategy {
   /** Whether the node draws a handle for a pointer to press. */
-  readonly handle: boolean
+  readonly hasHandle: boolean
   /** What the node listens for besides. Called once, inside the node's scope. */
   readonly listeners: (site: ReachSite) => Record<string, (event: PointerEvent) => void>
 }
 
 /** The handle, under the hand and under the keyboard. */
 export const byHandle: ReachStrategy = {
-  handle: true,
+  hasHandle: true,
   listeners: () => ({}),
 }
 
 /** A finger left still on the node. Milliseconds, if the wait is to be another. */
 export const byHolding = (after: number = HOLD): ReachStrategy => ({
-  handle: false,
+  hasHandle: false,
   listeners: (site) => {
     const held = useHold(site.ready, site.reach, () => after)
     return {

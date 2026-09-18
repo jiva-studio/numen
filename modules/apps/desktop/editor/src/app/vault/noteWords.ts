@@ -8,7 +8,7 @@ import type {
 } from '@numen/protocol'
 import { namesOf } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
-import type { Link, Neighbourhood, NoteResult, Role, Seat } from '@/entities/note'
+import type { Link, Neighbourhood, NoteWriteResult, Role, Seat } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 
 /**
@@ -63,9 +63,9 @@ export const mapLink = (link: Link) => ({
   label: link.label ?? '',
 })
 
-export const mapBaseline = (baseline: { prose: string; at: string }) => ({
+export const mapBaseline = (baseline: { prose: string; fingerprint: string }) => ({
   prose: baseline.prose,
-  at: fingerprint(baseline.at),
+  at: fingerprint(baseline.fingerprint),
 })
 
 export const mapNoteResult = (from: {
@@ -74,15 +74,15 @@ export const mapNoteResult = (from: {
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   url?: string | undefined
   embed?: string | undefined
-}): NoteResult & { at?: string; changed: boolean } => {
+}): NoteWriteResult => {
   const at = stamp(from.at)
   const error = errorIn(from)
   const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
   return {
     body: from.body ?? '',
     error,
-    changed: staleIn(from),
-    ...(at === undefined ? {} : { at }),
+    isChanged: staleIn(from),
+    ...(at === undefined ? {} : { fingerprint: at }),
     ...(link === undefined ? {} : { link }),
   }
 }

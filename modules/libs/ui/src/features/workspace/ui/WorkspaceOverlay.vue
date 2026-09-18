@@ -6,7 +6,7 @@ import type { Rect } from '../lib/rect'
 const props = defineProps<{
   box: Rect
   /** Drawn as a line between two tabs, for a place in a strip. */
-  caret?: boolean
+  isCaretLine?: boolean
 }>()
 
 const overlayStyle = computed(() => ({
@@ -18,7 +18,7 @@ const overlayStyle = computed(() => ({
 </script>
 
 <template>
-  <div class="workspace__overlay" :data-caret="caret || undefined" :style="overlayStyle" />
+  <div class="workspace__overlay" :data-caret="isCaretLine || undefined" :style="overlayStyle" />
 </template>
 
 <style scoped>

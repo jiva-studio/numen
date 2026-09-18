@@ -68,7 +68,7 @@ describe('what the window has to say', () => {
       id: 'reading\t01A',
       says: 'Reading the vault',
       about: 'Sanskrit',
-      working: true,
+      isWorking: true,
       isAsked: true,
     })
   })
@@ -79,7 +79,7 @@ describe('what the window has to say', () => {
 
     expect(one.notices.value[0]).toMatchObject({
       says: 'no such folder',
-      working: false,
+      isWorking: false,
       tone: 'alarm',
       stay: 'kept',
     })

@@ -16,9 +16,9 @@ const props = withDefaults(
     /** How tall it stands, as a length. */
     high?: string
     /** Rounded to its own ends, where what is awaited is drawn as a pill. */
-    pill?: boolean
+    isPill?: boolean
   }>(),
-  { wide: '100%', high: '1em', pill: false },
+  { wide: '100%', high: '1em', isPill: false },
 )
 
 const skeletonStyle = computed(() => ({
@@ -30,7 +30,7 @@ const skeletonStyle = computed(() => ({
 <template>
   <span
     class="skeleton numen"
-    :class="{ 'skeleton--pill': pill }"
+    :class="{ 'skeleton--pill': isPill }"
     :style="skeletonStyle"
     aria-hidden="true"
   />
@@ -49,7 +49,7 @@ const skeletonStyle = computed(() => ({
 }
 
 .skeleton--pill {
-  border-radius: var(--numen-radius-pill);
+  border-radius: var(--numen-radius-isPill);
 }
 
 /* Between a fill and half of one, and no faster than a person reading the row

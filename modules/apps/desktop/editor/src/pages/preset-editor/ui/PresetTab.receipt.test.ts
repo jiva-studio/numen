@@ -84,7 +84,7 @@ describe('when the material is learned', () => {
   })
 
   it('says nothing at all until the answer lands', () => {
-    const { tab } = mountPresetTab({ honest: false })
+    const { tab } = mountPresetTab({ isHonest: false })
     expect(tab.findAll('[data-control="learned"] [data-control="tile"]')).toHaveLength(0)
   })
 

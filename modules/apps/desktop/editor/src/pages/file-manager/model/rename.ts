@@ -23,12 +23,12 @@ const getExtension = (name: string): string => {
 /**
  * A name typed over a row, as the path the file is filed under from now on.
  */
-export const resolveRenamePath = (path: string, name: string, folder = false): string => {
+export const resolveRenamePath = (path: string, name: string, isFolder = false): string => {
   const typed = name.trim()
   if (!typed || typed.includes('/')) return ''
 
   const hasExtension = findExtensionStart(typed) >= 0
-  const called = folder || hasExtension ? typed : `${typed}${getExtension(fileOf(path))}`
+  const called = isFolder || hasExtension ? typed : `${typed}${getExtension(fileOf(path))}`
   if (called === fileOf(path)) return ''
 
   const under = getFolderPath(path)

@@ -8,7 +8,7 @@
 
 /** What the mocked vault answers about itself, set before the window draws. */
 export const said = {
-  ready: true,
+  isReady: true,
   error: '',
   opening: 'Root.md' as string | null,
   names: [] as {
@@ -73,27 +73,27 @@ export const said = {
     cards: 0,
     notWritten: [] as { path: string; text: string }[],
     error: null as import('@/shared/errors').ErrorCode | null,
-    changed: false,
+    isChanged: false,
     at: 'a2',
   },
 }
 
 /** The vaults this installation holds, and the one the window is showing. */
 export const listed = {
-  vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }],
+  vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }],
   showing: 'physics',
 }
 
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders = {
   '': [
-    { path: 'physics', name: 'physics', folder: true, kind: 'other' },
-    { path: 'Root.md', name: 'Root.md', folder: false, kind: 'note' },
-    { path: 'Cover.png', name: 'Cover.png', folder: false, kind: 'other' },
+    { path: 'physics', name: 'physics', isFolder: true, kind: 'other' },
+    { path: 'Root.md', name: 'Root.md', isFolder: false, kind: 'note' },
+    { path: 'Cover.png', name: 'Cover.png', isFolder: false, kind: 'other' },
   ],
   physics: [
-    { path: 'physics/Entropy.md', name: 'Entropy.md', folder: false, kind: 'note' },
-    { path: 'physics/Kelvin.md', name: 'Kelvin.md', folder: false, kind: 'note' },
+    { path: 'physics/Entropy.md', name: 'Entropy.md', isFolder: false, kind: 'note' },
+    { path: 'physics/Kelvin.md', name: 'Kelvin.md', isFolder: false, kind: 'note' },
   ],
 } as Record<string, readonly Record<string, unknown>[]>
 
@@ -213,7 +213,7 @@ export const sourceAnswer = (path: string, kind: 'book' | 'recording') => ({
 
 /** Everything answered back where it opens, which is where every test begins. */
 export const forgetAnswers = () => {
-  said.ready = true
+  said.isReady = true
   said.opening = 'Root.md'
   said.names = []
   said.passages = []
@@ -238,11 +238,11 @@ export const forgetAnswers = () => {
     cards: 0,
     notWritten: [],
     error: null,
-    changed: false,
+    isChanged: false,
     at: 'a2',
   }
   maker.forget()
   outside.forget()
-  listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]
+  listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }]
   listed.showing = 'physics'
 }

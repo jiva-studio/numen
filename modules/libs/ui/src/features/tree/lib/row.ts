@@ -16,7 +16,7 @@ export type RowId = string
 export interface Row {
   readonly id: RowId
   readonly name: string
-  readonly holds: boolean
+  readonly isHolding: boolean
   /** The rows it holds. A row that holds may hold none yet. */
   readonly rows?: readonly Row[]
 }
@@ -45,15 +45,15 @@ export const getMarkOf = (
 export interface ShownRow {
   readonly id: RowId
   readonly name: string
-  readonly holds: boolean
+  readonly isHolding: boolean
   /** The row holding it. Null at the top level. */
   readonly parent: RowId | null
   /** How deep it stands, counting from one, which is what it is announced as. */
   readonly level: number
   /** The last of the rows its holder holds. */
-  readonly last: boolean
+  readonly isLast: boolean
   /** Holding at least one row. */
-  readonly holding: boolean
+  readonly hasRows: boolean
   /** What it holds is drawn. */
   readonly open: boolean
 }
@@ -68,20 +68,20 @@ export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonl
   const walk = (children: readonly Row[], parent: RowId | null, level: number): void => {
     children.forEach((row, at) => {
       const inside = row.rows ?? []
-      const opened = row.holds && open.has(row.id)
+      const isOpened = row.isHolding && open.has(row.id)
 
       shown.push({
         id: row.id,
         name: row.name,
-        holds: row.holds,
+        isHolding: row.isHolding,
         parent,
         level,
-        last: at === children.length - 1,
-        holding: inside.length > 0,
-        open: opened,
+        isLast: at === children.length - 1,
+        hasRows: inside.length > 0,
+        open: isOpened,
       })
 
-      if (opened) walk(inside, row.id, level + 1)
+      if (isOpened) walk(inside, row.id, level + 1)
     })
   }
 

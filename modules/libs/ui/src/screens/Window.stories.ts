@@ -80,34 +80,34 @@ const ROWS: readonly Row[] = [
   {
     id: 'physics',
     name: 'Physics',
-    holds: true,
+    isHolding: true,
     rows: [
-      { id: 'entropy', name: 'Entropy.md', holds: false },
-      { id: 'mixing', name: 'Entropy of mixing.md', holds: false },
-      { id: 'second-law', name: 'The second law.md', holds: false },
-      { id: 'free-energy', name: 'Free energy.md', holds: false },
+      { id: 'entropy', name: 'Entropy.md', isHolding: false },
+      { id: 'mixing', name: 'Entropy of mixing.md', isHolding: false },
+      { id: 'second-law', name: 'The second law.md', isHolding: false },
+      { id: 'free-energy', name: 'Free energy.md', isHolding: false },
     ],
   },
   {
     id: 'computation',
     name: 'Computation',
-    holds: true,
+    isHolding: true,
     rows: [
-      { id: 'shannon-entropy', name: 'Shannon entropy.md', holds: false },
-      { id: 'landauer', name: "Landauer's principle.md", holds: false },
+      { id: 'shannon-entropy', name: 'Shannon entropy.md', isHolding: false },
+      { id: 'landauer', name: "Landauer's principle.md", isHolding: false },
     ],
   },
   {
     id: 'reading',
     name: 'Reading',
-    holds: true,
+    isHolding: true,
     rows: [
-      { id: 'boltzmann-pdf', name: 'Boltzmann 1877.pdf', holds: false },
-      { id: 'shannon-pdf', name: 'Shannon 1948.pdf', holds: false },
+      { id: 'boltzmann-pdf', name: 'Boltzmann 1877.pdf', isHolding: false },
+      { id: 'shannon-pdf', name: 'Shannon 1948.pdf', isHolding: false },
     ],
   },
-  { id: 'inbox', name: 'Inbox.md', holds: false },
-  { id: 'reading-list', name: 'Reading list.md', holds: false },
+  { id: 'inbox', name: 'Inbox.md', isHolding: false },
+  { id: 'reading-list', name: 'Reading list.md', isHolding: false },
 ]
 
 const OPEN = ['physics', 'computation', 'reading']
@@ -117,7 +117,7 @@ const iconFor = (id: string, open: boolean) => {
   const row =
     ROWS.find((one) => one.id === id) ??
     ROWS.flatMap((one) => one.rows ?? []).find((one) => one.id === id)
-  if (row?.holds) return open ? FolderOpen : Folder
+  if (row?.isHolding) return open ? FolderOpen : Folder
   if (row?.name.endsWith('.pdf')) return Book
   return FileText
 }
@@ -348,7 +348,7 @@ const did = (id: string, text: string, about: string, aside: string): Turn => ({
   text,
   about,
   aside,
-  opens: true,
+  isOpening: true,
 })
 
 const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })

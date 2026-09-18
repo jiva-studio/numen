@@ -16,8 +16,8 @@ import { DARK, expectDark } from '@/shared/fixtures/theme'
 interface Knobs {
   /** Cards due today. Nothing until it has been counted. */
   due: number | null
-  bare: boolean
-  over: boolean
+  isBare: boolean
+  isOnButton: boolean
 }
 
 /** The pill on the surface, and the same pill on a filled button. */
@@ -28,11 +28,11 @@ const renderPills = (args: Knobs) => ({
     <div class="numen" style="display:flex;align-items:center;gap:24px;padding:32px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
       <span style="display:inline-flex;align-items:center;gap:8px">
         Sanskrit
-        <DueCount :due="args.due" :bare="args.bare" />
+        <DueCount :due="args.due" :is-bare="args.isBare" />
       </span>
       <Button variant="solid">
         Review
-        <DueCount :due="args.due" :bare="args.bare" over />
+        <DueCount :due="args.due" :is-bare="args.isBare" is-on-button />
       </Button>
     </div>
   `,
@@ -54,10 +54,10 @@ const meta: Meta<Knobs> = {
   },
   argTypes: {
     due: { control: 'number' },
-    bare: { control: 'boolean' },
-    over: { control: 'boolean' },
+    isBare: { control: 'boolean' },
+    isOnButton: { control: 'boolean' },
   },
-  args: { due: 12, bare: false, over: false },
+  args: { due: 12, isBare: false, isOnButton: false },
   render: renderPills,
 }
 
@@ -69,7 +69,7 @@ export const Playground: Story = {}
 
 /** The figure alone, which is what a long list of rows draws. */
 export const Bare: Story = {
-  args: { bare: true },
+  args: { isBare: true },
   play: async ({ canvasElement }) => {
     const [pill] = within(canvasElement).getAllByRole('status')
     expect(pill?.textContent?.trim()).toBe('12')

@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { easeOut } from './arrange'
 import { hangParts, type PartsDeps, type PlexPart } from './inside'
-import { furthest, getOpenParts, scrollBy } from './open'
+import { getFurthest, getOpenParts, scrollBy } from './open'
 import type { PlacedNode } from './node'
 
 const NODE: PlacedNode = {
@@ -73,13 +73,13 @@ describe('more parts than the window holds', () => {
     const settled = hung(parts(MOST + 4))!
     expect(settled.shown).toBe(MOST)
     expect(settled.parts).toHaveLength(MOST + 4)
-    expect(furthest(settled)).toBe(4)
+    expect(getFurthest(settled)).toBe(4)
   })
 
   it('has nowhere to scroll where every one of them stands at once', () => {
     const settled = hung(parts(MOST))!
     expect(settled.shown).toBe(MOST)
-    expect(furthest(settled)).toBe(0)
+    expect(getFurthest(settled)).toBe(0)
   })
 
   it('stands as deep as the window, not as deep as it holds', () => {
@@ -90,7 +90,7 @@ describe('more parts than the window holds', () => {
   it('stands as many as the options ask for', () => {
     const settled = hangParts(NODE, parts(MOST + 4), { ...SIZES, maxParts: 3 }, DEPS)!
     expect(settled.shown).toBe(3)
-    expect(furthest(settled)).toBe(MOST + 1)
+    expect(getFurthest(settled)).toBe(MOST + 1)
   })
 })
 
@@ -100,8 +100,8 @@ describe('scrolling the window over the parts', () => {
   it('opens on the first of them, with more below and none above', () => {
     const shown = getOpenParts(many(), 1)!
     expect(shown.parts[0]!.text).toBe('Part 0')
-    expect(shown.above).toBe(false)
-    expect(shown.below).toBe(true)
+    expect(shown.isAbove).toBe(false)
+    expect(shown.isBelow).toBe(true)
   })
 
   it('moves by whole parts, so none is ever half on the ground', () => {
@@ -113,14 +113,14 @@ describe('scrolling the window over the parts', () => {
   })
 
   it('says there is more above it once it has been scrolled', () => {
-    expect(getOpenParts(many(), 1, 1)!.above).toBe(true)
+    expect(getOpenParts(many(), 1, 1)!.isAbove).toBe(true)
   })
 
   it('scrolls no further than the last of them', () => {
     const settled = many()
     const shown = getOpenParts(settled, 1, 99)!
     expect(shown.parts.at(-1)!.text).toBe(`Part ${settled.parts.length - 1}`)
-    expect(shown.below).toBe(false)
+    expect(shown.isBelow).toBe(false)
   })
 
   it('scrolls no further back than the first of them', () => {
@@ -288,7 +288,7 @@ describe('a node with little room under it', () => {
   it('stands in its window only what the depth left under it holds', () => {
     const settled = hangWithRoom(3 * SIZES.partHeight + 10)!
     expect(settled.shown).toBe(3)
-    expect(furthest(settled)).toBe(MOST)
+    expect(getFurthest(settled)).toBe(MOST)
   })
 
   it('keeps every part it does hang inside the window', () => {
@@ -303,7 +303,7 @@ describe('a node with little room under it', () => {
   it('stands them all at once where the depth holds every one of them', () => {
     const settled = hangParts(low(400), parts(3), SIZES, DEPS)!
     expect(settled.shown).toBe(3)
-    expect(furthest(settled)).toBe(0)
+    expect(getFurthest(settled)).toBe(0)
   })
 })
 

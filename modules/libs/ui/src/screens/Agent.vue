@@ -15,7 +15,7 @@ withDefaults(
   defineProps<{
     turns: readonly Turn[]
     /** An answer is on its way. */
-    working?: boolean
+    isWorking?: boolean
     placeholder?: string
     disabled?: boolean
     /** What the disc at the end of the field is called while it sends. */
@@ -24,7 +24,7 @@ withDefaults(
     stopLabel?: string
   }>(),
   {
-    working: false,
+    isWorking: false,
     placeholder: 'Write a message',
     disabled: false,
     sendLabel: 'Send',
@@ -95,7 +95,7 @@ onBeforeUnmount(() => watching?.disconnect())
       ref="composer"
       v-model="text"
       class="agent__composer"
-      :working="working"
+      :is-working="isWorking"
       :placeholder="placeholder"
       :disabled="disabled"
       :send-label="sendLabel"

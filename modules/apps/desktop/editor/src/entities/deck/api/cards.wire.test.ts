@@ -114,7 +114,7 @@ describe('reading a deck', () => {
 
     expect(answer.deck?.cards.map((one) => one.sectionIndex)).toEqual([0, null])
     expect(answer.deck?.cards[0]?.values).toEqual([{ field: 'Front', text: '<p>Entropy</p>' }])
-    expect(answer.at).toBe(read)
+    expect(answer.fingerprint).toBe(read)
     expect(answer.bound).toBe(400)
   })
 
@@ -125,7 +125,7 @@ describe('reading a deck', () => {
 
     expect(answer.deck).toBeNull()
     expect(answer.error).toBe('notADeck')
-    expect(answer.at).toBe('')
+    expect(answer.fingerprint).toBe('')
   })
 
   it('names what is wrong with it in the words the window uses', async () => {
@@ -197,7 +197,7 @@ describe('writing a deck', () => {
       read,
     )
 
-    expect(answer.changed).toBe(true)
+    expect(answer.isChanged).toBe(true)
     expect(answer.error).toBeNull()
   })
 })
@@ -243,7 +243,7 @@ describe('a stencil', () => {
     )
 
     expect(asked[0]?.fields).toEqual(['Front', 'Back'])
-    expect(answer.at).toBe('12 34 Word.md')
+    expect(answer.fingerprint).toBe('12 34 Word.md')
   })
 })
 
@@ -263,8 +263,8 @@ describe('renaming a field', () => {
       cards: 12,
       notWritten: [{ path: 'Old.md', text: 'Front' }],
       error: null,
-      changed: false,
-      at: '12 34 Word.md',
+      isChanged: false,
+      fingerprint: '12 34 Word.md',
     })
   })
 

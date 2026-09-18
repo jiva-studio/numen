@@ -22,11 +22,11 @@ export type SessionKeyIntent =
 /** What the window is showing when the key is pressed. */
 export interface ScreenState {
   /** Whether the answer is already showing. */
-  shown: boolean
+  isShown: boolean
   /** Whether the panel a card is asked about in is up. */
-  asking?: boolean
+  isAsking?: boolean
   /** Whether the panel the deck's notes are read in is up. */
-  reading?: boolean
+  isReading?: boolean
 }
 
 /** The letter the panel a card is asked about in is brought in with. */
@@ -67,7 +67,7 @@ const getPanelKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
 /** The keys the card itself is turned over, answered and left by. */
 const getCardKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
   if (press.key === 'Escape') {
-    return screen.asking || screen.reading ? { does: 'shut' } : { does: 'leave' }
+    return screen.isAsking || screen.isReading ? { does: 'shut' } : { does: 'leave' }
   }
   if (press.key === 'u' || press.key === 'U') return { does: 'takeBack' }
   if (press.key === ' ') return getSpaceKeyIntent(press, screen)
@@ -79,8 +79,8 @@ const getCardKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKey
  * answer is still shown by the control standing under both panes.
  */
 const getSpaceKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
-  if (screen.reading) return { does: 'scroll', back: press.shiftKey }
-  return screen.shown ? null : { does: 'show' }
+  if (screen.isReading) return { does: 'scroll', back: press.shiftKey }
+  return screen.isShown ? null : { does: 'show' }
 }
 
 /** The number a card is answered with, one for each grade in the order they are listed. */

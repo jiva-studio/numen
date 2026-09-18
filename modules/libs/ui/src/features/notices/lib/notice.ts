@@ -35,7 +35,7 @@ export interface Notice {
   /** What that count counts. */
   readonly counting?: TallyUnit
   /** Whether it is running now, or is a fact that is simply so. */
-  readonly working?: boolean
+  readonly isWorking?: boolean
   /** How it reads. Plain unless said otherwise. */
   readonly tone?: Tone
   /** How long it stands. Held unless said otherwise. */
@@ -76,7 +76,7 @@ export const createNotice = (task: Task): Notice => {
     id: task.id,
     says: error || task.doing,
     about: task.about,
-    working: error === '',
+    isWorking: error === '',
     isAsked: task.isAsked || error !== '',
     ...(error ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
     ...(completed !== undefined && total !== undefined && total > 0
@@ -90,7 +90,7 @@ export const createNotice = (task: Task): Notice => {
  *
  * A notice with no words is one nobody could read.
  */
-export const readable = (notices: readonly Notice[]): readonly Notice[] =>
+export const getReadable = (notices: readonly Notice[]): readonly Notice[] =>
   notices.filter((notice) => notice.says !== '')
 
 /** What a notice counts against, for the ones that count anything. */
@@ -107,6 +107,6 @@ export const getStillAway = (
   away: ReadonlySet<string>,
   notices: readonly Notice[],
 ): ReadonlySet<string> => {
-  const here = new Set(readable(notices).map((notice) => notice.id))
+  const here = new Set(getReadable(notices).map((notice) => notice.id))
   return new Set([...away].filter((id) => here.has(id)))
 }

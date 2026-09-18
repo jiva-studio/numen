@@ -74,12 +74,12 @@ export function windowAppearance(
     dressed.mode.textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
     try {
       const css = await fileOf(theme)
-      if (mine.current) dressed.theme.textContent = css
+      if (mine.isCurrent) dressed.theme.textContent = css
     } catch (error) {
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
-      if (mine.current) write(words.unworn, 'error')
+      if (mine.isCurrent) write(words.unworn, 'error')
     }
   }
 

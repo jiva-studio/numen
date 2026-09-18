@@ -29,7 +29,7 @@ export const Quiet: Story = {
 
 /** Work with no count: dots, and no bar to fill. */
 export const Working: Story = {
-  args: { says: 'Reading', about: 'Sabhaparva.epub', working: true },
+  args: { says: 'Reading', about: 'Sabhaparva.epub', isWorking: true },
   play: async ({ canvasElement }) => {
     const line = lineIn(canvasElement)
     await expect(line).toHaveAttribute('data-state', 'working')
@@ -42,7 +42,7 @@ export const Counting: Story = {
   args: {
     says: 'Learning what it says',
     about: 'Sabhaparva.epub',
-    working: true,
+    isWorking: true,
     tally: { done: 1200, total: 36560 },
     left: '1:58:20',
   },
@@ -63,7 +63,7 @@ export const TwoLines: Story = {
   args: {
     says: 'Proofreading the transcript',
     about: 'A Conversation in Vrindavan, 1972-11-04.md',
-    working: true,
+    isWorking: true,
     tally: { done: 9, total: 100 },
     left: '4:05',
   },
@@ -85,7 +85,7 @@ export const TooLong: Story = {
   args: {
     says: 'Learning what a very long name for a piece of work has to say about itself',
     about: 'a-note-whose-name-nobody-shortened-before-they-filed-it-away-for-good.md',
-    working: true,
+    isWorking: true,
     tally: { done: 74, total: 100 },
     left: '0:41',
   },

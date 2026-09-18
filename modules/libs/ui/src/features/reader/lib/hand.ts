@@ -44,13 +44,13 @@ export function getWheelOffset(wheel: Wheel, hasBelow: boolean): Offset {
 export class Hand {
   private from: Offset | undefined
   private stood: Offset = { x: 0, y: 0 }
-  private moved = false
+  private isMoved = false
 
   /** The hand took hold, at a point, with the row standing here. */
   take(at: Offset, stood: Offset) {
     this.from = at
     this.stood = stood
-    this.moved = false
+    this.isMoved = false
   }
 
   /** Whether the hand is holding the row. */
@@ -60,7 +60,7 @@ export class Hand {
 
   /** Whether it has moved far enough that this is a drag. */
   get dragging(): boolean {
-    return this.moved
+    return this.isMoved
   }
 
   /**
@@ -73,8 +73,8 @@ export class Hand {
   to(at: Offset): Offset | undefined {
     if (!this.from) return undefined
     const by = { x: at.x - this.from.x, y: at.y - this.from.y }
-    if (!this.moved && Math.hypot(by.x, by.y) < DRAG_THRESHOLD) return undefined
-    this.moved = true
+    if (!this.isMoved && Math.hypot(by.x, by.y) < DRAG_THRESHOLD) return undefined
+    this.isMoved = true
     return { x: this.stood.x - by.x, y: this.stood.y - by.y }
   }
 

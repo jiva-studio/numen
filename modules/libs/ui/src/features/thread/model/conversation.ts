@@ -27,7 +27,7 @@ export interface ConversationStrings {
 export interface Conversation {
   readonly turns: Ref<Turn[]>
   /** An answer is being written; the composer shows it. */
-  readonly working: Ref<boolean>
+  readonly isWorking: Ref<boolean>
   readonly ask: (question: string, focus: string) => Promise<void>
   /** Where in a source one line was working, for a line that says it opens one. */
   readonly getSourceLocation: (turn: string) => SourceLocation | null
@@ -48,7 +48,7 @@ export function useConversation(
   paint: Paint = onNextFrame,
 ): Conversation {
   const turns = ref<Turn[]>([])
-  const working = ref(false)
+  const isWorking = ref(false)
 
   /** Where in a source each line about work was working, under the line's name. */
   const locations = new Map<string, SourceLocation>()
@@ -72,13 +72,13 @@ export function useConversation(
   }
 
   const ask = async (question: string, focus: string) => {
-    if (!question || working.value) return
+    if (!question || isWorking.value) return
 
     turns.value.push({ id: `${next++}`, voice: 'asked', text: question })
 
     const flight = new AbortController()
     inFlight = flight
-    working.value = true
+    isWorking.value = true
 
     // The line for the work, up before anything comes back, and the line for
     // the wait under it. A question is in hand from the moment it is sent, and
@@ -158,14 +158,14 @@ export function useConversation(
       const error = await readSteps()
 
       work.clear()
-      const said = answer.isSaid()
+      const wasSaid = answer.isSaid()
       answer.settle()
 
       // Given up on is not gone wrong: what was asked for stops, and the
       // conversation keeps whatever had arrived by then.
       if (!flight.signal.aborted) {
         if (error) put({ id: `${next++}`, voice: 'answered', text: error, state: 'failed' })
-        else if (!said) put({ id: `${next++}`, voice: 'answered', text: words.nothing })
+        else if (!wasSaid) put({ id: `${next++}`, voice: 'answered', text: words.nothing })
       }
     } catch {
       // The turn ends however it went wrong, and the person is told it could
@@ -180,7 +180,7 @@ export function useConversation(
       if (inFlight === flight) {
         inFlight = null
         clear = null
-        working.value = false
+        isWorking.value = false
       }
     }
   }
@@ -190,7 +190,7 @@ export function useConversation(
     inFlight = null
     clear?.()
     clear = null
-    working.value = false
+    isWorking.value = false
   }
 
   /**
@@ -209,7 +209,7 @@ export function useConversation(
 
   return {
     turns,
-    working,
+    isWorking,
     ask,
     getSourceLocation: (turn: string) => locations.get(turn) ?? null,
     stop,

@@ -29,7 +29,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   retained: 0,
   owed: 0,
   through: 0,
-  enough: true,
+  canLearnEveryCard: true,
   closed: [],
   clears: 0,
   learned: 0,
@@ -43,14 +43,14 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
   goal: 'minutes',
   grid: cards.map((_, at) => at * 10),
   days: [],
-  at: cards.map((one, at) => point({ reviews: one, enough: enough[at] ?? true })),
+  at: cards.map((one, at) => point({ reviews: one, canLearnEveryCard: enough[at] ?? true })),
   now: NOWHERE,
   suggested: NOWHERE,
   decks: 1,
   cards: 400,
   overdue: 0,
   unbegun: 0,
-  honest: true,
+  isHonest: true,
 })
 
 describe('where a place of the grid stands across the picture', () => {

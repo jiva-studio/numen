@@ -16,7 +16,7 @@ export interface Installation {
   readonly applied: Readonly<Ref<string>>
   readonly mode: Readonly<Ref<Mode>>
   /** Whether the theme worn declares light and dark itself. */
-  readonly pinned: Readonly<Ref<boolean>>
+  readonly isPinned: Readonly<Ref<boolean>>
   readonly sizes: Readonly<Ref<Sizes>>
   readonly bounds: Readonly<Ref<Ranges>>
   /**
@@ -26,7 +26,7 @@ export interface Installation {
    */
   choose(item: string): void
   /** The two switches, which are read and written as the one value. */
-  readonly syncing: Ref<boolean>
+  readonly isSyncing: Ref<boolean>
   readonly isHanging: Ref<boolean>
   /** How many parts a day is hung in. A field offers no number as well. */
   readonly parts: Readonly<Ref<number>>

@@ -154,7 +154,7 @@ const cardsSaid = {
     ) => {
       requests.cards.push(`deck ${path}`)
       requests.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
-      return { error: null, changed: false, at: 'a2', bound: 0 }
+      return { error: null, isChanged: false, at: 'a2', bound: 0 }
     },
     readStencil: async (path: string) => ({
       stencil: { path, title: path, fields: [], faces: [], problems: [] },
@@ -163,7 +163,7 @@ const cardsSaid = {
     }),
     writeStencil: async (path: string) => {
       requests.cards.push(`stencil ${path}`)
-      return { error: null, changed: false, at: 'a2' }
+      return { error: null, isChanged: false, at: 'a2' }
     },
   },
 }

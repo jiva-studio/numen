@@ -23,7 +23,7 @@ defineEmits<{
     variant="outline"
     class="presets__preset"
     :class="{ 'presets__preset--paused': tile.one.paused }"
-    :disabled="!tile.opens"
+    :disabled="!tile.canStart"
     @click="$emit('start')"
   >
     <span class="presets__said">
@@ -41,7 +41,7 @@ defineEmits<{
          A session is left back onto this screen with these figures moved,
          so they are said again where they are read aloud. -->
     <span v-if="!tile.one.paused" class="presets__figures" aria-live="polite">
-      <span class="presets__done" :data-over="tile.over ? '' : undefined">{{ tile.says }}</span>
+      <span class="presets__done" :data-over="tile.isOver ? '' : undefined">{{ tile.says }}</span>
       <span v-if="tile.left" class="presets__left">{{ tile.left }}</span>
     </span>
   </Button>

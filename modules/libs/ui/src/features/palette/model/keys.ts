@@ -23,7 +23,7 @@ export interface PaletteKeysOptions {
   readonly reveal: () => void
   readonly places: PalettePlacesState
   /** Whether the action panel stands over the palette. */
-  readonly panel: Ref<boolean>
+  readonly isPanelOpen: Ref<boolean>
   readonly getOfferedActions: () => readonly PaletteAction[]
   readonly typed: Ref<string>
   /** Whether the palette is drawn at all, and which step it is on. */
@@ -51,11 +51,11 @@ const STEPS: Readonly<Record<string, readonly [by: number, from?: number]>> = {
 }
 
 export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
-  const { field, places, panel, typed } = options
+  const { field, places, isPanelOpen, typed } = options
 
   // The keyboard comes back to the field when the panel over it goes, and a
   // palette that is going takes it somewhere else itself.
-  watch(panel, async (now) => {
+  watch(isPanelOpen, async (now) => {
     if (now || !options.isOpen()) return
     await nextTick()
     field.value?.focus()
@@ -71,7 +71,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   const openActions = (event: KeyboardEvent): void => {
     if (!options.getOfferedActions().length) return
     event.preventDefault()
-    panel.value = true
+    isPanelOpen.value = true
   }
 
   const onKey = (event: KeyboardEvent): void => {
@@ -115,7 +115,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
    * caller that acts on what is lit acts on what is already so.
    */
   const enter = async (): Promise<void> => {
-    panel.value = false
+    isPanelOpen.value = false
     places.goTo(findKeptPlace(places.places.value, options.getOpensOn() || places.held.value))
     await nextTick()
     field.value?.focus()
@@ -124,7 +124,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   }
 
   const leave = (): void => {
-    panel.value = false
+    isPanelOpen.value = false
     places.held.value = ''
     const back = options.getOpenedFrom()
     if (back?.isConnected) back.focus()

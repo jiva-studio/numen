@@ -157,7 +157,7 @@ provide(
       </template>
     </WorkspacePane>
 
-    <WorkspaceOverlay v-if="overlay" :box="overlay" :caret="landing?.kind === 'strip'" />
+    <WorkspaceOverlay v-if="overlay" :box="overlay" :is-caret-line="landing?.kind === 'strip'" />
 
     <DragPreview v-if="label && position" class="workspace__dragged" :at="position" :says="label" />
   </div>

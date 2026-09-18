@@ -21,7 +21,7 @@ const meta = {
       },
     },
   },
-  args: { tool: 'note_search', about: '', working: false },
+  args: { tool: 'note_search', about: '', isWorking: false },
 } satisfies Meta<typeof ToolCall>
 
 export default meta
@@ -31,7 +31,7 @@ export const Playground: Story = {}
 
 /** Still in hand: the dots say the answer has not come back yet. */
 export const Working: Story = {
-  args: { tool: 'note_neighbourhood', about: 'Harmonic oscillator', working: true },
+  args: { tool: 'note_neighbourhood', about: 'Harmonic oscillator', isWorking: true },
 }
 
 /** Put down, with what it was about. */
@@ -48,7 +48,7 @@ export const InAThread: Story = {
         <ToolCall tool="note_search" about="entropy" />
         <ToolCall tool="note_read" about="Entropy" />
         <ToolCall tool="link_add" about="Entropy → Thermodynamics" />
-        <ToolCall tool="note_rewrite" about="Simple pendulum" working />
+        <ToolCall tool="note_rewrite" about="Simple pendulum" is-working />
       </div>
     `,
   }),
@@ -71,7 +71,7 @@ export const BeingWritten: Story = {
     tool: 'Create a note',
     about: "Bram Doyle's warning",
     aside: '12 015 characters',
-    working: true,
+    isWorking: true,
   },
   play: async ({ canvasElement }) => {
     const line = canvasElement.querySelector('.tool-call')

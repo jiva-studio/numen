@@ -1,8 +1,7 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
-import { StopReason } from '@numen/protocol'
 import { many, percent, plural } from '@numen/ui'
 import type { ErrorCode } from '@/shared/errors'
-import type { BudgetUnit, Goal, Rule } from './types'
+import type { BudgetUnit, Goal, Rule, StopReason } from './types'
 import type { Field } from './lib/fields'
 
 /** What each of the three goals is offered as: the value it steers. */
@@ -130,21 +129,20 @@ const UNWRITTEN =
  * here, so a verdict added to the schema is one this window is made to answer.
  */
 const STOPPED: Record<StopReason, string> = {
-  [StopReason.UNSPECIFIED]: '',
-  [StopReason.NOTHING]: '',
-  [StopReason.NO_MINUTES]:
+  none: '',
+  noMinutes:
     'No minutes a day: this preset schedules nothing, and every deck pointing at it stops.',
-  [StopReason.NO_CARDS]:
+  noCards:
     'No cards a day: this preset schedules nothing, and every deck pointing at it stops.',
-  [StopReason.NO_DAY]:
+  noDay:
     'This preset aims at no day, so it schedules nothing. ' +
     'Name the day the material is to be in the head.',
-  [StopReason.PAST_DAY]:
+  pastDay:
     'This preset is past the day it aimed at. Its budget is spent, and it schedules nothing.',
-  [StopReason.NO_LOAD]:
+  noLoad:
     'Today carries none of this load, so this preset schedules nothing today. ' +
     'The next day that carries some picks its cards up.',
-  [StopReason.NO_WEEK]:
+  noWeek:
     'No day of the week carries any of this load, so this preset schedules ' +
     'nothing on any of them, and every deck pointing at it stops.',
 }

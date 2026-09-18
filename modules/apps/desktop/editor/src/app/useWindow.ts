@@ -105,7 +105,7 @@ export const useWindow = () => {
       source: on?.source ?? null,
       made: getMade(file),
       vault: vaultsModule.shown.value,
-      ready: !window.failure.value,
+      isReady: !window.failure.value,
     }
   }
 

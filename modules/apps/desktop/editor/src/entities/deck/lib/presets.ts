@@ -1,9 +1,35 @@
 /** How the decks pointing at one preset are scheduled, and what that comes to. */
-import type { BudgetName, StopReason } from '@numen/protocol'
 import type { Goal } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 
 export type { Goal }
+
+/** Why a preset schedules nothing. `none` is a preset that schedules. */
+export type StopReason =
+  | 'none'
+  | 'noMinutes'
+  | 'noCards'
+  | 'noDay'
+  | 'pastDay'
+  | 'noLoad'
+  | 'noWeek'
+
+/**
+ * Every reason there is, `none` last. A verdict the schema gains and this does
+ * not is caught where the two are mapped onto each other.
+ */
+export const STOP_REASONS: readonly StopReason[] = [
+  'noMinutes',
+  'noCards',
+  'noDay',
+  'pastDay',
+  'noLoad',
+  'noWeek',
+  'none',
+]
+
+/** A budget a day can run out of, named as the settings name it. */
+export type BudgetName = 'minutesADay' | 'newADay' | 'reviewsADay' | 'byDate' | 'backlog' | 'paused'
 
 /** The three, in the order they are offered. */
 export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
@@ -117,15 +143,15 @@ export interface Preset {
 export interface ReadResult {
   readonly preset: Preset | null
   readonly error: ErrorCode | null
-  readonly at: string
+  readonly fingerprint: string
   readonly bounds: SettingsBounds
 }
 
 /** What writing a preset came back with. */
 export interface WriteResult {
   readonly error: ErrorCode | null
-  readonly changed: boolean
-  readonly at: string
+  readonly isChanged: boolean
+  readonly fingerprint: string
 }
 
 /** What making a preset came back with. */
@@ -141,7 +167,8 @@ export interface Point {
   readonly retained: number
   readonly owed: number
   readonly through: number
-  readonly enough: boolean
+  /** Whether the pace this place sets learns every card face it can. */
+  readonly canLearnEveryCard: boolean
   readonly closed: readonly BudgetName[]
   readonly clears: number
   readonly learned: number
@@ -178,7 +205,7 @@ export interface Curve extends PresetCounts {
   readonly now: Place
   readonly suggested: Place
   readonly isValid?: boolean
-  readonly honest: boolean
+  readonly isHonest: boolean
 }
 
 /** One preset as a person choosing between them sees it. */

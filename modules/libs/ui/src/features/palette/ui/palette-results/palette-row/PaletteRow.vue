@@ -14,7 +14,7 @@ defineProps<{
   /** What this row is addressed by. */
   id: string
   /** Whether the keyboard stands on it. */
-  here: boolean
+  isHighlighted: boolean
 }>()
 
 const emit = defineEmits<{
@@ -34,9 +34,9 @@ defineSlots<{
     :id="id"
     class="palette__item rounded-node flex items-center gap-2 px-2 py-1.5"
     role="option"
-    :aria-selected="here"
+    :aria-selected="isHighlighted"
     :aria-disabled="row.item.disabled || undefined"
-    :data-here="here || undefined"
+    :data-here="isHighlighted || undefined"
     :data-disabled="row.item.disabled || undefined"
     @pointermove="emit('point-at', $event)"
     @pointerdown.prevent
@@ -48,7 +48,7 @@ defineSlots<{
 
     <span class="palette__lines flex min-w-0 flex-1 flex-col">
       <span class="palette__name min-w-0" data-palette="name">
-        <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.hit || undefined">
+        <span v-for="(part, piece) in row.name" :key="piece" :data-hit="part.isHit || undefined">
           {{ part.text }}
         </span>
       </span>
@@ -58,7 +58,7 @@ defineSlots<{
         class="palette__detail text-small text-hushed min-w-0"
         data-palette="detail"
       >
-        <span v-for="(part, piece) in row.detail" :key="piece" :data-hit="part.hit || undefined">
+        <span v-for="(part, piece) in row.detail" :key="piece" :data-hit="part.isHit || undefined">
           {{ part.text }}
         </span>
       </span>

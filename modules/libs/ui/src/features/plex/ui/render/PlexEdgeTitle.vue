@@ -12,16 +12,16 @@ withDefaults(
   defineProps<{
     line: EdgeLine
     /** Drawn over the boxes, on a halo as heavy as that asks for. */
-    lifted?: boolean
+    isRaised?: boolean
   }>(),
-  { lifted: false },
+  { isRaised: false },
 )
 
 const LAYERS = ['halo', 'letters'] as const
 </script>
 
 <template>
-  <g v-if="line.titlePath" class="plex__edge-title" :class="{ 'plex__edge-title--lifted': lifted }">
+  <g v-if="line.titlePath" class="plex__edge-title" :class="{ 'plex__edge-title--lifted': isRaised }">
     <text
       v-for="layer in LAYERS"
       :key="layer"

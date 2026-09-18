@@ -64,7 +64,7 @@ watch(
 <template>
   <section class="reading" :aria-label="words.reading">
     <div ref="column" class="reading__column">
-      <p v-if="!props.held.notes.value.length && !props.held.working.value" class="reading__quiet">
+      <p v-if="!props.held.notes.value.length && !props.held.isWorking.value" class="reading__quiet">
         {{ words.nothing }}
       </p>
 
@@ -77,7 +77,7 @@ watch(
         <NoteHead :note="one" />
 
         <p v-if="!one.path" class="reading__quiet">{{ words.dangling }}</p>
-        <p v-else-if="one.ambiguous" class="reading__quiet">{{ words.ambiguous }}</p>
+        <p v-else-if="one.isAmbiguous" class="reading__quiet">{{ words.ambiguous }}</p>
         <p v-if="one.error" class="reading__quiet">{{ one.error }}</p>
 
         <!-- A link in what is read leads nowhere: this window has one page. -->

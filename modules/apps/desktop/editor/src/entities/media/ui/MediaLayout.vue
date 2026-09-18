@@ -23,7 +23,7 @@ const props = defineProps<{
    * Whether the media is the whole of the strip. A picture is: it is as wide as
    * the pane and carries no controls beside it.
    */
-  framed?: boolean
+  isFramed?: boolean
   /** What the menu at the end of the strip offers, and nothing where it offers none. */
   offered?: readonly MenuItem[]
 }>()
@@ -34,7 +34,7 @@ const emit = defineEmits<{ choose: [id: string] }>()
 const { following, timed } = props.state
 
 /** Whether the view keeps the line being said in sight. */
-const follows = computed(() => following.value)
+const isFollowing = computed(() => following.value)
 
 const offered = computed(() => props.offered ?? [])
 
@@ -59,7 +59,7 @@ function onDismissMenu() {
 }
 
 function onToggleFollow() {
-  props.state.setFollowing(!follows.value)
+  props.state.setFollowing(!isFollowing.value)
 }
 
 // --- Helpers ---
@@ -67,15 +67,15 @@ function onToggleFollow() {
 
 <template>
   <div class="media">
-    <div class="media__head" :data-framed="props.framed ? '' : undefined">
+    <div class="media__head" :data-framed="props.isFramed ? '' : undefined">
       <slot name="player" />
 
       <!-- Following is only for text that carries times, and a framed media is
            the whole strip and carries no controls at all. -->
       <MediaActions
-        v-if="!props.framed && (timed || offered.length)"
-        :timed="timed"
-        :follows="follows"
+        v-if="!props.isFramed && (timed || offered.length)"
+        :is-timed="timed"
+        :is-following="isFollowing"
         :has-menu="offered.length > 0"
         @toggle-follow="onToggleFollow"
         @open-menu="onOpenMenu"

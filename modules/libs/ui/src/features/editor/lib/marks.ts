@@ -51,13 +51,13 @@ const build = (
   const eachLine = (
     start: number,
     end: number,
-    add: (at: number, first: boolean, last: boolean) => void,
+    add: (at: number, first: boolean, isLast: boolean) => void,
   ) => {
     for (let at = start, first = true; ; first = false) {
       const row = doc.lineAt(at)
-      const last = row.to >= end
-      add(row.from, first, last)
-      if (last) break
+      const isLast = row.to >= end
+      add(row.from, first, isLast)
+      if (isLast) break
       at = row.to + 1
     }
   }
@@ -98,8 +98,8 @@ const build = (
     }
 
     if (node.name === 'FencedCode') {
-      eachLine(node.from, node.to, (at, first, last) => {
-        const edge = `${first ? ' cm-code-first' : ''}${last ? ' cm-code-last' : ''}`
+      eachLine(node.from, node.to, (at, first, isLast) => {
+        const edge = `${first ? ' cm-code-first' : ''}${isLast ? ' cm-code-last' : ''}`
         found.push(line(`cm-code${edge}`).range(at))
       })
       return true

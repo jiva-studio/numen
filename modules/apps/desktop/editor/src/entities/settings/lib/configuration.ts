@@ -28,8 +28,7 @@ export interface Model {
   /** Grouping category/shelf for settings navigation. */
   readonly shelf: string
   /** Whether this is the default model for fresh installations. */
-  readonly isDefault?: boolean
-  readonly byDefault: boolean
+  readonly isDefault: boolean
   /** Setting edits applied when this model is selected. */
   readonly edits?: readonly SettingEdit[]
   readonly writes: readonly SettingEdit[]

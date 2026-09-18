@@ -37,7 +37,7 @@ const policy: Record<string, string[]> = Object.fromEntries(
  * Only the source forms this policy writes are understood: a keyword, a scheme
  * on its own, and a host with a port that may be any.
  */
-function allows(directive: string, address: string): boolean {
+function isAllowed(directive: string, address: string): boolean {
   const sources = policy[directive] ?? policy['default-src'] ?? []
   return sources.some((source) => {
     if (source === "'self'") return new URL(address, PAGE).origin === PAGE
@@ -108,7 +108,7 @@ describe('the policy the page carries', () => {
   it('submits a form nowhere', () => {
     // Android does not ask before a POST navigation, so the policy is what
     // holds a form the page never wrote from carrying the window away.
-    expect(allows('form-action', 'https://evil.example/submitted')).toBe(false)
+    expect(isAllowed('form-action', 'https://evil.example/submitted')).toBe(false)
   })
 })
 
@@ -128,7 +128,7 @@ describe('what the page asks for', () => {
     await expect(core.notes.getNeighbourhood({ path: 'Physics.md' })).rejects.toThrow()
 
     expect(asked).not.toStrictEqual([])
-    for (const address of asked) expect(allows('connect-src', address)).toBe(true)
+    for (const address of asked) expect(isAllowed('connect-src', address)).toBe(true)
   })
 
   it('asks for nothing from a stylesheet', () => {
@@ -169,7 +169,7 @@ describe('a picture written into a note', () => {
       (each) => (each as HTMLImageElement).src,
     )
     expect(drawn).toStrictEqual(['https://evil.example/pixel.png'])
-    for (const address of drawn) expect(allows('img-src', address)).toBe(false)
+    for (const address of drawn) expect(isAllowed('img-src', address)).toBe(false)
 
     sheet.unmount()
   })

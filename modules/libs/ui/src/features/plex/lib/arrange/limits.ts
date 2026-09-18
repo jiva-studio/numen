@@ -85,7 +85,7 @@ export function limitsFor(
   // The widest row that still leaves the window able to hold it — and, where a
   // column can be seated, room for one beyond it. It is measured from what the
   // window holds at the settings, which are the closest the gaps ever pack.
-  const row = widestRow(countAlong(2 * halfWidth, width, options.gap), (perLine) => {
+  const row = findWidestRow(countAlong(2 * halfWidth, width, options.gap), (perLine) => {
     if (rowHalf(perLine) > halfWidth) return false
     return !seatsColumn || columnsBeside(perLine) >= 1
   })
@@ -117,7 +117,7 @@ export function limitsFor(
 }
 
 /** The widest line that fits, or one when none of them do. */
-function widestRow(most: number, fits: (perLine: number) => boolean): number {
+function findWidestRow(most: number, fits: (perLine: number) => boolean): number {
   for (let perLine = most; perLine >= 1; perLine--) {
     if (fits(perLine)) return perLine
   }

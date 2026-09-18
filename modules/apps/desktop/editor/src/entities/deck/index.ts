@@ -25,11 +25,13 @@ export {
   NO_BOUNDS,
   NOWHERE,
   RULES,
+  STOP_REASONS,
   setLoadOn,
   WHOLE_LOAD,
 } from './lib/presets'
 export type {
   Bounds,
+  BudgetName,
   BudgetUnit,
   Curve,
   Goal,
@@ -45,6 +47,7 @@ export type {
   Rule,
   Settings,
   SettingsBounds,
+  StopReason,
   WriteResult,
 } from './lib/presets'
 export { presets } from './api/presets.wire'

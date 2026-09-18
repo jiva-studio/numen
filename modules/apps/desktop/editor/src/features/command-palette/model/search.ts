@@ -91,15 +91,15 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   ) => {
     try {
       const found = await question()
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       into(found)
     } catch (error) {
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       into([])
       console.error(error)
       failureMessages.value = { ...failureMessages.value, [group]: words.notAsked }
     } finally {
-      if (mine.current) isWorking.value = { ...isWorking.value, [group]: false }
+      if (mine.isCurrent) isWorking.value = { ...isWorking.value, [group]: false }
     }
   }
 
@@ -137,7 +137,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       return
     }
     await wait(HOLD)
-    if (!mine.current) return
+    if (!mine.isCurrent) return
     await ask(mine, query)
   }
 
@@ -166,7 +166,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
         id,
         title,
         items: rows.map((one) => one.item),
-        working: isWorking.value[id],
+        isWorking: isWorking.value[id],
         silence: silenceOf(id),
       }
     }

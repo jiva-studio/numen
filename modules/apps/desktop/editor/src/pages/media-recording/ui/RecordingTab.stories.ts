@@ -54,7 +54,7 @@ const createPlayer = (): Player => {
     url: address,
     at: ref(0),
     duration: ref(85_000),
-    playing: ref(false),
+    isPlaying: ref(false),
     error: ref(''),
     load: (wanted) => void (address.value = wanted),
     play: (wanted) => void (address.value = wanted),

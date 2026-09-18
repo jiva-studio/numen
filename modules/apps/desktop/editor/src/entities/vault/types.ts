@@ -11,7 +11,7 @@ export interface Vault {
   /** The folder, absolute on this machine. */
   readonly path: string
   /** Whether nothing is at the path. The vault stays on the list. */
-  readonly missing: boolean
+  readonly isMissing: boolean
 }
 
 /** Every vault the installation holds, and the one this window is showing. */

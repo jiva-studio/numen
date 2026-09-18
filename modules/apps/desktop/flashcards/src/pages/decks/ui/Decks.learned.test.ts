@@ -54,14 +54,14 @@ const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
-  counted: true,
+  isCounted: true,
   faces: 20,
   due: 8,
   new: 2,
   decks: [deck()],
   presets: [],
   unread: '',
-  reading: false,
+  isReading: false,
   ...fields,
 })
 
@@ -74,7 +74,7 @@ const mountDecks = (over: VaultCardsDue, presets: readonly Preset[], isScheduled
       due: new Map(),
       presets,
       byDeck: new Map(presets.flatMap((one) => one.decks.map((at) => [at, one] as const))),
-      scheduled: isScheduled,
+      hasPresets: isScheduled,
       today: '2026-09-05',
     },
   })
@@ -108,7 +108,7 @@ describe('how much of a deck stands learned', () => {
   // A count that has not landed says a figure is coming and never that there
   // is none, and the row does not move when it arrives.
   it('is drawn as the shape it will be until the count lands', () => {
-    const one = mountDecks(vault({ counted: false }), [])
+    const one = mountDecks(vault({ isCounted: false }), [])
 
     expect(one.findAll('.decks__learned')).toHaveLength(1)
     expect(one.find('.decks__learned').text()).toBe('')

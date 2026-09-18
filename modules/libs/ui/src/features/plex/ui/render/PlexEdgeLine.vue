@@ -7,14 +7,14 @@ withDefaults(
   defineProps<{
     line: EdgeLine
     /** Drawn over the boxes, in the colours that stand out against them. */
-    lifted?: boolean
+    isRaised?: boolean
   }>(),
-  { lifted: false },
+  { isRaised: false },
 )
 </script>
 
 <template>
-  <g class="plex__edge-line" :class="{ 'plex__edge-line--lifted': lifted }">
+  <g class="plex__edge-line" :class="{ 'plex__edge-line--lifted': isRaised }">
     <path class="plex__edge" :d="line.d" :opacity="line.edge.opacity" />
     <path
       v-if="line.arrow"

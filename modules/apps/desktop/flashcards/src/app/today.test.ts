@@ -28,14 +28,14 @@ const vault: VaultCardsDue = {
   vault: '01A',
   name: 'Vault',
   path: '/vaults/01A',
-  counted: true,
+  isCounted: true,
   faces: 4,
   due: 3,
   new: 1,
   decks: [{ deck: 'decks/Words.md', faces: 4, due: 3, new: 1, learned: 2, unbegun: 1 }],
   presets: [],
   unread: '',
-  reading: false,
+  isReading: false,
 }
 
 const createPresets = (settings: SettingsMessage): PresetsClient => ({

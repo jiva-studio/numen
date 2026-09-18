@@ -24,14 +24,14 @@ const canRunAnything: RunGuard = () => true
 /** What a row of that kind offers, by the identity of each item. */
 const getItemIds = (
   source: Source,
-  folder = false,
+  isFolder = false,
   canRun: RunGuard = canRunAnything,
-): readonly string[] => itemsFor({ source, folder }, false, canRun).map((one) => one.id)
+): readonly string[] => itemsFor({ source, isFolder }, false, canRun).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
 const getGroupedIds = (source: Source): readonly string[] =>
-  groupItems(itemsFor({ source, folder: false }, false, canRunAnything)).map(
-    (one) => `${one.rule ? '— ' : ''}${one.id}`,
+  groupItems(itemsFor({ source, isFolder: false }, false, canRunAnything)).map(
+    (one) => `${one.isRule ? '— ' : ''}${one.id}`,
   )
 
 describe('the menu on a row standing for a recording', () => {

@@ -34,7 +34,7 @@ export interface Entry {
   readonly path: string
   /** The last segment of the path, which is what the row shows. */
   readonly name: string
-  readonly folder: boolean
+  readonly isFolder: boolean
   readonly kind: Source
   readonly type: NoteType
 }

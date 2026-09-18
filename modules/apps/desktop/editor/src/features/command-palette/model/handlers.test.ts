@@ -31,7 +31,7 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   source: null,
   made: {},
   vault: { id: 'physics', name: 'Physics' },
-  ready: true,
+  isReady: true,
   ...over,
 })
 
@@ -40,7 +40,7 @@ const createVault = (id: string, name: string): Vault => ({
   id,
   name,
   path: `/vaults/${name}`,
-  missing: false,
+  isMissing: false,
 })
 
 const createRenameResult = (over: Partial<RenameResult> = {}): RenameResult => ({
@@ -78,11 +78,11 @@ const window = (
   answers: {
     renamed?: RenameResult
     removed?: RemoveResult
-    made?: boolean
+    wasMade?: boolean
     /** Where the tab holding the note stands now. */
     at?: string
     /** The note is waiting on the person, so nothing may move its file. */
-    asking?: boolean
+    isAsking?: boolean
     /** The folder the person chose in the machine's own picker. */
     chose?: string
     /** What the list of vaults answered adding or renaming one. */
@@ -100,7 +100,7 @@ const window = (
     /** What deleting the text came back with. */
     deleteError?: string
     /** Whether this build cannot delete the text at all. */
-    undeletable?: boolean
+    isUndeletable?: boolean
   } = {},
 ) => {
   const done: string[] = []
@@ -115,14 +115,14 @@ const window = (
     files: {
       createNote: async (title, from, seat) => {
         done.push(`createNote ${title} ${from || '—'} ${seat ?? '—'}`)
-        return answers.made === false ? null : { path: `${title}.md`, title }
+        return answers.wasMade === false ? null : { path: `${title}.md`, title }
       },
       rename: async (path, title) => {
         done.push(`rename ${path} ${title}`)
         return answers.renamed ?? createRenameResult()
       },
-      remove: async (path, destroy) => {
-        done.push(`remove ${path} ${destroy}`)
+      remove: async (path, isPermanent) => {
+        done.push(`remove ${path} ${isPermanent}`)
         return answers.removed ?? createRemoveResult()
       },
       move: async (from, to) => {
@@ -155,11 +155,11 @@ const window = (
         done.push(`deletes the text of ${path}`)
         if (answers.deleteError)
           throw new ConnectError(answers.deleteError, Code.FailedPrecondition)
-        return answers.undeletable !== true
+        return answers.isUndeletable !== true
       },
       deleteCopy: async (path: string) => {
         done.push(`deletes the copy of ${path}`)
-        return answers.undeletable !== true
+        return answers.isUndeletable !== true
       },
     },
     makers: {
@@ -183,7 +183,7 @@ const window = (
     notes: {
       getTabAt: (path) => (path === at ? 'held' : null),
       getPath: (id) => (id === 'held' ? at : id),
-      isAsking: () => answers.asking === true,
+      asking: () => answers.isAsking === true,
       settle: async (id) => void done.push(`settle ${id}`),
       close: (id) => void done.push(`close ${id}`),
       openFile: (path, title, showing) => void done.push(`openFile ${path} ${title} ${showing}`),
@@ -358,7 +358,7 @@ describe('a note made', () => {
   })
 
   it('takes the person nowhere where the vault would not make it', async () => {
-    const one = window({ made: false })
+    const one = window({ wasMade: false })
 
     await carry(invocationOf('child', front(), 'Entropy'), one.on)
 
@@ -510,7 +510,7 @@ describe('the transcript of a recording deleted', () => {
   })
 
   it('says this build cannot do it, and offers it nowhere after that', async () => {
-    const one = window({ undeletable: true })
+    const one = window({ isUndeletable: true })
 
     await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
@@ -529,7 +529,7 @@ describe('a note renamed', () => {
   })
 
   it('is refused while the note is waiting on the person', async () => {
-    const one = window({ asking: true })
+    const one = window({ isAsking: true })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -687,7 +687,7 @@ describe('a note removed', () => {
   })
 
   it('is refused while the note is waiting on the person', async () => {
-    const one = window({ asking: true })
+    const one = window({ isAsking: true })
 
     await carry(invocationOf('remove', front()), one.on)
 
@@ -735,8 +735,8 @@ describe('several files removed at once', () => {
       ...one.on,
       files: {
         ...one.on.files,
-        remove: async (path, destroy) => {
-          one.done.push(`remove ${path} ${destroy}`)
+        remove: async (path, isPermanent) => {
+          one.done.push(`remove ${path} ${isPermanent}`)
           return createRemoveResult(path === 'physics/Ontology.md' ? { error: 'missing' } : {})
         },
       },
@@ -775,7 +775,7 @@ describe('a file filed somewhere else', () => {
   })
 
   it('stays where it is while its tab is waiting on the person', async () => {
-    const one = window({ asking: true })
+    const one = window({ isAsking: true })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
@@ -1092,7 +1092,7 @@ describe('the open files a command reaches', () => {
     has: (one) => one === id,
     getPath: (one) => (one === id ? path : one),
     getTitle: (one) => (one === id ? `${id} called` : ''),
-    isAsking: () => false,
+    asking: () => false,
     settle: async (one) => void steps.push(`settle ${one}`),
     close: (one) => void steps.push(`close ${one}`),
     getTabAt: (one) => (one === path ? id : null),
@@ -1128,7 +1128,7 @@ describe('the open files a command reaches', () => {
     one.notes.close('Gone.md')
 
     expect(one.notes.getPath('Gone.md')).toBe('Gone.md')
-    expect(one.notes.isAsking('Gone.md')).toBe(false)
+    expect(one.notes.asking('Gone.md')).toBe(false)
     expect(one.done).toStrictEqual([])
   })
 })

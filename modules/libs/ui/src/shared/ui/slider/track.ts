@@ -76,9 +76,9 @@ export const stepForKey = (
   key: string,
   value: number,
   bounds: Bounds,
-  far: boolean,
+  isBigStep: boolean,
 ): number | null => {
-  const paces = far ? PACES : 1
+  const paces = isBigStep ? PACES : 1
   if (key === 'Home') return bounds.min
   if (key === 'End') return bounds.max
   if (key === 'ArrowRight' || key === 'ArrowUp') return stepBy(value, paces, bounds)

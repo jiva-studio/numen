@@ -3,7 +3,7 @@
  */
 import { dayAfter, daysBetween, isDay } from '@numen/ui'
 import type { Bounds, BudgetUnit, Goal, Load, Rule, Settings, SettingsBounds } from '../types'
-import { clamp, nearest } from './curve'
+import { clamp, findNearest } from './curve'
 import type { Field } from './fields'
 import type { SettingValue } from '../types'
 
@@ -106,9 +106,9 @@ export const findGridIndex = (
   value: SettingValue,
   today: string,
 ): number => {
-  if (typeof value === 'number') return nearest(grid, value)
+  if (typeof value === 'number') return findNearest(grid, value)
   if (typeof value === 'string' && isDay(value)) {
-    return nearest(grid, daysBetween(today, value))
+    return findNearest(grid, daysBetween(today, value))
   }
   return -1
 }

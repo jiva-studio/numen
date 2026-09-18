@@ -118,7 +118,7 @@ export interface DeckReadResult {
   readonly deck: VaultDeck | null
   readonly error: ErrorCode | null
   /** The file it came out of, to present at the next write. */
-  readonly at: string
+  readonly fingerprint: string
   /** The size a deck is read up to, in bytes. */
   readonly bound: number
 }
@@ -127,8 +127,8 @@ export interface DeckReadResult {
 export interface DeckWriteResult {
   readonly error: ErrorCode | null
   /** The file is no longer the one this caller read, and nothing was written. */
-  readonly changed: boolean
-  readonly at: string
+  readonly isChanged: boolean
+  readonly fingerprint: string
   readonly bound: number
 }
 
@@ -137,14 +137,14 @@ export interface StencilReadResult {
   /** Null when the stencil was refused. */
   readonly stencil: VaultStencil | null
   readonly error: ErrorCode | null
-  readonly at: string
+  readonly fingerprint: string
 }
 
 /** What writing a stencil came back with. */
 export interface StencilWriteResult {
   readonly error: ErrorCode | null
-  readonly changed: boolean
-  readonly at: string
+  readonly isChanged: boolean
+  readonly fingerprint: string
 }
 
 /** One deck a rename did not reach, which keeps the heading it had. */
@@ -164,8 +164,8 @@ export interface FieldRenameResult {
   /** Set where nothing was renamed at all. */
   readonly error: ErrorCode | null
   /** The stencil is no longer the one this caller read, and nothing was renamed. */
-  readonly changed: boolean
-  readonly at: string
+  readonly isChanged: boolean
+  readonly fingerprint: string
 }
 
 /**

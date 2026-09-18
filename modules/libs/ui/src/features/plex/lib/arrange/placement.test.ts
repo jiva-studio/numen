@@ -28,7 +28,7 @@ const limits = (each: RoleLimits): Limits =>
   Object.fromEntries(RELATED_SEATS.map((seat) => [seat, each])) as Limits
 
 /** Every box the width its seat is drawn at. */
-const evenly: Widths = () => nodeSize.width
+const sameWidth: Widths = () => nodeSize.width
 
 const place = (
   seats: Seating,
@@ -40,7 +40,7 @@ const place = (
     FOCUS,
     options,
     limits({ perLine, lines: DEFAULT_OPTIONS.maxLines }),
-    evenly,
+    sameWidth,
   )
 
 const of = (nodes: readonly PlacedNode[], seat: PlexRelatedSeat) =>

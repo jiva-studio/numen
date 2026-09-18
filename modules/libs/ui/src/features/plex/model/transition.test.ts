@@ -22,7 +22,7 @@ describe('a movement stepped by hand', () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
 
-    const { frame, moving } = inScope(() =>
+    const { frame, isMoving } = inScope(() =>
       usePlexTransition(
         () => current.value,
         () => undefined,
@@ -31,22 +31,22 @@ describe('a movement stepped by hand', () => {
       ),
     )
 
-    expect(moving.value).toBe(false)
+    expect(isMoving.value).toBe(false)
     expect(getNode(frame.value.nodes, 'child-0')).toBeDefined()
 
     current.value = neighbourhoods.leaf
     await Promise.resolve()
 
     world.tick(0)
-    expect(moving.value).toBe(true)
+    expect(isMoving.value).toBe(true)
     // The old picture is still on screen at the first frame.
     expect(getNode(frame.value.nodes, 'child-0')).toBeDefined()
 
     world.tick(200)
-    expect(moving.value).toBe(true)
+    expect(isMoving.value).toBe(true)
 
     world.tick(400)
-    expect(moving.value).toBe(false)
+    expect(isMoving.value).toBe(false)
     expect(getNode(frame.value.nodes, 'child-0')).toBeUndefined()
     expect(getNode(frame.value.nodes, 'parent-0')).toBeDefined()
   })
@@ -55,7 +55,7 @@ describe('a movement stepped by hand', () => {
     // A backgrounded tab hands the first callback a stale timestamp.
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
-    const { moving } = inScope(() =>
+    const { isMoving } = inScope(() =>
       usePlexTransition(
         () => current.value,
         () => undefined,
@@ -68,11 +68,11 @@ describe('a movement stepped by hand', () => {
     await Promise.resolve()
 
     world.tick(10_000) // first frame, long after the request
-    expect(moving.value).toBe(true)
+    expect(isMoving.value).toBe(true)
     world.tick(10_200)
-    expect(moving.value).toBe(true)
+    expect(isMoving.value).toBe(true)
     world.tick(10_400)
-    expect(moving.value).toBe(false)
+    expect(isMoving.value).toBe(false)
   })
 
   it('re-aims mid-movement instead of queueing', async () => {
@@ -106,7 +106,7 @@ describe('when nothing should move', () => {
   it('arrives at once when it is given no time to move in', async () => {
     const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
-    const { frame, moving } = inScope(() =>
+    const { frame, isMoving } = inScope(() =>
       usePlexTransition(
         () => current.value,
         () => undefined,
@@ -119,7 +119,7 @@ describe('when nothing should move', () => {
     await Promise.resolve()
 
     expect(world.pending).toBe(false)
-    expect(moving.value).toBe(false)
+    expect(isMoving.value).toBe(false)
     expect(getNode(frame.value.nodes, 'child-0')).toBeUndefined()
   })
 
@@ -147,7 +147,7 @@ describe('a change to the arrangement is a movement too', () => {
   it('travels to a new density rather than jumping to it', async () => {
     const world = stubClock()
     const input = ref({ options: { maxPerLine: 5 } })
-    const { moving } = inScope(() =>
+    const { isMoving } = inScope(() =>
       usePlexTransition(
         () => neighbourhoods.crowded,
         () => input.value,
@@ -159,7 +159,7 @@ describe('a change to the arrangement is a movement too', () => {
     input.value = { options: { maxPerLine: 3 } }
     await Promise.resolve()
     world.tick(0)
-    expect(moving.value).toBe(true)
+    expect(isMoving.value).toBe(true)
   })
 })
 

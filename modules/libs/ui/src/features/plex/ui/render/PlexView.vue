@@ -23,7 +23,7 @@ import { browserClock } from '../../model/transition'
 
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
-  mayReach: true,
+  canReach: true,
   seatName: seatWord,
   dwell: DWELL,
   reaching: () => byHandle,
@@ -80,7 +80,7 @@ const roleOf = (node: PlacedNode): GestureRole => {
   const outcome = props.gestureOutcome
   if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
   if (props.gestureFrom === node.id) return 'source'
-  return props.mayReach && props.gestureFrom === null ? 'open' : 'closed'
+  return props.canReach && props.gestureFrom === null ? 'open' : 'closed'
 }
 
 /** The node the attention has settled on, as that node reports it. */
@@ -178,8 +178,8 @@ const dragging = computed(() =>
          them, and with it the title it carries. -->
     <g v-if="lifted.length" class="plex__lift" aria-hidden="true">
       <template v-for="line in lifted" :key="line.key">
-        <PlexEdgeLine :line="line" lifted />
-        <PlexEdgeTitle v-if="showEdgeLabels" :line="line" lifted />
+        <PlexEdgeLine :line="line" is-raised />
+        <PlexEdgeTitle v-if="showEdgeLabels" :line="line" is-raised />
       </template>
     </g>
 

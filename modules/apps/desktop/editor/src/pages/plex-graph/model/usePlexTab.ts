@@ -20,7 +20,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const picture = computed<PlexNeighbourhood | null>(() => {
     const around = view.neighbourhood.value
-    if (!deps.ready.value || !around) return null
+    if (!deps.isReady.value || !around) return null
     const drawn = asPlex(around, map.getNodeId)
     map.retainNodeIds(drawn.nodes.map((node) => node.id))
     return drawn
@@ -28,12 +28,12 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const empty = computed(
     () =>
-      deps.ready.value && !view.here.value && !deps.openingPath.value && !view.neighbourhood.value,
+      deps.isReady.value && !view.here.value && !deps.openingPath.value && !view.neighbourhood.value,
   )
 
   const dragged = computed<readonly string[]>(() => {
     const here = view.here.value
-    if (!deps.ready.value || !view.neighbourhood.value || !here) return []
+    if (!deps.isReady.value || !view.neighbourhood.value || !here) return []
     return deps.dragged.value.filter((path) => path !== here)
   })
 

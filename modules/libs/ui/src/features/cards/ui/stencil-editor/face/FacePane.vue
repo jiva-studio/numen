@@ -14,11 +14,11 @@ withDefaults(
     /** The part, as the face lays it out. */
     pane: Pane
     /** A field pressed in the strip would be written here. */
-    aimed?: boolean
+    isFocused?: boolean
     /** The words it is drawn with. */
     words?: StencilWords
   }>(),
-  { aimed: false, words: () => STENCIL_WORDS },
+  { isFocused: false, words: () => STENCIL_WORDS },
 )
 
 const emit = defineEmits<{
@@ -41,8 +41,8 @@ defineExpose({
     class="face__pane"
     :data-pane="`${pane.half}-${pane.mode}`"
     :data-mode="pane.mode"
-    :data-blank="pane.blank || undefined"
-    :data-aimed="aimed || undefined"
+    :data-blank="pane.isBlank || undefined"
+    :data-focused="isFocused || undefined"
   >
     <AutosizeTextarea
       v-if="pane.mode === 'written'"
@@ -68,7 +68,7 @@ defineExpose({
     </div>
 
     <!-- An empty part says what it is for, in the middle of itself. -->
-    <p v-if="pane.blank" class="face__ghost caps-numen text-small text-hushed" aria-hidden="true">
+    <p v-if="pane.isBlank" class="face__ghost caps-numen text-small text-hushed" aria-hidden="true">
       {{ pane.said }}
     </p>
 

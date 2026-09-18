@@ -26,7 +26,7 @@ const { on, notices, dismissNotice, vaults, decks, session } = useWindow()
     <Vaults
       v-if="on === 'vaults'"
       :vaults="vaults.list.value"
-      :counting="vaults.counting.value"
+      :is-counting="vaults.isCounting.value"
       :version="VERSION"
       @choose="vaults.choose"
     />
@@ -38,7 +38,7 @@ const { on, notices, dismissNotice, vaults, decks, session } = useWindow()
       :due="decks.done.due.value"
       :presets="decks.schedules.presets.value"
       :by-deck="decks.schedules.byDeck.value"
-      :scheduled="decks.schedules.known.value"
+      :has-presets="decks.schedules.known.value"
       :today="decks.today.value"
       @start="decks.start"
       @start-preset="decks.startPreset"
@@ -54,9 +54,9 @@ const { on, notices, dismissNotice, vaults, decks, session } = useWindow()
     <Session
       v-else-if="session.state.card.value"
       :card="session.state.card.value"
-      :shown="session.state.shown.value"
+      :is-shown="session.state.shown.value"
       :left="session.state.left.value"
-      :taken-back="session.state.answers.value.length > 0"
+      :can-take-back="session.state.answers.value.length > 0"
       :at="session.at.value"
       @update:at="session.moveTo"
       @show="session.state.show"

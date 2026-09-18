@@ -111,7 +111,7 @@ describe('a recording loaded', () => {
     expect(plays.url.value).toBe(TALK)
     expect(element.loaded).toStrictEqual([TALK])
     expect(element.started).toBe(0)
-    expect(plays.playing.value).toBe(false)
+    expect(plays.isPlaying.value).toBe(false)
   })
 
   it('is loaded once, however often it is asked for', () => {
@@ -188,7 +188,7 @@ describe('a recording played', () => {
 
     expect(element.loaded).toStrictEqual([TALK, OTHER])
     expect(plays.url.value).toBe(OTHER)
-    expect(plays.playing.value).toBe(true)
+    expect(plays.isPlaying.value).toBe(true)
   })
 
   it('is not playing where the window refused it, and says so', async () => {
@@ -199,7 +199,7 @@ describe('a recording played', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(plays.playing.value).toBe(false)
+    expect(plays.isPlaying.value).toBe(false)
     expect(plays.error.value).toBe(WORDS.unreadable)
   })
 
@@ -224,7 +224,7 @@ describe('a recording played', () => {
 
     plays.pause()
 
-    expect(plays.playing.value).toBe(false)
+    expect(plays.isPlaying.value).toBe(false)
     expect(plays.at.value).toBe(3_000)
   })
 
@@ -234,7 +234,7 @@ describe('a recording played', () => {
 
     emit('ended')
 
-    expect(plays.playing.value).toBe(false)
+    expect(plays.isPlaying.value).toBe(false)
   })
 })
 
@@ -324,7 +324,7 @@ describe('the element a window plays through', () => {
     plays.pause()
 
     expect(plays.url.value).toBe('')
-    expect(plays.playing.value).toBe(false)
+    expect(plays.isPlaying.value).toBe(false)
     expect(plays.error.value).toBe(WORDS.unreadable)
   })
 })

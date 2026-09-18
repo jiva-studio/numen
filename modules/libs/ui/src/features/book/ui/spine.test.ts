@@ -22,7 +22,7 @@ interface Run {
 }
 
 /** The runs the corpus carries, in the order it writes them. */
-const runs = (): readonly Run[] => {
+const getRuns = (): readonly Run[] => {
   const held = new DOMParser().parseFromString(spine, 'text/html')
   return [...held.body.querySelectorAll('[data-offset]')].map((one) => ({
     at: Number(one.getAttribute('data-offset')),
@@ -32,7 +32,7 @@ const runs = (): readonly Run[] => {
 
 /** Where the document stands in the book's text, read off its own runs. */
 const span = () => {
-  const all = runs()
+  const all = getRuns()
   const first = all[0]!
   const last = all[all.length - 1]!
   return { from: first.at, to: last.at + bytesIn(last.said) }
@@ -62,15 +62,15 @@ const getMoves = (wrapper: Awaited<ReturnType<typeof reading>>) =>
 
 describe('the markup a spine document arrives as', () => {
   it('says where every run of it begins', () => {
-    expect(runs().length).toBeGreaterThan(0)
-    for (const run of runs()) expect(Number.isFinite(run.at)).toBe(true)
+    expect(getRuns().length).toBeGreaterThan(0)
+    for (const run of getRuns()) expect(Number.isFinite(run.at)).toBe(true)
   })
 
   it('runs on from one offset to the next, by the bytes each run says', () => {
     // Every byte of the document stands in one run, so a run reaches exactly to
     // where the next begins. An escaping the two sides read differently parts
     // these numbers on the first paragraph that carries an ampersand.
-    const all = runs()
+    const all = getRuns()
     for (let i = 1; i < all.length; i++) {
       const before = all[i - 1]!
       expect(all[i]!.at).toBe(before.at + bytesIn(before.said))

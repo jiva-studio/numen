@@ -177,11 +177,11 @@ const {
         :row="row"
         :name="name"
         :selected="picked.has(row.id)"
-        :lifted="lifted.has(row.id)"
-        :into="row.id === into"
-        :before="row.id === before"
-        :tabbed="row.id === tabbed"
-        :renaming="renamingPath === row.id"
+        :is-dragged="lifted.has(row.id)"
+        :is-drop-inside="row.id === into"
+        :is-drop-above="row.id === before"
+        :is-tab-stop="row.id === tabbed"
+        :is-renaming="renamingPath === row.id"
         :mark="getMarkOf(marking, row.id)"
         @focus="onRowFocus(row.id)"
         @pointerdown="onRowPointerDown(row.id, $event)"
@@ -192,7 +192,7 @@ const {
         @abandon="onAbandon(row.id)"
         @blur="onFieldBlur"
       >
-        <slot name="icon" :id="row.id" :holds="row.holds" :open="row.open" />
+        <slot name="icon" :id="row.id" :holds="row.isHolding" :open="row.open" />
       </TreeRow>
     </div>
 

@@ -25,7 +25,7 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   source: null,
   made: {},
   vault: { id: 'physics', name: 'Physics' },
-  ready: true,
+  isReady: true,
   ...over,
 })
 
@@ -44,7 +44,7 @@ const vault = (id: string, name: string, isMissing = false): Vault => ({
   id,
   name,
   path: `/vaults/${name}`,
-  missing: isMissing,
+  isMissing: isMissing,
 })
 
 /** The vaults the installation holds, with the one in front named. */
@@ -234,7 +234,7 @@ describe('what is in front', () => {
 
   /** A vault that will not open is the one a person most needs to leave. */
   it('says the vault could not be opened, and offers nothing over the note', () => {
-    const { commands } = createPalette({ ready: false })
+    const { commands } = createPalette({ isReady: false })
 
     expect(getItemIds(commands.groups)).toStrictEqual({
       note: [],
@@ -583,7 +583,7 @@ describe('the runs over the file in front', () => {
   })
 
   it('offers neither where the vault could not be opened', () => {
-    const { commands } = createPalette({ ...recording, ready: false })
+    const { commands } = createPalette({ ...recording, isReady: false })
 
     expect(getItemIds(commands.groups).file).toBeUndefined()
   })
@@ -723,9 +723,9 @@ describe('dropping the transcript of a recording', () => {
 
 describe('a command that was not offered over what it was asked over', () => {
   it('says the vault could not be opened', () => {
-    const { commands } = createPalette({ ready: false })
+    const { commands } = createPalette({ isReady: false })
 
-    expect(commands.getObjection('remove', front({ ready: false }))).toBe(words.noVault)
+    expect(commands.getObjection('remove', front({ isReady: false }))).toBe(words.noVault)
   })
 
   it('says nothing in front is a note', () => {

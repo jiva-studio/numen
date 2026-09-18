@@ -168,19 +168,19 @@ export function usePlexGesture(
     //
     // One pointer at a time: a second finger arriving is not this gesture, and
     // its release is not this gesture's release.
-    const mine = (event: PointerEvent) => event.pointerId === pointer.value
+    const isMine = (event: PointerEvent) => event.pointerId === pointer.value
 
     const onMove = (event: PointerEvent) => {
-      if (mine(event)) move(event)
+      if (isMine(event)) move(event)
     }
     const onUp = (up: PointerEvent) => {
-      if (mine(up)) finish()
+      if (isMine(up)) finish()
     }
     // The browser takes the pointer away — a drag the system turned into a
     // scroll, a pen lifted out of range. No `pointerup` follows, so without
     // this the thread stays drawn and the next release anywhere makes a node.
     const onLost = (event: PointerEvent) => {
-      if (mine(event)) cancel()
+      if (isMine(event)) cancel()
     }
     const onKey = (key: KeyboardEvent) => {
       if (key.key === 'Escape') cancel()

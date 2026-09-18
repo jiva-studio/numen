@@ -43,7 +43,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   /** How many at the end came named and not read. */
   const unread = ref(0)
 
-  const working = ref(false)
+  const isWorking = ref(false)
 
   /** The deck the notes in hand belong to, empty while none are. */
   const held = ref('')
@@ -61,7 +61,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     // never read one deck's notes under another deck's card.
     clearNotes()
     asked = deck
-    working.value = true
+    isWorking.value = true
     try {
       const around = await deps.getDeckNeighbourhood(vault, deck)
       // A card answered while this was in flight moves the session to another
@@ -79,7 +79,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
       held.value = ''
       deps.showNotice(words.unreached)
     } finally {
-      if (asked === deck) working.value = false
+      if (asked === deck) isWorking.value = false
     }
   }
 
@@ -122,7 +122,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   return {
     notes,
     unread,
-    working,
+    isWorking,
     at,
     open,
     openPanel,

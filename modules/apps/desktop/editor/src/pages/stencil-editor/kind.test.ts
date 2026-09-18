@@ -27,11 +27,11 @@ const vault = (
   answers: {
     error?: ErrorCode
     problems?: readonly DeckProblem[]
-    changed?: boolean
+    isChanged?: boolean
     /** What renaming a field comes back with, where a test wants another answer. */
     renaming?: FieldRenameResult
     /** The vault is out of reach, and a read of the stencil reaches nothing. */
-    unreachable?: boolean
+    isUnreachable?: boolean
     /** What a write of the stencil is refused for. */
     wrote?: ErrorCode
   } = {},
@@ -58,13 +58,13 @@ const vault = (
         front: rewriteBraces(face.front),
         back: rewriteBraces(face.back),
       }))
-      return { decks: [], cards: 0, notWritten: [], error: null, changed: false, at: 'renamed' }
+      return { decks: [], cards: 0, notWritten: [], error: null, isChanged: false, fingerprint: 'renamed' }
     },
-    readDeck: async () => ({ deck: null, error: 'missing', at: '', bound: 0 }),
-    writeDeck: async () => ({ error: null, changed: false, at: '', bound: 0 }),
+    readDeck: async () => ({ deck: null, error: 'missing', fingerprint: '', bound: 0 }),
+    writeDeck: async () => ({ error: null, isChanged: false, fingerprint: '', bound: 0 }),
     readStencil: async (path) => {
-      if (answers.unreachable) throw new Error('out of reach')
-      if (answers.error) return { stencil: null, error: answers.error, at: '' }
+      if (answers.isUnreachable) throw new Error('out of reach')
+      if (answers.error) return { stencil: null, error: answers.error, fingerprint: '' }
       return {
         stencil: {
           path,
@@ -76,18 +76,18 @@ const vault = (
           problems: answers.problems ?? [],
         },
         error: null,
-        at: 'read',
+        fingerprint: 'read',
       }
     },
     writeStencil: async (path, wrote, drew) => {
       written.push(
         `${path} ${wrote.join(', ') || '—'} | ${drew.faces.map((one) => one.back).join(' ')}`,
       )
-      if (answers.wrote) return { error: answers.wrote, changed: false, at: '' }
-      if (answers.changed) return { error: null, changed: true, at: '' }
+      if (answers.wrote) return { error: answers.wrote, isChanged: false, fingerprint: '' }
+      if (answers.isChanged) return { error: null, isChanged: true, fingerprint: '' }
       fields = wrote
       faces = drew.faces
-      return { error: null, changed: false, at: 'written' }
+      return { error: null, isChanged: false, fingerprint: 'written' }
     },
   }
 
@@ -186,8 +186,8 @@ describe('a field renamed in a stencil', () => {
         cards: 3,
         notWritten: [],
         error: null,
-        changed: false,
-        at: 'renamed',
+        isChanged: false,
+        fingerprint: 'renamed',
       },
     })
 
@@ -204,8 +204,8 @@ describe('a field renamed in a stencil', () => {
         cards: 1,
         notWritten: [{ path: 'Broken.md', text: 'the frontmatter cannot be read' }],
         error: null,
-        changed: false,
-        at: 'renamed',
+        isChanged: false,
+        fingerprint: 'renamed',
       },
     })
 
@@ -222,8 +222,8 @@ describe('a field renamed in a stencil', () => {
         cards: 0,
         notWritten: [],
         error: 'notAStencil',
-        changed: false,
-        at: '',
+        isChanged: false,
+        fingerprint: '',
       },
     })
 
@@ -240,8 +240,8 @@ describe('a field renamed in a stencil', () => {
         cards: 3,
         notWritten: [],
         error: null,
-        changed: true,
-        at: '',
+        isChanged: true,
+        fingerprint: '',
       },
     })
 
@@ -289,7 +289,7 @@ describe('a field carried in a stencil', () => {
 
 describe('a stencil whose file moved past what was read', () => {
   it('is stale once the write comes back saying the file changed', async () => {
-    const { stencils, tab } = await open({ changed: true })
+    const { stencils, tab } = await open({ isChanged: true })
 
     tab.addField('Weight')
     await stencils.flush()
@@ -298,7 +298,7 @@ describe('a stencil whose file moved past what was read', () => {
   })
 
   it('keeps what the person wrote when they say so', async () => {
-    const { stencils, tab, written } = await open({ changed: true })
+    const { stencils, tab, written } = await open({ isChanged: true })
 
     tab.addField('Weight')
     await stencils.flush()
@@ -324,7 +324,7 @@ describe('a stencil the vault refused', () => {
   })
 
   it('says the vault could not be reached, where the read reached nothing', async () => {
-    const { tab } = await open({ unreachable: true })
+    const { tab } = await open({ isUnreachable: true })
 
     expect(tab.errorMessage.value).toBe(words.unreachable)
   })

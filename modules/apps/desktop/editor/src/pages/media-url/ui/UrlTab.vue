@@ -42,7 +42,7 @@ function onTimeUpdate(ms: number) {
 </script>
 
 <template>
-  <MediaLayout :state="props.state" framed :offered="offered" @choose="onChoose">
+  <MediaLayout :state="props.state" is-framed :offered="offered" @choose="onChoose">
     <template #player>
       <Embed
         ref="player"

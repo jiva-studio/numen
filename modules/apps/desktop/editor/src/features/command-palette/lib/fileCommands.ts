@@ -30,7 +30,7 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
     // there is what says this file is one. An hour of video on somebody's disk
     // is asked for by hand, and one already here is not asked for again.
     isOffered: (at, runs) =>
-      at.ready &&
+      at.isReady &&
       runs.canRun('downloadCopy') &&
       at.made.copy !== undefined &&
       isUnmade(at.made.copy),

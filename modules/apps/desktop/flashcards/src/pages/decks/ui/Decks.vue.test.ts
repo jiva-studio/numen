@@ -46,7 +46,7 @@ const vault: VaultCardsDue = {
   vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
-  counted: true,
+  isCounted: true,
   faces: 40,
   due: 12,
   new: 4,
@@ -73,7 +73,7 @@ const vault: VaultCardsDue = {
     },
   ],
   unread: '',
-  reading: false,
+  isReading: false,
 }
 
 const mountDecks = (presets: readonly Preset[], over: VaultCardsDue = vault) =>
@@ -84,7 +84,7 @@ const mountDecks = (presets: readonly Preset[], over: VaultCardsDue = vault) =>
       due: new Map(),
       presets,
       byDeck: new Map(presets.flatMap((one) => one.decks.map((deck) => [deck, one] as const))),
-      scheduled: true,
+      hasPresets: true,
       today: '2026-09-05',
     },
   })

@@ -26,7 +26,7 @@ const emit = defineEmits<{
 const scrollOffset = ref(0)
 
 /** The parts, as far out from under the box as they have come. */
-const opened = computed(() => getOpenParts(props.hung, props.open, scrollOffset.value))
+const openParts = computed(() => getOpenParts(props.hung, props.open, scrollOffset.value))
 
 /** What a wheel moved that came to no whole part, held for the next one. */
 let carried = 0
@@ -48,7 +48,7 @@ watch(
  * carried into the next one.
  */
 const scrollParts = (event: WheelEvent) => {
-  const shown = opened.value
+  const shown = openParts.value
   if (!shown) return
 
   const wheel = { delta: event.deltaY, mode: event.deltaMode }
@@ -57,7 +57,7 @@ const scrollParts = (event: WheelEvent) => {
     carried = left
     return
   }
-  if (by < 0 ? !shown.above : !shown.below) {
+  if (by < 0 ? !shown.isAbove : !shown.isBelow) {
     carried = 0
     return
   }
@@ -78,18 +78,18 @@ const arrowLine = (arrow: Arrow) =>
 <template>
   <!-- The parts are for the hand; the same parts are reached by name in the
        palette. -->
-  <g v-if="opened" class="plex__inside" aria-hidden="true" @wheel="scrollParts">
+  <g v-if="openParts" class="plex__inside" aria-hidden="true" @wheel="scrollParts">
     <!-- One ground under all of them, as deep as they have come. -->
     <rect
       class="plex__ground"
       :x="hung.offset - hung.width / 2"
       :y="hung.top"
       :width="hung.width"
-      :height="opened.height"
-      :opacity="opened.opacity"
+      :height="openParts.height"
+      :opacity="openParts.opacity"
     />
     <PlexPart
-      v-for="part in opened.parts"
+      v-for="part in openParts.parts"
       :key="part.id"
       :part="part"
       :hung="hung"
@@ -98,11 +98,11 @@ const arrowLine = (arrow: Arrow) =>
 
     <!-- More of them than the window holds, the way they are scrolled to. -->
     <path
-      v-for="arrow in opened.arrows"
+      v-for="arrow in openParts.arrows"
       :key="arrow.at"
       class="plex__more"
       :d="arrowLine(arrow)"
-      :opacity="opened.opacity"
+      :opacity="openParts.opacity"
     />
   </g>
 </template>

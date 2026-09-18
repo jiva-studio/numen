@@ -47,7 +47,7 @@ function createPlayer(): Player {
     url: address,
     at: ref(0),
     duration: ref(0),
-    playing: ref(false),
+    isPlaying: ref(false),
     error: ref(''),
     load: (wanted) => void (address.value = wanted),
     play: (wanted) => void (address.value = wanted),

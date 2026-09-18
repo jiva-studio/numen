@@ -20,7 +20,7 @@ const model = (one: Partial<Model> & { name: string }): Model => ({
   namedAt: ['indexing', 'embedding', 'model', 'name'],
   title: '',
   shelf: '',
-  byDefault: false,
+  isDefault: false,
   writes: [],
   presence: 'nothing to fetch',
   ...one,
@@ -55,7 +55,7 @@ describe('the choices a setting offers', () => {
   const PRESET = model({
     name: 'https://models.example/held/Tiny_rec.onnx',
     title: 'Tiny, small',
-    byDefault: true,
+    isDefault: true,
   })
 
   it('name a preset by its own words and address it underneath', () => {

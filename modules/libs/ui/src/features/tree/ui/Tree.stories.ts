@@ -65,31 +65,31 @@ const FEW: readonly Row[] = [
   {
     id: 'work',
     name: 'Work',
-    holds: true,
+    isHolding: true,
     rows: [
       {
         id: 'plans',
         name: 'Plans',
-        holds: true,
-        rows: [{ id: 'friday', name: 'Friday', holds: false }],
+        isHolding: true,
+        rows: [{ id: 'friday', name: 'Friday', isHolding: false }],
       },
-      { id: 'notes', name: 'Notes', holds: false },
+      { id: 'notes', name: 'Notes', isHolding: false },
     ],
   },
-  { id: 'empty', name: 'Empty', holds: true },
-  { id: 'loose', name: 'Loose', holds: false },
+  { id: 'empty', name: 'Empty', isHolding: true },
+  { id: 'loose', name: 'Loose', isHolding: false },
 ]
 
 /** One row inside the next, as far down as it goes. */
 const deep = (levels: number): readonly Row[] => {
   const createLevel = (level: number): readonly Row[] =>
     level > levels
-      ? [{ id: 'bottom', name: 'The bottom', holds: false }]
+      ? [{ id: 'bottom', name: 'The bottom', isHolding: false }]
       : [
           {
             id: `level-${level}`,
             name: `Level ${level}`,
-            holds: true,
+            isHolding: true,
             rows: createLevel(level + 1),
           },
         ]
@@ -102,39 +102,39 @@ const many = (count: number): readonly Row[] =>
   Array.from({ length: count }, (_, at) => ({
     id: `row-${at}`,
     name: `Row ${at + 1}`,
-    holds: false,
+    isHolding: false,
   }))
 
 const CYRILLIC: readonly Row[] = [
   {
     id: 'грядки',
     name: 'Грядки',
-    holds: true,
+    isHolding: true,
     rows: [
-      { id: 'морковь', name: 'Морковь', holds: false },
-      { id: 'семена', name: 'Список семян на весну', holds: false },
+      { id: 'морковь', name: 'Морковь', isHolding: false },
+      { id: 'семена', name: 'Список семян на весну', isHolding: false },
     ],
   },
-  { id: 'сарай', name: 'Сарай', holds: true },
+  { id: 'сарай', name: 'Сарай', isHolding: true },
 ]
 
 const UNBROKEN: readonly Row[] = [
   {
     id: 'run-on',
     name: 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakat',
-    holds: false,
+    isHolding: false,
   },
   {
     id: 'long',
     name: 'A name that goes on and on, well past the width anything drawing it is likely to have',
-    holds: false,
+    isHolding: false,
   },
 ]
 
 const NAMELESS: readonly Row[] = [
-  { id: 'blank', name: '', holds: false },
-  { id: 'blank-holder', name: '', holds: true, rows: [{ id: 'inside', name: '', holds: false }] },
-  { id: 'named', name: 'Named', holds: false },
+  { id: 'blank', name: '', isHolding: false },
+  { id: 'blank-holder', name: '', isHolding: true, rows: [{ id: 'inside', name: '', isHolding: false }] },
+  { id: 'named', name: 'Named', isHolding: false },
 ]
 
 interface Corpus {
@@ -153,7 +153,7 @@ const CORPORA = {
   'other scripts': { rows: CYRILLIC, open: ['грядки'] },
   unbroken: { rows: UNBROKEN, open: [] },
   nameless: { rows: NAMELESS, open: ['blank-holder'] },
-  one: { rows: [{ id: 'only', name: 'Only', holds: false }], open: [] },
+  one: { rows: [{ id: 'only', name: 'Only', isHolding: false }], open: [] },
   empty: { rows: [], open: [] },
 } satisfies Record<string, Corpus>
 

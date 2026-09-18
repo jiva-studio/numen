@@ -1,33 +1,30 @@
 /** The presets of a vault, as the window asks for them and as the schema writes them. */
-import {
-  BudgetUnit as BudgetUnits,
-  Rule as Rules,
-  type Bounds as BoundsMessage,
-  type Curve as CurveMessage,
-  type ErrorCode as ProtoErrorCode,
-  type Place as PlaceMessage,
-  type Point as PointMessage,
-  type Preset as PresetMessage,
-  type Settings as SettingsMessage,
-  type SettingsBounds as SettingsBoundsMessage,
+import type {
+  Bounds as BoundsMessage,
+  Curve as CurveMessage,
+  ErrorCode as ProtoErrorCode,
+  Place as PlaceMessage,
+  Point as PointMessage,
+  Preset as PresetMessage,
+  Settings as SettingsMessage,
+  SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
-import { goalNames, goalOf, namesOf } from '@numen/wire'
+import { goalNames, goalOf } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
 import { presetsService } from '@/shared/clients'
 import { DEFAULTS, NOWHERE } from '../lib/presets'
 import type {
   Bounds,
-  BudgetUnit,
   Curve,
   Place,
   Point,
   Preset,
   Presets,
   ReadResult,
-  Rule,
   Settings,
   SettingsBounds,
 } from '../lib/presets'
+import { CLOSED, COUNTED, COUNTING, LEARNED, RULING, STOPPED } from './presets.names'
 
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {
@@ -48,7 +45,7 @@ export const presets: Presets = {
       preset,
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
+    return { error: errorIn(answer), isChanged: staleIn(answer), fingerprint: stamp(answer.at) ?? '' }
   },
   write: async (path, settings, seen) => {
     const answer = await presetsService.writePreset({
@@ -56,7 +53,7 @@ export const presets: Presets = {
       settings: toSettingsMessage(settings),
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: errorIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
+    return { error: errorIn(answer), isChanged: staleIn(answer), fingerprint: stamp(answer.at) ?? '' }
   },
   curve: async (path, settings) => {
     const answer = await presetsService.computeCurve({
@@ -76,7 +73,7 @@ const parseRead = (answer: {
 }): ReadResult => ({
   preset: answer.preset ? parsePreset(answer.preset) : null,
   error: errorIn(answer),
-  at: stamp(answer.at) ?? '',
+  fingerprint: stamp(answer.at) ?? '',
   bounds: parseSettingsBounds(answer.bounds),
 })
 
@@ -106,8 +103,8 @@ const parsePreset = (one: PresetMessage): Preset => ({
   title: one.title,
   settings: settingsOf(one.settings),
   problems: one.problems,
-  stops: one.stops,
-  stopsOn: one.stopsOn,
+  stops: STOPPED[one.stops],
+  stopsOn: STOPPED[one.stopsOn],
 })
 
 /** The settings in the window's own words. A preset carrying none is the defaults. */
@@ -152,8 +149,8 @@ const parsePoint = (one: PointMessage): Point => ({
   retained: one.retained,
   owed: one.owed,
   through: one.through,
-  enough: one.enough,
-  closed: one.closed,
+  canLearnEveryCard: one.enough,
+  closed: one.closed.flatMap((name) => CLOSED[name] ?? []),
   clears: one.clears,
   learned: one.learned,
   ...(one.learns === undefined ? {} : { learns: one.learns }),
@@ -174,7 +171,7 @@ const NO_CURVE: Curve = {
   overdue: 0,
   unbegun: 0,
   isValid: true,
-  honest: true,
+  isHonest: true,
 }
 
 /** A curve as the window carries it. An answer holding none is an empty one. */
@@ -193,30 +190,9 @@ const parseCurve = (curve: CurveMessage | undefined): Curve =>
         overdue: curve.overdue,
         unbegun: curve.unbegun,
         isValid: true,
-        honest: true,
+        isHonest: true,
       }
 
 const parsePlace = (place: PlaceMessage | undefined): Place =>
   place === undefined ? NOWHERE : { at: place.at, value: place.value, day: place.day }
 
-/**
- * What counts as learned, in the window's own words.
- */
-const LEARNED: Record<Rules, Rule | null> = {
-  [Rules.UNSPECIFIED]: null,
-  [Rules.INTERVAL]: 'interval',
-  [Rules.RETENTION]: 'retention',
-}
-
-const RULING = namesOf<Rule, Rules>(LEARNED)
-
-/**
- * The unit a budget is spent in, in the window's own words.
- */
-const COUNTED: Record<BudgetUnits, BudgetUnit | null> = {
-  [BudgetUnits.UNSPECIFIED]: null,
-  [BudgetUnits.CARDS]: 'cards',
-  [BudgetUnits.SHOWS]: 'shows',
-}
-
-const COUNTING = namesOf<BudgetUnit, BudgetUnits>(COUNTED)

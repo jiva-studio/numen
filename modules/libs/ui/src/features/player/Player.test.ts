@@ -9,7 +9,7 @@ import Player from './Player.vue'
 type PlayerProps = InstanceType<typeof Player>['$props']
 
 const mountPlayer = (props: Partial<PlayerProps> = {}) =>
-  mount(Player, { props: { at: 0, length: 125_000, playing: false, ...props } })
+  mount(Player, { props: { at: 0, length: 125_000, isPlaying: false, ...props } })
 
 const button = (player: ReturnType<typeof mountPlayer>) => player.get('button')
 const bar = (player: ReturnType<typeof mountPlayer>) => player.get('input[type="range"]')
@@ -22,7 +22,7 @@ describe('what a person is told', () => {
     expect(button(still).attributes('aria-label')).toBe('Play')
     expect(button(still).attributes('aria-pressed')).toBe('false')
 
-    const going = mountPlayer({ playing: true })
+    const going = mountPlayer({ isPlaying: true })
     expect(button(going).attributes('aria-label')).toBe('Pause')
     expect(button(going).attributes('aria-pressed')).toBe('true')
   })
@@ -52,7 +52,7 @@ describe('what a person did', () => {
     expect(still.emitted('play')).toHaveLength(1)
     expect(still.emitted('pause')).toBeUndefined()
 
-    const going = mountPlayer({ playing: true })
+    const going = mountPlayer({ isPlaying: true })
     await button(going).trigger('click')
     expect(going.emitted('pause')).toHaveLength(1)
     expect(going.emitted('play')).toBeUndefined()

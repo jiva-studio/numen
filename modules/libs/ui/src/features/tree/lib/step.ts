@@ -61,8 +61,8 @@ function stepUp(visibleRows: readonly ShownRow[], at: number, here: ShownRow): S
 
 /** A closed row opens, an open one is descended into, and a leaf stays. */
 function stepIn(visibleRows: readonly ShownRow[], at: number, here: ShownRow): Step {
-  if (here.holds && !here.open) return { at: here.id, turn: { row: here.id, open: true } }
-  if (here.open && here.holding) return stepDown(visibleRows, at, here)
+  if (here.isHolding && !here.open) return { at: here.id, turn: { row: here.id, open: true } }
+  if (here.open && here.hasRows) return stepDown(visibleRows, at, here)
   return { at: here.id, turn: null }
 }
 

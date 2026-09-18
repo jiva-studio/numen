@@ -43,7 +43,7 @@ const items = computed(() => {
   const entry = props.state.list.getEntryAt(asked.path)
   const on = {
     source: entry?.kind ?? 'other',
-    folder: entry?.folder ?? false,
+    isFolder: entry?.isFolder ?? false,
   }
   return itemsFor(on, props.state.getOverPaths(asked.path).length > 1, props.state.canRun)
 })
@@ -113,7 +113,7 @@ function rowsOf(entries: readonly ListingRow[]): Row[] {
   return entries.map((one) => ({
     id: one.entry.path,
     name: one.entry.name,
-    holds: one.entry.folder,
+    isHolding: one.entry.isFolder,
     rows: rowsOf(one.rows),
   }))
 }

@@ -409,7 +409,7 @@ describe('what does not fit is reported rather than dropped silently', () => {
 })
 
 describe('the extent', () => {
-  const holdsEveryNode = ({ nodes, extent }: PlexFrame) => {
+  const hasEveryNode = ({ nodes, extent }: PlexFrame) => {
     for (const node of nodes) {
       expect(node.x - node.width / 2).toBeGreaterThanOrEqual(extent.minX)
       expect(node.x + node.width / 2).toBeLessThanOrEqual(extent.maxX)
@@ -419,13 +419,13 @@ describe('the extent', () => {
   }
 
   it.each(every)('contains every node of %s', (_name, neighbourhood: PlexNeighbourhood) => {
-    holdsEveryNode(arrangePlex(neighbourhood))
+    hasEveryNode(arrangePlex(neighbourhood))
   })
 
   it.each(every)(
     'contains every node of %s, sized to its titles',
     (_name, neighbourhood: PlexNeighbourhood) => {
-      holdsEveryNode(arrangePlex(neighbourhood, { measure: byTitle }))
+      hasEveryNode(arrangePlex(neighbourhood, { measure: byTitle }))
     },
   )
 

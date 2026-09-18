@@ -71,14 +71,14 @@ describe('a close', () => {
 })
 
 describe('the last tab in the workspace', () => {
-  const alone = () => workspaceOf(stack('main', 'plex'))
+  const createLoneTab = () => workspaceOf(stack('main', 'plex'))
 
   it('is offered a close, as every other tab is', () => {
-    expect(closeOf(mountWorkspace(alone()), 'plex').exists()).toBe(true)
+    expect(closeOf(mountWorkspace(createLoneTab()), 'plex').exists()).toBe(true)
   })
 
   it('leaves one pane holding nothing where it is closed', async () => {
-    const held = mountWorkspace(alone())
+    const held = mountWorkspace(createLoneTab())
     await closeOf(held, 'plex').trigger('click')
 
     const after = held.emitted('update:modelValue')?.[0]?.[0] as State
@@ -91,7 +91,7 @@ describe('the last tab in the workspace', () => {
   // anything the workspace kept to itself: a caller holding the tab open sees
   // none of this.
   it('leaves the silence in its place', async () => {
-    const held = mountWorkspace(alone(), {}, { silence: '<p class="quiet">Nothing here</p>' })
+    const held = mountWorkspace(createLoneTab(), {}, { silence: '<p class="quiet">Nothing here</p>' })
     await closeOf(held, 'plex').trigger('click')
 
     const after = held.emitted('update:modelValue')?.[0]?.[0] as State

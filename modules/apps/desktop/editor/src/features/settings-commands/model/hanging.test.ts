@@ -30,7 +30,7 @@ describe('whether a node hangs the parts of its note', () => {
     expect(groups.map((group) => group.id)).toStrictEqual([HANGING])
     const items = groups.flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual([ON, OFF])
-    expect(items.find((one) => one.inForce)?.id).toBe(OFF)
+    expect(items.find((one) => one.isCurrent)?.id).toBe(OFF)
   })
 
   it('hangs the parts where the vault cannot be asked', async () => {
@@ -120,7 +120,7 @@ describe('how many parts stand under a node', () => {
     await held.start()
 
     const items = held.getPartsGroups().flatMap((group) => group.items)
-    expect(items.filter((one) => one.inForce).map((one) => one.id)).toStrictEqual(['4'])
+    expect(items.filter((one) => one.isCurrent).map((one) => one.id)).toStrictEqual(['4'])
     expect(items.find((one) => one.id === '4')?.detail).toBe(words.current)
     expect(items.find((one) => one.id === '5')?.detail).toBeUndefined()
   })

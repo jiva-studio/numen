@@ -61,7 +61,7 @@ describe('the settings of a preset', () => {
       learned: 'retention',
       load: { mon: 50 },
     })
-    expect(answer.at).toBe('12 34 Daily.md')
+    expect(answer.fingerprint).toBe('12 34 Daily.md')
   })
 
   it('take the default for a rule the file leaves unnamed', async () => {
@@ -128,7 +128,7 @@ describe('putting a deck on a preset', () => {
     const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
 
     expect(asked[0]?.seen).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
-    expect(answer.at).toBe('12 34 Deck.md')
+    expect(answer.fingerprint).toBe('12 34 Deck.md')
   })
 
   it('names no file where the window read none', async () => {
@@ -144,8 +144,8 @@ describe('putting a deck on a preset', () => {
 
     expect(await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual({
       error: null,
-      changed: true,
-      at: '',
+      isChanged: true,
+      fingerprint: '',
     })
   })
 })
@@ -205,7 +205,7 @@ describe('what a preset comes to over the range of its goal', () => {
       decks: 2,
       cards: 400,
       overdue: 12,
-      honest: true,
+      isHonest: true,
     })
   })
 

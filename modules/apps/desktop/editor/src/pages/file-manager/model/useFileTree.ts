@@ -55,7 +55,7 @@ export function useFileTree(core: Folders): FileTree {
   const getRowsInFolder = (folder: string): readonly ListingRow[] =>
     getEntriesInFolder(folder).map((entry) => ({
       entry,
-      rows: entry.folder && isFolderOpen(entry.path) ? getRowsInFolder(entry.path) : [],
+      rows: entry.isFolder && isFolderOpen(entry.path) ? getRowsInFolder(entry.path) : [],
     }))
 
   const rows = computed<readonly ListingRow[]>(() => getRowsInFolder(ROOT))

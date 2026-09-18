@@ -7,9 +7,8 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import { StopReason } from '@numen/protocol'
 import type { ErrorCode } from '@/shared/errors'
-import type { Cards, VaultCard, DeckProblem } from '@/entities/deck'
+import type { Cards, VaultCard, DeckProblem, Preset } from '@/entities/deck'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
 import { fileOpeners } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
@@ -19,7 +18,7 @@ import { useDeckTabs, type DeckTabState } from '../model/useDeckTabs'
 import { WORDS as words } from '@/entities/deck'
 
 /** A preset that schedules, which is what every preset here is. */
-const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
+const SCHEDULING = { stops: 'none', stopsOn: 'none' } satisfies Pick<Preset, 'stops' | 'stopsOn'>
 
 /** The one place a file is opened from. Nothing here opens one. */
 const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
@@ -90,8 +89,8 @@ const mountDeck = async (
       cards: 0,
       notWritten: [],
       error: null,
-      changed: false,
-      at: '',
+      isChanged: false,
+      fingerprint: '',
     }),
     readDeck: async (path) => ({
       deck: {
@@ -104,12 +103,12 @@ const mountDeck = async (
         problems,
       },
       error: null,
-      at: 'read',
+      fingerprint: 'read',
       bound: 0,
     }),
-    writeDeck: async () => ({ error: null, changed: false, at: 'written', bound: 0 }),
-    readStencil: async () => ({ stencil: null, error: 'missing', at: '' }),
-    writeStencil: async () => ({ error: null, changed: false, at: '' }),
+    writeDeck: async () => ({ error: null, isChanged: false, fingerprint: 'written', bound: 0 }),
+    readStencil: async () => ({ stencil: null, error: 'missing', fingerprint: '' }),
+    writeStencil: async () => ({ error: null, isChanged: false, fingerprint: '' }),
   }
 
   /** Which preset the deck names, as the vault answers it. */
@@ -121,7 +120,7 @@ const mountDeck = async (
     read: async (path) => ({
       preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
       error: null,
-      at: '',
+      fingerprint: '',
       bounds: NO_BOUNDS,
     }),
     list: async () =>
@@ -139,18 +138,18 @@ const mountDeck = async (
         ...SCHEDULING,
       },
       error: null,
-      at: '',
+      fingerprint: '',
       bounds: NO_BOUNDS,
     }),
     scheduleDeck: async (_deck, preset) => {
       put.push(preset)
       if (schedule.notScheduled) {
-        return { error: schedule.notScheduled, changed: false, at: '' }
+        return { error: schedule.notScheduled, isChanged: false, fingerprint: '' }
       }
       by = preset
-      return { error: null, changed: false, at: 'scheduled' }
+      return { error: null, isChanged: false, fingerprint: 'scheduled' }
     },
-    write: async () => ({ error: null, changed: false, at: '' }),
+    write: async () => ({ error: null, isChanged: false, fingerprint: '' }),
     curve: async () => ({
       goal: 'minutes',
       grid: [],
@@ -162,7 +161,7 @@ const mountDeck = async (
       cards: 0,
       overdue: 0,
       unbegun: 0,
-      honest: true,
+      isHonest: true,
     }),
   }
 

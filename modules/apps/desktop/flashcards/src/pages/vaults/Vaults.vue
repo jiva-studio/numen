@@ -17,7 +17,7 @@ import type { VaultCardsDue } from '@/entities/vault'
 
 const props = defineProps<{
   vaults: readonly VaultCardsDue[]
-  counting: boolean
+  isCounting: boolean
   version: string
 }>()
 
@@ -29,12 +29,12 @@ defineEmits<{ (event: 'choose', vault: string): void }>()
  */
 const listed = computed<readonly VaultRow[]>(() =>
   props.vaults.map((one) => {
-    const said = one.reading ? 'Reading the vault' : one.unread
+    const said = one.isReading ? 'Reading the vault' : one.unread
     return {
       id: one.vault,
       name: one.name,
       path: one.path,
-      working: !one.counted,
+      isWorking: !one.isCounted,
       ...(said ? { detail: said } : {}),
     }
   }),
@@ -49,8 +49,8 @@ const waiting = computed(
   () =>
     new Map(
       props.vaults
-        .filter((one) => !one.unread && !one.reading)
-        .map((one) => [one.vault, one.counted ? one.due + one.new : null]),
+        .filter((one) => !one.unread && !one.isReading)
+        .map((one) => [one.vault, one.isCounted ? one.due + one.new : null]),
     ),
 )
 </script>
@@ -65,12 +65,12 @@ const waiting = computed(
   >
     <!-- The list is where the room is shortest, so the number stands alone. -->
     <template #vault="{ vault }">
-      <DueCount v-if="waiting.has(vault.id)" :due="waiting.get(vault.id) ?? null" bare />
+      <DueCount v-if="waiting.has(vault.id)" :due="waiting.get(vault.id) ?? null" is-bare />
     </template>
 
     <!-- Nothing is known about the installation yet, not even which vaults it
          holds, which is the one thing the screen has to say until it is. -->
-    <template v-if="counting" #waiting>
+    <template v-if="isCounting" #waiting>
       <p class="vaults__counting" role="status">
         <Spinner />
         Reading the vaults

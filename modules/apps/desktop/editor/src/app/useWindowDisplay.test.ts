@@ -77,7 +77,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     getSettings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
     updateSettings: async () => {},
     getSettingsFile: async () => ({ written: '{}', path: '/numen.json' }),
-    saveSettingsFile: async () => ({ changed: false }),
+    saveSettingsFile: async () => ({ isChanged: false }),
     watchQuit: async function* () {},
     reportFlush: async () => {},
     ...over,

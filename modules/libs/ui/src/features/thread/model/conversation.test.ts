@@ -171,7 +171,7 @@ describe('giving up', () => {
     await asking
 
     expect(conversation.turns.value.map((turn) => turn.text)).toEqual(['what is here?', 'Two '])
-    expect(conversation.working.value).toBe(false)
+    expect(conversation.isWorking.value).toBe(false)
   })
 })
 
@@ -353,7 +353,7 @@ describe('a call that was working on a place', () => {
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
-    expect(line?.opens).toBe(true)
+    expect(line?.isOpening).toBe(true)
     expect(conversation.getSourceLocation(line?.id ?? '')).toEqual(place)
 
     release()
@@ -376,7 +376,7 @@ describe('a call that was working on a place', () => {
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
-    expect(line?.opens).toBeUndefined()
+    expect(line?.isOpening).toBeUndefined()
     expect(conversation.getSourceLocation(line?.id ?? '')).toBeNull()
 
     release()
@@ -398,7 +398,7 @@ describe('a call that was working on a place', () => {
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
-    expect(line?.opens).toBeUndefined()
+    expect(line?.isOpening).toBeUndefined()
     expect(conversation.getSourceLocation(line?.id ?? '')).toBeNull()
 
     release()
@@ -553,7 +553,7 @@ describe('a conversation that is over', () => {
     await asking
 
     expect(conversation.turns.value.map((turn) => turn.text)).toEqual(['what is here?', 'Two '])
-    expect(conversation.working.value).toBe(false)
+    expect(conversation.isWorking.value).toBe(false)
   })
 
   it('says nothing when the agent refuses to let go', async () => {
@@ -638,7 +638,7 @@ describe('giving up on an answer', () => {
     conversation.stop()
 
     expect(conversation.turns.value.filter((turn) => turn.voice === 'doing')).toEqual([])
-    expect(conversation.working.value).toBe(false)
+    expect(conversation.isWorking.value).toBe(false)
 
     release()
     await asking

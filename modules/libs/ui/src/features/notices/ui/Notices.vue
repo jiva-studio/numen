@@ -58,7 +58,7 @@ const stack = useTemplateRef<HTMLElement>('stack')
 const {
   drawn,
   folds,
-  opened,
+  isOpened,
   leftOn,
   holdCard,
   dismissByHand,
@@ -100,7 +100,7 @@ const { told, cried } = useAnnouncer(() => drawn.value)
           type="button"
           class="notice notice__folded"
           @pointerover="onPointerOver"
-          @click="opened = true"
+          @click="isOpened = true"
         >
           {{ folds.over }} {{ more }}
         </button>

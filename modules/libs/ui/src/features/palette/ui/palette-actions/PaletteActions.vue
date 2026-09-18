@@ -153,7 +153,7 @@ const onKey = (event: KeyboardEvent) => {
         :ref="(element) => hold(row.action.id, element)"
         :key="row.action.id"
         :row="row"
-        :here="row.at === here"
+        :is-highlighted="row.at === here"
         @pointermove="onRowPointerMove(row.at, $event)"
         @pointerdown.prevent
         @click="run(row.at)"

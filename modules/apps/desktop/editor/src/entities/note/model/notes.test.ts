@@ -12,18 +12,18 @@ function fake(over: Partial<Notes> = {}) {
   const core: Notes = {
     read: async (path) =>
       files.has(path)
-        ? { body: files.get(path) ?? '', error: null, at: getFingerprint(files.get(path) ?? '') }
+        ? { body: files.get(path) ?? '', error: null, fingerprint: getFingerprint(files.get(path) ?? '') }
         : { body: '', error: 'missing' },
     write: async (path, body, seen) => {
       wrote.push({ path, body })
       const held = files.get(path)
       // A note still holding either the prose or the file that prose came out of
       // is the note this caller read.
-      if (seen && held !== undefined && held !== seen.prose && getFingerprint(held) !== seen.at) {
-        return { body: '', error: null, changed: true }
+      if (seen && held !== undefined && held !== seen.prose && getFingerprint(held) !== seen.fingerprint) {
+        return { body: '', error: null, isChanged: true }
       }
       files.set(path, body)
-      return { body: '', error: null, at: getFingerprint(body) }
+      return { body: '', error: null, fingerprint: getFingerprint(body) }
     },
     ...over,
   }
@@ -579,7 +579,7 @@ describe('a note that points somewhere', () => {
       read: async () => ({
         body: '',
         error: null,
-        at: getFingerprint(''),
+        fingerprint: getFingerprint(''),
         ...(link ? { link } : {}),
       }),
     })

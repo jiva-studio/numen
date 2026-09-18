@@ -89,16 +89,16 @@ export function useCommandPalette(
     failureMessage.value = ''
     try {
       const listed = await core.vaults()
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       known.value = listed.vaults
       showing.value = listed.showing
     } catch (error) {
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       known.value = []
       console.error(error)
       failureMessage.value = words.notAsked
     } finally {
-      if (mine.current) isWorking.value = false
+      if (mine.isCurrent) isWorking.value = false
     }
   }
 
@@ -125,18 +125,18 @@ export function useCommandPalette(
     isWorking.value = true
     failureMessage.value = ''
     await wait(HOLD)
-    if (!mine.current) return
+    if (!mine.isCurrent) return
     try {
       const names = await core.names(query, EACH)
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       found.value = names
     } catch (error) {
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       found.value = []
       console.error(error)
       failureMessage.value = words.notAsked
     } finally {
-      if (mine.current) isWorking.value = false
+      if (mine.isCurrent) isWorking.value = false
     }
   }
 
@@ -177,7 +177,7 @@ export function useCommandPalette(
   const getObjection = (id: string, over: CommandTarget): string => {
     const command = byId.get(id)
     if (!command || command.isOffered(over, runs)) return ''
-    return over.ready ? words.noNote : words.noVault
+    return over.isReady ? words.noNote : words.noVault
   }
 
   const chooseItem = (item: string, action: string): CommandInvocation | null => {

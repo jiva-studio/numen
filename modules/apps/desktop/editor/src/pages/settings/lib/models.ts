@@ -66,7 +66,7 @@ const getModelChoice = (model: Model, words: Words): SelectChoice => {
   ])
   return {
     id: model.name,
-    text: model.byDefault ? `${name} — ${words.byDefault}` : name,
+    text: model.isDefault ? `${name} — ${words.byDefault}` : name,
     ...(detail ? { detail } : {}),
     ...(model.shelf ? { group: model.shelf } : {}),
   }

@@ -163,7 +163,7 @@ export const Nothing: Story = {
 const TODAY = getDayName(now)
 
 /** A day drawn on its own, so the cell pointed at is the one holding now. */
-const alone = (tally: Tally): Map<string, Tally> => new Map([[TODAY, tally]])
+const createOneDay = (tally: Tally): Map<string, Tally> => new Map([[TODAY, tally]])
 
 const room = (args: unknown) => ({
   components: { Heatmap },
@@ -190,7 +190,7 @@ const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
  */
 export const ADayReviewed: Story = {
   args: {
-    did: alone({ answered: 26, again: 2, hard: 3, good: 18, easy: 3, asked: 24, recalled: 20 }),
+    did: createOneDay({ answered: 26, again: 2, hard: 3, good: 18, easy: 3, asked: 24, recalled: 20 }),
     now,
     words,
   },
@@ -224,7 +224,7 @@ export const ADayReviewed: Story = {
  */
 export const ADayOfNewCards: Story = {
   args: {
-    did: alone({ answered: 12, again: 0, hard: 1, good: 9, easy: 2, asked: 0, recalled: 0 }),
+    did: createOneDay({ answered: 12, again: 0, hard: 1, good: 9, easy: 2, asked: 0, recalled: 0 }),
     now,
     words,
   },

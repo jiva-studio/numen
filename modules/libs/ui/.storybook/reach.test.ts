@@ -15,7 +15,7 @@ const SOUND: Stop = {
   where: 'button.tab__close',
   name: 'Close',
   shown: true,
-  moving: false,
+  isMoving: false,
 }
 
 const stop = (how: Partial<Stop>): Stop => ({ ...SOUND, ...how })
@@ -28,12 +28,12 @@ describe('what the keyboard rule refuses', () => {
     {
       says: 'a stop caught on its way in, held still at the opacity it passed',
       allowed: true,
-      stop: stop({ shown: false, moving: true }),
+      stop: stop({ shown: false, isMoving: true }),
     },
     {
       says: 'a stop on its way in with no name, which arriving does not excuse',
       allowed: false,
-      stop: stop({ name: '', moving: true }),
+      stop: stop({ name: '', isMoving: true }),
     },
   ]
 

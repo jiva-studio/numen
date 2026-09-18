@@ -33,8 +33,8 @@ const { callout } = props.state
     v-if="callout"
     class="curve-slider__tail"
     data-control="tail"
-    :data-under="callout.under || undefined"
-    :class="{ 'curve-slider__tail--under': callout.under }"
+    :data-under="callout.isUnder || undefined"
+    :class="{ 'curve-slider__tail--under': callout.isUnder }"
     :style="callout.tail"
   />
 </template>

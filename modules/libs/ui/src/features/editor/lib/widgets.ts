@@ -25,30 +25,30 @@ export class Bullet extends WidgetType {
 /** A task's box, which is ticked by clicking it. */
 export class Box extends WidgetType {
   constructor(
-    readonly done: boolean,
-    readonly writable: boolean,
+    readonly isDone: boolean,
+    readonly isWritable: boolean,
   ) {
     super()
   }
 
   override eq(other: Box) {
-    return other.done === this.done && other.writable === this.writable
+    return other.isDone === this.isDone && other.isWritable === this.isWritable
   }
 
   toDOM(view: EditorView) {
     const box = document.createElement('input')
     box.type = 'checkbox'
     box.className = 'cm-box'
-    box.checked = this.done
-    box.disabled = !this.writable
+    box.checked = this.isDone
+    box.disabled = !this.isWritable
     box.addEventListener('mousedown', (event) => event.preventDefault())
     box.addEventListener('click', () => {
-      if (!this.writable) return
+      if (!this.isWritable) return
       const at = view.posAtDOM(box)
       const marker = view.state.doc.sliceString(at, at + 3)
       if (marker.length !== 3) return
       view.dispatch({
-        changes: { from: at, to: at + 3, insert: this.done ? '[ ]' : '[x]' },
+        changes: { from: at, to: at + 3, insert: this.isDone ? '[ ]' : '[x]' },
       })
     })
     return box

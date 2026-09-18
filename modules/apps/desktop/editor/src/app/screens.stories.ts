@@ -8,7 +8,6 @@
  * piece is drawn in the state it settles in and a picture can be taken of it.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { StopReason } from '@numen/protocol'
 import { WorkspaceLayout, branch, pane } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
@@ -115,14 +114,14 @@ const INSTALLATION: Installation = {
   ]),
   applied: ref('preset:numen'),
   mode: ref('system'),
-  pinned: ref(false),
+  isPinned: ref(false),
   sizes: ref({ interfaceScale: 1, textScale: 1.25 }),
   bounds: ref({
     interfaceScale: { least: 0.8, most: 2 },
     textScale: { least: 0.8, most: 1.75 },
   }),
   choose: () => {},
-  syncing: ref(true),
+  isSyncing: ref(true),
   isHanging: ref(true),
   parts: ref(6),
   partsBounds: ref({ least: 1, most: 12 }),
@@ -151,7 +150,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   retained: 0,
   owed: 0,
   through: 0,
-  enough: true,
+  canLearnEveryCard: true,
   closed: [],
   clears: 0,
   learned: 0,
@@ -195,7 +194,7 @@ const CURVE: Curve = {
   cards: 1_240,
   overdue: 96,
   unbegun: 410,
-  honest: true,
+  isHonest: true,
 }
 
 const SETTINGS_OF_PRESET: Scheduling = {
@@ -221,10 +220,10 @@ const PRESET_STATE: PresetTabState = {
   curve: shallowRef(CURVE),
   material: shallowRef({ decks: 3, cards: 1_240, overdue: 96, unbegun: 410 } as PresetCounts),
   place: ref(4),
-  waiting: ref(false),
+  isWaiting: ref(false),
   bounds: shallowRef(BOUNDS),
   problems: shallowRef([]),
-  stopped: ref(StopReason.NOTHING),
+  stopped: ref('none'),
   errorMessage: ref(''),
   hasChanged: ref(false),
   reload: () => {},
@@ -477,7 +476,7 @@ const PLAYER: Player = {
   url: ref(MEDIA),
   at: ref(47_200),
   duration: ref(RUNS),
-  playing: ref(true),
+  isPlaying: ref(true),
   error: ref(''),
   load: () => {},
   play: () => {},
@@ -548,32 +547,32 @@ export const Transcribing: Story = {
 const entry = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
-  folder: false,
+  isFolder: false,
   kind: 'note',
   type: 'note',
   ...over,
 })
 
-const other = (path: string, kind: Entry['kind']): Entry => entry(path, { kind, type: 'note' })
+const createOtherEntry = (path: string, kind: Entry['kind']): Entry => entry(path, { kind, type: 'note' })
 
 /** The folders of the vault the pictures in this file are taken of. */
 const VAULT: Record<string, readonly Entry[]> = {
   [ROOT]: [
-    entry('Lectures', { folder: true, kind: 'other' }),
-    entry('Physics', { folder: true, kind: 'other' }),
-    entry('Reading', { folder: true, kind: 'other' }),
-    entry('Sanskrit', { folder: true, kind: 'other' }),
+    entry('Lectures', { isFolder: true, kind: 'other' }),
+    entry('Physics', { isFolder: true, kind: 'other' }),
+    entry('Reading', { isFolder: true, kind: 'other' }),
+    entry('Sanskrit', { isFolder: true, kind: 'other' }),
     entry('Entropy.md'),
     entry('Inbox.md'),
     entry('Reading list.md'),
     entry('Sanskrit.md', { type: 'preset' }),
   ],
   Lectures: [
-    other('Lectures/Lecture 3.mp3', 'recording'),
-    other('Lectures/Lecture 4.mp3', 'recording'),
-    other('Lectures/Lecture 5.mp3', 'recording'),
-    other('Lectures/Seminar, May.wav', 'recording'),
-    other('Lectures/Kolb, an interview.flac', 'recording'),
+    createOtherEntry('Lectures/Lecture 3.mp3', 'recording'),
+    createOtherEntry('Lectures/Lecture 4.mp3', 'recording'),
+    createOtherEntry('Lectures/Lecture 5.mp3', 'recording'),
+    createOtherEntry('Lectures/Seminar, May.wav', 'recording'),
+    createOtherEntry('Lectures/Kolb, an interview.flac', 'recording'),
     entry('Lectures/What the demon costs.md'),
   ],
   Physics: [
@@ -584,11 +583,11 @@ const VAULT: Record<string, readonly Entry[]> = {
     entry('Physics/The second law.md'),
   ],
   Reading: [
-    other('Reading/Bennett 1982.epub', 'book'),
-    other('Reading/Boltzmann 1877.pdf', 'book'),
-    other('Reading/Fermi, Thermodynamics.pdf', 'book'),
-    other('Reading/Landauer 1961.pdf', 'book'),
-    other('Reading/Shannon 1948.pdf', 'book'),
+    createOtherEntry('Reading/Bennett 1982.epub', 'book'),
+    createOtherEntry('Reading/Boltzmann 1877.pdf', 'book'),
+    createOtherEntry('Reading/Fermi, Thermodynamics.pdf', 'book'),
+    createOtherEntry('Reading/Landauer 1961.pdf', 'book'),
+    createOtherEntry('Reading/Shannon 1948.pdf', 'book'),
   ],
   Sanskrit: [
     entry('Sanskrit/Declensions.md', { type: 'deck' }),

@@ -1,6 +1,6 @@
 /** How fast the counts in the corner are moving, as plain values. */
 
-import { readable, tallyOf, type Notice } from './notice'
+import { getReadable, tallyOf, type Notice } from './notice'
 import { rateOf } from './tally'
 
 /** What one count stood at when it last moved, and when that was. */
@@ -25,7 +25,7 @@ export const measureMovement = (
   at: number,
 ): ReadonlyMap<string, Movement> => {
   const moving = new Map<string, Movement>()
-  for (const notice of readable(notices)) {
+  for (const notice of getReadable(notices)) {
     const tally = tallyOf(notice)
     if (tally === undefined) continue
     const before = was.get(notice.id)

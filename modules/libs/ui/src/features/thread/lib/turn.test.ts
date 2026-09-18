@@ -9,8 +9,8 @@ const createAnswered = (id: string, text = 'back', state?: Turn['state']): Turn 
 
 describe('the voices', () => {
   it('draws what was said in a bubble and what came back on the surface', () => {
-    expect(VOICES.asked.bubble).toBe(true)
-    expect(VOICES.answered.bubble).toBe(false)
+    expect(VOICES.asked.isBubble).toBe(true)
+    expect(VOICES.answered.isBubble).toBe(false)
   })
 
   it('puts them on opposite sides', () => {

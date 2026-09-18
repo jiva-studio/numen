@@ -8,9 +8,9 @@ import { WORDS as words } from '../../words'
 // --- Props & Emits ---
 const props = defineProps<{
   /** Whether the text carries times, which is what following goes by. */
-  timed?: boolean
+  isTimed?: boolean
   /** Whether the view keeps the line being said in sight. */
-  follows?: boolean
+  isFollowing?: boolean
   /** Whether the menu at the end of the strip offers anything. */
   hasMenu?: boolean
 }>()
@@ -30,12 +30,12 @@ function onOpenMenu(event: Event) {
 <template>
   <div class="media__actions">
     <button
-      v-if="props.timed"
+      v-if="props.isTimed"
       type="button"
       class="media__follow"
       :aria-label="words.follow"
       :title="words.follow"
-      :aria-pressed="props.follows ? 'true' : 'false'"
+      :aria-pressed="props.isFollowing ? 'true' : 'false'"
       @click="onToggleFollow"
     >
       <LocateFixed class="media__icon" />

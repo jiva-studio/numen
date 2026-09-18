@@ -221,7 +221,7 @@ export async function walk(): Promise<Walk> {
       shown: shown(here),
       // The stop itself, or whatever it is drawn inside: a row on its way in
       // carries every control standing on it.
-      moving: here.closest(MOVING) !== null,
+      isMoving: here.closest(MOVING) !== null,
     })
   }
 

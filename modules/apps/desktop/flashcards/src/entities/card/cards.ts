@@ -12,7 +12,7 @@ export interface CardFace {
   readonly heading: string
   readonly front: string
   readonly back: string
-  readonly seen: boolean
+  readonly isSeen: boolean
   /** Where each of the four would leave it. */
   readonly ahead: Intervals | null
 }

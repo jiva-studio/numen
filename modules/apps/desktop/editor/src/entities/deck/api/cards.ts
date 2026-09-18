@@ -27,7 +27,7 @@ export const deckService: DeckService = {
     return {
       deck: answer.deck ? deserializeDeck(answer.deck) : null,
       error: errorIn(answer),
-      at: stamp(answer.at) ?? '',
+      fingerprint: stamp(answer.at) ?? '',
       bound: Number(answer.bound),
     }
   },
@@ -45,8 +45,8 @@ export const deckService: DeckService = {
     })
     return {
       error: errorIn(answer),
-      changed: staleIn(answer),
-      at: stamp(answer.at) ?? '',
+      isChanged: staleIn(answer),
+      fingerprint: stamp(answer.at) ?? '',
       bound: Number(answer.bound),
     }
   },
@@ -78,8 +78,8 @@ export const stencilService: StencilService = {
         text: one.problem?.text ?? '',
       })),
       error: errorIn(answer),
-      changed: staleIn(answer),
-      at: stamp(answer.at) ?? '',
+      isChanged: staleIn(answer),
+      fingerprint: stamp(answer.at) ?? '',
     }
   },
   readStencil: async (path) => {
@@ -87,7 +87,7 @@ export const stencilService: StencilService = {
     return {
       stencil: answer.stencil ? deserializeStencil(answer.stencil) : null,
       error: errorIn(answer),
-      at: stamp(answer.at) ?? '',
+      fingerprint: stamp(answer.at) ?? '',
     }
   },
   writeStencil: async (path, fields, stencil, seen) => {
@@ -106,8 +106,8 @@ export const stencilService: StencilService = {
     })
     return {
       error: errorIn(answer),
-      changed: staleIn(answer),
-      at: stamp(answer.at) ?? '',
+      isChanged: staleIn(answer),
+      fingerprint: stamp(answer.at) ?? '',
     }
   },
 }

@@ -51,16 +51,16 @@ const count = (one: VaultCounts): DueCounts => ({ day: '', vaults: [], counted: 
 const createFeed = () => {
   const held: DueCounts[] = []
   let wake: (() => void) | null = null
-  let over = false
+  let isOver = false
 
   const watchCardsDue = async function* (
     _said: Record<string, never>,
     how?: { signal?: AbortSignal },
   ): AsyncGenerator<DueCounts> {
-    over = false
+    isOver = false
     for (;;) {
       while (held.length) yield held.shift() as DueCounts
-      if (over) return
+      if (isOver) return
       await new Promise<void>((then, stopped) => {
         wake = () => {
           wake = null
@@ -80,7 +80,7 @@ const createFeed = () => {
       wake?.()
     },
     endCounts() {
-      over = true
+      isOver = true
       wake?.()
     },
   }
@@ -103,7 +103,7 @@ describe('counting what every vault owes', () => {
     // Nothing is known about what any of them holds, and none of them reads as
     // a vault owing nothing.
     for (const held of one.vaults.value) {
-      expect(held.counted).toBe(false)
+      expect(held.isCounted).toBe(false)
       expect(held.due + held.new).toBe(0)
     }
   })
@@ -118,12 +118,12 @@ describe('counting what every vault owes', () => {
     front.sendCount(count(vault('01B', { due: 4, new: 1 })))
     await settles()
 
-    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', counted: false, due: 0, new: 0 })
-    expect(one.vaults.value[1]).toMatchObject({ vault: '01B', counted: true, due: 4, new: 1 })
+    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', isCounted: false, due: 0, new: 0 })
+    expect(one.vaults.value[1]).toMatchObject({ vault: '01B', isCounted: true, due: 4, new: 1 })
 
     front.sendCount(count(vault('01A')))
     await settles()
-    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', counted: true, due: 1, new: 2 })
+    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', isCounted: true, due: 1, new: 2 })
     // What a day took arrives in milliseconds and is held in minutes.
     expect(one.vaults.value[0]?.presets[0]).toEqual({
       preset: 'Sanskrit.md',
@@ -156,8 +156,8 @@ describe('counting what every vault owes', () => {
     await settles()
 
     expect(one.vaults.value[0]?.unread).toBe('this folder cannot be read as a vault')
-    expect(one.vaults.value[1]).toMatchObject({ counted: true, due: 6 })
-    expect(one.counting.value).toBe(false)
+    expect(one.vaults.value[1]).toMatchObject({ isCounted: true, due: 6 })
+    expect(one.isCounting.value).toBe(false)
   })
 
   // A vault being read into the index has no numbers yet, so its row goes on
@@ -172,7 +172,7 @@ describe('counting what every vault owes', () => {
     front.endCounts()
     await settles()
 
-    expect(one.vaults.value[0]).toMatchObject({ counted: false, reading: true, unread: '' })
+    expect(one.vaults.value[0]).toMatchObject({ isCounted: false, isReading: true, unread: '' })
   })
 
   it('is still counting until the last of them has arrived', async () => {
@@ -182,12 +182,12 @@ describe('counting what every vault owes', () => {
     void one.count()
     front.sendCount(createVaultList(vault('01A')))
     await settles()
-    expect(one.counting.value).toBe(true)
+    expect(one.isCounting.value).toBe(true)
 
     front.sendCount(count(vault('01A')))
     front.endCounts()
     await settles()
-    expect(one.counting.value).toBe(false)
+    expect(one.isCounting.value).toBe(false)
   })
 
   // The window opening, a session ending and a vault moving underneath it all
@@ -263,7 +263,7 @@ describe('counting what every vault owes', () => {
     front.sendCount(createVaultList(vault('01A')))
     await settles()
 
-    expect(one.vaults.value[0]).toMatchObject({ counted: true, due: 9 })
+    expect(one.vaults.value[0]).toMatchObject({ isCounted: true, due: 9 })
   })
 
   it('says what went wrong and stops counting', async () => {
@@ -278,7 +278,7 @@ describe('counting what every vault owes', () => {
     await one.count()
 
     expect(errors).toHaveLength(1)
-    expect(one.counting.value).toBe(false)
+    expect(one.isCounting.value).toBe(false)
     expect(one.vaults.value).toHaveLength(0)
   })
 
@@ -296,7 +296,7 @@ describe('counting what every vault owes', () => {
     await asked
 
     expect(errors).toHaveLength(0)
-    expect(one.counting.value).toBe(false)
+    expect(one.isCounting.value).toBe(false)
     expect(one.vaults.value).toHaveLength(2)
   })
 })

@@ -113,7 +113,7 @@ describe('the bubble over the knob', () => {
   it('hangs above the knob, clear of it by the gap', () => {
     const callout = calloutOf({ x: WIDE / 2, y: 120 })
 
-    expect(callout.under).toBe(false)
+    expect(callout.isUnder).toBe(false)
     expect(callout.box).toStrictEqual(
       box(
         WIDE / 2 - CALLOUT_WIDE / 2,
@@ -128,14 +128,14 @@ describe('the bubble over the knob', () => {
   it('turns under the knob where above would take it off the top', () => {
     const callout = calloutOf({ x: WIDE / 2, y: TOP })
 
-    expect(callout.under).toBe(true)
+    expect(callout.isUnder).toBe(true)
     expect(callout.box.y).toBe(TOP + CALLOUT_GAP)
     expect(callout.at.translate).toBe('-50% 0')
   })
 
   it('turns over at the exact height it no longer fits above', () => {
-    expect(calloutOf({ x: WIDE / 2, y: TOP + CALLOUT_GAP + CALLOUT_HIGH }).under).toBe(false)
-    expect(calloutOf({ x: WIDE / 2, y: TOP + CALLOUT_GAP + CALLOUT_HIGH - 1 }).under).toBe(true)
+    expect(calloutOf({ x: WIDE / 2, y: TOP + CALLOUT_GAP + CALLOUT_HIGH }).isUnder).toBe(false)
+    expect(calloutOf({ x: WIDE / 2, y: TOP + CALLOUT_GAP + CALLOUT_HIGH - 1 }).isUnder).toBe(true)
   })
 
   it.each([

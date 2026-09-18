@@ -10,4 +10,4 @@ export const formatNames = (says: string, notes: readonly string[]): string => {
 }
 
 /** Everything one command has to say, as the one line the window says it in. */
-export const all = (...says: readonly string[]): string => says.filter((one) => one).join('. ')
+export const joinAll = (...says: readonly string[]): string => says.filter((one) => one).join('. ')

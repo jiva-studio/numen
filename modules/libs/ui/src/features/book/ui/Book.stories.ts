@@ -176,7 +176,7 @@ const paperOf = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__paper') as HTMLElement
 
 /** Every run of the text, in the order the document sets them. */
-const runsOf = (canvasElement: HTMLElement) => [
+const getRunsOf = (canvasElement: HTMLElement) => [
   ...paperOf(canvasElement).querySelectorAll<HTMLElement>('[data-offset]'),
 ]
 
@@ -191,7 +191,7 @@ const inFrontOf = (canvasElement: HTMLElement) =>
 const waitForLayout = async (canvasElement: HTMLElement) =>
   await waitFor(
     async () => {
-      await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
+      await expect(getRunsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
       await expect(canvasElement.querySelector('.book__count')).toBeInTheDocument()
     },
     { timeout: ITS_OWN_PACE },
@@ -199,7 +199,7 @@ const waitForLayout = async (canvasElement: HTMLElement) =>
 
 /** How wide one column is, taken off the first run of the text. */
 const columnOf = (canvasElement: HTMLElement) =>
-  runsOf(canvasElement)[0]!.getClientRects()[0]!.width
+  getRunsOf(canvasElement)[0]!.getClientRects()[0]!.width
 
 /** Turn the pages, set the text larger, and watch the offset in front follow. */
 export const Playground: Story = {
@@ -293,12 +293,12 @@ export const TwoColumns: Story = {
 
     // The run that stands in the second column of the first spread stands in
     // the first column of nothing after one turn: the whole spread has gone.
-    const before = runsOf(canvasElement).map((run) => run.getClientRects()[0]?.left ?? 0)
+    const before = getRunsOf(canvasElement).map((run) => run.getClientRects()[0]?.left ?? 0)
     await userEvent.keyboard('{ArrowRight}')
 
     await waitFor(
       async () => {
-        const after = runsOf(canvasElement).map((run) => run.getClientRects()[0]?.left ?? 0)
+        const after = getRunsOf(canvasElement).map((run) => run.getClientRects()[0]?.left ?? 0)
         const moved = before.map((was, index) => was - (after[index] ?? 0))
         await expect(Math.max(...moved)).toBeCloseTo(area.width, -1)
       },
@@ -348,7 +348,7 @@ export const AWordWithNothingToBreakAt: Story = {
 
     // The run's own box is the column's whatever it holds, so what is asked is
     // whether the text inside it runs past the box.
-    const run = runsOf(canvasElement)[0]!
+    const run = getRunsOf(canvasElement)[0]!
     await expect(run.scrollWidth).toBeLessThanOrEqual(run.clientWidth + 1)
     await expect(run.getClientRects()[0]!.width).toBeLessThanOrEqual(
       areaOf(canvasElement).clientWidth + 1,
@@ -422,7 +422,7 @@ export const WordsCanBeTakenUp: Story = {
     await expect(getComputedStyle(canvasElement.firstElementChild!).userSelect).toBe('none')
 
     await expect(getComputedStyle(paperOf(canvasElement)).userSelect).not.toBe('none')
-    await expect(getComputedStyle(runsOf(canvasElement)[0]!).userSelect).not.toBe('none')
+    await expect(getComputedStyle(getRunsOf(canvasElement)[0]!).userSelect).not.toBe('none')
   },
 }
 
@@ -458,7 +458,7 @@ export const NoTextAtAll: Story = {
   render: reading({ markup: '', span: { from: 0, to: 0 } }),
   play: async ({ canvasElement }) => {
     await expect(paperOf(canvasElement)).toBeInTheDocument()
-    await expect(runsOf(canvasElement)).toHaveLength(0)
+    await expect(getRunsOf(canvasElement)).toHaveLength(0)
     await expect(canvasElement.querySelector('.book__foot')).toBeInTheDocument()
     await expect(canvasElement.querySelector('.book__count')).not.toBeInTheDocument()
     await expect(canvasElement.querySelector('.book__left')).not.toBeInTheDocument()
@@ -482,10 +482,10 @@ export const SetLarger: Story = {
     })
     const before = inFrontOf(canvasElement)
 
-    const set = getComputedStyle(runsOf(canvasElement)[0]!).fontSize
+    const set = getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize
     await userEvent.click(canvas.getByLabelText('Larger'))
     await waitFor(
-      async () => await expect(getComputedStyle(runsOf(canvasElement)[0]!).fontSize).not.toBe(set),
+      async () => await expect(getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize).not.toBe(set),
       { timeout: ITS_OWN_PACE },
     )
 
@@ -493,7 +493,7 @@ export const SetLarger: Story = {
     // another spread. What the person was reading is on it.
     await waitFor(
       async () => {
-        const standing = runsOf(canvasElement).find(
+        const standing = getRunsOf(canvasElement).find(
           (run) => Number(run.dataset['offset']) === before,
         )!
         const rect = standing.getClientRects()[0]!

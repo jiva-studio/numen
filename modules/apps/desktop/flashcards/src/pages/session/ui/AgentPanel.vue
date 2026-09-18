@@ -36,7 +36,7 @@ watch(
       class="asking__talk"
       :model-value="props.held.written.value"
       :turns="props.held.turns.value"
-      :working="props.held.working.value"
+      :is-working="props.held.isWorking.value"
       :placeholder="words.ask"
       :send-label="words.send"
       :stop-label="words.stop"

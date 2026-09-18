@@ -32,7 +32,7 @@ describe('the themes offered', () => {
     const shipping = getThemeGroups(THEMES, 'preset:dracula', words)[0]
 
     expect(shipping?.items[0]?.title).toBe('dracula')
-    expect(shipping?.items[0]?.inForce).toBe(true)
+    expect(shipping?.items[0]?.isCurrent).toBe(true)
   })
 })
 
@@ -40,7 +40,7 @@ describe('the modes offered', () => {
   it('marks the one in force and leaves the rest unsaid', () => {
     const items = getModeGroups('dark', false, words).flatMap((one) => one.items)
 
-    expect(items.filter((one) => one.inForce).map((one) => one.title)).toStrictEqual([words.dark])
+    expect(items.filter((one) => one.isCurrent).map((one) => one.title)).toStrictEqual([words.dark])
     expect(items.some((one) => one.disabled)).toBe(false)
   })
 

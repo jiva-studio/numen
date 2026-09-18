@@ -14,7 +14,7 @@ export interface ShownVault {
   /** The vault the window is showing, and nothing where it shows none. */
   readonly vault: string
   /** Whether that vault has been read and can be asked to do anything. */
-  readonly ready: boolean
+  readonly isReady: boolean
 }
 
 /** Everything the welcome screen says in the window's voice. */
@@ -56,7 +56,7 @@ export const SETTINGS = 'settings'
 export const waysIn = (at: ShownVault, words: Words, agent: string): readonly WelcomeAction[] => {
   const settings: WelcomeAction = { id: SETTINGS, text: words.settings, ...keysOf(SETTINGS, agent) }
   if (at.vault === '') return [settings]
-  const note: readonly WelcomeAction[] = at.ready
+  const note: readonly WelcomeAction[] = at.isReady
     ? [{ id: 'note', text: words.newNote, ...keysOf('note', agent) }]
     : []
   return [
@@ -75,7 +75,7 @@ export const waysIn = (at: ShownVault, words: Words, agent: string): readonly We
  */
 export const vaultsOn = (list: VaultList, words: Words): readonly VaultRow[] =>
   list.vaults.map((one) => {
-    const aside = one.missing ? words.gone : one.id === list.showing ? words.current : ''
+    const aside = one.isMissing ? words.gone : one.id === list.showing ? words.current : ''
     return {
       id: one.id,
       name: one.name,

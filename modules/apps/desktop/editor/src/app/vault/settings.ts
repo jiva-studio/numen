@@ -72,7 +72,7 @@ export const settingsCore: SettingsPort = {
         name: one.name,
         title: one.title,
         shelf: one.shelf,
-        byDefault: one.byDefault,
+        isDefault: one.byDefault,
         writes: one.writes.map((w) => ({ at: w.at, value: w.value })),
         presence: fetched[one.presence],
       })),
@@ -92,7 +92,7 @@ export const settingsCore: SettingsPort = {
       written: text,
       ...(seen === null ? {} : { seen }),
     })
-    return { changed: staleIn(answer) }
+    return { isChanged: staleIn(answer) }
   },
   getReviewSettings: async () => {
     const answer = await settingsService.getSettings({})

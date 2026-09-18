@@ -59,7 +59,7 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
   }
 
   function activateRow(row: ShownRow): void {
-    if (row.holds) toggleRow(row)
+    if (row.isHolding) toggleRow(row)
     tell('activate', row.id)
   }
 
@@ -86,16 +86,16 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     event.preventDefault()
     ;(event.currentTarget as HTMLElement).focus()
 
-    const how: Press = { joining: event.ctrlKey || event.metaKey, reaching: event.shiftKey }
-    selection.said.value = how.joining || how.reaching || !selection.picked.value.has(row)
-    const taken = selection.said.value ? selection.selectRow(row, how) : getSelected()
+    const how: Press = { isJoining: event.ctrlKey || event.metaKey, isExtending: event.shiftKey }
+    selection.wasSaid.value = how.isJoining || how.isExtending || !selection.picked.value.has(row)
+    const taken = selection.wasSaid.value ? selection.selectRow(row, how) : getSelected()
 
     drag.lift(getDraggedRows(taken, row), event)
   }
 
   function onRowClick(row: ShownRow): void {
-    const spoken = selection.said.value
-    selection.said.value = false
+    const spoken = selection.wasSaid.value
+    selection.wasSaid.value = false
     if (drag.moved.value || spoken) return
     selection.selectRow(row.id, PLAIN)
   }
@@ -149,7 +149,7 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     // The row the keyboard stands on joins the selection, or leaves it.
     if (event.key === ' ') {
       event.preventDefault()
-      selection.selectRow(on.id, { joining: true, reaching: false })
+      selection.selectRow(on.id, { isJoining: true, isExtending: false })
       return true
     }
 
@@ -182,8 +182,8 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     event.preventDefault()
 
     applyStep(stepTo(getShownRows(), rows.tabbed.value, event.key), {
-      joining: false,
-      reaching: event.shiftKey,
+      isJoining: false,
+      isExtending: event.shiftKey,
     })
   }
 

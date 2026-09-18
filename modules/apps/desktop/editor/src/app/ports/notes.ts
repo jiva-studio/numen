@@ -5,7 +5,8 @@ import type {
   NewNote,
   NoteEdit,
   NoteHeading,
-  NoteResult,
+  NoteReadResult,
+  NoteWriteResult,
   RemoveResult,
   RenameResult,
 } from '@/entities/note'
@@ -28,7 +29,7 @@ export interface NotePort {
   /** A change being made to a note's prose, reported while it is being made. */
   watchEdits(signal: AbortSignal): AsyncIterable<NoteEdit>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
-  read(path: string): Promise<NoteResult & { at?: string }>
+  read(path: string): Promise<NoteReadResult>
   /**
    * Prose into a note, keeping the frontmatter the file has when it lands.
    *
@@ -39,8 +40,8 @@ export interface NotePort {
   write(
     path: string,
     body: string,
-    seen: { prose: string; at: string } | null,
-  ): Promise<NoteResult & { at?: string; changed?: boolean }>
+    seen: { prose: string; fingerprint: string } | null,
+  ): Promise<NoteWriteResult>
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<CreateResult>
   /**
@@ -59,5 +60,5 @@ export interface NotePort {
    * back from. Destroying takes the file off the disk and brings nothing back,
    * and is asked of a note only.
    */
-  remove(path: string, destroy?: boolean): Promise<RemoveResult>
+  remove(path: string, isPermanent?: boolean): Promise<RemoveResult>
 }

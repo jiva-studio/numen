@@ -62,7 +62,7 @@ describe('a line about work that opens something', () => {
   const createDoing = (id: string, opens?: boolean): Turn =>
     opens === undefined
       ? { id, voice: 'doing', text: 'Read a document' }
-      : { id, voice: 'doing', text: 'Read a document', opens }
+      : { id, voice: 'doing', text: 'Read a document', isOpening: opens }
 
   it('can be pressed, and says which turn was pressed', async () => {
     const wrapper = thread([createDoing('1', true)])

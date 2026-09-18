@@ -2,10 +2,9 @@
  * Tab state and coordinator for an open flashcard preset.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { StopReason } from '@numen/protocol'
 import type { WindowHandle } from '@/entities/tab'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { DEFAULTS } from '../types'
+import { DEFAULTS, type StopReason } from '../types'
 import { produceSchedule } from '../lib/curve'
 import { shapeOf, steer } from '../lib/fields'
 import { WORDS as words } from '../words'
@@ -37,7 +36,7 @@ export function createOpenPreset(path: string, today: string, bounds: SettingsBo
     path: ref(path),
     settings: shallowRef<Settings>(DEFAULTS),
     problems: shallowRef<readonly string[]>([]),
-    stopped: ref(StopReason.NOTHING),
+    stopped: ref<StopReason>('none'),
     curves: createCurveState(DEFAULTS, today, bounds),
     flight: createWriteFlight(),
   }
@@ -57,19 +56,19 @@ export const readPreset = async (
   } catch (error) {
     console.error(error)
     one.flight.errorMessage.value = words.unreachable
-    one.curves.waiting.value = false
+    one.curves.isWaiting.value = false
     return
   }
   const readError = answer.error
   one.flight.errorMessage.value = readError === null ? '' : words.notRead(readError)
   one.flight.hasChanged.value = false
-  one.flight.at = answer.at
+  one.flight.at = answer.fingerprint
   bounds.value = answer.bounds
   one.curves.answers.clear()
   if (!answer.preset) {
     one.problems.value = []
-    one.stopped.value = StopReason.NOTHING
-    one.curves.waiting.value = false
+    one.stopped.value = 'none'
+    one.curves.isWaiting.value = false
     return
   }
   if (answer.preset.title) titles.set(one.path.value, answer.preset.title)
@@ -172,7 +171,7 @@ export const createPresetState = (
     curve: one.curves.curve,
     material: one.curves.material,
     place: one.curves.place,
-    waiting: one.curves.waiting,
+    isWaiting: one.curves.isWaiting,
     bounds,
     problems: one.problems,
     stopped: one.stopped,

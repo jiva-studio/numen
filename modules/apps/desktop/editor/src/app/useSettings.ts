@@ -51,11 +51,11 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     themes: dressed.list,
     applied: dressed.applied,
     mode: dressed.mode,
-    pinned: dressed.pinned,
+    isPinned: dressed.isPinned,
     sizes: dressed.sized,
     bounds: dressed.bounds,
     choose: (item) => void dressed.chooseItem(item),
-    syncing: computed({
+    isSyncing: computed({
       get: () => oneName.kept.value,
       set: (on) => void oneName.choose(on ? ON : OFF),
     }),

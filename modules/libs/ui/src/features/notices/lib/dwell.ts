@@ -1,6 +1,6 @@
 /** How long a notice stands, and which of the ones handed in are drawn. */
 
-import { readable, type Notice } from './notice'
+import { getReadable, type Notice } from './notice'
 
 /**
  * How long work runs before it is worth a card, in milliseconds.
@@ -40,7 +40,7 @@ export const arrivals = (
   notices: readonly Notice[],
   at: number,
 ): ReadonlyMap<string, number> =>
-  new Map(readable(notices).map((notice) => [notice.id, was.get(notice.id) ?? at]))
+  new Map(getReadable(notices).map((notice) => [notice.id, was.get(notice.id) ?? at]))
 
 /** Whether a notice has stood long enough to have been read. */
 const isRead = (notice: Notice, firstSeen: ReadonlyMap<string, number>, at: number): boolean =>
@@ -54,7 +54,7 @@ export const getShownNotices = (
   at: number,
   wait: number = WAIT,
 ): readonly Notice[] =>
-  readable(notices).filter((notice) => {
+  getReadable(notices).filter((notice) => {
     if (away.has(notice.id)) return false
     if (notice.stay === 'read') return !isRead(notice, firstSeen, at)
     return notice.isAsked || at - (firstSeen.get(notice.id) ?? at) >= wait
@@ -66,6 +66,6 @@ export const getFinishedNotices = (
   firstSeen: ReadonlyMap<string, number>,
   at: number,
 ): readonly string[] =>
-  readable(notices)
+  getReadable(notices)
     .filter((notice) => notice.stay === 'read' && isRead(notice, firstSeen, at))
     .map((notice) => notice.id)

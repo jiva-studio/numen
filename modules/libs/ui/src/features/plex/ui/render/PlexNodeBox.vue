@@ -14,7 +14,7 @@ const props = defineProps<{
   /** The box as it is drawn: its width, and how far its middle has slid. */
   box: WideBox
   /** Not a node yet, so its title is the seat it would take. */
-  ghost: boolean
+  isGhost: boolean
 }>()
 
 defineSlots<{
@@ -55,7 +55,7 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
     :height="node.height"
   />
   <foreignObject :x="startsAt" :y="-node.height / 2" :width="box.width" :height="node.height">
-    <div class="plex__title" :class="{ 'caps-numen': ghost }">
+    <div class="plex__title" :class="{ 'caps-numen': $host }">
       <!-- Whatever stands for the thing a node addresses. The plex has no
            way to know what that is, so it is handed one. -->
       <span v-if="hasIcon" class="plex__icon" aria-hidden="true">

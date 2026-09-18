@@ -17,7 +17,7 @@ export interface Chord {
   /** The letter it is held with. */
   readonly letter: string
   /** Whether Shift is held with it. */
-  readonly shift: boolean
+  readonly hasShift: boolean
 }
 
 /**
@@ -29,14 +29,14 @@ export interface Chord {
  * the letter on its own is spoken for.
  */
 export const CHORDS: readonly Chord[] = [
-  { command: 'note', letter: 'n', shift: false },
-  { command: 'newVault', letter: 'n', shift: true },
-  { command: 'goto', letter: 'g', shift: false },
-  { command: 'travel', letter: 'p', shift: true },
-  { command: 'plex', letter: 'x', shift: true },
-  { command: 'child', letter: 'c', shift: true },
-  { command: 'agent', letter: 'a', shift: true },
-  { command: 'close', letter: 'w', shift: true },
+  { command: 'note', letter: 'n', hasShift: false },
+  { command: 'newVault', letter: 'n', hasShift: true },
+  { command: 'goto', letter: 'g', hasShift: false },
+  { command: 'travel', letter: 'p', hasShift: true },
+  { command: 'plex', letter: 'x', hasShift: true },
+  { command: 'child', letter: 'c', hasShift: true },
+  { command: 'agent', letter: 'a', hasShift: true },
+  { command: 'close', letter: 'w', hasShift: true },
 ]
 
 /** Whether this keystroke is one the window answers at all. */
@@ -47,8 +47,8 @@ export const isChord = (event: {
 }): boolean => !event.altKey && (event.ctrlKey || event.metaKey)
 
 /** What a letter asks for, and nothing where no command answers to it. */
-export const commandFor = (letter: string, shift: boolean): string =>
-  CHORDS.find((one) => one.letter === letter.toLowerCase() && one.shift === shift)?.command ?? ''
+export const commandFor = (letter: string, hasShift: boolean): string =>
+  CHORDS.find((one) => one.letter === letter.toLowerCase() && one.hasShift === hasShift)?.command ?? ''
 
 /**
  * How a command's keystroke is drawn on the keyboard in hand, and nothing for
@@ -56,7 +56,7 @@ export const commandFor = (letter: string, shift: boolean): string =>
  */
 export const keyOf = (command: string, agent: string): PaletteKeys | undefined => {
   const chord = CHORDS.find((one) => one.command === command)
-  return chord ? keyChord(chord.letter, agent, chord.shift) : undefined
+  return chord ? keyChord(chord.letter, agent, chord.hasShift) : undefined
 }
 
 /** That keystroke as a row of the palette takes it. */
