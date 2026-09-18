@@ -1327,3 +1327,212 @@ func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
 		}
 	}
 }
+
+// getInstants are the fields of a struct whose names end in Time, by the type
+// each is written in.
+func getInstants(file *ast.File) []identity {
+	var found []identity
+	ast.Inspect(file, func(node ast.Node) bool {
+		spec, is := node.(*ast.TypeSpec)
+		if !is {
+			return true
+		}
+		held, is := spec.Type.(*ast.StructType)
+		if !is {
+			return true
+		}
+		for _, one := range held.Fields.List {
+			for _, name := range one.Names {
+				if name.IsExported() && strings.HasSuffix(name.Name, "Time") {
+					found = append(found, identity{spec.Name.Name, name.Name, getTypeName(one.Type)})
+				}
+			}
+		}
+		return true
+	})
+	return found
+}
+
+// An instant the core carries is a time.Time. A second count and a millisecond
+// count are both integers, so one written where the other is read compiles and
+// is wrong by a factor of a thousand; the zero of either is a real instant in
+// 1970, and the clock it was read from is nowhere in the name.
+//
+// The rule holds over domain/ and port/, which is where the core says what it
+// is about and what it asks of the outside.
+func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
+	var wrong []string
+	var read int
+	for _, at := range []string{"domain", "port"} {
+		dir := filepath.Join("..", at)
+		held, err := os.ReadDir(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, one := range held {
+			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
+				strings.HasSuffix(one.Name(), "_test.go") {
+				continue
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, one.Name()), nil, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, found := range getInstants(file) {
+				read++
+				if found.spelled != "time.Time" {
+					wrong = append(wrong, fmt.Sprintf("%s/%s.%s is a %s",
+						at, found.in, found.field, found.spelled))
+				}
+			}
+		}
+	}
+	for _, one := range wrong {
+		t.Error(one + ": an instant the core carries is a time.Time")
+	}
+
+	// A walk that read no instant is a rule checked against nothing, and it
+	// passes.
+	if read == 0 {
+		t.Fatal("domain/ and port/ name no instant: the walk is not reading them")
+	}
+}
+
+// What the rule refuses, read against a declaration written to be refused. It
+// finds the field and the type it is written in, and lets through the one that
+// is a time and the ones that name no instant at all.
+func TestWhatTheInstantRuleRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "instant.go", `package p
+
+import "time"
+
+type Reading struct {
+	ModTime  time.Time
+	SeenTime int64
+	Pages    int
+	runTime  int64
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var refused []string
+	for _, one := range getInstants(file) {
+		if one.spelled != "time.Time" {
+			refused = append(refused, one.field)
+		}
+	}
+	if !slices.Equal(refused, []string{"SeenTime"}) {
+		t.Errorf("the rule refuses %v, want the one instant written as a number", refused)
+	}
+}
+
+// getMethodIdentities are the parameters and results of a file's interface
+// methods whose names end in ID, by the interface each method stands in.
+//
+// A parameter carries its name in the signature, so a walk reads it the same
+// way it reads a field. One written with no name at all names no identity and
+// is not read.
+func getMethodIdentities(file *ast.File) []identity {
+	var found []identity
+	ast.Inspect(file, func(node ast.Node) bool {
+		spec, is := node.(*ast.TypeSpec)
+		if !is {
+			return true
+		}
+		held, is := spec.Type.(*ast.InterfaceType)
+		if !is {
+			return true
+		}
+		for _, method := range held.Methods.List {
+			signature, is := method.Type.(*ast.FuncType)
+			if !is || len(method.Names) == 0 {
+				continue
+			}
+			fields := signature.Params.List
+			if signature.Results != nil {
+				fields = append(fields, signature.Results.List...)
+			}
+			for _, one := range fields {
+				for _, name := range one.Names {
+					if strings.HasSuffix(name.Name, "ID") {
+						found = append(found, identity{
+							spec.Name.Name + "." + method.Names[0].Name,
+							name.Name,
+							getTypeName(one.Type),
+						})
+					}
+				}
+			}
+		}
+		return true
+	})
+	return found
+}
+
+// The same rule over what a port asks for. An identity handed across a port as
+// a number is the store's numbering crossing into the language the core is
+// written in, and a signature is where it crosses.
+func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
+	var wrong []string
+	var read int
+	dir := filepath.Join("..", "port")
+	held, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range held {
+		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
+			strings.HasSuffix(one.Name(), "_test.go") {
+			continue
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, one.Name()), nil, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, found := range getMethodIdentities(file) {
+			read++
+			if numbered[found.spelled] {
+				wrong = append(wrong, fmt.Sprintf("port/%s(%s %s)",
+					found.in, found.field, found.spelled))
+			}
+		}
+	}
+	for _, one := range wrong {
+		t.Error(one + ": an identity a port asks for is a word of the core's own")
+	}
+
+	// A walk that read no identity is a rule checked against nothing, and it
+	// passes.
+	if read == 0 {
+		t.Fatal("port/ asks for no identity by name: the walk is not reading it")
+	}
+}
+
+// What the rule refuses, read against an interface written to be refused. It
+// reaches a parameter and a result alike, lets through the one that is the
+// core's own word, and reads nothing into a parameter with no name.
+func TestWhatTheIdentityRuleRefusesInASignature(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "asking.go", `package p
+
+import "context"
+
+type Store interface {
+	Read(ctx context.Context, vaultID domain.VaultID, chunkID int64) error
+	Write(ctx context.Context, rowID int) (cardID domain.CardID, err error)
+	Count(context.Context, int64) int
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var refused []string
+	for _, one := range getMethodIdentities(file) {
+		if numbered[one.spelled] {
+			refused = append(refused, one.field)
+		}
+	}
+	if !slices.Equal(refused, []string{"chunkID", "rowID"}) {
+		t.Errorf("the rule refuses %v, want the two identities spelled as numbers", refused)
+	}
+}
