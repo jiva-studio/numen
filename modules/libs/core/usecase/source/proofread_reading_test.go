@@ -61,9 +61,7 @@ func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map
 }
 
 // proofreadable is a reading of the fixture, already written down, and what a
-// ProofreadReading over it is made out of. A test that wants another
-// proofreader builds another ProofreadReading, because the one it has cannot
-// be given a second.
+// ProofreadReading over it is made out of.
 type proofreadable struct {
 	readers port.VaultReaders
 	derived port.DerivedStores
@@ -225,8 +223,6 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	// The same reading and the same store, put right by another proofreader:
-	// the one it was made with cannot be exchanged for a second.
 	again := &corrector{says: map[int]string{2: corrects(2, "the WORDS 3")}}
 	res, err := held.put(t, again).Execute(t.Context(), v, documentPath)
 	if err != nil {

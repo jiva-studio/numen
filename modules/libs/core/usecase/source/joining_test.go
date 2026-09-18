@@ -165,8 +165,6 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	// The same recording and the same store, put right by another proofreader:
-	// the one it was made with cannot be exchanged for a second.
 	again := newTranscriptProofreading(t, u.readers, u.derived, &corrector{says: map[int]string{}})
 	again.BatchSize, again.Overlap, again.InFlight = 2, 0, 1
 	res, err := again.Execute(t.Context(), v, recordingPath)

@@ -32,9 +32,6 @@ var (
 // corrections go beside it, so a proofreading that went wrong is a file that can
 // be deleted and a person can always ask what the machine read.
 type ProofreadReading struct {
-	// What it is built out of. A ProofreadReading that exists has all three,
-	// because NewProofreadReading is the only way to make one and it refuses
-	// to make one without them.
 	readers port.VaultReaders
 	derived port.DerivedStores
 	by      port.Proofreader
@@ -67,9 +64,7 @@ type ProofreadReading struct {
 // read out of, the store the reading and its corrections are kept in, and the
 // proofreader that answers about a page.
 //
-// It refuses what it cannot be: an installation that configured no proofreader
-// has nothing to make one out of, and that is answered here rather than by
-// every method of a half-built one.
+// An installation that configured no proofreader is refused here.
 func NewProofreadReading(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
 ) (ProofreadReading, error) {

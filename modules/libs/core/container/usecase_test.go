@@ -21,15 +21,8 @@ type exposed struct {
 
 // getExposedDependencies are the types of one file whose constructor asks for a
 // collaborator that the type then carries in an exported field.
-//
-// A constructor is what says a use case has everything it needs to do its work.
-// An exported field the constructor also takes is that promise written and then
-// taken back: the value can be built by the constructor and changed afterwards,
-// or built by struct literal with the field left empty, and the method that
-// needed it answers a refusal instead of working.
 func getExposedDependencies(file *ast.File) []exposed {
-	// A constructor is found by what it answers with rather than by what it is
-	// called, so naming one something else does not put a type out of reach.
+	// A constructor is what a New function answers with.
 	ctors := map[string][]string{}
 	ast.Inspect(file, func(node ast.Node) bool {
 		fn, is := node.(*ast.FuncDecl)
@@ -84,11 +77,9 @@ func getExposedDependencies(file *ast.File) []exposed {
 // usecaseBaseline are the use cases still carrying a collaborator in the open,
 // each under the file it stands in, and the list only shrinks.
 //
-// A use case here is made by its constructor and changed afterwards, or built
-// by struct literal with a field left empty. Closing one means the fields go
-// unexported, the constructor refuses what it cannot make, and the tests of
-// that package build through it — which is what `ProofreadReading` and
-// `ProofreadTranscript` in usecase/source look like now.
+// Closing one: the fields go unexported, the constructor refuses what it cannot
+// make, and the package's tests build through it. `ProofreadReading` in
+// usecase/source is one that is closed.
 var usecaseBaseline = []string{
 	"usecase/cards/create.go Create exposes Writers, Index, Now",
 	"usecase/cards/list.go List exposes Readers, Notes",
@@ -171,10 +162,7 @@ func getUseCases(t *testing.T) []string {
 	return said
 }
 
-// A use case is made with everything it needs, or it is not made. A caller that
-// can write a collaborator afterwards can leave it empty, and then the method
-// that needed it answers a refusal — the person presses the control and nothing
-// happens.
+// A use case is made with everything it needs, or it is not made.
 func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 	var wrong []string
 	for _, one := range getUseCases(t) {
@@ -187,9 +175,8 @@ func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 	}
 }
 
-// A use case that has been closed is one nobody has to argue for. The baseline
-// only shrinks, and an entry naming a type that no longer carries one is an
-// entry that stayed behind.
+// The baseline only shrinks: an entry naming a type that carries no
+// collaborator in the open any more is an entry that stayed behind.
 func TestNothingIsBaselinedThatNoUseCaseCarriesAnyMore(t *testing.T) {
 	said := getUseCases(t)
 	for _, one := range usecaseBaseline {

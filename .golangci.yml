@@ -168,10 +168,9 @@ linters:
         - -ST1022
 
     revive:
-      # The rules are named one by one, so the set is what this repository
-      # decided rather than what the linter shipped with. Its `exported` rule is
-      # left out: it asks for a doc comment on every exported name, and a
-      # comment that restates the name is the narration `AGENTS.md` refuses.
+      # The rules are named one by one, so the set is this repository's own.
+      # `exported` is left out: it asks for a doc comment on every exported
+      # name, and a comment that restates the name is narration.
       rules:
         # A name the language already has means one thing everywhere it is read.
         - name: redefines-builtin-id

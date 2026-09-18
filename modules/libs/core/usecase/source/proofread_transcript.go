@@ -26,9 +26,6 @@ import (
 // A correction changes words. The proofreader is given line numbers and text,
 // and every cue keeps the moments it was spoken between.
 type ProofreadTranscript struct {
-	// What it is built out of. A ProofreadTranscript that exists has all
-	// three, because NewProofreadTranscript is the only way to make one and it
-	// refuses to make one without them.
 	readers port.VaultReaders
 	derived port.DerivedStores
 	by      port.Proofreader
@@ -63,7 +60,7 @@ type ProofreadTranscript struct {
 // now stand are kept in, and the proofreader that answers about a batch of
 // lines.
 //
-// It refuses what it cannot be, so no half-built one exists to be called.
+// An installation that configured no proofreader is refused here.
 func NewProofreadTranscript(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
 ) (ProofreadTranscript, error) {
