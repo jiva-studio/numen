@@ -32,7 +32,7 @@ func proofreadReadingCommand(
 	}
 
 	proofread, cut := open.Proofread, open.Cut
-	fmt.Fprintf(out, "proofreading %s with %s\n", path, proofread.By.GetName())
+	fmt.Fprintf(out, "proofreading %s with %s\n", path, proofread.GetProofreaderName())
 	started := time.Now()
 
 	// The line of pages rewrites itself, and is closed once it stops.

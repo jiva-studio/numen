@@ -62,9 +62,25 @@ is coined or suffixed to keep clear of a name another context uses.
 
 ## Constructors
 
-Every package has `New*` functions. A dependency is given at construction and
-is not assignable afterwards; a guard reading `if u.X == nil` in a method is
-the residue of a field that still is, and it goes when the field is closed.
+A use case is made with everything it needs, or it is not made. The constructor
+takes the collaborators, refuses what it cannot make, and the fields holding
+them are unexported — so no half-built one exists for a method to check.
+
+| The rule | The test |
+|---|---|
+| A use case does not carry a collaborator its constructor takes in an exported field | `TestNoUseCaseCarriesACollaboratorInTheOpen` |
+
+`usecase/source`'s `ProofreadReading` and `ProofreadTranscript` are what a
+closed one looks like. The rest are in the rule's baseline, which only shrinks.
+
+A dependency that may genuinely be absent is not a nil left in a field: it is a
+case the composition root decides, and it says so in a word — `ProofreadingConfig.Reading`
+answers `held bool`, so a window that cannot proofread never gets something to
+proofread with.
+
+A policy is not a collaborator. How many pages a batch holds, where progress is
+reported, what to do after a write — those are set on the made value and carry
+a default.
 
 ## Where a rule lives
 

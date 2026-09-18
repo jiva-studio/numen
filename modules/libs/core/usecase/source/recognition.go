@@ -478,7 +478,14 @@ func (r *RecognitionWorker) collect(
 			return
 		}
 		id := proofreadID(one.Path)
-		right := NewProofreadReading(r.with.Readers, r.with.Derived, by)
+		right, err := NewProofreadReading(r.with.Readers, r.with.Derived, by)
+		if err != nil {
+			r.report(task.Task{
+				ID: id, Doing: "Proofreading a reading",
+				About: one.Path, Error: err.Error(),
+			}, true)
+			continue
+		}
 		right.Queue = queue
 		right.Pages = said.Batch
 		right.MaxEditDistance = said.MaxEditDistance

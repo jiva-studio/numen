@@ -62,7 +62,10 @@ func (c ProofreadingConfig) Reading(
 		}
 	}
 
-	right = NewProofreadReading(readers, derived, by)
+	right, err = NewProofreadReading(readers, derived, by)
+	if err != nil {
+		return ProofreadReading{}, false, err
+	}
 	right.Queue = queue
 	right.Pages = c.Batch
 	right.MaxEditDistance = c.MaxEditDistance
@@ -85,7 +88,10 @@ func (c ProofreadingConfig) Transcript(
 		return ProofreadTranscript{}, false, nil
 	}
 
-	right = NewProofreadTranscript(readers, derived, by)
+	right, err = NewProofreadTranscript(readers, derived, by)
+	if err != nil {
+		return ProofreadTranscript{}, false, err
+	}
 	right.BatchSize = c.Batch
 	right.Overlap = c.Overlap
 	right.InFlight = c.InFlight

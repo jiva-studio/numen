@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
@@ -33,13 +34,23 @@ func newProofreadTranscript(
 		t.Fatal(err)
 	}
 	by := &corrector{says: says}
-	return ProofreadTranscript{
-		Readers:   vaults{first.ID: shelved},
-		Derived:   shelves{kept},
-		By:        by,
-		BatchSize: 1,
-		InFlight:  1,
-	}, first, kept, by, hash
+	return newTranscriptProofreading(t, vaults{first.ID: shelved}, shelves{kept}, by),
+		first, kept, by, hash
+}
+
+// newTranscriptProofreading is one built the only way there is, with the
+// batching the tests here read a line at a time by.
+func newTranscriptProofreading(
+	t *testing.T, readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
+) ProofreadTranscript {
+	t.Helper()
+	made, err := NewProofreadTranscript(readers, derived, by)
+	if err != nil {
+		t.Fatal(err)
+	}
+	made.BatchSize = 1
+	made.InFlight = 1
+	return made
 }
 
 // newCues is the words as the cues a model wrote them down as.
@@ -58,22 +69,33 @@ func readCues(t *testing.T, shelved *shelf, name string) []transcript.Cue {
 	return cues
 }
 
-// TestNothingIsPutRightWhereNothingWasConfiguredToProofreadWith. An
-// installation that named no profile has no proofreader, so nil is what the
-// settings hand over and the constructor takes it without a word. A caller that
-// forgot to refuse it first is answered, not brought down mid-transcript.
-func TestNothingIsPutRightWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
-	u, v, _, by, _ := newProofreadTranscript(t, nil, "first thing", "secnd thing")
+// A proofreading with nothing to proofread with is refused where it would be
+// made, so no such thing exists to be called. An installation that named no
+// profile has no proofreader at all, so this is a value the settings produce
+// and not a caller's slip.
+func TestNoTranscriptProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) {
+	u, _, _, by, _ := newProofreadTranscript(t, nil, "first thing", "secnd thing")
 
-	if _, err := NewProofreadTranscript(u.Readers, u.Derived, nil).
-		Execute(t.Context(), v, recordingPath); !errors.Is(err, errNothingProofreads) {
-		t.Fatalf("a transcript was put right with no proofreader: %v", err)
+	for name, one := range map[string]struct {
+		readers port.VaultReaders
+		derived port.DerivedStores
+		by      port.Proofreader
+		want    error
+	}{
+		"nothing to proofread with": {u.readers, u.derived, nil, errNothingProofreads},
+		"no vault":                  {nil, u.derived, by, errNoVaultToProofread},
+		"no store":                  {u.readers, nil, by, errNoStoreToProofread},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := NewProofreadTranscript(one.readers, one.derived, one.by); !errors.Is(err, one.want) {
+				t.Fatalf("made with %v", err)
+			}
+		})
 	}
-	// The control: the same transcript, through the same constructor, with a
-	// proofreader.
-	if _, err := NewProofreadTranscript(u.Readers, u.Derived, by).
-		Execute(t.Context(), v, recordingPath); err != nil {
-		t.Fatalf("a transcript with a proofreader was refused: %v", err)
+
+	// The control: all three, and it is made.
+	if _, err := NewProofreadTranscript(u.readers, u.derived, by); err != nil {
+		t.Fatalf("a proofreading with everything it needs was refused: %v", err)
 	}
 }
 
@@ -162,16 +184,16 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	again := &corrector{says: map[int]string{3: corrects(3, "fourth thing")}}
-	u.By = again
-	res, err := u.Execute(t.Context(), v, recordingPath)
+	said := &corrector{says: map[int]string{3: corrects(3, "fourth thing")}}
+	again := newTranscriptProofreading(t, u.readers, u.derived, said)
+	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.Resumed != 2 {
 		t.Errorf("took up %d lines of the transcript", res.Resumed)
 	}
-	for _, asked := range again.asked {
+	for _, asked := range said.asked {
 		for _, batch := range asked {
 			if batch < 2 {
 				t.Errorf("asked about line %d again", batch)
@@ -359,9 +381,9 @@ func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 	}
 
 	told := 0
-	u.By = &corrector{}
-	u.OnProgress = func(ProofreadTranscriptResult) { told++ }
-	res, err := u.Execute(t.Context(), v, recordingPath)
+	again := newTranscriptProofreading(t, u.readers, u.derived, &corrector{})
+	again.OnProgress = func(ProofreadTranscriptResult) { told++ }
+	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -385,7 +407,7 @@ func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 
 	// The shelf as a run that ended between the two passes left it: every line
 	// asked about, and no seam.
-	stood, err := json.Marshal(putting{By: u.By.GetName(), At: getSpan(len(words) - 1).To})
+	stood, err := json.Marshal(putting{By: u.GetProofreaderName(), At: getSpan(len(words) - 1).To})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -165,9 +165,11 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	again := &corrector{says: map[int]string{}}
-	u.By = again
-	res, err := u.Execute(t.Context(), v, recordingPath)
+	// The same recording and the same store, put right by another proofreader:
+	// the one it was made with cannot be exchanged for a second.
+	again := newTranscriptProofreading(t, u.readers, u.derived, &corrector{says: map[int]string{}})
+	again.BatchSize, again.Overlap, again.InFlight = 2, 0, 1
+	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,13 +261,14 @@ func TestATranscriptNothingRanPastAsksAboutItsBatchesOnly(t *testing.T) {
 
 	// The transcript is answered whole, seams and all, and a run over it again
 	// asks nothing.
-	again := &corrector{}
-	u.By = again
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+	said := &corrector{}
+	again := newTranscriptProofreading(t, u.readers, u.derived, said)
+	again.BatchSize, again.Overlap, again.InFlight = u.BatchSize, u.Overlap, u.InFlight
+	if _, err := again.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if len(again.asked) != 0 {
-		t.Errorf("it asked %v again", again.asked)
+	if len(said.asked) != 0 {
+		t.Errorf("it asked %v again", said.asked)
 	}
 }
 
@@ -314,13 +317,14 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	again := &corrector{says: map[int]string{4: newJoinReply(5, 6, "The point of it is very simple.")}}
-	u.By = again
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+	said := &corrector{says: map[int]string{4: newJoinReply(5, 6, "The point of it is very simple.")}}
+	again := newTranscriptProofreading(t, u.readers, u.derived, said)
+	again.BatchSize, again.Overlap, again.InFlight = u.BatchSize, u.Overlap, u.InFlight
+	if _, err := again.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(again.asked, [][]int{{4}}) {
-		t.Errorf("it asked %v, want the seam it stopped on", again.asked)
+	if !reflect.DeepEqual(said.asked, [][]int{{4}}) {
+		t.Errorf("it asked %v, want the seam it stopped on", said.asked)
 	}
 
 	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
@@ -59,42 +60,78 @@ func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map
 	return out, nil
 }
 
-// newProofreadReading is a reading of the fixture, already written down, and a
-// ProofreadReading over it.
+// proofreadable is a reading of the fixture, already written down, and what a
+// ProofreadReading over it is made out of. A test that wants another
+// proofreader builds another ProofreadReading, because the one it has cannot
+// be given a second.
+type proofreadable struct {
+	readers port.VaultReaders
+	derived port.DerivedStores
+	vault   domain.Vault
+	shelved *shelf
+}
+
+// put is a proofreading of that reading, by the proofreader given.
+func (p proofreadable) put(t *testing.T, by port.Proofreader) ProofreadReading {
+	t.Helper()
+	made, err := NewProofreadReading(p.readers, p.derived, by)
+	if err != nil {
+		t.Fatal(err)
+	}
+	made.Pages = 2
+	return made
+}
+
+// newProofreadReading is that reading, a proofreading of it, and the
+// proofreader the proofreading was made with.
 func newProofreadReading(t *testing.T, says map[int]string) (ProofreadReading, domain.Vault, *shelf, *corrector) {
+	t.Helper()
+	held := newProofreadable(t)
+	by := &corrector{says: says}
+	return held.put(t, by), held.vault, held.shelved, by
+}
+
+// newProofreadable is the fixture's reading, written down and ready to be put
+// right.
+func newProofreadable(t *testing.T) proofreadable {
 	t.Helper()
 	read, v, _, shelved, _ := reading(t, "the words", outline)
 	if _, err := read.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	by := &corrector{says: says}
-	return ProofreadReading{
-		Readers: read.Readers,
-		Derived: shelves{shelved},
-		By:      by,
-		Pages:   2,
-	}, v, shelved, by
+	return proofreadable{readers: read.Readers, derived: shelves{shelved}, vault: v, shelved: shelved}
 }
 
 // corrects is a reply putting one line right.
 func corrects(at int, text string) string { return fmt.Sprintf("%d|%s", at, text) }
 
-// TestNothingIsProofreadWhereNothingWasConfiguredToProofreadWith. An
-// installation that named no profile has no proofreader, so nil is what the
-// settings hand over and the constructor takes it without a word. A caller that
-// forgot to refuse it first is answered, not brought down mid-reading.
-func TestNothingIsProofreadWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
-	put, v, _, by := newProofreadReading(t, nil)
+// A proofreading with nothing to proofread with is refused where it would be
+// made, so no such thing exists to be called. An installation that named no
+// profile has no proofreader at all, so this is a value the settings produce
+// and not a caller's slip.
+func TestNoProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) {
+	held := newProofreadable(t)
 
-	if _, err := NewProofreadReading(put.Readers, put.Derived, nil).
-		Execute(t.Context(), v, documentPath); !errors.Is(err, errNothingProofreads) {
-		t.Fatalf("a reading was proofread with no proofreader: %v", err)
+	for name, one := range map[string]struct {
+		readers port.VaultReaders
+		derived port.DerivedStores
+		by      port.Proofreader
+		want    error
+	}{
+		"nothing to proofread with": {held.readers, held.derived, nil, errNothingProofreads},
+		"no vault":                  {nil, held.derived, &corrector{}, errNoVaultToProofread},
+		"no store":                  {held.readers, nil, &corrector{}, errNoStoreToProofread},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := NewProofreadReading(one.readers, one.derived, one.by); !errors.Is(err, one.want) {
+				t.Fatalf("made with %v", err)
+			}
+		})
 	}
-	// The control: the same reading, through the same constructor, with a
-	// proofreader.
-	if _, err := NewProofreadReading(put.Readers, put.Derived, by).
-		Execute(t.Context(), v, documentPath); err != nil {
-		t.Fatalf("a reading with a proofreader was refused: %v", err)
+
+	// The control: all three, and it is made.
+	if _, err := NewProofreadReading(held.readers, held.derived, &corrector{}); err != nil {
+		t.Fatalf("a proofreading with everything it needs was refused: %v", err)
 	}
 }
 
@@ -171,10 +208,12 @@ func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
 }
 
 func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
-	put, v, shelved, by := newProofreadReading(t, map[int]string{
+	held := newProofreadable(t)
+	by := &corrector{says: map[int]string{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
-	})
+	}}
+	put, v, shelved := held.put(t, by), held.vault, held.shelved
 	ctx, stop := context.WithCancel(t.Context())
 	by.stop = func(requests int) {
 		if requests == 2 {
@@ -186,9 +225,10 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
+	// The same reading and the same store, put right by another proofreader:
+	// the one it was made with cannot be exchanged for a second.
 	again := &corrector{says: map[int]string{2: corrects(2, "the WORDS 3")}}
-	put.By = again
-	res, err := put.Execute(t.Context(), v, documentPath)
+	res, err := held.put(t, again).Execute(t.Context(), v, documentPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -418,10 +458,10 @@ func getCheckpoint(t *testing.T, shelved *shelf) checkpoint {
 }
 
 func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
-	put, v, shelved, _ := newProofreadReading(t, nil)
+	held := newProofreadable(t)
 	left := newProofreadQueue(map[int]string{0: corrects(0, "the WORDS 1")})
+	put, v, shelved := held.put(t, left), held.vault, held.shelved
 	put.Queue = left
-	put.By = left
 
 	res, err := put.Execute(t.Context(), v, documentPath)
 	if err != nil {
@@ -467,10 +507,10 @@ func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
 }
 
 func TestABatchTheProofreaderHasForgottenIsLeftAgain(t *testing.T) {
-	put, v, shelved, _ := newProofreadReading(t, nil)
+	held := newProofreadable(t)
 	left := newProofreadQueue(nil)
+	put, v, shelved := held.put(t, left), held.vault, held.shelved
 	put.Queue = left
-	put.By = left
 
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
@@ -495,13 +535,15 @@ func TestABatchTheProofreaderHasForgottenIsLeftAgain(t *testing.T) {
 // A reading nothing is left to be asked about is not work, and nothing is told
 // about it.
 func TestAReadingAtItsLastPageReportsNoProgress(t *testing.T) {
-	put, v, _, _ := newProofreadReading(t, map[int]string{0: corrects(0, "the WORDS 1")})
-	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
+	held := newProofreadable(t)
+	v := held.vault
+	first := held.put(t, &corrector{says: map[int]string{0: corrects(0, "the WORDS 1")}})
+	if _, err := first.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
 
 	told := 0
-	put.By = &corrector{}
+	put := held.put(t, &corrector{})
 	put.OnProgress = func(ProofreadReadingResult) { told++ }
 	res, err := put.Execute(t.Context(), v, documentPath)
 	if err != nil {
