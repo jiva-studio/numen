@@ -28,10 +28,17 @@ type exposed struct {
 // or built by struct literal with the field left empty, and the method that
 // needed it answers a refusal instead of working.
 func getExposedDependencies(file *ast.File) []exposed {
+	// A constructor is found by what it answers with rather than by what it is
+	// called, so naming one something else does not put a type out of reach.
 	ctors := map[string][]string{}
 	ast.Inspect(file, func(node ast.Node) bool {
 		fn, is := node.(*ast.FuncDecl)
-		if !is || fn.Recv != nil || !strings.HasPrefix(fn.Name.Name, "New") {
+		if !is || fn.Recv != nil || !strings.HasPrefix(fn.Name.Name, "New") ||
+			fn.Type.Results == nil || len(fn.Type.Results.List) == 0 {
+			return true
+		}
+		made := getTypeName(fn.Type.Results.List[0].Type)
+		if made == "" {
 			return true
 		}
 		var taken []string
@@ -40,7 +47,7 @@ func getExposedDependencies(file *ast.File) []exposed {
 				taken = append(taken, strings.ToLower(name.Name))
 			}
 		}
-		ctors[strings.TrimPrefix(fn.Name.Name, "New")] = taken
+		ctors[strings.TrimPrefix(made, "*")] = taken
 		return true
 	})
 
@@ -210,6 +217,14 @@ func NewRead(readers port.VaultReaders, notes port.NoteQueries) Read {
 type Write struct {
 	Writers port.VaultWriters
 }
+
+type Search struct {
+	Passages port.PassageQueries
+}
+
+func NewOver(passages port.PassageQueries) Search {
+	return Search{Passages: passages}
+}
 `, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -219,8 +234,10 @@ type Write struct {
 		refused = append(refused, one.in+": "+strings.Join(one.fields, ", "))
 	}
 	// Pages is the caller's own and no collaborator; notes is closed; Write has
-	// no constructor to promise anything.
-	if !slices.Equal(refused, []string{"Read: Readers"}) {
+	// no constructor to promise anything. Search is reached through a
+	// constructor not named after it.
+	slices.Sort(refused)
+	if !slices.Equal(refused, []string{"Read: Readers", "Search: Passages"}) {
 		t.Errorf("the rule refuses %v, want the one collaborator left in the open", refused)
 	}
 }
