@@ -78,11 +78,126 @@ export const words = (name) =>
  * so one letter in front of the ending is a word that ends there by accident:
  * a ring is a thing. The past forms that carry no ending are listed below.
  *
- * A third-person verb is not tested for. `carries` and `cells` end the same
- * way, and a factory here is free to take a plain noun, so no machine can tell
- * the narrator from the thing. A person reads those.
+ * A third-person verb carries no ending a machine can read: `carries` and
+ * `cells` end the same way. The words are written down in `narrators` instead.
  */
 export const verbal = (word) => /^.{2,}(ing|ed)$/.test(word) || past.has(word)
+
+/**
+ * The third-person verbs. `holds` and `recognises` read as a narrator
+ * describing somebody else's code, where `hold` and `recognise` are the caller
+ * asking for something.
+ *
+ * A denylist, where the dictionary above is an allowlist, because that is the
+ * shorter list by three times: the words ending in -s that are plural nouns run
+ * past a hundred and fifty and grow with every new one, and these do not.
+ *
+ * A word here is refused whichever way it is read. `covers` and `shares` are
+ * plural nouns as well as verbs, and a function named by a plain noun is
+ * refused too — `getCovers` says what the caller gets, and `covers` says it of
+ * neither reading.
+ *
+ * `contains` and `matches` are not here. The standard library named both, and a
+ * caller reads them as that library's word rather than as a narrator's.
+ */
+const narrators = new Set([
+  'admits', 'allows', 'closes', 'covers', 'crosses', 'deals', 'declares',
+  'divides', 'encloses', 'follows', 'forgets', 'hangs', 'holds', 'joins',
+  'keeps', 'knows', 'lands', 'leads', 'learns', 'lives', 'merges', 'opens',
+  'presses', 'proofreads', 'reaches', 'reckons', 'recognises', 'refuses',
+  'repeats', 'ripens', 'runs', 'says', 'shares', 'sits', 'spends', 'spreads',
+  'stands', 'stops', 'supports', 'takes', 'tells', 'transcribes', 'writes',
+])
+
+/**
+ * Whether a name reads as a narrator. Only a function is held to this: a
+ * parameter is routinely a plural noun — `marksIn(runs, origin)` hands over
+ * runs — and the name carries no verb in front to tell the two apart.
+ *
+ * The first word is what is read, as everywhere else: `keepsNotes` narrates and
+ * `keepNotes` asks.
+ */
+export const narrates = (name) => narrators.has(words(name)[0] ?? '')
+
+/**
+ * baseline are the functions still named by a third-person verb, in either
+ * language, and the list only shrinks. A name here is debt somebody wrote down;
+ * a name that has left the source has to leave this list, and the test below
+ * refuses one that nothing is called any more.
+ */
+export const narratorBaseline = []
+
+/**
+ * The words ending in -ly or -est that are not an adverb or a superlative.
+ * `apply` and `request` are verbs a caller says, `family` and `tally` are
+ * things, and `honest` is what a thing is rather than which of several it is.
+ *
+ * Six words, where the endings they are exceptions to catch twenty: this is the
+ * allowlist worth writing, and the plural nouns ending in -s are not.
+ */
+const notDegrees = new Set(['apply', 'family', 'honest', 'reply', 'request', 'tally'])
+
+/**
+ * The words ending in -able that a caller says rather than a thing is.
+ * `enable` and `disable` are what is done to a setting; the rest of the ending
+ * marks an adjective every time it appears here.
+ */
+const notAdjectives = new Set(['disable', 'enable', 'unable'])
+
+/**
+ * Whether a name says what something is like, how, or how much, rather than
+ * what is done. `plainly`, `quietest` and `readable` describe; `getPlainRune`,
+ * `findQuietest` and `canRead` are asked for.
+ *
+ * Only a function is held to this. A parameter naming a bound is an adjective
+ * by nature — `cut(scores, longest, shortest)` hands over the longest and the
+ * shortest a run may be — and there is no verb in front to tell it apart.
+ */
+export const describes = (name) => {
+  const first = words(name)[0] ?? ''
+  if (/^.{3,}[ai]ble$/.test(first)) return !notAdjectives.has(first)
+  return /^.{3,}(ly|est)$/.test(first) && !notDegrees.has(first)
+}
+
+/**
+ * The words that stand for a thing instead of naming it: pronouns, and the
+ * determiners and adverbs of place and degree. `one`, `all`, `ours` and `here`
+ * each need the declaration read before the name says anything, which is the
+ * same fault a preposition alone has.
+ *
+ * The list is closed. English gains no new pronouns, so nothing is ever added
+ * here for a word somebody wrote.
+ */
+const standIns = new Set([
+  'again', 'all', 'alone', 'another', 'anything', 'anywhere', 'both', 'each',
+  'either', 'enough', 'every', 'everything', 'everywhere', 'far', 'here',
+  'itself', 'least', 'less', 'mine', 'more', 'most', 'neither', 'none',
+  'nothing', 'nowhere', 'one', 'only', 'other', 'others', 'ours', 'quite',
+  'rather', 'same', 'somewhere', 'still', 'such', 'that', 'theirs', 'there',
+  'these', 'this', 'those', 'too', 'very', 'yours',
+])
+
+/**
+ * Whether a name stands for a thing rather than naming it. As with the
+ * preposition rule, only a whole name is read: `one` says nothing and
+ * `getOnlyVault` says what comes back.
+ */
+export const standsFor = (name) => {
+  const said = words(name)
+  return said.length === 1 && standIns.has(said[0])
+}
+
+/**
+ * baseline are the functions still named by an adverb or a superlative, and the
+ * list only shrinks. A name here is debt somebody wrote down.
+ */
+export const degreeBaseline = []
+
+/**
+ * baseline are the functions still named by a word that stands for a thing
+ * rather than naming it, and the list only shrinks.
+ */
+export const standInBaseline = []
 
 /**
  * The past forms no ending gives away. `drawn`, `held` and `took` narrate as
@@ -127,10 +242,10 @@ const prepositions = new Set([
   'about', 'above', 'across', 'after', 'against', 'ahead', 'along', 'alongside',
   'among', 'apart', 'around', 'aside', 'at', 'away', 'before', 'behind',
   'below', 'beneath', 'beside', 'besides', 'between', 'beyond', 'by', 'down',
-  'during', 'except', 'for', 'from', 'in', 'inside', 'into', 'near', 'off',
-  'on', 'onto', 'out', 'outside', 'over', 'past', 'since', 'through',
-  'throughout', 'till', 'to', 'toward', 'towards', 'under', 'underneath',
-  'until', 'up', 'upon', 'via', 'with', 'within', 'without',
+  'during', 'except', 'for', 'from', 'in', 'inside', 'into', 'near', 'of',
+  'off', 'on', 'onto', 'out', 'outside', 'over', 'past', 'since', 'than',
+  'through', 'throughout', 'till', 'to', 'toward', 'towards', 'under',
+  'underneath', 'until', 'up', 'upon', 'via', 'with', 'within', 'without',
 ])
 
 /**
