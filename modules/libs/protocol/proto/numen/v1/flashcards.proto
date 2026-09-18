@@ -321,6 +321,16 @@ message TakeBackAnswerResponse {}
 
 message ListReviewDaysRequest {
   string vault = 1;
+
+  // The stretch of time wanted, each written as the year, the month and the
+  // day, and both ends inside it. An empty end is unbounded at that end, so a
+  // request naming neither asks for every day there is.
+  //
+  // A vault grows a day for every day it is reviewed, and a caller draws a
+  // fixed stretch of them. Streak and answered are over the whole of it
+  // whatever is asked for here.
+  string from = 2;
+  string to = 3;
 }
 
 message ListReviewDaysResponse {
