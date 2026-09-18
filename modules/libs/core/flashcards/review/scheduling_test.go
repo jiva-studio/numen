@@ -164,7 +164,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 		return s
 	}
 
-	button := p.GetLandingDay(loaded(due), local, due)
+	button := p.GetDueDay(loaded(due), local, due)
 	replayed := p.ScheduleDay(loaded(due.UTC()), stamp, by.Next(stood, stamp, review.Good).Due)
 	if button.Equal(due) {
 		t.Fatalf("the placement left the card on %v, where the scheduler put it", due.In(in))
