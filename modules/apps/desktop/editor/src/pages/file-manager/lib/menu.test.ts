@@ -44,6 +44,31 @@ describe('the menu on a row standing for a recording', () => {
   })
 })
 
+describe('the menu on a row standing for an address', () => {
+  it('offers the runs over what is at the address', () => {
+    expect(getItemIds('url')).toStrictEqual(
+      expect.arrayContaining(['downloadText', 'downloadCopy', 'deleteText', 'deleteCopy']),
+    )
+  })
+
+  // A build that cannot reach one offers none of them, which is how a person
+  // is told this build does not do it.
+  it('offers none of them where the build cannot do them', () => {
+    const offered = getItemIds('url', false, () => false)
+    for (const one of ['downloadText', 'downloadCopy', 'deleteText', 'deleteCopy']) {
+      expect(offered).not.toContain(one)
+    }
+  })
+
+  // What is left is the menu any file gets, which is where a scan lands too
+  // when nothing can be run on it.
+  it('comes back to the plain file menu where none of them can be run', () => {
+    expect(getItemIds('url', false, () => false)).toStrictEqual(
+      getItemIds('book', false, () => false),
+    )
+  })
+})
+
 describe('the menu on a row standing for a scanned document', () => {
   it('offers the text of it to be recognised', () => {
     expect(getItemIds('book')).toContain('recognise')
