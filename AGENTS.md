@@ -6,6 +6,17 @@ Gemini, or any other) must follow them.
 ## Canonical guides
 
 - **Architecture decisions**: [`docs/adr/README.md`](docs/adr/README.md) — the rules live here, not in this file's memory.
+- **The vocabulary**: [`docs/glossary.md`](docs/glossary.md) — its preamble is what a rename is judged against.
+
+This file holds what every language here shares. What is one module's own is
+written in that module, beside the code it holds:
+
+| Module | Holds |
+|---|---|
+| [`modules/libs/core`](modules/libs/core/AGENTS.md) | the layers, the ports, what the core may not do, and the test that refuses each |
+| [`modules/libs/protocol`](modules/libs/protocol/AGENTS.md) | one service to a subject, generated code, totality |
+| [`modules/apps/desktop`](modules/apps/desktop/AGENTS.md) | where a file of a window stands, and what a `.vue` may not do |
+| [`modules/tools/lint`](modules/tools/lint/AGENTS.md) | what a rule must carry before it is landed |
 
 ---
 
@@ -236,20 +247,16 @@ Domain distinctions:
 
 ---
 
-## 10. File placement — domain code stays in its domain
+## 10. File placement — a file stands where its subject does
 
-Code that serves one domain lives inside that domain's folder under
-`modules/apps/desktop/editor/src/` or `modules/apps/desktop/flashcards/src/`:
+A file serving one subject stands with that subject and nowhere else. What two
+subjects both need stands below them, and a type only one of them reads never
+moves down.
 
-| File | Belongs in |
-|---|---|
-| Note-specific types (`Move`, `Focus`, `Enabler`) | `note/` |
-| File-manager entries (`FileEntry`, `MoveResult`) | `files/` |
-| Flashcard review settings | `cards/` |
-
-There is no `tabs/` folder and no `shared/`. What two or more domains genuinely
-use sits at the top of `src/` under the word for what it is — `transport.ts`,
-`theme.ts`, `words.ts` — and a type only one domain reads never moves there.
+Which layers there are, and what may reach what, is written per module: the
+windows in [`modules/apps/desktop/AGENTS.md`](modules/apps/desktop/AGENTS.md),
+the core in [`modules/libs/core/AGENTS.md`](modules/libs/core/AGENTS.md). Each
+names the test that refuses it, and every push runs them.
 
 ---
 

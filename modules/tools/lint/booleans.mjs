@@ -4,9 +4,9 @@
  * kind — `changed` is a past tense, `disabled` is a state somebody set, and
  * neither says that what stands there is true or false.
  *
- * The rule is `AGENTS.md` §6, and it holds in both languages. Go's own idiom
- * agrees for a predicate — `IsDir`, `IsAbs` — and says nothing about a field,
- * so this is the repository's rule and not the language's.
+ * The rule holds in both languages. Go's own idiom agrees for a predicate —
+ * `IsDir`, `IsAbs` — and says nothing about a field, so this is the
+ * repository's rule and not the language's.
  */
 import { code } from './source.mjs'
 
