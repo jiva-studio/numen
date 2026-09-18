@@ -24,7 +24,7 @@ type Follow struct {
 	// ErrorHandler, if set, is called with what went wrong, and with nil when a
 	// later attempt succeeds. Both, so what is reported is the state of things
 	// now.
-	ErrorHandler func(error)
+	ErrorHandler port.ErrorHandler
 }
 
 // NewFollow is what keeps the index level with a vault being edited: what says

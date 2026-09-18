@@ -94,7 +94,7 @@ type Search struct {
 	derived      port.DerivedStores
 	documents    port.TextExtractor
 	floor        float64
-	errorHandler func(error)
+	errorHandler port.ErrorHandler
 }
 
 // New is a search over one vault's index.
@@ -109,7 +109,7 @@ type Search struct {
 //
 // `errorHandler` hears about a half that could not answer. Nothing is said by
 // passing nothing.
-func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, errorHandler func(error)) Search {
+func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, errorHandler port.ErrorHandler) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}
